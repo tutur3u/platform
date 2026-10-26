@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Date controls reserve a stable slot when their inline toggle is visible.
 class ProfileTimelineDateStrip extends StatelessWidget {
@@ -38,7 +39,7 @@ class ProfileTimelineDateStrip extends StatelessWidget {
         children: [SizedBox(height: 0, key: ValueKey('timeline-date-slot'))],
       );
     }
-    final theme = shad.Theme.of(context);
+    final tokens = AppTokens.of(context);
     final locale = Localizations.localeOf(context).toString();
     final l10n = context.l10n;
     final weekEnd = DateTime(week.year, week.month, week.day + 7);
@@ -53,41 +54,49 @@ class ProfileTimelineDateStrip extends StatelessWidget {
           child: Row(
             children: [
               if (showToggle)
-                IconButton(
+                AppIconButton(
                   key: const ValueKey('timeline-date-toggle'),
                   tooltip: open
                       ? l10n.profileTimelineHideDates
                       : l10n.profileTimelineShowDates,
                   onPressed: onToggle,
                   icon: Icon(
-                    open ? Icons.view_agenda_outlined : Icons.date_range,
+                    open ? LucideIcons.rows3 : LucideIcons.calendarRange,
                   ),
                 ),
               Expanded(
-                child: Text(
-                  DateFormat.yMMM(locale).format(headerDate),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.base,
+                child: Padding(
+                  padding: const EdgeInsetsDirectional.only(
+                    start: AppSpacing.xs,
+                  ),
+                  child: Text(
+                    DateFormat.yMMMM(locale).format(headerDate),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: tokens.typography.base.copyWith(
+                      color: tokens.colorScheme.foreground,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
               ),
-              IconButton(
+              AppIconButton(
                 tooltip: l10n.profileTimelineToday,
                 onPressed: onToday,
-                icon: const Icon(Icons.today_outlined),
+                icon: const Icon(LucideIcons.calendarCheck),
               ),
               if (open) ...[
-                IconButton(
+                AppIconButton(
                   tooltip: MaterialLocalizations.of(
                     context,
                   ).previousPageTooltip,
                   onPressed: () => onWeek(-1),
-                  icon: const Icon(Icons.chevron_left),
+                  icon: const Icon(LucideIcons.chevronLeft),
                 ),
-                IconButton(
+                AppIconButton(
                   tooltip: MaterialLocalizations.of(context).nextPageTooltip,
                   onPressed: () => onWeek(1),
-                  icon: const Icon(Icons.chevron_right),
+                  icon: const Icon(LucideIcons.chevronRight),
                 ),
               ],
             ],
@@ -108,8 +117,9 @@ class ProfileTimelineDateStrip extends StatelessWidget {
                   alignment: Alignment.centerLeft,
                   child: Text(
                     l10n.profileTimelineAgenda,
-                    style: theme.typography.large.copyWith(
-                      fontWeight: FontWeight.w700,
+                    style: tokens.typography.large.copyWith(
+                      color: tokens.colorScheme.foreground,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 )
@@ -196,7 +206,8 @@ class _TimelineWeekState extends State<_TimelineWeek> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
+    final tokens = AppTokens.of(context);
+    final c = tokens.colorScheme;
     final locale = Localizations.localeOf(context).toString();
     final scale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final l10n = context.l10n;
@@ -243,7 +254,12 @@ class _TimelineWeekState extends State<_TimelineWeek> {
                         children: [
                           Text(
                             DateFormat.E(locale).format(date),
-                            style: theme.typography.textSmall,
+                            style: tokens.typography.xSmall.copyWith(
+                              color: isSelected
+                                  ? c.foreground
+                                  : c.mutedForeground,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                           const SizedBox(height: 4),
                           Container(
@@ -251,20 +267,30 @@ class _TimelineWeekState extends State<_TimelineWeek> {
                             height: 44 * scale,
                             alignment: Alignment.center,
                             decoration: BoxDecoration(
-                              shape: BoxShape.circle,
+                              borderRadius: BorderRadius.circular(
+                                AppRadius.sm * scale,
+                              ),
                               color: isSelected
-                                  ? theme.colorScheme.primary
-                                  : theme.colorScheme.card,
+                                  ? c.primary
+                                  : active
+                                  ? AppTone.primary.fill(c)
+                                  : c.card.withValues(alpha: 0.6),
                               border: Border.all(
-                                color: theme.colorScheme.border,
+                                color: isSelected
+                                    ? c.primary
+                                    : c.border.withValues(alpha: 0.7),
                               ),
                             ),
                             child: Text(
                               '${date.day}',
-                              style: theme.typography.base.copyWith(
+                              style: tokens.typography.base.copyWith(
                                 color: isSelected
-                                    ? theme.colorScheme.primaryForeground
-                                    : theme.colorScheme.foreground,
+                                    ? c.primaryForeground
+                                    : c.foreground,
+                                fontWeight: FontWeight.w600,
+                                fontFeatures: const [
+                                  FontFeature.tabularFigures(),
+                                ],
                               ),
                             ),
                           ),
@@ -275,7 +301,7 @@ class _TimelineWeekState extends State<_TimelineWeek> {
                               height: 4,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: theme.colorScheme.primary,
+                                color: c.primary,
                               ),
                             ),
                         ],

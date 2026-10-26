@@ -1,9 +1,9 @@
 {
   "name": "@tuturuuu/meet",
-  "version": "0.34.1",
+  "version": "0.35.0",
   "private": true,
   "scripts": {
-    "type-check": "node scripts/type-check.cjs",
+    "type-check": "node scripts/type-check.cjs && bun run type-check:config",
     "dev": "node ../../scripts/portless-safe-dev.js",
     "dev:app": "node ../../scripts/portless-dev-banner.js -- vp dev --port ${PORT:-7807}",
     "devx": "bun sb:stop && bun sb:start && bun dev",
@@ -28,7 +28,8 @@
     "preview:cloudflare": "vp preview",
     "deploy:cloudflare": "wrangler deploy --config dist/ssr/wrangler.json",
     "cf:typecheck": "node scripts/type-check.cjs",
-    "cf:typegen": "wrangler types --config dist/ssr/wrangler.json --include-runtime=false --env-interface CloudflareEnv cloudflare-env.d.ts && biome format --write cloudflare-env.d.ts"
+    "cf:typegen": "wrangler types --config dist/ssr/wrangler.json --include-runtime=false --env-interface CloudflareEnv cloudflare-env.d.ts && biome format --write cloudflare-env.d.ts",
+    "type-check:config": "tsc --noEmit --project tsconfig.config.json"
   },
   "dependencies": {
     "@cloudflare/pages-plugin-vercel-og": "0.1.2",

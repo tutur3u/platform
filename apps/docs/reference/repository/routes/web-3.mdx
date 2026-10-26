@@ -11,7 +11,6 @@ This inventory lists concrete Next page and handler files, including generated w
 
 | URL pattern | Page or HTTP methods | Source |
 | --- | --- | --- |
-| `/api/v1/product-feedback/receipts/[key]` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/product-feedback/receipts/%5Bkey%5D/route.ts) |
 | `/api/v1/product-feedback` | GET, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/product-feedback/route.ts) |
 | `/api/v1/proxy/tuturuuu` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/proxy/tuturuuu/route.ts) |
 | `/api/v1/public/pricing` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/public/pricing/route.ts) |
@@ -30,7 +29,7 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/storage/download/[...path]` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/storage/download/%5B...path%5D/route.ts) |
 | `/api/v1/storage/folders` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/storage/folders/route.ts) |
 | `/api/v1/storage/guarded-download/[token]` | GET, HEAD, OPTIONS | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/storage/guarded-download/%5Btoken%5D/route.ts) |
-| `/api/v1/storage/list` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/storage/list/route.ts) |
+| `/api/v1/storage/list` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/storage/list/route.ts) |
 | `/api/v1/storage/share` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/storage/share/route.ts) |
 | `/api/v1/storage/share-batch` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/storage/share-batch/route.ts) |
 | `/api/v1/storage/upload` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/storage/upload/route.ts) |
@@ -98,7 +97,7 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/link-previews` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/chat/conversations/%5BconversationId%5D/link-previews/route.ts) |
 | `/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/messages/[messageId]` | DELETE, PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/chat/conversations/%5BconversationId%5D/messages/%5BmessageId%5D/route.ts) |
 | `/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/messages` | GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/chat/conversations/%5BconversationId%5D/messages/route.ts) |
-| `/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/reactions` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/chat/conversations/%5BconversationId%5D/reactions/route.ts) |
+| `/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/reactions` | GET, POST, PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/chat/conversations/%5BconversationId%5D/reactions/route.ts) |
 | `/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/read` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/chat/conversations/%5BconversationId%5D/read/route.ts) |
 | `/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]` | DELETE, PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/chat/conversations/%5BconversationId%5D/route.ts) |
 | `/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/shared-content` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/chat/conversations/%5BconversationId%5D/shared-content/route.ts) |
@@ -107,6 +106,7 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/workspaces/[wsId]/chat/directory` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/chat/directory/route.ts) |
 | `/api/v1/workspaces/[wsId]/chat/friend-requests/[requestId]` | DELETE, PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/chat/friend-requests/%5BrequestId%5D/route.ts) |
 | `/api/v1/workspaces/[wsId]/chat/friend-requests` | GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/chat/friend-requests/route.ts) |
+| `/api/v1/workspaces/[wsId]/chat/reactions/retire` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/chat/reactions/retire/route.ts) |
 | `/api/v1/workspaces/[wsId]/chat/realtime` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/chat/realtime/route.ts) |
 | `/api/v1/workspaces/[wsId]/chat/search` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/chat/search/route.ts) |
 | `/api/v1/workspaces/[wsId]/consolidate-users` | GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/consolidate-users/route.ts) |

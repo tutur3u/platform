@@ -43,7 +43,13 @@ REDIRECT = ".wrangler/deploy/config.json"
 SAVED_REDIRECT = ".void/preview-deploy-config.json"
 REDIRECTS = (REDIRECT, SAVED_REDIRECT)
 RECEIPT = "apps-native-artifact.json"
+# The exact static-asset policy besides the emitted directory; an app wrapper
+# may require more (Tasks requires html_handling "none").
+ASSET_POLICY = {"binding": "ASSETS", "run_worker_first": True, "not_found_handling": "none"}
 PUBLIC_FILES = ("robots.txt", "sitemap.xml")
+# Public files that may be HTML (each also in PUBLIC_FILES, so byte-checked);
+# any other HTML in the output is prerender output.
+PUBLIC_HTML = ()
 MAX_FILES = 50000
 MAX_BYTES = 1024 * 1024 * 1024
 
@@ -125,8 +131,8 @@ def validate_output(directory, source=None):
     require(isinstance(metadata_path, str) and Path(metadata_path).is_absolute() and Path(metadata_path).name == ".void-wrangler.jsonc", "unreviewed producer config metadata")
     require(config["userConfigPath"] == metadata_path, "producer config metadata drift")
     assets = config.get("assets")
-    require(isinstance(assets, dict) and set(assets) == {"binding", "directory", "run_worker_first", "not_found_handling"}, "unreviewed asset configuration")
-    require(assets["binding"] == "ASSETS" and assets["run_worker_first"] is True and assets["not_found_handling"] == "none", "static bypass/fallback forbidden")
+    require(isinstance(assets, dict) and set(assets) == set(ASSET_POLICY) | {"directory"}, "unreviewed asset configuration")
+    require(all(json.dumps(assets[key]) == json.dumps(value) for key, value in ASSET_POLICY.items()), "static bypass/fallback forbidden")
     assets_path = emitted_path(dist, config_path.parent, assets["directory"])
     require(assets_path == dist / "client" and assets_path.is_dir(), "assets must be the emitted dist/client")
     main = emitted_path(dist, config_path.parent, config.get("main"))
@@ -134,7 +140,8 @@ def validate_output(directory, source=None):
     for name in PUBLIC_FILES:
         require((assets_path / name).is_file(), "missing public asset: " + name)
         require((assets_path / name).read_bytes() == (source / "public" / name).read_bytes(), "public asset drift: " + name)
-    require(not any(assets_path.rglob("*.html")), "unreviewed static HTML/prerender output")
+    html = {path.relative_to(assets_path).as_posix() for path in assets_path.rglob("*.html")}
+    require(html <= set(PUBLIC_HTML) & set(PUBLIC_FILES), "unreviewed static HTML/prerender output")
     return {"app": app, "config": config_path, "main": main, "assets": assets_path}
 
 

@@ -1,6 +1,9 @@
 import { pollDevboxAgentJobs } from '../platform-devbox';
 import { normalizeBaseUrl } from './config';
-import { createDevboxAgentCapabilities } from './devbox-agent-capabilities';
+import {
+  createDevboxAgentCapabilities,
+  heartbeatStorageTrigger,
+} from './devbox-agent-capabilities';
 import {
   agentRequest,
   backoffDelay,
@@ -182,6 +185,8 @@ export async function runDevboxAgentLoop({
     lastHeartbeatOkAt = Date.now();
     heartbeatFailures = 0;
     nextHeartbeatAt = Date.now() + timing.heartbeatIntervalMs;
+    // Low disk on this host starts one detached, lease-guarded reclaim.
+    void heartbeatStorageTrigger().catch(() => undefined);
   };
   // Transient failures retry with jittered backoff (never slower than the
   // heartbeat interval); the watchdog bounds the total outage.

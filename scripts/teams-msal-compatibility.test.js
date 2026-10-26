@@ -89,9 +89,11 @@ test('Teams client credentials acquire a token using MSAL with fixture transport
   assert.equal(posts[0].get('grant_type'), 'client_credentials');
   assert.equal(posts[0].get('client_id'), credentials.clientId);
   assert.equal(posts[0].get('client_secret'), credentials.clientSecret);
-  assert.match(
-    posts[0].get('scope'),
-    /https:\/\/graph.microsoft.com\/\.default/
+  assert.ok(
+    posts[0]
+      .get('scope')
+      .split(' ')
+      .includes('https://graph.microsoft.com/.default')
   );
   assert.equal(posts[0].has('response_mode'), false);
   assert.equal(posts[0].has('instance_aware'), false);

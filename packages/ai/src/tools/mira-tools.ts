@@ -2,6 +2,7 @@ import type { PermissionId } from '@tuturuuu/types';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import type { Tool, ToolSet } from 'ai';
 import { createStreamRenderUiTool } from './definitions/render-ui';
+import { isMiraToolAvailableToClient } from './mira-client-capabilities';
 import { createTaskWriteGuard } from './mira-task-write-guard';
 import { miraToolDefinitions } from './mira-tool-definitions';
 import { searchMiraTools } from './mira-tool-discovery';
@@ -52,6 +53,8 @@ export function createMiraStreamTools(
   >;
 
   for (const [name, def] of definitionEntries) {
+    // A client that cannot apply a UI effect never sees its tool.
+    if (!isMiraToolAvailableToClient(name, ctx.clientCapabilities)) continue;
     const requiredPerm = MIRA_TOOL_PERMISSIONS[name];
     let isMissingPermission = false;
     let missingPermissionsStr = '';
@@ -80,6 +83,8 @@ export function createMiraStreamTools(
           for (const candidate of Object.keys(
             miraToolDefinitions
           ) as MiraToolName[]) {
+            if (!isMiraToolAvailableToClient(candidate, ctx.clientCapabilities))
+              continue;
             const permission = MIRA_TOOL_PERMISSIONS[candidate];
             const required = permission
               ? Array.isArray(permission)
@@ -195,7 +200,7 @@ export function createMiraStreamTools(
       ...def,
       execute: async (
         args: Record<string, unknown>,
-        options?: { abortSignal?: AbortSignal }
+        options?: { abortSignal?: AbortSignal; toolCallId?: string }
       ) => {
         const executionCtx =
           name === 'set_workspace_context'

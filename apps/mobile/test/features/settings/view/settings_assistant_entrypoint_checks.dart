@@ -70,7 +70,7 @@ void registerSettingsAssistantEntrypointChecks() {
           }
         });
         await h.locale.setLocale(Locale(language));
-        await h.pump(tester);
+        await h.pump(tester, shellChrome: true);
         final origin = entrypoint.endsWith('live menu')
             ? find.byType(AssistantPage)
             : find.byType(ProductSettingsSection);
@@ -101,51 +101,63 @@ void registerSettingsAssistantEntrypointChecks() {
           await _settle(tester);
           expect(find.text(l10n.assistantHistoryTitle), findsNothing);
           final settingsAction = find.widgetWithText(
-            ListTile,
+            AppListTile,
             l10n.assistantSettingsTitle,
           );
           // The nested sheet shares the bottom edge with the floating dock.
-          // Tap the visible leading edge of the real menu row.
-          await tester.tapAt(
-            tester.getTopLeft(settingsAction) + const Offset(16, 24),
-          );
+          // Tap a point of the real menu row that the dock leaves reachable.
+          await tester.tapAt(_reachablePointOf(tester, settingsAction));
         }
         await _settle(tester);
         final hub = find.byType(AssistantSettingsHub);
         expect(hub, findsOneWidget);
-        expect(Navigator.of(tester.element(hub)), same(root));
-        expect(find.byType(ShellPage), findsNothing);
+        expect(Navigator.of(tester.element(hub)), isNot(same(root)));
+        expect(find.byType(ShellPage), findsOneWidget);
         expect(find.text(l10n.assistantSettingsTitle), findsOneWidget);
-        expect(find.bySemanticsLabel(l10n.navBack), findsOneWidget);
+        expect(
+          h.router.state.matchedLocation,
+          Routes.settingsAppPath('assistant'),
+        );
+        expect(find.byKey(const ValueKey('app-sheet-close')), findsNothing);
         expect(tester.element(hub).read<AuthCubit>(), same(h.auth));
         expect(tester.element(hub).read<WorkspaceCubit>(), same(h.workspaces));
         expect(tester.widget<AssistantSettingsHub>(hub).workspaceId, 'ws');
         // Continue through the actual caller and hub into both routed editors.
         final personality = find.widgetWithText(
-          ListTile,
+          AppListTile,
           l10n.assistantPersonalityTitle,
         );
         await tester.ensureVisible(personality);
         await tester.tap(personality);
         await _settle(tester);
-        expect(find.byType(MobileSectionAppBar), findsOneWidget);
-        expect(find.bySemanticsLabel(l10n.navBack), findsOneWidget);
-        expect(find.byType(ShellPage), findsNothing);
+        expect(find.byType(MobileSectionAppBar), findsNothing);
+        expect(find.byType(AppSheetScaffold), findsNothing);
+        expect(
+          h.router.state.matchedLocation,
+          Routes.settingsAppPath('assistant'),
+        );
+        expect(find.byKey(const ValueKey('app-sheet-close')), findsNothing);
+        expect(find.byType(ShellPage), findsOneWidget);
         await tester.tap(
           find.byKey(const ValueKey('assistant-personality-name')),
         );
         await _settle(tester);
         expect(find.byType(AssistantPersonalityFieldEditor), findsOneWidget);
-        expect(find.byType(MobileSectionAppBar), findsOneWidget);
-        await tester.enterText(find.byType(TextFormField), 'Routed Nova');
-        await tester.tap(find.widgetWithText(FilledButton, l10n.commonSave));
+        expect(find.byType(MobileSectionAppBar), findsNothing);
+        expect(find.byType(AppSheetScaffold), findsNothing);
+        await tester.enterText(
+          find.byType(AppTextFormField).last,
+          'Routed Nova',
+        );
+        expect(find.byTooltip(l10n.commonSave).hitTestable(), findsOneWidget);
+        await tester.tap(find.byTooltip(l10n.commonSave).hitTestable());
         await _settle(tester);
-        expect(find.text('Routed Nova'), findsOneWidget);
+        expect(find.text('Routed Nova').hitTestable(), findsOneWidget);
         expect(settingsRepository.writes, 1);
-        await tester.tap(find.byKey(const ValueKey('settings-route-back')));
+        await tester.binding.handlePopRoute();
         await _settle(tester);
         final memory = find.widgetWithText(
-          ExpansionTile,
+          AppDisclosure,
           l10n.assistantMemoryTitle,
         );
         await tester.ensureVisible(memory);
@@ -156,17 +168,25 @@ void registerSettingsAssistantEntrypointChecks() {
         await tester.tap(memoryRow);
         await _settle(tester);
         expect(find.byType(AssistantMemoryEditor), findsOneWidget);
-        expect(find.byType(MobileSectionAppBar), findsOneWidget);
-        expect(find.bySemanticsLabel(l10n.navBack), findsOneWidget);
-        await tester.enterText(find.byType(TextFormField), 'Routed memory');
+        expect(find.byType(MobileSectionAppBar), findsNothing);
+        expect(find.byType(AppSheetScaffold), findsNothing);
+        expect(
+          h.router.state.matchedLocation,
+          Routes.settingsAppPath('assistant'),
+        );
+        expect(find.byKey(const ValueKey('app-sheet-close')), findsNothing);
+        await tester.enterText(
+          find.byType(AppTextFormField).last,
+          'Routed memory',
+        );
         await _settle(tester);
-        final memorySave = find.widgetWithText(FilledButton, l10n.commonSave);
+        final memorySave = find.byTooltip(l10n.commonSave).hitTestable();
         await tester.ensureVisible(memorySave);
         await tester.tap(memorySave);
         await _settle(tester);
         expect(find.text('Routed memory'), findsOneWidget);
         expect(settingsRepository.edits, 1);
-        await tester.tap(find.byKey(const ValueKey('settings-route-back')));
+        await tester.binding.handlePopRoute();
         await _settle(tester);
         expect(hub, findsNothing);
         expect(origin, findsOneWidget);
@@ -178,4 +198,22 @@ void registerSettingsAssistantEntrypointChecks() {
       });
     }
   }
+}
+
+/// Returns a point inside [finder] whose hit test reaches it, so taps follow
+/// what a user can touch rather than a fixed edge the floating dock may cover.
+Offset _reachablePointOf(WidgetTester tester, Finder finder) {
+  final target = tester.renderObject(finder);
+  final rect = tester.getRect(finder);
+  for (var y = rect.top + 4; y < rect.bottom; y += 4) {
+    for (var x = rect.left + 8; x < rect.right; x += 8) {
+      final point = Offset(x, y);
+      final result = HitTestResult();
+      tester.binding.hitTestInView(result, point, tester.view.viewId);
+      if (result.path.any((entry) => identical(entry.target, target))) {
+        return point;
+      }
+    }
+  }
+  fail('No reachable point on the menu row; the floating dock covers it.');
 }

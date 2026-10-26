@@ -1253,9 +1253,13 @@ and debugging pointers for watcher history/log files plus commands like
 `git show --stat --oneline <hash>` and watcher container logs. Notification
 send failures are logged and never block the watcher loop.
 Watcher incident email code runs from the repo root inside the watcher
-container, so any workspace package imported by `scripts/watch-blue-green/*`
-must be root-resolvable through `package.json` and covered by a root-runtime
-import test.
+container. Import any workspace package used by `scripts/watch-blue-green/*`
+through its workspace source path (for example
+`packages/email-service/src/index.ts`) and cover it with a root-runtime import
+test. Do not add it to the root `package.json` dependencies: Turbo folds the
+root package's workspace dependencies into the global hash, so every edit to
+that package's dependency closure would invalidate every cached task (see
+[Caching](/build/devops/caching)).
 
 Example post-restart commands for colocated projects:
 

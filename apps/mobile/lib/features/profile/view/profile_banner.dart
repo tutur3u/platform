@@ -18,16 +18,25 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Full-width banner; errors keep the surrounding identity usable.
 class ProfileBanner extends StatelessWidget {
-  const ProfileBanner({required this.profile, super.key});
+  const ProfileBanner({
+    required this.profile,
+    this.radius = 18,
+    this.padding = const EdgeInsets.only(bottom: 16),
+    super.key,
+  });
   final UserProfile profile;
+
+  /// Corner radius; 0 when the banner is the top edge of an enclosing card.
+  final double radius;
+  final EdgeInsetsGeometry padding;
   @override
   Widget build(BuildContext context) {
     final url = profile.bannerUrl;
     final hasImage = url != null && url.isNotEmpty;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: padding,
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(radius),
         child: AspectRatio(
           aspectRatio: 3,
           child: !hasImage

@@ -1,9 +1,10 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_shell_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_stream_parser.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
+
 import 'assistant_settings_repair_harness.dart';
 
 void main() {
@@ -12,7 +13,13 @@ void main() {
   ) async {
     final h = RepairHarness();
     addTearDown(() => h.dispose(tester));
-    await h.mount(tester);
+    await h.mount(
+      tester,
+      initialPreferences: {
+        '$repairActor::mira-dashboard-workspace-context-$repairWorkspace':
+            'personal',
+      },
+    );
     final controller = h.composer(tester);
     await h.chat.openChatById(repairWorkspace, repairChat);
     await tester.pumpAndSettle();
@@ -23,21 +30,27 @@ void main() {
     expect(h.chat.state.storedChatId, repairChat);
     expect(h.repository.starts, 0);
   });
-  testWidgets('first-use page offers informed recovery before creation', (
+  testWidgets('legacy page offers informed recovery before creation', (
     tester,
   ) async {
     final h = RepairHarness();
     addTearDown(() => h.dispose(tester));
-    await h.mount(tester);
+    await h.mount(
+      tester,
+      initialPreferences: {
+        '$repairActor::mira-dashboard-workspace-context-$repairWorkspace':
+            'personal',
+      },
+    );
     expect(h.chat.state.creationOutcomeUnknown, isTrue);
     expect(h.chat.state.storedChatId, isNull);
     h.composer(tester).text = 'First draft';
     await h.startNew(tester);
-    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(find.byType(AppDialog), findsOneWidget);
     final controller = h.composer(tester);
     expect(controller.text, 'First draft');
     expect(h.repository.starts, 0);
-    await tester.tap(find.widgetWithText(FilledButton, 'Start a new chat'));
+    await tester.tap(find.widgetWithText(AppButton, 'Start a new chat'));
     await tester.pumpAndSettle();
     expect(h.chat.state.creationOutcomeUnknown, isFalse);
     expect(await h.repository.hasUnknownChatCreation(repairWorkspace), isFalse);

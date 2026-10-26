@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
 import 'package:mobile/features/assistant/widgets/assistant_header_status_chip.dart';
 import 'package:mobile/features/assistant/widgets/assistant_name_dialog.dart';
@@ -91,19 +92,15 @@ class AssistantModeTitle extends StatelessWidget {
             Expanded(
               child: Tooltip(
                 message: context.l10n.assistantRenameTitle,
-                child: TextButton(
+                child: AppButton.ghost(
                   key: const ValueKey('assistant-name-title'),
-                  style: TextButton.styleFrom(
-                    padding: EdgeInsets.zero,
-                    alignment: Alignment.centerLeft,
-                  ),
                   onPressed: () {
                     if (!current()) return;
                     final latest = overrides.state.registrationForLocation(
                       Routes.assistant,
                     )!;
                     unawaited(
-                      showDialog<void>(
+                      showAppDialog<void>(
                         context: context,
                         builder: (_) => AssistantNameDialog(
                           name: title,
@@ -143,7 +140,7 @@ class AssistantModeTitle extends StatelessWidget {
                 child: AssistantHeaderStatusChip(
                   label: status,
                   onPressed: registration.onSubtitlePressed,
-                  child: const Icon(Icons.memory_rounded, size: 20),
+                  child: const Icon(LucideIcons.cpu, size: 20),
                 ),
               ),
             ],

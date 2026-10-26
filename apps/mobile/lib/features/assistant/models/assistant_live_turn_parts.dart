@@ -1,5 +1,9 @@
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 
+/// Live tools whose results describe the user's screen and must never be
+/// stored with the conversation.
+const assistantEphemeralLiveTools = {'get_mobile_screen_context'};
+
 /// Each turn owns its tool objects while asynchronous execution completes.
 /// Text and transcription are alternate provider streams, never duplicates.
 class AssistantLiveTurnParts {
@@ -41,8 +45,12 @@ class AssistantLiveTurnParts {
     return part;
   }
 
+  /// Ephemeral tool results (screen context) reach the model over the socket
+  /// only; parts, persisted history and restored caches keep a placeholder.
   void completeTool(Map<String, dynamic> part, Map<String, dynamic> result) {
-    part['output'] = Map<String, dynamic>.from(result);
+    part['output'] = assistantEphemeralLiveTools.contains(part['toolName'])
+        ? const {'shared': true, 'retained': false}
+        : Map<String, dynamic>.from(result);
     part['state'] = 'output-available';
   }
 

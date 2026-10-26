@@ -1429,3 +1429,17 @@ become free time merely because they are not native locked tasks.
 The shared decision lives in `calendar-preview-blocked.ts`; its unit tests and
 `unified-scheduler/provider-commitments.test.ts` in all three apps cover the
 preview integration. This does not add Google Tasks or Microsoft To Do sync.
+
+## Offline fallback on the native Worker
+
+The offline worker precaches the exact `/offline.html` (with `offline.css` and
+`offline.js`) and shows it when navigation fails without a network. The native
+Worker serves static assets with `html_handling: 'none'`, so `/offline.html`
+answers `200` at that exact URL in one asset read. The default handling answers
+it with an internal redirect to `/offline` that only the bridge's
+redirect-following hides. Tasks emits no other HTML and relies on no HTML
+auto-index or trailing-slash alias. The Next build is
+unchanged. Covered by `apps/tasks/cloudflare/offline-fallback.runtime.mjs` on
+the sealed native build, and by the artifact contract in
+`scripts/ci/tasks-native-artifact.test.py`, which rejects a missing or
+redirecting `html_handling`.

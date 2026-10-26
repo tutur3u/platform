@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/data/models/google_calendar_color.dart';
 import 'package:mobile/features/calendar/widgets/event_form_sheet.dart';
@@ -90,6 +91,7 @@ void main() {
             child: TextButton(
               onPressed: () => showEventFormSheet(
                 context,
+                isCurrentScope: () => true,
                 event: CalendarEvent.fromJson({
                   'id': 'event',
                   'title': 'Meeting',
@@ -109,10 +111,11 @@ void main() {
       await tester.pumpAndSettle();
       pending.complete(_options());
       await tester.pumpAndSettle();
-      final chip = tester.widget<ChoiceChip>(
+      final chip = tester.widget<AppChip>(
         find.byKey(ValueKey('google-color-${entry.$1}-${entry.$2}')),
       );
       expect(chip.selected, isTrue);
+      expect(chip.inMutuallyExclusiveGroup, isTrue);
     });
   }
 
@@ -135,6 +138,7 @@ void main() {
               onPressed: () async {
                 saved = await showEventFormSheet(
                   context,
+                  isCurrentScope: () => true,
                   event: event,
                   timezone: 'America/New_York',
                   providerColors: _options(),
@@ -154,8 +158,10 @@ void main() {
           : 'label-one';
       final chip = find.byKey(ValueKey('google-color-$kind-$id'));
       await tester.ensureVisible(chip);
+      await tester.pumpAndSettle();
       await tester.tap(chip);
       await tester.ensureVisible(find.text('Save'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Save'));
       await tester.pumpAndSettle();
       expect(saved!.keys, ['providerColor']);
@@ -206,19 +212,22 @@ void main() {
       }
       final chip = find.byKey(const ValueKey('google-color-inherit-inherit'));
       await tester.ensureVisible(chip);
+      await tester.pumpAndSettle();
       await tester.tap(chip);
       if (scenario == 'combined') {
         await tester.enterText(find.byType(TextField).first, 'Edited title');
         tester.testTextInput.hide();
         await tester.pumpAndSettle();
       } else if (scenario == 'dates') {
-        await tester.ensureVisible(find.byType(Switch));
-        await tester.tap(find.byType(Switch));
+        await tester.ensureVisible(find.byType(AppSwitch));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byType(AppSwitch));
         await tester.pumpAndSettle();
       } else {
         currentScope = false;
       }
       await tester.ensureVisible(find.text('Save'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Save'));
       await tester.pumpAndSettle();
       expect(saved, isNull);

@@ -10,8 +10,8 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/layout/layout.dart';
-import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/core/utils/gallery_platform_file.dart';
 import 'package:mobile/core/utils/timezone.dart';
 import 'package:mobile/data/models/workspace.dart';
@@ -37,13 +37,18 @@ import 'package:mobile/features/assistant/local/assistant_local_model.dart';
 import 'package:mobile/features/assistant/local/assistant_remote_chat_actions.dart';
 import 'package:mobile/features/assistant/local/assistant_remote_scope_guard.dart';
 import 'package:mobile/features/assistant/models/assistant_chat_identity.dart';
+import 'package:mobile/features/assistant/models/assistant_live_dispatch.dart';
 import 'package:mobile/features/assistant/models/assistant_live_history_confirmation.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
 import 'package:mobile/features/assistant/models/assistant_live_start_gate.dart';
 import 'package:mobile/features/assistant/models/assistant_live_ui_state.dart';
 import 'package:mobile/features/assistant/models/assistant_mobile_screen_context.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
-import 'package:mobile/features/assistant/view/assistant_settings_hub.dart';
+import 'package:mobile/features/assistant/theme/assistant_theme_controller.dart';
+import 'package:mobile/features/assistant/theme/assistant_theme_scope.dart';
+import 'package:mobile/features/assistant/theme/assistant_theme_session_source.dart';
+import 'package:mobile/features/assistant/theme/assistant_theme_sheet.dart';
+import 'package:mobile/features/assistant/view/assistant_live_call_screen.dart';
 import 'package:mobile/features/assistant/widgets/assistant_attachment_sheet_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_capture_sheet.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_dock.dart';
@@ -69,7 +74,6 @@ import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/chat/models/chat_initial_ai_settings.dart';
 import 'package:mobile/features/settings/cubit/theme_cubit.dart';
-import 'package:mobile/features/settings/view/settings_scoped_page.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
@@ -79,11 +83,13 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'assistant_page_new_chat.dart';
 part 'assistant_page_settings.dart';
+part 'assistant_page_theme.dart';
+part 'assistant_page_message_actions.dart';
 part 'assistant_page_live_actions.dart';
+part 'assistant_page_live_call.dart';
 part 'assistant_page_layout.dart';
 part 'assistant_page_workspace.dart';
 part 'assistant_page_attachments.dart';
@@ -100,6 +106,7 @@ class AssistantPage extends StatefulWidget {
     this.preferences,
     this.currentActor,
     this.liveRepository,
+    this.liveSocket,
   });
 
   final int replayToken;
@@ -107,6 +114,7 @@ class AssistantPage extends StatefulWidget {
   final AssistantPreferences? preferences;
   final String? Function()? currentActor;
   final AssistantLiveRepository? liveRepository;
+  final AssistantLiveSocketClient? liveSocket;
 
   @override
   State<AssistantPage> createState() => _AssistantPageState();
@@ -130,6 +138,11 @@ class _AssistantPageState extends State<AssistantPage>
   Object? _chromeActionsKey;
   List<ShellActionSpec>? _chromeActions;
   final _inputController = TextEditingController();
+  late final _chatThemeActor = AssistantThemeSessionSource(
+    auth: context.read<AuthCubit>(),
+    actorId: _currentActor(),
+  );
+  late final _chatTheme = AssistantThemeController(actor: _chatThemeActor);
   double? _composerHeight;
   bool _settingsWritePending = false;
   bool _newConversationPending = false;
@@ -174,11 +187,7 @@ class _AssistantPageState extends State<AssistantPage>
     onSoulRefreshRequested: _shellCubit.refreshSoul,
     onThemeRequested: (theme, isCurrent) async {
       if (!mounted || !isCurrent()) return;
-      final mode = switch (theme) {
-        'light' => shad.ThemeMode.light,
-        'dark' => shad.ThemeMode.dark,
-        _ => shad.ThemeMode.system,
-      };
+      final mode = ThemeCubit.parseThemeMode(theme);
       await context.read<ThemeCubit>().setThemeMode(
         mode,
         isCurrent: () => mounted && isCurrent(),
@@ -187,10 +196,7 @@ class _AssistantPageState extends State<AssistantPage>
     onSoulRefreshFailed: (_) {
       if (!mounted) return;
       final message = context.l10n.assistantSettingsRefreshFailed;
-      shad.showToast(
-        context: context,
-        builder: (_, _) => shad.SurfaceCard(child: Text(message)),
-      );
+      showAppToast(context, message: message);
     },
     onImmersiveModeChanged: _shellCubit.setImmersiveMode,
     onSettingsRestored: (settings) {
@@ -215,7 +221,7 @@ class _AssistantPageState extends State<AssistantPage>
   late final AssistantLiveCubit _liveCubit = AssistantLiveCubit(
     currentScopeToken: () => _voiceActorScopeEpoch,
     repository: _liveRepository,
-    socket: AssistantLiveSocketClient(),
+    socket: widget.liveSocket ?? AssistantLiveSocketClient(),
     audioPlayer: AssistantLiveAudioPlayer(),
     recorder: AssistantLiveRecorder(),
     cameraService: AssistantLiveCameraService(),
@@ -272,7 +278,9 @@ class _AssistantPageState extends State<AssistantPage>
   bool _appIsForeground = true;
 
   void _resetLocalActor() {
+    _syncThemeActor(force: true);
     ++_voiceActorScopeEpoch;
+    _dismissLiveCall();
     unawaited(_localCubit.invalidate());
     setState(() => _loadedWorkspaceId = null);
   }
@@ -324,12 +332,18 @@ class _AssistantPageState extends State<AssistantPage>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _syncThemeActor();
     if (TickerMode.valuesOf(context).enabled) {
       _resumeLocal();
-    } else {
+    } else if (!_isLiveCallPresented) {
+      // Another route hides the page. Its own call surface keeps Live going.
       _liveHaptics.suspend();
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted || TickerMode.valuesOf(context).enabled) return;
+        if (!mounted ||
+            TickerMode.valuesOf(context).enabled ||
+            _isLiveCallPresented) {
+          return;
+        }
         unawaited(_voiceCapture.cancel());
         unawaited(_localCubit.invalidate());
         _collapseComposerToFab();
@@ -340,12 +354,17 @@ class _AssistantPageState extends State<AssistantPage>
 
   Future<void> _disconnectWhenHidden() async {
     await _liveBrowsingPreferenceLoad;
-    if (!mounted || TickerMode.valuesOf(context).enabled) return;
+    if (!mounted ||
+        TickerMode.valuesOf(context).enabled ||
+        _isLiveCallPresented) {
+      return;
+    }
     if (!_keepLiveWhileBrowsing) await _disconnectForLifecycle();
   }
 
   @override
   void dispose() {
+    _disposeChatTheme();
     WidgetsBinding.instance.removeObserver(this);
     _liveHaptics.dispose();
     _scrollController.removeListener(_handleScroll);
@@ -376,7 +395,7 @@ class _AssistantPageState extends State<AssistantPage>
       }
       return true;
     },
-    child: _buildPage(context),
+    child: _themedPage(context),
   );
 
   Future<void> _loadLiveBrowsingPreference(String wsId) async {
@@ -565,9 +584,14 @@ class _AssistantPageState extends State<AssistantPage>
   }
 
   void _showInlineNotice(String message) {
-    final messenger = ScaffoldMessenger.maybeOf(context);
-    messenger?.hideCurrentSnackBar();
-    messenger?.showSnackBar(SnackBar(content: Text(message)));
+    showAppToast(
+      context,
+      message: message,
+      bottomClearance: _composerReservedSpace(
+        context,
+        isComposerVisible: _isComposerVisible,
+      ),
+    );
   }
 
   double _composerReservedSpace(
@@ -630,51 +654,6 @@ class _AssistantPageState extends State<AssistantPage>
 
   String _activeConversationKey(AssistantChatState state) {
     return state.chat?.id ?? state.storedChatId ?? 'new';
-  }
-
-  Widget _buildLiveModeView(
-    String wsId,
-    AssistantChatState chatState,
-    AssistantLiveState liveState,
-    AssistantLiveUiState liveUiState,
-    AssistantShellState shellState,
-    CameraController? liveCameraController,
-  ) {
-    return AssistantLiveModeView(
-      chatState: chatState,
-      liveState: liveState,
-      liveUiState: liveUiState,
-      assistantName: shellState.soul.name,
-      cameraController: liveCameraController,
-      scrollController: _scrollController,
-      onRetry: () => _handleLiveRetry(wsId, chatState),
-      onToggleMicrophone: () => _handleLiveMicrophoneToggle(wsId, chatState),
-      onToggleCamera: _liveCubit.toggleCamera,
-      onDisconnect: () =>
-          _liveCubit.disconnect(clearSession: true, finishTurn: true),
-      onOpenTextEntry: _openChatComposerFromLiveMode,
-    );
-  }
-
-  Widget _buildLiveStageCard(
-    String wsId,
-    AssistantChatState chatState,
-    AssistantLiveState liveState,
-    CameraController? liveCameraController,
-  ) {
-    return AssistantLiveStageCard(
-      liveState: liveState,
-      cameraController: liveCameraController,
-      onOpenLiveMode: () => _enterLiveMode(
-        wsId: wsId,
-        activeChatId: chatState.chat?.id ?? chatState.storedChatId,
-        autoStartMicrophone: false,
-      ),
-      onRetry: () => _handleLiveRetry(wsId, chatState),
-      onDisconnect: () =>
-          _liveCubit.disconnect(clearSession: true, finishTurn: true),
-      onCameraToggle: _liveCubit.toggleCamera,
-    );
   }
 }
 

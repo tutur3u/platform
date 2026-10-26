@@ -3,7 +3,7 @@ const RELEASE_COMMIT_SUBJECT = /^chore\(release\): release /u;
 const MANIFEST_FILE = '.release-please-manifest.json';
 const DEFAULT_CHANGELOG = 'CHANGELOG.md';
 const DEFAULT_RELEASE_TYPE = 'node';
-const DEFAULT_APPROVED_AUTHORS = ['github-actions[bot]'];
+const DEFAULT_APPROVED_AUTHORS = Object.freeze(['github-actions[bot]']);
 
 // The version file each release type rewrites. Anything else is a release type
 // this repo does not use yet, and an unknown type must narrow the allowlist
@@ -89,10 +89,10 @@ function getCommitAuthorLogin(commit) {
   return commit?.author?.login || commit?.committer?.login || null;
 }
 
-function isApprovedAuthor(login, type, approvedAuthors) {
-  if (type === 'Bot') return true;
-
-  return approvedAuthors.includes(login);
+function isApprovedAuthor(login, approvedAuthors) {
+  return (
+    DEFAULT_APPROVED_AUTHORS.includes(login) && approvedAuthors.includes(login)
+  );
 }
 
 function skip(reason) {
@@ -144,7 +144,7 @@ function evaluateReleasePullRequest({
 
   const authorLogin = pullRequest.user?.login;
 
-  if (!isApprovedAuthor(authorLogin, pullRequest.user?.type, approvedAuthors)) {
+  if (!isApprovedAuthor(authorLogin, approvedAuthors)) {
     return skip(
       `pull request was opened by ${authorLogin}, which is not a release automation identity`
     );

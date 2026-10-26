@@ -18,7 +18,7 @@ import {
 import {
   guardApiProxyRequest,
   hasSupabaseSessionCookie,
-  isTrustedProxyBypassRequest,
+  isTrustedProxyBypassForRequest,
   type ProxyRoutePolicy,
   type RateLimitProfile,
 } from '@tuturuuu/utils/api-proxy-guard';
@@ -41,7 +41,6 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { BASE_URL, PUBLIC_PATHS } from './constants/common';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
-import { guardApiCost } from './lib/api-cost-guard';
 import {
   calendarPreferenceGuardOptions,
   handleCalendarPreferenceGuardResponse,
@@ -56,8 +55,11 @@ import { handleLocale } from './lib/locale-proxy';
 import { getMailAppOrigin } from './lib/mail-app-url';
 import { getMeetAppOrigin } from './lib/meet-app-url';
 import { feedbackProxyPayloadLimit } from './lib/product-feedback-limits';
+import { profileMediaProxyPayloadLimit } from './lib/profile-media-proxy';
+import { guardApiCostAndCsrf } from './lib/security/api-request-guard';
 import { getToolsAppOrigin } from './lib/tools-app-url';
 import { getTrackAppOrigin } from './lib/track-app-url';
+import { workspaceHomeRedirectUrl } from './lib/workspace-home-redirect';
 import {
   getWorkspaceRoutePermissionRequirements,
   hasRequiredWorkspaceRoutePermission,
@@ -769,7 +771,7 @@ async function blockMalformedApiAuthCookieRequest(
 ): Promise<NextResponse | null> {
   if (
     hasLikelyAuthenticatedApiCredential(req) ||
-    isTrustedProxyBypassRequest(req.nextUrl.pathname, req.headers)
+    isTrustedProxyBypassForRequest(req)
   ) {
     return null;
   }
@@ -841,10 +843,7 @@ function getSuspiciousAnonymousApiSignal(req: NextRequest): {
   reason: 'malformed-auth-header' | 'suspicious-anonymous-request';
   status: 400 | 401;
 } | null {
-  if (
-    isTrustedProxyBypassRequest(req.nextUrl.pathname, req.headers) ||
-    hasSupabaseSessionCookie(req)
-  ) {
+  if (isTrustedProxyBypassForRequest(req) || hasSupabaseSessionCookie(req)) {
     return null;
   }
 
@@ -1052,7 +1051,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
       const suspicious = await blockSuspiciousAnonymousApiRequest(req);
       if (suspicious) return suspicious;
     }
-    const costResponse = await guardApiCost(req);
+    const costResponse = await guardApiCostAndCsrf(req, WEB_APP_URL);
     if (costResponse) return costResponse;
     if (versionedAsset) return NextResponse.next();
     const additionalRoutePolicies = (await hasWorkspaceEmailRateLimitOverrides(
@@ -1064,10 +1063,9 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
       const guardResponse = await guardApiProxyRequest(req, {
         additionalRoutePolicies,
         ...calendarPreferenceGuardOptions(req),
-        maxPayloadBytes: feedbackProxyPayloadLimit(
-          req.method,
-          req.nextUrl.pathname
-        ),
+        maxPayloadBytes:
+          profileMediaProxyPayloadLimit(req.method, req.nextUrl) ??
+          feedbackProxyPayloadLimit(req.method, req.nextUrl.pathname),
         trustedBypassRules: [
           {
             matches: isTrustedCliTuturuuuRateLimitBypass,
@@ -1363,20 +1361,11 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
         const defaultWorkspace = await getUserDefaultWorkspace();
 
         if (defaultWorkspace) {
-          const target = defaultWorkspace.personal
-            ? 'personal'
-            : defaultWorkspace.id === ROOT_WORKSPACE_ID
-              ? 'internal'
-              : defaultWorkspace.id;
-
-          const canonicalPath = `/${target}`;
-          const localizedCanonicalPath = prependLocalePrefix(
-            canonicalPath,
-            activeLocalePrefix
+          const wsRedirect = NextResponse.redirect(
+            workspaceHomeRedirectUrl(defaultWorkspace, req.nextUrl, (path) =>
+              prependLocalePrefix(path, activeLocalePrefix)
+            )
           );
-
-          const redirectUrl = new URL(localizedCanonicalPath, req.nextUrl);
-          const wsRedirect = NextResponse.redirect(redirectUrl);
           propagateAuthCookies(authRes, wsRedirect);
           return wsRedirect;
         }

@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.18.3](https://github.com/tutur3u/platform/compare/ai-v0.18.2...ai-v0.18.3) (2026-10-24)
+
+
+### Bug Fixes
+
+* **storage:** preserve legacy URL delimiter keys ([#6512](https://github.com/tutur3u/platform/issues/6512)) ([3cccfcf](https://github.com/tutur3u/platform/commit/3cccfcf55bf490677042d399bfefae7ac42a9e73))
+* **storage:** reject encoded traversal paths ([#6507](https://github.com/tutur3u/platform/issues/6507)) ([b461f77](https://github.com/tutur3u/platform/commit/b461f7733b80e43036a9ae0d2e0188dd276b020e))
+* **storage:** sign uploads and MarkItDown reads with the encoded key ([2730e27](https://github.com/tutur3u/platform/commit/2730e27f988c1b35d58af248643c4d8cc16b9c84))
+
 ## [0.18.2](https://github.com/tutur3u/platform/compare/ai-v0.18.1...ai-v0.18.2) (2026-10-18)
 
 

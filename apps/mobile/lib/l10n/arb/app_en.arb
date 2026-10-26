@@ -366,6 +366,27 @@
       }
     }
   },
+  "@homeGreetingAfternoonNamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@homeGreetingEveningNamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@homeGreetingMorningNamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "@inventoryAuditChanges": {
     "placeholders": {
       "count": {
@@ -652,6 +673,30 @@
       }
     }
   },
+  "@profileDurationHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "@profileDurationHoursMinutes": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "@profileDurationMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
   "@profileEmailPendingChange": {
     "placeholders": {
       "email": {
@@ -748,9 +793,6 @@
         "type": "String"
       },
       "occurrence": {
-        "type": "String"
-      },
-      "timezone": {
         "type": "String"
       }
     }
@@ -1323,20 +1365,45 @@
   "assistantLiveCallAssistant": "Call {assistantName}",
   "assistantLiveCallingAssistant": "Calling {assistantName}",
   "assistantLiveCameraPreview": "Live camera",
+  "assistantLiveCallCamera": "Camera",
+  "assistantLiveCallCaptions": "Captions",
+  "assistantLiveCallCaptionsEmpty": "Captions appear here as you talk.",
+  "assistantLiveCallClose": "Close",
+  "assistantLiveCallConnected": "Connected",
+  "assistantLiveCallConnecting": "Connecting…",
+  "assistantLiveCallDuration": "Call duration",
+  "assistantLiveCallEnd": "End",
+  "assistantLiveCallEndedWithDuration": "Call ended · {duration}",
+  "@assistantLiveCallEndedWithDuration": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "assistantLiveCallFailed": "Couldn't connect",
+  "assistantLiveCallKeyboard": "Keyboard",
+  "assistantLiveCallMinimize": "Minimize",
+  "assistantLiveCallMute": "Mute",
+  "assistantLiveCallMuted": "Muted",
+  "assistantLiveCallReconnecting": "Reconnecting…",
+  "assistantLiveCallRetry": "Retry",
+  "assistantLiveCallReturn": "Return to call",
+  "assistantLiveCallYou": "You",
   "assistantLiveCancelCall": "Cancel call",
   "assistantLiveConnect": "Start live session",
-  "assistantLiveDescriptionConnecting": "Creating a direct Gemini Live session for text, audio, and camera input.",
+  "assistantLiveDescriptionConnecting": "Connecting your live conversation.",
   "assistantLiveDescriptionError": "The live session hit an error. Retry or start a fresh session.",
-  "assistantLiveDescriptionIdle": "Start a live session to talk, type, or stream camera context into the same assistant chat.",
+  "assistantLiveDescriptionIdle": "Tap the microphone to start talking. Your conversation stays here.",
   "assistantLiveDescriptionListening": "Microphone streaming is active. Mira will keep listening for new audio input.",
-  "assistantLiveDescriptionPreparing": "Minting an ephemeral token and restoring the last resumable live session.",
+  "assistantLiveDescriptionPreparing": "Getting your live conversation ready.",
   "assistantLiveDescriptionReady": "Live text and audio are ready. Type a turn, talk, or share your camera feed.",
-  "assistantLiveDescriptionReconnecting": "The session is reconnecting with the latest resumable handle and restored history.",
+  "assistantLiveDescriptionReconnecting": "Reconnecting your conversation. Your transcript is still here.",
   "assistantLiveDisconnect": "End live session",
   "assistantLiveDraftAssistant": "Mira is replying",
   "assistantLiveDraftUser": "You are speaking",
   "assistantLiveHideCamera": "Hide camera",
-  "assistantLiveIdleHeading": "Talk with Mira",
+  "assistantLiveIdleHeading": "Ready to talk",
   "assistantLiveInfoAccessHeading": "Current access",
   "assistantLiveInfoDismiss": "Got it",
   "assistantLiveInfoTitle": "Live information",
@@ -1349,6 +1416,7 @@
   "assistantLiveOpenMode": "Open live mode",
   "assistantLivePermissionDenied": "Camera or microphone access is blocked. Enable permissions to use the full live mode.",
   "assistantLiveReconnectBanner": "Session rotation detected. Reconnecting with about {timeLeft} remaining.",
+  "assistantLiveReconnectExhausted": "The connection kept dropping. Check your network, then retry the live session.",
   "assistantLiveRetryAction": "Retry live session",
   "assistantLiveReturnToChat": "Return to chat",
   "assistantLiveScreenActive": "Your screen is shared with Live",
@@ -1501,6 +1569,90 @@
   "assistantToolNoActionNeeded": "No tools were needed for this reply.",
   "assistantToolSelectedTools": "Selected tools",
   "assistantToolsLabel": "Tools",
+  "assistantToolLabelTasksRead": "Checked your tasks",
+  "assistantToolLabelTasksReadRunning": "Checking your tasks",
+  "assistantToolLabelTaskCreate": "Created a task",
+  "assistantToolLabelTaskCreateRunning": "Creating a task",
+  "assistantToolLabelTaskUpdate": "Updated a task",
+  "assistantToolLabelTaskUpdateRunning": "Updating a task",
+  "assistantToolLabelTaskComplete": "Completed a task",
+  "assistantToolLabelTaskCompleteRunning": "Completing a task",
+  "assistantToolLabelTaskDelete": "Deleted a task",
+  "assistantToolLabelTaskDeleteRunning": "Deleting a task",
+  "assistantToolLabelBoardsRead": "Checked your boards",
+  "assistantToolLabelBoardsReadRunning": "Checking your boards",
+  "assistantToolLabelBoardsWrite": "Updated your boards",
+  "assistantToolLabelBoardsWriteRunning": "Updating your boards",
+  "assistantToolLabelCalendarRead": "Checked your calendar",
+  "assistantToolLabelCalendarReadRunning": "Checking your calendar",
+  "assistantToolLabelCalendarWrite": "Updated your calendar",
+  "assistantToolLabelCalendarWriteRunning": "Updating your calendar",
+  "assistantToolLabelEmailRead": "Checked your email",
+  "assistantToolLabelEmailReadRunning": "Checking your email",
+  "assistantToolLabelEmailDraft": "Drafted a reply",
+  "assistantToolLabelEmailDraftRunning": "Drafting a reply",
+  "assistantToolLabelFinanceRead": "Checked your finances",
+  "assistantToolLabelFinanceReadRunning": "Checking your finances",
+  "assistantToolLabelFinanceWrite": "Updated your finances",
+  "assistantToolLabelFinanceWriteRunning": "Updating your finances",
+  "assistantToolLabelTimeRead": "Checked your time tracking",
+  "assistantToolLabelTimeReadRunning": "Checking your time tracking",
+  "assistantToolLabelTimeWrite": "Updated your time tracking",
+  "assistantToolLabelTimeWriteRunning": "Updating your time tracking",
+  "assistantToolLabelHealthRead": "Checked your health and habits",
+  "assistantToolLabelHealthReadRunning": "Checking your health and habits",
+  "assistantToolLabelHealthWrite": "Logged your progress",
+  "assistantToolLabelHealthWriteRunning": "Logging your progress",
+  "assistantToolLabelDayOverview": "Reviewed your day",
+  "assistantToolLabelDayOverviewRunning": "Reviewing your day",
+  "assistantToolLabelMemorySave": "Saved to memory",
+  "assistantToolLabelMemorySaveRunning": "Saving to memory",
+  "assistantToolLabelMemoryRead": "Checked memory",
+  "assistantToolLabelMemoryReadRunning": "Checking memory",
+  "assistantToolLabelMemoryWrite": "Updated memory",
+  "assistantToolLabelMemoryWriteRunning": "Updating memory",
+  "assistantToolLabelImage": "Created an image",
+  "assistantToolLabelImageRunning": "Creating an image",
+  "assistantToolLabelQrCode": "Created a QR code",
+  "assistantToolLabelQrCodeRunning": "Creating a QR code",
+  "assistantToolLabelWebSearch": "Searched the web",
+  "assistantToolLabelWebSearchRunning": "Searching the web",
+  "assistantToolLabelChecks": "Ran checks",
+  "assistantToolLabelChecksRunning": "Running checks",
+  "assistantToolLabelFile": "Read a file",
+  "assistantToolLabelFileRunning": "Reading a file",
+  "assistantToolLabelWorkspace": "Checked your workspace",
+  "assistantToolLabelWorkspaceRunning": "Checking your workspace",
+  "assistantToolLabelSettings": "Updated your settings",
+  "assistantToolLabelSettingsRunning": "Updating your settings",
+  "assistantToolLabelOpenApp": "Opened an app",
+  "assistantToolLabelOpenAppRunning": "Opening an app",
+  "assistantToolLabelView": "Prepared a view",
+  "assistantToolLabelViewRunning": "Preparing a view",
+  "assistantToolStepCount": "{count, plural, =1{1 step} other{{count} steps}}",
+  "@assistantToolStepCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "assistantToolStepResultCount": "{count, plural, =0{No results} =1{1 result} other{{count} results}}",
+  "@assistantToolStepResultCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "assistantToolStepWorking": "Working…",
+  "assistantToolStepDetails": "Details",
+  "assistantToolStepHideDetails": "Hide details",
+  "assistantToolStepRunning": "In progress",
+  "assistantToolStepDone": "Done",
+  "assistantToolStepFailed": "Couldn't finish this step",
+  "assistantToolStepsInProgress": "Steps in progress",
+  "assistantToolStepsDone": "Steps done",
   "assistantUntitledChat": "Untitled chat",
   "assistantUpcomingLabel": "upcoming",
   "assistantVideoAttachment": "Video",
@@ -1575,7 +1727,6 @@
   "calendarConnectionsDisconnect": "Disconnect",
   "calendarConnectionsDisconnectConfirm": "Disconnect {account}? Associated calendars will be disabled.",
   "calendarConnectionsEmpty": "No accounts connected",
-  "calendarConnectionsSubtitle": "Connect Google and Microsoft accounts to sync calendars.",
   "calendarConnectionsTitle": "Manage Calendar Accounts",
   "calendarDayView": "Day",
   "calendarDeleteConfirm": "Delete this event?",
@@ -1718,6 +1869,47 @@
   "cmsSummary": "Summary",
   "cmsTitle": "Title",
   "cmsTitleApp": "CMS",
+  "cmsPipelineEyebrow": "Publishing pipeline",
+  "cmsPublishedOfTotal": "{published} of {total} published",
+  "@cmsPublishedOfTotal": {
+    "placeholders": {
+      "published": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "cmsPipelineSupporting": "{drafts} in draft · {scheduled} scheduled",
+  "@cmsPipelineSupporting": {
+    "placeholders": {
+      "drafts": {
+        "type": "int"
+      },
+      "scheduled": {
+        "type": "int"
+      }
+    }
+  },
+  "cmsEntryCount": "{count, plural, =1{1 entry} other{{count} entries}}",
+  "@cmsEntryCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cmsCollectionDisabled": "Disabled",
+  "cmsCollectionsProgress": "Publishing by collection",
+  "cmsNoCollectionsMessage": "Collections group one kind of content, such as articles or events. Create one to start writing entries.",
+  "cmsNoEntriesMatch": "No entries match these filters.",
+  "cmsNoEntriesMatchMessage": "Try another status or collection, or clear the search.",
+  "cmsFilterByCollection": "Filter by collection",
+  "cmsDetailsSection": "Details",
+  "cmsPublishingSection": "Publishing",
+  "cmsLoadFailed": "Could not load content",
+  "cmsRefreshFailed": "Could not refresh. Showing the last loaded content.",
   "commonActive": "Active",
   "commonAll": "All",
   "commonApply": "Apply",
@@ -1860,6 +2052,7 @@
   "dashboardTaskUpcoming": "Upcoming",
   "dashboardTasksMetric": "{count} active",
   "dashboardTodayTitle": "Today at a glance",
+  "dashboardUntitledEvent": "Untitled event",
   "dashboardUpcomingEvents": "Upcoming events",
   "dashboardUpcomingMeetings": "Upcoming meetings",
   "desktopUpdateCancel": "Cancel scheduled update",
@@ -2418,10 +2611,17 @@
   "habitsWorkoutTotalVolume": "Total volume",
   "habitsWorkoutWeight": "Weight",
   "homeCustomize": "Customize Home",
+  "homeGreetingAfternoon": "Good afternoon",
+  "homeGreetingAfternoonNamed": "Good afternoon, {name}",
+  "homeGreetingEvening": "Good evening",
+  "homeGreetingEveningNamed": "Good evening, {name}",
+  "homeGreetingMorning": "Good morning",
+  "homeGreetingMorningNamed": "Good morning, {name}",
   "homeHiddenWidgets": "Hidden widgets",
   "homeHideWidget": "Hide widget",
   "homePersonalAgenda": "Agenda",
   "homePersonalAgendaUnavailable": "Personal calendar is unavailable.",
+  "homeSectionLoadFailed": "Pull down to try again.",
   "homeShowWidget": "Show widget",
   "inventoryAddCategory": "Add category",
   "inventoryAddManufacturer": "Add manufacturer",
@@ -2754,6 +2954,8 @@
   "mailOpenFailed": "Could not open this message. Please try again.",
   "mailOrganization": "Organization",
   "mailOwner": "Owner",
+  "mailPreviewEmptyMessage": "Pick a conversation from the list to read it here.",
+  "mailPreviewEmptyTitle": "Select a conversation",
   "mailRemoveAttachment": "Remove attachment",
   "mailReply": "Reply",
   "mailReplyAll": "Reply all",
@@ -3089,6 +3291,10 @@
   "notificationsArchiveEmptyTitle": "No archived notifications",
   "notificationsDaysAgo": "{count}d ago",
   "notificationsDeclineInvite": "Decline",
+  "notificationsGroupEarlier": "Earlier",
+  "notificationsGroupLastWeek": "Last 7 days",
+  "notificationsGroupToday": "Today",
+  "notificationsGroupYesterday": "Yesterday",
   "notificationsHoursAgo": "{count}h ago",
   "notificationsInbox": "Inbox",
   "notificationsInboxEmptyMessage": "New activity, mentions, and invites will show up here.",
@@ -3198,6 +3404,9 @@
   "profileDisplayNameDescription": "This name appears in collaborative surfaces across the app.",
   "profileDisplayNameHint": "Your display name",
   "profileDisplayNameRequired": "Display name cannot be empty",
+  "profileDurationHours": "{hours}h",
+  "profileDurationHoursMinutes": "{hours}h {minutes}m",
+  "profileDurationMinutes": "{minutes}m",
   "profileEmail": "Email",
   "profileEmailDescription": "Updating your email sends confirmation to both the old and new addresses.",
   "profileEmailHint": "example@tuturuuu.com",
@@ -3291,7 +3500,6 @@
   "reminders3h": "3 hours before",
   "remindersAllDayEvent": "All-day event: {title}",
   "remindersCalendarTiming": "Calendar: {when}",
-  "remindersDescription": "Task deadlines and calendar events, kept ready on this device.",
   "remindersEnableNotifications": "Enable notifications",
   "remindersEventTitle": "Calendar events",
   "remindersIn12h": "In 12 hours",
@@ -3302,7 +3510,7 @@
   "remindersLastChecked": "Last checked: {time}",
   "remindersNeverChecked": "Waiting for the first refresh",
   "remindersNext": "Next reminder: {time}",
-  "remindersOccurrenceDetails": "{leadTime} · {occurrence} ({timezone})",
+  "remindersOccurrenceDetails": "{leadTime} · {occurrence}",
   "remindersPermissionOff": "Device notifications disabled",
   "remindersPermissionOn": "Device notifications enabled",
   "remindersRefresh": "Refresh now",
@@ -4602,8 +4810,6 @@
   "assistantNewChatResetCommittedStale": "The reset was saved for the earlier context, but this screen changed. Your draft is retained. Check your chat history; the app will not retry automatically.",
   "assistantSettingsSelectionDenied": "You cannot change these chat settings. Your previous settings and draft are retained.",
   "assistantSettingsSelectionUnconfirmed": "The chat settings could not be confirmed. Your draft is retained. Check the conversation settings before choosing again.",
-  "assistantExpandPrompt": "Expand prompt",
-  "assistantMinimizePrompt": "Minimize prompt",
   "assistantSettingInfo": "About {setting}",
   "@assistantSettingInfo": {
     "placeholders": {
@@ -4615,7 +4821,6 @@
   "assistantPreviewPlay": "Play preview",
   "assistantPreviewPause": "Pause preview",
   "feedbackTitle": "Send feedback",
-  "feedbackPrivate": "Share product feedback privately with Tuturuuu staff. Do not include passwords or secrets. One optional PNG, JPEG or WebP screenshot, up to 2 MB.",
   "feedbackSubject": "Subject",
   "feedbackDetails": "Details",
   "feedbackAttach": "Attach screenshot",
@@ -4740,5 +4945,190 @@
   "settingsSearchBrowserTerm": "browser",
   "profilePhoto": "Photo",
   "profileCoverBanner": "Cover banner",
-  "profileMediaSet": "Set"
+  "profileMediaSet": "Set",
+  "assistantSubmitSuccess": "Submitted successfully",
+  "offlineDownloadsPaused": "Downloads paused. Saved data is still available. We will retry in the background.",
+  "offlineDownloadsRetryLimit": "Downloads are still unavailable. Try again later; saved data is still available.",
+  "mailSettingsReadOnly": "Saved settings are read-only until access can be verified.",
+  "calendarSettingsError": "Could not load or save calendar preferences. Retry when online.",
+  "assistantReactionCelebrate": "Celebrate",
+  "assistantReactionInsightful": "Insightful",
+  "assistantReactionLabel": "Reaction",
+  "assistantReactionLike": "Like",
+  "assistantReactionLove": "Love",
+  "assistantReactionUnconfirmed": "The reaction could not be confirmed. Refresh reactions to reconcile it safely.",
+  "assistantReactionUnavailable": "Reactions are unavailable right now. Try again.",
+  "assistantRefreshReactions": "Refresh reactions",
+  "assistantReplyMessageAction": "Reply",
+  "assistantReplyUnavailable": "Original message unavailable",
+  "assistantThemeAdvanced": "Advanced",
+  "assistantThemeBackground": "Background colors",
+  "assistantThemeBackgroundStyle": "Background style",
+  "assistantThemeCustom": "Custom",
+  "assistantThemeDeviceScope": "For your Assistant chats on this device, across workspaces.",
+  "assistantThemeIntensity": "Background intensity",
+  "assistantThemeLoading": "Loading appearance…",
+  "assistantThemeMessages": "Message colors",
+  "assistantThemeOmbre": "Ombre",
+  "assistantThemePreset": "Preset",
+  "assistantThemePreview": "Chat appearance preview",
+  "assistantThemePreviewAssistant": "Let’s make room for what matters.",
+  "assistantThemePreviewUser": "Help me plan a focused day.",
+  "assistantThemeReset": "Reset appearance",
+  "assistantThemeRetry": "Retry",
+  "assistantThemeSaving": "Saving appearance…",
+  "assistantThemeStorageError": "Appearance could not be saved or loaded on this device.",
+  "assistantThemeText": "Text colors",
+  "assistantThemeTitle": "Chat appearance",
+  "assistantReplyPending": "The earlier message is still unconfirmed. Clear this reply and retry the earlier message first.",
+  "assistantReplyLiveUnavailable": "Replies are unavailable while Live is connected. End the call or cancel the reply before sending.",
+  "assistantReplyChangedBeforeSend": "The reply changed before sending. Your draft was kept. Review it and send again.",
+  "assistantLiveSendRefused": "Live did not accept this message. Your draft was kept. Check the connection before trying again.",
+  "assistantLiveSendUnknown": "Live delivery is uncertain. Your draft was kept. Check the conversation before resending to avoid duplicates.",
+  "inputPlaceholderAddress": "e.g. 12 Nguyen Hue, District 1",
+  "inputPlaceholderAssistantBoundaries": "e.g. Ask before changing or deleting my data",
+  "inputPlaceholderAssistantMemory": "e.g. Brief answers",
+  "inputPlaceholderAssistantName": "e.g. Mira",
+  "inputPlaceholderAssistantPersonality": "e.g. Patient, curious, and practical",
+  "inputPlaceholderAssistantTone": "e.g. Warm and professional",
+  "inputPlaceholderAssistantVerbosity": "e.g. Brief answers with key details",
+  "inputPlaceholderCmsCollectionDescription": "Describe what this collection contains",
+  "inputPlaceholderCmsCollectionTitle": "e.g. Product guides",
+  "inputPlaceholderCmsCollectionType": "e.g. article",
+  "inputPlaceholderCmsEntryTitle": "e.g. Getting started with your workspace",
+  "inputPlaceholderCmsSlug": "e.g. getting-started",
+  "inputPlaceholderCmsSubtitle": "Add a short line introducing this entry",
+  "inputPlaceholderCmsSummary": "Summarize the main points for readers",
+  "inputPlaceholderComment": "Write your comment here",
+  "inputPlaceholderCourseDescription": "Describe what learners will achieve",
+  "inputPlaceholderCourseName": "e.g. Everyday English",
+  "inputPlaceholderDate": "Tap to choose a date",
+  "inputPlaceholderDays": "e.g. 2",
+  "inputPlaceholderDisplayName": "e.g. Linh",
+  "inputPlaceholderDocumentName": "e.g. Weekly planning",
+  "inputPlaceholderEmailConfirmation": "Enter the account email to confirm",
+  "inputPlaceholderFeedback": "Describe what happened and what could improve",
+  "inputPlaceholderFieldKey": "e.g. water_intake",
+  "inputPlaceholderFieldLabel": "e.g. Water intake",
+  "inputPlaceholderFieldUnit": "e.g. ml, km, or minutes",
+  "inputPlaceholderFlashcardBack": "e.g. Paris",
+  "inputPlaceholderFlashcardFront": "e.g. What is the capital of France?",
+  "inputPlaceholderFullName": "e.g. Nguyen Minh Linh",
+  "inputPlaceholderHabitDescription": "Describe how you will practice this habit",
+  "inputPlaceholderHabitName": "e.g. Drink water",
+  "inputPlaceholderInventoryManufacturer": "e.g. Acme",
+  "inputPlaceholderInventoryName": "e.g. Office supplies",
+  "inputPlaceholderLinkText": "e.g. Project handbook",
+  "inputPlaceholderLinkUrl": "https://example.com",
+  "inputPlaceholderListingTitle": "e.g. Handmade notebook",
+  "inputPlaceholderMailCalendarUrl": "Paste a Google Calendar event link",
+  "inputPlaceholderMailDescription": "Describe which messages belong here",
+  "inputPlaceholderMailDraftInstructions": "e.g. Write a friendly follow-up about our meeting",
+  "inputPlaceholderMailLabelInstructions": "e.g. Apply to invoices and payment receipts",
+  "inputPlaceholderMailName": "e.g. Customer support",
+  "inputPlaceholderMailSubject": "e.g. Follow-up on our meeting",
+  "inputPlaceholderMeetingName": "e.g. Weekly team check-in",
+  "inputPlaceholderNote": "Add details you want to remember",
+  "inputPlaceholderPassphrase": "Enter at least 8 characters",
+  "inputPlaceholderPassphraseConfirmation": "Enter the same passphrase again",
+  "inputPlaceholderPassphraseUnlock": "Enter the passphrase for this note",
+  "inputPlaceholderPassword": "Use 12–72 characters",
+  "inputPlaceholderPhone": "e.g. +84 912 345 678",
+  "inputPlaceholderPin": "Enter a 6-digit PIN",
+  "inputPlaceholderPinConfirmation": "Enter the same 6-digit PIN again",
+  "inputPlaceholderPrice": "e.g. 150000",
+  "inputPlaceholderQuantity": "e.g. 10",
+  "inputPlaceholderQuizExplanation": "Explain why this answer is correct or incorrect",
+  "inputPlaceholderQuizOption": "e.g. Paris",
+  "inputPlaceholderQuizQuestion": "e.g. What is the capital of France?",
+  "inputPlaceholderQuizSetName": "e.g. World capitals",
+  "inputPlaceholderSaleTitle": "e.g. Office supplies order",
+  "inputPlaceholderSharedMessage": "Edit the message you want to share",
+  "inputPlaceholderStorefrontCurrency": "e.g. VND",
+  "inputPlaceholderStorefrontDescription": "Describe what customers can find here",
+  "inputPlaceholderStorefrontName": "e.g. Linh’s stationery",
+  "inputPlaceholderStorefrontSearch": "Search by storefront name",
+  "inputPlaceholderStorefrontSlug": "e.g. linh-stationery",
+  "inputPlaceholderTableCell": "Enter cell content",
+  "inputPlaceholderTargetValue": "e.g. 2000",
+  "inputPlaceholderTimeDescription": "Describe what you worked on",
+  "inputPlaceholderTimeTitle": "e.g. Prepare project proposal",
+  "inputPlaceholderUpdate": "Share progress, decisions, or next steps",
+  "inputPlaceholderUserId": "Paste the user ID",
+  "inputPlaceholderUsername": "e.g. minh_linh",
+  "inputPlaceholderWorkoutExercise": "e.g. Squats",
+  "inputPlaceholderWorkoutReps": "e.g. 12",
+  "inputPlaceholderWorkoutSets": "e.g. 3",
+  "inputPlaceholderWorkoutWeight": "e.g. 20",
+  "mailSenderNamePlaceholder": "e.g. Alex Nguyen",
+  "mailSignaturePlaceholder": "e.g. Best regards,\nAlex Nguyen\nProduct team",
+  "mailDraftInstructionsPlaceholder": "e.g. Keep replies short and friendly. Sign off with my first name.",
+  "mailForwardToPlaceholder": "name@example.com",
+  "feedbackSubjectPlaceholder": "e.g. Calendar doesn't sync on Wi-Fi",
+  "feedbackDetailsPlaceholder": "What happened, what you expected, and the steps to get there.",
+  "settingsWorkspaceCountValue": "{count, plural, =1{1 workspace} other{{count} workspaces}}",
+  "@settingsWorkspaceCountValue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "offlineStoredOnDevice": "Stored on this device",
+  "offlineStorageUsed": "Storage used",
+  "offlineQueuedChanges": "{count, plural, =0{No changes waiting to sync} =1{1 change waiting to sync} other{{count} changes waiting to sync}}",
+  "@offlineQueuedChanges": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "offlineCollectionSummary": "{items, plural, =1{1 item} other{{items} items}} · {size} · Updated {time}",
+  "@offlineCollectionSummary": {
+    "placeholders": {
+      "items": {
+        "type": "int"
+      },
+      "size": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineManageData": "Manage data",
+  "offlineEvictRowDescription": "Frees space. Data downloads again when you are online.",
+  "offlineTechnicalDetails": "Technical details",
+  "mailSettingsReadingGroup": "Reading",
+  "mailSettingsComposeGroup": "Sender and signature",
+  "mailSettingsAiGroup": "AI drafts",
+  "mailSettingsDeliveryGroup": "Delivery and routing",
+  "mailSettingsGroupPermissions": "Group permissions",
+  "mailSettingsOrganizeGroup": "Organize",
+  "mailSenderNameHelper": "Recipients see this name next to your address.",
+  "mailSignatureHelper": "Added to the end of new messages and replies.",
+  "mailAutoDraftDescription": "Prepare reply drafts for you to review before sending.",
+  "mailDraftInstructions": "Draft instructions",
+  "mailDraftInstructionsHelper": "Tells the assistant how to write your reply drafts.",
+  "feedbackIntro": "Tell us what works and what doesn't. Only the Tuturuuu team reads your feedback.",
+  "feedbackYourFeedback": "Your feedback",
+  "feedbackDetailsHelper": "Do not include passwords or other secrets.",
+  "feedbackScreenshotGroup": "Screenshot (optional)",
+  "feedbackAttachDescription": "PNG, JPEG or WebP, up to 2 MB",
+  "workspacePickerCount": "{count, plural, =1{1 workspace} other{{count} workspaces}}",
+  "@workspacePickerCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "workspacePickerCreateDescription": "Start a new space for a team or project",
+  "workspacePickerCurrentLabel": "Current workspace",
+  "workspacePickerDefaultDescription": "Opens first when you launch the app",
+  "workspacePickerEmptyMessage": "Workspaces you create or are invited to appear here.",
+  "workspacePickerNoResultsMessage": "Try another name or plan, or clear the search.",
+  "workspacePickerTeamBadge": "Team"
 }

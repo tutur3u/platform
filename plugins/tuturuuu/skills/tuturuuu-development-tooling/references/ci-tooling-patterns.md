@@ -10,15 +10,14 @@ Use root-pinned Oxlint/Oxfmt through `bun oxc:lint`, `bun oxc:format` and
 format writes are intentional. Existing Biome CI/editor/generator ownership remains
 until a workspace records rule coverage, formatting deltas and compensating
 validators. Do not run global formatters or the root-wide Vite+ migrator for a
-single workspace. Run `node --test scripts/oxc.test.js` to exercise file scope,
-symlink rejection, dialog linting and read-only formatting behavior.
+single workspace. `scripts/oxc.test.js` covers file scope, symlinks and read-only formatting.
+Colab's local Worker preview uses `vite.worker.config.ts`; keep its existing
+configuration/persistence, disable remote bindings and require the CI preview runtime check.
+Publication remains separate.
 
-Gradual Cloudflare adoption preserves request/session, API, storage, consent and
-localization contracts. Domain modules and portable React components use injected
-adapters rather than framework/runtime globals. Keep framework imports in explicit
-adapter entrypoints and protect portability with import-boundary regressions.
-Vite+ tooling does not convert Next.js routes/actions; paused TanStack Start remains
-paused. See [adoption guidance](../../../../../apps/docs/build/development-tools/oxc-cloudflare-adoption.mdx)
+Preserve session, API, storage, consent and localization contracts. Portable domain/UI
+modules use injected adapters; keep framework imports in explicit entrypoints
+Enforce import boundaries; Vite+ does not convert routes/actions or resume paused runtimes. See [adoption guidance](../../../../../apps/docs/build/development-tools/oxc-cloudflare-adoption.mdx)
 for parity and Worker acceptance gates; builds stay in exact-commit CI.
 
 ## cf CLI migration boundaries
@@ -47,33 +46,47 @@ the qualified bundle and invokes Wrangler without rebundling. Runtime fixtures
 allocate one temporary persistence directory per run, retain it across restarts,
 and remove it on failure/close; never reuse the app developer state directory.
 
-Settings preflight tokens need Workers Scripts read coverage on the pinned account,
-plus Zone and Workers Routes read coverage on every target-account zone; narrower
-visibility can hide unexpected routes. Keep the bounded fail-closed checks and see
+Coordination's before/after token gates consume the verified snapshot's `secrets`
+array; avoid duplicate CLI reads. Settings tokens need Workers Scripts read on the
+pinned account and Zone/Workers Routes read on every zone; narrow visibility hides routes. Keep the bounded fail-closed checks and see
 the parity runbook's permission table. The usage inventory scans tracked executable
 files in `tmp/` but excludes `.md`/`.mdx`/`.txt` everywhere, including runnable docs.
+
+Drift-relevant settings list readback follows at most eight pages (50 entries per page) inside
+the existing 28-request budget; inconsistent or repeated pages fail closed.
+Object endpoints may carry list envelope metadata without being paginated.
+Deployment history is the explicit exception: Cloudflare defines its first
+entry as the current deployment. Capture only its id and complete valid traffic
+split from page one; reject missing/invalid current state rather than searching
+history. History length must not block publication. Preserve complete secrets,
+domains and routes and exact schedule comparison; see the parity runbook's
+deployment-history exception and twenty-page regression.
+Keep endpoint diagnostics free of response text and preserve zone ordinals.
+Planner recovery needs a new production SHA containing a script fix; an old
+run reuses its triggering SHA. See the parity runbook and settings regressions.
 
 Prefer cf for operations with demonstrated parity, beginning with bounded read-only
 inventory/observability and a Vite-native Worker pilot. Pin dependencies through
 package-manager commands; verify cf authentication/account independently of Wrangler.
 Review typed configuration and Vite mode resolution against existing resource
 identities, routes, bindings, Durable Object migrations, triggers and secret names.
-Keep one authoritative configuration per scope. Replace development, type generation,
-CI artifact production, tail/version inspection and release/rollback separately;
+Keep one authoritative configuration per scope. Replace dev, types, CI artifacts, tail/version inspection and release/rollback separately;
 retain Wrangler for unsupported operations. Exact-commit CI and real emitted-artifact
 acceptance remain required. Do not run global migration or deployment as part of
 planning. Follow the phased plan in the adoption guidance above and recheck
 [upstream coverage](https://blog.cloudflare.com/cloudflare-cf-cli-launch/) before edits.
 
-Execute cf with Node22.18+ even when Bun installs dependencies; typed-config
-commands are not supported on Bun. Discover a reviewed exact version from private
-scratch outside app config/.env ancestry before adding it to a workspace. Use
-anonymous operation-only search queries, then focused command help/schema.
-Require `cf auth whoami` JSON `authenticated === true`, not process exit0:
-unauthenticated results can exit successfully. cf credentials are separate from
-Wrangler. Stop authenticated parity work when access is absent; do not copy tokens
-or login files. Account selection may write project cache, so verify identity and
-local files. See [cf prerequisites](https://developers.cloudflare.com/cf/get-started/).
+Execute the pinned cf CLI with a Node version satisfying its package engines
+(`cf@1.0.0-beta.20`: `^22.23 || ^24.22 || ^26.12`); Bun cannot run typed-config commands.
+The older discovery minimum does not suffice. Native scripts use typed config and `.cloudflare/types/index.d.ts`.
+Calendar's `calendar-cf-types.mjs` emits ASSETS-only template declarations after cf/artifact checks; keep fixtures/restores under Calendar for isolated dependency lookup and read verified descriptors rather than checked paths.
+`calendar-cf-output.mjs` companion compares sealed ESM/assets and tar-preserved restored output.
+Manifest-listed hashed server `.css` and `.woff2` files enter static assets only after source-hash and duplicate-client-byte checks; orphan or unknown server files fail closed.
+Retain publishers until upload-name/runtime parity, and the types CI oracle until qualification.
+Use anonymous operation-only queries outside config/env ancestry. Discover help/schema; require `cf auth whoami` JSON
+`authenticated === true`; unauthenticated results can exit zero. cf credentials
+are separate: stop when access is absent; never copy tokens or login files.
+Account selection may write project cache; verify identity and resulting files. See [cf prerequisites](https://developers.cloudflare.com/cf/get-started/).
 
 ## Cloudflare runaway-work review
 
@@ -89,6 +102,41 @@ an independent operator response. Alerts and CPU limits do not cap total spend.
 Do not copy upstream examples that deliberately retry forever into finite jobs.
 See the adoption guidance's runaway-work acceptance table; live settings are
 separate evidence, never implied by documentation or build success.
+
+For Turbo cache admission, `budget-v2` in the global DO is the single durable
+authority. Use one storage transaction for each reservation/admin mutation and
+commit before artifact access. Never use R2 snapshots, isolate memory or an
+eventually consistent cache as positive admission authority. Preserve committed
+charges after unknown outcomes; do not retry reservations or refund failed
+artifact work. Denials and unchanged admin actions perform no writes. There are
+no R2 control writes or background checkpoint jobs, avoiding the same-key write
+limit. Legacy `_control/budget-v1` is read only on explicit first initialization;
+disable/drain the previous revision and reconcile unknown writes before import.
+Never reset lost usage to zero or delete DO state as recovery. Count artifact
+operations, DO/rate-limit calls and separate DO storage costs. Denied ingress and
+failed attempts remain traffic-dependent costs requiring the independent mode-off
+stop. `apps/turbo-cache/src/{stop-regression,budget-integrity}.test.ts` cover
+failure/unknown outcomes, delayed legacy writes after stop, restart, burst 429s,
+concurrency and maximum batches. The nonpublishing
+`turbo-cache-cloudflare.yaml` / `build-acceptance` job must build the exact PR
+head without compiled-artifact caches and exercise source and emitted Workers in
+workerd. The shared cf harness uses disposable secrets and isolated persistence;
+it verifies default-off, transactional initialization and stop/restart. Keep
+hosted enabled-traffic/cost acceptance separate from local-runtime evidence.
+
+## Cloudflare backend ownership guard
+
+New crons, queues, schedulers and heavy/long-running backend work go to Cloudflare
+(Cron Control Cron Triggers, Queues, Workflows, Durable Objects) under the
+runaway-work review above. `scripts/ci/cloudflare-backend-ownership.test.js` fails
+on a new Vercel cron, enabled cron-catalog job, live pg_cron job, post-cutoff
+`cron.schedule`, Supabase Edge Function, Trigger.dev config/dependency/import, Next
+`after()` import or `/api/cron` route. A cadence change counts as a new owner.
+Legacy owners live in the shrink-only allowlist with owner/target/plan; the test
+pins the adopted baseline and fails stale entries, so delete an entry when its
+legacy definition is removed. Retained pg_cron jobs need a written pure-database
+justification; `pg_net` callers are not exceptions. Do not extend the baseline to
+admit new work. See `apps/docs/build/devops/cloudflare-backend-ownership.mdx`.
 
 ## Codex plugin native parallel pilot
 
@@ -147,12 +195,12 @@ whose reusable workflow requests more than its caller grants.
 `scripts/ci/workflow-permissions.test.js` enforces the default, the reviewed
 workflow-level write allowlist, and caller and callee grants in both directions.
 
-CodeQL PR uploads are diff-filtered; an analysis with zero uploaded results does
-not prove the local SARIF gate had no findings. The trusted new-alert gate prints
-blocking rule IDs and primary locations, omits message bodies, and escapes workflow
-command characters. A missing category baseline still fails closed. For exact
-CLI reproduction and regression coverage, follow
-[`security-cadence.mdx`](../../../../../apps/docs/build/devops/security-cadence.mdx).
+CodeQL PR uploads are diff-filtered; zero uploaded results do not clear the
+local SARIF gate. Triage at the analyzed SHA and current main: trace validation
+rejections, same-descriptor reads and directory-only fsync before calling an alert real.
+Keep optional-reader defects distinct from default production reachability; test
+replacement negatives without enabling collection. The gate prints escaped rule IDs
+and locations, omits messages, and fails closed without a baseline. See [`security-cadence.mdx`](../../../../../apps/docs/build/devops/security-cadence.mdx).
 
 ## Bun runtime pins
 
@@ -168,7 +216,7 @@ fleet versions; verify those separately before claiming runtime acceptance.
 - Focused non-build tests needed to validate authorized work may run. Builds and setup-triggered builds run in CI only. Start long-lived development servers only when requested or needed for explicitly requested runtime verification. Deployment authority stays separate.
 - For TypeScript, JavaScript, root scripts, or repo config changes, run focused non-build checks locally; do not run local `bun validate`.
 - Run `bun check:changed` before every push. It maps changed paths to Biome, branch-name, generated-inventory, guard, related-test, affected type-check and Flutter checks without builds, queues heavy steps through ttr, and treats cold-`dist` type errors outside changed files as advisory. Missing imports never demote real changed-file errors such as TS2322; only implicit-any follow-ons may be softened. Shared packages select reverse dependents; root/shared configs explicitly require CI. Hook mode refuses dirty tracked content and untracked inputs in selected workspaces/reverse dependents and parent directories of selected script tests. Git paths are NUL-delimited; reject only option-like repository/workspace-relative prefixes, preserving internal dash route directories. Shared config coverage notices include Bun/npm, root Vitest and Oxc configs. Extend `scripts/check-changed/plan.js` with tests when a new cheap CI failure class appears; see [pre-push checks](../../../../../apps/docs/build/development-tools/pre-push-checks.mdx).
-- Partition related tests by runner before planning commands: `node:test` imports or the owning package's `node --test` script select native tests; explicit Vitest imports override that package default. Never send the same file to both runners or suppress real failures as empty discovery. Hook mode validates every pushed branch destination from Git stdin; without push refs, local `tmp/` branches may validate a configured tracking branch, printing both names; untracked temporary branches and ordinary invalid local names still fail. Published branch names remain CI-gated.
+- Partition related tests by runner before planning commands. Parse runtime imports from syntax with the pinned root parser; fixture strings, template text, comments, regular expressions and type-only imports must not select a runner. Actual `node:test` imports or the owning package's `node --test` script select native tests; explicit runtime Vitest imports override that package default. Cover both directions and the SDK portable-build fixture in `scripts/check-changed-runners.test.js`. Never send the same file to both runners or suppress real failures as empty discovery. Hook mode validates every pushed branch destination from Git stdin; without push refs, local `tmp/` branches may validate a configured tracking branch, printing both names; untracked temporary branches and ordinary invalid local names still fail. Published branch names remain CI-gated.
 - tsrs (Rust TypeScript port) is advisory only: the gate defaults to tsc until seeded-error qualification, and explicit tsrs runs always retain tsc confirmation. Gate each project through TSRS_PROJECTS and print exact diagnostic-key differences as advisory output even when tsc passes. Resolve tsrs only for plans including a qualified project, disable npm lifecycle scripts, and use only an existing TSRS_BIN in hook mode, and `tsrs-shadow.yaml` records main-push parity. Keep `tsc` as the required gate until the [promotion criteria](../../../../../apps/docs/build/development-tools/tsrs-shadow-type-check.mdx#promotion-criteria) hold; tsrs currently tracks TypeScript 7.1 semantics and lacks `--showConfig`.
 - Use focused package-local tests, then applicable exact-commit CI checks.
 - Make nested CLI fixtures provide private Bun, bunx and Node launchers; CI's Bun bootstrap installs only Bun. Keep `resources-test-fixtures.ts` outside portable SDK staging as well as the no-emit type-check input, so fixture hooks never become public dependencies. Qualification controls must cover the actual source closure and both process-helper source/test workflow triggers.
@@ -177,6 +225,13 @@ fleet versions; verify those separately before claiming runtime acceptance.
 - For single-package validation, prefer package-local commands such as `bun --cwd packages/ai vitest run ...` instead of root commands that fan out through Turbo.
 - Run `bun ff` for owned frontend/TS files when required; if it triggers repo-wide Biome behavior, use exact-file Biome commands. Preserve unrelated dirty files and require the applicable lint workflow in exact-commit CI.
 - For nested Biome configs, reproduce with the pinned executable and authentic generated bytes: Biome 2.5.13 rebases inherited root `files.includes` globs under the extending config, so root `!apps/meet/src/routeTree.gen.ts` can miss the file. In Meet and Calendar, use owning `formatter.includes: ["**", "!src/routeTree.gen.ts"]`. Preserve supplier bytes and generated casts; do not format or hand-patch generated source, disable types, or add global waivers. Compare before/after generated exclusions and authored/Worker negative controls; preserve linter settings and inactive-runtime scope. Fixture skips prove exclusion only, not lint/type/build/full CI or runtime acceptance; retain raw failures and protocol NOTPASS separately.
+
+Keep Vite/Void host configuration in its own TypeScript program when tooling
+loads runtime globals such as Bun's augmented fetch. Mail, Calendar and Meet
+use `tsconfig.config.json`, checked by the normal package `type-check` gate.
+Retain every app/test root and the separate host-config check. Run
+`scripts/ci/vite-config-type-boundary.test.js` and inspect `tsc --listFilesOnly`
+when diagnosing ambient-type leakage; do not patch mocks to satisfy host globals.
 
 ## Validation job relevance
 
@@ -202,7 +257,8 @@ exact-head hosted improvement; never weaken a gate to improve a timing figure.
 
 Mobile PR selection lives in `scripts/ci/mobile-build-selection.ts`, called by the
 switchboard after explicit disable handling. Android remains the portable smoke;
-other platforms retain native-directory checks and all builds on main pushes.
+other platforms retain native-directory PR checks. Android/Linux keep matching
+main pushes; iOS/macOS/Windows development builds use nightly/release/manual.
 Only known portable/other-native paths may omit a platform. Unknown/empty inputs,
 dependency manifests and tooling changes run all. Preserve PR triggers/check names
 and include the helper in the reusable switchboard sparse checkout. Verify
@@ -306,6 +362,16 @@ for the diagnostic collector's legacy comparison field and remaining gates.
   the runner's signed Ubuntu sources. Preserve signature checks, native browser
   packages and runner-owned browser downloads; vendor-feed setup errors are not
   application failures. Require exact-commit CI to verify runner layout and packages.
+- `ttr storage status|analyze|suggest|prune|fleet` is the machine-wide storage
+  triage path (Mac, devboxes, runners). Measure with APFS private bytes or
+  allocated blocks with hard links once, never `du -L`. `prune` is a dry run
+  until `--apply`, re-verifies hold files (`~/.t3/cleanup/holds.d`), live cwds
+  and worktree state per step, and delegates artifacts and Rust targets to the
+  repo scripts below. Never auto-remove dirty, unmerged, held, busy or primary
+  checkouts, `preserve/*` refs, VM disks or unnamed Supabase volumes. Disk
+  admission in `ttr resources` and the bucketed heartbeat `resources.disk`
+  (strict on web and Worker) keep work off full disks. See
+  `apps/docs/build/development-tools/machine-storage-health.mdx`.
 - `bun rust-cache report|prune|auto` is the repo-owned Rust target cleanup
   wrapper. It owns only `apps/backend/target` by default, stores auto-run state
   under ignored `tmp/rust-cache/state.json`, skips CI unless explicitly enabled,
@@ -316,6 +382,28 @@ for the diagnostic collector's legacy comparison field and remaining gates.
   source or an unmerged worktree. Confirmed-merged worktrees should be removed
   after main-green, `bun git-sync`, and production verification so their target
   caches disappear with them.
+- `bun worktree:footprint` reports each registered worktree's allocated and
+  APFS-unique size. On macOS Bun `node_modules` are clones of the shared cache,
+  so `du` overstates a fresh worktree about 14x (4.3 GiB vs ~0.3 GiB unique).
+  `bun worktree:prune-artifacts` is a dry run unless `--apply` is passed. It
+  only removes git-ignored, untracked rebuildable outputs (`.turbo`, `.next`,
+  `.open-next`, `dist`, ignored `build`, Flutter `.dart_tool` build output) from
+  linked worktrees that are clean, unheld, idle,
+  and merged into `--base`. Keep `bunfig.toml` `globalStore = false` and the
+  default clonefile backend unless exact-commit CI type-check/build evidence
+  proves otherwise. Explicit holds-file read errors and fatal check-ignore errors
+  fail closed. Holds resolve filesystem aliases; recursive activity scans cap depth
+  at 32 and entries at 10,000, treating incomplete scans as active. Each apply
+  invocation builds a fresh plan. Checkout scans protect `.git` directories/files
+  and bare `HEAD`/`objects` markers, including ancestors inside the worktree.
+  Deletion walks repeat those boundaries and never recursively remove directories.
+  Before deletion, `lsof +D` checks open files and working directories with a
+  five-second forced-kill deadline and 1 MiB output cap. Missing tools, warnings,
+  failures and ambiguous output preserve artifacts as `liveness-unknown`; live
+  users produce `in-use`. Only an empty, warning-free no-match result admits
+  deletion. Locks and holds remain necessary to fence later owner activity.
+  Rust targets remain owned by rust-cache.
+  See `apps/docs/build/development-tools/worktree-disk-usage.mdx`.
 - Turborepo build outputs may include production `.next/**`, but must exclude
   volatile Next caches such as `.next/cache/**` and `.next/dev/**`. Next 16.3
   enables the Turbopack build filesystem cache locally through the shared Next
@@ -595,6 +683,21 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   must also disable cancellation and use that isolated identity; changing only
   the cancellation flag leaves candidates vulnerable to later main pushes. Never
   combine `queue: max` with cancellation enabled.
+- Defer heavy PR validation on drafts before runner allocation, while keeping
+  light lint/type checks. Security jobs, including CodeQL analysis and the
+  security-egress contract/preflight, remain eligible on drafts. Heavy-only
+  non-security workflows can gate `check-ci`;
+  mixed workflows gate only heavy jobs and dependent summaries. Include
+  `ready_for_review` and `converted_to_draft`, preserve existing aggregate failure
+  assertions, and verify merge-eligible required checks still report. Keep path
+  selection in the existing switchboard or trusted security selectors. Run
+  `pr-verification-scheduling.test.js` with the concurrency policy suite.
+  Apple/Windows mobile development builds run nightly, on published releases and
+  on manual dispatch. This coverage exception validates selected snapshots, not
+  every merged SHA; nightly selects the default-branch head. Android/Linux retain
+  matching main pushes. Store and production publication retain their triggers,
+  locks and gates. See the
+  [CI runbook](../../../../../apps/docs/build/devops/github-actions-runbook.mdx#draft-pr-runner-admission).
 - Only the exact SHA selected for promotion needs complete CI. Superseded `main`
   validation may be cancelled, but cancellation is never passing evidence. If a
   pinned candidate lost a required check to supersession, restore that exact-SHA
@@ -686,6 +789,18 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   Turbo. CPU, heap, and concurrency controls are pass-through values. Use a
   transit-only dependency task when downstream tests must invalidate on
   dependency source changes without executing dependency test suites.
+- Keep the Turbo global hash small. Never add workspace packages to root
+  `package.json` dependencies: Turbo hashes the root's workspace closure
+  globally, and the old email-service root dependency busted every task on 11
+  of 40 main commits. Machine paths (`PUB_CACHE`, `LOCALAPPDATA`,
+  `USERPROFILE`) are pass-through only. Hash gitignored files that change
+  results (`.env*` for Vitest `loadEnv`, `.dev.vars*` for `wrangler types` and
+  `cf workers types`), and cache the generated declarations the tsconfig reads
+  (`.cloudflare/types/**` for `cf workers types`).
+  `scripts/ci/turbo-cache-config.test.js` pins these rules. Diagnose misses
+  with `--dry=json` hash comparisons as described in
+  `apps/docs/build/devops/caching.mdx`; never narrow `^type-check`/`^transit`
+  links or exclude upstream `__tests__` to raise a hit rate.
 - Artifact uploads must declare both retention and missing-file behavior.
   Consolidate failure diagnostics per shard or mode, keep package handoff
   tarballs for one day without redundant compression, and cache native
@@ -702,6 +817,19 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   storage discounts as an unlimited entitlement. Aim below 9 GB steady-state
   inside the currently configured 10 GB cache limit, and never automatically
   delete default-branch CodeQL caches.
+- Bound Gradle Actions caching to wrapper distributions and
+  `caches/modules-2/files-2.1` downloads. Only the main-push Android build may
+  save, after `gradle-cache-budget.js` admits at most 512 MiB including tar
+  overhead allowance; oversize skips the save without pruning build state.
+  Use stable `gradle-downloads-v2-` platform/Java keys, with no build-file hash
+  generations or broad v1 restore fallback. Flutter SDK/pub keys use only
+  platform/channel/release identities; never add pubspec-lock generations to
+  download archives. Run `node --test scripts/ci/heavyweight-cache-budget.test.js
+  scripts/ci/mobile-cache-budget.test.js scripts/ci/flutter-cache.test.js` when
+  changing these policies. Follow the [cache budget runbook](../../../../../apps/docs/build/devops/github-actions-runbook.mdx#repository-cache-budget)
+  for operator-only old-key cleanup and Supabase reseeding; static checks do
+  not establish hosted retention. Preserve runner routing until a pool and its
+  trusted-job admission are verified.
 - Package release workflows must use npm trusted publishing. Keep
   `id-token: write` isolated to the final `publish-npm` job, publish a downloaded and
   verified tarball with `npm publish --ignore-scripts`, and do not reintroduce
@@ -800,6 +928,32 @@ RPC behavior, without adding immediate re-enqueue feedback. These deadlines do
 not cap recurring invocation counts, billed rows, response bytes or total spend.
 See the database request deadline section in the Cron Control runbook for controlled
 unit evidence versus hosted scheduling and independent-stop release gates.
+
+Cron Control's scheduled job catalog (`src/jobs.ts`) is default off through the
+`CRON_CONTROL_ENABLED_JOBS` var; disabled ticks must do no storage or network work.
+Keep job decisions in the pure `LedgerCore` so unit tests run without Workers, and
+keep the `cloudflare:workers` Durable Object adapter out of unit-test imports. Count
+claims, writes and processor calls in tests: duplicate slots, Durable Object restart,
+stop racing a retry, failure-budget exhaustion and the concurrency bound. The runtime
+check dispatches scheduled events to a loopback processor; never dispatch the
+immediate-notification trigger there. Add a trigger to both `wrangler.jsonc` and the
+runtime script's expected list. See the runbook's per-job cutover order.
+
+Require a complete JSON object within the 64 KiB outcome cap before accepting
+2xx success. Reject oversized chunks before retaining them; read errors and
+invalid or truncated JSON are unknown, never success. Reconciled claims are
+settled: late completions must not recharge failures or overwrite an unknown
+outcome, including when reconciliation refused a replacement at the budget limit.
+Keep dispatch and restart regressions for both late failure and late success.
+
+For checkout expiry, preserve pending obligations with pre-expiry backpressure,
+not truncation. Drain owed invalidations before new expiry, isolate failures and
+persist per-item attempt counts and bounded quarantine. Settle only Inventory's
+explicit per-workspace success receipts. Include claim, pending-work, fence and
+completion RPC waits in the whole-run deadline, with no dependent work after a
+timeout. Run cron-control's independent unit config; test Inventory's receipt
+adapter with its own config. See the processor migration runbook for bounds and
+remaining cross-store crash and hosted-runtime evidence.
 
 ## Native Meet realtime toolchain
 
@@ -1015,7 +1169,7 @@ it is separate evidence from CI Chromium and emitted Worker acceptance. See the
 Apps runbook above for cleanup and remaining qualification boundaries. Historical
 timeout causality remains UNKNOWN; the routing gap is a separate source finding.
 
-Active local-Supabase jobs use `.github/actions/cache-supabase-images` after the owning dependency install; employee-schema targets `source/apps/database`. Derive service versions from the pinned CLI's `services -o json`, with version-gated supplemental Dockerfile pins for Kong/Mailpit/imgproxy. Mirror registry rewriting exactly. Cache only each profile's required images, including GoTrue/Realtime/Storage bootstrap migrations even when long-running services are excluded, and postgres-meta for typegen. Exact SHA256 keys bind the list, registry, OS and arch; inspect loaded images and never unconditionally re-pull the baseline Postgres image. Archives are bounded to 6 GiB.
+Active local-Supabase jobs use `.github/actions/cache-supabase-images` after the owning dependency install; employee-schema targets `source/apps/database`. Derive service versions from the pinned CLI's `services -o json`, with version-gated supplemental CLI 2.121.0 Dockerfile pins for Kong/Mailpit/imgproxy (2.8.1/v1.31.3/v3.26.0). Catalog local tags override those fallbacks; reject duplicate catalog names while emitting each required image once. Mirror registry rewriting exactly. Cache only each profile's required images, including GoTrue/Realtime/Storage bootstrap migrations even when long-running services are excluded, and postgres-meta for typegen. Exact SHA256 keys bind the list, registry, OS and arch; inspect loaded images and never unconditionally re-pull the baseline Postgres image. Archives are bounded to 6 GiB.
 
 Paused Docker E2E consumers reuse the shared `full` profile rather than a separate `supabase-docker-v2` archive. Keep the registry benchmark switch and all runtime pause gates intact; this consolidates future cache writes without deleting hosted entries or resuming Docker.
 

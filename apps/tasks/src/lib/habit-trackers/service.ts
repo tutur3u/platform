@@ -1,5 +1,5 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import type { Json, TablesInsert, TablesUpdate } from '@tuturuuu/types';
+import type { Json, TablesUpdate } from '@tuturuuu/types';
 import type {
   HabitTracker,
   HabitTrackerCardSummary,
@@ -27,7 +27,6 @@ import {
   buildHabitTrackerTeamSummary,
   computeHabitTrackerStreakSummary,
   getCurrentPeriodWindow,
-  normalizeEntryKind,
 } from './streaks';
 
 export type HabitTrackerScope = 'self' | 'team' | 'member';
@@ -50,7 +49,6 @@ export class HabitTrackerError extends Error {
   }
 }
 
-type HabitTrackerInsert = TablesInsert<'workspace_habit_trackers'>;
 type HabitTrackerUpdate = TablesUpdate<'workspace_habit_trackers'>;
 
 type HabitTrackerLatestStatRow = {
@@ -230,8 +228,10 @@ function normalizeEntryValues(input: unknown): HabitTrackerEntry['values'] {
   return normalized;
 }
 
-function serializeEntryValues(values: HabitTrackerEntry['values']): Json {
-  return values as Json;
+export function serializeEntryValues(
+  values: HabitTrackerEntry['values']
+): NonNullable<Json> {
+  return values as NonNullable<Json>;
 }
 
 function applyLatestStatsToMemberSummary(
@@ -254,7 +254,7 @@ function applyLatestStatsToMemberSummary(
   };
 }
 
-function mapTrackerRow(row: Record<string, unknown>): HabitTracker {
+export function mapTrackerRow(row: Record<string, unknown>): HabitTracker {
   return {
     id: String(row.id),
     ws_id: String(row.ws_id),
@@ -324,7 +324,7 @@ function mapTrackerRow(row: Record<string, unknown>): HabitTracker {
   };
 }
 
-function mapEntryRow(row: Record<string, unknown>): HabitTrackerEntry {
+export function mapEntryRow(row: Record<string, unknown>): HabitTrackerEntry {
   return {
     id: String(row.id),
     ws_id: String(row.ws_id),
@@ -397,7 +397,9 @@ function ensureTrackerSchema(input: HabitTrackerInput) {
   }
 }
 
-function sanitizeTrackerInput(input: HabitTrackerInput): HabitTrackerInput {
+export function sanitizeTrackerInput(
+  input: HabitTrackerInput
+): HabitTrackerInput {
   const parsed = habitTrackerInputSchema.parse({
     ...input,
     quick_add_values: (input.quick_add_values ?? [])
@@ -416,7 +418,7 @@ function sanitizeTrackerInput(input: HabitTrackerInput): HabitTrackerInput {
   };
 }
 
-function sanitizeEntryValues(
+export function sanitizeEntryValues(
   tracker: HabitTracker,
   input: HabitTrackerEntryInput
 ) {
@@ -989,50 +991,6 @@ export async function getHabitTrackerDetail(
   };
 }
 
-export async function createHabitTracker(
-  supabase: TypedSupabaseClient,
-  wsId: string,
-  actorUserId: string,
-  input: HabitTrackerInput
-) {
-  const payload = sanitizeTrackerInput(input);
-  const insertPayload: HabitTrackerInsert = {
-    name: payload.name,
-    description: payload.description ?? null,
-    color: payload.color,
-    icon: payload.icon,
-    tracking_mode: payload.tracking_mode,
-    target_period: payload.target_period,
-    target_operator: payload.target_operator,
-    target_value: payload.target_value,
-    primary_metric_key: payload.primary_metric_key,
-    aggregation_strategy: payload.aggregation_strategy,
-    input_schema: payload.input_schema as unknown as Json,
-    quick_add_values: payload.quick_add_values as unknown as Json,
-    freeze_allowance: payload.freeze_allowance ?? 0,
-    recovery_window_periods: payload.recovery_window_periods ?? 0,
-    use_case: payload.use_case ?? 'generic',
-    template_category: payload.template_category ?? 'custom',
-    composer_mode: payload.composer_mode ?? 'advanced_custom',
-    composer_config: (payload.composer_config ?? {}) as unknown as Json,
-    start_date: payload.start_date ?? new Date().toISOString().slice(0, 10),
-    is_active: payload.is_active ?? true,
-    ws_id: wsId,
-    created_by: actorUserId,
-  };
-  const { data, error } = await supabase
-    .from('workspace_habit_trackers')
-    .insert(insertPayload)
-    .select('*')
-    .single();
-
-  if (error) {
-    throw new HabitTrackerError('Failed to create habit tracker', 500);
-  }
-
-  return mapTrackerRow(data as Record<string, unknown>);
-}
-
 export async function updateHabitTracker(
   supabase: TypedSupabaseClient,
   wsId: string,
@@ -1074,8 +1032,8 @@ export async function updateHabitTracker(
     target_value: payload.target_value,
     primary_metric_key: payload.primary_metric_key,
     aggregation_strategy: payload.aggregation_strategy,
-    input_schema: payload.input_schema as unknown as Json,
-    quick_add_values: payload.quick_add_values as unknown as Json,
+    input_schema: payload.input_schema as unknown as NonNullable<Json>,
+    quick_add_values: payload.quick_add_values as unknown as NonNullable<Json>,
     freeze_allowance: payload.freeze_allowance ?? 0,
     recovery_window_periods: payload.recovery_window_periods ?? 0,
     use_case: payload.use_case ?? current.use_case ?? 'generic',
@@ -1085,7 +1043,7 @@ export async function updateHabitTracker(
       payload.composer_mode ?? current.composer_mode ?? 'advanced_custom',
     composer_config: (payload.composer_config ??
       current.composer_config ??
-      {}) as unknown as Json,
+      {}) as unknown as NonNullable<Json>,
     start_date: payload.start_date ?? current.start_date,
     is_active: payload.is_active ?? true,
   };
@@ -1125,7 +1083,7 @@ export async function archiveHabitTracker(
   }
 }
 
-async function getTrackerOrThrow(
+export async function getTrackerOrThrow(
   supabase: TypedSupabaseClient,
   wsId: string,
   trackerId: string
@@ -1147,82 +1105,6 @@ async function getTrackerOrThrow(
   }
 
   return mapTrackerRow(data as Record<string, unknown>);
-}
-
-export async function createHabitTrackerEntry(
-  supabase: TypedSupabaseClient,
-  wsId: string,
-  trackerId: string,
-  actorUserId: string,
-  input: HabitTrackerEntryInput
-) {
-  const tracker = await getTrackerOrThrow(supabase, wsId, trackerId);
-  const sanitized = sanitizeEntryValues(tracker, input);
-  const entryKind = normalizeEntryKind(tracker.tracking_mode);
-
-  if (entryKind === 'daily_summary') {
-    const { data: existing, error: existingError } = await supabase
-      .from('workspace_habit_tracker_entries')
-      .select('*')
-      .eq('ws_id', wsId)
-      .eq('tracker_id', trackerId)
-      .eq('user_id', actorUserId)
-      .eq('entry_kind', 'daily_summary')
-      .eq('entry_date', sanitized.entry.entry_date)
-      .maybeSingle();
-
-    if (existingError) {
-      throw new HabitTrackerError('Failed to load habit tracker entry', 500);
-    }
-
-    if (existing) {
-      const { data, error } = await supabase
-        .from('workspace_habit_tracker_entries')
-        .update({
-          values: serializeEntryValues(sanitized.values),
-          primary_value: sanitized.primaryValue,
-          note: sanitized.entry.note ?? null,
-          tags: sanitized.entry.tags ?? [],
-          occurred_at: sanitized.entry.occurred_at ?? new Date().toISOString(),
-        })
-        .eq('id', existing.id)
-        .select('*')
-        .single();
-
-      if (error) {
-        throw new HabitTrackerError(
-          'Failed to update habit tracker entry',
-          500
-        );
-      }
-
-      return mapEntryRow(data as Record<string, unknown>);
-    }
-  }
-
-  const { data, error } = await supabase
-    .from('workspace_habit_tracker_entries')
-    .insert({
-      ws_id: wsId,
-      tracker_id: trackerId,
-      user_id: actorUserId,
-      entry_kind: entryKind,
-      entry_date: sanitized.entry.entry_date,
-      occurred_at: sanitized.entry.occurred_at ?? new Date().toISOString(),
-      values: serializeEntryValues(sanitized.values),
-      primary_value: sanitized.primaryValue,
-      note: sanitized.entry.note ?? null,
-      tags: sanitized.entry.tags ?? [],
-      created_by: actorUserId,
-    })
-    .select('*')
-    .single();
-
-  if (error) {
-    throw new HabitTrackerError('Failed to create habit tracker entry', 500);
-  }
-
-  return mapEntryRow(data as Record<string, unknown>);
 }
 
 export async function updateHabitTrackerEntry(

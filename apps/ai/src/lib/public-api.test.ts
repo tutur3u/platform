@@ -89,7 +89,7 @@ describe('AI Studio billing policy', () => {
     );
     expect(mocks.settleAiStudioRun).not.toHaveBeenCalled();
   });
-  it('fails and releases the hold if actual pricing becomes zero', async () => {
+  it('records reconciliation without refunding if actual pricing becomes zero', async () => {
     mocks.calculateAiStudioUsageCost.mockResolvedValueOnce({
       billedCredits: 0,
       providerCostUsd: 0,
@@ -110,12 +110,24 @@ describe('AI Studio billing policy', () => {
         },
         { status: 'succeeded', usage: { inputTokens: 100, outputTokens: 50 } }
       )
-    ).rejects.toThrow('pricing is unavailable');
-    expect(mocks.settleAiStudioRun).toHaveBeenCalledWith(
+    ).rejects.toThrow('AI usage requires reconciliation.');
+    expect(mocks.settleAiStudioRun).not.toHaveBeenCalled();
+    expect(mocks.recordAiStudioRunStep).toHaveBeenCalledWith(
       expect.objectContaining({
+        runId: 'run',
+        name: 'settlement_reconciliation',
         status: 'failed',
-        actualCredits: 0,
-        metadata: expect.objectContaining({ reconciliation_required: true }),
+        inputTokens: 100,
+        outputTokens: 50,
+        metadata: expect.objectContaining({
+          reconciliation_required: true,
+          completion: 'unknown',
+          phase: 'pricing',
+        }),
+      }),
+      expect.objectContaining({
+        fetch: expect.any(Function),
+        throwOnError: true,
       })
     );
   });
@@ -141,14 +153,21 @@ describe('AI Studio billing policy', () => {
           usage: { imageUnits: 1, inputTokens: 100, outputTokens: 1120 },
         }
       )
-    ).rejects.toThrow('missing modality receipt');
-    expect(mocks.settleAiStudioRun).toHaveBeenCalledWith(
+    ).rejects.toThrow('AI usage requires reconciliation.');
+    expect(mocks.settleAiStudioRun).not.toHaveBeenCalled();
+    expect(mocks.recordAiStudioRunStep).toHaveBeenCalledWith(
       expect.objectContaining({
-        status: 'failed',
-        imageUnits: 1,
+        runId: 'run',
         inputTokens: 100,
         outputTokens: 1120,
-        metadata: expect.objectContaining({ reconciliation_required: true }),
+        metadata: expect.objectContaining({
+          reconciliation_required: true,
+          usage: { imageUnits: 1, inputTokens: 100, outputTokens: 1120 },
+        }),
+      }),
+      expect.objectContaining({
+        fetch: expect.any(Function),
+        throwOnError: true,
       })
     );
   });
@@ -224,16 +243,22 @@ describe('AI Studio billing policy', () => {
         },
         { status: 'succeeded', usage: { inputTokens: 100, outputTokens: 80 } }
       )
-    ).rejects.toThrow('pricing unavailable');
-    expect(mocks.settleAiStudioRun).toHaveBeenCalledWith(
+    ).rejects.toThrow('AI usage requires reconciliation.');
+    expect(mocks.settleAiStudioRun).not.toHaveBeenCalled();
+    expect(mocks.recordAiStudioRunStep).toHaveBeenCalledWith(
       expect.objectContaining({
-        status: 'failed',
-        actualCredits: 0,
-        errorClass: 'PricingUnavailable',
+        runId: 'run',
+        inputTokens: 100,
+        outputTokens: 80,
         metadata: expect.objectContaining({
           reconciliation_required: true,
-          pricing_status: 'unavailable',
+          completion: 'unknown',
+          phase: 'pricing',
         }),
+      }),
+      expect.objectContaining({
+        fetch: expect.any(Function),
+        throwOnError: true,
       })
     );
   });
@@ -285,10 +310,12 @@ describe('AI Studio billing policy', () => {
         inputTokens: 100,
         outputTokens: 50,
         reasoningTokens: 30,
-      })
+      }),
+      expect.objectContaining({ fetch: expect.any(Function) })
     );
     expect(mocks.settleAiStudioRun).toHaveBeenCalledWith(
-      expect.objectContaining({ outputTokens: 80, reasoningTokens: 30 })
+      expect.objectContaining({ outputTokens: 80, reasoningTokens: 30 }),
+      expect.objectContaining({ fetch: expect.any(Function) })
     );
   });
 
@@ -358,7 +385,8 @@ describe('AI Studio billing policy', () => {
         outputTokens: 9,
         providerCostUsd: 0.0025,
         runId: 'external-run',
-      })
+      }),
+      expect.objectContaining({ fetch: expect.any(Function) })
     );
     expect(mocks.settleAiStudioRun).not.toHaveBeenCalled();
   });
@@ -383,12 +411,19 @@ describe('AI Studio billing policy', () => {
         },
         { status: 'succeeded', usage: { imageUnits: 1 } }
       )
-    ).rejects.toThrow('missing image receipt');
-    expect(mocks.settleExternalAiStudioRun).toHaveBeenCalledWith(
+    ).rejects.toThrow('AI usage requires reconciliation.');
+    expect(mocks.settleExternalAiStudioRun).not.toHaveBeenCalled();
+    expect(mocks.recordAiStudioRunStep).toHaveBeenCalledWith(
       expect.objectContaining({
-        status: 'failed',
-        imageUnits: 1,
-        unmeteredCredits: 0,
+        runId: 'external-run',
+        metadata: expect.objectContaining({
+          reconciliation_required: true,
+          usage: { imageUnits: 1 },
+        }),
+      }),
+      expect.objectContaining({
+        fetch: expect.any(Function),
+        throwOnError: true,
       })
     );
     expect(mocks.settleAiStudioRun).not.toHaveBeenCalled();
@@ -435,7 +470,8 @@ describe('AI Studio billing policy', () => {
       expect.objectContaining({
         providerCostUsd: 0.0025,
         runId: 'external-run',
-      })
+      }),
+      expect.objectContaining({ fetch: expect.any(Function) })
     );
     expect(mocks.settleAiStudioRun).not.toHaveBeenCalled();
   });
@@ -464,7 +500,8 @@ describe('AI Studio billing policy', () => {
     });
 
     expect(mocks.settleAiStudioRun).toHaveBeenCalledWith(
-      expect.objectContaining({ actualCredits: 25, runId: 'metered-run' })
+      expect.objectContaining({ actualCredits: 25, runId: 'metered-run' }),
+      expect.objectContaining({ fetch: expect.any(Function) })
     );
     expect(mocks.settleExternalAiStudioRun).not.toHaveBeenCalled();
   });

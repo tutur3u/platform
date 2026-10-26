@@ -10,6 +10,7 @@ import {
 import {
   hashPassword,
   MAX_PASSWORD_LENGTH,
+  passwordRequiresReset,
   verifyPassword,
 } from '@tuturuuu/utils/crypto';
 import {
@@ -91,6 +92,13 @@ export async function guestLogin(rawPlanId: string, input: GuestLoginInput) {
   if (!plan) return { error: 'Invalid request' };
   const guest = plan.meet_together_guests[0];
 
+  if (passwordRequiresReset(guest?.password_hash)) {
+    return {
+      error: 'The plan creator must reset this guest password.',
+      code: 'PASSWORD_RESET_REQUIRED' as const,
+    };
+  }
+
   const attempt: PasswordAttemptSubject = {
     scope: guest?.name ? 'meet-guest' : 'meet-guest-create',
     target: guest?.name
@@ -150,7 +158,7 @@ export async function guestLogin(rawPlanId: string, input: GuestLoginInput) {
   }
 
   if (verification.needsRehash) {
-    // Upgrade legacy hashes in place. The filter on the old value keeps a
+    // Upgrade older scrypt parameters. The filter on the old value keeps a
     // concurrent login from overwriting a hash another request already
     // upgraded; losing that race is harmless because both hashes verify.
     const { error: rehashError } = await sbAdmin

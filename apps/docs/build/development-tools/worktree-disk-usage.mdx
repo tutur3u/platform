@@ -1,0 +1,174 @@
+---
+title: 'Worktree Disk Usage'
+description: 'Measure the real APFS footprint of parallel worktrees and prune rebuildable artifacts safely.'
+updatedAt: '2026-10-24'
+---
+
+Parallel agent lanes each get their own Git worktree. On macOS, `du`, Finder
+and most cleanup reports overstate their cost, because Bun installs
+`node_modules` as APFS clones of `~/.bun/install/cache`. Clones share physical
+blocks until a file is modified, so a worktree that reports 4.3 GiB can free as
+little as 0.3 GiB when it is removed.
+
+## Measure before you delete
+
+```bash
+bun worktree:footprint                         # every registered worktree
+bun worktree:footprint --worktree "$PWD"       # one worktree
+bun worktree:footprint --json                  # machine-readable buckets
+```
+
+The report lists, per registered worktree:
+
+- **allocated**: what `du` reports (hard links counted once).
+- **unique (APFS)**: bytes no clone shares, read from `getattrlist`
+  `ATTR_CMNEXT_PRIVATESIZE` through the system Python. Approximately what
+  removing the worktree frees. It excludes per-file metadata, which costs
+  roughly 50–100 MiB for a full `node_modules` tree. The column shows `n/a` on
+  other platforms.
+- **node_mod**: allocated size of the root `node_modules`.
+- **artifacts**: rebuildable outputs by category (see below).
+
+Nested registered worktrees and `.git` are excluded from their parent's
+totals. The report is read-only and uses `git --no-optional-locks`, so it does
+not refresh other worktrees' indexes. A full scan of about 25 worktrees takes a
+few minutes.
+
+### Reference measurements (2026-10-23, Bun 1.4.4, APFS)
+
+| Checkout | Allocated (`du`) | Unique (APFS) | Notes |
+| --- | --- | --- | --- |
+| Fresh T3/PR worktree | 4.3–4.8 GiB | ~0.31 GiB | Source checkout only; `node_modules` is fully shared |
+| Mobile lane worktree | 4.5–4.6 GiB | 0.47–0.56 GiB | Adds `apps/mobile/build` (97–185 MiB) and `.dart_tool/hooks_runner` (~64 MiB) |
+| Long-lived main checkout | 13.5 GiB | 11.2 GiB | `node_modules` from August no longer shares blocks with the cache |
+| `~/.bun/install/cache` | 11.8 GiB | 1.8 GiB | Shared clone source for every worktree |
+
+A fresh `bun install --frozen-lockfile` in a scratch export changed `df` by
+83–100 MiB and created about 250k inodes, while `du` reported 4.0 GiB. Deleting
+the tree freed 50–81 MiB. `df` was noisy because other lanes were writing at the
+same time.
+
+<Warning>
+  A `node_modules` tree only shares blocks while the cache entries it was
+  cloned from still exist. When Bun replaces those entries, the old tree becomes
+  private. A long-lived checkout's dependencies can then cost their full size,
+  as with the 11.2 GiB main checkout above. If the report shows a large
+  unique `node_modules`, the owner can reinstall it (`rm -rf node_modules &&
+  bun install`) to re-clone it from the cache. Do not do this in a checkout you
+  do not own.
+</Warning>
+
+## Prune rebuildable artifacts
+
+```bash
+bun worktree:prune-artifacts                           # dry run (default)
+bun worktree:prune-artifacts --apply                   # build and apply a fresh plan
+bun worktree:prune-artifacts --category build --apply  # one category only
+```
+
+Candidates must pass every gate:
+
+- The worktree is linked: not the primary checkout, not bare, not locked, and
+  not the worktree you are running from.
+- It is not held. Holds come from `~/.t3/cleanup/holds.d/tuturuuu.txt` or
+  `TUTURUUU_WORKTREE_HOLDS_FILE` / `--holds-file`. A hold protects its path,
+  its children and its parents, resolving filesystem aliases such as /tmp and
+  /private/tmp. Explicit or environment-selected holds files must be readable;
+  only a missing default holds file is optional.
+- It is clean: `git status --porcelain` is empty, including untracked files.
+- It is merged: `HEAD` is an ancestor of `--base` (default `origin/main`).
+  Squash-merged branches stay ineligible, so remove those worktrees through
+  the normal post-merge cleanup instead.
+- The worktree's index and HEAD reflog, and the artifact itself, are older than
+  `--min-idle-hours` (default 24). Artifact activity includes descendants, with
+  a depth cap of 32 and an entry cap of 10,000. Truncated or unreadable scans
+  are treated as active and skipped.
+- The directory matches an artifact category, is git-ignored, and contains no
+  tracked files. This is why the tracked `apps/docs/build` documentation is
+  never a candidate.
+- The artifact contains no nested checkout and is not inside one. A `.git`
+  directory or file, or bare-repository markers (`HEAD` and an `objects`
+  directory), protect the whole artifact, even when the checkout belongs to
+  another repository. Incomplete checkout scans fail closed with
+  `artifact-scan-unknown`; they use the same depth and entry bounds as activity
+  scans.
+- The plan stays under the `--max-remove` total (default `20g`).
+
+Each invocation creates a fresh plan; `--apply` does not reuse an earlier dry run.
+Fatal `git check-ignore` errors record `check-ignore-failed` and skip that worktree.
+Rust target cleanup belongs exclusively to `bun rust-cache`.
+
+Before deleting, the tool re-checks that the worktree is still clean, still on
+the planned `HEAD`, and that the target is a real directory inside it. It repeats
+checkout detection and runs `lsof -nP -Fpf +D <artifact>` to detect any process
+with its working directory or an open file beneath the target. This probe has a
+five-second deadline, a forced kill on timeout, and a 1 MiB output limit. Live
+users record `in-use`; missing tools, warnings, errors, truncated output and
+ambiguous results record `liveness-unknown` and preserve the artifact. Only a
+no-match exit with empty stdout and stderr permits deletion.
+
+Deletion walks check checkout boundaries again and remove directories without
+recursive filesystem removal, preserving a checkout discovered during the walk.
+An interrupted walk can remove some ordinary artifacts before recording a skip;
+only fully removed candidates contribute to `removedSize`. These observations
+do not reserve the directory against later activity: owners should keep active
+worktrees locked or held during cleanup. Regression coverage lives in
+`scripts/worktree-footprint.test.js`, including real child processes with old
+artifacts open or held as their working directory.
+
+| Category | Paths |
+| --- | --- |
+| `turbo` | `.turbo`, `apps/*/.turbo`, `packages/*/.turbo` |
+| `next` | `apps/*/.next` |
+| `open-next` | `apps/*/.open-next` |
+| `dist` | `apps/*/dist`, `packages/*/dist` |
+| `build` | `apps/*/build`, `packages/*/build` (ignored only) |
+| `dart-tool-build` | `apps/*/.dart_tool/{build,flutter_build,hooks_runner}` |
+
+These are intentionally excluded: `node_modules` (mostly shared clone data),
+`.wrangler` (local D1/KV state), Playwright `test-results`/`playwright-report`
+(evidence), iOS `Pods`, and Flutter `.dart_tool/package_config.json`.
+The machine-level cleanup still handles whole idle checkouts and idle
+`node_modules`.
+
+## Install and cache decisions
+
+- **Keep the clonefile backend.** It is Bun's macOS default. With
+  `--backend=hardlink` the install took 39 s instead of 11 s and saved no
+  measurable space. Hard links also make `node_modules` files mutable aliases
+  of the shared cache. Do not pass `--backend=copyfile`.
+- **Keep `globalStore = false` in `bunfig.toml`.** With Bun 1.4.4,
+  `globalStore = true` moved 1,612 of 2,517 package directories into
+  `~/.bun/install/cache/links`. It produced the same physical package graph:
+  25 peer-variant splits and one React, `@types/react` and Next instance. It
+  saved about 135k inodes per worktree, about 45 MiB. That saving does not
+  justify the remaining risks:
+  - The August 2026 type-identity breakage is unproven either way. A focused
+    `packages/ui` type-check fails identically in both layouts until workspace
+    packages are built.
+  - Turbopack, Vite and Wrangler file-access roots would need to resolve
+    packages outside the repository.
+  - Docker and CI install paths are unverified.
+
+  Reopen this only with exact-commit CI type-check and build evidence.
+- **Flutter** already shares `~/.pub-cache` (about 1.5 GiB) across worktrees.
+  Only `build/` and `.dart_tool/` outputs are per-worktree.
+- **Turborepo** keeps its local cache in each checkout's `.turbo/cache`.
+  Agent worktrees hold almost none because local builds are not run on shared
+  machines. A shared `TURBO_CACHE_DIR` would give cross-lane hits but has no
+  eviction, so it is not configured in the repository. If you opt in locally,
+  prune it on a size bound yourself. CI keeps its own Turbo cache actions.
+
+## Worktree setup recommendations
+
+- Run `bun install --frozen-lockfile` with the default backend. It takes about
+  10 s and adds about 0.1 GiB of real disk on top of the ~0.3 GiB source
+  checkout.
+- Lanes that only read code, or only edit docs or workflow files, can skip
+  the install and rely on exact-commit CI. Run single-file formatters from
+  outside the repository, for example `npx @biomejs/biome@2.5.13 check <path>`
+  from `/tmp`. Inside the repository, npm rejects the root `catalog:`
+  specifiers.
+- The biggest real savings come from removing settled worktrees, with their
+  source and Flutter outputs, and from reinstalling stale long-lived
+  `node_modules`. Pruning `node_modules` in fresh worktrees saves far less.

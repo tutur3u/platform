@@ -4,19 +4,34 @@ import 'package:mobile/features/assistant/widgets/assistant_markdown_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_source_link.dart';
 import 'package:mobile/features/assistant/widgets/assistant_thinking_accordion.dart';
 import 'package:mobile/features/assistant/widgets/assistant_tool_results_section.dart';
+import 'package:mobile/features/assistant/widgets/assistant_tool_steps.dart';
 
-/// Text and images retain source ordering. Only adjacent tools share a group.
+/// Text and images retain source ordering. Every other tool call in the turn
+/// joins one accordion placed where the first tool call appears.
 List<Widget> assistantOrderedPartWidgets(
   List<AssistantMessagePart> parts, {
   required bool active,
 }) {
   final children = <Widget>[];
-  final reasoning = parts
-      .where(
-        (part) =>
-            part.type == 'reasoning' && (part.text?.trim().isNotEmpty ?? false),
-      )
-      .toList(growable: false);
+  final reasoning = <AssistantMessagePart>[];
+  final tools = <AssistantMessagePart>[];
+  var firstTool = -1;
+  var lastText = -1;
+  for (var index = 0; index < parts.length; index++) {
+    final part = parts[index];
+    if (part.type == 'reasoning' && (part.text?.trim().isNotEmpty ?? false)) {
+      reasoning.add(part);
+    } else if (part.type == 'dynamic-tool' &&
+        !isAssistantInlineImageToolPart(part)) {
+      if (firstTool < 0) firstTool = index;
+      tools.add(part);
+    } else if (part.type == 'text' && (part.text?.trim().isNotEmpty ?? false)) {
+      lastText = index;
+    }
+  }
+  final hasSteps = assistantVisibleToolSteps(tools).isNotEmpty;
+  // Meta-only turns render nothing once the reply text has started.
+  final showTools = hasSteps || (active && lastText < firstTool);
   var showedReasoning = false;
   for (var index = 0; index < parts.length; index++) {
     final part = parts[index];
@@ -32,27 +47,20 @@ List<Widget> assistantOrderedPartWidgets(
         );
       }
     } else if (part.type == 'dynamic-tool') {
-      final start = index;
-      if (assistantImageToolParts([part]).isNotEmpty) {
+      if (isAssistantInlineImageToolPart(part)) {
         children.add(
           Padding(
-            key: ValueKey('assistant-tool-part-$start'),
+            key: ValueKey('assistant-tool-part-$index'),
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: AssistantInlineToolImages(parts: [part]),
           ),
         );
-      } else {
-        final tools = <AssistantMessagePart>[part];
-        while (index + 1 < parts.length &&
-            parts[index + 1].type == 'dynamic-tool' &&
-            assistantImageToolParts([parts[index + 1]]).isEmpty) {
-          tools.add(parts[++index]);
-        }
+      } else if (index == firstTool && showTools) {
         children.add(
           Padding(
-            key: ValueKey('assistant-tool-part-$start'),
+            key: ValueKey('assistant-tool-part-$index'),
             padding: const EdgeInsets.symmetric(vertical: 4),
-            child: AssistantToolResultsSection(parts: tools),
+            child: AssistantToolResultsSection(parts: tools, active: active),
           ),
         );
       }
@@ -63,7 +71,10 @@ List<Widget> assistantOrderedPartWidgets(
         Padding(
           key: ValueKey('assistant-text-part-$index'),
           padding: const EdgeInsets.only(bottom: 8),
-          child: AssistantMarkdownBody(data: part.text!.trim()),
+          child: AssistantMarkdownBody(
+            data: part.text!.trim(),
+            selectable: false,
+          ),
         ),
       );
     }

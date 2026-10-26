@@ -15,6 +15,7 @@ class MailMessageTile extends StatelessWidget {
     required this.onTap,
     required this.onSelect,
     required this.workspaceId,
+    this.active = false,
     super.key,
   });
   final Map<String, dynamic> item;
@@ -23,6 +24,9 @@ class MailMessageTile extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onSelect;
   final String workspaceId;
+
+  /// The conversation open in a split layout's detail pane.
+  final bool active;
 
   @override
   Widget build(BuildContext context) {
@@ -41,10 +45,12 @@ class MailMessageTile extends StatelessWidget {
       entityId: item['id'] as String? ?? '',
       feature: 'mail',
       child: Semantics(
-        selected: selected,
+        selected: selected || active,
         child: Material(
           color: selected
               ? colors.primary.withValues(alpha: 0.08)
+              : active
+              ? colors.secondaryContainer
               : Colors.transparent,
           child: InkWell(
             onTap: onTap,

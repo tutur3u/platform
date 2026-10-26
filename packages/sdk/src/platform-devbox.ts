@@ -4,6 +4,7 @@ import {
   encodePathSegment,
   type InternalApiClientOptions,
 } from '@tuturuuu/internal-api/client';
+import { BalancerRunsClient } from './platform-balancer';
 import { DevboxFleetClient } from './platform-devbox-fleet';
 
 export interface DevboxRunPayload {
@@ -96,10 +97,12 @@ export interface DevboxAgentShutdownResponse {
 export class DevboxesClient {
   private readonly api;
   readonly fleet: DevboxFleetClient;
+  readonly balancer: BalancerRunsClient;
 
   constructor(options: InternalApiClientOptions, fleetOptions = options) {
     this.api = createInternalApiClient(options);
     this.fleet = new DevboxFleetClient(fleetOptions);
+    this.balancer = new BalancerRunsClient(fleetOptions);
   }
 
   createRun(payload: DevboxRunPayload, options: { signal?: AbortSignal } = {}) {

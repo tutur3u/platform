@@ -12,7 +12,15 @@ const local = vi.hoisted(() => ({
 }));
 vi.mock(
   '../app/api/v1/workspaces/[wsId]/calendar/categories/reorder/route',
-  () => ({ PUT: local.reorder })
+  () => ({
+    GET: undefined,
+    HEAD: undefined,
+    POST: undefined,
+    PUT: local.reorder,
+    PATCH: undefined,
+    DELETE: undefined,
+    OPTIONS: undefined,
+  })
 );
 
 import {

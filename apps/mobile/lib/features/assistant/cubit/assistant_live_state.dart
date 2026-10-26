@@ -37,6 +37,8 @@ class AssistantLiveState extends Equatable {
     this.insightCards = const [],
     this.goAwayTimeLeft,
     this.error,
+    this.callStartedAt,
+    this.lastCallDuration,
   });
 
   final String? workspaceId;
@@ -70,6 +72,12 @@ class AssistantLiveState extends Equatable {
   final List<AssistantLiveInsightCard> insightCards;
   final String? goAwayTimeLeft;
   final String? error;
+
+  /// When the current call first connected; survives reconnects.
+  final DateTime? callStartedAt;
+
+  /// Duration of the most recent call after it ended.
+  final Duration? lastCallDuration;
 
   bool get isBusy =>
       status == AssistantLiveConnectionStatus.preparing ||
@@ -116,6 +124,8 @@ class AssistantLiveState extends Equatable {
     Object? goAwayTimeLeft = _assistantLiveSentinel,
     Object? error = _assistantLiveSentinel,
     bool clearError = false,
+    Object? callStartedAt = _assistantLiveSentinel,
+    Object? lastCallDuration = _assistantLiveSentinel,
   }) {
     return AssistantLiveState(
       workspaceId: workspaceId == _assistantLiveSentinel
@@ -168,6 +178,12 @@ class AssistantLiveState extends Equatable {
           : error == _assistantLiveSentinel
           ? this.error
           : error as String?,
+      callStartedAt: callStartedAt == _assistantLiveSentinel
+          ? this.callStartedAt
+          : callStartedAt as DateTime?,
+      lastCallDuration: lastCallDuration == _assistantLiveSentinel
+          ? this.lastCallDuration
+          : lastCallDuration as Duration?,
     );
   }
 
@@ -204,5 +220,7 @@ class AssistantLiveState extends Equatable {
     insightCards,
     goAwayTimeLeft,
     error,
+    callStartedAt,
+    lastCallDuration,
   ];
 }

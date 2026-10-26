@@ -8,6 +8,7 @@ const { capabilities, executeJob } = vi.hoisted(() => ({
 }));
 vi.mock('./devbox-agent-capabilities', () => ({
   createDevboxAgentCapabilities: capabilities,
+  heartbeatStorageTrigger: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock('./devbox-runner', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./devbox-runner')>()),

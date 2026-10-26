@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_shell_cubit.dart';
@@ -17,6 +18,7 @@ import 'package:mobile/features/assistant/widgets/assistant_composer_primary_act
 import 'package:mobile/features/assistant/widgets/assistant_composer_size_reporter.dart';
 import 'package:mobile/features/assistant/widgets/assistant_dock_surface.dart';
 import 'package:mobile/features/assistant/widgets/assistant_inline_voice_controls.dart';
+import 'package:mobile/features/assistant/widgets/assistant_reply_preview.dart';
 import 'package:mobile/features/shell/view/floating_dock_rail.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -41,6 +43,7 @@ class AssistantComposerDock extends StatelessWidget {
     required this.onSend,
     required this.onRemoveAttachment,
     this.repository,
+    this.chatCubit,
     this.voiceCapture,
     this.onAttachVoice,
     this.onSendVoice,
@@ -52,6 +55,7 @@ class AssistantComposerDock extends StatelessWidget {
     this.localModelLabel,
     this.onOpenLocalModels,
     this.onStopLocal,
+    this.onCancelReply,
     super.key,
   });
 
@@ -59,6 +63,7 @@ class AssistantComposerDock extends StatelessWidget {
   final Future<void> Function()? onAttachVoice;
   final Future<void> Function()? onSendVoice;
   final AssistantChatState chatState;
+  final AssistantChatCubit? chatCubit;
   final AssistantLiveState liveState;
   final AssistantLiveUiState liveUiState;
   final AssistantShellState shellState;
@@ -71,6 +76,7 @@ class AssistantComposerDock extends StatelessWidget {
   final String? localModelLabel;
   final Future<void> Function()? onOpenLocalModels;
   final Future<void> Function()? onStopLocal;
+  final VoidCallback? onCancelReply;
   final bool navigationExpanded;
   final double bottomInset;
   final bool isPersonalWorkspace;
@@ -89,12 +95,14 @@ class AssistantComposerDock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final content = Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         AssistantComposerOptions(
           localOnly: localOnly,
           localModelLabel: localModelLabel,
           onOpenLocalModels: onOpenLocalModels,
           chatState: chatState,
+          chatCubit: chatCubit,
           shellState: shellState,
           repository: repository,
           onOpenAttachments: onOpenAttachments,
@@ -108,21 +116,20 @@ class AssistantComposerDock extends StatelessWidget {
         Expanded(
           child: ListenableBuilder(
             listenable: focusNode,
-            builder: (context, _) => TextField(
+            builder: (context, _) => AppTextField(
+              key: const ValueKey('assistant-composer-editor'),
+              style: const TextStyle(fontSize: 16, height: 1.25),
+              contentPadding: const EdgeInsets.symmetric(vertical: 12),
               controller: controller,
               focusNode: focusNode,
-              style: const TextStyle(fontSize: 16, height: 1.25),
               minLines: 1,
               maxLines: 5,
               keyboardType: TextInputType.multiline,
               textInputAction: TextInputAction.newline,
               onTapOutside: (_) => focusNode.unfocus(),
-              decoration: InputDecoration(
-                hintText: context.l10n.assistantAskPlaceholder,
-                border: InputBorder.none,
-                isDense: true,
-                contentPadding: const EdgeInsets.symmetric(vertical: 12),
-              ),
+              placeholder: context.l10n.assistantAskPlaceholder,
+              hintMaxLines: 1,
+              borderless: true,
             ),
           ),
         ),
@@ -132,23 +139,27 @@ class AssistantComposerDock extends StatelessWidget {
             final hasPrompt =
                 value.text.trim().isNotEmpty ||
                 chatState.composerAttachments.isNotEmpty;
-            if (hasPrompt || localGenerating) return const SizedBox.shrink();
-            return IconButton(
-              tooltip: localOnly
-                  ? context.l10n.assistantLocalTextOnly
-                  : context.l10n.voiceRecord,
-              constraints: const BoxConstraints.tightFor(width: 44, height: 44),
-              padding: EdgeInsets.zero,
-              onPressed:
-                  localBlocked ||
-                      localOnly ||
-                      chatState.status == AssistantChatStatus.restoring
-                  ? null
-                  : () {
-                      focusNode.unfocus();
-                      unawaited(onMicrophoneTap());
-                    },
-              icon: const Icon(Icons.mic_none_rounded),
+            return Visibility(
+              key: const ValueKey('assistant-composer-microphone-slot'),
+              visible: !hasPrompt && !localGenerating,
+              maintainSize: true,
+              maintainAnimation: true,
+              maintainState: true,
+              child: AppIconButton(
+                tooltip: localOnly
+                    ? context.l10n.assistantLocalTextOnly
+                    : context.l10n.voiceRecord,
+                onPressed:
+                    localBlocked ||
+                        localOnly ||
+                        chatState.status == AssistantChatStatus.restoring
+                    ? null
+                    : () {
+                        focusNode.unfocus();
+                        unawaited(onMicrophoneTap());
+                      },
+                icon: const Icon(LucideIcons.mic),
+              ),
             );
           },
         ),
@@ -188,8 +199,20 @@ class AssistantComposerDock extends StatelessWidget {
       constraints: BoxConstraints(minHeight: assistantComposerHeight(context)),
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.end,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (chatState.replyTarget case final reply? when !localOnly)
+            AssistantReplyPreview(
+              label: reply.role == 'user'
+                  ? context.l10n.assistantYouLabel
+                  : shellState.soul.name,
+              text: reply.parts
+                  .where((part) => part.type == 'text')
+                  .map((part) => part.text ?? '')
+                  .join('\n'),
+              onCancel: onCancelReply,
+            ),
           if (!localOnly && chatState.composerAttachments.isNotEmpty)
             AssistantComposerAttachments(
               attachments: chatState.composerAttachments,
@@ -230,8 +253,6 @@ class AssistantComposerDock extends StatelessWidget {
   Widget navigationToggle(BuildContext context) =>
       AssistantComposerPrimaryAction(
         controller: controller,
-        attachments: chatState.composerAttachments,
-        onRemoveAttachment: onRemoveAttachment,
         focusNode: focusNode,
         onToggleNavigation: onToggleNavigation,
         onSend: onSend,

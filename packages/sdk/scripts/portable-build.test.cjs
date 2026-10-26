@@ -183,13 +183,14 @@ test('stages the actual SDK closure without server dependencies or test-only fil
     repoRoot: path.resolve(__dirname, '../../..'),
     destination: path.join(destination, 'src'),
   });
-  assert.equal(sources.length, 23);
+  assert.equal(sources.length, 24);
   assert.equal(
     fs.existsSync(path.join(destination, 'src/cli/resources-test-fixtures.ts')),
     false
   );
   assert.ok(sources.includes('packages/utils/src/task-description-codec.ts'));
   assert.ok(sources.includes('packages/internal-api/src/users.ts'));
+  assert.ok(sources.includes('packages/internal-api/src/internal-api-url.ts'));
   assert.equal(
     fs.existsSync(
       path.join(destination, 'src/cli/devbox-playground-runtime.acceptance.ts')

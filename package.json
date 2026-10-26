@@ -69,6 +69,7 @@
     "clean": "rm -rf bun.lock && find . -name node_modules -prune -o \\( -name .next -o -name .turbo \\) -type d -exec rm -rf {} + && bunx npkill --delete-all -y",
     "clean:dev:web": "node scripts/clean-web-dev-cache.js",
     "apple:p8-jwt": "node scripts/apple-p8-jwt-signer.js",
+    "bot:token": "node scripts/tuturuuu-bot-token.js",
     "android:self-sign": "node scripts/android-self-sign.js",
     "prepare": "node scripts/install-git-hooks.js",
     "git-release-please": "node scripts/git-release-please.js",
@@ -133,6 +134,8 @@
     "check:mobile-lucide": "node scripts/check-mobile-lucide-sync.js",
     "check:mobile-shadcn": "node scripts/check-mobile-shadcn-imports.js",
     "rust-cache": "node scripts/rust-cache.js",
+    "worktree:footprint": "node scripts/worktree-footprint.js report",
+    "worktree:prune-artifacts": "node scripts/worktree-footprint.js prune",
     "dev:mobile": "cd apps/mobile && flutter run --dart-define-from-file=.env --flavor development --target lib/main_development.dart",
     "dev:mobile:prod": "cd apps/mobile && flutter run --dart-define-from-file=.env.production --flavor production --target lib/main_production.dart",
     "dev:docs": "node scripts/local-docs.js",
@@ -326,9 +329,6 @@
     "unrs-resolver"
   ],
   "workspaces": ["apps/*", "packages/*"],
-  "dependencies": {
-    "@tuturuuu/email-service": "workspace:*"
-  },
   "optionalDependencies": {
     "@typescript/typescript-aix-ppc64": "7.0.2",
     "@typescript/typescript-darwin-arm64": "7.0.2",

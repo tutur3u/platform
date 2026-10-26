@@ -3,7 +3,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Check, Loader2 } from '@tuturuuu/icons';
 import {
-  updateCurrentUserEmail,
   updateCurrentUserFullName,
   updateCurrentUserProfile,
 } from '@tuturuuu/internal-api';
@@ -15,7 +14,9 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { satelliteProfileQueryKey } from './profile-avatar-editor';
 
-type ProfileField = 'display_name' | 'email' | 'full_name';
+// Email is intentionally absent: satellite sessions cannot change the auth
+// email, so satellites link to the web settings dialog instead.
+type ProfileField = 'display_name' | 'full_name';
 
 export function ProfileFieldForm({
   field,
@@ -39,10 +40,8 @@ export function ProfileFieldForm({
       if (!normalized) throw new Error('empty-value');
       if (field === 'display_name') {
         await updateCurrentUserProfile({ display_name: normalized });
-      } else if (field === 'full_name') {
-        await updateCurrentUserFullName(normalized);
       } else {
-        await updateCurrentUserEmail(normalized);
+        await updateCurrentUserFullName(normalized);
       }
     },
     onError: () =>
@@ -67,16 +66,10 @@ export function ProfileFieldForm({
       }}
     >
       <Input
-        aria-label={t(
-          field === 'display_name'
-            ? 'display-name'
-            : field === 'full_name'
-              ? 'full-name'
-              : 'email-address'
-        )}
-        autoComplete={field === 'email' ? 'email' : 'name'}
+        aria-label={t(field === 'display_name' ? 'display-name' : 'full-name')}
+        autoComplete="name"
         placeholder={placeholder ?? undefined}
-        type={field === 'email' ? 'email' : 'text'}
+        type="text"
         value={value}
         onChange={(event) => setValue(event.target.value)}
       />

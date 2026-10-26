@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/features/profile/profile_timeline_repository.dart';
 import 'package:mobile/features/profile/view/profile_timeline_browser.dart';
 
@@ -104,7 +105,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(
-      find.byType(ListTile, skipOffstage: false).evaluate().length,
+      find.byType(AppGroupedRow, skipOffstage: false).evaluate().length,
       lessThan(20),
     );
     expect(find.text('Large row 500'), findsNothing);

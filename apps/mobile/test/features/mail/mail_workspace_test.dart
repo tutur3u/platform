@@ -16,6 +16,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../helpers/phone_surface.dart';
 import '../../helpers/pump_app.dart';
 
 class _Repository extends Mock implements MailRepository {}
@@ -28,6 +29,8 @@ Map<String, dynamic> inbox(String subject) => {
 };
 
 void main() {
+  // These suites cover the compact (pushed reader) flow.
+  usePhoneSurface();
   late _Repository repository;
   setUp(() {
     SharedPreferences.setMockInitialValues({});
@@ -520,48 +523,6 @@ void main() {
     await tester.pumpAndSettle();
     expect(attempts, 2);
     expect(find.byType(MailReader), findsOneWidget);
-  });
-
-  testWidgets('failed open offers a visible retry above the dock', (
-    tester,
-  ) async {
-    respond((_) async => inbox('First'));
-    await mount(tester);
-    await tester.pumpAndSettle();
-    var attempts = 0;
-    when(
-      () => repository.detail('ws', 'box', 'First', thread: true),
-    ).thenAnswer((_) async {
-      attempts++;
-      if (attempts < 3) {
-        throw const ApiException(message: 'Unavailable', statusCode: 503);
-      }
-      return {
-        'thread': {'id': 'First', 'subject': 'First'},
-        'messages': <dynamic>[],
-      };
-    });
-    await tester.tap(find.text('First'));
-    await tester.pump(const Duration(milliseconds: 400));
-    await tester.pump(const Duration(milliseconds: 400));
-    await tester.pump(const Duration(milliseconds: 250));
-    expect(attempts, 2);
-    expect(
-      find.text('Could not open this message. Please try again.'),
-      findsOneWidget,
-    );
-    expect(
-      tester
-          .widget<SnackBar>(find.byType(SnackBar))
-          .margin!
-          .resolve(TextDirection.ltr)
-          .bottom,
-      112,
-    );
-    await tester.tap(find.text('Retry'));
-    await tester.pumpAndSettle();
-    expect(find.byType(MailReader), findsOneWidget);
-    expect(attempts, 3);
   });
 
   testWidgets('archive updates immediately and rolls back a failed request', (

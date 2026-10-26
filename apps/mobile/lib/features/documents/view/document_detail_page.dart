@@ -279,6 +279,9 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
                                 TextField(
                                   controller: _titleController,
                                   decoration: InputDecoration(
+                                    hintText: context
+                                        .l10n
+                                        .inputPlaceholderDocumentName,
                                     labelText:
                                         context.l10n.documentsDocumentName,
                                   ),

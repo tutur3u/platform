@@ -97,6 +97,9 @@ class _MailOrganizationPageState extends State<MailOrganizationPage> {
                     controller: name,
                     enabled: !saving && (!_members || item == null),
                     decoration: InputDecoration(
+                      hintText: _members
+                          ? l10n.profileEmailHint
+                          : l10n.inputPlaceholderMailName,
                       labelText: _members ? l10n.mailEmail : l10n.mailName,
                     ),
                   ),
@@ -123,6 +126,7 @@ class _MailOrganizationPageState extends State<MailOrganizationPage> {
                       controller: description,
                       enabled: !saving,
                       decoration: InputDecoration(
+                        hintText: context.l10n.inputPlaceholderMailDescription,
                         labelText: l10n.mailDescription,
                       ),
                     ),
@@ -132,6 +136,8 @@ class _MailOrganizationPageState extends State<MailOrganizationPage> {
                       minLines: 2,
                       maxLines: 5,
                       decoration: InputDecoration(
+                        hintText:
+                            context.l10n.inputPlaceholderMailLabelInstructions,
                         labelText: l10n.mailAiInstructions,
                       ),
                     ),

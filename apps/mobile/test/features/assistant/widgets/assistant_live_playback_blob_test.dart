@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_playback_blob.dart';
 
 void main() {
@@ -27,7 +28,7 @@ void main() {
         reducedMotion ? Duration.zero : const Duration(milliseconds: 90),
       );
       expect(find.byIcon(Icons.hearing_rounded), findsNothing);
-      expect(find.byIcon(Icons.graphic_eq_rounded), findsNothing);
+      expect(find.byIcon(LucideIcons.audioLines), findsNothing);
       expect(
         find.byKey(const ValueKey('assistant-playback-spectrum')),
         findsOneWidget,

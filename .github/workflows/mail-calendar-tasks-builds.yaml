@@ -1,6 +1,7 @@
 name: Mail Calendar Tasks builds
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
     paths:
       - 'scripts/safe-fs.js'
       - 'apps/mail/**'
@@ -14,8 +15,16 @@ on:
       - 'patches/**'
       - 'scripts/ci/mail-calendar-tasks-affected*'
       - 'scripts/ci/calendar-native-*'
+      - 'scripts/ci/calendar-cf-types*'
+      - 'scripts/ci/calendar-cf-fixture*'
+      - 'scripts/ci/calendar-cf-files*'
+      - 'scripts/ci/calendar-cf-output*'
+      - 'scripts/ci/calendar-cf-archive.py'
       - 'scripts/ci/native-source-identity-test-helper.js'
+      - 'scripts/ci/apps-native-runtime-pointer.mjs'
       - 'scripts/ci/calendar-emitted-defaults*'
+      - 'scripts/ci/tasks-native-artifact*'
+      - 'scripts/ci/apps-native-artifact.py'
       - '.github/actions/**'
       - '.github/workflows/ci-check.yml'
       - 'tuturuuu.ci.ts'
@@ -35,8 +44,16 @@ on:
       - 'patches/**'
       - 'scripts/ci/mail-calendar-tasks-affected*'
       - 'scripts/ci/calendar-native-*'
+      - 'scripts/ci/calendar-cf-types*'
+      - 'scripts/ci/calendar-cf-fixture*'
+      - 'scripts/ci/calendar-cf-files*'
+      - 'scripts/ci/calendar-cf-output*'
+      - 'scripts/ci/calendar-cf-archive.py'
       - 'scripts/ci/native-source-identity-test-helper.js'
+      - 'scripts/ci/apps-native-runtime-pointer.mjs'
       - 'scripts/ci/calendar-emitted-defaults*'
+      - 'scripts/ci/tasks-native-artifact*'
+      - 'scripts/ci/apps-native-artifact.py'
       - '.github/actions/**'
       - '.github/workflows/ci-check.yml'
       - 'tuturuuu.ci.ts'
@@ -49,6 +66,7 @@ concurrency:
   cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 jobs:
   check-ci:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     permissions:
       contents: read
       deployments: read
@@ -171,6 +189,8 @@ jobs:
         with:
           node-version: 24.22.0
       - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+      - name: Tasks native artifact helper regressions
+        run: python3 scripts/ci/tasks-native-artifact.test.py
       - name: Build application and shared dependencies without deployment
         id: mail-frontend-build
         uses: ./.github/actions/run-with-turbo-remote-cache
@@ -178,6 +198,21 @@ jobs:
           command: bun turbo:local run build --concurrency=2 --filter=@tuturuuu/tasks
           token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && secrets.TURBO_TOKEN || '' }}
           team: ${{ github.ref != 'refs/heads/production' && (vars.TURBO_TEAM || secrets.TURBO_TEAM) || '' }}
+      - name: Build the native Tasks candidate
+        run: bun run --cwd apps/tasks build:cloudflare
+      - name: Qualify the emitted Tasks Worker config
+        run: python3 scripts/ci/tasks-native-artifact.py config apps/tasks
+      - name: Seal the native Tasks output
+        env:
+          TASKS_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python3 scripts/ci/tasks-native-artifact.py seal apps/tasks --receipt "$RUNNER_TEMP/tasks-native-artifact.json"
+      - name: Serve the exact offline fallback from the emitted Worker
+        timeout-minutes: 4
+        run: bun run --cwd apps/tasks test:runtime
+      - name: Confirm the runtime check left the sealed output unchanged
+        env:
+          TASKS_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python3 scripts/ci/tasks-native-artifact.py verify apps/tasks --receipt "$RUNNER_TEMP/tasks-native-artifact.json"
 
   build-web:
     name: build (web)
@@ -244,7 +279,7 @@ jobs:
           test "$(node --version)" = v24.22.0
       - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
       - name: Test artifact boundary regressions
-        run: node --test scripts/ci/calendar-native-source-identity.test.js scripts/ci/calendar-native-artifact.test.mjs scripts/ci/calendar-emitted-defaults.test.mjs scripts/ci/calendar-native-typegen.test.mjs
+        run: node --test scripts/ci/calendar-native-source-identity.test.js scripts/ci/calendar-native-artifact.test.mjs scripts/ci/calendar-emitted-defaults.test.mjs scripts/ci/calendar-native-typegen.test.mjs scripts/ci/calendar-cf-types.test.mjs scripts/ci/calendar-cf-fixture.test.mjs scripts/ci/calendar-cf-files.test.mjs scripts/ci/calendar-cf-output.test.mjs
       - name: Build shared dependencies without a legacy Calendar build
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
@@ -342,10 +377,18 @@ jobs:
           typegen_file="$typegen_dir/cloudflare-env.d.ts"
           bun x --no-install wrangler types --config "$CALENDAR_EMITTED_CONFIG" --env-interface CloudflareEnv --include-runtime=false "$typegen_file"
           if [[ ! -f "$typegen_file" || ! -s "$typegen_file" || -L "$typegen_file" ]]; then
-            printf '%s\n' 'Wrangler did not generate a regular, nonempty bindings file' >&2
+            printf '%s\n' 'Reference generator did not produce a regular, nonempty bindings file' >&2
             exit 1
           fi
-          cp -- "$typegen_file" cloudflare-env.d.ts
+          node ../../scripts/ci/calendar-cf-types.mjs --config "$CALENDAR_EMITTED_CONFIG" --reference "$typegen_file" --sha "$SOURCE_SHA" > "$typegen_dir/cf-types.json"
+          cp -- "$typegen_dir/cf-types.json" "$RUNNER_TEMP/calendar-cf-types.json"
+      - name: Retain Calendar binding type parity receipt
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: calendar-cf-types-${{ env.SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/calendar-cf-types.json
+          retention-days: 7
+          if-no-files-found: error
       - name: Check Calendar native Worker and affected Web Tasks consumers
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
@@ -358,6 +401,8 @@ jobs:
       - name: Seal source and emitted artifact identity
         id: calendar-canonical-seal
         run: node scripts/ci/calendar-native-artifact.mjs seal apps/calendar "$SOURCE_SHA" apps/calendar/calendar-artifact.json
+      - name: Qualify Calendar cf Build Output without publication
+        run: node scripts/ci/calendar-cf-output.mjs emit apps/calendar "$SOURCE_SHA" "$RUNNER_TEMP/calendar-cf-output"
       - name: Exercise exact emitted Worker public routes
         id: calendar-runtime
         timeout-minutes: 3
@@ -373,6 +418,8 @@ jobs:
       - name: Exercise exact emitted offline asset
         working-directory: apps/calendar
         run: node --test src/runtime/offline-artifact.runtime.mjs
+      - name: Verify cf comparison after runtime checks
+        run: node scripts/ci/calendar-cf-output.mjs verify apps/calendar "$SOURCE_SHA" "$RUNNER_TEMP/calendar-cf-output"
       - name: Verify runtime checks left the sealed artifact unchanged
         run: |
           node scripts/ci/calendar-native-artifact.mjs verify apps/calendar "$SOURCE_SHA" apps/calendar/calendar-artifact.json
@@ -385,6 +432,16 @@ jobs:
         with:
           name: calendar-worker-${{ env.SOURCE_SHA }}
           path: ${{ runner.temp }}/calendar-worker.tar.gz
+          include-hidden-files: true
+          retention-days: 7
+          if-no-files-found: error
+      - name: Pack verified Calendar cf comparison output
+        run: tar -czf "$RUNNER_TEMP/calendar-cf-output.tar.gz" -C "$RUNNER_TEMP/calendar-cf-output" .
+      - name: Retain Calendar cf comparison output
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: calendar-cf-output-${{ env.SOURCE_SHA }}
+          path: ${{ runner.temp }}/calendar-cf-output.tar.gz
           include-hidden-files: true
           retention-days: 7
           if-no-files-found: error
@@ -448,10 +505,24 @@ jobs:
         with:
           name: calendar-worker-${{ env.SOURCE_SHA }}
           path: ${{ runner.temp }}/calendar-restore
+      - name: Download same-run cf comparison archive
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: calendar-cf-output-${{ env.SOURCE_SHA }}
+          path: ${{ runner.temp }}/calendar-cf-output-download
+      - name: Restore same-run cf comparison output
+        run: |
+          archive="$RUNNER_TEMP/calendar-cf-output-download/calendar-cf-output.tar.gz"
+          tar -tzf "$archive" > "$RUNNER_TEMP/calendar-cf-output.entries.txt"
+          python3 scripts/ci/calendar-cf-archive.py "$archive"
+          mkdir "$RUNNER_TEMP/calendar-cf-output-restored"
+          tar --no-same-owner -xzf "$archive" -C "$RUNNER_TEMP/calendar-cf-output-restored"
       - name: Restore same-run immutable artifact without rebuilding
         run: tar -xzf "$RUNNER_TEMP/calendar-restore/calendar-worker.tar.gz" -C apps/calendar
       - name: Verify exact source seal after relocation
         run: node scripts/ci/calendar-native-artifact.mjs verify apps/calendar "$SOURCE_SHA" apps/calendar/calendar-artifact.json
+      - name: Verify relocated cf comparison against the exact sealed source
+        run: node scripts/ci/calendar-cf-output.mjs verify apps/calendar "$SOURCE_SHA" "$RUNNER_TEMP/calendar-cf-output-restored"
       - name: Discover restored config
         id: output
         run: node scripts/ci/calendar-native-artifact.mjs config apps/calendar "$SOURCE_SHA"

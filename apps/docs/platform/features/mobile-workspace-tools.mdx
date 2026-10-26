@@ -653,6 +653,10 @@ fixed `https://calendar.tuturuuu.com` origin. Calendar validates the original
 session again and enforces workspace permissions. Incoming cookies, forwarding
 headers, and client-supplied gateway credentials are never relayed. Redirects and
 non-JSON upstream responses are rejected; mutations are never automatically retried.
+Authenticated requests preserve `x-tuturuuu-offline-download` and
+`x-tuturuuu-turnstile-token` when supplied, so Calendar applies the same bulk-read
+protection and verification flow. Ordinary reads stay unmarked. Regression coverage
+lives in `apps/infrastructure/src/lib/mobile-calendar/gateway.test.ts`.
 
 The server credential is stored as a versioned encrypted envelope in the root
 workspace's `workspace_secrets` row named `mobile_calendar_gateway:v1`. Its data
@@ -1070,6 +1074,99 @@ when the gateway and owning app both enforce the guard. Ordinary unmarked
 foreground reads do not consume these additional bulk-download budgets.
 The additional server download protection applies only to eligible GET/HEAD requests explicitly marked `x-tuturuuu-offline-download: 1`. Ordinary daily enterprise operations in Finance, Inventory, Contacts, Tasks and other apps always continue through existing authentication, authorization, MFA, abuse and API protections without accessing this additional guard's Redis clients, quotas or CAPTCHA, even when it is activated. This scope applies to the web API and every registered satellite proxy. `OFFLINE_DOWNLOAD_PROTECTION_ENABLED` defaults to inactive and activates only for the exact value `true`; while inactive, marked bulk downloads return 503 with `Retry-After: 30`. Omitting the bulk marker never bypasses baseline protections or grants access.
 
+### Guard rejection diagnostics
+
+Every rejection emitted by the shared API proxy/offline-download/account-assurance
+guards, including Infrastructure's early app-session failures, carries one fixed
+scalar `X-Tuturuuu-Guard-Reason`. These diagnostics apply across registered
+satellites and Web; guard decisions, statuses, limits and fail-closed behavior
+remain unchanged. The reason values are:
+
+| Reason | Existing rejection |
+| --- | --- |
+| `offline-download-inactive` | 503: marked bulk read while protection is inactive. |
+| `offline-download-unavailable` | 503: activated protection cannot complete (including missing distributed storage or an unavailable subject). |
+| `offline-download-rate-limited` | 429: bulk read budget exhausted. |
+| `offline-download-authentication-required` | 401: bulk read lacks a session subject. |
+| `offline-download-challenge-required` | 403: Turnstile verification missing or rejected. |
+| `auth-assurance-unavailable` | 503: account assurance cannot be verified. |
+| `auth-assurance-required` | 403: MFA verification required. |
+| `auth-assurance-unauthenticated` | 401: account credentials invalid. |
+| `app-session-refresh-unavailable` | 503: app-session refresh unavailable before the API guard. |
+| `app-session-unauthenticated` | 401: app-session authentication failed before the API guard. |
+| `proxy-ip-blocked` | 429: existing IP block. |
+| `proxy-rate-limited` | 429: route budget exhausted. |
+| `proxy-payload-too-large` | 413: payload exceeds its existing bound. |
+| `proxy-content-rejected` | 400: request content validation rejected the payload. |
+
+`X-Tuturuuu-Auth-Assurance`, retry and cookie behavior remain intact.
+`X-Tuturuuu-Guard-Request-Id` is a locally generated random correlation ID;
+request-provided IDs, identities and credentials are never copied into diagnostics.
+Both diagnostic headers are listed in `Access-Control-Expose-Headers`, retaining
+existing entries. This permits browser clients to read them when the existing
+origin policy allows the response; it does not grant new origins access. Native
+mobile clients can read response headers directly.
+
+Infrastructure returns these shared guard responses through its middleware,
+before the mobile Calendar gateway runs. Always emit one `console.warn` event
+named `Guard rejected request` per rejection, containing only the fixed reason,
+a fixed route template (for example `/api/v1/mobile-calendar/:path*`) and the
+same generated request ID. This provides runtime-log evidence without depending
+on whether a deployment's Vercel request-log view retains response headers.
+Infrastructure omits its older Calendar preference 429 warning when this shared
+diagnostic is present, keeping one warning per rejection.
+Do not log raw paths, queries, bodies, user/workspace IDs, cookies or tokens.
+A gateway-owned 503 without this header remains a distinct failure; absence of
+the header alone does not prove which downstream service failed.
+
+Regression coverage: `guard-rejection.test.ts`, `offline-download-guard.test.ts`,
+`required-mfa-runtime.test.ts`, `api-proxy-guard.test.ts`, auth's
+`mfa-failure.test.ts`, and Infrastructure's `proxy.test.ts` cover reason values,
+privacy, existing status/retry behavior and middleware header propagation.
+Mobile's existing 503 diagnostics do not yet record the reason; adding that
+client field is a follow-up and does not block server-side correlation.
+
+### Mobile download protection readiness
+
+The default production mobile Download all path needs protection readiness at
+Web, Finance, Inventory, Tasks and Infrastructure. A release/configuration owner
+must verify every serving replica and fallback, using exact deployment identities.
+
+| Serving app | Mobile path responsibility |
+| --- | --- |
+| Web | Shared exchange rates, tags, workspace members and satellite fallbacks. |
+| Finance | Wallets, checkpoints, transactions, categories and financial statistics. |
+| Inventory | Catalog, setup, sales, audit and inventory access reads. |
+| Tasks | Tasks, boards, labels, projects and initiatives; some supporting reads go to Web. |
+| Infrastructure | Inbound `/api/v1/mobile-calendar/` gateway reads. |
+| Calendar | Marked reads forwarded by Infrastructure, plus direct marked Calendar reads. |
+
+This serving map follows `core/config/api_origins.dart` in mobile, each app's
+`proxy.ts`, and `apps/infrastructure/src/lib/mobile-calendar/gateway.ts`.
+Infrastructure forwards the bulk marker and Turnstile token to Calendar. Both
+hops enforce the guard and need shared Redis clearance, so Calendar can reuse
+the verified clearance without submitting the one-use Turnstile token again.
+No checked-in workflow or application configuration assigns the activation flag.
+That establishes source wiring only: deployed flag values, Redis/Turnstile
+provisioning, mixed-replica consistency and authenticated canary results remain
+unknown until the release owner observes them. The Infrastructure gateway can
+also return a separate gateway-unavailable 503; status alone does not identify
+which service failed.
+
+Mobile presents one localized paused-download message after a 429 or 503 and
+stops the remaining modules instead of printing each server error. It preserves
+the selected modules, Wi-Fi consent and retry deadline. A service failure waits
+between 30 seconds and 15 minutes, using the bounded Retry-After delay.
+An explicit Download all or module retry tap starts a new plan immediately;
+automatic retries retain the cooldown. One explicit plan permits
+three service-failure attempts total, including the initial attempt; its retry
+budget and deadline survive restart. Reconnect, app resume and a scoped one-shot
+timer can resume that plan. After the limit, only an explicit retry starts a new
+bounded plan. Pause cancels the retained plan. Ordinary screen reads and saved
+data remain usable. Regression coverage is in
+`offline_preparation_service_pause_test.dart` and
+`offline_preparation_intent_test.dart`.
+
 Before enabling offline prefetch, provision `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` on every gateway and owning-app replica that can handle these reads. Verify distributed limiter operations, shared clearance storage, Turnstile configuration, and authenticated ordinary-read and marked-bulk canaries on the exact deployment. Enable the activation flag only after those checks pass, consistently across the request path; available Redis or elevated account trust never implicitly activates the feature. Keep the flag inactive during initial provisioning. Once activated, Redis/configuration/runtime failures still return 503; there is no automatic outage bypass or process-local substitute.
 
 When activated, the shared proxy enforces explicitly marked eligible bulk reads: 1,200/minute and 30,000/hour per IP, plus 600/minute and 12,000/hour per session when present. Gateway and owning-app enforcement may both count a marked request. Bulk requests require Turnstile clearance unless the server has verified elevated trust; clearance lasts 15 minutes and never bypasses authentication, permissions, MFA, blocks, or quotas. Ordinary unmarked requests do not spend these additional offline-download allowances.
@@ -1206,7 +1303,7 @@ personal membership fails closed; neither Overview nor Timeline follows the
 selected team or tracked-time sharing preference. An unreadable local snapshot
 does not block refresh. Regression coverage includes
 `profile_timeline_incremental_test.dart`, `profile_timeline_races_test.dart`,
-`profile_media_optimization_test.dart`, `profile_media_image_test.dart`, and the
+`core/media/profile_media_optimizer_test.dart`, `profile_media_image_test.dart`, and the
 first-class mobile-activity/banner-ticket API tests.
 
 Profile Overview and Timeline show personal data only and expose no team-sharing
