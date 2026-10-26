@@ -54,7 +54,7 @@ export function readExternalProjectEmailPolicy(
 export function writeExternalProjectEmailPolicy(
   settings: Json | null | undefined,
   policy: ExternalProjectEmailPolicy
-): Json {
+): NonNullable<Json> {
   return {
     ...asRecord(settings),
     [EXTERNAL_PROJECT_EMAIL_POLICY_KEY]:

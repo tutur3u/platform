@@ -1,7 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import { ObservabilityPanel } from '@/components/observability-panel';
 import { StudioPageShell } from '@/components/studio/studio-page-shell';
-import { resolveDisplayCurrency } from '@/lib/display-currency';
+import { resolveDisplayCurrency } from '@/lib/display-currency.server';
 import { getAiStudioPageContext } from '@/lib/page-context';
 
 export default async function CreditsPage({

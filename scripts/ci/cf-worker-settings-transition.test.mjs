@@ -87,13 +87,18 @@ const credentials = (api) => ({
 });
 
 test('cron-control records a reviewed transition from the live identity', () => {
-  assert.match(plan.transition.decision, /^CRON-LEDGER-1:/);
-  assert.deepEqual(plan.previous.crons, ['*/5 * * * *']);
-  assert.deepEqual(Object.keys(plan.previous.vars), ['WEB_ORIGIN']);
-  assert.deepEqual(plan.previous.durableObjects, {});
+  assert.match(plan.transition.decision, /^CRON-HISTORY-RETENTION:/);
+  assert.deepEqual(plan.transition.fields, ['vars']);
+  assert.deepEqual(plan.previous, {
+    ...plan.target,
+    vars: { ...plan.target.vars, CRON_CONTROL_ENABLED_JOBS: '' },
+  });
   assert.equal(plan.target.crons.length, 9);
   assert.deepEqual(plan.target.durableObjectClasses, { CronLedger: 'sqlite' });
-  assert.equal(plan.target.vars.CRON_CONTROL_ENABLED_JOBS, '');
+  assert.equal(
+    plan.target.vars.CRON_CONTROL_ENABLED_JOBS,
+    'database-cron-history-retention'
+  );
   assert.equal(plan.target.vars.CRON_CONTROL_WORKER_PROCESSORS, '');
 });
 
@@ -237,17 +242,29 @@ test('an already transitioned Worker is held to unchanged settings', async () =>
 
 test('a live Worker matching neither stage fails closed without leaking values', async () => {
   const halfway = liveWorker(plan.previous, {
-    schedules: { schedules: plan.target.crons.map((cron) => ({ cron })) },
+    settings: {
+      bindings: bindingsFor({
+        ...plan.previous,
+        vars: {
+          ...plan.previous.vars,
+          CRON_CONTROL_ENABLED_JOBS: 'unreviewed-job',
+        },
+      }),
+    },
   });
   await assert.rejects(
     captureBefore({ plan, ...credentials(halfway) }),
     (error) => {
       assert.match(error.message, /match no recorded transition stage/);
-      assert.match(error.message, /previous: cron schedules differ/);
       assert.match(
         error.message,
-        /target: Worker vars differ: CRON_CONTROL_ENABLED_JOBS, CRON_CONTROL_WORKER_PROCESSORS, INFRASTRUCTURE_ORIGIN, INVENTORY_ORIGIN, PAY_ORIGIN, TASKS_ORIGIN\)$/
+        /previous: Worker vars differ: CRON_CONTROL_ENABLED_JOBS/
       );
+      assert.match(
+        error.message,
+        /target: Worker vars differ: CRON_CONTROL_ENABLED_JOBS\)$/
+      );
+      assert.ok(!error.message.includes('unreviewed-job'));
       // No var value may leak: compare parsed hostnames, not substrings.
       const origins = new Set(
         Object.values({ ...plan.previous.vars, ...plan.target.vars })
@@ -268,7 +285,7 @@ for (const [label, binding, error] of [
   [
     'unreviewed binding type',
     { name: 'CACHE', type: 'kv_namespace', namespace_id: 'kv' },
-    /unreviewed kv_namespace binding <undeclared binding #12>$/,
+    /unreviewed kv_namespace binding <undeclared binding #13>$/,
   ],
   [
     'foreign Durable Object environment',
@@ -350,8 +367,8 @@ test('server-provided binding identifiers never reach output', async () => {
       }
     );
   assert.deepEqual(messages, [
-    'unreviewed <unknown type> binding <undeclared binding #12>',
-    'undeclared plain_text binding <undeclared binding #12>',
+    'unreviewed <unknown type> binding <undeclared binding #13>',
+    'undeclared plain_text binding <undeclared binding #13>',
     'unreviewed <unknown attribute> on plain_text binding WEB_ORIGIN',
     'Durable Object bindings differ',
   ]);
@@ -391,7 +408,7 @@ test('identifier-shaped credentials used as binding names are never printed', as
   assert.equal(outputs.length, 8);
   assert.ok(
     outputs.every((message) =>
-      /<undeclared binding #12>|<unknown attribute>/.test(message)
+      /<undeclared binding #13>|<unknown attribute>/.test(message)
     )
   );
 });
@@ -428,11 +445,11 @@ test('prototype-shaped binding names cannot bypass verification', async () => {
       );
     }
   assert.deepEqual(messages, [
-    'undeclared plain_text binding <undeclared binding #12>',
-    'undeclared durable_object_namespace binding <undeclared binding #12>',
-    'undeclared plain_text binding <undeclared binding #12>',
-    'undeclared durable_object_namespace binding <undeclared binding #12>',
-    'undeclared plain_text binding <undeclared binding #12>',
-    'undeclared durable_object_namespace binding <undeclared binding #12>',
+    'undeclared plain_text binding <undeclared binding #13>',
+    'undeclared durable_object_namespace binding <undeclared binding #13>',
+    'undeclared plain_text binding <undeclared binding #13>',
+    'undeclared durable_object_namespace binding <undeclared binding #13>',
+    'undeclared plain_text binding <undeclared binding #13>',
+    'undeclared durable_object_namespace binding <undeclared binding #13>',
   ]);
 });

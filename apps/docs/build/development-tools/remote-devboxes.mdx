@@ -241,6 +241,41 @@ coverage lives in `apps/database/supabase/tests/devbox-runner-trust-pools.sql`
 and `devbox-runner-drain-hardening.sql` (pgTAP), and the Infrastructure route
 and store tests.
 
+### Claim admission by reported execution mode
+
+Apply `20261026145000_devbox_claim_mode_admission.sql` after the current main
+migrations before enabling capability-report freshness admission.
+
+The database flag `private.devbox_control_settings.require_reported_execution_mode`
+defaults to off and must stay off pending agent and heartbeat-handler support.
+Judge always refuses a runner reporting `trusted`, even when this flag is off.
+With the flag on, `claim_next_devbox_run` additionally enforces trusted-work
+report freshness:
+
+- `run`, `build`, `serve` and `tunnel` claims require the runner to have
+  reported `executionMode: trusted` within the last 90 seconds;
+- Judge claims refuse every runner reporting `trusted`, even with a stale or
+  missing timestamp. `judge-only` and legacy agents without a mode remain eligible;
+- playground and maintenance claims are unchanged.
+
+Report freshness uses `capabilities_updated_at`, which a database trigger owns and stamps
+on inserts and every capabilities or timestamp update. A trusted report older than the
+window cannot admit trusted work; future timestamps are rejected. Identical
+reports and timestamp-only writes are restamped by the server. The agent's clock
+is never trusted.
+
+Agents report `executionMode` from `TUTURUUU_DEVBOX_EXECUTION_MODE`, and both the
+web heartbeat schema and the control Worker's capability allowlist accept it as a
+string enum. Before cutover, deploy agents that report it and verify a fresh
+trusted report from every run-enabled runner; keep the admission flag off until
+that verification.
+
+An authorized operator runs
+`private.set_devbox_require_reported_execution_mode(true)` through the gated
+production database path. It refuses while any run-enabled runner lacks a fresh
+`trusted` report and lists those runners; `p_force => true` overrides that guard
+deliberately; NULL does not override it, and NULL `p_enabled` is rejected. Disable the flag the same way with `false`. Regression coverage
+lives in `apps/database/supabase/tests/devbox-claim-mode-admission.sql`.
 ### Several runner identities on one host
 
 Keep each trust tier on its own runner identity: a separate runner token, OS
@@ -501,6 +536,47 @@ container receives a share of the host CPU and memory budget divided by that
 ceiling. A managed agent can dispatch independent Judge jobs concurrently within
 the configured process-wide sandbox budget. These settings do
 not limit the current trusted host commands, builds, previews, or tunnels.
+
+### Stale run reaper
+
+Runs left `running` or `cancel_requested` after an agent crash, watchdog exit,
+SIGKILL, or a claim response the agent never received would otherwise count
+against that capacity forever. `private.reap_stale_devbox_runs` finishes them:
+
+- `cancel_requested` unacknowledged for 10 minutes becomes `cancelled`;
+- a run past `started_at + timeout_seconds + 5 minutes` becomes `failed`;
+- a run started over 10 minutes ago on a missing or revoked runner, or one
+  without a heartbeat for 10 minutes, becomes `failed`.
+
+Reaped runs release an unused non-kept lease and record a `reaped` run event with
+the reason. Every claim reaps up to 25 of the claiming runner's stale runs
+before counting capacity, so both the Cloudflare control Worker and the web
+poll route free slots without a scheduler. Runs without a timeout on a healthy
+runner (long `serve` or `tunnel` jobs) are never reaped. Disabling a runner's
+heartbeat takes it offline, so its active runs are reaped after 10 minutes.
+
+**MANUAL sweep or on-claim self-reap only.** No trigger schedules a global
+sweep today. Runners that never claim again retain their stale runs until an
+operator invokes `POST /api/v1/infrastructure/devboxes/runs/reap-stale` on the
+Infrastructure app. It uses the same gate as runner drain and features: root
+workspace membership plus `manage_workspace_secrets` or `manage_workspace_roles`.
+Each call reaps at most 200 runs across all runners and returns
+`{ limit, reaped }`. There is deliberately no `/api/cron` route for it.
+
+Browser operators authenticate with the Infrastructure app-session audience
+`infra`. The manual POST requires an `Origin` matching the request URL exactly
+and rejects a supplied `Sec-Fetch-Site` other than `same-origin`. Forwarded hosts
+do not expand the allowed origin. CLI access bearer tokens retain the same
+root permission gate as runner drain and may omit `Origin`; a supplied origin
+must still match. A CLI token in a cookie does not receive that exemption.
+
+Adding a Cloudflare Cron Control trigger is a follow-up under the billable-work
+rules: bounded calls/retries, idempotent progress, terminal scheduling and a
+tested durable stop fence. Do not add a Vercel cron or pg_cron entry. Regression
+coverage lives in `apps/database/supabase/tests/devbox-stale-run-reaper.sql`
+and `apps/infrastructure/src/app/api/v1/infrastructure/devboxes/runs/reap-stale/`
+(`route.test.ts` and `access.test.ts`). The access tests exercise real signed
+app-session and CLI tokens with fixture permission and storage boundaries.
 
 ## Judge setup
 
@@ -1024,6 +1100,51 @@ without a final assertion report leaves the underlying cause unproven. Preserve
 allocated fixtures until successful final cleanup or independently verified
 resource absence, and use the next exact-source CI result for runtime evidence.
 
+### Composing devbox claim migrations
+
+Apply trust pools (`20261023100000`), drain hardening (`20261023103000`),
+mode admission (`20261026145000`), concurrent active-run index creation
+(`20261026145100`), index validation (`20261026145200`), then stale-run
+trigger/function installation (`20261026145300`). The index migration contains
+only `CREATE INDEX CONCURRENTLY`; run it outside a transaction. The next migration
+refuses a missing or invalid index before installing the reaper. If a concurrent
+build fails, inspect `pg_catalog.pg_index`, drop only the invalid
+`private.idx_devbox_runs_active_updated` index with `DROP INDEX CONCURRENTLY`
+outside a transaction, reapply that index file as an explicitly approved standalone
+SQL operation if its migration version was already recorded, then retry the guard
+and DDL. `CONCURRENTLY` still waits for long-running transactions. Inspect
+`pg_stat_progress_create_index` and `pg_stat_activity` to identify the build and
+blocking transaction. Cancel only the verified build PID with `pg_cancel_backend`,
+then inspect the index validity before the approved concurrent drop/rebuild. Do
+not cancel unrelated transactions or repair the migration ledger blindly. The
+following catalog guard fails loudly if the index is missing or invalid.
+
+The transactional claim/reaper migrations set `lock_timeout = 5s` and
+`statement_timeout = 30s`. A busy existing table aborts the migration rather than
+queuing fleet writes indefinitely; retry after the blocker clears. These settings
+must never be added to the single-statement concurrent-index migration.
+The final claim keeps the mode and drain admission predicates and lease move,
+and reaps at most 25 runs for the claiming runner after acquiring its advisory
+lock and before counting capacity. Run the trust-pool, drain-hardening, mode
+admission and stale-run reaper pgTAP suites against this combined sequence;
+validating each migration in isolation cannot prove the final claim behavior.
+
+Reaping releases a non-kept lease only after every queued, running or
+cancel-requested sibling finishes. Multiple runs may reuse one lease; a stale
+run cannot invalidate a healthy sibling's next claim. The reaper locks affected
+leases in ID order before checking siblings in a fresh statement snapshot;
+enqueue locks the lease for sharing and rejects inactive leases after waiting. The stale-run reaper
+pgTAP suite covers queued and running siblings and final-sibling release.
+
+For the lease race regression, run
+`supabase/fixtures/devbox-reaper-lease-race.sql` as `supabase_admin` inside the
+repository isolated local database before its lifecycle cleanup. It opens two
+committed sessions to prove each lease-lock winner. Normal Supabase pgTAP uses
+the restricted `postgres` role, which cannot use dblink with loopback trust
+authentication. Keep this privileged fixture inside a disposable local stack;
+its setup commits rows and its teardown removes only its actor's devbox rows.
+The lifecycle's full database cleanup removes the test account and its automatic
+workspace membership.
 
 ## Trusted command execution boundary
 
