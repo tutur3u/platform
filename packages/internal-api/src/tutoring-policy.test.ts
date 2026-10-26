@@ -41,6 +41,33 @@ describe('Easy Center tutoring shifts', () => {
     ).toBe('Shift 1');
   });
 
+  it('moves the untouched template to one weak-support session', () => {
+    expect(EASY_CENTER_TUTORING_POLICY.weakSupportSessions).toBe(1);
+    expect(
+      parseTutoringPolicy({
+        ...EASY_CENTER_TUTORING_POLICY,
+        weakSupportSessions: 2,
+      })?.weakSupportSessions
+    ).toBe(1);
+  });
+
+  it('keeps a staff-edited weak-support session count', () => {
+    // Editing the timing section saves the policy as custom.
+    expect(
+      parseTutoringPolicy({
+        ...EASY_CENTER_TUTORING_POLICY,
+        preset: 'custom',
+        weakSupportSessions: 2,
+      })?.weakSupportSessions
+    ).toBe(2);
+    expect(
+      parseTutoringPolicy({
+        ...EASY_CENTER_TUTORING_POLICY,
+        weakSupportSessions: 3,
+      })?.weakSupportSessions
+    ).toBe(3);
+  });
+
   it('upgrades untouched legacy shifts without overwriting staff changes', () => {
     const oldRules = EASY_CENTER_TUTORING_POLICY.timeRules
       .filter((rule) => rule.label !== 'Shift 8')
