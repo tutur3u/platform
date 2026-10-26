@@ -107,6 +107,8 @@ interface TopicAnnouncementsContextValue {
   actions: TopicAnnouncementActions;
   announcements: TopicAnnouncementRecord[];
   canSend: boolean;
+  /** ENABLE_TOPIC_TEACHER_ASSIGNMENTS: teacher assignment UI in the composer. */
+  teacherAssignmentsEnabled: boolean;
   contacts: TopicAnnouncementContact[];
   deliveredAnnouncements: TopicAnnouncementRecord[];
   filters: TopicAnnouncementFilters;
@@ -144,10 +146,12 @@ export function useTopicAnnouncements() {
 export function TopicAnnouncementsProvider({
   canSend,
   children,
+  teacherAssignmentsEnabled = false,
   wsId,
 }: {
   canSend: boolean;
   children: ReactNode;
+  teacherAssignmentsEnabled?: boolean;
   wsId: string;
 }) {
   const queryClient = useQueryClient();
@@ -281,6 +285,7 @@ export function TopicAnnouncementsProvider({
       }),
       announcements,
       canSend,
+      teacherAssignmentsEnabled,
       contacts,
       deliveredAnnouncements,
       filters: {
@@ -355,6 +360,7 @@ export function TopicAnnouncementsProvider({
       setStatusQuery,
       status,
       templates,
+      teacherAssignmentsEnabled,
       templatesQuery.isLoading,
       usersQuery.isLoading,
       workspaceUsers,

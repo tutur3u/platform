@@ -281,8 +281,14 @@ the notify route answers 404. Safety-only denials ship regardless of the flag:
 teachers cannot create topics or change fields beyond the topic content,
 `resend` is supervisor-only, attachments on sent or processing topics are
 fixed, the list search cannot widen a scope, and a send with a blank topic is
-refused. Regression coverage:
-`apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/topic-announcements/supervisor-flow-flag-off.test.ts`
+refused. In Contacts, the teacher picker, the notify checkbox, the course book
+and video fields, the topic-less draft allowance, the early composer reset, the
+"My topics" teacher view and its deadlines appear only with the flag on; with
+it off the composer sends the pre-feature payload. The sidebar entry keeps its
+`manage_users` rule; teachers open "My topics" from the `topic_assigned`
+notification. Regression coverage:
+`apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/topic-announcements/supervisor-flow-flag-off.test.ts`,
+the "teacher assignments off" cases in `announcement-form.test.tsx`,
 and the flag-off case in `send-admission.test.ts`.
 
 - **Supervisor scope is unchanged.** `manage_users` reads and writes every topic

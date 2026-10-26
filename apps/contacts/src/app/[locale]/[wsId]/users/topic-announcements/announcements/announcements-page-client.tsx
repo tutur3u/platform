@@ -11,6 +11,7 @@ export function TopicAnnouncementsAnnouncementsPageClient() {
     actions,
     announcements,
     canSend,
+    teacherAssignmentsEnabled,
     contacts,
     filters,
     groups,
@@ -31,6 +32,7 @@ export function TopicAnnouncementsAnnouncementsPageClient() {
       <AnnouncementsPanel
         announcements={announcements}
         canSend={canSend}
+        teacherAssignmentsEnabled={teacherAssignmentsEnabled}
         contacts={contacts}
         groups={groups}
         isCreating={pending.createAnnouncement}
