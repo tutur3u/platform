@@ -32,6 +32,8 @@ extension _TaskRowAssign on _TaskBoardDetailPageViewState {
             ),
         ],
         initialSelectedIds: current,
+        applyLabel: context.l10n.commonSave,
+        clearLabel: context.l10n.commonClear,
       ),
     );
     if (selected == null || !context.mounted) return;

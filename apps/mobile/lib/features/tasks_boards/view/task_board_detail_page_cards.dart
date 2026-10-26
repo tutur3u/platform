@@ -26,7 +26,14 @@ class _BoardTaskTile extends StatelessWidget {
   final VoidCallback onOpenMenu;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => Semantics(
+    onLongPressHint: isBulkSelectMode
+        ? context.l10n.taskBoardDetailSelectTask
+        : context.l10n.taskBoardDetailTaskActions,
+    child: _buildCard(context),
+  );
+
+  Widget _buildCard(BuildContext context) {
     final theme = shad.Theme.of(context);
     final title = task.name?.trim().isNotEmpty == true
         ? task.name!.trim()

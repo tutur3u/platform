@@ -1,10 +1,13 @@
+import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/models/task_board_detail.dart';
 import 'package:mobile/data/models/task_board_task.dart';
+import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/models/workspace_user_option.dart';
 import 'package:mobile/data/sources/api_exception.dart';
 import 'package:mobile/features/tasks_boards/cubit/task_board_detail_cubit.dart';
+import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 
 import 'task_board_row_actions_fixture.dart';
 
@@ -168,17 +171,19 @@ void main() {
   ) async {
     await pumpKanban(tester);
 
+    final cubit = readRowActionsCubit(tester);
     await openMenu(tester, 'Alpha task');
     await tester.tap(find.byKey(const ValueKey('task-row-menu-assign')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Lan').last);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Apply filters'));
+    await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
 
     expect(repository.assigneeUpdates, [
       ['user-1'],
     ]);
+    expect(taskIn(cubit, 'task-1').assigneeIds, ['user-1']);
     await drainToasts(tester);
   });
 
@@ -195,11 +200,33 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Lan').last);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Apply filters'));
+    await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
 
     expect(find.text('Assign rejected'), findsOneWidget);
     expect(taskIn(cubit, 'task-1').assigneeIds, isEmpty);
     await drainToasts(tester);
+  });
+
+  testWidgets('a personal workspace menu offers no Assignees action', (
+    tester,
+  ) async {
+    const personal = Workspace(id: 'ws-1', name: 'Personal', personal: true);
+    workspaceCubit = RowActionsWorkspaceCubit();
+    whenListen(
+      workspaceCubit,
+      const Stream<WorkspaceState>.empty(),
+      initialState: const WorkspaceState(
+        status: WorkspaceStatus.loaded,
+        currentWorkspace: personal,
+        workspaces: [personal],
+      ),
+    );
+    await pumpKanban(tester);
+
+    await openMenu(tester, 'Alpha task');
+
+    expect(find.text('Move task'), findsOneWidget);
+    expect(find.byKey(const ValueKey('task-row-menu-assign')), findsNothing);
   });
 }
