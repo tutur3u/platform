@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  CLASS_TOPIC,
   CONTACT_ID,
   createTopicWorkspaceFixture,
   FOREIGN_WU,
   GROUP_TOPIC,
-  OTHER_GROUP,
   OTHER_TEACHER_WU,
   OTHER_TOPIC,
   OWN_TOPIC,
@@ -52,6 +52,12 @@ const { notifyTopicAnnouncementTeachers } = await import(
 );
 
 const params = { params: Promise.resolve({ wsId: WS_ID }) };
+
+function row(id: string) {
+  return mocks.admin.tables.topic_announcements.find(
+    (announcement: { id: string }) => announcement.id === id
+  );
+}
 
 function grant(...permissions: string[]) {
   mocks.granted = new Set(permissions);
@@ -106,35 +112,63 @@ describe('create with teacher fields', () => {
     expect(response.status).toBe(400);
   });
 
-  it('assigns a teacher-created topic to that teacher', async () => {
-    grant('create_user_groups_posts');
-    const response = await create({ groupId: TAUGHT_GROUP, topic: 'Mine' });
-    expect(response.status).toBe(201);
-    const { data } = await response.json();
-    expect(data.teacher_workspace_user_id).toBe(TEACHER_WU);
-  });
-
   it.each([
-    { teacherWorkspaceUserId: OTHER_TEACHER_WU },
-    { groupId: OTHER_GROUP },
-  ])(
-    'forbids a teacher create that escapes their assignment %j',
-    async (body) => {
-      grant('create_user_groups_posts');
-      expect((await create(body)).status).toBe(403);
-    }
-  );
+    ['create_user_groups_posts'],
+    ['create_user_groups_posts', 'update_user_groups_posts'],
+  ])('does not let a teacher create topics (%s)', async (...permissions) => {
+    grant(...permissions);
+    const before = mocks.admin.tables.topic_announcements.length;
+    const response = await create({ groupId: TAUGHT_GROUP, topic: 'Mine' });
+    expect(response.status).toBe(403);
+    expect(mocks.admin.tables.topic_announcements).toHaveLength(before);
+    expect(mocks.admin.tables.topic_announcement_recipients).toEqual([]);
+  });
 });
 
 describe('teacher-scoped list', () => {
-  it('limits teachers to their own and their classes topics', async () => {
-    grant('update_user_groups_posts');
-    const response = await LIST(new Request('http://localhost'), params);
+  const listIds = async (url = 'http://localhost') => {
+    const response = await LIST(new Request(url), params);
     expect(response.status).toBe(200);
-    expect(mocks.admin.orFilters).toContainEqual({
-      filter: `teacher_workspace_user_id.eq.${TEACHER_WU},group_id.in.(${TAUGHT_GROUP})`,
-      table: 'topic_announcements',
-    });
+    const { data } = await response.json();
+    return (data as { id: string }[]).map((item) => item.id).sort();
+  };
+
+  it('limits teachers to their own topics and unassigned class topics', async () => {
+    grant('update_user_groups_posts');
+    expect(await listIds()).toEqual([OWN_TOPIC, CLASS_TOPIC].sort());
+    expect(mocks.admin.orFilters).toEqual([
+      {
+        filter: `teacher_workspace_user_id.eq.${TEACHER_WU},and(teacher_workspace_user_id.is.null,group_id.in.(${TAUGHT_GROUP}))`,
+        mode: 'select',
+        table: 'topic_announcements',
+      },
+    ]);
+  });
+
+  it('sends the teacher scope and the search as one AND-ed filter', async () => {
+    grant('update_user_groups_posts');
+    row(OTHER_TOPIC).title = 'Unit 9';
+    row(OWN_TOPIC).title = 'Unit 9';
+    expect(await listIds('http://localhost?q=Unit%209')).toEqual([OWN_TOPIC]);
+    expect(mocks.admin.orFilters).toEqual([
+      {
+        filter: `and(or(teacher_workspace_user_id.eq.${TEACHER_WU},and(teacher_workspace_user_id.is.null,group_id.in.(${TAUGHT_GROUP}))),or(title.ilike."%Unit 9%",topic.ilike."%Unit 9%",class_label.ilike."%Unit 9%"))`,
+        mode: 'select',
+        table: 'topic_announcements',
+      },
+    ]);
+  });
+
+  it.each([
+    'x%),or(id.neq.0',
+    'x%",id.neq."0',
+    `a),teacher_workspace_user_id.eq.${OTHER_TEACHER_WU},(b`,
+    '%',
+  ])('keeps a hostile search %j inside the teacher scope', async (q) => {
+    grant('update_user_groups_posts');
+    const ids = await listIds(`http://localhost?q=${encodeURIComponent(q)}`);
+    for (const id of ids) expect([OWN_TOPIC, CLASS_TOPIC]).toContain(id);
+    expect(mocks.admin.orFilters).toHaveLength(1);
   });
 
   it('does not filter the supervisor list', async () => {

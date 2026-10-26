@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import {
-  buildTopicAnnouncementTeacherFilter,
+  buildTopicAnnouncementListOrFilter,
   type TopicAnnouncementAccessOptions,
 } from './access';
 import { normalizeTopicAnnouncementAttachmentFileName } from './attachments';
@@ -63,18 +63,12 @@ export function createTopicAnnouncementListHandler(
       .select('*', { count: 'exact' })
       .eq('ws_id', normalizedWsId);
 
-    if (scope?.kind === 'teacher') {
-      query = query.or(buildTopicAnnouncementTeacherFilter(scope));
-    }
+    const scopeAndSearch = buildTopicAnnouncementListOrFilter({ q, scope });
+    if (scopeAndSearch) query = query.or(scopeAndSearch);
     if (status === 'active') {
       query = query.neq('status', 'cancelled');
     } else if (status !== 'all') {
       query = query.eq('status', status);
-    }
-    if (q) {
-      query = query.or(
-        `title.ilike.%${q}%,topic.ilike.%${q}%,class_label.ilike.%${q}%`
-      );
     }
     if (contactId) {
       const { data: recipientRows, error: recipientError } = await sbAdmin

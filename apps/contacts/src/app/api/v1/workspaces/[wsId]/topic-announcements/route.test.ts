@@ -233,7 +233,7 @@ describe('actual topic handlers at Contacts-only session boundary', () => {
     expect(fixture.queries).toContainEqual([
       'topic_announcements',
       'or',
-      `teacher_workspace_user_id.eq.${TEACHER_WORKSPACE_USER_ID},group_id.in.(${TAUGHT_GROUP_ID})`,
+      `teacher_workspace_user_id.eq.${TEACHER_WORKSPACE_USER_ID},and(teacher_workspace_user_id.is.null,group_id.in.(${TAUGHT_GROUP_ID}))`,
     ]);
   });
   it('does not filter the supervisor list', async () => {

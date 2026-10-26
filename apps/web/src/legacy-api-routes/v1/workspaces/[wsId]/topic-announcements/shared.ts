@@ -7,6 +7,7 @@ import {
 } from '@tuturuuu/users-core/routes/topic-announcements';
 
 export {
+  buildTopicAnnouncementTeacherFilter,
   isTopicAnnouncementAssignedToScope,
   isTopicAnnouncementTopicReady,
   loadScopedTopicAnnouncement,
