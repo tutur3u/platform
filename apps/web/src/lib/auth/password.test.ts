@@ -325,4 +325,77 @@ describe('passwordLogin', () => {
       undefined
     );
   });
+
+  describe('mobile session tokens', () => {
+    const mobileInput = {
+      client: 'mobile' as const,
+      email: 'person@example.com',
+      password: 'correct-horse',
+    };
+
+    it('returns the token pair to the native app, which sends no browser headers', async () => {
+      const { passwordLogin } = await import('./password');
+
+      const result = await passwordLogin(mobileInput, {
+        client: 'mobile',
+        endpoint: '/api/v1/auth/password-login',
+        headers: {
+          accept: 'application/json',
+          'content-type': 'application/json',
+          'user-agent': 'Dart/3.9 (dart:io)',
+        },
+      });
+
+      expect(result.status).toBe(200);
+      expect(result.body).toMatchObject({
+        session: { access_token: 'access', refresh_token: 'refresh' },
+      });
+    });
+
+    it.each([
+      ['Headers', new Headers({ Origin: 'https://tuturuuu.com' })],
+      ['a Map', new Map([['Sec-Fetch-Mode', 'cors']])],
+      ['a record', { 'Sec-Fetch-Site': 'same-site' }],
+    ])(
+      'refuses browser requests passed as %s before checking the password',
+      async (_label, browserHeaders) => {
+        const { passwordLogin } = await import('./password');
+
+        const result = await passwordLogin(mobileInput, {
+          client: 'mobile',
+          endpoint: '/api/v1/auth/mobile/password-login',
+          headers: browserHeaders,
+        });
+
+        expect(result).toEqual({
+          body: {
+            code: 'MOBILE_SESSION_BROWSER_REFUSED',
+            error: 'Mobile sessions are not available to browser requests',
+          },
+          status: 403,
+        });
+        expect(mocks.browserSignInWithPassword).not.toHaveBeenCalled();
+        expect(mocks.checkPasswordLoginLimit).not.toHaveBeenCalled();
+        expect(mocks.recordPasswordLoginFailure).not.toHaveBeenCalled();
+      }
+    );
+
+    it('still signs browser web-client logins into the cookie session', async () => {
+      const { passwordLogin } = await import('./password');
+
+      const result = await passwordLogin(
+        { ...mobileInput, client: 'web' },
+        {
+          client: 'web',
+          endpoint: '/api/v1/auth/password-login',
+          headers: new Headers({
+            origin: 'https://tuturuuu.com',
+            'sec-fetch-site': 'same-origin',
+          }),
+        }
+      );
+
+      expect(result).toEqual({ body: { success: true }, status: 200 });
+    });
+  });
 });

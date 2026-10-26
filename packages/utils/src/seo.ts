@@ -1,16 +1,14 @@
 import policy from './seo-policy.json';
+import {
+  escapeSeoRegex as escapeRegex,
+  PRIVATE_PATH_PATTERN,
+  PRIVATE_ROBOTS_HEADER,
+  SEO_LOCALE_PREFIX,
+} from './seo-robots';
 
+export { PRIVATE_ROBOTS_HEADER };
 export type SeoApp = keyof typeof policy;
 export const APP_SEO_POLICY = policy;
-export const PRIVATE_ROBOTS_HEADER = 'noindex, nofollow, nosnippet';
-
-// These remain private even where a public dynamic slug pattern could match.
-const PRIVATE_PATH_PATTERN =
-  '(?:api|auth|login|logout|signup|verify-token|auth-error|add-account|dashboard|onboarding|invite|shared|share|embed|orders|cart|checkout|account|no-access|access-denied|not-whitelisted|not-available|-)(?:/|$)';
-
-function escapeRegex(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
 
 /** Next path-to-regexp fragments; every public pattern must match a whole URL. */
 export function createSeoHeaders(
@@ -29,7 +27,7 @@ export function createSeoHeaders(
     env.NODE_ENV === 'development' ||
     env.TUTURUUU_NOINDEX === '1';
   const publicPattern = `(?:${publicPatterns.join('|')})/?$`;
-  const localePrefix = '(?:(?:en|vi)/)?';
+  const localePrefix = SEO_LOCALE_PREFIX;
 
   return [
     {
