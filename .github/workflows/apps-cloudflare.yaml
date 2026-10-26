@@ -224,7 +224,7 @@ jobs:
           } > "$evidence/source-receipt.txt"
       - name: Retain generated Apps route tree evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: apps-route-tree-${{ env.APPS_SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/apps-route-tree-${{ env.APPS_SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}/
@@ -252,7 +252,7 @@ jobs:
         run: node scripts/ci/native-emitted-config-receipt.mjs apps/apps "$APPS_SOURCE_SHA" "$RUNNER_TEMP/native-emitted-config-apps.json"
       - name: Retain apps diagnostic config receipt
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: apps-native-config-receipt-${{ env.APPS_SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/native-emitted-config-apps.json
@@ -308,7 +308,7 @@ jobs:
         run: |
           python3 scripts/ci/apps-native-artifact.py verify apps/apps --receipt "$RUNNER_TEMP/apps-native-artifact.json"
           python3 scripts/ci/apps-native-artifact.py pack apps/apps --receipt "$RUNNER_TEMP/apps-native-artifact.json" --archive "$RUNNER_TEMP/apps-native.tar.gz"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: apps-native-${{ env.APPS_SOURCE_SHA }}
           path: ${{ runner.temp }}/apps-native.tar.gz
@@ -328,7 +328,7 @@ jobs:
           sha256sum "$RUNNER_TEMP/apps-debug-sealed-source.tar.gz" "$RUNNER_TEMP/apps-native-artifact.json" >> "$RUNNER_TEMP/apps-debug-sealed-source.txt"
       - name: Retain failed-job sealed source for debugging
         if: ${{ failure() && steps.apps-canonical-seal.outcome == 'success' && steps.apps-debug-pack.outcome == 'success' }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: apps-debug-sealed-source-${{ env.APPS_SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
@@ -345,7 +345,7 @@ jobs:
           fi
       - name: Retain Apps finite public SDK evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: apps-native-evidence-validate-${{ env.APPS_SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/apps-native-evidence.tar.gz
@@ -417,7 +417,7 @@ jobs:
           fi
       - name: Retain Apps finite public SDK evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: apps-native-evidence-restored-${{ env.APPS_SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/apps-native-evidence.tar.gz
