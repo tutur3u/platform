@@ -22,7 +22,7 @@ extension _DashboardCustomization on _DashboardViewState {
     Workspace workspace,
     TaskListState taskState,
     CalendarState calendarState,
-    List<UserTask> focusTasks,
+    ({List<UserTask> today, List<UserTask> upNext}) tasks,
     List<CalendarEvent> upcomingEvents,
   ) {
     final user = context.read<AuthCubit>().state.user;
@@ -31,7 +31,11 @@ extension _DashboardCustomization on _DashboardViewState {
     final cards = <String, Widget>{
       'tasks': StaggeredEntrance(
         replayKey: widget.replayToken,
-        child: _AssignedTasksBlock(state: taskState, tasks: focusTasks),
+        child: _TaskSectionsBlock(
+          state: taskState,
+          today: tasks.today,
+          upNext: tasks.upNext,
+        ),
       ),
       'calendar': StaggeredEntrance(
         replayKey: widget.replayToken,
@@ -180,8 +184,8 @@ class _HomeWidgetEditor extends StatelessWidget {
     return (module.label(context.l10n), module.icon);
   }
   return switch (id) {
-    'tasks' => (context.l10n.dashboardAssignedToMe, Icons.checklist_rounded),
-    'calendar' => (context.l10n.dashboardUpcomingEvents, Icons.event_rounded),
+    'tasks' => (context.l10n.homeWidgetTasks, Icons.checklist_rounded),
+    'calendar' => (context.l10n.homeSectionCalendar, Icons.event_rounded),
     _ => (context.l10n.dashboardTodayTitle, Icons.auto_graph_rounded),
   };
 }

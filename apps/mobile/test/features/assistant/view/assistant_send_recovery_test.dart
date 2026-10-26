@@ -121,7 +121,8 @@ void main() {
       expect(find.text('Start a new chat'), findsNothing);
       expect(h.repository.api.creates, 1);
       expect(h.repository.chats.sends, 1);
-      expect(draft.text, "Today's focus");
+      // The composer clears on Send, before the acknowledgment arrives.
+      expect(draft.text, isEmpty);
       acknowledgment.complete();
       await tester.pumpAndSettle();
       expect(draft.text, isEmpty);

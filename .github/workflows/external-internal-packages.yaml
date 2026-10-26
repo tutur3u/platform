@@ -66,17 +66,6 @@ jobs:
       - name: Install dependencies
         run: bash scripts/ci/run-with-backoff.sh bun install
 
-      - name: Install Vercel CLI
-        if: env.IS_FORK_PULL_REQUEST != 'true'
-        run: bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0
-
-      - name: Pull Vercel Environment Information
-        if: env.IS_FORK_PULL_REQUEST != 'true'
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PLATFORM_PROJECT_ID }}
-        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
-
       - name: Build Project Artifacts (Fork)
         if: env.IS_FORK_PULL_REQUEST == 'true'
         env:
@@ -94,7 +83,7 @@ jobs:
           NODE_OPTIONS: --max-old-space-size=8192
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
-          SUPABASE_SECRET_KEY: ${{ secrets.PRODUCTION_SUPABASE_SECRET_KEY }}
+          SUPABASE_SECRET_KEY: sb_secret_ci_placeholder
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
           command: bun turbo:local run build --concurrency=2 --filter=@tuturuuu/external

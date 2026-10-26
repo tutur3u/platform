@@ -1926,3 +1926,109 @@ content/dock padding are unchanged. Actual-shell regression coverage in
 `settings_secrets_shell_checks.dart` checks English/Vietnamese, narrow layouts and
 large text, including denial visibility and dock Back. This scoped correction
 does not establish the cause of the reported Assistant Settings TestFlight issue.
+
+### Task board row gestures
+
+In the board **List** view, task rows take native swipe and long-press
+gestures. The same behavior applies on Android and iOS.
+
+- **Swipe toward the end edge** (right in left-to-right locales) completes an
+  open task or reopens a done one, through the existing move-to-status
+  mutation. Rows in closed lists offer no completion swipe.
+- **Swipe toward the start edge** reveals **Schedule** (due-date picker; the
+  due date lands at the end of the chosen local day), **Priority** (single
+  choice) and **Delete** (the existing asynchronous confirmation, which stays
+  busy until the mutation finishes).
+- **Long press** opens the row's context menu: Complete or Reopen, Start
+  focus, Schedule, Change priority, Move task, Select task, Open full details
+  and Delete task.
+- **Start focus** starts a device Pomodoro focus phase for the task: an
+  ordinary time-tracking session linked to the task, with a countdown and a
+  phase-end notification (see the Timer page). Starting a
+  session closes any running one on the server, so a running or paused timer
+  for another task is replaced only after confirmation. A paused one is stopped
+  first, which closes its break. If the new start then fails, the paused work
+  is resumed and paused again, so it looks as it did. If the pause still
+  fails after one retry, the toast says the timer is running. Before saying
+  so, the app re-reads the paused and running sessions, because a lost pause
+  response may hide a pause that succeeded. It reports what it finds (paused,
+  running, or that it could not confirm). Only when nothing could be resumed
+  does the toast say the paused timer ended. All of these offer **Open
+  timer**. A timer running
+  for this task is kept, and one paused on this task is resumed. The success
+  toast offers **Open timer**.
+- **Failures** roll the row back, then show the server's error as a toast:
+  a failed complete returns the task to its list, and a failed priority or due
+  date change restores the previous value.
+  **Select task** enters bulk selection. Earlier, a long press entered bulk
+  selection directly. In bulk selection, swipes are off and a long press
+  toggles the row, as before.
+- Tapping a row still opens its quick actions. Every swipe action is also
+  exposed as a screen-reader action.
+
+Kanban cards keep their earlier long-press selection behavior; this decision
+covers List view rows only. Regression coverage:
+`task_board_row_actions_test.dart` (mutations, menu, bulk mode, 320dp at 2x
+text), `task_board_row_actions_flows_test.dart` (failure rollback and error
+toasts, the Schedule picker, Start focus), `task_board_bulk_selection_test.dart`
+and `app_swipe_actions_test.dart` (thresholds, the fling minimum, reveal,
+right-to-left, semantics, enlarged text). Widget tests do
+not establish gesture feel on devices.
+
+### Root tabs and dock search
+
+The floating dock's five root tabs are named **Home**, **Apps**, **Mira**,
+**Inbox** and **You** (Vietnamese: Trang chủ, Ứng dụng, Mira, Hộp thư, Bạn).
+The names are the tabs' accessible labels and the shell titles of their root
+pages. The dock stays icon-only (no captions), and Back stays on the dock;
+there is no top-left back button.
+
+The Inbox tab is the dock's bell-icon tab, formerly labelled Notifications;
+it opens the same notifications inbox. "Notifications" now survives only as
+the item in the shell's overflow menu, which opens that same page. Whether
+Inbox should also lose the bell icon is still an open decision.
+
+Home, Inbox and You show a **Search** dock action that opens Apps with its
+search field focused (`AppTabCubit.openWithSearch`). Apps keeps its own search
+action, and Mira's dock belongs to its composer.
+
+**Mira** opens on its starter suggestions when no conversation is shown:
+Today's focus, Day plan, Backlog cleanup and Team update. They are one grouped
+card of icon rows (title and caption, no shadows or gradients), and a tap puts
+the prompt in the composer, as before. A Recent conversations section is
+deferred until the open Mira chat PRs that own the Assistant page land; the
+history sheet remains the way to reopen a conversation.
+
+**You** shows the identity card, then **Focus Time**: totals for today, this
+week and this month, plus the recent-activity chart, counting all tracked
+time linked to a task (`taskLinked`; see the Timer page). Its **See all**
+opens the Timer statistics, which count all tracked time. Below that are
+rows for **Workspaces** (with the workspace count, opening the workspace
+picker), **Timeline** (switching the page to Timeline) and **Settings**.
+
+Regression coverage: `shell_viewport_checks.dart` (icon-only dock and labels
+across phone, tablet and rail sizes), `apps_search_submit_test.dart` (Home
+search opens Apps search), `assistant_starter_prompts_test.dart` (grouped rows
+at phone and tablet sizes, 2x text, English and Vietnamese),
+`profile_you_rows_test.dart`, `profile_render_cases.dart` and
+`profile_overview_shell_test.dart` (Focus Time beside identity on desktop).
+
+### Task detail fields
+
+Task details show the task's fields as one grouped card of icon rows, in this
+order:
+
+1. **List**, always shown;
+2. **Due**;
+3. **Start**;
+4. **Priority**;
+5. **Estimation**;
+6. **Assignees**;
+7. **Labels**;
+8. **Projects**.
+
+Fields from Due onwards appear only when set. Values sit at the trailing edge;
+assignee, label and project chips wrap under the field name, so enlarged text
+never clips them. The description accordion stays above the card, and editing
+still happens in the task editor. Back stays on the dock.
+

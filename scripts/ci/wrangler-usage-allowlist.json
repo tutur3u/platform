@@ -168,6 +168,16 @@
       },
       "digest": "2cd0420e38464d156182a148232c06db5e8606cdac916911bff2025aee6aa556"
     },
+    ".github/workflows/wave1-native-production.yaml": {
+      "lines": 6,
+      "uses": 6,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6939",
+        "reason": "Operator-authorized route-free Calendar preparation reuses the existing prebundled publisher and SDK dry-run. Count its workflow metrics/log controls, production regression fixtures, and explicit log suppression. Independent source/security acceptance remains required; production stays held."
+      },
+      "digest": "8e4f714148cf8bd98d38bbc8d08b48176c8acb7a99f4aab48bd1f94227f3574e"
+    },
     ".github/workflows/wave1-native-publish.yaml": {
       "lines": 2,
       "uses": 2,
@@ -1938,6 +1948,16 @@
       },
       "digest": "21483c0dcd7291dffcd7a7277ef38f24f7b492b9ac4aba4375ae365be36dde03"
     },
+    "scripts/ci/wave1-native-production.test.mjs": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6939",
+        "reason": "Operator-authorized route-free Calendar preparation reuses the existing prebundled publisher and SDK dry-run. Count its workflow metrics/log controls, production regression fixtures, and explicit log suppression. Independent source/security acceptance remains required; production stays held."
+      },
+      "digest": "dc3b92a5cfc19f7b692e11515f6504e287baf589085d732ce1ce3814e192d3f6"
+    },
     "scripts/ci/wave1-native-publication.test.js": {
       "lines": 2,
       "uses": 2,
@@ -1949,14 +1969,14 @@
       "digest": "337188d6eb8a642ffba63d4c5903066f6a151b1155140045d7f0c235df8500d3"
     },
     "scripts/ci/wave1-native-publish.mjs": {
-      "lines": 5,
-      "uses": 5,
+      "lines": 6,
+      "uses": 6,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+        "decision": "https://github.com/tutur3u/platform/pull/6939",
+        "reason": "Operator-authorized route-free Calendar preparation reuses the existing prebundled publisher and SDK dry-run. Count its workflow metrics/log controls, production regression fixtures, and explicit log suppression. Independent source/security acceptance remains required; production stays held."
       },
-      "digest": "f676a7e1da9180851870db73a8fd4457f17647bc4964dd5833e9576ffa29acd6"
+      "digest": "f60e3c6025b5fd947f602bb001f0532d9a8234dd92ee543daffc4836f7c58789"
     },
     "scripts/ci/wave1-native-publishers.test.js": {
       "lines": 4,

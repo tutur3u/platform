@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout_tokens.dart';
 import 'package:mobile/core/ui/tokens/app_color_tokens.dart';
+import 'package:mobile/core/ui/tokens/app_interface_tokens.dart';
 import 'package:mobile/core/ui/tokens/app_typography.dart';
 
 /// Elevation recipes. Mobile surfaces are mostly flat; shadows are reserved
@@ -47,14 +48,16 @@ abstract final class AppMotion {
 /// extension, falling back to Classic for the ambient brightness.
 @immutable
 class AppTokens {
-  const AppTokens._(this.colorScheme, this.typography);
+  const AppTokens._(this.colorScheme, this.typography, this.interface);
 
   factory AppTokens.of(BuildContext context) {
     final theme = Theme.of(context);
     final colors =
         theme.extension<AppColorTokens>() ??
         AppColorTokens.fallback(theme.brightness);
-    return AppTokens._(colors, _typography);
+    final interface =
+        theme.extension<AppInterfaceTokens>() ?? AppInterfaceTokens.standard;
+    return AppTokens._(colors, _typography, interface);
   }
 
   static const _typography = AppTypography();
@@ -62,14 +65,18 @@ class AppTokens {
   final AppColorTokens colorScheme;
   final AppTypography typography;
 
+  /// Style, density and corner choices from Appearance.
+  final AppInterfaceTokens interface;
+
   Brightness get brightness => colorScheme.brightness;
   bool get isDark => colorScheme.isDark;
 
-  // Radius aliases match the legacy shadcn getter names.
-  double get radiusSm => AppRadius.xs;
-  double get radiusMd => 10;
-  double get radiusLg => AppRadius.sm;
-  double get radiusXl => AppRadius.md;
+  // Radius aliases match the legacy shadcn getter names and follow the
+  // Appearance corner style.
+  double get radiusSm => interface.radius(AppRadius.xs);
+  double get radiusMd => interface.radius(10);
+  double get radiusLg => interface.radius(AppRadius.sm);
+  double get radiusXl => interface.radius(AppRadius.md);
   BorderRadius get borderRadiusSm => BorderRadius.circular(radiusSm);
   BorderRadius get borderRadiusMd => BorderRadius.circular(radiusMd);
   BorderRadius get borderRadiusLg => BorderRadius.circular(radiusLg);

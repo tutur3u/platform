@@ -118,13 +118,15 @@ void main() {
       }
       expect(repository.starts, 1);
       expect(repository.sent!.last.replyToMessageId, _first);
-      expect(controller.text, 'Reply draft');
+      // Send empties the composer before the ACK; the held reply stays sent.
+      expect(controller.text, isEmpty);
       expect(h.chat.state.replyTarget, isNull);
       if (changed) expect(h.chat.setReplyTarget(_second), isTrue);
       repository.acknowledge();
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
-      expect(controller.text, changed ? 'Reply draft' : isEmpty);
+      expect(controller.text, isEmpty);
+      // A reply target chosen while the send was held survives its ACK.
       expect(h.chat.state.replyTarget?.id, changed ? _second : isNull);
       expect(repository.starts, 1);
     });

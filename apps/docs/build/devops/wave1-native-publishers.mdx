@@ -8,9 +8,10 @@ description: "Owner-provisioned staging, sealed native publication profiles, pro
 Land the production hold before these publisher changes. Meet, Calendar, Mail and
 Apps production publication remains **held for wave-1 cutover**. The production
 planner holds in `tuturuuu.ci.ts` remain authoritative. Native Calendar/Mail/Apps
-jobs additionally report the source hold in `scripts/ci/wave1-native-profiles.json`;
-removing either hold alone does not authorize publication. A later explicit cutover
-PR must reconcile both policies and its exact production promotion range.
+jobs retain the fallback hold diagnostic in `scripts/ci/wave1-native-profiles.json`.
+The validated per-app `productionPublicationPolicy` controls the new private production
+uploader. A later explicit cutover PR must admit only that app and its exact
+production promotion range; deleting a diagnostic string never admits publication.
 
 These workflows add no automatic schedule and perform no provider or DNS setup.
 PR profile qualification has read-only deployment permission. Each caller grants
@@ -112,6 +113,10 @@ to the canonical host would return 503 and is forbidden.
    connected-account encryption key and storage credentials preserve the owning
    environment's identity. Optional names are listed separately; provider acceptance
    must identify which are required for the configured transports and old attachments.
+   Calendar alone treats `TUTURUUU_APP_COORDINATION_SECRET` as optional because its
+   shared token service accepts `SUPABASE_SECRET_KEY`. Preserve Mail and Apps
+   requirements. Hosted auth continuity must prove agreement with the staging issuer;
+   declaring the fallback does not prove matching signing keys.
 5. Supply GitHub build/publication secret names `STAGING_SUPABASE_URL` and
    `STAGING_SUPABASE_PUBLISHABLE_KEY`. Held production builds retain fixtures and
    read no production inputs. Only public Supabase inputs reach staging builds.
@@ -337,8 +342,8 @@ SFU/TURN. workers.dev does not itself prove shared canonical-domain cookie conti
 
 Before a later cutover PR, capture authoritative DNS/proxy/Route/Custom Domain IDs,
 immutable Vercel fallbacks, current Worker versions, rollback operator, explicit
-promotion range and compatible secrets/state. Production configs currently declare
-Custom Domains: their eventual publication is a traffic switch, not just code upload.
+promotion range and compatible secrets/state. Calendar/Mail/Apps production
+profiles declare no Routes or Custom Domains. Their private upload and the later release-owner routing switch are separate operations.
 Do not enable `WAVE1_PRODUCTION_PUBLISH_ENABLED`, remove holds or attach routes until
 that later release is expressly approved. Retain Vercel framework/domain settings.
 
@@ -431,3 +436,98 @@ during use, at most once per minute. Importing those modules must not start time
 workerd forbids global-scope `setInterval`. TTL checks remain authoritative on
 every read; the worker-import regression covers timer-free import and expiry.
 The unadapted dependency graph is not specific to the staging profile; production builds share it.
+
+## Route-free production preparation
+
+`wave1-native-production.yaml` is a manual, production-branch-only preparation
+workflow. Calendar is the first enabled input; Mail and Apps retain their holds
+and need their own reviewed cutover and workflow selection changes. Meet retains
+its separate frontend/realtime publisher and both-version rollback requirement.
+This workflow changes no publication admission. The source policy job must admit
+the selected app before qualification or credential-bearing work can run.
+
+The original Calendar production build binds the protected
+`wave1-calendar-production` environment only for an admitted production ref and reads `PRODUCTION_SUPABASE_URL` and
+`PRODUCTION_SUPABASE_PUBLISHABLE_KEY`. PR/main and held production builds retain
+fixtures. The same-run archive passes original and separate-job restored runtime
+gates before the upload job restores and rechecks it again without deploy credentials.
+
+Set `WAVE1_PRODUCTION_CLOUDFLARE_API_TOKEN` only in the dedicated GitHub
+`wave1-calendar-production` environment. Before entering the secret, require exactly
+the `production` branch, no required reviewer and disabled administrator bypass.
+The read-only topology credential belongs in the same environment under
+`WAVE1_PRODUCTION_CLOUDFLARE_READ_TOKEN`. Only it performs account zone/route,
+Custom Domain and workers.dev/preview observations; the deploy token is never a
+fallback for those reads. The deploy token needs Workers Scripts:Edit. The read
+token needs account-wide Zone, Workers Routes and Workers Scripts read access.
+Calendar production preserves `GOOGLE_REDIRECT_URI` as a required Worker secret,
+while staging declares its redirect URI as a plain var. Production Microsoft OAuth
+uses `https://calendar.tuturuuu.com/api/v1/calendar/auth/microsoft/callback`,
+which Calendar owns. Entra must register this exact production URI before Outlook
+connect can pass; the removed Web callback returns 404.
+
+The generic `production` environment is not an admitted credential store. Only
+the final upload step receives the deploy token; staging credentials are refused. Complete topology verification requires the read token to see every account zone. Restricted zone visibility cannot establish
+absence of attachments in another account zone. The uploader checks required runtime secret names; initialize the named private production
+Worker, its disabled workers.dev/preview state, runtime secrets and an accepted
+rollback version through the operator's separately reviewed provisioning procedure.
+A missing Worker or rollback baseline blocks this preparation job.
+
+Production profile configs have `routes=[]`, `workers_dev=false` and
+`preview_urls=false`, with no named environment or cron triggers. The uploader also
+refuses a Worker already attached to any zone Route or Custom Domain. This matters
+because deploying new code to an attached Worker changes served traffic even when
+the local config declares no routes. Check topology immediately before the single
+upload and again afterwards. Existing live Workers require the release owner's
+normal update/rollback procedure; this preparation workflow cannot update them.
+
+The read token is available only to the read-only preflight and post-upload
+verification steps; the deploy token is available only to the upload step. Tests
+assert these exact step sets. Preflight refusals skip the upload step and do not
+consume a publication attempt. Each upload is bounded to 180 seconds inside a
+four-minute step. Pre-upload
+observations share a 90-second deadline; post-upload acceptance has 60 seconds.
+Reconciliation reads at most 99 versions and 99 workflow runs, with 15-second/1 MiB
+API read bounds. A matching SHA/artifact must be active at 100% during preflight or the run
+refuses before entering upload. A matching active artifact is accepted without upload. Once that SHA's version has
+been rolled back and is inactive, the same SHA is refused during preflight.
+Recovery needs a new source SHA and fresh qualification/admission; do not rerun
+the rolled-back SHA to reactivate it or bypass the inactive-version fence. Inspect
+all earlier production dispatches across source SHAs and every job attempt,
+scoped to the selected app. Ignore only the current run and attempt, not older
+attempts in that run. An earlier accepted-private receipt whose version is the
+current rollback baseline closes that app's older history; verify its exact app,
+Worker, source, run, attempt and version against the retained artifact.
+An earlier started or unknown upload, ambiguous/inactive match, or incomplete
+history blocks another upload; an absent version never proves an earlier write
+failed. Retain the original run and operation identity for operator reconciliation.
+A dispatch or rerun whose earlier upload step was skipped or never started can
+proceed. A matching version uses the newest earlier deployment excluding that
+version as its rollback, and requires the original receipt if no such deployment
+remains. An upload exception leaves the private receipt `pending`; post-upload
+acceptance failure leaves it `uploaded`. No automatic retry, new admission or traffic switch
+follows either state.
+
+To unblock an uncertain upload, the release owner first preserves the original
+run/attempt, qualified archive and publication receipt, then inspects provider
+versions and deployments for that receipt's exact source/artifact annotations.
+If that version is active and the original rollback exists, rerun the original
+failed publish job with its original qualified archive: preflight reconciles it
+without uploading and post-verification emits an accepted-private receipt.
+A later source can then use that accepted version as its rollback baseline.
+If there is no exact active match, the receipt is missing/expired, or an earlier
+write remains unknown, keep publication held. The owner must resolve the provider
+outcome and obtain independent review of any recovery change; deleting run history,
+changing app names or retrying a fresh upload is not an unblock procedure.
+
+The private 90-day artifact records the exact SHA/digest, weighted rollback
+versions and before-state topology. This is private code publication only, not a
+canonical deployment marker or customer delivery. Immediately before the separately
+authorized routing flip, refresh the cutover capture and rehearse restoration of
+the exact DNS/proxy/Route/Custom Domain topology. Run native smoke and the required
+30–60 minute watch after the flip. Signed-in production acceptance remains operator-owned.
+
+Regression coverage: `scripts/ci/wave1-native-production.test.mjs` executes held,
+admitted, retry, unknown-outcome, topology and reconciliation paths with counting
+provider/CLI fixtures, and verifies all three sealed frontend profiles have no routes.
+Exact-commit CI and hosted provider acceptance remain separate gates.
