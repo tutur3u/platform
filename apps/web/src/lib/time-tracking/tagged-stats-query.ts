@@ -8,7 +8,7 @@ import {
 
 const PAGE_SIZE = 1000;
 /** A year of four-a-day Pomodoro sessions fits well inside this bound. */
-const MAX_PAGES = 10;
+export const MAX_TAGGED_STATS_PAGES = 10;
 
 /** Whether `timezone` is an IANA zone this runtime can format in. */
 export function isSupportedTimezone(timezone: string): boolean {
@@ -35,13 +35,15 @@ export async function loadTaggedTimeStats(
     daysBack: number;
     now?: Date;
   }
-): Promise<TaggedTimeStats> {
+): Promise<TaggedTimeStats & { truncated: boolean }> {
   const now = options.now ?? new Date();
   const since = new Date(
     now.getTime() - taggedStatsLookbackDays(options.daysBack) * 86_400_000
   ).toISOString();
   const sessions: TaggedSession[] = [];
-  for (let page = 0; page < MAX_PAGES; page++) {
+  // Set when every page came back full: older sessions may be missing.
+  let truncated = false;
+  for (let page = 0; page < MAX_TAGGED_STATS_PAGES; page++) {
     let query = sbAdmin
       .from('time_tracking_sessions')
       .select('start_time, duration_seconds')
@@ -56,10 +58,14 @@ export async function loadTaggedTimeStats(
     if (error) throw error;
     sessions.push(...(data ?? []));
     if ((data?.length ?? 0) < PAGE_SIZE) break;
+    truncated = page === MAX_TAGGED_STATS_PAGES - 1;
   }
-  return computeTaggedTimeStats(sessions, {
-    timezone: options.timezone,
-    now,
-    daysBack: options.daysBack,
-  });
+  return {
+    ...computeTaggedTimeStats(sessions, {
+      timezone: options.timezone,
+      now,
+      daysBack: options.daysBack,
+    }),
+    truncated,
+  };
 }
