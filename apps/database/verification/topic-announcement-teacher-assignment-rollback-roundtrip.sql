@@ -20,13 +20,13 @@ select hasnt_column('private', 'topic_announcements', 'send_due_at',
 select col_not_null('private', 'topic_announcements', 'topic',
   'rollback restores topic not null');
 select ok(
-  (select convalidated from pg_constraint
+  (select not convalidated from pg_constraint
    where conrelid = 'private.topic_announcements'::regclass
      and conname = 'topic_announcements_topic_not_blank')
   and not exists (select 1 from pg_constraint
     where conrelid = 'private.topic_announcements'::regclass
       and conname = 'topic_announcements_topic_ready_check'),
-  'rollback restores the validated non-blank topic rule'
+  'rollback restores the non-blank topic rule as NOT VALID'
 );
 select ok(
   to_regprocedure('private.topic_announcements_teacher_same_workspace()') is null,
@@ -47,10 +47,10 @@ select ok(
   'rollback removes only topic_assigned from the notification types'
 );
 select ok(
-  (select convalidated from pg_constraint
+  (select not convalidated from pg_constraint
    where conrelid = 'public.notifications'::regclass
      and conname = 'notifications_type_check'),
-  'notification type constraint is validated when no topic_assigned rows exist'
+  'rollback leaves the notification type constraint NOT VALID'
 );
 
 select throws_ok($$

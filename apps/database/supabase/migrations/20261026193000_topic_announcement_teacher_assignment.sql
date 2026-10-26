@@ -16,6 +16,10 @@
 --    catalog and extended, so this migration composes with any other migration
 --    that redefines notifications_type_check before or after it.
 --
+-- Both replaced check constraints are added NOT VALID and are not validated
+-- here, so no table scan runs under ACCESS EXCLUSIVE. They still apply to every
+-- new or updated row.
+--
 -- The tables are service-role only, so no policy or grant changes are needed.
 set local lock_timeout = '5s';
 set local statement_timeout = '30s';
@@ -52,16 +56,16 @@ alter table private.topic_announcements
 alter table private.topic_announcements
   drop constraint topic_announcements_topic_not_blank;
 
--- Existing rows all have a non-blank topic (enforced until now), so validation
--- cannot fail; NOT VALID keeps the ACCESS EXCLUSIVE window free of the scan.
+-- Left NOT VALID on purpose: validating here would scan the table while this
+-- transaction holds ACCESS EXCLUSIVE. New and updated rows are still checked,
+-- and every existing row already satisfies it (the old non-blank rule was
+-- enforced until now). Validate later, if ever, in its own migration, which
+-- takes only SHARE UPDATE EXCLUSIVE.
 alter table private.topic_announcements
   add constraint topic_announcements_topic_ready_check check (
     status = 'draft'
     or (topic is not null and length(btrim(topic)) > 0)
   ) not valid;
-
-alter table private.topic_announcements
-  validate constraint topic_announcements_topic_ready_check;
 
 create index topic_announcements_teacher_session_idx
   on private.topic_announcements (
@@ -137,8 +141,10 @@ begin
   alter table public.notifications
     drop constraint notifications_type_check;
 
-  -- The new list is a superset of the previous one, so validation cannot fail;
-  -- NOT VALID keeps the ACCESS EXCLUSIVE window free of the table scan.
+  -- Left NOT VALID on purpose: validating here would scan public.notifications
+  -- while the DROP/ADD holds ACCESS EXCLUSIVE. New rows are still checked, and
+  -- the new list is a superset of the old one, so existing rows already pass.
+  -- Validate later, if ever, in its own migration (SHARE UPDATE EXCLUSIVE).
   execute format(
     'alter table public.notifications add constraint notifications_type_check check (type in (%s)) not valid',
     (
@@ -146,9 +152,6 @@ begin
       from unnest(current_types || array['topic_assigned']) with ordinality as types(type_name, position)
     )
   );
-
-  alter table public.notifications
-    validate constraint notifications_type_check;
 
   execute format(
     'comment on constraint notifications_type_check on public.notifications is %L',
