@@ -102,7 +102,8 @@ export async function createHabitTracker(
     use_case: payload.use_case ?? 'generic',
     template_category: payload.template_category ?? 'custom',
     composer_mode: payload.composer_mode ?? 'advanced_custom',
-    composer_config: (payload.composer_config ?? {}) as unknown as NonNullable<Json>,
+    composer_config: (payload.composer_config ??
+      {}) as unknown as NonNullable<Json>,
     start_date: payload.start_date ?? new Date().toISOString().slice(0, 10),
     is_active: payload.is_active ?? true,
     ws_id: wsId,
