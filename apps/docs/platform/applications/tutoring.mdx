@@ -232,7 +232,10 @@ off by default):
   weak support, also needs the existing `update_user_groups` class-management
   permission, on top of the usual `update_user_groups_scores`. Unflagged feedback
   is unaffected. No role is added. Groups' homeroom teachers are expected to
-  hold that permission through their workspace role.
+  hold that permission through their workspace role. The check runs on the
+  server for every feedback write path: the Contacts feedback API
+  (`apps/contacts/src/lib/user-feedbacks.ts`, used by both its workspace and
+  group-member feedback routes) and the web feedback and tutoring routes.
 - **End tutoring** (Thoát kèm) is an explicit queue action for weak-support and
   office-review rows, confirmed in an in-app dialog. It calls
   `POST /api/v1/workspaces/{wsId}/tutoring/weak-support/end`, which clears the
@@ -243,6 +246,8 @@ off by default):
 Regression coverage:
 [`weak-content-access.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/tutoring/weak-content-access.test.ts),
 [`weak-support/end/route.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/tutoring/weak-support/end/route.test.ts),
+the Contacts route cases in
+[`users/feedbacks/route.test.ts` (Contacts)](https://github.com/tutur3u/platform/blob/main/apps/contacts/src/app/api/v1/workspaces/%5BwsId%5D/users/feedbacks/route.test.ts),
 the weak-support policy cases in
 [`users/feedbacks/route.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/legacy-api-routes/v1/workspaces/%5BwsId%5D/users/feedbacks/route.test.ts),
 and
