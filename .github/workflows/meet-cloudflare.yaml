@@ -2,7 +2,7 @@ name: Meet Cloudflare
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
+    types: [opened, synchronize, reopened, ready_for_review, labeled, converted_to_draft]
     paths:
       - 'scripts/safe-fs.js'
       - 'apps/meet/**'
@@ -90,7 +90,7 @@ permissions:
 # unique. The literal prefix keeps workflow_call runs from one planner apart.
 # Only the deploy job serializes production with a non-cancelling queue.
 concurrency:
-  group: meet-cloudflare-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}
+  group: meet-cloudflare-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}${{ github.event.action == 'labeled' && github.event.label.name != 'ready-for-ci' && format('-label-{0}', github.run_id) || '' }}
   cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 
 env:
@@ -98,7 +98,7 @@ env:
 
 jobs:
   check-ci:
-    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    if: ${{ (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (github.event_name != 'pull_request' || (contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && (github.event.action != 'labeled' || github.event.label.name == 'ready-for-ci'))) }}
     uses: ./.github/workflows/ci-check.yml
     permissions:
       contents: read
@@ -108,12 +108,7 @@ jobs:
       check_pr_release_only: true
   validate:
     needs: [check-ci, production-policy]
-    if: >-
-      ${{ !cancelled() && needs.check-ci.result == 'success' &&
-          needs.check-ci.outputs.should_run == 'true' &&
-          needs.check-ci.outputs.run_checks == 'true' &&
-          (github.ref != 'refs/heads/production' ||
-           (needs.production-policy.result == 'success' && needs.production-policy.outputs.allowed == 'true')) }}
+    if: ${{ (!cancelled() && needs.check-ci.result == 'success' && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true' && (github.ref != 'refs/heads/production' || (needs.production-policy.result == 'success' && needs.production-policy.outputs.allowed == 'true'))) && (github.event_name != 'pull_request' || (contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && (github.event.action != 'labeled' || github.event.label.name == 'ready-for-ci'))) }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -385,6 +380,7 @@ jobs:
           retention-days: 3
           if-no-files-found: error
   restored-artifact:
+    if: github.event_name != 'pull_request' || (contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && (github.event.action != 'labeled' || github.event.label.name == 'ready-for-ci'))
     name: Accept restored Meet artifact
     needs: validate
     permissions:
@@ -446,7 +442,7 @@ jobs:
         run: GITHUB_SHA="$SOURCE_SHA" node scripts/ci/verify-meet-start-output.js verify apps/meet apps/meet/meet-artifact.json
   production-policy:
     name: Report wave-1 production publication hold
-    if: github.ref == 'refs/heads/production'
+    if: ${{ (github.ref == 'refs/heads/production') && (github.event_name != 'pull_request' || (contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && (github.event.action != 'labeled' || github.event.label.name == 'ready-for-ci'))) }}
     runs-on: ubuntu-latest
     outputs:
       allowed: ${{ steps.policy.outputs.allowed }}
@@ -460,7 +456,7 @@ jobs:
 
   deploy:
     needs: [validate, restored-artifact, production-policy]
-    if: github.ref == 'refs/heads/production' && needs.production-policy.outputs.allowed == 'true'
+    if: ${{ (github.ref == 'refs/heads/production' && needs.production-policy.outputs.allowed == 'true') && (github.event_name != 'pull_request' || (contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && (github.event.action != 'labeled' || github.event.label.name == 'ready-for-ci'))) }}
     permissions:
       contents: read
       deployments: write

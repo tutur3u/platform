@@ -736,6 +736,20 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   Required checks need a job-level `check-ci` skip instead. Moving PR CI to
   self-hosted fleet runners is a follow-up and is not adopted. See the
   [runbook](../../../../../apps/docs/build/devops/github-actions-runbook.mdx#hosted-runner-reservation-and-pr-queue-pressure).
+- Heavy PR jobs require the `ready-for-ci` label. Add it only when the PR is
+  ready to merge (`gh pr edit <n> --add-label ready-for-ci`). An exact-head local
+  pass still counts as green under the speed grant. A new push to a labelled PR
+  reruns CI and supersedes the old run; `gh run rerun` or removing and re-adding
+  the label reruns without a push. Gate every job of a new heavy PR workflow
+  with `PR_LABEL_GATE` from `scripts/ci/pr-label-gate.js`, ANDed at the top
+  level. Add `labeled` to `pull_request.types`, append
+  `LABEL_EVENT_GROUP_SUFFIX` to its cancelling group, and classify the workflow
+  there. Gate callers, never reusable callees; never use workflow-level
+  filters. Leave paused `if: false` jobs alone. Branch-push validators keep
+  push only for `main`, `production` and `release-please--branches--**`; keep
+  mutating jobs (Biome auto-format) push-only. Cheap script-only and security
+  checks stay ungated. See the
+  [runbook](../../../../../apps/docs/build/devops/github-actions-runbook.mdx#label-gated-heavy-pr-ci-ready-for-ci).
 - Consolidate PR-only release checks into the reusable CI config job with
   `check_pr_release_only: true`. Meet, Lettin and Parley compare the same PR base
   and head as before; production/manual events always return `run_checks=true`.

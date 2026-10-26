@@ -1,7 +1,7 @@
 name: Mail Calendar Tasks builds
 on:
   pull_request:
-    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
+    types: [opened, synchronize, reopened, ready_for_review, labeled, converted_to_draft]
     paths:
       - 'scripts/safe-fs.js'
       - 'apps/mail/**'
@@ -64,11 +64,11 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}${{ github.event.action == 'labeled' && github.event.label.name != 'ready-for-ci' && format('-label-{0}', github.run_id) || '' }}
   cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 jobs:
   check-ci:
-    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    if: ${{ (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (github.event_name != 'pull_request' || (contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && (github.event.action != 'labeled' || github.event.label.name == 'ready-for-ci'))) }}
     permissions:
       contents: read
       deployments: read
@@ -78,7 +78,7 @@ jobs:
   build-mail:
     name: build (mail)
     needs: check-ci
-    if: needs.check-ci.outputs.should_run == 'true' && toJSON(fromJSON(needs.check-ci.outputs.affected_jobs || '{}').mail) != 'false'
+    if: ${{ (needs.check-ci.outputs.should_run == 'true' && toJSON(fromJSON(needs.check-ci.outputs.affected_jobs || '{}').mail) != 'false') && (github.event_name != 'pull_request' || (contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && (github.event.action != 'labeled' || github.event.label.name == 'ready-for-ci'))) }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
@@ -169,7 +169,7 @@ jobs:
   build-tasks:
     name: build (tasks)
     needs: check-ci
-    if: needs.check-ci.outputs.should_run == 'true' && toJSON(fromJSON(needs.check-ci.outputs.affected_jobs || '{}').tasks) != 'false'
+    if: ${{ (needs.check-ci.outputs.should_run == 'true' && toJSON(fromJSON(needs.check-ci.outputs.affected_jobs || '{}').tasks) != 'false') && (github.event_name != 'pull_request' || (contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && (github.event.action != 'labeled' || github.event.label.name == 'ready-for-ci'))) }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
@@ -219,7 +219,7 @@ jobs:
   build-web:
     name: build (web)
     needs: check-ci
-    if: needs.check-ci.outputs.should_run == 'true' && toJSON(fromJSON(needs.check-ci.outputs.affected_jobs || '{}').web) != 'false'
+    if: ${{ (needs.check-ci.outputs.should_run == 'true' && toJSON(fromJSON(needs.check-ci.outputs.affected_jobs || '{}').web) != 'false') && (github.event_name != 'pull_request' || (contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && (github.event.action != 'labeled' || github.event.label.name == 'ready-for-ci'))) }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
@@ -251,7 +251,7 @@ jobs:
 
   calendar-native:
     needs: check-ci
-    if: needs.check-ci.outputs.should_run == 'true' && toJSON(fromJSON(needs.check-ci.outputs.affected_jobs || '{}').calendar) != 'false'
+    if: ${{ (needs.check-ci.outputs.should_run == 'true' && toJSON(fromJSON(needs.check-ci.outputs.affected_jobs || '{}').calendar) != 'false') && (github.event_name != 'pull_request' || (contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && (github.event.action != 'labeled' || github.event.label.name == 'ready-for-ci'))) }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
@@ -480,6 +480,7 @@ jobs:
           retention-days: 3
           if-no-files-found: error
   calendar-artifact-restore:
+    if: github.event_name != 'pull_request' || (contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && (github.event.action != 'labeled' || github.event.label.name == 'ready-for-ci'))
     needs: calendar-native
     runs-on: ubuntu-latest
     timeout-minutes: 15

@@ -1,7 +1,7 @@
 name: Mobile Build Windows
 
 concurrency:
-    group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}
+    group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}${{ github.event.action == 'labeled' && github.event.label.name != 'ready-for-ci' && format('-label-{0}', github.run_id) || '' }}
     cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 
 on:
@@ -11,7 +11,7 @@ on:
       types: [published]
     workflow_dispatch:
     pull_request:
-        types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
+        types: [opened, synchronize, reopened, ready_for_review, labeled, converted_to_draft]
         branches:
             - main
         paths:
@@ -24,7 +24,7 @@ permissions:
 
 jobs:
     check-ci:
-        if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+        if: ${{ (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (github.event_name != 'pull_request' || (contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && (github.event.action != 'labeled' || github.event.label.name == 'ready-for-ci'))) }}
         permissions:
             contents: read
             deployments: read
@@ -35,7 +35,7 @@ jobs:
     build-windows:
         name: Build Windows (Development)
         needs: [check-ci]
-        if: needs.check-ci.outputs.should_run == 'true'
+        if: ${{ (needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || (contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && (github.event.action != 'labeled' || github.event.label.name == 'ready-for-ci'))) }}
         runs-on: windows-latest
         timeout-minutes: 45
         defaults:
