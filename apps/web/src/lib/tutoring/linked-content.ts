@@ -231,7 +231,9 @@ async function storeLinkedLessonContent({
     .eq('ws_id', wsId)
     .maybeSingle();
   if (error) throw error;
-  if (!session) return 'skipped' as const;
+  // Same rule as the listing: blank content is linked, real text is a manual
+  // edit that must never be overwritten.
+  if (session?.content.trim() !== '') return 'skipped' as const;
 
   // Derive as if still pending: the notes as they stood at completion.
   const linked = await loadLinkedLessonContent({
@@ -248,15 +250,18 @@ async function storeLinkedLessonContent({
     .eq('id', sessionId)
     .eq('ws_id', wsId)
     .eq('attendance_status', 'DONE')
-    .eq('content', '');
+    // Compare-and-set on the blank value read above, whitespace included,
+    // so a staff edit made in the meantime is left alone.
+    .eq('content', session.content);
   if (updateError) throw updateError;
   return 'stored' as const;
 }
 
 /**
  * Stores the linked lesson notes when a make-up session is completed. The
- * write only lands while the content is still empty, so a staff edit made in
- * the meantime is never overwritten.
+ * write only lands while the content is still blank (empty or whitespace, as
+ * the listing treats it), so a staff edit made in the meantime is never
+ * overwritten.
  *
  * Completion never fails because of it: errors are logged, and the wait is
  * bounded so it cannot stack onto completion latency. A `failed` result means

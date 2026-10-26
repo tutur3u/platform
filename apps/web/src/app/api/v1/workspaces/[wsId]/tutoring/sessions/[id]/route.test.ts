@@ -133,12 +133,15 @@ describe('DELETE tutoring session', () => {
 });
 
 describe('PUT tutoring session completion', () => {
-  async function complete() {
+  async function complete(body: Record<string, unknown> = {}) {
     const { PUT } = await import('./route');
     return PUT(
       new Request(
         `http://localhost/api/v1/workspaces/${wsId}/tutoring/sessions/${sessionId}`,
-        { method: 'PUT', body: JSON.stringify({ attendanceStatus: 'DONE' }) }
+        {
+          method: 'PUT',
+          body: JSON.stringify({ attendanceStatus: 'DONE', ...body }),
+        }
       ),
       { params: Promise.resolve({ id: sessionId, wsId }) }
     );
@@ -163,5 +166,24 @@ describe('PUT tutoring session completion', () => {
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ message: 'success' });
+  });
+
+  it.each([
+    ['without content', {}],
+    ['with empty content', { content: '' }],
+    ['with whitespace-only content', { content: '   ' }],
+  ])('stores the linked notes when completed %s', async (_label, body) => {
+    expect((await complete(body)).status).toBe(200);
+    expect(mocks.freeze).toHaveBeenCalledWith(
+      expect.objectContaining({ sessionId, wsId })
+    );
+  });
+
+  it('keeps text sent with the completion as a manual edit', async () => {
+    expect((await complete({ content: 'Tutor plan' })).status).toBe(200);
+    expect(query.update).toHaveBeenCalledWith(
+      expect.objectContaining({ content: 'Tutor plan' })
+    );
+    expect(mocks.freeze).not.toHaveBeenCalled();
   });
 });
