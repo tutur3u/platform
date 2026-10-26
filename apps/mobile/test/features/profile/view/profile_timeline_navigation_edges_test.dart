@@ -246,7 +246,7 @@ void main() {
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: ProfileTimelineBrowser(
-                      items: [_item('Task', DateTime(2026, 10, 1, 10))],
+                      items: [_item('Draft brief', DateTime(2026, 10, 1, 10))],
                       now: DateTime(2026, 10, 1, 12),
                       onOpen: (_) {},
                     ),
@@ -266,7 +266,7 @@ void main() {
       final output = Platform.environment['TIMELINE_RENDER_DIR'];
       if (output == null) return;
       await tester.pump(const Duration(milliseconds: 200));
-      final title = tester.getRect(find.text('Task'));
+      final title = tester.getRect(find.text('Draft brief'));
       await tester
           .runAsync(() async {
             final boundary = tester.renderObject<RenderRepaintBoundary>(
@@ -338,7 +338,7 @@ void main() {
       tester.getRect(find.byKey(const ValueKey('timeline-browser'))),
       initial,
     );
-    expect(find.text('Task'), findsOneWidget);
+    expect(find.text('Draft brief'), findsOneWidget);
     final selectedDate = tester.getRect(
       find.byKey(
         ValueKey('timeline-date-${DateTime(2026, 10).toIso8601String()}'),

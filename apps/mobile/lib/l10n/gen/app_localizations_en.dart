@@ -6943,6 +6943,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileTimelineHideDates => 'Close dates and browse agenda';
 
   @override
+  String get profileTimelineKindNote => 'Note';
+
+  @override
+  String get profileTimelineKindTask => 'Task';
+
+  @override
+  String get profileTimelineKindTransaction => 'Transaction';
+
+  @override
+  String get profileTimelineKindWorkspaceEvent => 'Workspace event';
+
+  @override
   String get profileTimelineLimited => 'Showing recent activity only. Some sources reached the display limit.';
 
   @override
@@ -6950,17 +6962,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileTimelineMoreDays => 'Show more loaded days';
-
-  @override
-  String profileTimelineNotes(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'Added $count notes',
-      one: 'Added 1 note',
-    );
-    return '$_temp0';
-  }
 
   @override
   String get profileTimelinePartial => 'Some activity is unavailable.';
@@ -6972,46 +6973,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileTimelineTab => 'Timeline';
 
   @override
-  String profileTimelineTasks(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'Created $count tasks',
-      one: 'Created 1 task',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String get profileTimelineTitle => 'Timeline';
 
   @override
   String get profileTimelineToday => 'Today';
 
   @override
-  String profileTimelineTransactions(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'Created $count transactions',
-      one: 'Created 1 transaction',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String get profileTimelineUnavailable => 'Activity could not be refreshed.';
-
-  @override
-  String profileTimelineWorkspaceEvents(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count workspace events added',
-      one: '1 workspace event added',
-    );
-    return '$_temp0';
-  }
 
   @override
   String get profileTimelineYesterday => 'Yesterday';
