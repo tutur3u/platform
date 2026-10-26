@@ -1100,7 +1100,14 @@ resource absence, and use the next exact-source CI result for runtime evidence.
 ### Composing devbox claim migrations
 
 Apply trust pools (`20261023100000`), drain hardening (`20261023103000`),
-mode admission (`20261024094600`), then stale-run reaping (`20261024095000`).
+mode admission (`20261026145000`), concurrent active-run index creation
+(`20261026145100`), index validation (`20261026145200`), then stale-run
+trigger/function installation (`20261026145300`). The index migration contains
+only `CREATE INDEX CONCURRENTLY`; run it outside a transaction. The next migration
+refuses a missing or invalid index before installing the reaper. If a concurrent
+build fails, inspect `pg_catalog.pg_index`, drop only the invalid
+`private.idx_devbox_runs_active_updated` index with `DROP INDEX CONCURRENTLY`
+outside a transaction, rerun the index migration, then retry the guard and DDL.
 The final claim keeps the mode and drain admission predicates and lease move,
 and reaps at most 25 runs for the claiming runner after acquiring its advisory
 lock and before counting capacity. Run the trust-pool, drain-hardening, mode
