@@ -1278,20 +1278,21 @@ protocol adapters, function guard and generated App Router route registry.
 Run `bun packages/start-bridge/src/codegen/cli.ts generate apps/calendar`
 after changing a route, then run the same command with `check` for validation.
 
-One artifact supports the Calendar subdomain root and `/calendar` on the
-apex. Its assets, public offline fallback, service worker scope and `/_fn`
-transport remain inside the serving mount. The retained
-`/_calendar/functions` transport is internally retargeted without replaying
-request bodies. Web and Tasks retain their API ownership and Calendar keeps
-its request telemetry and locale preference fallback.
+The cutover candidate admits only `calendar.tuturuuu.com` and
+`calendar-staging.tuturuuu.com`, configured in `start-bridge.config.ts`.
+Apex `/calendar`, workers.dev and unknown hosts return 404 before dispatch.
+Web and Tasks keep their API ownership, and Calendar retains telemetry,
+locale preference fallback and body-preserving legacy function retargeting.
 
-The offline worker caches bounded public hashed assets and public fallback
-files. It never persists private navigation HTML or API responses, and a
-mounted worker cannot cache assets belonging to the root or another app.
-The regression coverage is in `offline-assets.test.ts` and
-`handler-start-handoff.test.ts`.
+The handler carries a fresh CSP nonce through middleware and Start to the
+router. Normal responses deny framing and use nosniff, a strict-origin referrer
+policy and noindex. Non-assets force private, no-store, removing CDN overrides;
+successful static responses keep their existing cache policy. The retained
+Next policy's external-project WebGL framing exception stays owner-controlled.
+Tests cover these boundaries in `root-cutover.test.ts`, `response-policy.test.ts`
+and `handler-start-handoff.test.ts`.
 
-Existing Calendar crons remain on Infrastructure's Vercel gateway, pointing
-at Calendar's canonical URL. Moving a browser mount does not migrate those
-schedules. Production traffic remains held pending exact-source build,
-artifact, browser, shared-session security and provider acceptance.
+The offline worker caches only bounded public assets and fallback files.
+Existing crons stay on Infrastructure's Vercel gateway at Calendar's canonical
+URL. Production publication remains held until exact-source build, sealed
+artifact, signed-root EN/VI, browser and provider acceptance, with rollback ready.

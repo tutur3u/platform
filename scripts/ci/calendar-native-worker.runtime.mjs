@@ -56,7 +56,7 @@ async function runParent() {
     config: configPath,
     main,
     sourceSHA,
-    canonicalHost: 'calendar-ci.invalid',
+    canonicalHost: 'calendar.tuturuuu.com',
     ownerPackage: resolve(app, 'package.json'),
     seal: await sealArtifact(root, 'calendar'),
     outbound: denyCalendarOutbound([]),
@@ -204,7 +204,7 @@ async function runChild() {
     });
   }
   const fetchWorker = (path, headers = {}) =>
-    runtime.worker.fetch(`https://calendar-ci.invalid${path}`, {
+    runtime.worker.fetch(`https://calendar.tuturuuu.com${path}`, {
       headers,
       redirect: 'manual',
     });
@@ -225,7 +225,7 @@ async function runChild() {
           assert.equal(
             response.status,
             200,
-            `Calendar request=https://calendar-ci.invalid${path.slice(0, 160)} location=${(response.headers.get('location') ?? '<absent>').split(/[?#]/, 1)[0].slice(0, 240)}`
+            `Calendar request=https://calendar.tuturuuu.com${path.slice(0, 160)} location=${(response.headers.get('location') ?? '<absent>').split(/[?#]/, 1)[0].slice(0, 240)}`
           );
         } catch (error) {
           primary = error;

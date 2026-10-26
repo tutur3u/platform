@@ -60,7 +60,10 @@ describe('canonical Calendar response policy at the native boundary', () => {
         'x-owner': 'web',
       },
     });
-    expect(await applyCalendarResponsePolicy(request(path), owner)).toBe(owner);
+    const response = await applyCalendarResponsePolicy(request(path), owner);
+    expect(await response.text()).toBe('embed');
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+    expect(response.headers.get('x-frame-options')).toBeNull();
     expect(owner.headers.has('x-frame-options')).toBe(false);
     expect(owner.headers.get('content-security-policy')).toBe(
       'frame-ancestors https://owner.test'
