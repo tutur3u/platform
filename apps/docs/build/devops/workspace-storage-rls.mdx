@@ -10,6 +10,8 @@ enforces `storage.objects` RLS for browser and user-token clients. Owning server
 APIs use the service role, which bypasses RLS. Migration
 `20261026170000_least_privilege_workspace_storage_rls.sql` replaced the original
 policies. Those let any workspace member read, write and delete every object.
+`20261026192000_topic_announcements_private_storage_root.sql` added
+`topic-announcements/**` to the private roots.
 
 All rules require a `MEMBER` workspace membership; guests are excluded.
 `workspace_storage.object_access(name, operation, actor)` evaluates them. The
@@ -21,7 +23,7 @@ call the helper with a forged actor:
 | `chat/<chatId>/**` (legacy AI attachments) | chat creator | none | chat creator |
 | `chats/ai/resources/<chatId>/**` | chat creator | none | chat creator |
 | `chats/ai/resources/temp/<userId>/**` | that user | none | that user |
-| other `chats/**` (native Chat), `external-apps/**`, `AI Agent Imports/**`, `mira/images/**`, `recordings/**`, `.tuturuuu/**` | none | none | none |
+| other `chats/**` (native Chat), `external-apps/**`, `AI Agent Imports/**`, `mira/images/**`, `recordings/**`, `topic-announcements/**`, `.tuturuuu/**` | none | none | none |
 | `project-updates/**` | member | member | member |
 | `template-backgrounds/**` | member | `manage_drive` | `manage_drive` |
 | everything else, including root-level files (Drive) | `view_drive`, `manage_drive` or `admin` | `manage_drive` or `admin` | `manage_drive` or `admin` |
@@ -42,6 +44,12 @@ Workspace creators count as `admin`, which mirrors `has_workspace_permission`.
 - `POST /api/ai/chat/delete-file` accepts only the caller's own temp folder or
   an existing chat (UUID segment) the caller created. Orphaned and non-chat
   folders are not deletable through it.
+- Topic announcement attachments (`topic-announcements/attachments/**`) upload
+  through `POST /api/v1/workspaces/[wsId]/storage/upload-url`. Its topic branch
+  checks `ENABLE_TOPIC_ANNOUNCEMENTS` and `manage_users` before it issues a
+  signed upload URL, and it is the only Drive route that accepts the root.
+  Email delivery downloads attachments with the service role. Neither
+  `view_drive` nor `manage_drive` grants direct or Drive-route access.
 - Meeting recording routes check membership and the recording session, then use
   the service role for storage. Playback signs only paths inside the verified
   session folder.
@@ -120,6 +128,11 @@ rollback's policies.
   - It is plain SQL and drops the helpers.
   - Proof: `apps/database/verification/workspace-storage-rls-incident-rollback.sql`
     (14 assertions).
+- **Topic announcements root:**
+  `20261026192000_topic_announcements_private_storage_root.rollback.sql`
+  restores the 20261026170000 `object_access` body, returning
+  `topic-announcements/**` to Drive permissions. It reopens that MEDIUM finding.
+  Run it before either 20261026170000 rollback when unwinding both.
 - **Faithful:** `20261026170000_least_privilege_workspace_storage_rls.rollback.sql`.
   It restores the exact 20231004102905 policies.
   - This reopens the HIGH finding and non-member inserts.

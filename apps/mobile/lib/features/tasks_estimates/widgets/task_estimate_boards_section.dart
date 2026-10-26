@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/ui/overlays/show_app_sheet.dart' show showAppDialog;
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/data/models/task_estimate_board.dart';
 import 'package:mobile/features/tasks/widgets/task_surface.dart';
@@ -78,7 +79,8 @@ class _TaskEstimateBoardTile extends StatelessWidget {
             ? () {
                 final cubit = context.read<TaskEstimatesCubit>();
                 unawaited(
-                  shad.showDialog<void>(
+                  showAppDialog<void>(
+                    useRootNavigator: true,
                     context: context,
                     builder: (_) => BlocProvider.value(
                       value: cubit,

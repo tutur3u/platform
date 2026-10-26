@@ -505,8 +505,7 @@ class _HabitTrackerFormSheetState extends State<HabitTrackerFormSheet> {
                   ],
                 ),
                 const SizedBox(height: 8),
-                SwitchListTile.adaptive(
-                  contentPadding: EdgeInsets.zero,
+                AppToggleRow(
                   title: Text(l10n.habitsActiveLabel),
                   value: _isActive,
                   onChanged: (value) {
@@ -1260,8 +1259,7 @@ class _FieldDraftCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          SwitchListTile.adaptive(
-            contentPadding: EdgeInsets.zero,
+          AppToggleRow(
             title: Text(context.l10n.habitsFieldRequired),
             value: draft.required,
             onChanged: (value) => onChanged(draft.copyWith(required: value)),

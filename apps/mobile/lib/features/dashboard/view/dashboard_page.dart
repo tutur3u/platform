@@ -237,9 +237,7 @@ class _DashboardViewState extends State<_DashboardView> {
                     workspaceState.status == WorkspaceStatus.initial ||
                     workspaceState.status == WorkspaceStatus.loading;
                 if (isWorkspaceLoading) {
-                  return const shad.Scaffold(
-                    child: Center(child: NovaLoadingIndicator()),
-                  );
+                  return const shad.Scaffold(child: AppLoadingIndicator.page());
                 }
 
                 return _workspaceUnavailableState(context, workspaceState);

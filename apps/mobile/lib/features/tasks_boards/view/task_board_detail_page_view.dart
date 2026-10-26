@@ -286,7 +286,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
               children: [
                 shellActionRegistration,
                 shellMiniNavRegistration,
-                const Center(child: NovaLoadingIndicator()),
+                const AppLoadingIndicator.page(),
               ],
             );
           }
@@ -1186,7 +1186,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
       return;
     }
 
-    final selectedListId = await shad.showDialog<String>(
+    final selectedListId = await _showBoardDialog<String>(
       context: context,
       builder: (dialogContext) => _MoveTaskListDialog(lists: lists),
     );
@@ -1332,7 +1332,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
       return;
     }
 
-    final selectedListId = await shad.showDialog<String>(
+    final selectedListId = await _showBoardDialog<String>(
       context: context,
       builder: (dialogContext) => _MoveTaskListDialog(lists: availableLists),
     );
@@ -1411,7 +1411,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
       final title = normalizedStatus == 'done'
           ? context.l10n.taskBoardDetailBulkMarkDone
           : context.l10n.taskBoardDetailBulkMarkClosed;
-      selectedListId = await shad.showDialog<String>(
+      selectedListId = await _showBoardDialog<String>(
         context: context,
         builder: (dialogContext) =>
             _TaskListPickerDialog(title: title, lists: targetLists),

@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
+import 'package:mobile/core/ui/overlays/app_action_sheet.dart';
 import 'package:mobile/features/security/cubit/app_lock_cubit.dart';
 import 'package:mobile/features/security/data/app_lock_settings_store.dart';
 import 'package:mobile/features/security/device_mfa/device_mfa_sheet.dart';
@@ -184,25 +185,17 @@ class _SessionSettingsSectionState extends State<SessionSettingsSection> {
             value: _appLockDelayLabel(context, appLockState.delay),
             onTap: () async {
               final cubit = context.read<AppLockCubit>();
-              final selected = await showModalBottomSheet<AppLockDelay>(
+              final selected = await showAppChoiceSheet<AppLockDelay>(
                 context: context,
-                useSafeArea: true,
-                builder: (sheetContext) => Padding(
-                  padding: const EdgeInsets.only(top: 12, bottom: 12),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      for (final delay in AppLockDelay.values)
-                        ListTile(
-                          title: Text(_appLockDelayLabel(context, delay)),
-                          trailing: delay == appLockState.delay
-                              ? const Icon(LucideIcons.check)
-                              : null,
-                          onTap: () => Navigator.of(sheetContext).pop(delay),
-                        ),
-                    ],
-                  ),
-                ),
+                title: l10n.appLockDelayTitle,
+                selected: appLockState.delay,
+                choices: [
+                  for (final delay in AppLockDelay.values)
+                    AppSheetChoice(
+                      value: delay,
+                      label: _appLockDelayLabel(context, delay),
+                    ),
+                ],
               );
               if (selected != null) await cubit.setDelay(selected);
             },

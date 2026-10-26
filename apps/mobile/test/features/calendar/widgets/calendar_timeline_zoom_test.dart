@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/features/calendar/widgets/calendar_zoom_sheet.dart';
 import 'package:mobile/features/calendar/widgets/date_snap_scroll_physics.dart';
@@ -138,7 +139,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(
       tester
-          .widget<IconButton>(find.widgetWithIcon(IconButton, Icons.zoom_in))
+          .widget<AppIconButton>(
+            find.widgetWithIcon(AppIconButton, LucideIcons.zoomIn),
+          )
           .onPressed,
       isNull,
     );

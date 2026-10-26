@@ -55,14 +55,12 @@ class _FeedbackSheetState extends State<_FeedbackSheet> {
     }
     var requireAttention = feedback?.requireAttention ?? false;
 
-    final saved = await showDialog<bool>(
+    final saved = await showAppDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          feedback == null
-              ? context.l10n.crmAddFeedback
-              : context.l10n.commonEdit,
-        ),
+      builder: (context) => AppDialog(
+        title: feedback == null
+            ? context.l10n.crmAddFeedback
+            : context.l10n.commonEdit,
         content: StatefulBuilder(
           builder: (context, setState) => Column(
             mainAxisSize: MainAxisSize.min,
@@ -90,7 +88,8 @@ class _FeedbackSheetState extends State<_FeedbackSheet> {
                   labelText: context.l10n.crmFeedback,
                 ),
               ),
-              SwitchListTile(
+              AppToggleRow(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 value: requireAttention,
                 onChanged: (value) => setState(() => requireAttention = value),
                 title: Text(context.l10n.crmRequireAttention),
@@ -99,11 +98,11 @@ class _FeedbackSheetState extends State<_FeedbackSheet> {
           ),
         ),
         actions: [
-          TextButton(
+          AppButton.ghost(
             onPressed: () => Navigator.of(context).pop(false),
             child: Text(context.l10n.commonCancel),
           ),
-          FilledButton(
+          AppButton.primary(
             onPressed: () => Navigator.of(context).pop(true),
             child: Text(context.l10n.commonSave),
           ),
@@ -163,7 +162,7 @@ class _FeedbackSheetState extends State<_FeedbackSheet> {
             const SizedBox(height: 16),
             Expanded(
               child: _loading
-                  ? const Center(child: NovaLoadingIndicator())
+                  ? const AppLoadingIndicator.page()
                   : ListView(
                       children: _items
                           .map(

@@ -14,7 +14,6 @@ import 'package:mobile/core/widgets/network_avatar.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
 import '../models/assistant_models.dart';
 
 typedef AssistantSubmitText = Future<void> Function(String text);
@@ -1222,7 +1221,7 @@ class _TimeTrackingStatsCard extends StatelessWidget {
             padding: EdgeInsets.zero,
             child: Padding(
               padding: EdgeInsets.all(16),
-              child: Center(child: NovaLoadingIndicator()),
+              child: AppLoadingIndicator(),
             ),
           );
         }

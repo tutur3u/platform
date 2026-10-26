@@ -99,6 +99,12 @@ function PolicySummary({
         <p>
           {t('policy_weakContentReviewDays')}: {policy.weakContentReviewDays}
         </p>
+        <p>
+          {t('policy_restrict_weak_content')}:{' '}
+          {policy.restrictWeakContentEditors
+            ? t('policy_restrict_weak_content_on')
+            : t('policy_restrict_weak_content_off')}
+        </p>
         {policy.groupExclusions.length ? (
           <ul className="space-y-1 text-sm">
             {policy.groupExclusions.map((rule, index) => (

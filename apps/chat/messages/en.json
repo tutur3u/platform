@@ -712,6 +712,10 @@
       "calendar_reconnect_required": {
         "description": "Calendar sync paused because the provider stopped accepting access. Reconnect the account to resume.",
         "title": "Reconnect your calendar"
+      },
+      "tutoring_session_completed": {
+        "description": "A tutor marked a tutoring session for a learner in your class as complete.",
+        "title": "Tutoring session completed"
       }
     },
     "decline": "Decline",

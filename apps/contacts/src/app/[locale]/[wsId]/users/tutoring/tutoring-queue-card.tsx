@@ -24,6 +24,10 @@ import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import { TutoringReasonBadge } from './tutoring-badges';
+import {
+  canEndWeakSupport,
+  TutoringEndWeakSupport,
+} from './tutoring-end-weak-support';
 import { WorkspacePersonPicker } from './tutoring-people-picker';
 
 interface TutoringQueueFilters {
@@ -218,7 +222,7 @@ export function TutoringQueueCard({
           <DataTableColumnHeader
             column={column}
             t={tableT}
-            title={t('feedback')}
+            title={t('tutoring_content')}
           />
         ),
         cell: ({ row }) => (
@@ -253,13 +257,21 @@ export function TutoringQueueCard({
         header: () => <div className="text-right">{t('actions')}</div>,
         cell: ({ row }) =>
           row.original.review_only ? (
-            <Button asChild size="sm" variant="outline">
-              <Link href={`/${locale}/${wsId}/users/feedbacks`}>
-                {t('queue_office_review')}
-              </Link>
-            </Button>
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button asChild size="sm" variant="outline">
+                <Link href={`/${locale}/${wsId}/users/feedbacks`}>
+                  {t('queue_office_review')}
+                </Link>
+              </Button>
+              {canManage ? (
+                <TutoringEndWeakSupport item={row.original} wsId={wsId} />
+              ) : null}
+            </div>
           ) : canManage ? (
-            <div className="flex justify-end">
+            <div className="flex flex-wrap justify-end gap-2">
+              {canEndWeakSupport(row.original) ? (
+                <TutoringEndWeakSupport item={row.original} wsId={wsId} />
+              ) : null}
               <Button
                 disabled={schedulingKey !== null}
                 onClick={() => actions.onSchedule(row.original)}

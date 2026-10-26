@@ -106,8 +106,13 @@ export async function fetchServiceRoleKey({
   );
   if (!response.ok) throw statusError('api_keys', response.status);
   const keys = await response.json();
-  const key = keys.find?.(
-    (entry) => entry.name === 'service_role' || entry.type === 'secret'
+  const key = (
+    keys.find?.((entry) => entry.type === 'secret') ??
+    keys.find?.(
+      (entry) =>
+        entry.name === 'service_role' &&
+        (entry.type === 'legacy' || entry.type === undefined)
+    )
   )?.api_key;
   if (!key) throw new OperationError('service_role_key_unavailable');
   return key;
@@ -115,6 +120,15 @@ export async function fetchServiceRoleKey({
 
 function encodeKey(key) {
   return key.split('/').map(encodeURIComponent).join('/');
+}
+
+export function storageAuthHeaders(serviceKey) {
+  return {
+    apikey: serviceKey,
+    ...(serviceKey.startsWith('eyJ')
+      ? { authorization: `Bearer ${serviceKey}` }
+      : {}),
+  };
 }
 
 export function createStorageClient({
@@ -125,8 +139,7 @@ export function createStorageClient({
   fetchImpl = fetch,
 }) {
   const headers = {
-    authorization: `Bearer ${serviceKey}`,
-    apikey: serviceKey,
+    ...storageAuthHeaders(serviceKey),
     'content-type': 'application/json',
   };
   return {

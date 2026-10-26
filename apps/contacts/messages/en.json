@@ -9067,7 +9067,14 @@
     "topic_pending_teacher": "Leave the topic empty to let the assigned teacher write it. Sending requires a topic.",
     "video_url_invalid": "Use an https:// link without spaces.",
     "video_url_label": "Video link",
-    "video_url_placeholder": "https://"
+    "video_url_placeholder": "https://",
+    "send_blocked_unverified": "Not sent: {count} recipients have not verified their email",
+    "send_blocked_unverified_helper": "The announcement was kept as it was. Send verification to {emails}, then send again once they confirm.",
+    "bulk_send_blocked_unverified": "{blocked} announcements were not sent because {contacts} recipients have not verified their email. They were kept, so you can send them after verification.",
+    "verify_bulk_result": "Verification sent to {sent} contacts; {pending} already had a pending link.",
+    "verify_bulk_rate_limited": "Sending limit reached: {count} contacts were not sent a link. Try again in a few minutes.",
+    "verify_bulk_failed": "{count} contacts could not be sent a link.",
+    "verify_all_unverified": "Send verification to {count} unverified"
   },
   "ws-topic-announcements-gate": {
     "disabled_description": "Turn topic announcements on to keep a verified contact list and send reusable announcements from this workspace.",
@@ -9181,7 +9188,7 @@
     "conflict_teacher_slots": "Session {slotA} conflicts with session {slotB} for the selected teacher",
     "content": "Content",
     "content_placeholder": "What should the teacher cover in these sessions?",
-    "content_rule_absent": "Use the missed class lesson. Recorded lesson content is filled in when available; check it before saving.",
+    "content_rule_absent": "Uses the notes from the missed class. Leave the drafted notes as they are to keep them following the class notes until the session is completed.",
     "content_rule_weak": "Use the learning need entered by the homeroom teacher. Review it before saving.",
     "content_update_failed": "Could not save the lesson content. Try again.",
     "content_updated": "Lesson content saved",
@@ -9428,7 +9435,21 @@
     "unavailable_title": "We couldn't load this workspace",
     "weak_content_review_due": "Office review: content unchanged",
     "weak_support": "Weak support",
-    "when": "When"
+    "when": "When",
+    "content_linked_badge": "Follows the missed lesson notes",
+    "content_linked_hint": "Until this session is completed, the content follows the notes recorded for the missed class. Saving your own text stops the updates; clearing it links the notes again.",
+    "end_weak_support": "End tutoring",
+    "end_weak_support_confirm": "End tutoring",
+    "end_weak_support_description": "{student} leaves weak-support tutoring for {group}: the needs-support flag is cleared and no new sessions are suggested. The tutoring content stays in feedback history, and sessions already scheduled stay on the schedule.",
+    "end_weak_support_done": "Tutoring ended",
+    "end_weak_support_failed": "Could not end tutoring. Try again.",
+    "end_weak_support_title": "End weak-support tutoring?",
+    "linked_content_not_stored": "Session completed, but the missed lesson notes could not be saved to it. Check its content.",
+    "policy_restrict_weak_content": "Only class managers set tutoring content",
+    "policy_restrict_weak_content_help": "When on, only members who can manage classes (update user groups) can set, edit, or end weak-support tutoring content.",
+    "policy_restrict_weak_content_off": "Off",
+    "policy_restrict_weak_content_on": "On",
+    "tutoring_content": "Tutoring content"
   },
   "ws-user-attendance": {
     "absent": "Absent",
@@ -9532,7 +9553,8 @@
     "title": "User Feedbacks",
     "unknown_group": "Unknown Group",
     "unknown_user": "Unknown User",
-    "user_group_required": "Target user and group are required"
+    "user_group_required": "Target user and group are required",
+    "tutoring_content_hint": "This learner joins weak-support tutoring. The text above is the tutoring content (Nội dung kèm) the tutor teaches."
   },
   "ws-user-fields": {
     "value": "Value"

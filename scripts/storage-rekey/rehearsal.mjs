@@ -18,6 +18,7 @@ import {
   fetchServiceRoleKey,
   lit,
   readSecretFile,
+  storageAuthHeaders,
 } from './supabase.mjs';
 
 const TEST_WS = '00000000-0000-0000-0000-000000000002'; // seeded "Prototype General"
@@ -43,7 +44,7 @@ if (!/development|staging/i.test(project?.name ?? '')) {
 const sql = createSqlClient({ projectRef, accessToken });
 const serviceKey = await fetchServiceRoleKey({ projectRef, accessToken });
 const base = `https://${projectRef}.supabase.co/storage/v1`;
-const headers = { authorization: `Bearer ${serviceKey}`, apikey: serviceKey };
+const headers = storageAuthHeaders(serviceKey);
 
 async function upload(key, type) {
   const response = await fetch(

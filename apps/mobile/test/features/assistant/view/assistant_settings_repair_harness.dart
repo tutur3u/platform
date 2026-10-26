@@ -126,9 +126,7 @@ class RepairHarness extends BackgroundReplyHarness {
     await tester.pumpAndSettle();
     await tester.tap(find.byIcon(LucideIcons.history));
     await tester.pumpAndSettle();
-    await tester.tap(
-      find.widgetWithIcon(AppIconButton, LucideIcons.messageSquarePlus),
-    );
+    await tester.tap(find.byKey(const ValueKey('assistant-history-new')));
     await tester.pumpAndSettle();
   }
 }

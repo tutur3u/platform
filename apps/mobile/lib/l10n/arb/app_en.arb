@@ -718,34 +718,6 @@
       }
     }
   },
-  "@profileTimelineNotes": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "@profileTimelineTasks": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "@profileTimelineTransactions": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "@profileTimelineWorkspaceEvents": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "@profileTrackedMinutes": {
     "placeholders": {
       "minutes": {
@@ -1403,7 +1375,6 @@
   "assistantLiveDraftAssistant": "Mira is replying",
   "assistantLiveDraftUser": "You are speaking",
   "assistantLiveHideCamera": "Hide camera",
-  "assistantLiveIdleHeading": "Ready to talk",
   "assistantLiveInfoAccessHeading": "Current access",
   "assistantLiveInfoDismiss": "Got it",
   "assistantLiveInfoTitle": "Live information",
@@ -1433,6 +1404,7 @@
   "assistantLiveStageAssistantSpeaking": "Voice response is streaming",
   "assistantLiveStageYouListening": "Your microphone is live",
   "assistantLiveStageYouMuted": "Tap the mic to speak again",
+  "assistantLiveStartTalking": "Start talking",
   "assistantLiveStartupAudio": "Audio initialization",
   "assistantLiveStartupDuration": "{milliseconds} ms",
   "assistantLiveStartupHistory": "Conversation history",
@@ -1455,9 +1427,7 @@
   "assistantLiveSubtitle": "Gemini 3.1 Flash Live with voice, camera, attachments, and unified chat history.",
   "assistantLiveTierRequired": "Live voice is available on PLUS and above.",
   "assistantLiveTitle": "Mira Live",
-  "assistantLiveTranscriptEmpty": "Start talking or type a message. Your conversation appears here.",
   "assistantLiveTranscriptPending": "Transcript changes are not yet synchronized.",
-  "assistantLiveTranscriptTitle": "Live transcript",
   "assistantLiveTypeMessage": "Type",
   "assistantLiveWorkspaceTierLabel": "Workspace {tier}",
   "assistantLocalBudget": "Model storage budget exceeded. Remove a model before installing another.",
@@ -1491,6 +1461,7 @@
   "assistantLocalSelected": "Selected for Mira",
   "assistantLocalSelectionUnknown": "A previously selected local model is no longer in the catalogue. Choose a model or explicitly choose remote mode.",
   "assistantLocalSize": "{size} MiB",
+  "assistantLocalSourceEmpty": "Download a model below",
   "assistantLocalStop": "Stop local generation",
   "assistantLocalStorageError": "Could not save local history or mode. Your conversation has not been uploaded.",
   "assistantLocalTextOnly": "Local mode supports text only",
@@ -1521,6 +1492,7 @@
   "assistantModelInputCost": "Input",
   "assistantModelLabel": "Model",
   "assistantModelOutputCost": "Output",
+  "assistantModelSourceTitle": "Model source",
   "assistantModelUnfavorite": "Remove from favorites",
   "assistantNewConversation": "New conversation",
   "assistantOutputLabel": "Output",
@@ -1931,6 +1903,7 @@
   "commonLive": "Live",
   "commonLoadMore": "Load more",
   "commonLoading": "Loading",
+  "commonMoreOptions": "More options",
   "commonNext": "Next",
   "commonNoSearchResults": "No matching results",
   "commonOff": "Off",
@@ -3446,19 +3419,19 @@
   "profileTimelineEmpty": "No recent activity in this workspace",
   "profileTimelineHasActivity": "Activity in loaded snapshot",
   "profileTimelineHideDates": "Close dates and browse agenda",
+  "profileTimelineKindNote": "Note",
+  "profileTimelineKindTask": "Task",
+  "profileTimelineKindTransaction": "Transaction",
+  "profileTimelineKindWorkspaceEvent": "Workspace event",
   "profileTimelineLimited": "Showing recent activity only. Some sources reached the display limit.",
   "profileTimelineLoadedEnd": "All loaded activity shown",
   "profileTimelineMoreDays": "Show more loaded days",
-  "profileTimelineNotes": "{count, plural, one{Added 1 note} other{Added {count} notes}}",
   "profileTimelinePartial": "Some activity is unavailable.",
   "profileTimelineShowDates": "Show date selector",
   "profileTimelineTab": "Timeline",
-  "profileTimelineTasks": "{count, plural, one{Created 1 task} other{Created {count} tasks}}",
   "profileTimelineTitle": "Timeline",
   "profileTimelineToday": "Today",
-  "profileTimelineTransactions": "{count, plural, one{Created 1 transaction} other{Created {count} transactions}}",
   "profileTimelineUnavailable": "Activity could not be refreshed.",
-  "profileTimelineWorkspaceEvents": "{count, plural, one{1 workspace event added} other{{count} workspace events added}}",
   "profileTimelineYesterday": "Yesterday",
   "profileTitle": "Profile",
   "profileTrackedMinutes": "{minutes} min tracked",
@@ -4513,6 +4486,7 @@
   "timerHeatmapViewCompactCards": "Cards",
   "timerHeatmapViewHybrid": "Hybrid",
   "timerHeatmapViewOriginal": "Original",
+  "timerHeatmapViewTitle": "View",
   "timerHeatmapWed": "We",
   "timerHeatmapYearPattern": "Activity Pattern",
   "timerHistory": "History",
