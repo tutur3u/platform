@@ -18,6 +18,7 @@ import utc from 'dayjs/plugin/utc';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import { switchPomodoroOffForTimer } from '@/lib/time-tracking/pomodoro-deps';
 import {
   getWorkspaceConfig,
   isPersonalWorkspace,
@@ -864,7 +865,6 @@ export const POST = withSessionAuth<{ wsId: string }>(
         );
       }
 
-      // Use service role client for secure operations
       const sbAdmin = await createAdminClient(); // This should use service role
 
       const taskValidation = await validateSessionTaskWorkspace({
@@ -896,7 +896,6 @@ export const POST = withSessionAuth<{ wsId: string }>(
         }
       }
 
-      // If this is a manual entry (missed entry), handle differently
       if (startTime && endTime) {
         return handleManualEntry({
           requestBody: validatedBody,
@@ -917,6 +916,7 @@ export const POST = withSessionAuth<{ wsId: string }>(
         );
       }
 
+      await switchPomodoroOffForTimer(normalizedWsId, user.id);
       return createRunningSession({
         requestBody: validatedBody,
         user,

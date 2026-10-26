@@ -233,24 +233,27 @@ with its own `project_id` and ports, as in
 
 ### Timer routes go through the controller (before client adoption)
 
-The Timer's own start, stop, pause and resume routes are the main other
-writers. Before any client adopts the Pomodoro, they move behind the same
-lock:
+The Timer's own session routes consult the Pomodoro first
+(`apps/web/src/lib/time-tracking/pomodoro-timer-bridge.ts`):
 
-- Each takes the actor's advisory lock and reads the control row.
-- When the control is OFF, they behave exactly as today.
-- When a Pomodoro is on and the request targets its `prepared_session_id`
-  (or resume chain), the route plans the matching Pomodoro command (stop,
-  pause, resume) instead, so both stay in sync.
-- On a **session mismatch** (the request targets or starts a different
-  session), the route applies the request as today and switches the
-  Pomodoro OFF (reset to idle, revision bumped, broadcast).
+- **Its own focus session:** a Timer stop, pause or resume of the Pomodoro's
+  `prepared_session_id` (or a session resumed from it) runs as the matching
+  Pomodoro command. The Timer answers with the resulting session in its usual
+  shape, so the shared phase follows the Timer.
+- **Starting a timer, or resuming another session:** the Pomodoro switches
+  OFF first, with no session effects, and the Timer then acts as before. A
+  running focus session is closed by the Timer's own start, as today.
+- **Stop, pause or edit of another session:** the Pomodoro is left alone.
+- **A refused command** (for example a pause while the Pomodoro already has
+  the focus paused) switches the Pomodoro OFF and lets the Timer act.
 - **A device never closes a manual timer.** No Pomodoro command, reconcile or
-  route on another device stops a session that is not the stored
-  `prepared_session_id` or its chain.
+  route stops a session that is not the stored `prepared_session_id` or its
+  chain.
 
-Missed-entry, edit and approval writers still bypass this; full writer
-closure stays a separate prerequisite.
+The Pomodoro side is atomic under the lock; the Timer's own writes still are
+not. When they race, the database turns the Pomodoro OFF (`mismatch`) on its
+next command. Missed-entry, edit and approval writers also stay outside, so
+full writer closure remains a separate prerequisite.
 
 ### Tests the migration must ship with
 
