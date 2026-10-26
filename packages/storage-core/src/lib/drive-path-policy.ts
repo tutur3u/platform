@@ -10,22 +10,26 @@ function isPrivateAppStoragePath(path: string): boolean {
   if (sanitized === null) return true;
   // Match encoded aliases conservatively; transport encoding must not select
   // a different authorization policy from the literal storage namespace.
-  let root = sanitized.split('/')[0] ?? '';
+  let namespace = sanitized.split('/').slice(0, 2).join('/');
   for (let pass = 0; pass < 5; pass += 1) {
-    const decoded = root.replace(/%([\da-f]{2})/gi, (_match, byte: string) =>
-      String.fromCharCode(Number.parseInt(byte, 16))
+    const decoded = namespace.replace(
+      /%([\da-f]{2})/gi,
+      (_match, byte: string) => String.fromCharCode(Number.parseInt(byte, 16))
     );
-    if (decoded === root) break;
-    root = decoded;
+    if (decoded === namespace) break;
+    namespace = decoded;
   }
-  return [
-    'chat',
-    'chats',
-    'external-apps',
-    'AI Agent Imports',
-    'mira',
-    'recordings',
-  ].includes(root);
+  const [root, child] = namespace.split('/');
+  return (
+    [
+      'chat',
+      'chats',
+      'external-apps',
+      'AI Agent Imports',
+      'recordings',
+    ].includes(root ?? '') ||
+    (root === 'mira' && child === 'images')
+  );
 }
 
 export function isExcludedDrivePath(wsId: string, path: string): boolean {

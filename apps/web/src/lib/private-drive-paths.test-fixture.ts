@@ -18,7 +18,10 @@ export const PRIVATE_DRIVE_RESOURCE_PATHS = [
   '%2563hat/member-a-chat/notes.txt',
   'chat\\member-a-chat\\notes.txt',
   'AI Agent Imports/zalo/channel/thread/private.mp3',
+  'AI%20Agent%20Imports/zalo/channel/thread/private.mp3',
   'mira/images/private-image.png',
+  'mira/images',
+  'mira/%69mages/private.png',
   'recordings/meeting/session/private.webm',
 ] as const;
 
@@ -27,6 +30,5 @@ export const PRIVATE_DRIVE_ROOTS = [
   'chats',
   'external-apps',
   'AI Agent Imports',
-  'mira',
   'recordings',
 ] as const;

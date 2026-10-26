@@ -57,11 +57,15 @@ from `packages/internal-api`, and consume it from `apps/drive`.
 
 Drive permissions apply to ordinary Drive files. They do not grant access to
 application-owned chat attachments. In every workspace, Drive share, download,
-list, export, upload, rename, and delete boundaries reject the `chat`, `chats`, `external-apps`, `AI Agent Imports`, `mira`,
-and `recordings` namespaces. This includes legacy AI chat, private Mind threads,
-temporary/native/voice chat resources, imported external-chat media, Mira image
-results, and meeting audio. Root listings and Drive analytics
-omit those objects; quota accounting continues to count their bytes.
+list, export, upload, rename, and delete boundaries reserve the root names `chat`,
+`chats`, `external-apps`, `AI Agent Imports`, and `recordings` for their owning
+applications. Only the two-segment prefix `mira/images` is reserved for Mira image
+results; `mira` itself and ordinary files such as `mira/notes.txt` remain available.
+Root/directory listings and Drive analytics omit private objects; quota accounting
+continues to count their bytes. Exports omit private descendants. Recursive Drive
+renames/deletes validate every enumerated object before any mutation, so a parent
+operation cannot expose or remove `mira/images`. A `mira` folder containing only
+ordinary files can be renamed or deleted normally.
 
 This applies to Web, the Drive satellite, mobile Drive, and API-key storage APIs.
 Even an attachment's owner must use the owning application API for these paths.
@@ -102,8 +106,20 @@ Intentional Drive outputs remain accessible: `drive/mira/qr/` is explicitly save
 to Drive (`packages/ai/src/tools/executors/qr.ts:114`), and Meet room files and
 recordings use the creator's personal Drive (`packages/meet-core/src/routes/api/meet-call/[meetingId]/files/route.ts:38`
 and sibling `recording/route.ts:43`). See the Meet call recording decision.
-Profile/report buckets and workspace-wide branding/template/whiteboard assets
-are outside this private chat/media namespace policy.
+Profile/report buckets and workspace-wide branding/template/whiteboard assets,
+`task-images`, `project-updates`, and `forms` are outside this private chat/media
+namespace policy.
+
+### Reserved-name collision check
+
+A user-created `recordings` root folder could plausibly collide with the reserved
+meeting prefix: older generic folder/upload APIs allowed arbitrary root names,
+and objects beneath a user-selected `recordings` folder use the same namespace.
+This is source reasoning only; no production inventory was read and no collision
+is confirmed. Keep `recordings` reserved. A later approved operator check should
+inventory that prefix, distinguish meeting/session objects from user-created
+files, and plan reference-preserving relocation for any collisions. Do not infer
+ownership from the folder name or automatically move/delete matching objects.
 
 ### Previously issued signed URLs
 

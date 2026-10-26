@@ -48,5 +48,15 @@ it('keeps ordinary Drive renames working', async () => {
     currentName: 'before',
     newName: 'after',
     isFolder: true,
+    driveOnly: true,
   });
+});
+
+it('denies renaming into or out of mira/images', async () => {
+  expect((await rename('images', 'notes', 'mira')).status).toBe(403);
+  expect((await rename('notes', 'images', 'mira')).status).toBe(403);
+  expect(mocks.rename).not.toHaveBeenCalled();
+});
+it('allows an ordinary mira file rename', async () => {
+  expect((await rename('notes.txt', 'renamed.txt', 'mira')).status).toBe(200);
 });

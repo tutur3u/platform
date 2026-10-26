@@ -169,24 +169,27 @@ describe('Drive sharing does not authorize private chat resources', () => {
     }
   );
 
-  it('keeps member B own Drive file shareable', async () => {
-    const response = await POST(
-      new Request('http://localhost/api/v1/workspaces/ws-123/storage/share', {
-        method: 'POST',
-        body: JSON.stringify({ path: 'documents/member-b/report.pdf' }),
-      }),
-      params
-    );
-    expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({
-      signedUrl: 'https://storage.example/signed-object',
-    });
-    expect(mocks.createWorkspaceStorageSignedReadUrl).toHaveBeenCalledWith(
-      'ws-123',
-      'documents/member-b/report.pdf',
-      expect.objectContaining({ expiresIn: 31_536_000 })
-    );
-  });
+  it.each(['documents/member-b/report.pdf', 'mira/notes.txt'])(
+    'keeps own Drive file %s shareable',
+    async (path) => {
+      const response = await POST(
+        new Request('http://localhost/api/v1/workspaces/ws-123/storage/share', {
+          method: 'POST',
+          body: JSON.stringify({ path }),
+        }),
+        params
+      );
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual({
+        signedUrl: 'https://storage.example/signed-object',
+      });
+      expect(mocks.createWorkspaceStorageSignedReadUrl).toHaveBeenCalledWith(
+        'ws-123',
+        path,
+        expect.objectContaining({ expiresIn: 31_536_000 })
+      );
+    }
+  );
 });
 
 vi.mock('next/server', async (importOriginal) => ({

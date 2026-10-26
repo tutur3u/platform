@@ -35,7 +35,7 @@ beforeEach(() => {
   });
 });
 
-it.each(['50% done', 'docs/', '/docs'])(
+it.each(['50% done', 'docs/', '/docs', 'mira'])(
   'preserves legacy list path compatibility for %j',
   async (path) => {
     const response = await GET(
@@ -48,7 +48,7 @@ it.each(['50% done', 'docs/', '/docs'])(
     expect(mocks.listWorkspaceStorageDirectory).toHaveBeenCalledWith(
       'workspace-test',
       expect.objectContaining({
-        path: path === '50% done' ? path : 'docs',
+        path: ['50% done', 'mira'].includes(path) ? path : 'docs',
       })
     );
   }

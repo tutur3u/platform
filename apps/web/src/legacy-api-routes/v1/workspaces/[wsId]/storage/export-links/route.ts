@@ -30,11 +30,15 @@ function toExportableFiles(
   objects: Awaited<
     ReturnType<typeof listWorkspaceStorageRawObjectsForProvider>
   >,
-  prefix: string
+  prefix: string,
+  wsId: string
 ) {
   return objects
     .filter(
-      (object) => !object.isFolderPlaceholder && object.path.startsWith(prefix)
+      (object) =>
+        !object.isFolderPlaceholder &&
+        object.path.startsWith(prefix) &&
+        !isExcludedDrivePath(wsId, object.path)
     )
     .map((object) => ({
       path: object.path,
@@ -120,7 +124,7 @@ export async function POST(
     }
 
     objects = objects.slice(0, EXPORT_LINKS_RAW_OBJECT_SCAN_LIMIT);
-    const files = toExportableFiles(objects, prefix);
+    const files = toExportableFiles(objects, prefix, normalizedWsId);
 
     if (files.length === 0) {
       return NextResponse.json(

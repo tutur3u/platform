@@ -160,7 +160,8 @@ export async function DELETE(
     await deleteWorkspaceStorageFolderByPath(
       normalizedWsId,
       sanitizedPath,
-      sanitizedName
+      sanitizedName,
+      { driveOnly: true }
     );
 
     return NextResponse.json({ success: true, message: 'Folder deleted' });

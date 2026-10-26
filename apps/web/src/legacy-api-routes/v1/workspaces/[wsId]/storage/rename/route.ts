@@ -88,6 +88,7 @@ export async function POST(
       currentName,
       newName,
       isFolder: parsed.data.isFolder,
+      driveOnly: true,
     });
 
     return NextResponse.json({

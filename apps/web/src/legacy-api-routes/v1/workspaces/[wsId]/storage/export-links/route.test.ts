@@ -201,4 +201,16 @@ describe('workspace storage export-links route', () => {
       expect(mocks.createWorkspaceStorageExportToken).not.toHaveBeenCalled();
     }
   );
+  it('exports ordinary mira files without private image descendants', async () => {
+    mocks.listWorkspaceStorageRawObjectsForProvider.mockResolvedValue([
+      createRawObject('mira/notes.txt'),
+      createRawObject('mira/images/private.png'),
+    ]);
+    const response = await postExportLinks('mira');
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      files: [{ path: 'mira/notes.txt' }],
+    });
+    expect(mocks.createWorkspaceStorageExportAssetUrl).toHaveBeenCalledTimes(1);
+  });
 });

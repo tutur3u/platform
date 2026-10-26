@@ -26,6 +26,9 @@ describe('Drive excludes private chat namespaces', () => {
   it('keeps ordinary Drive names and nested chats folders', () => {
     for (const path of [
       '',
+      'mira',
+      'mira/notes.txt',
+      'mira/images-backup/file.png',
       'documents/file.pdf',
       'documents/chats/file.txt',
       'chats-backup/file.pdf',
@@ -48,9 +51,19 @@ describe('Drive excludes private chat namespaces', () => {
         { name: '%63hats' },
         { name: 'documents' },
       ])
-    ).toEqual([{ name: 'documents' }]);
+    ).toEqual([{ name: 'mira' }, { name: 'documents' }]);
     expect(
       filterDriveEntries('ws-1', 'documents', [{ name: 'chats' }])
     ).toEqual([{ name: 'chats' }]);
   });
+});
+
+it('keeps mira visible and hides only its private images child', () => {
+  expect(
+    filterDriveEntries('ws-1', 'mira', [
+      { name: 'notes.txt' },
+      { name: 'images' },
+      { name: '%69mages' },
+    ])
+  ).toEqual([{ name: 'notes.txt' }]);
 });
