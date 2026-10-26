@@ -477,8 +477,17 @@ requests. Nobody repairs a rejected credential by hand.
   is reused only through a guarded update that matches a row still active,
   unquarantined and unchanged since the callback read it; otherwise (including
   a quarantined row) the callback keeps the quarantine and sends the user
-  through consent again instead of reviving the rejected credential. Ordinary
-  reconnects stay consent-free.
+  through consent again instead of reviving the rejected credential. Automatic
+  consent restarts are capped at one per account/user/workspace in each fixed
+  ten-minute window, shared across instances and newly initiated OAuth flows by
+  the existing single-use nonce ledger. Window boundaries can admit two close
+  attempts, but never an unbounded loop. A repeated missing refresh token returns
+  localized HTTP 429 with `Retry-After`; an unavailable ledger returns HTTP 503
+  and never starts another consent flow. Neither response changes the token row.
+  A genuinely fresh refresh token bypasses this restart cap and can complete
+  recovery. Explicit user-initiated reconnects retain their consent behavior;
+  ordinary connects stay consent-free. Coverage: `google-consent-restart.test.ts`
+  and the Google callback route tests.
 - **Observability.** One `calendar.oauth.token_outcome` log line per outcome
   carries the route template, provider, outcome, reason, provider code and a
   hashed account id. `calendar.oauth.deactivation_spike` fires on five or more
