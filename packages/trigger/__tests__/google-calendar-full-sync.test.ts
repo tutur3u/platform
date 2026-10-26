@@ -27,10 +27,17 @@ const importIds = vi.hoisted(() => ({
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: async () => ({
     from: () => {
+      // Keyset read of the workspace's active Google rows; the token is
+      // matched in process against the access token the test passes.
       const query = {
         select: () => query,
         eq: () => query,
-        limit: async () => ({ data: [{ id: importIds.token }], error: null }),
+        gt: () => query,
+        order: () => query,
+        limit: async () => ({
+          data: [{ id: importIds.token, access_token: 'test-access-token' }],
+          error: null,
+        }),
       };
       return query;
     },

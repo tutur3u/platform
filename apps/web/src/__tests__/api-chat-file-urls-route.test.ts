@@ -27,6 +27,19 @@ const mocks = vi.hoisted(() => {
   };
 
   const adminSupabase = {
+    from: vi.fn((table: string) => {
+      if (table !== 'ai_chats') throw new Error('unexpected admin table');
+      return {
+        select: vi.fn(() => ({
+          eq: vi.fn(() => ({
+            maybeSingle: vi.fn(async () => ({
+              data: { creator_id: 'user-1' },
+              error: null,
+            })),
+          })),
+        })),
+      };
+    }),
     storage: {
       from: vi.fn(() => ({
         list,

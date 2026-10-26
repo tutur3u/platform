@@ -12,6 +12,7 @@ export type PolicySectionId =
   | 'presets'
   | 'timing'
   | 'exceptions'
+  | 'groupShifts'
   | 'weak'
   | 'campuses'
   | 'message';
@@ -19,6 +20,7 @@ const TITLES = {
   presets: 'policy_presets',
   timing: 'policy_timing',
   exceptions: 'policy_exceptions',
+  groupShifts: 'policy_group_shifts',
   weak: 'policy_weak_rules',
   campuses: 'policy_campuses',
   message: 'policy_parent_template',
@@ -65,8 +67,13 @@ function PolicySummary({
             <div>
               <p className="font-medium">
                 {rule.label || t('policy_class_time')}: {rule.classStartTime}
+                {rule.classEndTime ? `–${rule.classEndTime}` : ''}
+                {rule.classWeekdays
+                  ? ` · ${rule.classWeekdays.map((day) => t(`policy_weekday_${day}`)).join(', ')}`
+                  : ''}
               </p>
               <p className="text-muted-foreground text-sm">
+                {t('policy_tutoring_days')}:{' '}
                 {rule.weekdays
                   .map((day) => t(`policy_weekday_${day}`))
                   .join(', ')}
@@ -92,6 +99,12 @@ function PolicySummary({
         <p>
           {t('policy_weakContentReviewDays')}: {policy.weakContentReviewDays}
         </p>
+        <p>
+          {t('policy_restrict_weak_content')}:{' '}
+          {policy.restrictWeakContentEditors
+            ? t('policy_restrict_weak_content_on')
+            : t('policy_restrict_weak_content_off')}
+        </p>
         {policy.groupExclusions.length ? (
           <ul className="space-y-1 text-sm">
             {policy.groupExclusions.map((rule, index) => (
@@ -107,6 +120,23 @@ function PolicySummary({
           </p>
         )}
       </div>
+    );
+  if (id === 'groupShifts')
+    return Object.entries(policy.shiftByGroupId).length ? (
+      <dl className="space-y-2">
+        {Object.entries(policy.shiftByGroupId).map(([groupId, label]) => (
+          <div className="flex justify-between gap-3" key={groupId}>
+            <dt>
+              {groups.find((group) => group.id === groupId)?.name || groupId}
+            </dt>
+            <dd>{label}</dd>
+          </div>
+        ))}
+      </dl>
+    ) : (
+      <p className="text-muted-foreground text-sm">
+        {t('policy_no_group_shifts')}
+      </p>
     );
   if (id === 'campuses')
     return Object.entries(policy.campusByGroupId).length ? (

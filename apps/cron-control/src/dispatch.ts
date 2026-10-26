@@ -92,14 +92,15 @@ function workerProcessorFor(cronJob: CronJob, env: DispatchEnv) {
   return WORKER_PROCESSORS[cronJob.workerProcessor];
 }
 
-type Attempt = 'failed' | 'ok' | 'retryable' | 'unknown';
+type Attempt = 'degraded' | 'failed' | 'ok' | 'retryable' | 'unknown';
 
 // Existing processors return JSON objects, some without an ok field. A partial,
 // unreadable or oversized summary cannot establish success, even after 200 headers.
 export const MAX_OUTCOME_BODY_BYTES = 64 * 1024;
 
 async function readOutcome(
-  response: Response
+  response: Response,
+  allowDegraded: boolean
 ): Promise<Exclude<RunOutcome, 'stopped'>> {
   const reader = response.body?.getReader();
   if (!reader) return 'unknown';
@@ -124,8 +125,25 @@ async function readOutcome(
     );
     if (typeof body !== 'object' || body === null || Array.isArray(body))
       return 'unknown';
-    if ('ok' in body)
-      return body.ok === true ? 'ok' : body.ok === false ? 'failed' : 'unknown';
+    if ('ok' in body) {
+      if (body.ok === false) return 'failed';
+      if (body.ok !== true) return 'unknown';
+      if (allowDegraded && 'degraded' in body && body.degraded !== false) {
+        if (body.degraded !== true || !('transientProviders' in body))
+          return 'unknown';
+        const providers = body.transientProviders;
+        return Array.isArray(providers) &&
+          providers.length > 0 &&
+          providers.length <= 2 &&
+          new Set(providers).size === providers.length &&
+          providers.every(
+            (provider) => provider === 'google' || provider === 'microsoft'
+          )
+          ? 'degraded'
+          : 'unknown';
+      }
+      return 'ok';
+    }
     return 'ok';
   } catch {
     return 'unknown';
@@ -163,7 +181,10 @@ async function invoke(
   }
   if (response.ok)
     return {
-      result: await readOutcome(response),
+      result: await readOutcome(
+        response,
+        cronJob.id === 'calendar-provider-sync'
+      ),
       status: response.status,
     };
   await response.body?.cancel().catch(() => undefined);
