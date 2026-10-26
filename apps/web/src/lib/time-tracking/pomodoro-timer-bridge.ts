@@ -25,7 +25,10 @@ import {
 
 export type TimerSessionAction = 'stop' | 'pause' | 'resume';
 
-export type TimerBridgeResult = { sessionId: string } | { conflict: true } | null;
+export type TimerBridgeResult =
+  | { sessionId: string }
+  | { conflict: true }
+  | null;
 
 export interface TimerSessionRef {
   id: string;
