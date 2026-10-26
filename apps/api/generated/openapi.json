@@ -1,0 +1,337 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Tuturuuu API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/health": {
+      "get": {
+        "operationId": "getHealth",
+        "security": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Validated response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "const": "ok"
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Request failure; writes are never automatically retried",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-policy": {
+          "kind": "public"
+        },
+        "x-runtime": "worker",
+        "x-limits": {
+          "bodyBytes": 0,
+          "deadlineMs": 3000,
+          "ratePolicy": "metadata-read"
+        },
+        "x-guard": "metadata"
+      }
+    },
+    "/api/build-info": {
+      "get": {
+        "operationId": "getBuildInfo",
+        "security": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Validated response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "appName": {
+                      "type": "string"
+                    },
+                    "version": {
+                      "type": "string"
+                    },
+                    "builtAt": {
+                      "type": "string"
+                    },
+                    "commitHash": {
+                      "type": "string"
+                    },
+                    "commitMessage": {
+                      "type": "string"
+                    },
+                    "deploymentStamp": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "deploymentUrl": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "environment": {
+                      "type": "string"
+                    },
+                    "refName": {
+                      "type": "string"
+                    },
+                    "shortCommitHash": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "appName",
+                    "version",
+                    "builtAt",
+                    "commitHash",
+                    "commitMessage",
+                    "deploymentStamp",
+                    "deploymentUrl",
+                    "environment",
+                    "refName",
+                    "shortCommitHash"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Request failure; writes are never automatically retried",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-policy": {
+          "kind": "public"
+        },
+        "x-runtime": "worker",
+        "x-limits": {
+          "bodyBytes": 0,
+          "deadlineMs": 3000,
+          "ratePolicy": "metadata-read"
+        },
+        "x-guard": "metadata"
+      }
+    },
+    "/api/v1/mobile/version": {
+      "get": {
+        "operationId": "getMobileVersion",
+        "security": [],
+        "parameters": [
+          {
+            "name": "platform",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ios",
+                "android"
+              ]
+            }
+          },
+          {
+            "name": "build",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]*)$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Validated response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "platform": {
+                      "type": "string",
+                      "enum": [
+                        "ios",
+                        "android"
+                      ]
+                    },
+                    "currentBuild": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "minimumSupportedBuild": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "latestBuild": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "storeUrl": {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "requiresUpdate": {
+                      "type": "boolean"
+                    },
+                    "shouldUpdate": {
+                      "type": "boolean"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "supported",
+                        "update-recommended",
+                        "update-required"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "platform",
+                    "currentBuild",
+                    "minimumSupportedBuild",
+                    "latestBuild",
+                    "storeUrl",
+                    "requiresUpdate",
+                    "shouldUpdate",
+                    "status"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Request failure; writes are never automatically retried",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-policy": {
+          "kind": "public"
+        },
+        "x-runtime": "worker",
+        "x-limits": {
+          "bodyBytes": 0,
+          "deadlineMs": 3000,
+          "ratePolicy": "metadata-read"
+        },
+        "x-guard": "metadata"
+      }
+    }
+  }
+}

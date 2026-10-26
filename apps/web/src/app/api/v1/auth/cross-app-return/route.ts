@@ -5,6 +5,7 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { MAX_URL_LENGTH } from '@tuturuuu/utils/constants';
+import { getMountedAppVerifyTokenMatch } from '@tuturuuu/utils/internal-app-mounts';
 import {
   type AppDomain,
   getAppDomainByUrl,
@@ -33,14 +34,37 @@ function decodeReturnUrl(returnUrl: string) {
 
 type ResolvedCrossAppTarget = {
   appName: string;
+  /** Set for an app mounted on the apex: its verifier and app-relative next path. */
+  mount?: { basePath: string; nextPath: string };
   canonicalReturnUrl: string;
   kind: AppDomain['kind'] | 'managed-tuturuuu';
   requiresToken: boolean;
   targetApp: string;
 };
 
-function mapConfiguredUrlToApp(returnUrl: string) {
+function mapConfiguredUrlToApp(
+  returnUrl: string
+): ResolvedCrossAppTarget | null {
   const decodedUrl = decodeReturnUrl(returnUrl);
+  const mounted = getMountedAppVerifyTokenMatch(decodedUrl);
+
+  if (mounted) {
+    return {
+      appName: mounted.name,
+      canonicalReturnUrl: mounted.canonicalUrl,
+      kind: 'internal',
+      mount: {
+        basePath: mounted.basePath,
+        nextPath: normalizeAuthRedirectPath(
+          mounted.nextUrl,
+          mounted.origin,
+          '/'
+        ),
+      },
+      requiresToken: true,
+      targetApp: mounted.name,
+    };
+  }
 
   try {
     const appDomain = getAppDomainByUrl(decodedUrl);
@@ -97,6 +121,16 @@ async function resolveTargetApp(
 
 function buildTokenReturnUrl(target: ResolvedCrossAppTarget) {
   const nextUrl = new URL(target.canonicalReturnUrl);
+
+  if (target.mount) {
+    const verifyUrl = new URL(
+      `${target.mount.basePath}/verify-token`,
+      nextUrl.origin
+    );
+    verifyUrl.searchParams.set('nextUrl', target.mount.nextPath);
+
+    return verifyUrl;
+  }
 
   if (target.kind === 'internal') {
     const normalizedTargetPath = normalizeAuthRedirectPath(

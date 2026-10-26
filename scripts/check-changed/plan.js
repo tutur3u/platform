@@ -3,6 +3,7 @@
 
 const path = require('node:path');
 const { reverseDependents, assertSafePaths } = require('./workspaces.js');
+const { AUTH_GUARDS } = require('../auth-guards.js');
 const { PAUSED_APP_DIRECTORIES } = require('../paused-runtimes.js');
 
 const BIOME_VERSION = '2.5.13';
@@ -28,11 +29,6 @@ const WORKFLOW_POLICY_TESTS = [
   'scripts/ci/protected-workflow-concurrency.test.js',
   'scripts/ci/bun-workflow-pins.test.js',
   'scripts/ci/check-workflow-config.test.js',
-];
-const AUTH_GUARDS = [
-  ['internal-app-auth', 'scripts/check-internal-app-auth.js'],
-  ['satellite-cookie-auth', 'scripts/check-satellite-cookie-auth.js'],
-  ['server-console', 'scripts/check-server-console.js'],
 ];
 
 function isPausedPath(file) {
@@ -90,20 +86,77 @@ function nodeScriptTests(files, exists) {
   return [...selected].sort();
 }
 
-function isNodeTest(file, context) {
+function runtimeImports(source, filename) {
+  const { parse } = require('@babel/parser');
+  const ast = parse(source, {
+    sourceType: 'unambiguous',
+    sourceFilename: filename,
+    plugins: ['typescript', 'jsx'],
+    createImportExpressions: true,
+    allowReturnOutsideFunction: true,
+  });
+  const imports = new Set();
+  function visit(node) {
+    if (!node || typeof node !== 'object') return;
+    let specifier;
+    if (
+      node.type === 'ImportDeclaration' &&
+      node.importKind !== 'type' &&
+      (node.specifiers.length === 0 ||
+        node.specifiers.some((entry) => entry.importKind !== 'type'))
+    ) {
+      specifier = node.source;
+    } else if (
+      (node.type === 'ExportNamedDeclaration' ||
+        node.type === 'ExportAllDeclaration') &&
+      node.exportKind !== 'type'
+    ) {
+      specifier = node.source;
+    } else if (node.type === 'ImportExpression') {
+      specifier = node.source;
+    } else if (
+      node.type === 'CallExpression' &&
+      node.callee.type === 'Identifier' &&
+      node.callee.name === 'require'
+    ) {
+      specifier = node.arguments[0];
+    } else if (
+      node.type === 'TSImportEqualsDeclaration' &&
+      node.importKind !== 'type' &&
+      node.moduleReference.type === 'TSExternalModuleReference'
+    ) {
+      specifier = node.moduleReference.expression;
+    }
+    if (specifier?.type === 'StringLiteral') imports.add(specifier.value);
+    for (const child of Object.values(node)) {
+      if (Array.isArray(child)) child.forEach(visit);
+      else if (child?.type) visit(child);
+    }
+  }
+  visit(ast);
+  return imports;
+}
+
+/**
+ * Which runner owns a test file: 'vitest', 'node' (node --test) or 'bun'
+ * (`bun test`, for Worker/Durable Object suites that CI runs with Bun and that
+ * Node cannot load because of extensionless workspace imports).
+ */
+function testRunnerOf(file, context) {
   const workspace = workspaceOf(file);
-  if (!workspace) return NODE_TEST_FILE.test(file);
+  if (!workspace) return NODE_TEST_FILE.test(file) ? 'node' : 'vitest';
   const script = context.workspaces?.find(
     (entry) => entry.workspace === workspace
   )?.testScript;
   const source = context.readSource?.(file) ?? '';
-  const imports = (module) =>
-    new RegExp(
-      `(?:from\\s*|require\\s*\\(\\s*|import\\s*\\(\\s*)['"]${module}['"]`
-    ).test(source);
-  if (imports('vitest')) return false;
-  if (imports('node:test')) return true;
-  return /\bnode\s+--test(?:\s|$)/.test(script ?? '');
+  const imports = runtimeImports(source, file);
+  if (imports.has('vitest')) return 'vitest';
+  if (imports.has('bun:test')) return 'bun';
+  if (imports.has('node:test')) return 'node';
+  return /\bnode\s+--test(?:\s|$)/.test(script ?? '') ? 'node' : 'vitest';
+}
+function isNodeTest(file, context) {
+  return testRunnerOf(file, context) === 'node';
 }
 
 /**
@@ -207,8 +260,8 @@ function planChecks(changes, context) {
   }
 
   if (any(/^(apps|packages)\/[^/]+\/.*\.[cm]?[jt]sx?$/)) {
-    for (const [id, script] of AUTH_GUARDS) {
-      steps.push(nodeStep(id, id, [script]));
+    for (const { name, script } of AUTH_GUARDS) {
+      steps.push(nodeStep(name, name, [script]));
     }
   }
   if (any(/^apps\/[^/]+\/messages\/.*\.json$/)) {
@@ -269,7 +322,7 @@ function planChecks(changes, context) {
   for (const file of present) {
     if (!workspaceOf(file) || file.startsWith(MOBILE_PREFIX)) continue;
     for (const related of siblingTests(file, exists)) {
-      relatedTests.set(related, isNodeTest(related, context));
+      relatedTests.set(related, testRunnerOf(related, context));
     }
   }
   const scriptTests = nodeScriptTests(
@@ -279,7 +332,9 @@ function planChecks(changes, context) {
   const nodeTests = [
     ...new Set([
       ...scriptTests,
-      ...[...relatedTests].filter(([, node]) => node).map(([file]) => file),
+      ...[...relatedTests]
+        .filter(([, runner]) => runner === 'node')
+        .map(([file]) => file),
       ...(workflowTouched ? WORKFLOW_POLICY_TESTS : []),
     ]),
   ].filter(exists);
@@ -344,10 +399,28 @@ function planChecks(changes, context) {
   }
 
   for (const [workspace, files] of byWorkspace) {
-    if (!context.hasVitest(workspace)) continue;
-    const tests = [
+    const related = [
       ...new Set(files.flatMap((file) => siblingTests(file, exists))),
-    ].filter((file) => !relatedTests.get(file));
+    ];
+    const bunTests = related.filter((file) => relatedTests.get(file) === 'bun');
+    if (bunTests.length) {
+      // `bun test` from the repository root would run the root `test` script.
+      steps.push({
+        id: `bun-test:${workspace}`,
+        label: `bun test ${workspace} (${bunTests.length} related files)`,
+        command: 'bun',
+        args: [
+          'test',
+          ...bunTests.map((file) => path.posix.relative(workspace, file)),
+        ],
+        cwd: workspace,
+        heavy: true,
+      });
+    }
+    if (!context.hasVitest(workspace)) continue;
+    const tests = related.filter(
+      (file) => (relatedTests.get(file) ?? 'vitest') === 'vitest'
+    );
     if (!tests.length) continue;
     steps.push({
       id: `vitest:${workspace}`,

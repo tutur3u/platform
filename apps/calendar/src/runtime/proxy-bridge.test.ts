@@ -216,6 +216,6 @@ describe('Calendar request bridge', () => {
           throw new Error('Must not dispatch');
         },
       })
-    ).rejects.toThrow('Unexpected external Calendar middleware rewrite');
+    ).rejects.toThrow('Unexpected external middleware rewrite');
   });
 });

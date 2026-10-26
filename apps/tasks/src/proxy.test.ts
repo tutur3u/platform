@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TTR_URL } from './constants/common';
 import { config, proxy } from './proxy';
+import { rootEntry } from './runtime/root-page-model.server';
 
 const mocks = vi.hoisted(() => {
   const authProxy = vi.fn();
@@ -20,6 +21,7 @@ const mocks = vi.hoisted(() => {
     }),
     getAppSessionClaimsFromRequest: vi.fn(),
     getCurrentUserDefaultWorkspace: vi.fn(),
+    getSatelliteAppSessionUser: vi.fn(),
     getRequestHeadersWithResponseCookies: vi.fn(),
     getUserConfig: vi.fn(),
     guardApiProxyRequest: vi.fn(),
@@ -90,6 +92,25 @@ vi.mock('@/lib/tasks/task-board-entrypoint', () => ({
   ) => mocks.resolveTaskBoardEntrypoint(...args),
 }));
 
+vi.mock('@tuturuuu/satellite/auth', () => ({
+  getSatelliteAppSessionUser: (
+    ...args: Parameters<typeof mocks.getSatelliteAppSessionUser>
+  ) => mocks.getSatelliteAppSessionUser(...args),
+}));
+
+vi.mock('@tuturuuu/start-bridge/next/headers', () => ({
+  headers: async () => new Headers({ cookie: 'sb-test-auth-token=shared' }),
+}));
+
+vi.mock('@tuturuuu/start-bridge/next/navigation', () => ({
+  notFound: () => {
+    throw new Error('notFound');
+  },
+  redirect: (href: string) => {
+    throw new Error(`redirect ${href}`);
+  },
+}));
+
 vi.mock('@tuturuuu/utils/api-proxy-guard', () => ({
   guardApiProxyRequest: (
     ...args: Parameters<typeof mocks.guardApiProxyRequest>
@@ -148,6 +169,28 @@ describe('Tasks proxy auth mode', () => {
       targetApp: 'tasks',
     });
   });
+
+  it.each([
+    ['GET', '/api/build-info', false],
+    ['HEAD', '/api/build-info', false],
+    ['POST', '/api/build-info', true],
+    ['GET', '/api/build-info/extra', true],
+  ])(
+    'build-info admission: %s %s refreshes=%s',
+    async (method, path, refreshes) => {
+      const request = new NextRequest(`https://tasks.tuturuuu.com${path}`, {
+        method,
+        headers: { authorization: 'Bearer x', cookie: 'sb-x=1' },
+      });
+      await proxy(request);
+
+      expect(mocks.refreshAppSessionForRequest).toHaveBeenCalledTimes(
+        refreshes ? 1 : 0
+      );
+      expect(mocks.guardApiProxyRequest).toHaveBeenCalled();
+      expect(request.headers.has('cookie')).toBe(refreshes);
+    }
+  );
 
   it('refreshes Supabase-cookie product APIs in Supabase-first mode', async () => {
     const request = new NextRequest('https://tasks.tuturuuu.com/api/v1/tasks', {
@@ -287,6 +330,9 @@ describe('Tasks proxy auth mode', () => {
       expect(response.headers.get('x-middleware-rewrite')).toBe(
         `https://tasks.tuturuuu.com/${locale}/task-link-preview`
       );
+      expect(
+        response.headers.get('x-middleware-request-x-tuturuuu-page-rewrite')
+      ).toBe(`/${locale}/task-link-preview`);
       expect(response.headers.get('cache-control')).toBe(
         'private, no-store, max-age=0'
       );
@@ -444,6 +490,9 @@ describe('Tasks proxy auth mode', () => {
     expect(response.headers.get('x-middleware-rewrite')).toBe(
       'https://tasks.tuturuuu.com/vi/personal/tasks?retry=1'
     );
+    expect(
+      response.headers.get('x-middleware-request-x-tuturuuu-page-rewrite')
+    ).toBe('/vi/personal/tasks?retry=1');
   });
 
   it('rewrites to the task entrypoint when board resolution throws', async () => {
@@ -461,6 +510,24 @@ describe('Tasks proxy auth mode', () => {
     );
   });
 
+  it.each(['*', '*;q=0.5', 'vi-VN,*;q=0.1', 'not a language!!'])(
+    'negotiates a locale for Accept-Language %s instead of failing',
+    async (acceptLanguage) => {
+      const response = await proxy(
+        new NextRequest('https://tasks.tuturuuu.com/shared/task/share-code', {
+          headers: {
+            'accept-language': acceptLanguage,
+            'user-agent': 'facebookexternalhit/1.1',
+          },
+        })
+      );
+
+      expect(response.headers.get('x-middleware-rewrite')).toBe(
+        `https://tasks.tuturuuu.com/${acceptLanguage.startsWith('vi') ? 'vi' : 'en'}/task-link-preview`
+      );
+    }
+  );
+
   it.each(['no-redirect=1', 'hash-nav=1', 'multiAccount=1'])(
     'keeps root redirect exclusions for %s',
     async (query) => {
@@ -473,6 +540,136 @@ describe('Tasks proxy auth mode', () => {
       expect(mocks.resolveTaskBoardEntrypoint).not.toHaveBeenCalled();
     }
   );
+
+  describe('under the tuturuuu.com/tasks basePath', () => {
+    const based = (path: string, init?: { headers?: HeadersInit }) =>
+      new NextRequest(`https://tuturuuu.com/tasks${path}`, {
+        ...init,
+        nextConfig: { basePath: '/tasks' },
+      });
+
+    it('keeps the default board redirect inside the base', async () => {
+      const response = await proxy(based('/vi?tab=tasks'));
+
+      expect(response.headers.get('location')).toBe(
+        'https://tuturuuu.com/tasks/vi/personal/boards/board-default?tab=tasks'
+      );
+    });
+
+    it('keeps the entrypoint fallback rewrite inside the base', async () => {
+      mocks.resolveTaskBoardEntrypoint.mockResolvedValueOnce(null);
+
+      const response = await proxy(based('/?retry=1'));
+
+      expect(response.headers.get('x-middleware-rewrite')).toBe(
+        'https://tuturuuu.com/tasks/en/personal/tasks?retry=1'
+      );
+    });
+
+    it('keeps the root workspace normalization inside the base', async () => {
+      const response = await proxy(
+        based('/en/00000000-0000-0000-0000-000000000000/tasks?view=list')
+      );
+
+      expect(response.headers.get('location')).toBe(
+        'https://tuturuuu.com/tasks/en/internal/tasks?view=list'
+      );
+    });
+
+    it('keeps the crawler preview rewrite inside the base', async () => {
+      const response = await proxy(
+        based('/shared/task/share-code', {
+          headers: { 'user-agent': 'facebookexternalhit/1.1' },
+        })
+      );
+
+      expect(response.headers.get('x-middleware-rewrite')).toBe(
+        'https://tuturuuu.com/tasks/en/task-link-preview'
+      );
+    });
+  });
+
+  describe('root entry parity: document request vs client navigation', () => {
+    beforeEach(() => {
+      mocks.getSatelliteAppSessionUser.mockResolvedValue({ id: 'user-1' });
+      mocks.getUserConfig.mockResolvedValue({ value: 'true' });
+      mocks.getCurrentUserDefaultWorkspace.mockResolvedValue({
+        id: 'workspace-1',
+        personal: false,
+      });
+    });
+
+    const loaderEntry = (path: string, locale = 'en') => {
+      const url = new URL(path, 'http://app.invalid');
+      return rootEntry({
+        locale,
+        localePrefixed: /^\/(?:en|vi)(?=\/|$)/u.test(url.pathname),
+        search: url.searchParams,
+      });
+    };
+
+    it.each([
+      ['/?settingsDialog=open', 'en'],
+      ['/vi?tab=tasks&view=list', 'vi'],
+    ])(
+      'opens the same preferred workspace board for %s',
+      async (path, locale) => {
+        const document = await proxy(
+          new NextRequest(`https://tasks.tuturuuu.com${path}`)
+        );
+        const loader = await loaderEntry(path, locale);
+        const location = new URL(document.headers.get('location') ?? '');
+
+        expect(loader.kind).toBe('board');
+        expect(`${location.pathname}${location.search}`).toBe(loader.path);
+      }
+    );
+
+    it('keeps the same destination under the /tasks mount', async () => {
+      const document = await proxy(
+        new NextRequest('https://tuturuuu.com/tasks/vi?tab=tasks', {
+          nextConfig: { basePath: '/tasks' },
+        })
+      );
+      const loader = await loaderEntry('/vi?tab=tasks', 'vi');
+
+      expect(document.headers.get('location')).toBe(
+        `https://tuturuuu.com/tasks${loader.path}`
+      );
+    });
+
+    it('falls back to the same task entrypoint without a board', async () => {
+      mocks.resolveTaskBoardEntrypoint.mockResolvedValue(null);
+
+      const document = await proxy(
+        new NextRequest('https://tasks.tuturuuu.com/vi?retry=1')
+      );
+      const loader = await loaderEntry('/vi?retry=1', 'vi');
+
+      expect(loader).toEqual({
+        kind: 'entrypoint',
+        target: 'workspace-1',
+        path: '/vi/workspace-1/tasks?retry=1',
+      });
+      expect(
+        document.headers.get('x-middleware-request-x-tuturuuu-page-rewrite')
+      ).toBe(loader.path);
+    });
+
+    it('sends client navigation without a session to login', async () => {
+      mocks.getSatelliteAppSessionUser.mockResolvedValue(null);
+
+      await expect(loaderEntry('/')).rejects.toThrow('redirect /login');
+    });
+
+    it.each(['/?no-redirect=1', '/?hash-nav=1', '/?multiAccount=1'])(
+      'has no root page for excluded client navigation %s',
+      async (path) => {
+        await expect(loaderEntry(path)).rejects.toThrow('notFound');
+        expect(mocks.resolveTaskBoardEntrypoint).not.toHaveBeenCalled();
+      }
+    );
+  });
 });
 
 describe('PWA public-route boundary', () => {

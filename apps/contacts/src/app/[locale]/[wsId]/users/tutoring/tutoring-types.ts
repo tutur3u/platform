@@ -17,6 +17,8 @@ export interface TutoringFormValues {
   reasonType: TutoringReasonType;
   reasonDetail: string;
   content: string;
+  /** Lesson notes drafted from the missed class; unchanged drafts stay linked. */
+  linkedContent?: string;
   sourceFeedbackId?: string | null;
 }
 

@@ -10,6 +10,12 @@ URL boundary; the Router does not serialize their query strings. Cards and the
 native navigation adapter use document navigation. The retained portable gateway
 is predecessor source and cannot substitute for native acceptance.
 
+The request context, `next/*` ports (document-mode navigation), `next-intl`
+alias, Vite preset and central API forwarding come from
+[`@tuturuuu/start-bridge`](/build/devops/start-bridge). `start-bridge.routes.json`
+maps each retained App Router file to the native module that owns it, and CI
+fails on any unmapped `route.*` or `page.*`.
+
 ## Owning validation
 
 `.github/workflows/apps-cloudflare.yaml` uses Bun 1.4.4 and Node 24.22.0. Root

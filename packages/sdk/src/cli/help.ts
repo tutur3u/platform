@@ -2,6 +2,7 @@ import { feedbackHelp } from './feedback';
 import { boxHelp } from './help-devbox';
 import { formatHelp, type HelpTopic } from './help-format';
 import { getGlobalHelp } from './help-global';
+import { upgradeHelp } from './help-upgrade';
 import { resourcesHelp } from './resources';
 
 export { getGlobalHelp } from './help-global';
@@ -199,12 +200,7 @@ const helpTopics: Record<string, HelpTopic> = {
     examples: ['ttr logout'],
     usage: 'ttr logout',
   },
-  upgrade: {
-    description:
-      'Upgrades the globally installed Tuturuuu CLI package with Bun.',
-    examples: ['ttr upgrade'],
-    usage: 'ttr upgrade',
-  },
+  upgrade: upgradeHelp,
   projects: {
     commands: [
       'list                         list projects',

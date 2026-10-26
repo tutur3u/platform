@@ -34,6 +34,7 @@
   "apps/git": "0.15.0",
   "apps/track": "0.31.0",
   "packages/agent-quota": "0.2.0",
+  "packages/start-bridge": "0.1.0",
   "packages/ai": "0.18.3",
   "packages/apis": "0.13.1",
   "packages/auth": "0.7.0",

@@ -268,6 +268,53 @@ void main() {
     expect(find.byType(AssistantLiveCallScreen), findsOneWidget);
     expect(find.text("Couldn't connect"), findsOneWidget);
   });
+
+  testWidgets('returning to a call that just dropped shows it ended', (
+    tester,
+  ) async {
+    final cubit = _cubit();
+    addTearDown(cubit.close);
+    // Return to call has no start attempt; a session that dropped just before
+    // it opened must not wait on Connecting for a start that never comes.
+    await _present(tester, cubit);
+    expect(find.text('Connecting…'), findsNothing);
+    expect(find.text('Call ended'), findsOneWidget);
+    expect(find.byKey(const ValueKey('assistant-live-call-again')), findsOne);
+  });
+
+  testWidgets('session close removes only the call route under a cover', (
+    tester,
+  ) async {
+    final cubit = _cubit()
+      ..show(
+        AssistantLiveState(
+          status: AssistantLiveConnectionStatus.connected,
+          callStartedAt: DateTime.now(),
+        ),
+      );
+    await _present(tester, cubit);
+    final call = tester.element(find.byType(AssistantLiveCallScreen));
+    unawaited(
+      Navigator.of(call, rootNavigator: true).push<void>(
+        MaterialPageRoute(builder: (_) => const Text('covering page')),
+      ),
+    );
+    await _pumpRoute(tester);
+    expect(find.text('covering page'), findsOneWidget);
+
+    var closed = false;
+    unawaited(cubit.close().whenComplete(() => closed = true));
+    for (var i = 0; i < 20 && !closed; i++) {
+      await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    await _pumpRoute(tester);
+    expect(
+      find.byType(AssistantLiveCallScreen, skipOffstage: false),
+      findsNothing,
+    );
+    expect(find.text('covering page'), findsOneWidget);
+  });
 }
 
 Future<void> _present(

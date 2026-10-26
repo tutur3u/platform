@@ -161,6 +161,18 @@ class _AssistantPersonalityFieldEditorState
             children: [
               if (options.isEmpty)
                 AppTextFormField(
+                  placeholder: switch (field) {
+                    AssistantPersonalityField.name =>
+                      l.inputPlaceholderAssistantName,
+                    AssistantPersonalityField.personality =>
+                      l.inputPlaceholderAssistantPersonality,
+                    AssistantPersonalityField.boundaries =>
+                      l.inputPlaceholderAssistantBoundaries,
+                    AssistantPersonalityField.tone =>
+                      l.inputPlaceholderAssistantTone,
+                    AssistantPersonalityField.verbosity =>
+                      l.inputPlaceholderAssistantVerbosity,
+                  },
                   controller: _text,
                   enabled: !_saving && !_saved && state.canEditSoul,
                   minLines: field == AssistantPersonalityField.name ? 1 : 3,

@@ -131,6 +131,7 @@ class _InternalAccountEditorState extends State<InternalAccountEditor> {
                       enabled: !_saving,
                       maxLength: 100,
                       decoration: InputDecoration(
+                        hintText: context.l10n.inputPlaceholderDisplayName,
                         labelText: l10n.adminAccountsDisplayName,
                       ),
                       validator: (value) => value?.trim().isNotEmpty ?? false
@@ -144,6 +145,7 @@ class _InternalAccountEditorState extends State<InternalAccountEditor> {
                       maxLength: 64,
                       autocorrect: false,
                       decoration: InputDecoration(
+                        hintText: context.l10n.inputPlaceholderUsername,
                         labelText: l10n.adminAccountsUsername,
                       ),
                     ),
@@ -154,6 +156,8 @@ class _InternalAccountEditorState extends State<InternalAccountEditor> {
                       keyboardType: TextInputType.emailAddress,
                       autocorrect: false,
                       decoration: InputDecoration(
+                        hintText:
+                            context.l10n.inputPlaceholderEmailConfirmation,
                         labelText: l10n.adminAccountsConfirmEmail,
                       ),
                       validator: (value) =>
@@ -171,6 +175,7 @@ class _InternalAccountEditorState extends State<InternalAccountEditor> {
                         autocorrect: false,
                         enableSuggestions: false,
                         decoration: InputDecoration(
+                          hintText: context.l10n.inputPlaceholderPassword,
                           labelText: l10n.adminAccountsNewPassword,
                         ),
                         validator: (value) =>

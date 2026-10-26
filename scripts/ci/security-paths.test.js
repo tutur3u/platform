@@ -127,9 +127,11 @@ test('scan scope selects CodeQL languages and dependency audits', () => {
     ['actions']
   );
   assert.deepEqual(classifyScope(['docs/a.md']).codeqlLanguages, []);
-  // Unknown change sets and scheduled runs scan everything.
+  // Unknown or empty change sets and scheduled runs scan everything.
   for (const scope of [
     classifyScope(null),
+    classifyScope([]),
+    classifyScope(['', '  ']),
     classifyScope([], { full: true }),
   ]) {
     assert.deepEqual(scope.codeqlLanguages, [

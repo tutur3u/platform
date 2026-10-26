@@ -33,6 +33,9 @@ const volume = (freeGiB: number, path = '/w'): VolumeProbe => ({
   inodeFreePercent: null,
 });
 const isolated = async (extra: NodeJS.ProcessEnv = {}) => ({
+  TTR_RESOURCES_MIN_FREE_GIB: '0',
+  TTR_STORAGE_MIN_FREE_PERCENT: '5',
+  TTR_STORAGE_RECOVER_FREE_PERCENT: '10',
   TTR_STORAGE_HOME: await mkdtemp(join(tmpdir(), 'ttr-hysteresis-')),
   TTR_STORAGE_HOST_ID: 'mac-1',
   ...extra,
@@ -61,7 +64,7 @@ describe('hysteresis and alert dedupe', () => {
       TTR_STORAGE_RECOVER_FREE: '20G',
       TTR_STORAGE_RECOVER_FREE_PERCENT: 'lots',
     });
-    expect(custom.recover.minFreeBytes).toBe(40 * GiB);
+    expect(custom.recover.minFreeBytes).toBe(41 * GiB);
     expect(custom.warnings).toHaveLength(1);
   });
 

@@ -10,6 +10,7 @@ on:
       - ".github/workflows/desktop-beta.yaml"
       - ".github/actions/setup-flutter-with-cache/**"
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
     paths:
       - "scripts/desktop-deployment/**"
       - ".github/workflows/desktop-beta.yaml"
@@ -22,7 +23,7 @@ on:
         default: true
 
 concurrency:
-  group: desktop-beta-${{ github.ref }}
+  group: desktop-beta-${{ github.ref }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
   cancel-in-progress: false
   queue: max
 
@@ -32,6 +33,7 @@ permissions:
 
 jobs:
   check-ci:
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
     permissions:
       contents: read
       deployments: read
@@ -42,11 +44,11 @@ jobs:
   validate:
     name: Desktop distribution tests
     needs: check-ci
-    if: needs.check-ci.outputs.should_run == 'true'
+    if: (needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
@@ -55,13 +57,13 @@ jobs:
   windows-dry-run:
     name: Windows x64 installer dry run
     needs: [check-ci, validate]
-    if: needs.check-ci.outputs.should_run == 'true' && github.event_name == 'workflow_dispatch' && inputs.dry_run
+    if: (needs.check-ci.outputs.should_run == 'true' && github.event_name == 'workflow_dispatch' && inputs.dry_run) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     runs-on: windows-latest
     timeout-minutes: 60
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -71,6 +73,8 @@ jobs:
         with:
           flutter-version: "3.47.x"
           channel: stable
+      - name: Validate Windows smoke and updater scripts
+        run: node --test scripts/desktop-deployment/installer-syntax.test.mjs scripts/desktop-deployment/windows-smoke.test.mjs
       - name: Write dry-run public configuration
         env:
           DESKTOP_PUBLIC_CONFIG: '{"NEXT_PUBLIC_SUPABASE_URL":"https://desktop-ci.supabase.co","NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY":"sb_publishable_desktop_ci_placeholder","API_BASE_URL":"https://tuturuuu.com"}'
@@ -89,11 +93,15 @@ jobs:
         env:
           DESKTOP_BETA_PLATFORMS: windows
         run: node scripts/desktop-deployment/verify-publication.mjs
+      - name: Smoke installed Windows dry run
+        run: pwsh -NoProfile -File scripts/desktop-deployment/smoke-windows.ps1
       - name: Upload Windows dry-run installer and checksum receipt
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: desktop-windows-x64-dry-run
-          path: ${{ runner.temp }}/desktop-artifacts/*
+          path: |
+            ${{ runner.temp }}/desktop-artifacts/*
+            ${{ runner.temp }}/windows-installed-files.json
           if-no-files-found: error
           retention-days: 7
           compression-level: 0
@@ -104,14 +112,14 @@ jobs:
   release-status:
     name: Desktop beta availability
     needs: check-ci
-    if: needs.check-ci.outputs.should_run == 'true' && github.ref == 'refs/heads/production' && !inputs.dry_run
+    if: (needs.check-ci.outputs.should_run == 'true' && github.ref == 'refs/heads/production' && !inputs.dry_run) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     runs-on: ubuntu-latest
     outputs:
       enabled: ${{ steps.status.outputs.enabled }}
       platforms: ${{ steps.platforms.outputs.platforms }}
       matrix: ${{ steps.platforms.outputs.matrix }}
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
@@ -131,7 +139,7 @@ jobs:
   build:
     name: Desktop beta (${{ matrix.platform }})
     needs: [check-ci, validate, release-status]
-    if: needs.release-status.outputs.enabled == 'true' && github.ref == 'refs/heads/production'
+    if: (needs.release-status.outputs.enabled == 'true' && github.ref == 'refs/heads/production') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     environment: desktop-beta
     permissions:
       contents: read
@@ -143,12 +151,15 @@ jobs:
       matrix: ${{ fromJSON(needs.release-status.outputs.matrix) }}
     runs-on: ${{ matrix.runner }}
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
+      - name: Validate Windows smoke and updater scripts
+        if: matrix.platform == 'windows'
+        run: node --test scripts/desktop-deployment/installer-syntax.test.mjs scripts/desktop-deployment/windows-smoke.test.mjs
       - name: Require desktop signing configuration
         if: matrix.platform != 'windows'
         shell: bash
@@ -246,14 +257,25 @@ jobs:
           APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
           APP_STORE_CONNECT_PRIVATE_KEY_P8_B64: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY_P8_B64 }}
         run: node scripts/desktop-deployment/package-ci.mjs
+      - name: Smoke installed Windows beta
+        if: matrix.platform == 'windows'
+        run: pwsh -NoProfile -File scripts/desktop-deployment/smoke-windows.ps1
       - name: Upload isolated beta package
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: desktop-beta-${{ matrix.platform }}
           path: ${{ runner.temp }}/desktop-artifacts/*
           if-no-files-found: error
           retention-days: 7
           compression-level: 0
+      - name: Upload Windows installation inventory
+        if: matrix.platform == 'windows'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: windows-installation-inventory
+          path: ${{ runner.temp }}/windows-installed-files.json
+          if-no-files-found: error
+          retention-days: 7
       - name: Remove public build input
         if: always()
         shell: bash
@@ -264,7 +286,7 @@ jobs:
     needs: [build, release-status]
     env:
       DESKTOP_BETA_PLATFORMS: ${{ needs.release-status.outputs.platforms }}
-    if: always() && !cancelled() && needs.release-status.outputs.enabled == 'true' && github.ref == 'refs/heads/production' && (needs.build.result == 'success' || needs.build.result == 'failure')
+    if: (always() && !cancelled() && needs.release-status.outputs.enabled == 'true' && github.ref == 'refs/heads/production' && (needs.build.result == 'success' || needs.build.result == 'failure')) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     environment: desktop-beta
     runs-on: macos-latest
     timeout-minutes: 45
@@ -273,7 +295,7 @@ jobs:
       id-token: write
       attestations: write
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
