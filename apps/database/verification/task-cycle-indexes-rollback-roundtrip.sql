@@ -1,6 +1,6 @@
--- Rollback proof for 20261027091000/091100/091200 (task cycle indexes).
+-- Rollback proof for 20261027000200/000300/000400 (task cycle indexes).
 -- Run ONLY against a disposable local stack, after applying
--- apps/database/rollbacks/20261027091000_task_cycle_tasks_indexes.rollback.sql,
+-- apps/database/rollbacks/20261027000200_task_cycle_tasks_indexes.rollback.sql,
 -- then re-apply the three forward migrations and re-run
 -- supabase/tests/task-cycle-one-per-task.sql.
 begin;
