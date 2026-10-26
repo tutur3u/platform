@@ -10,6 +10,8 @@ import 'package:intl/intl.dart';
 import 'package:mime/mime.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/kit/kit.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/drive/drive_models.dart';
 import 'package:mobile/data/repositories/drive_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
@@ -405,25 +407,24 @@ class _DrivePageState extends State<DrivePage> {
   }
 
   Future<void> _showDriveActionsSheet() async {
-    final action = await showModalBottomSheet<String>(
+    final l10n = context.l10n;
+    final action = await showAppActionSheet<String>(
       context: context,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.create_new_folder_outlined),
-              title: Text(context.l10n.driveCreateFolder),
-              onTap: () => Navigator.of(context).pop('folder'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.upload_file_outlined),
-              title: Text(context.l10n.driveUploadFiles),
-              onTap: () => Navigator.of(context).pop('upload'),
-            ),
-          ],
+      title: l10n.commonCreate,
+      actions: [
+        AppSheetAction(
+          icon: LucideIcons.folderPlus,
+          tone: AppTone.info,
+          label: l10n.driveCreateFolder,
+          value: 'folder',
         ),
-      ),
+        AppSheetAction(
+          icon: LucideIcons.upload,
+          tone: AppTone.info,
+          label: l10n.driveUploadFiles,
+          value: 'upload',
+        ),
+      ],
     );
 
     if (!mounted || action == null) return;
@@ -437,51 +438,23 @@ class _DrivePageState extends State<DrivePage> {
   }
 
   Future<void> _showSortSheet() async {
-    final action = await showModalBottomSheet<String>(
+    final l10n = context.l10n;
+    final action = await showAppChoiceSheet<String>(
       context: context,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: Icon(
-                _sortBy == 'name' && _sortOrder == 'asc'
-                    ? Icons.check_circle
-                    : Icons.sort_by_alpha,
-              ),
-              title: Text(context.l10n.driveSortNameAsc),
-              onTap: () => Navigator.of(context).pop('name_asc'),
-            ),
-            ListTile(
-              leading: Icon(
-                _sortBy == 'name' && _sortOrder == 'desc'
-                    ? Icons.check_circle
-                    : Icons.sort_by_alpha,
-              ),
-              title: Text(context.l10n.driveSortNameDesc),
-              onTap: () => Navigator.of(context).pop('name_desc'),
-            ),
-            ListTile(
-              leading: Icon(
-                _sortBy == 'updated_at' && _sortOrder == 'desc'
-                    ? Icons.check_circle
-                    : Icons.update_rounded,
-              ),
-              title: Text(context.l10n.driveSortUpdated),
-              onTap: () => Navigator.of(context).pop('updated_desc'),
-            ),
-            ListTile(
-              leading: Icon(
-                _sortBy == 'size' && _sortOrder == 'desc'
-                    ? Icons.check_circle
-                    : Icons.data_object_rounded,
-              ),
-              title: Text(context.l10n.driveSortSize),
-              onTap: () => Navigator.of(context).pop('size_desc'),
-            ),
-          ],
-        ),
-      ),
+      title: l10n.sortBy,
+      selected: switch ((_sortBy, _sortOrder)) {
+        ('name', 'asc') => 'name_asc',
+        ('name', 'desc') => 'name_desc',
+        ('updated_at', 'desc') => 'updated_desc',
+        ('size', 'desc') => 'size_desc',
+        _ => null,
+      },
+      choices: [
+        AppSheetChoice(value: 'name_asc', label: l10n.driveSortNameAsc),
+        AppSheetChoice(value: 'name_desc', label: l10n.driveSortNameDesc),
+        AppSheetChoice(value: 'updated_desc', label: l10n.driveSortUpdated),
+        AppSheetChoice(value: 'size_desc', label: l10n.driveSortSize),
+      ],
     );
 
     if (!mounted || action == null) return;
@@ -611,81 +584,77 @@ class _DrivePageState extends State<DrivePage> {
     try {
       final data = await _repository.exportLinks(wsId, path: folderPath);
       if (!mounted || !_isCurrentRequest(token, wsId, actorId)) return;
-      await showModalBottomSheet<void>(
+      await showAppSheet<void>(
         context: context,
-        isScrollControlled: true,
-        builder: (context) => FractionallySizedBox(
-          heightFactor: 0.85,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  context.l10n.driveExportLinksTitle,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  data.folderPath,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                const SizedBox(height: 16),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: data.files.length,
-                    itemBuilder: (context, index) {
-                      final file = data.files[index];
-                      return ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: Text(file.relativePath),
-                        subtitle: Text(file.url),
-                        trailing: PopupMenuButton<String>(
-                          onSelected: (value) async {
-                            if (value == 'copy') {
-                              await Clipboard.setData(
-                                ClipboardData(text: file.url),
-                              );
-                              if (!context.mounted) return;
-                              _toast(context.l10n.driveLinkCopied);
-                            } else if (value == 'share') {
-                              await SharePlus.instance.share(
-                                ShareParams(text: file.url),
-                              );
-                            } else if (value == 'open') {
-                              await launchUrl(
-                                Uri.parse(file.url),
-                                mode: LaunchMode.externalApplication,
-                              );
-                            }
-                          },
-                          itemBuilder: (context) => [
-                            PopupMenuItem(
-                              value: 'copy',
-                              child: Text(context.l10n.commonCopy),
-                            ),
-                            PopupMenuItem(
-                              value: 'share',
-                              child: Text(context.l10n.commonShare),
-                            ),
-                            PopupMenuItem(
-                              value: 'open',
-                              child: Text(context.l10n.commonOpen),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
+        size: AppSheetSize.large,
+        builder: (context) => AppSheetScaffold(
+          title: context.l10n.driveExportLinksTitle,
+          description: data.folderPath,
+          slivers: [
+            SliverList.builder(
+              itemCount: data.files.length,
+              itemBuilder: (context, index) {
+                final file = data.files[index];
+                return AppGroupedSlice(
+                  position: AppSlicePosition.of(index, data.files.length),
+                  dividerInset: AppLayout.rowHorizontalPadding,
+                  child: AppGroupedRow(
+                    title: Text(file.relativePath),
+                    subtitle: Text(
+                      file.url,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    trailing: AppIconButton(
+                      tooltip: context.l10n.commonMoreOptions,
+                      icon: const Icon(LucideIcons.ellipsis),
+                      onPressed: () => unawaited(_showLinkActions(file.url)),
+                    ),
                   ),
-                ),
-              ],
+                );
+              },
             ),
-          ),
+          ],
         ),
       );
     } on ApiException catch (error) {
       if (!mounted || !_isCurrentRequest(token, wsId, actorId)) return;
       _toast(error.message, destructive: true);
+    }
+  }
+
+  Future<void> _showLinkActions(String url) async {
+    final l10n = context.l10n;
+    final action = await showAppActionSheet<String>(
+      context: context,
+      title: l10n.commonMoreOptions,
+      actions: [
+        AppSheetAction(
+          icon: LucideIcons.copy,
+          label: l10n.commonCopy,
+          value: 'copy',
+        ),
+        AppSheetAction(
+          icon: LucideIcons.share2,
+          label: l10n.commonShare,
+          value: 'share',
+        ),
+        AppSheetAction(
+          icon: LucideIcons.externalLink,
+          label: l10n.commonOpen,
+          value: 'open',
+        ),
+      ],
+    );
+    if (!mounted) return;
+    switch (action) {
+      case 'copy':
+        await Clipboard.setData(ClipboardData(text: url));
+        if (mounted) _toast(context.l10n.driveLinkCopied);
+      case 'share':
+        await SharePlus.instance.share(ShareParams(text: url));
+      case 'open':
+        await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
     }
   }
 

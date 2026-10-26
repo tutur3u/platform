@@ -1872,6 +1872,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonLoading => 'Loading';
 
   @override
+  String get commonMoreOptions => 'More options';
+
+  @override
   String get commonNext => 'Next';
 
   @override
@@ -10111,6 +10114,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get timerHeatmapViewOriginal => 'Original';
+
+  @override
+  String get timerHeatmapViewTitle => 'View';
 
   @override
   String get timerHeatmapWed => 'We';

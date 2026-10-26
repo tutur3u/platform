@@ -3709,6 +3709,12 @@ abstract class AppLocalizations {
   /// **'Loading'**
   String get commonLoading;
 
+  /// No description provided for @commonMoreOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'More options'**
+  String get commonMoreOptions;
+
   /// No description provided for @commonNext.
   ///
   /// In en, this message translates to:
@@ -19116,6 +19122,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Original'**
   String get timerHeatmapViewOriginal;
+
+  /// No description provided for @timerHeatmapViewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'View'**
+  String get timerHeatmapViewTitle;
 
   /// No description provided for @timerHeatmapWed.
   ///

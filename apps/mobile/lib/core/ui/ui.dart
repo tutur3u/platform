@@ -32,6 +32,7 @@ export 'package:mobile/core/ui/components/app_time_picker.dart';
 export 'package:mobile/core/ui/components/app_toast.dart';
 export 'package:mobile/core/ui/components/app_toggle_row.dart';
 export 'package:mobile/core/ui/icons/app_icons.dart';
+export 'package:mobile/core/ui/overlays/app_action_sheet.dart';
 export 'package:mobile/core/ui/overlays/app_dialog.dart';
 export 'package:mobile/core/ui/overlays/app_modal_scope.dart';
 export 'package:mobile/core/ui/overlays/app_sheet_scaffold.dart';

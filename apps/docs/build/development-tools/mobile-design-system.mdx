@@ -202,7 +202,23 @@ the generated web-parity `LucideIcons` and `LucideLabIcons` (see
 
 **Sheets and dialogs.** Open every overlay with `showAppSheet` (compact:
 bottom sheet; wider: centered dialog) or `showAppDialog`. Lay out the body with
-`AppSheetScaffold` or `AppDialog`.
+`AppSheetScaffold` or `AppDialog`. Every sheet uses one surface
+(`AppSheetSurface`: popover fill, 24dp top radius, drag handle) and one inset
+policy, so sheets look and behave the same in every app.
+
+- **Menus and pickers.** Use `showAppActionSheet` (`AppSheetAction` rows with a
+  tone icon tile, a value or a callback, `destructive`, `enabled`) for "more",
+  "add" and "attach" menus, and `showAppChoiceSheet` (`AppSheetChoice`,
+  check-marked, lazily built) for single-choice pickers. `AppSelect` opens the
+  same choice sheet. Do not stack `AppListTile`s or `ListTile`s in a bare
+  sheet body: that skips the header, close button and bottom clearance.
+- **Legacy sheets.** The compact `showAdaptiveSheet` path draws the same
+  `AppSheetSurface` and consumes keyboard insets once at the host, so its
+  bodies must not pad for the keyboard again. Bodies that are also shown
+  outside a sheet use `const AppSheetHandle()` instead of a hand-drawn bar; it
+  renders nothing inside a host that already draws the handle. Do not call
+  `showModalBottomSheet` or paint a second rounded sheet background inside a
+  body.
 
 - **Back closes the topmost overlay first.** `AppModalBinding` registers a
   *modal* entry in `ShellChromeActionsCubit`. While it exists,

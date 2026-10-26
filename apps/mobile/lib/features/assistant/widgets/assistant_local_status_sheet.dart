@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -16,38 +17,35 @@ class AssistantLocalStatusSheet extends StatelessWidget {
   final VoidCallback onManage;
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.all(20),
-    child: SingleChildScrollView(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            context.l10n.assistantLocalModeAction,
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          const SizedBox(height: 12),
-          Text(
-            preparing
-                ? context.l10n.assistantLocalLoading
-                : context.l10n.assistantLocalMode(
-                    modelLabel ?? context.l10n.assistantLocalSelectionUnknown,
-                  ),
-          ),
-          if (notice case final text?) ...[
-            const SizedBox(height: 12),
-            Text(text),
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return AppSheetScaffold(
+      icon: LucideIcons.cpu,
+      title: preparing
+          ? l10n.assistantLocalLoading
+          : l10n.assistantLocalMode(
+              modelLabel ?? l10n.assistantLocalSelectionUnknown,
+            ),
+      description: l10n.assistantLocalHelp,
+      actions: [
+        AppButton.primary(
+          key: const ValueKey('assistant-local-status-manage'),
+          onPressed: onManage,
+          child: Text(l10n.assistantLocalModeAction),
+        ),
+      ],
+      child: switch (notice) {
+        final text? => AppGroupedCard(
+          children: [
+            AppStateMessage.inline(
+              icon: LucideIcons.triangleAlert,
+              tone: AppTone.warning,
+              title: text,
+            ),
           ],
-          const SizedBox(height: 12),
-          Text(context.l10n.assistantLocalHelp),
-          const SizedBox(height: 20),
-          AppButton.primary(
-            onPressed: onManage,
-            child: Text(context.l10n.assistantLocalModeAction),
-          ),
-        ],
-      ),
-    ),
-  );
+        ),
+        null => const SizedBox.shrink(),
+      },
+    );
+  }
 }

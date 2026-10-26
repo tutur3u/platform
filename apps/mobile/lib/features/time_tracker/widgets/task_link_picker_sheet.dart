@@ -6,6 +6,8 @@ import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
+import 'package:mobile/core/ui/overlays/show_app_sheet.dart'
+    show AppSheetHandle;
 import 'package:mobile/data/models/task_link_option.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -253,20 +255,7 @@ class _TaskLinkPickerSheetState extends State<TaskLinkPickerSheet> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // Phones get shad.openDrawer's drag handle; dialogs show one.
-                if (!context.isCompact)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8, bottom: 4),
-                    child: Center(
-                      child: Container(
-                        width: 36,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: colorScheme.border,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ),
-                  ),
+                if (!context.isCompact) const AppSheetHandle(),
                 Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 20,

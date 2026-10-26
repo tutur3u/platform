@@ -4,10 +4,8 @@ extension _CrmOwnedSheets on _CrmPageState {
   Future<T?> _showOwnedSheet<T>({
     required BuildContext context,
     required WidgetBuilder builder,
-    bool isScrollControlled = false,
-  }) => showModalBottomSheet<T>(
+  }) => showAppSheet<T>(
     context: context,
-    isScrollControlled: isScrollControlled,
     builder: (context) =>
         _CrmOwnedOverlay(alive: _alive, child: builder(context)),
   );

@@ -120,9 +120,13 @@ localization changes.
 ## Overlays And Shell
 
 - Open sheets and dialogs with `showAppSheet` / `showAppDialog` and lay them out
-  with `AppSheetScaffold` / `AppDialog`. Do not call `shad.openDrawer`,
-  `shad.showDialog`, `shad.showDropdown` or raw `showModalBottomSheet`.
-  `showAdaptiveSheet` remains a compatibility path with the same Back binding.
+  with `AppSheetScaffold` / `AppDialog`. Menus use `showAppActionSheet`; single
+  choices use `showAppChoiceSheet` (also behind `AppSelect`). Do not call
+  `shad.openDrawer`, `shad.showDialog`, `shad.showDropdown` or raw
+  `showModalBottomSheet`, and do not hand-draw drag handles or a second sheet
+  background (use `AppSheetHandle`). `showAdaptiveSheet` remains a
+  compatibility path that draws the same `AppSheetSurface`, handle and
+  keyboard inset, with the same Back binding.
 - Dialogs and fit sheets consume keyboard insets at the host boundary. Do not
   add a second IME padding layer in their bodies. Verify phone paths with a
   keyboard open and tap OK/Save; a tablet-only picker test does not cover them.

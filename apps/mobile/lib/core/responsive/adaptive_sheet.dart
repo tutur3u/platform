@@ -3,6 +3,7 @@ import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/theme/appearance/appearance_scope.dart';
 import 'package:mobile/core/theme/appearance/glass_effects.dart';
 import 'package:mobile/core/ui/overlays/app_modal_scope.dart';
+import 'package:mobile/core/ui/overlays/show_app_sheet.dart';
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
 
@@ -11,8 +12,9 @@ import 'package:mobile/widgets/app_dialog_scaffold.dart';
 ///
 /// The dialog variant is constrained to [maxDialogWidth] (default 560).
 ///
-/// Uses the app surface by default. Callers with their own shaped surface can
-/// explicitly opt into a transparent background.
+/// Compact sheets use the shared `AppSheetSurface` (drag handle, popover
+/// fill, keyboard inset), the same surface as `showAppSheet`. Callers with
+/// their own shaped surface can explicitly opt into a transparent background.
 ///
 /// Wraps overlay content with an [AppModalBinding] so system Back and the
 /// shell's floating-dock Back close the overlay instead of popping the page
@@ -42,10 +44,28 @@ Future<T?> showAdaptiveSheet<T>({
       useSafeArea: useSafeArea,
       isDismissible: isDismissible,
       enableDrag: enableDrag,
-      builder: (sheetContext) => AppModalBinding(
-        dismissible: isDismissible || enableDrag,
-        child: _sheetSurface(sheetContext, builder(sheetContext), surface),
-      ),
+      builder: (sheetContext) {
+        final child = builder(sheetContext);
+        // Bodies that bring their own card keep it; everything else gets
+        // the shared sheet surface, handle and keyboard inset.
+        if (child is AppDialogScaffold || surface.a == 0) {
+          return AppModalBinding(
+            dismissible: isDismissible || enableDrag,
+            child: AppearanceScope.opaqueScaffolds(child),
+          );
+        }
+        return AppSheetKeyboardInset(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.94,
+            ),
+            child: AppModalBinding(
+              dismissible: isDismissible || enableDrag,
+              child: AppSheetSurface(showHandle: enableDrag, child: child),
+            ),
+          ),
+        );
+      },
     );
   }
 

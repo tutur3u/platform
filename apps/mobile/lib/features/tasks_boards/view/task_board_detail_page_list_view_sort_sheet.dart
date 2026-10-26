@@ -19,15 +19,7 @@ class _SortBottomSheet extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 36,
-            height: 4,
-            margin: const EdgeInsets.only(top: 12, bottom: 16),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.mutedForeground.withValues(alpha: 0.4),
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
+          const AppSheetHandle(),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(

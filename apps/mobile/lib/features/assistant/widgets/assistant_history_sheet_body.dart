@@ -3,7 +3,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-import 'package:mobile/core/responsive/responsive_values.dart';
+import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
@@ -32,201 +33,158 @@ class AssistantHistorySheetBody extends StatefulWidget {
 
 class _AssistantHistorySheetBodyState extends State<AssistantHistorySheetBody> {
   static const _pageSize = 20;
-  static const _loadMoreThreshold = 240.0;
-
-  final _scrollController = ScrollController();
   final _searchController = TextEditingController();
+  bool _revealScheduled = false;
   late int _visibleCount = _initialVisibleCount(
     widget.chatCubit.state.history.length,
   );
 
   @override
-  void initState() {
-    super.initState();
-    _scrollController.addListener(_handleScroll);
+  void dispose() {
+    // The shell search field may still hold the controller this frame.
+    final controller = _searchController;
+    WidgetsBinding.instance.addPostFrameCallback((_) => controller.dispose());
+    super.dispose();
   }
 
-  @override
-  void dispose() {
-    _scrollController
-      ..removeListener(_handleScroll)
-      ..dispose();
-    _searchController.dispose();
-    super.dispose();
+  List<AssistantChatRecord> _matching(List<AssistantChatRecord> history) {
+    final query = _searchController.text.trim().toLowerCase();
+    if (query.isEmpty) return history;
+    return history
+        .where((chat) => (chat.title ?? '').toLowerCase().contains(query))
+        .toList(growable: false);
+  }
+
+  /// Reveals the next page when a row near the end of the loaded page builds.
+  void _revealMore(int index, int total) {
+    if (_revealScheduled || index < _visibleCount - 4) return;
+    if (_visibleCount >= total) return;
+    _revealScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _revealScheduled = false;
+      if (!mounted) return;
+      setState(
+        () => _visibleCount = math.min(_visibleCount + _pageSize, total),
+      );
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
-        child: BlocBuilder<AssistantChatCubit, AssistantChatState>(
-          bloc: widget.chatCubit,
-          builder: (context, state) {
-            final query = _searchController.text.trim().toLowerCase();
-            final matchingHistory = query.isEmpty
-                ? state.history
-                : state.history
-                      .where(
-                        (chat) =>
-                            (chat.title ?? '').toLowerCase().contains(query),
-                      )
-                      .toList(growable: false);
-            final visibleCount = math.min(
-              _visibleCount == 0
-                  ? _initialVisibleCount(matchingHistory.length)
-                  : _visibleCount,
-              matchingHistory.length,
-            );
-            final visibleHistory = matchingHistory
-                .take(visibleCount)
-                .toList(growable: false);
-            final colors = Theme.of(context).colorScheme;
-
-            final availableHeight =
-                MediaQuery.sizeOf(context).height -
-                MediaQuery.viewInsetsOf(context).bottom -
-                MediaQuery.paddingOf(context).top -
-                32;
-
-            return SizedBox(
-              height: math
-                  .min(context.isCompact ? 540.0 : 620.0, availableHeight)
-                  .clamp(240.0, 620.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          context.l10n.assistantHistoryTitle,
-                          style: Theme.of(context).textTheme.titleLarge
-                              ?.copyWith(fontWeight: FontWeight.w700),
-                        ),
-                      ),
-                      AppIconButton(
-                        tooltip: context.l10n.assistantNewConversation,
-                        onPressed: widget.onNewConversation,
-                        icon: const Icon(LucideIcons.messageSquarePlus),
-                      ),
-                      AppIconButton(
-                        tooltip: MaterialLocalizations.of(
-                          context,
-                        ).closeButtonTooltip,
-                        onPressed: widget.onClose,
-                        icon: const Icon(LucideIcons.x),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  AppSheetSearchHost(
-                    search: AppSheetSearch(
-                      controller: _searchController,
-                      hint: context.l10n.chatSearch,
-                      onChanged: (_) =>
-                          setState(() => _visibleCount = _pageSize),
+    final l10n = context.l10n;
+    return BlocBuilder<AssistantChatCubit, AssistantChatState>(
+      bloc: widget.chatCubit,
+      builder: (context, state) {
+        final matching = _matching(state.history);
+        final visible = math.min(
+          _visibleCount == 0
+              ? _initialVisibleCount(matching.length)
+              : _visibleCount,
+          matching.length,
+        );
+        final searching = _searchController.text.trim().isNotEmpty;
+        return AppSheetScaffold(
+          title: l10n.assistantHistoryTitle,
+          search: AppSheetSearch(
+            controller: _searchController,
+            hint: l10n.chatSearch,
+            onChanged: (_) => setState(() => _visibleCount = _pageSize),
+          ),
+          actions: [
+            AppButton.primary(
+              key: const ValueKey('assistant-history-new'),
+              leading: const Icon(LucideIcons.messageSquarePlus),
+              onPressed: widget.onNewConversation,
+              child: Text(l10n.assistantNewConversation),
+            ),
+          ],
+          slivers: [
+            if (matching.isEmpty)
+              SliverToBoxAdapter(
+                child: AppGroupedCard(
+                  children: [
+                    AppStateMessage.inline(
+                      icon: searching
+                          ? LucideIcons.searchX
+                          : LucideIcons.messagesSquare,
+                      title: searching
+                          ? l10n.chatNoSearchResults
+                          : l10n.assistantHistoryEmpty,
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  if (matchingHistory.isEmpty)
-                    Expanded(
-                      child: Center(
-                        child: Text(
-                          query.isEmpty
-                              ? context.l10n.assistantHistoryEmpty
-                              : context.l10n.chatNoSearchResults,
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(color: colors.onSurfaceVariant),
-                        ),
-                      ),
-                    )
-                  else
-                    Expanded(
-                      child: ListView.separated(
-                        controller: _scrollController,
-                        itemCount: visibleHistory.length,
-                        separatorBuilder: (_, _) => const SizedBox(height: 4),
-                        itemBuilder: (context, index) {
-                          final chat = visibleHistory[index];
-                          final selected = chat.id == widget.activeChatId;
-                          return Material(
-                            color: selected
-                                ? colors.primaryContainer.withValues(alpha: .55)
-                                : colors.surfaceContainerLow,
-                            borderRadius: BorderRadius.circular(14),
-                            child: AppListTile(
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 3,
-                              ),
-                              leading: Icon(
-                                LucideIcons.messageCircle,
-                                color: selected
-                                    ? colors.primary
-                                    : colors.onSurfaceVariant,
-                              ),
-                              title: Text(
-                                chat.title?.trim().isNotEmpty == true
-                                    ? chat.title!
-                                    : context.l10n.assistantUntitledChat,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              subtitle: Text(
-                                chat.createdAt == null
-                                    ? (chat.model ?? '')
-                                    : DateFormat.MMMd().add_jm().format(
-                                        chat.createdAt!.toLocal(),
-                                      ),
-                                maxLines: 1,
-                              ),
-                              trailing: selected
-                                  ? Icon(
-                                      LucideIcons.check,
-                                      color: colors.primary,
-                                    )
-                                  : const Icon(LucideIcons.chevronRight),
-                              onTap: () => widget.onSelectChat(chat),
-                            ),
-                          );
-                        },
-                      ),
+                  ],
+                ),
+              )
+            else
+              SliverList.builder(
+                itemCount: visible,
+                itemBuilder: (context, index) {
+                  _revealMore(index, matching.length);
+                  final chat = matching[index];
+                  return AppGroupedSlice(
+                    position: AppSlicePosition.of(index, visible),
+                    child: _HistoryRow(
+                      chat: chat,
+                      selected: chat.id == widget.activeChatId,
+                      onTap: () => widget.onSelectChat(chat),
                     ),
-                ],
+                  );
+                },
               ),
-            );
-          },
-        ),
-      ),
+          ],
+        );
+      },
     );
-  }
-
-  void _handleScroll() {
-    if (!_scrollController.hasClients) {
-      return;
-    }
-    if (_scrollController.position.extentAfter > _loadMoreThreshold) {
-      return;
-    }
-
-    final query = _searchController.text.trim().toLowerCase();
-    final total = query.isEmpty
-        ? widget.chatCubit.state.history.length
-        : widget.chatCubit.state.history
-              .where((chat) => (chat.title ?? '').toLowerCase().contains(query))
-              .length;
-    if (_visibleCount >= total) {
-      return;
-    }
-
-    setState(() {
-      _visibleCount = math.min(_visibleCount + _pageSize, total);
-    });
   }
 
   static int _initialVisibleCount(int totalCount) {
     return math.min(_pageSize, totalCount);
+  }
+}
+
+class _HistoryRow extends StatelessWidget {
+  const _HistoryRow({
+    required this.chat,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final AssistantChatRecord chat;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = AppTokens.of(context).colorScheme;
+    final title = chat.title?.trim();
+    final createdAt = chat.createdAt;
+    final locale = Localizations.localeOf(context).toString();
+    return Semantics(
+      selected: selected,
+      child: AppGroupedRow(
+        leading: AppIconTile(
+          icon: LucideIcons.messageCircle,
+          tone: selected ? AppTone.primary : AppTone.neutral,
+        ),
+        title: Text(
+          title?.isNotEmpty == true
+              ? title!
+              : context.l10n.assistantUntitledChat,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        subtitle: Text(
+          createdAt == null
+              ? (chat.model ?? '')
+              : DateFormat.MMMd(locale).add_jm().format(createdAt.toLocal()),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        trailing: selected
+            ? Icon(LucideIcons.check, size: 18, color: c.primary)
+            : null,
+        showChevron: !selected,
+        onTap: onTap,
+      ),
+    );
   }
 }
