@@ -130,31 +130,63 @@ weak-support feedback, the English center preset proposes two consecutive
 45-minute sessions before one class. Scheduling from the support queue loads
 these suggestions before opening the form. Staff still review the teacher,
 date, and time before creating any session. If too few scheduled classes are
-available, remaining slots stay blank for manual scheduling.
+available, the found slots are applied, the remaining slots stay blank for
+manual scheduling, and the form reports how many were filled. When the group
+calendar has upcoming classes but none match a shift rule, the form says so
+instead of reporting an empty calendar.
+
+### Shift rules and group shifts
+
+Each workspace configures its own shift rules under **Settings → Special class
+times**: a class window (start, optional end) and class days, the tutoring start
+time, tutoring days, and length (45 minutes by default). Tutoring days may be a
+subset of class days. Rules without an assignment match a class by weekday and
+exact local start time.
+
+**Settings → Group shifts** assigns a class group to a named shift. An assigned
+group uses that shift's tutoring time and tutoring days for every class on its
+calendar, whatever clock time the calendar stores. This covers class dates
+imported from the legacy session list, which were stored at a 07:00
+Asia/Ho_Chi_Minh placeholder that matches no shift. When an assigned group has
+no scheduled classes in the look-ahead window, suggestions use the shift's
+days in the workspace default time zone (Asia/Ho_Chi_Minh). These implied
+classes are never stored, and staff still review every slot. Assignments to a
+renamed or deleted shift match nothing. They do not invalidate the policy.
+Applying a preset keeps campus and group shift assignments.
 
 The standard preset places a 45-minute session immediately before class. The
-Easy Center preset includes the seven named weekday and weekend shifts from
+Easy Center preset includes the eight named weekday and weekend shifts from
 the center's schedule. The Monday/Wednesday/Friday 18:00 class uses Wednesday
 and Friday 17:15–18:00 only: Monday is skipped, even when it is the next
 scheduled class. The Tuesday/Thursday class uses 17:15–18:00. The weekend
 08:00–09:30 class uses **09:30–10:30 after class**, an intentional 60-minute
-exception to the usual 45 minutes. Other weekend shifts keep the table below.
+exception to the usual 45 minutes. The weekend 19:00 class (Shift 8) uses
+18:15–19:00. Other weekend shifts keep the table below. An untouched saved
+seven-shift preset gains Shift 8 when read.
 Untouched older Easy Center preset shift rules adopt these corrections when
 read; staff-edited rules and the standard/custom policies keep their saved
 behavior, including generic before-class fallback. The canonical Easy Center
 preset never falls back to an unlisted class day or time.
 
-| Class start | Class days | Tutoring time |
-| --- | --- | --- |
-| 18:00 | Monday/Wednesday/Friday | 17:15–18:00 Wednesday/Friday only |
-| 18:00 | Tuesday/Thursday | 17:15–18:00 |
-| 08:00 | Saturday/Sunday | 09:30–10:30 |
-| 09:30 | Saturday/Sunday | 08:45–09:30 |
-| 16:00 | Saturday/Sunday | 15:15–16:00 |
-| 17:30 | Saturday/Sunday | 16:45–17:30 |
-| 18:00 | Saturday/Sunday | 17:15–18:00 |
+| Shift | Class window | Class days | Tutoring time |
+| --- | --- | --- | --- |
+| Shift 1 | 18:00–19:30 | Monday/Wednesday/Friday | 17:15–18:00 Wednesday/Friday only |
+| Shift 2 | 18:00–19:30 | Tuesday/Thursday | 17:15–18:00 |
+| Shift 3 | 09:30–11:00 | Saturday/Sunday | 08:45–09:30 |
+| Shift 4 | 08:00–09:30 | Saturday/Sunday | 09:30–10:30 |
+| Shift 5 | 16:00–17:30 | Saturday/Sunday | 15:15–16:00 |
+| Shift 6 | 17:30–19:00 | Saturday/Sunday | 16:45–17:30 |
+| Shift 7 | 18:00–19:30 | Saturday/Sunday | 17:15–18:00 |
+| Shift 8 | 19:00 | Saturday/Sunday | 18:15–19:00 |
+
+The preset is a template: applying it fills these rules into the workspace's
+own policy, which the owner can then edit. It contains no learner or group
+data. Untouched saved preset rules gain the display-only class window and
+class days when read.
 
 Regression coverage: `tutoring-policy.test.ts`, `tutoring-suggestion.test.ts`,
+`tutoring-shift-assignment.test.ts`, the Contacts
+`tutoring-suggestion-apply.test.ts` (partial and unmatched results),
 and the Contacts `tutoring-policy-card.test.tsx`, `tutoring-teacher-picker.test.tsx`,
 and `tutoring-create-card.test.tsx` mounted section/teacher controls.
 `tutoring-policy-save.test.tsx` covers refreshed-section isolation and pending/failed saves.
@@ -307,6 +339,10 @@ counts, duplicate or truncated pages prevent suggestions and expose Retry. Missi
 teachers and schedules have distinct feedback. Configured but unmaterialized class
 occurrences are shown as a schedule-review exception, not confirmed classes.
 The displayed horizon follows the configured policy rather than a fixed four weeks.
+An empty window is complete: the sessions API reports `totalPages: 1` for zero
+rows, and the reader accepts either zero or one page for an empty catalog. Before
+this was accepted, a workspace with no tutoring sessions in the horizon always
+showed the incomplete-data retry state.
 
 Choices exclude recorded learner/teacher tutoring conflicts and other slots in the
 current draft, with half-open intervals and overnight overlap. Cancellation records
