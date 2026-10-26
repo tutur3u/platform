@@ -226,6 +226,28 @@ pages link to the app sub-screen instead of repeating its editors. The app
 sub-screens link back to their offline data. Mail and Assistant keep their
 account-scoped hubs, which an account or workspace switch cancels.
 
+### Appearance follows the account
+
+Appearance (theme, accent, background, surfaces, interface style, density,
+corners and reduced motion) follows the signed-in account across devices. It is
+stored in `user_configs` as `MOBILE_APPEARANCE` through
+`/api/v1/users/me/configs`, and cached per user so it shows at launch and
+offline. Resolution order: the device override, then the account, then the
+default. Seeding happens once per device: the first account bound after the
+upgrade receives the device's existing look, only when one exists and the
+override is off (`appearance-seed-consumed` records it). Later empty accounts
+show the default and write nothing until the user edits. One switch on the
+Appearance page, *Use different appearance on this device*, keeps this device
+on its own look. Turning it on keeps what is showing, and turning it off shows
+the account's values again. Signed out, or while an account still awaits MFA,
+only the device's look shows, so a previous account's look never leaks.
+Light/dark mode and haptics stay device preferences. Uploads run one at a time
+per user, and the newest local choice is always sent last. A choice stays
+pending until the server confirms it with nothing newer queued, and unsent
+choices retry on the next launch or sign-in. Coverage:
+`test/features/settings/cubit/theme_account_appearance_test.dart` and the
+Appearance checks in `settings_compact_navigation_test.dart`.
+
 Summaries state the current value rather than repeating a title: Tasks reads
 "Board view" or "Board list", Finance "Amounts shown" or "Amounts hidden", and
 Calendar the effective first day. Each sub-screen group has a footer naming the
