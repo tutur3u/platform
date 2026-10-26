@@ -306,7 +306,9 @@ it.each(['throw', 'policy-result'])(
         error: { code: 'offline' },
       });
     const response = await enforceRequiredMfaRequest(
-      request({ authorization: 'Bearer eyJprovider' })
+      request({
+        authorization: `Bearer ${failure === 'policy-result' ? createAppCoordinationToken({ userId: 'actor', targetApp: 'infra' }).token : 'eyJprovider'}`,
+      })
     );
     expect(response?.status).toBe(503);
     expect(response?.headers.get('X-Tuturuuu-Guard-Reason')).toBe(

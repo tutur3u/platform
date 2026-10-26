@@ -469,9 +469,6 @@ describe('guardApiProxyRequest', () => {
     );
 
     expect(response?.status).toBe(429);
-    expect(response?.headers.get('X-Tuturuuu-Guard-Reason')).toBe(
-      'proxy-rate-limited'
-    );
     expect(response?.headers.get('X-Proxy-Block-Reason')).toBe(
       'ip-already-blocked'
     );
@@ -504,6 +501,9 @@ describe('guardApiProxyRequest', () => {
     );
 
     expect(response?.status).toBe(429);
+    expect(response?.headers.get('X-Tuturuuu-Guard-Reason')).toBe(
+      'proxy-rate-limited'
+    );
     expect(response?.headers.get('X-RateLimit-Limit')).toBe('20');
     expect(response?.headers.get('X-RateLimit-Caller-Class')).toBe('anonymous');
     expect(response?.headers.get('X-RateLimit-Policy')).toBe('default');
