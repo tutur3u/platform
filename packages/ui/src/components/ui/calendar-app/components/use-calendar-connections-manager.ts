@@ -116,6 +116,7 @@ export function useCalendarConnectionsManager(wsId: string) {
     retry: 1,
   });
   const accounts = accountsQuery.data?.accounts || [];
+  const needsReconnectAccounts = accountsQuery.data?.needsReconnect ?? [];
   const isLoadingAccounts = accountsQuery.isLoading;
   const hasConnectedAccounts = accounts.length > 0;
   const syncStatusQuery = useQuery(
@@ -370,9 +371,15 @@ export function useCalendarConnectionsManager(wsId: string) {
   });
 
   // Google auth mutation
-  const googleAuthMutation = useMutation<AuthResponse, Error, void>({
+  const googleAuthMutation = useMutation<
+    AuthResponse,
+    Error,
+    // biome-ignore lint/suspicious/noConfusingVoidType: TanStack makes void variables optional, so plain mutate() callers stay valid.
+    { reconnect?: boolean } | void
+  >({
     mutationKey: ['calendar', 'google-auth', wsId],
-    mutationFn: () => getGoogleCalendarAuthUrl(wsId),
+    mutationFn: (variables) =>
+      getGoogleCalendarAuthUrl(wsId, undefined, !!variables?.reconnect),
     onSuccess: (data) => {
       if (data.authUrl) window.location.href = data.authUrl;
       else toast.error(t('auth_url_invalid'));
@@ -627,6 +634,7 @@ export function useCalendarConnectionsManager(wsId: string) {
     isSyncing,
     manualSyncDisabled,
     microsoftAuthMutation,
+    needsReconnectAccounts,
     newCalendarName,
     resetCalendarDataMutation,
     setExpandedPopoverAccounts,

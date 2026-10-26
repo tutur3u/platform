@@ -50,9 +50,11 @@ consent and idempotency rules. Cadences match the live legacy owner, not the sta
 source catalogs. See the [background work inventory](/build/devops/background-work-inventory).
 
 **Every job defaults off.** A job runs only when its id is listed in the
-`CRON_CONTROL_ENABLED_JOBS` Worker var (empty in `cloudflare.config.ts`), so enabling one
-is a reviewed configuration change. While a job is off its tick performs no storage
-or network work. Each enabled job also needs its target origin var and secret:
+`CRON_CONTROL_ENABLED_JOBS` Worker var, so enabling one
+is a reviewed configuration change. Production selects only database history
+retention; legacy jobs remain disabled. While a job is off its tick performs no
+storage or network work. Each enabled legacy HTTP job also needs its target
+origin var and secret:
 
 | Target | Origin var | Secret |
 | --- | --- | --- |
@@ -63,7 +65,7 @@ or network work. Each enabled job also needs its target origin var and secret:
 | Tasks | `TASKS_ORIGIN` | `CRON_SECRET_TASKS` |
 
 Each secret holds the value the target project already uses for `CRON_SECRET`.
-These secrets and `CRON_CONTROL_OPERATOR_TOKEN` are not in `secrets.required`,
+These legacy processor secrets are not in `secrets.required`,
 and the production workflow does not install them yet. Installing them is a
 separate reviewed workflow change or an operator `wrangler secret put`. An enabled
 job whose secret or https origin is missing logs `Cron Control job misconfigured`
@@ -91,12 +93,19 @@ state. It has no alarms, so only Cron Triggers start work.
   `ok: false` is failed; malformed, truncated, unreadable or oversized summaries
   are unknown and consume the failure budget without a retry. An absent `ok`
   field preserves existing JSON-object processor contracts. Bytes exceeding the
-  remaining cap are rejected before retaining the chunk.
+  remaining cap are rejected before retaining the chunk. Calendar provider sync
+  also reports `degraded` for a valid `ok: true` response whose sampled provider
+  accounts all failed transiently. This outcome applies only to
+  `calendar-provider-sync`; other jobs ignore the Calendar degradation fields.
+  `lastOutcome: degraded` survives a ledger restart and is visible in
+  `GET /control/jobs`, while `lastCompletedAt` retains the last `ok` completion.
 - **Failure budget.** Five consecutive failed or unknown slots stop the job
   (`failure-budget-exhausted`). A run terminated before it completes leaves an
   expired lease; the next claim charges it as unknown before admitting a
   replacement, so repeated terminations exhaust the budget too. The counter
-  survives restarts and resets only on success or operator resume. Settled
+  survives restarts and resets on an `ok` run, a nonfatal Calendar `degraded`
+  run, or operator resume. Degradation does not spend the fatal budget or advance
+  the timestamp of the last `ok` completion. Settled
   claims reject late completions, including after reconciliation exhausts the
   budget; late success cannot overwrite the unknown outcome. The dispatch and
   ledger unit regressions cover these cases across a simulated restart.
@@ -110,6 +119,33 @@ state. It has no alarms, so only Cron Triggers start work.
 - **Fail closed.** If the ledger is unavailable, the job is skipped before its
   processor is called. A lost completion leaves the lease to expire and is then
   charged as unknown.
+
+### Production operator token
+
+Provision the independent stop control before enabling a production job. Ops
+keeps the token on the M4 at
+`~/.config/tuturuuu-ops/cron-control-operator.token` with mode `600` in a private
+directory. Generate it directly into that file; never print it or pass its value
+as a command argument. Create it once, retain it for incident response, and
+coordinate any later rotation with the production deployment owner.
+
+Upload that file with the repository's Wrangler `secret put
+CRON_CONTROL_OPERATOR_TOKEN`, targeting `tuturuuu-cron-control` in account
+`e8912e2867beecc673d171907bf09649`, with the file as standard input. Store the
+same file using `gh secret set CRON_CONTROL_OPERATOR_TOKEN --env
+cron-control-production --repo tutur3u/platform` with standard input. The normal
+production workflow requires this secret and includes it in its private
+`--secrets-file`, preserving the stop control on later publications.
+
+Verify `GET /control/jobs` on
+`https://tuturuuu-cron-control.tuturuuu-e89.workers.dev` returns `200` with
+the token and `404` without it. Keep credentials in a child environment or
+standard input, never a literal header in shell arguments. Before retention is
+published, the authenticated job list must show no enabled jobs. The immediate
+rollback is an authenticated `POST
+/control/jobs/database-cron-history-retention/stop`; then remove the enabled id
+through the reviewed configuration/deployment path. A bounded SQL batch already
+running may finish after Stop.
 
 ### Cost envelope
 
@@ -306,9 +342,15 @@ recovery and database/provider acceptance remain separate gates.
 
 ## Seven-day database cron history
 
-`database-cron-history-retention` is a default-off Cron Control Worker processor
-on the existing ten-minute trigger. Enable only this job id in
-`CRON_CONTROL_ENABLED_JOBS` after the approved migration is applied. It always
+The production configuration enables only `database-cron-history-retention`
+in `CRON_CONTROL_ENABLED_JOBS` on the existing ten-minute trigger, after
+`20261025210000` has been applied. The job catalog remains default-off; other
+jobs stay disabled. Staging has no Cron Control Worker, so staging retention
+is not applicable. This selection lives in
+`apps/cron-control/cloudflare.config.ts` and its recorded parity identity;
+publish it through the reviewed Cron Control production workflow. A source
+merge alone does not prove live activation: read back the deployed binding
+and verify the first three scheduled slots before accepting the rollout. It always
 uses its Worker processor; it needs `SUPABASE_URL` and `SUPABASE_SECRET_KEY`,
 not a web origin, web cron secret or `CRON_CONTROL_WORKER_PROCESSORS` entry.
 No new pg_cron schedule or Next route is added.

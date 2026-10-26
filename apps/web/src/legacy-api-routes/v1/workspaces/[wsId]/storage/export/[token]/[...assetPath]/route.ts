@@ -1,4 +1,4 @@
-import { isReservedMobileDeploymentDrivePath } from '@tuturuuu/storage-core/mobile-deployment/storage-policy';
+import { isExcludedDrivePath } from '@tuturuuu/storage-core/drive-path-policy';
 import {
   resolveWorkspaceStorageExportAssetPath,
   verifyWorkspaceStorageExportToken,
@@ -36,7 +36,7 @@ export async function GET(
       folderPath: verified.folderPath,
       assetPathSegments: assetPath,
     });
-    if (isReservedMobileDeploymentDrivePath(wsId, path)) {
+    if (isExcludedDrivePath(wsId, path)) {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
     const signedUrl = await createWorkspaceStorageSignedReadUrl(wsId, path, {

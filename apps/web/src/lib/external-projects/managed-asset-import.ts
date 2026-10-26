@@ -215,7 +215,7 @@ export async function createManagedAssetImportJob(
     .insert({
       adapter: payload.adapter,
       canonical_external_project_id: payload.canonicalProjectId,
-      report: report as unknown as Json,
+      report: report as unknown as NonNullable<Json>,
       requested_by: payload.actorId,
       source_reference: 'managed-assets',
       status: 'queued',
@@ -369,7 +369,7 @@ export async function processManagedAssetImportJob(
     .from('workspace_external_project_import_jobs')
     .update({
       completed_at: completed ? new Date().toISOString() : null,
-      report: nextReport as unknown as Json,
+      report: nextReport as unknown as NonNullable<Json>,
       status,
     })
     .eq('ws_id', workspaceId)

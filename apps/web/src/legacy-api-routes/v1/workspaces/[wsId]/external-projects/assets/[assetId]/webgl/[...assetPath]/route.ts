@@ -7,6 +7,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { resolveWorkspaceId } from '@tuturuuu/utils/constants';
 import { sanitizePath } from '@tuturuuu/utils/storage-path';
+import { isWorkspaceUuidLiteral } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import {
   requireWorkspaceExternalProjectAccess,
@@ -378,8 +379,16 @@ export async function GET(
   }
 ) {
   const { assetId, assetPath, wsId } = await params;
-  const admin = (await createAdminClient()) as TypedSupabaseClient;
   const resolvedWsId = resolveWorkspaceId(wsId);
+
+  if (!isWorkspaceUuidLiteral(resolvedWsId)) {
+    return NextResponse.json(
+      { error: 'Invalid workspace ID' },
+      { status: 400 }
+    );
+  }
+
+  const admin = (await createAdminClient()) as TypedSupabaseClient;
 
   try {
     const binding = await resolveWorkspaceExternalProjectBinding(
