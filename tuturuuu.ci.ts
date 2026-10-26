@@ -120,6 +120,7 @@ export const ci = {
   'cms-cloudflare.yaml': true,
   'storefront-cloudflare.yaml': true,
   'ai-cloudflare.yaml': true,
+  'forms-cloudflare.yaml': true,
   'nova-cloudflare.yaml': true,
   'inventory-cloudflare.yaml': true,
 };
