@@ -58,7 +58,11 @@ async function request(fetchImpl, url, init, prefix) {
   return response;
 }
 
-export function createSqlClient({ projectRef, accessToken, fetchImpl = fetch }) {
+export function createSqlClient({
+  projectRef,
+  accessToken,
+  fetchImpl = fetch,
+}) {
   const url = `${MANAGEMENT_API}/projects/${projectRef}/database/query`;
   async function run(query, { readOnly }) {
     const response = await request(
@@ -171,14 +175,23 @@ export function createStorageClient({
     },
     async headStatus(url) {
       // HEAD only: the probe never downloads object bytes.
-      const response = await request(fetchImpl, url, { method: 'HEAD' }, 'head');
+      const response = await request(
+        fetchImpl,
+        url,
+        { method: 'HEAD' },
+        'head'
+      );
       return response.status;
     },
   };
 }
 
-export async function withRetry(operation, { attempts = 3, baseDelayMs = 500, sleep } = {}) {
-  const wait = sleep ?? ((ms) => new Promise((resolve) => setTimeout(resolve, ms)));
+export async function withRetry(
+  operation,
+  { attempts = 3, baseDelayMs = 500, sleep } = {}
+) {
+  const wait =
+    sleep ?? ((ms) => new Promise((resolve) => setTimeout(resolve, ms)));
   let lastError;
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     try {

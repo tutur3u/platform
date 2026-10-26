@@ -237,7 +237,8 @@ function hasAttachmentPlaceholder(content: string) {
 }
 
 // Signed-URL remediation re-keys objects to `{uuidv4}-{original name}`.
-const REKEY_PREFIX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}-/i;
+const REKEY_PREFIX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}-/i;
 
 function stripTimestampPrefix(filename: string) {
   return filename.replace(REKEY_PREFIX, '').replace(/^\d+[_-]/u, '');

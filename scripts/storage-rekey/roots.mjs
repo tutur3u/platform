@@ -7,7 +7,8 @@
 
 import { lit } from './supabase.mjs';
 
-const UUID_RE = '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$';
+const UUID_RE =
+  '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$';
 export const ROOT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000000';
 
 const ACTIVE_USER = (expr) =>
@@ -76,7 +77,10 @@ function relative(key) {
 function jsonRewrite({ name, table, column, from, to, scope = 'true' }) {
   const values = [
     [from, to],
-    [`ai-file:${encodeURIComponent(from)}`, `ai-file:${encodeURIComponent(to)}`],
+    [
+      `ai-file:${encodeURIComponent(from)}`,
+      `ai-file:${encodeURIComponent(to)}`,
+    ],
   ];
   let expr = `${column}::text`;
   let match = 'false';
@@ -93,7 +97,12 @@ function jsonRewrite({ name, table, column, from, to, scope = 'true' }) {
 
 function aiChatScope(key) {
   const p = key.split('/');
-  if (p[1] === 'chats' && p[2] === 'ai' && p[3] === 'resources' && new RegExp(UUID_RE).test(p[4] ?? '')) {
+  if (
+    p[1] === 'chats' &&
+    p[2] === 'ai' &&
+    p[3] === 'resources' &&
+    new RegExp(UUID_RE).test(p[4] ?? '')
+  ) {
     return `chat_id = ${lit(p[4])}`;
   }
   return 'true';
@@ -111,12 +120,39 @@ const REF_UPDATES = {
                and coalesce(a.storage_ws_id, (select c.ws_id from private.chat_conversations c
                  where c.id = a.conversation_id)) = ${lit(wsId)}::uuid))`,
     },
-    jsonRewrite({ name: 'ai_chat_messages', table: 'public.ai_chat_messages', column: 'metadata', from, to, scope: aiChatScope(from) }),
+    jsonRewrite({
+      name: 'ai_chat_messages',
+      table: 'public.ai_chat_messages',
+      column: 'metadata',
+      from,
+      to,
+      scope: aiChatScope(from),
+    }),
   ],
   'mira/images': ({ from, to, wsId }) => [
-    jsonRewrite({ name: 'ai_chat_messages', table: 'public.ai_chat_messages', column: 'metadata', from, to }),
-    jsonRewrite({ name: 'ai_credit_reservations', table: 'private.ai_credit_reservations', column: 'metadata', from, to, scope: `ws_id = ${lit(wsId)}::uuid` }),
-    jsonRewrite({ name: 'ai_credit_transactions', table: 'public.ai_credit_transactions', column: 'metadata', from, to, scope: `ws_id = ${lit(wsId)}::uuid` }),
+    jsonRewrite({
+      name: 'ai_chat_messages',
+      table: 'public.ai_chat_messages',
+      column: 'metadata',
+      from,
+      to,
+    }),
+    jsonRewrite({
+      name: 'ai_credit_reservations',
+      table: 'private.ai_credit_reservations',
+      column: 'metadata',
+      from,
+      to,
+      scope: `ws_id = ${lit(wsId)}::uuid`,
+    }),
+    jsonRewrite({
+      name: 'ai_credit_transactions',
+      table: 'public.ai_credit_transactions',
+      column: 'metadata',
+      from,
+      to,
+      scope: `ws_id = ${lit(wsId)}::uuid`,
+    }),
   ],
   '.tuturuuu': ({ from, to }) => [
     {
@@ -131,7 +167,9 @@ const REF_UPDATES = {
 export function refsUpdateSql(root, { bucket, entry, from, to, guard }) {
   const updates = REF_UPDATES[root]({ from, to, wsId: entry.wsId });
   const b = lit(bucket);
-  const cas = guard ? ` and o.id = ${lit(entry.id)} and o.updated_at = ${lit(entry.oldUpdatedAt)}::timestamptz` : '';
+  const cas = guard
+    ? ` and o.id = ${lit(entry.id)} and o.updated_at = ${lit(entry.oldUpdatedAt)}::timestamptz`
+    : '';
   const ctes = [
     `g as (select o.id, o.owner, o.owner_id, o.created_at from storage.objects o
       where o.bucket_id = ${b} and o.name = ${lit(from)}${cas} for update)`,
@@ -145,9 +183,13 @@ export function refsUpdateSql(root, { bucket, entry, from, to, guard }) {
       from g where t.bucket_id = ${b} and t.name = ${lit(to)} and (select v from ok) returning 1)`);
   }
   for (const update of updates) {
-    ctes.push(`${update.name} as (${update.sql} and (select v from ok) returning 1)`);
+    ctes.push(
+      `${update.name} as (${update.sql} and (select v from ok) returning 1)`
+    );
   }
-  const counts = updates.map((u) => `(select count(*) from ${u.name})::int as ${u.name}`);
+  const counts = updates.map(
+    (u) => `(select count(*) from ${u.name})::int as ${u.name}`
+  );
   return `with ${ctes.join(',\n')}
   select (select count(*) from g) = 1 as guard_ok, (select count(*) from n) = 1 as new_ok${
     guard ? ', (select count(*) from fix)::int as owner_restored' : ''

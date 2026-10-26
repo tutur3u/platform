@@ -16,7 +16,8 @@ import { lit, OperationError, withRetry } from './supabase.mjs';
 
 export const MAX_BATCH_SIZE = 50;
 const MAX_KEY_BYTES = 1024;
-const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+const UUID_V4 =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
 export function newKeyFor(oldName, uuid = randomUUID) {
   const slash = oldName.lastIndexOf('/');
@@ -41,7 +42,17 @@ function objectRowSql(bucket, { id, name }) {
     from storage.objects where bucket_id = ${lit(bucket)} and ${where}`;
 }
 
-export function createEngine({ ledger, save, sql, storage, fence, roots, log, now, retry = {} }) {
+export function createEngine({
+  ledger,
+  save,
+  sql,
+  storage,
+  fence,
+  roots,
+  log,
+  now,
+  retry = {},
+}) {
   const bucket = ledger.bucket;
   const at = () => now?.() ?? new Date().toISOString();
   const op = (fn) =>
@@ -52,9 +63,14 @@ export function createEngine({ ledger, save, sql, storage, fence, roots, log, no
   const move = (entry, to, patch) => {
     transition(entry, to, { now: at(), patch });
     save();
-    log('object', { id: entry.id, state: to, reason: patch?.skipReason ?? patch?.errorCode });
+    log('object', {
+      id: entry.id,
+      state: to,
+      reason: patch?.skipReason ?? patch?.errorCode,
+    });
   };
-  const readObject = async (key) => (await op(() => sql.read(objectRowSql(bucket, key))))[0] ?? null;
+  const readObject = async (key) =>
+    (await op(() => sql.read(objectRowSql(bucket, key))))[0] ?? null;
 
   async function precheck(entry) {
     const root = roots[entry.root];
@@ -93,7 +109,8 @@ export function createEngine({ ledger, save, sql, storage, fence, roots, log, no
   async function verifyStep(entry) {
     const created = await readObject({ name: entry.newName });
     const sameSize = created && String(created.size) === String(entry.size);
-    const sameType = created && (created.mimetype ?? null) === (entry.mimetype ?? null);
+    const sameType =
+      created && (created.mimetype ?? null) === (entry.mimetype ?? null);
     if (!sameSize || !sameType) {
       return move(entry, 'failed', { errorCode: 'verify_mismatch' });
     }
@@ -103,7 +120,15 @@ export function createEngine({ ledger, save, sql, storage, fence, roots, log, no
   async function refsStep(entry) {
     const root = roots[entry.root];
     const [result] = await op(() =>
-      sql.write(root.refsUpdateSql({ bucket, entry, from: entry.oldName, to: entry.newName, guard: true }))
+      sql.write(
+        root.refsUpdateSql({
+          bucket,
+          entry,
+          from: entry.oldName,
+          to: entry.newName,
+          guard: true,
+        })
+      )
     );
     if (!result?.guard_ok || !result?.new_ok) {
       // CAS lost: the object changed (or vanished) after selection. Drop our
@@ -116,16 +141,29 @@ export function createEngine({ ledger, save, sql, storage, fence, roots, log, no
   }
 
   async function deleteStep(entry, { probe }) {
-    if (probe) entry.probe = { url: await op(() => storage.sign(entry.oldName, 600)), status: null };
+    if (probe)
+      entry.probe = {
+        url: await op(() => storage.sign(entry.oldName, 600)),
+        status: null,
+      };
     await op(() => storage.remove([entry.oldName]));
-    if (await readObject({ name: entry.oldName })) throw new OperationError('old_still_present');
+    if (await readObject({ name: entry.oldName }))
+      throw new OperationError('old_still_present');
     if (probe) {
-      entry.probe = { url: null, status: await op(() => storage.headStatus(entry.probe.url)) };
+      entry.probe = {
+        url: null,
+        status: await op(() => storage.headStatus(entry.probe.url)),
+      };
     }
     move(entry, 'old_deleted');
   }
 
-  const steps = { selected: copyStep, copied: verifyStep, verified: refsStep, refs_updated: deleteStep };
+  const steps = {
+    selected: copyStep,
+    copied: verifyStep,
+    verified: refsStep,
+    refs_updated: deleteStep,
+  };
 
   async function advance(entry, options) {
     while (steps[entry.state]) {
@@ -150,16 +188,27 @@ export function createEngine({ ledger, save, sql, storage, fence, roots, log, no
         if (batch.length === 0) break;
         for (const entry of batch) {
           processed += 1;
-          await advance(entry, { probe: probeEvery > 0 && (processed - 1) % probeEvery === 0 });
+          await advance(entry, {
+            probe: probeEvery > 0 && (processed - 1) % probeEvery === 0,
+          });
         }
-        log('batch', { root, size: batch.length, opsUsed: fence.used, counts: countByState(rowsForRoot(ledger, root)) });
+        log('batch', {
+          root,
+          size: batch.length,
+          opsUsed: fence.used,
+          counts: countByState(rowsForRoot(ledger, root)),
+        });
       }
     } catch (error) {
       if (!(error instanceof StopRequested)) throw error;
       stopped = error.reason;
     }
     save();
-    return { stopped, opsUsed: fence.used, counts: countByState(rowsForRoot(ledger, root)) };
+    return {
+      stopped,
+      opsUsed: fence.used,
+      counts: countByState(rowsForRoot(ledger, root)),
+    };
   }
 
   async function rollbackEntry(entry) {
@@ -168,12 +217,27 @@ export function createEngine({ ledger, save, sql, storage, fence, roots, log, no
     const original = await readObject({ name: entry.oldName });
     if (!original) {
       // The old key is gone; restoring it would revive leaked tokens.
-      log('rollback_refused', { id: entry.id, state: entry.state, reason: 'old_key_deleted' });
+      log('rollback_refused', {
+        id: entry.id,
+        state: entry.state,
+        reason: 'old_key_deleted',
+      });
       return;
     }
     if (entry.newName) {
-      await op(() => sql.write(root.refsUpdateSql({ bucket, entry, from: entry.newName, to: entry.oldName, guard: false })));
-      if (await readObject({ name: entry.newName })) await op(() => storage.remove([entry.newName]));
+      await op(() =>
+        sql.write(
+          root.refsUpdateSql({
+            bucket,
+            entry,
+            from: entry.newName,
+            to: entry.oldName,
+            guard: false,
+          })
+        )
+      );
+      if (await readObject({ name: entry.newName }))
+        await op(() => storage.remove([entry.newName]));
     }
     move(entry, 'rolled_back');
   }
@@ -181,7 +245,9 @@ export function createEngine({ ledger, save, sql, storage, fence, roots, log, no
   async function rollback({ root }) {
     let stopped = null;
     const candidates = rowsForRoot(ledger, root).filter((entry) =>
-      ['selected', 'copied', 'verified', 'refs_updated', 'failed'].includes(entry.state)
+      ['selected', 'copied', 'verified', 'refs_updated', 'failed'].includes(
+        entry.state
+      )
     );
     try {
       for (const entry of candidates) await rollbackEntry(entry);
@@ -190,8 +256,15 @@ export function createEngine({ ledger, save, sql, storage, fence, roots, log, no
       stopped = error.reason;
     }
     save();
-    const refused = rowsForRoot(ledger, root).filter((entry) => entry.state === 'old_deleted').length;
-    return { stopped, opsUsed: fence.used, oldDeletedNotRolledBack: refused, counts: countByState(rowsForRoot(ledger, root)) };
+    const refused = rowsForRoot(ledger, root).filter(
+      (entry) => entry.state === 'old_deleted'
+    ).length;
+    return {
+      stopped,
+      opsUsed: fence.used,
+      oldDeletedNotRolledBack: refused,
+      counts: countByState(rowsForRoot(ledger, root)),
+    };
   }
 
   return { run, rollback, advance };

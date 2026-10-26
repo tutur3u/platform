@@ -76,12 +76,18 @@ describe('executeConvertFileToMarkdown', () => {
       rpc: vi.fn(),
       storage: { from: vi.fn().mockReturnValue({ createSignedUrl, list }) },
     });
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response(
-        JSON.stringify({ ok: true, markdown: '# Converted', title: 'Report' }),
-        { status: 200 }
-      )
-    );
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            ok: true,
+            markdown: '# Converted',
+            title: 'Report',
+          }),
+          { status: 200 }
+        )
+      );
     vi.stubGlobal('fetch', fetchMock);
 
     const result = (await executeConvertFileToMarkdown(

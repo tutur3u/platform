@@ -9,9 +9,10 @@ import fs from 'node:fs';
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
-const { atomicWriteFileSync, writeExclusiveFileSync } = require(
-  '../safe-fs.js'
-);
+const {
+  atomicWriteFileSync,
+  writeExclusiveFileSync,
+} = require('../safe-fs.js');
 
 export const LEDGER_VERSION = 1;
 
@@ -136,7 +137,8 @@ export function mergeSelection(ledger, rows, { now }) {
   let added = 0;
   for (const row of rows) {
     if (ledger.objects[row.id]) continue;
-    if (created.has(`id:${row.id}`) || created.has(`name:${row.name}`)) continue;
+    if (created.has(`id:${row.id}`) || created.has(`name:${row.name}`))
+      continue;
     ledger.objects[row.id] = {
       id: row.id,
       root: row.root,
@@ -155,9 +157,7 @@ export function mergeSelection(ledger, rows, { now }) {
       attempts: 0,
       refs: null,
       probe: null,
-      history: [
-        { state: row.skipReason ? 'skipped' : 'selected', at: now },
-      ],
+      history: [{ state: row.skipReason ? 'skipped' : 'selected', at: now }],
     };
     added += 1;
   }
@@ -198,7 +198,9 @@ export function planDigest(ledger, root) {
   const ids = pendingForRoot(ledger, root)
     .map((entry) => `${entry.id}:${entry.state}`)
     .sort();
-  return createHash('sha256').update(`${root}\n${ids.join('\n')}`).digest('hex');
+  return createHash('sha256')
+    .update(`${root}\n${ids.join('\n')}`)
+    .digest('hex');
 }
 
 function sha256(value) {
@@ -206,7 +208,11 @@ function sha256(value) {
 }
 
 /** Issues a fresh one-time approval token; only its hash is kept. */
-export function issueApproval(ledger, root, { now, random = randomBytes } = {}) {
+export function issueApproval(
+  ledger,
+  root,
+  { now, random = randomBytes } = {}
+) {
   // Hex, so the value can never be parsed as a CLI flag.
   const token = random(18).toString('hex');
   ledger.approvals[root] = {
@@ -221,7 +227,10 @@ export function issueApproval(ledger, root, { now, random = randomBytes } = {}) 
 export function consumeApproval(ledger, root, token, { now } = {}) {
   const approval = ledger.approvals[root];
   if (!approval) {
-    throw new LedgerError('No approval issued for this root', 'ERR_APPROVAL_MISSING');
+    throw new LedgerError(
+      'No approval issued for this root',
+      'ERR_APPROVAL_MISSING'
+    );
   }
   if (approval.usedAt) {
     throw new LedgerError('Approval token already used', 'ERR_APPROVAL_USED');

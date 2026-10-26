@@ -14,8 +14,16 @@ function world() {
   const refs = new Map();
   let seq = 0;
   const put = (name, extra = {}) =>
-    objects.set(name, { id: `obj-${++seq}`, name, updated_at: 't0', size: '5', mimetype: 'text/plain', ...extra });
-  const nameFrom = (query) => /name = '((?:[^']|'')*)'/.exec(query)?.[1].replaceAll("''", "'");
+    objects.set(name, {
+      id: `obj-${++seq}`,
+      name,
+      updated_at: 't0',
+      size: '5',
+      mimetype: 'text/plain',
+      ...extra,
+    });
+  const nameFrom = (query) =>
+    /name = '((?:[^']|'')*)'/.exec(query)?.[1].replaceAll("''", "'");
   const calls = [];
   const sql = {
     async read(query) {
@@ -23,7 +31,14 @@ function world() {
       if (query.startsWith('PRECHECK ')) {
         const entry = JSON.parse(query.slice(9));
         const row = [...objects.values()].find((o) => o.id === entry.id);
-        return [{ present: Boolean(row), name: row?.name, updated_at: row?.updated_at, skip_reason: row?.skip ?? null }];
+        return [
+          {
+            present: Boolean(row),
+            name: row?.name,
+            updated_at: row?.updated_at,
+            skip_reason: row?.skip ?? null,
+          },
+        ];
       }
       const row = objects.get(nameFrom(query));
       return row ? [row] : [];
@@ -36,7 +51,11 @@ function world() {
       const newOk = objects.has(entry.newName);
       let updated = 0;
       if (guardOk && newOk) {
-        for (const [id, key] of refs) if (key === from) refs.set(id, to), (updated += 1);
+        for (const [id, key] of refs) {
+          if (key !== from) continue;
+          refs.set(id, to);
+          updated += 1;
+        }
       }
       return [{ guard_ok: guardOk, new_ok: newOk, chat_files: updated }];
     },
@@ -65,14 +84,18 @@ function world() {
   };
   const roots = {
     chats: {
-      precheckSql: ({ entry }) => `PRECHECK ${JSON.stringify({ id: entry.id })}`,
+      precheckSql: ({ entry }) =>
+        `PRECHECK ${JSON.stringify({ id: entry.id })}`,
       refsUpdateSql: (args) => `REFS ${JSON.stringify(args)}`,
     },
   };
   return { objects, refs, put, sql, storage, roots, calls };
 }
 
-function setup(t, { maxOps = 1000, names = ['ws/chats/c1/a.txt', 'ws/chats/c1/b.txt'] } = {}) {
+function setup(
+  t,
+  { maxOps = 1000, names = ['ws/chats/c1/a.txt', 'ws/chats/c1/b.txt'] } = {}
+) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'rekey-engine-'));
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
   const w = world();
@@ -80,10 +103,22 @@ function setup(t, { maxOps = 1000, names = ['ws/chats/c1/a.txt', 'ws/chats/c1/b.
     w.put(name);
     w.refs.set(`ref:${name}`, name);
   }
-  const ledger = loadLedger(path.join(dir, 'l.json'), { projectRef: 'r', environment: 'staging', bucket: 'workspaces' }, { now: 't' });
+  const ledger = loadLedger(
+    path.join(dir, 'l.json'),
+    { projectRef: 'r', environment: 'staging', bucket: 'workspaces' },
+    { now: 't' }
+  );
   mergeSelection(
     ledger,
-    [...w.objects.values()].map((o) => ({ id: o.id, root: 'chats', wsId: 'ws', name: o.name, updatedAt: o.updated_at, size: o.size, mimetype: o.mimetype })),
+    [...w.objects.values()].map((o) => ({
+      id: o.id,
+      root: 'chats',
+      wsId: 'ws',
+      name: o.name,
+      updatedAt: o.updated_at,
+      size: o.size,
+      mimetype: o.mimetype,
+    })),
     { now: 't' }
   );
   const stopFile = path.join(dir, 'STOP');
@@ -102,19 +137,35 @@ function setup(t, { maxOps = 1000, names = ['ws/chats/c1/a.txt', 'ws/chats/c1/b.
 }
 
 test('new keys keep the directory and never reuse the old key', () => {
-  const key = newKeyFor('ws/chats/ai/resources/c/1712_a b.pdf', () => '11111111-2222-4333-8444-555555555555');
-  assert.equal(key, 'ws/chats/ai/resources/c/11111111-2222-4333-8444-555555555555-1712_a b.pdf');
-  assert.throws(() => newKeyFor('ws/chats/c/a', () => ''), { code: 'key_uuid_invalid' });
-  const keys = new Set(Array.from({ length: 200 }, () => newKeyFor('ws/chats/c/a.txt')));
+  const key = newKeyFor(
+    'ws/chats/ai/resources/c/1712_a b.pdf',
+    () => '11111111-2222-4333-8444-555555555555'
+  );
+  assert.equal(
+    key,
+    'ws/chats/ai/resources/c/11111111-2222-4333-8444-555555555555-1712_a b.pdf'
+  );
+  assert.throws(() => newKeyFor('ws/chats/c/a', () => ''), {
+    code: 'key_uuid_invalid',
+  });
+  const keys = new Set(
+    Array.from({ length: 200 }, () => newKeyFor('ws/chats/c/a.txt'))
+  );
   assert.equal(keys.size, 200);
   assert.equal(keys.has('ws/chats/c/a.txt'), false);
   assert.throws(() => newKeyFor('noslash'), { code: 'key_shape' });
-  assert.throws(() => newKeyFor(`ws/${'x'.repeat(1100)}`), { code: 'key_too_long' });
+  assert.throws(() => newKeyFor(`ws/${'x'.repeat(1100)}`), {
+    code: 'key_too_long',
+  });
 });
 
 test('happy path re-keys every object, moves refs, deletes old keys', async (t) => {
   const { w, ledger, make } = setup(t);
-  const result = await make().run({ root: 'chats', batchSize: 50, probeEvery: 1 });
+  const result = await make().run({
+    root: 'chats',
+    batchSize: 50,
+    probeEvery: 1,
+  });
   assert.equal(result.stopped, null);
   assert.equal(result.counts.old_deleted, 2);
   for (const entry of Object.values(ledger.objects)) {
@@ -123,7 +174,10 @@ test('happy path re-keys every object, moves refs, deletes old keys', async (t) 
     assert.equal(w.objects.has(entry.newName), true);
     assert.equal(w.refs.get(`ref:${entry.oldName}`), entry.newName);
     assert.deepEqual(entry.probe, { url: null, status: 400 });
-    assert.deepEqual(entry.history.map((h) => h.state), ['selected', 'copied', 'verified', 'refs_updated', 'old_deleted']);
+    assert.deepEqual(
+      entry.history.map((h) => h.state),
+      ['selected', 'copied', 'verified', 'refs_updated', 'old_deleted']
+    );
   }
 });
 
@@ -144,7 +198,9 @@ test('STOP mid-run halts before the next operation and a restart resumes', async
   };
   const first = await engine.run({ root: 'chats' });
   assert.equal(first.stopped, 'stop_file');
-  const states = Object.values(ledger.objects).map((e) => e.state).sort();
+  const states = Object.values(ledger.objects)
+    .map((e) => e.state)
+    .sort();
   assert.deepEqual(states, ['selected', 'selected']);
   // The copy landed but was not recorded; the restart must adopt it, not copy twice.
   w.storage.copy = realCopy;
@@ -152,7 +208,10 @@ test('STOP mid-run halts before the next operation and a restart resumes', async
   const copiesBefore = w.calls.filter((c) => c === 'storage.copy').length;
   const second = await make().run({ root: 'chats' });
   assert.equal(second.counts.old_deleted, 2);
-  assert.equal(w.calls.filter((c) => c === 'storage.copy').length - copiesBefore, 1);
+  assert.equal(
+    w.calls.filter((c) => c === 'storage.copy').length - copiesBefore,
+    1
+  );
   assert.equal(w.objects.size, 2);
 });
 
@@ -166,7 +225,9 @@ test('max-ops cap stops cleanly and is resumable', async (t) => {
 });
 
 test('transient copy errors retry within the bound; persistent ones fail the object', async (t) => {
-  const { w, ledger, make } = setup(t, { names: ['ws/chats/c1/a.txt', 'ws/chats/c1/b.txt'] });
+  const { w, ledger, make } = setup(t, {
+    names: ['ws/chats/c1/a.txt', 'ws/chats/c1/b.txt'],
+  });
   w.storage.failCopy = 2;
   let result = await make().run({ root: 'chats' });
   assert.equal(result.counts.old_deleted, 2);

@@ -13,7 +13,12 @@ import { randomUUID } from 'node:crypto';
 import fs from 'node:fs';
 import { parseArgs } from 'node:util';
 import { ROOT_WORKSPACE_ID } from './roots.mjs';
-import { createSqlClient, fetchServiceRoleKey, lit, readSecretFile } from './supabase.mjs';
+import {
+  createSqlClient,
+  fetchServiceRoleKey,
+  lit,
+  readSecretFile,
+} from './supabase.mjs';
 
 const TEST_WS = '00000000-0000-0000-0000-000000000002'; // seeded "Prototype General"
 
@@ -23,6 +28,7 @@ const { positionals, values } = parseArgs({
 });
 const [command] = positionals;
 const projectRef = values['project-ref'];
+// biome-ignore lint/suspicious/noUndeclaredEnvVars: direct operator script, outside cached Turbo tasks.
 const accessToken = readSecretFile(process.env.SUPABASE_ACCESS_TOKEN_FILE);
 
 const project = await (
@@ -40,17 +46,29 @@ const base = `https://${projectRef}.supabase.co/storage/v1`;
 const headers = { authorization: `Bearer ${serviceKey}`, apikey: serviceKey };
 
 async function upload(key, type) {
-  const response = await fetch(`${base}/object/workspaces/${key.split('/').map(encodeURIComponent).join('/')}`, {
-    method: 'POST',
-    headers: { ...headers, 'content-type': type },
-    body: 'synthetic',
-  });
+  const response = await fetch(
+    `${base}/object/workspaces/${key.split('/').map(encodeURIComponent).join('/')}`,
+    {
+      method: 'POST',
+      headers: { ...headers, 'content-type': type },
+      body: 'synthetic',
+    }
+  );
   if (!response.ok) throw new Error(`upload_http_${response.status}`);
 }
 
 async function seed() {
-  const [{ creator_id: user }] = await sql.read(`select creator_id from public.workspaces where id = ${lit(TEST_WS)}`);
-  const s = { user, chat: randomUUID(), goneChat: randomUUID(), conv: randomUUID(), msg: randomUUID(), tag: randomUUID() };
+  const [{ creator_id: user }] = await sql.read(
+    `select creator_id from public.workspaces where id = ${lit(TEST_WS)}`
+  );
+  const s = {
+    user,
+    chat: randomUUID(),
+    goneChat: randomUUID(),
+    conv: randomUUID(),
+    msg: randomUUID(),
+    tag: randomUUID(),
+  };
   const w = TEST_WS;
   s.keys = {
     aiA: `${w}/chats/ai/resources/${s.chat}/1712000000000_a.txt`,
@@ -61,27 +79,41 @@ async function seed() {
     mira: `${w}/mira/images/${randomUUID()}.png`,
     vault: `${ROOT_WORKSPACE_ID}/.tuturuuu/rehearsal-${s.tag}/file-${s.tag}.ciphertext.json`,
   };
-  await sql.write(`insert into public.ai_chats (id, creator_id, title) values (${lit(s.chat)}, ${lit(user)}, 'rekey rehearsal')`);
+  await sql.write(
+    `insert into public.ai_chats (id, creator_id, title) values (${lit(s.chat)}, ${lit(user)}, 'rekey rehearsal')`
+  );
   await sql.write(`insert into public.ai_chat_messages (chat_id, creator_id, role, content, metadata) values
     (${lit(s.chat)}, ${lit(user)}, 'USER', 'rehearsal', ${lit(JSON.stringify({ attachments: [{ storagePath: s.keys.aiA, id: `ai-file:${encodeURIComponent(s.keys.aiA)}` }] }))}::jsonb),
     (${lit(s.chat)}, ${lit(user)}, 'ASSISTANT', 'rehearsal', ${lit(JSON.stringify({ toolResults: [{ output: { storagePath: s.keys.aiB } }, { output: { storagePath: s.keys.mira, imageUrl: 'synthetic' } }] }))}::jsonb)`);
-  await sql.write(`insert into private.chat_conversations (id, ws_id, type, created_by, title) values (${lit(s.conv)}, ${lit(w)}, 'group', ${lit(user)}, 'rekey rehearsal')`);
-  await sql.write(`insert into private.chat_messages (id, conversation_id, sender_id, kind, content) values (${lit(s.msg)}, ${lit(s.conv)}, ${lit(user)}, 'user', 'rehearsal')`);
-  for (const [key, deleted] of [[s.keys.native, false], [s.keys.nativeDeleted, true]]) {
+  await sql.write(
+    `insert into private.chat_conversations (id, ws_id, type, created_by, title) values (${lit(s.conv)}, ${lit(w)}, 'group', ${lit(user)}, 'rekey rehearsal')`
+  );
+  await sql.write(
+    `insert into private.chat_messages (id, conversation_id, sender_id, kind, content) values (${lit(s.msg)}, ${lit(s.conv)}, ${lit(user)}, 'user', 'rehearsal')`
+  );
+  for (const [key, deleted] of [
+    [s.keys.native, false],
+    [s.keys.nativeDeleted, true],
+  ]) {
     await sql.write(`insert into private.chat_message_attachments (conversation_id, message_id, uploader_id, storage_path, full_path, filename, content_type, size_bytes, storage_ws_id, deleted_at)
       values (${lit(s.conv)}, ${lit(s.msg)}, ${lit(user)}, ${lit(key.slice(w.length + 1))}, ${lit(key)}, 'd.txt', 'text/plain', 9, ${lit(w)}, ${deleted ? 'now()' : 'null'})`);
   }
-  for (const [name, key] of Object.entries(s.keys)) await upload(key, name === 'mira' ? 'image/png' : 'text/plain');
+  for (const [name, key] of Object.entries(s.keys))
+    await upload(key, name === 'mira' ? 'image/png' : 'text/plain');
   await sql.write(`update storage.objects set owner = ${lit(user)}, owner_id = ${lit(user)}
     where bucket_id = 'workspaces' and name in (${Object.values(s.keys).map(lit).join(', ')})`);
   fs.writeFileSync(values.state, JSON.stringify(s), { mode: 0o600 });
-  console.log(JSON.stringify({ event: 'seeded', objects: Object.keys(s.keys).length }));
+  console.log(
+    JSON.stringify({ event: 'seeded', objects: Object.keys(s.keys).length })
+  );
 }
 
 // Two vault versions sharing one artifact path, as SQL draft inheritance creates.
 async function seedVault() {
   const s = JSON.parse(fs.readFileSync(values.state, 'utf8'));
-  const [{ id: env }] = await sql.read('select id from private.mobile_deployment_environments order by created_at limit 1');
+  const [{ id: env }] = await sql.read(
+    'select id from private.mobile_deployment_environments order by created_at limit 1'
+  );
   s.vaultVersions = [randomUUID(), randomUUID()];
   s.vaultKey = `${ROOT_WORKSPACE_ID}/.tuturuuu/rehearsal-${s.tag}/vault-${s.tag}.ciphertext.json`;
   const rel = s.vaultKey.slice(ROOT_WORKSPACE_ID.length + 1);
@@ -123,9 +155,16 @@ async function verify() {
 async function cleanup() {
   const s = JSON.parse(fs.readFileSync(values.state, 'utf8'));
   const w = TEST_WS;
-  const prefixes = [`${w}/chats/ai/resources/${s.chat}/`, `${w}/chats/ai/resources/${s.goneChat}/`, `${w}/chats/${s.conv}/`, `${ROOT_WORKSPACE_ID}/.tuturuuu/rehearsal-${s.tag}/`];
+  const prefixes = [
+    `${w}/chats/ai/resources/${s.chat}/`,
+    `${w}/chats/ai/resources/${s.goneChat}/`,
+    `${w}/chats/${s.conv}/`,
+    `${ROOT_WORKSPACE_ID}/.tuturuuu/rehearsal-${s.tag}/`,
+  ];
   const miraName = s.keys.mira.split('/').pop();
-  const rows = await sql.read(`select name from storage.objects where bucket_id = 'workspaces' and (${prefixes.map((p) => `name like ${lit(`${p}%`)}`).join(' or ')} or (name like ${lit(`${w}/mira/images/%`)} and right(name, ${miraName.length}) = ${lit(miraName)}))`);
+  const rows = await sql.read(
+    `select name from storage.objects where bucket_id = 'workspaces' and (${prefixes.map((p) => `name like ${lit(`${p}%`)}`).join(' or ')} or (name like ${lit(`${w}/mira/images/%`)} and right(name, ${miraName.length}) = ${lit(miraName)}))`
+  );
   if (rows.length) {
     const response = await fetch(`${base}/object/workspaces`, {
       method: 'DELETE',
@@ -135,19 +174,42 @@ async function cleanup() {
     if (!response.ok) throw new Error(`delete_http_${response.status}`);
   }
   if (s.vaultVersions) {
-    await sql.write(`delete from private.mobile_deployment_file_artifacts where version_id in (${s.vaultVersions.map(lit).join(', ')})`);
-    await sql.write(`delete from private.mobile_deployment_versions where id in (${s.vaultVersions.map(lit).join(', ')})`);
+    await sql.write(
+      `delete from private.mobile_deployment_file_artifacts where version_id in (${s.vaultVersions.map(lit).join(', ')})`
+    );
+    await sql.write(
+      `delete from private.mobile_deployment_versions where id in (${s.vaultVersions.map(lit).join(', ')})`
+    );
   }
-  await sql.write(`delete from private.chat_conversations where id = ${lit(s.conv)}`); // cascades messages/attachments
-  await sql.write(`delete from public.ai_chat_messages where chat_id = ${lit(s.chat)}`);
+  await sql.write(
+    `delete from private.chat_conversations where id = ${lit(s.conv)}`
+  ); // cascades messages/attachments
+  await sql.write(
+    `delete from public.ai_chat_messages where chat_id = ${lit(s.chat)}`
+  );
   await sql.write(`delete from public.ai_chats where id = ${lit(s.chat)}`);
   const [left] = await sql.read(`select
     (select count(*) from storage.objects where bucket_id = 'workspaces' and (${prefixes.map((p) => `name like ${lit(`${p}%`)}`).join(' or ')}))::int as objects,
     (select count(*) from public.ai_chats where id = ${lit(s.chat)})::int as chats,
     (select count(*) from private.chat_conversations where id = ${lit(s.conv)})::int as conversations`);
-  console.log(JSON.stringify({ event: 'cleanup', removedObjects: rows.length, remaining: left }));
+  console.log(
+    JSON.stringify({
+      event: 'cleanup',
+      removedObjects: rows.length,
+      remaining: left,
+    })
+  );
 }
 
-const commands = { seed, 'seed-vault': seedVault, verify, 'verify-vault': verifyVault, cleanup };
-if (!commands[command]) throw new Error('Usage: rehearsal.mjs <seed|seed-vault|verify|verify-vault|cleanup> --project-ref <ref> --state <file>');
+const commands = {
+  seed,
+  'seed-vault': seedVault,
+  verify,
+  'verify-vault': verifyVault,
+  cleanup,
+};
+if (!commands[command])
+  throw new Error(
+    'Usage: rehearsal.mjs <seed|seed-vault|verify|verify-vault|cleanup> --project-ref <ref> --state <file>'
+  );
 await commands[command]();

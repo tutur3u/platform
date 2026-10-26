@@ -16,7 +16,10 @@ test('STOP file halts the next operation and survives a new fence (restart)', (t
   const fence = createStopFence({ stopFile, maxOps: 10 });
   fence.beforeOperation();
   fs.writeFileSync(stopFile, '');
-  assert.throws(() => fence.beforeOperation(), (error) => error instanceof StopRequested && error.reason === 'stop_file');
+  assert.throws(
+    () => fence.beforeOperation(),
+    (error) => error instanceof StopRequested && error.reason === 'stop_file'
+  );
   assert.equal(fence.used, 1, 'a fenced operation is not counted');
   const restarted = createStopFence({ stopFile, maxOps: 10 });
   assert.throws(() => restarted.beforeOperation(), { reason: 'stop_file' });
@@ -26,7 +29,10 @@ test('STOP file halts the next operation and survives a new fence (restart)', (t
 });
 
 test('max-ops cap is a hard budget', (t) => {
-  const fence = createStopFence({ stopFile: path.join(tempDir(t), 'STOP'), maxOps: 2 });
+  const fence = createStopFence({
+    stopFile: path.join(tempDir(t), 'STOP'),
+    maxOps: 2,
+  });
   fence.beforeOperation();
   fence.beforeOperation();
   assert.equal(fence.remaining, 0);
