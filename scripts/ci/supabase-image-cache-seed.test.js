@@ -215,28 +215,23 @@ test('seed workflow keeps fixed main-only choices, serial profiles and read-only
       assert.equal(step.with?.['seed-image-catalog'], undefined);
 });
 
-test('every reviewed catalog image has a matching official fallback', () => {
-  const { imageList } = require('./supabase-image-cache.js');
-  const fs = require('node:fs');
-  const images = imageList({
-    cliVersion: '2.117.0',
-    registry: 'public.ecr.aws',
-    profile: 'full',
-    config: fs.readFileSync('apps/database/supabase/config.toml', 'utf8'),
-    services: [
-      ['postgres', '17.6.1.167'],
-      ['postgres-meta', 'v0.99.0'],
-      ['postgrest', 'v16.2'],
-      ['gotrue', 'v2.196.0'],
-      ['realtime', 'v2.130.0'],
-      ['storage-api', 'v1.72.1'],
-      ['studio', '2026.08.24-sha-8ec45b2'],
-    ].map(([name, local]) => ({ name: `supabase/${name}`, local })),
-  });
+test('every current and retained catalog image has a matching official fallback', () => {
+  const retainedImages = [
+    'postgres:17.6.1.167',
+    'postgres-meta:v0.99.0',
+    'postgrest:v16.2',
+    'gotrue:v2.196.0',
+    'realtime:v2.130.0',
+    'storage-api:v1.72.1',
+    'studio:2026.08.24-sha-8ec45b2',
+    'kong:2.8.1',
+    'mailpit:v1.30.2',
+    'imgproxy:v3.8.0',
+  ].map((image) => `public.ecr.aws/supabase/${image}`);
   const future = data.catalogs['cli-2.121.0'].images;
   assert.deepEqual(
     Object.keys(data.fallbacks).sort(),
-    [...new Set([...images, ...Object.keys(future)])].sort()
+    [...new Set([...retainedImages, ...Object.keys(future)])].sort()
   );
   for (const [image, pin] of Object.entries(data.fallbacks)) {
     assert.equal(

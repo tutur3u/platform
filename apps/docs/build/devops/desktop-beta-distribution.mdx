@@ -89,8 +89,7 @@ reviewed change after provisioning; their credentials are not PFX replacements.
 ### Signing later
 
 Authenticode needs an OV/EV certificate, compatible hardware/cloud key integration and timestamping.
-EV does not guarantee SmartScreen reputation. Azure Trusted Signing (now Artifact Signing) is a managed
-alternative; review identity eligibility, bounded usage and cost before enabling it. No purchase or service is created here.
+EV does not guarantee SmartScreen reputation. For Azure Trusted Signing (now Artifact Signing), review identity, bounded usage and costs before enabling it.
 MSIX is separate: reuse `desktop-store-draft.yaml` and `windows-store-manifest.xml`, then verify publisher identity,
 signing, URI activation, upgrades and Store certification. See [Microsoft's signing overview](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/code-signing-options).
 
@@ -114,9 +113,8 @@ matching publisher signatures and rejects unsigned installers.
 
 ### Build Windows artifacts without publishing
 
-Dispatch `desktop-beta.yaml` on the implementation branch with `dry_run=true`.
-The `windows-latest` job uses placeholder public configuration and `contents: read`;
-it receives no signing credentials, protected environment or publication rights.
+Dispatch `desktop-beta.yaml` on the implementation branch with `dry_run=true`. The `windows-latest` job
+uses placeholder public configuration and `contents: read`, without signing credentials or publication rights.
 Dry runs skip release jobs, including on `production`. Production sign-in and updates need separate qualification.
 
 The seven-day `desktop-windows-x64-dry-run` artifact contains:
@@ -125,16 +123,19 @@ The seven-day `desktop-windows-x64-dry-run` artifact contains:
 - `desktop-artifacts/verified-windows.json`: installer SHA-256, source SHA, run ID and `unsigned-windows` status.
 - `windows-installed-files.json`: installed filenames, sizes/hashes, source SHA, run ID/attempt and installer hash.
 
-The smoke silently installs the installer, verifies its receipt hash, and checks
-the runner, Flutter DLL, ICU data, AOT library and assets.
-Root files must match the runner/DLL/uninstaller allowlist; assets stay under `data/`.
-The runner starts hidden and shows its window only from Flutter's first-frame callback. The smoke requires a visible window after 15 seconds, then stops and uninstalls. OIDC request/runtime credentials are removed before child launches.
-Cleanup failures are reported without masking an earlier startup failure.
-The production matrix uses the same gate, with its inventory uploaded separately.
-Windows CI runs PowerShell parse and smoke fixtures for hidden windows, unexpected files
-and simultaneous startup/uninstall failure. Fixtures simulate processes; the installed-app
-check is the native acceptance gate. See [Flutter's first-frame guidance](https://docs.flutter.dev/release/breaking-changes/windows-show-window-migration).
-Packaging/updating currently targets x64; ARM64 needs separate native qualification.
+The smoke verifies the receipt, required Flutter files and hidden/system files, using literal paths.
+Reject all reparse points. Root files match the runner/DLL/uninstaller allowlist; `data/` permits ICU, AOT and Flutter assets, rejecting `.env*` path segments, MZ headers and executable/script/debug/credential types.
+The runner stays hidden until Flutter's first frame. After 15 seconds the smoke requires a visible main window
+with the exact title `Tuturuuu`. Installation and uninstallation each have a 120-second wait, then a 10-second
+owned-process-tree stop attempt. Uninstall is skipped if the installer is still running; original errors survive cleanup.
+[Inno's uninstaller exit code](https://jrsoftware.org/ishelp/topic_uninstexitcodes.htm) signals completion of its actual work; its clone may still finish deleting the original EXE.
+
+This proves a first frame, not healthy Firebase, Supabase, caches or widgets: caught startup failures and ErrorWidgets can render.
+OIDC/runtime variables are removed, but same-user process access is not isolated; a separate smoke job without OIDC is a follow-up.
+Slow bootstrap leaves the window hidden. A native splash/watchdog is a separate product follow-up; the 15-second gate is unchanged.
+The production matrix uses the same gate and separate inventory. Fixtures cover hidden files, wrong titles and phase timeouts; the installed-app check is the native gate.
+See [Flutter's first-frame guidance](https://docs.flutter.dev/release/breaking-changes/windows-show-window-migration).
+Packaging/updating targets x64; ARM64 needs separate native qualification.
 
 | Platform | Configuration |
 | --- | --- |
