@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://nova.tuturuuu.com/sitemap.xml
+Sitemap: https://nova.ai.vn/sitemap.xml

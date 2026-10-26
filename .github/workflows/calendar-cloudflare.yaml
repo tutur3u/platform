@@ -1,6 +1,7 @@
 name: Native Calendar Cloudflare
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
     paths: ['apps/calendar/**', 'packages/**', 'scripts/ci/wave1-*', '.github/workflows/wave1-*', '.github/workflows/calendar-cloudflare.yaml', 'tuturuuu.ci.ts', 'tuturuuu.ts', 'bun.lock', 'turbo.json', 'package.json']
   push:
     branches: [main]
@@ -18,6 +19,7 @@ concurrency:
   queue: max
 jobs:
   check-ci:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     uses: ./.github/workflows/ci-check.yml
     permissions:
       contents: read

@@ -44,6 +44,12 @@ const fixtures = hasSaga
       'calendar-google-import-generation.sql',
     ]
   : ['calendar-retained-generation.sql'];
+if (
+  trackedFiles.some((file) =>
+    file.endsWith('/20261026023000_calendar_auth_token_deactivation.sql')
+  )
+)
+  fixtures.push('calendar-auth-token-deactivation.sql');
 const ports = await chooseAvailablePortBlock(identity);
 const metadata = await stageDisposableProject({
   repositoryRoot,

@@ -6,6 +6,7 @@ import {
   queryClients,
   renderLoginForm,
   renderLoginFormSearch,
+  resetReturnUrlLoginMocks,
 } from './login-form-test-support';
 
 const platformVerifyTokenReturnUrl =
@@ -14,73 +15,7 @@ const localPortlessPlatformVerifyTokenReturnUrl =
   'https://tuturuuu.localhost:1355/verify-token?nextUrl=%2Fen%2Fpersonal%2Ftasks';
 
 describe('LoginForm returnUrl navigation', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mocks.currentUserProfile = {
-      avatar_url: null,
-      display_name: 'Person Example',
-      email: 'person@example.com',
-      full_name: null,
-      id: 'user-1',
-    };
-    mocks.getOtpSettings.mockResolvedValue({ otpEnabled: true });
-    mocks.getUser.mockResolvedValue({
-      data: {
-        user: {
-          email: 'person@example.com',
-          id: 'user-1',
-        },
-      },
-    });
-    mocks.getClaims.mockResolvedValue({
-      data: { claims: { sub: 'user-1' } },
-      error: null,
-    });
-    mocks.mfaAssuranceLevel.mockResolvedValue({
-      data: {
-        currentLevel: 'aal1',
-        nextLevel: 'aal1',
-      },
-    });
-    mocks.mfaListFactors.mockResolvedValue({
-      data: {
-        totp: [
-          {
-            id: 'factor-1',
-            status: 'verified',
-          },
-        ],
-      },
-      error: null,
-    });
-    mocks.mfaChallenge.mockResolvedValue({
-      data: {
-        id: 'challenge-1',
-      },
-      error: null,
-    });
-    mocks.mfaVerify.mockResolvedValue({ error: null });
-    mocks.resolveCrossAppReturnUrlWithInternalApi.mockResolvedValue({
-      error: 'Invalid returnUrl',
-    });
-    mocks.createMfaMobileApprovalChallengeWithInternalApi.mockResolvedValue({
-      challenge: {
-        expiresAt: '2026-06-11T03:10:00.000Z',
-        id: 'mobile-challenge-1',
-        pairCode: '123456',
-      },
-      secret: 'mobile-secret',
-    });
-    mocks.pollMfaMobileApprovalChallengeWithInternalApi.mockResolvedValue({
-      mobileMfaVerified: false,
-      status: 'pending',
-    });
-    mocks.passwordLoginWithInternalApi.mockResolvedValue({ success: true });
-    mocks.refreshSession.mockResolvedValue({ error: null });
-    mocks.sendOtpWithInternalApi.mockResolvedValue({});
-    mocks.signInWithOAuth.mockResolvedValue({ error: null });
-    mocks.verifyOtpWithInternalApi.mockResolvedValue({});
-  });
+  beforeEach(resetReturnUrlLoginMocks);
 
   afterEach(() => {
     for (const queryClient of queryClients) queryClient.clear();

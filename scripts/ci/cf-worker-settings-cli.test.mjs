@@ -97,7 +97,11 @@ function healthy(live) {
     domains: ok([]),
     zones: ok([{ id: ZONE, name: 'example.com' }]),
     routes: ok([]),
-    deployments: ok({ deployments: [{ id: 'live', versions: [] }] }),
+    deployments: ok({
+      deployments: [
+        { id: 'live', versions: [{ version_id: 'v', percentage: 100 }] },
+      ],
+    }),
   };
 }
 
@@ -326,6 +330,7 @@ const UNGATED = new Set([
   'verify/result.status',
   'zones/result.0.name',
   'deployments/result.deployments.0.id',
+  'deployments/result.deployments.0.versions.0.version_id',
   ...previousIdentity.secrets.map(
     (_, index) =>
       `settings/result.bindings.${Object.keys(previousIdentity.vars).length + index}.name`

@@ -52,6 +52,13 @@ export default defineConfig({
           '../../packages/supabase/src/auth-errors.ts'
         ),
       },
+      {
+        find: '@tuturuuu/devbox/balancer',
+        replacement: resolve(
+          __dirname,
+          '../../packages/devbox/src/balancer/index.ts'
+        ),
+      },
       { find: '@', replacement: resolve(__dirname, './src') },
       {
         find: /^@tuturuuu\/internal-api\/(.+)$/,

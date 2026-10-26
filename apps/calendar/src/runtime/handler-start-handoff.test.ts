@@ -6,8 +6,8 @@ const suppliers = vi.hoisted(() => ({
   start: vi.fn<(request: Request) => Promise<Response>>(),
   proxy: vi.fn(),
 }));
-vi.mock('@tanstack/react-start/server-entry', () => ({
-  default: { fetch: suppliers.start },
+vi.mock('@tuturuuu/start-bridge/start/server-entry', () => ({
+  createBridgeStartHandler: () => ({ fetch: suppliers.start }),
 }));
 vi.mock('@tanstack/react-start/server-only', () => ({}));
 vi.mock('../proxy', () => ({ proxy: suppliers.proxy }));
@@ -48,7 +48,7 @@ beforeEach(() => {
 
 describe('actual Calendar handler to Start handoff', () => {
   it('passes a native JSON mutation once and preserves supplier failure identity', async () => {
-    const request = mutation('/_calendar/functions/fixture');
+    const request = mutation('/_fn/fixture');
     const failure = new Error('unconfirmed Start write');
     suppliers.start.mockImplementationOnce(async (forwarded) => {
       expect(forwarded.url).toBe(request.url);
@@ -470,5 +470,64 @@ describe('actual Calendar handler asset and API owner dispatch', () => {
       log.mockRestore();
       vi.unstubAllEnvs();
     }
+  });
+});
+
+describe('mounted Calendar handler ownership', () => {
+  it('strips only its own base before asset lookup and scopes service worker control', async () => {
+    const asset = vi.fn(async (request: Request) => {
+      expect(request.url).toBe('https://tuturuuu.com/serwist/sw.js?x=1');
+      return new Response('worker');
+    });
+    const response = await handleCalendarRequest(
+      new Request('https://tuturuuu.com/calendar/serwist/sw.js?x=1'),
+      { ASSETS: { fetch: asset } },
+      ctx,
+      telemetry
+    );
+    expect(response.headers.get('service-worker-allowed')).toBe('/calendar/');
+    expect(response.headers.get('cache-control')).toBe('no-cache');
+    expect(await response.text()).toBe('worker');
+    expect(suppliers.proxy).not.toHaveBeenCalled();
+  });
+  it.each(['/api/build-info', '/mail/verify-token', '/calendarish'])(
+    'does not claim the apex path %s',
+    async (path) => {
+      const response = await handleCalendarRequest(
+        new Request(`https://tuturuuu.com${path}`),
+        env,
+        ctx,
+        telemetry
+      );
+      expect(response.status).toBe(404);
+      expect(suppliers.proxy).not.toHaveBeenCalled();
+      expect(suppliers.start).not.toHaveBeenCalled();
+    }
+  );
+  it('preserves a legacy mounted JSON function body without a redirect or replay', async () => {
+    const body = '{ "revision": 7 }';
+    suppliers.start.mockImplementationOnce(async (request) => {
+      expect(request.url).toBe('https://tuturuuu.com/_fn/fixture?x=a%2Bb');
+      expect(request.method).toBe('POST');
+      expect(await request.text()).toBe(body);
+      await expect(request.text()).rejects.toThrow();
+      return new Response('accepted', { status: 202 });
+    });
+    const response = await handleCalendarRequest(
+      new Request(
+        'https://tuturuuu.com/calendar/_calendar/functions/fixture?x=a%2Bb',
+        {
+          method: 'POST',
+          body,
+          headers: { 'content-type': 'application/json' },
+        }
+      ),
+      env,
+      ctx,
+      telemetry
+    );
+    expect(response.status).toBe(202);
+    expect(suppliers.start).toHaveBeenCalledTimes(1);
+    expect(suppliers.proxy).not.toHaveBeenCalled();
   });
 });

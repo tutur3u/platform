@@ -40,6 +40,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
+import { getMountedAppVerifyTokenMatch } from '@tuturuuu/utils/internal-app-mounts';
 import { getAppDomainByUrl } from '@tuturuuu/utils/internal-domains';
 import { requiresAccountMfa } from '@tuturuuu/utils/required-mfa-browser';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -243,11 +244,9 @@ function getStaticReturnApp(
     return 'web';
   }
 
-  const appDomain = getAppDomainByUrl(returnUrl);
-
-  if (appDomain?.kind === 'internal') {
-    return appDomain.name;
-  }
+  const appDomain =
+    getMountedAppVerifyTokenMatch(returnUrl) ?? getAppDomainByUrl(returnUrl);
+  if (appDomain?.kind === 'internal') return appDomain.name;
 
   return normalizeManagedTuturuuuReturnUrl(returnUrl)
     ? MANAGED_TUTURUUU_RETURN_APP
@@ -885,13 +884,8 @@ export default function LoginForm({
         nextUrl.searchParams.set('multiAccount', 'true');
       }
 
-      if (nextUrl.origin !== window.location.origin) {
-        window.location.assign(nextUrl.toString());
-      } else {
-        router.push(nextUrl.toString());
-        router.refresh();
-      }
-
+      // Another app serves its verifier, even on this origin (an apex mount).
+      window.location.assign(nextUrl.toString());
       return;
     }
 
