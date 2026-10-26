@@ -2,6 +2,8 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { Json } from '@tuturuuu/types';
 import { AiStudioError } from './errors';
 
+export type AiStudioMeteringIo = { fetch?: typeof globalThis.fetch };
+
 export type AiStudioRunReservation = {
   reservationId: string;
   runId: string;
@@ -37,9 +39,10 @@ export type RecordAiStudioRunStepInput = {
 };
 
 export async function recordAiStudioRunStep(
-  input: RecordAiStudioRunStepInput
+  input: RecordAiStudioRunStepInput,
+  io: AiStudioMeteringIo & { throwOnError?: boolean } = {}
 ): Promise<void> {
-  const sbAdmin = await createAdminClient({ noCookie: true });
+  const sbAdmin = await createAdminClient({ noCookie: true, fetch: io.fetch });
   const { error } = await sbAdmin
     .schema('private')
     .from('ai_studio_run_steps')
@@ -69,6 +72,12 @@ export async function recordAiStudioRunStep(
     );
 
   if (error) {
+    if (io.throwOnError)
+      throw new AiStudioError('Reconciliation record could not be confirmed.', {
+        code: 'server_error',
+        status: 503,
+        type: 'server_error',
+      });
     console.warn('Failed to record AI Studio run step', {
       code: error.code,
       runId: input.runId,
@@ -88,9 +97,10 @@ export type CalculateAiStudioUsageCostInput = {
 };
 
 export async function calculateAiStudioUsageCost(
-  input: CalculateAiStudioUsageCostInput
+  input: CalculateAiStudioUsageCostInput,
+  io: AiStudioMeteringIo = {}
 ): Promise<AiStudioUsageCost> {
-  const sbAdmin = await createAdminClient({ noCookie: true });
+  const sbAdmin = await createAdminClient({ noCookie: true, fetch: io.fetch });
   const { data, error } = await sbAdmin
     .schema('private')
     .rpc('calculate_ai_studio_usage_cost', {
@@ -268,9 +278,10 @@ export type SettleAiStudioRunInput = {
 };
 
 export async function settleAiStudioRun(
-  input: SettleAiStudioRunInput
+  input: SettleAiStudioRunInput,
+  io: AiStudioMeteringIo = {}
 ): Promise<void> {
-  const sbAdmin = await createAdminClient({ noCookie: true });
+  const sbAdmin = await createAdminClient({ noCookie: true, fetch: io.fetch });
   const { data, error } = await sbAdmin
     .schema('private')
     .rpc('settle_ai_studio_run', {
@@ -317,9 +328,10 @@ export type SettleExternalAiStudioRunInput = Omit<
 };
 
 export async function settleExternalAiStudioRun(
-  input: SettleExternalAiStudioRunInput
+  input: SettleExternalAiStudioRunInput,
+  io: AiStudioMeteringIo = {}
 ): Promise<void> {
-  const sbAdmin = await createAdminClient({ noCookie: true });
+  const sbAdmin = await createAdminClient({ noCookie: true, fetch: io.fetch });
   const { data, error } = await sbAdmin
     .schema('private')
     .rpc('settle_external_ai_studio_run', {

@@ -103,6 +103,7 @@ const nextConfig = createTuturuuuNextConfig({
     'chat-state-cloudflare-do',
   ],
   experimental: {
+    authInterrupts: true,
     ...(offlineConfig.experimental ?? {}),
     // Reuse static route stages and shared shells across similar navigations.
     // Personalized runtime stages remain request-bound unless a segment opts in.

@@ -1,3 +1,6 @@
+import { matchPage } from '@tuturuuu/start-bridge/pages';
+import { calendarBase } from './calendar-mount';
+import { pages } from './page-registry.bridge.gen';
 import '@tanstack/react-start/server-only';
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
@@ -29,16 +32,15 @@ export async function loadPageModel(path: string) {
 }
 
 async function loadResolvedPageModel(url: URL) {
-  const segments = url.pathname
-    .split('/')
-    .filter(Boolean)
-    .map(decodeURIComponent);
+  const pathname = calendarBase(url)?.strip(url.pathname);
+  if (pathname == null) notFound();
+  const segments = pathname.split('/').filter(Boolean).map(decodeURIComponent);
   const locale = loadLocaleContext(`${url.pathname}${url.search}`);
   if (segments[0] === 'en' || segments[0] === 'vi') segments.shift();
   const request = calendarRequest().request;
   if (
     (request.method === 'GET' || request.method === 'HEAD') &&
-    PUBLIC_PATHS.includes(url.pathname) &&
+    PUBLIC_PATHS.includes(pathname) &&
     !url.searchParams.has('token')
   )
     return {
@@ -70,6 +72,7 @@ async function loadResolvedPageModel(url: URL) {
     return { ...common, kind: 'verify-token' as const };
   if (!actor?.id) redirect('/login');
   if (!segments.length) redirect('/personal');
+  if (!matchPage(pages, `/${segments.join('/')}`)) notFound();
   const wsId = segments[0];
   if (!wsId) notFound();
   if (segments.length > 1 && segments[1] !== 'lab' && segments[1] !== 'tasks')

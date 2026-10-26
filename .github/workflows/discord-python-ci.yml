@@ -6,6 +6,7 @@ on:
       - "apps/discord/**"
       - ".github/workflows/discord-python-ci.yml"
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
     paths:
       - "apps/discord/**"
       - ".github/workflows/discord-python-ci.yml"
@@ -93,7 +94,7 @@ jobs:
   test:
     name: Test Suite
     needs: [check-ci]
-    if: needs.check-ci.outputs.should_run == 'true'
+    if: needs.check-ci.outputs.should_run == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -131,7 +132,7 @@ jobs:
   test-coverage:
     name: Test Coverage
     needs: [check-ci]
-    if: needs.check-ci.outputs.should_run == 'true'
+    if: needs.check-ci.outputs.should_run == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -170,7 +171,7 @@ jobs:
   build-check:
     name: Build Check
     needs: [check-ci]
-    if: needs.check-ci.outputs.should_run == 'true'
+    if: needs.check-ci.outputs.should_run == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -234,7 +235,7 @@ jobs:
   matrix-test:
     name: Multi-Version Test
     needs: [check-ci]
-    if: needs.check-ci.outputs.should_run == 'true'
+    if: needs.check-ci.outputs.should_run == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false

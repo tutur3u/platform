@@ -4,7 +4,7 @@ const MAX_PAGES = 8;
 const MAX_PAGE_SIZE = 50;
 
 /** Follow only locally constructed page URLs; never trust response links. */
-export async function settingsList(request, path, display = path, field) {
+export async function settingsList(request, path, display = path) {
   const items = [];
   const seen = new Set();
   let totalPages;
@@ -16,7 +16,7 @@ export async function settingsList(request, path, display = path, field) {
     const body = await request(`${url.pathname}${url.search}`, display);
     const fail = (condition, reason) =>
       assert.ok(condition, `settings snapshot ${reason} for GET ${display}`);
-    const batch = field ? body.result?.[field] : body.result;
+    const batch = body.result;
     const info = body.result_info ?? {};
     fail(Array.isArray(batch), 'list unavailable');
     for (const key of [

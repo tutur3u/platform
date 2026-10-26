@@ -157,6 +157,68 @@ describe('CMS proxy auth mode', () => {
     });
   });
 
+  it.each([
+    '/cms/vi/play/fixture',
+    '/cms/api/v1/admin/external-projects',
+    '/cms/verify-token?token=untrusted',
+  ])('preserves the shared session for mounted %s', async (path) => {
+    mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(true);
+    const response = await proxy(
+      new NextRequest(`https://tuturuuu.com${path}`, {
+        nextConfig: { basePath: '/cms' },
+        headers: { cookie: 'sb-fixture-auth-token=shared' },
+      })
+    );
+    expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
+    expect(mocks.consumeVerifyTokenRequest).not.toHaveBeenCalled();
+    expect(mocks.authProxy).not.toHaveBeenCalled();
+    expect(mocks.clearSupabaseAuthCookies).not.toHaveBeenCalled();
+    expect(
+      response.headers
+        .getSetCookie()
+        .filter((cookie) =>
+          /^(?:tuturuuu_app_session|sb-[^=]+-auth-token)/u.test(cookie)
+        )
+    ).toEqual([]);
+    if (path.includes('/api/'))
+      expect(mocks.guardApiProxyRequest).toHaveBeenCalledOnce();
+    if (path.includes('verify-token'))
+      expect(response.headers.get('location')).toBe(
+        'https://tuturuuu.com/cms/login'
+      );
+  });
+
+  it.each(['refresh-app-session', 'verify-app-token', 'logout'])(
+    'rejects mounted session writer %s before dispatch',
+    async (endpoint) => {
+      const response = await proxy(
+        new NextRequest(`https://tuturuuu.com/cms/api/auth/${endpoint}`, {
+          method: 'POST',
+          nextConfig: { basePath: '/cms' },
+        })
+      );
+      expect(response.status).toBe(409);
+      expect(response.headers.getSetCookie()).toEqual([]);
+      expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
+      expect(mocks.consumeVerifyTokenRequest).not.toHaveBeenCalled();
+      expect(mocks.authProxy).not.toHaveBeenCalled();
+    }
+  );
+
+  it('keeps a mounted workspace redirect inside CMS', async () => {
+    const response = await proxy(
+      new NextRequest(
+        'https://tuturuuu.com/cms/vi/00000000-0000-0000-0000-000000000000',
+        {
+          nextConfig: { basePath: '/cms' },
+        }
+      )
+    );
+    expect(response.headers.get('location')).toBe(
+      'https://tuturuuu.com/cms/vi/internal'
+    );
+  });
+
   it('refreshes product APIs in Supabase-first mode', async () => {
     const request = new NextRequest(
       'https://cms.tuturuuu.com/api/v1/admin/external-projects'

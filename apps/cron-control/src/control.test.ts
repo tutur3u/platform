@@ -81,7 +81,9 @@ it('catalog ids are unique and every cadence has a trigger', () => {
   expect(new Set(ids).size).toBe(ids.length);
   for (const job of CRON_JOBS) {
     expect(CRON_TRIGGERS).toContain(job.cron);
-    expect(job.path).toMatch(/^\/api\/cron\/[a-z0-9/-]+$/);
+    if (job.workerProcessor === 'cron-history-retention')
+      expect(job.path).toBe('/rest/v1/rpc/prune_cron_history');
+    else expect(job.path).toMatch(/^\/api\/cron\/[a-z0-9/-]+$/);
     expect(leaseMs(job)).toBeGreaterThan(job.timeoutMs);
   }
 });
