@@ -24,6 +24,8 @@ export interface TutoringSessionRecord {
   reason_type: TutoringReasonType;
   reason_detail: string;
   content: string;
+  /** True while a pending make-up session follows the missed lesson's notes. */
+  content_linked?: boolean;
   attendance_status: TutoringAttendanceStatus;
   parent_message_preview: string;
   source_feedback_id: string | null;
@@ -224,6 +226,12 @@ export async function deleteTutoringSession(
   );
 }
 
+/** A completion succeeds even when its linked lesson notes were not stored. */
+export interface TutoringCompletionResponse {
+  message: string;
+  warning?: 'LINKED_CONTENT_NOT_STORED';
+}
+
 export async function markTutoringSession(
   workspaceId: string,
   sessionId: string,
@@ -231,12 +239,29 @@ export async function markTutoringSession(
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);
-  return client.json<{ message: string }>(
+  return client.json<TutoringCompletionResponse>(
     `${basePath(workspaceId)}/sessions/${encodePathSegment(sessionId)}/mark`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ attendanceStatus }),
+    }
+  );
+}
+
+/** Ends weak-support tutoring ("Thoát kèm") for a learner in one class. */
+export async function endTutoringWeakSupport(
+  workspaceId: string,
+  payload: { groupId: string; studentUserId: string },
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string; cleared: number }>(
+    `${basePath(workspaceId)}/weak-support/end`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
     }
   );
 }

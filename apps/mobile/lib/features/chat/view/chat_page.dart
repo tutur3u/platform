@@ -139,7 +139,7 @@ class _ChatPageState extends State<_ChatActorHost> {
                 children: [
                   shellActions,
                   miniNav,
-                  const Center(child: NovaLoadingIndicator()),
+                  const AppLoadingIndicator.page(),
                 ],
               );
             }

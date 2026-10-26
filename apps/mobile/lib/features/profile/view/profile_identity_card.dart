@@ -8,7 +8,7 @@ import 'package:mobile/features/profile/view/profile_banner.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// The account's identity at the top of Profile: cover, avatar, name, email,
-/// bio and the way into the profile editor.
+/// bio and an icon-only way into the profile editor beside the avatar.
 ///
 /// The shell navbar carries the page title, so the name is content, not a
 /// second title bar. Identity from a previous account is never shown: the
@@ -69,6 +69,19 @@ class ProfileIdentityCard extends StatelessWidget {
                         )
                       : _CoverTint(color: c.primary),
                 ),
+                if (profile != null)
+                  PositionedDirectional(
+                    end: AppSpacing.md,
+                    bottom: 0,
+                    child: AppIconButton(
+                      key: const ValueKey('profile-edit-identity'),
+                      variant: AppButtonVariant.outline,
+                      shape: AppButtonShape.circle,
+                      tooltip: l10n.settingsProfileEdit,
+                      icon: const Icon(LucideIcons.pencil),
+                      onPressed: () => context.push(Routes.settingsProfile),
+                    ),
+                  ),
                 PositionedDirectional(
                   start: AppSpacing.lg,
                   bottom: 0,
@@ -124,16 +137,6 @@ class ProfileIdentityCard extends StatelessWidget {
                         color: c.foreground,
                         height: 1.45,
                       ),
-                    ),
-                  ],
-                  if (profile != null) ...[
-                    const SizedBox(height: AppSpacing.lg),
-                    AppButton.outline(
-                      key: const ValueKey('profile-edit-identity'),
-                      size: AppButtonSize.small,
-                      leading: const Icon(LucideIcons.userPen),
-                      onPressed: () => context.push(Routes.settingsProfile),
-                      child: Text(l10n.settingsProfileEdit),
                     ),
                   ],
                 ],

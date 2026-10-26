@@ -1207,12 +1207,6 @@ abstract class AppLocalizations {
   /// **'Hide camera'**
   String get assistantLiveHideCamera;
 
-  /// No description provided for @assistantLiveIdleHeading.
-  ///
-  /// In en, this message translates to:
-  /// **'Ready to talk'**
-  String get assistantLiveIdleHeading;
-
   /// No description provided for @assistantLiveInfoAccessHeading.
   ///
   /// In en, this message translates to:
@@ -1387,6 +1381,12 @@ abstract class AppLocalizations {
   /// **'Tap the mic to speak again'**
   String get assistantLiveStageYouMuted;
 
+  /// No description provided for @assistantLiveStartTalking.
+  ///
+  /// In en, this message translates to:
+  /// **'Start talking'**
+  String get assistantLiveStartTalking;
+
   /// No description provided for @assistantLiveStartupAudio.
   ///
   /// In en, this message translates to:
@@ -1519,23 +1519,11 @@ abstract class AppLocalizations {
   /// **'Mira Live'**
   String get assistantLiveTitle;
 
-  /// No description provided for @assistantLiveTranscriptEmpty.
-  ///
-  /// In en, this message translates to:
-  /// **'Start talking or type a message. Your conversation appears here.'**
-  String get assistantLiveTranscriptEmpty;
-
   /// No description provided for @assistantLiveTranscriptPending.
   ///
   /// In en, this message translates to:
   /// **'Transcript changes are not yet synchronized.'**
   String get assistantLiveTranscriptPending;
-
-  /// No description provided for @assistantLiveTranscriptTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Live transcript'**
-  String get assistantLiveTranscriptTitle;
 
   /// No description provided for @assistantLiveTypeMessage.
   ///
@@ -1735,6 +1723,12 @@ abstract class AppLocalizations {
   /// **'{size} MiB'**
   String assistantLocalSize(int size);
 
+  /// No description provided for @assistantLocalSourceEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Download a model below'**
+  String get assistantLocalSourceEmpty;
+
   /// No description provided for @assistantLocalStop.
   ///
   /// In en, this message translates to:
@@ -1914,6 +1908,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Output'**
   String get assistantModelOutputCost;
+
+  /// No description provided for @assistantModelSourceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Model source'**
+  String get assistantModelSourceTitle;
 
   /// No description provided for @assistantModelUnfavorite.
   ///
@@ -4128,6 +4128,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Loading'**
   String get commonLoading;
+
+  /// No description provided for @commonMoreOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'More options'**
+  String get commonMoreOptions;
 
   /// No description provided for @commonNext.
   ///
@@ -13219,6 +13225,30 @@ abstract class AppLocalizations {
   /// **'Close dates and browse agenda'**
   String get profileTimelineHideDates;
 
+  /// No description provided for @profileTimelineKindNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Note'**
+  String get profileTimelineKindNote;
+
+  /// No description provided for @profileTimelineKindTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Task'**
+  String get profileTimelineKindTask;
+
+  /// No description provided for @profileTimelineKindTransaction.
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction'**
+  String get profileTimelineKindTransaction;
+
+  /// No description provided for @profileTimelineKindWorkspaceEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace event'**
+  String get profileTimelineKindWorkspaceEvent;
+
   /// No description provided for @profileTimelineLimited.
   ///
   /// In en, this message translates to:
@@ -13236,12 +13266,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Show more loaded days'**
   String get profileTimelineMoreDays;
-
-  /// No description provided for @profileTimelineNotes.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, one{Added 1 note} other{Added {count} notes}}'**
-  String profileTimelineNotes(int count);
 
   /// No description provided for @profileTimelinePartial.
   ///
@@ -13261,12 +13285,6 @@ abstract class AppLocalizations {
   /// **'Timeline'**
   String get profileTimelineTab;
 
-  /// No description provided for @profileTimelineTasks.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, one{Created 1 task} other{Created {count} tasks}}'**
-  String profileTimelineTasks(int count);
-
   /// No description provided for @profileTimelineTitle.
   ///
   /// In en, this message translates to:
@@ -13279,23 +13297,11 @@ abstract class AppLocalizations {
   /// **'Today'**
   String get profileTimelineToday;
 
-  /// No description provided for @profileTimelineTransactions.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, one{Created 1 transaction} other{Created {count} transactions}}'**
-  String profileTimelineTransactions(int count);
-
   /// No description provided for @profileTimelineUnavailable.
   ///
   /// In en, this message translates to:
   /// **'Activity could not be refreshed.'**
   String get profileTimelineUnavailable;
-
-  /// No description provided for @profileTimelineWorkspaceEvents.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, one{1 workspace event added} other{{count} workspace events added}}'**
-  String profileTimelineWorkspaceEvents(int count);
 
   /// No description provided for @profileTimelineYesterday.
   ///
@@ -19536,6 +19542,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Original'**
   String get timerHeatmapViewOriginal;
+
+  /// No description provided for @timerHeatmapViewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'View'**
+  String get timerHeatmapViewTitle;
 
   /// No description provided for @timerHeatmapWed.
   ///

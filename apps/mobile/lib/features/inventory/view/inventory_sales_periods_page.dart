@@ -6,6 +6,7 @@ import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_sync_refresh.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
@@ -19,7 +20,6 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/fab/extended_fab.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:mobile/widgets/pending_sync_frame.dart';
 
 class InventorySalesPeriodsPage extends StatefulWidget {
@@ -178,7 +178,7 @@ class _InventorySalesPeriodsPageState extends State<InventorySalesPeriodsPage>
               if (_failed)
                 InventoryReadWarning(onRetry: () => unawaited(_reload())),
               if (_loading && _periods.isEmpty)
-                const Center(child: NovaLoadingIndicator()),
+                const AppLoadingIndicator.page(),
               if (!_loading && _periods.isEmpty)
                 Text(context.l10n.inventoryManageEmpty),
               for (final period in _periods.where(

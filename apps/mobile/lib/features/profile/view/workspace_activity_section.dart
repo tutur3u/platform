@@ -2,13 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
+import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/core/utils/timezone.dart';
 import 'package:mobile/data/repositories/profile_activity_repository.dart';
 import 'package:mobile/features/profile/view/shared_activity_sheet.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:mobile/widgets/pending_sync_frame.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -212,7 +212,7 @@ class _WorkspaceActivitySectionState extends State<WorkspaceActivitySection> {
         if (_loading)
           const Padding(
             padding: EdgeInsets.all(16),
-            child: Center(child: NovaLoadingIndicator()),
+            child: AppLoadingIndicator(),
           ),
         if (_next != null && !_loading)
           TextButton(

@@ -70,7 +70,16 @@ Credentials:
   Management API token.
 - SQL runs through the Management API query endpoint, and selection uses
   `read_only`.
-- The service-role key is fetched into memory and never persisted.
+- The Storage credential is fetched into memory and never persisted or logged.
+  Prefer a new opaque secret key (`type: secret`); fall back to the legacy
+  `service_role` JWT only when no secret key exists. Publishable and anon keys
+  are never selected.
+- Opaque keys are sent only as `apikey`. Legacy JWTs (starting with `eyJ`)
+  use both `apikey` and `Authorization: Bearer`. This applies to copy, delete,
+  signing and staging rehearsal uploads/cleanup. Signed-URL HEAD probes send
+  no credentials.
+- A disabled legacy JWT can cause `copy_http_400` before any copy succeeds.
+  The tool prefers opaque secrets to avoid legacy signature verification failures.
 
 ## Reference inventory
 
@@ -255,3 +264,6 @@ The unit tests in `scripts/storage-rekey/*.test.mjs` cover:
 - Restart adoption of a copy that landed before a crash.
 - CAS skips and deleted-chat skips.
 - Rollback, including the refusal after `old_deleted`.
+
+Credential selection, request headers and secret-free error/event output are
+covered by `scripts/storage-rekey/supabase.test.mjs`.

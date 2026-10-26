@@ -53,7 +53,7 @@ class _WorkspaceSelectPageState extends State<WorkspaceSelectPage> {
       child: BlocBuilder<WorkspaceCubit, WorkspaceState>(
         builder: (context, state) {
           if (state.status == WorkspaceStatus.loading) {
-            return const Center(child: NovaLoadingIndicator());
+            return const AppLoadingIndicator.page();
           }
 
           if (state.status == WorkspaceStatus.error) {
@@ -68,7 +68,7 @@ class _WorkspaceSelectPageState extends State<WorkspaceSelectPage> {
           if (context.read<WorkspaceCubit>().hasAuthenticatedActor &&
               !state.visibilityResolved &&
               state.visibilityStatus != WorkspaceStatus.error) {
-            return const Center(child: NovaLoadingIndicator());
+            return const AppLoadingIndicator.page();
           }
           if (state.workspaces.isNotEmpty && state.visibleWorkspaces.isEmpty) {
             return AppPageBody(
