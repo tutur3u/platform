@@ -1294,6 +1294,12 @@ Next policy's external-project WebGL framing exception stays owner-controlled.
 Tests cover these boundaries in `root-cutover.test.ts`, `response-policy.test.ts`
 and `handler-start-handoff.test.ts`.
 
+The exact `/offline.html` document uses a restrictive static CSP that permits its
+sealed same-origin script, stylesheet and image. SSR and private pages retain
+the per-request nonce policy, and both policies deny framing. The sealed-Worker
+browser regression loads the real fallback headers and clicks Retry to verify
+that the script reloads the document; byte equality alone cannot prove this.
+
 The offline worker caches only bounded public assets and fallback files.
 Existing crons stay on Infrastructure's Vercel gateway at Calendar's canonical
 URL. Production publication remains held until exact-source build, sealed

@@ -17,6 +17,15 @@ async function canonicalPolicy() {
 }
 
 const policy = canonicalPolicy();
+const offlineDocumentPolicy = [
+  "default-src 'none'",
+  "script-src 'self'",
+  "style-src 'self'",
+  "img-src 'self'",
+  "base-uri 'none'",
+  "form-action 'none'",
+  "frame-ancestors 'none'",
+].join('; ');
 
 export async function applyCalendarResponsePolicy(
   request: Request,
@@ -32,7 +41,14 @@ export async function applyCalendarResponsePolicy(
       if (headers.get(key) !== value) headers.append(key, value);
     } else headers.set(key, value);
   }
-  if (framingDenied && nonce && appConfig.csp) {
+  const isOfflineDocument =
+    path === '/offline.html' &&
+    (request.method === 'GET' || request.method === 'HEAD') &&
+    response.status === 200 &&
+    headers.get('Content-Type')?.toLowerCase().includes('text/html');
+  if (isOfflineDocument) {
+    headers.append('Content-Security-Policy', offlineDocumentPolicy);
+  } else if (framingDenied && nonce && appConfig.csp) {
     headers.append('Content-Security-Policy', appConfig.csp(nonce));
   }
   headers.set('X-Content-Type-Options', 'nosniff');
