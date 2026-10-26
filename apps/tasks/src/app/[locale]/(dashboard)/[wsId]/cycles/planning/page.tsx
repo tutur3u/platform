@@ -1,5 +1,5 @@
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { CyclePlanningView } from '@tuturuuu/tasks-ui/tu-do/cycles/planning/cycle-planning-view';
 import { loadTaskCycles } from '@tuturuuu/tasks-ui/tu-do/cycles/task-cycles-page-model';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
@@ -28,7 +28,12 @@ export default async function CyclePlanningPage({ params }: Props) {
     redirect(`/${workspace.id}`);
   }
 
-  const cycles = await loadTaskCycles(await createClient(), workspace.id);
+  // task_cycles is service-role only; the read is scoped to the workspace
+  // resolved and permission-checked above.
+  const cycles = await loadTaskCycles(
+    await createAdminClient({ noCookie: true }),
+    workspace.id
+  );
   if (!cycles) notFound();
 
   return (

@@ -12,7 +12,7 @@ import {
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import type { KeyboardEvent } from 'react';
-import { taskTicket } from './cycle-planning-model';
+import { canMoveToScope, taskTicket } from './cycle-planning-model';
 import { CYCLE_TASK_DRAG_TYPE } from './cycle-scope-switcher';
 import type { CyclePlanningScope, CyclePlanningTask } from './types';
 
@@ -45,6 +45,7 @@ export function CycleTaskRow({
 }: CycleTaskRowProps) {
   const t = useTranslations('task-cycle-planning');
   const project = task.projects[0];
+  const targets = moveTargets.filter((target) => canMoveToScope(task, target));
 
   return (
     <li className="group flex h-8 items-center gap-2 rounded-md px-2 hover:bg-muted/60 has-[:focus-visible]:bg-muted/60">
@@ -76,14 +77,19 @@ export function CycleTaskRow({
             className="size-5 border border-background"
             title={person.display_name ?? undefined}
           >
-            {person.avatar_url && <AvatarImage src={person.avatar_url} />}
+            {person.avatar_url && (
+              <AvatarImage
+                src={person.avatar_url}
+                alt={person.display_name ?? ''}
+              />
+            )}
             <AvatarFallback className="text-[10px]">
               {(person.display_name ?? '?').slice(0, 1).toUpperCase()}
             </AvatarFallback>
           </Avatar>
         ))}
       </div>
-      {moveTargets.length > 0 && (
+      {targets.length > 0 && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -96,7 +102,7 @@ export function CycleTaskRow({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            {moveTargets.map((target) => (
+            {targets.map((target) => (
               <DropdownMenuItem
                 key={target}
                 onSelect={() => onMove(task, target)}

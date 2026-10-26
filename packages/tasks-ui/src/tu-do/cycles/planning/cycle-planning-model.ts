@@ -32,6 +32,12 @@ export interface CycleStatusGroup {
   tasks: CyclePlanningTask[];
 }
 
+/** Calendar day in the viewer's local timezone (cycle dates are local days). */
+export function localDay(now: Date) {
+  const pad = (value: number) => String(value).padStart(2, '0');
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+}
+
 function toDay(value: string | null) {
   return value ? value.slice(0, 10) : null;
 }
@@ -49,7 +55,7 @@ export function resolveScopeCycles(
   cycles: CyclePlanningCycle[],
   now: Date = new Date()
 ) {
-  const today = now.toISOString().slice(0, 10);
+  const today = localDay(now);
   const active = cycles
     .filter((cycle) => cycle.status === 'active')
     .sort((a, b) => (startsBefore(a, b) ? 1 : -1));
@@ -80,6 +86,19 @@ export function scopeCycleId(
   if (scope === 'backlog') return null;
   return cycles[scope]?.id ?? null;
 }
+
+/** The backlog lists open tasks only, so finished tasks cannot move there. */
+export function canMoveToScope(
+  task: CyclePlanningTask,
+  target: CyclePlanningScope
+) {
+  return (
+    target !== 'backlog' || (task.status !== 'done' && task.status !== 'closed')
+  );
+}
+
+/** The API returns at most this many tasks per scope (no pagination yet). */
+export const CYCLE_TASK_LIST_CAP = 500;
 
 export function groupTasksByStatus(
   tasks: CyclePlanningTask[]
@@ -175,4 +194,41 @@ export function collectFilterOptions(
     tasks.flatMap((task) => task.labels)
   ).sort(byName);
   return { people, projects, labels };
+}
+
+/**
+ * Drops filter values with no option in the loaded scope, so a filter from
+ * another scope cannot silently hide every row. Sentinels and priorities are
+ * always offered and are kept.
+ */
+export function pruneFilters(
+  filters: CyclePlanningFilters,
+  options: ReturnType<typeof collectFilterOptions>
+): CyclePlanningFilters {
+  const keep = (
+    ids: string[],
+    available: { id: string }[],
+    sentinels: string[]
+  ) => {
+    const allowed = new Set([
+      ...available.map((item) => item.id),
+      ...sentinels,
+    ]);
+    const kept = ids.filter((id) => allowed.has(id));
+    return kept.length === ids.length ? ids : kept;
+  };
+  const assigneeIds = keep(filters.assigneeIds, options.people, [
+    ASSIGNEE_ME,
+    ASSIGNEE_UNASSIGNED,
+  ]);
+  const projectIds = keep(filters.projectIds, options.projects, [PROJECT_NONE]);
+  const labelIds = keep(filters.labelIds, options.labels, []);
+  if (
+    assigneeIds === filters.assigneeIds &&
+    projectIds === filters.projectIds &&
+    labelIds === filters.labelIds
+  ) {
+    return filters;
+  }
+  return { ...filters, assigneeIds, projectIds, labelIds };
 }
