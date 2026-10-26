@@ -269,6 +269,10 @@ review branch when direct main publication is not admitted. Follow
 Verify the remote SHA and report commit, push and remaining CI/release status
 separately. Children hand accepted changes to the sole integration writer in a
 shared checkout; that owner completes publication before closing the task.
+Hosted PR CI runs only with the `ready-for-ci` label: add it only when the PR is
+ready to merge (reviewed, exact-head local gates green), batch pushes, and treat
+a local exact-head pass as green; see the
+[runbook](../../../../../apps/docs/build/devops/github-actions-runbook.mdx#label-gated-heavy-pr-ci-ready-for-ci).
 
 If blocked, preserve the exact patch/worktree, owner, checks, blocker and resume
 event in the existing ledger. Never hide unfinished work, include foreign/private

@@ -48,7 +48,7 @@ function tokenize(source) {
       index += operator.length;
       continue;
     }
-    if ('()[].,'.includes(rest[0])) {
+    if ('()[].,*'.includes(rest[0])) {
       tokens.push({ type: 'op', value: rest[0] });
       index += 1;
       continue;
@@ -103,6 +103,18 @@ function truthy(value) {
     item === 0 ||
     Number.isNaN(item)
   );
+}
+
+const FILTERED = Symbol('object filter');
+
+function filtered(value) {
+  const item = normalize(value);
+  const items = Array.isArray(item)
+    ? item
+    : item && typeof item === 'object'
+      ? Object.values(item)
+      : [];
+  return Object.assign([...items], { [FILTERED]: true });
 }
 
 function property(target, key) {
@@ -195,7 +207,20 @@ function parse(tokens, scope) {
     for (;;) {
       if (isOp('.')) {
         take('.');
-        value = property(value, take().value);
+        if (isOp('*')) {
+          // Object filter (`labels.*.name`): later keys map over each item.
+          take('*');
+          value = filtered(value);
+        } else {
+          const key = take().value;
+          value = value?.[FILTERED]
+            ? filtered(
+                value
+                  .map((item) => property(item, key))
+                  .filter((item) => item !== null)
+              )
+            : property(value, key);
+        }
       } else if (isOp('[')) {
         take('[');
         const key = or();

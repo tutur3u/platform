@@ -47,6 +47,7 @@ import {
 import { Separator } from '../../separator';
 import { Switch } from '../../switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../tabs';
+import { reconnectCalendarProvider } from './calendar-reconnect-action';
 import { CalendarSyncRecovery } from './calendar-sync-recovery';
 import { CalendarSyncSettingsPanel } from './calendar-sync-settings-panel';
 import type { CalendarConnectionsManagerState } from './use-calendar-connections-manager';
@@ -433,9 +434,10 @@ export function CalendarConnectionsSettingsContent({
                           size="sm"
                           className="shrink-0"
                           onClick={() =>
-                            account.provider === 'google'
-                              ? googleAuthMutation.mutate()
-                              : microsoftAuthMutation.mutate()
+                            reconnectCalendarProvider(
+                              { googleAuthMutation, microsoftAuthMutation },
+                              account.provider
+                            )
                           }
                         >
                           {t('reconnect') || 'Reconnect'}
