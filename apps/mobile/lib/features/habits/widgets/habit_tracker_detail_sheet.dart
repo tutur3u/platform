@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
@@ -57,64 +58,69 @@ class HabitTrackerDetailSheet extends StatelessWidget {
       if (showLeaderboard) Tab(text: context.l10n.habitsLeaderboardTab),
     ];
 
-    return SizedBox(
-      height: height,
-      child: Material(
-        color: Theme.of(context).colorScheme.surface,
-        child: DefaultTabController(
-          length: tabs.length,
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: detailStatus == HabitsStatus.loading && detail == null
-                ? const AppLoadingIndicator.page()
-                : detailStatus == HabitsStatus.error && detail == null
-                ? _DetailErrorView(error: detailError, onRetry: onRetry)
-                : detail == null
-                ? const SizedBox.shrink()
-                : Builder(
-                    builder: (context) {
-                      final currentDetail = detail!;
-                      final tabViews = [
-                        _OverviewTab(
-                          detail: currentDetail,
-                          isSubmittingStreakAction: isSubmittingStreakAction,
-                          onApplyStreakAction: onApplyStreakAction,
-                        ),
-                        _EntriesTab(
-                          detail: currentDetail,
-                          isSubmittingEntry: isSubmittingEntry,
-                          onDeleteEntry: (entryId) =>
-                              _confirmDeleteEntry(context, entryId),
-                        ),
-                        if (showLeaderboard)
-                          _LeaderboardTab(detail: currentDetail),
-                      ];
-
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          _Header(
+    // Never taller than the sheet host allows; it draws the surface.
+    return LayoutBuilder(
+      builder: (context, constraints) => SizedBox(
+        height: constraints.hasBoundedHeight
+            ? math.min(height, constraints.maxHeight)
+            : height,
+        child: Material(
+          type: MaterialType.transparency,
+          child: DefaultTabController(
+            length: tabs.length,
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: detailStatus == HabitsStatus.loading && detail == null
+                  ? const AppLoadingIndicator.page()
+                  : detailStatus == HabitsStatus.error && detail == null
+                  ? _DetailErrorView(error: detailError, onRetry: onRetry)
+                  : detail == null
+                  ? const SizedBox.shrink()
+                  : Builder(
+                      builder: (context) {
+                        final currentDetail = detail!;
+                        final tabViews = [
+                          _OverviewTab(
                             detail: currentDetail,
-                            isArchivingTracker: isArchivingTracker,
-                            onLogEntry: onLogEntry,
-                            onEditTracker: onEditTracker,
-                            onArchiveTracker: () => _confirmArchive(context),
+                            isSubmittingStreakAction: isSubmittingStreakAction,
+                            onApplyStreakAction: onApplyStreakAction,
                           ),
-                          if (isDetailRefreshing) ...[
-                            const SizedBox(height: 12),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(999),
-                              child: const NovaLoadingIndicator(size: 20),
+                          _EntriesTab(
+                            detail: currentDetail,
+                            isSubmittingEntry: isSubmittingEntry,
+                            onDeleteEntry: (entryId) =>
+                                _confirmDeleteEntry(context, entryId),
+                          ),
+                          if (showLeaderboard)
+                            _LeaderboardTab(detail: currentDetail),
+                        ];
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            _Header(
+                              detail: currentDetail,
+                              isArchivingTracker: isArchivingTracker,
+                              onLogEntry: onLogEntry,
+                              onEditTracker: onEditTracker,
+                              onArchiveTracker: () => _confirmArchive(context),
                             ),
+                            if (isDetailRefreshing) ...[
+                              const SizedBox(height: 12),
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(999),
+                                child: const NovaLoadingIndicator(size: 20),
+                              ),
+                            ],
+                            const SizedBox(height: 16),
+                            TabBar(tabs: tabs),
+                            const SizedBox(height: 12),
+                            Expanded(child: TabBarView(children: tabViews)),
                           ],
-                          const SizedBox(height: 16),
-                          TabBar(tabs: tabs),
-                          const SizedBox(height: 12),
-                          Expanded(child: TabBarView(children: tabViews)),
-                        ],
-                      );
-                    },
-                  ),
+                        );
+                      },
+                    ),
+            ),
           ),
         ),
       ),
