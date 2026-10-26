@@ -69,6 +69,7 @@ import 'package:mobile/features/settings/cubit/locale_cubit.dart';
 import 'package:mobile/features/settings/cubit/locale_state.dart';
 import 'package:mobile/features/settings/cubit/theme_cubit.dart';
 import 'package:mobile/features/settings/cubit/theme_state.dart';
+import 'package:mobile/features/settings/data/account_appearance_repository.dart';
 import 'package:mobile/features/settings/view/calendar_timezone_scope.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_mini_nav_cubit.dart';
@@ -82,6 +83,8 @@ import 'package:mobile/features/tasks_estimates/cubit/task_estimates_cubit.dart'
 import 'package:mobile/features/tasks_estimates/cubit/task_labels_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_requests_cubit.dart';
+import 'package:mobile/features/time_tracker/pomodoro/pomodoro_controller.dart';
+import 'package:mobile/features/time_tracker/pomodoro/pomodoro_state.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -146,6 +149,7 @@ class _AppState extends State<App> {
   late final ShellMiniNavCubit _shellMiniNavCubit;
   late final ShellProfileCubit _shellProfileCubit;
   late final ShellTitleOverrideCubit _shellTitleOverrideCubit;
+  late final PomodoroController _pomodoroController;
   late final AppLinks _appLinks;
   late final GoRouter _router;
   late final _AppLifecycleObserver _lifecycleObserver;
@@ -194,9 +198,11 @@ class _AppState extends State<App> {
     _localeCubit = LocaleCubit(settingsRepository: _settingsRepo);
     _themeCubit = ThemeCubit(
       settingsRepository: _settingsRepo,
+      accountAppearanceRepository: AccountAppearanceRepository(),
       initialThemeMode: widget.initialThemeMode,
       initialAppearance: widget.initialAppearance,
     );
+    unawaited(_themeCubit.bindAccount(_appearanceAccountId(_authCubit.state)));
     _calendarSettingsCubit = CalendarSettingsCubit();
     _experimentalAppsCubit = ExperimentalAppsCubit(
       settingsRepository: _settingsRepo,
@@ -222,6 +228,11 @@ class _AppState extends State<App> {
       profileRepository: _profileRepository,
     );
     _shellTitleOverrideCubit = ShellTitleOverrideCubit();
+    _pomodoroController = PomodoroController(
+      repository: _timeTrackerRepository,
+      loadSettings: _timeTrackerRepository.loadPomodoroSettings,
+      notificationCopy: _pomodoroNotificationCopy,
+    );
     _appLinks = AppLinks();
     _lifecycleObserver = _AppLifecycleObserver(_handleLifecycleState);
     WidgetsBinding.instance.addObserver(_lifecycleObserver);
@@ -266,6 +277,7 @@ class _AppState extends State<App> {
           _authCubit.state.user!.id,
         ),
       );
+      unawaited(_pomodoroController.restore(_authCubit.state.user!.id));
       _shellProfileCubit.primeFromAuthenticatedUser(_authCubit.state.user!);
       unawaited(
         _shellProfileCubit.loadFromAuthenticatedUser(_authCubit.state.user!),
@@ -273,6 +285,9 @@ class _AppState extends State<App> {
       unawaited(_loadWorkspacesWithReminders());
     }
   }
+
+  static String? _appearanceAccountId(AuthState state) =>
+      state.status == AuthStatus.authenticated ? state.user?.id : null;
 
   String _currentMatchedLocation() {
     final configuration = _router.routerDelegate.currentConfiguration;
@@ -371,6 +386,29 @@ class _AppState extends State<App> {
     return null;
   }
 
+  /// Notification copy for the phase that just ended, in the app's locale.
+  ({String title, String body}) _pomodoroNotificationCopy(PomodoroPhase ended) {
+    final preferred =
+        _localeCubit.state.locale ??
+        WidgetsBinding.instance.platformDispatcher.locale;
+    final l10n = lookupAppLocalizations(
+      AppLocalizations.supportedLocales.any(
+            (locale) => locale.languageCode == preferred.languageCode,
+          )
+          ? Locale(preferred.languageCode)
+          : const Locale('en'),
+    );
+    return ended == PomodoroPhase.focus
+        ? (
+            title: l10n.timerPomodoroFocusDoneTitle,
+            body: l10n.timerPomodoroFocusDoneBody,
+          )
+        : (
+            title: l10n.timerPomodoroBreakDoneTitle,
+            body: l10n.timerPomodoroBreakDoneBody,
+          );
+  }
+
   @override
   void dispose() {
     _unregisterAssistantActions();
@@ -396,6 +434,7 @@ class _AppState extends State<App> {
     unawaited(_shellMiniNavCubit.close());
     unawaited(_shellProfileCubit.close());
     unawaited(_shellTitleOverrideCubit.close());
+    unawaited(_pomodoroController.close());
     unawaited(PushNotificationService.instance.dispose());
     super.dispose();
   }
@@ -421,6 +460,7 @@ class _AppState extends State<App> {
         BlocProvider.value(value: _shellMiniNavCubit),
         BlocProvider.value(value: _shellProfileCubit),
         BlocProvider.value(value: _shellTitleOverrideCubit),
+        BlocProvider.value(value: _pomodoroController),
       ],
       child: CalendarTimezoneScope(
         child: MultiBlocListener(
@@ -431,6 +471,10 @@ class _AppState extends State<App> {
               listener: (context, state) {
                 _syncOfflinePreparationScope(resetWorkspace: true);
                 ProfileCubit.clearMemoryCache();
+                // Appearance follows the account unless this device overrides.
+                unawaited(_themeCubit.bindAccount(_appearanceAccountId(state)));
+                // The device Pomodoro belongs to one account.
+                unawaited(_pomodoroController.restore(state.user?.id));
                 if (state.status == AuthStatus.authenticated) {
                   unawaited(
                     PushNotificationService.instance.startSession(

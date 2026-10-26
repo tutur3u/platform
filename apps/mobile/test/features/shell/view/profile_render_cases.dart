@@ -139,12 +139,14 @@ void _profileRenderCases() {
             AppLayout.gutter(DeviceClass.compact),
           );
         } else if (size.key == 'desktop') {
-          // Wide bodies put identity beside activity.
+          // Wide bodies put identity beside the Focus Time column, which
+          // opens with its section header.
           expect(tester.getSize(identity).width, 360);
           expect(
-            tester.getTopLeft(find.byType(ProfileActivitySection)).dy,
+            tester.getTopLeft(find.byKey(const ValueKey('you-focus-time'))).dy,
             tester.getTopLeft(identity).dy,
           );
+          expect(find.byType(ProfileActivitySection), findsOneWidget);
         }
         expect(
           tester

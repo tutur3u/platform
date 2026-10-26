@@ -14,6 +14,7 @@ import 'package:mobile/features/settings/cubit/theme_cubit.dart';
 import 'package:mobile/features/settings/cubit/theme_state.dart';
 import 'package:mobile/features/settings/view/appearance/appearance_accent_picker.dart';
 import 'package:mobile/features/settings/view/appearance/appearance_controls.dart';
+import 'package:mobile/features/settings/view/appearance/appearance_interface_section.dart';
 import 'package:mobile/features/settings/view/appearance/appearance_labels.dart';
 import 'package:mobile/features/settings/view/appearance/appearance_pickers.dart';
 import 'package:mobile/features/settings/view/appearance/appearance_preview.dart';
@@ -23,8 +24,9 @@ import 'package:mobile/features/settings/view/settings_row_layout.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-/// Settings → Appearance: mode, curated themes, accent, background style and
-/// surface tuning. Every choice applies instantly and persists.
+/// Settings → Appearance: mode, curated themes, accent, background style,
+/// surface tuning and the interface group. Every choice applies instantly
+/// and follows the signed-in account unless this device overrides it.
 class AppearancePage extends StatefulWidget {
   const AppearancePage({this.highlight, super.key});
 
@@ -87,6 +89,25 @@ class _AppearancePageState extends State<AppearancePage> {
               l10n.appearancePreviewTitle,
               AppearancePreview(settings: settings),
             ),
+            if (state.hasAccount)
+              Padding(
+                padding: const EdgeInsets.only(
+                  bottom: SettingsRowLayout.groupGap,
+                ),
+                child: SettingsGroup(
+                  children: [
+                    SettingsSwitchRow(
+                      key: const ValueKey('appearance-device-override'),
+                      icon: LucideIcons.smartphone,
+                      title: l10n.appearanceDeviceOverride,
+                      subtitle: l10n.appearanceDeviceOverrideDescription,
+                      value: state.deviceOverride,
+                      onChanged: (value) =>
+                          choose(() => cubit.setDeviceOverride(value: value)),
+                    ),
+                  ],
+                ),
+              ),
             section(
               l10n.appearanceModeTitle,
               AppearanceSegmented<ThemeMode>(
@@ -155,6 +176,10 @@ class _AppearancePageState extends State<AppearancePage> {
                   onCommit: (next) => unawaited(cubit.setAppearance(next)),
                 ),
               ),
+            AppearanceInterfaceSection(
+              settings: settings,
+              onChanged: (next) => choose(() => cubit.setAppearance(next)),
+            ),
             _ResetButton(state: state, cubit: cubit),
           ],
         ),

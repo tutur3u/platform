@@ -26,6 +26,7 @@ export 'package:mobile/core/ui/components/app_scaffold.dart';
 export 'package:mobile/core/ui/components/app_search_field.dart';
 export 'package:mobile/core/ui/components/app_select.dart';
 export 'package:mobile/core/ui/components/app_slider.dart';
+export 'package:mobile/core/ui/components/app_swipe_actions.dart';
 export 'package:mobile/core/ui/components/app_tap_target.dart';
 export 'package:mobile/core/ui/components/app_text_field.dart';
 export 'package:mobile/core/ui/components/app_text_form_field.dart';

@@ -119,33 +119,69 @@ List<Widget>? _homeStateRows(
   return null;
 }
 
-class _AssignedTasksBlock extends StatelessWidget {
-  const _AssignedTasksBlock({required this.state, required this.tasks});
+/// Today (overdue and due today) and Up next (later), as two sections.
+class _TaskSectionsBlock extends StatelessWidget {
+  const _TaskSectionsBlock({
+    required this.state,
+    required this.today,
+    required this.upNext,
+  });
 
   final TaskListState state;
-  final List<UserTask> tasks;
+  final List<UserTask> today;
+  final List<UserTask> upNext;
 
   @override
-  Widget build(BuildContext context) => _HomeSection(
-    title: context.l10n.dashboardAssignedToMe,
-    actionLabel: context.l10n.dashboardOpenTasks,
-    onOpen: () => context.go(Routes.tasks),
-    children:
-        _homeStateRows(
-          context,
-          loading:
-              state.status == TaskListStatus.loading && !state.hasLoadedOnce,
-          failed:
-              state.status == TaskListStatus.error &&
-              state.totalActiveTasks == 0 &&
-              tasks.isEmpty,
-          empty: state.totalActiveTasks == 0 || tasks.isEmpty,
-          emptyIcon: LucideIcons.circleCheck,
-          emptyTitle: context.l10n.dashboardNoAssignedTasks,
-          emptyMessage: context.l10n.dashboardNoAssignedTasksDescription,
-        ) ??
-        [for (final task in tasks) _TaskRow(task: task)],
-  );
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final loading =
+        state.status == TaskListStatus.loading && !state.hasLoadedOnce;
+    final failed =
+        state.status == TaskListStatus.error &&
+        state.totalActiveTasks == 0 &&
+        today.isEmpty &&
+        upNext.isEmpty;
+    Widget section(
+      String title,
+      List<UserTask> tasks,
+      IconData emptyIcon,
+      String emptyTitle,
+    ) => _HomeSection(
+      title: title,
+      actionLabel: l10n.homeSeeAll,
+      onOpen: () => context.go(Routes.tasks),
+      children:
+          _homeStateRows(
+            context,
+            loading: loading,
+            failed: failed,
+            empty: tasks.isEmpty,
+            emptyIcon: emptyIcon,
+            emptyTitle: emptyTitle,
+          ) ??
+          [for (final task in tasks) _TaskRow(task: task)],
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        section(
+          l10n.homeSectionToday,
+          today,
+          LucideIcons.circleCheck,
+          l10n.homeTodayEmpty,
+        ),
+        const SizedBox(height: AppLayout.sectionGap),
+        section(
+          l10n.homeSectionUpNext,
+          upNext,
+          LucideIcons.calendarClock,
+          l10n.homeUpNextEmpty,
+        ),
+      ],
+    );
+  }
 }
 
 class _UpcomingEventsBlock extends StatelessWidget {
@@ -161,8 +197,8 @@ class _UpcomingEventsBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => _HomeSection(
-    title: context.l10n.dashboardUpcomingEvents,
-    actionLabel: context.l10n.dashboardOpenCalendar,
+    title: context.l10n.homeSectionCalendar,
+    actionLabel: context.l10n.homeSeeAll,
     onOpen: () => context.go(Routes.calendar),
     dividerInset: _EventRow.dividerInset,
     children:
@@ -172,8 +208,7 @@ class _UpcomingEventsBlock extends StatelessWidget {
           failed: status == CalendarStatus.error && events.isEmpty,
           empty: events.isEmpty,
           emptyIcon: LucideIcons.calendarCheck,
-          emptyTitle: context.l10n.dashboardNoUpcomingEvents,
-          emptyMessage: context.l10n.dashboardNoUpcomingEventsDescription,
+          emptyTitle: context.l10n.homeCalendarEmpty,
         ) ??
         [for (final event in events) _EventRow(event: event)],
   );

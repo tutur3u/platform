@@ -333,6 +333,42 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantAttachmentUploadFailed => 'An attachment failed to upload. Remove it and try again before sending.';
 
   @override
+  String get assistantAttachmentFailureForbidden => 'This chat can\'t accept attachments. Remove it or start a new chat.';
+
+  @override
+  String get assistantAttachmentFailureNetwork => 'Upload interrupted. Check your connection and tap Retry.';
+
+  @override
+  String get assistantAttachmentFailureServer => 'Upload didn\'t finish. Tap Retry.';
+
+  @override
+  String get assistantAttachmentFailureTooLarge => 'File is larger than 32 MB. Remove it or attach a smaller file.';
+
+  @override
+  String get assistantAttachmentFailureUnsupported => 'This file type isn\'t supported. Remove it to send.';
+
+  @override
+  String assistantAttachmentNotSentMany(int count) {
+    return '$count attachments didn\'t upload. Retry or remove them to send.';
+  }
+
+  @override
+  String assistantAttachmentNotSentOne(String name, String reason) {
+    return '$name didn\'t upload. $reason';
+  }
+
+  @override
+  String get assistantAttachmentPreparing => 'Preparing';
+
+  @override
+  String get assistantAttachmentRetry => 'Retry';
+
+  @override
+  String assistantAttachmentUploadingPercent(int percent) {
+    return '$percent%';
+  }
+
+  @override
   String get assistantAttachmentUploadPending => 'Wait for attachment uploads to finish before sending.';
 
   @override
@@ -996,7 +1032,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantSaveAction => 'Save';
 
   @override
-  String get assistantScrollToBottomAction => 'Scroll to bottom';
+  String get assistantScrollToBottomAction => 'Jump to latest';
 
   @override
   String get assistantSearchModels => 'Search models';
@@ -2142,6 +2178,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get commonSave => 'Save';
+
+  @override
+  String get commonSearch => 'Search';
 
   @override
   String get commonSelectDate => 'Select a date';
@@ -4267,6 +4306,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get habitsWorkoutWeight => 'Weight';
 
   @override
+  String get homeCalendarEmpty => 'No events this week.';
+
+  @override
   String get homeCustomize => 'Customize Home';
 
   @override
@@ -4306,10 +4348,61 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homePersonalAgendaUnavailable => 'Personal calendar is unavailable.';
 
   @override
+  String get homeSectionCalendar => 'Calendar';
+
+  @override
   String get homeSectionLoadFailed => 'Pull down to try again.';
 
   @override
+  String get homeSectionToday => 'Today';
+
+  @override
+  String get homeSectionUpNext => 'Up next';
+
+  @override
+  String get homeSeeAll => 'See all';
+
+  @override
   String get homeShowWidget => 'Show widget';
+
+  @override
+  String get homeTodayEmpty => 'Nothing due today.';
+
+  @override
+  String get homeUpNextEmpty => 'Nothing coming up.';
+
+  @override
+  String get homeWidgetTasks => 'Today and Up next';
+
+  @override
+  String get homeWorkspaceChipsLabel => 'Workspaces';
+
+  @override
+  String get homeWorkspaceEditPins => 'Edit pinned workspaces';
+
+  @override
+  String get homeWorkspaceFind => 'Find workspace';
+
+  @override
+  String get homeWorkspaceMore => 'More';
+
+  @override
+  String get homeWorkspaceNew => 'New workspace';
+
+  @override
+  String get homeWorkspacePin => 'Pin to Home';
+
+  @override
+  String get homeWorkspacePinsDescription => 'Pinned workspaces appear as chips on Home.';
+
+  @override
+  String get homeWorkspacePinsFailed => 'Couldn\'t save pinned workspaces.';
+
+  @override
+  String get homeWorkspacePinsTitle => 'Pinned workspaces';
+
+  @override
+  String get homeWorkspaceUnpin => 'Unpin from Home';
 
   @override
   String get inventoryAddCategory => 'Add category';
@@ -6057,6 +6150,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navHome => 'Home';
 
   @override
+  String get navInbox => 'Inbox';
+
+  @override
+  String get navMira => 'Mira';
+
+  @override
   String get navMore => 'More';
 
   @override
@@ -6067,6 +6166,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get navTimer => 'Timer';
+
+  @override
+  String get navYou => 'You';
 
   @override
   String get notesArchive => 'Archive note';
@@ -6837,6 +6939,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileEmailUpdateNote => 'Confirmation emails will be sent to both addresses';
 
   @override
+  String get profileFocusTime => 'Focus Time';
+
+  @override
   String get profileFullName => 'Full name';
 
   @override
@@ -7342,6 +7447,39 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appearanceBackgroundTitle => 'Background';
 
   @override
+  String get appearanceCornersRounded => 'Rounded';
+
+  @override
+  String get appearanceCornersSoft => 'Soft';
+
+  @override
+  String get appearanceCornersSquare => 'Square';
+
+  @override
+  String get appearanceCornersTitle => 'Corners';
+
+  @override
+  String get appearanceDensityComfortable => 'Comfortable';
+
+  @override
+  String get appearanceDensityCompact => 'Compact';
+
+  @override
+  String get appearanceDensityTitle => 'Density';
+
+  @override
+  String get appearanceDeviceOverride => 'Use different appearance on this device';
+
+  @override
+  String get appearanceDeviceOverrideDescription => 'Changes here stay on this device and don\'t sync to your account.';
+
+  @override
+  String get appearanceFeedbackTitle => 'Feedback and motion';
+
+  @override
+  String get appearanceHapticsDescription => 'Light vibrations when you choose, swipe or confirm.';
+
+  @override
   String get appearanceIntensity => 'Intensity';
 
   @override
@@ -7354,6 +7492,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appearancePreviewTitle => 'Preview';
 
   @override
+  String get appearanceReduceMotion => 'Reduce motion';
+
+  @override
+  String get appearanceReduceMotionDescription => 'Always reduce animations, even when the system setting is off.';
+
+  @override
   String get appearanceReset => 'Reset to default';
 
   @override
@@ -7361,6 +7505,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appearanceSoftness => 'Softness';
+
+  @override
+  String get appearanceStyleDescription => 'Changes how pages slide and lists scroll. Colors and layout stay the same on every device.';
+
+  @override
+  String get appearanceStyleIos => 'iOS-like';
+
+  @override
+  String get appearanceStyleMaterial => 'Material-like';
+
+  @override
+  String get appearanceStyleTitle => 'Style';
+
+  @override
+  String get appearanceStyleTuturuuu => 'Tuturuuu';
 
   @override
   String get appearanceSurfaceOpacity => 'Card opacity';
@@ -8640,6 +8799,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardDetailColorYellow => 'Yellow';
 
   @override
+  String get taskBoardDetailCompleteTask => 'Complete';
+
+  @override
   String get taskBoardDetailCreateList => 'Create list';
 
   @override
@@ -8722,6 +8884,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get taskBoardDetailDueDateUpdated => 'Due date updated.';
+
+  @override
   String get taskBoardDetailEditList => 'Edit list';
 
   @override
@@ -8762,6 +8927,36 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get taskBoardDetailFiltersActive => 'Filters active';
+
+  @override
+  String get taskBoardDetailFocusReplaceConfirm => 'Stop and start';
+
+  @override
+  String get taskBoardDetailFocusReplaceMessage => 'A timer is already running. Starting focus stops it and starts a new session for this task.';
+
+  @override
+  String get taskBoardDetailFocusReplacePausedMessage => 'A paused timer is waiting to resume. Starting focus ends it and starts a new session for this task.';
+
+  @override
+  String get taskBoardDetailFocusReplacePausedTitle => 'End the paused timer?';
+
+  @override
+  String get taskBoardDetailFocusReplaceTitle => 'Stop the running timer?';
+
+  @override
+  String get taskBoardDetailFocusStartFailedPausedEnded => 'Couldn\'t start focus, and your paused timer was ended. Open the timer to resume it.';
+
+  @override
+  String get taskBoardDetailFocusStartFailedRestored => 'Couldn\'t start focus. Your paused timer is back as it was.';
+
+  @override
+  String get taskBoardDetailFocusStartFailedRunning => 'Couldn\'t start focus. Your previous timer is running again.';
+
+  @override
+  String get taskBoardDetailFocusStartFailedUnknown => 'Couldn\'t start focus, and the previous timer\'s state couldn\'t be confirmed. Open the timer to check it.';
+
+  @override
+  String get taskBoardDetailFocusStarted => 'Timer started for this task.';
 
   @override
   String taskBoardDetailFromList(String list) {
@@ -8901,6 +9096,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardDetailOpenRelatedTask => 'Open related task';
 
   @override
+  String get taskBoardDetailOpenTimer => 'Open timer';
+
+  @override
   String get taskBoardDetailOverdue => 'Overdue';
 
   @override
@@ -8981,9 +9179,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardDetailRenameList => 'Rename list';
 
   @override
+  String get taskBoardDetailReopenTask => 'Reopen';
+
+  @override
   String taskBoardDetailRestoreTasks(int count) {
     return 'Restore ($count)';
   }
+
+  @override
+  String get taskBoardDetailScheduleTask => 'Schedule';
 
   @override
   String get taskBoardDetailSearchDone => 'Done';
@@ -9019,6 +9223,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get taskBoardDetailSetEstimation => 'Set estimation';
+
+  @override
+  String get taskBoardDetailStartFocus => 'Start focus';
 
   @override
   String taskBoardDetailStartsAt(String date) {
@@ -9176,6 +9383,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get taskBoardDetailTaskLabels => 'Labels';
+
+  @override
+  String get taskBoardDetailTaskList => 'List';
 
   @override
   String get taskBoardDetailTaskListLabel => 'List';
@@ -10386,10 +10596,49 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timerPomodoro => 'Pomodoro';
 
   @override
+  String get timerPomodoroBreakDoneBody => 'Ready for the next focus?';
+
+  @override
+  String get timerPomodoroBreakDoneTitle => 'Break over';
+
+  @override
+  String timerPomodoroCycle(int current, int total) {
+    return 'Focus $current of $total';
+  }
+
+  @override
+  String get timerPomodoroFocusDoneBody => 'Time for a break.';
+
+  @override
+  String get timerPomodoroFocusDoneTitle => 'Focus done';
+
+  @override
+  String get timerPomodoroOrphanedSession => 'Focus couldn\'t start, and a timer it created may still be running. Check the Timer page.';
+
+  @override
+  String get timerPomodoroOtherRunning => 'Another timer is running. Stop it on the Timer page to continue this focus.';
+
+  @override
+  String timerPomodoroRemaining(String minutes, String seconds) {
+    return '$minutes:$seconds left';
+  }
+
+  @override
   String get timerPomodoroSettings => 'Pomodoro settings';
 
   @override
   String get timerPomodoroSettingsDescription => 'Tune focus sessions, breaks, and the automation between them.';
+
+  @override
+  String get timerPomodoroSkip => 'Skip';
+
+  @override
+  String get timerPomodoroStart => 'Start focus';
+
+  @override
+  String timerPomodoroSummary(int focus, int rest) {
+    return '$focus min focus · $rest min break';
+  }
 
   @override
   String get timerProofOfWorkRequired => 'At least one proof image is required.';
@@ -11463,6 +11712,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileMediaSet => 'Set';
+
+  @override
+  String get profileYouWorkspaces => 'Workspaces';
 
   @override
   String get assistantSubmitSuccess => 'Submitted successfully';

@@ -103,6 +103,7 @@ class _AppearanceBackdropState extends State<AppearanceBackdrop>
         settings.backgroundStyle == AppearanceBackgroundStyle.blobs &&
         _foreground &&
         TickerMode.valuesOf(context).enabled &&
+        !settings.reduceMotion &&
         !MediaQuery.disableAnimationsOf(context);
     animate ? _clock.start() : _clock.stop();
     final ambient = settings.hasAmbientBackground;

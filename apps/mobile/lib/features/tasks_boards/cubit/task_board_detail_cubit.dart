@@ -764,6 +764,8 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
       assigneeIds,
     );
 
+    // Restored if the request fails, before the server refresh.
+    final previous = _findTaskSnapshot(taskId);
     _optimisticallyUpdateTask(
       taskId: taskId,
       name: name,
@@ -814,13 +816,12 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
       }, reloadBoard: false);
     } on Exception {
       if (!isClosed && state.workspaceId == wsId && state.boardId == board.id) {
+        if (previous != null) _replaceTaskSnapshot(previous);
         await _refreshBoardAndTaskLists(
           wsId: wsId,
           boardId: board.id,
-          affectedListIds: {if (affectedListId != null) affectedListId},
-          pageSizeHints: {
-            if (affectedListId != null) affectedListId: pageSizeHint,
-          },
+          affectedListIds: {?affectedListId},
+          pageSizeHints: {?affectedListId: pageSizeHint},
         );
       }
       rethrow;
@@ -835,20 +836,11 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
       _replaceTaskSnapshot(refreshedTask);
     }
 
-    if (affectedListId == null) {
-      await _refreshBoardAndTaskLists(
-        wsId: wsId,
-        boardId: board.id,
-        affectedListIds: const <String>{},
-      );
-      return;
-    }
-
     await _refreshBoardAndTaskLists(
       wsId: wsId,
       boardId: board.id,
-      affectedListIds: {affectedListId},
-      pageSizeHints: {affectedListId: pageSizeHint},
+      affectedListIds: {?affectedListId},
+      pageSizeHints: {?affectedListId: pageSizeHint},
     );
   }
 
@@ -2626,6 +2618,9 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
 
     await _refreshTaskLists(refreshableListIds, pageSizeHints: pageSizeHints);
   }
+
+  TaskBoardTask? _findTaskSnapshot(String taskId) =>
+      state.board?.tasks.where((task) => task.id == taskId).firstOrNull;
 
   String? _findTaskListId(String taskId) {
     final board = state.board;
