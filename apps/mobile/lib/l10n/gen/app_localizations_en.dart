@@ -8543,6 +8543,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardDetailFiltersActive => 'Filters active';
 
   @override
+  String get taskBoardDetailFocusReplaceConfirm => 'Stop and start';
+
+  @override
+  String get taskBoardDetailFocusReplaceMessage => 'A timer is already running. Starting focus stops it and starts a new session for this task.';
+
+  @override
+  String get taskBoardDetailFocusReplaceTitle => 'Stop the running timer?';
+
+  @override
+  String get taskBoardDetailFocusStarted => 'Timer started for this task.';
+
+  @override
   String taskBoardDetailFromList(String list) {
     return 'from: $list';
   }
@@ -8680,6 +8692,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardDetailOpenRelatedTask => 'Open related task';
 
   @override
+  String get taskBoardDetailOpenTimer => 'Open timer';
+
+  @override
   String get taskBoardDetailOverdue => 'Overdue';
 
   @override
@@ -8804,6 +8819,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get taskBoardDetailSetEstimation => 'Set estimation';
+
+  @override
+  String get taskBoardDetailStartFocus => 'Start focus';
 
   @override
   String taskBoardDetailStartsAt(String date) {

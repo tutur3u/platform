@@ -16279,6 +16279,30 @@ abstract class AppLocalizations {
   /// **'Filters active'**
   String get taskBoardDetailFiltersActive;
 
+  /// No description provided for @taskBoardDetailFocusReplaceConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop and start'**
+  String get taskBoardDetailFocusReplaceConfirm;
+
+  /// No description provided for @taskBoardDetailFocusReplaceMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'A timer is already running. Starting focus stops it and starts a new session for this task.'**
+  String get taskBoardDetailFocusReplaceMessage;
+
+  /// No description provided for @taskBoardDetailFocusReplaceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop the running timer?'**
+  String get taskBoardDetailFocusReplaceTitle;
+
+  /// No description provided for @taskBoardDetailFocusStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Timer started for this task.'**
+  String get taskBoardDetailFocusStarted;
+
   /// No description provided for @taskBoardDetailFromList.
   ///
   /// In en, this message translates to:
@@ -16513,6 +16537,12 @@ abstract class AppLocalizations {
   /// **'Open related task'**
   String get taskBoardDetailOpenRelatedTask;
 
+  /// No description provided for @taskBoardDetailOpenTimer.
+  ///
+  /// In en, this message translates to:
+  /// **'Open timer'**
+  String get taskBoardDetailOpenTimer;
+
   /// No description provided for @taskBoardDetailOverdue.
   ///
   /// In en, this message translates to:
@@ -16740,6 +16770,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Set estimation'**
   String get taskBoardDetailSetEstimation;
+
+  /// No description provided for @taskBoardDetailStartFocus.
+  ///
+  /// In en, this message translates to:
+  /// **'Start focus'**
+  String get taskBoardDetailStartFocus;
 
   /// No description provided for @taskBoardDetailStartsAt.
   ///

@@ -50,53 +50,18 @@ class _TaskCard extends StatelessWidget {
         Color.lerp(theme.colorScheme.foreground, listStyle.accent, 0.16) ??
         theme.colorScheme.foreground;
 
-    final l10n = context.l10n;
-    final swipeDoneTarget = _taskRowDoneTarget(list);
-
     return PendingSyncFrame(
       workspaceId: board.wsId,
       feature: 'tasks',
       entityId: task.id,
       child: Padding(
         padding: EdgeInsets.only(bottom: isLast ? 0 : 2),
-        child: AppSwipeActions(
-          key: ValueKey('task-row-swipe-${task.id}'),
+        child: _TaskRowSwipe(
+          task: task,
+          list: list,
           enabled: !isBulkSelectMode,
-          leading: swipeDoneTarget == null
-              ? null
-              : AppSwipeAction(
-                  label: swipeDoneTarget == 'done'
-                      ? l10n.taskBoardDetailCompleteTask
-                      : l10n.taskBoardDetailReopenTask,
-                  icon: swipeDoneTarget == 'done'
-                      ? LucideIcons.circleCheck
-                      : LucideIcons.rotateCcw,
-                  tone: AppTone.success,
-                  onPressed: () => onToggleDone(swipeDoneTarget),
-                ),
-          trailing: [
-            AppSwipeAction(
-              key: const ValueKey('task-row-swipe-schedule'),
-              label: l10n.taskBoardDetailScheduleTask,
-              icon: LucideIcons.calendarClock,
-              tone: AppTone.info,
-              onPressed: () => rowActions.onSchedule(task),
-            ),
-            AppSwipeAction(
-              key: const ValueKey('task-row-swipe-priority'),
-              label: l10n.taskBoardDetailPriority,
-              icon: LucideIcons.flag,
-              tone: AppTone.warning,
-              onPressed: () => rowActions.onPriority(task),
-            ),
-            AppSwipeAction(
-              key: const ValueKey('task-row-swipe-delete'),
-              label: l10n.taskBoardDetailDeleteTask,
-              icon: LucideIcons.trash2,
-              tone: AppTone.destructive,
-              onPressed: () => rowActions.onDelete(task),
-            ),
-          ],
+          onToggleDone: onToggleDone,
+          rowActions: rowActions,
           child: _buildRow(
             context,
             list: list,
@@ -212,98 +177,6 @@ class _TaskCard extends StatelessWidget {
                   ),
                 ),
               ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _TaskSelectionToggle extends StatelessWidget {
-  const _TaskSelectionToggle({
-    required this.isSelected,
-    required this.listStyle,
-    required this.onPressed,
-  });
-
-  final bool isSelected;
-  final _TaskBoardListVisualStyle listStyle;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-
-    return Semantics(
-      button: true,
-      checked: isSelected,
-      child: InkResponse(
-        onTap: onPressed,
-        radius: 22,
-        child: SizedBox.square(
-          dimension: 21,
-          child: Center(
-            child: Icon(
-              isSelected ? Icons.check_box : Icons.check_box_outline_blank,
-              size: 19,
-              color: isSelected
-                  ? listStyle.accent
-                  : theme.colorScheme.mutedForeground,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _TaskCompletionToggle extends StatelessWidget {
-  const _TaskCompletionToggle({
-    required this.task,
-    required this.list,
-    required this.listStyle,
-    required this.targetStatus,
-    required this.enabled,
-    required this.onPressed,
-  });
-
-  final TaskBoardTask task;
-  final TaskBoardList list;
-  final _TaskBoardListVisualStyle listStyle;
-  final String targetStatus;
-  final bool enabled;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.dynamicColors;
-    final normalizedStatus = TaskBoardList.normalizeSupportedStatus(
-      list.status,
-    );
-    final isChecked =
-        normalizedStatus == 'done' ||
-        normalizedStatus == 'closed' ||
-        task.closedAt != null;
-
-    return Tooltip(
-      message: _taskBoardListStatusLabel(context, targetStatus),
-      child: Semantics(
-        button: true,
-        checked: isChecked,
-        child: InkResponse(
-          onTap: enabled ? onPressed : null,
-          radius: 22,
-          child: SizedBox.square(
-            dimension: 21,
-            child: Center(
-              child: Icon(
-                isChecked ? Icons.check_circle : Icons.radio_button_unchecked,
-                size: 19,
-                color: isChecked
-                    ? colors.green
-                    : listStyle.accent.withValues(alpha: enabled ? 0.82 : 0.42),
-              ),
             ),
           ),
         ),

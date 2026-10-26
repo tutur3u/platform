@@ -6,6 +6,7 @@ import 'package:flutter/semantics.dart';
 import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/core/layout/grouped_rows.dart';
 import 'package:mobile/core/layout/layout_tokens.dart';
+import 'package:mobile/core/ui/tokens/app_color_tokens.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 
 /// One action exposed by [AppSwipeActions].
@@ -54,6 +55,11 @@ class AppSwipeActions extends StatefulWidget {
 
   /// Share of the row width a leading swipe must cross to commit.
   static const double commitFraction = 0.35;
+
+  /// Share of the row width a fling must travel before its velocity alone
+  /// can commit the leading action, so a flick while scrolling never
+  /// completes a task.
+  static const double flingMinFraction = 0.15;
 
   @override
   State<AppSwipeActions> createState() => _AppSwipeActionsState();
@@ -112,7 +118,10 @@ class _AppSwipeActionsState extends State<AppSwipeActions>
   void _onDragEnd(DragEndDetails details) {
     final velocity = (_rtl ? -1 : 1) * details.primaryVelocity!;
     if (_offset > 0) {
-      final commit = _armed || (velocity > 900 && widget.leading != null);
+      final flung =
+          velocity > 900 &&
+          _offset >= _width * AppSwipeActions.flingMinFraction;
+      final commit = _armed || (flung && widget.leading != null);
       _armed = false;
       _settle(0);
       if (commit) _run(widget.leading!);
@@ -203,10 +212,33 @@ class _AppSwipeActionsState extends State<AppSwipeActions>
   }
 }
 
-Color _onFill(Color fill) =>
-    ThemeData.estimateBrightnessForColor(fill) == Brightness.dark
-    ? const Color(0xFFFFFFFF)
-    : const Color(0xFF000000);
+/// Label colour on a solid [AppTone] fill, from the theme tokens: the
+/// paired foreground roles where the scheme defines one, otherwise whichever
+/// of the page foreground and background reads better on the fill.
+Color _labelOn(AppColorTokens colors, AppTone tone) {
+  switch (tone) {
+    case AppTone.primary:
+      return colors.primaryForeground;
+    case AppTone.destructive:
+      return colors.destructiveForeground;
+    case AppTone.neutral:
+      return colors.foreground;
+    case AppTone.info:
+    case AppTone.success:
+    case AppTone.warning:
+      final fill = tone.foreground(colors);
+      return _contrast(colors.foreground, fill) >=
+              _contrast(colors.background, fill)
+          ? colors.foreground
+          : colors.background;
+  }
+}
+
+double _contrast(Color a, Color b) {
+  final la = a.computeLuminance();
+  final lb = b.computeLuminance();
+  return (math.max(la, lb) + 0.05) / (math.min(la, lb) + 0.05);
+}
 
 class _LeadingBackground extends StatelessWidget {
   const _LeadingBackground({required this.action, required this.armed});
@@ -218,7 +250,7 @@ class _LeadingBackground extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = AppTokens.of(context).colorScheme;
     final fill = armed ? action.tone.foreground(colors) : colors.muted;
-    final ink = armed ? _onFill(fill) : colors.mutedForeground;
+    final ink = armed ? _labelOn(colors, action.tone) : colors.mutedForeground;
     return ColoredBox(
       color: fill,
       child: Align(
@@ -264,7 +296,7 @@ class _TrailingButtons extends StatelessWidget {
                       child: Center(
                         child: _ActionFace(
                           action: action,
-                          color: _onFill(action.tone.foreground(colors)),
+                          color: _labelOn(colors, action.tone),
                           // Show labels once each button can hold one.
                           compact: width < actions.length * 44,
                         ),
