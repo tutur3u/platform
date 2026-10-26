@@ -168,6 +168,27 @@ describe('bridgeTimerSessionAction conflicts', () => {
     expect(row()?.mode).toBe('pomodoro');
   });
 
+  it('does not retry once the Pomodoro moved to another session', async () => {
+    const { deps, apply } = setup(focusRow());
+    const read = deps.store.read;
+    let reads = 0;
+    deps.store.read = async () => {
+      reads++;
+      if (reads === 1) return focusRow({ revision: 2 });
+      // Elsewhere, the Pomodoro moved on to a new focus session.
+      const current = (await read()) as PomodoroControlRow;
+      return { ...current, prepared_session_id: 'focus-9' };
+    };
+    const result = await bridgeTimerSessionAction(deps, 'pause', {
+      id: 'focus-1',
+      parentSessionId: null,
+    });
+
+    expect(result).toBeNull();
+    expect(apply).toHaveBeenCalledTimes(1);
+    expect(apply.mock.calls[0]?.[0].effects).toEqual([]);
+  });
+
   it('answers a lasting conflict with a 409 and keeps the Pomodoro', async () => {
     const { deps, row } = setup(focusRow());
     deps.store.apply = async () => {
