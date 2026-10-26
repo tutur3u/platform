@@ -3,6 +3,9 @@ import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/l10n/l10n.dart';
 
+/// On-device status: the active model, any notice, and the way to settings.
+/// The privacy note stays in the scrolling body so large text never pushes
+/// the header and action out of a small sheet.
 class AssistantLocalStatusSheet extends StatelessWidget {
   const AssistantLocalStatusSheet({
     required this.preparing,
@@ -20,13 +23,7 @@ class AssistantLocalStatusSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     return AppSheetScaffold(
-      icon: LucideIcons.cpu,
-      title: preparing
-          ? l10n.assistantLocalLoading
-          : l10n.assistantLocalMode(
-              modelLabel ?? l10n.assistantLocalSelectionUnknown,
-            ),
-      description: l10n.assistantLocalHelp,
+      title: l10n.assistantLocalHeaderReady,
       actions: [
         AppButton.primary(
           key: const ValueKey('assistant-local-status-manage'),
@@ -34,18 +31,28 @@ class AssistantLocalStatusSheet extends StatelessWidget {
           child: Text(l10n.assistantLocalModeAction),
         ),
       ],
-      child: switch (notice) {
-        final text? => AppGroupedCard(
-          children: [
+      child: AppGroupedSection(
+        footer: l10n.assistantLocalHelp,
+        children: [
+          AppGroupedRow(
+            leading: const AppIconTile(
+              icon: LucideIcons.cpu,
+              tone: AppTone.primary,
+            ),
+            title: Text(
+              preparing
+                  ? l10n.assistantLocalLoading
+                  : modelLabel ?? l10n.assistantLocalSelectionUnknown,
+            ),
+          ),
+          if (notice case final text?)
             AppStateMessage.inline(
               icon: LucideIcons.triangleAlert,
               tone: AppTone.warning,
               title: text,
             ),
-          ],
-        ),
-        null => const SizedBox.shrink(),
-      },
+        ],
+      ),
     );
   }
 }

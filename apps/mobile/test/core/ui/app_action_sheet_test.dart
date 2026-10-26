@@ -4,6 +4,7 @@ import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/core/ui/ui.dart';
 
+import '../../helpers/helpers.dart';
 import 'sheet_host_harness.dart';
 
 /// Phone with a 2x text scale, a home indicator and a 300dp keyboard.
@@ -20,17 +21,12 @@ Future<void> _pumpSmallPhone(
   addTearDown(tester.view.reset);
   tester.platformDispatcher.textScaleFactorTestValue = 2;
   addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
-  await tester.pumpWidget(
-    MaterialApp(
-      theme: AppTheme.light,
-      home: Scaffold(
-        body: Builder(
-          builder: (context) => Center(
-            child: TextButton(
-              onPressed: () => open(context),
-              child: const Text('Open'),
-            ),
-          ),
+  await tester.pumpApp(
+    Builder(
+      builder: (context) => Center(
+        child: TextButton(
+          onPressed: () => open(context),
+          child: const Text('Open'),
         ),
       ),
     ),
