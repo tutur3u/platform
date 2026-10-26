@@ -723,7 +723,19 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   gVisor acceptance retains bounded cleanup. Paused Docker/Rust workflows are
   unchanged, and paused TanStack validation retains its existing policy. New
   validation workflows must coalesce PR revisions, including `pull_request_target`
-  events whose `github.ref` points to the base branch.
+  events whose `github.ref` points to the base branch. Calendar and Mail
+  Cloudflare cancel only PR revisions (main is a main-only exception); their
+  upload lock lives in `wave1-native-publish.yaml`, so never add the parent's
+  group to a called workflow.
+- Reserve hosted runners for main, production and release work. Verify PRs
+  primarily with exact-head local or remote-fleet runs, and batch pushes rather
+  than pushing WIP. Path-filter heavy PR triggers only (append `'!**/*.md'` and
+  `'!**/*.mdx'` to PR `paths`, or use docs-only `paths-ignore`). Leave main push
+  filters unchanged: promotion and CodeQL baselines need complete main runs.
+  Check rulesets first, because a trigger-filtered required check never reports.
+  Required checks need a job-level `check-ci` skip instead. Moving PR CI to
+  self-hosted fleet runners is a follow-up and is not adopted. See the
+  [runbook](../../../../../apps/docs/build/devops/github-actions-runbook.mdx#hosted-runner-reservation-and-pr-queue-pressure).
 - Consolidate PR-only release checks into the reusable CI config job with
   `check_pr_release_only: true`. Meet, Lettin and Parley compare the same PR base
   and head as before; production/manual events always return `run_checks=true`.
