@@ -319,3 +319,74 @@ test('app-owned Worker options shape the generated Worker config', (t) => {
     []
   );
 });
+
+test('the generated Worker states its effective mounts and fails safely', (t) => {
+  const root = createFixtureRepo(t);
+  writeTree(root, {
+    '.github/workflows/native-start-app.yaml': 'on: workflow_call\n',
+  });
+  const files = (config) => {
+    const result = plan(root, { loadAppConfig: () => ({ config }) });
+    const content = (file) =>
+      result.writes.find((write) => write.path === file)?.content ?? '';
+    return {
+      result,
+      worker: content('apps/demo/cloudflare/worker.ts'),
+      runtime: content('apps/demo/cloudflare/native-built-worker.runtime.mjs'),
+    };
+  };
+
+  // Default: the subdomain root and the apex mount.
+  const mounted = files({}).worker;
+  assert.match(
+    mounted,
+    /\/\/ One artifact: the subdomain root and the tuturuuu\.com\/demo mount\.\nconst mounts = \{\n {2}app: 'demo',\n {2}rootHosts: \['demo\.tuturuuu\.com'\],\n {2}mountHosts: \['tuturuuu\.com'\],\n {2}basePath: '\/demo',\n {2}\.\.\.appConfig\.mounts,\n\};/
+  );
+
+  // Root-only: no apex mount is claimed in the generated source.
+  const rootOnly = {
+    mounts: {
+      rootHosts: ['demo.tuturuuu.com', 'demo-staging.tuturuuu.com'],
+      mountHosts: [],
+      unknownHost: 'reject',
+    },
+  };
+  const { worker, runtime } = files(rootOnly);
+  assert.match(
+    worker,
+    /\/\/ Root-only: served at demo\.tuturuuu\.com, demo-staging\.tuturuuu\.com; no apex mount, and unknown hosts are rejected\.\nconst mounts = \{\n {2}app: 'demo',\n {2}rootHosts: \['demo\.tuturuuu\.com', 'demo-staging\.tuturuuu\.com'\],\n {2}mountHosts: \[\],\n {2}unknownHost: 'reject' as const,\n {2}\.\.\.appConfig\.mounts,\n\};/
+  );
+  assert.doesNotMatch(worker, /tuturuuu\.com\/demo|basePath: '\/demo'/);
+
+  // A failed route load still answers through the response policy.
+  assert.match(
+    worker,
+    /try \{\n\s*response = await \(await handler\)\(request, env, ctx\);\n\s*\} catch \(error\) \{[\s\S]*?console\.error\('\[start-bridge\] worker failed', error\);\n\s*response = bridgeErrorResponse\(\);/
+  );
+  assert.match(
+    worker,
+    /bridgeErrorResponse,\n\s*createBridgeHandler,\n\} from '@tuturuuu\/start-bridge\/start\/handler';/
+  );
+
+  // Each built Worker proves the policy on a page, an API response and a 404.
+  assert.match(
+    runtime,
+    /\['SSR page', '\/'\],\s*\['API response', '\/api\/(?:build-info|__native-smoke-policy__)'\],\s*\['missing page', '\/__native-smoke-missing__'\],/
+  );
+  for (const check of [
+    /no-store/,
+    /headers\['x-robots-tag'\]/,
+    /headers\['x-frame-options'\], 'DENY'/,
+    /frame-ancestors 'none'/,
+  ])
+    assert.match(runtime, check);
+
+  // Re-applying with the same configuration changes nothing.
+  applyPlan(root, files(rootOnly).result, { spawn: () => ({ status: 0 }) });
+  assert.deepEqual(
+    pendingWrites(
+      plan(root, { loadAppConfig: () => ({ config: rootOnly }) })
+    ).map((write) => write.path),
+    []
+  );
+});

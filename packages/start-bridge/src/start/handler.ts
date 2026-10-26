@@ -109,7 +109,7 @@ export function createBridgeHandler<
   const inFunctionBase = (path: string) =>
     !!options.functionBase && inBase(path, options.functionBase);
 
-  return async function handle(
+  async function handleRequest(
     incoming: Request,
     env: Env,
     ctx: Ctx
@@ -208,5 +208,32 @@ export function createBridgeHandler<
     const secured = new Response(final.body, final);
     secured.headers.set('Content-Security-Policy', policy);
     return secured;
+  }
+
+  return async function handle(
+    incoming: Request,
+    env: Env,
+    ctx: Ctx
+  ): Promise<Response> {
+    try {
+      return await handleRequest(incoming, env, ctx);
+    } catch (error) {
+      // A failure in the proxy, an endpoint or Start still answers through
+      // the app's response policy (no-store, robots, framing), never with
+      // its details.
+      console.error('[start-bridge] request failed', error);
+      return bridgeErrorResponse();
+    }
   };
+}
+
+/** The bridge's own failure response: generic text, never error details. */
+export function bridgeErrorResponse() {
+  return new Response('Internal Server Error', {
+    status: 500,
+    headers: {
+      'Content-Type': 'text/plain; charset=utf-8',
+      'Cache-Control': 'private, no-store',
+    },
+  });
 }

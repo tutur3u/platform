@@ -398,6 +398,7 @@ test('emitted ${app} Worker serves its root, mount and unknown paths', {
             resolve({
               status: response.statusCode ?? 0,
               location: response.headers.location ?? null,
+              headers: response.headers,
               body: Buffer.concat(chunks).toString('utf8'),
             })
           );
@@ -475,6 +476,25 @@ ${buildInfo}
   await t.test('an unknown path is not a server error', async () => {
     const response = await get('/__native-smoke-missing__');
     assert.ok(response.status < 500, String(response.status));
+  });
+
+  await t.test('the response policy covers a page, an API response and a missing page', async () => {
+    for (const [label, path] of [
+      ['SSR page', '/'],
+      ['API response', ${hasBuildInfo ? "'/api/build-info'" : "'/api/__native-smoke-policy__'"}],
+      ['missing page', '/__native-smoke-missing__'],
+    ]) {
+      const { status, headers } = await get(path);
+      const where = \`\${label} \${path} (\${status})\`;
+      assert.match(headers['cache-control'] ?? '', /\\bno-store\\b/u, \`\${where}: Cache-Control no-store\`);
+      assert.ok(headers['x-robots-tag'], \`\${where}: X-Robots-Tag\`);
+      assert.equal(headers['x-frame-options'], 'DENY', \`\${where}: X-Frame-Options\`);
+      assert.match(
+        headers['content-security-policy'] ?? '',
+        /frame-ancestors 'none'/u,
+        \`\${where}: CSP frame-ancestors\`
+      );
+    }
   });
 
   t.diagnostic(\`denied egress origins: \${[...new Set(egress)].join(', ') || 'none'}\`);

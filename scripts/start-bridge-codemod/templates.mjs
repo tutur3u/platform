@@ -130,9 +130,28 @@ export function workerEntry({
   rootHost,
   proxyMatcher,
   assetsBinding,
+  mounts: effectiveMounts,
 }) {
   const name = `${pascal(app)}Environment`;
-  const mounts = defaultMounts({ app, rootHost });
+  const mounts = effectiveMounts ?? defaultMounts({ app, rootHost });
+  const mounted = mounts.mountHosts?.length > 0;
+  const mountComment = mounted
+    ? `// One artifact: the subdomain root and the ${mounts.mountHosts.join(', ')}${mounts.basePath} mount.`
+    : `// Root-only: served at ${mounts.rootHosts.join(', ')}; no apex mount${
+        mounts.unknownHost === 'reject'
+          ? ', and unknown hosts are rejected'
+          : ''
+      }.`;
+  const mountLines = [
+    `  rootHosts: [${mounts.rootHosts.map(quote).join(', ')}],`,
+    `  mountHosts: [${(mounts.mountHosts ?? []).map(quote).join(', ')}],`,
+    ...(mounts.basePath && mounted
+      ? [`  basePath: ${quote(mounts.basePath)},`]
+      : []),
+    ...(mounts.unknownHost
+      ? [`  unknownHost: ${quote(mounts.unknownHost)} as const,`]
+      : []),
+  ];
   const proxyImport = proxyMatcher
     ? `import { config as proxyConfig, proxy } from '${proxyModule}';`
     : `import { proxy } from '${proxyModule}';`;
@@ -156,7 +175,10 @@ import { createProxyMatcher } from '${BRIDGE.proxyMatcher}';
     : '{ fetch(request: Request): Promise<Response> }';
   return `${header(app)}/// <reference types="@vitejs/plugin-rsc/types" />
 ${assetsImport}import { createFunctionProxy } from '${BRIDGE.functionProxy}';
-${matcherImports}import { createBridgeHandler } from '${BRIDGE.handler}';
+${matcherImports}import {
+  bridgeErrorResponse,
+  createBridgeHandler,
+} from '${BRIDGE.handler}';
 import { createBridgeStartHandler } from '${BRIDGE.serverEntry}';
 ${proxyImport}
 import appConfig from '${moduleFrom('../', APP_CONFIG)}';
@@ -175,12 +197,10 @@ interface WorkerContext {
 
 type ApiEntry = typeof import('${moduleFrom('../', API_ENTRY)}');
 
-// One artifact: the subdomain root and the tuturuuu.com/${app} mount.
+${mountComment}
 const mounts = {
   app: ${quote(app)},
-  rootHosts: [${mounts.rootHosts.map(quote).join(', ')}],
-  mountHosts: [${mounts.mountHosts.map(quote).join(', ')}],
-  basePath: ${quote(mounts.basePath)},
+${mountLines.join('\n')}
   ...appConfig.mounts,
 };
 
@@ -210,7 +230,14 @@ const handler = (
 
 export default {
   async fetch(request: Request, env: ${name}, ctx: WorkerContext) {
-    const response = await (await handler)(request, env, ctx);
+    let response: Response;
+    try {
+      response = await (await handler)(request, env, ctx);
+    } catch (error) {
+      // Even a failed route load answers through the response policy.
+      console.error('[start-bridge] worker failed', error);
+      response = bridgeErrorResponse();
+    }
     return appConfig.wrapResponse
       ? appConfig.wrapResponse(response, {
           request,

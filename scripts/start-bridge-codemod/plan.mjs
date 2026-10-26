@@ -200,6 +200,9 @@ export function planConversion(repoRoot, app, options = {}) {
   for (const problem of workerConfigProblems(appConfig.config, mounts))
     problems.push(`${appPath}/${APP_CONFIG}: ${problem}`);
   resolved.worker = effectiveWorkerConfig(appConfig.config, mounts);
+  // The Worker's mounts as the app configured them (root-only apps claim no
+  // apex mount in the generated source).
+  resolved.mounts = { ...mounts, ...appConfig.config?.mounts };
   if (!inventory.proxy)
     problems.push(`${appPath}: no src/proxy.ts; the bridge handler needs one`);
 

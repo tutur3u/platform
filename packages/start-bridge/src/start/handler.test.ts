@@ -1,9 +1,14 @@
 import { NextResponse } from 'next/dist/server/web/spec-extension/response';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { AssetsBinding } from '../core/assets';
+import { createRootResponsePolicy } from '../core/response-policy';
 import { cookies } from '../server/request-context';
 import { routerBasepath } from './base-path';
-import { type BridgeHandlerOptions, createBridgeHandler } from './handler';
+import {
+  type BridgeHandlerOptions,
+  bridgeErrorResponse,
+  createBridgeHandler,
+} from './handler';
 
 const ctx = { waitUntil: vi.fn() };
 type Env = { ASSETS: AssetsBinding };
@@ -338,5 +343,75 @@ describe('framable paths keep the upstream CSP (uploaded WebGL builds)', () => {
     expect(await cspOf(extra, 'https://cms.tuturuuu.com/api/embed/x')).toBe(
       sandbox
     );
+  });
+});
+
+describe('the bridge answers its own failures safely', () => {
+  const failing = (where: 'proxy' | 'endpoint' | 'start') =>
+    createBridgeHandler<Env, typeof ctx>({
+      mounts: { app: 'cms', rootHosts: ['cms.tuturuuu.com'] },
+      start: {
+        fetch: async () => {
+          if (where === 'start') throw new Error('secret start detail');
+          return new Response('page');
+        },
+      },
+      proxy: async () => {
+        if (where === 'proxy') throw new Error('secret proxy detail');
+        return NextResponse.next();
+      },
+      endpoints: [
+        {
+          pattern: '/api/own',
+          module: {
+            GET: async () => {
+              throw new Error('secret endpoint detail');
+            },
+          },
+        },
+      ],
+      assets: (env) => env.ASSETS,
+      centralApiOrigin: () => 'https://central.example',
+    });
+
+  it('turns a thrown proxy, endpoint or Start error into a generic 500', async () => {
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+    for (const [where, path] of [
+      ['proxy', '/en'],
+      ['endpoint', '/api/own'],
+      ['start', '/en'],
+    ] as const) {
+      const response = await failing(where)(
+        new Request(`https://cms.tuturuuu.com${path}`),
+        env,
+        ctx
+      );
+      expect(response.status, where).toBe(500);
+      const body = await response.text();
+      expect(body, where).toBe('Internal Server Error');
+      expect(body, where).not.toContain('secret');
+      expect(response.headers.get('Cache-Control'), where).toBe(
+        'private, no-store'
+      );
+    }
+    // Details go to the server log only.
+    expect(logged).toHaveBeenCalled();
+  });
+
+  it('gets the full response policy when the app wraps it', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const policy = createRootResponsePolicy({ seo: 'noindex, nofollow' });
+    const request = new Request('https://cms.tuturuuu.com/en');
+    const headers = policy(await failing('start')(request, env, ctx), {
+      request,
+    }).headers;
+    expect(headers.get('Cache-Control')).toBe('private, no-store');
+    expect(headers.get('Vary')).toBe('Cookie');
+    expect(headers.get('X-Robots-Tag')).toBe('noindex, nofollow');
+    expect(headers.get('X-Frame-Options')).toBe('DENY');
+    expect(headers.get('Content-Security-Policy')).toBe(
+      "frame-ancestors 'none'"
+    );
+    expect(bridgeErrorResponse().status).toBe(500);
   });
 });
