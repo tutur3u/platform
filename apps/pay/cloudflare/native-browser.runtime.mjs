@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHmac, randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -9,6 +10,33 @@ import {
   payBrowserListener,
   payRuntime,
 } from './native-runtime-fixture.mjs';
+
+function syntheticSessionHeaders(secret) {
+  const token = (target) => {
+    const now = Math.floor(Date.now() / 1000);
+    const encode = (value) =>
+      Buffer.from(JSON.stringify(value)).toString('base64url');
+    const unsigned = `${encode({ alg: 'HS256', typ: 'JWT' })}.${encode({
+      typ: 'app_coordination',
+      iss: 'tuturuuu',
+      aud: 'tuturuuu-api',
+      sub: '46cb11ba-cf10-44db-9f66-d47a4fc9df14',
+      email: 'pay-native@example.test',
+      origin_app: 'web',
+      target_app: target,
+      iat: now,
+      exp: now + 3600,
+      jti: randomUUID(),
+      scopes: ['internal-app:session'],
+    })}`;
+    return `ttr_app_${unsigned}.${createHmac('sha256', secret).update(unsigned).digest('base64url')}`;
+  };
+  const pay = token('pay');
+  return {
+    authorization: `Bearer ${pay}`,
+    cookie: `tuturuuu_app_session=${pay}; tuturuuu_web_app_session=${token('web')}`,
+  };
+}
 
 function secure(response) {
   assert.equal(
@@ -62,9 +90,17 @@ test('Pay staging: identity, denial, sandbox isolation and anonymous browser red
       await context.test(
         'WebGL sandbox and neighbouring framing denial',
         async () => {
+          const anonymous = await runtime.fetch(`${mode.origin}${webglRoot}`);
+          assert.equal(anonymous.status, 401);
+          await anonymous.text();
+          assert.deepEqual(
+            forwarded,
+            [],
+            'Unauthenticated requests must not forward'
+          );
           for (const path of [...webglPaths, ...neighbours]) {
             const response = await runtime.fetch(`${mode.origin}${path}`, {
-              headers: { authorization: 'Bearer ttr_pay_runtime_fixture' },
+              headers: syntheticSessionHeaders(runtime.secret),
             });
             assert.equal(response.status, 200);
             assert.equal(await response.text(), 'upstream game fixture');
