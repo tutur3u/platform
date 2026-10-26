@@ -212,3 +212,85 @@ it('keeps running when a small sample mixes a broken-client signal with other fa
   const { state } = await runPastBudget(envelope);
   expect(state).toMatchObject({ stopped: false, consecutiveFailures: 0 });
 });
+
+it.each([1, 4])(
+  'records a total transient outage of %i accounts durably without stopping',
+  async (count) => {
+    const envelope = buildProviderSyncEnvelope(
+      {
+        processed: 1,
+        deferred: 0,
+        results: [workspace(1, { success: false })],
+      },
+      Array.from({ length: count }, (_, index) =>
+        account(index, 'google', 'transient')
+      )
+    );
+    expect(envelope.body).toMatchObject({
+      ok: true,
+      degraded: true,
+      transientProviders: ['google'],
+    });
+    const { outcomes, state } = await runPastBudget(envelope);
+    expect(outcomes).toEqual(
+      Array(MAX_CONSECUTIVE_FAILURES + 2).fill('degraded')
+    );
+    expect(state).toMatchObject({
+      stopped: false,
+      consecutiveFailures: 0,
+      lastOutcome: 'degraded',
+      lastCompletedAt: null,
+    });
+  }
+);
+
+it('keeps a healthy provider visible beside a degraded provider', async () => {
+  const envelope = buildProviderSyncEnvelope(
+    { processed: 1, deferred: 0, results: [workspace(1, { success: false })] },
+    [
+      account(1, 'google', 'transient'),
+      account(2, 'microsoft', 'ok', { refreshed: true }),
+    ]
+  );
+  expect(envelope.body.transientProviders).toEqual(['google']);
+  const { state } = await runPastBudget(envelope);
+  expect(state).toMatchObject({
+    lastOutcome: 'degraded',
+    stopped: false,
+    consecutiveFailures: 0,
+  });
+});
+
+it('keeps healthy mixed accounts successful rather than degrading the whole provider', async () => {
+  const envelope = buildProviderSyncEnvelope(
+    { processed: 1, deferred: 0, results: [workspace(1, { success: false })] },
+    [account(1, 'google', 'transient'), account(2, 'google', 'ok')]
+  );
+  expect(envelope.body).toMatchObject({
+    degraded: false,
+    transientProviders: [],
+  });
+  const { state } = await runPastBudget(envelope);
+  expect(state).toMatchObject({
+    lastOutcome: 'ok',
+    stopped: false,
+    consecutiveFailures: 0,
+  });
+});
+
+it('does not let a malformed degraded flag conceal a failed or unreadable run', async () => {
+  const envelope = buildProviderSyncEnvelope(
+    { processed: 0, deferred: 0, results: [] },
+    []
+  );
+  envelope.body.degraded = true;
+  const malformed = await runPastBudget(envelope);
+  expect(malformed.state).toMatchObject({
+    stopped: true,
+    lastOutcome: 'unknown',
+  });
+  envelope.body.ok = false;
+  envelope.body.transientProviders = ['google'];
+  const failed = await runPastBudget(envelope);
+  expect(failed.state).toMatchObject({ stopped: true, lastOutcome: 'failed' });
+});
