@@ -177,7 +177,7 @@ jobs:
         run: node scripts/ci/native-emitted-config-receipt.mjs "$APP_DIR" "$SOURCE_SHA" "$RUNNER_TEMP/native-emitted-config.json"
       - name: Retain diagnostic config receipt
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ inputs.app }}-native-config-receipt-${{ env.SOURCE_SHA }}${{ env.ARTIFACT_SUFFIX }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/native-emitted-config.json
@@ -219,7 +219,7 @@ jobs:
         run: |
           python3 "$ARTIFACT_SCRIPT" verify "$APP_DIR" --receipt "$RUNNER_TEMP/native-artifact.json"
           python3 "$ARTIFACT_SCRIPT" pack "$APP_DIR" --receipt "$RUNNER_TEMP/native-artifact.json" --archive "$RUNNER_TEMP/native.tar.gz"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ inputs.app }}-native-${{ env.SOURCE_SHA }}${{ env.ARTIFACT_SUFFIX }}
           path: ${{ runner.temp }}/native.tar.gz
