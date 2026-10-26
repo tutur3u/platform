@@ -5,8 +5,13 @@ import { proxy } from './proxy';
 const mocks = vi.hoisted(() => ({
   authProxy: vi.fn(),
   getCurrentUserDefaultWorkspace: vi.fn(),
+  guardApiProxyRequest: vi.fn(async () => null),
   hasSupportedSupabaseAuthCookie: vi.fn(),
   isPersonalWorkspace: vi.fn(),
+  refreshAppSessionForRequest: vi.fn(async () => ({
+    ok: true,
+    response: NextResponse.next(),
+  })),
 }));
 
 vi.mock('@tuturuuu/auth/app-session', () => ({
@@ -24,13 +29,14 @@ vi.mock('@tuturuuu/auth/proxy', async () => ({
   createCentralizedAuthProxy: () => mocks.authProxy,
   getRequestHeadersWithResponseCookies: () => new Headers(),
   propagateAuthCookies: () => {},
+  refreshAppSessionForRequest: mocks.refreshAppSessionForRequest,
 }));
 vi.mock('@tuturuuu/internal-api', () => ({
   getCurrentUserDefaultWorkspace: () => mocks.getCurrentUserDefaultWorkspace(),
   withForwardedInternalApiAuth: () => ({}),
 }));
 vi.mock('@tuturuuu/utils/api-proxy-guard', () => ({
-  guardApiProxyRequest: async () => null,
+  guardApiProxyRequest: mocks.guardApiProxyRequest,
   hasAuthenticatedBearerToken: () => false,
 }));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
@@ -110,4 +116,44 @@ describe('Track proxy redirects under a basePath', () => {
       'https://track.tuturuuu.com/personal'
     );
   });
+
+  it.each(['*', '*;q=0.5', 'vi-VN,*;q=0.1'])(
+    'negotiates a locale for Accept-Language %s instead of failing',
+    async (acceptLanguage) => {
+      const response = await proxy(
+        new NextRequest('https://track.tuturuuu.com/workspace-1/history', {
+          headers: { 'accept-language': acceptLanguage },
+        })
+      );
+
+      expect(response.status).toBeLessThan(500);
+    }
+  );
+});
+
+describe('Track proxy API admission', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it.each([
+    ['GET', '/api/build-info', false],
+    ['HEAD', '/api/build-info', false],
+    ['POST', '/api/build-info', true],
+    ['GET', '/api/build-info/extra', true],
+  ])(
+    'build-info admission: %s %s refreshes=%s',
+    async (method, path, refreshes) => {
+      const request = new NextRequest(`https://track.tuturuuu.com${path}`, {
+        method,
+        headers: { authorization: 'Bearer x', cookie: 'sb-x=1' },
+      });
+      await proxy(request);
+
+      expect(mocks.refreshAppSessionForRequest).toHaveBeenCalledTimes(
+        refreshes ? 1 : 0
+      );
+      expect(mocks.guardApiProxyRequest).toHaveBeenCalled();
+      expect(request.headers.has('cookie')).toBe(refreshes);
+      expect(request.headers.has('authorization')).toBe(refreshes);
+    }
+  );
 });

@@ -260,7 +260,17 @@ Verification is not an atomic directory snapshot against concurrent changes by
 the same OS user. Pruning can remove a release still used by a long-running older
 CLI process; retain that release until its processes finish. Windows filesystem
 behavior is not qualified; unsupported secure-filesystem operations fail closed.
-Unknown `ttr upgrade` subcommands fail rather than running the global install.
+Unknown `ttr upgrade` subcommands, flags and surplus arguments fail with a usage
+error before any installation. `ttr upgrade list [--json]` only reads releases.
+Older published parsers can treat even `ttr upgrade list --json` as a global
+installation. Before using upgrade subcommands on a shared host, identify the
+installed release with `ttr --version` or its package.json and verify that it
+supports them. Do not probe support by running an upgrade subcommand. Drain
+active jobs before any global upgrade or activation.
+Bare `ttr upgrade` installs npm `latest`, not main. Main's SDK dev workflow
+publishes qualified prereleases under npm `dev`; stable publication follows the
+Release Please and production release workflow. Check publication using
+`npm view tuturuuu@dev version` or the workflow result.
 Regression coverage: `cli-versions.test.ts`, `cli-versions-command.test.ts`,
 `cli-versions-review.test.ts`, `cli-versions-download.test.ts`,
 `cli-versions-security.test.ts`, and `cli-versions-fd.test.ts`.

@@ -1,6 +1,7 @@
 import { isRedirect } from '@tanstack/router-core';
 import { NextResponse } from 'next/dist/server/web/spec-extension/response';
 import { describe, expect, it, vi } from 'vitest';
+import type { AssetsBinding } from '../core/assets';
 import { createBasePath, OUTSIDE_APP_LOCATION_HEADER } from '../core/base-path';
 import { redirect } from '../rsc/navigation';
 import { withBridgeRequest } from '../server/request-context';
@@ -78,7 +79,7 @@ describe('absolute redirects', () => {
       );
     });
     const handle = createBridgeHandler<
-      { ASSETS: { fetch(request: Request): Promise<Response> } },
+      { ASSETS: AssetsBinding },
       { waitUntil(work: Promise<unknown>): void }
     >({
       mounts: {

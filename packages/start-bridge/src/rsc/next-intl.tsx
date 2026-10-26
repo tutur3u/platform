@@ -20,7 +20,12 @@ export async function NextIntlClientProvider({
   timeZone?: string;
   [key: string]: unknown;
 }) {
-  const config = await loadIntlConfig(locale);
+  // Settle the hooks' config too, so translated descendants (including
+  // Suspense fallbacks) render inline instead of suspending on `use()`.
+  const [config] = await Promise.all([
+    loadIntlConfig(locale),
+    loadIntlConfig(),
+  ]);
   return (
     <IntlClientProvider
       locale={config.locale}
@@ -35,7 +40,23 @@ export async function NextIntlClientProvider({
 /** next-intl's server default: the runtime's zone (UTC on Workers). */
 const DEFAULT_TIME_ZONE = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-const config = () => use(loadIntlConfig());
+let warnedUnsettled = false;
+
+function config() {
+  const pending = loadIntlConfig();
+  if (
+    !warnedUnsettled &&
+    typeof process !== 'undefined' &&
+    process.env.NODE_ENV === 'development' &&
+    (pending as { status?: string }).status !== 'fulfilled'
+  ) {
+    warnedUnsettled = true;
+    console.warn(
+      '[start-bridge] A server component used next-intl before NextIntlClientProvider settled the request config. It suspends and streams as a lazy row; keep translated components, especially Suspense fallbacks, below the provider.'
+    );
+  }
+  return use(pending);
+}
 
 export function useTranslations(namespace?: string) {
   const { locale, messages, timeZone } = config();

@@ -14,6 +14,7 @@ import {
 import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
 import type { NextRequest } from 'next/dist/server/web/spec-extension/request';
 import { NextResponse } from 'next/dist/server/web/spec-extension/response';
+import { maybeBridgeRequest } from '../server/request-context';
 
 export interface FunctionProxyOptions {
   /** App-session audience, e.g. `meet`. */
@@ -30,7 +31,9 @@ export interface FunctionProxyOptions {
 /**
  * Middleware for the server-function base: GET or JSON POST only, refreshes
  * an existing app session (supabase-first), then applies the API proxy guard.
- * Requests with no session cookie are not refreshed.
+ * Requests with no session cookie are not refreshed. Mounted requests (a
+ * non-empty base resolved by the bridge from the URL) use the shared apex
+ * session, so they are never refreshed and never write app-session cookies.
  */
 export function createFunctionProxy(options: FunctionProxyOptions) {
   const prefixBase =
@@ -50,12 +53,15 @@ export function createFunctionProxy(options: FunctionProxyOptions) {
         .toLowerCase() !== 'application/json'
     )
       return new NextResponse(null, { status: 415 });
+    // The URL-derived base from the bridge request context; never a header.
+    const mounted = Boolean(maybeBridgeRequest()?.appBase);
     const hasSession =
-      hasSupportedSupabaseAuthCookie(request) ||
-      getAppSessionTokenFromRequest(request) ||
-      getWebAppSessionTokenFromRequest(request) ||
-      getAppSessionRefreshTokenFromRequest(request) ||
-      getWebAppSessionRefreshTokenFromRequest(request);
+      !mounted &&
+      (hasSupportedSupabaseAuthCookie(request) ||
+        getAppSessionTokenFromRequest(request) ||
+        getWebAppSessionTokenFromRequest(request) ||
+        getAppSessionRefreshTokenFromRequest(request) ||
+        getWebAppSessionRefreshTokenFromRequest(request));
     const session = hasSession
       ? await refreshAppSessionForRequest(request, {
           sessionMode: 'supabase-first',

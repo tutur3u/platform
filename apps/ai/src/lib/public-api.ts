@@ -1,4 +1,5 @@
 import { AiStudioError, toOpenAiError } from '@tuturuuu/ai/studio/errors';
+import type { AiStudioMeteringIo } from '@tuturuuu/ai/studio/metering';
 import {
   beginAiStudioRun,
   beginExternalAiStudioRun,
@@ -18,6 +19,10 @@ import {
   EXTERNAL_AI_SCOPE,
   type MeteredAiCredential as PublicAiCredential,
 } from './public-credential';
+import {
+  runBudgetedSettlement,
+  type SettlementReconciliation,
+} from './settlement-io';
 
 export { authenticatePublicAiRequest } from './public-credential';
 
@@ -32,7 +37,9 @@ export type MeteredUsage = {
 export type MeteredExecutionContext = {
   calculateCost?: UsageCostCalculator;
   requirePricedUsage?: boolean;
-  pricingFailureFinalized?: boolean;
+  reconciliation?: SettlementReconciliation;
+  disconnectedAt?: number;
+  releaseDisconnectListener?: () => void;
   credential: PublicAiCredential;
   modelId: string;
   requestId: string;
@@ -64,7 +71,8 @@ type PrepareMeteredExecutionInput = {
 /** Server-owned pricing strategy for multimodal provider receipts. Never read from request JSON. */
 export type UsageCostCalculator = (
   usage: MeteredUsage,
-  workspaceId: string
+  workspaceId: string,
+  io?: AiStudioMeteringIo
 ) => Promise<{ billedCredits: number; providerCostUsd: number }>;
 
 /**
@@ -231,7 +239,7 @@ export async function prepareMeteredExecution({
         workspaceId: credential.workspaceId,
       });
 
-  return {
+  const context: MeteredExecutionContext = {
     calculateCost,
     requirePricedUsage,
     credential,
@@ -240,6 +248,14 @@ export async function prepareMeteredExecution({
     runId: reservation.runId,
     startedAt: Date.now(),
   };
+  const disconnected = () => {
+    context.disconnectedAt ??= Date.now();
+  };
+  if (request.signal.aborted) disconnected();
+  else request.signal.addEventListener('abort', disconnected, { once: true });
+  context.releaseDisconnectListener = () =>
+    request.signal.removeEventListener('abort', disconnected);
+  return context;
 }
 
 async function assertAiStudioModelType(modelId: string, requiredType: string) {
@@ -288,112 +304,84 @@ export async function settleMeteredExecution(
     usage: MeteredUsage;
   }
 ): Promise<{ billedCredits: number; providerCostUsd: number }> {
-  if (context.pricingFailureFinalized) {
-    throw new AiStudioError(
-      'Usage pricing failed; the reservation was released.',
-      {
-        code: 'server_error',
-        status: 503,
-        type: 'server_error',
-      }
-    );
-  }
-  const cost = await (context.calculateCost
-    ? context.calculateCost(usage, context.credential.workspaceId)
-    : calculateAiStudioUsageCost({
-        imageCount: usage.imageUnits,
+  return runBudgetedSettlement(
+    context,
+    { usage, status, metadata },
+    async (io, setPhase) => {
+      const cost = await (context.calculateCost
+        ? context.calculateCost(usage, context.credential.workspaceId, io)
+        : calculateAiStudioUsageCost(
+            {
+              imageCount: usage.imageUnits,
+              inputTokens: usage.inputTokens,
+              modelId: context.modelId,
+              // AI SDK outputTokens already includes reasoning; the cost RPC adds its
+              // reasoning argument separately. Keep the audit total inclusive below.
+              outputTokens:
+                usage.outputTokens === undefined
+                  ? undefined
+                  : Math.max(
+                      0,
+                      usage.outputTokens - (usage.reasoningTokens ?? 0)
+                    ),
+              reasoningTokens: usage.reasoningTokens,
+              workspaceId: context.credential.workspaceId,
+            },
+            io
+          )
+      ).then((cost) => {
+        if (
+          context.requirePricedUsage &&
+          (status === 'succeeded' ||
+            Object.values(usage).some((value) => (value ?? 0) > 0)) &&
+          !(cost.providerCostUsd > 0 && cost.billedCredits > 0)
+        ) {
+          throw new Error('Sponsored usage pricing is unavailable.');
+        }
+        return cost;
+      });
+      setPhase('settlement');
+
+      const settlement = {
+        embeddingUnits: usage.embeddingUnits,
+        errorClass: error instanceof Error ? error.name : null,
+        errorMessage:
+          error instanceof Error ? error.message.slice(0, 500) : null,
+        firstTokenLatencyMs,
+        imageUnits: usage.imageUnits,
         inputTokens: usage.inputTokens,
-        modelId: context.modelId,
-        // AI SDK outputTokens already includes reasoning; the cost RPC adds its
-        // reasoning argument separately. Keep the audit total inclusive below.
-        outputTokens:
-          usage.outputTokens === undefined
-            ? undefined
-            : Math.max(0, usage.outputTokens - (usage.reasoningTokens ?? 0)),
+        latencyMs: Date.now() - context.startedAt,
+        metadata,
+        outputTokens: usage.outputTokens,
+        providerCostUsd: cost.providerCostUsd,
         reasoningTokens: usage.reasoningTokens,
-        workspaceId: context.credential.workspaceId,
-      })
-  )
-    .then((cost) => {
-      if (
-        context.requirePricedUsage &&
-        (status === 'succeeded' ||
-          Object.values(usage).some((value) => (value ?? 0) > 0)) &&
-        !(cost.providerCostUsd > 0 && cost.billedCredits > 0)
-      ) {
-        throw new Error('Sponsored usage pricing is unavailable.');
+        runId: context.runId,
+        status,
+      };
+
+      if (externalAppAttribution(context.credential)) {
+        // The app is not charged, but what it *would* have cost is exactly the
+        // number needed to judge whether the unmetered arrangement still makes
+        // sense, so it is recorded rather than discarded.
+        await settleExternalAiStudioRun(
+          {
+            ...settlement,
+            unmeteredCredits: cost.billedCredits,
+          },
+          io
+        );
+      } else {
+        await settleAiStudioRun(
+          {
+            ...settlement,
+            actualCredits: cost.billedCredits,
+          },
+          io
+        );
       }
       return cost;
-    })
-    .catch(async (pricingError) => {
-      if (context.requirePricedUsage || context.calculateCost) {
-        // Release the hold without claiming a successful zero-cost generation.
-        // Preserve measured usage for reconciliation once pricing recovers.
-        const failureSettlement = {
-          runId: context.runId,
-          status: 'failed' as const,
-          imageUnits: usage.imageUnits,
-          inputTokens: usage.inputTokens,
-          outputTokens: usage.outputTokens,
-          reasoningTokens: usage.reasoningTokens,
-          errorClass: 'PricingUnavailable',
-          errorMessage:
-            'Pricing unavailable; reservation released. Usage needs reconciliation.',
-          metadata: {
-            ...(metadata &&
-            typeof metadata === 'object' &&
-            !Array.isArray(metadata)
-              ? metadata
-              : {}),
-            pricing_status: 'unavailable',
-            reconciliation_required: true,
-          },
-        };
-        if (externalAppAttribution(context.credential)) {
-          await settleExternalAiStudioRun({
-            ...failureSettlement,
-            unmeteredCredits: 0,
-          });
-        } else {
-          await settleAiStudioRun({ ...failureSettlement, actualCredits: 0 });
-        }
-        context.pricingFailureFinalized = true;
-        throw pricingError;
-      }
-      return { billedCredits: 0, providerCostUsd: 0 };
-    });
-
-  const settlement = {
-    embeddingUnits: usage.embeddingUnits,
-    errorClass: error instanceof Error ? error.name : null,
-    errorMessage: error instanceof Error ? error.message.slice(0, 500) : null,
-    firstTokenLatencyMs,
-    imageUnits: usage.imageUnits,
-    inputTokens: usage.inputTokens,
-    latencyMs: Date.now() - context.startedAt,
-    metadata,
-    outputTokens: usage.outputTokens,
-    providerCostUsd: cost.providerCostUsd,
-    reasoningTokens: usage.reasoningTokens,
-    runId: context.runId,
-    status,
-  };
-
-  if (externalAppAttribution(context.credential)) {
-    // The app is not charged, but what it *would* have cost is exactly the
-    // number needed to judge whether the unmetered arrangement still makes
-    // sense, so it is recorded rather than discarded.
-    await settleExternalAiStudioRun({
-      ...settlement,
-      unmeteredCredits: cost.billedCredits,
-    });
-  } else {
-    await settleAiStudioRun({
-      ...settlement,
-      actualCredits: cost.billedCredits,
-    });
-  }
-  return cost;
+    }
+  );
 }
 
 export async function recordMeteredExecutionStep(

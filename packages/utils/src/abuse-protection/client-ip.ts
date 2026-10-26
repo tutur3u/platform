@@ -1,3 +1,7 @@
+import { normalizeClientIp } from './ip-address';
+import { verifyOriginClientIpProof } from './origin-ip-proof';
+
+export { isValidIpAddress, normalizeClientIp } from './ip-address';
 /**
  * Trusted-proxy client IP resolution.
  *
@@ -18,7 +22,7 @@ export const TRUSTED_PROXY_ENV = 'TRUSTED_PROXY';
 export const TRUSTED_PROXY_HOPS_ENV = 'TRUSTED_PROXY_HOPS';
 /** Shared secret Cloudflare injects when it proxies to the Vercel origin. */
 export const TRUSTED_PROXY_ORIGIN_SECRET_ENV = 'TRUSTED_PROXY_ORIGIN_SECRET';
-/** Request header carrying {@link TRUSTED_PROXY_ORIGIN_SECRET_ENV}. */
+/** Request header carrying the origin secret or a versioned signed client-IP proof. */
 export const CLOUDFLARE_ORIGIN_AUTH_HEADER = 'x-tuturuuu-origin-auth';
 const MIN_ORIGIN_SECRET_LENGTH = 32;
 
@@ -41,8 +45,8 @@ export interface ClientIpConfig {
    */
   trustedHops: number;
   /**
-   * `cloudflare-origin` only: the secret Cloudflare adds to every request it
-   * proxies to Vercel. Absent or too short means no request is authenticated.
+   * `cloudflare-origin` only: the shared key for apex-origin authentication
+   * and signed Worker client-IP proofs. Missing or short keys never authenticate.
    */
   originAuthSecret?: string;
 }
@@ -122,9 +126,18 @@ export function isAuthenticatedCloudflareOrigin(
   config: ClientIpConfig
 ): boolean {
   const secret = config.originAuthSecret;
-  if (config.mode !== 'cloudflare-origin' || !secret) return false;
+  if (
+    config.mode !== 'cloudflare-origin' ||
+    !secret ||
+    secret.length < MIN_ORIGIN_SECRET_LENGTH
+  )
+    return false;
   const presented = readHeader(headers, CLOUDFLARE_ORIGIN_AUTH_HEADER);
-  return presented !== null && constantTimeEquals(presented, secret);
+  return (
+    presented !== null &&
+    (verifyOriginClientIpProof({ proof: presented, secret }) !== null ||
+      constantTimeEquals(presented, secret))
+  );
 }
 
 /**
@@ -203,68 +216,6 @@ function readHeader(headers: ClientIpHeaders, name: string): string | null {
   return value ?? null;
 }
 
-const IPV4_PATTERN =
-  /^(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/;
-const IPV6_GROUP_PATTERN = /^[0-9a-f]{1,4}$/i;
-
-function isValidIpv6(value: string): boolean {
-  if (value.length > 45) return false;
-
-  let groups = value;
-  let maxGroups = 8;
-  const lastColon = groups.lastIndexOf(':');
-  const tail = groups.slice(lastColon + 1);
-  if (tail.includes('.')) {
-    if (!IPV4_PATTERN.test(tail)) return false;
-    groups = `${groups.slice(0, lastColon + 1)}0`;
-    maxGroups = 7;
-  }
-
-  const halves = groups.split('::');
-  if (halves.length > 2) return false;
-
-  const parseHalf = (half: string) => (half === '' ? [] : half.split(':'));
-  const head = parseHalf(halves[0] ?? '');
-  const rest = halves.length === 2 ? parseHalf(halves[1] ?? '') : [];
-  const all = [...head, ...rest];
-  if (!all.every((group) => IPV6_GROUP_PATTERN.test(group))) return false;
-
-  // The IPv4 tail occupies two 16-bit groups but was replaced by one.
-  const groupCount = all.length + (maxGroups === 7 ? 1 : 0);
-  return halves.length === 2 ? groupCount < 8 : groupCount === 8;
-}
-
-/** Validate an IPv4 or IPv6 address literal. */
-export function isValidIpAddress(value: string): boolean {
-  if (!value) return false;
-  if (IPV4_PATTERN.test(value)) return true;
-  return value.includes(':') && isValidIpv6(value);
-}
-
-/**
- * Normalise a single header entry: trim, strip IPv6 brackets/zone ids and an
- * IPv4 `:port` suffix, lowercase IPv6. Returns null when it is not an IP.
- */
-export function normalizeClientIp(raw: string | null | undefined) {
-  let value = raw?.trim();
-  if (!value) return null;
-
-  const bracketed = /^\[([^\]]+)\](?::\d+)?$/.exec(value);
-  if (bracketed?.[1]) {
-    value = bracketed[1];
-  } else if (/^\d{1,3}(\.\d{1,3}){3}:\d+$/.test(value)) {
-    value = value.slice(0, value.lastIndexOf(':'));
-  }
-
-  const zoneIndex = value.indexOf('%');
-  if (zoneIndex > 0 && value.includes(':')) {
-    value = value.slice(0, zoneIndex);
-  }
-
-  if (!isValidIpAddress(value)) return null;
-  return value.includes(':') ? value.toLowerCase() : value;
-}
-
 function forwardedEntries(value: string | null): string[] {
   if (!value) return [];
   return value
@@ -310,13 +261,16 @@ function resolveForMode(
     case 'cloudflare':
       // Cloudflare's edge overwrites this header on every proxied request.
       return normalizeClientIp(readHeader(headers, 'cf-connecting-ip'));
-    case 'cloudflare-origin':
-      // Cloudflare in front of Vercel. Only a request carrying the origin
-      // secret came through Cloudflare, so only then is its overwritten
-      // client header meaningful; a direct hit falls back to Vercel's headers.
+    case 'cloudflare-origin': {
+      const signedIp = verifyOriginClientIpProof({
+        proof: readHeader(headers, CLOUDFLARE_ORIGIN_AUTH_HEADER),
+        secret: config.originAuthSecret,
+      });
+      if (signedIp) return signedIp;
       return isAuthenticatedCloudflareOrigin(headers, config)
         ? normalizeClientIp(readHeader(headers, 'cf-connecting-ip'))
         : resolveVercelClientIp(headers);
+    }
     case 'vercel':
       return resolveVercelClientIp(headers);
     case 'forwarded': {

@@ -55,6 +55,7 @@ export interface RouteLimits {
 
 export interface ApiEnv {
   RETAINED_API_ORIGIN?: string;
+  TRUSTED_PROXY_ORIGIN_SECRET?: string;
   API_WORKER_OPERATIONS?: string;
   ALLOWED_ORIGINS?: string;
   MOBILE_VERSION_POLICY?: string;

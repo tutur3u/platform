@@ -205,9 +205,16 @@ export async function resolveBridgePage<Page extends BridgePage>(
   let match = matchPage(options.pages, pathname);
   // A rewritten location (`/en/x`, the next-intl rewrite) addresses a
   // manifest whose `[locale]` segment is stripped: the prefix is the locale.
+  // It wins over a dynamic segment that would capture the locale (`/en` is
+  // the landing page, not workspace `en`); a page whose first segment is
+  // literally the prefix still wins.
   let prefixLocale: string | undefined;
   const [, first, ...rest] = pathname.split('/');
-  if (!match && first && locales.includes(first)) {
+  if (
+    first &&
+    locales.includes(first) &&
+    match?.page.pattern.split('/')[1] !== first
+  ) {
     const stripped = matchPage(options.pages, `/${rest.join('/')}`);
     if (stripped?.page.defaults && 'locale' in stripped.page.defaults) {
       match = stripped;

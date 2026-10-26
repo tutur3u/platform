@@ -1,4 +1,3 @@
-import { match } from '@formatjs/intl-localematcher';
 import {
   clearSupabaseAuthCookies,
   getAppSessionClaimsFromRequest,
@@ -19,13 +18,13 @@ import {
   getCurrentUserDefaultWorkspace,
   withForwardedInternalApiAuth,
 } from '@tuturuuu/internal-api';
+import { negotiateAcceptLanguage } from '@tuturuuu/satellite/accept-language';
 import {
   guardApiProxyRequest,
   hasAuthenticatedBearerToken,
 } from '@tuturuuu/utils/api-proxy-guard';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
-import Negotiator from 'negotiator';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
@@ -50,9 +49,20 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     const isLocalAuthApi = req.nextUrl.pathname.startsWith(
       LOCAL_AUTH_API_PREFIX
     );
+    // Release identity is public (the native Worker serves it like any other
+    // route): no refresh, and no ambient identity reaches the handler.
+    const isBuildInfoRead =
+      req.nextUrl.pathname === '/api/build-info' &&
+      (req.method === 'GET' || req.method === 'HEAD');
+    if (isBuildInfoRead) {
+      for (const cookie of req.cookies.getAll())
+        req.cookies.delete(cookie.name);
+      req.headers.delete('cookie');
+      req.headers.delete('authorization');
+    }
     const hasBearerApiSession = hasAuthenticatedBearerToken(req.headers);
     const appSessionRefresh =
-      isLocalAuthApi || hasBearerApiSession
+      isLocalAuthApi || isBuildInfoRead || hasBearerApiSession
         ? null
         : await refreshAppSessionForRequest(req, {
             sessionMode: 'supabase-first',
@@ -76,6 +86,9 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
       }
       return preserveMfaRecoveryCookies(req, guardResponse);
     }
+
+    if (isBuildInfoRead)
+      return NextResponse.next({ request: { headers: req.headers } });
 
     return (
       appSessionRefresh?.response ??
@@ -313,21 +326,13 @@ const getDefaultLocale = (
   req: NextRequest
 ): {
   locale: Locale;
-} => {
-  // Get browser languages
-  const headers = {
-    'accept-language': req.headers.get('accept-language') ?? 'en-US,en;q=0.5',
-  };
-
-  const languages = new Negotiator({ headers }).languages();
-  const detectedLocale = match(languages, supportedLocales, defaultLocale);
-
-  return {
-    locale: supportedLocales.includes(detectedLocale as Locale)
-      ? (detectedLocale as Locale)
-      : defaultLocale,
-  };
-};
+} => ({
+  locale: negotiateAcceptLanguage(
+    req.headers.get('accept-language'),
+    supportedLocales,
+    defaultLocale
+  ),
+});
 
 const getLocale = (
   req: NextRequest
