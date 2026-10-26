@@ -17,6 +17,10 @@ import {
   requireRollback,
   uploadArtifact,
 } from './wave1-native-publish.mjs';
+import {
+  NativeUploadError,
+  productionFailureMessage,
+} from './wave1-native-upload-error.mjs';
 
 export function assertRouteFree(config) {
   assert.deepEqual(
@@ -322,17 +326,25 @@ export async function main({
       record.state = 'pending';
       save();
       // One bounded upload. Exceptions remain pending, including a lost CLI receipt.
-      record.versionId = await uploadArtifact({
-        env,
-        app,
-        environment: 'production',
-        config,
-        sha,
-        digest,
-        cfToken: token,
-        p,
-        exec,
-      });
+      try {
+        record.versionId = await uploadArtifact({
+          env,
+          app,
+          environment: 'production',
+          config,
+          sha,
+          digest,
+          cfToken: token,
+          p,
+          exec,
+        });
+      } catch (error) {
+        if (error instanceof NativeUploadError) {
+          record.uploadFailure = error.uploadFailure;
+          save();
+        }
+        throw error;
+      }
     }
     record.state = 'uploaded';
     save();
@@ -354,10 +366,8 @@ if (
     .then((record) =>
       console.log(`${record.state}: ${record.worker}; routing remains separate`)
     )
-    .catch(() => {
-      console.error(
-        'Production upload refused or uncertain; inspect the retained receipt and provider versions before another attempt'
-      );
+    .catch((error) => {
+      console.error(productionFailureMessage(error));
       process.exitCode = 1;
     });
 }

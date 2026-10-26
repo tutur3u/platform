@@ -1,0 +1,19 @@
+[
+  {
+    "repository": "tutur3u/platform",
+    "app": "calendar",
+    "worker": "tuturuuu-calendar",
+    "runId": "40413173161",
+    "runAttempt": "1",
+    "sha": "ac8beee09e9700b453a55e193db5957985e01956",
+    "digest": "2116459bf121f09a7a714889d13d291a9823b451285747602a67eb0e50435b97",
+    "baselineDeploymentId": "e77a63b0-ec5d-46bf-bb89-b1829066ba90",
+    "baselineVersionId": "1a7cbbd0-d3a2-415f-8b75-890a1412c3f0",
+    "outcome": "failed-no-write",
+    "authority": "Release owner custody receipt, 27 October 2026; one replay after reviewed fix and production sync",
+    "evidence": [
+      "Mastermind CF audit summary: 05:38:04 assets session and 05:38:06-07 asset uploads succeeded; no Upload Version or Create Worker Deployment after those assets",
+      "calendar-reconcile-40413173161.json: all 13 versions read, zero exact SHA/digest matches; original baseline remains active at 100%"
+    ]
+  }
+]
