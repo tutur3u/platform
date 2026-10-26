@@ -234,6 +234,46 @@ Topic Announcements live under Users and are gated by the workspace secret `ENAB
 - User group and course storage uploads are quota-sensitive and must use the server-mediated `uploadWorkspaceUserGroupStorageFile` / group storage multipart route. Do not mint signed upload URLs from this route because the app server cannot verify the final object size after a direct provider upload.
 - Attachment rows keep workspace, announcement, storage path, content type, and size metadata. Email delivery downloads the stored files and switches to raw MIME only when attachments exist; regular no-attachment messages should keep the standard SES `SendEmailCommand` path.
 
+### Teacher-assigned topics
+
+Supervisors can create a month of sessions before topics exist, assign each
+session to the teacher who writes its topic, and track whether topics went out
+on time. Schema: `20261026193000_topic_announcement_teacher_assignment.sql`
+(inert until the teacher flow is wired). Default for every workspace: no
+teacher, no deadline, existing behavior unchanged.
+
+- **Draft topics.** `topic` may be empty only while `status = draft`. Every
+  other status still requires a non-blank topic, so nothing without a topic can
+  be queued or sent.
+- **Teacher in charge.** `teacher_workspace_user_id` must be a workspace user of
+  the same workspace (trigger-enforced). Deleting that user clears the
+  assignment. A `topic_assigned` notification type is reserved for the
+  supervisor's save-and-notify action.
+- **24-hour deadline.** On write, the app stores `send_due_at` = session start
+  (`session_date` + `start_time` in the workspace's fixed calendar timezone)
+  minus 24 hours. Sessions without a date or start time have no deadline.
+- **Late is computed on read, never stored.** Sent: `sent_at` is set. Late:
+  `sent_at` is null and `now() > send_due_at`. Not sent: otherwise. There is no
+  status column, sweep, or cron for lateness. A resend to a substitute bumps
+  `delivery_revision` and keeps the first `sent_at`, so it never changes
+  whether the topic went out on time. Proactive late alerts are out of scope
+  until requested; they would run on Cloudflare under the bounded, stop-fenced
+  rules.
+- **Course book and video link.** `course_book` is at most 200 characters.
+  `video_url` must be an `https://` link without whitespace, at most 2000
+  characters.
+- **Email verification is kept.** Teacher-assigned topics use the same
+  recipient verification gate as every other topic email. There is no
+  staff-attested bypass: this is a multi-tenant open-source product, and a
+  bypass would let any sender in an enabled workspace mail arbitrary addresses
+  from our domain. Each recipient verifies once (or is linked to a confirmed
+  same-workspace account).
+
+Regression coverage: `apps/database/supabase/tests/topic-announcement-teacher-assignment.sql`.
+Rollback: `apps/database/rollbacks/20261026193000_topic_announcement_teacher_assignment.rollback.sql`,
+proven by
+`apps/database/verification/topic-announcement-teacher-assignment-rollback-roundtrip.sql`.
+
 
 ### Mobile profile image optimization
 
