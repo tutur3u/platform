@@ -1,6 +1,7 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { TutoringMarkSchema } from '@/legacy-api-routes/v1/workspaces/[wsId]/tutoring/shared';
+import { freezeLinkedLessonContent } from '@/lib/tutoring/linked-content';
 import { resolveTutoringRouteAccess } from '@/lib/tutoring/route-access';
 
 interface Params {
@@ -65,6 +66,14 @@ export async function POST(request: Request, { params }: Params) {
 
   if (!data) {
     return NextResponse.json({ message: 'Session not found' }, { status: 404 });
+  }
+
+  if (parsed.data.attendanceStatus === 'DONE') {
+    await freezeLinkedLessonContent({
+      sbAdmin,
+      sessionId: id,
+      wsId: normalizedWsId,
+    });
   }
 
   return NextResponse.json({ message: 'success' });

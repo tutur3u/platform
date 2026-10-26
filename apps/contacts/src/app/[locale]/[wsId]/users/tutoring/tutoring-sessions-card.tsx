@@ -394,7 +394,9 @@ export function TutoringSessionsCard({
           <DialogHeader>
             <DialogTitle>{t('edit_content')}</DialogTitle>
             <DialogDescription>
-              {t('edit_content_description')}
+              {editingSession?.content_linked
+                ? t('content_linked_hint')
+                : t('edit_content_description')}
             </DialogDescription>
           </DialogHeader>
           <Textarea
@@ -406,13 +408,21 @@ export function TutoringSessionsCard({
           />
           <Button
             disabled={updateContent.isPending}
-            onClick={() =>
-              editingSession &&
+            onClick={() => {
+              if (!editingSession) return;
+              // Saving the untouched notes would stop them following the class.
+              if (
+                editingSession.content_linked &&
+                draftContent === editingSession.content
+              ) {
+                setEditingSession(null);
+                return;
+              }
               updateContent.mutate({
                 id: editingSession.id,
                 content: draftContent,
-              })
-            }
+              });
+            }}
           >
             {t('save_content')}
           </Button>

@@ -8,6 +8,7 @@ import {
   type TutoringSessionSlotInput,
   TutoringSessionUpdateSchema,
 } from '@/legacy-api-routes/v1/workspaces/[wsId]/tutoring/shared';
+import { freezeLinkedLessonContent } from '@/lib/tutoring/linked-content';
 import { resolveTutoringRouteAccess } from '@/lib/tutoring/route-access';
 import { listWorkspaceTeacherIds } from '@/lib/tutoring/teachers';
 
@@ -243,6 +244,16 @@ export async function PUT(request: Request, { params }: Params) {
 
   if (!data) {
     return NextResponse.json({ message: 'Session not found' }, { status: 404 });
+  }
+
+  // Completing with no (or blank) content keeps the linked notes; only real
+  // text sent alongside the completion counts as a manual edit.
+  if (parsed.data.attendanceStatus === 'DONE' && !parsed.data.content?.trim()) {
+    await freezeLinkedLessonContent({
+      sbAdmin,
+      sessionId: id,
+      wsId: normalizedWsId,
+    });
   }
 
   return NextResponse.json({ message: 'success' });
