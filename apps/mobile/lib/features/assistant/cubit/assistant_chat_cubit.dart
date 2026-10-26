@@ -15,6 +15,8 @@ import 'package:mobile/data/sources/safe_error_diagnostics.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
 
 import '../data/assistant_chat_persistence_contract.dart';
+import '../data/assistant_created_chat.dart';
+import '../data/assistant_media_optimizer.dart';
 import '../data/assistant_preferences.dart';
 import '../data/assistant_reaction_intent.dart';
 import '../data/assistant_repository.dart';
@@ -57,7 +59,9 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
     OperationalErrorReporter? operationalReporter,
     Future<void> Function(String theme, bool Function() isCurrent)?
     onThemeRequested,
-  }) : _operationalReporter =
+    AssistantMediaOptimizer? mediaOptimizer,
+  }) : _mediaOptimizer = mediaOptimizer ?? const AssistantMediaOptimizer(),
+       _operationalReporter =
            operationalReporter ??
            MobileObservability.instance.operationalReporter,
        _prepareResetWorkspaceContext = prepareResetWorkspaceContext,
@@ -79,6 +83,9 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
   final Future<void> Function(String theme, bool Function() isCurrent)?
   _onThemeRequested;
   final OperationalErrorReporter _operationalReporter;
+  final AssistantMediaOptimizer _mediaOptimizer;
+  // Local sources of composer attachments that may still need a retry.
+  final _attachmentSources = <String, AssistantFilePickerResult>{};
   final AssistantRepository _repository;
   final AssistantPreferences _preferences;
   final Future<void> Function(String workspaceContextId)
