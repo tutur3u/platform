@@ -56,7 +56,9 @@ shared auth-boundary guard.
 Every response carries `x-tuturuuu-runtime: native` and the Next build's
 production headers: `X-Robots-Tag` from the Tasks SEO policy
 (`PRIVATE_ROBOTS_HEADER`), `Content-Security-Policy: frame-ancestors 'none'`,
-`X-Frame-Options: DENY` and HSTS. A response's own CSP is kept, but
+`X-Frame-Options: DENY` (except on the Next build's framable WebGL asset path,
+`/api/v1/workspaces/*/external-projects/assets/*/webgl`) and HSTS. A
+response's own CSP is kept, but
 `frame-ancestors 'none'` replaces any ancestor directive in each of its
 policies. It also sends `X-Content-Type-Options:
 nosniff` and `Referrer-Policy: strict-origin-when-cross-origin`. Every

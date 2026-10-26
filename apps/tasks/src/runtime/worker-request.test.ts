@@ -219,6 +219,54 @@ describe('Tasks Worker request step (root-only, fail-closed)', () => {
     }
   );
 
+  it.each([
+    '/api/v1/workspaces/ws/external-projects/assets/a/webgl',
+    '/api/v1/workspaces/ws/external-projects/assets/a/webgl/index.html',
+  ])('leaves the framable WebGL path frameable: %s', async (path) => {
+    const { handle } = setup(
+      () =>
+        new Response('x', {
+          headers: { 'content-security-policy': "default-src 'self'" },
+        })
+    );
+
+    const response = await handle(
+      new Request(`https://tasks.tuturuuu.com${path}`),
+      {},
+      ctx
+    );
+
+    expect(response.headers.has('x-frame-options')).toBe(false);
+    expect(response.headers.get('content-security-policy')).toBe(
+      "default-src 'self'"
+    );
+    expect(response.headers.get('x-robots-tag')).toBe(
+      'noindex, nofollow, nosnippet'
+    );
+    expect(response.headers.get('cache-control')).toBe(
+      'private, no-store, max-age=0'
+    );
+  });
+
+  it.each([
+    '/api/v1/workspaces/ws/external-projects/assets/a/webglx',
+    '/api/v1/workspaces/ws/external-projects/assets/a/b/webgl',
+    '/x/api/v1/workspaces/ws/external-projects/assets/a/webgl',
+  ])('denies framing next to the WebGL path: %s', async (path) => {
+    const { handle } = setup();
+
+    const response = await handle(
+      new Request(`https://tasks.tuturuuu.com${path}`),
+      {},
+      ctx
+    );
+
+    expect(response.headers.get('x-frame-options')).toBe('DENY');
+    expect(response.headers.get('content-security-policy')).toBe(
+      "frame-ancestors 'none'"
+    );
+  });
+
   it('denies framing when there is no CSP', () => {
     expect(denyFraming(null)).toBe("frame-ancestors 'none'");
     expect(denyFraming(' ; , ')).toBe("frame-ancestors 'none'");
