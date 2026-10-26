@@ -2,6 +2,7 @@ import {
   BarChart3,
   CalendarDays,
   Plus,
+  RefreshCcw,
   Target,
   TrendingUp,
   Trophy,
@@ -16,12 +17,19 @@ export type { NavLink } from '@tuturuuu/ui/custom/navigation';
 
 type NavigationTranslator = Parameters<typeof createWorkspaceMembersNavLink>[0];
 
+export interface NavigationAccess {
+  /** Cycles require `manage_projects`, matching the Cycles page guard. */
+  canManageCycles?: boolean;
+}
+
 export async function getNavigationLinks({
   personalOrWsId,
+  access,
 }: {
   personalOrWsId: string;
+  access?: NavigationAccess;
 }): Promise<(NavLink | null)[]> {
-  return buildNavigationLinks(await getTranslations(), personalOrWsId);
+  return buildNavigationLinks(await getTranslations(), personalOrWsId, access);
 }
 
 /**
@@ -30,7 +38,8 @@ export async function getNavigationLinks({
  */
 export function buildNavigationLinks(
   t: NavigationTranslator,
-  personalOrWsId: string
+  personalOrWsId: string,
+  access: NavigationAccess = {}
 ): (NavLink | null)[] {
   return [
     {
@@ -43,11 +52,20 @@ export function buildNavigationLinks(
           href: `/${personalOrWsId}/tasks/new`,
           icon: createElement(Plus, { className: 'h-4 w-4' }),
         },
+        {
+          title: t('sidebar_tabs.cycles'),
+          href: `/${personalOrWsId}/cycles`,
+          icon: createElement(RefreshCcw, { className: 'h-4 w-4' }),
+          aliases: [`/${personalOrWsId}/cycles/*`],
+          disabled: !access.canManageCycles,
+        },
       ],
       aliases: [
         `/${personalOrWsId}/tasks/*`,
         `/${personalOrWsId}/boards`,
         `/${personalOrWsId}/boards/*`,
+        `/${personalOrWsId}/cycles`,
+        `/${personalOrWsId}/cycles/*`,
       ],
     },
     {
