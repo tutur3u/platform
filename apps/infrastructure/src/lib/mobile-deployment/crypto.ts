@@ -1,156 +1,31 @@
 import 'server-only';
 
 import {
-  createCipheriv,
-  createDecipheriv,
-  createHash,
-  randomBytes,
-} from 'node:crypto';
-import {
-  decryptWorkspaceKey,
-  encryptField,
-  encryptWorkspaceKey,
-  generateWorkspaceKey,
-  getMasterKey,
-} from '@tuturuuu/utils/encryption';
+  createEncryptedDataKey as createVaultDataKey,
+  decryptDataKey as unwrapVaultDataKey,
+} from '@tuturuuu/storage-core/vault/crypto';
+import { workspaceKeyWrapper } from '@tuturuuu/storage-core/vault/workspace-key-wrapper';
+import { getMasterKey } from '@tuturuuu/utils/encryption';
 
-const ALGORITHM = 'aes-256-gcm';
-const IV_BYTES = 12;
-const TAG_BYTES = 16;
-
-export class MobileDeploymentEncryptionError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'MobileDeploymentEncryptionError';
-  }
-}
-
-type EncryptedBytesPayload = {
-  alg: 'A256GCM';
-  ciphertext: string;
-  iv: string;
-  tag: string;
-};
-
-function requireDataKey(dataKey: Buffer) {
-  if (!Buffer.isBuffer(dataKey) || dataKey.length !== 32) {
-    throw new MobileDeploymentEncryptionError(
-      'Mobile deployment data key is invalid'
-    );
-  }
-}
-
-export function sha256Base64Url(buffer: Uint8Array | string) {
-  return createHash('sha256').update(buffer).digest('base64url');
-}
-
-export function sha256Hex(buffer: Uint8Array | string) {
-  return createHash('sha256').update(buffer).digest('hex');
-}
+export {
+  decryptBytes,
+  decryptSecretValue,
+  encryptBytes,
+  encryptSecretValue,
+  sha256Base64Url,
+  sha256Hex,
+  VaultEncryptionError as MobileDeploymentEncryptionError,
+} from '@tuturuuu/storage-core/vault/crypto';
 
 export async function createEncryptedDataKey() {
-  const masterKey = getMasterKey();
-  const dataKey = generateWorkspaceKey();
-  return {
-    dataKey,
-    encryptedDataKey: await encryptWorkspaceKey(dataKey, masterKey),
-  };
+  return createVaultDataKey(workspaceKeyWrapper(getMasterKey()));
 }
 
 export async function decryptDataKey(encryptedDataKey: string) {
-  const masterKey = getMasterKey();
-  const dataKey = await decryptWorkspaceKey(encryptedDataKey, masterKey);
-  requireDataKey(dataKey);
-  return dataKey;
-}
-
-export function encryptSecretValue(value: string, dataKey: Buffer) {
-  requireDataKey(dataKey);
-  return encryptField(value, dataKey);
-}
-
-export function decryptSecretValue(ciphertext: string, dataKey: Buffer) {
-  requireDataKey(dataKey);
-  if (!ciphertext) return '';
-  const payload = Buffer.from(ciphertext, 'base64');
-  if (payload.length < IV_BYTES + TAG_BYTES) {
-    throw new MobileDeploymentEncryptionError(
-      'Encrypted mobile deployment secret payload is invalid'
-    );
-  }
-  try {
-    const iv = payload.subarray(0, IV_BYTES);
-    const tag = payload.subarray(payload.length - TAG_BYTES);
-    const encrypted = payload.subarray(IV_BYTES, payload.length - TAG_BYTES);
-    const decipher = createDecipheriv(ALGORITHM, dataKey, iv, {
-      authTagLength: TAG_BYTES,
-    });
-    decipher.setAuthTag(tag);
-    return Buffer.concat([
-      decipher.update(encrypted),
-      decipher.final(),
-    ]).toString('utf8');
-  } catch {
-    throw new MobileDeploymentEncryptionError(
-      'Encrypted mobile deployment secret authentication failed'
-    );
-  }
-}
-
-export function encryptBytes(plaintext: Uint8Array, dataKey: Buffer) {
-  requireDataKey(dataKey);
-  const iv = randomBytes(IV_BYTES);
-  const cipher = createCipheriv(ALGORITHM, dataKey, iv, {
-    authTagLength: TAG_BYTES,
-  });
-  const ciphertext = Buffer.concat([
-    cipher.update(Buffer.from(plaintext)),
-    cipher.final(),
-  ]);
-  const payload: EncryptedBytesPayload = {
-    alg: 'A256GCM',
-    ciphertext: ciphertext.toString('base64'),
-    iv: iv.toString('base64'),
-    tag: cipher.getAuthTag().toString('base64'),
-  };
-
-  return new TextEncoder().encode(JSON.stringify(payload));
-}
-
-export function decryptBytes(payloadBytes: Uint8Array, dataKey: Buffer) {
-  requireDataKey(dataKey);
-  let payload: EncryptedBytesPayload;
-
-  try {
-    payload = JSON.parse(new TextDecoder().decode(payloadBytes));
-  } catch {
-    throw new MobileDeploymentEncryptionError(
-      'Encrypted mobile deployment file payload is not valid JSON'
-    );
-  }
-
-  if (payload.alg !== 'A256GCM') {
-    throw new MobileDeploymentEncryptionError(
-      'Encrypted mobile deployment file payload uses an unsupported algorithm'
-    );
-  }
-
-  const iv = Buffer.from(payload.iv, 'base64');
-  const tag = Buffer.from(payload.tag, 'base64');
-  const ciphertext = Buffer.from(payload.ciphertext, 'base64');
-
-  if (iv.length !== IV_BYTES || tag.length !== TAG_BYTES) {
-    throw new MobileDeploymentEncryptionError(
-      'Encrypted mobile deployment file payload metadata is invalid'
-    );
-  }
-
-  const decipher = createDecipheriv(ALGORITHM, dataKey, iv, {
-    authTagLength: TAG_BYTES,
-  });
-  decipher.setAuthTag(tag);
-
-  return Buffer.concat([decipher.update(ciphertext), decipher.final()]);
+  return unwrapVaultDataKey(
+    encryptedDataKey,
+    workspaceKeyWrapper(getMasterKey())
+  );
 }
 
 export function redactLastFour(value: string) {

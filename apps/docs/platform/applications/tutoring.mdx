@@ -126,8 +126,14 @@ For an absence, staff enter the missed class date and select **Suggest all
 sessions**. The form scans the selected group's upcoming scheduled classes and
 proposes one slot for each missing session. This naturally handles a
 Monday-to-Wednesday, Saturday-to-Sunday, or Sunday-to-Saturday pattern. For
-weak-support feedback, the English center preset proposes two consecutive
-45-minute sessions before one class. Scheduling from the support queue loads
+weak-support feedback, the English center preset proposes one 45-minute
+session before the next class (**Sessions for weak support** defaults to 1).
+A higher count places that many consecutive sessions before one class. The
+template's **Follow up after (days)** (Nhắc lại sau) defaults to 3; the standard
+preset keeps 7. A saved English center template that still holds the earlier
+defaults (2 sessions, 7 days) reads each as the new default (1 session, 3 days).
+Values staff edited in **Timing and follow-up** are kept: that edit saves the
+policy as custom. Scheduling from the support queue loads
 these suggestions before opening the form. Staff still review the teacher,
 date, and time before creating any session. If too few scheduled classes are
 available, the found slots are applied, the remaining slots stay blank for

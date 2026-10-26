@@ -65,7 +65,8 @@ export const STANDARD_TUTORING_POLICY: TutoringPolicy = {
 export const EASY_CENTER_TUTORING_POLICY: TutoringPolicy = {
   ...STANDARD_TUTORING_POLICY,
   preset: 'easy_center',
-  weakSupportSessions: 2,
+  weakSupportSessions: 1,
+  followUpDays: 3,
   absenceLookbackDays: 21,
   weakContentReviewDays: 14,
   groupExclusions: [
@@ -200,6 +201,12 @@ export function usesEasyCenterPresetShifts(policy: TutoringPolicy) {
   );
 }
 
+/** English center template defaults that changed on 2026-10-26. */
+const EARLIER_EASY_CENTER_DEFAULTS = [
+  ['weakSupportSessions', 2],
+  ['followUpDays', 7],
+] as const;
+
 const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
 const FIELDS = [
   'durationMinutes',
@@ -276,6 +283,15 @@ export function parseTutoringPolicy(value: unknown): TutoringPolicy | null {
     saved.groupExclusions[0]?.value === 'DDT'
   ) {
     candidate.groupExclusions = EASY_CENTER_TUTORING_POLICY.groupExclusions;
+  }
+  // Any section edit saves the policy as custom, so an easy_center policy
+  // still holding an earlier template default is untouched and adopts the
+  // current default.
+  if (saved.preset === 'easy_center') {
+    for (const [field, earlier] of EARLIER_EASY_CENTER_DEFAULTS) {
+      if (saved[field] === earlier)
+        candidate[field] = EASY_CENTER_TUTORING_POLICY[field];
+    }
   }
   if (!['standard', 'easy_center', 'custom'].includes(String(candidate.preset)))
     return null;
