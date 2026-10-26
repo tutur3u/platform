@@ -156,7 +156,27 @@ async function findMergedPendingOverflowPullRequest(github, targetBranch) {
   return undefined;
 }
 
+// Release Please rewrites overflow notes in two API steps: it first resets the
+// notes branch to the target branch, then commits release-notes.md. A failure
+// in between leaves the open release PR pointing at a missing file, and every
+// later run fails while parsing that PR. Its own changelogs restore the notes.
+async function findOpenOverflowPullRequest(github, targetBranch) {
+  const pullRequests = await github.listOpenPullRequests(targetBranch);
+
+  for (const pullRequest of pullRequests) {
+    if (!pullRequest.head?.ref?.startsWith('release-please--branches--')) {
+      continue;
+    }
+
+    const notesBranch = extractOverflowBranchName(pullRequest.body || '');
+    if (notesBranch) return { notesBranch, pullRequest };
+  }
+
+  return undefined;
+}
+
 async function buildReleaseNotesFromPullRequest({
+  changelogRef,
   configFile,
   github,
   manifestFile,
@@ -184,7 +204,10 @@ async function buildReleaseNotesFromPullRequest({
 
   for (const { releasePath, version } of versionChanges) {
     const changelogPath = getChangelogPath(config, releasePath);
-    const changelog = await github.getTextFile(changelogPath, targetBranch);
+    const changelog = await github.getTextFile(
+      changelogPath,
+      changelogRef || targetBranch
+    );
 
     entries.push({
       component: getComponent(config, releasePath),
@@ -203,10 +226,12 @@ async function recoverReleasePleaseOverflowNotes({
   manifestFile = '.release-please-manifest.json',
   targetBranch = 'production',
 }) {
-  const recoveryTarget = await findMergedPendingOverflowPullRequest(
+  const mergedTarget = await findMergedPendingOverflowPullRequest(
     github,
     targetBranch
   );
+  const recoveryTarget =
+    mergedTarget || (await findOpenOverflowPullRequest(github, targetBranch));
 
   if (!recoveryTarget) {
     return { status: 'skipped', reason: 'no merged pending overflow PR' };
@@ -227,6 +252,11 @@ async function recoverReleasePleaseOverflowNotes({
   }
 
   const notes = await buildReleaseNotesFromPullRequest({
+    // A merged release's changelogs are on the target branch; an open one's
+    // exist only on the release PR head.
+    changelogRef: mergedTarget
+      ? targetBranch
+      : recoveryTarget.pullRequest.head.sha,
     configFile,
     github,
     manifestFile,
@@ -271,6 +301,7 @@ module.exports = {
   extractChangelogEntry,
   extractOverflowBranchName,
   findMergedPendingOverflowPullRequest,
+  findOpenOverflowPullRequest,
   getChangelogPath,
   getComponent,
   parseManifestVersionChanges,

@@ -97,6 +97,9 @@ function createFakeGitHub(overrides = {}) {
 
       throw new Error(`Unexpected file request: ${filePath}`);
     },
+    async listOpenPullRequests() {
+      return [];
+    },
     async listClosedPullRequests() {
       return [
         {
@@ -329,4 +332,104 @@ test('failure before final commit publication never creates a bootstrap ref', as
     /Synthetic blob failure/
   );
   assert.deepEqual(paths, ['/git/commits/base', '/git/blobs']);
+});
+
+test('restores missing notes for an open overflow release PR from its head', async () => {
+  const changelogRefs = [];
+  const base = createFakeGitHub();
+  const github = createFakeGitHub({
+    async getBranchSha(branchName) {
+      // Release Please already reset the notes branch to production.
+      return branchName === 'production' ? 'production-sha' : 'production-sha';
+    },
+    async getTextFile(filePath, ref, options) {
+      if (filePath.endsWith('CHANGELOG.md')) changelogRefs.push(ref);
+      return base.getTextFile(filePath, ref, options);
+    },
+    async listClosedPullRequests() {
+      return [];
+    },
+    async listOpenPullRequests(targetBranch) {
+      assert.equal(targetBranch, 'production');
+      return [
+        {
+          body: 'This release is too large to preview in the pull request body. View the full release notes here: https://github.com/tutur3u/platform/blob/release-please--branches--production--release-notes/release-notes.md',
+          head: {
+            ref: 'release-please--branches--production',
+            sha: 'head-sha',
+          },
+          number: 6623,
+        },
+      ];
+    },
+  });
+
+  const result = await recoverReleasePleaseOverflowNotes({ github });
+
+  assert.deepEqual(result, {
+    branch: 'release-please--branches--production--release-notes',
+    pullRequestNumber: 6623,
+    status: 'created',
+  });
+  // The open release's changelog entries exist only on its head.
+  assert.deepEqual(changelogRefs, ['head-sha', 'head-sha']);
+  assert.equal(github.calls.length, 1);
+  const [kind, filePath, branch, notes] = github.calls[0];
+  assert.deepEqual(
+    [kind, filePath, branch],
+    [
+      'createFile',
+      'release-notes.md',
+      'release-please--branches--production--release-notes',
+    ]
+  );
+  assert.match(notes, /<summary>platform: 0\.4\.0<\/summary>/u);
+  assert.match(notes, /<summary>utils: 0\.3\.0<\/summary>/u);
+});
+
+test('leaves an open overflow release PR alone while its notes exist', async () => {
+  const github = createFakeGitHub({
+    async getTextFile(filePath) {
+      if (filePath === 'release-notes.md') return 'existing notes';
+      throw new Error(`Unexpected file request: ${filePath}`);
+    },
+    async listClosedPullRequests() {
+      return [];
+    },
+    async listOpenPullRequests() {
+      return [
+        {
+          body: 'This release is too large to preview in the pull request body. View the full release notes here: https://github.com/tutur3u/platform/blob/release-please--branches--production--release-notes/release-notes.md',
+          head: {
+            ref: 'release-please--branches--production',
+            sha: 'head-sha',
+          },
+          number: 6623,
+        },
+      ];
+    },
+  });
+
+  const result = await recoverReleasePleaseOverflowNotes({ github });
+
+  assert.equal(result.status, 'exists');
+  assert.equal(github.calls.length, 0);
+});
+
+test('reads files above the contents API size limit through the blob API', async () => {
+  const client = new GitHubClient({ repository: 'example/repo', token: 't' });
+  const routes = [];
+  client.request = async (_method, route) => {
+    routes.push(route);
+    if (route.startsWith('/contents/')) {
+      return { content: '', encoding: 'none', sha: 'blob-sha', type: 'file' };
+    }
+    return {
+      content: Buffer.from('# Changelog', 'utf8').toString('base64'),
+      encoding: 'base64',
+    };
+  };
+
+  assert.equal(await client.getTextFile('CHANGELOG.md', 'head'), '# Changelog');
+  assert.deepEqual(routes, ['/contents/CHANGELOG.md', '/git/blobs/blob-sha']);
 });
