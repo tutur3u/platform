@@ -32,12 +32,22 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     const isLocalAuthApi = req.nextUrl.pathname.startsWith(
       LOCAL_AUTH_API_PREFIX
     );
-    const appSessionRefresh = isLocalAuthApi
-      ? null
-      : await refreshAppSessionForRequest(req, {
-          sessionMode: 'supabase-first',
-          targetApp: 'nova',
-        });
+    const isBuildInfoRead =
+      req.nextUrl.pathname === '/api/build-info' &&
+      (req.method === 'GET' || req.method === 'HEAD');
+    if (isBuildInfoRead) {
+      for (const cookie of req.cookies.getAll())
+        req.cookies.delete(cookie.name);
+      req.headers.delete('cookie');
+      req.headers.delete('authorization');
+    }
+    const appSessionRefresh =
+      isLocalAuthApi || isBuildInfoRead
+        ? null
+        : await refreshAppSessionForRequest(req, {
+            sessionMode: 'supabase-first',
+            targetApp: 'nova',
+          });
 
     if (appSessionRefresh && !appSessionRefresh.ok) {
       return appSessionFailureResponse(
@@ -56,6 +66,9 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
       }
       return preserveMfaRecoveryCookies(req, guardResponse);
     }
+
+    if (isBuildInfoRead)
+      return NextResponse.next({ request: { headers: req.headers } });
 
     return (
       appSessionRefresh?.response ??

@@ -45,6 +45,41 @@ also works when IntersectionObserver is unavailable. Regression evidence lives
 in `sale-picker-pagination.test.tsx` and `season-sale-integration.test.tsx`;
 these mounted tests do not establish live browser/provider success.
 
+## Browser offline behavior
+
+Inventory web keeps service-worker registration disabled. Its layout explicitly
+uses `OfflineProvider register={false}` because Inventory has no worker source or
+`/serwist/sw.js` route. Moving its routes onto the shared Start bridge does not
+enable a worker or add precaching. Mobile offline storage is a separate surface.
+
+The existing `inventory-offline-create-v1` mutation endpoint retains its contract
+header, stable operation identity, current actor/workspace permissions on every
+retry, HTTP 201 for a first commit and HTTP 200 for a receipt replay. Missing
+contract support returns its existing error; the bridge must not retry with a
+legacy create request. Offline or stale checkout stays blocked, and season-merge
+recovery retains its actor/workspace-scoped original request across reloads.
+
+The bridge route-port regression is `src/start-bridge/offline-handler.test.ts`;
+its domain and proxy boundaries use fixtures. The shared inventory-core offline
+tests, `season-sale-prices.test.tsx`, `use-season-merge-recovery.test.tsx` and the
+missing-worker registration regression remain required. These tests do not
+substitute for an emitted Worker and browser offline acceptance.
+
+## Storefront checkout return locations
+
+Cash receipts, Square Terminal receipts, Square POS fallback links and Polar
+return flows use the shopper's Storefront mount. On the apex this is
+`https://tuturuuu.com/storefront`; a Storefront subdomain retains its origin.
+The bridge request context supplies the current origin and mount. API forwarding
+also preserves the canonical apex shopper's `Origin`; unrelated Origin values
+cannot select a return host.
+
+An explicit `NEXT_PUBLIC_STOREFRONT_APP_URL` takes precedence, followed by
+`STOREFRONT_APP_URL`. These configured URLs retain their path and continue to
+override request-derived mounts. `route-return-urls.test.ts` covers each payment
+flow, configuration precedence, forwarded requests and the cash receipt returned
+after a completed payment's enrichment fails.
+
 ## Native Inventory presentation
 
 The Flutter mini-app keeps Overview, Products, Sales, Manage and Storefront
