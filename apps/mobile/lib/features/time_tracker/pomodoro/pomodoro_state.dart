@@ -15,8 +15,9 @@ typedef PomodoroRun = ({DateTime start, DateTime? end});
 /// while running, or holding [remaining] while paused or waiting to start.
 ///
 /// Focus phases are ordinary time-tracking sessions ([sessionId]); breaks
-/// are not tracked work. Single-device by design: the countdown lives on this
-/// device and is not shared with other clients.
+/// are not tracked work. A state with a [revision] mirrors the shared,
+/// cross-device Pomodoro on the server; without one it lives on this device
+/// only.
 class PomodoroState extends Equatable {
   const PomodoroState({
     this.phase = PomodoroPhase.idle,
@@ -30,6 +31,7 @@ class PomodoroState extends Equatable {
     this.taskName,
     this.title,
     this.runs = const [],
+    this.revision,
   });
 
   factory PomodoroState.fromJson(Map<String, dynamic> json) {
@@ -50,6 +52,7 @@ class PomodoroState extends Equatable {
       taskName: json['taskName'] as String?,
       title: json['title'] as String?,
       runs: _runsFromJson(json),
+      revision: json['revision'] as int?,
     );
   }
 
@@ -95,6 +98,12 @@ class PomodoroState extends Equatable {
   /// The spans in which the current focus phase actually ran: one per start
   /// or resume, closed by each pause. The open run ends at [deadline].
   final List<PomodoroRun> runs;
+
+  /// The server's revision of the shared Pomodoro; null on a device-only
+  /// Pomodoro.
+  final int? revision;
+
+  bool get isShared => revision != null;
 
   /// Whether a session starting at [time] started while this focus phase
   /// was running, so never during a pause or after the phase ended.
@@ -148,6 +157,7 @@ class PomodoroState extends Equatable {
     taskName: taskName,
     title: title,
     runs: runs ?? this.runs,
+    revision: revision,
   );
 
   Map<String, Object?> toJson() => {
@@ -161,6 +171,7 @@ class PomodoroState extends Equatable {
     'taskId': taskId,
     'taskName': taskName,
     'title': title,
+    'revision': revision,
     'runs': [
       for (final run in runs)
         {
@@ -183,5 +194,6 @@ class PomodoroState extends Equatable {
     taskName,
     title,
     runs,
+    revision,
   ];
 }

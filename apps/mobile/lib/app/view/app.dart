@@ -83,6 +83,7 @@ import 'package:mobile/features/tasks_estimates/cubit/task_labels_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_requests_cubit.dart';
 import 'package:mobile/features/time_tracker/pomodoro/pomodoro_controller.dart';
+import 'package:mobile/features/time_tracker/pomodoro/pomodoro_remote.dart';
 import 'package:mobile/features/time_tracker/pomodoro/pomodoro_state.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
@@ -229,6 +230,7 @@ class _AppState extends State<App> {
       repository: _timeTrackerRepository,
       loadSettings: _timeTrackerRepository.loadPomodoroSettings,
       notificationCopy: _pomodoroNotificationCopy,
+      remote: PomodoroRemote(),
     );
     _appLinks = AppLinks();
     _lifecycleObserver = _AppLifecycleObserver(_handleLifecycleState);
@@ -499,6 +501,7 @@ class _AppState extends State<App> {
                   previous.currentWorkspace?.id != current.currentWorkspace?.id,
               listener: (context, state) {
                 _syncOfflinePreparationScope();
+                _attachPomodoro(state.currentWorkspace?.id);
                 unawaited(
                   context.read<HabitsAccessCubit>().syncWorkspace(
                     state.currentWorkspace?.id,

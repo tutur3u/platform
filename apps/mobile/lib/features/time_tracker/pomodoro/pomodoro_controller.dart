@@ -4,22 +4,28 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/data/models/time_tracking/pomodoro_settings.dart';
 import 'package:mobile/data/models/time_tracking/session.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
+import 'package:mobile/data/sources/api_exception.dart';
 import 'package:mobile/features/time_tracker/pomodoro/pomodoro_notifier.dart';
+import 'package:mobile/features/time_tracker/pomodoro/pomodoro_remote.dart';
 import 'package:mobile/features/time_tracker/pomodoro/pomodoro_sessions.dart';
 import 'package:mobile/features/time_tracker/pomodoro/pomodoro_state.dart';
 import 'package:mobile/features/time_tracker/pomodoro/pomodoro_store.dart';
+
+part 'pomodoro_controller_shared.dart';
 
 /// Localized notification copy for the phase that just ended.
 typedef PomodoroNotificationCopy =
     ({String title, String body}) Function(PomodoroPhase endingPhase);
 
-/// Runs the device's Pomodoro.
+/// Runs the Pomodoro.
 ///
-/// Focus phases start and stop ordinary time-tracking sessions through the
-/// existing tracker API, linked to a task when one is given. Breaks are not
-/// tracked. The countdown, phase deadline and notification live on this
-/// device only (no server deadline, so no migration); see the native pass
-/// plan for the shared, cross-device version.
+/// With a [PomodoroRemote] and a server that has it, the Pomodoro is shared
+/// across devices: the server plans each phase and owns the focus sessions,
+/// and this device mirrors it (see `pomodoro_controller_shared.dart`).
+/// Otherwise it runs on this device: focus phases start and stop ordinary
+/// time-tracking sessions through the tracker API, and the countdown,
+/// deadline and notification live here. A device Pomodoro already running
+/// finishes on the device. Breaks are never tracked.
 class PomodoroController extends Cubit<PomodoroState> {
   PomodoroController({
     required ITimeTrackerRepository repository,
@@ -27,8 +33,10 @@ class PomodoroController extends Cubit<PomodoroState> {
     required PomodoroNotificationCopy notificationCopy,
     PomodoroNotifier notifier = const LocalPomodoroNotifier(),
     PomodoroStore store = const PomodoroStore(),
+    PomodoroRemote? remote,
     DateTime Function()? now,
   }) : _repository = repository,
+       _remote = remote,
        _loadSettings = loadSettings,
        _copy = notificationCopy,
        _notifier = notifier,
@@ -41,7 +49,13 @@ class PomodoroController extends Cubit<PomodoroState> {
   final PomodoroNotificationCopy _copy;
   final PomodoroNotifier _notifier;
   final PomodoroStore _store;
+  final PomodoroRemote? _remote;
   final DateTime Function() _now;
+  Future<void> Function()? _unsubscribe;
+  ({String userId, String wsId})? _attached;
+
+  /// Whether this device mirrors the server's Pomodoro rather than its own.
+  bool get _mirrors => state.isShared || (state.isIdle && _attached != null);
   late final PomodoroSessions _sessions = PomodoroSessions(_repository);
   Timer? _phaseTimer;
   Future<void>? _inFlight;
@@ -93,6 +107,7 @@ class PomodoroController extends Cubit<PomodoroState> {
     final stored = await _store.read();
     if (isClosed) return;
     _phaseTimer?.cancel();
+    if (_attached?.userId != userId) _detach();
     if (stored == null || userId == null || stored.userId != userId) {
       if (stored != null) {
         await _notifier.cancel();
@@ -102,12 +117,18 @@ class PomodoroController extends Cubit<PomodoroState> {
       return;
     }
     emit(stored);
-    await _reconcile();
+    await (stored.isShared ? _reconcileShared() : _reconcile());
   }
+
+  /// Follows the shared Pomodoro of [wsId] for [userId], unless a device
+  /// Pomodoro is running here.
+  Future<void> attach({required String userId, required String wsId}) =>
+      _exclusive(() => _attach(userId, wsId));
 
   /// Ends every phase whose deadline has passed, as when the app resumes or
   /// the phase timer fires late. Safe to call at any time.
-  Future<void> reconcile() => _exclusive(_reconcile);
+  Future<void> reconcile() =>
+      _exclusive(() => _mirrors ? _reconcileShared() : _reconcile());
 
   Future<void> _reconcile() async {
     await _follow();
@@ -132,6 +153,20 @@ class PomodoroController extends Cubit<PomodoroState> {
     String? taskName,
     TimeTrackingSession? replacingPaused,
   }) => _exclusive(() async {
+    if (_remote != null && (state.isIdle || state.isShared)) {
+      try {
+        return await _startShared(
+          userId: userId,
+          wsId: wsId,
+          title: title,
+          taskId: taskId,
+          taskName: taskName,
+          replacingPaused: replacingPaused,
+        );
+      } on PomodoroRemoteUnavailable {
+        // An older server: run the Pomodoro on this device.
+      }
+    }
     final settings = await _loadSettings();
     final before = state;
     if (replacingPaused != null) {
@@ -209,6 +244,9 @@ class PomodoroController extends Cubit<PomodoroState> {
     String? taskId,
     String? taskName,
   }) => _exclusive(() async {
+    // The Timer start before this switched any shared Pomodoro off, so the
+    // countdown on this running session belongs to this device.
+    if (state.isShared) _detach();
     final settings = await _loadSettings();
     await _adopt(
       settings,
@@ -274,6 +312,10 @@ class PomodoroController extends Cubit<PomodoroState> {
   /// (re-read, since the main Timer may have resumed it under a new id).
   Future<void> pause() => _exclusive(() async {
     if (!state.isRunning) return;
+    if (state.isShared) {
+      await _command('pause');
+      return;
+    }
     var sessionId = state.sessionId;
     if (state.isFocus) {
       final found = await _sessions.current(state);
@@ -297,6 +339,10 @@ class PomodoroController extends Cubit<PomodoroState> {
   /// already running for it, resumes its paused session, or starts one.
   Future<void> resume() => _exclusive(() async {
     if (!state.isPaused) return;
+    if (state.isShared) {
+      await _command('resume');
+      return;
+    }
     String? sessionId;
     var runs = state.runsOpenedAt(_now());
     if (state.isFocus) {
@@ -341,6 +387,10 @@ class PomodoroController extends Cubit<PomodoroState> {
   /// Ends the current phase now and moves to the next one.
   Future<void> skip() => _exclusive(() async {
     if (state.isIdle) return;
+    if (state.isShared) {
+      await _command('skip');
+      return;
+    }
     await _completePhase();
     _armTimer();
   });
@@ -349,6 +399,10 @@ class PomodoroController extends Cubit<PomodoroState> {
   /// already stopped elsewhere can never leave the Pomodoro stuck; then the
   /// phase's current session is stopped (already stopped counts as done).
   Future<void> stop() => _exclusive(() async {
+    if (state.isShared) {
+      if (!state.isIdle) await _command('stop');
+      return;
+    }
     final ended = state;
     _phaseTimer?.cancel();
     await _set(const PomodoroState());
@@ -461,6 +515,7 @@ class PomodoroController extends Cubit<PomodoroState> {
   @override
   Future<void> close() {
     _phaseTimer?.cancel();
+    _detach();
     return super.close();
   }
 }
