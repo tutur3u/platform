@@ -115,6 +115,7 @@ export const ci = {
   'desktop-beta.yaml': true,
   'desktop-store-draft.yaml': true,
   'mobile-build-linux.yaml': true,
+  'track-cloudflare.yaml': true,
 };
 
 // Publication only: native build and original/restored acceptance remain enabled.
