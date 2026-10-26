@@ -297,6 +297,26 @@ describe('framable paths keep the upstream CSP (uploaded WebGL builds)', () => {
     }
   });
 
+  it('adds no CSP on the WebGL path when the upstream sent none', async () => {
+    const handler = build({ forwardApi: async () => new Response('game') });
+    expect(await cspOf(handler, `https://cms.tuturuuu.com${webgl}`)).toBeNull();
+  });
+
+  it('matches the normalized, case-sensitive path', async () => {
+    const handler = build();
+    for (const path of [`${webgl}/../x`, `${webgl}%2Fx`, webgl.toUpperCase()]) {
+      const csp = await cspOf(handler, `https://cms.tuturuuu.com${path}`);
+      expect(csp, path).toMatch(/frame-ancestors 'none'$/u);
+    }
+    // A dot segment that resolves into the WebGL path is that path.
+    expect(
+      await cspOf(
+        handler,
+        `https://cms.tuturuuu.com/api/v1/workspaces/ws-1/x/../external-projects/assets/a-1/webgl`
+      )
+    ).toBe(sandbox);
+  });
+
   it('lets an app keep an upstream policy or add framable paths', async () => {
     const keep = build({
       csp: (nonce, { response, path }) =>

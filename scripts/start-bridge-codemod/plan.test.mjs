@@ -282,9 +282,15 @@ test('the app-owned Worker config is created once and never overwritten', (t) =>
   // so app configs import no generated module.
   assert.match(
     worker,
-    /appConfig\.wrapResponse\(response, \{\s*request,\s*env,\s*mounts,\s*publicAssets,?\s*\}\)/
+    /appConfig\.wrapResponse\(response, \{\s*request,\s*env,\s*mounts,\s*publicAssets,/
   );
   assert.match(worker, /\n {4}apiOrigin: appConfig\.apiOrigin,\n/);
+  // The app's framable paths reach the handler csp and the response policy.
+  assert.match(worker, /\n {4}framablePaths: appConfig\.framablePaths,\n/);
+  assert.match(
+    worker,
+    /wrapResponse\(response, \{[\s\S]*?publicAssets,\s*framablePaths: appConfig\.framablePaths,\s*\}\)/
+  );
   applyPlan(root, first, { spawn: noCommands });
   // The app's own options survive every re-run.
   const owned =

@@ -8,7 +8,13 @@
  *
  * Web APIs only, and no relative runtime imports: start-bridge.config.ts is
  * loaded with Node's type stripping by the codemod and the runtime test.
+ *
+ * Framable paths (the platform list in `@tuturuuu/utils/framable-paths`, the
+ * app's `framablePaths` and `framable` here) keep the upstream CSP untouched:
+ * Web's uploaded WebGL builds carry a `sandbox` CSP that must reach the
+ * browser as served. Matching is case-sensitive, like central's routes.
  */
+import { framablePathRegexes } from '@tuturuuu/utils/framable-paths';
 
 export interface ResponsePolicyContext<Env = unknown> {
   request: Request;
@@ -20,14 +26,17 @@ export interface ResponsePolicyContext<Env = unknown> {
   };
   /** App-relative public files served from ASSETS (from the generated Worker). */
   publicAssets?: ReadonlySet<string>;
+  /** The app's `framablePaths` (from the generated Worker). */
+  framablePaths?: readonly RegExp[];
 }
 
 export interface RootResponsePolicyOptions<Env = unknown> {
   /** `X-Robots-Tag` for every response, e.g. `noindex, nofollow`. */
   seo: string | ((context: ResponsePolicyContext<Env>) => string);
   /**
-   * App-relative paths that other origins may frame: no `X-Frame-Options`
-   * and their CSP `frame-ancestors` is left as the handler set it.
+   * More app-relative paths that other origins may frame, beyond the
+   * platform list and the app's `framablePaths`: no `X-Frame-Options`, and
+   * the upstream CSP (or its absence) passes through untouched.
    */
   framable?: readonly RegExp[];
   /**
@@ -88,7 +97,7 @@ function appPathOf(url: URL, mounts: ResponsePolicyContext['mounts']) {
 export function createRootResponsePolicy<Env = unknown>(
   options: RootResponsePolicyOptions<Env>
 ) {
-  const framable = options.framable ?? [];
+  const framable = [...framablePathRegexes(), ...(options.framable ?? [])];
   const fallbackCsp = options.csp ?? NO_ANCESTORS;
   return function applyRootResponsePolicy(
     response: Response,
@@ -107,7 +116,10 @@ export function createRootResponsePolicy<Env = unknown>(
     );
     headers.set('X-Content-Type-Options', 'nosniff');
     headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-    if (!framable.some((pattern) => pattern.test(path))) {
+    const framed = [...framable, ...(context.framablePaths ?? [])].some(
+      (pattern) => pattern.test(path)
+    );
+    if (!framed) {
       headers.set('X-Frame-Options', 'DENY');
       const csp = headers.get('Content-Security-Policy');
       headers.set(

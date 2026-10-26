@@ -277,5 +277,77 @@ describe('framing and document headers', () => {
       'utf8'
     );
     expect(source).not.toMatch(/^import (?!type)[^;]*from '\.\.?\//mu);
+    // Its one package import is itself import-free.
+    const shared = readFileSync(
+      new URL('../../../utils/src/framable-paths.ts', import.meta.url),
+      'utf8'
+    );
+    expect(shared).not.toMatch(/^import /mu);
+  });
+});
+
+describe('framable paths (uploaded WebGL builds)', () => {
+  const sandbox =
+    'sandbox allow-scripts allow-downloads allow-pointer-lock allow-modals';
+  const webgl = '/api/v1/workspaces/ws-1/external-projects/assets/a-1/webgl';
+
+  it('passes the upstream sandbox CSP through untouched', () => {
+    for (const path of [webgl, `${webgl}/`, `${webgl}/Build/game.js`]) {
+      const headers = apply(`https://cms.tuturuuu.com${path}`, {
+        headers: { 'Content-Security-Policy': sandbox },
+      });
+      expect(headers.get('Content-Security-Policy'), path).toBe(sandbox);
+      expect(headers.get('X-Frame-Options'), path).toBeNull();
+      // Robots, sniffing and private caching still apply.
+      expect(headers.get('X-Robots-Tag')).toBe('noindex, nofollow');
+      expect(headers.get('X-Content-Type-Options')).toBe('nosniff');
+      expect(headers.get('Cache-Control')).toBe('private, no-store');
+    }
+    // On the apex mount too (matched app-relative).
+    expect(
+      apply(
+        `https://tuturuuu.com/cms${webgl}/index.html`,
+        { headers: { 'Content-Security-Policy': sandbox } },
+        { mounts: { mountHosts: ['tuturuuu.com'], basePath: '/cms' } }
+      ).get('Content-Security-Policy')
+    ).toBe(sandbox);
+  });
+
+  it('adds no replacement CSP when the upstream sent none', () => {
+    const headers = apply(`https://cms.tuturuuu.com${webgl}`);
+    expect(headers.get('Content-Security-Policy')).toBeNull();
+    expect(headers.get('X-Frame-Options')).toBeNull();
+  });
+
+  it('denies framing next to it, after URL normalization', () => {
+    for (const path of [
+      '/api/v1/workspaces/ws-1/external-projects/assets/a-1',
+      `${webgl}x`,
+      '/api/v1/workspaces/ws-1/external-projects/assets/a-1/x/webgl',
+      // `..` is resolved before matching, so it cannot reach in or out.
+      `${webgl}/../x`,
+      // An encoded slash is not a path separator.
+      `${webgl}%2Fx`,
+      // Case-sensitive, like central's route.
+      webgl.toUpperCase(),
+    ]) {
+      const headers = apply(`https://cms.tuturuuu.com${path}`, {
+        headers: { 'Content-Security-Policy': sandbox },
+      });
+      expect(headers.get('Content-Security-Policy'), path).toBe(
+        `${sandbox}; frame-ancestors 'none'`
+      );
+      expect(headers.get('X-Frame-Options'), path).toBe('DENY');
+    }
+  });
+
+  it("uses the app's framablePaths from the generated Worker", () => {
+    const headers = apply(
+      'https://forms.tuturuuu.com/embed/f1',
+      {},
+      { framablePaths: [/^\/embed\//u] }
+    );
+    expect(headers.get('X-Frame-Options')).toBeNull();
+    expect(headers.get('Content-Security-Policy')).toBeNull();
   });
 });

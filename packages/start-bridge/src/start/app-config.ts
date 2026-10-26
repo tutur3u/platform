@@ -17,6 +17,12 @@ export interface BridgeAppConfig<Env = unknown> {
     nonce: string,
     context: { request: Request; response: Response; path: string }
   ) => string | null | undefined;
+  /**
+   * App-relative paths other origins may frame, beyond the platform list
+   * (`@tuturuuu/utils/framable-paths`): the handler `csp` and the response
+   * policy leave their upstream CSP untouched and set no `X-Frame-Options`.
+   */
+  framablePaths?: readonly RegExp[];
   /** Overrides of the generated mounts: hosts, `basePath`, `unknownHost`. */
   mounts?: Partial<Omit<AppMountConfig, 'app'>>;
   /**
@@ -54,6 +60,7 @@ export interface BridgeAppConfig<Env = unknown> {
       /** Passed by Workers generated since the shared response policy. */
       mounts?: Omit<AppMountConfig, 'app'> & { app?: string };
       publicAssets?: ReadonlySet<string>;
+      framablePaths?: readonly RegExp[];
     }
   ) => Response | Promise<Response>;
 }

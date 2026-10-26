@@ -193,6 +193,7 @@ const handler = (
     mounts,
     csp: appConfig.csp,
     apiOrigin: appConfig.apiOrigin,
+    framablePaths: appConfig.framablePaths,
     start: createBridgeStartHandler(),
     serverFnBase: ${quote(FUNCTION_BASE)},
     proxy,${matcherOption}
@@ -211,7 +212,13 @@ export default {
   async fetch(request: Request, env: ${name}, ctx: WorkerContext) {
     const response = await (await handler)(request, env, ctx);
     return appConfig.wrapResponse
-      ? appConfig.wrapResponse(response, { request, env, mounts, publicAssets })
+      ? appConfig.wrapResponse(response, {
+          request,
+          env,
+          mounts,
+          publicAssets,
+          framablePaths: appConfig.framablePaths,
+        })
       : response;
   },
 };

@@ -154,6 +154,7 @@ Worker behaviour without editing generated files:
 | Option | Effect |
 | --- | --- |
 | `csp(nonce, { request, response, path })` | `createBridgeHandler({ csp })`: the response's Content-Security-Policy; the generated router already stamps the nonce. Return `null` to keep the response's own policy. Framable paths (`@tuturuuu/utils/framable-paths`, e.g. Web's uploaded WebGL builds with their `sandbox` CSP) always keep the upstream policy untouched |
+| `framablePaths` | App-relative path regexes other origins may frame, beyond the platform list in `@tuturuuu/utils/framable-paths`. The generated Worker passes them to the handler `csp` and the response policy, which leave their upstream CSP untouched and set no `X-Frame-Options` |
 | `mounts` | Overrides the generated hosts, `basePath` or `unknownHost` (`'reject'` answers 404 for unlisted hosts) |
 | `apiOrigin(request, { env, path })` | Origin for one unowned `/api/*` request (e.g. Storefront's `/api/v1/inventory/**` to Inventory); `undefined` keeps the central Web API. Forwarding keeps the central forward's base stripping, loop guard and header removal |
 | `wrapResponse(response, { request, env, mounts, publicAssets })` | Decorates every response; use the shared response policy below. The Worker passes its effective mounts and public files |
@@ -185,17 +186,18 @@ export default defineBridgeAppConfig<{ TUTURUUU_NOINDEX?: string }>({
   wrapResponse: createRootResponsePolicy({
     seo: ({ env }) =>
       env?.TUTURUUU_NOINDEX === '1' ? 'noindex, nofollow' : 'index, follow',
-    framable: [/^\/embed\//u], // only if other origins may frame these paths
   }),
+  framablePaths: [/^\/embed\//u], // only if other origins may frame these paths
 });
 ```
 
 - **Every response** gets:
   - `X-Robots-Tag` from `seo`, which is a string or a function of `{ request, env }`;
   - `X-Content-Type-Options: nosniff` and `Referrer-Policy: strict-origin-when-cross-origin`;
-  - outside `framable` paths, `X-Frame-Options: DENY`, and `frame-ancestors 'none'` in every CSP policy. An existing `frame-ancestors` is replaced in any letter case, each comma-separated or repeated header policy is covered, and a response without a CSP gets `csp` (default `frame-ancestors 'none'`).
+  - outside framable paths, `X-Frame-Options: DENY`, and `frame-ancestors 'none'` in every CSP policy. An existing `frame-ancestors` is replaced in any letter case, each comma-separated or repeated header policy is covered, and a response without a CSP gets `csp` (default `frame-ancestors 'none'`).
 - **Caching:** only `GET`/`HEAD` requests for `/assets/*` or the app's public files keep their own caching, unless they answer HTML. Every other response is set, not defaulted, to `Cache-Control: private, no-store`, and gains `Vary: Cookie`.
-- **Paths:** `framable` and the asset paths are matched app-relative, so on the `tuturuuu.com/<app>` mount the base is stripped first. WebSocket upgrades (101) pass through untouched.
+- **Framable paths:** the platform list (`@tuturuuu/utils/framable-paths`, Web's uploaded WebGL builds at `/api/v1/workspaces/*/external-projects/assets/*/webgl`), the app's `framablePaths` and the policy's own `framable`. These keep the upstream CSP exactly as served, or its absence. Web's `sandbox allow-scripts ...` policy must reach the browser, or uploaded scripts run unsandboxed on the app origin. The handler `csp` skips these paths too. Matching is case-sensitive, unlike Next's header `source` matching; that's harmless because central's routes are case-sensitive.
+- **Paths:** framable and asset paths are matched app-relative, so on the `tuturuuu.com/<app>` mount the base is stripped first. WebSocket upgrades (101) pass through untouched.
 
 Migrating an app with a hand-rolled `wrapResponse` (Finance, Tasks, Track,
 Storefront):
