@@ -747,7 +747,11 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   evidence once the label is removed. The always-on CI Admitted check
   (`ci-admitted.yaml`) reads current labels from a base-commit script. It is red
   without the label, and on the push/label race, which it reports with re-add
-  guidance. Unadmitted PR runs use `UNADMITTED_GROUP_SUFFIX`, so they never
+  guidance. It is advisory: the base commit protects the script, not the
+  PR-supplied workflow file. A missing base script fails red, never green. A
+  green admission run can coexist with a newer skipped heavy run; confirm the
+  heavy checks are not skipped, or re-add the label. Unadmitted PR runs use
+  `UNADMITTED_GROUP_SUFFIX`, so they never
   cancel an admitted run. Append that suffix to every new heavy workflow's
   cancelling group. Do not add per-workflow admission jobs: they would allocate
   a hosted job on every unlabelled push. Gate every job of a new heavy PR workflow
