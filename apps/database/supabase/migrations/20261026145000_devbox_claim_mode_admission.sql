@@ -1,3 +1,7 @@
+begin;
+set local lock_timeout = '5s';
+set local statement_timeout = '30s';
+
 -- Devbox claim mode admission (S4), behind a database flag that defaults OFF.
 --
 -- When private.devbox_control_settings.require_reported_execution_mode is on:
@@ -302,3 +306,4 @@ grant execute on function private.devbox_runner_mode_admits(jsonb, timestamptz, 
 revoke all on function private.set_devbox_require_reported_execution_mode(boolean, boolean) from public, anon, authenticated;
 grant execute on function private.set_devbox_require_reported_execution_mode(boolean, boolean) to service_role;
 revoke all on function private.stamp_devbox_runner_capabilities() from public, anon, authenticated;
+commit;
