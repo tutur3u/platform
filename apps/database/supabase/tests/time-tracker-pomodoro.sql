@@ -58,7 +58,8 @@ select throws_ok($q$select private.command_time_tracker_pomodoro(pg_temp.fid(908
 select throws_ok($q$select private.command_time_tracker_pomodoro(pg_temp.fid(90811),pg_temp.fid(90803),1,pg_temp.fid(90831),'{"type":"stop"}',pg_temp.state('idle',null,0),'[]')$q$,'42501','Insufficient permissions','nonmember denied');
 insert into public.workspace_members(ws_id,user_id,type) values(pg_temp.fid(90812),pg_temp.fid(90801),'MEMBER');
 select throws_ok($q$select private.command_time_tracker_pomodoro(pg_temp.fid(90812),pg_temp.fid(90801),1,pg_temp.fid(90831),'{"type":"stop"}',pg_temp.state('idle',null,0),'[]')$q$,'55000','Pomodoro control not configured','member without a control denied');
-select throws_ok($q$select pg_temp.cmd(0,90831,'{"type":"stop"}',pg_temp.state('idle',null,0),'[]')$q$,'22023','Invalid Pomodoro command','revision zero rejected');
+select throws_ok($q$select pg_temp.cmd(0,90831,'{"type":"stop"}',pg_temp.state('idle',null,0),'[]')$q$,'40001','Pomodoro revision conflict','revision zero without a receipt is a conflict');
+select throws_ok($q$select pg_temp.cmd(-1,90831,'{"type":"stop"}',pg_temp.state('idle',null,0),'[]')$q$,'22023','Invalid Pomodoro command','negative revision rejected');
 select throws_ok($q$select pg_temp.cmd(1,90831,'{"type":"wake"}',pg_temp.state('idle',null,0),'[]')$q$,'22023','Invalid Pomodoro command','unknown command rejected');
 select throws_ok($q$select pg_temp.cmd(1,90831,'{"type":"start","title":"Write"}',pg_temp.state('focus',600,1500000),'[]')$q$,'22023','Invalid Pomodoro state','deadline beyond any phase rejected');
 select throws_ok($q$select pg_temp.cmd(1,90831,'{"type":"start","title":"Write"}',pg_temp.state('nap',null,0),'[]')$q$,'22023','Invalid Pomodoro state','unknown phase rejected');
@@ -81,6 +82,10 @@ select is((select is_running from public.time_tracking_sessions where id=pg_temp
 select is(pg_temp.cmd(1,90831,'{"type":"start","title":"Write"}',pg_temp.state('focus',25,1500000),'[]')-'replayed',
  (select result-'replayed' from applied where n=1),'same id and payload replays the applied result');
 select is((pg_temp.cmd(1,90831,'{"type":"start","title":"Write"}','{}','[]')->>'replayed')::boolean,true,'replay is marked and ignores a new plan');
+select is(pg_temp.cmd(0,90831,'{"type":"start","title":"Write"}','{}','[]')-'replayed',
+ (select result-'replayed' from applied where n=1),'a retry with the revision 0 of the creating start still replays');
+select is(pg_temp.cmd(7,90831,'{"type":"start","title":"Write"}','{}','[]')-'replayed',
+ (select result-'replayed' from applied where n=1),'a retry with any revision replays by command id');
 select is(pg_temp.sessions(),1::bigint,'replay starts nothing');
 select throws_ok($q$select pg_temp.cmd(1,90831,'{"type":"start","title":"Other"}',pg_temp.state('focus',25,1500000),'[]')$q$,'40001','Pomodoro command conflict','reused id with a new payload conflicts');
 select throws_ok($q$select pg_temp.cmd(1,90832,'{"type":"stop"}',pg_temp.state('idle',null,0),'[]')$q$,'40001','Pomodoro revision conflict','stale revision conflicts');
