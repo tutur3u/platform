@@ -373,6 +373,7 @@ class ArtifactTest(unittest.TestCase):
             lambda c: c.update(unknown_binding={"id": "unreviewed"}),
             lambda c: c["assets"].update(run_worker_first=False),
             lambda c: c["assets"].update(not_found_handling="single-page-application"),
+            lambda c: c["assets"].update(html_handling="none"),
             lambda c: c["assets"].update(directory="../../public"),
             lambda c: c.update(main="../../../package.json"),
         ]

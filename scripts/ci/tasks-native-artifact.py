@@ -3,7 +3,8 @@
 Reuses the reviewed Apps seal/restore implementation with the Worker identity
 apps/tasks/void.config.ts declares: root-only (no workers.dev route), the
 strict public fetch flag, no vars (the Worker always sends the Tasks SEO
-policy's robots header) and no observability block.
+policy's robots header), no observability block, and static assets served
+with html_handling "none".
 """
 import importlib.util
 import os
@@ -32,6 +33,9 @@ def load():
         "vars": {},
     }
     module.NORMALIZED_DEFAULTS = {**module.NORMALIZED_DEFAULTS, "topLevelName": WORKER}
+    # The offline worker precaches the exact /offline.html: serve it without
+    # the default html_handling's internal redirect to /offline.
+    module.ASSET_POLICY = {**module.ASSET_POLICY, "html_handling": "none"}
     module.RECEIPT = "tasks-native-artifact.json"
     module.PUBLIC_FILES = PUBLIC_FILES
     return module

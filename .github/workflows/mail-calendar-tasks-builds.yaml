@@ -196,6 +196,21 @@ jobs:
           command: bun turbo:local run build --concurrency=2 --filter=@tuturuuu/tasks
           token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && secrets.TURBO_TOKEN || '' }}
           team: ${{ github.ref != 'refs/heads/production' && (vars.TURBO_TEAM || secrets.TURBO_TEAM) || '' }}
+      - name: Build the native Tasks candidate
+        run: bun run --cwd apps/tasks build:cloudflare
+      - name: Qualify the emitted Tasks Worker config
+        run: python3 scripts/ci/tasks-native-artifact.py config apps/tasks
+      - name: Seal the native Tasks output
+        env:
+          TASKS_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python3 scripts/ci/tasks-native-artifact.py seal apps/tasks --receipt "$RUNNER_TEMP/tasks-native-artifact.json"
+      - name: Serve the exact offline fallback from the emitted Worker
+        timeout-minutes: 4
+        run: bun run --cwd apps/tasks test:runtime
+      - name: Confirm the runtime check left the sealed output unchanged
+        env:
+          TASKS_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python3 scripts/ci/tasks-native-artifact.py verify apps/tasks --receipt "$RUNNER_TEMP/tasks-native-artifact.json"
 
   build-web:
     name: build (web)

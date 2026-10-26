@@ -38,7 +38,7 @@ class TasksArtifactTest(unittest.TestCase):
             **artifact.IDENTITY, **artifact.NORMALIZED_DEFAULTS,
             "configPath": str(app / ".void-wrangler.jsonc"), "userConfigPath": str(app / ".void-wrangler.jsonc"),
             "main": "index.js",
-            "assets": {"binding": "ASSETS", "directory": "../client", "run_worker_first": True, "not_found_handling": "none"},
+            "assets": {"binding": "ASSETS", "directory": "../client", "run_worker_first": True, "not_found_handling": "none", "html_handling": "none"},
         }
         (app / "dist/native/wrangler.json").write_text(json.dumps(config))
         (app / base.REDIRECT).write_text(json.dumps({"configPath": "../../dist/native/wrangler.json", "auxiliaryWorkers": []}))
@@ -54,6 +54,8 @@ class TasksArtifactTest(unittest.TestCase):
         self.assertIs(artifact.IDENTITY["workers_dev"], False)
         self.assertEqual(artifact.IDENTITY["vars"], {})
         self.assertNotIn("observability", artifact.IDENTITY)
+        self.assertEqual(artifact.ASSET_POLICY["html_handling"], "none")
+        self.assertNotIn("html_handling", base.ASSET_POLICY)
         self.assertEqual(artifact.RECEIPT, "tasks-native-artifact.json")
         self.assertEqual(base.IDENTITY["name"], "tuturuuu-apps-vite-staging")
         self.assertIn("observability", base.IDENTITY)
@@ -65,6 +67,7 @@ class TasksArtifactTest(unittest.TestCase):
         self.assertIn("compatibility_date: '2026-10-19'", source)
         self.assertIn("compatibility_flags: ['nodejs_compat', 'global_fetch_strictly_public']", source)
         self.assertIn("workers_dev: false", source)
+        self.assertIn("html_handling: 'none'", source)
         self.assertNotIn("observability", source)
         self.assertNotIn("vars:", source)
 
@@ -104,6 +107,24 @@ class TasksArtifactTest(unittest.TestCase):
         (app / "dist/client/index.html").write_text("<html></html>")
         with self.assertRaisesRegex(ValueError, "unreviewed static HTML"):
             artifact.validate_output(app)
+
+    def test_offline_fallback_requires_exact_html_handling(self):
+        app, config = self.fixture()
+        artifact.validate_output(app)
+        missing = {k: v for k, v in config["assets"].items() if k != "html_handling"}
+        cases = [
+            (missing, "unreviewed asset configuration"),
+            ({**config["assets"], "html_handling": "auto-trailing-slash"}, "static bypass/fallback forbidden"),
+            ({**config["assets"], "html_handling": "force-trailing-slash"}, "static bypass/fallback forbidden"),
+            ({**config["assets"], "html_handling": "drop-trailing-slash"}, "static bypass/fallback forbidden"),
+            ({**config["assets"], "html_handling": None}, "static bypass/fallback forbidden"),
+            ({**config["assets"], "serve_directly": True}, "unreviewed asset configuration"),
+        ]
+        for assets, message in cases:
+            with self.subTest(assets=assets):
+                (app / "dist/native/wrangler.json").write_text(json.dumps({**config, "assets": assets}))
+                with self.assertRaisesRegex(ValueError, message):
+                    artifact.validate_output(app)
 
     def test_cli_requires_the_tasks_source_channel(self):
         app, _ = self.fixture()

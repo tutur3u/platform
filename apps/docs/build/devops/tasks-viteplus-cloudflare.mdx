@@ -104,11 +104,19 @@ one `void.config.ts` declares:
 - `tuturuuu-tasks-vite-staging`, compatibility date `2026-10-19`
 - `nodejs_compat` and `global_fetch_strictly_public`
 - `workers_dev: false`, no vars and no observability block
+- static assets with `html_handling: 'none'`, so the offline worker's exact
+  `/offline.html` is read directly rather than through the default internal
+  redirect to `/offline` (a missing value or an `auto`/trailing-slash policy
+  fails the contract)
 
 `public/offline.html` is a declared public file, byte-checked like the others;
 any other HTML in the output is rejected as prerender output. Run the
 regressions with `python3 scripts/ci/tasks-native-artifact.test.py` (CI runs
-them in the `build (tasks)` job).
+them in the `build (tasks)` job). That job also builds the native candidate,
+checks and seals its emitted config, runs `bun run --cwd apps/tasks
+test:runtime` (`cloudflare/offline-fallback.runtime.mjs`: `/offline.html` and
+`/offline.css` answer `200` with their exact bytes and no egress) and verifies
+the sealed output is unchanged.
 
 After a real `bun run build:cloudflare`:
 
