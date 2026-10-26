@@ -107,6 +107,10 @@ export async function payRuntime(t, options = {}) {
       },
       outboundService: async (request) => {
         assert.ok(++operations <= 100, 'Outbound operation budget exceeded');
+        if (options.fixtureResponse) {
+          const response = await options.fixtureResponse(request);
+          if (response) return response;
+        }
         unexpected.push({ method: request.method, url: request.url });
         return new Response('Unadmitted fixture egress', { status: 599 });
       },
