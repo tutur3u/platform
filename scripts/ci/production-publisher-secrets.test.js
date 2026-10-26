@@ -11,6 +11,7 @@ const publishers = [
   'meet-cloudflare.yaml',
   'mail-calendar-tasks-builds.yaml',
   'apps-cloudflare.yaml',
+  'wave1-native-production.yaml',
 ];
 const workflows = Object.fromEntries(
   publishers.map((name) => [name, readWorkflow(name)])

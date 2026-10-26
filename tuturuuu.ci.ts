@@ -34,6 +34,7 @@ export const ci = {
   'wave1-native-app.yaml': true,
   'native-start-app.yaml': true,
   'wave1-native-publish.yaml': true,
+  'wave1-native-production.yaml': true,
   'colab-cloudflare.yaml': true,
   'coordination-cloudflare.yaml': true,
   'turbo-cache-cloudflare.yaml': true,
