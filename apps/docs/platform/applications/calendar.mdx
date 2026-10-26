@@ -442,8 +442,9 @@ requests. Nobody repairs a rejected credential by hand.
   (hashed account, provider, outcome, reason); complete detail is in the
   per-outcome logs. The run fails (`ok: false`) only when, for one provider,
   at least three accounts failed with an explicit client-wide diagnosis
-  (`systemic`) and none obtained a fresh credential (HTTP 500), when no
-  workspace sync completed, or on the existing enumeration/dispatch failures.
+  (`systemic`), or every evaluated account for that provider did, and none
+  obtained a fresh credential (HTTP 500), when no workspace sync completed,
+  or on the existing enumeration/dispatch failures.
   Breaker holds of any reason, revocations and one tenant removing our app
   never fail the job. `cron-control`'s
   `calendar-provider-sync-contract.test.ts` drives these responses through the
