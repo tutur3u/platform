@@ -48,7 +48,7 @@ export function getMountedAppVerifyTokenMatch(
     return null;
 
   const url = new URL(platform.canonicalUrl);
-  const [app, ...rest] = url.pathname.slice(1).split('/');
+  const [app, ...rest] = url.pathname.replace(/\/$/, '').slice(1).split('/');
   const tail =
     rest.length === 2 && LOCALE_SEGMENTS.has(rest[0] ?? '')
       ? rest.slice(1)

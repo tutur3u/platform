@@ -22,6 +22,16 @@ describe('getMountedAppVerifyTokenMatch', () => {
     });
   });
 
+  it.each(['/inventory/verify-token/', '/inventory/vi/verify-token/'])(
+    'accepts a trailing slash on an active mounted verifier: %s',
+    (path) => {
+      expect(
+        getMountedAppVerifyTokenMatch(`https://tuturuuu.com${path}`, active)
+          ?.name
+      ).toBe('inventory');
+    }
+  );
+
   it('accepts a locale segment before verify-token', () => {
     expect(
       getMountedAppVerifyTokenMatch(
@@ -40,6 +50,10 @@ describe('getMountedAppVerifyTokenMatch', () => {
     ['an unsupported locale', 'https://tuturuuu.com/inventory/fr/verify-token'],
     ['an encoded slash', 'https://tuturuuu.com/inventory%2Fverify-token'],
     ['an empty segment', 'https://tuturuuu.com/inventory//verify-token'],
+    [
+      'repeated trailing slashes',
+      'https://tuturuuu.com/inventory/verify-token//',
+    ],
     ['a subdomain verifier', 'https://inventory.tuturuuu.com/verify-token'],
     [
       'a lookalike host',
