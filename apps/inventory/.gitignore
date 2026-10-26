@@ -1,3 +1,5 @@
 .next
 .turbo
 tsconfig.tsbuildinfo
+.void/
+.void-wrangler.jsonc

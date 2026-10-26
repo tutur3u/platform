@@ -7,6 +7,7 @@ import type {
 } from '@tuturuuu/ui/hooks/use-notifications';
 import { useCallback, useEffect, useRef } from 'react';
 import { NotificationCard } from './notification-card';
+import type { NotificationCodeText } from './notification-code-text';
 
 type TabType = 'inbox' | 'archive';
 export function NotificationList({
@@ -23,6 +24,7 @@ export function NotificationList({
   declineText,
   acceptedText,
   declinedText,
+  codeText,
   markAsReadText,
   markAsUnreadText,
   onMarkAsRead,
@@ -42,6 +44,7 @@ export function NotificationList({
   declineText: string;
   acceptedText: string;
   declinedText: string;
+  codeText?: NotificationCodeText;
   markAsReadText: string;
   markAsUnreadText: string;
   onMarkAsRead: (id: string, isUnread: boolean) => void;
@@ -160,6 +163,7 @@ export function NotificationList({
             declineText={declineText}
             acceptedText={acceptedText}
             declinedText={declinedText}
+            codeText={codeText}
           />
         ))}
 

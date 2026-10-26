@@ -79,12 +79,21 @@ The input row has no second Send button. Each assistant turn has one initially
 collapsed transparent thinking accordion, showing the latest heading from reasoning
 text already supplied by the API. Expanding it reveals those existing sections in
 source order. Only the current streaming turn animates its thinking icon; stopped,
-completed, and failed turns use a static icon. Consecutive tool calls share one
-collapsed transparent accordion displaying the latest tool name, while response
-text and generated images keep their relative positions. No additional hidden
-reasoning is requested or inferred. These rules apply to mobile Mira's timeline;
-other clients retain their own presentation. Accordion regressions are in
-`assistant_activity_accordion_test.dart`. The transcript's scroll-to-bottom
+completed, and failed turns use a static icon. Every tool call in a turn shares
+one collapsed transparent accordion placed where the first call appears, even when
+step boundaries, reasoning, or reply text arrive between calls; reply text and
+generated images keep their source positions. The header shows the latest step's
+localized friendly label (for example "Checked your tasks") and its step count,
+with a spinner while the streaming turn has a pending call and a check once done.
+Discovery and no-op tools (`search_tools`, `select_tools`, `no_action_needed`)
+never count as steps, so a turn with only those renders no accordion; while such a
+turn is still streaming without reply text, a subtle working row appears instead.
+Expanded steps show a friendly label and short summary; the raw input and output
+JSON stays behind a per-step Details control. Unmapped tools fall back to a
+humanized name. No additional hidden reasoning is requested or inferred. These
+rules apply to mobile Mira's timeline; other clients retain their own
+presentation. Accordion regressions are in `assistant_activity_accordion_test.dart`
+and `assistant_tool_accordion_test.dart`. The transcript's scroll-to-bottom
 action clears the dock using the shell viewport's inherited clearance; the outer
 shell consumes the keyboard inset once. Regressions cover controller and capture
 transitions, retained dock identity, transparent tool inspection, and actual shell

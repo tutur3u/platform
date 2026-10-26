@@ -10,10 +10,8 @@ import {
   Lock,
   Share2,
 } from '@tuturuuu/icons';
-import {
-  createWorkspaceStorageSignedUrl,
-  uploadWorkspaceStorageFile,
-} from '@tuturuuu/internal-api';
+import { uploadWorkspaceStorageFile } from '@tuturuuu/internal-api';
+import { buildWorkspaceStorageShareUrl } from '@tuturuuu/storage-core/signed-url-policy';
 import type { WorkspaceDocument } from '@tuturuuu/types';
 import {
   AlertDialog,
@@ -36,6 +34,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import DocumentShareDialog from '../document-share-dialog';
+import { resolveDocumentImageSources } from './document-image-sources';
 
 interface DocumentEditorProps {
   documentId: string;
@@ -106,7 +105,9 @@ export function DocumentEditor({
           typeof initialDocument.content === 'string'
             ? JSON.parse(initialDocument.content)
             : initialDocument.content;
-        return parsed;
+        return parsed && typeof parsed === 'object'
+          ? resolveDocumentImageSources(parsed)
+          : parsed;
       } catch {
         const contentStr =
           typeof initialDocument.content === 'string'
@@ -321,11 +322,9 @@ export function DocumentEditor({
         );
       }
 
-      return createWorkspaceStorageSignedUrl(
-        wsId,
-        uploadResult.path,
-        31_536_000
-      );
+      // Embed the stable sign-on-read URL, never a long-lived bearer token:
+      // each image load gets a fresh one-hour URL after an access check.
+      return buildWorkspaceStorageShareUrl(wsId, uploadResult.path);
     },
     [wsId]
   );
