@@ -8,7 +8,8 @@ import 'package:mobile/features/assistant/widgets/assistant_tool_summary.dart';
 
 import '../../../helpers/helpers.dart';
 
-const _longName = 'read_every_task_in_the_current_workspace_and_calendar';
+const _longName = 'read_every_record_in_the_current_archive_and_inbox_folder';
+const _longLabel = 'Read every record in the current archive and inbox folder';
 
 List<AssistantMessagePart> _parts(int count) => [
   for (var index = 0; index < count; index++)
@@ -45,23 +46,22 @@ void main() {
       final semantics = tester.ensureSemantics();
       await tester.pumpApp(_summary(_parts(2), scale: scale));
       final toggle = find.byKey(const ValueKey('assistant-tools-toggle'));
-      final slot = find.byKey(const ValueKey('assistant-tools-count-slot'));
       final preview = tester.renderObject<RenderParagraph>(
-        find.text('$_longName ·'),
+        find.text(_longLabel),
       );
       expect(preview.didExceedMaxLines, isTrue);
-      final count = tester.renderObject<RenderParagraph>(find.text('2'));
-      expect(count.didExceedMaxLines, isFalse);
-      expect(
-        tester.getRect(toggle).contains(tester.getCenter(find.text('2'))),
-        isTrue,
+      final count = tester.renderObject<RenderParagraph>(
+        find.text(' · 2 steps'),
       );
+      expect(count.didExceedMaxLines, scale > 1 ? isTrue : isFalse);
       expect(
-        tester.getRect(slot).contains(tester.getCenter(find.text('2'))),
+        tester
+            .getRect(toggle)
+            .contains(tester.getCenter(find.text(' · 2 steps'))),
         isTrue,
       );
       final node = tester.getSemantics(toggle);
-      expect(node.label, 'Tools: $_longName · 2');
+      expect(node.label, 'Steps done: $_longLabel · 2 steps');
       expect(node.flagsCollection.isButton, isTrue);
       expect(node.flagsCollection.isExpanded, Tristate.isFalse);
       expect(
@@ -78,9 +78,7 @@ void main() {
     });
   }
 
-  testWidgets('streamed counts retain header and reserved count geometry', (
-    tester,
-  ) async {
+  testWidgets('streamed counts retain header geometry', (tester) async {
     final parts = ValueNotifier(_parts(1));
     addTearDown(parts.dispose);
     await tester.pumpApp(
@@ -90,27 +88,21 @@ void main() {
       ),
     );
     Rect? header;
-    Rect? countSlot;
-    for (final count in [1, 9, 10, 99, 100, 999]) {
+    for (final count in [2, 9, 10, 99, 100, 999]) {
       parts.value = _parts(count);
       await tester.pump();
       final currentHeader = tester.getRect(
         find.byKey(const ValueKey('assistant-tools-toggle')),
       );
-      final currentSlot = tester.getRect(
-        find.byKey(const ValueKey('assistant-tools-count-slot')),
-      );
       header ??= currentHeader;
-      countSlot ??= currentSlot;
       expect(currentHeader, header);
-      expect(currentSlot, countSlot);
-      expect(find.text(count.toString()), findsOneWidget);
+      expect(find.text(' · $count steps'), findsOneWidget);
       expect(find.textContaining(':output-available'), findsNothing);
       expect(tester.takeException(), isNull);
     }
     parts.value = _parts(1000);
     await tester.pump();
-    expect(find.text('1000'), findsOneWidget);
+    expect(find.text(' · 1000 steps'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -144,7 +136,7 @@ void main() {
     );
     expect(find.text('read_tasks_1:output-available'), findsOneWidget);
     expect(find.text('$_longName:input-available'), findsOneWidget);
-    expect(find.text('3'), findsOneWidget);
+    expect(find.text(' · 3 steps'), findsOneWidget);
     await tester.tap(toggle);
     await tester.pumpAndSettle();
     expect(find.text('read_tasks_1:output-available'), findsNothing);

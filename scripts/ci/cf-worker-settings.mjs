@@ -6,6 +6,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { isDeepStrictEqual } from 'node:util';
+import { currentDeployment } from './cf-worker-current-deployment.mjs';
 import { settingsList } from './cf-worker-settings-pagination.mjs';
 
 function canonical(value) {
@@ -266,14 +267,7 @@ async function readSettings({ identity, accountId, token, fetchImpl = fetch }) {
     ))
       zoneRoutes.push({ zone: zone.id, route });
   }
-  const deployments = {
-    deployments: await settingsList(
-      request,
-      `${script}/deployments`,
-      undefined,
-      'deployments'
-    ),
-  };
+  const deployments = await currentDeployment(request, `${script}/deployments`);
   return {
     settings,
     subdomain,

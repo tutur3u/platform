@@ -1,6 +1,7 @@
 name: External project storage analytics contract
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
     paths:
       - "apps/database/supabase/migrations/**"
       - "apps/database/supabase/tests/external-project-storage-analytics-cache.sql"
@@ -37,6 +38,7 @@ concurrency:
   cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 jobs:
   check-ci:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     permissions:
       contents: read
       deployments: read

@@ -159,14 +159,17 @@ test('a custom domain hidden on page two still blocks publication', async () => 
   assert.equal(api.calls.length, 2);
 });
 
-test('wrapped deployment history is paginated without dropping rollback versions', async () => {
+test('twenty pages of deployment history retain only the current traffic split', async () => {
   const api = paginated(
     '/deployments',
     [
       [
         {
           id: 'current',
-          versions: [{ version_id: 'current-version', percentage: 100 }],
+          versions: [
+            { version_id: 'current-version', percentage: 75 },
+            { version_id: 'canary-version', percentage: 25 },
+          ],
         },
       ],
       [
@@ -176,15 +179,54 @@ test('wrapped deployment history is paginated without dropping rollback versions
         },
       ],
     ],
-    {},
+    { total_pages: 20 },
     'deployments'
   );
   const snapshot = await captureSettings(options(api));
-  assert.deepEqual(snapshot.rollback.map((entry) => entry.id).sort(), [
-    'current',
-    'previous',
+  assert.deepEqual(snapshot.rollback, [
+    {
+      id: 'current',
+      versions: [
+        { percentage: 25, version_id: 'canary-version' },
+        { percentage: 75, version_id: 'current-version' },
+      ],
+    },
   ]);
-  assert.equal(api.calls.length, 2);
+  assert.equal(api.calls.length, 1);
+});
+
+for (const history of [
+  [],
+  [null],
+  [{ id: 'missing-versions' }],
+  [{ id: 'invalid-split', versions: [{ version_id: 'v', percentage: 90 }] }],
+]) {
+  test(`unavailable active deployment fails closed: ${JSON.stringify(history)}`, async () => {
+    const api = paginated(
+      '/deployments',
+      [history],
+      { total_pages: 20 },
+      'deployments'
+    );
+    await assert.rejects(
+      captureSettings(options(api)),
+      /active deployment rollback target unavailable for GET/
+    );
+    assert.equal(api.calls.length, 1);
+  });
+}
+
+test('a non-first deployment page is not accepted as current state', async () => {
+  const api = paginated(
+    '/deployments',
+    [[{ id: 'history', versions: [{ version_id: 'v', percentage: 100 }] }]],
+    { page: 2, total_pages: 20 },
+    'deployments'
+  );
+  await assert.rejects(
+    captureSettings(options(api)),
+    /active deployment rollback target unavailable/
+  );
 });
 
 for (const [label, pages, metadata, error] of [

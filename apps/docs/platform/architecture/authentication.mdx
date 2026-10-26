@@ -1259,3 +1259,15 @@ authentication, database and storage provider, without realtime subscriptions.
 See [the realtime runbook](/build/devops/programming-realtime-runbook).
 
 Administrative policy/recovery metadata transitions use a row-locked database compare-and-swap with a unique generation. A delayed completion cannot overwrite a newer recovery marker, even after the application coordination lease expires. Provider password changes remain GoTrue operations; optional-account password reset does not promise immediate revocation of every previously issued JWT, including when an administrator concurrently enables required MFA. Fresh required-policy and factor checks still apply to every protected request.
+
+## Satellite login return destinations
+
+Satellite login pages normalize untrusted `next` and `nextUrl` destinations with
+`normalizeAuthRedirectPath` before a signed-in redirect or a central login
+handoff. Origin-changing inputs, including slash-backslash authorities and
+encoded or control-character variants, use the app's existing fallback. Valid
+same-origin paths and encoded query data remain intact. Repeated parameters use
+the first value. Storefront, Inventory, Chat, Mind and Nova share this rule;
+Nova retains its central-only handoff and each app retains its existing landing
+path. Their colocated `redirect-security.test.ts` suites execute the real pages
+and shared normalizer for signed-in and central handoff paths.

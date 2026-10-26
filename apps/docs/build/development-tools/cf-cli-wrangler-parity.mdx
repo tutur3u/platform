@@ -1,7 +1,7 @@
 ---
 title: "cf CLI and Void over Wrangler"
 description: "Per-operation parity matrix, native Worker template, rollback, the Wrangler usage guard and the per-service cutover checklist."
-updatedAt: '2026-10-24'
+updatedAt: '2026-10-26'
 ---
 
 ## Decision
@@ -289,7 +289,8 @@ data-only fixture; no CLI invocation). The latter recognizes both legacy and
 | Colab | Wrangler bundler with assets and AI | Local Worker preview uses Vite+; release build-output conversion pending | `pending-migration` |
 | Meet realtime | Wrangler, three SQLite DO classes | Needs DO `exports` and runtime fixtures | `pending-migration` |
 | Mail email routing | Wrangler config, email handler | Needs the email trigger mapping | `pending-migration` |
-| Meet, Apps, Calendar, Mail, Shortener | Void build, Wrangler publication | Wave 1 owner | `void-wave1-publication` |
+| API | None yet; Vite+ build from `wrangler.jsonc` | Needs `cloudflare.config.ts` and a cf runtime harness | `pending-migration` |
+| Meet, Apps, Calendar, Mail, Shortener; CMS, Finance, Tasks and Track native candidates | Void build, Wrangler publication | Wave 1 owner | `void-wave1-publication` |
 | Parley, Lettin | OpenNext, Wrangler | Start on Void migration | `opennext-adapter` |
 | Backend, TanStack Web | Paused | Excluded | `paused-runtime` |
 
@@ -334,7 +335,7 @@ to receipts. Actual token scope remains unverified until the bounded read-only
 preflight succeeds. Missing access, truncated lists and unsupported account size
 fail before publication; do not bypass that gate to deploy.
 
-List snapshots follow locally constructed `page` URLs for at most eight pages
+Drift-relevant list snapshots (secrets, domains, zones and routes) follow locally constructed `page` URLs for at most eight pages
 of at most 50 entries each, sharing the unchanged 28-request snapshot budget.
 They reject repeated pages, inconsistent pagination metadata and incomplete
 reported totals. The 20-zone account limit still applies. Settings-object
@@ -342,6 +343,18 @@ endpoints retain their full object even if the envelope includes list metadata;
 `result_info.total_pages` alone does not imply that an object was truncated.
 Pagination failures name the same safe request display path as HTTP failures.
 Regression coverage lives in `scripts/ci/cf-worker-settings.test.mjs`.
+
+Deployment history is an explicit exception to list completeness. The
+[deployment API](https://developers.cloudflare.com/api/resources/workers/subresources/scripts/subresources/deployments/methods/list/)
+defines the first deployment as the one currently serving traffic. Read only
+the first page and retain that deployment's id and complete version/percentage
+split for rollback. Historical deployments and their pagination totals do not
+describe current settings and are not captured. A missing first deployment,
+non-first page, missing versions, duplicate version ids or traffic percentages
+that do not total 100 fail closed; never substitute an older deployment. This
+uses one request inside the same 28-request budget. Domain, route and secret
+completeness and exact schedule comparison remain required. The twenty-page
+history and missing-active regressions cover this exception.
 
 Recovery requires a production commit containing the fixed script. Planner
 deploy jobs check out the triggering production SHA; re-running an older failed

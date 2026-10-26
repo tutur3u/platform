@@ -2049,6 +2049,12 @@
     "accept": "Chấp nhận",
     "archive": "Lưu trữ",
     "archive-all": "Lưu trữ tất cả",
+    "codes": {
+      "calendar_reconnect_required": {
+        "description": "Đồng bộ lịch đã tạm dừng vì nhà cung cấp không còn chấp nhận quyền truy cập. Hãy kết nối lại tài khoản để tiếp tục.",
+        "title": "Kết nối lại lịch của bạn"
+      }
+    },
     "decline": "Từ chối",
     "empty-archive": "Chưa có thông báo đã lưu trữ.",
     "inbox": "Hộp thư",
