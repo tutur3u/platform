@@ -174,6 +174,7 @@ class _ProfileOverviewPageState extends State<ProfileOverviewPage> {
                                 onAction: () => context.go(Routes.timerStats),
                               ),
                               ProfileActivitySection(
+                                showHeader: false,
                                 // Focus Time counts Pomodoro focus only.
                                 tag: pomodoroSessionTag,
                                 replayToken: widget.replayToken,
