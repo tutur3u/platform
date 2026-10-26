@@ -1,3 +1,4 @@
+import { framablePathRegexes } from '@tuturuuu/utils/framable-paths';
 import { APP_SEO_POLICY, PRIVATE_ROBOTS_HEADER } from '@tuturuuu/utils/seo';
 import { publicAssets } from './public-assets.bridge.gen';
 
@@ -7,8 +8,7 @@ const publicPatterns = policy.publicPatterns.map(
   (pattern) => new RegExp(`^(?:${pattern})$`)
 );
 const canonicalHost = new URL(policy.origin).host;
-const webglPath =
-  /^\/api\/v1\/workspaces\/[^/]+\/external-projects\/assets\/[^/]+\/webgl(?:\/|$)/u;
+const framablePaths = framablePathRegexes();
 
 export function applyResponsePolicy(request: Request, response: Response) {
   const url = new URL(request.url);
@@ -25,15 +25,22 @@ export function applyResponsePolicy(request: Request, response: Response) {
     'X-Robots-Tag',
     isPublic ? 'index, follow' : PRIVATE_ROBOTS_HEADER
   );
-  if (webglPath.test(url.pathname)) {
+  if (framablePaths.some((pattern) => pattern.test(url.pathname))) {
     result.headers.delete('X-Frame-Options');
   } else {
-    const directives = (result.headers.get('Content-Security-Policy') ?? '')
-      .split(';')
-      .map((value) => value.trim())
-      .filter((value) => value && !/^frame-ancestors(?:\s|$)/iu.test(value));
-    directives.push("frame-ancestors 'none'");
-    result.headers.set('Content-Security-Policy', directives.join('; '));
+    const policies = (result.headers.get('Content-Security-Policy') ?? '')
+      .split(',')
+      .map((policy) => {
+        const directives = policy
+          .split(';')
+          .map((value) => value.trim())
+          .filter(
+            (value) => value && !/^frame-ancestors(?:\s|$)/iu.test(value)
+          );
+        directives.push("frame-ancestors 'none'");
+        return directives.join('; ');
+      });
+    result.headers.set('Content-Security-Policy', policies.join(', '));
     result.headers.set('X-Frame-Options', 'DENY');
   }
   result.headers.set('X-Content-Type-Options', 'nosniff');

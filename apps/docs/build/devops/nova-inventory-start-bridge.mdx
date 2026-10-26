@@ -81,9 +81,12 @@ App configs leave handler-level `csp` unset: it would overwrite an upstream
 policy before the response decorator runs. The Web-owned
 `/api/v1/workspaces/:wsId/external-projects/assets/:assetId/webgl` subtree
 is the same intentional framing exception as Next's shared config. Forwarded
-responses retain their upstream sandbox CSP unchanged and have no
+responses use the shared `framablePathRegexes()` boundary, retain their upstream sandbox CSP unchanged and have no
 `X-Frame-Options`; neighboring paths retain the framing denial. The exception
-does not bypass API authorization, robots, no-store or Cookie variance.
+does not bypass API authorization, robots, no-store or Cookie variance. On other
+paths, filter framing directives separately in every comma-separated CSP policy
+and retain every policy and its non-framing directives. The bridge handler uses
+the same shared framing patterns, while app configs keep handler CSP unset.
 Regressions exercise the real bridge and central forwarder, with authentication
 and upstream network responses isolated at fixture boundaries.
 

@@ -223,3 +223,32 @@ describe('inventory central WebGL sandbox boundary', () => {
     }
   );
 });
+
+describe('inventory CSP policy lists', () => {
+  it.each([
+    {
+      csp: "frame-ancestors 'self', script-src 'nonce-second'; img-src https://images.invalid",
+      expected:
+        "frame-ancestors 'none', script-src 'nonce-second'; img-src https://images.invalid; frame-ancestors 'none'",
+    },
+    {
+      csp: "script-src 'nonce-first'; frame-ancestors 'self', frame-ancestors 'self'; img-src https://images.invalid",
+      expected:
+        "script-src 'nonce-first'; frame-ancestors 'none', img-src https://images.invalid; frame-ancestors 'none'",
+    },
+  ])(
+    'retains every policy and its non-framing directives: $csp',
+    async ({ csp, expected }) => {
+      const request = new Request(`https://${canonical}/login`);
+      const response = await config.wrapResponse?.(
+        new Response('fixture', {
+          headers: { 'Content-Security-Policy': csp },
+        }),
+        { request, env: {} }
+      );
+      expect(response?.headers.get('Content-Security-Policy')).toBe(expected);
+      expect(response?.headers.get('X-Frame-Options')).toBe('DENY');
+      expect(await response?.text()).toBe('fixture');
+    }
+  );
+});
