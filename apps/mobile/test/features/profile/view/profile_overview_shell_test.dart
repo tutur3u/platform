@@ -388,6 +388,7 @@ void main() {
           );
           expect(focus.taskLinked, isTrue);
           expect(focus.tag, isNull);
+          expect(find.text('Your private activity'), findsNothing);
           for (
             var attempt = 0;
             attempt < 60 && find.text('1h').evaluate().isEmpty;

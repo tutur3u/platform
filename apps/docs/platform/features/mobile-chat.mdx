@@ -260,6 +260,39 @@ Regression coverage includes `assistant_first_create_v100_test.dart`, the actual
 creation route's `initial-settings.test.ts`, and `chat-initial-ai-settings.sql`.
 Route/page fixtures do not certify migration execution; isolated SQL qualification
 and exact-commit CI remain delivery gates.
+
+Empty-state Send starts native creation immediately, without the follow-up
+message queue's 220 ms debounce. The repository returns `AssistantCreatedChat`
+only after saving the acknowledged conversation selection and clearing its
+creation hold. The Cubit can then start the reply without writing the same
+selection again. Cached/history records do not carry this process-local result;
+other creation adapters retain their selection-write check. A retired actor,
+workspace or send generation still cannot dispatch after a late creation receipt.
+Attachment-driven creation keeps its existing explicit creation path.
+Regression coverage: `assistant_first_send_pipeline_test.dart` and
+`assistant_created_chat_test.dart`, alongside the existing creation/reset and
+native dispatch tests.
+
+The native server loads settings and authorized history concurrently. It always
+loads history, including for the first message, so replay detection and prior
+attachment context remain authoritative. Mira's SDK tool catalog makes
+`get_my_tasks` and `get_day_overview` available immediately when present and
+authorized. Other capabilities remain deferred behind `search_tools`; its
+results activate tools without a separate `select_tools` model step. Short
+conversational replies may stream text directly. Forced-tool policies, loop
+limits, workspace checks, execution guards and write approvals still apply.
+This policy applies to the shared Mira SDK route; it changes neither chat
+creation transactions nor credit/model admission.
+
+`native-ai-first-token.test.ts` checks overlapping reads through the native POST.
+`native-ai-ttft.test.ts` measures POST entry to the first NDJSON text delta with
+the real SDK tool loop and deterministic fixture delays (settings 80 ms,
+history 120 ms, shadow upsert 20 ms, each model step 200 ms). Five runs per
+source version must finish with a saved assistant receipt and the expected task
+read count. This isolates scheduling and discovery overhead; authentication,
+database/provider networks, model decisions and device rendering are fixtures,
+so the numbers are not production or device latency guarantees.
+
 The strict saved-message and request-identity checks remain in force. Legacy
 prefixed AI conversations cannot provide this complete stored-settings receipt,
 so this control denies their stored model/credit edits before PATCH; their

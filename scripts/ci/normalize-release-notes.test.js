@@ -399,3 +399,63 @@ test('mobile notes strip bare PR numbers and every permitted task branch prefix'
     );
   }
 });
+
+function playNotes(input) {
+  const result = spawnSync(
+    process.execPath,
+    [path.join(__dirname, 'normalize-release-description.js'), '--mobile'],
+    { input, encoding: 'utf8' }
+  );
+  assert.equal(result.status, 0, result.stderr);
+  return result.stdout;
+}
+
+test('Play release note budget fits the actual 15-change beta history', () => {
+  const changes = [
+    'Type the glass benchmark list key',
+    'Harden task-row swipes, roll back failed edits, add Start focus',
+    'Swipe actions and a context menu on task rows',
+    'Pin board form actions and steady the new dialog tests',
+    'Finish dialog launchers and close only the owning request sheet',
+    'Overlay the Habits refresh mark instead of shrinking tabs',
+    'Fit the Habits detail sheet inside the shared sheet host',
+    'Redesign Mira Live around one obvious start action',
+    'Give timeline rows rounding slack and update its tests',
+    'Icon-only profile edit and a scannable timeline',
+    'Consume the keyboard once and keep one handle per sheet',
+    'Reach AppLoadingIndicator through the Nova import',
+    'Keep the on-device status sheet readable at large text',
+    'Drop the unused loader import in the product editor',
+    'Size every loading state through AppLoadingIndicator',
+  ];
+  const input = changes.join('\n');
+  const full = normalizeMobileReleaseNotes(input);
+  assert.ok(Array.from(full).length > 500, 'the original batch exceeds Play');
+  const output = playNotes(input);
+  assert.ok(output.length > 0);
+  assert.ok(Array.from(output).length <= 500);
+  const selected = output.split('\n');
+  const all = full.split('\n');
+  assert.deepEqual(selected, all.slice(0, selected.length));
+  assert.ok(Array.from(`${output}\n${all[selected.length]}`).length > 500);
+  assert.equal(full.split('\n').length, 15, 'shared history stays complete');
+});
+
+test('Play release note budget preserves mobile priority and whole bullets', () => {
+  const first = `fix(mobile): ${'A'.repeat(480)}`;
+  const next = 'feat(mobile): A complete change that no longer fits';
+  const input = ['fix(web): Small later change', first, next].join('\n');
+  assert.equal(playNotes(input), `- ${'A'.repeat(480)}`);
+});
+
+test('Play release note budget counts Unicode characters at the exact limit', () => {
+  const exact = `- ${String.fromCodePoint(0x10400).repeat(498)}`;
+  assert.equal(playNotes(`${exact}\n- Next change`), exact);
+  assert.equal(Array.from(exact).length, 500);
+});
+
+test('Play release note budget fails the nonempty guard for an oversized first bullet', () => {
+  const output = playNotes(`- ${'A'.repeat(499)}\n- Small later change`);
+  // The workflow keeps test -s: no complete priority bullet fits, so it fails closed.
+  assert.equal(output, '');
+});

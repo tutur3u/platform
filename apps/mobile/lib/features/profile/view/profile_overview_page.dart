@@ -173,6 +173,7 @@ class _ProfileOverviewPageState extends State<ProfileOverviewPage> {
                                 onAction: () => context.go(Routes.timerStats),
                               ),
                               ProfileActivitySection(
+                                showHeader: false,
                                 // Focus Time is all task-linked tracked time.
                                 taskLinked: true,
                                 replayToken: widget.replayToken,

@@ -21,10 +21,28 @@ describe('framable paths', () => {
       expect(pattern?.test(path), path).toBe(false);
   });
 
-  it('is the list next-config excludes from the anti-framing headers', async () => {
-    const headers = await createTuturuuuNextConfig().headers?.();
-    const sources = (headers ?? []).map((rule) => rule.source).join('\n');
-    for (const pattern of TUTURUUU_DEFAULT_FRAMABLE_PATTERNS)
-      expect(sources).toContain(pattern);
+  it('is exactly the list next-config excludes from the anti-framing headers', async () => {
+    const [antiFraming] = (await createTuturuuuNextConfig().headers?.()) ?? [];
+    expect(antiFraming).toEqual({
+      source: `/:path((?!${TUTURUUU_DEFAULT_FRAMABLE_PATTERNS.map(
+        (pattern) => `${pattern}(?:/|$)`
+      ).join('|')}).*)`,
+      headers: [
+        { key: 'Content-Security-Policy', value: "frame-ancestors 'none'" },
+        { key: 'X-Frame-Options', value: 'DENY' },
+      ],
+    });
+    expect(antiFraming?.source).toBe(
+      '/:path((?!api/v1/workspaces/[^/]+/external-projects/assets/[^/]+/webgl(?:/|$)).*)'
+    );
+  });
+
+  it('documents the case difference with Next header matching', () => {
+    // Next matches header sources case-insensitively; the bridge regexes are
+    // case-sensitive. Harmless: central's route itself is case-sensitive, so
+    // an upper-case variant never serves the sandboxed build.
+    const [pattern] = framablePathRegexes();
+    expect(pattern?.flags).toBe('u');
+    expect(pattern?.test(webgl.toUpperCase())).toBe(false);
   });
 });

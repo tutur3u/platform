@@ -56,7 +56,9 @@ surfaces and review rationale, after:
    old/new Worker versions, secret names, scheduler custody, operator and rollback
    triggers. Meet rollback captures **both** frontend and realtime versions.
 5. Review and freeze the exact production promotion range. Source sync is not
-   permission to attach canonical routes or activate schedulers.
+   permission to attach canonical routes or activate schedulers. Calendar/Mail/Apps
+   use the [private production preparation workflow](/build/devops/wave1-native-publishers#route-free-production-preparation);
+   its route-free upload precedes a separately captured routing switch.
 
 For Meet restore the captured frontend version, then realtime if changed; preserve
 Custom Domains. For Calendar/Mail/Apps retain their immutable Vercel deployments.
@@ -65,7 +67,116 @@ Domain and DNS/proxy topology before disabling a candidate. Never replay uncerta
 Mail sends or change ingestion/R2 ownership as a frontend rollback. Rehearse recovery;
 DNS TTLs and provider convergence prevent assuming instantaneous rollback.
 
+## Subdomain cutover tools
+
+Native apps go live on their own subdomain first (root mode). Two read-only
+scripts support gate 4 and the post-deploy check:
+
+- `node scripts/native-cutover/capture.mjs --host <app>.tuturuuu.com --vercel-project <project> [--cf-zone-id <zone>] --out tmp/native-cutover-<app>.json`
+  records DNS, the live edge (`server`, `x-vercel-id`, `cf-ray`, runtime
+  header), Vercel's current production deployment (URL and `dpl_` id) and, with
+  a dedicated `CLOUDFLARE_READONLY_API_TOKEN`, the host's DNS record (proxied
+  flag, TTL) and **every route in the zone**, including wildcard routes and
+  scriptless exclusions. Run it again immediately before the flip; production
+  deployments keep moving.
+- `node scripts/native-cutover/smoke.mjs --origin https://<app>.tuturuuu.com --app <id> --expect native|legacy`
+  checks robots, the anonymous login handoff (return URL on the app host,
+  `nextUrl` kept), a protected API (401), build-info, the server-function guard,
+  crawler SSR with a working asset, a wildcard `Accept-Language`, the runtime
+  header and the anti-framing headers on every response. Run `--expect legacy`
+  before the flip as the baseline and `--expect native` after it.
+
+The dedicated capture token needs only **Zone DNS:Read** and **Workers Routes:Read**,
+restricted to the **tuturuuu.com** zone. Do not supply a generic deployment token.
+The zone ID must contain exactly 32 lowercase hexadecimal characters; the host
+must be a DNS hostname without a scheme, port, path or query.
+
+Captures contain production `*.vercel.app` URLs, which can reveal origin-bypass
+hints. Store them only under gitignored `tmp/` or the private operations ledger,
+and never commit them. CLI stderr retained in a failed capture is limited to
+2,000 characters. Cloudflare credentials are redacted from results and upstream
+error details are omitted.
+
+`matchesRoute(pattern, requestUrl)` in `scripts/native-cutover/route-pattern.mjs`
+implements the [Cloudflare route pattern rules](https://developers.cloudflare.com/workers/configuration/routing/routes/#matching-behavior):
+optional HTTP/HTTPS scheme, leading host `*` (including `*.` and `*host`),
+case-sensitive paths and trailing path `*`. It matches individual URLs, including
+query strings; it does not select the winning route or establish DNS/zone eligibility.
+Host matching uses the current case-insensitive rule; pre-15 October 2023 routes
+can have case-sensitive host semantics. Keep the full inventory regardless of
+which routes match a probe URL, since narrower paths and scriptless routes matter
+for rollback.
+
+Smoke checks resolve relative `Location` headers against the tested origin.
+Transport, redirect parsing, body-read and asset-fetch errors produce a failed
+row and leave the remaining checks running. Run the synthetic regression suite
+with `node --test scripts/native-cutover/*.test.mjs`; it uses no provider tokens.
+
+Prefer a rollback that does not wait on DNS: once the host's record is proxied
+and serves the Vercel origin correctly, cut over by attaching the Worker route
+and roll back by detaching it. A DNS-only CNAME switch rolls back only as fast as
+its TTL.
+
 Observe Apps for at least 14 days and Meet/Mail/provider-critical Calendar flows for
 30 days or the relevant business cycle before separately authorized decommissioning.
 No hold removal, resource provisioning, deployment or DNS change is authorized by
 this runbook alone.
+
+## Shared-origin mount flags
+
+Meet and Mail move from their subdomains to `tuturuuu.com/meet` and
+`tuturuuu.com/mail`. Meet's Worker entry and Mail's request handler run
+`decideOneOriginRequest` (`@tuturuuu/utils/one-origin-routing`) before anything
+else. It reads two per-app
+Worker variables:
+
+| Variable | Values | Effect |
+| --- | --- | --- |
+| `TTR_ONE_ORIGIN_MEET` / `TTR_ONE_ORIGIN_MAIL` | `off` (default and any unknown value), `shadow`, `on` | `off`: the shared origin returns 404. `shadow`: both hosts serve; shared-origin responses carry `X-Robots-Tag: noindex`. `on`: subdomain navigations redirect to the shared origin. |
+| `TTR_ONE_ORIGIN_<APP>_REDIRECT_STATUS` | `307` (default), `301` | Use `307` (`Cache-Control: no-store`) through observation: 3 days for Meet, 7 days for Mail. Promote to `301` only after that window, because a cached 301 cannot be revoked by a route rollback. |
+
+Redirects apply only to subdomain GET/HEAD navigations: `Sec-Fetch-Mode: navigate`,
+or an HTML `Accept` header without Fetch Metadata. They keep the raw path and query
+bytes, and the subdomain root maps to the canonical `/<app>/` (the bare `/<app>`
+is canonicalized by a zone redirect, because Worker routes cannot match it once a
+query string is present). Machine traffic is always served on the subdomain and never redirected.
+That covers `/api/*` (webhooks, OAuth callbacks), `/assets/*`, `/.well-known/*`,
+WebSocket upgrades, server functions (`/_serverFn` and the legacy app bases) and
+Meet's `/live-connect`. The decision never rewrites URLs. The Start bridge
+resolves the base per request, serving the subdomain at its root and the shared
+origin under `/<app>` from one artifact.
+
+Each app's `basePathReady` constant (`apps/meet/cloudflare/one-origin.ts`,
+`apps/mail/src/runtime/one-origin.ts`)
+stays `false` until its Start bridge build routes under `/<app>`. While false, the
+shared origin is refused in every mode and the subdomain behaves exactly as before.
+Setting the variables, attaching zone routes and changing the redirect status are
+release actions that need user approval.
+
+### Document security headers
+
+Same-origin apps form one trust domain, so each app carries its own document
+policy (`@tuturuuu/utils/security-headers`). Meet's Worker entry and Mail's
+request handler apply it to `text/html` responses only. They never replace a
+header the route already set.
+
+- **Enforced now:**
+  - `X-Content-Type-Options: nosniff`.
+  - `Referrer-Policy: strict-origin-when-cross-origin`.
+  - An explicit `Permissions-Policy`. Meet allows `camera`, `microphone` and
+    `display-capture` for itself. Mail denies all three, so a camera grant made to
+    Meet on the shared origin cannot be used from a Mail document.
+- **Report-only:** `Content-Security-Policy-Report-Only` sets no `'unsafe-inline'` or
+  `'unsafe-eval'` for scripts, plus `require-trusted-types-for 'script'`,
+  `object-src 'none'`, `base-uri 'none'` and `frame-ancestors 'none'`. On the
+  shared origin, "self" is path-scoped to `https://tuturuuu.com/<app>/` plus
+  `https://tuturuuu.com/api/`, so Meet's policy reports a fetch to `/mail/...`.
+  Violations stay in the browser console unless the Worker variable
+  `TTR_CSP_REPORT_URI` names a report endpoint.
+
+Report-only is burn-in on the subdomain, not admission. Every app shares one
+session on `tuturuuu.com`, so the CSP and Trusted Types must be **enforced** before
+an app is routed onto the shared origin in any mode, `shadow` included.
+Enforcement needs a per-request script nonce passed to the Start router
+(`ssr.nonce`) through the Start bridge request context, and zero remaining
+violations for each app. Inline scripts are expected to report until then.

@@ -1,0 +1,205 @@
+---
+title: "Nova and Inventory Start bridge qualification"
+description: "App-specific action boundaries, route registries and offline parity required before native cutover."
+---
+
+Nova and Inventory use the shared
+[Start bridge](/build/devops/start-bridge) for request context, Next adapters,
+function guards, route dispatch, cookies and base paths. App code must not copy
+those implementations. The canonical codemod supplies the RSC page adapter, router and Worker entry.
+Source registration alone does not establish an accepted native build, staging
+behavior or production cutover. Retained action imports use the shared React
+server-action transport in the native build.
+
+## Route registration
+
+Both apps declare `start-bridge.routes.json`. Regenerate and check from the root:
+
+```sh
+node scripts/start-bridge-codemod/cli.mjs nova --apply
+node scripts/start-bridge-codemod/cli.mjs inventory --apply
+bun packages/start-bridge/src/codegen/cli.ts check apps/nova apps/inventory
+```
+
+Registries live under each app's `src/start-bridge/`. Nova includes both OG
+`route.tsx` handlers, not only its `route.ts` files. Nova declares the existing portable
+`@cloudflare/pages-plugin-vercel-og` renderer. The generated preset resolves `next/og`
+to its API; do not remove routes to satisfy the registry.
+Changes to public assets must also refresh `public-assets.bridge.gen.ts` before
+sealing. Generated manifests prove source coverage, not page or API behavior.
+
+The generated Worker entries use the shared `createBridgeHandler` and read the
+matcher from each app's proxy configuration. Inventory excludes `_next` and
+dotted paths.
+Its existing proxy retains public storefront/webhook exceptions, workspace
+session requirements and inventory-specific rate limits. The bridge resolves ownership per request; current app options admit only the
+declared root hosts. Inventory keeps Web-owned paths ahead of
+local endpoints using the existing Next configuration's reserved API paths. Server functions compile at `/_serverFn`; the shared fetch helper
+and Worker apply the resolved mount. Cookies remain unchanged and shared, as
+defined by the owning bridge/auth contract. Login pages derive native callback
+URLs from the active request context and base, while retained Next requests use
+the configured app URL. Inventory builds local login and locale redirects from
+`request.nextUrl.clone()` so the Next base path and query survive. The login-mount
+and proxy regressions cover both root and apex callbacks; central Web login
+return-app classification must also recognize mounted callbacks before acceptance.
+
+The exact `GET` and `HEAD` `/api/build-info` endpoint is public deployment
+metadata. Both app proxies follow CMS: remove ambient cookies and authorization,
+skip app-session refresh for that read, and retain the API guard. Mutation
+methods and path lookalikes keep their existing session and guard boundaries.
+The app-owned `proxy-build-info.test.ts` suites cover these boundaries; the
+generated emitted-runtime assertion must still verify the compiled source SHA
+through an anonymous request.
+
+## Root hosts and response policy
+
+Both native apps are root-only while apex cutover is held. Their app-owned
+`start-bridge.config.ts` sets `mountHosts: []` and `unknownHost: 'reject'`:
+
+| App | Production root | Staging root |
+| --- | --- | --- |
+| Nova | `nova.ai.vn` | `nova-staging.tuturuuu.com` |
+| Inventory | `inventory.tuturuuu.com` | `inventory-staging.tuturuuu.com` |
+
+Nova's `nova.tuturuuu.com` alias is a routing-layer 307 redirect to
+`nova.ai.vn`, not a Worker root. Preserve that redirect at cutover, including
+the requested path and query; the native Worker rejects the alias host.
+
+Apex paths, suffix lookalikes and unlisted hosts, including Workers preview
+hosts, return the bridge's 404 before app dispatch. The generated runtime gate
+uses raw Host headers to test each allowed root and the rejected hosts.
+Inventory declares its anonymous root outcome as 307; Nova declares 200.
+
+Every response receives the app's robots policy; ordinary paths also receive anti-framing CSP,
+`X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff` and
+`Referrer-Policy: strict-origin-when-cross-origin`. The CSP retains the existing
+Next `frame-ancestors 'none'` policy from `packages/utils/src/next-config.ts`.
+A stricter script policy also requires nonce support for app-owned and library
+inline scripts; verify that compatibility in the real browser before adopting it.
+
+App configs leave handler-level `csp` unset: it would overwrite an upstream
+policy before the response decorator runs. The Web-owned
+`/api/v1/workspaces/:wsId/external-projects/assets/:assetId/webgl` subtree
+is the same intentional framing exception as Next's shared config. Forwarded
+responses use the shared `framablePathRegexes()` boundary, retain their upstream sandbox CSP unchanged and have no
+`X-Frame-Options`; neighboring paths retain the framing denial. The exception
+does not bypass API authorization, robots, no-store or Cookie variance. On other
+paths, filter framing directives separately in every comma-separated CSP policy
+and retain every policy and its non-framing directives. The bridge handler uses
+the same shared framing patterns, while app configs keep handler CSP unset.
+Regressions exercise the real bridge and central forwarder, with authentication
+and upstream network responses isolated at fixture boundaries.
+
+Robots decisions read `APP_SEO_POLICY`, not a deployment environment switch.
+Nova preserves its policy's public learning and competition pages on the
+production host, including supported locale prefixes. Other Nova paths and all
+staging responses are private. Inventory's current policy has no indexed
+paths, including its Storefront-facing APIs. Storefront's separate SEO policy
+continues to own its customer pages.
+
+Every non-asset response forces `Cache-Control: private, no-store`, replacing
+upstream max-age directives, and varies on Cookie while retaining other Vary
+values. Only GET/HEAD requests under `/assets/` or for exact generated public
+files preserve asset caching. A file-like API path or a mutation method does
+not receive that exemption. Unit tests cover upstream max-age overrides and
+method/path negatives; each app's `response-policy.runtime.mjs` checks the real
+emitted Worker on production, staging and rejected hosts. Browser acceptance
+also verifies CSP-compatible hydration and navigation.
+
+The app-owned config keeps its top-level imports compatible with Node type
+stripping for the generated mount probe. The response decorator loads its
+app-owned policy module when it handles a response. The compatibility CLI
+`scripts/ci/nova-inventory-native-artifact.py` delegates to the generated
+per-app artifact helper, so compatibility flags and public-file identity have
+one canonical owner.
+
+## Nova server actions
+
+The generated page adapter sends existing React `use server` calls through the
+shared Start server-action transport. Keep the original action imports and
+server implementations; do not maintain a second app-specific transport or move
+admin-client imports into a client entry.
+
+| Existing action | Transport method | Required supplier behavior |
+| --- | --- | --- |
+| `addWhitelistEmail` | POST | Enabled global role manager; permission is checked before insert. |
+| `fetchAdmins` | POST | Authenticated actor with an enabled management role. |
+| `fetchSessionDetails` | POST | Session belongs to the request actor and requested challenge. |
+| `fetchAllProblems` | POST | Own challenge session, or an enabled manager of that challenge for another user or a sessionless read. |
+| `getFullSubmission` | POST | Bound session owner or challenge manager; hidden cases require that manager. |
+| `sendOtpAction`, `verifyOtpAction` | POST | Existing central-auth-only rejection; no local OTP flow. |
+
+The shared function proxy refreshes/guards transport; it does not replace these
+domain checks. Layout authorization is also insufficient for a direct callable.
+The action-security tests cover the original suppliers. Shared bridge tests cover
+reply encoding and dispatch; emitted RPC and browser execution require native
+acceptance.
+
+## Inventory offline behavior
+
+Existing workspace actions use the shared server-action transport with the
+current request's forwarded auth. The offline mutation route remains the existing
+thin adapter to `@tuturuuu/inventory-core/offline-create-route`.
+
+Inventory deliberately has no browser service worker. Preserve its
+`OfflineProvider register={false}` and missing-worker regression. The shared
+offline package's default root-scoped registration must not become active as a
+side effect of moving layouts. Do not invent a worker route, register a root
+worker on the apex, or clear another app's registrations to pass acceptance.
+
+`offline-handler.test.ts` exercises the real route adapter through the shared
+Worker handler at root and `/inventory`: original operation/workspace forwarding,
+201/200 receipt status, contract header, terminal 503, missing worker and method
+denial. Proxy and domain boundaries use fixtures. Retain the inventory-core
+permission/replay tests, offline/stale checkout denial and actor/workspace-scoped
+season-merge recovery tests. See
+[Inventory browser offline behavior](/platform/applications/inventory#browser-offline-behavior).
+
+## Qualification and cutover
+
+Run unit/types on Sonha and heavy build/runtime/browser work on Thanh through
+the shared resource queue. Frozen installs can make workspace bin files
+executable; require a clean source check and reconcile such a mode change with
+the owning package rather than silently accepting a different source tree.
+
+When transferring built workspace dependencies between runners, bind them to
+the exact source and lockfile, verify the archive hash and allowlist its paths
+before extraction. On macOS, create these archives with `COPYFILE_DISABLE=1`
+so AppleDouble metadata does not add siblings outside the declared `dist`
+directories. Regenerate a rejected archive; keep the extraction whitelist intact.
+
+For each exact candidate head require applicable lint/types/unit checks, real
+`vp build`, source-bound sealed output, emitted Worker acceptance and browser
+acceptance at root and the app mount. Exercise anonymous/signed/wrong-app sessions,
+refresh and logout, native RPC, central forwarding and private/public route
+boundaries. Inventory additionally verifies that no service-worker registration
+is attempted, checkout is blocked offline, and unresolved recovery retains the
+same operation identity after reload. Nova verifies both OG image responses and
+manager/participant/foreign-user action controls. At the apex, assert the actual
+central-login destination and nested callback, not just a redirect status: Web
+and the mounted app share an origin, while their login paths remain distinct.
+A bare `/verify-token` request intentionally redirects when its token is missing;
+it is not an anonymous HTML or offline-provider probe.
+
+After the native build, use `scripts/ci/nova-inventory-native-artifact.py` with
+`nova` or `inventory` as its first argument. It reuses the reviewed Apps artifact
+contract with the selected app's staging Worker identity and every checked-out
+public asset. Set `START_BRIDGE_SOURCE_SHA` to the exact built commit. The
+remaining arguments are the shared helper's `seal`, `verify`, `pack` and
+`restore` commands; provide runner-owned receipt/archive paths. Restore requires
+a fresh output tree with the same checked-out public sources. Verify the seal
+again after runtime/browser checks. The helper performs no publication.
+
+`python3 scripts/ci/nova-inventory-native-artifact.test.py` checks sealing,
+restoration, identity refusal and tamper detection using synthetic output. Those
+fixtures do not qualify an emitted Worker or replace runtime/browser checks.
+When running the shared artifact source tests on macOS, use a canonical
+`TMPDIR` (for example `/private/tmp`): the race-injection fixture compares the
+move destination with its temporary path, while the implementation resolves that
+path. A `/var` to `/private/var` alias prevents the fixture from injecting its
+symlink; it is not evidence that the negative control ran.
+
+An M4 storage refusal moves `check:changed` to a verified Thanh bundle; it does
+not authorize a disk override. Independent security review and an explicit
+cutover PR remain required. No migrations or production publication are part of
+the preparatory ports.

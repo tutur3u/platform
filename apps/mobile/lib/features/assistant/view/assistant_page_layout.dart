@@ -227,6 +227,27 @@ extension _AssistantPageLayout on _AssistantPageState {
                           );
                         }
 
+                        Future<void> retryComposerAttachment(
+                          String attachmentId,
+                        ) async {
+                          // Captured before the await: an actor or workspace
+                          // change meanwhile must not upload into the new one.
+                          final guard = _remoteGuard(currentWorkspace.id);
+                          final scopeVersion =
+                              _chatCubit.attachmentScopeVersion;
+                          if (!guard.current) return;
+                          final timezone = await getCurrentTimezoneIdentifier();
+                          if (!mounted || !guard.current) return;
+                          await _chatCubit.retryComposerAttachment(
+                            wsId: currentWorkspace.id,
+                            attachmentId: attachmentId,
+                            modelId: _shellCubit.state.selectedModel.value,
+                            timezone: timezone,
+                            expectedWorkspaceVersion: scopeVersion,
+                            isCurrentActor: () => guard.current,
+                          );
+                        }
+
                         final liveUiState = deriveAssistantLiveUiState(
                           shellState: shellState,
                           liveState: liveState,
@@ -274,40 +295,50 @@ extension _AssistantPageLayout on _AssistantPageState {
                                         NotificationListener<Notification>(
                                           onNotification:
                                               onTranscriptNotification,
-                                          child: CustomScrollView(
-                                            controller: _scrollController,
-                                            keyboardDismissBehavior:
-                                                scrollDismissBehavior,
-                                            physics: _AssistantPageState
-                                                ._assistantScrollPhysics,
-                                            slivers: [
-                                              _transcriptPage(
-                                                headerHeight: headerHeight,
-                                                sliver: SliverList.list(
-                                                  children: [
-                                                    if (showLiveStrip) ...[
-                                                      _buildLiveStageCard(
-                                                        currentWorkspace.id,
-                                                        chatState,
-                                                        liveState,
-                                                        liveCameraController,
-                                                      ),
-                                                      const SizedBox(
-                                                        height: 12,
-                                                      ),
+                                          // A resting finger pauses follow.
+                                          child: Listener(
+                                            onPointerDown: (_) =>
+                                                _transcriptFollower
+                                                    .pointerDown(),
+                                            onPointerUp: (_) =>
+                                                _transcriptFollower.pointerUp(),
+                                            onPointerCancel: (_) =>
+                                                _transcriptFollower.pointerUp(),
+                                            child: CustomScrollView(
+                                              controller: _scrollController,
+                                              keyboardDismissBehavior:
+                                                  scrollDismissBehavior,
+                                              physics: _AssistantPageState
+                                                  ._assistantScrollPhysics,
+                                              slivers: [
+                                                _transcriptPage(
+                                                  headerHeight: headerHeight,
+                                                  sliver: SliverList.list(
+                                                    children: [
+                                                      if (showLiveStrip) ...[
+                                                        _buildLiveStageCard(
+                                                          currentWorkspace.id,
+                                                          chatState,
+                                                          liveState,
+                                                          liveCameraController,
+                                                        ),
+                                                        const SizedBox(
+                                                          height: 12,
+                                                        ),
+                                                      ],
+                                                      if (showTranscript)
+                                                        _buildTranscriptSection(
+                                                          chatState,
+                                                          liveState,
+                                                          shellState,
+                                                        )
+                                                      else
+                                                        starterPrompts,
                                                     ],
-                                                    if (showTranscript)
-                                                      _buildTranscriptSection(
-                                                        chatState,
-                                                        liveState,
-                                                        shellState,
-                                                      )
-                                                    else
-                                                      starterPrompts,
-                                                  ],
+                                                  ),
                                                 ),
-                                              ),
-                                            ],
+                                              ],
+                                            ),
                                           ),
                                         ),
                                         if (chatState.status ==
@@ -429,6 +460,8 @@ extension _AssistantPageLayout on _AssistantPageState {
                                               ),
                                               onRemoveAttachment:
                                                   removeComposerAttachment,
+                                              onRetryAttachment:
+                                                  retryComposerAttachment,
                                             ),
                                       primary: isLiveMode
                                           ? _livePrimaryAction()
