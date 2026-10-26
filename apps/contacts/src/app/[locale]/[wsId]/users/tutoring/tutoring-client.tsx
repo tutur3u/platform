@@ -348,6 +348,8 @@ export function TutoringClient({ wsId, canManage, canConfigure }: Props) {
           ? item.feedback_content
           : makeupContent,
       groupId: item.group_id,
+      linkedContent:
+        item.reason_type === 'WEAK_SUPPORT' ? undefined : makeupContent,
       missedClassDate: oldestMissedDate(item.missed_class_dates),
       reasonDetail: item.feedback_content,
       reasonType:

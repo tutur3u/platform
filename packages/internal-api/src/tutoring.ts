@@ -24,6 +24,8 @@ export interface TutoringSessionRecord {
   reason_type: TutoringReasonType;
   reason_detail: string;
   content: string;
+  /** True while a pending make-up session follows the missed lesson's notes. */
+  content_linked?: boolean;
   attendance_status: TutoringAttendanceStatus;
   parent_message_preview: string;
   source_feedback_id: string | null;
