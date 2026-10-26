@@ -44,9 +44,7 @@ for (const app of ['calendar', 'mail', 'apps']) {
       if (app === 'calendar')
         assert.equal(
           emitted.vars.MICROSOFT_REDIRECT_URI,
-          env === 'production'
-            ? 'https://tuturuuu.com/api/v1/calendar/auth/microsoft/callback'
-            : `https://${p.host}/api/v1/calendar/auth/microsoft/callback`
+          `https://${p.host}/api/v1/calendar/auth/microsoft/callback`
         );
       if (app === 'apps')
         assert.equal(

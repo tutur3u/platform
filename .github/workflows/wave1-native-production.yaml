@@ -131,6 +131,7 @@ jobs:
           node scripts/ci/wave1-native-publish.mjs dry-run "$APP" production "$SOURCE_SHA"
           node scripts/ci/wave1-native-artifact.mjs verify "$APP" production "$SOURCE_SHA"
   publish:
+    name: publish-${{ inputs.app }}
     needs: [production-policy, qualify, restored]
     if: github.ref == 'refs/heads/production' && needs.production-policy.outputs.allowed == 'true'
     runs-on: ubuntu-latest
@@ -166,20 +167,36 @@ jobs:
       - name: Recheck restored runtime without provider credentials
         timeout-minutes: 3
         run: node scripts/ci/wave1-native-runtime.mjs "$APP" production "$SOURCE_SHA"
-      - name: Upload once without attaching serving topology
-        timeout-minutes: 8
+      - name: Read-only production preflight
+        id: preflight
+        timeout-minutes: 2
         env:
-          WAVE1_PRODUCTION_CLOUDFLARE_API_TOKEN: ${{ secrets.WAVE1_PRODUCTION_CLOUDFLARE_API_TOKEN }}
           WAVE1_PRODUCTION_CLOUDFLARE_READ_TOKEN: ${{ secrets.WAVE1_PRODUCTION_CLOUDFLARE_READ_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
-        run: node scripts/ci/wave1-native-production.mjs "$APP" "$SOURCE_SHA"
+        run: node scripts/ci/wave1-native-production.mjs "$APP" "$SOURCE_SHA" preflight
+      - name: Upload once without attaching serving topology
+        id: upload
+        timeout-minutes: 4
+        env:
+          WAVE1_PRODUCTION_CLOUDFLARE_API_TOKEN: ${{ secrets.WAVE1_PRODUCTION_CLOUDFLARE_API_TOKEN }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
+        run: node scripts/ci/wave1-native-production.mjs "$APP" "$SOURCE_SHA" upload
+      - name: Read-only post-upload topology verification
+        id: verify
+        timeout-minutes: 2
+        env:
+          WAVE1_PRODUCTION_CLOUDFLARE_READ_TOKEN: ${{ secrets.WAVE1_PRODUCTION_CLOUDFLARE_READ_TOKEN }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
+        run: node scripts/ci/wave1-native-production.mjs "$APP" "$SOURCE_SHA" verify
       - name: Retain private upload and rollback receipt, including unknown outcomes
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: wave1-${{ inputs.app }}-production-publication-${{ github.sha }}-${{ github.run_id }}
+          name: wave1-${{ inputs.app }}-production-publication-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/${{ inputs.app }}-production-publication.json
           retention-days: 30
           if-no-files-found: warn

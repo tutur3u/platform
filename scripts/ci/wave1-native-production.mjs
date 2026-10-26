@@ -9,6 +9,7 @@ import {
   publicInputsDigest,
   verify,
 } from './wave1-native-artifact.mjs';
+import { assertNoEarlierUpload } from './wave1-native-production-history.mjs';
 import { profiles } from './wave1-native-profile.mjs';
 import {
   boundedJson,
@@ -48,74 +49,6 @@ export function assertRouteFree(config) {
   assert.equal(config.no_bundle, true);
 }
 
-const uploadStepName = 'Upload once without attaching serving topology';
-async function assertNoEarlierUpload({ env, sha, fetcher }) {
-  const base = `https://api.github.com/repos/${env.GITHUB_REPOSITORY}/actions`;
-  const runs = await boundedJson(
-    `${base}/workflows/wave1-native-production.yaml/runs?branch=production&event=workflow_dispatch&per_page=100`,
-    env.GITHUB_TOKEN,
-    fetcher
-  );
-  assert.ok(
-    Array.isArray(runs.workflow_runs) &&
-      runs.total_count < 100 &&
-      runs.total_count === runs.workflow_runs.length,
-    'Unbounded or incomplete publication history'
-  );
-  assert.ok(
-    runs.workflow_runs.some(
-      (run) =>
-        String(run.id) === env.GITHUB_RUN_ID &&
-        run.head_sha === sha &&
-        run.head_branch === 'production'
-    ),
-    'Current production run missing from history'
-  );
-  for (const run of runs.workflow_runs) {
-    if (
-      run.head_branch !== 'production' ||
-      (String(run.id) === env.GITHUB_RUN_ID && env.GITHUB_RUN_ATTEMPT === '1')
-    )
-      continue;
-    assert.ok(
-      Number.isSafeInteger(run.id) && run.id > 0,
-      'Malformed prior run identity'
-    );
-    const jobs = await boundedJson(
-      `${base}/runs/${run.id}/jobs?filter=all&per_page=100`,
-      env.GITHUB_TOKEN,
-      fetcher
-    );
-    assert.ok(
-      Array.isArray(jobs.jobs) &&
-        jobs.total_count < 100 &&
-        jobs.total_count === jobs.jobs.length,
-      'Unknown earlier upload status; never replay'
-    );
-    const publishers = jobs.jobs.filter((job) => job.name === 'publish');
-    if (!publishers.length) {
-      assert.equal(
-        run.status,
-        'queued',
-        'Unknown earlier upload status; never replay'
-      );
-      continue;
-    }
-    for (const job of publishers) {
-      if (job.conclusion === 'skipped' || job.status === 'queued') continue;
-      const step = job.steps?.find((entry) => entry.name === uploadStepName);
-      assert.ok(step, 'Unknown earlier upload step; never replay');
-      const notStarted =
-        step.conclusion === 'skipped' ||
-        (['queued', 'pending'].includes(step.status) && !step.started_at);
-      assert.ok(
-        notStarted,
-        'Earlier production upload started or is unknown; owner reconciliation required, never replay'
-      );
-    }
-  }
-}
-
 export async function main({
   argv = process.argv.slice(2),
   env = process.env,
@@ -124,7 +57,8 @@ export async function main({
   appRoot,
   preflightTimeoutMs = 90_000,
 } = {}) {
-  const [app, sha] = argv;
+  const [app, sha, mode = 'all'] = argv;
+  assert.ok(['all', 'preflight', 'upload', 'verify'].includes(mode));
   assert.ok(Object.hasOwn(profiles.apps, app), 'Unknown wave-1 frontend');
   assert.match(sha ?? '', /^[a-f0-9]{40}$/);
   assert.equal(
@@ -145,10 +79,19 @@ export async function main({
   );
   const token = env.WAVE1_PRODUCTION_CLOUDFLARE_API_TOKEN;
   const topologyToken = env.WAVE1_PRODUCTION_CLOUDFLARE_READ_TOKEN;
-  assert.ok(
-    token && topologyToken && env.GITHUB_TOKEN,
-    'Missing named production/read credential'
-  );
+  if (mode !== 'upload')
+    assert.ok(topologyToken, 'Missing named read credential');
+  if (mode === 'preflight')
+    assert.ok(env.GITHUB_TOKEN, 'Missing history credential');
+  if (mode === 'upload' || mode === 'all')
+    assert.ok(token, 'Missing named production credential');
+  if (mode === 'preflight' || mode === 'verify')
+    assert.ok(!token, 'Deploy credential forbidden in read-only step');
+  if (mode === 'upload')
+    assert.ok(
+      !topologyToken && !env.GITHUB_TOKEN,
+      'Read credentials forbidden in upload step'
+    );
   appRoot ??= resolve('apps', app);
   const validate = () => {
     assert.equal(
@@ -180,7 +123,7 @@ export async function main({
       ...options,
       signal: AbortSignal.any([options.signal, deadline]),
     });
-  const provider = async (url, credential = token) => {
+  const provider = async (url, credential = topologyToken) => {
     const response = await boundedJson(url, credential, boundedFetch);
     assert.equal(response.success, true, 'Provider observation failed');
     return response.result;
@@ -251,46 +194,94 @@ export async function main({
     );
     return { domains, routes, serving };
   };
-  const before = await topology();
-  const names = await provider(`${script}/secrets`);
-  assert.ok(Array.isArray(names));
-  for (const name of p.secrets)
+  const path = resolve(env.RUNNER_TEMP, `${app}-production-publication.json`);
+  let record;
+  let before;
+  if (mode === 'all' || mode === 'preflight') {
+    before = await topology();
+    const names = await provider(`${script}/secrets`);
+    assert.ok(Array.isArray(names));
+    for (const name of p.secrets)
+      assert.ok(
+        names.some((secret) => secret.name === name),
+        `Missing production secret name: ${name}`
+      );
+    const deployments = await provider(`${script}/deployments`);
     assert.ok(
-      names.some((secret) => secret.name === name),
-      `Missing production secret name: ${name}`
+      Array.isArray(deployments.deployments) &&
+        deployments.deployments.length > 0,
+      'Initial private Worker and rollback version must be provisioned'
     );
-  const deployments = await provider(`${script}/deployments`);
-  assert.ok(
-    Array.isArray(deployments.deployments) &&
-      deployments.deployments.length > 0,
-    'Initial private Worker and rollback version must be provisioned'
-  );
-  const versions = await provider(`${script}/versions?per_page=100`);
-  assert.ok(
-    Array.isArray(versions.items) && versions.items.length < 100,
-    'Version history exceeds bounded reconciliation'
-  );
-  const matches = [];
-  for (const item of versions.items) {
-    assert.match(item.id ?? '', /^[a-f0-9-]{36}$/);
-    const version = await provider(`${script}/versions/${item.id}`);
-    if (matchesVersion(version, sha, digest)) matches.push(version.id);
+    const versions = await provider(`${script}/versions?per_page=100`);
+    assert.ok(
+      Array.isArray(versions.items) && versions.items.length < 100,
+      'Version history exceeds bounded reconciliation'
+    );
+    const matches = [];
+    for (const item of versions.items) {
+      assert.match(item.id ?? '', /^[a-f0-9-]{36}$/);
+      const version = await provider(`${script}/versions/${item.id}`);
+      if (matchesVersion(version, sha, digest)) matches.push(version.id);
+    }
+    assert.ok(matches.length <= 1, 'Ambiguous matching production versions');
+    const candidates = matches.length
+      ? deployments.deployments.filter(
+          (deployment) =>
+            Array.isArray(deployment.versions) &&
+            !deployment.versions.some(
+              (version) => version.version_id === matches[0]
+            )
+        )
+      : deployments.deployments;
+    assert.ok(
+      candidates.length > 0,
+      'No earlier rollback deployment; require the original receipt'
+    );
+    const rollback = requireRollback(candidates);
+    record = {
+      schema: 1,
+      app,
+      sha,
+      digest,
+      worker: p.name,
+      rollback,
+      topology: before,
+      state: 'preflight',
+      runId: env.GITHUB_RUN_ID,
+      runAttempt: env.GITHUB_RUN_ATTEMPT,
+      preflightAt: Date.now(),
+      ...(matches.length ? { versionId: matches[0], reconciled: true } : {}),
+    };
+    if (!matches.length)
+      await assertNoEarlierUpload({
+        env,
+        sha,
+        app,
+        worker: p.name,
+        rollback,
+        fetcher: boundedFetch,
+      });
+    assert.deepEqual(
+      await topology(),
+      before,
+      'Serving topology changed before upload'
+    );
+    validate();
+    deadline.throwIfAborted();
+    writeFileSync(path, `${JSON.stringify(record, null, 2)}\n`, {
+      mode: 0o600,
+    });
+    if (mode === 'preflight') return record;
+  } else {
+    record = JSON.parse(readFileSync(path, 'utf8'));
+    assert.equal(record.app, app);
+    assert.equal(record.sha, sha);
+    assert.equal(record.digest, digest);
+    assert.equal(record.worker, p.name);
+    assert.equal(record.runId, env.GITHUB_RUN_ID);
+    assert.equal(record.runAttempt, env.GITHUB_RUN_ATTEMPT);
+    before = record.topology;
   }
-  assert.ok(matches.length <= 1, 'Ambiguous matching production versions');
-  const candidates = matches.length
-    ? deployments.deployments.filter(
-        (deployment) =>
-          Array.isArray(deployment.versions) &&
-          !deployment.versions.some(
-            (version) => version.version_id === matches[0]
-          )
-      )
-    : deployments.deployments;
-  assert.ok(
-    candidates.length > 0,
-    'No earlier rollback deployment; require the original receipt'
-  );
-  const rollback = requireRollback(candidates);
   const accept = async (id) => {
     const version = await provider(`${script}/versions/${id}`);
     assert.ok(
@@ -308,52 +299,40 @@ export async function main({
     );
     validate();
   };
-  const path = resolve(env.RUNNER_TEMP, `${app}-production-publication.json`);
-  const record = {
-    schema: 1,
-    app,
-    sha,
-    digest,
-    worker: p.name,
-    rollback,
-    topology: before,
-    state: 'preflight',
-  };
   const save = () =>
     writeFileSync(path, `${JSON.stringify(record, null, 2)}\n`, {
       mode: 0o600,
     });
-  if (matches.length) {
-    record.versionId = matches[0];
-    await accept(record.versionId);
-    record.state = 'reconciled';
+  if (mode === 'all' || mode === 'upload') {
+    assert.equal(record.state, 'preflight');
+    assert.ok(
+      Date.now() - record.preflightAt >= 0 &&
+        Date.now() - record.preflightAt < 120_000,
+      'Preflight expired; start a fresh read-only preflight'
+    );
+    validate();
+    deadline.throwIfAborted();
+    if (!record.reconciled) {
+      record.state = 'pending';
+      save();
+      // One bounded upload. Exceptions remain pending, including a lost CLI receipt.
+      record.versionId = await uploadArtifact({
+        env,
+        app,
+        environment: 'production',
+        config,
+        sha,
+        digest,
+        cfToken: token,
+        p,
+        exec,
+      });
+    }
+    record.state = 'uploaded';
     save();
-    return record;
+    if (mode === 'upload') return record;
   }
-  await assertNoEarlierUpload({ env, sha, fetcher: boundedFetch });
-  assert.deepEqual(
-    await topology(),
-    before,
-    'Serving topology changed before upload'
-  );
-  validate();
-  deadline.throwIfAborted();
-  record.state = 'pending';
-  save();
-  // One bounded upload. Exceptions remain pending, including a lost CLI receipt.
-  record.versionId = await uploadArtifact({
-    env,
-    app,
-    environment: 'production',
-    config,
-    sha,
-    digest,
-    cfToken: token,
-    p,
-    exec,
-  });
-  record.state = 'uploaded';
-  save();
+  assert.equal(record.state, 'uploaded');
   deadline = AbortSignal.timeout(60_000);
   await accept(record.versionId);
   record.state = 'accepted-private';
@@ -367,9 +346,7 @@ if (
 ) {
   main()
     .then((record) =>
-      console.log(
-        `Accepted private ${record.worker} version ${record.versionId}; routing remains separate`
-      )
+      console.log(`${record.state}: ${record.worker}; routing remains separate`)
     )
     .catch(() => {
       console.error(

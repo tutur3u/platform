@@ -1233,6 +1233,12 @@ Never delete consumption history to renew admission or infer retry permission fr
 missing local receipt or inactive version. Reconcile listed versions by detail SHA/tag and retain unresolved attempts.
 The [publisher runbook](../../../../../apps/docs/build/devops/wave1-native-publishers.mdx)
 owns the schema, bounded operation counts, residual account risk and recovery.
+For private production preparation, keep the read token confined to preflight and
+post-upload verification, and the deploy token confined to the upload step. Check
+replay history per app across source SHAs and attempts; an accepted receipt must
+match the current rollback baseline before it closes older history. A skipped
+upload after read-only refusal is retryable; an unknown write is not. Follow the
+runbook's original-run reconciliation procedure rather than clearing history.
 Run `wave1-native-publication.test.js` for the real entrypoint transport tests and
 its final-fence removal negative control, alongside publisher/policy/credential
 and workflow suites. Source-only tests do not establish hosted token permissions

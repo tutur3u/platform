@@ -83,6 +83,8 @@ function setup(t, { admitted = true } = {}) {
     assert.equal(options.method, 'GET');
     if (url.startsWith('https://api.github.com/')) {
       assert.equal(options.headers.Authorization, 'Bearer github-fixture');
+      if (url.includes('/artifacts?'))
+        return Response.json({ total_count: 0, artifacts: [] });
       if (url.includes('/jobs?')) {
         const step = {
           name: 'Upload once without attaching serving topology',
@@ -91,7 +93,9 @@ function setup(t, { admitted = true } = {}) {
           started_at: '2026-10-27T00:00:00Z',
         };
         const priorJob = {
-          name: 'publish',
+          name: 'publish-calendar',
+          run_id: url.includes('/runs/122/') ? 122 : 123,
+          run_attempt: 1,
           status: 'completed',
           conclusion: 'failure',
           steps: [step],
@@ -101,7 +105,18 @@ function setup(t, { admitted = true } = {}) {
             { ...step, conclusion: 'skipped', started_at: null },
           ];
         if (state.priorMode === 'unknown') priorJob.steps = [];
-        return Response.json({ total_count: 1, jobs: [priorJob] });
+        const currentJob = {
+          name: 'publish-calendar',
+          run_id: 123,
+          run_attempt: Number(env.GITHUB_RUN_ATTEMPT),
+          status: 'in_progress',
+          conclusion: null,
+          steps: [{ ...step, status: 'in_progress' }],
+        };
+        const jobs = url.includes('/runs/123/')
+          ? [currentJob, ...(env.GITHUB_RUN_ATTEMPT === '1' ? [] : [priorJob])]
+          : [priorJob];
+        return Response.json({ total_count: jobs.length, jobs });
       }
       assert.equal(
         url.includes('head_sha='),
@@ -120,10 +135,14 @@ function setup(t, { admitted = true } = {}) {
       ['/domains', '/routes', '/subdomain'].some((suffix) =>
         url.endsWith(suffix)
       ) || url.includes('/zones?');
-    assert.equal(
-      options.headers.Authorization,
-      topology ? 'Bearer topology-fixture' : 'Bearer production-fixture'
-    );
+    if (topology)
+      assert.equal(options.headers.Authorization, 'Bearer topology-fixture');
+    else
+      assert.ok(
+        ['Bearer topology-fixture', 'Bearer production-fixture'].includes(
+          options.headers.Authorization
+        )
+      );
     let result;
     if (url.includes('/zones?'))
       return Response.json({
@@ -349,7 +368,8 @@ test('matching active version reconciles without another upload', async (t) => {
   p.state.active = newId;
   p.state.prior = true;
   const result = await p.run();
-  assert.equal(result.state, 'reconciled');
+  assert.equal(result.state, 'accepted-private');
+  assert.equal(result.reconciled, true);
   assert.ok(
     result.rollback.versions.every(
       (version) => version.version_id !== result.versionId
@@ -416,15 +436,37 @@ test('only the production environment upload step receives the named deploy toke
       'secrets.WAVE1_PRODUCTION_CLOUDFLARE_API_TOKEN'
     )
   );
-  assert.equal(tokenSteps.length, 1);
+  assert.deepEqual(
+    tokenSteps.map((step) => step.id),
+    ['upload']
+  );
+  const readSteps = workflow.jobs.publish.steps.filter((step) =>
+    JSON.stringify(step).includes(
+      'secrets.WAVE1_PRODUCTION_CLOUDFLARE_READ_TOKEN'
+    )
+  );
+  assert.deepEqual(
+    readSteps.map((step) => step.id),
+    ['preflight', 'verify']
+  );
+  assert.ok(
+    workflow.jobs.publish.steps.findIndex((step) => step.id === 'preflight') <
+      workflow.jobs.publish.steps.findIndex((step) => step.id === 'upload')
+  );
+  assert.equal(workflow.jobs.publish.name, 'publish-$' + '{{ inputs.app }}');
   assert.equal(
     tokenSteps[0].run,
-    'node scripts/ci/wave1-native-production.mjs "$APP" "$SOURCE_SHA"'
+    'node scripts/ci/wave1-native-production.mjs "$APP" "$SOURCE_SHA" upload'
   );
   for (const [name, job] of Object.entries(workflow.jobs)) {
     if (name !== 'publish')
       assert.ok(
-        !JSON.stringify(job).includes('WAVE1_PRODUCTION_CLOUDFLARE_API_TOKEN')
+        !JSON.stringify(job).includes(
+          'WAVE1_PRODUCTION_CLOUDFLARE_API_TOKEN'
+        ) &&
+          !JSON.stringify(job).includes(
+            'WAVE1_PRODUCTION_CLOUDFLARE_READ_TOKEN'
+          )
       );
   }
   assert.equal(workflow.concurrency['cancel-in-progress'], false);
@@ -508,3 +550,43 @@ test('pre-upload reads share a finite deadline and cannot reach upload after tim
   await assert.rejects(p.run({ preflightTimeoutMs: 5, fetcher }));
   assert.equal(p.state.writes, 0);
 });
+
+test('separate preflight, upload and verification steps enforce credential isolation', async (t) => {
+  const p = setup(t);
+  const readEnv = { ...p.env };
+  delete readEnv.WAVE1_PRODUCTION_CLOUDFLARE_API_TOKEN;
+  const preflight = await p.run({
+    argv: ['calendar', sha, 'preflight'],
+    env: readEnv,
+  });
+  assert.equal(preflight.state, 'preflight');
+  assert.equal(p.state.writes, 0);
+  assert.ok(p.state.calls.length > 0);
+  const uploadEnv = { ...p.env };
+  delete uploadEnv.WAVE1_PRODUCTION_CLOUDFLARE_READ_TOKEN;
+  delete uploadEnv.GITHUB_TOKEN;
+  const readsBefore = p.state.calls.length;
+  const uploaded = await p.run({
+    argv: ['calendar', sha, 'upload'],
+    env: uploadEnv,
+  });
+  assert.equal(uploaded.state, 'uploaded');
+  assert.equal(p.state.writes, 1);
+  assert.equal(p.state.calls.length, readsBefore);
+  delete readEnv.GITHUB_TOKEN;
+  const accepted = await p.run({
+    argv: ['calendar', sha, 'verify'],
+    env: readEnv,
+  });
+  assert.equal(accepted.state, 'accepted-private');
+  assert.equal(p.state.writes, 1);
+});
+for (const mode of ['preflight', 'upload', 'verify'])
+  test(`${mode} refuses credentials belonging to another step`, async (t) => {
+    const p = setup(t);
+    await assert.rejects(
+      p.run({ argv: ['calendar', sha, mode] }),
+      /credential|credentials/
+    );
+    assert.equal(p.state.writes, 0);
+  });

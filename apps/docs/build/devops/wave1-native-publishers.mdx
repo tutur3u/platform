@@ -462,7 +462,9 @@ fallback for those reads. The deploy token needs Workers Scripts:Edit. The read
 token needs account-wide Zone, Workers Routes and Workers Scripts read access.
 Calendar production preserves `GOOGLE_REDIRECT_URI` as a required Worker secret,
 while staging declares its redirect URI as a plain var. Production Microsoft OAuth
-keeps Web's existing `https://tuturuuu.com/api/v1/calendar/auth/microsoft/callback`.
+uses `https://calendar.tuturuuu.com/api/v1/calendar/auth/microsoft/callback`,
+which Calendar owns. Entra must register this exact production URI before Outlook
+connect can pass; the removed Web callback returns 404.
 
 The generic `production` environment is not an admitted credential store. Only
 the final upload step receives the deploy token; staging credentials are refused. Complete topology verification requires the read token to see every account zone. Restricted zone visibility cannot establish
@@ -479,11 +481,19 @@ the local config declares no routes. Check topology immediately before the singl
 upload and again afterwards. Existing live Workers require the release owner's
 normal update/rollback procedure; this preparation workflow cannot update them.
 
-Each upload is bounded to 180 seconds inside an eight-minute step. Pre-upload
+The read token is available only to the read-only preflight and post-upload
+verification steps; the deploy token is available only to the upload step. Tests
+assert these exact step sets. Preflight refusals skip the upload step and do not
+consume a publication attempt. Each upload is bounded to 180 seconds inside a
+four-minute step. Pre-upload
 observations share a 90-second deadline; post-upload acceptance has 60 seconds.
 Reconciliation reads at most 99 versions and 99 workflow runs, with 15-second/1 MiB
 API read bounds. A matching active SHA/artifact is accepted without upload. Inspect
-all earlier production dispatches across source SHAs and every job attempt.
+all earlier production dispatches across source SHAs and every job attempt,
+scoped to the selected app. Ignore only the current run and attempt, not older
+attempts in that run. An earlier accepted-private receipt whose version is the
+current rollback baseline closes that app's older history; verify its exact app,
+Worker, source, run, attempt and version against the retained artifact.
 An earlier started or unknown upload, ambiguous/inactive match, or incomplete
 history blocks another upload; an absent version never proves an earlier write
 failed. Retain the original run and operation identity for operator reconciliation.
@@ -493,6 +503,18 @@ version as its rollback, and requires the original receipt if no such deployment
 remains. An upload exception leaves the private receipt `pending`; post-upload
 acceptance failure leaves it `uploaded`. No automatic retry, new admission or traffic switch
 follows either state.
+
+To unblock an uncertain upload, the release owner first preserves the original
+run/attempt, qualified archive and publication receipt, then inspects provider
+versions and deployments for that receipt's exact source/artifact annotations.
+If that version is active and the original rollback exists, rerun the original
+failed publish job with its original qualified archive: preflight reconciles it
+without uploading and post-verification emits an accepted-private receipt.
+A later source can then use that accepted version as its rollback baseline.
+If there is no exact active match, the receipt is missing/expired, or an earlier
+write remains unknown, keep publication held. The owner must resolve the provider
+outcome and obtain independent review of any recovery change; deleting run history,
+changing app names or retrying a fresh upload is not an unblock procedure.
 
 The private 30-day artifact records the exact SHA/digest, weighted rollback
 versions and before-state topology. This is private code publication only, not a
