@@ -13,7 +13,8 @@ class _TimerRepository extends Fake implements ITimeTrackerRepository {
 
   final TimeTrackingSession? running;
   final TimeTrackingSession? paused;
-  final List<({String wsId, String? title, String? taskId})> starts = [];
+  final List<({String wsId, String? title, String? taskId, List<String>? tags})>
+  starts = [];
   final List<String> stops = [];
   final List<String> resumes = [];
   final List<String> pauses = [];
@@ -85,9 +86,10 @@ class _TimerRepository extends Fake implements ITimeTrackerRepository {
     String? userId,
     String? parentSessionId,
     bool wasResumed = false,
+    List<String>? tags,
   }) async {
     if (failStart) throw Exception('offline');
-    starts.add((wsId: wsId, title: title, taskId: taskId));
+    starts.add((wsId: wsId, title: title, taskId: taskId, tags: tags));
     return TimeTrackingSession(id: 'session-new', title: title, taskId: taskId);
   }
 }
@@ -201,6 +203,7 @@ void main() {
       expect(timer.starts.single.wsId, 'ws-1');
       expect(timer.starts.single.taskId, 'task-1');
       expect(timer.starts.single.title, 'Alpha task');
+      expect(timer.starts.single.tags, ['pomodoro']);
       expect(find.text('Timer started for this task.'), findsOneWidget);
       await drainToasts(tester);
     });

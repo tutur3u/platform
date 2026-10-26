@@ -80,7 +80,7 @@ export const ci = {
   'vercel-preview-platform.yaml': true,
   'vercel-production-ai.yaml': true,
   'vercel-production-apps.yaml': true,
-  'vercel-production-calendar.yaml': true,
+  'vercel-production-calendar.yaml': false,
   'vercel-production-chat.yaml': true,
   'vercel-production-cms.yaml': true,
   'vercel-production-drive.yaml': true,
@@ -130,7 +130,12 @@ export const ci = {
 // Admit each app only in an explicitly reviewed wave cutover PR.
 export const productionPublicationPolicy = {
   meet: { state: 'held', reason: 'held for wave-1 cutover' },
-  calendar: { state: 'held', reason: 'held for wave-1 cutover' },
+  calendar: {
+    state: 'admitted',
+    reason:
+      'Calendar native root cutover with private smoke and rehearsed route rollback',
+    surfaces: ['frontend'],
+  },
   mail: { state: 'held', reason: 'held for wave-1 cutover' },
   apps: { state: 'held', reason: 'held for wave-1 cutover' },
   shortener: { state: 'held', reason: 'held for wave-2 cutover' },

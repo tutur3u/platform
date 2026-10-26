@@ -142,6 +142,12 @@ for (const [name, mutate] of [
     },
   ],
   [
+    'different Worker receipt',
+    (p) => {
+      p.state.receipt.worker = 'tuturuuu-mail';
+    },
+  ],
+  [
     'different app receipt',
     (p) => {
       p.state.receipt.app = 'mail';
@@ -181,6 +187,7 @@ for (const [name, mutate] of [
 test('receipt archive is bounded and storage request receives no GitHub credential', async () => {
   const payload = { state: 'accepted-private', versionId };
   const zip = execFileSync('python3', [
+    '-I',
     '-c',
     `import io,sys,zipfile
 b=io.BytesIO()

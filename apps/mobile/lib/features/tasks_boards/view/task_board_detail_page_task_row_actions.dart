@@ -23,6 +23,7 @@ enum _TaskRowMenuAction {
   focus,
   schedule,
   priority,
+  assign,
   move,
   select,
   details,
@@ -64,6 +65,7 @@ extension _TaskRowActions on _TaskBoardDetailPageViewState {
       ),
     );
     final doneTarget = _taskRowDoneTarget(list);
+    final assignBoard = _taskRowAssignBoard(context);
     final title = task.name?.trim().isNotEmpty == true
         ? task.name!.trim()
         : l10n.taskBoardDetailUntitledTask;
@@ -104,6 +106,13 @@ extension _TaskRowActions on _TaskBoardDetailPageViewState {
           tone: AppTone.warning,
           label: l10n.taskBoardDetailChangePriority,
         ),
+        if (assignBoard != null)
+          AppSheetAction(
+            key: const ValueKey('task-row-menu-assign'),
+            value: _TaskRowMenuAction.assign,
+            icon: LucideIcons.users,
+            label: l10n.taskBoardDetailTaskAssignees,
+          ),
         AppSheetAction(
           value: _TaskRowMenuAction.move,
           icon: LucideIcons.folderInput,
@@ -140,6 +149,8 @@ extension _TaskRowActions on _TaskBoardDetailPageViewState {
         await _scheduleTask(context, task);
       case _TaskRowMenuAction.priority:
         await _pickTaskPriority(context, task);
+      case _TaskRowMenuAction.assign:
+        await _pickTaskAssignees(context, task, assignBoard!);
       case _TaskRowMenuAction.move:
         await _openMoveTaskPicker(context, task, lists);
       case _TaskRowMenuAction.select:
@@ -224,6 +235,7 @@ extension _TaskRowActions on _TaskBoardDetailPageViewState {
     required String successMessage,
     String? priority,
     DateTime? endDate,
+    List<String>? assigneeIds,
   }) async {
     final cubit = context.read<TaskBoardDetailCubit>();
     // showAppToast needs a context below the root overlay; the root
@@ -243,7 +255,7 @@ extension _TaskRowActions on _TaskBoardDetailPageViewState {
         estimationPoints: task.estimationPoints,
         labelIds: task.labelIds,
         projectIds: task.projectIds,
-        assigneeIds: task.assigneeIds,
+        assigneeIds: assigneeIds ?? task.assigneeIds,
       );
       if (!toastContext.mounted) return;
       showAppToast(toastContext, message: successMessage);

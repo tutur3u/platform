@@ -14227,6 +14227,18 @@ abstract class AppLocalizations {
   /// **'Density'**
   String get appearanceDensityTitle;
 
+  /// No description provided for @appearanceDeviceOverride.
+  ///
+  /// In en, this message translates to:
+  /// **'Use different appearance on this device'**
+  String get appearanceDeviceOverride;
+
+  /// No description provided for @appearanceDeviceOverrideDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes here stay on this device and don\'t sync to your account.'**
+  String get appearanceDeviceOverrideDescription;
+
   /// No description provided for @appearanceFeedbackTitle.
   ///
   /// In en, this message translates to:
@@ -14272,7 +14284,7 @@ abstract class AppLocalizations {
   /// No description provided for @appearanceReduceMotionDescription.
   ///
   /// In en, this message translates to:
-  /// **'Always reduce animations on this device, even when the system setting is off.'**
+  /// **'Always reduce animations, even when the system setting is off.'**
   String get appearanceReduceMotionDescription;
 
   /// No description provided for @appearanceReset.
@@ -20118,6 +20130,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Focus done'**
   String get timerPomodoroFocusDoneTitle;
+
+  /// No description provided for @timerPomodoroOrphanedSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus couldn\'t start, and a timer it created may still be running. Check the Timer page.'**
+  String get timerPomodoroOrphanedSession;
 
   /// No description provided for @timerPomodoroOtherRunning.
   ///

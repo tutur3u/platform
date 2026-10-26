@@ -488,7 +488,11 @@ consume a publication attempt. Each upload is bounded to 180 seconds inside a
 four-minute step. Pre-upload
 observations share a 90-second deadline; post-upload acceptance has 60 seconds.
 Reconciliation reads at most 99 versions and 99 workflow runs, with 15-second/1 MiB
-API read bounds. A matching active SHA/artifact is accepted without upload. Inspect
+API read bounds. A matching SHA/artifact must be active at 100% during preflight or the run
+refuses before entering upload. A matching active artifact is accepted without upload. Once that SHA's version has
+been rolled back and is inactive, the same SHA is refused during preflight.
+Recovery needs a new source SHA and fresh qualification/admission; do not rerun
+the rolled-back SHA to reactivate it or bypass the inactive-version fence. Inspect
 all earlier production dispatches across source SHAs and every job attempt,
 scoped to the selected app. Ignore only the current run and attempt, not older
 attempts in that run. An earlier accepted-private receipt whose version is the
@@ -516,7 +520,7 @@ write remains unknown, keep publication held. The owner must resolve the provide
 outcome and obtain independent review of any recovery change; deleting run history,
 changing app names or retrying a fresh upload is not an unblock procedure.
 
-The private 30-day artifact records the exact SHA/digest, weighted rollback
+The private 90-day artifact records the exact SHA/digest, weighted rollback
 versions and before-state topology. This is private code publication only, not a
 canonical deployment marker or customer delivery. Immediately before the separately
 authorized routing flip, refresh the cutover capture and rehearse restoration of

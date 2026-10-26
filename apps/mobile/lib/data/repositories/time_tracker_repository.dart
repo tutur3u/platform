@@ -67,6 +67,7 @@ abstract class ITimeTrackerRepository {
     String? userId,
     String? parentSessionId,
     bool wasResumed = false,
+    List<String>? tags,
   });
 
   Future<TimeTrackingSession> stopSession(String wsId, String sessionId);
@@ -118,6 +119,8 @@ abstract class ITimeTrackerRepository {
     String? userId, {
     bool isPersonal = false,
     String? timezone,
+    String? tag,
+    bool taskLinked = false,
   });
 
   Future<TimeTrackingPeriodStats> getPeriodStats(
@@ -329,33 +332,32 @@ class TimeTrackerRepository implements ITimeTrackerRepository {
     String? userId,
     String? parentSessionId,
     bool wasResumed = false,
-  }) async {
-    return await _writeSession(
-      wsId,
-      'POST',
-      '/api/v1/workspaces/$wsId/time-tracking/sessions',
-      {
-        'title': title ?? 'Work session',
-        if (description != null) 'description': description,
-        if (categoryId != null) 'categoryId': categoryId,
-        if (taskId != null) 'taskId': taskId,
-        if (userId != null) 'userId': userId,
-        if (parentSessionId != null) 'parentSessionId': parentSessionId,
-        if (wasResumed) 'wasResumed': true,
-      },
-    );
-  }
+    List<String>? tags,
+  }) => _writeSession(
+    wsId,
+    'POST',
+    '/api/v1/workspaces/$wsId/time-tracking/sessions',
+    {
+      'title': title ?? 'Work session',
+      if (description != null) 'description': description,
+      if (categoryId != null) 'categoryId': categoryId,
+      if (taskId != null) 'taskId': taskId,
+      if (userId != null) 'userId': userId,
+      if (parentSessionId != null) 'parentSessionId': parentSessionId,
+      if (wasResumed) 'wasResumed': true,
+      if (tags != null && tags.isNotEmpty) 'tags': tags,
+    },
+  );
 
   @override
-  Future<TimeTrackingSession> stopSession(String wsId, String sessionId) async {
-    return await _writeSession(
-      wsId,
-      'PATCH',
-      '/api/v1/workspaces/$wsId/time-tracking/sessions/$sessionId',
-      {'action': 'stop'},
-      sessionId: sessionId,
-    );
-  }
+  Future<TimeTrackingSession> stopSession(String wsId, String sessionId) =>
+      _writeSession(
+        wsId,
+        'PATCH',
+        '/api/v1/workspaces/$wsId/time-tracking/sessions/$sessionId',
+        {'action': 'stop'},
+        sessionId: sessionId,
+      );
 
   @override
   Future<TimeTrackingSession> pauseSession(
@@ -363,33 +365,27 @@ class TimeTrackerRepository implements ITimeTrackerRepository {
     String sessionId, {
     String? breakTypeId,
     String? breakTypeName,
-  }) async {
-    return await _writeSession(
-      wsId,
-      'PATCH',
-      '/api/v1/workspaces/$wsId/time-tracking/sessions/$sessionId',
-      {
-        'action': 'pause',
-        if (breakTypeId != null) 'breakTypeId': breakTypeId,
-        if (breakTypeName != null) 'breakTypeName': breakTypeName,
-      },
-      sessionId: sessionId,
-    );
-  }
+  }) => _writeSession(
+    wsId,
+    'PATCH',
+    '/api/v1/workspaces/$wsId/time-tracking/sessions/$sessionId',
+    {
+      'action': 'pause',
+      if (breakTypeId != null) 'breakTypeId': breakTypeId,
+      if (breakTypeName != null) 'breakTypeName': breakTypeName,
+    },
+    sessionId: sessionId,
+  );
 
   @override
-  Future<TimeTrackingSession> resumeSession(
-    String wsId,
-    String sessionId,
-  ) async {
-    return await _writeSession(
-      wsId,
-      'PATCH',
-      '/api/v1/workspaces/$wsId/time-tracking/sessions/$sessionId',
-      {'action': 'resume'},
-      sessionId: sessionId,
-    );
-  }
+  Future<TimeTrackingSession> resumeSession(String wsId, String sessionId) =>
+      _writeSession(
+        wsId,
+        'PATCH',
+        '/api/v1/workspaces/$wsId/time-tracking/sessions/$sessionId',
+        {'action': 'resume'},
+        sessionId: sessionId,
+      );
 
   @override
   Future<TimeTrackingSession> editSession(
@@ -490,6 +486,8 @@ class TimeTrackerRepository implements ITimeTrackerRepository {
     String? userId, {
     bool isPersonal = false,
     String? timezone,
+    String? tag,
+    bool taskLinked = false,
   }) async {
     final resolvedTimezone = (timezone != null && timezone.isNotEmpty)
         ? timezone
@@ -500,6 +498,8 @@ class TimeTrackerRepository implements ITimeTrackerRepository {
         if (userId != null && userId.isNotEmpty) 'userId': userId,
         'isPersonal': isPersonal.toString(),
         'timezone': resolvedTimezone,
+        if (tag != null) 'tag': tag,
+        if (taskLinked) 'taskLinked': 'true',
       }),
     );
 
