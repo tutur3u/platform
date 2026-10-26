@@ -30,6 +30,15 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createDynamicAdminClient: () => mocks.createDynamicAdminClient(),
 }));
 
+// Stored-object verification has its own tests; these cover routing only.
+vi.mock('@/app/api/ai/chat/_lib/chat-resource-object-guard', () => ({
+  verifyAiChatStoredObjects: async ({
+    objects,
+  }: {
+    objects: { path: string }[];
+  }) => new Map(objects.map(({ path }) => [path, 'valid'])),
+}));
+
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   verifyWorkspaceMembershipType: (
     ...args: Parameters<typeof mocks.verifyWorkspaceMembershipType>
@@ -82,7 +91,7 @@ describe('Mind chat file routes', () => {
   it.each<[string, () => Promise<unknown>, Record<string, unknown>]>([
     [
       'upload-url',
-      () => import('@/legacy-api-routes/ai/chat/upload-url/route'),
+      () => import('@/app/api/ai/chat/upload-url/route'),
       {
         allowAiTempAuth: true,
         ...appSessionAuthOptions,
@@ -91,7 +100,7 @@ describe('Mind chat file routes', () => {
     ],
     [
       'delete-file',
-      () => import('@/legacy-api-routes/ai/chat/delete-file/route'),
+      () => import('@/app/api/ai/chat/delete-file/route'),
       {
         allowAiTempAuth: true,
         ...appSessionAuthOptions,
@@ -100,7 +109,7 @@ describe('Mind chat file routes', () => {
     ],
     [
       'file-urls',
-      () => import('@/legacy-api-routes/ai/chat/file-urls/route'),
+      () => import('@/app/api/ai/chat/file-urls/route'),
       {
         allowAiTempAuth: true,
         ...appSessionAuthOptions,
@@ -149,7 +158,7 @@ describe('Mind chat file routes', () => {
     );
     const context = createRouteContext();
     const { POST } = (await import(
-      '@/legacy-api-routes/ai/chat/upload-url/route'
+      '@/app/api/ai/chat/upload-url/route'
     )) as unknown as {
       POST: ChatFileRoutePost;
     };
@@ -200,7 +209,7 @@ describe('Mind chat file routes', () => {
     );
     const context = createRouteContext();
     const { POST } = (await import(
-      '@/legacy-api-routes/ai/chat/delete-file/route'
+      '@/app/api/ai/chat/delete-file/route'
     )) as unknown as {
       POST: ChatFileRoutePost;
     };
@@ -225,7 +234,7 @@ describe('Mind chat file routes', () => {
       storage: { from: vi.fn(() => ({ createSignedUploadUrl })) },
     });
     const { POST } = (await import(
-      '@/legacy-api-routes/ai/chat/upload-url/route'
+      '@/app/api/ai/chat/upload-url/route'
     )) as unknown as { POST: ChatFileRoutePost };
 
     const response = await POST(
@@ -240,7 +249,7 @@ describe('Mind chat file routes', () => {
     expect(createSignedUploadUrl).not.toHaveBeenCalled();
   });
 
-  it('allows upload-url for a chat id that does not exist yet', async () => {
+  it('sends upload-url for a chat id that does not exist yet to temp', async () => {
     const createSignedUploadUrl = vi.fn().mockResolvedValue({
       data: { signedUrl: 'https://storage.example.com/upload', token: 't' },
       error: null,
@@ -250,7 +259,7 @@ describe('Mind chat file routes', () => {
       storage: { from: vi.fn(() => ({ createSignedUploadUrl })) },
     });
     const { POST } = (await import(
-      '@/legacy-api-routes/ai/chat/upload-url/route'
+      '@/app/api/ai/chat/upload-url/route'
     )) as unknown as { POST: ChatFileRoutePost };
 
     const response = await POST(
@@ -262,7 +271,14 @@ describe('Mind chat file routes', () => {
     );
 
     expect(response.status).toBe(200);
+    // No owned ai_chats row yet: the upload goes to the caller's temp folder.
     expect(createSignedUploadUrl).toHaveBeenCalledTimes(1);
+    expect(createSignedUploadUrl).toHaveBeenCalledWith(
+      expect.stringMatching(
+        /^ws-1\/chats\/ai\/resources\/temp\/user-1\/\d+_a\.png$/
+      ),
+      { upsert: false }
+    );
   });
 
   it.each([
@@ -288,7 +304,7 @@ describe('Mind chat file routes', () => {
       storage: { from: vi.fn(() => ({ remove })) },
     });
     const { POST } = (await import(
-      '@/legacy-api-routes/ai/chat/delete-file/route'
+      '@/app/api/ai/chat/delete-file/route'
     )) as unknown as { POST: ChatFileRoutePost };
 
     const response = await POST(
@@ -311,7 +327,7 @@ describe('Mind chat file routes', () => {
       storage: { from: vi.fn(() => ({ remove })) },
     });
     const { POST } = (await import(
-      '@/legacy-api-routes/ai/chat/delete-file/route'
+      '@/app/api/ai/chat/delete-file/route'
     )) as unknown as { POST: ChatFileRoutePost };
 
     const response = await POST(
@@ -376,7 +392,7 @@ describe('Mind chat file routes', () => {
     );
     const context = createRouteContext();
     const { POST } = (await import(
-      '@/legacy-api-routes/ai/chat/file-urls/route'
+      '@/app/api/ai/chat/file-urls/route'
     )) as unknown as {
       POST: ChatFileRoutePost;
     };

@@ -11,6 +11,7 @@ import 'package:mobile/features/time_tracker/cubit/time_tracker_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
 import 'package:mobile/features/time_tracker/utils/missed_entry_flow.dart';
 import 'package:mobile/features/time_tracker/widgets/category_sheet.dart';
+import 'package:mobile/features/time_tracker/widgets/pomodoro_panel.dart';
 import 'package:mobile/features/time_tracker/widgets/running_session_info_card.dart';
 import 'package:mobile/features/time_tracker/widgets/task_link_picker_sheet.dart';
 import 'package:mobile/features/time_tracker/widgets/timer_advanced_section.dart';
@@ -83,6 +84,8 @@ class _TimerTabState extends State<TimerTab> {
                   unawaited(_handlePause(context, cubit, wsId, userId)),
               onResume: () => unawaited(_handleResume(context, cubit)),
             ),
+            const PomodoroPanel(),
+            const shad.Gap(16),
             // Running session info card (read-only summary while running/paused)
             if (state.isRunning || state.isPaused) ...[
               RunningSessionInfoCard(

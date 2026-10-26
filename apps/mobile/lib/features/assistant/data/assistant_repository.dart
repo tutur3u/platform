@@ -24,8 +24,10 @@ import 'package:mobile/features/chat/models/chat_models.dart';
 
 import '../models/assistant_models.dart';
 import '../models/assistant_soul_snapshot.dart';
+import 'assistant_attachment_upload.dart';
 import 'assistant_calendar_insight.dart';
 import 'assistant_chat_persistence_contract.dart';
+import 'assistant_created_chat.dart';
 import 'assistant_history_message.dart';
 import 'assistant_history_parts.dart';
 import 'assistant_reaction_journal.dart';
@@ -510,90 +512,16 @@ class AssistantRepository
     ]);
   }
 
+  /// See [AssistantAttachmentUploader] for the per-store routing contract.
   Future<AssistantAttachment> uploadAttachment({
     required String wsId,
     required AssistantFilePickerResult file,
     String? chatId,
-  }) async {
-    if (chatId != null && chatId.isNotEmpty) {
-      try {
-        final attachment = await _chatRepository.uploadAttachment(
-          wsId,
-          chatId,
-          file: file.file,
-        );
-        return _assistantAttachmentFromChatAttachment(
-          attachment,
-          fallbackId: file.id,
-          fallbackPath: file.path,
-          fallbackType: file.mimeType,
-          fallbackSize: file.size,
-        );
-      } on ApiException catch (error) {
-        if (![404, 403].contains(error.statusCode) ||
-            file.mimeType.startsWith('audio/')) {
-          rethrow;
-        }
-      }
-    }
-
-    final uploadResponse = await _apiClient.postJson(
-      '/api/ai/chat/upload-url',
-      {
-        'filename': file.name,
-        'wsId': wsId,
-        if (chatId != null) 'chatId': chatId,
-      },
-    );
-
-    final signedUrl = uploadResponse['signedUrl'] as String;
-    final token = uploadResponse['token'] as String;
-    final path = uploadResponse['path'] as String;
-    final bytes = await file.file.readAsBytes();
-
-    final initialType = _uploadContentType(file.mimeType);
-    var response = await _httpClient.put(
-      Uri.parse(signedUrl),
-      headers: {'Authorization': 'Bearer $token', 'Content-Type': initialType},
-      body: bytes,
-    );
-
-    if (!response.isSuccessful) {
-      final body = response.body;
-      if (body.toLowerCase().contains('unsupported mime type')) {
-        response = await _httpClient.put(
-          Uri.parse(signedUrl),
-          headers: {'Authorization': 'Bearer $token'},
-          body: bytes,
-        );
-      }
-    }
-
-    if (!response.isSuccessful) {
-      throw ApiException(
-        message: response.body.isEmpty ? 'Upload failed' : response.body,
-        statusCode: response.statusCode,
-      );
-    }
-
-    String? signedReadUrl;
-    try {
-      signedReadUrl = (await fetchSignedReadUrls([path]))[path];
-    } on Object {
-      signedReadUrl = null;
-    }
-
-    return AssistantAttachment(
-      id: file.id,
-      name: file.name,
-      size: file.size,
-      type: file.mimeType,
-      localPath: file.path,
-      storagePath: path,
-      signedUrl: signedReadUrl,
-      uploadState: AssistantAttachmentUploadState.uploaded,
-    );
-  }
+    void Function(double progress)? onProgress,
+  }) => AssistantAttachmentUploader(
+    apiClient: _apiClient,
+    httpClient: _httpClient,
+  ).upload(wsId: wsId, file: file, chatId: chatId, onProgress: onProgress);
 
   Future<void> deleteAttachment({
     required String wsId,
@@ -636,21 +564,6 @@ class AssistantRepository
     return signedUrlByPath;
   }
 
-  String _uploadContentType(String mimeType) {
-    const officeTypes = {
-      'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'application/vnd.ms-powerpoint',
-      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    };
-    if (officeTypes.contains(mimeType.toLowerCase())) {
-      return 'application/octet-stream';
-    }
-    return mimeType.isEmpty ? 'application/octet-stream' : mimeType;
-  }
-
   @override
   String generateUuid() {
     final bytes = List<int>.generate(16, (_) => _random.nextInt(256));
@@ -666,8 +579,4 @@ class AssistantRepository
         '${hex(bytes[10])}${hex(bytes[11])}${hex(bytes[12])}${hex(bytes[13])}'
         '${hex(bytes[14])}${hex(bytes[15])}';
   }
-}
-
-extension on http.Response {
-  bool get isSuccessful => statusCode >= 200 && statusCode < 300;
 }

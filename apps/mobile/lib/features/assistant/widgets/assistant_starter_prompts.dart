@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/layout/grouped_rows.dart';
+import 'package:mobile/core/layout/grouped_section.dart';
 import 'package:mobile/core/ui/ui.dart';
-import 'package:mobile/features/apps/widgets/app_card_palette.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/staggered_entrance.dart';
 
@@ -46,127 +47,31 @@ class AssistantStarterPrompts extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 24),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final textScale = MediaQuery.textScalerOf(context).scale(16) / 16;
-            final useColumns = constraints.maxWidth >= 620 * textScale;
-            final width = useColumns
-                ? (constraints.maxWidth - 12) / 2
-                : constraints.maxWidth;
-            return Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: [
-                for (var index = 0; index < prompts.length; index++)
-                  SizedBox(
-                    width: width,
-                    child: StaggeredEntrance(
-                      replayKey:
-                          'assistant-starter-'
-                          '${prompts[index].prompt}-$replayToken',
-                      delay: Duration(milliseconds: 140 + (index * 70)),
-                      child: _StarterPromptCard(
-                        prompt: prompts[index],
-                        onTap: () => onPromptSelected(prompts[index].prompt),
-                      ),
-                    ),
+        // One grouped card of rows, like Settings: no shadows or gradients on
+        // list content. Labels allow four lines (AppGroupedRow's default is
+        // two) so long translations at large text are not cut; captions wrap
+        // in full.
+        StaggeredEntrance(
+          replayKey: 'assistant-starter-rows-$replayToken',
+          delay: const Duration(milliseconds: 140),
+          child: AppGroupedCard(
+            children: [
+              for (final prompt in prompts)
+                AppGroupedRow(
+                  key: ValueKey('assistant-starter-${prompt.prompt}'),
+                  leading: AppIconTile(icon: prompt.icon, tone: prompt.tone),
+                  title: Text(
+                    prompt.label,
+                    maxLines: 4,
+                    overflow: TextOverflow.ellipsis,
                   ),
-              ],
-            );
-          },
+                  subtitle: Text(prompt.caption),
+                  onTap: () => onPromptSelected(prompt.prompt),
+                ),
+            ],
+          ),
         ),
       ],
-    );
-  }
-}
-
-class _StarterPromptCard extends StatelessWidget {
-  const _StarterPromptCard({required this.prompt, required this.onTap});
-
-  final _StarterPrompt prompt;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final surfaceColor = Color.alphaBlend(
-      prompt.shadow.withValues(alpha: 0.22),
-      prompt.background,
-    );
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(26),
-      onTap: onTap,
-      child: Material(
-        color: surfaceColor,
-        borderRadius: BorderRadius.circular(26),
-        clipBehavior: Clip.antiAlias,
-        child: Container(
-          width: double.infinity,
-          constraints: const BoxConstraints(minHeight: 126),
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(26),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color.alphaBlend(
-                  prompt.iconBackground.withValues(alpha: 0.14),
-                  prompt.background,
-                ),
-                surfaceColor,
-              ],
-            ),
-            border: Border.all(color: prompt.border.withValues(alpha: 0.95)),
-            boxShadow: [
-              BoxShadow(
-                color: prompt.shadow,
-                blurRadius: 18,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 58,
-                height: 58,
-                decoration: BoxDecoration(
-                  color: prompt.iconBackground,
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: Icon(prompt.icon, color: prompt.iconColor, size: 28),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      prompt.label,
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        color: prompt.textColor,
-                        fontWeight: FontWeight.w900,
-                        height: 1.05,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      prompt.caption,
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: prompt.textColor.withValues(alpha: 0.8),
-                        height: 1.34,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }
@@ -177,96 +82,46 @@ class _StarterPrompt {
     required this.prompt,
     required this.caption,
     required this.icon,
-    required this.background,
-    required this.border,
-    required this.shadow,
-    required this.iconBackground,
-    required this.iconColor,
-    required this.textColor,
+    required this.tone,
   });
 
   final String label;
   final String prompt;
   final String caption;
   final IconData icon;
-  final Color background;
-  final Color border;
-  final Color shadow;
-  final Color iconBackground;
-  final Color iconColor;
-  final Color textColor;
+  final AppTone tone;
 }
 
 List<_StarterPrompt> _starterPrompts(BuildContext context) {
-  final focusPalette = AppCardPalette.resolve(
-    context,
-    index: 0,
-    moduleId: 'drive',
-  );
-  final planPalette = AppCardPalette.resolve(
-    context,
-    index: 1,
-    moduleId: 'calendar',
-  );
-  final backlogPalette = AppCardPalette.resolve(
-    context,
-    index: 2,
-    moduleId: 'finance',
-  );
-  final draftPalette = AppCardPalette.resolve(
-    context,
-    index: 3,
-    moduleId: 'crm',
-  );
-
+  final l10n = context.l10n;
   return [
     _StarterPrompt(
-      label: context.l10n.assistantStarterFocus,
-      prompt: context.l10n.assistantStarterFocus,
-      caption: context.l10n.assistantStarterCaptionFocus,
+      label: l10n.assistantStarterFocus,
+      prompt: l10n.assistantStarterFocus,
+      caption: l10n.assistantStarterCaptionFocus,
       icon: LucideIcons.target,
-      background: focusPalette.background,
-      border: focusPalette.border,
-      shadow: focusPalette.shadow,
-      iconBackground: focusPalette.iconBackground,
-      iconColor: focusPalette.iconColor,
-      textColor: focusPalette.textColor,
+      tone: AppTone.success,
     ),
     _StarterPrompt(
-      label: context.l10n.assistantStarterPlan,
-      prompt: context.l10n.assistantStarterPlan,
-      caption: context.l10n.assistantStarterCaptionPlan,
+      label: l10n.assistantStarterPlan,
+      prompt: l10n.assistantStarterPlan,
+      caption: l10n.assistantStarterCaptionPlan,
       icon: LucideIcons.calendarDays,
-      background: planPalette.background,
-      border: planPalette.border,
-      shadow: planPalette.shadow,
-      iconBackground: planPalette.iconBackground,
-      iconColor: planPalette.iconColor,
-      textColor: planPalette.textColor,
+      tone: AppTone.info,
     ),
     _StarterPrompt(
-      label: context.l10n.assistantStarterBacklog,
-      prompt: context.l10n.assistantStarterBacklog,
-      caption: context.l10n.assistantStarterCaptionBacklog,
+      label: l10n.assistantStarterBacklog,
+      prompt: l10n.assistantStarterBacklog,
+      caption: l10n.assistantStarterCaptionBacklog,
       icon: LucideIcons.package,
-      background: backlogPalette.background,
-      border: backlogPalette.border,
-      shadow: backlogPalette.shadow,
-      iconBackground: backlogPalette.iconBackground,
-      iconColor: backlogPalette.iconColor,
-      textColor: backlogPalette.textColor,
+      tone: AppTone.warning,
     ),
     _StarterPrompt(
-      label: context.l10n.assistantStarterDraft,
-      prompt: context.l10n.assistantStarterDraft,
-      caption: context.l10n.assistantStarterCaptionDraft,
+      label: l10n.assistantStarterDraft,
+      prompt: l10n.assistantStarterDraft,
+      caption: l10n.assistantStarterCaptionDraft,
       icon: LucideIcons.pencil,
-      background: draftPalette.background,
-      border: draftPalette.border,
-      shadow: draftPalette.shadow,
-      iconBackground: draftPalette.iconBackground,
-      iconColor: draftPalette.iconColor,
-      textColor: draftPalette.textColor,
+      tone: AppTone.primary,
     ),
   ];
 }

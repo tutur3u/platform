@@ -1,6 +1,23 @@
 part of 'time_tracker_repository.dart';
 
 extension _TimeTrackerRepositoryHelpers on TimeTrackerRepository {
+  /// The `type=running` or `type=paused` session snapshot, or null.
+  Future<Map<String, dynamic>?> _sessionOfType(String wsId, String type) async {
+    final data = await _read(
+      wsId,
+      _withQuery('/api/v1/workspaces/$wsId/time-tracking/sessions', {
+        'type': type,
+      }),
+    );
+    final session = data['session'];
+    return session is Map<String, dynamic> ? session : null;
+  }
+
+  Future<TimeTrackingSession?> _pausedSession(String wsId) async {
+    final session = await _sessionOfType(wsId, 'paused');
+    return session == null ? null : TimeTrackingSession.fromJson(session);
+  }
+
   Future<TimeTrackingSession?> _pendingRunningSession(
     String wsId,
     Object? snapshot,
