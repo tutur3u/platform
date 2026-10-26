@@ -1,8 +1,10 @@
 import { defaultContentSecurityPolicy } from '@tuturuuu/start-bridge/csp';
 import { defineBridgeAppConfig } from '@tuturuuu/start-bridge/start/app-config';
+import { framablePathRegexes } from '@tuturuuu/utils/framable-paths';
 import type { FormsEnvironment } from './cloudflare/worker';
 
 const PUBLIC_FILES = new Set(['/embed.js', '/robots.txt', '/sitemap.xml']);
+const upstreamFramablePaths = framablePathRegexes();
 const EMBED_PAGE = /^\/embed\/[^/]+(?:\/|$)/u;
 
 export default defineBridgeAppConfig<FormsEnvironment>({
@@ -16,6 +18,9 @@ export default defineBridgeAppConfig<FormsEnvironment>({
     const headers = new Headers(response.headers);
     const path = new URL(request.url).pathname;
     const isEmbed = EMBED_PAGE.test(path);
+    const upstreamFramable = upstreamFramablePaths.some((pattern) =>
+      pattern.test(path)
+    );
     headers.set('X-Content-Type-Options', 'nosniff');
     headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
 
@@ -32,11 +37,11 @@ export default defineBridgeAppConfig<FormsEnvironment>({
         'Content-Security-Policy',
         [...directives, 'frame-ancestors *'].join('; ')
       );
-    } else {
+    } else if (!upstreamFramable) {
       headers.set('X-Frame-Options', 'DENY');
     }
 
-    if (env.TUTURUUU_NOINDEX === '1' || isEmbed) {
+    if (env.TUTURUUU_NOINDEX === '1' || isEmbed || upstreamFramable) {
       headers.set('X-Robots-Tag', 'noindex, nofollow');
     }
 

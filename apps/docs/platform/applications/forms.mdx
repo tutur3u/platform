@@ -105,3 +105,11 @@ their route-level access, Turnstile and rate limits still apply. Private page
 loaders and API handlers validate the actor and workspace access. These mount
 and anonymous-respondent cases are covered by
 `apps/forms/src/proxy-refresh.test.ts`.
+
+The native Worker also preserves the platform's canonical uploaded WebGL
+framing exception. Those proxied responses keep the upstream sandbox and framing
+headers, remain private/no-store and noindex, and do not use the embed policy.
+Composed bridge-and-wrapper tests cover WebGL documents, child assets and
+neighbouring paths. The ordinary `type-check` command checks both the retained
+app and `tsconfig.cloudflare.json`, so hosted native qualification covers the
+router, Start entry and generated adapters as well as emitted bindings.

@@ -3,7 +3,7 @@
   "version": "0.20.0",
   "private": true,
   "scripts": {
-    "type-check": "node ../../scripts/run-tsc-build.js --build",
+    "type-check": "node ../../scripts/run-tsc-build.js --build && bun run type-check:cloudflare",
     "test": "vitest run",
     "test:watch": "vitest",
     "dev": "node ../../scripts/portless-safe-dev.js",
