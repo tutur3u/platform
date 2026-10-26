@@ -50,7 +50,9 @@ export const POST = withSessionAuth(
       const body = await req.json();
       const { paths } = SignedReadUrlRequestSchema.parse(body);
       if (
-        paths.some((path) => !isAiChatResourcePath(path) && !isMiraImagePath(path))
+        paths.some(
+          (path) => !isAiChatResourcePath(path) && !isMiraImagePath(path)
+        )
       ) {
         return NextResponse.json(
           { message: 'Invalid storage path' },
