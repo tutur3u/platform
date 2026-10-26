@@ -12,7 +12,6 @@ extension _AssistantPageSubmission on _AssistantPageState {
     final chatState = _chatCubit.state;
     final submittedReplyId = chatState.replyTarget?.id;
     final liveState = _liveCubit.state;
-    final operation = _remoteOperationGuard(wsId);
     final workspaceVersion = _chatCubit.attachmentScopeVersion;
     if (_chatCubit.state.workspaceId != wsId ||
         _chatCubit.state.status == AssistantChatStatus.restoring) {
@@ -84,8 +83,28 @@ extension _AssistantPageSubmission on _AssistantPageState {
     if (text.trim().isEmpty && attachments.isEmpty) {
       return;
     }
+    final throughLive = _shouldSendThroughLive(chatState, liveState);
+    if (!throughLive && _chatCubit.replyBlockedByPendingSubmission) {
+      _showInlineNotice(context.l10n.assistantReplyPending);
+      return;
+    }
+    // Only an admitted send takes the operation lease: a rapid second tap
+    // finds the composer already empty and must not retire the first send.
+    final operation = _remoteOperationGuard(wsId);
+    final draftValue = _inputController.value;
+    _transcriptFollower.resume();
+    // A chat send empties the composer the moment the user sends; acceptance
+    // is awaited separately and only an unaccepted send gives the draft back.
+    // Live keeps its draft until dispatch so its #6664 fences still apply.
+    if (!throughLive) _inputController.clear();
+    // An unsent draft returns even across a scope change, as the composer
+    // kept it before; text the user typed since then is never overwritten.
+    void restoreDraft() {
+      if (!mounted || _inputController.text.isNotEmpty) return;
+      _inputController.value = draftValue;
+    }
 
-    if (_shouldSendThroughLive(chatState, liveState)) {
+    if (throughLive) {
       var liveWorkspaceVersion = workspaceVersion;
       bool current() =>
           guard.current &&
@@ -145,10 +164,6 @@ extension _AssistantPageSubmission on _AssistantPageState {
       }
       return;
     } else {
-      if (_chatCubit.replyBlockedByPendingSubmission) {
-        _showInlineNotice(context.l10n.assistantReplyPending);
-        return;
-      }
       var replyChangedBeforeSubmission = false;
       if (!await submitAssistantRemoteChat(
         _chatCubit,
@@ -172,6 +187,7 @@ extension _AssistantPageSubmission on _AssistantPageState {
             operation.current &&
             _chatCubit.attachmentScopeVersion == workspaceVersion,
       )) {
+        restoreDraft();
         if (mounted &&
             guard.current &&
             operation.current &&
@@ -189,13 +205,9 @@ extension _AssistantPageSubmission on _AssistantPageState {
 
     if (!operation.current ||
         !mounted ||
-        _chatCubit.attachmentScopeVersion != workspaceVersion ||
-        _chatCubit.state.replyTarget != null ||
-        _inputController.text != text) {
+        _chatCubit.attachmentScopeVersion != workspaceVersion) {
       return;
     }
-
-    _inputController.clear();
     _scheduleScrollToBottom();
   }
 }

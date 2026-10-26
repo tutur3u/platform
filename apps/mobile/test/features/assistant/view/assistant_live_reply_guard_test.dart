@@ -437,7 +437,8 @@ void main() {
         cancelReply ? isNull : _answer,
       );
       expect(repository.sentAttachments, attachments);
-      expect(composer.controller.value, draft);
+      // Send empties the text at once; attachments wait for the ACK.
+      expect(composer.controller.text, isEmpty);
       expect(h.chat.state.composerAttachments, attachments);
       repository.acknowledge();
       await tester.pump();
