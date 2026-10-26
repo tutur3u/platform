@@ -45,6 +45,20 @@ const RETRY_BACKOFF_MS = 2_000;
 type Target = { problem: string } | { secret: string; url: URL };
 
 function resolveTarget(cronJob: CronJob, env: DispatchEnv): Target {
+  if (cronJob.workerProcessor === 'cron-history-retention') {
+    if (!env.SUPABASE_SECRET_KEY)
+      return { problem: 'SUPABASE_SECRET_KEY unset' };
+    try {
+      const url = new URL('/rest/v1/rpc/prune_cron_history', env.SUPABASE_URL);
+      const loopback =
+        url.hostname === '127.0.0.1' || url.hostname === 'localhost';
+      if (url.protocol !== 'https:' && !(loopback && url.protocol === 'http:'))
+        return { problem: 'SUPABASE_URL must be https' };
+      return { secret: env.SUPABASE_SECRET_KEY, url };
+    } catch {
+      return { problem: 'SUPABASE_URL invalid' };
+    }
+  }
   const origin = env[TARGET_ORIGIN_VARS[cronJob.target]];
   const secret = env[TARGET_SECRET_VARS[cronJob.target]];
   if (!origin)
@@ -63,15 +77,18 @@ function resolveTarget(cronJob: CronJob, env: DispatchEnv): Target {
   return { secret, url };
 }
 
-// The Worker port is selected separately from enabling the job, so a job can
-// move its schedule first and its processor later. It also needs the
-// database secrets the Worker already holds.
+// Legacy ports are selected separately so schedules and processors can move
+// independently. Native database maintenance has no legacy HTTP fallback.
 function workerProcessorFor(cronJob: CronJob, env: DispatchEnv) {
   if (!cronJob.workerProcessor) return null;
   const selected = (env.CRON_CONTROL_WORKER_PROCESSORS ?? '')
     .split(',')
     .map((id) => id.trim());
-  if (!selected.includes(cronJob.id)) return null;
+  if (
+    cronJob.workerProcessor !== 'cron-history-retention' &&
+    !selected.includes(cronJob.id)
+  )
+    return null;
   return WORKER_PROCESSORS[cronJob.workerProcessor];
 }
 
