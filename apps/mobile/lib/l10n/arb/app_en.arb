@@ -718,34 +718,6 @@
       }
     }
   },
-  "@profileTimelineNotes": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "@profileTimelineTasks": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "@profileTimelineTransactions": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "@profileTimelineWorkspaceEvents": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "@profileTrackedMinutes": {
     "placeholders": {
       "minutes": {
@@ -3363,19 +3335,19 @@
   "profileTimelineEmpty": "No recent activity in this workspace",
   "profileTimelineHasActivity": "Activity in loaded snapshot",
   "profileTimelineHideDates": "Close dates and browse agenda",
+  "profileTimelineKindNote": "Note",
+  "profileTimelineKindTask": "Task",
+  "profileTimelineKindTransaction": "Transaction",
+  "profileTimelineKindWorkspaceEvent": "Workspace event",
   "profileTimelineLimited": "Showing recent activity only. Some sources reached the display limit.",
   "profileTimelineLoadedEnd": "All loaded activity shown",
   "profileTimelineMoreDays": "Show more loaded days",
-  "profileTimelineNotes": "{count, plural, one{Added 1 note} other{Added {count} notes}}",
   "profileTimelinePartial": "Some activity is unavailable.",
   "profileTimelineShowDates": "Show date selector",
   "profileTimelineTab": "Timeline",
-  "profileTimelineTasks": "{count, plural, one{Created 1 task} other{Created {count} tasks}}",
   "profileTimelineTitle": "Timeline",
   "profileTimelineToday": "Today",
-  "profileTimelineTransactions": "{count, plural, one{Created 1 transaction} other{Created {count} transactions}}",
   "profileTimelineUnavailable": "Activity could not be refreshed.",
-  "profileTimelineWorkspaceEvents": "{count, plural, one{1 workspace event added} other{{count} workspace events added}}",
   "profileTimelineYesterday": "Yesterday",
   "profileTitle": "Profile",
   "profileTrackedMinutes": "{minutes} min tracked",

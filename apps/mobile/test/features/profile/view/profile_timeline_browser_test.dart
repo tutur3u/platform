@@ -71,11 +71,12 @@ void main() {
     expect(
       find.descendant(
         of: find.byType(AppGroupedRow),
-        matching: find.text('Created 1 task'),
+        matching: find.text('Task'),
       ),
       findsOneWidget,
     );
-    expect(find.textContaining('Created 1 task ·'), findsNothing);
+    // The kind is the title of an untitled row, never repeated below it.
+    expect(find.text('Task'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

@@ -6642,6 +6642,18 @@ class AppLocalizationsVi extends AppLocalizations {
   String get profileTimelineHideDates => 'Đóng thanh ngày và xem dòng hoạt động';
 
   @override
+  String get profileTimelineKindNote => 'Ghi chú';
+
+  @override
+  String get profileTimelineKindTask => 'Công việc';
+
+  @override
+  String get profileTimelineKindTransaction => 'Giao dịch';
+
+  @override
+  String get profileTimelineKindWorkspaceEvent => 'Sự kiện không gian làm việc';
+
+  @override
   String get profileTimelineLimited => 'Chỉ hiển thị hoạt động gần đây. Một số nguồn đã đạt giới hạn hiển thị.';
 
   @override
@@ -6649,11 +6661,6 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get profileTimelineMoreDays => 'Hiện thêm ngày đã tải';
-
-  @override
-  String profileTimelineNotes(int count) {
-    return 'Đã thêm $count ghi chú';
-  }
 
   @override
   String get profileTimelinePartial => 'Một số hoạt động chưa hiển thị.';
@@ -6665,28 +6672,13 @@ class AppLocalizationsVi extends AppLocalizations {
   String get profileTimelineTab => 'Dòng thời gian';
 
   @override
-  String profileTimelineTasks(int count) {
-    return 'Đã tạo $count công việc';
-  }
-
-  @override
   String get profileTimelineTitle => 'Dòng thời gian';
 
   @override
   String get profileTimelineToday => 'Hôm nay';
 
   @override
-  String profileTimelineTransactions(int count) {
-    return 'Đã tạo $count giao dịch';
-  }
-
-  @override
   String get profileTimelineUnavailable => 'Không thể làm mới hoạt động.';
-
-  @override
-  String profileTimelineWorkspaceEvents(int count) {
-    return 'Đã thêm $count sự kiện vào không gian';
-  }
 
   @override
   String get profileTimelineYesterday => 'Hôm qua';
