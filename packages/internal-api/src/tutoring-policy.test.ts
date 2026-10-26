@@ -256,6 +256,21 @@ describe('Easy Center tutoring shifts', () => {
     });
   });
 
+  it('keeps the weak-content editor restriction off unless saved on', () => {
+    const { restrictWeakContentEditors, ...legacy } =
+      EASY_CENTER_TUTORING_POLICY;
+    expect(restrictWeakContentEditors).toBe(false);
+    expect(STANDARD_TUTORING_POLICY.restrictWeakContentEditors).toBe(false);
+    expect(parseTutoringPolicy(legacy)?.restrictWeakContentEditors).toBe(false);
+    expect(
+      parseTutoringPolicy({ ...legacy, restrictWeakContentEditors: true })
+        ?.restrictWeakContentEditors
+    ).toBe(true);
+    expect(
+      parseTutoringPolicy({ ...legacy, restrictWeakContentEditors: 'yes' })
+    ).toBeNull();
+  });
+
   it('upgrades only the prior Easy Center exclusion preset', () => {
     const priorRules = [{ scope: 'all', match: 'contains', value: 'DDT' }];
     expect(
