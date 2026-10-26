@@ -27,7 +27,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: mail-profile-runtime-${{ github.event.pull_request.number }}
+  group: mail-profile-runtime-${{ github.event.pull_request.number }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
   cancel-in-progress: true
 jobs:
   check-ci:

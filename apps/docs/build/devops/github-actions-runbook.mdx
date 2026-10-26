@@ -496,12 +496,26 @@ starts its reusable callee.
   merge tooling such as `watch_pr_ready` counts `SKIPPED` as passing. Once the
   label is removed, the PR has no hosted evidence. Re-add the label for a fresh
   admitted run, or rely on the exact-head local pass.
+- **CI Admitted check (`ci-admitted.yaml`, always on).** One small job per PR
+  event reads the PR's *current* labels with a read-only token and runs the
+  admission script from the base commit. It is **red** when `ready-for-ci` is
+  missing, so skipped heavy checks never read as passing. It is also red when
+  the label is present now but was absent from this event's payload (the
+  push/label race). Draft and WIP PRs show it red, but it blocks nothing,
+  because no ruleset requires checks. Green means this event's heavy runs were
+  admitted.
 - **Push/label race.** A `synchronize` payload carries the labels present at
-  push time. If the label is added seconds after a push, that unlabelled push
-  run can land after the admitted `labeled` run and supersede it with skipped
-  checks. Add the label only after the PR shows the new head SHA. If a labelled
-  PR shows skipped heavy checks, remove and re-add the label. Pushes to an
-  already-labelled PR are admitted.
+  push time. PR runs whose payload lacks the label use a separate
+  `-unadmitted` concurrency group (`UNADMITTED_GROUP_SUFFIX`), so a late
+  unlabelled push run can never cancel the admitted `labeled` run. Its skipped
+  checks can still be the newest shown under the same names. CI Admitted then
+  turns red with "re-add" guidance: remove and re-add the label to admit the
+  current head. Adding the label only after the PR shows the new head SHA
+  avoids the race entirely.
+- **Why not a per-workflow admission job:** reading current labels in each of
+  the 57 heavy workflows would allocate a hosted job on every unlabelled PR
+  push. One admission check per event keeps unlabelled pushes runner-free for
+  heavy workflows.
 - **Always on for every PR push:** Branch Name Check, Check Migration
   Timestamps, Check Database Migrations, Mobile API Mappings, Codex Plugin
   Check, Security Checks (gitleaks, dependency review and audit) and Security
