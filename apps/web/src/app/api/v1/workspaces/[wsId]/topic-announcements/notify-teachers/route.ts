@@ -21,6 +21,9 @@ export async function POST(request: Request, { params }: Params) {
     requireManage: true,
   });
   if (access.response) return access.response;
+  if (!access.context.teacherAssignmentsEnabled) {
+    return NextResponse.json({ message: 'Not found' }, { status: 404 });
+  }
 
   let body: unknown;
   try {

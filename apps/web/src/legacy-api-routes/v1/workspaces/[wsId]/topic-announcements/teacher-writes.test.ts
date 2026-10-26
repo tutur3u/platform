@@ -17,6 +17,7 @@ import {
 
 const mocks = vi.hoisted(() => ({
   admin: null as any,
+  teacherAssignments: true,
   granted: new Set<string>(),
 }));
 
@@ -34,7 +35,13 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
     withoutPermission: (permission: string) => !mocks.granted.has(permission),
   })),
   getSecret: vi.fn(() => ({ value: 'true' })),
-  getSecrets: vi.fn(async () => []),
+  getSecrets: vi.fn(async () => [
+    { name: 'ENABLE_TOPIC_ANNOUNCEMENTS', value: 'true' },
+    {
+      name: 'ENABLE_TOPIC_TEACHER_ASSIGNMENTS',
+      value: mocks.teacherAssignments ? 'true' : 'false',
+    },
+  ]),
   normalizeWorkspaceId: vi.fn(async (wsId: string) => wsId),
 }));
 vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({

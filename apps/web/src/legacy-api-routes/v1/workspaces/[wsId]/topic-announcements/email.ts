@@ -1,7 +1,7 @@
 import { getContactVerificationStatuses } from '@tuturuuu/users-core/routes/topic-announcements';
 import {
+  getTopicAnnouncementSendFlags,
   hasUnavailableTopicAnnouncementRecipient,
-  isTopicAnnouncementSendingEnabled,
 } from '@/lib/topic-announcement-send-admission';
 
 export { getContactVerificationStatuses } from '@tuturuuu/users-core/routes/topic-announcements';
@@ -132,7 +132,8 @@ export async function sendTopicAnnouncement({
     return { error: 'ALREADY_SENT', status: 409 };
   }
 
-  if (!(await isTopicAnnouncementSendingEnabled(normalizedWsId))) {
+  const sendFlags = await getTopicAnnouncementSendFlags(normalizedWsId);
+  if (!sendFlags.sending) {
     return { error: 'TOPIC_ANNOUNCEMENTS_DISABLED', status: 409 };
   }
 
@@ -283,8 +284,12 @@ export async function sendTopicAnnouncement({
     .from('topic_announcements')
     .update({
       last_error: null,
-      // Keep the first send time so a resend never changes on-time status.
-      sent_at: announcement.sent_at ?? new Date().toISOString(),
+      // With teacher assignments on, keep the first send time so a resend
+      // never changes on-time status; otherwise behave as before.
+      sent_at:
+        sendFlags.teacherAssignments && announcement.sent_at
+          ? announcement.sent_at
+          : new Date().toISOString(),
       sent_email_audit_id: result.auditId ?? null,
       status: 'sent',
       updated_by: actorUserId,

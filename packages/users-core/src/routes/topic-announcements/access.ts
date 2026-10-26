@@ -42,8 +42,11 @@ export function decideTopicAnnouncementAccessMode({
   requireManage = false,
   requireSend = false,
   teacherAccess,
+  teacherAssignmentsEnabled = false,
 }: TopicAnnouncementAccessOptions & {
   hasPermission: (permission: string) => boolean;
+  /** The teacher branch exists only when teacher assignments are enabled. */
+  teacherAssignmentsEnabled?: boolean;
 }): TopicAnnouncementAccessMode {
   const canManage = hasPermission('manage_users');
   const managerAllowed =
@@ -52,7 +55,7 @@ export function decideTopicAnnouncementAccessMode({
       (canManage && hasPermission('send_user_group_post_emails')));
   if (managerAllowed) return 'manager';
 
-  if (!teacherAccess) return 'denied';
+  if (!teacherAccess || !teacherAssignmentsEnabled) return 'denied';
   return TOPIC_ANNOUNCEMENT_TEACHER_PERMISSIONS[teacherAccess].some(
     hasPermission
   )
@@ -245,4 +248,49 @@ export function validateTeacherTopicAnnouncementWrite({
     return { message: 'Teachers can only save topic drafts', status: 403 };
   }
   return null;
+}
+
+/**
+ * With teacher assignments off, write paths behave as before the feature:
+ * the topic is required whenever it is written (the pre-feature schema's
+ * `min(1)`), and teacher-only fields are ignored, as the old schema stripped
+ * unknown keys. Returns the error response body, or the payload to write.
+ */
+export function gateTopicAnnouncementTeacherFields<
+  Payload extends {
+    courseBook?: string | null;
+    teacherWorkspaceUserId?: string | null;
+    topic?: string;
+    videoUrl?: string | null;
+  },
+>(
+  payload: Payload,
+  { enabled, topicRequired }: { enabled: boolean; topicRequired: boolean }
+):
+  | { error: { issues: unknown[]; message: string }; payload?: never }
+  | { error?: never; payload: Payload } {
+  if (enabled) return { payload };
+  const topicWritten = topicRequired || payload.topic !== undefined;
+  if (topicWritten && !payload.topic?.trim()) {
+    return {
+      error: {
+        issues: [
+          {
+            code: 'too_small',
+            message: 'Topic is required',
+            path: ['topic'],
+          },
+        ],
+        message: 'Invalid request',
+      },
+    };
+  }
+  return {
+    payload: {
+      ...payload,
+      courseBook: undefined,
+      teacherWorkspaceUserId: undefined,
+      videoUrl: undefined,
+    },
+  };
 }

@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const f = vi.hoisted(() => ({
   enabled: true,
+  teacherAssignments: false,
   archived: false,
   failReceipt: false,
   contactWsId: '',
@@ -29,6 +30,10 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   normalizeWorkspaceId: vi.fn(),
   getSecrets: async () => [
     { name: 'ENABLE_TOPIC_ANNOUNCEMENTS', value: f.enabled ? 'true' : 'false' },
+    {
+      name: 'ENABLE_TOPIC_TEACHER_ASSIGNMENTS',
+      value: f.teacherAssignments ? 'true' : 'false',
+    },
   ],
   getSecret: (name: string, rows: Array<{ name: string }>) =>
     rows.find((row) => row.name === name),
@@ -184,6 +189,7 @@ beforeEach(() => {
   vi.setSystemTime(new Date('2026-10-07T10:00:00Z'));
   vi.stubEnv('CRON_SECRET', 'synthetic-test-cron');
   f.enabled = true;
+  f.teacherAssignments = false;
   f.contactWsId = workspaceId;
   f.nullRecipient = false;
   f.recipientError = false;
@@ -256,7 +262,23 @@ describe('real topic sender admission and authoritative receipt', () => {
     });
     expect(f.provider).toHaveBeenCalledOnce();
   });
-  it('stamps the first sent_at and keeps it on a resend', async () => {
+  it('restamps sent_at on a resend with teacher assignments off (as before)', async () => {
+    await send();
+    expect(f.row.sent_at).toBe('2026-10-07T10:00:00.000Z');
+    vi.setSystemTime(new Date('2026-10-09T10:00:00Z'));
+    await sendTopicAnnouncement({
+      actorUserId: 'synthetic-actor',
+      announcementId,
+      normalizedWsId: workspaceId,
+      request: request(),
+      resend: true,
+      sbAdmin: client(),
+    });
+    expect(f.provider).toHaveBeenCalledTimes(2);
+    expect(f.row.sent_at).toBe('2026-10-09T10:00:00.000Z');
+  });
+  it('keeps the first sent_at on a resend with teacher assignments on', async () => {
+    f.teacherAssignments = true;
     await send();
     expect(f.row.sent_at).toBe('2026-10-07T10:00:00.000Z');
     vi.setSystemTime(new Date('2026-10-09T10:00:00Z'));

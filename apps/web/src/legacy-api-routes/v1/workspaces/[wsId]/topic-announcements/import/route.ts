@@ -58,7 +58,8 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
-  const { actorUserId, normalizedWsId, sbAdmin } = access.context;
+  const { actorUserId, normalizedWsId, sbAdmin, teacherAssignmentsEnabled } =
+    access.context;
   const rowErrors: { message: string; rowNumber: number }[] = [];
   const validRows = parsed.data.rows.flatMap((row, index) => {
     const rowNumber = index + 1;
@@ -152,10 +153,9 @@ export async function POST(request: Request, { params }: Params) {
 
   // send_due_at (24h before the session in the workspace timezone) is owned
   // by the deadline helper; keep it out of the row mapping below.
-  const timezone = await getWorkspaceSchedulingTimezone(
-    sbAdmin,
-    normalizedWsId
-  );
+  const timezone = teacherAssignmentsEnabled
+    ? await getWorkspaceSchedulingTimezone(sbAdmin, normalizedWsId)
+    : null;
   const { data: announcements, error: announcementError } = await sbAdmin
     .from('topic_announcements')
     .insert(
@@ -168,11 +168,13 @@ export async function POST(request: Request, { params }: Params) {
         end_time: row.endTime,
         place: row.place?.trim() || null,
         room: row.room?.trim() || null,
-        send_due_at: computeTopicAnnouncementSendDueAt({
-          sessionDate: row.sessionDate,
-          startTime: row.startTime,
-          timeZone: timezone,
-        }),
+        send_due_at: teacherAssignmentsEnabled
+          ? computeTopicAnnouncementSendDueAt({
+              sessionDate: row.sessionDate,
+              startTime: row.startTime,
+              timeZone: timezone,
+            })
+          : null,
         session_date: row.sessionDate ?? null,
         source_row_number: row.rowNumber,
         source_type: parsed.data.sourceType,
