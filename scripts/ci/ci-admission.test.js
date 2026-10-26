@@ -97,7 +97,10 @@ test('CI Admitted is always on, read-only and immune to PR edits', () => {
   }
   assert.match(job.steps[1].run, /issues\/\$PR_NUMBER\/labels/u);
   assert.match(job.steps[2].run, /node scripts\/ci\/ci-admission\.js/u);
-  assert.equal(workflow.concurrency['cancel-in-progress'], true);
+  assert.match(
+    workflow.concurrency['cancel-in-progress'],
+    /github\.event\.label\.name != 'ready-for-ci'/u
+  );
   assert.match(workflow.concurrency.group, /pull_request\.number/u);
 });
 

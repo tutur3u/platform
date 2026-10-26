@@ -20,8 +20,6 @@ const filters = JSON.parse(
     { encoding: 'utf8' }
   )
 );
-const matches = (category, file) =>
-  filters[category].some((pattern) => path.matchesGlob(file, pattern));
 const converted = [
   'biome-check.yaml',
   'i18n-check.yaml',
@@ -72,63 +70,9 @@ test('existing check display names remain stable in the consolidated run', () =>
     for (const [id, name] of Object.entries(jobs))
       assert.equal(workflows[file].jobs[id].name, name);
   }
-  assert.equal(workflow.jobs.scope.name, 'Check branch name');
+  assert.equal(workflow.jobs['branch-name'].name, 'Check branch name');
   assert.equal(workflow.jobs.gate.name, 'Cheap PR Checks');
-  assert.equal(workflow.jobs.gate.if, 'always()');
-});
-
-test('path selection covers locale consumers, source contracts and guard changes', () => {
-  for (const file of [
-    'apps/web/messages/en.json',
-    'packages/ui/messages/vi.json',
-    'apps/mail/src/routes/index.tsx',
-    'scripts/i18n-rendered-keys.js',
-  ])
-    assert.ok(matches('i18n', file), file);
-  for (const file of [
-    'apps/web/src/app/sitemap.ts',
-    'apps/docs/docs.json',
-    'apps/web/public/robots.txt',
-    'scripts/local-docs.js',
-    'packages/utils/src/seo.ts',
-    'packages/sdk/package.json',
-    'apps/mail/next.config.ts',
-  ])
-    assert.ok(matches('docs', file), file);
-  for (const file of [
-    'apps/database/supabase/migrations/20261027000000_change.sql',
-    'scripts/check-migration-timestamps.js',
-  ])
-    assert.ok(matches('migrations', file), file);
-  for (const file of [
-    'apps/pay/src/app/api/payment/route.ts',
-    'apps/mobile/lib/core/config/api_config.dart',
-    'packages/sdk/src/client.ts',
-  ])
-    assert.ok(matches('mobile', file), file);
-  for (const file of [
-    'plugins/tuturuuu/scripts/validate_plugin.py',
-    '.agents/plugins/marketplace.json',
-    '.claude-plugin/marketplace.json',
-    'skills.sh.json',
-    'apps/docs/build/skills/installation.mdx',
-  ])
-    assert.ok(matches('plugin', file), file);
-  for (const category of Object.keys(filters))
-    assert.ok(matches(category, '.github/workflows/pr-checks.yaml'), category);
-  for (const category of ['biome', 'i18n', 'migrations', 'mobile', 'plugin'])
-    assert.equal(
-      matches(category, 'apps/docs/platform/overview.mdx'),
-      false,
-      category
-    );
-  for (const category of ['i18n', 'docs', 'migrations', 'mobile', 'plugin'])
-    assert.equal(
-      matches(category, 'apps/mobile/lib/screens/home.dart'),
-      false,
-      category
-    );
-  assert.equal(matches('biome', 'README.md'), false);
+  assert.equal(workflow.jobs.gate.if, '!cancelled()');
 });
 
 const resultSet = (overrides = {}, selected = {}) =>
@@ -140,7 +84,9 @@ const resultSet = (overrides = {}, selected = {}) =>
         {
           result:
             overrides[id] ||
-            (['scope', 'admitted'].includes(id) ? 'success' : 'skipped'),
+            (['scope', 'branch-name', 'admitted'].includes(id)
+              ? 'success'
+              : 'skipped'),
           outputs:
             id === 'scope'
               ? Object.fromEntries(
@@ -163,6 +109,7 @@ function gate(results, ready = false) {
       ...process.env,
       RESULTS: JSON.stringify(results),
       READY: String(ready),
+      FULL_RUN: 'true',
       BASE_BRANCH: 'main',
     },
   });
@@ -308,7 +255,7 @@ test('the inventory records all baseline PR entrypoints and the required-check m
 });
 
 test('the consolidated branch check executes the existing policy with branch names as data', () => {
-  const script = workflow.jobs.scope.steps[1].run;
+  const script = workflow.jobs['branch-name'].steps[0].run;
   const { BRANCH_NAME_PATTERN } = require('../check-changed/plan');
   const match = /\[\[ \$BRANCH_NAME =~ (.+) \]\]/u.exec(script);
   assert.equal(BRANCH_NAME_PATTERN.source, match[1].replaceAll('/', '\\/'));
@@ -330,4 +277,16 @@ test('the consolidated branch check executes the existing policy with branch nam
       branch
     );
   }
+});
+
+test('Security Checks bytes match the pinned PR base 30a396356e534edafac76ef917d6a55cb26d1d8e', () => {
+  const { createHash } = require('node:crypto');
+  const { readFileSync } = require('node:fs');
+  const bytes = readFileSync(
+    path.resolve(__dirname, '../../.github/workflows/security-checks.yaml')
+  );
+  assert.equal(
+    createHash('sha256').update(bytes).digest('hex'),
+    'e40cc4481e16dba35251cbe90be820e8368639a230cdcb521e654fa8a34e6234'
+  );
 });

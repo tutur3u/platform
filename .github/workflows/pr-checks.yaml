@@ -8,12 +8,13 @@ permissions:
   contents: read
 
 concurrency:
-  group: cheap-pr-checks-${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
-  cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
+  group: cheap-pr-checks-${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}${{ (github.event_name == 'pull_request' && (github.event.action == 'labeled' || github.event.action == 'unlabeled') && github.event.label.name != 'ready-for-ci') && format('-metadata-{0}-{1}', github.run_id, github.run_attempt) || '' }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
+  cancel-in-progress: ${{ (!(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--')))) && !(github.event_name == 'pull_request' && (github.event.action == 'labeled' || github.event.action == 'unlabeled') && github.event.label.name != 'ready-for-ci') }}
 
 jobs:
   scope:
-    name: Check branch name
+    name: Select cheap PR checks
+    if: github.event_name != 'pull_request' || (github.event.action != 'labeled' && github.event.action != 'unlabeled') || github.event.label.name == 'ready-for-ci'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -29,7 +30,7 @@ jobs:
     steps:
       - name: Select affected checks
         id: paths
-        uses: dorny/paths-filter@15192bc058cc28a13dbf6cde61f19e18988b7af6 # v3
+        uses: dorny/paths-filter@0e4a8c6effa4802afeda77dc8d303f8176d7dfad # v3.0.4
         with:
           filters: |
             biome:
@@ -37,6 +38,8 @@ jobs:
               - &manifest 'package.json'
               - &lock 'bun.lock'
               - '**/*.{js,cjs,mjs,jsx,ts,cts,mts,tsx,json,jsonc,css,graphql,gql}'
+              - '.editorconfig'
+              - '.gitignore'
             i18n:
               - *control
               - *manifest
@@ -48,6 +51,7 @@ jobs:
               - 'apps/*/package.json'
               - 'packages/*/package.json'
               - 'scripts/i18n-*'
+              - 'scripts/run-i18n-check.js'
               - 'i18n-*.json'
             docs:
               - *control
@@ -67,6 +71,10 @@ jobs:
               - 'scripts/ci/paused-*'
               - 'scripts/ci/release-docs-*'
               - 'scripts/ci/cf-adoption-*'
+              - 'apps/mobile/pubspec.*'
+              - 'apps/discord/pyproject.toml'
+              - 'apps/discord/uv.lock'
+              - 'scripts/safe-fs.js'
             migrations:
               - *control
               - 'apps/database/supabase/migrations/**.sql'
@@ -92,9 +100,18 @@ jobs:
               - 'skills.sh.json'
               - 'apps/docs/build/skills/**'
               - 'apps/docs/build/development-tools/codex-plugin.mdx'
+              - 'apps/docs/build/development-tools/git-conventions.mdx'
               - 'AGENTS.md'
               - 'apps/docs/docs.json'
               - 'tuturuuu*.ts'
+
+  branch-name:
+    name: Check branch name
+    if: github.event_name != 'pull_request' || (github.event.action != 'labeled' && github.event.action != 'unlabeled') || github.event.label.name == 'ready-for-ci'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions: {}
+    steps:
       - name: Check branch name
         env:
           PR_BRANCH: ${{ github.head_ref }}
@@ -178,8 +195,8 @@ jobs:
 
   gate:
     name: Cheap PR Checks
-    if: always()
-    needs: [scope, admitted, biome, i18n, docs, migration-timestamps, migrations, mobile, plugin]
+    if: '!cancelled()'
+    needs: [scope, branch-name, admitted, biome, i18n, docs, migration-timestamps, migrations, mobile, plugin]
     runs-on: ubuntu-latest
     timeout-minutes: 3
     permissions: {}
@@ -187,20 +204,25 @@ jobs:
       - name: Require successful selected checks
         env:
           RESULTS: ${{ toJSON(needs) }}
+          FULL_RUN: ${{ github.event_name != 'pull_request' || (github.event.action != 'labeled' && github.event.action != 'unlabeled') || github.event.label.name == 'ready-for-ci' }}
           READY: ${{ contains(github.event.pull_request.labels.*.name, 'ready-for-ci') }}
           BASE_BRANCH: ${{ github.base_ref }}
         run: |
           node - <<'NODE'
           const results = JSON.parse(process.env.RESULTS);
           const scope = results.scope.outputs;
+          const full = process.env.FULL_RUN === 'true';
           const selected = {
-            biome: scope.biome === 'true' && process.env.READY === 'true',
-            i18n: scope.i18n === 'true' && process.env.READY === 'true',
-            docs: scope.docs === 'true' && process.env.READY === 'true',
-            'migration-timestamps': scope.migrations === 'true',
-            migrations: scope.migrations === 'true',
-            mobile: scope.mobile === 'true' && process.env.BASE_BRANCH === 'main',
-            plugin: scope.plugin === 'true',
+            scope: full,
+            'branch-name': full,
+            admitted: true,
+            biome: full && scope.biome === 'true' && process.env.READY === 'true',
+            i18n: full && scope.i18n === 'true' && process.env.READY === 'true',
+            docs: full && scope.docs === 'true' && process.env.READY === 'true',
+            'migration-timestamps': full && scope.migrations === 'true',
+            migrations: full && scope.migrations === 'true',
+            mobile: full && scope.mobile === 'true' && process.env.BASE_BRANCH === 'main',
+            plugin: full && scope.plugin === 'true',
           };
           for (const [name, job] of Object.entries(results)) {
             if (job.result === 'success') continue;

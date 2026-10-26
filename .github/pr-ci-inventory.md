@@ -93,6 +93,16 @@ selection is included. This is a trigger estimate, not executed post-change CI,
 runner-slot savings or queue latency. It does not support a 40% overall claim.
 Database contracts and app/store builds are outside the cheap-check scope.
 
+After the review corrections, replaying the same captured paths with
+`picomatch` and `{dot:true}` still selects **516 → 408 runs (20.9%)**. The
+corrected selectors retain validators for pubspec, Discord manifests/lockfiles,
+safe-fs, Git conventions, Biome config and the i18n launcher. They change job
+selection rather than the unfiltered workflow entrypoint count. Unrelated
+label events now allocate only admission and the aggregate in this workflow;
+normal validation also includes a separate branch-name job so a bad name
+cannot hide other checks. These job changes are not counted as saved workflow
+runs or measured runner-time savings.
+
 | PR | Changed paths | Before | After |
 | --- | --- | --- | --- |
 | #6725 | 16 | 39 | 33 |

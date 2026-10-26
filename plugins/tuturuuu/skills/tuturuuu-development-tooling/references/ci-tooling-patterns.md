@@ -742,11 +742,13 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   pass still counts as green under the speed grant. A new push to a labelled PR
   reruns CI and supersedes the old run. Retrigger without a push by removing and
   re-adding the label; `gh run rerun` replays the original event, so a
-  pre-label run stays skipped. Admission checks only label presence: any later
-  label event on a ready PR is a real admitted run in the same group, so a
-  skipped run can never mask a red one on a labelled PR. Skipped checks are not
+  pre-label run stays skipped. Most heavy workflows admit by label presence.
+  In the consolidated `pr-checks.yaml`, only `ready-for-ci` label changes rerun
+  selected validators; other label changes run CI admission and its aggregate
+  in unique non-cancelling groups, including the admission callee. They provide
+  admission evidence only, not a new validation pass. Skipped checks are not
   evidence once the label is removed. The always-on CI Admitted check
-  (`ci-admitted.yaml`) reads current labels from a base-commit script. It is red
+  (`pr-checks.yaml` → `ci-admitted.yaml`) reads current labels from a base-commit script. It is red
   without the label, and on the push/label race, which it reports with re-add
   guidance. It is advisory: the base commit protects the script, not the
   PR-supplied workflow file. A missing base script fails red, never green. A
@@ -757,13 +759,18 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   cancelling group. Do not add per-workflow admission jobs: they would allocate
   a hosted job on every unlabelled push. Gate every job of a new heavy PR workflow
   with `PR_LABEL_GATE` from `scripts/ci/pr-label-gate.js`, ANDed at the top
-  level. Add `labeled` to `pull_request.types`, keep label events in the
-  ordinary cancelling PR group, and classify the workflow there. Gate callers, never reusable callees; never use workflow-level
-  filters. Leave paused `if: false` jobs alone. Branch-push validators keep
+  level. Add `labeled` to `pull_request.types`; readiness label events share
+  the ordinary validation group, while metadata-only label events must use a
+  unique non-cancelling group. Classify the workflow there. Gate callers, never
+  reusable callees; never use workflow-level filters. Leave paused `if: false` jobs alone. Branch-push validators keep
   push only for `main`, `production` and `release-please--branches--**`; keep
   mutating jobs (Biome auto-format) push-only. Cheap script-only and security
   checks stay ungated. See the
   [runbook](../../../../../apps/docs/build/devops/github-actions-runbook.mdx#label-gated-heavy-pr-ci-ready-for-ci).
+- Verify new third-party action pins through the owning repository's
+  `git/commits/<sha>` API. Annotated tag objects are also 40 hex digits; use the
+  tag's peeled commit. The offline pin suite rejects observed tag objects but
+  cannot establish arbitrary object types from syntax alone.
 - Consolidate PR-only release checks into the reusable CI config job with
   `check_pr_release_only: true`. Meet, Lettin and Parley compare the same PR base
   and head as before; production/manual events always return `run_checks=true`.

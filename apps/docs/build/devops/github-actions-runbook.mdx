@@ -472,18 +472,39 @@ branch push. Plugin checks on protected and generated release branches remain.
 One SHA-pinned `dorny/paths-filter` job selects the affected callers. Biome,
 i18n and docs retain `ready-for-ci` admission; script-only checks remain ungated.
 Workflow/action changes select every category. Locale consumer source changes
-select i18n as well as bundle edits. Migration guard edits select migration
-checks. Mobile API selection retains the original main-base restriction.
+select i18n as well as bundle edits and `scripts/run-i18n-check.js`. Docs
+selection includes mobile pubspec files, Discord manifests/lockfiles and the
+safe-fs helper used by the inventory generator. Biome selects `.editorconfig`
+and `.gitignore`; plugin validation includes the Git conventions page.
+Migration guard edits select migration checks. Mobile API selection retains the original main-base restriction.
 Security Checks and its trusted base-commit scope are separate and unchanged:
 there is no path filter or readiness label on its PR trigger.
 
-The always-run **Cheap PR Checks** gate succeeds for irrelevant path skips and
-fails for selected skips, failures, cancellations or missing admission. CI
-admission stays red until this event and the live PR both carry `ready-for-ci`.
+The **Cheap PR Checks** gate runs with `!cancelled()`, succeeds for irrelevant
+path skips and fails for selected caller skips, failures or missing admission.
+Branch naming is an independent job, so a bad name fails the aggregate without
+hiding selected validation. CI admission stays red until this event and the
+live PR both carry `ready-for-ci`.
 Existing leaf job display names are retained; reusable calls add caller prefixes
 to GitHub check contexts. No current ruleset requires a status check. Before
 requiring a leaf in future, use an always-reporting gate or preserve that exact
 context on irrelevant paths. Recheck rulesets in the same change window.
+
+Among label events, only adding or removing `ready-for-ci` retriggers the
+consolidated validators.
+Other `labeled`/`unlabeled` events run only CI admission and its aggregate;
+each receives a unique non-cancelling group in both parent and admission callee.
+Those runs do not establish a new validation pass. Unadmitted validation stays
+in a separate group and cannot cancel an admitted run. This exception applies
+to the consolidated workflow; other heavy workflows retain label-presence
+admission until separately migrated.
+
+Every selector pattern has a positive fixture in
+`scripts/ci/pr-checks-paths.test.js`, using `picomatch` with `{dot:true}` like
+dorny. Keep these fixtures aligned with actual validator inputs, including
+non-JavaScript manifests. Security Checks is also locked to the pinned PR base
+by a SHA-256 regression. New action pins must resolve to commits, not annotated
+tag objects; verify their object type with the owning repository's Git API.
 
 Called workflows inherit `github.workflow` from their caller, so each reusable
 workflow's concurrency group includes a distinct file namespace. Biome retains
@@ -520,7 +541,9 @@ starts its reusable callee.
   rerun replays its original event, so a run started before the label was
   added is skipped again. Use `gh run rerun` only to retry an admitted run,
   for example after a flaky failure.
-- **Other labels on a ready PR rerun CI.** Admission checks only that the label
+- **Other labels on a ready PR rerun independent heavy workflows.** Cheap PR
+  Checks runs only admission and its aggregate for unrelated label changes.
+  Other heavy workflows check only that the label
   is present, so any later `labeled` event on a labelled PR is a real admitted
   run on the same SHA. It joins the same PR group and supersedes the
   in-progress run. The newest check per name is therefore always genuine
