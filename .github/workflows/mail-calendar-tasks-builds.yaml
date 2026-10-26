@@ -1,6 +1,7 @@
 name: Mail Calendar Tasks builds
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
     paths:
       - 'scripts/safe-fs.js'
       - 'apps/mail/**'
@@ -20,7 +21,10 @@ on:
       - 'scripts/ci/calendar-cf-output*'
       - 'scripts/ci/calendar-cf-archive.py'
       - 'scripts/ci/native-source-identity-test-helper.js'
+      - 'scripts/ci/apps-native-runtime-pointer.mjs'
       - 'scripts/ci/calendar-emitted-defaults*'
+      - 'scripts/ci/tasks-native-artifact*'
+      - 'scripts/ci/apps-native-artifact.py'
       - '.github/actions/**'
       - '.github/workflows/ci-check.yml'
       - 'tuturuuu.ci.ts'
@@ -46,7 +50,10 @@ on:
       - 'scripts/ci/calendar-cf-output*'
       - 'scripts/ci/calendar-cf-archive.py'
       - 'scripts/ci/native-source-identity-test-helper.js'
+      - 'scripts/ci/apps-native-runtime-pointer.mjs'
       - 'scripts/ci/calendar-emitted-defaults*'
+      - 'scripts/ci/tasks-native-artifact*'
+      - 'scripts/ci/apps-native-artifact.py'
       - '.github/actions/**'
       - '.github/workflows/ci-check.yml'
       - 'tuturuuu.ci.ts'
@@ -59,6 +66,7 @@ concurrency:
   cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 jobs:
   check-ci:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     permissions:
       contents: read
       deployments: read
@@ -181,6 +189,8 @@ jobs:
         with:
           node-version: 24.22.0
       - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+      - name: Tasks native artifact helper regressions
+        run: python3 scripts/ci/tasks-native-artifact.test.py
       - name: Build application and shared dependencies without deployment
         id: mail-frontend-build
         uses: ./.github/actions/run-with-turbo-remote-cache
@@ -188,6 +198,21 @@ jobs:
           command: bun turbo:local run build --concurrency=2 --filter=@tuturuuu/tasks
           token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && secrets.TURBO_TOKEN || '' }}
           team: ${{ github.ref != 'refs/heads/production' && (vars.TURBO_TEAM || secrets.TURBO_TEAM) || '' }}
+      - name: Build the native Tasks candidate
+        run: bun run --cwd apps/tasks build:cloudflare
+      - name: Qualify the emitted Tasks Worker config
+        run: python3 scripts/ci/tasks-native-artifact.py config apps/tasks
+      - name: Seal the native Tasks output
+        env:
+          TASKS_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python3 scripts/ci/tasks-native-artifact.py seal apps/tasks --receipt "$RUNNER_TEMP/tasks-native-artifact.json"
+      - name: Serve the exact offline fallback from the emitted Worker
+        timeout-minutes: 4
+        run: bun run --cwd apps/tasks test:runtime
+      - name: Confirm the runtime check left the sealed output unchanged
+        env:
+          TASKS_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python3 scripts/ci/tasks-native-artifact.py verify apps/tasks --receipt "$RUNNER_TEMP/tasks-native-artifact.json"
 
   build-web:
     name: build (web)

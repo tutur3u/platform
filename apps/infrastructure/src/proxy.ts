@@ -15,6 +15,7 @@ import {
   hasAuthenticatedBearerToken,
   isTrustedProxyBypassRequest,
 } from '@tuturuuu/utils/api-proxy-guard';
+import { GUARD_REASON_HEADER } from '@tuturuuu/utils/guard-rejection';
 import { getTuturuuuSharedCookieOptions } from '@tuturuuu/utils/shared-cookie';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -132,6 +133,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     if (guardResponse) {
       if (
         guardResponse.status === 429 &&
+        !guardResponse.headers.has(GUARD_REASON_HEADER) &&
         isCalendarPreferenceRequest(request)
       ) {
         console.warn(

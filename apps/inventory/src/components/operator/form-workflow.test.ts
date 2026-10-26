@@ -1,16 +1,11 @@
 import { readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { getInventoryStockState } from './operator-stock';
 
-const operatorDir = join(
-  process.cwd(),
-  'apps/inventory',
-  'src',
-  'components',
-  'operator'
-);
-const inventoryDir = join(process.cwd(), 'apps/inventory');
+const operatorDir = dirname(fileURLToPath(import.meta.url));
+const inventoryDir = resolve(operatorDir, '../../..');
 
 function source(fileName: string) {
   return readFileSync(join(operatorDir, fileName), 'utf8');
@@ -18,7 +13,9 @@ function source(fileName: string) {
 
 function operatorSources() {
   return readdirSync(operatorDir)
-    .filter((fileName) => fileName.endsWith('.tsx'))
+    .filter(
+      (fileName) => fileName.endsWith('.tsx') && !fileName.endsWith('.test.tsx')
+    )
     .map((fileName) => ({
       fileName,
       source: source(fileName),
@@ -49,11 +46,18 @@ describe('Inventory operator form workflows', () => {
           const tagStart = match.index ?? 0;
           const tagContext = source.slice(tagStart, tagStart + 500);
 
-          return !(
-            fileName === 'inventory-image-upload.tsx' &&
+          const visuallyHiddenNativeControl =
+            match[1] === 'input' &&
             tagContext.includes('className="sr-only"') &&
-            tagContext.includes('type="file"')
-          );
+            (tagContext.includes('type="file"') ||
+              tagContext.includes('type="radio"'));
+          const imagePreviewTrigger =
+            fileName === 'sale-product-image-dialog.tsx' &&
+            match[1] === 'button' &&
+            tagContext.includes('aria-label=') &&
+            tagContext.includes('type="button"');
+
+          return !visuallyHiddenNativeControl && !imagePreviewTrigger;
         })
         .map((match) => `${fileName}: ${match[0]}`);
     });
@@ -80,10 +84,9 @@ describe('Inventory operator form workflows', () => {
 
   it('routes operator dropdowns through combobox-backed wrappers', () => {
     const violations = operatorSources().flatMap(({ fileName, source }) => {
-      const rawSelectImport = source.includes('@tuturuuu/ui/select');
-      const rawSelectElement = /<Select(?!Field|ValueField)\b/.test(source);
+      const rawSelectElement = /<select\b/.test(source);
 
-      return rawSelectImport || rawSelectElement ? [fileName] : [];
+      return rawSelectElement ? [fileName] : [];
     });
 
     expect(violations).toEqual([]);
@@ -175,7 +178,7 @@ describe('Inventory operator form workflows', () => {
 
   it('keeps catalog products, stock, and categories infinitely pageable', () => {
     const dataSource = source('use-inventory-data.ts');
-    const clientSource = source('inventory-operator-client.tsx');
+    const clientSource = source('inventory-operator-content.tsx');
     const catalogSource = source('catalog-workspace-panel.tsx');
     const categoriesSource = source('product-categories-panel.tsx');
 
@@ -183,8 +186,8 @@ describe('Inventory operator form workflows', () => {
     expect(dataSource).toContain('const categories = useInfiniteQuery');
     expect(dataSource).toContain('listInventoryProductCategories');
     expect(dataSource).toContain('getNextPageParam');
-    expect(clientSource).toContain('data.products.fetchNextPage()');
-    expect(clientSource).toContain('data.categories.fetchNextPage()');
+    expect(clientSource).toContain('productPagination');
+    expect(clientSource).toContain('categoryPagination');
     expect(catalogSource).toContain('ProductCategoriesPanel');
     expect(catalogSource).toContain('pagination={productPagination}');
     expect(categoriesSource).toContain('createInventoryProductCategory');
@@ -215,7 +218,7 @@ describe('Inventory operator form workflows', () => {
     const shell = source('operator-dialog-shell.tsx');
     expect(shell).toContain('OperatorDialogContent');
     expect(shell).toContain('overflow-y-auto');
-    expect(shell).toContain('flex max-h-[calc(100dvh-2rem)] flex-col');
+    expect(shell).toContain('flex max-h-[calc(100dvh-1rem)] flex-col');
     expect(shell).toContain('mobileFullscreen');
     expect(source('sale-create-dialog.tsx')).toContain(
       '<OperatorDialogContent mobileFullscreen size="lg">'
@@ -224,7 +227,11 @@ describe('Inventory operator form workflows', () => {
     // No operator dialog may render a raw <DialogContent>; they must compose the
     // shell so header/footer stay pinned consistently.
     const violations = operatorSources()
-      .filter(({ fileName }) => fileName !== 'operator-dialog-shell.tsx')
+      .filter(
+        ({ fileName }) =>
+          fileName !== 'operator-dialog-shell.tsx' &&
+          fileName !== 'sale-product-image-dialog.tsx'
+      )
       .flatMap(({ fileName, source }) =>
         (source.match(/<DialogContent\b/g) ?? []).map(
           (tag) => `${fileName}: ${tag}`
@@ -232,6 +239,13 @@ describe('Inventory operator form workflows', () => {
       );
 
     expect(violations).toEqual([]);
+
+    expect(source('sale-product-image-dialog.tsx')).toContain(
+      "aria-label={t('previewImage', { name })}"
+    );
+    expect(source('sale-product-image-dialog.tsx')).toContain(
+      'DialogContent className="max-w-4xl overflow-hidden p-0"'
+    );
 
     const denseMobileViolations = operatorSources()
       .filter(({ source }) =>

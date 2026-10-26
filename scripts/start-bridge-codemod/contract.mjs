@@ -2,12 +2,15 @@
 // specifier, pinned toolchain version and generated-file name here so a bridge
 // API change is a one-file update. Pure data; no I/O.
 
+import { REQUIRED_FLAGS } from './worker-config.mjs';
+
 export const BRIDGE_PACKAGE = '@tuturuuu/start-bridge';
 export const BRIDGE_DIR = 'packages/start-bridge';
 
 export const BRIDGE = {
   vitePreset: `${BRIDGE_PACKAGE}/vite`,
   handler: `${BRIDGE_PACKAGE}/start/handler`,
+  assets: `${BRIDGE_PACKAGE}/assets`,
   serverEntry: `${BRIDGE_PACKAGE}/start/server-entry`,
   basePath: `${BRIDGE_PACKAGE}/base-path`,
   startBasePath: `${BRIDGE_PACKAGE}/start/base-path`,
@@ -16,6 +19,8 @@ export const BRIDGE = {
   proxyBridge: `${BRIDGE_PACKAGE}/proxy-bridge`,
   proxyMatcher: `${BRIDGE_PACKAGE}/proxy-matcher`,
   appBase: `${BRIDGE_PACKAGE}/start/app-base`,
+  appConfig: `${BRIDGE_PACKAGE}/start/app-config`,
+  responsePolicy: `${BRIDGE_PACKAGE}/response-policy`,
   pages: `${BRIDGE_PACKAGE}/pages`,
   pageRoute: `${BRIDGE_PACKAGE}/start/page-route`,
   pageRender: `${BRIDGE_PACKAGE}/start/page-render`,
@@ -36,6 +41,10 @@ export const API_PATTERNS = `${GENERATED_DIR}/api-patterns.bridge.gen.ts`;
 /** The rsc API entry: registers the app base, then exports the registry. */
 export const API_ENTRY = `${GENERATED_DIR}/api-entry.ts`;
 export const CENTRAL_FIRST = `${GENERATED_DIR}/central-first.ts`;
+/** App-owned Worker options; created once, never overwritten. */
+export const APP_CONFIG = 'start-bridge.config.ts';
+/** Per-app robots allowlist shared with Next (`@tuturuuu/utils/seo`). */
+export const SEO_POLICY = 'packages/utils/src/seo-policy.json';
 export const APP_BASE = `${GENERATED_DIR}/app-base.ts`;
 /** `next/og` on Workers, as Meet runs it. */
 export const OG_PACKAGE = '@cloudflare/pages-plugin-vercel-og';
@@ -85,6 +94,8 @@ export const DEPENDENCIES = {
     '@tanstack/react-start': '1.169.3',
   },
   devDependencies: {
+    // The native binding type check resolves it from the owning app (#6787).
+    '@cloudflare/workers-types': '5.20261022.1',
     '@tailwindcss/vite': '4.3.3',
     '@vitejs/plugin-react': '6.1.2',
     '@vitejs/plugin-rsc': '0.5.38',
@@ -97,7 +108,10 @@ export const DEPENDENCIES = {
 
 export const RUNTIME = {
   compatibilityDate: '2026-10-12',
-  compatibilityFlags: ['nodejs_compat'],
+  // Same-zone self-fetches (app-base `appUrl(path, request.url)`) must reach
+  // this Worker, not the zone origin (the retained Vercel app), as Calendar,
+  // Mail and Meet already do. Apps add flags in start-bridge.config.ts.
+  compatibilityFlags: REQUIRED_FLAGS,
   bun: '1.4.4',
   node: '24.22.0',
 };

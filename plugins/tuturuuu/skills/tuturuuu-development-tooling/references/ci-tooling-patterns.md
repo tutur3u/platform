@@ -52,6 +52,19 @@ pinned account and Zone/Workers Routes read on every zone; narrow visibility hid
 the parity runbook's permission table. The usage inventory scans tracked executable
 files in `tmp/` but excludes `.md`/`.mdx`/`.txt` everywhere, including runnable docs.
 
+Drift-relevant settings list readback follows at most eight pages (50 entries per page) inside
+the existing 28-request budget; inconsistent or repeated pages fail closed.
+Object endpoints may carry list envelope metadata without being paginated.
+Deployment history is the explicit exception: Cloudflare defines its first
+entry as the current deployment. Capture only its id and complete valid traffic
+split from page one; reject missing/invalid current state rather than searching
+history. History length must not block publication. Preserve complete secrets,
+domains and routes and exact schedule comparison; see the parity runbook's
+deployment-history exception and twenty-page regression.
+Keep endpoint diagnostics free of response text and preserve zone ordinals.
+Planner recovery needs a new production SHA containing a script fix; an old
+run reuses its triggering SHA. See the parity runbook and settings regressions.
+
 Prefer cf for operations with demonstrated parity, beginning with bounded read-only
 inventory/observability and a Vite-native Worker pilot. Pin dependencies through
 package-manager commands; verify cf authentication/account independently of Wrangler.
@@ -89,6 +102,27 @@ an independent operator response. Alerts and CPU limits do not cap total spend.
 Do not copy upstream examples that deliberately retry forever into finite jobs.
 See the adoption guidance's runaway-work acceptance table; live settings are
 separate evidence, never implied by documentation or build success.
+
+For Turbo cache admission, `budget-v2` in the global DO is the single durable
+authority. Use one storage transaction for each reservation/admin mutation and
+commit before artifact access. Never use R2 snapshots, isolate memory or an
+eventually consistent cache as positive admission authority. Preserve committed
+charges after unknown outcomes; do not retry reservations or refund failed
+artifact work. Denials and unchanged admin actions perform no writes. There are
+no R2 control writes or background checkpoint jobs, avoiding the same-key write
+limit. Legacy `_control/budget-v1` is read only on explicit first initialization;
+disable/drain the previous revision and reconcile unknown writes before import.
+Never reset lost usage to zero or delete DO state as recovery. Count artifact
+operations, DO/rate-limit calls and separate DO storage costs. Denied ingress and
+failed attempts remain traffic-dependent costs requiring the independent mode-off
+stop. `apps/turbo-cache/src/{stop-regression,budget-integrity}.test.ts` cover
+failure/unknown outcomes, delayed legacy writes after stop, restart, burst 429s,
+concurrency and maximum batches. The nonpublishing
+`turbo-cache-cloudflare.yaml` / `build-acceptance` job must build the exact PR
+head without compiled-artifact caches and exercise source and emitted Workers in
+workerd. The shared cf harness uses disposable secrets and isolated persistence;
+it verifies default-off, transactional initialization and stop/restart. Keep
+hosted enabled-traffic/cost acceptance separate from local-runtime evidence.
 
 ## Cloudflare backend ownership guard
 
@@ -182,7 +216,7 @@ fleet versions; verify those separately before claiming runtime acceptance.
 - Focused non-build tests needed to validate authorized work may run. Builds and setup-triggered builds run in CI only. Start long-lived development servers only when requested or needed for explicitly requested runtime verification. Deployment authority stays separate.
 - For TypeScript, JavaScript, root scripts, or repo config changes, run focused non-build checks locally; do not run local `bun validate`.
 - Run `bun check:changed` before every push. It maps changed paths to Biome, branch-name, generated-inventory, guard, related-test, affected type-check and Flutter checks without builds, queues heavy steps through ttr, and treats cold-`dist` type errors outside changed files as advisory. Missing imports never demote real changed-file errors such as TS2322; only implicit-any follow-ons may be softened. Shared packages select reverse dependents; root/shared configs explicitly require CI. Hook mode refuses dirty tracked content and untracked inputs in selected workspaces/reverse dependents and parent directories of selected script tests. Git paths are NUL-delimited; reject only option-like repository/workspace-relative prefixes, preserving internal dash route directories. Shared config coverage notices include Bun/npm, root Vitest and Oxc configs. Extend `scripts/check-changed/plan.js` with tests when a new cheap CI failure class appears; see [pre-push checks](../../../../../apps/docs/build/development-tools/pre-push-checks.mdx).
-- Partition related tests by runner before planning commands: `node:test` imports or the owning package's `node --test` script select native tests; explicit Vitest imports override that package default. Never send the same file to both runners or suppress real failures as empty discovery. Hook mode validates every pushed branch destination from Git stdin; without push refs, local `tmp/` branches may validate a configured tracking branch, printing both names; untracked temporary branches and ordinary invalid local names still fail. Published branch names remain CI-gated.
+- Partition related tests by runner before planning commands. Parse runtime imports from syntax with the pinned root parser; fixture strings, template text, comments, regular expressions and type-only imports must not select a runner. Actual `node:test` imports or the owning package's `node --test` script select native tests; explicit runtime Vitest imports override that package default. Cover both directions and the SDK portable-build fixture in `scripts/check-changed-runners.test.js`. Never send the same file to both runners or suppress real failures as empty discovery. Hook mode validates every pushed branch destination from Git stdin; without push refs, local `tmp/` branches may validate a configured tracking branch, printing both names; untracked temporary branches and ordinary invalid local names still fail. Published branch names remain CI-gated.
 - tsrs (Rust TypeScript port) is advisory only: the gate defaults to tsc until seeded-error qualification, and explicit tsrs runs always retain tsc confirmation. Gate each project through TSRS_PROJECTS and print exact diagnostic-key differences as advisory output even when tsc passes. Resolve tsrs only for plans including a qualified project, disable npm lifecycle scripts, and use only an existing TSRS_BIN in hook mode, and `tsrs-shadow.yaml` records main-push parity. Keep `tsc` as the required gate until the [promotion criteria](../../../../../apps/docs/build/development-tools/tsrs-shadow-type-check.mdx#promotion-criteria) hold; tsrs currently tracks TypeScript 7.1 semantics and lacks `--showConfig`.
 - Use focused package-local tests, then applicable exact-commit CI checks.
 - Make nested CLI fixtures provide private Bun, bunx and Node launchers; CI's Bun bootstrap installs only Bun. Keep `resources-test-fixtures.ts` outside portable SDK staging as well as the no-emit type-check input, so fixture hooks never become public dependencies. Qualification controls must cover the actual source closure and both process-helper source/test workflow triggers.
@@ -191,6 +225,13 @@ fleet versions; verify those separately before claiming runtime acceptance.
 - For single-package validation, prefer package-local commands such as `bun --cwd packages/ai vitest run ...` instead of root commands that fan out through Turbo.
 - Run `bun ff` for owned frontend/TS files when required; if it triggers repo-wide Biome behavior, use exact-file Biome commands. Preserve unrelated dirty files and require the applicable lint workflow in exact-commit CI.
 - For nested Biome configs, reproduce with the pinned executable and authentic generated bytes: Biome 2.5.13 rebases inherited root `files.includes` globs under the extending config, so root `!apps/meet/src/routeTree.gen.ts` can miss the file. In Meet and Calendar, use owning `formatter.includes: ["**", "!src/routeTree.gen.ts"]`. Preserve supplier bytes and generated casts; do not format or hand-patch generated source, disable types, or add global waivers. Compare before/after generated exclusions and authored/Worker negative controls; preserve linter settings and inactive-runtime scope. Fixture skips prove exclusion only, not lint/type/build/full CI or runtime acceptance; retain raw failures and protocol NOTPASS separately.
+
+Keep Vite/Void host configuration in its own TypeScript program when tooling
+loads runtime globals such as Bun's augmented fetch. Mail, Calendar and Meet
+use `tsconfig.config.json`, checked by the normal package `type-check` gate.
+Retain every app/test root and the separate host-config check. Run
+`scripts/ci/vite-config-type-boundary.test.js` and inspect `tsc --listFilesOnly`
+when diagnosing ambient-type leakage; do not patch mocks to satisfy host globals.
 
 ## Validation job relevance
 
@@ -216,7 +257,8 @@ exact-head hosted improvement; never weaken a gate to improve a timing figure.
 
 Mobile PR selection lives in `scripts/ci/mobile-build-selection.ts`, called by the
 switchboard after explicit disable handling. Android remains the portable smoke;
-other platforms retain native-directory checks and all builds on main pushes.
+other platforms retain native-directory PR checks. Android/Linux keep matching
+main pushes; iOS/macOS/Windows development builds use nightly/release/manual.
 Only known portable/other-native paths may omit a platform. Unknown/empty inputs,
 dependency manifests and tooling changes run all. Preserve PR triggers/check names
 and include the helper in the reusable switchboard sparse checkout. Verify
@@ -641,6 +683,21 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   must also disable cancellation and use that isolated identity; changing only
   the cancellation flag leaves candidates vulnerable to later main pushes. Never
   combine `queue: max` with cancellation enabled.
+- Defer heavy PR validation on drafts before runner allocation, while keeping
+  light lint/type checks. Security jobs, including CodeQL analysis and the
+  security-egress contract/preflight, remain eligible on drafts. Heavy-only
+  non-security workflows can gate `check-ci`;
+  mixed workflows gate only heavy jobs and dependent summaries. Include
+  `ready_for_review` and `converted_to_draft`, preserve existing aggregate failure
+  assertions, and verify merge-eligible required checks still report. Keep path
+  selection in the existing switchboard or trusted security selectors. Run
+  `pr-verification-scheduling.test.js` with the concurrency policy suite.
+  Apple/Windows mobile development builds run nightly, on published releases and
+  on manual dispatch. This coverage exception validates selected snapshots, not
+  every merged SHA; nightly selects the default-branch head. Android/Linux retain
+  matching main pushes. Store and production publication retain their triggers,
+  locks and gates. See the
+  [CI runbook](../../../../../apps/docs/build/devops/github-actions-runbook.mdx#draft-pr-runner-admission).
 - Only the exact SHA selected for promotion needs complete CI. Superseded `main`
   validation may be cancelled, but cancellation is never passing evidence. If a
   pinned candidate lost a required check to supersession, restore that exact-SHA
@@ -1112,7 +1169,7 @@ it is separate evidence from CI Chromium and emitted Worker acceptance. See the
 Apps runbook above for cleanup and remaining qualification boundaries. Historical
 timeout causality remains UNKNOWN; the routing gap is a separate source finding.
 
-Active local-Supabase jobs use `.github/actions/cache-supabase-images` after the owning dependency install; employee-schema targets `source/apps/database`. Derive service versions from the pinned CLI's `services -o json`, with version-gated supplemental Dockerfile pins for Kong/Mailpit/imgproxy. Mirror registry rewriting exactly. Cache only each profile's required images, including GoTrue/Realtime/Storage bootstrap migrations even when long-running services are excluded, and postgres-meta for typegen. Exact SHA256 keys bind the list, registry, OS and arch; inspect loaded images and never unconditionally re-pull the baseline Postgres image. Archives are bounded to 6 GiB.
+Active local-Supabase jobs use `.github/actions/cache-supabase-images` after the owning dependency install; employee-schema targets `source/apps/database`. Derive service versions from the pinned CLI's `services -o json`, with version-gated supplemental CLI 2.121.0 Dockerfile pins for Kong/Mailpit/imgproxy (2.8.1/v1.31.3/v3.26.0). Catalog local tags override those fallbacks; reject duplicate catalog names while emitting each required image once. Mirror registry rewriting exactly. Cache only each profile's required images, including GoTrue/Realtime/Storage bootstrap migrations even when long-running services are excluded, and postgres-meta for typegen. Exact SHA256 keys bind the list, registry, OS and arch; inspect loaded images and never unconditionally re-pull the baseline Postgres image. Archives are bounded to 6 GiB.
 
 Paused Docker E2E consumers reuse the shared `full` profile rather than a separate `supabase-docker-v2` archive. Keep the registry benchmark switch and all runtime pause gates intact; this consolidates future cache writes without deleting hosted entries or resuming Docker.
 

@@ -79,12 +79,21 @@ The input row has no second Send button. Each assistant turn has one initially
 collapsed transparent thinking accordion, showing the latest heading from reasoning
 text already supplied by the API. Expanding it reveals those existing sections in
 source order. Only the current streaming turn animates its thinking icon; stopped,
-completed, and failed turns use a static icon. Consecutive tool calls share one
-collapsed transparent accordion displaying the latest tool name, while response
-text and generated images keep their relative positions. No additional hidden
-reasoning is requested or inferred. These rules apply to mobile Mira's timeline;
-other clients retain their own presentation. Accordion regressions are in
-`assistant_activity_accordion_test.dart`. The transcript's scroll-to-bottom
+completed, and failed turns use a static icon. Every tool call in a turn shares
+one collapsed transparent accordion placed where the first call appears, even when
+step boundaries, reasoning, or reply text arrive between calls; reply text and
+generated images keep their source positions. The header shows the latest step's
+localized friendly label (for example "Checked your tasks") and its step count,
+with a spinner while the streaming turn has a pending call and a check once done.
+Discovery and no-op tools (`search_tools`, `select_tools`, `no_action_needed`)
+never count as steps, so a turn with only those renders no accordion; while such a
+turn is still streaming without reply text, a subtle working row appears instead.
+Expanded steps show a friendly label and short summary; the raw input and output
+JSON stays behind a per-step Details control. Unmapped tools fall back to a
+humanized name. No additional hidden reasoning is requested or inferred. These
+rules apply to mobile Mira's timeline; other clients retain their own
+presentation. Accordion regressions are in `assistant_activity_accordion_test.dart`
+and `assistant_tool_accordion_test.dart`. The transcript's scroll-to-bottom
 action clears the dock using the shell viewport's inherited clearance; the outer
 shell consumes the keyboard inset once. Regressions cover controller and capture
 transitions, retained dock identity, transparent tool inspection, and actual shell
@@ -342,9 +351,10 @@ stayed ready for at least 60 seconds (for example, before a routine provider
 `GoAway`) starts a fresh budget, and so does any start or Retry the user makes.
 Regression coverage: `assistant_live_reconnect_backoff_test.dart`.
 
-Credit reservation and cumulative usage settlement remain on the live Next.js
-backend. Rust is a future migration target, not the deployed API. The token route
-is tracked in `apps/tanstack-web/migration/route-overrides.json`.
+Credit reservation and cumulative usage settlement run on the Next.js backend
+(`apps/web`), the only active runtime for these routes. The paused Rust backend
+and TanStack app are not current runtimes; their retained route tracking is
+historical, not deployment evidence.
 
 ## Verification
 
@@ -708,6 +718,57 @@ coverage is in `assistant_live_startup_diagnostics_test.dart`.
 This removes serial client-side waiting; actual device/provider speed remains a
 runtime measurement rather than a promised fixed latency reduction.
 
+The mobile token route (`/api/v1/assistant/live/token`) returns a
+`Server-Timing` header with durations only: `auth`, `session`, `workspace`,
+`access` (membership and tier together), `prompt` and `history` (overlapped),
+`mint`, and `total`. Use it to split the client's "Session authorization" phase
+into server stages and network time. Membership and the tier lookup run
+concurrently; prompt personalization runs alongside chat binding and history,
+both only after both access gates pass. The token is minted only when both
+succeed, and the response is `private, no-store`. Timings are returned only on
+successful responses, and `session` is absent under temporary AI authentication,
+which resolves the actor without a Supabase session. Overlapped durations do not
+sum to `total`.
+
+Fresh sessions read at most the newest 60 stored rows in one ownership-joined
+query and replay the newest text that fits a 32,000-character budget. Rows with
+other roles or no text use query slots but not budget. A single oversized latest
+message keeps only its tail. Replay is text only and does not keep user/assistant
+pairs together, so the oldest kept turn can be an assistant reply.
+
+Tier lookups canonicalize workspace UUIDs (trimmed, lowercase) before reading
+subscriptions, so uppercase input still resolves a paid tier. The Voice Assistant
+feature policy currently admits every tier; the PRO tier still matters for plan
+model allocation and other PRO-gated features.
+
+Per-chat message reads use `ai_chat_messages_chat_created_idx
+(chat_id, created_at, id)`, built `CONCURRENTLY`. An interrupted concurrent build
+leaves an INVALID index that `IF NOT EXISTS` then skips, so the migration
+can be recorded as applied without the performance fix. After promotion, confirm
+the index is valid before treating it as done:
+
+```sql
+select c.relname, i.indisvalid, i.indisready, pg_get_indexdef(i.indexrelid)
+from pg_index i
+join pg_class c on c.oid = i.indexrelid
+where i.indrelid = 'public.ai_chat_messages'::regclass
+  and c.relname = 'ai_chat_messages_chat_created_idx';
+```
+
+Both flags must be true and the definition must be
+`(chat_id, created_at, id)` on `public.ai_chat_messages`. If either flag is false,
+the authorized database owner drops the index with `DROP INDEX CONCURRENTLY` and
+rebuilds it with the same statement. Do not replay the migration and count its
+NOTICE as a successful build.
+
+Coverage: `assistant-live-token-routes.test.ts` (stage overlap with deferred
+promises, access gates, timing header), `assistant-live-token-tier.test.ts`
+(uppercase UUID keeps a pinned PRO requirement admitted),
+`resolve-plan-model-tier.test.ts` (PRO allocation for uppercase input),
+`workspace-tier-admin.test.ts` (canonical tier lookup),
+`assistant-history.test.ts` (budget and ownership join), and
+`ai-chat-messages-chat-order-index.sql` (index and ordered plan).
+
 ## Canonical mobile Live capabilities
 
 New mobile clients request the `canonical-v1` tool protocol. The token response
@@ -729,8 +790,9 @@ network-wide mutation deduplication or cancellation of dispatched writes.
 
 Resumption handles use protocol-specific, UUID-validated chat scopes so a
 canonical connection cannot restore legacy tool declarations, or vice versa.
-Both scopes still require ownership of the same conversation. The Rust GET
-session port follows the same validation; web remains the production runtime.
+Both scopes still require ownership of the same conversation. `apps/web` is the
+only active runtime for this validation; the paused Rust backend's session port
+is historical and is not evidence for current behavior.
 
 `canonical-tool-bridge.test.ts`, the canonical execution route tests,
 `session-scope.test.ts`, and `assistant_live_repository_test.dart` cover schema

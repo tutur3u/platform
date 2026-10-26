@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { PRIVATE_DRIVE_RESOURCE_PATHS } from '@/lib/private-drive-paths.test-fixture';
 
 vi.mock('server-only', () => ({}));
 
@@ -86,7 +87,7 @@ describe('API-key storage reserved mobile deployment paths', () => {
   });
 
   it('rejects listing the mobile deployment vault prefix', async () => {
-    const { GET } = await import('./list/route');
+    const { GET } = await import('@/app/api/v1/storage/list/route');
 
     const response = await GET(
       new Request(
@@ -103,7 +104,7 @@ describe('API-key storage reserved mobile deployment paths', () => {
     mocks.createDynamicAdminClient.mockResolvedValue({
       storage: { from: vi.fn(() => ({ list })) },
     });
-    const { GET } = await import('./list/route');
+    const { GET } = await import('@/app/api/v1/storage/list/route');
     const path = 'docs?draft#final';
     const response = await GET(
       new Request(
@@ -403,3 +404,150 @@ describe('API-key storage reserved mobile deployment paths', () => {
     expect(mocks.createDynamicAdminClient).not.toHaveBeenCalled();
   });
 });
+
+vi.mock('next/server', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('next/server')>()),
+  connection: vi.fn().mockResolvedValue(undefined),
+}));
+
+describe('API-key Drive cannot expose private chat objects', () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+  });
+  it.each(PRIVATE_DRIVE_RESOURCE_PATHS)(
+    'rejects list, download, share, batch signing and delete for %s',
+    async (path) => {
+      const list = await import('@/app/api/v1/storage/list/route');
+      const download = await import(
+        '@/app/api/v1/storage/download/[...path]/route'
+      );
+      const share = await import('@/app/api/v1/storage/share/route');
+      const batch = await import('@/app/api/v1/storage/share-batch/route');
+      const del = await import('./delete/route');
+      const responses = [
+        await list.GET(
+          new Request(
+            `http://localhost/api/v1/storage/list?path=${encodeURIComponent(path)}`
+          ) as Parameters<typeof list.GET>[0]
+        ),
+        await download.GET(
+          new Request(
+            'http://localhost/api/v1/storage/download/object'
+          ) as Parameters<typeof download.GET>[0],
+          { params: Promise.resolve({ path: path.split('/') }) }
+        ),
+        await share.POST(
+          createJsonRequest('POST', '/api/v1/storage/share', {
+            path,
+          }) as Parameters<typeof share.POST>[0]
+        ),
+        await batch.POST(
+          createJsonRequest('POST', '/api/v1/storage/share-batch', {
+            paths: ['documents/own.pdf', path],
+          }) as Parameters<typeof batch.POST>[0]
+        ),
+      ];
+      responses.push(
+        await del.DELETE(
+          createJsonRequest('DELETE', '/api/v1/storage/delete', {
+            paths: [path],
+          }) as Parameters<typeof del.DELETE>[0]
+        )
+      );
+      for (const response of responses) expect(response.status).toBe(403);
+      expect(mocks.createDynamicAdminClient).not.toHaveBeenCalled();
+    }
+  );
+});
+
+it('allows ordinary mira notes to be listed, shared, downloaded and deleted', async () => {
+  const list = vi.fn(async () => ({
+    data: [{ id: 'notes', name: 'notes.txt', metadata: { size: 5 } }],
+    error: null,
+  }));
+  const createSignedUrl = vi.fn(async () => ({
+    data: { signedUrl: 'https://storage.test/mira-notes' },
+    error: null,
+  }));
+  const download = vi.fn(async () => ({
+    data: new Blob(['notes'], { type: 'text/plain' }),
+    error: null,
+  }));
+  const remove = vi.fn(async () => ({
+    data: [{ name: 'notes.txt' }],
+    error: null,
+  }));
+  mocks.createDynamicAdminClient.mockResolvedValue({
+    storage: { from: () => ({ list, createSignedUrl, download, remove }) },
+  });
+  const listing = await import('@/app/api/v1/storage/list/route');
+  const share = await import('@/app/api/v1/storage/share/route');
+  const batch = await import('@/app/api/v1/storage/share-batch/route');
+  const read = await import('@/app/api/v1/storage/download/[...path]/route');
+  const del = await import('./delete/route');
+  expect(
+    (
+      await listing.GET(
+        new Request(
+          'http://localhost/api/v1/storage/list?path=mira'
+        ) as Parameters<typeof listing.GET>[0]
+      )
+    ).status
+  ).toBe(200);
+  expect(
+    (
+      await share.POST(
+        createJsonRequest('POST', '/api/v1/storage/share', {
+          path: 'mira/notes.txt',
+        }) as Parameters<typeof share.POST>[0]
+      )
+    ).status
+  ).toBe(200);
+  expect(
+    (
+      await batch.POST(
+        createJsonRequest('POST', '/api/v1/storage/share-batch', {
+          paths: ['mira/notes.txt'],
+        }) as Parameters<typeof batch.POST>[0]
+      )
+    ).status
+  ).toBe(200);
+  expect(
+    (
+      await read.GET(
+        new Request(
+          'http://localhost/api/v1/storage/download/file'
+        ) as Parameters<typeof read.GET>[0],
+        { params: Promise.resolve({ path: ['mira', 'notes.txt'] }) }
+      )
+    ).status
+  ).toBe(200);
+  expect(
+    (
+      await del.DELETE(
+        createJsonRequest('DELETE', '/api/v1/storage/delete', {
+          paths: ['mira/notes.txt'],
+        }) as Parameters<typeof del.DELETE>[0]
+      )
+    ).status
+  ).toBe(200);
+  expect(download).toHaveBeenCalled();
+  expect(remove).toHaveBeenCalledWith([`${ROOT_WORKSPACE_ID}/mira/notes.txt`]);
+});
+
+it.each(['mira/images', 'mira/%69mages'])(
+  'denies signed uploads into %s',
+  async (path) => {
+    vi.clearAllMocks();
+    const { POST } = await import('./upload-url/route');
+    const response = await POST(
+      createJsonRequest('POST', '/api/v1/storage/upload-url', {
+        path,
+        filename: 'file.txt',
+      }) as Parameters<typeof POST>[0]
+    );
+    expect(response.status).toBe(403);
+    expect(mocks.createDynamicAdminClient).not.toHaveBeenCalled();
+  }
+);

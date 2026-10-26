@@ -1,6 +1,7 @@
 name: Cron Control Cloudflare
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
     paths:
       - 'apps/cron-control/**'
       - '.github/workflows/cron-control-cloudflare.yaml'
@@ -38,6 +39,7 @@ concurrency:
   cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 jobs:
   check-ci:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     uses: ./.github/workflows/ci-check.yml
     permissions:
       contents: read
@@ -144,11 +146,12 @@ jobs:
           SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.PRODUCTION_SUPABASE_SECRET_KEY }}
           CRON_CONTROL_DELIVERY_TOKEN: ${{ secrets.CRON_CONTROL_DELIVERY_TOKEN }}
+          CRON_CONTROL_OPERATOR_TOKEN: ${{ secrets.CRON_CONTROL_OPERATOR_TOKEN }}
         run: |
-          test -n "$CLOUDFLARE_API_TOKEN" && test -n "$SUPABASE_URL" && test -n "$SUPABASE_SECRET_KEY" && test -n "$CRON_CONTROL_DELIVERY_TOKEN" || { echo 'Missing Cron Control credential'; exit 1; }
+          test -n "$CLOUDFLARE_API_TOKEN" && test -n "$SUPABASE_URL" && test -n "$SUPABASE_SECRET_KEY" && test -n "$CRON_CONTROL_DELIVERY_TOKEN" && test -n "$CRON_CONTROL_OPERATOR_TOKEN" || { echo 'Missing Cron Control credential'; exit 1; }
           secrets_file="$RUNNER_TEMP/cron-control-secrets.json"
           trap 'rm -f "$secrets_file"' EXIT
-          node -e 'const fs = require("node:fs"); const names = ["SUPABASE_URL", "SUPABASE_SECRET_KEY", "CRON_CONTROL_DELIVERY_TOKEN"]; fs.writeFileSync(process.argv[1], JSON.stringify(Object.fromEntries(names.map((name) => [name, process.env[name]]))), { mode: 0o600 });' "$secrets_file"
+          node -e 'const fs = require("node:fs"); const names = ["SUPABASE_URL", "SUPABASE_SECRET_KEY", "CRON_CONTROL_DELIVERY_TOKEN", "CRON_CONTROL_OPERATOR_TOKEN"]; fs.writeFileSync(process.argv[1], JSON.stringify(Object.fromEntries(names.map((name) => [name, process.env[name]]))), { mode: 0o600 });' "$secrets_file"
           # --no-provision: a deploy must never create resources (cf defaults to provisioning).
           bun x --no-install cf deploy --prebuilt --mode production --no-provision --message "$GITHUB_SHA" --secrets-file "$secrets_file"
       - name: Capture and compare settings after publication

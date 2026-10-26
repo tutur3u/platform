@@ -1,5 +1,13 @@
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { fontModule, importedNames, startBridgeRscPlugin } from './rsc';
+import {
+  fontModule,
+  importedNames,
+  startBridgeNodeBuiltinsPlugin,
+  startBridgeRscPlugin,
+} from './rsc';
 
 describe('RSC plugin', () => {
   it('reads imported font names, including default and aliases', () => {
@@ -57,10 +65,10 @@ describe('RSC plugin', () => {
       }),
       build: {
         target: 'es2026',
-        rollupOptions: {
+        rollupOptions: expect.objectContaining({
           platform: 'neutral',
           output: { entryFileNames: '[name].js' },
-        },
+        }),
       },
     });
     expect(plugin.configEnvironment('ssr')).toBeNull();
@@ -76,13 +84,87 @@ describe('RSC plugin', () => {
       resolve: expect.objectContaining({ noExternal: true }),
       build: {
         target: 'es2026',
-        rollupOptions: {
+        rollupOptions: expect.objectContaining({
           input: { 'bridge-api': '/app/src/start-bridge/api.ts' },
           platform: 'neutral',
           output: { entryFileNames: '[name].js' },
-        },
+        }),
       },
     });
     expect(plugin.configEnvironment('ssr')).toBeNull();
+  });
+  it('turns CommonJS requires of Node built-ins into ESM imports in rsc', () => {
+    const config = startBridgeRscPlugin().configEnvironment('rsc') as {
+      resolve: { builtins: (string | RegExp)[] };
+      build: { rollupOptions: { plugins: unknown[] } };
+    };
+    const builtin = config.resolve.builtins.find(
+      (entry): entry is RegExp => entry instanceof RegExp
+    );
+    for (const name of ['child_process', 'node:child_process', 'tty'])
+      expect(builtin?.test(name), name).toBe(true);
+    expect(builtin?.test('react')).toBe(false);
+    expect(config.build.rollupOptions.plugins).toHaveLength(1);
+  });
+
+  it('applies the built-in require conversion to opted-in environments only', () => {
+    const rscPlugins = (
+      startBridgeRscPlugin().configEnvironment('rsc') as {
+        build: { rollupOptions: { plugins: { name: string }[] } };
+      }
+    ).build.rollupOptions.plugins;
+    const plugin = startBridgeNodeBuiltinsPlugin();
+    const ssr = plugin.configEnvironment('ssr') as {
+      build: { rollupOptions: { plugins: { name: string }[] } };
+    };
+    expect(ssr).toEqual({
+      build: { rollupOptions: { plugins: [expect.any(Object)] } },
+    });
+    expect(ssr.build.rollupOptions.plugins[0]?.name).toBe(rscPlugins[0]?.name);
+    expect(plugin.configEnvironment('client')).toBeNull();
+    expect(plugin.configEnvironment('rsc')).toBeNull();
+    const custom = startBridgeNodeBuiltinsPlugin({ environments: ['worker'] });
+    expect(custom.configEnvironment('worker')).not.toBeNull();
+    expect(custom.configEnvironment('ssr')).toBeNull();
+  });
+
+  it('loads wasm and binary data as Wrangler modules in rsc (next/og)', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'start-bridge-binary-'));
+    try {
+      const font = join(dir, 'noto.ttf.bin');
+      writeFileSync(font, new Uint8Array([0, 159, 255]));
+      const plugin = startBridgeRscPlugin();
+      const importer = join(dir, 'index.js');
+      const resolved = plugin.resolveId.call(
+        { environment: { name: 'rsc' } },
+        './noto.ttf.bin',
+        importer
+      ) as { id: string; external: boolean };
+      expect(resolved.external).toBe(true);
+      expect(
+        plugin.resolveId.call(
+          { environment: { name: 'client' } },
+          './noto.ttf.bin',
+          importer
+        )
+      ).toBeNull();
+      const emitted: { name: string; source: Uint8Array }[] = [];
+      const code = plugin.renderChunk.call(
+        {
+          environment: { name: 'rsc' },
+          emitFile: (file) => {
+            emitted.push(file);
+            return 'ref';
+          },
+          getFileName: () => 'assets/noto.ttf-abc.bin',
+        },
+        `import font from "${resolved.id}";`,
+        { fileName: 'assets/og-route.js' }
+      );
+      expect(code).toBe('import font from "./noto.ttf-abc.bin";');
+      expect([...(emitted[0]?.source ?? [])]).toEqual([0, 159, 255]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

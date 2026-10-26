@@ -66,13 +66,13 @@ Their scroll content reserves the shell-provided bottom padding, so the floating
 dock clears the last actionable row. Pushed destinations return to the screen
 that opened them; direct links fall back to their Settings parent.
 
-Settings → Edit profile, opened from the Settings profile header, is the one
+Settings → Edit profile, opened from the Account group's profile row, is the one
 place for account and profile settings at `/settings/profile`: Identity (display
 name, full name, email with any pending change), Avatar (Photo, Remove avatar
 and a Cover banner row that adds, changes or removes the banner), Account (Manage
 accounts at `/settings/accounts`, Sessions and devices) and Account status, as
 captioned grouped cards with the shell title "Edit profile". Its identity card is
-borderless with a circular avatar, matching the Settings header, and an unknown
+borderless with a circular avatar, matching the Settings profile row, and an unknown
 join date is omitted. Manage accounts appears only here; the root has neither a
 You row nor a Manage accounts row, and its group caption is General. Legacy
 `/profile/edit` and `/profile/accounts` links redirect to those destinations.
@@ -272,7 +272,7 @@ Routes and redirects:
 
 Settings search is the Settings root's primary floating dock action, not an
 inline field. Opening it turns the shell's top navbar into the query field, and
-results replace the root list, profile header included. Search matches titles,
+results replace the root list, Account group included. Search matches titles,
 sections and the settings on app sub-screens, ignoring case and Vietnamese
 diacritics, including decomposed input with combining marks. A result for a
 routed destination opens it. A result for an inline root row clears and closes
@@ -495,6 +495,42 @@ workspace state emissions, with rename and workspace-switch controls. This
 isolates unnecessary subscription work; it does not measure frame latency or
 establish a TestFlight performance improvement.
 
+## Settings sub-page forms
+
+Settings sub-pages (Mail, Offline modules, Feedback and per-app screens) share
+one template: the shell navbar carries the title, the dock carries Back, and the
+body is captioned `SettingsCompactSection` cards separated by the group gap.
+Inside a card, on/off settings are `SettingsSwitchRow` (the whole row toggles),
+single choices are `SettingsChoiceRow` (current value at the end; opens the
+shared option sheet from `showAppSelectSheet`), and free text is an
+`AppTextField` or `AppTextFormField` padded by `SettingsFieldRow`. Fields keep
+their visible label above the outline, a placeholder that gives an example
+rather than repeating the label, helper text for format or privacy notes, and
+the counter when a length limit applies. Primary actions use
+`AppButton.primary`; there are no underline-style Material fields.
+
+- **Mail** groups Reading (remote images, default action, swipe actions),
+  Sender and signature, AI drafts (auto-draft and draft instructions), Delivery
+  and routing, Group permissions and Organize. Field order and saved keys are
+  unchanged.
+- **Offline modules** show a Stored on this device card: storage used with
+  queued changes, then one row per collection with its item count, a readable
+  size ("870 KB") and a localized update time. Each row opens the stored item
+  browser. Snapshot counts, payload bytes, server totals and the coverage and
+  measurement caveats stay under a collapsed Technical details section.
+  Collection names are derived from the cache namespace and are not translated.
+- **Feedback** has Subject and Details fields, a Screenshot (optional) row with
+  the accepted formats and size, and a primary Send button.
+
+Every text input in the mobile app shows a localized placeholder while empty.
+`test/core/ui/input_placeholder_audit_test.dart` scans `lib/` and fails on an
+input constructor without `placeholder:`, `hintText:` or `hint:`. A deliberate
+exception, such as a single OTP digit cell, carries an
+`// input-placeholder: exempt <reason>` comment inside the call. Coverage also
+includes `settings_forms_render_test.dart` (Feedback and Offline in English and
+Vietnamese, light and dark), `offline_module_page_test.dart` and the Mail
+settings regressions.
+
 ## Handled timezone operational failures
 
 Mobile timezone diagnostics distinguish preference load (`timezoneRead`), API
@@ -543,16 +579,13 @@ apply in English and Vietnamese, light and dark, and enlarged text. Coverage:
 
 ## Settings overview and Appearance
 
-The Settings overview opens with a profile header: the signed-in user's avatar,
-display name and email, and the number of workspaces they belong to. The identity
-and its Edit profile pill open `/settings/profile`. The workspace count keeps its
-natural width on one line and opens the workspace list; a long name ellipsizes
-instead. With enlarged text, if the name would have less than about 96px, the
-count moves to its own line under the identity. The Workspace pill opens
-`/settings/workspace`. These are shortcuts; every destination remains reachable
-from a captioned group, with per-app rows under Apps. The header does not show
-social counts or
-invented destinations. The shell keeps the single top-navbar title and the
+The Settings overview opens with an Account group instead of a header. Its
+rows are the profile (avatar, display name and email; opens `/settings/profile`),
+the current Workspace (its name; opens `/settings/workspace`), Switch workspace
+(the workspace count as its value; opens the workspace picker) and Hidden
+workspaces. There are no standalone Edit profile or Workspace buttons and no
+separate workspace counter: every account destination is an ordinary grouped
+row. The root shows no social counts or invented destinations. The shell keeps the single top-navbar title and the
 floating dock Back control; the page adds no large in-body title or back chevron.
 
 Root preference rows still open nested editors and save only an explicit choice.
@@ -610,6 +643,33 @@ AA, and disabled buttons keep shad's styling. Default Classic dark uses the base
 scheme, so its destructive buttons also change from a translucent to a solid
 fill. Segmented-control labels (Mode, Background) scale down to fit rather than
 truncate.
+
+### Interface style options (planned)
+
+The default interface looks the same on Android and iOS: the Tuturuuu style.
+A planned **Interface** group in Appearance lets each user choose:
+
+| Option | Choices | Default |
+| --- | --- | --- |
+| Style | Tuturuuu, iOS-like, Material-like | Tuturuuu |
+| Density | Comfortable, Compact | Comfortable |
+| Corner radius | Rounded, Soft, Square | Rounded |
+| Accent | Existing accents | Match theme |
+| Haptics | On, Off | On |
+| Reduce motion | Follow system, Always reduce | Follow system |
+
+Rules:
+
+- **Stored per device.** Choices persist alongside the existing appearance
+  payload and are not synced to the account.
+- **Applied through the theme.** Choices take effect through theme
+  extensions read via `AppTokens`; widgets never fork on the platform.
+- **Accessibility floors.** Compact density never shrinks touch targets below
+  44pt. Every Style and Radius combination keeps the contrast guarantees
+  above.
+- **Reset.** Reset to default restores every option.
+
+See the [native pass plan](/build/development-tools/mobile-native-pass-plan#appearance-style-system).
 
 ### App-wide application and cost
 

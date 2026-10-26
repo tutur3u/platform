@@ -3,7 +3,7 @@
   "version": "0.31.0",
   "private": true,
   "scripts": {
-    "type-check": "bun run type-check:app && bun run type-check:boundary && bun run type-check:worker",
+    "type-check": "bun run type-check:app && bun run type-check:boundary && bun run type-check:worker && bun run type-check:config",
     "dev": "node ../../scripts/portless-safe-dev.js",
     "dev:app": "node ../../scripts/portless-dev-banner.js -- vp dev --host 127.0.0.1 --port 7820",
     "build": "bun run bridge:check && vp build",
@@ -22,7 +22,8 @@
     "type-check:worker": "tsc --noEmit --project tsconfig.worker.json",
     "type-check:boundary": "tsc --project tsconfig.boundary.json",
     "bridge:generate": "bun ../../packages/start-bridge/src/codegen/cli.ts generate .",
-    "bridge:check": "bun ../../packages/start-bridge/src/codegen/cli.ts check ."
+    "bridge:check": "bun ../../packages/start-bridge/src/codegen/cli.ts check .",
+    "type-check:config": "tsc --noEmit --project tsconfig.config.json"
   },
   "packageManager": "bun@1.4.4",
   "portless": {

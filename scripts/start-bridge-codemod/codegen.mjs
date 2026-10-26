@@ -13,7 +13,10 @@ const PLANNER = `
 const [registry, input] = [process.argv[1], await Bun.stdin.json()];
 const { planRegistries } = await import(registry);
 const exists = (relative) => input.existing.includes(relative);
-const plan = planRegistries(input.config, input.files, exists);
+// Runs in the app root: lazy registries read route sources for their methods.
+const { readFileSync } = await import('node:fs');
+const readSource = (relative) => readFileSync(relative, 'utf8');
+const plan = planRegistries(input.config, input.files, exists, readSource);
 console.log(JSON.stringify({ generated: plan.generated, errors: plan.errors }));
 `;
 

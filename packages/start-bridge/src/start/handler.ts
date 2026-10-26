@@ -1,5 +1,7 @@
+import { createFramablePathMatcher } from '@tuturuuu/utils/framable-paths';
 import type { NextRequest } from 'next/dist/server/web/spec-extension/request';
 import { forwardToCentralApi } from '../core/api-forward';
+import { type AssetsBinding, fetchAsset } from '../core/assets';
 import { type BasePath, createBasePath } from '../core/base-path';
 import { createNonce } from '../core/csp';
 import { type BridgeEndpoint, dispatchEndpoint } from '../core/endpoints';
@@ -15,10 +17,9 @@ import {
   type NextProxy,
 } from '../next/proxy-bridge';
 import type { BridgeRequestContext } from '../server/request-context';
+import { admitMountedMutation, type BridgeCsrfOptions } from './csrf-admission';
 
-export interface AssetsBinding {
-  fetch(request: Request): Promise<Response>;
-}
+export type { AssetsBinding } from '../core/assets';
 
 export interface BridgeHandlerOptions<Env, Ctx> {
   /** Where this artifact is served; the base is resolved per request. */
@@ -47,6 +48,16 @@ export interface BridgeHandlerOptions<Env, Ctx> {
    * bracket patterns; matched against the app-relative path.
    */
   centralFirst?: readonly string[];
+  /**
+   * Picks the origin for one unowned `/api/*` request (e.g. Storefront sends
+   * `/api/v1/inventory/**` to Inventory); `undefined` keeps
+   * `centralApiOrigin`. The request still goes through the central forward:
+   * base stripping, the loop guard and hop-by-hop header removal.
+   */
+  apiOrigin?: (
+    request: NextRequest,
+    context: { env: Env; path: string }
+  ) => string | undefined;
   /** Overrides the unowned `/api/*` forwarder. */
   forwardApi?: (request: NextRequest, origin: string) => Promise<Response>;
   matches?: (pathname: string) => boolean;
@@ -57,8 +68,25 @@ export interface BridgeHandlerOptions<Env, Ctx> {
    * Builds the `Content-Security-Policy` for a fresh per-response script
    * nonce (e.g. `defaultContentSecurityPolicy`). The nonce is in the request
    * context (`requestNonce()`); pass it to `createRouter({ ssr: { nonce } })`.
+   * It also receives the request, the response and its app-relative path;
+   * returning `null` keeps the response's own policy. Framable paths never
+   * reach it (see `framablePaths`).
    */
-  csp?: (nonce: string) => string;
+  csp?: (
+    nonce: string,
+    context: { request: Request; response: Response; path: string }
+  ) => string | null | undefined;
+  /**
+   * App-relative paths, beyond the platform's framable defaults
+   * (`@tuturuuu/utils/framable-paths`, e.g. Web's uploaded WebGL builds),
+   * whose upstream `Content-Security-Policy` passes through untouched.
+   */
+  framablePaths?: readonly RegExp[];
+  /**
+   * Same-origin admission for cookie-authenticated mutations on mounted
+   * (apex) requests, before `proxy.ts`. Root-mode requests are unaffected.
+   */
+  csrf?: BridgeCsrfOptions<Env>;
 }
 
 /**
@@ -81,12 +109,13 @@ export function createBridgeHandler<
       }
     });
   const publicAssets = options.publicAssets ?? new Set<string>();
+  const isFramable = createFramablePathMatcher(options.framablePaths);
   const inBase = (path: string, prefix: string) =>
     path === prefix || path.startsWith(`${prefix}/`);
   const inFunctionBase = (path: string) =>
     !!options.functionBase && inBase(path, options.functionBase);
 
-  return async function handle(
+  async function handleRequest(
     incoming: Request,
     env: Env,
     ctx: Ctx
@@ -108,6 +137,15 @@ export function createBridgeHandler<
     headers.delete(APP_BASE_HEADER);
     if (!base.isRoot) headers.set(APP_BASE_HEADER, base.basePath);
     const request = new Request(incoming, { headers });
+    if (!base.isRoot && options.csrf) {
+      const refused = admitMountedMutation({
+        appPath,
+        exemptions: options.csrf.exemptions,
+        mode: options.csrf.mode(env),
+        request: incoming,
+      });
+      if (refused) return refused;
+    }
     const nonce = options.csp ? createNonce() : undefined;
     let response: Response;
     if (
@@ -116,7 +154,10 @@ export function createBridgeHandler<
     ) {
       const assets = options.assets(env);
       if (!assets) throw new Error('Assets binding is unavailable');
-      response = await assets.fetch(base.stripRequest(request) ?? request);
+      response = await fetchAsset(
+        assets,
+        base.stripRequest(request) ?? request
+      );
     } else {
       const dispatch: BridgeDispatch = async (forwarded) => {
         const pathname = forwarded.nextUrl.pathname;
@@ -129,7 +170,9 @@ export function createBridgeHandler<
             : null;
         if (endpoint) return endpoint;
         if (central || pathname === '/api' || pathname.startsWith('/api/')) {
-          const origin = options.centralApiOrigin(env);
+          const origin =
+            options.apiOrigin?.(forwarded, { env, path: pathname }) ??
+            options.centralApiOrigin(env);
           if (options.forwardApi) return options.forwardApi(forwarded, origin);
           // The central API sees the app-relative path, never the base.
           return forwardToCentralApi(
@@ -167,8 +210,45 @@ export function createBridgeHandler<
     }
     const final = base.finalizeResponse(response);
     if (!nonce || !options.csp) return final;
+    // A framable path's upstream policy (Web's `sandbox` CSP for uploaded
+    // WebGL builds) must reach the browser untouched, or the uploaded
+    // scripts run unsandboxed on the app origin.
+    if (isFramable(appPath)) return final;
+    const policy = options.csp(nonce, {
+      request: incoming,
+      response: final,
+      path: appPath,
+    });
+    if (policy == null) return final;
     const secured = new Response(final.body, final);
-    secured.headers.set('Content-Security-Policy', options.csp(nonce));
+    secured.headers.set('Content-Security-Policy', policy);
     return secured;
+  }
+
+  return async function handle(
+    incoming: Request,
+    env: Env,
+    ctx: Ctx
+  ): Promise<Response> {
+    try {
+      return await handleRequest(incoming, env, ctx);
+    } catch (error) {
+      // A failure in the proxy, an endpoint or Start still answers through
+      // the app's response policy (no-store, robots, framing), never with
+      // its details.
+      console.error('[start-bridge] request failed', error);
+      return bridgeErrorResponse();
+    }
   };
+}
+
+/** The bridge's own failure response: generic text, never error details. */
+export function bridgeErrorResponse() {
+  return new Response('Internal Server Error', {
+    status: 500,
+    headers: {
+      'Content-Type': 'text/plain; charset=utf-8',
+      'Cache-Control': 'private, no-store',
+    },
+  });
 }

@@ -57,6 +57,9 @@ class _CreateManageItemDialogState extends State<_CreateManageItemDialog> {
         ),
       ],
       child: TextField(
+        decoration: InputDecoration(
+          hintText: context.l10n.inputPlaceholderInventoryName,
+        ),
         controller: _controller,
         autofocus: true,
         onSubmitted: (_) => unawaited(_handleConfirm()),

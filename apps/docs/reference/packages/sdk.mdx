@@ -239,6 +239,42 @@ errors, and non-JSON notices. Use `ttr upgrade` to run `bun i -g tuturuuu`. Use
 `--no-update-check` on a single command, or set `TUTURUUU_DISABLE_UPDATE_CHECK=1`,
 to disable the check.
 
+`ttr upgrade install [version]` keeps releases side by side in
+`~/.tuturuuu/cli/versions/<version>`. It requires Bun even when the CLI runs under
+Node. Registry requests have a two-minute deadline; archive bodies stay in memory
+under a 64 MiB cap and must match sha512 `dist.integrity` before extraction.
+Installation uses `bun install --production --ignore-scripts`. `release.json`
+stores `filesSha256`, one SHA-256 hash over the ordered per-file path/hash lines,
+and `files`, their count. It does not store the individual per-file hashes.
+A mismatch publishes nothing; an invalid existing release is reported, never
+overwritten. Running processes keep their own release files.
+`ttr upgrade activate <version>` first runs the target release's own
+`resources setup --root <first-root> --shell none --force --json`, which refuses
+while any resource owner or ticket is live, and only then atomically switches
+`~/.tuturuuu/cli/current`, rewrites the `ttr`/`tuturuuu`/`tutur3u` launchers in
+`~/.tuturuuu/cli/bin` and records the previous release. Roll back by activating
+the previous version. `ttr upgrade list` shows verification state and
+`ttr upgrade prune --keep <n>` never removes the current or previous release.
+
+Verification is not an atomic directory snapshot against concurrent changes by
+the same OS user. Pruning can remove a release still used by a long-running older
+CLI process; retain that release until its processes finish. Windows filesystem
+behavior is not qualified; unsupported secure-filesystem operations fail closed.
+Unknown `ttr upgrade` subcommands, flags and surplus arguments fail with a usage
+error before any installation. `ttr upgrade list [--json]` only reads releases.
+Older published parsers can treat even `ttr upgrade list --json` as a global
+installation. Before using upgrade subcommands on a shared host, identify the
+installed release with `ttr --version` or its package.json and verify that it
+supports them. Do not probe support by running an upgrade subcommand. Drain
+active jobs before any global upgrade or activation.
+Bare `ttr upgrade` installs npm `latest`, not main. Main's SDK dev workflow
+publishes qualified prereleases under npm `dev`; stable publication follows the
+Release Please and production release workflow. Check publication using
+`npm view tuturuuu@dev version` or the workflow result.
+Regression coverage: `cli-versions.test.ts`, `cli-versions-command.test.ts`,
+`cli-versions-review.test.ts`, `cli-versions-download.test.ts`,
+`cli-versions-security.test.ts`, and `cli-versions-fd.test.ts`.
+
 CLI sessions are dedicated Tuturuuu gateway JWTs, separate from normal browser
 and Supabase Auth sessions. The CLI stores a short-lived app-session access JWT
 plus a longer-lived refresh JWT, refreshes shortly before access-token expiry,
@@ -1726,6 +1762,15 @@ Shell setup preserves existing content and original backups through marked Zsh/B
 
 Out-of-range numeric configuration values (lanes `1`–`8`, workers and Turbo `1`–`64`, `maxValidationLanes` below the base) are clamped with a stderr warning that names the field and allowed range. Invalid JSON or wrongly typed fields produce an `Invalid resource configuration: <field> <expectation>` error that never discloses field values. Explicit `run` and `setup` fail on that error. `status` still prints its report with `config.state: invalid` and the error as a warning, then exits `1`; it also reports `disabled` admission and base lanes (or, failing that, `maxValidationLanes`) above the host lane ceiling as warnings. Shims print it and run the command without admission, so one bad value cannot brick every tool on the machine. `disable`/`enable` toggle future automatic admission. All configuration mutations, including uninstall, serialize with admission and read the latest policy inside the mutex. Disabled, out-of-scope and deliberate bypass commands retain their arguments/environment without admission-cap validation. `TTR_RESOURCES_BYPASS=1` is a deliberate one-command bypass. Once owners and waiters drain, `uninstall` removes owned hooks/shims and preserves shell content, configuration and backups. Keep the default `TTR_RESOURCES_HOME` across projects; private temporary homes are for lightweight synthetic tests, not parallel heavy work. Resource fixtures mock host capacity in Vitest parents and disposable Bun loaders/shims. Read exit diagnostics after subprocess pipes close; use a separate exit barrier when testing surviving descendants. Parent Vitest coverage is not evidence of coverage inside Bun subprocesses.
 
+Multi-host dispatch fixtures in `resources-hosts-concurrency.test.ts` and
+`resources-hosts-auto.test.ts` use fixed server/heartbeat timestamps, explicit
+environments, injected disk inputs, and promise barriers for concurrent runs.
+Separate wall-clock reads can put a heartbeat after its server timestamp and
+refuse dispatch. Fixture admission polls complete immediately; real ledger
+reservation checks and mutex backoff remain. A producer that exits before its
+start barrier fails the test directly. The last-lane assertion still requires
+exactly one remote dispatch and one local fallback, without a larger timeout.
+
 The bounded monitor emits JSONL memory-pressure, T3-tree resident-memory and top-process samples without arguments or environment values. RSS differs from Activity Monitor's footprint and can count shared pages multiple times.
 Offload full validation with `ttr box run --runner <remote-id> -- <command>` only after verifying a different machine and intended checkout. Same-machine runners/containers consume local RAM; resource setup does not configure runners, transmit credentials, or restart Docker.
 
@@ -1837,6 +1882,8 @@ idle queue, preserved roots/settings and capacity evidence.
 - **Hosts.** The single `local` host uses the lane FIFO for heavy work. Lane owners count as local heavy load, a heavy `--hosts` job takes a local lane only while no lane waiter is ahead, and light local work holds a ledger reservation. `runner` hosts dispatch the exact pushed commit through the devbox offload transport (`runBoxOffload`, unchanged). Immediately before remote creation the runner is re-validated against a fresh snapshot that carries the server's timestamp. If it is stale, draining or missing, its disk is unknown or low, or the snapshot has no server time, the reservation is released and the job requeues without dispatching. Admission also refuses runners in snapshots without a server timestamp, and runners without activity telemetry (other clients' runs would be invisible). The commit plan is recomputed at dispatch; if it changed, the job falls back to local hosts. SIGHUP is forwarded to the offload transport's cancellation as SIGTERM, so a closed terminal also stops the remote run. Runs that other clients start on that runner count as heavy load. A runner that refuses creation means no remote run exists, so the job is requeued for local hosts; an ambiguous failure is never repeated locally.
 - **Admission.** Admission requires a fresh trusted runner (`evaluateTrustedRunner` plus `telemetryTtlSeconds`) and known free disk at or above `max(reserved.diskGiB, minDiskFreeGiB ?? 50)`. Unreachable fleets, stale heartbeats, draining runners and unknown disk are never admitted. Dirty or unpushed trees are local-only.
 - **Canonical reservations.** Tickets and reservations live in `<home>/hosts-state/` and are created only inside the host-wide admission mutex. Concurrent requesters on this machine therefore cannot double-assign a slot. Each reservation is tied to its broker PID (or owned child group). Cancellation (SIGINT/SIGTERM/SIGHUP) releases it, and a dead owner is pruned on the next round. A malformed entry closes admission. Only `scope: "host"` reservations claim capacity: a project-only lock never stands in for host-wide admission.
+- **Concurrent slot release.** Status and queue observations may overlap a release. A slot removed between its directory and owner reads is absent, including `ENOENT`/`ENOTDIR`, without retrying the observation. Recent ownerless directories still count as initializing. Malformed owners, invalid slot types, unreadable state and missing persistent budget fences keep admission closed. `resources-slots-observation.test.ts` injects a release between reads and checks these fail-closed controls.
+
 - **Preference.** An optional per-host `preference` rank in `hosts.json` (lower first) orders hosts that already passed every eligibility and capacity check; the capacity score breaks ties, and unranked hosts follow ranked ones. It is an ordering hint only: a preferred host that is stale, draining, degraded, low on or unknown disk, missing telemetry, or full is skipped, never forced, and preference never lets a dirty tree run remotely. Runners are degraded when their 1-minute load per CPU (agent telemetry `resources.loadAverage` / `resources.cpu.cores`) reaches `maxLoadPerCpu` (default 1); missing load telemetry fails closed, and the pre-dispatch revalidation re-checks it. The operator's order is skr-studio > skr-sonha > skr-linux-lan > M4; `ttr resources hosts --simulate` prints it with a scenario for today's health (skr-studio offline, skr-sonha degraded at load 27 to 32, both skipped) and one with every host healthy. skr-studio and skr-sonha capacities there are illustrative until Mastermind registers them (`resources-hosts-preference.test.ts`).
 - **Fairness.** Waiters are ordered by their project's live share, then age. A project is the repository's common Git directory, so all Upskii worktrees share one identity. A waiter overtaken `fairness.maxBypass` times (default 4) holds every host that could ever fit it until it is placed. This backpressure is what prevents starvation.
 - **Disk at dequeue (REV-6480-1/2).** Every lane-queued job re-checks free disk inside admission, immediately before claim and spawn, using a local `statfs` probe (`resources-disk-gate.ts`).

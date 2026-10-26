@@ -65,6 +65,56 @@ Domain and DNS/proxy topology before disabling a candidate. Never replay uncerta
 Mail sends or change ingestion/R2 ownership as a frontend rollback. Rehearse recovery;
 DNS TTLs and provider convergence prevent assuming instantaneous rollback.
 
+## Subdomain cutover tools
+
+Native apps go live on their own subdomain first (root mode). Two read-only
+scripts support gate 4 and the post-deploy check:
+
+- `node scripts/native-cutover/capture.mjs --host <app>.tuturuuu.com --vercel-project <project> [--cf-zone-id <zone>] --out tmp/native-cutover-<app>.json`
+  records DNS, the live edge (`server`, `x-vercel-id`, `cf-ray`, runtime
+  header), Vercel's current production deployment (URL and `dpl_` id) and, with
+  a dedicated `CLOUDFLARE_READONLY_API_TOKEN`, the host's DNS record (proxied
+  flag, TTL) and **every route in the zone**, including wildcard routes and
+  scriptless exclusions. Run it again immediately before the flip; production
+  deployments keep moving.
+- `node scripts/native-cutover/smoke.mjs --origin https://<app>.tuturuuu.com --app <id> --expect native|legacy`
+  checks robots, the anonymous login handoff (return URL on the app host,
+  `nextUrl` kept), a protected API (401), build-info, the server-function guard,
+  crawler SSR with a working asset, a wildcard `Accept-Language`, the runtime
+  header and the anti-framing headers on every response. Run `--expect legacy`
+  before the flip as the baseline and `--expect native` after it.
+
+The dedicated capture token needs only **Zone DNS:Read** and **Workers Routes:Read**,
+restricted to the **tuturuuu.com** zone. Do not supply a generic deployment token.
+The zone ID must contain exactly 32 lowercase hexadecimal characters; the host
+must be a DNS hostname without a scheme, port, path or query.
+
+Captures contain production `*.vercel.app` URLs, which can reveal origin-bypass
+hints. Store them only under gitignored `tmp/` or the private operations ledger,
+and never commit them. CLI stderr retained in a failed capture is limited to
+2,000 characters. Cloudflare credentials are redacted from results and upstream
+error details are omitted.
+
+`matchesRoute(pattern, requestUrl)` in `scripts/native-cutover/route-pattern.mjs`
+implements the [Cloudflare route pattern rules](https://developers.cloudflare.com/workers/configuration/routing/routes/#matching-behavior):
+optional HTTP/HTTPS scheme, leading host `*` (including `*.` and `*host`),
+case-sensitive paths and trailing path `*`. It matches individual URLs, including
+query strings; it does not select the winning route or establish DNS/zone eligibility.
+Host matching uses the current case-insensitive rule; pre-15 October 2023 routes
+can have case-sensitive host semantics. Keep the full inventory regardless of
+which routes match a probe URL, since narrower paths and scriptless routes matter
+for rollback.
+
+Smoke checks resolve relative `Location` headers against the tested origin.
+Transport, redirect parsing, body-read and asset-fetch errors produce a failed
+row and leave the remaining checks running. Run the synthetic regression suite
+with `node --test scripts/native-cutover/*.test.mjs`; it uses no provider tokens.
+
+Prefer a rollback that does not wait on DNS: once the host's record is proxied
+and serves the Vercel origin correctly, cut over by attaching the Worker route
+and roll back by detaching it. A DNS-only CNAME switch rolls back only as fast as
+its TTL.
+
 Observe Apps for at least 14 days and Meet/Mail/provider-critical Calendar flows for
 30 days or the relevant business cycle before separately authorized decommissioning.
 No hold removal, resource provisioning, deployment or DNS change is authorized by
