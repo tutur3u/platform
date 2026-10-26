@@ -44,6 +44,17 @@ vi.mock('@tuturuuu/google', () => ({
   },
 }));
 
+vi.mock('next-intl/server', () => ({
+  getTranslations: async ({ locale }: { locale: string }) => {
+    const { createTranslator } = await import('use-intl/core');
+    const messages =
+      locale === 'vi'
+        ? (await import('../../../../../../../messages/vi.json')).default
+        : (await import('../../../../../../../messages/en.json')).default;
+    return createTranslator({ locale, messages, namespace: 'calendar' });
+  },
+}));
+
 vi.mock('@/lib/api-auth', () => ({
   resolveSessionAuthContext: resolveSessionAuthContextMock,
 }));
@@ -411,6 +422,49 @@ describe('Google Calendar OAuth callback route', () => {
     expect(supabase.tokenUpdateMock).not.toHaveBeenCalled();
     expect(supabase.tokenInsertMock).not.toHaveBeenCalled();
     expect(fullSyncMock).not.toHaveBeenCalled();
+  });
+
+  it('caps consent restarts across fresh OAuth flows and still accepts a fresh credential', async () => {
+    getTokenMock.mockResolvedValue(createTokenResponse(null));
+    const supabase = createSupabaseClient({
+      existingToken: {
+        id: 'existing-token-id',
+        refresh_token: 'rejected-refresh-token',
+        is_active: false,
+        deactivated_reason: 'google_invalid_grant',
+      },
+    });
+    mockResolvedAuthContext(supabase.client);
+    vi.spyOn(Date, 'now').mockReturnValue(Date.UTC(2026, 9, 26, 8, 1));
+    const first = await GET(callbackRequest(signedState()));
+    expect(new URL(first.headers.get('location') ?? '').host).toBe(
+      'accounts.google.com'
+    );
+    const repeated = await GET(
+      callbackRequest(signedState(), 'https://calendar.tuturuuu.com', {
+        'Accept-Language': 'vi',
+      })
+    );
+    expect(repeated.status).toBe(429);
+    expect(repeated.headers.get('Retry-After')).toBe('540');
+    expect(repeated.headers.get('Cache-Control')).toBe('no-store');
+    expect(repeated.headers.has('location')).toBe(false);
+    expect(await repeated.json()).toEqual({
+      code: 'google_calendar_consent_restart_limited',
+      error:
+        'Google chưa cấp mã làm mới. Vui lòng chờ trước khi kết nối lại tài khoản này.',
+    });
+    expect(supabase.tokenUpdateMock).not.toHaveBeenCalled();
+    getTokenMock.mockResolvedValue(createTokenResponse('fresh-refresh-token'));
+    const recovered = await GET(callbackRequest(signedState()));
+    expect(recovered.status).toBe(302);
+    expect(supabase.tokenUpdateMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        refresh_token: 'fresh-refresh-token',
+        deactivated_reason: null,
+        is_active: true,
+      })
+    );
   });
 
   it('asks again with consent when sync rejected the reused token after the read', async () => {

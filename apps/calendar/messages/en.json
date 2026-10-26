@@ -1417,6 +1417,8 @@
     "connect_microsoft_desc": "Connect your Microsoft account",
     "connected_accounts": "Connected Accounts",
     "connected_calendars": "Connected Calendars",
+    "consent_restart_limited": "Google did not issue a refresh token. Wait before reconnecting this account again.",
+    "consent_restart_unavailable": "Calendar reconnection is temporarily unavailable. Try again later.",
     "create": "Create",
     "create_calendar": "Create Calendar",
     "creation_recovery_notice": "The previous creation is unconfirmed. Retry the original request first; your edits will stay open to save after confirmation.",
