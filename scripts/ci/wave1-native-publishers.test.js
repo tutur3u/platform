@@ -483,3 +483,23 @@ test('Mail staging and production preserve native compatibility and bundling unc
   ]);
   assert.equal(configs[0].compatibility_date, '2026-10-19');
 });
+
+test('Calendar coordination fallback is optional while Mail and Apps still require their key', async (t) => {
+  const [{ profiles }, { prepare, verify }] = await modules;
+  for (const app of ['calendar', 'mail', 'apps']) {
+    const root = fixture(t, app);
+    prepare(root, app, 'staging', 'owner-example', sha);
+    const { config } = verify(root, app, 'staging', sha);
+    const emitted = JSON.parse(fs.readFileSync(config));
+    assert.equal(
+      emitted.secrets.required.includes('TUTURUUU_APP_COORDINATION_SECRET'),
+      app !== 'calendar',
+      `${app} coordination requirement must match its accepted fallback contract`
+    );
+  }
+  assert.ok(
+    profiles.apps.calendar.optionalSecretNames.includes(
+      'TUTURUUU_APP_COORDINATION_SECRET'
+    )
+  );
+});

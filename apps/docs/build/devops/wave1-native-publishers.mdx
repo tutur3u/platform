@@ -113,6 +113,10 @@ to the canonical host would return 503 and is forbidden.
    connected-account encryption key and storage credentials preserve the owning
    environment's identity. Optional names are listed separately; provider acceptance
    must identify which are required for the configured transports and old attachments.
+   Calendar alone treats `TUTURUUU_APP_COORDINATION_SECRET` as optional because its
+   shared token service accepts `SUPABASE_SECRET_KEY`. Preserve Mail and Apps
+   requirements. Hosted auth continuity must prove agreement with the staging issuer;
+   declaring the fallback does not prove matching signing keys.
 5. Supply GitHub build/publication secret names `STAGING_SUPABASE_URL` and
    `STAGING_SUPABASE_PUBLISHABLE_KEY`. Held production builds retain fixtures and
    read no production inputs. Only public Supabase inputs reach staging builds.
