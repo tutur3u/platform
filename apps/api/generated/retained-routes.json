@@ -300,16 +300,6 @@
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
   },
   {
-    "path": "/api/auth/me/session",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/auth/me/session/route.ts",
-    "sourceSha256": "fe66709eb8d05941dccee65ee6b14f5488ffe015bbcc01be759a463af97afc88",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
     "path": "/api/auth/mfa/totp/assurance-level",
     "sideEffects": "unknown",
     "shadow": "never",
@@ -404,7 +394,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/cli/auth/start/route.ts",
-    "sourceSha256": "0270dbfb314da1e8b55745d4cf39bf7709d51eb0304afa35e06b204ea66d6c4c",
+    "sourceSha256": "cbd8b37aacdfebae8803d7e14f5f6318403025ffbd7d1fcda3e3c3bf0458f83a",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
