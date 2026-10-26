@@ -21,49 +21,9 @@ import {
   validateOutput,
   verify,
 } from './calendar-native-artifact.mjs';
+import { fixture } from './calendar-native-artifact-fixture.mjs';
 
 const sha = 'a'.repeat(40);
-function fixture(run) {
-  const app = mkdtempSync(resolve(tmpdir(), 'calendar-artifact-'));
-  const put = (name, data) => {
-    const path = resolve(app, name);
-    mkdirSync(dirname(path), { recursive: true });
-    writeFileSync(path, typeof data === 'string' ? data : JSON.stringify(data));
-  };
-  const pointer = {
-    configPath: '../../dist/server/wrangler.json',
-    auxiliaryWorkers: [],
-  };
-  const config = {
-    name: 'tuturuuu-calendar',
-    main: './worker.js',
-    no_bundle: true,
-    rules: [{ type: 'ESModule', globs: ['**/*.js', '**/*.mjs'] }],
-    d1_databases: [],
-    compatibility_date: '2026-10-19',
-    compatibility_flags: ['nodejs_compat', 'global_fetch_strictly_public'],
-    workers_dev: false,
-    assets: {
-      binding: 'ASSETS',
-      directory: '../client',
-      run_worker_first: true,
-      not_found_handling: 'none',
-    },
-  };
-  put('.wrangler/deploy/config.json', pointer);
-  put('dist/server/wrangler.json', config);
-  put(
-    'dist/server/worker.js',
-    'export default { fetch() { return new Response("fixture"); } };'
-  );
-  put('dist/client/serwist/sw.js', 'self.addEventListener("fetch", () => {});');
-  put('cloudflare-env.d.ts', 'interface CloudflareEnv { ASSETS: Fetcher }');
-  try {
-    run({ app, put, pointer, config });
-  } finally {
-    rmSync(app, { recursive: true, force: true });
-  }
-}
 test('seal survives relocation and binds exact SHA, Worker, pointer and client bytes', () =>
   fixture(({ app, put }) => {
     const receipt = manifest(app, sha);
@@ -113,6 +73,7 @@ for (const [field, value] of [
   ['workers_dev', true],
   ['assets.run_worker_first', false],
   ['assets.not_found_handling', 'single-page-application'],
+  ['assets.html_handling', 'auto-trailing-slash'],
   ['triggers', { crons: ['* * * * *'] }],
   ['services', [{ binding: 'NEW_SERVICE', service: 'new' }]],
   ['build', { command: 'void deploy' }],
@@ -606,6 +567,8 @@ for (const [label, field, value] of [
   ['assets binding', 'assets.binding', 'OTHER'],
   ['assets routing', 'assets.run_worker_first', false],
   ['SPA fallback', 'assets.not_found_handling', 'single-page-application'],
+  ['HTML routing', 'assets.html_handling', 'auto-trailing-slash'],
+  ['missing HTML routing', 'assets.html_handling', undefined],
   ['Worker escape', 'main', '../../outside.js'],
 ]) {
   test(`saved pointer retains qualification: ${label}`, () =>
