@@ -98,19 +98,23 @@ forget consumed replay fences and spent limits.
 Native Workers call `configureAbuseGuardRuntime({ binding: env.ABUSE_GUARD,
 pepper, families })` in their adapter instead of the HTTP variables.
 
-Every store failure throws `AbuseGuardUnavailableError`. That includes a timeout,
-an auth or configuration error, a stop, and `off`. Once a family is assigned, its
-callers fail as follows:
+Every store failure throws `AbuseGuardUnavailableError`, and each caller applies
+the fail mode below. That includes a timeout, an auth or configuration error, an
+operator or budget stop, and an `off` selection. A sensitive family whose legacy
+policy failed open fails closed once it is assigned. Otherwise exhausting the
+store's budget would switch its protection off.
 
-- `offline`: the marked bulk read gets 503.
-- `replay`: all three refresh routes fail closed (503). Cross-app session refresh
-  always did. CLI refresh and app-token exchange continue on error only while
-  `replay` is unassigned.
-- `password`: the attempt is refused with `retryAfter: 30`.
-- `proxy`: fails open by design. Route limits are skipped, and IP blocks, auth and
-  edge controls still apply.
+| Family | Caller | Fail mode while assigned | While unassigned (legacy) |
+| --- | --- | --- | --- |
+| `offline` | Marked bulk reads (offline download guard) | Closed: 503 with `Retry-After: 30` | Closed: 503 |
+| `replay` | Cross-app session refresh | Closed: 503 | Closed: 503 |
+| `replay` | CLI refresh, app-token exchange | Closed: 503 with `Retry-After: 30` | Open: continue without the fence (existing policy) |
+| `proxy` | API proxy route rate limits | Open: no route limits; IP blocks, auth and edge controls still apply | Open: no route limits |
+| `password` | Meet guest and Nova password attempts | Not routed yet (legacy Upstash path) | Open: the KDF cost is the only bound |
 
-Unassigned families keep their legacy behavior.
+The `proxy` family stays fail-open by design. Failing every API request closed on
+a guard outage would be a platform-wide outage. Assign it only with a measured
+volume and a sized `proxy` budget.
 
 ## Cost safety
 

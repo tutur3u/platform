@@ -150,6 +150,19 @@ function cachedClient(
 }
 
 /**
+ * Whether `family` is assigned to the Durable Object store (served, or `off`
+ * because its assigned configuration is unusable). Callers whose legacy policy
+ * fails open use this to fail closed instead once the store owns the family,
+ * so exhausting the store's budget can never switch their protection off.
+ */
+export function isAbuseGuardFamilyAssigned(
+  family: AbuseGuardFamily,
+  env?: AbuseGuardEnv
+) {
+  return selectAbuseGuard(family, env).kind !== 'legacy';
+}
+
+/**
  * Once a family is assigned to the Durable Object store, an incomplete or
  * invalid configuration reports `off` and never falls back to the legacy
  * store: a fresh legacy store would forget consumed tokens and spent limits.

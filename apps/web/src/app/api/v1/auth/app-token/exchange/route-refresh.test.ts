@@ -168,6 +168,38 @@ describe('app token exchange route', () => {
     expect(mocks.redisSet).not.toHaveBeenCalled();
   });
 
+  it('fails closed when the guard store owns replay fences and errors', async () => {
+    // Assigning the family with no usable store configuration selects `off`.
+    vi.stubEnv('ABUSE_GUARD_FAMILIES', 'replay');
+    mockRegisteredApp(['external-projects:*']);
+    mocks.redisGet.mockRejectedValueOnce(new Error('guard unavailable'));
+    const { token: refreshToken } = createAppCoordinationToken(
+      {
+        email: 'victim@example.com',
+        expiresInSeconds: 86_400,
+        originApp: 'web',
+        scopes: ['app-token:refresh'],
+        targetApp: 'yoola',
+        userId: victimUserId,
+      },
+      { secret: 'test-secret' }
+    );
+
+    const response = await POST(
+      createExchangeRequest({
+        appId: 'yoola',
+        appSecret: 'ttr_app_secret_test',
+        refreshToken,
+        requestedScopes: ['external-projects:*'],
+        workspaceId,
+      })
+    );
+
+    expect(response.status).toBe(503);
+    expect(response.headers.get('Retry-After')).toBe('30');
+    vi.unstubAllEnvs();
+  });
+
   it('rejects refresh requests with non-refresh app tokens', async () => {
     mockRegisteredApp(['external-projects:*']);
     const { token: accessToken } = createAppCoordinationToken(

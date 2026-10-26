@@ -8,6 +8,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { isAbuseGuardFamilyAssigned } from '@tuturuuu/utils/abuse-guard/select';
 import { getAppDomainMap } from '@tuturuuu/utils/internal-domains';
 import { isRequiredMfaProofAllowed } from '@tuturuuu/utils/required-mfa-app-session';
 import type { MfaSessionProof } from '@tuturuuu/utils/required-mfa-policy';
@@ -378,7 +379,7 @@ async function verifyExchangeRefreshToken({
   replayGraceSeconds: number;
   refreshToken: string;
   targetApp: string;
-}): Promise<AppCoordinationTokenClaims | null> {
+}): Promise<AppCoordinationTokenClaims | 'unavailable' | null> {
   let verification: ReturnType<typeof verifyAppCoordinationToken>;
 
   try {
@@ -409,6 +410,11 @@ async function verifyExchangeRefreshToken({
 
   if (consumeResult === 'replayed') {
     return null;
+  }
+  // Legacy policy continues without the fence; once the guard store owns
+  // replay fences, an unavailable store fails closed.
+  if (consumeResult === 'unavailable' && isAbuseGuardFamilyAssigned('replay')) {
+    return 'unavailable';
   }
 
   return claims;
@@ -483,6 +489,12 @@ async function exchangeAppToken(request: NextRequest) {
       targetApp: resolvedTarget.targetApp,
     });
 
+    if (refreshClaims === 'unavailable') {
+      return NextResponse.json(
+        { error: 'Refresh temporarily unavailable' },
+        { status: 503, headers: { 'Retry-After': '30' } }
+      );
+    }
     if (!refreshClaims) {
       return NextResponse.json(
         { error: 'Invalid or expired refresh token' },

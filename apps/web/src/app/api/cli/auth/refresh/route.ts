@@ -4,6 +4,7 @@ import {
   verifyCliRefreshToken,
 } from '@tuturuuu/auth/cli-session';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { isAbuseGuardFamilyAssigned } from '@tuturuuu/utils/abuse-guard/select';
 import {
   readRequiredMfaPolicy,
   satisfiesRequiredMfaPolicy,
@@ -83,6 +84,14 @@ export async function POST(request: NextRequest) {
   });
 
   if (consumeResult === 'unavailable') {
+    // Legacy policy continues without the fence; once the guard store owns
+    // replay fences, an unavailable store fails closed.
+    if (isAbuseGuardFamilyAssigned('replay')) {
+      return NextResponse.json(
+        { error: 'Refresh temporarily unavailable' },
+        { status: 503, headers: { 'Retry-After': '30' } }
+      );
+    }
     console.warn('CLI refresh replay protection unavailable; continuing');
   } else if (consumeResult === 'replayed') {
     return NextResponse.json(

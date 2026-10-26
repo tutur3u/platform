@@ -185,6 +185,28 @@ describe('CLI auth refresh route', () => {
     expect(createAdminClient).toHaveBeenCalled();
   });
 
+  it('fails closed when the guard store owns replay fences and errors', async () => {
+    // Assigning the family with no usable store configuration selects `off`.
+    vi.stubEnv('ABUSE_GUARD_FAMILIES', 'replay');
+    refreshReplaySet.mockRejectedValueOnce(new Error('guard unavailable'));
+    const oldSession = createCliAppSession({
+      email: 'agent@example.com',
+      userId: 'user-1',
+    });
+
+    const response = await POST(
+      new NextRequest('https://tuturuuu.com/api/cli/auth/refresh', {
+        body: JSON.stringify({ refreshToken: oldSession.refresh.token }),
+        method: 'POST',
+      })
+    );
+
+    expect(response.status).toBe(503);
+    expect(response.headers.get('Retry-After')).toBe('30');
+    expect(createAdminClient).not.toHaveBeenCalled();
+    vi.unstubAllEnvs();
+  });
+
   it('continues when refresh-token replay protection errors', async () => {
     refreshReplaySet.mockRejectedValueOnce(new Error('redis unavailable'));
 
