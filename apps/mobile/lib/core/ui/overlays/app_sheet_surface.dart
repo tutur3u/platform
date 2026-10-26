@@ -28,10 +28,12 @@ class AppSheetSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = AppTokens.of(context).colorScheme;
+    final tokens = AppTokens.of(context);
+    final c = tokens.colorScheme;
+    final corner = tokens.interface.radius(AppRadius.sheet);
     final radius = dialog
-        ? BorderRadius.circular(AppRadius.sheet)
-        : const BorderRadius.vertical(top: Radius.circular(AppRadius.sheet));
+        ? BorderRadius.circular(corner)
+        : BorderRadius.vertical(top: Radius.circular(corner));
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: radius,

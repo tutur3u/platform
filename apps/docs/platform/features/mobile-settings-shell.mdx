@@ -712,6 +712,35 @@ grid. These are widget-level checks. Device visual, battery and frame-time
 acceptance on the exact CI-built artifact remain separate gates.
 
 
+### Interface style, density and corners
+
+Appearance ends with an Interface group. The default look is the same on
+Android and iOS. Each choice applies instantly through the theme and is stored
+with the appearance payload on this device only; it is not synced to the
+account.
+
+| Option | Choices | Default | Effect |
+| --- | --- | --- | --- |
+| Style | Tuturuuu, iOS-like, Material-like | Tuturuuu | Page transitions and scroll edges. iOS-like slides and bounces everywhere. Material-like zooms and clamps everywhere, except that iOS keeps its system edge-swipe Back. Tuturuuu keeps each platform's system navigation gesture. |
+| Density | Comfortable, Compact | Comfortable | Grouped row height (56dp or 48dp). Never below a 44dp touch target. |
+| Corners | Rounded, Soft, Square | Rounded | Card, panel, grouped and sheet radii (Soft is 60%, Square is at most 4dp). Pills stay round. |
+| Haptic feedback | On, Off | On | The same device preference as the Settings row. |
+| Reduce motion | Off, On | Off (follow system) | On always reduces motion on this device. It can only add to the system setting, never remove it, and also stops animated blobs. |
+
+Colors and layout do not change with these options, so the contrast
+guarantees above hold for every combination. **Reset to default** restores the
+interface options with the rest of Appearance. Haptic feedback keeps its own
+preference and is not reset.
+
+Components read the options through `AppTokens.of(context).interface`
+(`AppInterfaceTokens`, a Material theme extension) instead of checking the
+platform. Regression coverage: `interface_theme_test.dart` covers the payload
+round trip and fallbacks, radii, density floors, transitions per style and
+Reduce motion layering. `settings_appearance_interface_checks.dart` covers
+choosing, persisting and resetting in the real Settings shell, and a stored
+choice applying through the shell theme. The existing 320px at 2x text checks
+in English and Vietnamese include the new group.
+
 ### Custom controls and modal editors
 
 Appearance, Storage and Offline use the shared design-system controls. Appearance

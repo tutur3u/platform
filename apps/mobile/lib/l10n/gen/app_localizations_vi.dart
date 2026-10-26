@@ -7041,6 +7041,33 @@ class AppLocalizationsVi extends AppLocalizations {
   String get appearanceBackgroundTitle => 'Nền';
 
   @override
+  String get appearanceCornersRounded => 'Bo tròn';
+
+  @override
+  String get appearanceCornersSoft => 'Bo nhẹ';
+
+  @override
+  String get appearanceCornersSquare => 'Vuông';
+
+  @override
+  String get appearanceCornersTitle => 'Góc bo';
+
+  @override
+  String get appearanceDensityComfortable => 'Thoải mái';
+
+  @override
+  String get appearanceDensityCompact => 'Gọn';
+
+  @override
+  String get appearanceDensityTitle => 'Mật độ';
+
+  @override
+  String get appearanceFeedbackTitle => 'Phản hồi và chuyển động';
+
+  @override
+  String get appearanceHapticsDescription => 'Rung nhẹ khi bạn chọn, vuốt hoặc xác nhận.';
+
+  @override
   String get appearanceIntensity => 'Cường độ';
 
   @override
@@ -7053,6 +7080,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get appearancePreviewTitle => 'Xem trước';
 
   @override
+  String get appearanceReduceMotion => 'Giảm chuyển động';
+
+  @override
+  String get appearanceReduceMotionDescription => 'Luôn giảm hiệu ứng chuyển động trên thiết bị này, kể cả khi cài đặt hệ thống đang tắt.';
+
+  @override
   String get appearanceReset => 'Khôi phục mặc định';
 
   @override
@@ -7060,6 +7093,21 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get appearanceSoftness => 'Độ mềm';
+
+  @override
+  String get appearanceStyleDescription => 'Thay đổi cách trang chuyển và danh sách cuộn. Màu sắc và bố cục giữ nguyên trên mọi thiết bị.';
+
+  @override
+  String get appearanceStyleIos => 'Kiểu iOS';
+
+  @override
+  String get appearanceStyleMaterial => 'Kiểu Material';
+
+  @override
+  String get appearanceStyleTitle => 'Phong cách';
+
+  @override
+  String get appearanceStyleTuturuuu => 'Tuturuuu';
 
   @override
   String get appearanceSurfaceOpacity => 'Độ đục của thẻ';

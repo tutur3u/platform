@@ -7115,6 +7115,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appearanceBackgroundTitle => 'Background';
 
   @override
+  String get appearanceCornersRounded => 'Rounded';
+
+  @override
+  String get appearanceCornersSoft => 'Soft';
+
+  @override
+  String get appearanceCornersSquare => 'Square';
+
+  @override
+  String get appearanceCornersTitle => 'Corners';
+
+  @override
+  String get appearanceDensityComfortable => 'Comfortable';
+
+  @override
+  String get appearanceDensityCompact => 'Compact';
+
+  @override
+  String get appearanceDensityTitle => 'Density';
+
+  @override
+  String get appearanceFeedbackTitle => 'Feedback and motion';
+
+  @override
+  String get appearanceHapticsDescription => 'Light vibrations when you choose, swipe or confirm.';
+
+  @override
   String get appearanceIntensity => 'Intensity';
 
   @override
@@ -7127,6 +7154,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appearancePreviewTitle => 'Preview';
 
   @override
+  String get appearanceReduceMotion => 'Reduce motion';
+
+  @override
+  String get appearanceReduceMotionDescription => 'Always reduce animations on this device, even when the system setting is off.';
+
+  @override
   String get appearanceReset => 'Reset to default';
 
   @override
@@ -7134,6 +7167,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appearanceSoftness => 'Softness';
+
+  @override
+  String get appearanceStyleDescription => 'Changes how pages slide and lists scroll. Colors and layout stay the same on every device.';
+
+  @override
+  String get appearanceStyleIos => 'iOS-like';
+
+  @override
+  String get appearanceStyleMaterial => 'Material-like';
+
+  @override
+  String get appearanceStyleTitle => 'Style';
+
+  @override
+  String get appearanceStyleTuturuuu => 'Tuturuuu';
 
   @override
   String get appearanceSurfaceOpacity => 'Card opacity';
