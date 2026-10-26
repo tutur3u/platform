@@ -247,21 +247,21 @@ class _DrivePageState extends State<DrivePage> {
 
   Future<void> _showCreateFolderDialog() async {
     final controller = TextEditingController();
-    final created = await showDialog<bool>(
+    final created = await showAppDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(context.l10n.driveCreateFolder),
+      builder: (context) => AppDialog(
+        title: context.l10n.driveCreateFolder,
         content: TextField(
           controller: controller,
           autofocus: true,
           decoration: InputDecoration(hintText: context.l10n.driveFolderName),
         ),
         actions: [
-          TextButton(
+          AppButton.ghost(
             onPressed: () => Navigator.of(context).pop(false),
             child: Text(context.l10n.commonCancel),
           ),
-          FilledButton(
+          AppButton.primary(
             onPressed: () => Navigator.of(context).pop(true),
             child: Text(context.l10n.commonCreate),
           ),
@@ -288,21 +288,21 @@ class _DrivePageState extends State<DrivePage> {
 
   Future<void> _renameEntry(DriveEntry entry) async {
     final controller = TextEditingController(text: entry.name);
-    final renamed = await showDialog<bool>(
+    final renamed = await showAppDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(context.l10n.commonRename),
+      builder: (context) => AppDialog(
+        title: context.l10n.commonRename,
         content: TextField(
           controller: controller,
           autofocus: true,
           decoration: InputDecoration(hintText: context.l10n.driveRenameHint),
         ),
         actions: [
-          TextButton(
+          AppButton.ghost(
             onPressed: () => Navigator.of(context).pop(false),
             child: Text(context.l10n.commonCancel),
           ),
-          FilledButton(
+          AppButton.primary(
             onPressed: () => Navigator.of(context).pop(true),
             child: Text(context.l10n.commonSave),
           ),
@@ -332,21 +332,21 @@ class _DrivePageState extends State<DrivePage> {
   Future<void> _deleteEntries(List<DriveEntry> entries) async {
     if (entries.isEmpty) return;
 
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showAppDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(context.l10n.commonDelete),
+      builder: (context) => AppDialog(
+        title: context.l10n.commonDelete,
         content: Text(
           entries.length == 1
               ? context.l10n.driveDeleteSingleConfirm
               : context.l10n.driveDeleteManyConfirm(entries.length),
         ),
         actions: [
-          TextButton(
+          AppButton.ghost(
             onPressed: () => Navigator.of(context).pop(false),
             child: Text(context.l10n.commonCancel),
           ),
-          FilledButton(
+          AppButton.primary(
             onPressed: () => Navigator.of(context).pop(true),
             child: Text(context.l10n.commonDelete),
           ),

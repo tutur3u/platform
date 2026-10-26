@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/data/models/task_estimate_board.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -44,8 +45,8 @@ class _TaskEstimateDialogState extends State<TaskEstimateDialog> {
       _selectedEstimationType == 'none' ? null : _selectedEstimationType,
     );
 
-    return shad.AlertDialog(
-      title: Text(l10n.taskEstimatesDialogTitle(boardName)),
+    return AppDialog(
+      title: l10n.taskEstimatesDialogTitle(boardName),
       content: ConstrainedBox(
         constraints: BoxConstraints(
           maxHeight: MediaQuery.sizeOf(context).height * 0.6,
@@ -178,12 +179,12 @@ class _TaskEstimateDialogState extends State<TaskEstimateDialog> {
   }
 
   Future<void> _showMethodPicker(BuildContext context) async {
-    final selected = await shad.showDialog<String>(
+    final selected = await showAppDialog<String>(
       context: context,
       builder: (dialogContext) {
         final options = estimationTypes(dialogContext, includeNone: true);
-        return shad.AlertDialog(
-          title: Text(dialogContext.l10n.taskEstimatesDialogEstimationMethod),
+        return AppDialog(
+          title: dialogContext.l10n.taskEstimatesDialogEstimationMethod,
           content: SizedBox(
             width: double.maxFinite,
             child: Column(
