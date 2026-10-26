@@ -260,14 +260,8 @@ class _TaskBoardAdvancedFilterSheetState
   }
 
   Future<void> _close() async {
-    try {
-      await shad.closeOverlay<void>(context);
-      return;
-    } on Exception {
-      if (!mounted) return;
-      final navigator = Navigator.of(context);
-      await navigator.maybePop();
-    }
+    if (!mounted) return;
+    await Navigator.of(context).maybePop();
   }
 }
 

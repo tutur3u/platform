@@ -5334,7 +5334,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/sessions/[id]/mark/route.ts",
-    "sourceSha256": "d41c6243408a602fed2610bacb0097de5f2ea667498fe377d6eac695b0fdffee",
+    "sourceSha256": "82254766bb61a149573b78ecfd1ed93a00635e77b79545feb072d4a65a0cc661",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -5354,7 +5354,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/sessions/[id]/route.ts",
-    "sourceSha256": "be467c2ce967d2e7f470ea9ec58c3e92117a9c5c9e071d284be74b27e62b1848",
+    "sourceSha256": "0e5e979036f5b5d171c5b7331becf1e940ebe27fb74036e9fd96bd1ac73554e1",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -5364,7 +5364,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/sessions/route.ts",
-    "sourceSha256": "35037766711660e1eeb9b865cba452354cddd6c876073c06ce44310597ab6f54",
+    "sourceSha256": "71dbefc379f5ed08d5d52d3792f788b27e1929659033a13d89e633eeb1852aa8",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -5375,6 +5375,16 @@
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/teachers/route.ts",
     "sourceSha256": "d9b0a430edda09258a2cb7155dc9470d26a3e8a3bc3eafc06f6469b1d2f20268",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/workspaces/{wsId}/tutoring/weak-support/end",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/weak-support/end/route.ts",
+    "sourceSha256": "d58c935d367c784614c1d5a747cbc8caaf900cfe2e242d74975e1d94a1389234",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"

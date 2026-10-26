@@ -12,7 +12,6 @@ import 'package:mobile/features/assistant/view/assistant_settings_route_frame.da
 import 'package:mobile/features/assistant/widgets/assistant_live_browsing_setting.dart';
 import 'package:mobile/features/assistant/widgets/assistant_personal_settings_section.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
 
 /// Central Settings and Mira quick settings use the same preference editor.
 class AssistantSettingsHub extends StatefulWidget {
@@ -58,12 +57,14 @@ class _AssistantSettingsHubState extends State<AssistantSettingsHub> {
     child: BlocBuilder<AssistantSettingsCubit, AssistantSettingsState>(
       bloc: _settings,
       builder: (context, state) => state.loading
-          ? Semantics(
-              label: context.l10n.commonLoading,
-              child: const Center(child: NovaLoadingIndicator(size: 20)),
-            )
+          ? const AppLoadingIndicator.page()
           : AppPageListView(
               children: [
+                AssistantPersonalSettingsSection(
+                  key: ValueKey('personal-settings-${widget.workspaceId}'),
+                  workspaceId: widget.workspaceId,
+                  isScopeCurrent: widget.isScopeCurrent,
+                ),
                 if (state.loaded)
                   AssistantLiveBrowsingSetting(
                     keepLiveWhileBrowsing: state.keepLiveWhileBrowsing,
@@ -72,26 +73,23 @@ class _AssistantSettingsHubState extends State<AssistantSettingsHub> {
                   ),
                 if (state.failed)
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Column(
+                    padding: const EdgeInsets.only(
+                      bottom: AppLayout.sectionGap,
+                    ),
+                    child: AppGroupedCard(
                       children: [
-                        Text(
-                          state.loaded
+                        AppStateMessage.inline(
+                          icon: LucideIcons.triangleAlert,
+                          tone: AppTone.destructive,
+                          title: state.loaded
                               ? context.l10n.assistantLiveSettingSaveError
                               : context.l10n.commonSomethingWentWrong,
-                        ),
-                        AppButton.ghost(
-                          onPressed: () => unawaited(_settings.load()),
-                          child: Text(context.l10n.commonRetry),
+                          actionLabel: context.l10n.commonRetry,
+                          onAction: () => unawaited(_settings.load()),
                         ),
                       ],
                     ),
                   ),
-                AssistantPersonalSettingsSection(
-                  key: ValueKey('personal-settings-${widget.workspaceId}'),
-                  workspaceId: widget.workspaceId,
-                  isScopeCurrent: widget.isScopeCurrent,
-                ),
                 AssistantLocalModelsSection(
                   key: ValueKey(widget.workspaceId),
                   cubit: widget.localModels,

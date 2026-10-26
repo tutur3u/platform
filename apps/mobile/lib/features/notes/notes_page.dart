@@ -13,6 +13,7 @@ import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/breakpoints.dart';
 import 'package:mobile/core/router/mobile_link_launcher.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:mobile/features/notes/ai/notes_local_ai_cubit.dart';
 import 'package:mobile/features/notes/ai/notes_local_ai_host.dart';
@@ -37,7 +38,6 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:passkeys/authenticator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -523,9 +523,7 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
                                     children: [
                                       Expanded(
                                         child: _loading && _notes.isEmpty
-                                            ? const Center(
-                                                child: NovaLoadingIndicator(),
-                                              )
+                                            ? const AppLoadingIndicator.page()
                                             : RefreshIndicator(
                                                 onRefresh: _refresh,
                                                 child: NoteList(

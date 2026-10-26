@@ -227,7 +227,15 @@ export async function POST(
     const requestedStoragePath = sanitizedPath
       ? posix.join(sanitizedPath, sanitizedFilename)
       : sanitizedFilename;
-    if (isExcludedDrivePath(normalizedWsId, requestedStoragePath)) {
+    // Topic Announcement attachments live in a private root that Drive
+    // excludes; they are authorized below by the feature gate and
+    // manage_users instead of Drive permissions.
+    const isTopicAnnouncementUpload =
+      isReservedTopicAnnouncementPath(sanitizedPath);
+    if (
+      !isTopicAnnouncementUpload &&
+      isExcludedDrivePath(normalizedWsId, requestedStoragePath)
+    ) {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 
@@ -242,7 +250,7 @@ export async function POST(
     }
 
     let uploadContentType: typeof parsed.data.contentType;
-    const topicUploadAccess = isReservedTopicAnnouncementPath(sanitizedPath)
+    const topicUploadAccess = isTopicAnnouncementUpload
       ? await resolveTopicAnnouncementAttachmentUploadAccess({
           contentType: parsed.data.contentType,
           filename: sanitizedFilename,

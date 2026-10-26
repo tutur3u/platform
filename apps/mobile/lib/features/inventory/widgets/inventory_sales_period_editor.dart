@@ -366,7 +366,7 @@ class _ProductRuleEditorState extends State<_ProductRuleEditor> {
               SizedBox(
                 height: 210,
                 child: widget.loading
-                    ? const Center(child: NovaLoadingIndicator(size: 20))
+                    ? const AppLoadingIndicator()
                     : ListView.builder(
                         itemCount: products.length,
                         itemBuilder: (context, index) {

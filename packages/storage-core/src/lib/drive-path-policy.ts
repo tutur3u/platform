@@ -27,6 +27,7 @@ function isPrivateAppStoragePath(path: string): boolean {
       'external-apps',
       'AI Agent Imports',
       'recordings',
+      'topic-announcements',
     ].includes(root ?? '') ||
     (root === 'mira' && child === 'images')
   );

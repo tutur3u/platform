@@ -184,7 +184,7 @@ class _TaskPortfolioViewState extends State<TaskPortfolioView> {
     if (_permissionsController.isCheckingPermissions &&
         !_permissionsController.hasResolvedPermissions &&
         !hasVisibleData) {
-      return const Center(child: NovaLoadingIndicator());
+      return const AppLoadingIndicator.page();
     }
     if (_permissionsController.hasResolvedPermissions &&
         !_permissionsController.canManageProjects &&
@@ -197,7 +197,7 @@ class _TaskPortfolioViewState extends State<TaskPortfolioView> {
         if (state.status == TaskPortfolioStatus.loading &&
             state.projects.isEmpty &&
             state.initiatives.isEmpty) {
-          return const Center(child: NovaLoadingIndicator());
+          return const AppLoadingIndicator.page();
         }
         if (state.status == TaskPortfolioStatus.error &&
             state.projects.isEmpty &&

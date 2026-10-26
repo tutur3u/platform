@@ -50,6 +50,7 @@ const OBJECTS: Record<string, string> = {
   ai_agent_imports: `${WS}/AI Agent Imports/discord/channel/thread/g.png`,
   mira_images: `${WS}/mira/images/h.png`,
   drive_mira_qr: `${WS}/drive/mira/qr/q.png`,
+  topic_announcements: `${WS}/topic-announcements/attachments/u-a.pdf`,
 };
 
 function expectedFlags(actor: Actor, key: string): string {
@@ -127,6 +128,11 @@ describe('classifyWorkspaceStoragePath', () => {
       kind: 'private',
       wsId: WS,
     });
+    expect(
+      classifyWorkspaceStoragePath(
+        `${WS}/Topic-Announcements/attachments/a.pdf`
+      )
+    ).toEqual({ kind: 'private', wsId: WS });
     expect(
       classifyWorkspaceStoragePath(
         `${WS}/CHATS/ai/resources/${CHAT_OWNER}/c.pdf`

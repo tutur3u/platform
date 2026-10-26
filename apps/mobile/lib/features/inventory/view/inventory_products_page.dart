@@ -432,9 +432,7 @@ class _InventoryProductsPageState extends State<InventoryProductsPage>
                           if (_isLoadingMore)
                             const Padding(
                               padding: EdgeInsets.symmetric(vertical: 16),
-                              child: Center(
-                                child: NovaLoadingIndicator(size: 20),
-                              ),
+                              child: AppLoadingIndicator(),
                             ),
                         ],
                       ],
