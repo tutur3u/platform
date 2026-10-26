@@ -623,6 +623,16 @@ request was pending: offer a separate guarded open action. Fence double submits
 synchronously and avoid automatic retries for non-idempotent creation.
 Lettin's duplicate-entry D1 and component tests exercise these boundaries.
 
+## Calendar consent restart admission
+
+Automatic Google consent restarts use `admitGoogleConsentRestart` after callback
+authorization and the scoped provider-account lookup. Keep admission in the
+existing atomic nonce ledger (one account/user/workspace slot per ten-minute
+window), fail closed on unavailable storage, and preserve fresh-state/PKCE and
+quarantine reuse guards. HTTP 429 includes Retry-After and localized Calendar
+copy. A fresh provider refresh token bypasses restart admission. See the
+Calendar product decision and callback/consent-restart tests.
+
 ## Notification email admission
 
 Immediate and batched notification email share `notifications/cron-helpers.ts`
