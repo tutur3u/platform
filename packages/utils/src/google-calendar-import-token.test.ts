@@ -38,8 +38,17 @@ function client(pages: Row[][], error: unknown = null) {
   };
 }
 
-const page = (count: number, id = ID_A, token = 'other'): Row[] =>
-  Array.from({ length: count }, () => ({ id, access_token: token }));
+let nextId = 0;
+// Distinct, ascending ids, like a real keyset page.
+function page(count: number, token = 'other'): Row[] {
+  return Array.from({ length: count }, () => {
+    nextId += 1;
+    return {
+      id: `00000000-0000-4000-8000-${String(nextId).padStart(12, '0')}`,
+      access_token: token,
+    };
+  });
+}
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -63,13 +72,23 @@ describe('verifiedGoogleImportToken', () => {
   });
 
   it('pages through large workspaces by id instead of failing', async () => {
-    const { db, filters } = client([
-      page(199).concat([{ id: ID_A, access_token: 'other' }]),
+    const first = page(199).concat([{ id: ID_A, access_token: 'other' }]);
+    const { db, filters, query } = client([
+      first,
       [{ id: ID_B, access_token: 'credential' }],
     ]);
     expect(await verifiedGoogleImportToken(db, WS, 'credential')).toBe(ID_B);
     expect(filters).toContainEqual(['gt.id', ID_A]);
+    expect(query.order).toHaveBeenCalledWith('id', { ascending: true });
+    expect(new Set(first.map((row) => row.id)).size).toBe(200);
     expect(JSON.stringify(filters)).not.toContain('credential');
+  });
+
+  it('accepts exactly the sanity bound', async () => {
+    const pages = Array.from({ length: 50 }, () => page(200));
+    pages[49]![199] = { id: ID_B, access_token: 'credential' };
+    const { db } = client([...pages, []]);
+    expect(await verifiedGoogleImportToken(db, WS, 'credential')).toBe(ID_B);
   });
 
   it('returns null when no row or several rows hold the credential', async () => {

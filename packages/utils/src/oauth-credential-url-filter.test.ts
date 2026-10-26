@@ -9,7 +9,8 @@ import { describe, expect, it } from 'vitest';
 // an RPC body) or in process. Null checks carry no value and are allowed.
 // Known limits: computed column names and differently named columns (for
 // example push-notification `token`) are not detected.
-const CREDENTIAL = String.raw`\w*(?:access|refresh)_token\w*`;
+// Includes JSON paths and qualified names such as `data->>access_token`.
+const CREDENTIAL = String.raw`[\w.>-]*(?:access|refresh)_token[\w.>-]*`;
 const QUOTE = '[\'"`]';
 // Any builder method whose first argument is a credential column, except
 // builders that name a column without filtering on its value.
@@ -17,12 +18,17 @@ const METHOD_FILTER = new RegExp(
   String.raw`\.(\w+)\(\s*${QUOTE}${CREDENTIAL}${QUOTE}\s*,\s*([^)]*)\)`,
   'g'
 );
-const NON_FILTER_METHODS = new Set(['select', 'order', 'onConflict']);
+// Builders that name a column without filtering on it, and form-body
+// `append` for OAuth token requests (POST bodies, not URLs).
+const NON_FILTER_METHODS = new Set(['append', 'onConflict', 'order', 'select']);
 const OTHER_FILTERS = [
   new RegExp(String.raw`\.match\(\s*\{[^}]*\b${CREDENTIAL}\b`, 'g'),
-  new RegExp(String.raw`\.or\(\s*${QUOTE}[^'"\`]*\b${CREDENTIAL}\.`, 'g'),
-  // Hand-built PostgREST query strings.
-  new RegExp(String.raw`\b${CREDENTIAL}=(?:eq|neq|in|like|ilike|is)\.`, 'g'),
+  new RegExp(
+    String.raw`\.or\(\s*${QUOTE}[^'"\`]*\b\w*(?:access|refresh)_token\w*\.(?!is\.null\b)`,
+    'g'
+  ),
+  // Hand-built PostgREST query strings, any operator.
+  new RegExp(String.raw`\b${CREDENTIAL}=(?:not\.)?\w+\.`, 'g'),
 ];
 const NULL_CHECK = /^(?:null|(['"`])is\1\s*,\s*null)\s*$/;
 
@@ -88,8 +94,12 @@ describe('OAuth credential URL filters', () => {
         supabase.from('t').isFilter('access_token', null);
         db.from('t').eq('id', id).select('access_token');
         db.from('t').order('refresh_token', { ascending: true });
+        db.from('t').or('access_token.is.null');
+        db.from('t').eq('data->>refresh_token', value);
+        fetch(\`/rest/v1/t?access_token=not.cs.\${value}\`);
+        body.append('refresh_token', credential);
       `)
-    ).toHaveLength(9);
+    ).toHaveLength(11);
   });
 
   it('finds no credential-valued filter in any repository source', () => {
