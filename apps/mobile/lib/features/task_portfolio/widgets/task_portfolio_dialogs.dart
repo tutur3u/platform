@@ -4,9 +4,7 @@ import 'package:flutter/material.dart' hide AlertDialog;
 import 'package:intl/intl.dart';
 import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
-import 'package:mobile/core/ui/icons/app_icons.dart';
-import 'package:mobile/core/ui/overlays/show_app_sheet.dart'
-    show AppSheetHandle;
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/task_initiative_summary.dart';
 import 'package:mobile/data/models/task_project_summary.dart';
 import 'package:mobile/data/models/workspace_user_option.dart';

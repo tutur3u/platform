@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout.dart';
-import 'package:mobile/core/ui/components/app_toggle_row.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
@@ -82,14 +82,12 @@ class _MailOrganizationPageState extends State<MailOrganizationPage> {
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, update) {
           final l10n = context.l10n;
-          return AlertDialog(
-            title: Text(
-              _members
-                  ? l10n.mailMembers
-                  : widget.kind == 'labels'
-                  ? l10n.mailLabels
-                  : l10n.mailFolders,
-            ),
+          return AppDialog(
+            title: _members
+                ? l10n.mailMembers
+                : widget.kind == 'labels'
+                ? l10n.mailLabels
+                : l10n.mailFolders,
             content: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -168,13 +166,13 @@ class _MailOrganizationPageState extends State<MailOrganizationPage> {
               ),
             ),
             actions: [
-              TextButton(
+              AppButton.ghost(
                 onPressed: saving
                     ? null
                     : () => Navigator.of(dialogContext).pop(),
                 child: Text(l10n.commonCancel),
               ),
-              TextButton(
+              AppButton.ghost(
                 onPressed: saving
                     ? null
                     : () async {
@@ -234,17 +232,17 @@ class _MailOrganizationPageState extends State<MailOrganizationPage> {
   }
 
   Future<void> _remove(Map<String, dynamic> item) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showAppDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(context.l10n.commonDelete),
+      builder: (context) => AppDialog(
+        title: context.l10n.commonDelete,
         content: Text(context.l10n.mailDeleteConfirm),
         actions: [
-          TextButton(
+          AppButton.ghost(
             onPressed: () => Navigator.of(context).pop(false),
             child: Text(context.l10n.commonCancel),
           ),
-          TextButton(
+          AppButton.ghost(
             onPressed: () => Navigator.of(context).pop(true),
             child: Text(context.l10n.commonDelete),
           ),

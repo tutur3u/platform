@@ -7,8 +7,8 @@ class _MoveTaskListDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return shad.AlertDialog(
-      title: Text(context.l10n.taskBoardDetailMoveTask),
+    return AppDialog(
+      title: context.l10n.taskBoardDetailMoveTask,
       content: ConstrainedBox(
         constraints: const BoxConstraints(maxHeight: 360),
         child: SingleChildScrollView(
@@ -44,8 +44,8 @@ class _TaskListPickerDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return shad.AlertDialog(
-      title: Text(title),
+    return AppDialog(
+      title: title,
       content: ConstrainedBox(
         constraints: const BoxConstraints(maxHeight: 360),
         child: SingleChildScrollView(
@@ -105,8 +105,8 @@ class _TaskRelationshipPickerDialogState
         })
         .toList(growable: false);
 
-    return shad.AlertDialog(
-      title: Text(widget.title),
+    return AppDialog(
+      title: widget.title,
       content: SizedBox(
         width: double.maxFinite,
         child: Column(

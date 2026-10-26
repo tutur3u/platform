@@ -46,8 +46,8 @@ extension _CrmPageActions on _CrmPageState {
 
     final confirmed = await _showOwnedDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(dialogContext.l10n.crmImportUsers),
+      builder: (dialogContext) => AppDialog(
+        title: dialogContext.l10n.crmImportUsers,
         content: SizedBox(
           width: 420,
           child: Column(
@@ -70,11 +70,11 @@ extension _CrmPageActions on _CrmPageState {
           ),
         ),
         actions: [
-          TextButton(
+          AppButton.ghost(
             onPressed: () => Navigator.of(dialogContext).pop(false),
             child: Text(dialogContext.l10n.commonCancel),
           ),
-          FilledButton(
+          AppButton.primary(
             onPressed: () => Navigator.of(dialogContext).pop(true),
             child: Text(dialogContext.l10n.commonImport),
           ),
@@ -149,15 +149,15 @@ extension _CrmPageActions on _CrmPageState {
   Future<void> _deleteUser(CrmUser user) async {
     final confirmed = await _showOwnedDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(context.l10n.commonDelete),
+      builder: (context) => AppDialog(
+        title: context.l10n.commonDelete,
         content: Text(context.l10n.crmDeleteUserConfirm),
         actions: [
-          TextButton(
+          AppButton.ghost(
             onPressed: () => Navigator.of(context).pop(false),
             child: Text(context.l10n.commonCancel),
           ),
-          FilledButton(
+          AppButton.primary(
             onPressed: () => Navigator.of(context).pop(true),
             child: Text(context.l10n.commonDelete),
           ),

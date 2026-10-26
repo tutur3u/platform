@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart'
     hide AlertDialog, FilledButton, OutlinedButton, TextField;
 import 'package:mobile/core/input/platform_text_context_menu.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
@@ -348,8 +349,8 @@ class _ReasonDialogContentState extends State<_ReasonDialogContent> {
         ? l10n.timerSubmitInfo
         : widget.title;
 
-    return shad.AlertDialog(
-      title: Text(widget.title),
+    return AppDialog(
+      title: widget.title,
       content: shad.TextField(
         selectionControls: platformTextSelectionControls(),
         contextMenuBuilder: platformTextContextMenuBuilder(),

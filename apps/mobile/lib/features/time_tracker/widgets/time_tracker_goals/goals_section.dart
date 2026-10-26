@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/core/ui/components/app_loading_indicator.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/time_tracking/goal.dart';
 import 'package:mobile/data/models/time_tracking/session.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -142,8 +142,8 @@ class _TimeTrackerGoalsSectionState extends State<TimeTrackerGoalsSection> {
     final toastContext = Navigator.of(rootContext, rootNavigator: true).context;
     final shouldDelete = await showDialog<bool>(
       context: rootContext,
-      builder: (dialogContext) => shad.AlertDialog(
-        title: Text(l10n.timerGoalsDeleteTitle),
+      builder: (dialogContext) => AppDialog(
+        title: l10n.timerGoalsDeleteTitle,
         content: Text(l10n.timerGoalsDeleteDescription),
         actions: [
           shad.OutlineButton(
