@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import {
+  computeTopicAnnouncementSendDueAt,
+  getWorkspaceSchedulingTimezone,
   normalizeEmail,
   resolveTopicAnnouncementsAccess,
   TopicAnnouncementImportSchema,
@@ -148,6 +150,12 @@ export async function POST(request: Request, { params }: Params) {
     .single();
   if (batchError) throw batchError;
 
+  // send_due_at (24h before the session in the workspace timezone) is owned
+  // by the deadline helper; keep it out of the row mapping below.
+  const timezone = await getWorkspaceSchedulingTimezone(
+    sbAdmin,
+    normalizedWsId
+  );
   const { data: announcements, error: announcementError } = await sbAdmin
     .from('topic_announcements')
     .insert(
@@ -160,6 +168,11 @@ export async function POST(request: Request, { params }: Params) {
         end_time: row.endTime,
         place: row.place?.trim() || null,
         room: row.room?.trim() || null,
+        send_due_at: computeTopicAnnouncementSendDueAt({
+          sessionDate: row.sessionDate,
+          startTime: row.startTime,
+          timeZone: timezone,
+        }),
         session_date: row.sessionDate ?? null,
         source_row_number: row.rowNumber,
         source_type: parsed.data.sourceType,

@@ -256,6 +256,29 @@ describe('real topic sender admission and authoritative receipt', () => {
     });
     expect(f.provider).toHaveBeenCalledOnce();
   });
+  it('stamps the first sent_at and keeps it on a resend', async () => {
+    await send();
+    expect(f.row.sent_at).toBe('2026-10-07T10:00:00.000Z');
+    vi.setSystemTime(new Date('2026-10-09T10:00:00Z'));
+    await sendTopicAnnouncement({
+      actorUserId: 'synthetic-actor',
+      announcementId,
+      normalizedWsId: workspaceId,
+      request: request(),
+      resend: true,
+      sbAdmin: client(),
+    });
+    expect(f.provider).toHaveBeenCalledTimes(2);
+    expect(f.row.sent_at).toBe('2026-10-07T10:00:00.000Z');
+  });
+  it('does not send a draft whose topic is still blank', async () => {
+    f.row.topic = '';
+    expect(await send()).toMatchObject({
+      error: 'TOPIC_REQUIRED',
+      status: 409,
+    });
+    expect(f.provider).not.toHaveBeenCalled();
+  });
   it('preserves a genuine provider failure and does not claim sent', async () => {
     f.provider.mockResolvedValue({
       success: false,

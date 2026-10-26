@@ -5250,6 +5250,16 @@
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
   },
   {
+    "path": "/api/v1/workspaces/{wsId}/topic-announcements/notify-teachers",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/topic-announcements/notify-teachers/route.ts",
+    "sourceSha256": "0dd3e6351a948a12b6525eb6d83ba579e6d4e1a8f90e5b9139a83979ae447cd1",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
     "path": "/api/v1/workspaces/{wsId}/topic-announcements/preview",
     "sideEffects": "unknown",
     "shadow": "never",
@@ -5264,7 +5274,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/workspaces/[wsId]/topic-announcements/route.ts",
-    "sourceSha256": "c90f3ec96712a3e998162d3536417861bddb4ffa86fbb6434e1a07cb8817edf3",
+    "sourceSha256": "0af72a09cfb75d04ef2bb173e65a782379e2c8106394f644261b5aa18141f55b",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"

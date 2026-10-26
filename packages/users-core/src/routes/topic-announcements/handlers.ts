@@ -1,4 +1,8 @@
 import { NextResponse } from 'next/server';
+import {
+  buildTopicAnnouncementTeacherFilter,
+  type TopicAnnouncementAccessOptions,
+} from './access';
 import { normalizeTopicAnnouncementAttachmentFileName } from './attachments';
 import { renderTopicAnnouncementEmail } from './email-renderer';
 import {
@@ -22,7 +26,7 @@ interface Params {
 export type TopicAnnouncementAccessResolver = (
   request: Request,
   wsId: string,
-  options: { requireManage?: boolean; requireSend?: boolean }
+  options: TopicAnnouncementAccessOptions
 ) => Promise<
   | { response: Response; context?: never }
   | { response?: never; context: TopicAnnouncementsAccessContext }
@@ -35,6 +39,7 @@ export function createTopicAnnouncementListHandler(
     const { wsId } = await params;
     const access = await resolveTopicAnnouncementsAccess(request, wsId, {
       requireManage: true,
+      teacherAccess: 'read',
     });
     if (access.response) return access.response;
 
@@ -48,7 +53,7 @@ export function createTopicAnnouncementListHandler(
       );
     }
 
-    const { normalizedWsId, sbAdmin } = access.context;
+    const { normalizedWsId, sbAdmin, scope } = access.context;
     const { page, pageSize, q, status, contactId } = parsed.data;
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
@@ -58,6 +63,9 @@ export function createTopicAnnouncementListHandler(
       .select('*', { count: 'exact' })
       .eq('ws_id', normalizedWsId);
 
+    if (scope?.kind === 'teacher') {
+      query = query.or(buildTopicAnnouncementTeacherFilter(scope));
+    }
     if (status === 'active') {
       query = query.neq('status', 'cancelled');
     } else if (status !== 'all') {
@@ -164,6 +172,7 @@ export function createTopicAnnouncementPreviewHandler(
     const { wsId } = await params;
     const access = await resolveTopicAnnouncementsAccess(request, wsId, {
       requireManage: true,
+      teacherAccess: 'read',
     });
     if (access.response) return access.response;
 
@@ -224,6 +233,7 @@ export function createTopicAnnouncementPreviewHandler(
       announcement: {
         body: payload.body,
         class_label: payload.classLabel,
+        course_book: payload.courseBook,
         day_label: payload.dayLabel,
         end_time: payload.endTime ?? null,
         place: payload.place,
@@ -232,6 +242,7 @@ export function createTopicAnnouncementPreviewHandler(
         start_time: payload.startTime ?? null,
         title: payload.title,
         topic: payload.topic,
+        video_url: payload.videoUrl,
       },
       attachments,
       workspaceName: workspace?.name ?? null,

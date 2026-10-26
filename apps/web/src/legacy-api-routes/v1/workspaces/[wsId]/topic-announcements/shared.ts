@@ -7,6 +7,9 @@ import {
 } from '@tuturuuu/users-core/routes/topic-announcements';
 
 export {
+  isTopicAnnouncementAssignedToScope,
+  isTopicAnnouncementTopicReady,
+  loadScopedTopicAnnouncement,
   OPTIONAL_TEXT_SCHEMA,
   TOPIC_ANNOUNCEMENT_ATTACHMENT_CONTENT_TYPES,
   TOPIC_ANNOUNCEMENT_ATTACHMENT_STORAGE_PROVIDERS,
@@ -18,7 +21,10 @@ export {
   TopicAnnouncementListQuerySchema,
   TopicAnnouncementPayloadSchema,
   TopicAnnouncementStatusSchema,
+  TopicAnnouncementUpdateSchema,
+  validateTeacherTopicAnnouncementWrite,
 } from '@tuturuuu/users-core/routes/topic-announcements';
+export { computeTopicAnnouncementSendDueAt } from '@tuturuuu/utils/topic-announcement-deadline';
 
 import {
   downloadWorkspaceStorageObjectForProvider,
