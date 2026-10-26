@@ -317,7 +317,7 @@ test('actual project guard rejects a mismatched recovery secret without revealin
       },
     });
   }
-  const expected = 'a'.repeat(20),
+  const expected = 'nzamlzqfdwaaxdefwraj',
     actual = 'b'.repeat(20);
   const wrong = run('true', expected, actual);
   assert.equal(wrong.status, 1);
