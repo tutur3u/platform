@@ -9,10 +9,10 @@ class _BoardTaskTile extends StatelessWidget {
     required this.listStyle,
     required this.task,
     required this.onTap,
-    required this.onMove,
     required this.isBulkSelectMode,
     required this.isSelected,
     required this.onToggleSelected,
+    required this.onOpenMenu,
   });
 
   final TaskBoardDetail board;
@@ -20,10 +20,10 @@ class _BoardTaskTile extends StatelessWidget {
   final _TaskBoardListVisualStyle listStyle;
   final TaskBoardTask task;
   final VoidCallback onTap;
-  final VoidCallback onMove;
   final bool isBulkSelectMode;
   final bool isSelected;
   final VoidCallback onToggleSelected;
+  final VoidCallback onOpenMenu;
 
   @override
   Widget build(BuildContext context) {
@@ -53,9 +53,15 @@ class _BoardTaskTile extends StatelessWidget {
           child: InkWell(
             borderRadius: BorderRadius.circular(10),
             onTap: isBulkSelectMode ? onToggleSelected : onTap,
+            // Outside bulk mode a long press opens the shared task context
+            // menu, whose Select action enters bulk mode.
             onLongPress: () {
               unawaited(AppHaptics.pickup());
-              onToggleSelected();
+              if (isBulkSelectMode) {
+                onToggleSelected();
+              } else {
+                onOpenMenu();
+              }
             },
             child: Stack(
               children: [

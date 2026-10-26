@@ -248,11 +248,11 @@ class _FilterSelectionSheetState extends State<_FilterSelectionSheet> {
         ? const BorderRadius.vertical(top: Radius.circular(16))
         : BorderRadius.circular(12);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: shad.Theme.of(context).colorScheme.background,
-        borderRadius: borderRadius,
-      ),
+    // A Material surface, not a decorated box, so the option ListTiles paint
+    // their ink on the sheet itself.
+    return Material(
+      color: shad.Theme.of(context).colorScheme.background,
+      borderRadius: borderRadius,
       child: SafeArea(
         top: false,
         child: Padding(
