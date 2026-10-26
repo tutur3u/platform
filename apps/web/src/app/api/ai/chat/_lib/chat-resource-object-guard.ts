@@ -46,11 +46,14 @@ async function verifyObject(
   path: string,
   knownSize: number | undefined
 ): Promise<'valid' | 'rejected' | 'unavailable'> {
-  let sizeBytes = knownSize;
-  if (sizeBytes === undefined) {
+  let sizeBytes: number;
+  if (knownSize === undefined) {
     const info = await admin.storage.from('workspaces').info(path);
-    if (info.error || typeof info.data?.size !== 'number') return 'unavailable';
-    sizeBytes = info.data.size;
+    const storedSize = info.data?.size;
+    if (info.error || typeof storedSize !== 'number') return 'unavailable';
+    sizeBytes = storedSize;
+  } else {
+    sizeBytes = knownSize;
   }
   const fileName = path.split('/').at(-1) ?? '';
   // upload-url only signs allowlisted extensions, so any other object came from
