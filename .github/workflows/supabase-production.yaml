@@ -638,6 +638,11 @@ jobs:
             echo "::error::Migration recovery production project binding does not match."
             exit 1
           fi
+          # Fail closed unless the environment targets the production project.
+          if [ "$PRODUCTION_PROJECT_ID" != "nzamlzqfdwaaxdefwraj" ]; then
+            echo "::error::PRODUCTION_PROJECT_ID does not match the production project ref."
+            exit 1
+          fi
           cd apps/database
           supabase link --project-ref "$PRODUCTION_PROJECT_ID"
           supabase db push --include-all

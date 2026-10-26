@@ -31,3 +31,29 @@ test('package release tests never receive the production service-role key', () =
     }
   }
 });
+
+// A misentered environment value must never link another project.
+test('Supabase migrations fail closed unless the project ref matches', () => {
+  for (const [file, job, variable, ref] of [
+    [
+      'supabase-staging.yaml',
+      'migrate',
+      'STAGING_PROJECT_ID',
+      'fxefojytwimjiqxseqag',
+    ],
+    [
+      'supabase-production.yaml',
+      'deploy',
+      'PRODUCTION_PROJECT_ID',
+      'nzamlzqfdwaaxdefwraj',
+    ],
+  ]) {
+    const step = workflows[file].jobs[job].steps.find((s) =>
+      /supabase link/u.test(s.run ?? '')
+    );
+    const guard = step.run.indexOf(`if [ "$${variable}" != "${ref}" ]; then`);
+    assert.ok(guard >= 0, `${file} must check ${variable}`);
+    assert.ok(guard < step.run.indexOf('supabase link'), file);
+    assert.match(step.run.slice(guard), /^\s+exit 1$/mu);
+  }
+});

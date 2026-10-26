@@ -214,6 +214,11 @@ jobs:
           STAGING_PROJECT_ID: ${{ secrets.STAGING_PROJECT_ID }}
         run: |
           set -euo pipefail
+          # Fail closed unless the environment targets the staging project.
+          if [ "$STAGING_PROJECT_ID" != "fxefojytwimjiqxseqag" ]; then
+            echo "::error::STAGING_PROJECT_ID does not match the staging project ref."
+            exit 1
+          fi
           cd apps/database
           supabase link --project-ref "$STAGING_PROJECT_ID"
           # An older main SHA can run after a descendant already applied newer
