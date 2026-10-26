@@ -1,6 +1,6 @@
 {
   "name": "tuturuuu",
-  "version": "0.28.0",
+  "version": "0.29.0",
   "description": "Official TypeScript/JavaScript SDK for the Tuturuuu platform",
   "license": "MIT",
   "author": "Tuturuuu",
@@ -100,6 +100,7 @@
     "@tiptap/react": "3.32.0",
     "@tuturuuu/devbox": "workspace:*",
     "@tuturuuu/types": "workspace:*",
+    "fs-native-extensions": "1.5.1",
     "prosemirror-model": "^1.25.12",
     "yaml": "^2.9.1",
     "yjs": "^13.6.33",

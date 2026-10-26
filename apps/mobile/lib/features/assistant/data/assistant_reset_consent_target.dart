@@ -7,14 +7,17 @@ final class AssistantResetConsentTarget {
     required this.actorId,
     required this.workspaceId,
     required this.requiresConsent,
+    required bool hadEnvelope,
     required String identity,
     required bool Function() isCurrent,
-  }) : _identity = identity,
+  }) : _hadEnvelope = hadEnvelope,
+       _identity = identity,
        _isCurrent = isCurrent;
 
   final String actorId;
   final String workspaceId;
   final bool requiresConsent;
+  final bool _hadEnvelope;
   final String _identity;
   final bool Function() _isCurrent;
   static final _issued = <String, AssistantResetConsentTarget>{};
@@ -35,6 +38,7 @@ extension AssistantResetConsentInspection on AssistantResetPreferences {
             actorId: actorId,
             workspaceId: workspaceId,
             requiresConsent: !_canCreate(value),
+            hadEnvelope: old != null,
             identity: _consentIdentity(prefs, old, value),
             isCurrent: isCurrent,
           );

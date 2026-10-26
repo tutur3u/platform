@@ -1,6 +1,5 @@
 import { Ratelimit } from '@upstash/ratelimit';
-import type { NextRequest } from 'next/server';
-import { NextResponse } from 'next/server';
+import type { NextRequest, NextResponse } from 'next/server';
 import {
   extractIPFromRequest,
   isIPBlockedEdge,
@@ -13,11 +12,16 @@ import {
 } from './abuse-protection/edge-trust';
 import { guardApiProxyBody } from './api-proxy-body';
 import {
+  DEFAULT_TRUSTED_BYPASS_RULES,
+  type TrustedProxyBypassRule,
+} from './api-proxy-bypass-rules';
+import {
   isFinanceInvoiceCreateSupportRead,
   isFinanceRead,
 } from './api-proxy-read-policy';
-import { DEV_MODE } from './constants';
+import { guardRejection } from './guard-rejection';
 import { guardOfflineDownloadRequest } from './offline-download-guard';
+import { buildProxyRateLimitRejection } from './proxy-rate-limit-rejection';
 import { validateRequestEmojiLimit } from './request-emoji-limit';
 import { enforceRequiredMfaRequest } from './required-mfa-runtime';
 import {
@@ -82,9 +86,7 @@ export type ProxyRoutePolicy = {
   rateLimits: RateLimitProfile;
 };
 
-export type TrustedProxyBypassRule = {
-  matches: (pathname: string, headers: Headers) => boolean;
-};
+export type { TrustedProxyBypassRule } from './api-proxy-bypass-rules';
 
 export type GuardOptions = {
   /** Reuse the actor already verified by the MFA guard for opted-in routes. */
@@ -568,62 +570,6 @@ const DEFAULT_ROUTE_POLICIES: ProxyRoutePolicy[] = [
   },
 ];
 
-function hasBearerToken(headers: Headers, secrets: Array<string | undefined>) {
-  const authHeader = headers.get('authorization');
-  if (!authHeader) {
-    return false;
-  }
-
-  return secrets.some(
-    (secret) => !!secret && authHeader === `Bearer ${secret}`
-  );
-}
-
-function hasHeaderToken(
-  headers: Headers,
-  headerName: string,
-  secrets: Array<string | undefined>
-) {
-  const headerValue = headers.get(headerName);
-  if (!headerValue) {
-    return false;
-  }
-
-  return secrets.some((secret) => !!secret && headerValue === secret);
-}
-
-const DEFAULT_TRUSTED_BYPASS_RULES: TrustedProxyBypassRule[] = [
-  {
-    matches: (pathname, headers) =>
-      (pathname === '/api/cron' || pathname.startsWith('/api/cron/')) &&
-      (hasBearerToken(headers, [
-        process.env.CRON_SECRET,
-        process.env.VERCEL_CRON_SECRET,
-        process.env.SUPABASE_SERVICE_ROLE_KEY,
-      ]) ||
-        hasHeaderToken(headers, 'x-cron-secret', [
-          process.env.CRON_SECRET,
-          process.env.VERCEL_CRON_SECRET,
-        ]) ||
-        hasHeaderToken(headers, 'x-vercel-cron-secret', [
-          process.env.CRON_SECRET,
-          process.env.VERCEL_CRON_SECRET,
-        ])),
-  },
-  {
-    matches: (pathname, headers) =>
-      (pathname === '/api/v1/webhooks' ||
-        pathname.startsWith('/api/v1/webhooks/')) &&
-      !!process.env.SUPABASE_WEBHOOK_SECRET &&
-      headers.get('x-webhook-secret') === process.env.SUPABASE_WEBHOOK_SECRET,
-  },
-  // Migration APIs: bypass rate limit in DEV_MODE (routes already return 403 in production)
-  {
-    matches: (pathname, _headers) =>
-      pathname.startsWith('/api/v1/infrastructure/migrate/') && DEV_MODE,
-  },
-];
-
 function createRedisRateLimitBuckets(
   redis: UpstashRatelimitRedisClient,
   prefixBase: string,
@@ -677,24 +623,6 @@ function getRoutePolicy(
   return (
     routePolicies.find((routePolicy) => routePolicy.matches(req)) ??
     DEFAULT_ROUTE_POLICIES[DEFAULT_ROUTE_POLICIES.length - 1]!
-  );
-}
-
-function buildRateLimitResponse(
-  status: 429,
-  retryAfter: number,
-  headers?: Record<string, string>
-) {
-  return NextResponse.json(
-    { error: 'Too Many Requests', message: 'Rate limit exceeded' },
-    {
-      status,
-      headers: {
-        'Cache-Control': 'no-store',
-        'Retry-After': `${retryAfter}`,
-        ...headers,
-      },
-    }
   );
 }
 
@@ -1070,9 +998,25 @@ function getRateLimitPrefix(
 export function isTrustedProxyBypassRequest(
   pathname: string,
   headers: Headers,
-  trustedBypassRules: TrustedProxyBypassRule[] = DEFAULT_TRUSTED_BYPASS_RULES
+  trustedBypassRules: TrustedProxyBypassRule[] = DEFAULT_TRUSTED_BYPASS_RULES,
+  method?: string
 ): boolean {
-  return trustedBypassRules.some((rule) => rule.matches(pathname, headers));
+  return trustedBypassRules.some((rule) =>
+    rule.matches(pathname, headers, method)
+  );
+}
+
+/** Same check for a whole request, so method-bound rules see the method. */
+export function isTrustedProxyBypassForRequest(
+  req: Pick<NextRequest, 'nextUrl' | 'headers' | 'method'>,
+  trustedBypassRules?: TrustedProxyBypassRule[]
+): boolean {
+  return isTrustedProxyBypassRequest(
+    req.nextUrl.pathname,
+    req.headers,
+    trustedBypassRules,
+    req.method
+  );
 }
 
 export function clearApiProxyGuardLimiterCache() {
@@ -1084,7 +1028,14 @@ export async function guardApiProxyRequest(
   options: GuardOptions
 ): Promise<NextResponse | null> {
   let authenticatedActor: string | null = null;
-  if (!isTrustedProxyBypassRequest(req.nextUrl.pathname, req.headers)) {
+  if (
+    !isTrustedProxyBypassRequest(
+      req.nextUrl.pathname,
+      req.headers,
+      undefined,
+      req.method
+    )
+  ) {
     const assurance = await enforceRequiredMfaRequest(
       req,
       options.useVerifiedBearerActor
@@ -1096,7 +1047,8 @@ export async function guardApiProxyRequest(
     if (assurance) return assurance;
   }
   const payloadResponse = await guardApiProxyBody(req, options.maxPayloadBytes);
-  if (payloadResponse) return payloadResponse;
+  if (payloadResponse)
+    return guardRejection(req, payloadResponse, 'proxy-payload-too-large');
 
   const routePolicies = [
     ...(options.additionalRoutePolicies ?? []),
@@ -1112,7 +1064,8 @@ export async function guardApiProxyRequest(
     !isTrustedProxyBypassRequest(
       req.nextUrl.pathname,
       req.headers,
-      trustedBypassRules
+      trustedBypassRules,
+      req.method
     )
   ) {
     // Credential presence alone never grants an authenticated budget.
@@ -1143,14 +1096,19 @@ export async function guardApiProxyRequest(
             Math.ceil((blockInfo.expiresAt.getTime() - Date.now()) / 1000)
           );
 
-          return buildRateLimitResponse(429, retryAfter, {
-            'X-Proxy-Block-Reason': 'ip-already-blocked',
-            'X-RateLimit-Policy': 'proxy-ip-block',
-            'X-RateLimit-Caller-Class': authenticatedActor
-              ? 'authenticated'
-              : 'unknown',
-            'X-RateLimit-Window': 'unknown',
-          });
+          return buildProxyRateLimitRejection(
+            req,
+            retryAfter,
+            {
+              'X-Proxy-Block-Reason': 'ip-already-blocked',
+              'X-RateLimit-Policy': 'proxy-ip-block',
+              'X-RateLimit-Caller-Class': authenticatedActor
+                ? 'authenticated'
+                : 'unknown',
+              'X-RateLimit-Window': 'unknown',
+            },
+            'proxy-ip-blocked'
+          );
         }
       }
     }
@@ -1251,16 +1209,21 @@ export async function guardApiProxyRequest(
             Math.ceil((reset - Date.now()) / 1000)
           );
 
-          return buildRateLimitResponse(429, retryAfter, {
-            'X-Proxy-Block-Reason': 'route-rate-limit',
-            'X-RateLimit-Limit': `${limit}`,
-            'X-RateLimit-Remaining': `${remaining}`,
-            'X-RateLimit-Reset': `${Math.ceil(reset / 1000)}`,
-            'X-RateLimit-Caller-Class': effectiveCallerClass,
-            'X-RateLimit-Window': window,
-            'X-RateLimit-Policy':
-              options.diagnosticPolicyName ?? routePolicy.key,
-          });
+          return buildProxyRateLimitRejection(
+            req,
+            retryAfter,
+            {
+              'X-Proxy-Block-Reason': 'route-rate-limit',
+              'X-RateLimit-Limit': `${limit}`,
+              'X-RateLimit-Remaining': `${remaining}`,
+              'X-RateLimit-Reset': `${Math.ceil(reset / 1000)}`,
+              'X-RateLimit-Caller-Class': effectiveCallerClass,
+              'X-RateLimit-Window': window,
+              'X-RateLimit-Policy':
+                options.diagnosticPolicyName ?? routePolicy.key,
+            },
+            'proxy-rate-limited'
+          );
         }
       }
     }
@@ -1284,10 +1247,12 @@ export async function guardApiProxyRequest(
     return null;
   }
 
-  return (
+  return guardRejection(
+    req,
     (await validateRequestEmojiLimit(req, {
       allowDescriptionYjsState,
       skipValidationForFields,
-    })) ?? null
+    })) ?? null,
+    'proxy-content-rejected'
   );
 }

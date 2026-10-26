@@ -10,7 +10,12 @@ extension AssistantNativeReceiptOperations on AssistantRepository {
     required String text,
     required List<AssistantAttachment> attachments,
     required bool Function() isCurrent,
+    String? replyToMessageId,
   }) async {
+    if (AssistantChatRoute.parse(chatId).kind !=
+        AssistantChatRouteKind.native) {
+      return null;
+    }
     bool current() => isCurrent() && currentActorId == actorId;
     if (!current()) return null;
     final response = await _apiClient.getJson(
@@ -39,6 +44,7 @@ extension AssistantNativeReceiptOperations on AssistantRepository {
       requestId: requestId,
       text: text,
       attachments: attachments,
+      replyToMessageId: replyToMessageId,
     )) {
       return null;
     }
@@ -52,11 +58,13 @@ bool _matchesNativeUserReceipt(
   required String? requestId,
   required String text,
   required List<AssistantAttachment> attachments,
+  String? replyToMessageId,
 }) {
   if (saved.kind != ChatMessageKind.user ||
       saved.senderId != actorId ||
       assistantClientRequestId(saved.metadata) != requestId ||
       saved.content != text ||
+      saved.replyToMessageId != replyToMessageId ||
       saved.attachments.length != attachments.length) {
     return false;
   }
@@ -80,6 +88,7 @@ AssistantJsonStreamEvent _nativeUserReceiptEvent(
   required String? requestId,
   required String text,
   required List<AssistantAttachment> attachments,
+  String? replyToMessageId,
   ApiMutationAdmission? admission,
 }) {
   requireAssistantMessageReceipts([saved], conversationId: chatId);
@@ -87,6 +96,7 @@ AssistantJsonStreamEvent _nativeUserReceiptEvent(
   if (requestId == null ||
       original != requestId ||
       saved.content != text ||
+      saved.replyToMessageId != replyToMessageId ||
       (admission != null &&
           !_matchesNativeUserReceipt(
             saved,
@@ -94,6 +104,7 @@ AssistantJsonStreamEvent _nativeUserReceiptEvent(
             requestId: requestId,
             text: text,
             attachments: attachments,
+            replyToMessageId: replyToMessageId,
           ))) {
     throw const FormatException('Native USER receipt differs from request');
   }
@@ -102,6 +113,7 @@ AssistantJsonStreamEvent _nativeUserReceiptEvent(
     'messageId': saved.id,
     'clientRequestId': original,
     'text': saved.content,
+    'message': restoreAssistantChatMessage(saved).toJson(),
     'nativeReceipt': {
       'actorId': saved.senderId,
       'workspaceId': wsId,
@@ -109,6 +121,7 @@ AssistantJsonStreamEvent _nativeUserReceiptEvent(
       'requestId': original,
       'messageId': saved.id,
       'text': saved.content,
+      'replyToMessageId': saved.replyToMessageId,
       'attachments': saved.attachments
           .map(
             (a) => {
@@ -133,6 +146,7 @@ bool matchesAssistantNativeUserAcknowledgment(
   required Object? messageId,
   required String text,
   required List<AssistantAttachment> attachments,
+  String? replyToMessageId,
 }) {
   if (raw is! Map<String, dynamic> ||
       raw['actorId'] != actorId ||
@@ -143,6 +157,7 @@ bool matchesAssistantNativeUserAcknowledgment(
       raw['text'] != text) {
     return false;
   }
+  if (raw['replyToMessageId'] != replyToMessageId) return false;
   final received = raw['attachments'];
   if (received is! List || received.length != attachments.length) return false;
   for (var i = 0; i < attachments.length; i++) {

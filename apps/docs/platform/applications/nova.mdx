@@ -25,6 +25,46 @@ handoff, the same satellite pattern used by
 [hive](/platform/applications/hive), and [tasks](/platform/applications/tasks).
 </Note>
 
+## Session integrity
+
+Creating a Nova participant submission requires the caller's own `IN_PROGRESS`
+session and an associated problem in that session's challenge. The server rejects
+submissions at or after `min(start_time + duration, close_at)`, including before
+the expiry cleanup runs. Only an enabled manager of the problem's own challenge
+(resolved server-side from the problem) may submit without a session; managing
+a different challenge, or a disabled role, grants no bypass. A supplied session
+must satisfy the same ownership, challenge and expiry checks.
+
+After creation, a submission's `problem_id` and `session_id` are immutable for
+every caller. Participants cannot edit, delete or grade their own submissions.
+Only an enabled manager of the submission's challenge may write or clear its
+grading (`/api/v1/submissions/{id}/criteria` and `/test-cases`), and only on a
+submission they own may that manager edit the prompt or delete it. A graded criterion must
+belong to the submission's challenge, and a graded test case must belong to its
+problem. The grading tables live in `private` with no `authenticated` grants,
+so the service-role routes are the only write path.
+
+The admin submission detail page applies the same scope: an enabled manager of
+the submission's challenge, or the owner when the submission is bound to their
+own session in that challenge. Challenge password verifier fields are never
+sent to the client.
+
+Active-session reads select the newest start. Session inserts serialize on the
+challenge row and reject an overlapping active session with HTTP 409. Expired rows
+remain as attempt history and do not prevent a new attempt. Daily attempt limits
+use UTC in both the API and database. Criteria retain catalog/password eligibility
+before `open_at`; starting a session still requires the opening window.
+
+Regression coverage: `submissions/route.test.ts`,
+`submissions/[submissionId]/route.test.ts`,
+`submissions/[submissionId]/grading-access.test.ts`, the admin
+`submissions/[submissionId]/page.test.tsx`,
+`packages/utils/src/nova/submissions/check-permission.test.ts`,
+`challenge-catalog-access.test.ts`, `sessions/route.test.ts`, and
+`supabase/tests/private-schema-nova-session-limits.sql`. The grant boundary is
+covered by `private-schema-nova-runtime.sql` and
+`private-schema-nova-challenge-catalog.sql`.
+
 ## Architecture / Satellite Auth
 
 Nova is a Next.js App Router app under `apps/nova` that owns the prompt
@@ -111,11 +151,13 @@ CREATE TABLE private.nova_challenges (
 ```
 
 Challenge passwords use the shared scrypt KDF from `@tuturuuu/utils/crypto`;
-new hashes embed their salt, so `password_salt` is `null` for them. Legacy
-salted SHA-256 rows still verify and are upgraded to scrypt the next time the
-correct password is entered, with an update guarded by the previous hash. See
-the Meet [password hash migration](/platform/applications/meet#password-hash-migration)
-for the shared coexistence and removal plan.
+new hashes embed their salt, so `password_salt` is `null` for them. Any other
+non-empty stored hash, including legacy salted SHA-256, is a reset marker: it
+never verifies, `verify-password` returns HTTP 409 `PASSWORD_RESET_REQUIRED`
+without a grant, and a challenge manager must set a new password. Scrypt hashes
+with older parameters still verify and are rehashed with an update guarded by
+the previous hash. See
+[shared-secret password reset](/platform/features/shared-secret-password-reset).
 
 After the password verifies, `/api/auth/challenges/verify-password` sets an
 httpOnly `nova_challenge_access_<challengeId>` cookie holding a signed grant

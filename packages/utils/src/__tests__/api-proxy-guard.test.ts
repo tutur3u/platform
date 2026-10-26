@@ -108,7 +108,6 @@ describe('guardApiProxyRequest', () => {
     mocks.validateEmoji.mockReset();
     mocks.getTrustEntries.mockReset();
     mocks.hasAppealRelief.mockReset();
-    // Default: no cached trust (untrusted). Tests opt in by overriding.
     mocks.getTrustEntries.mockResolvedValue(new Map<string, { m: number }>());
     mocks.hasAppealRelief.mockResolvedValue(false);
     mocks.readAbuseProtectionControls.mockResolvedValue({
@@ -132,6 +131,9 @@ describe('guardApiProxyRequest', () => {
       { prefixBase: 'proxy:test:api' }
     );
     expect(response?.status).toBe(413);
+    expect(response?.headers.get('X-Tuturuuu-Guard-Reason')).toBe(
+      'proxy-payload-too-large'
+    );
     expect(mocks.extractIp).not.toHaveBeenCalled();
   });
 
@@ -203,6 +205,9 @@ describe('guardApiProxyRequest', () => {
     expect(response?.status).toBe(429);
     expect(response?.headers.get('X-Proxy-Block-Reason')).toBe(
       'ip-already-blocked'
+    );
+    expect(response?.headers.get('X-Tuturuuu-Guard-Reason')).toBe(
+      'proxy-ip-blocked'
     );
     expect(mocks.limit).not.toHaveBeenCalled();
   });
@@ -496,6 +501,9 @@ describe('guardApiProxyRequest', () => {
     );
 
     expect(response?.status).toBe(429);
+    expect(response?.headers.get('X-Tuturuuu-Guard-Reason')).toBe(
+      'proxy-rate-limited'
+    );
     expect(response?.headers.get('X-RateLimit-Limit')).toBe('20');
     expect(response?.headers.get('X-RateLimit-Caller-Class')).toBe('anonymous');
     expect(response?.headers.get('X-RateLimit-Policy')).toBe('default');
@@ -2297,6 +2305,9 @@ describe('guardApiProxyRequest', () => {
     );
 
     expect(response).toBe(emojiResponse);
+    expect(response?.headers.get('X-Tuturuuu-Guard-Reason')).toBe(
+      'proxy-content-rejected'
+    );
     expect(mocks.validateEmoji).toHaveBeenCalledTimes(1);
   });
 
@@ -2308,7 +2319,6 @@ describe('guardApiProxyRequest', () => {
     mocks.redis.mockReturnValue({});
     mocks.extractIp.mockReturnValue('1.2.3.4');
     mocks.isBlocked.mockResolvedValue(null);
-    // Trust the session subject key (account trust → per-session keying).
     mocks.getTrustEntries.mockImplementation((keys: string[]) => {
       const map = new Map<string, { m: number }>();
       const sessionKey = keys.find((key) => key.startsWith('session:'));
@@ -2338,16 +2348,13 @@ describe('guardApiProxyRequest', () => {
 
     expect(response?.status).toBe(429);
     expect(response?.headers.get('X-RateLimit-Policy')).toBe('task-board-read');
-    // Base task-board read minute limit (600) scaled by the trust tier (3).
     expect(mocks.ratelimitConfigs).toContainEqual({
       limit: 1800,
       window: '1 m',
     });
-    // Trusted traffic gets an authenticated, tier-suffixed bucket.
     expect(mocks.ratelimitPrefixes).toContain(
       'proxy:test:api:task-board-read:authenticated:t3:get:minute'
     );
-    // The limiter is keyed by the per-session subject key, not the shared IP.
     const limiterId = mocks.limit.mock.calls[0]?.[0] as string;
     expect(limiterId.startsWith('session:')).toBe(true);
   });
@@ -2417,7 +2424,6 @@ describe('guardApiProxyRequest', () => {
     mocks.redis.mockReturnValue({});
     mocks.extractIp.mockReturnValue('1.2.3.4');
     mocks.isBlocked.mockResolvedValue(null);
-    // Trust the location (cidr) subject key only — no session cookie present.
     mocks.getTrustEntries.mockImplementation((keys: string[]) => {
       const map = new Map<string, { m: number }>();
       const cidrKey = keys.find((key) => key.startsWith('cidr:'));
@@ -2450,7 +2456,6 @@ describe('guardApiProxyRequest', () => {
     expect(mocks.ratelimitPrefixes).toContain(
       'proxy:test:api:task-board-read:anonymous:t2:get:minute'
     );
-    // Location trust keeps the shared per-IP bucket (whole team benefits).
     expect(mocks.limit).toHaveBeenCalledWith('ip:1.2.3.4');
   });
 
@@ -2512,7 +2517,6 @@ describe('guardApiProxyRequest', () => {
     mocks.redis.mockReturnValue({});
     mocks.extractIp.mockReturnValue('1.2.3.4');
     mocks.isBlocked.mockResolvedValue(null);
-    // Only the cidr is trusted; the session key is absent from the cache.
     mocks.getTrustEntries.mockImplementation((keys: string[]) => {
       const map = new Map<string, { m: number }>();
       const cidrKey = keys.find((key) => key.startsWith('cidr:'));
@@ -2540,7 +2544,6 @@ describe('guardApiProxyRequest', () => {
       { prefixBase: 'proxy:test:api' }
     );
 
-    // An untrusted session must not escape the per-IP bucket.
     expect(mocks.limit).toHaveBeenCalledWith('ip:1.2.3.4');
   });
 
@@ -2551,7 +2554,6 @@ describe('guardApiProxyRequest', () => {
     mocks.redis.mockReturnValue({});
     mocks.extractIp.mockReturnValue('1.2.3.4');
     mocks.isBlocked.mockResolvedValue(null);
-    // Default mock: empty trust map (forged or simply untrusted).
     mocks.limit.mockResolvedValueOnce({
       success: false,
       limit: 600,
@@ -2614,7 +2616,6 @@ describe('guardApiProxyRequest', () => {
     );
 
     expect(response?.status).toBe(429);
-    // Absolute exactly sets the minute window (even below the base 600).
     expect(mocks.ratelimitConfigs).toContainEqual({ limit: 50, window: '1 m' });
     expect(mocks.ratelimitPrefixes).toContain(
       'proxy:test:api:task-board-read:anonymous:abs-50-x-x:get:minute'
@@ -2648,7 +2649,6 @@ describe('guardApiProxyRequest', () => {
       { prefixBase: 'proxy:test:api' }
     );
 
-    // No read limiter is constructed → request passes the rate-limit stage.
     expect(response).toBeNull();
     expect(mocks.limit).not.toHaveBeenCalled();
   });
@@ -2689,7 +2689,6 @@ describe('guardApiProxyRequest', () => {
 
     expect(response?.status).toBe(429);
     expect(receivedKeys).toContain(`workspace:${wsId}`);
-    // Base task-board minute (600) scaled by the workspace tier (5).
     expect(mocks.ratelimitConfigs).toContainEqual({
       limit: 3000,
       window: '1 m',

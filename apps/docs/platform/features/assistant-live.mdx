@@ -1,6 +1,6 @@
 ---
 title: "Assistant Live"
-updatedAt: "2026-09-16"
+updatedAt: "2026-10-25"
 description: "Gemini voice, screen context, workspace tools, and session recovery in the dashboard assistant."
 ---
 
@@ -17,34 +17,64 @@ installation, compatibility, preparation recovery, and the separate inference ga
 
 ## Experience
 
-On mobile, entering Live keeps the shell navbar available until an explicit
-**Call Mira** action starts the call. Preparing, connecting, and reconnecting
-show a calling screen with the real connection status and a cancel action;
-microphone/camera/text/end controls appear only after connection. The connected
-controls replace navigation inside the same shell material at the same adaptive
-navbar width. Expanding navigation or ending the call preserves that surface.
-Text chat grows to at least three lines while focused and at most five lines in the dock. The control above Send opens a full-screen draft editor; minimizing returns the same text and selection to the dock without sending.
+On mobile, Live keeps mic, camera, keyboard and exit in four fixed slots in the shell's floating navbar.
+Chat and Live retain its bounds, material and navigation action. Idle mic starts; setup and reconnect keep visible media controls with truthful disabled states and Cancel.
+Active capture remains stoppable. Each start gets one microphone attempt; late permission, token or connection results cannot unmute or replace a newer attempt.
+Camera needs a connection. Keyboard returns to Chat and disconnects by default, with opt-in browsing retention; Exit cancels startup, hangs up or returns to Chat after ending.
 
-Live capture requests PCM16 mono, gain control, echo cancellation, and noise
-suppression. Android uses the communication source/mode and speaker route. The
-pinned iOS recorder enables native voice processing, and playback preserves its
-existing category/options. Disconnect stops capture and releases the playback
-unit instead of immediately initializing it again; this does not claim global
-iOS audio-session deactivation. Delayed setup/frame work and cancelled call starts are generation fenced; old
-requests cannot connect or clear a restarted call's pending state. Cancelling
-capture clears its startup ownership immediately; obsolete permission or ready
-waits cannot block or clear the replacement microphone attempt.
-Device routes and echo reduction still require device verification, including
-speaker, headset, and Bluetooth calls. Regression coverage includes
-`assistant_live_dock_lifecycle_test.dart`, `assistant_live_calling_view_test.dart`,
-`assistant_live_recorder_test.dart`, `assistant_live_disconnect_audio_test.dart`,
-and `assistant_live_microphone_restart_test.dart`.
+One scrollable blob, status and transcript stage stays mounted through reconnect and ending. Speaking uses admitted assistant audio and spectrum; reduced motion keeps it static.
+Recovery detail and retry remain inline. `assistant_live_dock_lifecycle_test.dart`, `assistant_live_state_presentation_test.dart` and `assistant_live_microphone_restart_test.dart` cover these rules.
 
+![Mira Live in the shared shell navbar](/images/mira-live-shell-light-390x844.png)
+
+Text chat grows to at most five lines in the dock, then scrolls inside the input.
+The Assistant has no fullscreen/expand draft action. Its single 52dp side action
+remains Send, recording control, or navigation as appropriate. Attachment previews,
+text selection, multiline input and keyboard/dock clearance remain inline.
+`assistant_composer_draft_test.dart`, `assistant_composer_multiline_test.dart` and `assistant_composer_geometry_test.dart` cover these mobile rules.
+
+Empty and single-line drafts share field, icon slots and side-action bounds.
+Typing hides the microphone but reserves its space, removing its interaction and accessibility target.
+The placeholder stays on one visual line at enlarged text sizes; accessibility retains the full prompt.
+Attachment and side-action controls stay bottom-aligned as the draft grows. Matching keyboard/safe-area
+geometry preserves empty/typed bounds. `assistant_composer_stability_test.dart` covers narrow phones,
+enlarged text, keyboard insets, multiline growth and retained dock material.
+<img className="block dark:hidden" src="/images/assistant-composer-light-typed.png" alt="Stable mobile Assistant composer while typing in light mode" />
+<img className="hidden dark:block" src="/images/assistant-composer-dark-typed.png" alt="Stable mobile Assistant composer while typing in dark mode" />
+
+Compare empty drafts in [light](/images/assistant-composer-light-empty.png) and [dark](/images/assistant-composer-dark-empty.png) mode,
+and multiline drafts in [light](/images/assistant-composer-light-multiline.png) and [dark](/images/assistant-composer-dark-multiline.png) mode.
+
+Live capture requests PCM16 mono, gain control, echo cancellation and noise suppression.
+Android uses the communication source/mode and speaker route; the pinned iOS recorder enables native voice processing, and playback preserves its category/options.
+Disconnect stops owned capture and releases playback without immediately initializing it again; this does not claim global iOS audio-session deactivation.
+Permission-only cancellation avoids native capture queries serialized behind an unanswered OS dialog. Generation fences discard late grants and obsolete setup/frame work.
+A pending native capture start still retains cleanup ownership. Old results cannot connect or clear a replacement attempt; microphone restart remains explicit.
+Device verification still covers speaker, headset and Bluetooth routes and echo reduction.
+Regression coverage includes `assistant_live_dock_lifecycle_test.dart`, `assistant_live_calling_view_test.dart`, `assistant_live_recorder_test.dart`,
+`assistant_live_recorder_lifecycle_test.dart`, `assistant_live_disconnect_audio_test.dart` and `assistant_live_microphone_restart_test.dart`.
 
 Mobile chat uses the shell's existing dock for its composer and primary action.
 An empty draft keeps the navigation menu; a nonempty draft or attachment changes
 that action to Send. During inline recording it becomes Pause, then Send while
 paused. Cancel discards only the recording and returns to the retained text draft.
+An untouched actor/workspace scope with no envelope, legacy selection/context,
+creation marker or in-process hold receives one serialized, acknowledged fresh
+envelope. Its first Send creates the chat without a reset dialog and retains the
+draft until the user-message acknowledgement. Missing envelopes with legacy
+state, a vanished inspected envelope, pending creation and held state still
+require informed recovery. If a
+text-only send has no selected conversation and local creation authority needs
+recovery, Send opens the existing informed New Chat confirmation. Cancel
+retains the draft without creating or sending anything. Confirmation resets the
+held selection, retains the unchanged draft, and sends it once; only a persisted
+user-message acknowledgement clears it. Unknown writes still require informed
+recovery and are never silently replayed. Remote-model preference hydration does
+not show a temporary local-model status in the navbar; a resolved local choice or
+preparation failure still shows its status. These mobile-only rules are covered
+by `assistant_send_recovery_test.dart` and `assistant_fresh_scope_test.dart`.
+
+![Mobile Assistant creation recovery with a retained draft](/images/assistant-send-recovery.png)
 The input row has no second Send button. Each assistant turn has one initially
 collapsed transparent thinking accordion, showing the latest heading from reasoning
 text already supplied by the API. Expanding it reveals those existing sections in
@@ -60,6 +90,81 @@ shell consumes the keyboard inset once. Regressions cover controller and capture
 transitions, retained dock identity, transparent tool inspection, and actual shell
 geometry in `apps/mobile/test/features/assistant/widgets/`.
 
+### Mobile message actions and appearance
+
+Long-press a message for Copy. Saved messages in native Assistant conversations
+also offer Reply and reactions. The reply preview stays inside the existing
+floating composer and can be cancelled before sending. Native replies retain the
+original target through retries; reactions reuse `private.chat_message_reactions`
+and the authenticated Chat API, so native web Chat and mobile see the same data.
+The server derives the actor from authentication and validates conversation access;
+one actor can remove only their own reaction. Optimistic rows, Live drafts and
+local-only model messages cannot receive persisted reactions or reply references.
+Legacy `ai-chat-*` and `legacy-ai-*` conversations keep Copy, but cannot use private
+Chat message IDs. Legacy dashboard Mira reaction/reply parity requires its own
+adapter work; IDs must never be stripped or guessed to enable it.
+
+Retained Live text cannot carry replies. A selected reply blocks sending and keeps its draft and
+target; end the call or cancel the reply first. The reply reference is never silently discarded.
+
+Changing or cancelling a reply during timezone resolution keeps the unsent draft and current target available for review, with a notice in the same composer scope.
+An admitted native turn consumes its acknowledgement even if a later draft selects another reply.
+
+<img className="block dark:hidden" src="/images/assistant-reply-feedback-light.png" alt="Reply change keeps the unsent draft in light mode" />
+<img className="hidden dark:block" src="/images/assistant-reply-feedback-dark.png" alt="Reply change keeps the unsent draft in dark mode" />
+
+Live completion clears unchanged submitted text regardless of cursor or IME ranges, and removes only matching attachments. New replies and later text edits remain. Local socket admission proves neither provider acknowledgement nor durable saving.
+Aborted typed preparation disconnects only its owned request; newer preparation remains active. Current-chat connection loss reports refusal, and same-chat reselection after possible dispatch reports uncertainty while retaining the draft.
+Refused or uncertain delivery is not automatically replayed. Mobile reply-guard and Live dispatch tests cover setup retirement, recovery, scoped notices and snapshot cleanup.
+
+Reactions follow the native idempotent contract below. **Refresh reactions** reconciles an unknown
+intent before updating its exact message. Reply previews jump to loaded originals without resuming
+bottom-following; acknowledgement ID relocation preserves expanded message state.
+
+Choose **Chat appearance** in Assistant More. Classic is the default; light/dark-aware presets offer
+solid, gradient and ombre backgrounds. Advanced starts collapsed and separates message palette,
+text accent, background palette/style and intensity. Preferences are device-local and actor-scoped
+across Assistant conversations and workspaces, for both remote and on-device conversations.
+They do not change the shell, web UI or another actor's preferences, or synchronize across devices.
+Preview updates immediately; storage debounces and slider release flushes the latest change.
+Closing flushes the last authorized edit; logout or session replacement retires delayed edits.
+Contrast, round trips, actor/session fences and collapsed-editor tests: `apps/mobile/test/features/assistant/theme/`.
+
+### Native mobile reaction operations
+
+Mobile persists reactions only for acknowledged messages in native Assistant
+conversations. It uses the actor-scoped private Chat model and **PUT** on the
+conversation reactions endpoint with a stable `opId`, `emoji` and desired
+`present` value. The reaction and operation receipt commit atomically; repeating
+an operation acknowledges it without applying it again, including after a newer
+operation. Existing web Chat **POST** callers retain toggle behavior. Old servers
+without PUT reject the new request before any reaction write; mobile never falls
+back to a toggle. Apply the operation migration before enabling this client.
+
+Before dispatch, an independent Hive journal must acknowledge and flush the
+intent. Failed storage adds no uncertainty. Scope retirement before dispatch
+removes the matching unsent marker. A valid terminal receipt cleans its exact
+operation even after navigation or a client timeout; it cannot erase a successor.
+Unknown outcomes retain the original operation. **Refresh reactions** retries
+that same idempotent intent and reads the exact message, so older messages do not
+depend on the latest history page. Reads alone never prove a mutation terminal.
+
+Sign-out retires dispatch admission synchronously, including auth-event logout,
+and removes actor/message/workspace/emoji journal metadata. Only hashed actor
+keys and unresolved operation IDs remain as a minimal retirement fence. Before
+that actor can submit another reaction, bounded authenticated retirement batches
+mark those IDs terminal on the server; delayed original requests cannot restore
+an old reaction after a later choice. Failed retirement retains the fence for an
+explicit retry. No reaction operation enters the offline queue.
+
+Coverage: `chat-reaction-operations.sql`, the reactions/retire route tests,
+`assistant_reaction_lifecycle_review_test.dart`,
+`api_client_operation_review_test.dart`, and the journal/flush regression suites.
+
+Age-based cleanup is disabled. The [retention proposal](/platform/features/assistant-reaction-retention)
+requires server-enforced expiry before bounded Cloudflare cleanup can remove operation or retirement records.
+
+### Web dashboard Live
 
 On the web dashboard, start or stop Live with the waveform icon in the chat
 composer. Live keeps the
@@ -230,9 +335,17 @@ reservation only, so a fresh authorization cannot replay cumulative usage from a
 previous reservation. Legacy unmetered consumers retain workspace/conversation
 scoping through the existing session API.
 
-Credit reservation and cumulative usage settlement remain on the live Next.js
-backend. Rust is a future migration target, not the deployed API. The token route
-is tracked in `apps/tanstack-web/migration/route-overrides.json`.
+Mobile Live reconnects a dropped call automatically with backoff: 0.8 s, doubling
+to at most 15 s. Each attempt fetches a fresh token, so a streak of drops is capped
+at five automatic attempts; Live then shows a retryable error. A connection that
+stayed ready for at least 60 seconds (for example, before a routine provider
+`GoAway`) starts a fresh budget, and so does any start or Retry the user makes.
+Regression coverage: `assistant_live_reconnect_backoff_test.dart`.
+
+Credit reservation and cumulative usage settlement run on the Next.js backend
+(`apps/web`), the only active runtime for these routes. The paused Rust backend
+and TanStack app are not current runtimes; their retained route tracking is
+historical, not deployment evidence.
 
 ## Verification
 
@@ -485,17 +598,30 @@ Delayed file decoding and stale pre-timezone scope are covered by
 
 ### Mobile Live calling surface
 
-Mira Live uses the app background for its calling stage and transcript. Camera, microphone, text-entry and end-call actions are published as content of the existing shell-owned floating dock; the page creates no second control rail. The same dock material persists when switching between Chat input and Live controls. The stage reflects real connection and speaking state, respects reduced motion, and retains permission/recovery feedback. Camera is enabled only after connection, microphone toggling is disabled while connecting, and end-call remains available to cancel an in-progress connection. This presentation does not claim a provider-latency improvement or on-device model execution.
+Mira Live inherits the app background and follows the [shared calling behavior](#experience). It reflects connection and speaking state without a second control rail, provider-latency claims or on-device model execution.
 
 Regression coverage: `assistant_live_mode_view_test.dart` and `assistant_live_call_controls_test.dart` cover narrow/landscape and enlarged-text layouts, real connection-state action availability, and the absence of a body-owned control rail. `shared_navbar_large_text_test.dart` exercises the actual shell at enlarged text size and verifies the same dock Material element survives Chat, Live, global-navigation and full-screen transitions.
 
+#### Full-screen call
+
+Starting a call (not unmuting) opens a full-screen call surface on the root navigator, above the app shell, as a system-like flow. It keeps the gradient and blob appearance backdrops, and it adds no navbar or second shell.
+- **Identity and status.** The surface shows the assistant's voice-reactive orb, name and one status line: Connecting…, the elapsed time, Reconnecting…, "Call ended · mm:ss", or "Couldn't connect".
+- **Elapsed time.** Shown as mm:ss, then h:mm:ss from one hour. Only the timer redraws each second, and screen readers get it as "Call duration". The call clock starts on the first connection, keeps running through reconnects and transient errors, records the duration on disconnect, and resets when a new call starts.
+- **Controls.** 64 dp circular controls: Mute, Camera, Keyboard, Captions, a 72 dp red End, and Minimize. Labels wrap only between words; at large text sizes a single long word scales down instead of breaking. In-call controls stay in place, disabled, while connecting; End stays available and cancels a connecting call. Mute appears toggled only while connected.
+- **Captions.** An optional drawer shows the latest turns and live drafts.
+- **After a call.** Ended and failed calls offer Close plus Call again or Retry.
+- **Minimizing.** Minimize or system Back keeps the call running and returns to the in-shell Live view, whose Return to call control reopens the surface; if the call dropped in the meantime, the reopened surface shows it ended. The dock call controls stay the in-shell control set.
+- **Lifecycle.** The surface opens before its session starts and reads as Connecting… until then; if the start attempt settles without a session (for example, a refused microphone permission), the surface closes. After the session starts, any disconnect ends the call on the surface, including page-initiated disconnects without a final turn such as backgrounding the app: on return it shows "Call ended" with Call again and Close, never a stuck Connecting… with live controls. Nothing reconnects such a call automatically.
+- **Teardown.** Dismissal always closes the call's own route, even when another route covers it. A workspace switch or a signed-in account change dismisses the surface, because its actions belong to the previous workspace. A start that is still waiting for its token checks the selected workspace directly, so a token answered during the switch never opens a call for the previous workspace. The provider handshake times out after 10 seconds, so a disconnect (and the next connect, which waits for that close) cannot hang on an unanswered socket. Disposing the page closes the session, which also dismisses the surface.
+- **Speaker routing.** Live keeps its existing speaker and Bluetooth routing. A speaker/earpiece toggle, CallKit/ConnectionService, an Android microphone foreground service and proximity dimming are follow-ups that need native work and device verification.
+
+Regression coverage: `live_call/assistant_live_call_model_test.dart` (duration format, call clock, phases, captions), `live_call/assistant_live_call_view_test.dart` (timer ticks without rebuilding peers, labels and tap targets, connecting/muted/ended states, and the 390×844 and 820×1180 light/dark/blob render matrix written to `MIRA_LIVE_CALL_RENDER_DIR`), `live_call/assistant_live_call_route_test.dart` (opens above the host, Minimize keeps the call, Return to call, dismissal on session close, a disconnect without a final turn shows the ended summary, and an unstarted start attempt closes the surface), and `assistant_live_keyboard_startup_test.dart` (backgrounding a presented call shows it ended on resume; a workspace switch dismisses it and leaves Live disconnected). The view test also checks that landscape and 2x text with captions open scroll without overflow.
+
 ### Mobile draft editing and previews
 
-The mobile prompt's expansion control sits above Send. Full-screen editing uses
-that same draft controller and preserves its selection; returning restores the
-previous dock focus. Enter remains a newline. The editor has no Send action and
-keeps the existing upload/removal and guarded submission callbacks unchanged.
-Attachment previews sit above the prompt in both modes. Images and videos open
+The mobile prompt grows inline through five lines and preserves text selection.
+Enter inserts a newline; the side action sends through the guarded submission
+path. Attachment previews sit above the prompt. Images and videos open
 media previews; audio opens playback controls without automatic playback.
 Uploading and failed attachments remain identified and removable. Previews are
 bounded and scrollable on narrow screens and at enlarged text sizes.
@@ -545,11 +671,19 @@ provider latency and live device connectivity require separate runtime evidence.
 
 ## Mobile startup measurements
 
-After the authenticated token arrives, mobile binds the owned conversation and
-initializes its native audio player concurrently. Both must finish before the
-provider socket is opened. A failure settles both operations; cancellation or an
-actor/workspace epoch change prevents later connection and timing publication.
-Native playback initialization and disposal retain their existing serial queue.
+After the authenticated token arrives, mobile starts binding the visible
+conversation and, in parallel, initializes its native audio player and then
+opens the provider socket. The token envelope already carries seed history and
+the server owns the chat, so binding never gates the provider handshake: the
+call connects (and buffered startup speech drains) while the transcript is still
+restoring. A binding failure stays in the chat view and never fails the call; an
+audio failure still prevents connection. `prepareSession` still returns only
+after binding settles, so a typed send captured from the visible conversation
+dispatches only once that conversation is bound: a namespace switch can still
+retire it. A retired preparation may already have opened a provider connection;
+it is closed without sending user content. Cancellation or an actor/workspace
+epoch change prevents later connection and timing publication. Native playback
+initialization and disposal retain their existing serial queue.
 
 Live state records monotonic millisecond durations for token minting, history
 binding, audio initialization, socket connection, provider readiness, and the
@@ -558,19 +692,73 @@ content, or error payloads and are not uploaded automatically. Concurrent stage
 durations must not be added to estimate total latency. Failed attempts retain
 only completed phase timings; obsolete attempts publish none.
 
-`assistant_live_startup_phases_test.dart` verifies independent overlap, the
-settle-all failure barrier, cancelled scope fencing, and immutable measurements.
+`assistant_live_startup_phases_test.dart` verifies that binding overlaps the
+handshake, that binding failures keep the call, that audio failures do not
+connect, cancelled scope fencing, and immutable measurements. The total phase is
+the time to a connected call; a slower binding publishes its duration after it
+settles.
 The Live information action in the shared shell opens the existing info sheet.
 It shows the most recent attempt’s recorded phase durations in milliseconds,
 including partial failed attempts, in a fixed phase order. Missing phases are
 omitted. Measurements stay in memory on the current device: no account IDs,
 request IDs, credentials, message content, persistence, or automatic uploads.
-History and audio run concurrently, so phase durations do not sum to total time.
+History overlaps the other phases, so phase durations do not sum to total time.
 The sheet scrolls on small screens and with enlarged text. Widget regression
 coverage is in `assistant_live_startup_diagnostics_test.dart`.
 
 This removes serial client-side waiting; actual device/provider speed remains a
 runtime measurement rather than a promised fixed latency reduction.
+
+The mobile token route (`/api/v1/assistant/live/token`) returns a
+`Server-Timing` header with durations only: `auth`, `session`, `workspace`,
+`access` (membership and tier together), `prompt` and `history` (overlapped),
+`mint`, and `total`. Use it to split the client's "Session authorization" phase
+into server stages and network time. Membership and the tier lookup run
+concurrently; prompt personalization runs alongside chat binding and history,
+both only after both access gates pass. The token is minted only when both
+succeed, and the response is `private, no-store`. Timings are returned only on
+successful responses, and `session` is absent under temporary AI authentication,
+which resolves the actor without a Supabase session. Overlapped durations do not
+sum to `total`.
+
+Fresh sessions read at most the newest 60 stored rows in one ownership-joined
+query and replay the newest text that fits a 32,000-character budget. Rows with
+other roles or no text use query slots but not budget. A single oversized latest
+message keeps only its tail. Replay is text only and does not keep user/assistant
+pairs together, so the oldest kept turn can be an assistant reply.
+
+Tier lookups canonicalize workspace UUIDs (trimmed, lowercase) before reading
+subscriptions, so uppercase input still resolves a paid tier. The Voice Assistant
+feature policy currently admits every tier; the PRO tier still matters for plan
+model allocation and other PRO-gated features.
+
+Per-chat message reads use `ai_chat_messages_chat_created_idx
+(chat_id, created_at, id)`, built `CONCURRENTLY`. An interrupted concurrent build
+leaves an INVALID index that `IF NOT EXISTS` then skips, so the migration
+can be recorded as applied without the performance fix. After promotion, confirm
+the index is valid before treating it as done:
+
+```sql
+select c.relname, i.indisvalid, i.indisready, pg_get_indexdef(i.indexrelid)
+from pg_index i
+join pg_class c on c.oid = i.indexrelid
+where i.indrelid = 'public.ai_chat_messages'::regclass
+  and c.relname = 'ai_chat_messages_chat_created_idx';
+```
+
+Both flags must be true and the definition must be
+`(chat_id, created_at, id)` on `public.ai_chat_messages`. If either flag is false,
+the authorized database owner drops the index with `DROP INDEX CONCURRENTLY` and
+rebuilds it with the same statement. Do not replay the migration and count its
+NOTICE as a successful build.
+
+Coverage: `assistant-live-token-routes.test.ts` (stage overlap with deferred
+promises, access gates, timing header), `assistant-live-token-tier.test.ts`
+(uppercase UUID keeps a pinned PRO requirement admitted),
+`resolve-plan-model-tier.test.ts` (PRO allocation for uppercase input),
+`workspace-tier-admin.test.ts` (canonical tier lookup),
+`assistant-history.test.ts` (budget and ownership join), and
+`ai-chat-messages-chat-order-index.sql` (index and ordered plan).
 
 ## Canonical mobile Live capabilities
 
@@ -593,8 +781,9 @@ network-wide mutation deduplication or cancellation of dispatched writes.
 
 Resumption handles use protocol-specific, UUID-validated chat scopes so a
 canonical connection cannot restore legacy tool declarations, or vice versa.
-Both scopes still require ownership of the same conversation. The Rust GET
-session port follows the same validation; web remains the production runtime.
+Both scopes still require ownership of the same conversation. `apps/web` is the
+only active runtime for this validation; the paused Rust backend's session port
+is historical and is not evidence for current behavior.
 
 `canonical-tool-bridge.test.ts`, the canonical execution route tests,
 `session-scope.test.ts`, and `assistant_live_repository_test.dart` cover schema

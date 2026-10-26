@@ -83,7 +83,8 @@ function isFiniteRoomLifecycleStep(step) {
     '"$GITHUB_WORKSPACE/apps/meet-realtime/src/room-do-lifecycle-race.test.ts" \\',
     '"$GITHUB_WORKSPACE/apps/meet-realtime/src/room-do-recovery.test.ts" \\',
     '"$GITHUB_WORKSPACE/apps/meet-realtime/src/collaboration-retry-budget.test.ts" \\',
-    '"$GITHUB_WORKSPACE/apps/meet-realtime/src/channel-retry-budget.test.ts"',
+    '"$GITHUB_WORKSPACE/apps/meet-realtime/src/channel-retry-budget.test.ts" \\',
+    '"$GITHUB_WORKSPACE/apps/meet-realtime/src/channel-checkpoint-request.test.ts"',
   ].join('\n');
   return (
     /^\s+- name: Test durable room lifecycle and recovery$/mu.test(step) &&

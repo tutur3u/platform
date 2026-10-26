@@ -7,15 +7,19 @@ import { runInNewContext } from 'node:vm';
 // Mandatory emitted-artifact acceptance input; keep outside source-only discovery.
 const client = resolve(process.env.CALENDAR_CLIENT_OUTPUT ?? 'dist/client');
 const code = await readFile(resolve(client, 'serwist/sw.js'), 'utf8');
-function worker() {
+function worker(basePath = '', origin = 'https://calendar.test') {
   const listeners = new Map();
   const entries = new Map();
   const background = [];
+  const cacheNames = new Set();
   const writes = [];
   let online = true;
   const self = {
-    location: { origin: 'https://calendar.test' },
-    addEventListener: (name, listener) => listeners.set(name, listener),
+    location: { origin },
+    clients: { claim: async () => {} },
+    registration: { scope: `${origin}${basePath}/` },
+    addEventListener: (name, listener) =>
+      listeners.set(name, [...(listeners.get(name) ?? []), listener]),
   };
   const cache = {
     match: async (input) =>
@@ -36,7 +40,11 @@ function worker() {
     Response,
     Headers,
     console,
-    caches: { open: async () => cache },
+    caches: {
+      open: async () => cache,
+      keys: async () => [...cacheNames],
+      delete: async (name) => cacheNames.delete(name),
+    },
     fetch: async () => {
       if (!online) throw new Error('offline');
       return new Response('network');
@@ -45,6 +53,13 @@ function worker() {
   return {
     entries,
     writes,
+    cacheNames,
+    async activate() {
+      const work = [];
+      for (const listener of listeners.get('activate') ?? [])
+        listener({ waitUntil: (promise) => work.push(promise) });
+      await Promise.all(work);
+    },
     offline: () => {
       online = false;
     },
@@ -55,13 +70,14 @@ function worker() {
         destination: { value: destination },
       });
       let response;
-      listeners.get('fetch')({
-        request,
-        respondWith: (promise) => {
-          response = promise;
-        },
-        waitUntil: (promise) => background.push(promise),
-      });
+      for (const listener of listeners.get('fetch') ?? [])
+        listener({
+          request,
+          respondWith: (promise) => {
+            response = promise;
+          },
+          waitUntil: (promise) => background.push(promise),
+        });
       const result = await response;
       await Promise.all(background);
       return result;
@@ -96,6 +112,41 @@ test('actual emitted worker caps concurrent Vite static cache writes at160', asy
   );
   assert.equal(app.entries.size, 160);
 });
+test('mounted emitted worker caches only Calendar assets and uses its own fallback', async () => {
+  const app = worker('/calendar');
+  assert.equal(
+    await app.request('/assets/web-12345678.js', 'cors', 'script'),
+    undefined
+  );
+  assert.equal(
+    await app.request('/calendarish/assets/app-12345678.js', 'cors', 'script'),
+    undefined
+  );
+  assert.equal(
+    await app.request(
+      '/calendar/api/v1/calendar/connections',
+      'cors',
+      'script'
+    ),
+    undefined
+  );
+  assert.equal(
+    await (
+      await app.request('/calendar/assets/app-12345678.js', 'cors', 'script')
+    ).text(),
+    'network'
+  );
+  assert.deepEqual(app.writes, [
+    'https://calendar.test/calendar/assets/app-12345678.js',
+  ]);
+  app.entries.set('/offline.html', new Response('Web Offline'));
+  app.entries.set('/calendar/offline.html', new Response('Calendar Offline'));
+  app.offline();
+  assert.equal(
+    await (await app.request('/calendar/personal', 'navigate')).text(),
+    'Calendar Offline'
+  );
+});
 test('existing offline dependencies are emitted as public deployment assets', async () => {
   for (const name of [
     'offline.html',
@@ -107,4 +158,31 @@ test('existing offline dependencies are emitted as public deployment assets', as
     'apple-touch-icon.png',
   ])
     assert.ok((await readFile(resolve(client, name))).length > 0);
+});
+
+test('emitted activation migrates legacy caches only on the Calendar subdomain', async () => {
+  for (const [origin, base, migrated] of [
+    ['https://calendar.tuturuuu.com', '', true],
+    ['https://tuturuuu.com', '/calendar', false],
+    ['https://staging.tuturuuu.com', '/calendar', false],
+  ]) {
+    const app = worker(base, origin);
+    for (const name of [
+      'tuturuuu-offline-precache-old',
+      'tuturuuu-offline-runtime-v1',
+      'calendar-runtime-v1',
+      'other-app',
+    ])
+      app.cacheNames.add(name);
+    await app.activate();
+    assert.equal(
+      app.cacheNames.has('tuturuuu-offline-precache-old'),
+      !migrated
+    );
+    assert.equal(app.cacheNames.has('tuturuuu-offline-runtime-v1'), !migrated);
+    assert.equal(app.cacheNames.has('calendar-runtime-v1'), true);
+    assert.equal(app.cacheNames.has('other-app'), true);
+    await app.activate();
+    assert.equal(app.cacheNames.size, migrated ? 2 : 4);
+  }
 });

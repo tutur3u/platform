@@ -33,6 +33,8 @@ describe('mobile deployment storage policy', () => {
   it.each([
     '.tuturuuu/mobile-deployment-vault/x%',
     '.tuturuuu/mobile-deployment-vault/',
+    '.tuturuuu/mobile-deployment-vault?',
+    '.tuturuuu/mobile-deployment-vault#',
     '/.tuturuuu/mobile-deployment-vault/v1',
     '.tuturuuu//mobile-deployment-vault/v1',
   ])('fails closed for malformed reserved vault path %s', (path) => {
@@ -50,6 +52,12 @@ describe('mobile deployment storage policy', () => {
     ).toBe(false);
     expect(
       isReservedMobileDeploymentDrivePath(ROOT_WORKSPACE_ID, 'public/file')
+    ).toBe(false);
+    expect(
+      isReservedMobileDeploymentDrivePath(ROOT_WORKSPACE_ID, 'v1..final.pdf')
+    ).toBe(false);
+    expect(
+      isReservedMobileDeploymentDrivePath(ROOT_WORKSPACE_ID, 'docs/')
     ).toBe(false);
   });
 

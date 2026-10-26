@@ -1,6 +1,7 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { getNovaAppSessionUserFromRequest } from '@/lib/app-session';
+import { requireNovaSubmissionManager } from '@/lib/submission-access';
 
 interface Params {
   params: Promise<{
@@ -60,9 +61,9 @@ export async function PUT(request: Request, { params }: Params) {
   }
 
   let body: {
-    prompt?: string;
-    problemId?: string;
-    sessionId?: string;
+    prompt?: unknown;
+    problemId?: unknown;
+    sessionId?: unknown;
   };
 
   try {
@@ -72,23 +73,35 @@ export async function PUT(request: Request, { params }: Params) {
   }
 
   try {
-    // Check if any update data was provided
-    if (Object.keys(body).length === 0) {
+    // Submissions are bound to their problem and session when created
+    // (checkPermission), so those links can never be rewritten afterwards.
+    if (body.problemId !== undefined || body.sessionId !== undefined) {
+      return NextResponse.json(
+        { message: 'problemId and sessionId cannot be changed' },
+        { status: 400 }
+      );
+    }
+
+    if (typeof body.prompt !== 'string') {
       return NextResponse.json(
         { message: 'No update data provided' },
         { status: 400 }
       );
     }
 
-    const updateData: any = {};
-    if (body.prompt !== undefined) updateData.prompt = body.prompt;
-    if (body.problemId !== undefined) updateData.problem_id = body.problemId;
-    if (body.sessionId !== undefined) updateData.session_id = body.sessionId;
+    // Participants cannot edit a prompt after it was submitted and graded.
+    const { response } = await requireNovaSubmissionManager(
+      user,
+      submissionId,
+      supabase
+    );
+
+    if (response) return response;
 
     const { data: updatedSubmission, error: updateError } = await supabase
       .schema('private')
       .from('nova_submissions')
-      .update(updateData)
+      .update({ prompt: body.prompt })
       .eq('id', submissionId)
       .eq('user_id', user.id)
       .select()
@@ -128,6 +141,16 @@ export async function DELETE(request: Request, { params }: Params) {
   }
 
   try {
+    // Deleting a submission would refund a session attempt, so participants
+    // cannot delete their own submissions.
+    const { response } = await requireNovaSubmissionManager(
+      user,
+      submissionId,
+      supabase
+    );
+
+    if (response) return response;
+
     const { error: deleteError } = await supabase
       .schema('private')
       .from('nova_submissions')

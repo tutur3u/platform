@@ -1,10 +1,7 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { describe, expect, it, vi } from 'vitest';
-import {
-  createHabitTrackerEntry,
-  getHabitTrackerDetail,
-  listHabitTrackerCards,
-} from './service';
+import { getHabitTrackerDetail, listHabitTrackerCards } from './service';
+import { createHabitTrackerEntry } from './writes';
 
 function createSelectBuilder({
   resolved,

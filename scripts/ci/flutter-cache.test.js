@@ -21,6 +21,7 @@ const action = JSON.parse(
 );
 const trusted =
   "github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')";
+const ghaExpression = (body) => `\${{ ${body} }}`;
 const cacheSha = '55cc8345863c7cc4c66a329aec7e433d2d1c52a9';
 const flutterSha = '1a449444c387b1966244ae4d4f8c696479add0b2';
 
@@ -70,7 +71,7 @@ test('only main push/dispatch attaches cache post-job saves; every other ref res
   }
 });
 
-test('SDK identity ignores pubspec lock while pub downloads retain it and upstream saving is off', () => {
+test('SDK and pub download identities ignore lockfile churn and upstream saving is off', () => {
   const identity = action.runs.steps[0];
   assert.equal(identity.id, 'identity');
   assert.equal(identity.with['dry-run'], true);
@@ -84,7 +85,10 @@ test('SDK identity ignores pubspec lock while pub downloads retain it and upstre
     if (step.name.includes('SDK'))
       assert.doesNotMatch(step.with.key, /pubspec|hashFiles/);
     if (step.name.includes('pub'))
-      assert.match(step.with.key, /hashFiles\('\*\*\/pubspec.lock'\)/);
+      assert.equal(
+        step.with.key,
+        `flutter-pub-v2-${ghaExpression('runner.os')}-${ghaExpression('runner.arch')}-${ghaExpression('steps.identity.outputs.CHANNEL')}-${ghaExpression('steps.identity.outputs.VERSION')}`
+      );
   }
   const install = action.runs.steps.at(-1);
   const expression = (field) =>

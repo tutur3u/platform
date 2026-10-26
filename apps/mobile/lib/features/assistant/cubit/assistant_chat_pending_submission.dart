@@ -129,6 +129,7 @@ extension _AssistantNativePending on AssistantChatCubit {
         text: turn.text,
         attachments: turn.attachments,
         isCurrent: current,
+        replyToMessageId: turn.optimisticMessage?.replyToMessageId,
       );
       if (!current()) return const AssistantSubmissionOutcome.stale();
       if (receipt == null) return const AssistantSubmissionOutcome.unknown();
@@ -146,7 +147,19 @@ extension _AssistantNativePending on AssistantChatCubit {
       _nativePending.remove((turn.actor, turn.workspace, turn.chat));
       _emitIfOpen(
         state.copyWith(
-          messages: saved?.messages ?? [...state.messages, receipt],
+          messages:
+              saved?.messages
+                  .map(
+                    (message) => message.id == savedId
+                        ? message.copyWith(
+                            isPersisted: true,
+                            reactions: receipt.reactions,
+                            replyToMessageId: receipt.replyToMessageId,
+                          )
+                        : message,
+                  )
+                  .toList() ??
+              [...state.messages, receipt],
           attachmentsByMessageId:
               saved?.attachments ??
               {
@@ -159,6 +172,7 @@ extension _AssistantNativePending on AssistantChatCubit {
               : state.composerAttachments,
         ),
       );
+      _persistAssistantChatCache();
       return AssistantSubmissionOutcome.acknowledged(turn.requestId, savedId);
     } on Object {
       return current()
@@ -196,6 +210,9 @@ extension _AssistantAcknowledgedSubmission on AssistantChatCubit {
     }
     final retained = _nativePendingFor(wsId);
     if (retained != null) {
+      if (state.replyTarget != null) {
+        return const AssistantSubmissionOutcome.denied();
+      }
       return await _reconcileNativePending(retained, message, current);
     }
     final selectedId = state.storedChatId;

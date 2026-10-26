@@ -1,6 +1,20 @@
-/// Metadata shared with Mira Live only when the user opts in to browsing mode.
-/// No screen text, query parameters, or arbitrary route identifiers are sent.
-Map<String, dynamic> assistantMobileScreenContext(Uri? uri) {
+import 'package:mobile/features/assistant/bridge/assistant_screen_context.dart';
+
+/// Context shared with Mira Live only when the user opts in to browsing mode:
+/// the app section, records the foreground screen registers, and its form
+/// fields with sensitive values redacted. No query parameters or arbitrary
+/// route identifiers are sent.
+Map<String, dynamic> assistantMobileScreenContext(
+  Uri? uri, {
+  AssistantScreenContextRegistry? registry,
+}) {
+  return {
+    ..._routeContext(uri),
+    ...(registry ?? AssistantScreenContextRegistry.instance).snapshot(),
+  };
+}
+
+Map<String, dynamic> _routeContext(Uri? uri) {
   final segments =
       uri?.pathSegments.where((segment) => segment.isNotEmpty).toList() ?? [];
   if (segments.isEmpty) return {'screen': 'home'};
@@ -31,7 +45,7 @@ Map<String, dynamic> assistantMobileScreenContext(Uri? uri) {
       : 'other';
   final context = <String, dynamic>{'screen': screen};
 
-  // A task ID can be resolved with the declared get_task_details tool.
+  // A task ID can be resolved with the canonical get_task tool.
   if (screen == 'tasks' &&
       segments.length == 2 &&
       RegExp(

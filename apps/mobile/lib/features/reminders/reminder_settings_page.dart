@@ -1,15 +1,14 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart' hide Scaffold;
 import 'package:intl/intl.dart';
 import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/notifications/push/push_notification_service.dart';
 import 'package:mobile/features/reminders/reminder_plan.dart';
 import 'package:mobile/features/reminders/reminder_service.dart';
 import 'package:mobile/features/reminders/reminder_settings.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class ReminderSettingsPage extends StatefulWidget {
   const ReminderSettingsPage({super.key});
@@ -104,18 +103,18 @@ class _ReminderSettingsPageState extends State<ReminderSettingsPage> {
     final offsets = kind == ReminderKind.task
         ? _draft.taskOffsets
         : _draft.eventOffsets;
-    return Card(
+    return AppCard(
+      padding: EdgeInsets.zero,
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SwitchListTile.adaptive(
-              contentPadding: EdgeInsets.zero,
-              secondary: Icon(
+            AppToggleRow(
+              leading: Icon(
                 kind == ReminderKind.task
-                    ? Icons.check_circle_outline_rounded
-                    : Icons.event_outlined,
+                    ? LucideIcons.circleCheck
+                    : LucideIcons.calendarDays,
               ),
               title: Text(
                 kind == ReminderKind.task
@@ -138,7 +137,7 @@ class _ReminderSettingsPageState extends State<ReminderSettingsPage> {
                 runSpacing: 4,
                 children: [
                   for (final offset in reminderIntervals.keys)
-                    FilterChip(
+                    AppChip(
                       label: Text(_offsetLabel(offset)),
                       selected: offsets.contains(offset),
                       onSelected: (_) => _toggleOffset(kind, offset),
@@ -157,22 +156,22 @@ class _ReminderSettingsPageState extends State<ReminderSettingsPage> {
     final l10n = context.l10n;
     final status = _service.status;
     final dateFormat = DateFormat.MMMd().add_jm();
-    return shad.Scaffold(
+    return AppScaffold(
       child: AppPageListView(
         children: [
-          Text(l10n.remindersDescription),
-          const SizedBox(height: 20),
           _timingCard(ReminderKind.task),
+          const SizedBox(height: AppSpacing.md),
           _timingCard(ReminderKind.event),
           const SizedBox(height: 12),
           if (_dirty)
-            FilledButton.icon(
+            AppButton.primary(
               onPressed: _saving ? null : _save,
-              icon: const Icon(Icons.save_outlined),
-              label: Text(l10n.commonSave),
+              leading: const Icon(LucideIcons.save),
+              child: Text(l10n.commonSave),
             ),
           const SizedBox(height: 16),
-          Card(
+          AppCard(
+            padding: EdgeInsets.zero,
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -180,7 +179,7 @@ class _ReminderSettingsPageState extends State<ReminderSettingsPage> {
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.notifications_active_outlined),
+                      const Icon(LucideIcons.bellRing),
                       const SizedBox(width: 8),
                       Expanded(child: Text(l10n.remindersStatusTitle)),
                       if (status.isRefreshing)
@@ -197,8 +196,8 @@ class _ReminderSettingsPageState extends State<ReminderSettingsPage> {
                       children: [
                         Icon(
                           enabled
-                              ? Icons.verified_outlined
-                              : Icons.notifications_off_outlined,
+                              ? LucideIcons.badgeCheck
+                              : LucideIcons.bellOff,
                           size: 18,
                         ),
                         const SizedBox(width: 8),
@@ -212,10 +211,10 @@ class _ReminderSettingsPageState extends State<ReminderSettingsPage> {
                       ],
                     ),
                     if (!enabled)
-                      TextButton.icon(
+                      AppButton.ghost(
                         onPressed: () => unawaited(_enableNotifications()),
-                        icon: const Icon(Icons.settings_outlined),
-                        label: Text(l10n.remindersEnableNotifications),
+                        leading: const Icon(LucideIcons.settings),
+                        child: Text(l10n.remindersEnableNotifications),
                       ),
                   ],
                   Text(l10n.remindersScheduledCount(status.scheduledCount)),
@@ -237,12 +236,12 @@ class _ReminderSettingsPageState extends State<ReminderSettingsPage> {
                     ),
                   ],
                   const SizedBox(height: 12),
-                  OutlinedButton.icon(
+                  AppButton.outline(
                     onPressed: status.isRefreshing
                         ? null
                         : () => unawaited(_service.refresh()),
-                    icon: const Icon(Icons.refresh_rounded),
-                    label: Text(l10n.remindersRefresh),
+                    leading: const Icon(LucideIcons.refreshCw),
+                    child: Text(l10n.remindersRefresh),
                   ),
                 ],
               ),

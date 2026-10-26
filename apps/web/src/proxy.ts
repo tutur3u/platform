@@ -18,7 +18,7 @@ import {
 import {
   guardApiProxyRequest,
   hasSupabaseSessionCookie,
-  isTrustedProxyBypassRequest,
+  isTrustedProxyBypassForRequest,
   type ProxyRoutePolicy,
   type RateLimitProfile,
 } from '@tuturuuu/utils/api-proxy-guard';
@@ -56,6 +56,7 @@ import { handleLocale } from './lib/locale-proxy';
 import { getMailAppOrigin } from './lib/mail-app-url';
 import { getMeetAppOrigin } from './lib/meet-app-url';
 import { feedbackProxyPayloadLimit } from './lib/product-feedback-limits';
+import { profileMediaProxyPayloadLimit } from './lib/profile-media-proxy';
 import { getToolsAppOrigin } from './lib/tools-app-url';
 import { getTrackAppOrigin } from './lib/track-app-url';
 import { workspaceHomeRedirectUrl } from './lib/workspace-home-redirect';
@@ -770,7 +771,7 @@ async function blockMalformedApiAuthCookieRequest(
 ): Promise<NextResponse | null> {
   if (
     hasLikelyAuthenticatedApiCredential(req) ||
-    isTrustedProxyBypassRequest(req.nextUrl.pathname, req.headers)
+    isTrustedProxyBypassForRequest(req)
   ) {
     return null;
   }
@@ -842,10 +843,7 @@ function getSuspiciousAnonymousApiSignal(req: NextRequest): {
   reason: 'malformed-auth-header' | 'suspicious-anonymous-request';
   status: 400 | 401;
 } | null {
-  if (
-    isTrustedProxyBypassRequest(req.nextUrl.pathname, req.headers) ||
-    hasSupabaseSessionCookie(req)
-  ) {
+  if (isTrustedProxyBypassForRequest(req) || hasSupabaseSessionCookie(req)) {
     return null;
   }
 
@@ -1065,10 +1063,9 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
       const guardResponse = await guardApiProxyRequest(req, {
         additionalRoutePolicies,
         ...calendarPreferenceGuardOptions(req),
-        maxPayloadBytes: feedbackProxyPayloadLimit(
-          req.method,
-          req.nextUrl.pathname
-        ),
+        maxPayloadBytes:
+          profileMediaProxyPayloadLimit(req.method, req.nextUrl) ??
+          feedbackProxyPayloadLimit(req.method, req.nextUrl.pathname),
         trustedBypassRules: [
           {
             matches: isTrustedCliTuturuuuRateLimitBypass,

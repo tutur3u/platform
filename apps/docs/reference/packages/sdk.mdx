@@ -239,6 +239,32 @@ errors, and non-JSON notices. Use `ttr upgrade` to run `bun i -g tuturuuu`. Use
 `--no-update-check` on a single command, or set `TUTURUUU_DISABLE_UPDATE_CHECK=1`,
 to disable the check.
 
+`ttr upgrade install [version]` keeps releases side by side in
+`~/.tuturuuu/cli/versions/<version>`. It requires Bun even when the CLI runs under
+Node. Registry requests have a two-minute deadline; archive bodies stay in memory
+under a 64 MiB cap and must match sha512 `dist.integrity` before extraction.
+Installation uses `bun install --production --ignore-scripts`. `release.json`
+stores `filesSha256`, one SHA-256 hash over the ordered per-file path/hash lines,
+and `files`, their count. It does not store the individual per-file hashes.
+A mismatch publishes nothing; an invalid existing release is reported, never
+overwritten. Running processes keep their own release files.
+`ttr upgrade activate <version>` first runs the target release's own
+`resources setup --root <first-root> --shell none --force --json`, which refuses
+while any resource owner or ticket is live, and only then atomically switches
+`~/.tuturuuu/cli/current`, rewrites the `ttr`/`tuturuuu`/`tutur3u` launchers in
+`~/.tuturuuu/cli/bin` and records the previous release. Roll back by activating
+the previous version. `ttr upgrade list` shows verification state and
+`ttr upgrade prune --keep <n>` never removes the current or previous release.
+
+Verification is not an atomic directory snapshot against concurrent changes by
+the same OS user. Pruning can remove a release still used by a long-running older
+CLI process; retain that release until its processes finish. Windows filesystem
+behavior is not qualified; unsupported secure-filesystem operations fail closed.
+Unknown `ttr upgrade` subcommands fail rather than running the global install.
+Regression coverage: `cli-versions.test.ts`, `cli-versions-command.test.ts`,
+`cli-versions-review.test.ts`, `cli-versions-download.test.ts`,
+`cli-versions-security.test.ts`, and `cli-versions-fd.test.ts`.
+
 CLI sessions are dedicated Tuturuuu gateway JWTs, separate from normal browser
 and Supabase Auth sessions. The CLI stores a short-lived app-session access JWT
 plus a longer-lived refresh JWT, refreshes shortly before access-token expiry,
@@ -456,6 +482,21 @@ current/protected backup. Failed or unknown recovery evidence stays retained.
 Cache pruning preserves archives referenced by the current installation and
 retained backups.
 
+Rollout integrity checks classify and read launcher files, supplier file contents,
+and cache manifests through the same open descriptor. Directory fingerprints
+compare the traversed path's device and inode with the open directory before and
+after enumeration and after hashing children; a replacement aborts the check.
+Cache manifests intentionally follow existing symlinks, while launcher paths
+reject them. Special files fail without waiting on a FIFO.
+
+Run `node --test scripts/sdk-rollout-descriptor.test.js scripts/sdk-rollout-race.test.js`
+for deterministic check/read and directory-swap regressions. The test loader
+injects filesystem hooks without changing the production functions. Set
+`SDK_ROLLOUT_TEST_REF=<git-ref>` to exercise the race tests against historical
+source; FIFO controls run in child processes with a two-second kill deadline.
+These checks do not replace exclusive use of the global package manager during
+rollout and restore.
+
 #### Recover a stale admission fence
 
 A dead preparation owner with no `admission/mutation.json` has not changed the
@@ -519,6 +560,26 @@ ttr box repair --dir . --dry-run
 should install detected missing prerequisites through its package manager.
 Use `ttr box repair --dir .` after a CLI upgrade to repair an existing runner
 service without registering a new runner token.
+
+### Machine Storage
+
+`ttr storage` reports disk headroom and ranks what fills a machine by the bytes
+deleting it would actually free (APFS private bytes on macOS, allocated blocks
+with hard links counted once on Linux). `prune` is a dry run until `--apply`.
+
+```bash
+ttr storage status            # free space, pressure and inodes per volume
+ttr storage analyze --json    # ranked consumers by category
+ttr storage suggest           # actions with reclaimable bytes, risk and command
+ttr storage prune             # dry run of the safe, bounded categories
+ttr storage prune --category worktrees --apply
+```
+
+Prune never removes dirty, unmerged, locked, busy, current or held worktrees,
+the primary checkout, `preserve/*` branches, or any path listed in a hold file
+(`~/.t3/cleanup/holds.d/*.txt`). See
+[Machine storage health](/build/development-tools/machine-storage-health) for
+thresholds, categories and per-OS commands.
 
 ### Scoped Help
 
@@ -1667,13 +1728,13 @@ Explicit `run` skips the queue only for a few read-only coreutils (`echo`, `pwd`
 
 Node shim classification consumes known runtime option values, including `--diagnostic-dir /tmp`, before identifying a tool entrypoint. Unknown or incomplete Node options queue conservatively, even when later arguments include `--help`. Recognized Vitest entrypoints retain their worker cap after runtime options and the Node `--` separator. Arguments after an ordinary script path remain that script's arguments. The Node 26.4 bare forms of `--experimental-config-file` and `--experimental-specifier-resolution` do not consume the next argv; only their `=` forms are accepted as value options. Any separate option value that itself identifies a tool, ttr launcher, or heavy script makes classification ambiguous and queues conservatively.
 
-The adaptive design requires a CLI release before activation. Optional `maxValidationLanes` accepts an integer from the base count through `8` and defaults to the base count. After release and a full idle drain, `ttr resources setup --max-lanes N` explicitly opts into a higher ceiling. Host capacity never changes the default automatically. Changing base lanes, maximum lanes, or aggregate worker budgets requires idle owners and zero waiters. Use `--workers` only for a justified aggregate budget. A maximum is a ceiling, not a promise of concurrent jobs.
+The adaptive design requires a CLI release before activation. Optional `maxValidationLanes` accepts an integer from the base count through `16` and defaults to the base count. After release and a full idle drain, `ttr resources setup --max-lanes N` explicitly opts into a higher ceiling. Host capacity never changes the default automatically. Changing base lanes, maximum lanes, or aggregate worker budgets requires idle owners and zero waiters. Use `--workers` only for a justified aggregate budget. A maximum is a ceiling, not a promise of concurrent jobs.
 
-Burst admission above the base requires a load-to-CPU ratio below `0.7` and sufficient memory. macOS requires normal memory pressure, reported as `1`. Linux requires at least 25% available memory and enough available memory for the estimated per-lane need. Missing telemetry refuses burst admission while preserving base admission behavior. Burst memory checks still apply with `--ignore-pressure`. FIFO order remains unchanged, and running jobs are never interrupted to shrink occupancy.
+Burst admission above the base requires a load-to-CPU ratio below `0.7` and sufficient memory. macOS requires normal memory pressure, reported as `1`. Linux requires at least 25% available memory and enough available memory for the estimated per-lane need. Missing telemetry refuses burst admission while preserving base admission behavior. Burst memory checks still apply with `--ignore-pressure`. Waiters with readable telemetry keep FIFO order; unreadable burst telemetry leaves that waiter base-only as described below. Running jobs are never interrupted to shrink occupancy.
 
 Shims classify only the program for `node`, `bun`, `bunx` and `npx`: the first positional argument after the runtime's own flags. Its later arguments belong to that program, so `bun /path/ttr resources run -- bunx vitest` is `ttr`, not vitest. The `ttr` CLI is a `#!/usr/bin/env bun` launcher and starts through the bun shim whenever the shims are on PATH (for example from a `~/.zshenv` that adds them for every zsh, including `ssh host 'cmd'` and `zsh -c`). Shims never admit it: `ttr` performs its own admission, and a shim admitting it first would hold the only lane while `ttr run` queued behind its own parent. Inside an admitted job, nested shims (`bunx` → a `#!/usr/bin/env node` vitest entry → the node shim) pass through under the owner once ancestry is verified. `resources-shim-chain.test.ts` reproduces that chain with one lane.
 
-The effective lane count is `max(1, min(maxValidationLanes, host lane ceiling))`, so base lanes above the host ceiling (for example a config copied from a larger machine) are capped as well, where the host lane ceiling is `max(1, min(8, floor(memory GiB / 4), CPUs - 2))` (6 on a 24 GiB / 10 CPU host). Worker totals no longer cap the lane count. Admission subtracts recorded running allocations from each budget. Once the aggregate budget is spent, each further pressure-gated burst lane receives exactly one worker, so the overcommit is bounded to one worker per burst lane. For multi-lane or adaptive configurations, the aggregate worker total is clamped with a warning to the host worker ceiling, `min(8, floor(memory GiB / 8), floor(CPUs / 2))` when that exceeds the legacy budget. Configured totals are never raised automatically.
+The effective lane count is `max(1, min(maxValidationLanes, host lane ceiling))`, so base lanes above the host ceiling (for example a config copied from a larger machine) are capped as well, where the host lane ceiling is `max(1, min(16, floor(memory GiB / 4), CPUs - 2))` (6 on a 24 GiB / 10 CPU host). Worker totals no longer cap the lane count. Admission subtracts recorded running allocations from each budget. Once the aggregate budget is spent, each further pressure-gated burst lane receives exactly one worker, so the overcommit is bounded to one worker per burst lane. For multi-lane or adaptive configurations, the aggregate worker total is clamped with a warning to the host worker ceiling, `min(8, floor(memory GiB / 8), floor(CPUs / 2))` when that exceeds the legacy budget. Configured totals are never raised automatically.
 
 Before replacing the installed scheduler, fully drain old brokers, shim processes, and FIFO waiters. An old scheduler encountering `slots/2` fails closed. Never rewrite tickets, remove live locks, or run mixed versions. Source tests/review do not authorize installation or activation, and this design does not change any installed scheduler. Reconcile every legacy `status.owner` consumer first. Status retains `owner`, `owners`, `laneCount`, `waiting`, and `limits`, and adds `baseLanes`, `maxLanes`, `effectiveLanes`, `occupied`, `burst: { eligible, reason }`, `ownerDetails` (PID, child PID, command, cwd, elapsed seconds, current CPU percent, cumulative CPU seconds, idle seconds), `waitingDetails` (command and wait time), and `warnings`. Brokers sample their owned process tree's cumulative CPU every 30 seconds into the slot's `activity.json`. Status warns when an owner has been idle at 0% CPU for more than 10 minutes. It never signals or kills owners. The compatibility `owner` stays populated whenever any owner exists; initializing occupancy is reported separately.
 
@@ -1684,6 +1745,8 @@ Cross-machine offload goes through `ttr box`. `ttr resources run --offload auto 
 A runner is eligible only when its heartbeat is fresh (under 60 seconds by the server clock from the snapshot's `Date` header, never the local clock; a list `status` of `online` alone is not freshness), it is not draining, `run` is enabled, it holds no Judge or playground role, it attests `executionMode: trusted`, and it advertises `protocols.commitRun` containing the client's envelope version (`capability_missing` otherwise). Otherwise the diagnostic names a `blockedBy` reason: `local_saturated`, `no_eligible_runner`, `offline`, `stale_heartbeat`, `draining`, `capability_missing` or `trust_cap`. When no runner is eligible, the closest actionable blocker is reported first (`stale_heartbeat`, `offline`, `draining`, `capability_missing`), then `trust_cap`. Queue messages print `blockedBy=local_saturated` with an `--offload auto` hint. `ttr resources offload [--runner <id>] [--json]` shows local saturation, every runner's eligibility and the selected target. `ttr box runners --json` adds the same `trustedWork` verdict per runner. Root admins can use `ttr box feature --runner <id> --feature <name> --enable|--disable` and `ttr box drain --runner <id> [--undo]`. Regression coverage lives in `resources-box-offload.test.ts`, `resources-box-offload-safety.test.ts` and `devbox-fleet.test.ts`.
 
 Elevated memory pressure holds new admission while existing jobs continue. Blocked waiters back off outside admission, remain cancellable, and probe pressure afresh before launch. This is cooperative scheduling; scripts can still fan out within a slot. Sequence lint, tests and browser QA when memory is limited.
+
+For `turbo run` commands (`turbo`, `bun turbo:local`, `bunx turbo`, `bun x turbo`, `bun run turbo`), `run` and turbo shims add `--summarize=true` and print one line after the command exits, for example `turbo cache: 12/15 tasks cached (local 10, remote 2); 3 executed in 41s; saved ~4m10s`. The spawn hook snapshots `.turbo/runs/` after queueing. The report reads only a single new JSON file whose run ID matches its basename, and removes it only when this command requested it. Files present at spawn are always preserved. A user-supplied `--summarize` is reported but kept. Dry runs, `--graph`, other commands and runs without a Turbo root are untouched. Concurrent runs may share `.turbo/runs/`; their files are never selected by timestamps. If the command never spawned, or zero or multiple new JSON files exist, nothing is reported or removed. Child stdio stays inherited and completion follows process exit, so escaped background processes holding stdout cannot hold the lane. The report never changes the exit status. Regression coverage lives in `resources-turbo-summary.test.ts` and `resources-summary-lifecycle.test.ts`.
 
 Shell setup preserves existing content and original backups through marked Zsh/Bash blocks. Open a new shell to activate hooks, or use `--shell none` for explicit queue usage. Absolute paths, custom PATH replacement and existing processes can bypass shims; wrap unrecognized scripts explicitly.
 
@@ -1757,7 +1820,39 @@ After upgrading every client and launcher, write the proposed config atomically 
 
 Confirm each project's identity from a worktree with a trivial `~/.bun/bin/ttr resources run --tokens 1 -- true`, then inspect `resources status --json`. Decide how runner work is counted: explicit admission or the shim directory on its service PATH. Direct SSH work and other unmanaged fan-out are invisible to the budget; inspect them separately. Preserve the saved shell policy: `.zshenv` also runs in noninteractive zsh, so it must be neutralised during rollback before the fence is removed.
 
-Ramp the base 2 → 4 → 6 → 8 → 10 → 12 only through idle, atomic config updates; `setup --lanes` accepts at most 8. Bursts above the base still require pressure and load eligibility. Before each step, measure at least 15 minutes of normal load: normal memory pressure, one-minute load below 0.7 × CPU count, at least 30% idle CPU, budget use below its ceiling, and no regression in a fixed probe suite. Count unmanaged runner/SSH fan-out as well. More lanes are a ceiling, not a reason to start heavy work. For any downgrade, follow the canonical rollback below rather than removing the marker first.
+Ramp the base 2 → 4 → 6 → 8 → 10 → 12 only through idle, atomic config updates; `setup --lanes` and `--max-lanes` accept 1 to 16 (`maxResourceLanes`). Bursts above the base still require pressure and load eligibility. Before each step, measure at least 15 minutes of normal load: normal memory pressure, one-minute load below 0.7 × CPU count, at least 30% idle CPU, budget use below its ceiling, and no regression in a fixed probe suite. Count unmanaged runner/SSH fan-out as well. More lanes are a ceiling, not a reason to start heavy work. For any downgrade, follow the canonical rollback below rather than removing the marker first.
+
+### Burst telemetry and minimal PATH
+
+Resource admission and status probes use trusted absolute system executables:
+`/usr/sbin/sysctl` with `/sbin/sysctl` fallback, and `/bin/ps` with `/usr/bin/ps`
+fallback. Probes have bounded time/output and a clean locale-only environment;
+they do not resolve caller PATH binaries or inherit loader variables. Linux
+pressure remains an absolute `/proc/meminfo` read. A minimal PATH can therefore
+use macOS burst admission without adding `/usr/sbin`.
+
+Unreadable load or pressure telemetry makes that ticket base-only for its
+remaining wait. It retains its original owner, queue age and place for base
+capacity. When only burst capacity is available, selection skips only these
+base-only tickets and applies existing FIFO or project-budget ordering to the
+remaining waiters. A real high-load or elevated-pressure reading still holds
+the queue under the existing policy. No telemetry error grants a burst lane.
+Cancellation, liveness, admission mutex and worker-cap checks are unchanged.
+
+Regression coverage: `resources-adaptive.test.ts` reproduces the minimal-PATH
+failure, retains the full-PATH control and high-load FIFO test, and exercises
+an unreadable head followed by a healthy burst waiter. macOS cases execute the
+real probe with deterministic pressure output and fixed host capacity/load;
+Linux CI skips those OS-specific cases. `resources-system-probes.test.ts`
+checks trusted paths, fallback, clean environment and bounded failure.
+
+Mastermind applied Studio's lane change on 2026-10-25: one pool A at 6 base/8
+max, physical ceiling 16; pool B was not created. Linux now has 3 lanes. This
+records the operator change and does not request another drain-window raise.
+The private Studio runbook is `/Users/thanh/Documents/STUDIO_LANES.md`. Read
+current status for worker caps; a declared total is not proof of effective
+admission caps. Future policy changes remain operator-owned and require an
+idle queue, preserved roots/settings and capacity evidence.
 
 ### Multi-host weighted admission
 
@@ -1766,12 +1861,14 @@ Ramp the base 2 → 4 → 6 → 8 → 10 → 12 only through idle, atomic config
 - **Classes and weights.** Explicit `--hosts` jobs are `heavy` unless `--class light` is given; trivial commands never queue. Local light work also passes the dequeue disk gate, and the CLI tells a nested `run --hosts` which reservation it runs under through `TTR_RESOURCES_HOST_RESERVATION`. That nested job then runs under the ancestor's reservation, but only while that reservation is live and its broker or owned child group is a verified process ancestor; otherwise it would deadlock behind its own ancestor. No registered host that could ever hold the job (counting `remoteOk`) means it fails fast instead of queueing. Each host has separate `slots.light` and `slots.heavy`, per-class CPU/memory `weights`, and per-class worker caps (`workers`). A job is admitted only if its class slot is free and the weighted sum fits `capacity - reserved`.
 - **Reserved headroom.** `reserved.cpus`, `reserved.memoryGiB` and `reserved.diskGiB` are per host, for co-tenants such as production containers, CI runners, Judge workers and the desktop.
 - **Hosts.** The single `local` host uses the lane FIFO for heavy work. Lane owners count as local heavy load, a heavy `--hosts` job takes a local lane only while no lane waiter is ahead, and light local work holds a ledger reservation. `runner` hosts dispatch the exact pushed commit through the devbox offload transport (`runBoxOffload`, unchanged). Immediately before remote creation the runner is re-validated against a fresh snapshot that carries the server's timestamp. If it is stale, draining or missing, its disk is unknown or low, or the snapshot has no server time, the reservation is released and the job requeues without dispatching. Admission also refuses runners in snapshots without a server timestamp, and runners without activity telemetry (other clients' runs would be invisible). The commit plan is recomputed at dispatch; if it changed, the job falls back to local hosts. SIGHUP is forwarded to the offload transport's cancellation as SIGTERM, so a closed terminal also stops the remote run. Runs that other clients start on that runner count as heavy load. A runner that refuses creation means no remote run exists, so the job is requeued for local hosts; an ambiguous failure is never repeated locally.
-- **Admission.** Admission requires a fresh trusted runner (`evaluateTrustedRunner` plus `telemetryTtlSeconds`) and known free disk at or above `reserved.diskGiB`. Unreachable fleets, stale heartbeats, draining runners and unknown disk are never admitted. Dirty or unpushed trees are local-only.
+- **Admission.** Admission requires a fresh trusted runner (`evaluateTrustedRunner` plus `telemetryTtlSeconds`) and known free disk at or above `max(reserved.diskGiB, minDiskFreeGiB ?? 50)`. Unreachable fleets, stale heartbeats, draining runners and unknown disk are never admitted. Dirty or unpushed trees are local-only.
 - **Canonical reservations.** Tickets and reservations live in `<home>/hosts-state/` and are created only inside the host-wide admission mutex. Concurrent requesters on this machine therefore cannot double-assign a slot. Each reservation is tied to its broker PID (or owned child group). Cancellation (SIGINT/SIGTERM/SIGHUP) releases it, and a dead owner is pruned on the next round. A malformed entry closes admission. Only `scope: "host"` reservations claim capacity: a project-only lock never stands in for host-wide admission.
+- **Concurrent slot release.** Status and queue observations may overlap a release. A slot removed between its directory and owner reads is absent, including `ENOENT`/`ENOTDIR`, without retrying the observation. Recent ownerless directories still count as initializing. Malformed owners, invalid slot types, unreadable state and missing persistent budget fences keep admission closed. `resources-slots-observation.test.ts` injects a release between reads and checks these fail-closed controls.
+
 - **Preference.** An optional per-host `preference` rank in `hosts.json` (lower first) orders hosts that already passed every eligibility and capacity check; the capacity score breaks ties, and unranked hosts follow ranked ones. It is an ordering hint only: a preferred host that is stale, draining, degraded, low on or unknown disk, missing telemetry, or full is skipped, never forced, and preference never lets a dirty tree run remotely. Runners are degraded when their 1-minute load per CPU (agent telemetry `resources.loadAverage` / `resources.cpu.cores`) reaches `maxLoadPerCpu` (default 1); missing load telemetry fails closed, and the pre-dispatch revalidation re-checks it. The operator's order is skr-studio > skr-sonha > skr-linux-lan > M4; `ttr resources hosts --simulate` prints it with a scenario for today's health (skr-studio offline, skr-sonha degraded at load 27 to 32, both skipped) and one with every host healthy. skr-studio and skr-sonha capacities there are illustrative until Mastermind registers them (`resources-hosts-preference.test.ts`).
 - **Fairness.** Waiters are ordered by their project's live share, then age. A project is the repository's common Git directory, so all Upskii worktrees share one identity. A waiter overtaken `fairness.maxBypass` times (default 4) holds every host that could ever fit it until it is placed. This backpressure is what prevents starvation.
 - **Disk at dequeue (REV-6480-1/2).** Every lane-queued job re-checks free disk inside admission, immediately before claim and spawn, using a local `statfs` probe (`resources-disk-gate.ts`).
-  - It uses Lane ST's thresholds: `TTR_STORAGE_MIN_FREE` (default 15 GiB) and `TTR_STORAGE_MIN_FREE_PERCENT` (default 5%).
+  - It uses `TTR_RESOURCES_MIN_FREE_GIB` (default 50 GiB absolute floor). Admission has no default percentage floor (`TTR_STORAGE_MIN_FREE_PERCENT` defaults to 0); explicit storage thresholds and inode checks still apply.
   - Below the floor, or when free disk is unknown, the job keeps waiting (fail closed).
   - Block reasons name only the job volume, the free/floor figures and an errno code, never the working path or raw filesystem errors, and status labels them `blockedBy=disk`.
   - The probe runs before taking the admission mutex, only for the FIFO head. It is bounded (2 s) and never stacked on a pending probe, so a hung volume counts as unknown and stalls no other admission.
@@ -1798,6 +1895,108 @@ Regression coverage:
 - `resources-hosts-ledger.test.ts`: concurrent no-double-assignment, process death, cancellation, overlap and stale-runner dispatch;
 - `resources-disk-gate.test.ts`;
 - `resources-hosts-sim.test.ts`.
+
+#### Capability placement and the M4 hub
+
+Multi-host admission is implemented but requires operator activation: a trusted
+registry, eligible registered devbox runners, a pushed clean commit and fresh
+telemetry. SSH reachability alone does not register a runner or admit work.
+The historical simulation above is an offline example, not live fleet capacity.
+
+Set `hubHostname` in `hosts.json` to the M4's exact OS hostname. Registries with
+runner entries refuse dispatch when that field is absent or differs from the
+current machine, before creating a ticket or contacting a runner. Submit fleet
+jobs on the M4; remote hosts use their own canonical `ttr resources run` queue.
+The transport remains the keyed devbox API; it does not SSH between hosts or
+copy local credentials/environment values.
+
+`hubHostname` controls dispatch origin only. It does not prohibit local heavy
+work or inspect commands for builds. The M4 build prohibition remains an
+operator/caller policy; a heavy class also includes permitted focused tests.
+Configure local slots/capabilities for the intended placement policy and submit
+builds only to remote hosts. Do not treat a matching hub hostname as permission
+to build on the M4.
+
+Each host can declare `platform: "darwin" | "linux"` and a `capabilities` array
+containing `ios`, `macos`, `flutter`, `web`, `rust`, `docker` and/or `supabase`. Declared
+platform must match local OS or fresh runner `capabilities.os.platform` telemetry;
+unknown/mismatched platform blocks placement and is rechecked before dispatch.
+Tool capabilities are operator attestations: verify installed tools, daemon
+access and runtime acceptance before advertising them. Missing capability tags
+cannot satisfy a job's requirements. Older untagged registries still admit
+generic jobs, but cannot admit jobs requiring a capability.
+
+```sh
+ttr resources run --hosts --requires ios -- flutter build ios --no-codesign
+ttr resources run --hosts --requires web -- bun run test
+ttr resources run --hosts --requires docker --requires rust -- sh verify.sh
+```
+
+`--requires` is repeatable and augments direct-tool inference. Xcode tools,
+CocoaPods and codesign require `macos`; Flutter requires `flutter` and adds `ios`
+for iOS/IPA targets or `macos` for macOS targets; Cargo/Rust tools require `rust`;
+Docker requires `docker`; Supabase requires `supabase` and adds `docker` for
+start, reset and test commands, including through `npx` and `bunx`. Known
+repository wrappers such as `sb:*` and mobile scripts infer requirements.
+Ambiguous heavy scripts and arbitrary executables must declare their
+requirements explicitly for automatic placement. Both Apple tags also require a declared
+Darwin host. Configure placement as follows, preserving measured weighted slots,
+worker caps and headroom:
+
+Nested `--hosts` calls validate explicit and inferred requirements against the
+actual local host before reusing either a heavy-lane ancestor or a light host
+reservation. Incompatible nesting errors before spawning or adding another
+ticket; compatible nesting keeps the existing reservation and limits. A nested
+call cannot migrate its already-running wrapper to a different host.
+Requirement parsing and applicable local compatibility checks also run before
+the trusted trivial-command shortcut. Unknown requirements fail closed even
+for `/usr/bin/true`; compatible trivial tools remain admission-free. Explicit
+`TTR_RESOURCES_BYPASS=1` retains its deliberate raw local-execution behavior.
+
+| Host | Declared capabilities | Placement policy |
+| --- | --- | --- |
+| M4 hub | Only verified light tooling, such as `web` | Coordination and focused build-free checks; no release builds. |
+| Linux runner | Verified `flutter`, `web`, `rust`, `docker` | Prefer for compatible work; no `ios` or `macos`. |
+| Studio runner | Verified `ios`, `macos`, `flutter`, `web`, `rust`, `docker` | Apple jobs, or compatible work when Linux has no capacity. |
+
+Set lower `preference` on Linux than Studio for portable work; capability checks
+still send Apple jobs only to Studio. Do not register held hosts. Studio has
+one pool A; the proposed pool B was not created. Do not add a second host entry to count the same machine twice. Mastermind must reconcile all
+resource homes and external CI consumers before declaring available slots.
+
+An incompatible starving waiter holds only hosts it could use, leaving Linux
+available behind an iOS waiter. Existing repository-share ordering, bounded
+bypass and local lane FIFO remain in force. Repeated enqueue preserves the
+original ticket owner, requirements, age and bypass count; a reserved token
+cannot be enqueued or admitted twice. Requeues retain age/bypass, and the ticket
+UUID is the remote create's idempotency key. An unacknowledged write never
+triggers another placement or a local retry; reconcile the original operation
+through `ttr box list` before deciding what happened.
+
+Regression coverage: `resources-hosts-nesting.test.ts`, `resources-hosts-requirements.test.ts`,
+`resources-hosts-dispatch.test.ts` and `resources-hosts-ledger.test.ts` cover
+capability/OS placement, hub refusal before writes, ordering, duplicate tickets,
+stable operation identity and unknown-outcome refusal.
+
+#### Studio operator lane update
+
+Mastermind applied the 2026-10-25 lane change: Studio now has one pool A at
+6 base/8 max lanes, and Linux has 3 lanes. Pool B was not created. The physical
+Studio ceiling remains 16. No further lane raise is proposed by this change;
+configuration and activation remain Mastermind's custody. The Studio source of
+operational detail is `/Users/thanh/Documents/STUDIO_LANES.md`; re-read current
+status before using declared worker totals as capacity evidence.
+
+Future changes require a full idle drain (zero owners, waiters, reservations
+and queued remote runs), saved config/registry/launcher bytes, the same roots
+and shell settings, a compatible pinned CLI and a reviewed `setup --dry-run`.
+Let existing work finish in order; never kill/reorder waiters or create another
+queue. Apply only as the operator, monitor CPU/memory/disk/I/O and effective
+worker caps, and roll back saved settings only after another idle drain.
+
+Operator-owned remaining evidence: reviewed registry installation, actual
+runner registration and runtime capability acceptance. Source tests and offline
+simulation do not activate multi-host admission or prove remote execution.
 
 ### Docker metadata lifecycle diagnostic
 
@@ -1914,3 +2113,112 @@ fi
 ```
 
 Do not remove `packages/sdk` or its dist. A declared dependency can recreate aliases pointing to the new `bin/ttr.cjs` wrapper; an undeclared orphan can remain absent. Inspect the resulting links before resuming. Native temp-directory and symlinked-home tests use physical paths, so macOS `/var/folders` aliases do not change installation identity. Resolve HOME and the Bun install base independently: a symlinked `.bun` or `.bun/install` is supported, while entries outside that resolved install base are still refused.
+
+#### Automatic placement and admission disk floor
+
+`ttr resources run --host auto --dry-run -- COMMAND` explains one invocation
+without starting it or creating a queue ticket. Remove `--dry-run` to execute.
+This reuses the trusted `hosts.json`, hub fence, devbox telemetry, reservations
+and exact-commit transport described above. It creates no daemon or poller.
+A missing registry fails closed; the CLI never activates the operator-owned
+registry. SSH access alone is insufficient: each remote host needs an eligible
+trusted devbox runner and fresh activity, load, OS and disk telemetry.
+
+Capabilities narrow the eligible set before ranking. Declare `--requires ios`,
+`--requires flutter`, `--requires docker` or `--requires supabase` for wrappers;
+repeat the flag for multiple requirements. Direct `supabase start`, `reset`
+and `test` commands require both the Supabase toolchain and Docker. Apple jobs
+need a declared Darwin host. An unreachable fleet/runner, failed probe, stale
+heartbeat, unknown OS/load/disk, or capability mismatch excludes that host and
+appears in the dry-run explanation. Automatic remote hosts also require `sshHost` (for example `"skr-sonha"`)
+for a bounded read-only admission probe. It reads the canonical ttr queue plus
+OS/load/disk headroom; direct SSH jobs are therefore counted even when they
+are absent from devbox activity. Probes use `ssh` with the configured alias,
+BatchMode and bounded timeouts, preserving the operator's SSH configuration
+(including Sonha's ProxyCommand and host-key checks). They interpolate no
+workload command, environment or path into shell text. Probe failure excludes
+the host for the invocation. Remote execution still uses the devbox API.
+
+The free-lane order is Thanh (`preference: 1`), Sonha (`2`), Linux (`3`), then
+local M4 (`4`). A full Thanh never causes queueing while an eligible Sonha or
+another host has a free lane. Linux is considered only after the Studios
+cannot take the job, and its configured reserved CPU/memory/slots must preserve
+pktm production headroom. Set Sonha's slot ceiling to its admitted 2–4 lanes
+and keep its checkout footprint small. Free-lane counts use the registered slot/weight budget, live SSH-probed local
+queue occupancy and reported devbox running **and queued** jobs.
+
+Only when every eligible host is full does the invocation wait in the existing
+host ledger, reporting the host with the shortest estimated wait. The estimate
+uses jobs ahead, usable slots and `expectedJobSeconds` (default 60 seconds per
+job); it is an estimate, not measured remaining runtime. Each admission round
+rechecks all hosts and takes a free eligible lane before waiting again. No
+eligible host means exit 75. Remote eligibility changes are retried at most
+three times before exit 75; ambiguous remote writes retain the existing
+operation identity and never fall back blindly.
+
+Remote lane observations have no operation identity that confirms a local
+reservation is included. Reservations therefore remain charged until completion,
+including the interval before remote creation. Dispatch rechecks other in-flight
+reservations using the same class, physical-lane and resource-budget rules as
+planning, excluding only its own reservation. Running work can be counted
+conservatively twice until identity-bearing confirmation is available. Both light
+and heavy remote jobs require a free physical lane; a full remote host can fall
+back to eligible local light capacity.
+
+Known repository wrappers infer their toolchains: `sb:*` scripts require Supabase
+and Docker, and mobile/Flutter scripts plus Dart/Melos wrappers require Flutter.
+Apple build scripts also require the matching Apple capability. Ambiguous known
+heavy `run` scripts fail automatic placement unless `--requires` is explicit.
+An explicit requirement augments inferred requirements and cannot remove them.
+
+The local admission floor is 50 GiB by default, configurable with
+`TTR_RESOURCES_MIN_FREE_GIB`. Resource admission uses an absolute byte floor by default, so a large volume
+with hundreds of GiB free is not refused solely by a default percentage. Explicit
+`TTR_STORAGE_MIN_FREE_PERCENT` and the existing storage byte/inode floors still
+apply. Storage health reporting retains its own percentage defaults. `ttr resources status [--json]` reports the configured floor,
+current measured headroom and admission verdict. Invalid admission configuration
+is reported in structured status and preserved as the remote probe exclusion
+reason. Falling below the admission floor enters the storage reclaim and blocker
+reporting path; successful reclaim must reach that floor before a job is admitted.
+A remote host's effective
+floor is `max(reserved.diskGiB, minDiskFreeGiB ?? 50)` in `hosts.json` and is
+rechecked before dispatch. Disk probes that fail are unavailable, never zero
+cost capacity. Disk overrides remain explicit operator decisions.
+
+Commands stay argv through the commit-run envelope and `shell: false`; no shell
+requotes them. The existing local queue still enforces worker caps. Ambient
+local environment is not copied to remote hosts. For exact explicit nonsecret
+environment assignments use argv, for example:
+
+```sh
+ttr resources run --host auto --requires web -- \
+  /usr/bin/env MODE='value with spaces' bun test
+```
+
+Do not place credentials in argv. Continue using the runner's approved secret
+configuration. This change does not add an environment or credential transport.
+
+Activation remains a separate operator step after release: inspect live host
+queues, capabilities, slot budgets, reservations and disk; install a trusted
+registry with the exact M4 `hubHostname`; preview the command; then enable only
+the reviewed hosts. This implementation does not perform that step. Tests in
+`resources-hosts-auto.test.ts` cover free-lane fallback, all-busy wait selection,
+Linux priority, unreachable/capability/OS/unknown-telemetry exclusion, disk
+thresholds, dry-run cleanup, and literal command/environment round trips.
+
+### Storage recovery on large volumes
+
+Default percentage recovery is the smaller of twice the low percentage and
+the low percentage's byte watermark plus 100 GiB on that volume. An 8 TB-class
+volume with a 5% low threshold can therefore recover at 537 GiB free without
+reaching 10%. Admission also keeps its absolute 50 GiB floor's recovery band:
+by default the larger of twice the byte low threshold and the floor plus 10 GiB.
+
+An explicit `TTR_STORAGE_RECOVER_FREE` or
+`TTR_STORAGE_RECOVER_FREE_PERCENT` can lower the corresponding recovery
+threshold. Recovery remains at least 1 GiB or 0.1 percentage point above low;
+an explicit byte setting can narrow the admission floor band to 1 GiB. Other
+byte, percentage and inode checks still apply. Host overrides remain operator
+owned; remove temporary recovery workarounds only after adopting the released
+CLI and verifying status. `storage-hysteresis-recovery.test.ts` and
+`resources-disk-floor.test.ts` cover recovery and override boundaries.

@@ -22,7 +22,7 @@ class _AvatarApi extends ApiClient {
     Duration timeout = const Duration(seconds: 30),
   }) async {
     expect(path, ProfileEndpoints.avatarUploadUrl);
-    expect(body, {'filename': 'avatar.png'});
+    expect(body, {'filename': 'avatar.jpg'});
     return {
       'uploadUrl': 'https://upload.example.test/avatar',
       'publicUrl': 'https://cdn.example.test/avatar',
@@ -61,9 +61,9 @@ void main() {
           img.encodePng(img.Image(width: 2, height: 2)),
         ),
       );
-      expect(img.decodePng(requests.single.bodyBytes)?.width, 2);
+      expect(img.decodeJpg(requests.single.bodyBytes)?.width, 2);
       expect(requests.single.bodyBytes.length, lessThanOrEqualTo(1000000));
-      expect(requests.single.headers['content-type'], 'image/png');
+      expect(requests.single.headers['content-type'], 'image/jpeg');
       expect(api.updates, [
         {'avatar_url': 'https://cdn.example.test/avatar'},
       ]);

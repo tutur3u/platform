@@ -1,7 +1,7 @@
 ---
 title: "Shortener"
 description: "Workspace link management and the separate redirect runtime."
-updatedAt: '2026-10-08'
+updatedAt: '2026-10-23'
 ---
 
 Shortener (`shortener.tuturuuu.com`, `apps/shortener`) is the redirect runtime.
@@ -15,6 +15,43 @@ A `/{slug}` request resolves through the configured redirect implementation.
 The destination and current access/validity checks determine the result.
 Do not assume a short link is a public content page, an authentication bypass,
 or a published copy of its target. Inspect the destination's own access rules.
+
+### Redirect rules
+
+These rules apply to every Shortener host (`ttr.gg` and its configured aliases)
+on the native Start + Void runtime:
+
+- **Lookup.** Generated slugs and custom aliases share one exact,
+  case-sensitive lookup of the stored slug.
+- **Redirect.** A found link with a valid destination answers `307` with
+  `Location` set to the stored target, byte for byte. The URL parser serializes
+  the target only when it contains spaces or non-ASCII characters. The short
+  link's own query is not appended, as in the legacy page. The click row is
+  written before the redirect is returned, and an analytics failure never blocks
+  the redirect.
+- **Destination validation.** A stored target that does not parse, or that
+  uses `javascript:`, `data:` or `vbscript:`, renders the invalid-destination
+  page and records no click. Script schemes were previously parseable; refusing
+  them is an intentional tightening.
+- **Password links.** These render the password form with the hint, never the
+  destination. `POST /api/verify` keeps its legacy statuses (`400`, `403`, `404`,
+  `500`) and records a click only after a correct password. The browser leaves
+  only for a navigable destination.
+- **Missing links.** A missing slug renders the not-found page with `200`, as
+  before. Deeper paths return `404`.
+- **Aliases.** Alias hosts redirect to `ttr.gg`, preserving the path and the
+  raw query, duplicate keys included. `www.ttr.gg` uses `308`; the other five
+  aliases use `307`.
+- **Analytics.** On Cloudflare, click geolocation comes from the trusted
+  request metadata and the client IP from `CF-Connecting-IP`, while
+  `vercel_region` and `vercel_id` stay null. Vercel Web Analytics is not loaded
+  on the native runtime.
+
+Regression coverage lives in `apps/shortener/src/link/link.test.ts` and
+`apps/shortener/src/native/shortener-request.test.ts`. The emitted Worker suite,
+`apps/shortener/cloudflare/native-built-worker.test.mjs`, runs in CI. The cutover
+and rollback profile is in
+[Shortener on Start + Void](/build/devops/shortener-start-void).
 
 ## Manage links
 

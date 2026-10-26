@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -105,38 +106,27 @@ class _AssistantHistorySheetBodyState extends State<AssistantHistorySheetBody> {
                               ?.copyWith(fontWeight: FontWeight.w700),
                         ),
                       ),
-                      IconButton(
+                      AppIconButton(
                         tooltip: context.l10n.assistantNewConversation,
                         onPressed: widget.onNewConversation,
-                        icon: const Icon(Icons.add_comment_outlined),
+                        icon: const Icon(LucideIcons.messageSquarePlus),
                       ),
-                      IconButton(
+                      AppIconButton(
+                        tooltip: MaterialLocalizations.of(
+                          context,
+                        ).closeButtonTooltip,
                         onPressed: widget.onClose,
-                        icon: const Icon(Icons.close_rounded),
+                        icon: const Icon(LucideIcons.x),
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  TextField(
-                    controller: _searchController,
-                    onChanged: (_) => setState(() => _visibleCount = _pageSize),
-                    decoration: InputDecoration(
-                      hintText: context.l10n.chatSearch,
-                      prefixIcon: const Icon(Icons.search_rounded),
-                      suffixIcon: query.isEmpty
-                          ? null
-                          : IconButton(
-                              tooltip: context.l10n.financeActivityClearSearch,
-                              onPressed: () {
-                                _searchController.clear();
-                                setState(() => _visibleCount = _pageSize);
-                              },
-                              icon: const Icon(Icons.close_rounded),
-                            ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      isDense: true,
+                  AppSheetSearchHost(
+                    search: AppSheetSearch(
+                      controller: _searchController,
+                      hint: context.l10n.chatSearch,
+                      onChanged: (_) =>
+                          setState(() => _visibleCount = _pageSize),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -166,17 +156,13 @@ class _AssistantHistorySheetBodyState extends State<AssistantHistorySheetBody> {
                                 ? colors.primaryContainer.withValues(alpha: .55)
                                 : colors.surfaceContainerLow,
                             borderRadius: BorderRadius.circular(14),
-                            child: ListTile(
-                              dense: true,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
-                              ),
+                            child: AppListTile(
                               contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 14,
                                 vertical: 3,
                               ),
                               leading: Icon(
-                                Icons.chat_bubble_outline_rounded,
+                                LucideIcons.messageCircle,
                                 color: selected
                                     ? colors.primary
                                     : colors.onSurfaceVariant,
@@ -198,10 +184,10 @@ class _AssistantHistorySheetBodyState extends State<AssistantHistorySheetBody> {
                               ),
                               trailing: selected
                                   ? Icon(
-                                      Icons.check_rounded,
+                                      LucideIcons.check,
                                       color: colors.primary,
                                     )
-                                  : const Icon(Icons.chevron_right_rounded),
+                                  : const Icon(LucideIcons.chevronRight),
                               onTap: () => widget.onSelectChat(chat),
                             ),
                           );

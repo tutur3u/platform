@@ -12,7 +12,7 @@ import {
  * present the token instead of any stored password material.
  */
 
-export const MEET_GUEST_SESSION_PURPOSE = 'meet-guest-session';
+export const MEET_GUEST_SESSION_PURPOSE = 'meet-guest-session-v2';
 export const MEET_GUEST_SESSION_TTL_SECONDS = 12 * 60 * 60;
 
 const COMPACT_UUID_PATTERN =

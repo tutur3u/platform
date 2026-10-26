@@ -11,6 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/theme/mobile_shad_theme.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/core/widgets/shadcn_localizations_fallback.dart';
 import 'package:mobile/core/widgets/shadcn_material_bridge.dart';
 import 'package:mobile/data/models/workspace.dart';
@@ -38,16 +39,33 @@ import 'package:mobile/features/shell/view/shell_top_bar_title.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:record/record.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 
-class _Auth extends MockCubit<AuthState> implements AuthCubit {}
+class _Auth extends MockCubit<AuthState> implements AuthCubit {
+  _Auth() {
+    when(() => isClosed).thenReturn(false);
+  }
+}
 
 class _Workspaces extends MockCubit<WorkspaceState> implements WorkspaceCubit {}
 
 class _Profile extends MockCubit<ShellProfileState>
     implements ShellProfileCubit {}
+
+class _RecordingPlatform extends RecordPlatform {
+  @override
+  Future<void> create(String recorderId) async {}
+  @override
+  Stream<RecordState> onStateChanged(String recorderId) => const Stream.empty();
+  @override
+  Future<void> dispose(String recorderId) async {}
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
 
 Future<void> _pump(WidgetTester tester) async {
   for (var i = 0; i < 12; i++) {
@@ -102,6 +120,9 @@ void main() {
   tearDownAll(() => supa.Supabase.instance.dispose());
 
   setUp(() async {
+    final previousRecorder = RecordPlatform.instance;
+    RecordPlatform.instance = _RecordingPlatform();
+    addTearDown(() => RecordPlatform.instance = previousRecorder);
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
           const MethodChannel('mobile/shell_back'),
@@ -230,11 +251,17 @@ void main() {
     );
     expect(surface, findsOneWidget);
     final materialElement = tester.element(surface);
+    final primarySlot = find.byKey(
+      const ValueKey('floating-dock-primary-slot'),
+    );
+    Map<String, Offset>? liveCenters;
     // Exercise the actual cached AssistantPage publisher and its internal
     // composer state, rather than replacing the shell's registered page slot.
     await tester.tap(find.byType(AssistantComposerFab));
     await _pump(tester);
     expect(find.byType(TextField), findsOneWidget);
+    final originalBounds = tester.getRect(surface);
+    final originalPrimaryBounds = tester.getRect(primarySlot);
     assistant.enterLiveMode();
     // Page slots publish after layout; retain identity during that frame too.
     await tester.pump();
@@ -250,14 +277,22 @@ void main() {
       expect(surface, findsOneWidget);
       expect(tester.element(surface), same(materialElement));
       expect(find.byType(ShellDockSurface), findsOneWidget);
-      expect(find.byType(AssistantLiveCallControls), findsNothing);
-      expect(find.byType(MorphingNavigationBar), findsOneWidget);
+      expect(tester.getRect(surface), originalBounds);
+      expect(tester.getRect(primarySlot), originalPrimaryBounds);
+      final centers = {
+        for (final id in ['microphone', 'camera', 'keyboard', 'exit'])
+          id: tester.getCenter(find.byKey(ValueKey('live-control-$id'))),
+      };
+      liveCenters ??= centers;
+      expect(centers, liveCenters);
+      expect(find.byType(AssistantLiveCallControls), findsOneWidget);
+      expect(find.byType(MorphingNavigationBar), findsNothing);
       expect(find.byType(TextField), findsNothing);
       expect(tester.takeException(), isNull);
     }
-    // The action rail replaces Chat's action after its outgoing transition.
+    // The navigation action keeps the same primary slot in Live.
     expect(find.byType(AssistantLivePrimaryAction), findsOneWidget);
-    expect(find.byTooltip('Call Mira'), findsOneWidget);
+    expect(find.byTooltip('Open mic'), findsOneWidget);
     assistant.toggleComposerNavigation();
     await _pump(tester);
     expect(tester.element(surface), same(materialElement));
@@ -265,19 +300,22 @@ void main() {
     assistant.toggleComposerNavigation();
     await _pump(tester);
     expect(tester.element(surface), same(materialElement));
-    expect(find.byType(AssistantLiveCallControls), findsNothing);
-    expect(find.byTooltip('Call Mira'), findsOneWidget);
+    expect(find.byType(AssistantLiveCallControls), findsOneWidget);
+    expect(find.byTooltip('Open mic'), findsOneWidget);
     assistant.enterFullscreen();
     await _pump(tester);
     expect(tester.element(surface), same(materialElement));
-    expect(find.byType(AssistantLiveCallControls), findsNothing);
-    expect(find.byTooltip('Call Mira'), findsOneWidget);
-    assistant.exitLiveMode();
+    expect(find.byType(AssistantLiveCallControls), findsOneWidget);
+    expect(find.byTooltip('Open mic'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('live-control-keyboard')));
     await _pump(tester);
-    await tester.tap(find.byType(AssistantComposerFab));
-    await _pump(tester);
+    expect(assistant.state.isLiveMode, isFalse);
     expect(tester.element(surface), same(materialElement));
     expect(find.byType(TextField), findsOneWidget);
+    expect(
+      tester.widget<TextField>(find.byType(TextField)).focusNode?.hasFocus,
+      isTrue,
+    );
     expect(find.byType(AssistantLiveCallControls), findsNothing);
   });
 
@@ -359,7 +397,14 @@ void main() {
                   ? find.byKey(const ValueKey('profile-overview-content'))
                   : find.byKey(const ValueKey('navbar-content')),
             );
-            expect(content.top, closeTo(bar.bottom + 10, .01));
+            // Profile uses the shared page top gap; other fixtures pad by 10.
+            expect(
+              content.top,
+              closeTo(
+                bar.bottom + (profileSection ? AppLayout.pageTop : 10),
+                .01,
+              ),
+            );
           }
           expect(
             floatingShellHeaderInset(
@@ -382,11 +427,14 @@ void main() {
           }
           final semantics = tester.ensureSemantics();
           expect(
-            find.bySemanticsLabel(
-              RegExp(
-                assistantSection
-                    ? '^${RegExp.escape(renderedTitle)}\$'
-                    : '$renderedTitle, Search apps',
+            find.descendant(
+              of: find.byType(ShellTopBarTitle),
+              matching: find.bySemanticsLabel(
+                RegExp(
+                  assistantSection
+                      ? '^${RegExp.escape(renderedTitle)}\$'
+                      : '$renderedTitle, Search apps',
+                ),
               ),
             ),
             findsOneWidget,
@@ -506,7 +554,7 @@ void main() {
           await _pump(tester);
           final input = find.byKey(const ValueKey('assistant-name-input'));
           expect(input, findsOneWidget);
-          expect(tester.widget<TextField>(input).autofocus, isTrue);
+          expect(tester.widget<AppTextField>(input).autofocus, isTrue);
           await tester.enterText(input, 'Nova');
           await tester.testTextInput.receiveAction(TextInputAction.done);
           await _pump(tester);

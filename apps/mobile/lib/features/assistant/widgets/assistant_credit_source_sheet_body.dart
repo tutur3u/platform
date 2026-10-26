@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_shell_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -46,19 +47,18 @@ class AssistantCreditSourceSheetBody extends StatelessWidget {
                       ),
                     ),
                   ),
-                  IconButton(
+                  AppIconButton(
                     tooltip: MaterialLocalizations.of(
                       context,
                     ).closeButtonTooltip,
-                    visualDensity: VisualDensity.compact,
                     onPressed: onClose,
-                    icon: const Icon(Icons.close_rounded),
+                    icon: const Icon(LucideIcons.x),
                   ),
                 ],
               ),
               const SizedBox(height: 12),
               _CreditSourceOptionCard(
-                icon: Icons.person_rounded,
+                icon: LucideIcons.user,
                 title: context.l10n.assistantSourcePersonal,
                 credits: shellState.personalCredits,
                 selected:
@@ -68,7 +68,7 @@ class AssistantCreditSourceSheetBody extends StatelessWidget {
               if (showWorkspaceOption) ...[
                 const SizedBox(height: 10),
                 _CreditSourceOptionCard(
-                  icon: Icons.apartment_rounded,
+                  icon: LucideIcons.building2,
                   title: context.l10n.assistantSourceWorkspace,
                   credits: shellState.workspaceCredits,
                   selected:
@@ -176,19 +176,19 @@ class _CreditSourceOptionCard extends StatelessWidget {
                   ),
                   if (disabled)
                     Icon(
-                      Icons.lock_outline_rounded,
+                      LucideIcons.lock,
                       size: 18,
                       color: theme.colorScheme.onSurfaceVariant,
                     )
                   else if (selected)
                     Icon(
-                      Icons.check_circle_rounded,
+                      LucideIcons.circleCheck,
                       size: 20,
                       color: theme.colorScheme.primary,
                     )
                   else
                     Icon(
-                      Icons.chevron_right_rounded,
+                      LucideIcons.chevronRight,
                       size: 18,
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -206,7 +206,7 @@ class _CreditSourceOptionCard extends StatelessWidget {
                         backgroundColor: theme.colorScheme.surface,
                         valueColor: AlwaysStoppedAnimation<Color>(
                           _creditProgressColor(
-                            theme,
+                            AppTokens.of(context).colorScheme,
                             percentRemaining.toDouble(),
                           ),
                         ),
@@ -232,13 +232,13 @@ class _CreditSourceOptionCard extends StatelessWidget {
     );
   }
 
-  Color _creditProgressColor(ThemeData theme, double percentRemaining) {
+  Color _creditProgressColor(AppColorTokens colors, double percentRemaining) {
     if (percentRemaining > 30) {
-      return theme.colorScheme.primary;
+      return colors.primary;
     }
     if (percentRemaining > 10) {
-      return Colors.orange;
+      return colors.warning;
     }
-    return theme.colorScheme.error;
+    return colors.destructive;
   }
 }

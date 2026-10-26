@@ -5925,6 +5925,14 @@
     "finalized": "Đã chốt",
     "guest": "Khách",
     "guest_account": "Tài khoản khách",
+    "guest_password_reset_description": "Nhập đúng tên khách dùng để đăng nhập. Chỉ có thể thay mật khẩu được đánh dấu cần đặt lại. Lịch rảnh và phiếu bầu được giữ nguyên; hãy gửi riêng mật khẩu mới cho khách.",
+    "guest_password_reset_failed": "Không thể đặt lại mật khẩu khách. Chỉ người tạo kế hoạch mới có thể đặt lại. Hãy tải lại kế hoạch và thử lại.",
+    "guest_password_reset_guest": "Tên khách",
+    "guest_password_reset_new_password": "Mật khẩu khách mới",
+    "guest_password_reset_not_required": "Mật khẩu của khách này không cần đặt lại.",
+    "guest_password_reset_required": "Mật khẩu khách này phải được đặt lại. Hãy nhờ người tạo kế hoạch đặt mật khẩu mới, rồi đăng nhập lại. Bạn cũng có thể dùng tài khoản Tuturuuu hoặc tên khách mới.",
+    "guest_password_reset_success": "Đã đặt lại mật khẩu. Khách có thể đăng nhập bằng mật khẩu mới.",
+    "guest_password_reset_title": "Đặt lại mật khẩu khách",
     "hourly_availability": "Mức độ rảnh theo giờ",
     "hourly_availability_description": "Mức độ chắc chắn và dự kiến trên các ngày đề xuất.",
     "identity_protection": "Bảo vệ danh tính",
@@ -6061,6 +6069,12 @@
       "enable": "Bật thông báo",
       "permission-denied": "Thông báo trình duyệt đã bị chặn. Vui lòng bật trong cài đặt trình duyệt.",
       "permission-request": "Bật thông báo trình duyệt để cập nhật"
+    },
+    "codes": {
+      "calendar_reconnect_required": {
+        "description": "Đồng bộ lịch đã tạm dừng vì nhà cung cấp không còn chấp nhận quyền truy cập. Hãy kết nối lại tài khoản để tiếp tục.",
+        "title": "Kết nối lại lịch của bạn"
+      }
     },
     "date_earlier": "Trước đó",
     "date_this_week": "Tuần này",

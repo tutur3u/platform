@@ -1,6 +1,13 @@
 part of 'assistant_page.dart';
 
 extension _AssistantPageHistory on _AssistantPageState {
+  Future<void> _dismissHistory(BuildContext context) async {
+    if (!context.mounted || ModalRoute.of(context)?.isCurrent != true) {
+      throw StateError('Assistant history sheet is no longer active');
+    }
+    Navigator.of(context).pop();
+  }
+
   Future<void> _showHistorySheet(BuildContext context, String wsId) async {
     if (_localCubit.state.local || _localCubit.state.blocked) {
       _showInlineNotice(context.l10n.assistantLocalHistoryNotice);
@@ -17,12 +24,13 @@ extension _AssistantPageHistory on _AssistantPageState {
           !_localCubit.state.blocked,
     );
     if (!await guard.run(_chatCubit.refreshHistory) || !context.mounted) return;
-    await showAdaptiveDrawer(
+    await showAppSheet<void>(
+      size: AppSheetSize.large,
       context: context,
       builder: (drawerContext) => AssistantHistorySheetBody(
         chatCubit: _chatCubit,
         activeChatId: _chatCubit.state.chat?.id,
-        onClose: () => dismissAdaptiveDrawerOverlay(drawerContext),
+        onClose: () => _dismissHistory(drawerContext),
         onNewConversation: () async {
           if (!guard.current) return;
           final reset = await _startNewConversation(
@@ -37,7 +45,7 @@ extension _AssistantPageHistory on _AssistantPageState {
             return;
           }
           try {
-            await guard.run(() => dismissAdaptiveDrawerOverlay(drawerContext));
+            await guard.run(() => _dismissHistory(drawerContext));
           } on Object {
             if (guard.current && mounted) {
               await _showNewChatResetNotice(
@@ -48,9 +56,7 @@ extension _AssistantPageHistory on _AssistantPageState {
           }
         },
         onSelectChat: (chat) async {
-          if (!await guard.run(
-                () => dismissAdaptiveDrawerOverlay(drawerContext),
-              ) ||
+          if (!await guard.run(() => _dismissHistory(drawerContext)) ||
               !mounted) {
             return;
           }
@@ -73,7 +79,7 @@ extension _AssistantPageHistory on _AssistantPageState {
     required AssistantShellState shellState,
     required bool isPersonalWorkspace,
   }) async {
-    await showAdaptiveSheet<void>(
+    await showAppSheet<void>(
       context: context,
       builder: (sheetContext) => AssistantCreditSourceSheet(
         cubit: _shellCubit,

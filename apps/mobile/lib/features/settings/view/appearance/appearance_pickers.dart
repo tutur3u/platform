@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/settings/view/settings_row_layout.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 Duration _motion(BuildContext context) =>
     MediaQuery.disableAnimationsOf(context)
@@ -26,8 +26,8 @@ class AppearanceSegmented<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = shad.Theme.of(context).colorScheme;
-    final typography = shad.Theme.of(context).typography;
+    final scheme = AppTokens.of(context).colorScheme;
+    final typography = AppTokens.of(context).typography;
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: ShapeDecoration(
@@ -65,7 +65,7 @@ class AppearanceSegmented<T> extends StatelessWidget {
                               ? scheme.primaryForeground
                               : scheme.foreground,
                         ),
-                        const shad.Gap(6),
+                        const AppGap(6),
                         // Long labels and enlarged text scale to fit.
                         Flexible(
                           child: FittedBox(

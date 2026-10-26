@@ -69,14 +69,14 @@
       "digest": "9db1107ae358039a4c0a1c925f33da6740c0d9c3a1f85351e26b8f512a18e73b"
     },
     ".github/workflows/coordination-cloudflare.yaml": {
-      "lines": 14,
-      "uses": 20,
+      "lines": 12,
+      "uses": 16,
       "gap": "do-publication-rehearsal",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6487",
-        "reason": "REV-6487-4: qualify real Vite metadata while preserving DO publication validation"
+        "decision": "https://github.com/tutur3u/platform/pull/6628",
+        "reason": "Reuse existing bounded cf settings snapshots for both required-secret gates; remove two redundant CLI reads and preserve publication checks."
       },
-      "digest": "432917c334a10df4f54b39b09d86237638b0b3262568345f46a89319545fdd21"
+      "digest": "d69c48ecdd7092efd00e91c3a95ea607ca8303d5c5f7839b7f583228fe79fa04"
     },
     ".github/workflows/devbox-control-cloudflare.yaml": {
       "lines": 13,
@@ -99,14 +99,14 @@
       "digest": "a5e511a92544ac9fdf20c4f5933836f11d10fe388be6d4c5c7902dbadf16ea02"
     },
     ".github/workflows/mail-calendar-tasks-builds.yaml": {
-      "lines": 8,
-      "uses": 8,
+      "lines": 7,
+      "uses": 7,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+        "decision": "https://github.com/tutur3u/platform/pull/6637",
+        "reason": "Calendar runs cf-inferred standalone binding generation; CI retains the legacy reference oracle until exact-artifact qualification. Publication and runtime gaps remain unchanged."
       },
-      "digest": "41921485da0ed2571deaa5229e178d3e2ed68370c7ca1145e6c4a8f0e4daa172"
+      "digest": "ab93d38ca88f0b634967f90a6e829b02f43b3b50a9ab31c00dfe42d91d6a925f"
     },
     ".github/workflows/meet-cloudflare.yaml": {
       "lines": 30,
@@ -117,6 +117,16 @@
         "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
       },
       "digest": "cf6695ee9df5d0771a1d45408d20c86bc921f2eb7dc72db33eebee4f47b19b2d"
+    },
+    ".github/workflows/native-start-app.yaml": {
+      "lines": 8,
+      "uses": 8,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6753",
+        "reason": "Reusable native Start app validation moves Shortener's admitted Wave 1 qualification (emitted binding types, deploy --dry-run without publication, built-Worker harness, artifact receipts) into one shared template; Shortener's own workflow no longer uses Wrangler. Publication stays held; remove with the Apps gap when cf deploy --prebuilt parity is proven."
+      },
+      "digest": "ae29e4eed3d835907be955f5b148c2ef37c053c6d8da4b817e67e5cd7930487e"
     },
     ".github/workflows/parley-cloudflare.yaml": {
       "lines": 3,
@@ -178,6 +188,86 @@
       },
       "digest": "84a45aa3eccd3adcc2055ee0aa8ebc6fd719a2be57fd2643c383b7d3d61d0506"
     },
+    "apps/ai/.gitignore": {
+      "lines": 1,
+      "uses": 1,
+      "digest": "eaa5c36b89bb2cc16b4b93bbe4ccfdddcddacc00b12726e591d57c46be30f9e8",
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6810",
+        "reason": "AI native candidate (#6810) on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      }
+    },
+    "apps/ai/cloudflare/native-built-worker.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20",
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6810",
+        "reason": "AI native candidate (#6810) on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      }
+    },
+    "apps/ai/cloudflare/runtime-fixture.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "digest": "e139bd3b3961b60527b5aa98419fb40cde9679450f4c651769242014bfec1e29",
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6810",
+        "reason": "AI native candidate (#6810) on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      }
+    },
+    "apps/ai/package.json": {
+      "lines": 1,
+      "uses": 1,
+      "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b",
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6810",
+        "reason": "AI native candidate (#6810) on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      }
+    },
+    "apps/api/package.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "pending-migration",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6821",
+        "reason": "API Worker (#6761, #6783) builds with @cloudflare/vite-plugin from wrangler.jsonc and runs its runtime test through the wrangler test harness; it has no publisher yet and moves to cloudflare.config.ts in its per-service parity PR."
+      },
+      "digest": "5885748fa252384100a1ee1796dc8608a4844ea82e9dced2b6ed892add90a490"
+    },
+    "apps/api/scripts/worker-runtime.test.mjs": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "pending-migration",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6821",
+        "reason": "API Worker (#6761, #6783) builds with @cloudflare/vite-plugin from wrangler.jsonc and runs its runtime test through the wrangler test harness; it has no publisher yet and moves to cloudflare.config.ts in its per-service parity PR."
+      },
+      "digest": "5c39eca31e598f25c287dedb8ed8bd3e68230927bf28a5a6f9e6a3b7f6a88635"
+    },
+    "apps/api/vite.config.ts": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "pending-migration",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6821",
+        "reason": "API Worker (#6761, #6783) builds with @cloudflare/vite-plugin from wrangler.jsonc and runs its runtime test through the wrangler test harness; it has no publisher yet and moves to cloudflare.config.ts in its per-service parity PR."
+      },
+      "digest": "9e15c227f35f6c2d0ad3c5586ae959517cd2d997e3959303be8cce73f001bcf8"
+    },
+    "apps/api/wrangler.jsonc": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "pending-migration",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6821",
+        "reason": "API Worker (#6761, #6783) builds with @cloudflare/vite-plugin from wrangler.jsonc and runs its runtime test through the wrangler test harness; it has no publisher yet and moves to cloudflare.config.ts in its per-service parity PR."
+      },
+      "digest": "bca6d616f58f1eb6fa7d940fa33951afb092b4b1825e26735010de00fe57965d"
+    },
     "apps/apps/cloudflare/gateway-built-worker.test.mjs": {
       "lines": 3,
       "uses": 3,
@@ -219,24 +309,54 @@
       "digest": "df3f9e7568bde2881c4b73d791468a87eaa6c1c48faf94672890d090b120943c"
     },
     "apps/calendar/package.json": {
-      "lines": 2,
-      "uses": 2,
+      "lines": 1,
+      "uses": 1,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+        "decision": "https://github.com/tutur3u/platform/pull/6637",
+        "reason": "Calendar runs cf-inferred standalone binding generation; CI retains the legacy reference oracle until exact-artifact qualification. Publication and runtime gaps remain unchanged."
       },
-      "digest": "cb164988a4b62ae085f64eaad548e91e9310e9e46a8b1c5d60760ed67a85fb64"
+      "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
+    },
+    "apps/cms/.gitignore": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6806",
+        "reason": "CMS native candidate (#6806) pins the Wrangler devDependency, runs its built-Worker runtime check in the Wrangler SDK and ignores .void-wrangler.jsonc; CMS on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "eaa5c36b89bb2cc16b4b93bbe4ccfdddcddacc00b12726e591d57c46be30f9e8"
+    },
+    "apps/cms/cloudflare/native-built-worker.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6806",
+        "reason": "CMS native candidate (#6806) pins the Wrangler devDependency, runs its built-Worker runtime check in the Wrangler SDK and ignores .void-wrangler.jsonc; CMS on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
+    },
+    "apps/cms/package.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6806",
+        "reason": "CMS native candidate (#6806) pins the Wrangler devDependency, runs its built-Worker runtime check in the Wrangler SDK and ignores .void-wrangler.jsonc; CMS on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
     },
     "apps/colab/package.json": {
-      "lines": 4,
-      "uses": 4,
+      "lines": 3,
+      "uses": 3,
       "gap": "pending-migration",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+        "decision": "https://github.com/tutur3u/platform/pull/6621",
+        "reason": "Replace the local preview CLI with the Vite+ Worker dev server; preserve production configuration and publication."
       },
-      "digest": "4c1ed0c6973427416bf15812d5389183f4c091d996df136e5f17cb11f3fe5a47"
+      "digest": "aff89e0ea26e56bc0c6e71a9c97fb00d948478bc6f58b2126f1ac99a80929c45"
     },
     "apps/colab/scripts/verify-expiry-runtime.mjs": {
       "lines": 2,
@@ -297,6 +417,36 @@
         "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
       },
       "digest": "352e8579027bfdbb0ff2c4a66197551c79ca581ce17cba225883cef6015eefea"
+    },
+    "apps/finance/.gitignore": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6822",
+        "reason": "Finance native candidate (#6757, #6822) pins the Wrangler devDependency, runs its runtime fixture in the Wrangler SDK, ignores .void-wrangler.jsonc and tests the emitted wrangler.json artifact; Finance on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "eaa5c36b89bb2cc16b4b93bbe4ccfdddcddacc00b12726e591d57c46be30f9e8"
+    },
+    "apps/finance/cloudflare/native-runtime-fixture.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6822",
+        "reason": "Finance native candidate (#6757, #6822) pins the Wrangler devDependency, runs its runtime fixture in the Wrangler SDK, ignores .void-wrangler.jsonc and tests the emitted wrangler.json artifact; Finance on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
+    },
+    "apps/finance/package.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6757",
+        "reason": "Finance native candidate (#6757, #6822) pins the Wrangler devDependency, runs its runtime fixture in the Wrangler SDK, ignores .void-wrangler.jsonc and tests the emitted wrangler.json artifact; Finance on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
     },
     "apps/lettin/.gitignore": {
       "lines": 1,
@@ -543,10 +693,10 @@
       "uses": 5,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+        "decision": "https://github.com/tutur3u/platform/pull/6821",
+        "reason": "Meet (#6789) added a trailing comma to its existing wrangler types line when appending type-check:config; usage counts are unchanged."
       },
-      "digest": "1112d182c8ce02094bb3dc922ad9dd8f7e2d4acd8be521eb0d503e5f0d0164ce"
+      "digest": "10d46d6fa952540b627a5f823ecdcc979c7b9fe7700e9b9a619eb299eba01cbb"
     },
     "apps/meet/wrangler.legacy.jsonc": {
       "lines": 2,
@@ -628,6 +778,66 @@
       },
       "digest": "b6dc0cd6589acfa0a56eace8fba5d57323ed82f22f8b0f44dea1132509ea8063"
     },
+    "apps/shortener/cloudflare/native-built-worker.test.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6433",
+        "reason": "Shortener Worker acceptance mirrors the Apps Wave 1 template: Void rebuilds on deploy, so CI qualifies the exact Void-emitted Worker with the pinned Wrangler adapter (emitted binding types, deploy --dry-run without publication, built-Worker harness, artifact receipts). Publication stays held; remove with the Apps gap when cf deploy --prebuilt parity is proven."
+      },
+      "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
+    },
+    "apps/shortener/package.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6432",
+        "reason": "Shortener follows the Wave 1 Start + Void Apps template: Void rebuilds on deploy, so the exact Void-emitted Worker is qualified and published with the pinned Wrangler adapter (types, dry-run, built-Worker harness). Publication stays held; remove with the Apps gap when cf deploy --prebuilt parity is proven."
+      },
+      "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
+    },
+    "apps/storefront/.gitignore": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6811",
+        "reason": "Storefront native candidate (#6811) on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "eaa5c36b89bb2cc16b4b93bbe4ccfdddcddacc00b12726e591d57c46be30f9e8"
+    },
+    "apps/storefront/cloudflare/native-built-worker.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6811",
+        "reason": "Storefront native candidate (#6811) on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
+    },
+    "apps/storefront/cloudflare/runtime-fixture.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6811",
+        "reason": "Storefront native candidate (#6811) on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "e139bd3b3961b60527b5aa98419fb40cde9679450f4c651769242014bfec1e29"
+    },
+    "apps/storefront/package.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6811",
+        "reason": "Storefront native candidate (#6811) on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
+    },
     "apps/tanstack-web/package.json": {
       "lines": 5,
       "uses": 5,
@@ -647,6 +857,56 @@
         "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
       },
       "digest": "6b612c9727845eb4a7916b3ad7d612485f9703e41054512a04ab90ae1a6eef8f"
+    },
+    "apps/tasks/.gitignore": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6821",
+        "reason": "Tasks native candidate ignores its local .void-wrangler.jsonc build output; Tasks on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "932ccfa6ecd7b462680d904df026cd9b5b144a11f36e7e1d1548c98d7f146ad5"
+    },
+    "apps/tasks/package.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6821",
+        "reason": "Tasks native candidate pins the Wrangler devDependency; Tasks on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
+    },
+    "apps/track/.gitignore": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6815",
+        "reason": "Track native candidate (#6815) pins the Wrangler devDependency, runs its built-Worker runtime check in the Wrangler SDK and ignores .void-wrangler.jsonc; Track on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "932ccfa6ecd7b462680d904df026cd9b5b144a11f36e7e1d1548c98d7f146ad5"
+    },
+    "apps/track/cloudflare/native-built-worker.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6815",
+        "reason": "Track native candidate (#6815) pins the Wrangler devDependency, runs its built-Worker runtime check in the Wrangler SDK and ignores .void-wrangler.jsonc; Track on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
+    },
+    "apps/track/package.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6815",
+        "reason": "Track native candidate (#6815) pins the Wrangler devDependency, runs its built-Worker runtime check in the Wrangler SDK and ignores .void-wrangler.jsonc; Track on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
     },
     "apps/web/e2e/lettin-wiki.noauth.spec.ts": {
       "lines": 3,
@@ -717,6 +977,36 @@
         "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
       },
       "digest": "bcbb803436432247ed4dc192bb85735f75fc20f1be4a53fa2aa8497b86b24ad0"
+    },
+    "packages/sdk/src/cli/storage-scratch.ts": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "shared-toolchain",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6618",
+        "reason": "Retain recognition of legacy CLI scratch-directory names while the root toolchain still supplies that CLI; this classifier invokes no CLI. Remove with retirement of its scratch artifacts."
+      },
+      "digest": "d12248f30b5486419590f1859a232a3300ccb098f78eb6b1648c6b038c8476d1"
+    },
+    "packages/start-bridge/src/vite/rsc.test.ts": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6821",
+        "reason": "start-bridge comments describe Wrangler module rules for emitted wasm and data modules; every bridge app on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "6d24777843593331c41fb867ebad9e242a57b0faa5d9f2f4770cd2cb96271ab0"
+    },
+    "packages/start-bridge/src/vite/rsc.ts": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6821",
+        "reason": "start-bridge comments describe Wrangler module rules for emitted wasm and data modules; every bridge app on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "dcb9a7e783a7f11deff53e76a011300a26bcf46fd8f1f5d1ab7e0f609d9dd6c2"
     },
     "patches/@opennextjs%2Fcloudflare@https%3A%2F%2Fregistry.npmjs.org%2F@opennextjs%2Fcloudflare%2F-%2Fcloudflare-1.20.6.tgz.patch": {
       "lines": 1,
@@ -1038,6 +1328,16 @@
       },
       "digest": "870ee7dc37ba959b9cf0e198972ba5843606a36acbccdcc3bb58c4bf40b73626"
     },
+    "scripts/ci/finance-native-artifact.test.py": {
+      "lines": 7,
+      "uses": 8,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6822",
+        "reason": "Finance native candidate (#6757, #6822) pins the Wrangler devDependency, runs its runtime fixture in the Wrangler SDK, ignores .void-wrangler.jsonc and tests the emitted wrangler.json artifact; Finance on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "52abc5e63cf83a7f8f5716f6a3ca8b20c7cc1b778417bda1a4c7d9d6e3d2cf87"
+    },
     "scripts/ci/fixtures/cf-worker-parity/coordination.json": {
       "lines": 1,
       "uses": 1,
@@ -1268,6 +1568,16 @@
       },
       "digest": "521e2cc3f7e0aa3a35a8323584954b5b51ddca33964e76538a79c458e9aa7ca2"
     },
+    "scripts/ci/native-root-browser.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6818",
+        "reason": "Shared signed-in native root-browser gate (#6818) loads the app's Wrangler SDK to start its built Worker; every Start + Void app on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "23238e55e45b6b35303bdc58ddbf3e07d58fd8aeda1dd60b3dbea2e5e7e1a9fd"
+    },
     "scripts/ci/native-worker-cf-artifact.test.js": {
       "gap": "do-publication-rehearsal",
       "admitted": {
@@ -1428,6 +1738,26 @@
       },
       "digest": "99d635ce313af1ff602ce34891806c8cf6893d6ed07702d1d19d68dbb4ea1ddc"
     },
+    "scripts/ci/shortener-native-artifact.test.py": {
+      "lines": 6,
+      "uses": 7,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6433",
+        "reason": "Shortener Worker acceptance mirrors the Apps Wave 1 template: Void rebuilds on deploy, so CI qualifies the exact Void-emitted Worker with the pinned Wrangler adapter (emitted binding types, deploy --dry-run without publication, built-Worker harness, artifact receipts). Publication stays held; remove with the Apps gap when cf deploy --prebuilt parity is proven."
+      },
+      "digest": "06dc1c0c44ba14771d1cc73b5b7eae49f602a795d50959122913be5847fad3fd"
+    },
+    "scripts/ci/turbo-cache-config.test.js": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "producer-inventory",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6618",
+        "reason": "Retain recognition of legacy binding-type generators alongside cf so cache policy verifies declaration outputs and environment inputs. This detector invokes no CLI; remove when no legacy declaration producer remains."
+      },
+      "digest": "dea61c5925b68295ab2c201cfdecd29b970bf4a0c96c53e000e8b2a77313bf4f"
+    },
     "scripts/ci/verify-meet-start-output.js": {
       "lines": 1,
       "uses": 1,
@@ -1537,6 +1867,66 @@
         "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
       },
       "digest": "baf94f033c6a453806621a425b7a8168436a006d48c8af2159c8880bf313872c"
+    },
+    "scripts/start-bridge-codemod/ci-templates.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6821",
+        "reason": "start-bridge codemod CI template runs the emitted config in the Wrangler SDK with denied egress; each generated app on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
+    },
+    "scripts/start-bridge-codemod/contract.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6821",
+        "reason": "start-bridge codemod pins the Wrangler devDependency for generated apps; each generated app on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "003e42560c1dfe190858c746acda20f00175843f3be72b2a0f27e7b88ff36454"
+    },
+    "scripts/start-bridge-codemod/plan.test.mjs": {
+      "lines": 3,
+      "uses": 3,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6821",
+        "reason": "start-bridge codemod tests cover the .void-wrangler.jsonc ignore; each generated app on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "ab90608cbf15f38479bdc0ca611eecd2d7dcbd29edf89edbd59fea89ab279925"
+    },
+    "scripts/start-bridge-codemod/repo-edits.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6821",
+        "reason": "start-bridge codemod ignores the local .void-wrangler.jsonc build output; each generated app on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "1ae2ff19f7c501dfb271227b0eda5d6dac956e11f13a02672b323dd8f43014f7"
+    },
+    "scripts/start-bridge-codemod/repo-edits.test.mjs": {
+      "lines": 6,
+      "uses": 6,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6821",
+        "reason": "start-bridge codemod tests cover the .void-wrangler.jsonc ignore; each generated app on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "e579a1b4be30ec53bb6747e3046aa030f44cdbe96e27202a12a47b4a5fa3cdec"
+    },
+    "scripts/worktree-footprint-git.js": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "shared-toolchain",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6618",
+        "reason": "Retain the explicit exclusion of local D1/KV state from rebuildable-output cleanup. This comment documents preservation rather than CLI invocation; remove only when the owning toolchain and retained local state are retired."
+      },
+      "digest": "a748a547eebc824ed34217f85495ab4a686ea3c2701c612f424f66b093513ebc"
     }
   }
 }

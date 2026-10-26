@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
-import 'package:mobile/core/ui/icons/app_icons.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/settings/view/settings_row_layout.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Fine-tuning for ambient backgrounds: strength, softness, card opacity and
 /// opt-in motion. Sliders preview live and persist when the drag ends.
@@ -72,7 +71,7 @@ class AppearanceAdjustments extends StatelessWidget {
                 trailingWidth: 60,
                 trailing: ExcludeSemantics(
                   child: IgnorePointer(
-                    child: shad.Switch(
+                    child: AppSwitch(
                       value: settings.animate,
                       onChanged: (_) {},
                     ),
@@ -106,7 +105,7 @@ class _SliderRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
+    final theme = AppTokens.of(context);
     final percent = '${(value * 100).round()}%';
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -128,7 +127,7 @@ class _SliderRow extends StatelessWidget {
                   color: theme.colorScheme.foreground,
                 ),
               ),
-              const shad.Gap(SettingsRowLayout.textGap),
+              const AppGap(SettingsRowLayout.textGap),
               Expanded(
                 child: Text(
                   label,
@@ -145,21 +144,13 @@ class _SliderRow extends StatelessWidget {
               ),
             ],
           ),
-          SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              activeTrackColor: theme.colorScheme.primary,
-              thumbColor: theme.colorScheme.primary,
-              inactiveTrackColor: theme.colorScheme.border,
-              overlayColor: theme.colorScheme.primary.withValues(alpha: 0.12),
-            ),
-            child: Slider(
-              value: value.clamp(min, 1),
-              min: min,
-              label: percent,
-              semanticFormatterCallback: (v) => '$label ${(v * 100).round()}%',
-              onChanged: onChanged,
-              onChangeEnd: onChangeEnd,
-            ),
+          AppSlider(
+            value: value.clamp(min, 1),
+            min: min,
+            onChanged: onChanged,
+            onChangeEnd: onChangeEnd,
+            label: label,
+            semanticFormatter: (value) => '${(value * 100).round()}%',
           ),
         ],
       ),

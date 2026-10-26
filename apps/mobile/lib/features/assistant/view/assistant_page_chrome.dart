@@ -58,7 +58,7 @@ extension _AssistantPageChrome on _AssistantPageState {
         ShellActionSpec(
           id: 'assistant-compose',
           inDock: true,
-          icon: Icons.chat_bubble_outline_rounded,
+          icon: LucideIcons.messageCircle,
           tooltip: context.l10n.assistantAskPlaceholder,
           // Opening an unsent local draft needs no network authentication.
           onPressed: guarded(_restoreComposerAndFocus, localDraft: true),
@@ -66,7 +66,7 @@ extension _AssistantPageChrome on _AssistantPageState {
       if (isLiveMode)
         ShellActionSpec(
           id: 'assistant-live-info',
-          icon: Icons.info_outline_rounded,
+          icon: LucideIcons.info,
           tooltip: context.l10n.assistantLiveInfoTitle,
           callbackToken:
               '$wsId:${liveState.status}:${liveState.startupTimings}',
@@ -82,7 +82,7 @@ extension _AssistantPageChrome on _AssistantPageState {
         ),
       ShellActionSpec(
         id: 'assistant-more',
-        icon: Icons.more_horiz_rounded,
+        icon: LucideIcons.ellipsis,
         tooltip: MaterialLocalizations.of(context).showMenuTooltip,
         callbackToken: (_localScope(), isLiveMode),
         onPressed: guarded(() => unawaited(_showAssistantMore(isLiveMode))),
@@ -90,7 +90,7 @@ extension _AssistantPageChrome on _AssistantPageState {
       ShellActionSpec(
         id: 'assistant-mode-chat',
         segmentGroup: 'assistant-modes',
-        icon: Icons.chat_bubble_outline_rounded,
+        icon: LucideIcons.messageCircle,
         tooltip: context.l10n.chatTitle,
         highlighted: !isLiveMode,
         onPressed: isLiveMode
@@ -100,7 +100,7 @@ extension _AssistantPageChrome on _AssistantPageState {
       ShellActionSpec(
         id: 'assistant-mode-live',
         segmentGroup: 'assistant-modes',
-        icon: Icons.graphic_eq_rounded,
+        icon: LucideIcons.audioLines,
         tooltip: context.l10n.commonLive,
         highlighted: isLiveMode,
         onPressed: isLiveMode
@@ -113,24 +113,32 @@ extension _AssistantPageChrome on _AssistantPageState {
   Future<void> _showAssistantMore(bool isLiveMode) async {
     final scope = _localScope();
     if (scope == null) return;
-    final choice = await showAdaptiveSheet<String>(
+    final choice = await showAppSheet<String>(
       context: context,
       builder: (sheetContext) => Material(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (!isLiveMode)
-              ListTile(
-                leading: const Icon(Icons.history_rounded),
-                title: Text(context.l10n.assistantHistoryTitle),
-                onTap: () => Navigator.of(sheetContext).pop('history'),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (!isLiveMode)
+                AppListTile(
+                  leading: const Icon(LucideIcons.history),
+                  title: Text(context.l10n.assistantHistoryTitle),
+                  onTap: () => Navigator.of(sheetContext).pop('history'),
+                ),
+              AppListTile(
+                leading: const Icon(LucideIcons.slidersHorizontal),
+                title: Text(context.l10n.assistantSettingsTitle),
+                onTap: () => Navigator.of(sheetContext).pop('settings'),
               ),
-            ListTile(
-              leading: const Icon(Icons.tune_rounded),
-              title: Text(context.l10n.assistantSettingsTitle),
-              onTap: () => Navigator.of(sheetContext).pop('settings'),
-            ),
-          ],
+              if (!isLiveMode)
+                AppListTile(
+                  leading: const Icon(LucideIcons.palette),
+                  title: Text(context.l10n.assistantThemeTitle),
+                  onTap: () => Navigator.of(sheetContext).pop('appearance'),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -139,30 +147,15 @@ extension _AssistantPageChrome on _AssistantPageState {
       await _showHistorySheet(context, _loadedWorkspaceId!);
     }
     if (choice == 'settings') await _showLiveSettings();
+    if (choice == 'appearance') await _showChatTheme();
   }
 
   void _toggleLiveDockNavigation() {
     context.read<AssistantChromeCubit>().toggleComposerNavigation();
   }
 
-  Widget _livePrimaryAction(
-    String wsId,
-    AssistantChatState chatState,
-    AssistantLiveState liveState,
-  ) => AssistantLivePrimaryAction(
-    state: liveState,
-    assistantName: _shellCubit.state.soul.name,
-    onCall: () => _handleLiveMicrophoneToggle(wsId, chatState),
-    onCancel: () async {
-      final epoch = _voiceActorScopeEpoch;
-      final attempt = _liveStartGate.currentFor(epoch);
-      await _liveCubit.disconnect(clearSession: true);
-      if (mounted &&
-          epoch == _voiceActorScopeEpoch &&
-          _loadedWorkspaceId == wsId) {
-        _liveStartGate.cancel(attempt);
-      }
-    },
+  Widget _livePrimaryAction() => AssistantLivePrimaryAction(
+    key: const ValueKey('assistant-dock-primary'),
     onNavigation: () {
       _inputFocusNode.unfocus();
       _toggleLiveDockNavigation();
@@ -178,9 +171,27 @@ extension _AssistantPageChrome on _AssistantPageState {
     onMicrophone: () => _handleLiveMicrophoneToggle(wsId, chatState),
     onCamera: _liveCubit.toggleCamera,
     onText: _openChatComposerFromLiveMode,
-    onDisconnect: () =>
-        _liveCubit.disconnect(clearSession: true, finishTurn: true),
+    onDisconnect: () async {
+      if (liveState.isBusy) {
+        await _cancelLiveDockCall(wsId);
+      } else if (liveState.status == AssistantLiveConnectionStatus.connected) {
+        await _liveCubit.disconnect(clearSession: true, finishTurn: true);
+      } else {
+        await _exitLiveMode();
+      }
+    },
   );
+
+  Future<void> _cancelLiveDockCall(String wsId) async {
+    final epoch = _voiceActorScopeEpoch;
+    final attempt = _liveStartGate.currentFor(epoch);
+    await _liveCubit.disconnect(clearSession: true);
+    if (mounted &&
+        epoch == _voiceActorScopeEpoch &&
+        _loadedWorkspaceId == wsId) {
+      _liveStartGate.cancel(attempt);
+    }
+  }
 
   bool _hasLiveAccess(AssistantShellState shellState) {
     return hasAssistantLiveWorkspaceAccess(

@@ -380,6 +380,11 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
                   key: _timelineViewportKey,
                   controller: _verticalController,
                   physics: const AlwaysScrollableScrollPhysics(),
+                  // The calendar canvas passes the dock clearance through, so
+                  // the last hour can scroll clear of the dock.
+                  padding: EdgeInsets.only(
+                    bottom: MediaQuery.paddingOf(context).bottom,
+                  ),
                   child: Stack(
                     children: [
                       SingleChildScrollView(

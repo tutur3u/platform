@@ -466,6 +466,25 @@
       "override_revoked": "Override revoked"
     }
   },
+  "accountBenefits": {
+    "active": "Active",
+    "amount": "Credit amount",
+    "benefit": "Benefit type",
+    "credits": "Bonus AI credits",
+    "description": "Grant features, early access and bonus AI credits with an audited reason.",
+    "earlyAccess": "Early access",
+    "expired": "Expired",
+    "expiry": "Expires at (optional)",
+    "failed": "Benefit request failed. Try again.",
+    "feature": "Feature access",
+    "grant": "Grant benefit",
+    "key": "Benefit key",
+    "reason": "Reason",
+    "revoke": "Revoke",
+    "revoked": "Revoked",
+    "title": "Account benefits",
+    "userId": "Account ID"
+  },
   "account_switcher": {
     "account_added_error": "Failed to add account",
     "account_added_success": "Account added successfully!",
@@ -516,25 +535,6 @@
     "switch_failed_description": "This account has been removed. Please add it again to continue using it.",
     "unknown_user": "Unknown User"
   },
-  "accountBenefits": {
-    "active": "Active",
-    "amount": "Credit amount",
-    "benefit": "Benefit type",
-    "credits": "Bonus AI credits",
-    "description": "Grant features, early access and bonus AI credits with an audited reason.",
-    "earlyAccess": "Early access",
-    "expired": "Expired",
-    "expiry": "Expires at (optional)",
-    "failed": "Benefit request failed. Try again.",
-    "feature": "Feature access",
-    "grant": "Grant benefit",
-    "key": "Benefit key",
-    "reason": "Reason",
-    "revoke": "Revoke",
-    "revoked": "Revoked",
-    "title": "Account benefits",
-    "userId": "Account ID"
-  },
   "admin-holidays": {
     "actions": "Actions",
     "add": "Add",
@@ -571,82 +571,6 @@
     "save": "Save",
     "title": "Vietnamese Holidays",
     "year": "Year"
-  },
-  "ai_chat": {
-    "add_attachments": "Add attachments",
-    "ai_models": "AI Models",
-    "all_conversations": "All conversations",
-    "anonymous": "Anonymous",
-    "chat_notes": "Chat notes",
-    "chat_summary": "Chat summary",
-    "chat_updated": "Chat updated",
-    "chat_visibility": "Chat visibility",
-    "chat_visibility_description": "Choose who can view this chat.",
-    "chatbots": "Chatbots",
-    "chats": "Chats",
-    "copy_public_link": "Copy public link",
-    "correct": "correct",
-    "correct_answer_is_highlighed": "The correct answer is highlighted",
-    "created": "Created",
-    "creating_chat": "Creating chat...",
-    "default_chat": "Default chat",
-    "example_1": "Explain technical concepts",
-    "example_1_prompt": "What is quantum computing?",
-    "example_2": "Generate math problems",
-    "example_2_prompt": "Generate a list of hard but interesting math problems for undergraduates.",
-    "example_3": "Explain to a 5th grader",
-    "example_3_prompt": "Explain the following concepts like I'm a fifth grader: \n\n",
-    "example_4": "Summarize an article",
-    "example_4_prompt": "Summarize the following article for a 2nd grader: \n\n",
-    "example_5": "Draft an email",
-    "example_5_prompt": "Draft an email to my boss about the following: \n\n",
-    "example_6": "Generate a poem",
-    "example_6_prompt": "Generate a poem about the following: \n\n",
-    "experimental_disclaimer": "Disclaimer: AI-generated content may not be accurate or up-to-date, please verify the information before using it.",
-    "extra_options": "Extra options",
-    "flashcards": "Flashcards",
-    "incorrect": "incorrect",
-    "latest_messages": "Latest messages",
-    "microphone_permission_denied": "You have denied microphone permissions. Please enable microphone permissions in your browser settings to use this feature.",
-    "multi_choice_quiz": "Multiple Choice",
-    "multiple_choice": "Multiple choice",
-    "my_chatbots": "My Chatbots",
-    "my_chatbots_description": "Manage your custom chatbots with your own prompts and responses.",
-    "new_chat": "New chat",
-    "new_chatbot": "New chatbot",
-    "no_chats": "Start a new chat by sending a prompt.",
-    "notes": "Notes",
-    "only_me": "Only me",
-    "open_public_link": "Open public link",
-    "paragraph_answers": "Paragraph answers",
-    "paragraph_quiz": "Paragraph Answers",
-    "permission_denied": "Permission denied",
-    "prompt": "Enter a prompt to start chatting with Tuturuuu AI.",
-    "prompt_placeholder": "Type your prompt here...",
-    "public": "Public",
-    "quizzes": "Quizzes",
-    "recent_conversations": "Recent conversations",
-    "refresh_chat": "Refresh chat",
-    "regenerate_response": "Regenerate response",
-    "reset_chat": "Reset chat",
-    "response_language": "Response language",
-    "reveal_answer": "Reveal answer",
-    "send_message": "Send message",
-    "something_went_wrong": "Something went wrong.",
-    "stop_generating": "Stop generating",
-    "summarized": "Summarized",
-    "summary": "Summary",
-    "try_again_later": "Please try again later.",
-    "upload_file_description": "Choose files you want to upload to this chat.",
-    "upload_files": "Upload Files",
-    "view_conversation": "View conversation",
-    "visibility_updated_desc": "Chat visibility updated successfully.",
-    "voice_input": "Voice input",
-    "welcome_msg": "You can start a conversation here or try the following examples:",
-    "welcome_to": "Welcome to",
-    "which_is": "which is",
-    "you": "You",
-    "you_selected": "You selected"
   },
   "ai-agents-settings": {
     "actions": {
@@ -1220,6 +1144,82 @@
     "add_domain": "Add domain",
     "add_email": "Add email"
   },
+  "ai_chat": {
+    "add_attachments": "Add attachments",
+    "ai_models": "AI Models",
+    "all_conversations": "All conversations",
+    "anonymous": "Anonymous",
+    "chat_notes": "Chat notes",
+    "chat_summary": "Chat summary",
+    "chat_updated": "Chat updated",
+    "chat_visibility": "Chat visibility",
+    "chat_visibility_description": "Choose who can view this chat.",
+    "chatbots": "Chatbots",
+    "chats": "Chats",
+    "copy_public_link": "Copy public link",
+    "correct": "correct",
+    "correct_answer_is_highlighed": "The correct answer is highlighted",
+    "created": "Created",
+    "creating_chat": "Creating chat...",
+    "default_chat": "Default chat",
+    "example_1": "Explain technical concepts",
+    "example_1_prompt": "What is quantum computing?",
+    "example_2": "Generate math problems",
+    "example_2_prompt": "Generate a list of hard but interesting math problems for undergraduates.",
+    "example_3": "Explain to a 5th grader",
+    "example_3_prompt": "Explain the following concepts like I'm a fifth grader: \n\n",
+    "example_4": "Summarize an article",
+    "example_4_prompt": "Summarize the following article for a 2nd grader: \n\n",
+    "example_5": "Draft an email",
+    "example_5_prompt": "Draft an email to my boss about the following: \n\n",
+    "example_6": "Generate a poem",
+    "example_6_prompt": "Generate a poem about the following: \n\n",
+    "experimental_disclaimer": "Disclaimer: AI-generated content may not be accurate or up-to-date, please verify the information before using it.",
+    "extra_options": "Extra options",
+    "flashcards": "Flashcards",
+    "incorrect": "incorrect",
+    "latest_messages": "Latest messages",
+    "microphone_permission_denied": "You have denied microphone permissions. Please enable microphone permissions in your browser settings to use this feature.",
+    "multi_choice_quiz": "Multiple Choice",
+    "multiple_choice": "Multiple choice",
+    "my_chatbots": "My Chatbots",
+    "my_chatbots_description": "Manage your custom chatbots with your own prompts and responses.",
+    "new_chat": "New chat",
+    "new_chatbot": "New chatbot",
+    "no_chats": "Start a new chat by sending a prompt.",
+    "notes": "Notes",
+    "only_me": "Only me",
+    "open_public_link": "Open public link",
+    "paragraph_answers": "Paragraph answers",
+    "paragraph_quiz": "Paragraph Answers",
+    "permission_denied": "Permission denied",
+    "prompt": "Enter a prompt to start chatting with Tuturuuu AI.",
+    "prompt_placeholder": "Type your prompt here...",
+    "public": "Public",
+    "quizzes": "Quizzes",
+    "recent_conversations": "Recent conversations",
+    "refresh_chat": "Refresh chat",
+    "regenerate_response": "Regenerate response",
+    "reset_chat": "Reset chat",
+    "response_language": "Response language",
+    "reveal_answer": "Reveal answer",
+    "send_message": "Send message",
+    "something_went_wrong": "Something went wrong.",
+    "stop_generating": "Stop generating",
+    "summarized": "Summarized",
+    "summary": "Summary",
+    "try_again_later": "Please try again later.",
+    "upload_file_description": "Choose files you want to upload to this chat.",
+    "upload_files": "Upload Files",
+    "view_conversation": "View conversation",
+    "visibility_updated_desc": "Chat visibility updated successfully.",
+    "voice_input": "Voice input",
+    "welcome_msg": "You can start a conversation here or try the following examples:",
+    "welcome_to": "Welcome to",
+    "which_is": "which is",
+    "you": "You",
+    "you_selected": "You selected"
+  },
   "api-key-data-table": {
     "active": "Active",
     "created_at": "Created At",
@@ -1737,6 +1737,23 @@
     }
   },
   "avatar": "Avatar",
+  "balancer": {
+    "title": "Balancer runs",
+    "description": "Runs requested through ttr balancer, with the host, exact source, lease and result each one used.",
+    "columns": {
+      "run": "Run",
+      "state": "State",
+      "host": "Host",
+      "source": "Source",
+      "lease": "Lease",
+      "result": "Result",
+      "requester": "Requested by",
+      "updated": "Updated"
+    },
+    "empty": "No balancer runs have been published yet.",
+    "unknown_hint": "Outcome unknown: the host stopped answering. It is never rescheduled automatically; reconcile it with ttr balancer reconcile.",
+    "exit_code": "Exit"
+  },
   "basic-data-table": {
     "created_at": "Created at",
     "id": "ID",
@@ -3706,6 +3723,29 @@
     "year": "Year",
     "yesterday": "Yesterday"
   },
+  "calendar-sidebar": {
+    "collapse": "Collapse sidebar",
+    "due": "Due",
+    "expand": "Expand sidebar",
+    "habits-tab": "Habits",
+    "no-tasks": "No tasks assigned",
+    "priority-critical": "Critical Priority",
+    "priority-high": "High Priority",
+    "priority-low": "Low Priority",
+    "priority-normal": "Normal Priority",
+    "ready": "Ready",
+    "schedule-tab": "Schedule",
+    "search-tasks": "Search tasks...",
+    "tasks-tab": "Tasks",
+    "untitled-task": "Untitled task"
+  },
+  "calendar-tabs": {
+    "calendar": "Calendar",
+    "events": "Events",
+    "overview": "Overview",
+    "sync-dashboard": "Sync Dashboard",
+    "sync-history": "Sync History"
+  },
   "calendar_lab": {
     "baseline_captured": "Baseline captured. Adjust weights and rerun to compare.",
     "controls": "Lab Controls",
@@ -3740,29 +3780,6 @@
     "tuning": "Weight Tuning",
     "violations": "Violations",
     "visualization": "Visualization"
-  },
-  "calendar-sidebar": {
-    "collapse": "Collapse sidebar",
-    "due": "Due",
-    "expand": "Expand sidebar",
-    "habits-tab": "Habits",
-    "no-tasks": "No tasks assigned",
-    "priority-critical": "Critical Priority",
-    "priority-high": "High Priority",
-    "priority-low": "Low Priority",
-    "priority-normal": "Normal Priority",
-    "ready": "Ready",
-    "schedule-tab": "Schedule",
-    "search-tasks": "Search tasks...",
-    "tasks-tab": "Tasks",
-    "untitled-task": "Untitled task"
-  },
-  "calendar-tabs": {
-    "calendar": "Calendar",
-    "events": "Events",
-    "overview": "Overview",
-    "sync-dashboard": "Sync Dashboard",
-    "sync-history": "Sync History"
   },
   "changelog-data-table": {
     "category": "Category",
@@ -6459,16 +6476,6 @@
   "dworkspace-mail": {
     "destination-addresses": "Destination Addresses"
   },
-  "email_service": {
-    "emails_already_sent": "Emails were already sent to these recipients.",
-    "emails_blocked_count": "Emails blocked: {count}. Rate limits may apply.",
-    "emails_send_failed_count": "Failed to send {count} emails.",
-    "emails_sent_success": "Successfully sent {count} emails.",
-    "rate_limit_blocked": "Email sending blocked by rate limits.",
-    "rate_limit_exceeded_details": "Rate limit exceeded ({limitType}). Used {usage}/{limit}. Retry after {retryAfter}s.",
-    "send_failed": "Failed to send email.",
-    "unexpected_error": "An unexpected error occurred"
-  },
   "email-audit": {
     "description": "View and monitor all outgoing email communications from your workspace.",
     "failed_emails": "Failed Emails",
@@ -6642,6 +6649,16 @@
     "select_template": "Select Template",
     "template_props": "Template Properties",
     "title": "Email Templates"
+  },
+  "email_service": {
+    "emails_already_sent": "Emails were already sent to these recipients.",
+    "emails_blocked_count": "Emails blocked: {count}. Rate limits may apply.",
+    "emails_send_failed_count": "Failed to send {count} emails.",
+    "emails_sent_success": "Successfully sent {count} emails.",
+    "rate_limit_blocked": "Email sending blocked by rate limits.",
+    "rate_limit_exceeded_details": "Rate limit exceeded ({limitType}). Used {usage}/{limit}. Retry after {retryAfter}s.",
+    "send_failed": "Failed to send email.",
+    "unexpected_error": "An unexpected error occurred"
   },
   "entity-creation-limits": {
     "actions": {
@@ -7672,6 +7689,206 @@
     "front": "Front",
     "id": "ID"
   },
+  "fleet": {
+    "actions": {
+      "all_machines": "All machines",
+      "drain": "Drain",
+      "undrain": "Resume placement"
+    },
+    "empty": {
+      "machines_detail": "Run ttr box connect --service on a host to enroll it.",
+      "machines_title": "No machines enrolled",
+      "runs": "No runs on this machine in the latest snapshot."
+    },
+    "errors": {
+      "machine_missing_detail": "It may have been removed, or it is outside the 50 most recently updated machines.",
+      "machine_missing_title": "Machine not found",
+      "snapshot_detail": "Nothing below is current. Retry, and check the devbox storage migrations if this persists.",
+      "snapshot_title": "Fleet data could not be loaded"
+    },
+    "facts": {
+      "cli": "ttr version",
+      "commit_run": "Commit-run protocol",
+      "cpu": "CPU",
+      "credential": "Credentials",
+      "credential_value": "{active} active of {total}",
+      "execution_mode": "Execution mode",
+      "features": "Enabled services",
+      "heartbeat": "Last heartbeat",
+      "hostname": "Hostname",
+      "memory": "Memory",
+      "never": "Never",
+      "none": "None",
+      "not_reported": "Not reported",
+      "platform": "Platform",
+      "registered": "Registered",
+      "reported": "Readings reported",
+      "runtimes": "Runtimes",
+      "uptime": "Uptime"
+    },
+    "isolation": {
+      "keys": {
+        "dedicatedDockerSocket": "Dedicated Docker socket",
+        "dedicatedUser": "Dedicated service user",
+        "gvisorDefault": "gVisor by default",
+        "noGeneralDockerGroup": "Not in the general Docker group",
+        "privateTokenDirectory": "Private token directory",
+        "protectedService": "Protected service"
+      },
+      "no": "No",
+      "not_attested": "This machine does not report isolation. Enable TUTURUUU_DEVBOX_REPORT_EXECUTION_MODE on the runner to attest it.",
+      "yes": "Yes"
+    },
+    "jobs": {
+      "columns": {
+        "created": "Requested",
+        "duration": "Duration",
+        "exit": "Exit",
+        "machine": "Machine",
+        "source": "Source",
+        "state": "Status"
+      },
+      "detail": {
+        "completed": "Finished",
+        "duration": "Duration",
+        "exit_code": "Exit code",
+        "load_failed": "This run could not be loaded. Retry; nothing shown here is current.",
+        "log_empty": "This run has not written any output.",
+        "log_label": "Run log",
+        "log_truncated": "Showing the last {count} events. Older output is not shown here.",
+        "machine": "Machine",
+        "none": "None",
+        "not_found_detail": "The ID is malformed or the run no longer exists.",
+        "not_found_title": "Run not found",
+        "not_yet": "Not yet",
+        "requested": "Requested",
+        "run_id": "Run ID",
+        "sections": {
+          "execution": "Execution",
+          "log": "Log",
+          "source": "Source"
+        },
+        "started": "Started",
+        "stop": "Request stop",
+        "timeout": "Timeout"
+      },
+      "empty": "No runs match this filter in the latest snapshot.",
+      "filters": {
+        "all": "All",
+        "failed": "Failed",
+        "label": "Filter runs",
+        "queued": "Queued",
+        "running": "Running",
+        "unknown": "Outcome unknown"
+      },
+      "recovery": {
+        "cancel_requested": "Stop requested. The runner stops it at its next check; until then it may still be running.",
+        "failed": "Failed with exit code {code}. The log below shows the last output.",
+        "outcome_unknown": "The machine running this is unreachable, so its result is unknown. It is not rescheduled automatically. Check the host before requesting it again; it may still be running.",
+        "queued_unassigned": "Waiting for an eligible machine to claim it.",
+        "timed_out": "Stopped after reaching its time limit.",
+        "unrecognized": "This console does not recognise the status \"{status}\". Treat the outcome as unknown."
+      },
+      "source": {
+        "command": "Command",
+        "commit": "Commit",
+        "directory": "Directory",
+        "invalid": "Unreadable commit-run envelope",
+        "maintenance": "Maintenance: {name}",
+        "repository_root": "Repository root"
+      },
+      "title": "Runs",
+      "unassigned": "Unassigned",
+      "window": "Latest {count} devbox runs"
+    },
+    "manage": "Runner admin",
+    "recovery": {
+      "awaiting_first_heartbeat": "Registered but never reported. Setup may have failed; rerun ttr box connect --service on the host and check its agent service.",
+      "disconnected": "Last heartbeat {age}. Runs that were active here have an unknown outcome and are not rescheduled automatically. Check the agent service on the host.",
+      "draining": "Drain requested {age}. Current work finishes; no new work is placed here.",
+      "heartbeat_disabled": "Heartbeat is turned off, so this machine takes no work. Turn it on in runner admin.",
+      "revoked": "Revoked. This machine can no longer authenticate or take work.",
+      "telemetry_late": "Last heartbeat {age}. Readings are not current and no new work is placed here.",
+      "untrusted": "No active runner credential. Reconnect with ttr box connect to issue one, or revoke this machine."
+    },
+    "refresh": "Refresh",
+    "resources": {
+      "disk": "Disk in use",
+      "disk_free": "{free} GiB free",
+      "load": "Load per core (1 min)",
+      "memory": "Memory in use",
+      "not_reported": "Not reported",
+      "unknown": "Unknown"
+    },
+    "run_state": {
+      "cancel_requested": "Cancelling",
+      "cancelled": "Cancelled",
+      "claimed": "Claimed",
+      "failed": "Failed",
+      "outcome_unknown": "Outcome unknown",
+      "queued": "Queued",
+      "running": "Running",
+      "succeeded": "Succeeded",
+      "timed_out": "Timed out",
+      "unrecognized": "Unrecognized status"
+    },
+    "runs": {
+      "command": "Command",
+      "exit": "Exit",
+      "started": "Started",
+      "status": "Status"
+    },
+    "sections": {
+      "attention": "Needs attention",
+      "identity": "Identity and setup",
+      "isolation": "Isolation attestation",
+      "machines": "Machines",
+      "recent_runs": "Recent runs",
+      "resources": "Resources",
+      "work": "Work on this machine"
+    },
+    "snapshot": "Snapshot {time}",
+    "state": {
+      "awaiting_first_heartbeat": "Setup incomplete",
+      "disconnected": "Disconnected",
+      "draining": "Draining",
+      "heartbeat_disabled": "Heartbeat off",
+      "online": "Online",
+      "revoked": "Revoked",
+      "telemetry_late": "Heartbeat late",
+      "untrusted": "No credential"
+    },
+    "stats": {
+      "attention": "Needs attention",
+      "of_machines": "of {count} machines",
+      "online": "Online",
+      "outcome_unknown": "Outcome unknown",
+      "queued": "Queued",
+      "run_window": "in the latest {count} runs",
+      "running": "Running"
+    },
+    "telemetry": {
+      "fresh": "Live readings",
+      "missing": "No readings",
+      "stale": "Stale readings"
+    },
+    "title": "Fleet",
+    "trust": {
+      "no_active_credential": "No active credential",
+      "revoked": "Revoked",
+      "trusted": "Credential active"
+    },
+    "work": {
+      "activity_unavailable": "Per-machine activity is unavailable until the drain/activity migration is applied.",
+      "kept_leases": "Kept leases",
+      "lane_ceiling": "Lane ceiling",
+      "leases": "Active leases",
+      "queued": "Queued here",
+      "running": "Running",
+      "summary": "{running} running, {queued} queued",
+      "summary_unknown": "{running} with unknown outcome, {queued} queued"
+    }
+  },
   "forms": {
     "access_mode": {
       "anonymous": "Anonymous allowed",
@@ -8639,6 +8856,12 @@
         "description": "Email audit, templates, queues, blacklist controls, and push delivery.",
         "title": "Communications"
       },
+      "delivery": {
+        "title": "Delivery"
+      },
+      "integrations": {
+        "title": "Integrations"
+      },
       "monitoring": {
         "description": "Runtime telemetry, deployments, cron health, logs, and resources."
       },
@@ -8662,6 +8885,11 @@
       "calendar_sync": "Calendar Sync",
       "holidays": "Holidays",
       "monitoring_deployments": "Deployment Stages"
+    },
+    "sections": {
+      "fleet": "Fleet",
+      "govern": "Govern",
+      "operate": "Operate"
     }
   },
   "infrastructure-tabs": {
@@ -8688,6 +8916,8 @@
     "entity_creation_limits": "Entity Creation Limits",
     "external_apps": "External Apps",
     "features": "Features",
+    "fleet": "Fleet",
+    "fleet_runs": "Runs",
     "github_bot": "GitHub Bot",
     "infrastructure": "Infrastructure",
     "integrations": "Integrations",
@@ -10649,6 +10879,14 @@
     "everyone_availability": "Everyone's availability",
     "guest": "Guest",
     "guest_account": "Guest account",
+    "guest_password_reset_description": "Enter the guest name exactly as used to sign in. Only passwords marked for reset can be replaced. Existing availability and votes are kept; share the new password privately.",
+    "guest_password_reset_failed": "Could not reset the guest password. Only the plan creator can reset it. Refresh the plan and try again.",
+    "guest_password_reset_guest": "Guest name",
+    "guest_password_reset_new_password": "New guest password",
+    "guest_password_reset_not_required": "This guest password does not require a reset.",
+    "guest_password_reset_required": "This guest password must be reset. Ask the plan creator to set a new password, then sign in again. You can also use your Tuturuuu account or a new guest name.",
+    "guest_password_reset_success": "Password reset. The guest can now sign in with the new password.",
+    "guest_password_reset_title": "Reset a guest password",
     "identity_protection": "Identity protection",
     "identity_protection_desc": "Use a guest account and optionally set a password for this plan to protect your identity.",
     "interacting_as": "Interacting as",
@@ -11454,6 +11692,12 @@
       "enable": "Enable notifications",
       "permission-denied": "Browser notifications are blocked. Please enable them in your browser settings.",
       "permission-request": "Enable browser notifications to stay updated"
+    },
+    "codes": {
+      "calendar_reconnect_required": {
+        "description": "Calendar sync paused because the provider stopped accepting access. Reconnect the account to resume.",
+        "title": "Reconnect your calendar"
+      }
     },
     "date_earlier": "Earlier",
     "date_this_week": "This Week",
@@ -12703,6 +12947,34 @@
     "reset-password-desc": "Enter the new password for your account",
     "resetting": "Resetting",
     "success-message": "Your password has been reset successfully. You can now log in with your new password."
+  },
+  "satellite-account-settings": {
+    "email_managed_centrally": "Email changes need confirmation, so they are made in your Tuturuuu account settings.",
+    "title": "Account",
+    "preferences": "Preferences",
+    "profile": "Profile",
+    "profile_description": "Manage your name, avatar and email",
+    "accounts": "Accounts",
+    "accounts_description": "Manage multiple accounts and switch between them",
+    "security": "Security",
+    "security_description": "Password, two-factor authentication, passkeys and sign-in methods",
+    "sessions": "Sessions & Devices",
+    "sessions_description": "Manage your active sessions and devices",
+    "appearance": "Appearance",
+    "appearance_description": "Theme and language",
+    "managed_centrally_title": "Managed in your Tuturuuu account",
+    "managed_centrally_description": "For your protection, {section} changes are made in Tuturuuu, which may ask you to confirm your identity. Changes apply to every Tuturuuu app.",
+    "signed_in_as": "Signed in as {email}",
+    "open_in_tuturuuu": "Open in Tuturuuu",
+    "accounts_switch": "Switch between signed-in accounts",
+    "accounts_add": "Add another account",
+    "accounts_remove": "Remove an account from this browser",
+    "security_password": "Change or reset your password",
+    "security_two_factor": "Two-factor authentication with an authenticator app",
+    "security_passkeys": "Passkeys",
+    "security_linked_identities": "Linked sign-in methods",
+    "sessions_devices": "See every device signed in to your account",
+    "sessions_revoke": "Sign out other devices"
   },
   "satellite-workspace-settings": {
     "avatar": "Workspace avatar",
@@ -14541,148 +14813,6 @@
       }
     }
   },
-  "task_project_detail": {
-    "common": {
-      "untitled_list": "Untitled List"
-    },
-    "configuration": {
-      "archive_description": "Archived projects are hidden from default views",
-      "archive_project": "Archive Project",
-      "end_date_label": "End Date",
-      "health_status": {
-        "at_risk": "At Risk",
-        "off_track": "Off Track",
-        "on_track": "On Track"
-      },
-      "health_status_label": "Health Status",
-      "health_status_placeholder": "Select health status",
-      "priority": {
-        "critical": "Critical",
-        "high": "High",
-        "low": "Low",
-        "normal": "Normal"
-      },
-      "priority_label": "Priority",
-      "priority_placeholder": "Select priority",
-      "project_lead_label": "Project Lead",
-      "start_date_label": "Start Date",
-      "status": {
-        "active": "Active",
-        "backlog": "Backlog",
-        "cancelled": "Cancelled",
-        "completed": "Completed",
-        "in_progress": "In Progress",
-        "in_review": "In Review",
-        "in_testing": "In Testing",
-        "on_hold": "On Hold",
-        "planned": "Planned"
-      },
-      "status_label": "Status",
-      "title": "Project Configuration"
-    },
-    "documents_tab": {
-      "description": "{count} reference items linked through document lists.",
-      "document_list": "Document list",
-      "documents": "documents",
-      "empty_description": "Document-list tasks linked to this project will appear here, separate from delivery work.",
-      "empty_title": "No linked documents",
-      "title": "Linked documents"
-    },
-    "header": {
-      "cancel": "Cancel",
-      "edit_name_aria": "Edit project name",
-      "project_name_placeholder": "Project name",
-      "save_changes": "Save Changes",
-      "saving": "Saving..."
-    },
-    "lead_selector": {
-      "loading": "Loading...",
-      "no_lead": "No lead",
-      "select_lead": "Select lead"
-    },
-    "link_dialog": {
-      "description": "Search for existing tasks to link to this project",
-      "no_tasks_found": "No tasks found matching \"{query}\"",
-      "search_placeholder": "Search tasks by title...",
-      "start_typing": "Start typing to search for tasks",
-      "tip": "Tip: Create new tasks directly in the Tasks tab and they will automatically be linked to this project.",
-      "title": "Link Tasks to Project"
-    },
-    "metadata": {
-      "page_description": "View and manage task project details.",
-      "page_title": "Task Project"
-    },
-    "overview": {
-      "describe_placeholder": "Describe your project...",
-      "description": "Description",
-      "document": "Document",
-      "document_list": "Document list",
-      "done": "Done",
-      "edit_description_aria": "Edit project description",
-      "hide_configuration": "Hide Configuration",
-      "link_tasks": "Link Tasks",
-      "linked_documents": "Linked Documents",
-      "linked_documents_description": "Reference items kept out of task counts.",
-      "linked_tasks": "Linked Tasks",
-      "no_description": "No description provided. Click the edit icon to add one.",
-      "no_documents_linked": "No documents linked yet",
-      "no_tasks_linked": "No tasks linked yet",
-      "no_updates_yet": "No updates yet. Share the first one!",
-      "post_update": "Post Update",
-      "recent_updates": "Recent Updates",
-      "rich_text_note": "Note: Rich text editing will be added in a future update",
-      "show_configuration": "Show Configuration",
-      "unknown_user": "Unknown",
-      "view_all": "View all"
-    },
-    "sidebar": {
-      "click_assign_lead": "Click to assign a lead",
-      "click_set_timeline": "Click to set timeline",
-      "completed": "Completed",
-      "edit_lead_aria": "Edit project lead",
-      "edit_timeline_aria": "Edit timeline",
-      "end_date": "End Date",
-      "end_label": "End:",
-      "in_progress": "In Progress",
-      "project_lead": "Project Lead",
-      "project_stats": "Project Stats",
-      "select_lead_label": "Select Lead",
-      "start_date": "Start Date",
-      "start_label": "Start:",
-      "timeline": "Timeline",
-      "total_tasks": "Total Tasks",
-      "unknown": "Unknown"
-    },
-    "tabs": {
-      "documents": "Documents",
-      "overview": "Overview",
-      "tasks": "Tasks",
-      "updates": "Updates"
-    },
-    "tasks_tab": {
-      "link_tasks": "Link Tasks",
-      "no_tasks_description": "Link existing tasks or create new ones to get started",
-      "no_tasks_title": "No tasks linked yet"
-    },
-    "update_card": {
-      "actions_aria": "Update actions",
-      "cancel": "Cancel",
-      "delete": "Delete",
-      "edit": "Edit",
-      "edited_badge": "Edited",
-      "save": "Save",
-      "unknown_user": "Unknown"
-    },
-    "updates_tab": {
-      "no_updates_description": "Be the first to share progress on this project!",
-      "no_updates_title": "No updates yet",
-      "post_update": "Post Update",
-      "posting": "Posting...",
-      "rich_text_coming_soon": "Rich text editor, reactions, and attachments coming soon",
-      "share_placeholder": "Share progress, celebrate wins, or discuss challenges...",
-      "share_update": "Share an Update"
-    }
-  },
   "task-drafts": {
     "board_view_description": "Saved drafts",
     "cancel": "Cancel",
@@ -15090,6 +15220,148 @@
     "sub_tasks": "Sub-tasks",
     "task_created": "Task created successfully",
     "task_creation_failed": "Failed to create task"
+  },
+  "task_project_detail": {
+    "common": {
+      "untitled_list": "Untitled List"
+    },
+    "configuration": {
+      "archive_description": "Archived projects are hidden from default views",
+      "archive_project": "Archive Project",
+      "end_date_label": "End Date",
+      "health_status": {
+        "at_risk": "At Risk",
+        "off_track": "Off Track",
+        "on_track": "On Track"
+      },
+      "health_status_label": "Health Status",
+      "health_status_placeholder": "Select health status",
+      "priority": {
+        "critical": "Critical",
+        "high": "High",
+        "low": "Low",
+        "normal": "Normal"
+      },
+      "priority_label": "Priority",
+      "priority_placeholder": "Select priority",
+      "project_lead_label": "Project Lead",
+      "start_date_label": "Start Date",
+      "status": {
+        "active": "Active",
+        "backlog": "Backlog",
+        "cancelled": "Cancelled",
+        "completed": "Completed",
+        "in_progress": "In Progress",
+        "in_review": "In Review",
+        "in_testing": "In Testing",
+        "on_hold": "On Hold",
+        "planned": "Planned"
+      },
+      "status_label": "Status",
+      "title": "Project Configuration"
+    },
+    "documents_tab": {
+      "description": "{count} reference items linked through document lists.",
+      "document_list": "Document list",
+      "documents": "documents",
+      "empty_description": "Document-list tasks linked to this project will appear here, separate from delivery work.",
+      "empty_title": "No linked documents",
+      "title": "Linked documents"
+    },
+    "header": {
+      "cancel": "Cancel",
+      "edit_name_aria": "Edit project name",
+      "project_name_placeholder": "Project name",
+      "save_changes": "Save Changes",
+      "saving": "Saving..."
+    },
+    "lead_selector": {
+      "loading": "Loading...",
+      "no_lead": "No lead",
+      "select_lead": "Select lead"
+    },
+    "link_dialog": {
+      "description": "Search for existing tasks to link to this project",
+      "no_tasks_found": "No tasks found matching \"{query}\"",
+      "search_placeholder": "Search tasks by title...",
+      "start_typing": "Start typing to search for tasks",
+      "tip": "Tip: Create new tasks directly in the Tasks tab and they will automatically be linked to this project.",
+      "title": "Link Tasks to Project"
+    },
+    "metadata": {
+      "page_description": "View and manage task project details.",
+      "page_title": "Task Project"
+    },
+    "overview": {
+      "describe_placeholder": "Describe your project...",
+      "description": "Description",
+      "document": "Document",
+      "document_list": "Document list",
+      "done": "Done",
+      "edit_description_aria": "Edit project description",
+      "hide_configuration": "Hide Configuration",
+      "link_tasks": "Link Tasks",
+      "linked_documents": "Linked Documents",
+      "linked_documents_description": "Reference items kept out of task counts.",
+      "linked_tasks": "Linked Tasks",
+      "no_description": "No description provided. Click the edit icon to add one.",
+      "no_documents_linked": "No documents linked yet",
+      "no_tasks_linked": "No tasks linked yet",
+      "no_updates_yet": "No updates yet. Share the first one!",
+      "post_update": "Post Update",
+      "recent_updates": "Recent Updates",
+      "rich_text_note": "Note: Rich text editing will be added in a future update",
+      "show_configuration": "Show Configuration",
+      "unknown_user": "Unknown",
+      "view_all": "View all"
+    },
+    "sidebar": {
+      "click_assign_lead": "Click to assign a lead",
+      "click_set_timeline": "Click to set timeline",
+      "completed": "Completed",
+      "edit_lead_aria": "Edit project lead",
+      "edit_timeline_aria": "Edit timeline",
+      "end_date": "End Date",
+      "end_label": "End:",
+      "in_progress": "In Progress",
+      "project_lead": "Project Lead",
+      "project_stats": "Project Stats",
+      "select_lead_label": "Select Lead",
+      "start_date": "Start Date",
+      "start_label": "Start:",
+      "timeline": "Timeline",
+      "total_tasks": "Total Tasks",
+      "unknown": "Unknown"
+    },
+    "tabs": {
+      "documents": "Documents",
+      "overview": "Overview",
+      "tasks": "Tasks",
+      "updates": "Updates"
+    },
+    "tasks_tab": {
+      "link_tasks": "Link Tasks",
+      "no_tasks_description": "Link existing tasks or create new ones to get started",
+      "no_tasks_title": "No tasks linked yet"
+    },
+    "update_card": {
+      "actions_aria": "Update actions",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "edit": "Edit",
+      "edited_badge": "Edited",
+      "save": "Save",
+      "unknown_user": "Unknown"
+    },
+    "updates_tab": {
+      "no_updates_description": "Be the first to share progress on this project!",
+      "no_updates_title": "No updates yet",
+      "post_update": "Post Update",
+      "posting": "Posting...",
+      "rich_text_coming_soon": "Rich text editor, reactions, and attachments coming soon",
+      "share_placeholder": "Share progress, celebrate wins, or discuss challenges...",
+      "share_update": "Share an Update"
+    }
   },
   "tasks": {
     "board": "Board",
@@ -18323,12 +18595,6 @@
     "contracts": "Contracts",
     "directory": "Directory",
     "payroll": "Payroll"
-  },
-  "ws_post_details": {
-    "approval_locked": "Approval is locked because at least one email has already been sent.",
-    "approval_revocable": "Approval can still be removed because no email has been sent yet.",
-    "check_all": "Check all",
-    "completed": "Completed"
   },
   "ws-activities": {
     "added": "Added",
@@ -23627,32 +23893,10 @@
     "wallet": "Payment Method",
     "wallet_deleted": "Wallet deleted successfully"
   },
-  "satellite-account-settings": {
-    "email_managed_centrally": "Email changes need confirmation, so they are made in your Tuturuuu account settings.",
-    "title": "Account",
-    "preferences": "Preferences",
-    "profile": "Profile",
-    "profile_description": "Manage your name, avatar and email",
-    "accounts": "Accounts",
-    "accounts_description": "Manage multiple accounts and switch between them",
-    "security": "Security",
-    "security_description": "Password, two-factor authentication, passkeys and sign-in methods",
-    "sessions": "Sessions & Devices",
-    "sessions_description": "Manage your active sessions and devices",
-    "appearance": "Appearance",
-    "appearance_description": "Theme and language",
-    "managed_centrally_title": "Managed in your Tuturuuu account",
-    "managed_centrally_description": "For your protection, {section} changes are made in Tuturuuu, which may ask you to confirm your identity. Changes apply to every Tuturuuu app.",
-    "signed_in_as": "Signed in as {email}",
-    "open_in_tuturuuu": "Open in Tuturuuu",
-    "accounts_switch": "Switch between signed-in accounts",
-    "accounts_add": "Add another account",
-    "accounts_remove": "Remove an account from this browser",
-    "security_password": "Change or reset your password",
-    "security_two_factor": "Two-factor authentication with an authenticator app",
-    "security_passkeys": "Passkeys",
-    "security_linked_identities": "Linked sign-in methods",
-    "sessions_devices": "See every device signed in to your account",
-    "sessions_revoke": "Sign out other devices"
+  "ws_post_details": {
+    "approval_locked": "Approval is locked because at least one email has already been sent.",
+    "approval_revocable": "Approval can still be removed because no email has been sent yet.",
+    "check_all": "Check all",
+    "completed": "Completed"
   }
 }

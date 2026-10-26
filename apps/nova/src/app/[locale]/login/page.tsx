@@ -1,3 +1,4 @@
+import { normalizeAuthRedirectPath } from '@tuturuuu/auth/proxy';
 import { NO_INDEX_ROBOTS } from '@tuturuuu/utils/common/metadata';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
@@ -9,8 +10,7 @@ export const metadata: Metadata = {
 
 function normalizeNextPath(value: string | string[] | undefined) {
   const rawValue = Array.isArray(value) ? value[0] : value;
-  if (!rawValue?.startsWith('/') || rawValue.startsWith('//')) return '/home';
-  return rawValue;
+  return normalizeAuthRedirectPath(rawValue, BASE_URL, '/home');
 }
 
 export default async function Login({

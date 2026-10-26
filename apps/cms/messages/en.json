@@ -8441,6 +8441,14 @@
     "finalized": "Finalized",
     "guest": "Guest",
     "guest_account": "Guest account",
+    "guest_password_reset_description": "Enter the guest name exactly as used to sign in. Only passwords marked for reset can be replaced. Existing availability and votes are kept; share the new password privately.",
+    "guest_password_reset_failed": "Could not reset the guest password. Only the plan creator can reset it. Refresh the plan and try again.",
+    "guest_password_reset_guest": "Guest name",
+    "guest_password_reset_new_password": "New guest password",
+    "guest_password_reset_not_required": "This guest password does not require a reset.",
+    "guest_password_reset_required": "This guest password must be reset. Ask the plan creator to set a new password, then sign in again. You can also use your Tuturuuu account or a new guest name.",
+    "guest_password_reset_success": "Password reset. The guest can now sign in with the new password.",
+    "guest_password_reset_title": "Reset a guest password",
     "hourly_availability": "Hourly availability",
     "hourly_availability_description": "Confirmed and tentative coverage across candidate dates.",
     "identity_protection": "Identity protection",
@@ -8765,6 +8773,12 @@
       "enable": "Enable notifications",
       "permission-denied": "Browser notifications are blocked. Please enable them in your browser settings.",
       "permission-request": "Enable browser notifications to stay updated"
+    },
+    "codes": {
+      "calendar_reconnect_required": {
+        "description": "Calendar sync paused because the provider stopped accepting access. Reconnect the account to resume.",
+        "title": "Reconnect your calendar"
+      }
     },
     "date_earlier": "Earlier",
     "date_this_week": "This Week",

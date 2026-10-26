@@ -53,6 +53,11 @@ export const MIRA_TOOL_DIRECTORY: Record<MiraToolName, string> = {
   delete_event: 'Delete a calendar event',
   check_e2ee_status: 'Check E2EE encryption status for calendar',
   enable_e2ee: 'Enable end-to-end encryption for calendar events',
+  list_recent_emails:
+    'List recent or unread email threads in your Mail inbox (hộp thư)',
+  get_email_thread: 'Read an email thread as bounded plain text (đọc thư)',
+  draft_email_reply:
+    'Create a reply draft in Mail for the user to review and send; never sends (trả lời thư)',
   log_transaction: 'Log an income or expense transaction',
   get_spending_summary: 'Get spending/income summary for N days',
   list_wallets: 'List workspace wallets',
@@ -98,6 +103,15 @@ export const MIRA_TOOL_DIRECTORY: Record<MiraToolName, string> = {
   delete_time_tracking_session: 'Delete a time tracking history session',
   move_time_tracking_session:
     'Move a session to another workspace if you are a member of both',
+  log_body_weight:
+    'Log body weight (kg or lb); creates a private Body Weight habit tracker on first use',
+  get_body_weight_history:
+    'Body weight history with latest, change, min and max',
+  list_habit_trackers:
+    'List habit trackers with targets, units and current progress',
+  log_habit_entry: 'Log an entry for any habit tracker',
+  get_day_overview:
+    'Plan my day: tasks due or overdue, calendar events, habit progress and running timer for one date',
   remember: 'Save a fact/preference about the user',
   recall: 'Search saved memories',
   list_memories: 'List saved memories with filters/pagination',
@@ -124,6 +138,8 @@ export const MIRA_TOOL_DIRECTORY: Record<MiraToolName, string> = {
   show_workspace_artifact:
     'Open tasks, calendar, finance, or meetings beside the chat',
   set_theme: 'Switch dark mode, light mode, or system theme',
+  open_app:
+    'Switch to another Tuturuuu app such as tasks, calendar, finance, mail, or drive',
   render_ui:
     'Generate an interactive, actionable UI component or widget instead of plain text when it significantly improves user experience (e.g. for forms, dashboards, blog-like insight layouts, or data visualization).',
   list_workspace_members: 'List all members of the workspace',

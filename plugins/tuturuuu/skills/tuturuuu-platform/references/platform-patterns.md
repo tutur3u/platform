@@ -6,6 +6,13 @@ shared-package changes.
 
 ## Web And Shared UI
 
+Shared middleware rejections use `@tuturuuu/utils/guard-rejection` to attach a
+fixed scalar reason and a generated correlation ID, expose them alongside
+existing CORS headers, and emit one warning with a fixed route template. Keep
+credentials, request-provided IDs and raw paths out of diagnostics. Preserve
+status/retry/MFA-cookie behavior. See the [guard diagnostics decision](../../../../../apps/docs/platform/features/mobile-workspace-tools.mdx#guard-rejection-diagnostics)
+and its focused regression coverage before adding a reason or changing middleware.
+
 - Calendar provider cron failures retain failed dashboard diagnostics while
   isolating accounts and bounding work. Rejected Google credentials stop siblings
   and become inactive only if storage still matches; transient failures retry.
@@ -91,10 +98,24 @@ shared-package changes.
   `useEffect`.
 - Client/shared UI app API calls should go through `packages/internal-api/src/*`
   helpers instead of scattered raw `fetch('/api/...')` calls.
+- Mounted app adapters register `registerDefaultAppBaseResolver` from
+  `@tuturuuu/internal-api/client` once at startup for helpers without options.
+  Read request-local context inside the callback and return an absolute URL on
+  SSR; never capture an incoming request in the registered closure. Select
+  app-owned routes when the adapter also calls central APIs. See the
+  [bridge resolver contract](../../../../../apps/docs/build/devops/start-bridge.mdx#internal-api-resolver-registration)
+  for browser setup, teardown and regression coverage.
 - Every `fetch` inside a query function should include `{ cache: 'no-store' }`.
 - Use `@tuturuuu/icons`, `@tuturuuu/ui/dialog`, and dynamic design tokens.
   Native browser dialogs, emojis in UI code, and hard-coded hue classes are not
   acceptable.
+- Operational status surfaces use `@tuturuuu/ui/custom/ops` (`StatusPill`,
+  `StatTile`, `ResourceMeter`, `StatePanel`, `OpsSection`, `OpsPageHeader`,
+  `LogLines`) and
+  the `OpsTone` vocabulary instead of app-local tone maps. `unknown` is not
+  `neutral`: stale or missing telemetry and unreachable workers render as
+  unknown, never as zero or healthy. `OpsPageHeader` shares FeatureSummary's
+  surface for read-only pages; keep FeatureSummary for create/settings flows.
 - If a client admin surface grows large, keep the main shell focused on query
   state, mutations, and routing; extract heavy render branches nearby.
 - **Tiptap extensions are fixed at editor creation.** `Editor.setOptions({
@@ -431,6 +452,27 @@ Rules:
   bug above (it broke all 20 contacts users pages). Use an app-local wrapper built
   on the app's `src/lib/workspace.ts`. `check-internal-app-auth` enforces both
   halves; the actorless rule is per-app via `ACTORLESS_CHECK_APPS`.
+- **`@tuturuuu/internal-api` is emitted as CommonJS** (`tsconfig.build.json`
+  uses `NodeNext` without `"type": "module"`), so a Vite+ app that imports it
+  from `dist/` bundles the whole client (~1 MB raw, every zod schema) into its
+  entry chunk; this was the single largest download on every Meet and Mail
+  page. Vite+ satellites alias `@tuturuuu/internal-api` and its subpaths to
+  `packages/internal-api/src/*.ts` in `vite.config.ts`, and the package declares
+  `"sideEffects": false`, so rolldown keeps only the readers a page uses. Keep
+  new internal-api modules free of import-time side effects, and check
+  `dist/client/assets` for a `dist-*.js`/`join-outcome-*.js`-sized chunk after
+  changing the alias list.
+- **Client bundles must not import both message bundles.** Meet's `en.json` and
+  `vi.json` weigh ~940 KB raw; `NextIntlClientProvider` now reads them through
+  `runtime/locale-messages.ts`, which keeps the static import on the server
+  (`createIsomorphicFn`) and fetches only the active locale from the hashed
+  `?url` asset the route head preloads. Route pending copy lives in
+  `loading-labels.ts` with a test that pins it to the JSON. Load heavy views
+  (call shell, collaboration editors, live plan editor, meeting detail) with
+  `lazy()` inside `page-view.tsx`; the server still renders them and hydration
+  waits for the chunk, so no layout shift. Preload the Noto Sans subsets and
+  use `font-display: swap` with the metric-matched `Noto Sans Fallback` face in
+  `typography.css` rather than `block`, which hid text until the font arrived.
 - A satellite that renders broad shared UI must be in the **checked** `APPS` list
   in `scripts/i18n-namespace-check.js`, not `UNCHECKED_APPS`. Scanning only the
   app's own source cannot see namespaces used *inside* `@tuturuuu/ui` /
@@ -671,12 +713,11 @@ the shared runtime’s `BASE_URL` points at Parley when running there. Participa
 invitations must instead remain on the current Parley origin at `/r/<code>`,
 never `/sessions/<id>`. Codes do not confer authorization.
 
-Reset participation acknowledgement when switching the selected scenario. Keep
-the selection visible when search filters hide its option. Load saved private
-rubrics only after both session-owner and meeting-host checks; render the session
-snapshot rather than the current scenario revision. See the Parley product guide
-and studio setup, invitation, review-route and Meet-link regression tests.
-
+Reset participation acknowledgement when switching scenarios. Keep filtered selections
+visible. Load private rubrics only after session-owner and meeting-host checks;
+render the session snapshot. See the Parley product guide and studio setup,
+invitation, review-route and Meet-link regression tests. Keep shared chat mention
+markers lazy and unguessable; see the [native import checks](../../../../../apps/docs/build/development-tools/thanh-local-e2e.mdx#native-worker-imports).
 
 ## Immediate notification selection
 
@@ -1191,3 +1232,18 @@ restoring real timers; see the Calendar application decision and tracker tests.
 Trace mobile preference requests through `ApiOrigins.baseUrlForPath`, not only `ownerForPath`: personal/workspace calendar-settings GET/PATCH now default directly to Web, while older published builds retain Infrastructure-to-Calendar routing. Keep Web settings paths out of satellite rewrites; changing the mobile host alone can still send traffic back to Calendar. Inspect `apps/web/vercel.json` and the active hosting policy separately: application MFA cannot bypass a provider challenge before application execution. Reuse the Bearer actor already verified by the MFA guard for exact preference GET/PATCH quotas; do not add an authentication request or rely on a warm trust cache.
 Keep preferences bounded and separate from unrelated gateway traffic. Retain anonymous quotas, MFA, IP blocks and route permissions. Test cold-cache/shared-IP rejection, token rotation, actor isolation, forged credentials and Settings mount request counts.
 Middleware logs alone cannot attribute a TestFlight incident; obtain safe rejection headers and correlate both hosts. See the Calendar settings decision, native API protection runbook and `api-proxy-calendar-preference-reads.test.ts`. Keep the calendar preference Web routing fix independently deliverable before native integrity. `NATIVE_INTEGRITY_MODE` defaults to `off`; `monitor` may record only scalar verification verdicts and must continue through existing auth/MFA/quota/permission controls on every integrity failure. Enforce only after operator acceptance of real providers, signed devices, nonce/counter replay storage, key deletion and unsupported/older-client policy. The guard also covers existing Web browser/server consumers without proofs, so keep enforce inactive until their proof coverage or a separately reviewed trusted-browser policy is accepted; never bypass by omitted header or User-Agent. Do not infer Vercel hosting clearance from a valid app proof. Follow the [native integrity runbook](../../../../../apps/docs/build/devops/calendar-native-api-protection.mdx#native-integrity-rollout-default-off) for configuration, acceptance and rollback; keep tokens, key IDs and request bindings out of logs. Turnstile fallback is separately default-off and requires server-owned unsupported-actor eligibility; live Apple or verified Play capability bars the downgrade. Request-owned verified-user reuse applies only to the exact unchanged Request in one process; distinct proxy/route objects or runtimes resolve identity normally, never through a trusted client header or assumed cross-runtime WeakMap.
+
+### Storage object key transport
+
+At Supabase URL-interpolating upload boundaries, encode logical object keys once
+with `encodeStoragePath` from `@tuturuuu/utils/storage-path`. Keep metadata,
+duplicate checks and returned application paths logical. Audit components,
+hooks and generic file helpers: even UUID prefixes can carry raw user filename
+extensions. Use the real installed SDK and a synthetic fetch transport to
+assert the once-decoded request pathname and empty URL search/hash, including
+`%41`, `?`, `#`, and Vietnamese NFC/NFD names. See the object key transport
+section in [storage egress protection](../../../../../apps/docs/build/devops/storage-egress-protection.mdx).
+
+## Standalone API foundation
+
+For the explicitly authorized `apps/api` Worker migration, use the [standalone API runbook](../../../../../apps/docs/build/devops/standalone-api.mdx). Domain operations register through one policy/schema pipeline. Protected operations fail closed until the concrete Web guard and principal adapter is verified; retained Next routes keep their existing guards. Do not import Node-only graphs or treat generated inventory as runtime acceptance.

@@ -1,5 +1,6 @@
 import 'server-only';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { encodeStoragePath } from '@tuturuuu/utils/storage-path';
 import { isSecurityEgressEnforcementEnabled } from './security-budget';
 import { relayStorageDownload } from './storage-download-relay';
 import { createGuardedSupabaseStorageReadUrl } from './storage-download-sign';
@@ -20,7 +21,7 @@ export async function downloadGuardedSupabaseStorageObject(
     }
     const { data, error } = await supabase.storage
       .from('workspaces')
-      .download(path);
+      .download(encodeStoragePath(path));
     if (error || !data)
       throw new StorageDownloadError('Storage object unavailable', 404);
     return {

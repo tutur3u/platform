@@ -100,11 +100,9 @@ Use the repo-local Tuturuuu Codex plugin for detailed pattern catalogs:
 
 Every open Tuturuuu pull request must be reviewed, fixed, validated, and prepared
 for merge in an isolated checkout under `.worktrees/`. Do not switch the shared
-main checkout onto the PR branch. Immediately run `bun setup` after creating the
-worktree so dependencies and required workspace builds are ready. In a
-non-interactive environment where Portless would require sudo to bind port 443,
-run `SKIP_PORTLESS_SETUP=1 bun setup` so only the interactive proxy step is
-skipped.
+main checkout onto the PR branch. Immediately run `bun install` after creating
+the worktree. Do not run `bun setup` on agent machines: it includes local
+builds. Builds run in CI for the exact commit.
 
 Keep the worktree and its local task branch for as long as the PR remains open.
 After GitHub confirms the PR merge is present on `main` and required post-merge
@@ -119,10 +117,11 @@ and verify production before removing the completed worktree and its local task
 branch. Retain dirty, blocked, unmerged, user-owned, and other-agent-owned
 lanes.
 
-Rust build output is rebuildable but can be large in retained worktrees. Use
-`bun rust-cache report` to measure it and only the repository-owned bounded
-`prune`/`auto` commands to reclaim `apps/backend/target` space. Inspect the
-worktree first and never delete source or an unmerged worktree as cache cleanup.
+Triage disk space with `ttr storage status`, `analyze` and `suggest`, and reclaim
+it only through the dry-run-first `ttr storage prune`, which delegates Rust
+`apps/backend/target` space to the bounded `bun rust-cache` commands. Never
+delete source, held paths, or a dirty or unmerged worktree as cache cleanup. See
+[Machine storage health](/build/development-tools/machine-storage-health).
 
 ### Shared Worktree Coordination
 

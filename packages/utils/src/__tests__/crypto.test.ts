@@ -1,7 +1,6 @@
 import * as nodeCrypto from 'node:crypto';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
-  hashLegacyPassword,
   hashPassword,
   isPasswordKdfHash,
   MAX_PASSWORD_LENGTH,
@@ -15,6 +14,9 @@ vi.mock('node:crypto', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:crypto')>();
   return { ...actual, timingSafeEqual: vi.fn(actual.timingSafeEqual) };
 });
+
+const LEGACY_HASH =
+  '7a37b85c8918eac19a9089c0fa5a2ab4dce3f90528dcdeec108b23ddf3607b99';
 
 const SALT_B64 = Buffer.alloc(16, 7).toString('base64url');
 const KEY_B64 = Buffer.alloc(32, 9).toString('base64url');
@@ -68,11 +70,17 @@ describe('password KDF', () => {
 
       await expect(
         verifyPassword('p@$$w0rd 密码テスト', { hash })
-      ).resolves.toEqual({ valid: true, needsRehash: false, scheme: 'scrypt' });
+      ).resolves.toEqual({
+        valid: true,
+        needsRehash: false,
+        scheme: 'scrypt',
+        resetRequired: false,
+      });
       await expect(verifyPassword('p@$$w0rd', { hash })).resolves.toEqual({
         valid: false,
         needsRehash: false,
         scheme: 'scrypt',
+        resetRequired: false,
       });
     });
 
@@ -91,45 +99,24 @@ describe('password KDF', () => {
       expect(nodeCrypto.timingSafeEqual).toHaveBeenCalledTimes(1);
     });
 
-    it('verifies legacy salted SHA-256 rows and asks for a rehash', async () => {
-      const legacy = hashLegacyPassword('secret', 'a1b2c3d4e5f6a7b8c9d0');
-      expect(legacy).toMatch(/^[0-9a-f]{64}$/);
-
-      await expect(
-        verifyPassword('secret', { hash: legacy, salt: 'a1b2c3d4e5f6a7b8c9d0' })
-      ).resolves.toEqual({
-        valid: true,
-        needsRehash: true,
-        scheme: 'legacy-sha256',
-      });
-      await expect(
-        verifyPassword('wrong', { hash: legacy, salt: 'a1b2c3d4e5f6a7b8c9d0' })
-      ).resolves.toMatchObject({ valid: false, needsRehash: false });
-    });
-
-    it('matches the digest the previous implementation stored', async () => {
-      // SHA-256("password" + "salt") as written by the old WebCrypto helper.
-      const previous =
-        '7a37b85c8918eac19a9089c0fa5a2ab4dce3f90528dcdeec108b23ddf3607b99';
-      expect(hashLegacyPassword('password', 'salt')).toBe(previous);
-      expect(
-        (await verifyPassword('password', { hash: previous, salt: 'salt' }))
-          .valid
-      ).toBe(true);
-    });
-
-    it('fails legacy rows without a salt instead of guessing one', async () => {
-      const legacy = hashLegacyPassword('secret', '');
-      for (const salt of [null, undefined, '']) {
-        expect(
-          (await verifyPassword('secret', { hash: legacy, salt })).valid
-        ).toBe(false);
+    it('requires reset for legacy rows regardless of the provided password or salt', async () => {
+      for (const password of ['password', 'wrong', LEGACY_HASH]) {
+        for (const salt of ['salt', null, undefined, '']) {
+          expect(
+            await verifyPassword(password, { hash: LEGACY_HASH, salt })
+          ).toEqual({
+            valid: false,
+            needsRehash: false,
+            scheme: 'legacy-sha256',
+            resetRequired: true,
+          });
+        }
       }
     });
 
     it('never accepts a stored hash as the password', async () => {
       const hash = await hashPassword('secret');
-      const legacy = hashLegacyPassword('secret', 'salt');
+      const legacy = LEGACY_HASH;
 
       expect((await verifyPassword(hash, { hash })).valid).toBe(false);
       expect(
@@ -155,7 +142,12 @@ describe('password KDF', () => {
 
       expect(passwordHashNeedsRehash(weaker)).toBe(true);
       await expect(verifyPassword('secret', { hash: weaker })).resolves.toEqual(
-        { valid: true, needsRehash: true, scheme: 'scrypt' }
+        {
+          valid: true,
+          needsRehash: true,
+          scheme: 'scrypt',
+          resetRequired: false,
+        }
       );
     });
 
@@ -183,7 +175,11 @@ describe('password KDF', () => {
       expect(parsePasswordKdfHash(hash)).toBeNull();
       await expect(
         verifyPassword('secret', { hash, salt: 'salt' })
-      ).resolves.toMatchObject({ valid: false, needsRehash: false });
+      ).resolves.toMatchObject({
+        valid: false,
+        needsRehash: false,
+        resetRequired: typeof hash === 'string' && hash.length > 0,
+      });
     });
 
     it('rejects oversized or non-string presented passwords without throwing', async () => {

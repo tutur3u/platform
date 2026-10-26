@@ -76,8 +76,10 @@ The setup command stores the runner token in a restricted local env file and
 installs a system-level runner service on Linux systemd or macOS launchd. The
 service starts after reboot and restarts automatically if the runner exits.
 Runner heartbeats report a small observability snapshot, including `ttr`, Bun,
-Node, Docker, Git, OS, CPU, RAM, load average, and uptime. Root workspace admins
-can inspect those fields from Infrastructure > Devboxes.
+Node, Docker, Git, OS, CPU, RAM, load average, bucketed disk headroom, uptime
+and, when execution-mode reporting is enabled, isolation attestation. Root
+workspace members can inspect them from Infrastructure > Fleet; feature,
+heartbeat and token controls stay in Infrastructure > Devboxes.
 
 Devbox agent poll and heartbeat traffic is blocked by default at the platform
 API boundary. Set `TUTURUUU_DEVBOX_AGENT_API_ENABLED=true` on the web app before
@@ -233,7 +235,8 @@ POST /api/v1/infrastructure/devboxes/runners/<runner-id>/features  {"feature":"j
 POST /api/v1/infrastructure/devboxes/runners/<runner-id>/drain     {"draining":true}
 ```
 
-Both use the same guarded database functions as the dashboard. Regression
+Both use the same guarded database functions as the dashboard; Fleet's machine
+page exposes **Drain** and **Resume placement** to the same administrators. Regression
 coverage lives in `apps/database/supabase/tests/devbox-runner-trust-pools.sql`
 and `devbox-runner-drain-hardening.sql` (pgTAP), and the Infrastructure route
 and store tests.

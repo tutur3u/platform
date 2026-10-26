@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_attachment_preview.dart';
@@ -42,10 +43,10 @@ void main() {
     );
     expect(
       tester
-          .widget<TextButton>(
+          .widget<AppButton>(
             find.descendant(
               of: find.byType(AssistantSourceLink).first,
-              matching: find.byType(TextButton),
+              matching: find.byType(AppButton),
             ),
           )
           .onPressed,
@@ -94,10 +95,7 @@ void main() {
         ),
       ),
     );
-    expect(
-      tester.widget<InputChip>(find.byType(InputChip)).onPressed,
-      isNotNull,
-    );
+    expect(tester.widget<AppChip>(find.byType(AppChip)).onPressed, isNotNull);
   });
 
   testWidgets('streamed text replaces the waiting indicator', (tester) async {

@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.3.3](https://github.com/tutur3u/platform/compare/storage-core-v0.3.2...storage-core-v0.3.3) (2026-10-24)
+
+
+### Bug Fixes
+
+* **storage:** encode remaining client upload object keys ([c91d44f](https://github.com/tutur3u/platform/commit/c91d44fac7323b5a224ea332a8db3357c1b7e523))
+* **storage:** preserve legacy URL delimiter keys ([#6512](https://github.com/tutur3u/platform/issues/6512)) ([3cccfcf](https://github.com/tutur3u/platform/commit/3cccfcf55bf490677042d399bfefae7ac42a9e73))
+* **storage:** reject encoded traversal paths ([#6507](https://github.com/tutur3u/platform/issues/6507)) ([b461f77](https://github.com/tutur3u/platform/commit/b461f7733b80e43036a9ae0d2e0188dd276b020e))
+* **storage:** return logical keys from encoded uploads and encode once ([72dd73e](https://github.com/tutur3u/platform/commit/72dd73e44ba5671c6cd890e666bb5a76147ba32d))
+
 ## [0.3.2](https://github.com/tutur3u/platform/compare/storage-core-v0.3.1...storage-core-v0.3.2) (2026-10-17)
 
 

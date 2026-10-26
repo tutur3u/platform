@@ -245,10 +245,12 @@ describe('AI chat attachment resources', () => {
       chatId: 'chat-1',
       wsId: 'workspace-1',
     });
+    // The adapter receives the literal key and encodes it once on the wire
+    // (see attachment-source-wire.test.ts).
     expect(mocks.download).toHaveBeenCalledWith(
       'workspace-1',
       'supabase',
-      'uploads/100%25%20ho%C3%A0n%20t%E1%BA%A5t.txt'
+      'uploads/100% hoàn tất.txt'
     );
   });
   it('preserves finance source reads authorized through view_drive', async () => {

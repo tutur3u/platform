@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/cache/cache_context.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_personal_settings_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_personal_settings_repository.dart';
 import 'package:mobile/features/assistant/view/assistant_settings_editor_page.dart';
@@ -120,36 +121,36 @@ class _AssistantPersonalSettingsSectionState
                 child: Center(child: NovaLoadingIndicator(size: 20)),
               ),
             if (snapshot != null) ...[
-              ListTile(
-                leading: const Icon(Icons.auto_awesome_outlined),
+              AppListTile(
+                leading: const Icon(LucideIcons.sparkles),
                 title: Text(l.assistantPersonalityTitle),
                 subtitle: Text(
                   snapshot.soul.name,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
-                trailing: const Icon(Icons.chevron_right),
-                enabled: !state.busy,
-                onTap: () => pushScopedSettingsPage(
-                  context,
-                  rootNavigator: true,
-                  builder: (_, isCurrent) => AssistantSettingsEditorPage(
-                    title: l.assistantPersonalityTitle,
-                    child: AssistantPersonalityEditor(
-                      cubit: cubit,
-                      isScopeCurrent: () => isCurrent() && cubit.admitted,
-                    ),
-                  ),
-                ),
+                trailing: const Icon(LucideIcons.chevronRight),
+                enabled: cubit.admitted && state.canEditSoul,
+                onTap: () => cubit.admitted && cubit.state.canEditSoul
+                    ? pushScopedSettingsPage(
+                        context,
+                        builder: (_, isCurrent) => AssistantSettingsEditorPage(
+                          title: l.assistantPersonalityTitle,
+                          child: AssistantPersonalityEditor(
+                            cubit: cubit,
+                            isScopeCurrent: () => isCurrent() && cubit.admitted,
+                          ),
+                        ),
+                      )
+                    : null,
               ),
-              ExpansionTile(
+              AppDisclosure(
                 title: Text(l.assistantMemoryTitle),
-                leading: const Icon(Icons.psychology_outlined),
+                leading: const Icon(LucideIcons.brain),
                 childrenPadding: const EdgeInsets.symmetric(horizontal: 16),
                 children: [
                   if (snapshot.memoryEnabled != null)
-                    SwitchListTile.adaptive(
-                      contentPadding: EdgeInsets.zero,
+                    AppToggleRow(
                       title: Row(
                         children: [
                           Expanded(child: Text(l.assistantMemoryCollection)),
@@ -160,16 +161,23 @@ class _AssistantPersonalSettingsSectionState
                         ],
                       ),
                       value: snapshot.memoryEnabled!,
-                      onChanged: state.busy
+                      onChanged: state.busy || state.loading
                           ? null
                           : (value) => cubit.setMemoryEnabled(enabled: value),
                     ),
                   if (snapshot.products['mira'] == false)
                     Text(l.assistantMemoryProductDisabled),
-                  if (snapshot.memoryEnabled == null)
+                  if (snapshot.memoryEnabled == null && state.loading)
+                    Semantics(
+                      label: l.commonLoading,
+                      child: const Center(
+                        child: NovaLoadingIndicator(size: 20),
+                      ),
+                    ),
+                  if (snapshot.memoryEnabled == null && !state.loading)
                     Text(l.assistantPersonalSettingsError),
-                  if (snapshot.memoryEnabled == null)
-                    TextButton(
+                  if (snapshot.memoryEnabled == null && !state.loading)
+                    AppButton.ghost(
                       onPressed: cubit.load,
                       child: Text(l.commonRetry),
                     ),
@@ -180,41 +188,41 @@ class _AssistantPersonalSettingsSectionState
                       child: Text(l.assistantMemoryEmpty),
                     ),
                   for (final item in snapshot.memories)
-                    ListTile(
+                    AppListTile(
                       contentPadding: EdgeInsets.zero,
                       title: Text(
                         item.text,
                         maxLines: 3,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      onTap: state.busy
+                      onTap: state.busy || state.loading
                           ? null
                           : () => pushScopedSettingsPage(
                               context,
-                              rootNavigator: true,
                               builder: (_, isCurrent) =>
                                   AssistantSettingsEditorPage(
                                     title: l.assistantMemoryEditTitle,
                                     child: AssistantMemoryEditor(
                                       settings: cubit,
                                       memoryId: item.id,
-                                      showTitle: false,
                                       isScopeCurrent: isCurrent,
                                     ),
                                   ),
                             ),
-                      trailing: IconButton(
+                      trailing: AppIconButton(
                         tooltip: l.commonDelete,
-                        onPressed: state.busy ? null : () => _delete(item),
-                        icon: const Icon(Icons.delete_outline),
+                        onPressed: state.busy || state.loading
+                            ? null
+                            : () => _delete(item),
+                        icon: const Icon(LucideIcons.trash2),
                       ),
                     ),
                   Align(
                     alignment: Alignment.centerLeft,
-                    child: TextButton.icon(
-                      onPressed: state.busy ? null : _export,
-                      icon: const Icon(Icons.ios_share),
-                      label: Text(l.assistantMemoryExport),
+                    child: AppButton.ghost(
+                      onPressed: state.busy || state.loading ? null : _export,
+                      leading: const Icon(LucideIcons.share),
+                      child: Text(l.assistantMemoryExport),
                     ),
                   ),
                 ],
@@ -231,7 +239,7 @@ class _AssistantPersonalSettingsSectionState
             if (state.failed)
               Align(
                 alignment: Alignment.centerLeft,
-                child: TextButton(
+                child: AppButton.ghost(
                   onPressed: state.busy ? null : cubit.load,
                   child: Text(l.commonRetry),
                 ),

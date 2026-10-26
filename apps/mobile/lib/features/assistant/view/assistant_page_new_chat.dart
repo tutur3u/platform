@@ -34,6 +34,7 @@ extension _AssistantPageNewChat on _AssistantPageState {
     AssistantChatState chatState,
     AssistantLiveState liveState, {
     BuildContext? historyContext,
+    bool preserveDraft = false,
   }) async {
     if (_localCubit.state.local || _localCubit.state.blocked) {
       _dismissKeyboard();
@@ -169,7 +170,7 @@ extension _AssistantPageNewChat on _AssistantPageState {
       }
       context.read<AssistantChromeCubit>().exitLiveMode();
       _inputController.removeListener(changed);
-      if (_inputController.value == draft) {
+      if (!preserveDraft && _inputController.value == draft) {
         _dismissKeyboard();
         _inputController.clear();
       }

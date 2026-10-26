@@ -21,10 +21,27 @@ import {
 
 export { offloadRequest } from './resources-offload-control';
 
+import { capabilityPressure, parseDiskCapability } from './storage-headroom';
+
 export type OffloadBlocker =
   | 'local_saturated'
   | 'no_eligible_runner'
+  | 'low_disk'
   | DevboxRunnerBlocker;
+
+/**
+ * A runner whose heartbeat reports critical disk headroom (bucketed
+ * `resources.disk`) is skipped; runners that do not report disk stay eligible.
+ */
+export function runnerDiskCritical(runner: DevboxFleetRunner) {
+  const resources = runner.capabilities?.resources;
+  if (!resources || typeof resources !== 'object' || Array.isArray(resources))
+    return null;
+  const disk = parseDiskCapability((resources as { disk?: unknown }).disk);
+  if (!disk) return null;
+  const { pressure, reasons } = capabilityPressure(disk);
+  return pressure === 'critical' ? reasons.join('; ') : null;
+}
 export const defaultOffloadTimeoutSeconds = 30 * 60;
 const POLL_MS = 2000;
 // Must match the server's run-log page size (DEVBOX_RUN_LOG_PAGE_SIZE).
@@ -174,10 +191,16 @@ export function selectOffloadRunner(
             run.runner_id === runner.id &&
             ['queued', 'claimed', 'running'].includes(run.status)
         ).length;
-  const eligible = evaluated
-    .filter((entry) => entry.verdict.eligible)
+  const trusted = evaluated.filter((entry) => entry.verdict.eligible);
+  const eligible = trusted
+    .filter((entry) => !runnerDiskCritical(entry.runner))
     .sort((a, b) => load(a.runner) - load(b.runner));
   if (eligible[0]) return { runner: eligible[0].runner };
+  if (trusted[0])
+    return {
+      blockedBy: 'low_disk',
+      reason: `${trusted[0].runner.name} (${trusted[0].runner.id}): reported disk is critical (${runnerDiskCritical(trusted[0].runner)})`,
+    };
   for (const blocker of blockerOrder) {
     const match = evaluated.find(
       (entry) => entry.verdict.blockedBy === blocker

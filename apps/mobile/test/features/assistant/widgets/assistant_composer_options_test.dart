@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_shell_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
+import 'package:mobile/features/assistant/widgets/assistant_attachment_preview.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_options.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -85,15 +87,13 @@ void main() {
         expect(find.text('Fast'), findsNothing);
         expect(find.text('Thinking'), findsNothing);
         expect(find.text('Add attachments'), findsOneWidget);
-        await tester.tap(find.byIcon(Icons.auto_awesome_outlined));
+        await tester.tap(find.byIcon(LucideIcons.sparkles));
         await tester.pumpAndSettle();
         expect(find.text('Locked'), findsNothing);
         expect(find.text('Disabled'), findsNothing);
         expect(
-          tester
-              .widget<ListTile>(find.widgetWithText(ListTile, 'Allowed'))
-              .enabled,
-          isTrue,
+          tester.widget<AppCard>(find.widgetWithText(AppCard, 'Allowed')).onTap,
+          isNotNull,
         );
         await tester.tap(find.text('Allowed'));
         await tester.pumpAndSettle();
@@ -102,4 +102,57 @@ void main() {
       },
     );
   }
+  testWidgets(
+    'removing an attachment closes the options sheet before the mutation',
+    (tester) async {
+      String? removed;
+      var sheetWasOpen = true;
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Builder(
+            builder: (context) => AppScaffold(
+              child: AssistantComposerOptions(
+                chatState: const AssistantChatState(
+                  fallbackChatId: 'draft',
+                  composerAttachments: [
+                    AssistantAttachment(
+                      id: 'file',
+                      name: 'Draft.txt',
+                      size: 1,
+                      type: 'text/plain',
+                    ),
+                  ],
+                ),
+                shellState: const AssistantShellState(),
+                onOpenAttachments: () async {},
+                onOpenCreditSourceSheet: () async {},
+                onThinkingModeChanged: (_) async {},
+                onCloseComposer: () {},
+                onModelSelected: (_) async {},
+                onRemoveAttachment: (id) async {
+                  removed = id;
+                  sheetWasOpen = ModalRoute.of(
+                    tester.element(find.byType(AssistantAttachmentPreview)),
+                  )!.isCurrent;
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(
+        find.byKey(const ValueKey('assistant-composer-options')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Draft.txt'), findsOneWidget);
+      await tester.tap(find.byTooltip('Delete: Draft.txt'));
+      await tester.pumpAndSettle();
+      expect(removed, 'file');
+      expect(sheetWasOpen, isFalse);
+      expect(find.text('Draft.txt'), findsNothing);
+      expect(find.byType(AppSheetScaffold), findsNothing);
+    },
+  );
 }

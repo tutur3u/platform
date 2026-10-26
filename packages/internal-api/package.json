@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/internal-api",
-  "version": "0.54.0",
+  "version": "0.55.0",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -8,6 +8,7 @@
     "directory": "packages/internal-api"
   },
   "main": "./dist/index.js",
+  "sideEffects": false,
   "types": "./dist/index.d.ts",
   "files": ["dist", "README.md"],
   "publishConfig": {
@@ -142,6 +143,11 @@
       "import": "./dist/finance-reconciliation.js",
       "require": "./dist/finance-reconciliation.js"
     },
+    "./habit-trackers": {
+      "types": "./dist/habit-trackers.d.ts",
+      "import": "./dist/habit-trackers.js",
+      "require": "./dist/habit-trackers.js"
+    },
     "./hive": {
       "types": "./dist/hive.d.ts",
       "import": "./dist/hive.js",
@@ -221,6 +227,11 @@
       "types": "./dist/personal-journal.d.ts",
       "import": "./dist/personal-journal.js",
       "require": "./dist/personal-journal.js"
+    },
+    "./nova": {
+      "types": "./dist/nova.d.ts",
+      "import": "./dist/nova.js",
+      "require": "./dist/nova.js"
     },
     "./onboarding": {
       "types": "./dist/onboarding.d.ts",

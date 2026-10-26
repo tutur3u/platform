@@ -44,6 +44,7 @@
     "../../packages/realtime/src/collaboration/server.ts",
     "../../packages/realtime/src/collaboration/runner-files.ts",
     "../../packages/realtime/src/core/retry-budget.ts",
+    "../../packages/realtime/src/core/service-request.ts",
     "../../packages/realtime/src/core/token.ts",
     "../../packages/realtime/src/documents/awareness.ts",
     "../../packages/realtime/src/documents/checkpoint.ts",

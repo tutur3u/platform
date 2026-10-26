@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/sources/api_exception.dart';
 import 'package:mobile/features/assistant/data/assistant_memory_edit.dart';
 import 'package:mobile/features/assistant/widgets/assistant_personal_settings_section.dart';
@@ -37,7 +38,7 @@ Future<void> openMemory(
 
 Future<void> pressSave(WidgetTester tester, {String text = 'Save'}) async {
   await tester.pump();
-  final save = find.widgetWithText(FilledButton, text);
+  final save = find.widgetWithText(AppButton, text);
   await tester.ensureVisible(save);
   await tester.tap(save);
   await tester.pumpAndSettle();
@@ -51,15 +52,18 @@ void main() {
       await openMemory(tester, repository, locale: locale);
       expect(
         tester
-            .widget<TextFormField>(find.byType(TextFormField))
+            .widget<AppTextFormField>(find.byType(AppTextFormField))
             .controller!
             .text,
         'Synthetic canonical content',
       );
-      await tester.enterText(find.byType(TextFormField), 'Saved replacement');
+      await tester.enterText(
+        find.byType(AppTextFormField),
+        'Saved replacement',
+      );
       await pressSave(tester, text: locale == 'en' ? 'Save' : 'Lưu');
       expect(repository.edits, 1);
-      expect(find.byType(TextFormField), findsNothing);
+      expect(find.byType(AppTextFormField), findsNothing);
       expect(find.text('Saved replacement'), findsOneWidget);
       expect(repository.productsSent, isNull);
       await tester.pumpWidget(const SizedBox.shrink());
@@ -77,7 +81,7 @@ void main() {
         );
       await openMemory(tester, repository, locale: locale);
       await tester.enterText(
-        find.byType(TextFormField),
+        find.byType(AppTextFormField),
         'Saved with audit warning',
       );
       await pressSave(tester, text: locale == 'en' ? 'Save' : 'Lưu');
@@ -93,11 +97,8 @@ void main() {
       );
       expect(
         tester
-            .widget<FilledButton>(
-              find.widgetWithText(
-                FilledButton,
-                locale == 'en' ? 'Save' : 'Lưu',
-              ),
+            .widget<AppButton>(
+              find.widgetWithText(AppButton, locale == 'en' ? 'Save' : 'Lưu'),
             )
             .onPressed,
         isNull,
@@ -118,15 +119,18 @@ void main() {
         const ApiException(message: 'Synthetic conflict', statusCode: 409),
       );
     await openMemory(tester, repository);
-    await tester.enterText(find.byType(TextFormField), 'Unsaved draft');
+    await tester.enterText(find.byType(AppTextFormField), 'Unsaved draft');
     await pressSave(tester);
     expect(
-      tester.widget<TextFormField>(find.byType(TextFormField)).controller!.text,
+      tester
+          .widget<AppTextFormField>(find.byType(AppTextFormField))
+          .controller!
+          .text,
       'Unsaved draft',
     );
     expect(
       tester
-          .widget<FilledButton>(find.widgetWithText(FilledButton, 'Save'))
+          .widget<AppButton>(find.widgetWithText(AppButton, 'Save'))
           .onPressed,
       isNull,
     );
@@ -141,7 +145,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Other saved changes'), findsOneWidget);
     expect(
-      tester.widget<TextFormField>(find.byType(TextFormField)).controller!.text,
+      tester
+          .widget<AppTextFormField>(find.byType(AppTextFormField))
+          .controller!
+          .text,
       'Unsaved draft',
     );
     expect(repository.edits, 1);
@@ -170,12 +177,15 @@ void main() {
       final repository = SettingsRepository()
         ..updateEdit = (_, _) => held.future;
       await openMemory(tester, repository);
-      await tester.enterText(find.byType(TextFormField), 'Submitted');
+      await tester.enterText(find.byType(AppTextFormField), 'Submitted');
       await tester.pump();
       await tester.ensureVisible(find.text('Save'));
       await tester.tap(find.text('Save'));
       await tester.pump();
-      await tester.enterText(find.byType(TextFormField), 'Newer unsaved draft');
+      await tester.enterText(
+        find.byType(AppTextFormField),
+        'Newer unsaved draft',
+      );
       held.complete(
         const AssistantMemoryEditReceipt(
           memory: EditableAssistantMemory(
@@ -187,10 +197,10 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.byType(TextFormField), findsOneWidget);
+      expect(find.byType(AppTextFormField), findsOneWidget);
       expect(
         tester
-            .widget<TextFormField>(find.byType(TextFormField))
+            .widget<AppTextFormField>(find.byType(AppTextFormField))
             .controller!
             .text,
         'Newer unsaved draft',
@@ -214,10 +224,10 @@ void main() {
         tester.view.viewInsets = const FakeViewPadding(bottom: 260);
         addTearDown(tester.view.resetViewInsets);
         await tester.enterText(
-          find.byType(TextFormField),
+          find.byType(AppTextFormField),
           'Accessible changed text',
         );
-        final save = find.widgetWithText(FilledButton, 'Save');
+        final save = find.widgetWithText(AppButton, 'Save');
         await tester.ensureVisible(save);
         await tester.pumpAndSettle();
         expect(tester.getSize(save).height, greaterThanOrEqualTo(48));

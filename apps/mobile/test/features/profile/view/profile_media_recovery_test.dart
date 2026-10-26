@@ -1,7 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -133,10 +136,13 @@ Future<(_Auth, _Repository, ProfileCubit, _Picker)> _pump(
       child: Builder(
         builder: (ownerContext) => Scaffold(
           body: BlocBuilder<ProfileCubit, ProfileState>(
-            builder: (context, state) => ProfileMediaRecovery(
-              state: state,
-              avatarPicker: picker,
-              pickerContext: ownerContext,
+            builder: (context, state) => RepaintBoundary(
+              key: const ValueKey('profile-media-recovery-render'),
+              child: ProfileMediaRecovery(
+                state: state,
+                avatarPicker: picker,
+                pickerContext: ownerContext,
+              ),
             ),
           ),
         ),
@@ -148,6 +154,53 @@ Future<(_Auth, _Repository, ProfileCubit, _Picker)> _pump(
 }
 
 void main() {
+  setUpAll(() async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    await (FontLoader(
+      'Roboto',
+    )..addFont(rootBundle.load('assets/fonts/NotoSans.ttf'))).load();
+    final manifest =
+        jsonDecode(await rootBundle.loadString('FontManifest.json'))
+            as List<dynamic>;
+    for (final entry in manifest.cast<Map<String, dynamic>>()) {
+      final loader = FontLoader(entry['family'] as String);
+      for (final asset
+          in (entry['fonts'] as List<dynamic>).cast<Map<String, dynamic>>()) {
+        loader.addFont(rootBundle.load(asset['asset'] as String));
+      }
+      await loader.load();
+    }
+  });
+  testWidgets('recovery remains compact on a phone', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await _pump(
+      tester,
+      const ApiException(message: 'bounded', statusCode: 413),
+    );
+    final card = find.byType(ProfileMediaRecovery);
+    final output = Platform.environment['PROFILE_MEDIA_RENDER_PATH'];
+    if (output != null) {
+      await tester.runAsync(() async {
+        final boundary = tester.renderObject<RenderRepaintBoundary>(
+          find.byKey(const ValueKey('profile-media-recovery-render')),
+        );
+        final image = await boundary.toImage(pixelRatio: 2);
+        try {
+          final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+          File(output)
+            ..createSync(recursive: true)
+            ..writeAsBytesSync(bytes!.buffer.asUint8List());
+        } finally {
+          image.dispose();
+        }
+      });
+    }
+    expect(tester.getSize(card).height, lessThan(220));
+    expect(tester.takeException(), isNull);
+  });
   for (final (status, english, vietnamese) in [
     (
       400,

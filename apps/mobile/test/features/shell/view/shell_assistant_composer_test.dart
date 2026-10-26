@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
@@ -24,13 +25,18 @@ import 'package:mobile/features/shell/view/shell_page.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 
 import '../../../helpers/helpers.dart';
 
-class _Auth extends MockCubit<AuthState> implements AuthCubit {}
+class _Auth extends MockCubit<AuthState> implements AuthCubit {
+  _Auth() {
+    when(() => isClosed).thenReturn(false);
+  }
+}
 
 class _Workspace extends MockCubit<WorkspaceState> implements WorkspaceCubit {}
 
@@ -465,7 +471,7 @@ void main() {
       expect(
         find.descendant(
           of: primary,
-          matching: find.byIcon(Icons.arrow_upward_rounded),
+          matching: find.byIcon(LucideIcons.arrowUp),
         ),
         findsOneWidget,
       );

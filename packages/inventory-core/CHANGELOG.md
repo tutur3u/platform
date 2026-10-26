@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.1](https://github.com/tutur3u/platform/compare/inventory-core-v0.11.0...inventory-core-v0.11.1) (2026-10-24)
+
+
+### Bug Fixes
+
+* **security:** derive client IP from trusted proxy headers ([cf2caa9](https://github.com/tutur3u/platform/commit/cf2caa93418d3e2b912bd14654d3ba4ed197fad5)) ([#6554](https://github.com/tutur3u/platform/issues/6554)) ([1af01f8](https://github.com/tutur3u/platform/commit/1af01f8897b1ba1f5e7d432d71df53612d61c548))
+
 ## [0.11.0](https://github.com/tutur3u/platform/compare/inventory-core-v0.10.0...inventory-core-v0.11.0) (2026-10-17)
 
 

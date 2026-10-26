@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/settings/view/settings_row_layout.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Rows in one rounded card. Over an ambient appearance the card is
 /// translucent; dividers start at the title column, as on iOS settings.
@@ -11,7 +11,7 @@ class SettingsGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
+    final theme = AppTokens.of(context);
     final radius = BorderRadius.circular(SettingsRowLayout.cardRadius);
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -29,8 +29,7 @@ class SettingsGroup extends StatelessWidget {
           children: [
             for (var index = 0; index < children.length; index++) ...[
               if (index > 0)
-                Divider(
-                  height: 1,
+                AppDivider(
                   thickness: 0.5,
                   indent: SettingsRowLayout.textColumn,
                   endIndent: SettingsRowLayout.inset,
@@ -54,7 +53,7 @@ class SettingsCaption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
+    final theme = AppTokens.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: SettingsRowLayout.captionInset,
@@ -91,7 +90,7 @@ class SettingsCompactSection extends StatelessWidget {
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       SettingsCaption(title),
-      const shad.Gap(8),
+      const AppGap(8),
       if (columnSplit case final split?)
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -99,7 +98,7 @@ class SettingsCompactSection extends StatelessWidget {
             Expanded(
               child: SettingsGroup(children: children.take(split).toList()),
             ),
-            const shad.Gap(16),
+            const AppGap(16),
             Expanded(
               child: SettingsGroup(children: children.skip(split).toList()),
             ),

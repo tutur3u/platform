@@ -26,7 +26,7 @@ class AppDialog extends StatelessWidget {
       namesRoute: true,
       explicitChildNodes: true,
       label: title,
-      child: SingleChildScrollView(
+      child: Padding(
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.xl,
           AppSpacing.md,
@@ -46,11 +46,15 @@ class AppDialog extends StatelessWidget {
             ),
             if (content != null) ...[
               const SizedBox(height: AppSpacing.sm),
-              DefaultTextStyle.merge(
-                style: tokens.typography.small.copyWith(
-                  color: c.mutedForeground,
+              Flexible(
+                child: SingleChildScrollView(
+                  child: DefaultTextStyle.merge(
+                    style: tokens.typography.small.copyWith(
+                      color: c.mutedForeground,
+                    ),
+                    child: content!,
+                  ),
                 ),
-                child: content!,
               ),
             ],
             if (actions.isNotEmpty) ...[
@@ -84,7 +88,7 @@ Future<bool> showAppConfirmDialog({
       title: title,
       content: message == null ? null : Text(message),
       actions: [
-        AppButton.outline(
+        AppButton.ghost(
           onPressed: () => Navigator.of(dialogContext).pop(false),
           child: Text(cancelLabel),
         ),
