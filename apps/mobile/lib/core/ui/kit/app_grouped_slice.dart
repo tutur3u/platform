@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout_tokens.dart';
+import 'package:mobile/core/ui/tokens/app_tokens.dart';
 
 /// Where a row sits within a grouped run of rows.
 enum AppSlicePosition {
@@ -41,7 +42,8 @@ class AppGroupedSlice extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final solid = MediaQuery.highContrastOf(context);
-    const corner = Radius.circular(AppRadius.card);
+    final cornerRadius = AppTokens.of(context).interface.radius(AppRadius.card);
+    final corner = Radius.circular(cornerRadius);
     final radius = BorderRadius.vertical(
       top: position.roundsTop ? corner : Radius.zero,
       bottom: position.roundsBottom ? corner : Radius.zero,
@@ -53,6 +55,7 @@ class AppGroupedSlice extends StatelessWidget {
         outline: colors.outlineVariant.withValues(alpha: solid ? 1 : 0.4),
         divider: colors.outlineVariant.withValues(alpha: 0.6),
         dividerInset: dividerInset,
+        radius: cornerRadius,
         textDirection: Directionality.of(context),
       ),
       child: ClipRRect(
@@ -70,6 +73,7 @@ class _SlicePainter extends CustomPainter {
     required this.outline,
     required this.divider,
     required this.dividerInset,
+    required this.radius,
     required this.textDirection,
   });
 
@@ -78,21 +82,22 @@ class _SlicePainter extends CustomPainter {
   final Color outline;
   final Color divider;
   final double dividerInset;
+  final double radius;
   final TextDirection textDirection;
 
   @override
   void paint(Canvas canvas, Size size) {
-    const r = AppRadius.card;
+    final r = radius;
     final top = position.roundsTop;
     final bottom = position.roundsBottom;
     final rect = Offset.zero & size;
     canvas.drawRRect(
       RRect.fromRectAndCorners(
         rect,
-        topLeft: top ? const Radius.circular(r) : Radius.zero,
-        topRight: top ? const Radius.circular(r) : Radius.zero,
-        bottomLeft: bottom ? const Radius.circular(r) : Radius.zero,
-        bottomRight: bottom ? const Radius.circular(r) : Radius.zero,
+        topLeft: top ? Radius.circular(r) : Radius.zero,
+        topRight: top ? Radius.circular(r) : Radius.zero,
+        bottomLeft: bottom ? Radius.circular(r) : Radius.zero,
+        bottomRight: bottom ? Radius.circular(r) : Radius.zero,
       ),
       Paint()..color = fill,
     );
@@ -105,12 +110,12 @@ class _SlicePainter extends CustomPainter {
       path
         ..arcToPoint(
           Offset(edge.left + r, edge.top),
-          radius: const Radius.circular(r),
+          radius: Radius.circular(r),
         )
         ..lineTo(edge.right - r, edge.top)
         ..arcToPoint(
           Offset(edge.right, edge.top + r),
-          radius: const Radius.circular(r),
+          radius: Radius.circular(r),
         );
     } else {
       path.moveTo(edge.right, edge.top);
@@ -120,12 +125,12 @@ class _SlicePainter extends CustomPainter {
       path
         ..arcToPoint(
           Offset(edge.right - r, edge.bottom),
-          radius: const Radius.circular(r),
+          radius: Radius.circular(r),
         )
         ..lineTo(edge.left + r, edge.bottom)
         ..arcToPoint(
           Offset(edge.left, edge.bottom - r),
-          radius: const Radius.circular(r),
+          radius: Radius.circular(r),
         );
     } else {
       path.moveTo(edge.left, edge.bottom);
@@ -161,5 +166,6 @@ class _SlicePainter extends CustomPainter {
       old.outline != outline ||
       old.divider != divider ||
       old.dividerInset != dividerInset ||
+      old.radius != radius ||
       old.textDirection != textDirection;
 }

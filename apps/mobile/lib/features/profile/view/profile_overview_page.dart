@@ -6,12 +6,14 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
+import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/profile/profile_timeline_repository.dart';
 import 'package:mobile/features/profile/view/profile_account_actions.dart';
 import 'package:mobile/features/profile/view/profile_activity_section.dart';
 import 'package:mobile/features/profile/view/profile_identity_card.dart';
 import 'package:mobile/features/profile/view/profile_timeline_section.dart';
+import 'package:mobile/features/profile/view/profile_you_rows.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_state.dart';
@@ -159,12 +161,32 @@ class _ProfileOverviewPageState extends State<ProfileOverviewPage> {
                     ),
                     activity: userId == null
                         ? null
-                        : ProfileActivitySection(
-                            replayToken: widget.replayToken,
-                            cacheUserId: widget.cacheUserId,
-                            statsLoader: widget.statsLoader,
-                            timezoneLoader: widget.timezoneLoader,
+                        : Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              // Focus Time is tracked time; See all opens the
+                              // Timer statistics.
+                              AppSectionHeader(
+                                key: const ValueKey('you-focus-time'),
+                                title: l10n.profileFocusTime,
+                                actionLabel: l10n.homeSeeAll,
+                                onAction: () => context.go(Routes.timerStats),
+                              ),
+                              ProfileActivitySection(
+                                showHeader: false,
+                                // Focus Time is all task-linked tracked time.
+                                taskLinked: true,
+                                replayToken: widget.replayToken,
+                                cacheUserId: widget.cacheUserId,
+                                statsLoader: widget.statsLoader,
+                                timezoneLoader: widget.timezoneLoader,
+                              ),
+                            ],
                           ),
+                  ),
+                  const SizedBox(height: AppLayout.sectionGap),
+                  ProfileYouRows(
+                    onOpenTimeline: () => setState(() => _timeline = true),
                   ),
                 ],
               ),

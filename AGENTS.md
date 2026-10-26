@@ -251,9 +251,10 @@ for roles, independent review, publication, receipts and retirement.
   Report any unrelated pre-existing CI blocker.
 - Before every push, run the build-free `bun check:changed` gate; see
   [pre-push checks](apps/docs/build/development-tools/pre-push-checks.mdx).
-- Hosted PR CI runs only with the `ready-for-ci` label. Add it only when a PR is
-  ready to merge (reviewed, exact-head local gates green); batch pushes; a local
-  exact-head pass still counts as green. See the
+- Lanes push once when exact-head local gates are green; batch review fixes
+  instead of pushing many small commits. Add `ready-for-ci` only after independent
+  review APPROVES and the PR is merge-ready. A local exact-head pass still counts
+  as green. See the
   [label-gated PR CI runbook](apps/docs/build/devops/github-actions-runbook.mdx#label-gated-heavy-pr-ci-ready-for-ci).
 - `bun validate` does NOT compile Next apps or run migrations, so it cannot see
   `cacheComponents` violations, unresolved dynamic/side-effect imports, or a

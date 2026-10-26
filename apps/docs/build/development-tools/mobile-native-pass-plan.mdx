@@ -102,7 +102,7 @@ forks.
 | Option | Choices | Default | Applied through |
 | --- | --- | --- | --- |
 | Style | Tuturuuu, iOS-like, Material-like | Tuturuuu, on both platforms | An `AppInterfaceStyle` `ThemeExtension`: page transitions (Cupertino or zoom), scroll physics (bouncing or clamping), switch and checkbox shapes, sheet corner treatment, list dividers (inset or full), and the action-sheet presentation (grouped card or menu) |
-| Density | Comfortable, Compact | Comfortable | `AppLayout` row heights and `AppSpacing` scale. Never below the 44pt target |
+| Density | Comfortable, Compact | Comfortable | `AppInterfaceTokens.rowMinHeight`: grouped row minimum height only (56dp or 48dp). Gaps and padding do not scale. Never below the 44pt target |
 | Corner radius | Rounded, Soft, Square | Rounded | `AppRadius` scale (card, sheet, pill) |
 | Accent | The existing accents | Match theme | Existing `AppearanceAccentId` (no change) |
 | Haptics | On, Off | On | Existing `AppHaptics.enabled` preference, moved into this group |
@@ -127,9 +127,10 @@ Design constraints:
 
 ## Pomodoro and Focus Time
 
-Focus Time is time tracking, not a separate store. A Pomodoro focus interval
-is a normal `time_tracking_sessions` row, and Focus Time statistics are
-existing tracker statistics filtered to those rows.
+Focus Time is time tracking, not a separate store: all tracked time linked to
+a task. A Pomodoro focus interval is a normal `time_tracking_sessions` row
+(tagged `pomodoro`), so it counts toward Focus Time like any other
+task-linked session.
 
 ### Proposed feature set
 
@@ -161,7 +162,7 @@ existing tracker statistics filtered to those rows.
 | Short and long breaks | Not tracked work. Recorded as control phase transitions only, so billing and productivity totals stay unchanged | Needed (see below) |
 | Settings | Today: device-local `PomodoroSettings`. Target: `private.time_tracker_controls.config`, which already matches the field names and bounds | None for the config shape |
 | Live phase, deadline and cycle position | `private.time_tracker_controls` `mode`, `phase`, `deadline_at` | **Needed**: the foundation pins `mode='off'`, `phase='idle'` and `deadline_at is null` by check constraint |
-| Focus Time totals | Existing period-stats RPCs (`time_tracking_period_stats`, enhanced stats), filtered by the `pomodoro` tag | Possibly needed: a tag filter parameter if the RPCs cannot already filter by tag |
+| Focus Time totals | The stats route's `taskLinked` filter (task-linked sessions), computed in TypeScript; `tag` stays as a filter | None |
 
 <Warning>
 A migration is required before cross-device Pomodoro can ship. It must relax
@@ -219,13 +220,13 @@ phase needs:
 | 7 | Shared Pomodoro activation: control mode, phase and deadline; pause/resume/skip contract; stats tag filter | Phase 6 and a reviewed database contract | **Yes, flagged, not written here** |
 | 8 | Cloudflare deadline scheduler, cross-device phase notifications and web parity | Phase 7 | No new tables expected |
 
-## Open questions
+## Decisions (2026-10-26)
 
-- Should Inbox replace the shell notifications bell entirely once it is a tab,
-  or keep the bell on Home?
-- Should Focus Time count only Pomodoro-tagged sessions, or all tracked time
-  linked to tasks?
-- Should Style be offered per device only (planned), or also follow the
-  account to a new device?
-- Should the Kanban card long-press also move to the context menu, matching
-  List view?
+- **Inbox replaces the notifications bell.** The overflow Notifications
+  entry goes; Inbox owns notifications.
+- **Focus Time is all task-linked tracked time**, not Pomodoro only. The
+  `tag` filter stays as a capability.
+- **Appearance follows the account**, through the existing user-config API
+  (as pins do), with a per-device override that wins when set.
+- **Kanban long-press opens the context menu**, unless that conflicts with
+  drag-to-reorder; then drag stays and the menu is reached another way.

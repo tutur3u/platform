@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout_tokens.dart';
+import 'package:mobile/core/ui/tokens/app_tokens.dart';
 
 /// Muted caption above a grouped card.
 class AppSectionCaption extends StatelessWidget {
@@ -56,7 +57,7 @@ class AppGroupedCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final solid = MediaQuery.highContrastOf(context);
-    final radius = BorderRadius.circular(AppRadius.card);
+    final radius = AppTokens.of(context).interface.borderRadius(AppRadius.card);
     return DecoratedBox(
       decoration: BoxDecoration(
         color: colors.surface.withValues(alpha: solid ? 1 : 0.72),
