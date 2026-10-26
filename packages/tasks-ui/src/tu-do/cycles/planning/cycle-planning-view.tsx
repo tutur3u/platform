@@ -10,12 +10,15 @@ import {
 } from './cycle-planning-api';
 import { CyclePlanningFiltersBar } from './cycle-planning-filters';
 import {
+  CYCLE_TASK_LIST_CAP,
   type CycleGroupStatus,
+  canMoveToScope,
   collectFilterOptions,
   DEFAULT_COLLAPSED_STATUSES,
   filterCycleTasks,
   groupTasksByStatus,
   hasActiveFilters,
+  pruneFilters,
   resolveScopeCycles,
   scopeCycleId,
 } from './cycle-planning-model';
@@ -65,13 +68,19 @@ export function CyclePlanningView({
   });
 
   const tasks = useMemo(() => tasksQuery.data ?? [], [tasksQuery.data]);
-  const groups = useMemo(
-    () => groupTasksByStatus(filterCycleTasks(tasks, filters, currentUserId)),
-    [tasks, filters, currentUserId]
-  );
   const options = useMemo(
     () => collectFilterOptions(tasks, currentUserId),
     [tasks, currentUserId]
+  );
+  // Values with no option in this scope are dropped once its tasks load.
+  const activeFilters = useMemo(
+    () => (tasksQuery.data ? pruneFilters(filters, options) : filters),
+    [tasksQuery.data, filters, options]
+  );
+  const groups = useMemo(
+    () =>
+      groupTasksByStatus(filterCycleTasks(tasks, activeFilters, currentUserId)),
+    [tasks, activeFilters, currentUserId]
   );
   const reachable = CYCLE_SCOPES.filter(
     (value) => value === 'backlog' || scopeCycles[value]
@@ -112,14 +121,19 @@ export function CyclePlanningView({
     );
   } else if (tasksQuery.isPending) {
     body = (
-      <div aria-busy className="space-y-1 px-2 py-2">
+      <div
+        role="status"
+        aria-busy
+        aria-label={t('loading')}
+        className="space-y-1 px-2 py-2"
+      >
         {[0, 1, 2, 3].map((key) => (
           <div key={key} className="h-6 animate-pulse rounded bg-muted/60" />
         ))}
       </div>
     );
   } else if (groups.length === 0) {
-    body = hasActiveFilters(filters) ? (
+    body = hasActiveFilters(activeFilters) ? (
       <CycleEmptyLine
         text={t('empty_filtered')}
         actionLabel={t('clear_filters')}
@@ -174,7 +188,7 @@ export function CyclePlanningView({
           dropTargets={reachable}
           onTaskDrop={(target, taskId) => {
             const task = tasks.find((item) => item.id === taskId);
-            if (task) move(task, target);
+            if (task && canMoveToScope(task, target)) move(task, target);
           }}
         />
         {scopeCycle && (
@@ -184,11 +198,16 @@ export function CyclePlanningView({
         )}
       </div>
       <CyclePlanningFiltersBar
-        filters={filters}
+        filters={activeFilters}
         onChange={setFilters}
         options={options}
       />
       {body}
+      {tasks.length >= CYCLE_TASK_LIST_CAP && (
+        <p className="px-2 text-muted-foreground text-xs">
+          {t('list_capped', { count: CYCLE_TASK_LIST_CAP })}
+        </p>
+      )}
     </div>
   );
 }

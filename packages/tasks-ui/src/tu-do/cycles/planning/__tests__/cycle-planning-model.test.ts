@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
+  canMoveToScope,
   collectFilterOptions,
   filterCycleTasks,
   groupTasksByStatus,
   hasActiveFilters,
+  localDay,
+  pruneFilters,
   resolveScopeCycles,
 } from '../cycle-planning-model';
 import {
@@ -30,6 +33,20 @@ describe('resolveScopeCycles', () => {
     );
     expect(current?.id).toBe('cycle-now');
     expect(next?.id).toBe('cycle-next');
+  });
+
+  it('uses the local calendar day, not the UTC one', () => {
+    // 00:30 local is still the previous UTC day east of UTC.
+    const earlyMorning = new Date(2026, 9, 27, 0, 30);
+    expect(localDay(earlyMorning)).toBe('2026-10-27');
+    const startsToday = {
+      ...CYCLES[3]!,
+      start_date: '2026-10-27',
+      end_date: '2026-11-09',
+    };
+    const { current, next } = resolveScopeCycles([startsToday], earlyMorning);
+    expect(current?.id).toBe(startsToday.id);
+    expect(next).toBeNull();
   });
 
   it('returns nulls without cycles', () => {
@@ -101,5 +118,46 @@ describe('filterCycleTasks', () => {
     const options = collectFilterOptions(tasks, ME);
     expect(options.people.map((person) => person.id)).toEqual(['alice']);
     expect(options.projects).toEqual([APOLLO]);
+  });
+});
+
+describe('canMoveToScope', () => {
+  it('keeps finished tasks out of the open-only backlog', () => {
+    expect(canMoveToScope(makeTask({ status: 'done' }), 'backlog')).toBe(false);
+    expect(canMoveToScope(makeTask({ status: 'closed' }), 'backlog')).toBe(
+      false
+    );
+    expect(canMoveToScope(makeTask({ status: 'done' }), 'next')).toBe(true);
+    expect(canMoveToScope(makeTask({ status: 'active' }), 'backlog')).toBe(
+      true
+    );
+  });
+});
+
+describe('pruneFilters', () => {
+  it('drops values with no option in the scope and keeps sentinels', () => {
+    const options = collectFilterOptions(
+      [makeTask({ assignees: [ALICE], projects: [APOLLO] })],
+      ME
+    );
+    const filters = {
+      ...EMPTY_CYCLE_PLANNING_FILTERS,
+      assigneeIds: [ASSIGNEE_ME, ALICE.id, 'gone-person'],
+      projectIds: [PROJECT_NONE, 'gone-project'],
+      labelIds: ['gone-label'],
+    };
+    expect(pruneFilters(filters, options)).toEqual({
+      ...filters,
+      assigneeIds: [ASSIGNEE_ME, ALICE.id],
+      projectIds: [PROJECT_NONE],
+      labelIds: [],
+    });
+  });
+
+  it('returns the same object when nothing is pruned', () => {
+    const options = collectFilterOptions([], ME);
+    expect(pruneFilters(EMPTY_CYCLE_PLANNING_FILTERS, options)).toBe(
+      EMPTY_CYCLE_PLANNING_FILTERS
+    );
   });
 });
