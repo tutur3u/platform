@@ -32,8 +32,8 @@ The generated Worker entries use the shared `createBridgeHandler` and read the
 matcher from each app's proxy configuration. Inventory excludes `_next` and
 dotted paths.
 Its existing proxy retains public storefront/webhook exceptions, workspace
-session requirements and inventory-specific rate limits. Each handler resolves
-the root or apex mount per request, and Inventory keeps Web-owned paths ahead of
+session requirements and inventory-specific rate limits. The bridge resolves ownership per request; current app options admit only the
+declared root hosts. Inventory keeps Web-owned paths ahead of
 local endpoints using the existing Next configuration's reserved API paths. Server functions compile at `/_serverFn`; the shared fetch helper
 and Worker apply the resolved mount. Cookies remain unchanged and shared, as
 defined by the owning bridge/auth contract. Login pages derive native callback
@@ -50,6 +50,51 @@ methods and path lookalikes keep their existing session and guard boundaries.
 The app-owned `proxy-build-info.test.ts` suites cover these boundaries; the
 generated emitted-runtime assertion must still verify the compiled source SHA
 through an anonymous request.
+
+## Root hosts and response policy
+
+Both native apps are root-only while apex cutover is held. Their app-owned
+`start-bridge.config.ts` sets `mountHosts: []` and `unknownHost: 'reject'`:
+
+| App | Production root | Staging root |
+| --- | --- | --- |
+| Nova | `nova.tuturuuu.com` | `nova-staging.tuturuuu.com` |
+| Inventory | `inventory.tuturuuu.com` | `inventory-staging.tuturuuu.com` |
+
+Apex paths, suffix lookalikes and unlisted hosts, including Workers preview
+hosts, return the bridge's 404 before app dispatch. The generated runtime gate
+uses raw Host headers to test each allowed root and the rejected hosts.
+Inventory declares its anonymous root outcome as 307; Nova declares 200.
+
+Every response receives the app's robots policy, anti-framing CSP,
+`X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff` and
+`Referrer-Policy: strict-origin-when-cross-origin`. The CSP retains the existing
+Next `frame-ancestors 'none'` policy from `packages/utils/src/next-config.ts`.
+A stricter script policy also requires nonce support for app-owned and library
+inline scripts; verify that compatibility in the real browser before adopting it.
+
+Robots decisions read `APP_SEO_POLICY`, not a deployment environment switch.
+Nova preserves its policy's public learning and competition pages on the
+production host, including supported locale prefixes. Other Nova paths and all
+staging responses are private. Inventory's current policy has no indexed
+paths, including its Storefront-facing APIs. Storefront's separate SEO policy
+continues to own its customer pages.
+
+Every non-asset response forces `Cache-Control: private, no-store`, replacing
+upstream max-age directives, and varies on Cookie while retaining other Vary
+values. Only GET/HEAD requests under `/assets/` or for exact generated public
+files preserve asset caching. A file-like API path or a mutation method does
+not receive that exemption. Unit tests cover upstream max-age overrides and
+method/path negatives; each app's `response-policy.runtime.mjs` checks the real
+emitted Worker on production, staging and rejected hosts. Browser acceptance
+also verifies CSP-compatible hydration and navigation.
+
+The app-owned config keeps its top-level imports compatible with Node type
+stripping for the generated mount probe. The response decorator loads its
+app-owned policy module when it handles a response. The compatibility CLI
+`scripts/ci/nova-inventory-native-artifact.py` delegates to the generated
+per-app artifact helper, so compatibility flags and public-file identity have
+one canonical owner.
 
 ## Nova server actions
 

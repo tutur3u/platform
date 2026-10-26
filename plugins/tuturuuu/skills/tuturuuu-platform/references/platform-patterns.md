@@ -6,12 +6,12 @@ shared-package changes.
 
 ## Web And Shared UI
 
-- Native satellite candidates consume `@tuturuuu/start-bridge`; keep shared
-  request/Next adapters there and app-specific action authorization in suppliers.
-  A function proxy or protected layout does not authorize a direct callable.
-  Preserve explicitly disabled service-worker registration during layout moves.
+- Native satellites consume shared `@tuturuuu/start-bridge` adapters; app configs
+  own exact hosts and SEO/security headers. Asset caching exemptions require GET/HEAD
+  and an asset path; force non-asset no-store. Keep config imports Node-strippable.
+  Suppliers authorize direct calls; preserve disabled service-worker registration.
   Use the [Nova/Inventory qualification guide](../../../../../apps/docs/build/devops/nova-inventory-start-bridge.mdx)
-  for route/action mapping, offline parity and separate emitted-runtime gates.
+  for action/offline parity and separate raw-Host, header and browser acceptance.
 
 - Calendar provider cron failures retain failed dashboard diagnostics while
   isolating accounts and bounding work. Rejected Google credentials stop siblings

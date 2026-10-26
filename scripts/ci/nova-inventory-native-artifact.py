@@ -9,28 +9,16 @@ from pathlib import Path
 import sys
 
 APPS = ("nova", "inventory")
-ROOT = Path(__file__).resolve().parents[2]
 
 
 def load(app):
     if app not in APPS:
         raise ValueError("unsupported app")
-    path = Path(__file__).with_name("apps-native-artifact.py")
-    spec = importlib.util.spec_from_file_location(f"{app}_artifact_base", path)
+    path = Path(__file__).with_name(f"{app}-native-artifact.py")
+    spec = importlib.util.spec_from_file_location(f"{app}_artifact_contract", path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    worker = f"tuturuuu-{app}-vite-staging"
-    module.IDENTITY = {**module.IDENTITY, "name": worker}
-    module.NORMALIZED_DEFAULTS = {**module.NORMALIZED_DEFAULTS, "topLevelName": worker}
-    module.RECEIPT = f"{app}-native-artifact.json"
-    public = ROOT / "apps" / app / "public"
-    paths = sorted(public.rglob("*"))
-    if any(path.is_symlink() for path in paths):
-        raise ValueError("public asset symlink forbidden")
-    module.PUBLIC_FILES = tuple(
-        path.relative_to(public).as_posix() for path in paths if path.is_file()
-    )
-    return module
+    return module.load()
 
 
 def main():

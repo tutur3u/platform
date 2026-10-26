@@ -81,6 +81,20 @@ class ArtifactTest(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "public asset drift"):
                     artifact.artifact(app, SHA)
 
+    def test_accepts_canonical_public_fetch_flags_and_rejects_drift(self):
+        for name in wrapper.APPS:
+            with self.subTest(app=name):
+                artifact, app, config = self.fixture(name)
+                path = app / "dist/native/wrangler.json"
+                config["compatibility_flags"] = [
+                    "nodejs_compat", "global_fetch_strictly_public",
+                ]
+                path.write_text(json.dumps(config))
+                artifact.artifact(app, SHA)
+                path.write_text(json.dumps({**config, "compatibility_flags": ["nodejs_compat"]}))
+                with self.assertRaisesRegex(ValueError, "contract drift: compatibility_flags"):
+                    artifact.artifact(app, SHA)
+
     def test_cli_requires_its_own_exact_source_channel(self):
         for name in wrapper.APPS:
             with self.subTest(app=name):

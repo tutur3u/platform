@@ -1,6 +1,16 @@
-// App-owned start-bridge Worker options for nova: the codemod created this
-// file and never overwrites it. See "Worker options" in
-// apps/docs/build/devops/start-bridge-codemod.mdx.
 import { defineBridgeAppConfig } from '@tuturuuu/start-bridge/start/app-config';
 
-export default defineBridgeAppConfig({});
+export default defineBridgeAppConfig({
+  mounts: {
+    rootHosts: ['nova.tuturuuu.com', 'nova-staging.tuturuuu.com'],
+    mountHosts: [],
+    unknownHost: 'reject',
+  },
+  csp: () => "frame-ancestors 'none'",
+  async wrapResponse(response, { request }) {
+    const { applyResponsePolicy } = await import(
+      './src/start-bridge/response-policy'
+    );
+    return applyResponsePolicy(request, response);
+  },
+});
