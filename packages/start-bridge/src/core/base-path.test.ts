@@ -114,3 +114,20 @@ describe('under /meet', () => {
     expect(meet.finalizeResponse(external)).toBe(external);
   });
 });
+
+describe('trailing slash trimming', () => {
+  it('trims any number of trailing slashes in linear time', async () => {
+    const { trimTrailingSlashes } = await import('./base-path');
+    expect(trimTrailingSlashes('/meet///')).toBe('/meet');
+    expect(trimTrailingSlashes('////')).toBe('');
+    const hostile = `/a${'/'.repeat(200_000)}x`;
+    const started = performance.now();
+    expect(trimTrailingSlashes(hostile)).toBe(hostile);
+    expect(() => normalizeBasePath(hostile)).toThrow('Invalid basePath');
+    expect(trimTrailingSlashes(`/meet${'/'.repeat(200_000)}`)).toBe('/meet');
+    // Linear work is ~1 ms; a quadratic trim takes seconds. The generous bound
+    // keeps that distinction without failing on a loaded runner's scheduler.
+    expect(performance.now() - started).toBeLessThan(2000);
+    expect(normalizeBasePath('/meet/////')).toBe('/meet');
+  });
+});

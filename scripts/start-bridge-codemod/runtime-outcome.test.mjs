@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   mountedPath,
+  resolveRuntimeProbes,
   runtimeExpectationProblems,
   runtimeOutcomeFailure,
 } from './runtime-outcome.mjs';
@@ -144,4 +145,148 @@ test('the apex path of an app-relative path', () => {
   assert.equal(mountedPath('/forms', '/'), '/forms');
   assert.equal(mountedPath('/forms', '/en'), '/forms/en');
   assert.equal(mountedPath('', '/'), '');
+});
+
+test('policy probes default to real responses and never guess', () => {
+  assert.deepEqual(
+    resolveRuntimeProbes(undefined, {
+      expectations: { '/': 200 },
+      hasBuildInfo: true,
+    }),
+    {
+      probes: [
+        { kind: 'page', path: '/' },
+        { kind: 'api', path: '/api/build-info' },
+        { kind: 'notFound', path: '/__native-smoke-missing__' },
+      ],
+      problems: [],
+    }
+  );
+  // A redirecting root and no build-info: nothing to default to.
+  const missing = resolveRuntimeProbes(undefined, {
+    expectations: { '/': { redirect: '/login' }, '/vi': 307 },
+    hasBuildInfo: false,
+  });
+  assert.equal(missing.problems.length, 2);
+  assert.match(missing.problems.join('\n'), /runtimeProbes\.page: declare/);
+  assert.match(missing.problems.join('\n'), /runtimeProbes\.api: declare/);
+  // Declared paths and explicit skips.
+  assert.deepEqual(
+    resolveRuntimeProbes(
+      { page: '/pricing', api: { skip: 'no anonymous API' }, notFound: '/x' },
+      { expectations: {}, hasBuildInfo: false }
+    ).probes,
+    [
+      { kind: 'page', path: '/pricing' },
+      { kind: 'api', skip: 'no anonymous API' },
+      { kind: 'notFound', path: '/x' },
+    ]
+  );
+  for (const declared of [
+    [],
+    'x',
+    { page: 'pricing' },
+    { page: '//evil' },
+    { page: { skip: ' ' } },
+    { page: { skip: 'x', path: '/' } },
+    { other: '/x' },
+  ])
+    assert.notDeepEqual(
+      resolveRuntimeProbes(declared, {
+        expectations: { '/': 200 },
+        hasBuildInfo: true,
+      }).problems,
+      [],
+      JSON.stringify(declared)
+    );
+});
+
+test('skipped probes name a real replacement and one probe always runs', () => {
+  const context = {
+    expectations: { '/': { redirect: '/login' } },
+    hasBuildInfo: true,
+    fixtureExists: (file) => file === 'cloudflare/signed-ssr.runtime.mjs',
+  };
+  const skip = (fixture) => ({
+    skip: 'auth-only',
+    ...(fixture ? { fixture } : {}),
+  });
+  // A page/404 skip must name an existing cloudflare/*.runtime.mjs fixture.
+  assert.match(
+    resolveRuntimeProbes({ page: skip() }, context).problems.join('\n'),
+    /runtimeProbes\.page: declare .*"fixture": "cloudflare\/<name>\.runtime\.mjs"/
+  );
+  assert.match(
+    resolveRuntimeProbes(
+      { page: skip('cloudflare/missing.runtime.mjs') },
+      context
+    ).problems.join('\n'),
+    /runtimeProbes\.page\.fixture: cloudflare\/missing\.runtime\.mjs does not exist/
+  );
+  // R3-1: the generated gate cannot be its own replacement, and a hidden
+  // fixture exists but is never selected by test:runtime's glob.
+  const everything = { ...context, fixtureExists: () => true };
+  assert.match(
+    resolveRuntimeProbes(
+      {
+        page: skip('cloudflare/native-built-worker.runtime.mjs'),
+        notFound: skip('cloudflare/native-built-worker.runtime.mjs'),
+      },
+      everything
+    ).problems.join('\n'),
+    /runtimeProbes\.page\.fixture: cloudflare\/native-built-worker\.runtime\.mjs is the generated gate[\s\S]*runtimeProbes\.notFound\.fixture: cloudflare\/native-built-worker\.runtime\.mjs is the generated gate/
+  );
+  for (const hidden of [
+    'cloudflare/.hidden.runtime.mjs',
+    'cloudflare/.runtime.mjs',
+  ])
+    assert.match(
+      resolveRuntimeProbes({ page: skip(hidden) }, everything).problems.join(
+        '\n'
+      ),
+      /runtimeProbes\.page: declare/,
+      hidden
+    );
+  for (const fixture of [
+    'signed-ssr.runtime.mjs',
+    '../x.runtime.mjs',
+    'cloudflare/x.mjs',
+    'cloudflare/nested/x.runtime.mjs',
+  ])
+    assert.notDeepEqual(
+      resolveRuntimeProbes({ page: skip(fixture) }, context).problems,
+      [],
+      fixture
+    );
+  const covered = resolveRuntimeProbes(
+    { page: skip('cloudflare/signed-ssr.runtime.mjs') },
+    context
+  );
+  assert.deepEqual(covered.problems, []);
+  assert.deepEqual(covered.probes[0], {
+    kind: 'page',
+    skip: 'auth-only',
+    fixture: 'cloudflare/signed-ssr.runtime.mjs',
+  });
+  // The API probe skips with a reason alone (no fixture key).
+  assert.notDeepEqual(
+    resolveRuntimeProbes(
+      {
+        page: '/pricing',
+        api: skip('cloudflare/signed-ssr.runtime.mjs'),
+      },
+      context
+    ).problems,
+    []
+  );
+  // Every probe skipped: a gate with zero fetches is rejected.
+  const allSkipped = resolveRuntimeProbes(
+    {
+      page: skip('cloudflare/signed-ssr.runtime.mjs'),
+      api: { skip: 'no anonymous API' },
+      notFound: skip('cloudflare/signed-ssr.runtime.mjs'),
+    },
+    context
+  );
+  assert.match(allSkipped.problems.join('\n'), /at least one probe must run/);
 });

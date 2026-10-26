@@ -4,6 +4,7 @@ import {
   type InternalApiClientOptions,
   type InternalApiQuery,
 } from './client';
+import { InternalApiError, parseInternalApiError } from './internal-api-error';
 import {
   createWorkspaceStorageUploadUrl,
   uploadFileWithSignedUrl,
@@ -14,6 +15,23 @@ export type TopicAnnouncementVerificationStatus =
   | 'needs_verification'
   | 'pending'
   | 'verified';
+
+export interface TopicAnnouncementUnverifiedContact {
+  email: string;
+  id: string;
+  name: string;
+}
+
+/** Thrown when a send is blocked because recipients have not verified their
+ * email. The announcement is left unchanged so it can be sent after they do. */
+export class TopicAnnouncementUnverifiedRecipientsError extends InternalApiError {
+  constructor(
+    public readonly unverifiedContacts: TopicAnnouncementUnverifiedContact[]
+  ) {
+    super('EMAIL_NOT_VERIFIED', 409, 'EMAIL_NOT_VERIFIED');
+    this.name = 'TopicAnnouncementUnverifiedRecipientsError';
+  }
+}
 
 export type TopicAnnouncementStatus =
   | 'cancelled'
@@ -407,7 +425,7 @@ export async function sendTopicAnnouncement(
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);
-  return client.json<{ auditId: string | null; messageId: string | null }>(
+  const response = await client.fetch(
     `${basePath(workspaceId)}/announcements/${encodePathSegment(announcementId)}/send`,
     {
       body: JSON.stringify(payload),
@@ -415,6 +433,27 @@ export async function sendTopicAnnouncement(
       method: 'POST',
     }
   );
+
+  if (response.status === 409) {
+    const data = (await response
+      .clone()
+      .json()
+      .catch(() => null)) as {
+      code?: string;
+      unverifiedContacts?: TopicAnnouncementUnverifiedContact[];
+    } | null;
+    if (data?.code === 'EMAIL_NOT_VERIFIED') {
+      throw new TopicAnnouncementUnverifiedRecipientsError(
+        data.unverifiedContacts ?? []
+      );
+    }
+  }
+  if (!response.ok) throw await parseInternalApiError(response);
+
+  return (await response.json()) as {
+    auditId: string | null;
+    messageId: string | null;
+  };
 }
 
 export async function previewTopicAnnouncementEmail(
@@ -538,6 +577,7 @@ export async function sendTopicAnnouncementsBulk(
       error?: string;
       messageId?: string | null;
       status?: number;
+      unverifiedContacts?: TopicAnnouncementUnverifiedContact[];
     }>;
   }>(`${basePath(workspaceId)}/send-bulk`, {
     body: JSON.stringify(payload),
