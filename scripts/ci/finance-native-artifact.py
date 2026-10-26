@@ -17,7 +17,7 @@ def load():
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     module.IDENTITY = {
-        **module.IDENTITY, "name": WORKER,
+        **module.IDENTITY, "name": WORKER, "workers_dev": False,
         "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
         "vars": {
             "TUTURUUU_NOINDEX": "1",

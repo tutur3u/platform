@@ -116,6 +116,7 @@ export const ci = {
   'desktop-store-draft.yaml': true,
   'mobile-build-linux.yaml': true,
   'track-cloudflare.yaml': true,
+  'cms-cloudflare.yaml': true,
   'nova-cloudflare.yaml': true,
   'inventory-cloudflare.yaml': true,
 };

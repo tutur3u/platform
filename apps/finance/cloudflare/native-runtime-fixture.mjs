@@ -22,6 +22,7 @@ export async function financeRuntime(t, options = {}) {
   assert.match(source ?? '', /^[a-f0-9]{40}$/);
   const { configPath, config } = readNativeRuntimeConfig(app);
   assert.equal(config.name, 'tuturuuu-finance-vite-staging');
+  assert.equal(config.workers_dev, false);
   assert.equal(config.no_bundle, true);
   assert.equal(config.assets.run_worker_first, true);
   assert.equal(config.assets.not_found_handling, 'none');
