@@ -8,10 +8,6 @@
 -- Each call handles at most p_limit runs (capped at 500) and skips locked
 -- run rows. Lease cleanup serializes with enqueue and other reapers. Re-running
 -- is idempotent: reaped runs are terminal and drop out of the candidate set.
-create index if not exists idx_devbox_runs_active_updated
-    on private.devbox_runs(updated_at)
-    where status in ('running', 'cancel_requested');
-
 create or replace function private.reap_stale_devbox_runs(
     p_runner_id uuid default null,
     p_limit integer default 100

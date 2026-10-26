@@ -1,3 +1,4 @@
+-- Apply 20261026145000, 20261026145100, 20261026145200, then 20261026145300.
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
