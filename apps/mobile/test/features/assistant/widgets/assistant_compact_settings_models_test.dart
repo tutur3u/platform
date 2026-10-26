@@ -127,7 +127,7 @@ void main() {
             selected ? findsNothing : findsOneWidget,
           );
           expect(
-            find.bySemanticsLabel(l.assistantLocalSelected),
+            find.byTooltip(l.assistantLocalSelected),
             selected ? findsOneWidget : findsNothing,
           );
           if (!selected) {
