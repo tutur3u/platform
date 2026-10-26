@@ -140,7 +140,7 @@ class AppearanceSettings extends Equatable {
   /// Navigation and scroll feel; the same on Android and iOS by default.
   final AppInterfaceStyle interfaceStyle;
 
-  /// Row height and gap scale.
+  /// Minimum grouped row height; gaps and padding do not change.
   final AppDensity density;
 
   /// Corner treatment for cards, sheets and grouped surfaces.

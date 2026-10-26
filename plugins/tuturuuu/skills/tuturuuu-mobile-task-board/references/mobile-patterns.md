@@ -184,6 +184,10 @@ localization changes.
   `AppTokens.of(context).interface`, never by platform checks. The Settings
   shell harness pumps once, so assert a stored appearance by pumping with it,
   not by changing it mid-test.
+- Home workspace chips read pins from the `MOBILE_PINNED_WORKSPACES` user
+  config only from five workspaces, and allow edits only after a successful
+  load. Start focus treats a paused session (stopped with an open break,
+  `type=paused`) like a running one, and stops it before starting.
 
 ## Task Board
 

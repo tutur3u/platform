@@ -1,13 +1,13 @@
 part of 'dashboard_page.dart';
 
-/// Greeting, today's date and the workspace switcher at the top of Home.
+/// Greeting, today's date and the workspace chips at the top of Home.
 ///
 /// The shell navbar already carries the "Home" title, so this is a greeting
 /// rather than a second page title.
 class _HomeHeader extends StatelessWidget {
   const _HomeHeader();
 
-  /// Below this content width the switcher moves under the greeting.
+  /// Below this content width the chips move under the greeting.
   static const double _headerRowMinWidth = 560;
 
   @override
@@ -62,15 +62,17 @@ class _HomeHeader extends StatelessWidget {
       ),
     );
 
+    // Chips sit under the greeting on narrow content and beside it from
+    // [_headerRowMinWidth]; the chip row scrolls in both layouts.
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth < _headerRowMinWidth) {
           return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               greetingBlock,
               const SizedBox(height: AppSpacing.md),
-              const _WorkspaceSwitcher(),
+              const HomeWorkspaceChips(),
             ],
           );
         }
@@ -83,87 +85,9 @@ class _HomeHeader extends StatelessWidget {
               constraints: BoxConstraints(
                 maxWidth: constraints.maxWidth * 0.45,
               ),
-              child: const _WorkspaceSwitcher(),
+              child: const HomeWorkspaceChips(),
             ),
           ],
-        );
-      },
-    );
-  }
-}
-
-/// Pill that names the current workspace and opens the workspace picker.
-class _WorkspaceSwitcher extends StatelessWidget {
-  const _WorkspaceSwitcher();
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = AppTokens.of(context);
-    final c = tokens.colorScheme;
-    return BlocBuilder<WorkspaceCubit, WorkspaceState>(
-      buildWhen: (previous, current) =>
-          previous.currentWorkspace != current.currentWorkspace,
-      builder: (context, state) {
-        final workspace = state.currentWorkspace;
-        final name = displayWorkspaceNameOrFallback(context, workspace);
-        final radius = BorderRadius.circular(AppRadius.pill);
-        void open() => showWorkspacePickerSheet(context);
-        return Semantics(
-          container: true,
-          button: true,
-          label: '${context.l10n.settingsCurrentWorkspace}: $name',
-          onTap: open,
-          excludeSemantics: true,
-          child: Material(
-            color: AppearanceScope.surfaceColor(context, c.card),
-            shape: RoundedRectangleBorder(
-              borderRadius: radius,
-              side: BorderSide(color: c.border.withValues(alpha: 0.7)),
-            ),
-            child: InkWell(
-              key: const ValueKey('home-workspace-switcher'),
-              borderRadius: radius,
-              onTap: open,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(minHeight: 48),
-                child: Padding(
-                  padding: const EdgeInsetsDirectional.fromSTEB(
-                    AppSpacing.sm,
-                    AppSpacing.xs,
-                    AppSpacing.md,
-                    AppSpacing.xs,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (workspace != null)
-                        WorkspaceAvatar(workspace: workspace, radius: 14)
-                      else
-                        const AppIconTile(icon: LucideIcons.layers, size: 28),
-                      const SizedBox(width: AppSpacing.sm),
-                      Flexible(
-                        child: Text(
-                          name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: tokens.typography.small.copyWith(
-                            color: c.foreground,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.xs),
-                      Icon(
-                        LucideIcons.chevronsUpDown,
-                        size: 16,
-                        color: c.mutedForeground,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
         );
       },
     );

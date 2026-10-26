@@ -34,13 +34,20 @@ abstract final class AppTheme {
     },
   );
 
-  // Every platform slides like iOS.
+  // Every platform slides like iOS. Platforms without a system edge-swipe
+  // Back drop the slide under reduce motion; iOS and macOS keep the
+  // Cupertino route, which owns that gesture.
   static final _iosLikeTransitions = PageTransitionsTheme(
     builders: {
       for (final platform in TargetPlatform.values)
-        platform: const _AppearancePageTransitionsBuilder(
-          CupertinoPageTransitionsBuilder(),
-        ),
+        platform:
+            platform == TargetPlatform.iOS || platform == TargetPlatform.macOS
+            ? const _AppearancePageTransitionsBuilder(
+                CupertinoPageTransitionsBuilder(),
+              )
+            : const _AppearancePageTransitionsBuilder(
+                _ReducibleCupertinoTransitionsBuilder(),
+              ),
     },
   );
 
@@ -267,6 +274,52 @@ class _AppearancePageTransitionsBuilder extends PageTransitionsBuilder {
     secondaryAnimation,
     route.opaque ? AppearanceRouteBackground(child: child) : child,
   );
+}
+
+/// The Cupertino slide, replaced by an instant change when animations are
+/// disabled (system Reduce motion or the Appearance choice). Used where Back
+/// is system-owned rather than an edge swipe.
+class _ReducibleCupertinoTransitionsBuilder extends PageTransitionsBuilder {
+  const _ReducibleCupertinoTransitionsBuilder();
+
+  static const _cupertino = CupertinoPageTransitionsBuilder();
+
+  @override
+  DelegatedTransitionBuilder? get delegatedTransition =>
+      (context, animation, secondaryAnimation, allowSnapshotting, child) =>
+          MediaQuery.disableAnimationsOf(context)
+          ? child
+          : _cupertino.delegatedTransition?.call(
+              context,
+              animation,
+              secondaryAnimation,
+              allowSnapshotting,
+              child,
+            );
+
+  @override
+  Duration get transitionDuration => _cupertino.transitionDuration;
+
+  @override
+  Duration get reverseTransitionDuration =>
+      _cupertino.reverseTransitionDuration;
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) => MediaQuery.disableAnimationsOf(context)
+      ? child
+      : _cupertino.buildTransitions(
+          route,
+          context,
+          animation,
+          secondaryAnimation,
+          child,
+        );
 }
 
 class _SmoothPageTransitionsBuilder extends PageTransitionsBuilder {
