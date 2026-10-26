@@ -29,11 +29,59 @@ assert.deepEqual(runtimeExpectationProblems(runtimeExpectations), []);
 async function qualifyMode(t, mode) {
   const { origin, base } = mode;
   const signedCalls = [];
+  const webglRoot =
+    '/api/v1/workspaces/fixture/external-projects/assets/fixture/webgl';
+  const webglPaths = [webglRoot, `${webglRoot}/index.html`];
+  const neighbouringPaths = [`${webglRoot}-extra`, `${webglRoot};params`];
+  const upstreamPolicy =
+    "sandbox allow-scripts; default-src 'none'; script-src 'self' 'unsafe-inline'";
+  const webglCalls = [];
   const runtime = await financeRuntime(t, {
     financeOrigin: origin,
-    fixtureResponse: (request) =>
-      signedSsrFixtureResponse(request, signedCalls, origin),
+    fixtureResponse: (request) => {
+      const url = new URL(request.url);
+      if (
+        url.origin === 'https://finance-fixture.invalid' &&
+        [...webglPaths, ...neighbouringPaths].includes(url.pathname)
+      ) {
+        webglCalls.push(url.pathname);
+        return new Response('upstream WebGL fixture', {
+          headers: {
+            'content-type': 'text/html',
+            'content-security-policy': upstreamPolicy,
+            'x-frame-options': 'SAMEORIGIN',
+          },
+        });
+      }
+      return signedSsrFixtureResponse(request, signedCalls, origin);
+    },
   });
+  await t.test(
+    `WebGL sandbox pass-through and neighbouring framing denial at ${origin}`,
+    async () => {
+      for (const path of [...webglPaths, ...neighbouringPaths]) {
+        const response = await runtime.fetch(`${origin}${path}`, {
+          headers: { authorization: 'Bearer ttr_finance_runtime_fixture' },
+        });
+        assert.equal(response.status, 200);
+        assert.equal(await response.text(), 'upstream WebGL fixture');
+        if (webglPaths.includes(path)) {
+          assert.equal(
+            response.headers.get('content-security-policy'),
+            upstreamPolicy
+          );
+          assert.equal(response.headers.get('x-frame-options'), null);
+        } else {
+          assert.match(
+            response.headers.get('content-security-policy') ?? '',
+            /frame-ancestors 'none'/
+          );
+          assert.equal(response.headers.get('x-frame-options'), 'DENY');
+        }
+      }
+      assert.deepEqual(webglCalls, [...webglPaths, ...neighbouringPaths]);
+    }
+  );
   await t.test(
     `exact build and anonymous API admission at ${origin}${base}`,
     async () => {

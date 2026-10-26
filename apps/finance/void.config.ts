@@ -11,7 +11,7 @@ export default defineConfig({
     main: './cloudflare/worker.ts',
     compatibility_date: '2026-10-12',
     compatibility_flags: ['nodejs_compat', 'global_fetch_strictly_public'],
-    workers_dev: true,
+    workers_dev: false,
     vars: {
       TUTURUUU_NOINDEX: '1',
       INTERNAL_WEB_API_ORIGIN: 'https://staging.tuturuuu.com',

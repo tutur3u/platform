@@ -66,6 +66,11 @@ entry wrapper.
 sends `X-Robots-Tag: noindex, nofollow, nosnippet`, `X-Frame-Options: DENY`,
 `X-Content-Type-Options: nosniff`, and `Referrer-Policy:
 strict-origin-when-cross-origin`. The CSP includes `frame-ancestors 'none'`.
+The exact shared WebGL asset path is the framing exception:
+`^/api/v1/workspaces/[^/]+/external-projects/assets/[^/]+/webgl(/|$)`.
+Its upstream sandbox CSP passes through unchanged and Finance removes
+`X-Frame-Options`. Neighbouring paths retain framing denial. Both root hosts
+must pass the emitted forwarding and boundary regressions before cutover.
 Personalized SSR and API responses use `Cache-Control: private, no-store` and
 vary on Cookie, Authorization and Accept-Language. Compiled static assets keep
 their own caching policy. Root hosts are explicitly admitted; unlisted hosts and
@@ -104,7 +109,10 @@ that cookie into cohort identity or copy it onto the shared origin.
 
 ## Qualify both Finance URL modes
 
-Root mode at `finance.<host>` is the first release gate. `<host>/finance` remains
+Root mode at `finance.<host>` is the first release gate. Finance disables
+`workers_dev` for its fail-closed root hosts. The sealed artifact and emitted
+runtime checks enforce the same setting; staging uses its explicitly admitted
+custom hostname. `<host>/finance` remains
 compatibility coverage and does not admit apex traffic. The bridge owns
 request-based mount resolution and the shared session model. Preserve the
 external prefix on redirects, ordinary links, assets, action requests, and API

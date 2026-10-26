@@ -5,6 +5,43 @@ const wrap = appConfig.wrapResponse;
 if (!wrap) throw new Error('Finance must secure every response');
 
 describe('Finance response security independent of staging flags', () => {
+  it.each(['', '/index.html', '/Build/game.js'])(
+    'keeps the upstream WebGL sandbox and removes framing denial for %s',
+    async (suffix) => {
+      const policy = "sandbox allow-scripts; default-src 'none'";
+      const response = await wrap(
+        new Response('fixture', {
+          headers: {
+            'content-security-policy': policy,
+            'x-frame-options': 'DENY',
+          },
+        }),
+        {
+          request: new Request(
+            `https://finance.tuturuuu.com/api/v1/workspaces/ws/external-projects/assets/asset/webgl${suffix}`
+          ),
+          env: { ASSETS: { fetch: async () => new Response('asset') } },
+        }
+      );
+      expect(response.headers.get('content-security-policy')).toBe(policy);
+      expect(response.headers.get('x-frame-options')).toBeNull();
+      expect(response.headers.get('cache-control')).toBe('private, no-store');
+    }
+  );
+
+  it.each(['/webgl-extra', '/webgl;params', '/WebGL'])(
+    'denies framing for the neighbouring path %s',
+    async (suffix) => {
+      const response = await wrap(new Response('fixture'), {
+        request: new Request(
+          `https://finance.tuturuuu.com/api/v1/workspaces/ws/external-projects/assets/asset${suffix}`
+        ),
+        env: { ASSETS: { fetch: async () => new Response('asset') } },
+      });
+      expect(response.headers.get('x-frame-options')).toBe('DENY');
+    }
+  );
+
   it.each([undefined, '0', '1'])(
     'keeps sensitive responses private with noindex=%s',
     async (flag) => {
