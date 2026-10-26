@@ -211,7 +211,10 @@ export async function GET(
       return signedUrl;
     }
 
-    return NextResponse.redirect(signedUrl, { status: 307 });
+    // The Location carries a short-lived bearer URL: never cache the redirect.
+    const redirect = NextResponse.redirect(signedUrl, { status: 307 });
+    redirect.headers.set('Cache-Control', 'private, no-store');
+    return redirect;
   } catch (error) {
     logWorkspaceStorageRouteError(
       'Unexpected error generating share redirect:',
