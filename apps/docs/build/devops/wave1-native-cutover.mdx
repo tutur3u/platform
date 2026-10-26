@@ -56,7 +56,9 @@ surfaces and review rationale, after:
    old/new Worker versions, secret names, scheduler custody, operator and rollback
    triggers. Meet rollback captures **both** frontend and realtime versions.
 5. Review and freeze the exact production promotion range. Source sync is not
-   permission to attach canonical routes or activate schedulers.
+   permission to attach canonical routes or activate schedulers. Calendar/Mail/Apps
+   use the [private production preparation workflow](/build/devops/wave1-native-publishers#route-free-production-preparation);
+   its route-free upload precedes a separately captured routing switch.
 
 For Meet restore the captured frontend version, then realtime if changed; preserve
 Custom Domains. For Calendar/Mail/Apps retain their immutable Vercel deployments.
