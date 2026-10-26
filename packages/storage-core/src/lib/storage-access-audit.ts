@@ -9,13 +9,15 @@
  * - `record()` is synchronous and never throws; writes are fire-and-forget
  *   (handed to the host's `waitUntil` when one exists) and never block or
  *   fail the user request.
- * - Bounded: at most `maxEventsPerRecord` rows per call, at most
+ * - Bounded: at most `maxEventsPerRecord` rows per call (100), at most
  *   `maxPendingWrites` concurrent writes (extra events are dropped and
  *   counted), and repeated identical allowed events are de-duplicated for
  *   `dedupeWindowMs`. Denials and errors are always recorded.
  * - No PII beyond the actor id: objects are reduced to the workspace, the
- *   lower-cased root segment and the Storage object id or a SHA-256 hash of
- *   the full object name. File names never leave this module.
+ *   lower-cased root segment and the Storage object id or a keyed
+ *   HMAC-SHA256 of the full object name. Without a server key no hash is
+ *   stored (an unsalted hash would let guessed names be confirmed). File
+ *   names never leave this module.
  *
  * Framework-independent: the insert sink and scheduler are injected.
  */
@@ -67,6 +69,11 @@ export interface StorageAccessAuditorOptions {
   schedule?: (work: Promise<unknown>) => void;
   maxPendingWrites?: number;
   maxEventsPerRecord?: number;
+  /**
+   * Server secret for `object_hash` (HMAC-SHA256). When absent, rows keep
+   * only the root and object id; an unkeyed hash is never stored.
+   */
+  objectHashKey?: string | null;
   dedupeWindowMs?: number;
   dedupeMaxKeys?: number;
   now?: () => number;
@@ -106,12 +113,29 @@ function uuidOrNull(value: string | null | undefined): string | null {
     : null;
 }
 
-async function sha256Hex(value: string): Promise<string> {
-  const digest = await crypto.subtle.digest(
-    'SHA-256',
+const hmacKeys = new Map<string, Promise<CryptoKey>>();
+
+/** Minimum key length accepted for object hashes (bytes of UTF-8). */
+export const MIN_OBJECT_HASH_KEY_LENGTH = 32;
+
+async function hmacSha256Hex(key: string, value: string): Promise<string> {
+  let cryptoKey = hmacKeys.get(key);
+  if (!cryptoKey) {
+    cryptoKey = crypto.subtle.importKey(
+      'raw',
+      new TextEncoder().encode(key),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+    hmacKeys.set(key, cryptoKey);
+  }
+  const signature = await crypto.subtle.sign(
+    'HMAC',
+    await cryptoKey,
     new TextEncoder().encode(value)
   );
-  return Array.from(new Uint8Array(digest), (byte) =>
+  return Array.from(new Uint8Array(signature), (byte) =>
     byte.toString(16).padStart(2, '0')
   ).join('');
 }
@@ -139,7 +163,8 @@ function splitObjectName(
 
 /** Reduces an event to a bounded, file-name-free row, or null if invalid. */
 export async function toStorageAccessAuditRow(
-  event: StorageAccessAuditEvent
+  event: StorageAccessAuditEvent,
+  options: { objectHashKey?: string | null } = {}
 ): Promise<StorageAccessAuditRow | null> {
   if (
     !ACTIONS.has(event.action) ||
@@ -154,6 +179,12 @@ export async function toStorageAccessAuditRow(
 
   const wsId = uuidOrNull(event.wsId);
   const objectId = uuidOrNull(event.objectId);
+  const hashKey =
+    typeof options.objectHashKey === 'string' &&
+    new TextEncoder().encode(options.objectHashKey).byteLength >=
+      MIN_OBJECT_HASH_KEY_LENGTH
+      ? options.objectHashKey
+      : null;
   const actorId = uuidOrNull(event.actorId);
   const object = event.path
     ? splitObjectName(wsId, event.path, event.kind)
@@ -171,7 +202,10 @@ export async function toStorageAccessAuditRow(
     actor_id: actorId,
     actor_kind: actorId ? (event.actorKind ?? 'user') : 'anonymous',
     item_count: itemCount,
-    object_hash: !objectId && object ? await sha256Hex(object.fullName) : null,
+    object_hash:
+      !objectId && object && hashKey
+        ? await hmacSha256Hex(hashKey, object.fullName)
+        : null,
     object_id: objectId,
     outcome: event.outcome,
     path_root: object?.root ?? null,
@@ -194,7 +228,8 @@ export function createStorageAccessAuditor(
   options: StorageAccessAuditorOptions
 ): StorageAccessAuditor {
   const maxPending = options.maxPendingWrites ?? 32;
-  const maxEvents = options.maxEventsPerRecord ?? 50;
+  // SDK share-batch accepts 100 paths; keep every object of a batch.
+  const maxEvents = options.maxEventsPerRecord ?? 100;
   const dedupeWindowMs = options.dedupeWindowMs ?? 60_000;
   const dedupeMaxKeys = options.dedupeMaxKeys ?? 2_000;
   const now = options.now ?? Date.now;
@@ -249,7 +284,13 @@ export function createStorageAccessAuditor(
         if (events.length === 0) return;
         const work: Promise<void> = (async () => {
           const rows = (
-            await Promise.all(events.map((e) => toStorageAccessAuditRow(e)))
+            await Promise.all(
+              events.map((e) =>
+                toStorageAccessAuditRow(e, {
+                  objectHashKey: options.objectHashKey,
+                })
+              )
+            )
           ).filter((row): row is StorageAccessAuditRow => row !== null);
           if (rows.length === 0) return;
           await options.insert(rows);

@@ -13,6 +13,8 @@ const WS = '11111111-1111-4111-8111-111111111111';
 const USER = '22222222-2222-4222-8222-222222222222';
 const OBJECT = '33333333-3333-4333-8333-333333333333';
 const ROUTE = '/api/v1/workspaces/[wsId]/storage/share';
+const KEY = 'synthetic-audit-hmac-key-0123456789abcdef';
+const keyed = { objectHashKey: KEY };
 
 const event = (
   overrides: Partial<StorageAccessAuditEvent> = {}
@@ -26,23 +28,31 @@ const event = (
   ...overrides,
 });
 
-async function sha256(value: string) {
-  const digest = await crypto.subtle.digest(
-    'SHA-256',
+async function hmac(value: string, key = KEY) {
+  const cryptoKey = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(key),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const signature = await crypto.subtle.sign(
+    'HMAC',
+    cryptoKey,
     new TextEncoder().encode(value)
   );
-  return Buffer.from(digest).toString('hex');
+  return Buffer.from(signature).toString('hex');
 }
 
 describe('toStorageAccessAuditRow', () => {
-  it('keeps the root and a hash of the full name, never the file name', async () => {
-    const row = await toStorageAccessAuditRow(event());
+  it('keeps the root and a keyed hash of the full name, never the file name', async () => {
+    const row = await toStorageAccessAuditRow(event(), keyed);
     expect(row).toEqual({
       action: 'share',
       actor_id: USER,
       actor_kind: 'user',
       item_count: 1,
-      object_hash: await sha256(`${WS}/Finance/Salaries 2026.xlsx`),
+      object_hash: await hmac(`${WS}/Finance/Salaries 2026.xlsx`),
       object_id: null,
       outcome: 'allowed',
       path_root: 'finance',
@@ -52,9 +62,36 @@ describe('toStorageAccessAuditRow', () => {
     expect(JSON.stringify(row)).not.toMatch(/Salaries|xlsx/);
   });
 
+  it('never stores an unkeyed hash that guessed names could be tested against', async () => {
+    const unsalted = Buffer.from(
+      await crypto.subtle.digest(
+        'SHA-256',
+        new TextEncoder().encode(`${WS}/Finance/Salaries 2026.xlsx`)
+      )
+    ).toString('hex');
+    for (const options of [
+      {},
+      { objectHashKey: null },
+      { objectHashKey: 'short' },
+    ]) {
+      const row = await toStorageAccessAuditRow(event(), options);
+      expect(row).toMatchObject({ object_hash: null, path_root: 'finance' });
+    }
+    const keyedRow = await toStorageAccessAuditRow(event(), keyed);
+    expect(keyedRow?.object_hash).not.toBe(unsalted);
+    expect(
+      (
+        await toStorageAccessAuditRow(event(), {
+          objectHashKey: `${KEY}-rotated`,
+        })
+      )?.object_hash
+    ).not.toBe(keyedRow?.object_hash);
+  });
+
   it('accepts full object names and prefers the object id over a hash', async () => {
     const row = await toStorageAccessAuditRow(
-      event({ objectId: OBJECT, path: `${WS}/chats/ai/resources/x/a.png` })
+      event({ objectId: OBJECT, path: `${WS}/chats/ai/resources/x/a.png` }),
+      keyed
     );
     expect(row).toMatchObject({
       object_hash: null,
@@ -73,10 +110,11 @@ describe('toStorageAccessAuditRow', () => {
 
   it('treats a single-segment listing path as a folder root', async () => {
     const row = await toStorageAccessAuditRow(
-      event({ action: 'list', kind: 'folder', path: 'Docs' })
+      event({ action: 'list', kind: 'folder', path: 'Docs' }),
+      keyed
     );
     expect(row?.path_root).toBe('docs');
-    expect(row?.object_hash).toBe(await sha256(`${WS}/Docs/`));
+    expect(row?.object_hash).toBe(await hmac(`${WS}/Docs/`));
   });
 
   it('records API key and anonymous actors and drops non-uuid ids', async () => {
@@ -162,6 +200,21 @@ describe('createStorageAccessAuditor', () => {
     expect(onError).toHaveBeenCalledWith(
       expect.objectContaining({ message: 'relation does not exist' })
     );
+  });
+
+  it('keeps every object of a 100-path batch by default', async () => {
+    const insert = vi.fn(async () => undefined);
+    const auditor = createStorageAccessAuditor({ insert });
+    auditor.record(
+      Array.from({ length: 101 }, (_, index) =>
+        event({ outcome: 'denied', path: `docs/${index}.pdf` })
+      )
+    );
+    await auditor.settled();
+    expect(
+      (insert.mock.calls[0] as unknown as [StorageAccessAuditRow[]])[0]
+    ).toHaveLength(100);
+    expect(auditor.stats().dropped).toBe(1);
   });
 
   it('drops events beyond the pending-write and per-call bounds', async () => {

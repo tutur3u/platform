@@ -11,7 +11,8 @@
 --
 -- Privacy: only the actor id is personal data. Objects are identified by
 -- their workspace, lower-cased root segment and either the Storage object id
--- or a SHA-256 hash of the full object name; file names are never stored.
+-- or an HMAC-SHA256 of the full object name keyed by a server secret (no
+-- unkeyed hash is ever stored); file names are never stored.
 -- Rows are kept for 90 days.
 --
 -- Access: RLS is enabled with no policies, so anon and authenticated read and
@@ -47,7 +48,7 @@ create table private.storage_access_events (
 );
 
 comment on table private.storage_access_events is
-  'App-side access audit for the workspaces Storage bucket (best-effort, 90-day retention). No file names; objects are identified by root plus object id or SHA-256 of the name. Service role only.';
+  'App-side access audit for the workspaces Storage bucket (best-effort, 90-day retention). No file names; objects are identified by root plus object id or a keyed HMAC-SHA256 of the name. Service role only.';
 
 create index storage_access_events_retention_idx
   on private.storage_access_events (occurred_at, id);

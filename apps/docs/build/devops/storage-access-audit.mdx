@@ -20,7 +20,7 @@ Each row is one access decision:
 | `actor_id`, `actor_kind` | User id (`user`), API key id (`api_key`), or none (`anonymous`) |
 | `ws_id` | Workspace of the object |
 | `path_root` | Lower-cased first folder under the workspace (`chats`, `docs`, …), or `(root)` for a root-level file |
-| `object_id` / `object_hash` | Storage object id when known, otherwise the SHA-256 of the full object name |
+| `object_id` / `object_hash` | Storage object id when known, otherwise an HMAC-SHA256 of the full object name keyed by `STORAGE_ACCESS_AUDIT_HMAC_KEY` (null when no key is configured) |
 | `action` | `sign`, `list`, `download`, `upload`, `delete` or `share` |
 | `route` | Route template, for example `/api/v1/workspaces/[wsId]/storage/share` |
 | `outcome` | `allowed`, `denied`, `invalid` or `error` (from the decision or the final status) |
@@ -29,8 +29,24 @@ Each row is one access decision:
 - File names, query strings, IP addresses, user agents, emails and signed URLs
   are **never** stored.
 - Only the actor id is personal data.
-- To check whether a known object was touched, hash its full name
-  (`<wsId>/<path>`) and compare it with `object_hash`.
+- To check whether a known object was touched, compute the HMAC of its full
+  name (`<wsId>/<path>`) with the audit key and compare it with `object_hash`.
+
+### Object hash key
+
+`object_hash` is keyed so that a reader of the table cannot confirm guessed
+file names. An unkeyed SHA-256 of `<wsId>/<path>` could be tested against
+candidate names.
+
+- Web reads the key from the environment variable
+  `STORAGE_ACCESS_AUDIT_HMAC_KEY`. Use at least 32 random bytes and keep it in
+  the deployment secret store. Never commit it, log it, or paste it into
+  tickets or chat.
+- If the key is missing or shorter than 32 bytes, rows store only the root and
+  object id. The writer never falls back to an unkeyed hash.
+- Rotating the key makes older rows unmatchable with the new key. Keep the
+  previous key in the secret store for the 90-day retention window if lookups
+  of older rows matter.
 
 ### Instrumented routes
 
@@ -59,7 +75,8 @@ The writer is `@tuturuuu/storage-core/storage-access-audit`.
   insert is logged with `console.warn` and dropped. The user request never waits
   for or fails because of the audit.
 - **Bounded per instance:**
-  - at most 50 rows per call;
+  - at most 100 rows per call, which covers the largest SDK batch of 100
+    paths;
   - at most 32 concurrent writes (extra events are dropped and counted);
   - identical `allowed` events from one instance are de-duplicated for 60
     seconds, so repeated image loads do not flood the table. Denials and errors
@@ -86,21 +103,32 @@ The writer is `@tuturuuu/storage-core/storage-access-audit`.
 - There is no product UI or API. Operators with database access query it for
   incident review.
 
-Example (run with an operator role):
+Example (run with an operator role). Pass the key as a psql variable read
+from the secret store, so it never appears in shell history, query logs
+attached to tickets, or chat:
 
 ```sql
+-- psql -v audit_key="$(read from the secret store)" ...
 select occurred_at, actor_kind, action, route, outcome, item_count
 from private.storage_access_events
 where ws_id = '<workspace uuid>'
-  and object_hash = encode(sha256(convert_to('<wsId>/<path>', 'UTF8')), 'hex')
+  and object_hash = encode(
+    extensions.hmac(
+      convert_to('<wsId>/<path>', 'UTF8'),
+      convert_to(:'audit_key', 'UTF8'),
+      'sha256'
+    ),
+    'hex'
+  )
 order by occurred_at desc;
 ```
 
 ## Rollout
 
-1. Apply `20261026120000_storage_access_audit_events.sql`. It needs approval and
+1. Apply `20261026180000_storage_access_audit_events.sql`. It needs approval and
    ships in the next migration batch.
-2. Set `STORAGE_ACCESS_AUDIT_ENABLED=true` for the Web deployment. Until then the
+2. Set `STORAGE_ACCESS_AUDIT_HMAC_KEY` (a secret of at least 32 random bytes),
+   then `STORAGE_ACCESS_AUDIT_ENABLED=true`, for the Web deployment. Until then the
    writer is a no-op, so the code is safe to deploy before the migration.
 3. Enable `database-storage-access-audit-retention` in
    `CRON_CONTROL_ENABLED_JOBS`.

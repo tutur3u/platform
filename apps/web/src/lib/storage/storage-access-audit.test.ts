@@ -68,6 +68,27 @@ describe('storage access audit (web binding)', () => {
       }),
     ]);
     expect(JSON.stringify(rows)).not.toContain('report.pdf');
+    // No STORAGE_ACCESS_AUDIT_HMAC_KEY: root only, never an unkeyed hash.
+    expect(rows[0]?.object_hash).toBeNull();
+  });
+
+  it('keys object hashes with STORAGE_ACCESS_AUDIT_HMAC_KEY', async () => {
+    vi.stubEnv('STORAGE_ACCESS_AUDIT_ENABLED', 'true');
+    vi.stubEnv(
+      'STORAGE_ACCESS_AUDIT_HMAC_KEY',
+      'synthetic-audit-hmac-key-0123456789abcdef'
+    );
+    auditStorageAccess({
+      action: 'sign',
+      outcome: 'allowed',
+      path: `${WS}/docs/report.pdf`,
+      route: '/api/ai/chat/signed-read-url',
+      wsId: WS,
+    });
+    await getStorageAccessAuditor().settled();
+
+    const [rows] = mocks.insert.mock.calls[0] as [Record<string, unknown>[]];
+    expect(rows[0]?.object_hash).toMatch(/^[0-9a-f]{64}$/);
   });
 
   it('logs and swallows write failures', async () => {

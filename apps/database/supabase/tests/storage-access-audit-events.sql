@@ -1,4 +1,4 @@
--- Contract for 20261026120000_storage_access_audit_events.sql: deny-all RLS,
+-- Contract for 20261026180000_storage_access_audit_events.sql: deny-all RLS,
 -- service-role-only writes and reads, bounded columns, and bounded 90-day
 -- retention.
 begin;
@@ -70,7 +70,7 @@ select throws_ok($$insert into private.storage_access_events (action, route, out
 select throws_ok($$insert into private.storage_access_events
   (object_hash, action, route, outcome)
   values ('report.pdf', 'sign', '/api/x', 'allowed')$$,
-  '23514', null, 'object_hash must be a SHA-256 hex digest');
+  '23514', null, 'object_hash must be a 64-character HMAC-SHA256 hex digest');
 select throws_ok($$insert into private.storage_access_events
   (path_root, action, route, outcome)
   values (repeat('r', 65), 'sign', '/api/x', 'allowed')$$,

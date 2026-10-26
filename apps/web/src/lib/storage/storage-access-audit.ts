@@ -10,7 +10,9 @@ import type { SupabaseClient } from '@tuturuuu/supabase';
  * Web binding of the storage access audit. Off unless
  * STORAGE_ACCESS_AUDIT_ENABLED=true, so code can ship before the approved
  * `private.storage_access_events` migration is applied. Writes use the
- * service role and are never awaited by the request.
+ * service role and are never awaited by the request. Object hashes are
+ * HMAC-SHA256 keyed by STORAGE_ACCESS_AUDIT_HMAC_KEY (at least 32 bytes);
+ * without it rows keep only the root and object id.
  */
 let auditor: StorageAccessAuditor | null = null;
 
@@ -27,6 +29,7 @@ export function isStorageAccessAuditEnabled() {
 export function getStorageAccessAuditor(): StorageAccessAuditor {
   if (!isStorageAccessAuditEnabled()) return disabledAuditor;
   auditor ??= createStorageAccessAuditor({
+    objectHashKey: process.env.STORAGE_ACCESS_AUDIT_HMAC_KEY ?? null,
     async insert(rows) {
       // The private schema is service-role only; generated types do not
       // include this append-only table, so use the untyped schema client.
