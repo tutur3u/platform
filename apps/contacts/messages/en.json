@@ -8859,6 +8859,7 @@
     "import_error_missing_email": "Missing email",
     "import_error_missing_time": "Missing time",
     "import_error_missing_topic": "Missing topic",
+    "import_error_too_long": "A cell is too long (title 300, topic 20,000, other fields 500 characters)",
     "import_error_unknown_contact": "Unknown contact",
     "import_error_unmatched_teacher": "Teacher not found",
     "import_failed": "Import failed",

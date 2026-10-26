@@ -289,7 +289,8 @@ sheet keeps the generic announcement template behavior.
 - **Limits.** Workbooks over 5 MB are refused before parsing, and merged
   ranges are clamped to the sheet's data. Import rows have the same length
   limits as creating one announcement (title 300, topic 20,000, labels 500)
-  regardless of the flag.
+  regardless of the flag; an over-length cell is a row error for that row
+  (and flagged in the teacher import preview), not a rejected import.
 - **Deadline.** With the flag on, the import stores `send_due_at` from each
   row's normalized date and start time in the workspace timezone.
 

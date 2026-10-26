@@ -170,3 +170,19 @@ describe('previewImportRow', () => {
     expect(previews[1]?.rowNumber).toBe(2);
   });
 });
+
+describe('import cell length limits', () => {
+  it('flags over-length cells before submitting', () => {
+    const ok = previewImportRow(
+      { contactEmail: 'a@example.com', title: 'x'.repeat(300) },
+      1
+    );
+    expect(ok.errors).toEqual([]);
+    const tooLong = previewImportRow(
+      { contactEmail: 'a@example.com', title: 'x'.repeat(301) },
+      2
+    );
+    expect(tooLong.errors).toContain('too_long');
+    expect(tooLong.submitRow).toBeUndefined();
+  });
+});

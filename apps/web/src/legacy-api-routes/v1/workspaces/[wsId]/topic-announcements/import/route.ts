@@ -146,7 +146,7 @@ export async function POST(request: Request, { params }: Params) {
         status: 'draft',
         teacher_workspace_user_id: row.teacherWorkspaceUserId,
         title: row.title,
-        topic: normalizeTopicAnnouncementTopic(row.topic),
+        topic: normalizeTopicAnnouncementTopic(row.topic ?? undefined) ?? null,
         updated_by: actorUserId,
         ws_id: normalizedWsId,
       }))

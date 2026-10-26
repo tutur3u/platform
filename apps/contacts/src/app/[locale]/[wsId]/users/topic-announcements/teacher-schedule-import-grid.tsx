@@ -55,6 +55,7 @@ const IMPORT_ISSUE_LABEL_KEYS = {
   missing_email: 'import_error_missing_email',
   missing_time: 'import_error_missing_time',
   missing_topic: 'import_error_missing_topic',
+  too_long: 'import_error_too_long',
   unknown_contact: 'import_error_unknown_contact',
   unmatched_teacher: 'import_error_unmatched_teacher',
 } as const;

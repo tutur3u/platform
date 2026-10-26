@@ -8859,6 +8859,7 @@
     "import_error_missing_email": "Thiếu email",
     "import_error_missing_time": "Thiếu giờ",
     "import_error_missing_topic": "Thiếu chủ đề",
+    "import_error_too_long": "Có ô quá dài (tiêu đề 300, chủ đề 20.000, các trường khác 500 ký tự)",
     "import_error_unknown_contact": "Không tìm thấy liên hệ",
     "import_error_unmatched_teacher": "Không tìm thấy giáo viên",
     "import_failed": "Nhập dữ liệu thất bại",

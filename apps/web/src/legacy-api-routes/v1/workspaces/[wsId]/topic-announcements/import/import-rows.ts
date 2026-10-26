@@ -31,6 +31,30 @@ export interface ImportRowError {
   rowNumber: number;
 }
 
+/** Same limits as creating one announcement. */
+export const IMPORT_ROW_LENGTH_LIMITS = {
+  classLabel: 500,
+  contactName: 500,
+  dayLabel: 500,
+  place: 500,
+  room: 500,
+  title: 300,
+  topic: 20_000,
+} as const;
+
+/** Row errors for cells over the create length limits. */
+export function importRowLengthErrors(
+  row: ImportRowInput,
+  rowNumber: number
+): ImportRowError[] {
+  return Object.entries(IMPORT_ROW_LENGTH_LIMITS).flatMap(([field, max]) => {
+    const value = row[field as keyof typeof IMPORT_ROW_LENGTH_LIMITS];
+    return value && value.trim().length > max
+      ? [{ message: `${field} is too long (max ${max})`, rowNumber }]
+      : [];
+  });
+}
+
 export function normalizeImportTime(value?: string) {
   if (!value) return null;
   const trimmed = value.trim();
@@ -69,10 +93,13 @@ function normalizeLegacyImportRows(rows: ImportRowInput[]) {
   const rowErrors: ImportRowError[] = [];
   const validRows = rows.flatMap((row, index): NormalizedImportRow[] => {
     const rowNumber = index + 1;
+    const lengthErrors = importRowLengthErrors(row, rowNumber);
+    rowErrors.push(...lengthErrors);
     const contactEmail = row.contactEmail
       ? normalizeEmail(row.contactEmail)
       : null;
     const topic = row.topic?.trim();
+    if (lengthErrors.length > 0) return [];
     if (!contactEmail) {
       rowErrors.push({ message: 'Missing contact email', rowNumber });
     }
@@ -117,6 +144,7 @@ export function normalizeImportRows(
   const validRows = rows.flatMap((row, index): NormalizedImportRow[] => {
     const rowNumber = index + 1;
     const errorCount = rowErrors.length;
+    rowErrors.push(...importRowLengthErrors(row, rowNumber));
     const contactEmail = row.contactEmail
       ? normalizeEmail(row.contactEmail)
       : null;

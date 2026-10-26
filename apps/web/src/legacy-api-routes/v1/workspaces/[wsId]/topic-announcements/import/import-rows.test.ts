@@ -154,6 +154,28 @@ describe('normalizeImportRows', () => {
     });
   });
 
+  it.each([true, false])(
+    'reports over-length cells as row errors (teacher assignments %s)',
+    (teacherAssignments) => {
+      const base = { contactEmail: 'a@example.com', topic: 'Topic' };
+      const { rowErrors, validRows } = normalizeImportRows(
+        [
+          { ...base, title: 'x'.repeat(301) },
+          { ...base, topic: 'x'.repeat(20_001) },
+          { ...base, room: 'x'.repeat(501) },
+          { ...base, title: 'x'.repeat(300) },
+        ],
+        { teacherAssignments }
+      );
+      expect(rowErrors).toEqual([
+        { message: 'title is too long (max 300)', rowNumber: 1 },
+        { message: 'topic is too long (max 20000)', rowNumber: 2 },
+        { message: 'room is too long (max 500)', rowNumber: 3 },
+      ]);
+      expect(validRows.map((row) => row.rowNumber)).toEqual([4]);
+    }
+  );
+
   it('accepts AM/PM times', () => {
     expect(normalizeImportTime('5:30 PM')).toBe('17:30:00');
     expect(normalizeImportTime('12:00 AM')).toBe('00:00:00');
@@ -162,25 +184,10 @@ describe('normalizeImportRows', () => {
 });
 
 describe('TopicAnnouncementImportSchema', () => {
-  it('applies the create length limits to import rows', () => {
-    const row = { contactEmail: 'a@example.com' };
-    for (const overrides of [
-      { title: 'x'.repeat(301) },
-      { topic: 'x'.repeat(20_001) },
-      { classLabel: 'x'.repeat(501) },
-      { place: 'x'.repeat(501) },
-      { room: 'x'.repeat(501) },
-      { dayLabel: 'x'.repeat(501) },
-    ]) {
-      expect(
-        TopicAnnouncementImportSchema.safeParse({
-          rows: [{ ...row, ...overrides }],
-        }).success
-      ).toBe(false);
-    }
+  it('accepts long cells so they can be reported per row', () => {
     expect(
       TopicAnnouncementImportSchema.safeParse({
-        rows: [{ ...row, title: 'x'.repeat(300), topic: 'x'.repeat(20_000) }],
+        rows: [{ contactEmail: 'a@example.com', title: 'x'.repeat(301) }],
       }).success
     ).toBe(true);
   });

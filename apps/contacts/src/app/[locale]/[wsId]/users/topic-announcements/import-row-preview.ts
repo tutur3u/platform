@@ -36,6 +36,7 @@ export type ImportRowError =
   | 'missing_date'
   | 'missing_email'
   | 'missing_time'
+  | 'too_long'
   | 'unknown_contact'
   | 'unmatched_teacher';
 
@@ -55,6 +56,25 @@ export interface ImportPreviewContext {
   /** Teacher schedule imports require a session date and start time. */
   requireSchedule?: boolean;
   workspaceUsers?: MatchableWorkspaceUser[];
+}
+
+/** Same limits as creating one announcement (and the import API). */
+export const IMPORT_CELL_LENGTH_LIMITS = {
+  classLabel: 500,
+  contactName: 500,
+  dayLabel: 500,
+  place: 500,
+  room: 500,
+  title: 300,
+  topic: 20_000,
+} as const;
+
+function hasOverLengthCell(row: EditableImportRow) {
+  return Object.entries(IMPORT_CELL_LENGTH_LIMITS).some(
+    ([field, max]) =>
+      (row[field as keyof typeof IMPORT_CELL_LENGTH_LIMITS]?.trim().length ??
+        0) > max
+  );
 }
 
 export function createEmptyImportRows(
@@ -160,6 +180,7 @@ export function previewImportRow(
     }
   }
 
+  if (hasOverLengthCell(row)) errors.push('too_long');
   if (!row.topic?.trim()) warnings.push('missing_topic');
 
   const preview: ImportRowPreview = { errors, row, rowNumber, warnings };
