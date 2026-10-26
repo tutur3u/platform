@@ -55,6 +55,9 @@ abstract class ITimeTrackerRepository {
 
   Future<TimeTrackingSession?> getRunningSession(String wsId);
 
+  /// The session stopped by Pause whose break is still open, if any.
+  Future<TimeTrackingSession?> getPausedSession(String wsId);
+
   Future<TimeTrackingSession> startSession(
     String wsId, {
     String? title,
@@ -309,16 +312,12 @@ class TimeTrackerRepository implements ITimeTrackerRepository {
   }
 
   @override
-  Future<TimeTrackingSession?> getRunningSession(String wsId) async {
-    final data = await _read(
-      wsId,
-      _withQuery('/api/v1/workspaces/$wsId/time-tracking/sessions', {
-        'type': 'running',
-      }),
-    );
+  Future<TimeTrackingSession?> getRunningSession(String wsId) async =>
+      await _pendingRunningSession(wsId, await _sessionOfType(wsId, 'running'));
 
-    return await _pendingRunningSession(wsId, data['session']);
-  }
+  @override
+  Future<TimeTrackingSession?> getPausedSession(String wsId) =>
+      _pausedSession(wsId);
 
   @override
   Future<TimeTrackingSession> startSession(

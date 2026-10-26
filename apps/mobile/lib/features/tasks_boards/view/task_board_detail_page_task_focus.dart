@@ -4,8 +4,8 @@ part of 'task_board_detail_page.dart';
 ///
 /// There is no Pomodoro entry point for a task yet (planned for phase 6), so
 /// this starts an ordinary time-tracking session linked to the task through
-/// the existing tracker API. Starting a session closes any running one on
-/// the server, so a running timer is only replaced after confirmation.
+/// the existing tracker API. A running or paused timer for another task is
+/// only replaced after confirmation; one for this task is kept or resumed.
 extension _TaskFocusActions on _TaskBoardDetailPageViewState {
   Future<void> _startTaskFocus(BuildContext context, TaskBoardTask task) async {
     final wsId = context.read<TaskBoardDetailCubit>().state.workspaceId;
@@ -31,20 +31,36 @@ extension _TaskFocusActions on _TaskBoardDetailPageViewState {
     }
 
     try {
+      // A paused session (stopped, with its break still open) is replaced
+      // with the same care as a running one.
       final running = await repository.getRunningSession(wsId);
+      final paused = running == null
+          ? await repository.getPausedSession(wsId)
+          : null;
+      final current = running ?? paused;
       if (!context.mounted) return;
-      if (running != null && running.taskId != task.id) {
+      if (current != null && current.taskId != task.id) {
         final confirmed = await showAppConfirmDialog(
           context: context,
-          title: l10n.taskBoardDetailFocusReplaceTitle,
-          message: l10n.taskBoardDetailFocusReplaceMessage,
+          title: paused != null
+              ? l10n.taskBoardDetailFocusReplacePausedTitle
+              : l10n.taskBoardDetailFocusReplaceTitle,
+          message: paused != null
+              ? l10n.taskBoardDetailFocusReplacePausedMessage
+              : l10n.taskBoardDetailFocusReplaceMessage,
           confirmLabel: l10n.taskBoardDetailFocusReplaceConfirm,
           cancelLabel: l10n.commonCancel,
         );
         if (!confirmed || !context.mounted) return;
-      }
-      if (running == null || running.taskId != task.id) {
+        // Starting only closes running sessions; stopping a paused one also
+        // closes its open break.
+        if (paused != null) await repository.stopSession(wsId, paused.id);
         await repository.startSession(wsId, title: title, taskId: task.id);
+      } else if (current == null) {
+        await repository.startSession(wsId, title: title, taskId: task.id);
+      } else if (paused != null) {
+        // Paused on this task: pick it back up.
+        await repository.resumeSession(wsId, paused.id);
       }
       if (!toastContext.mounted) return;
       showAppToast(

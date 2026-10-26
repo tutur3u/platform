@@ -7,15 +7,36 @@ import 'package:mobile/data/sources/api_exception.dart';
 
 import 'task_board_row_actions_fixture.dart';
 
-/// Records tracker starts; every other tracker call is unexpected here.
+/// Records tracker writes; every other tracker call is unexpected here.
 class _TimerRepository extends Fake implements ITimeTrackerRepository {
-  _TimerRepository({this.running});
+  _TimerRepository({this.running, this.paused});
 
   final TimeTrackingSession? running;
+  final TimeTrackingSession? paused;
   final List<({String wsId, String? title, String? taskId})> starts = [];
+  final List<String> stops = [];
+  final List<String> resumes = [];
 
   @override
   Future<TimeTrackingSession?> getRunningSession(String wsId) async => running;
+
+  @override
+  Future<TimeTrackingSession?> getPausedSession(String wsId) async => paused;
+
+  @override
+  Future<TimeTrackingSession> stopSession(String wsId, String sessionId) async {
+    stops.add(sessionId);
+    return TimeTrackingSession(id: sessionId);
+  }
+
+  @override
+  Future<TimeTrackingSession> resumeSession(
+    String wsId,
+    String sessionId,
+  ) async {
+    resumes.add(sessionId);
+    return TimeTrackingSession(id: '$sessionId-resumed');
+  }
 
   @override
   Future<TimeTrackingSession> startSession(
@@ -168,6 +189,50 @@ void main() {
       await tester.tap(find.text('Stop and start'));
       await tester.pumpAndSettle();
       expect(timer.starts.single.taskId, 'task-1');
+      await drainToasts(tester);
+    });
+
+    testWidgets('ends a paused timer for another task only after asking', (
+      tester,
+    ) async {
+      final timer = _TimerRepository(
+        paused: const TimeTrackingSession(id: 'paused', taskId: 'task-9'),
+      );
+      await pumpBoard(tester, timer: timer);
+
+      await openMenu(tester, 'Alpha task');
+      await tester.tap(find.byKey(const ValueKey('task-row-menu-focus')));
+      await tester.pumpAndSettle();
+      expect(find.text('End the paused timer?'), findsOneWidget);
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      expect(timer.stops, isEmpty);
+      expect(timer.starts, isEmpty);
+
+      await openMenu(tester, 'Alpha task');
+      await tester.tap(find.byKey(const ValueKey('task-row-menu-focus')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Stop and start'));
+      await tester.pumpAndSettle();
+      // Stopping closes the paused session's open break before the start.
+      expect(timer.stops, ['paused']);
+      expect(timer.starts.single.taskId, 'task-1');
+      await drainToasts(tester);
+    });
+
+    testWidgets('resumes a timer paused on the same task', (tester) async {
+      final timer = _TimerRepository(
+        paused: const TimeTrackingSession(id: 'paused', taskId: 'task-1'),
+      );
+      await pumpBoard(tester, timer: timer);
+
+      await openMenu(tester, 'Alpha task');
+      await tester.tap(find.byKey(const ValueKey('task-row-menu-focus')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('End the paused timer?'), findsNothing);
+      expect(timer.resumes, ['paused']);
+      expect(timer.starts, isEmpty);
       await drainToasts(tester);
     });
 

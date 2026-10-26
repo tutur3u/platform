@@ -193,7 +193,7 @@ type names match the legacy shadcn names. `AppElevation` and `AppMotion` hold
 shadows and durations. Spacing and radii stay in `AppSpacing` / `AppRadius`.
 `AppTokens.of(context).interface` (`AppInterfaceTokens`) carries the
 Appearance interface choices: `radius(base)` / `borderRadius(base)` for the
-corner style, `rowMinHeight` for density and `scrollPhysics` for the style.
+corner style, `rowMinHeight` for density (row height only; gaps do not scale) and `scrollPhysics` for the style.
 Surfaces read radii through it instead of using `AppRadius` directly, and no
 component branches on the platform for these choices. `AppInterfaceTheme`
 installs the extension and page transitions on the Material theme;
