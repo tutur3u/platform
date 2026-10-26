@@ -19,6 +19,7 @@ import {
 import {
   boardModel,
   calendarModel,
+  cyclePlanningModel,
   cyclesModel,
   entrypointRedirect,
   legacyBoardRedirect,
@@ -52,6 +53,8 @@ const loaders = {
     inWorkspace(ctx, (scope) => boardModel(scope, ctx.params.boardId ?? '')),
   '/[wsId]/boards': (ctx: PageContext) => inWorkspace(ctx, entrypointRedirect),
   '/[wsId]/calendar': (ctx: PageContext) => inWorkspace(ctx, calendarModel),
+  '/[wsId]/cycles/planning': (ctx: PageContext) =>
+    inWorkspace(ctx, cyclePlanningModel),
   '/[wsId]/cycles': (ctx: PageContext) => inWorkspace(ctx, cyclesModel),
   '/[wsId]/goals': (ctx: PageContext) =>
     inWorkspace(ctx, () => progressModel(ctx.params.wsId ?? '', 'goals')),
