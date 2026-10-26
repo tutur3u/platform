@@ -38,7 +38,7 @@ describe('app indexing boundaries', () => {
         ).toContain(config.origin);
       }
     }
-    expect(APP_SEO_POLICY.nova.origin).toBe('https://nova.tuturuuu.com');
+    expect(APP_SEO_POLICY.nova.origin).toBe('https://nova.ai.vn');
     expect(APP_SEO_POLICY.rewise.origin).toBe('https://rewise.tuturuuu.com');
   });
 
