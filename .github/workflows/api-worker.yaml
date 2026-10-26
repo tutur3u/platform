@@ -2,6 +2,7 @@ name: Standalone API Worker
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
     paths:
       - apps/api/**
       - packages/utils/src/platform-release.ts
@@ -26,6 +27,7 @@ concurrency:
 
 jobs:
   verify:
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:

@@ -215,6 +215,22 @@ for (const [file, workflow] of Object.entries(workflows)) {
   for (const event of ['pull_request', 'pull_request_target']) {
     if (!Object.hasOwn(events(workflow), event)) continue;
     test(`${file}: ${event} revisions supersede or have an explicit exception`, () => {
+      if (file === 'biome-check.yaml') {
+        // Biome keeps mutation locks outside any parent group, so each
+        // validation job supersedes its own PR revisions.
+        for (const id of [
+          'check-ci',
+          'duplicate-validation',
+          'format',
+          'lint',
+        ]) {
+          assertPrSupersedes(
+            { ...workflow, concurrency: workflow.jobs[id].concurrency },
+            event
+          );
+        }
+        return;
+      }
       if (prExceptions[file]) {
         assert.ok(prExceptions[file]);
         if (!file.startsWith('docker-') && file !== 'rust-backend.yml') {

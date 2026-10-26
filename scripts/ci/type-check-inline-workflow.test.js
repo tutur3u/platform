@@ -23,7 +23,20 @@ const expression = (body) => `\${{ ${body} }}`;
 
 test('singleton keeps the Type Check context, event surface and runner with a read-only token', () => {
   assert.equal(workflow.name, 'TypeScript Type Check');
-  assert.deepEqual(workflow.on, { push: null, workflow_dispatch: null });
+  // Feature branches validate through the ready-for-ci PR gate.
+  assert.deepEqual(workflow.on, {
+    push: { branches: ['main', 'production', 'release-please--branches--**'] },
+    pull_request: {
+      types: [
+        'opened',
+        'synchronize',
+        'reopened',
+        'ready_for_review',
+        'labeled',
+      ],
+    },
+    workflow_dispatch: null,
+  });
   assert.deepEqual(Object.keys(workflow.jobs), ['type-check']);
   assert.equal(job.name, 'Type Check');
   assert.equal(job['runs-on'], 'ubuntu-latest');
