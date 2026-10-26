@@ -7,9 +7,7 @@ name: CI Admitted
 # PR author can still edit it. One small job per PR event; it reads the
 # current labels and runs no PR-provided command.
 on:
-  pull_request:
-    types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
-
+  workflow_call:
 permissions: {}
 
 concurrency:

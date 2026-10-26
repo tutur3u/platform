@@ -60,18 +60,21 @@ test('the CLI fails the check unless admitted and reports why', () => {
 });
 
 test('CI Admitted is always on, read-only and immune to PR edits', () => {
-  assert.deepEqual(workflow.on, {
-    pull_request: {
-      types: [
-        'opened',
-        'synchronize',
-        'reopened',
-        'ready_for_review',
-        'labeled',
-        'unlabeled',
-      ],
-    },
-  });
+  assert.deepEqual(workflow.on, { workflow_call: null });
+  const caller = require('./workflow-yaml-test-helper').readWorkflow(
+    'pr-checks.yaml',
+    { raw: true }
+  );
+  assert.deepEqual(caller.on.pull_request.types, [
+    'opened',
+    'synchronize',
+    'reopened',
+    'ready_for_review',
+    'labeled',
+    'unlabeled',
+  ]);
+  assert.equal(caller.jobs.admitted.if, undefined);
+  assert.equal(caller.jobs.admitted.needs, undefined);
   // Always on: no job gate and no switchboard that could skip it.
   assert.deepEqual(Object.keys(workflow.jobs), ['admitted']);
   assert.equal(job.if, undefined);

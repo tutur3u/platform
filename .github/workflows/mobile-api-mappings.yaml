@@ -1,21 +1,12 @@
 name: Mobile API Mappings
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}
+  group: mobile-api-mappings-${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}
   cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 
 on:
+  workflow_call:
   push:
-    branches: [main]
-    paths:
-      - "apps/mobile/lib/core/config/api_config.dart"
-      - "apps/*/src/app/api/**"
-      - "apps/web/src/legacy-api-routes/**"
-      - "apps/tanstack-web/migration/route-manifest.json"
-      - "packages/sdk/src/**"
-      - "scripts/check-mobile-api-mappings.*"
-      - ".github/workflows/mobile-api-mappings.yaml"
-  pull_request:
     branches: [main]
     paths:
       - "apps/mobile/lib/core/config/api_config.dart"
