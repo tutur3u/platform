@@ -183,5 +183,7 @@ test('shared, inline and E2E preflights validate notes rather than trusting ref 
       )
     );
   }
-  assert.equal(readWorkflow('biome-check.yaml').on.push, null);
+  assert.deepEqual(readWorkflow('biome-check.yaml').on.push, {
+    branches: ['main', 'production', 'release-please--branches--**'],
+  });
 });

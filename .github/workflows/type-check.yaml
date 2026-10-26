@@ -2,6 +2,9 @@ name: TypeScript Type Check
 
 on:
   push:
+    branches: [main, production, 'release-please--branches--**']
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
   workflow_dispatch:
 
 # Initial PR/main validation supersedes; reruns and manual evidence stay independent.
@@ -14,6 +17,7 @@ permissions:
 
 jobs:
   type-check:
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
     name: Type Check
     permissions:
       contents: read

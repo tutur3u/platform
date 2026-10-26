@@ -3,7 +3,7 @@ on:
   workflow_call:
   workflow_dispatch:
   pull_request:
-    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
+    types: [opened, synchronize, reopened, ready_for_review, labeled, converted_to_draft]
     paths:
       [
         'apps/shortener/**',
@@ -111,7 +111,7 @@ concurrency:
   cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 jobs:
   check-ci:
-    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    if: (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     uses: ./.github/workflows/ci-check.yml
     permissions:
       contents: read
@@ -122,7 +122,7 @@ jobs:
   # scripts/ci/production-publication-policy.ts and no staging publisher exists.
   native:
     needs: check-ci
-    if: needs.check-ci.outputs.should_run == 'true'
+    if: (needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     uses: ./.github/workflows/native-start-app.yaml
     permissions:
       contents: read

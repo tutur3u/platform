@@ -1,7 +1,7 @@
 name: SSO persistence database contract
 on:
   pull_request:
-    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
+    types: [opened, synchronize, reopened, ready_for_review, labeled, converted_to_draft]
     paths:
       - 'apps/database/supabase/migrations/**'
       - 'apps/database/supabase/tests/sso-persistence.sql'
@@ -33,7 +33,7 @@ concurrency:
 
 jobs:
   check-ci:
-    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    if: (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     permissions:
       contents: read
       deployments: read
@@ -42,7 +42,7 @@ jobs:
       workflow_name: sso-persistence-contract.yaml
   contract:
     needs: check-ci
-    if: always() && needs.check-ci.result == 'success'
+    if: (always() && needs.check-ci.result == 'success') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     permissions:
       contents: read
     runs-on: ubuntu-latest
