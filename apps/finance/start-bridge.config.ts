@@ -1,7 +1,7 @@
 import { defaultContentSecurityPolicy } from '@tuturuuu/start-bridge/csp';
 import { defineBridgeAppConfig } from '@tuturuuu/start-bridge/start/app-config';
 import type { FinanceEnvironment } from './cloudflare/worker';
-import { publicAssets } from './src/start-bridge/public-assets.bridge.gen';
+import { publicAssets } from './src/start-bridge/public-assets.bridge.gen.ts';
 
 export default defineBridgeAppConfig<FinanceEnvironment>({
   csp: defaultContentSecurityPolicy,

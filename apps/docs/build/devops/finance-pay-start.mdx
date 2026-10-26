@@ -104,7 +104,10 @@ that cookie into cohort identity or copy it onto the shared origin.
 
 ## Qualify both Finance URL modes
 
-Root mode at `finance.<host>` is the first release gate. `<host>/finance` remains
+Root mode at `finance.<host>` is the first release gate. Finance disables
+`workers_dev` for its fail-closed root hosts. The sealed artifact and emitted
+runtime checks enforce the same setting; staging uses its explicitly admitted
+custom hostname. `<host>/finance` remains
 compatibility coverage and does not admit apex traffic. The bridge owns
 request-based mount resolution and the shared session model. Preserve the
 external prefix on redirects, ordinary links, assets, action requests, and API
