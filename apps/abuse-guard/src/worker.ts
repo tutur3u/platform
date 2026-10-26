@@ -88,7 +88,7 @@ export async function executeRpc(
   rpc: ParsedGuardRpc
 ): Promise<RpcOutcome> {
   const ops = rpc.steps.reduce((total, step) => total + step.cmds.length, 0);
-  const requiresFairness = rpc.family === 'replay';
+  const requiresFairness = rpc.family === 'replay' || rpc.family === 'password';
   if (
     requiresFairness &&
     (!rpc.fairness || (rpc.family === 'replay' && !rpc.fairness.principal))

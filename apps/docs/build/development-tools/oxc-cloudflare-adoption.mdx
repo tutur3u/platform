@@ -344,9 +344,17 @@ It carries a few accounting limits:
 - Its daily budget counts admitted commands, not billed rows. One `win.hit` writes
   up to four window rows plus a dedupe record, and one `res.reserve` writes up to
   three rows plus a dedupe record.
-- Each isolate buffers fewer than 200 admitted commands, and those are lost if the
-  isolate is evicted. A budget or operator stop takes up to 5 seconds per isolate
-  to observe.
+- Replay/password command admission now checks durable source/principal quotas
+  and charges family usage in one control-object transaction. Each identity gets
+  at most 5% of the family share per UTC day. Denied subject commands and success
+  refunds count; cache eviction/restart never resets the quota.
+- Fair admission adds one control DO request per cache miss and up to two quota
+  rows plus a control-state write on admission. Rejected probes do not spend
+  subject commands, but their request billing remains unbounded without accepted
+  ingress controls. The command budget is not a total dollar cap. Hosted request
+  sizing and partition capacity remain activation holds.
+- Other families still buffer fewer than 200 admitted commands per isolate, lost
+  on eviction, and observe a budget/operator stop after up to 5 seconds.
 - The theoretical storage ceiling is 2 KiB × 120-day retention × the daily budget.
   Only replay fences use long TTLs, and their values are tiny.
 

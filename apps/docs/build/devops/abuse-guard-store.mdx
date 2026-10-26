@@ -49,8 +49,8 @@ body and path before parsing JSON.
 
 Clients never retry. A caller that retries a mutating call after an unknown
 outcome, such as a timeout, must pass the same `operationId` (from
-`createGuardOperationId()`). The retry then returns the original result instead
-of charging twice. Unknown names in `ABUSE_GUARD_FAMILIES`, including
+`createGuardOperationId()`). The retry then returns the original subject result without applying the mutation
+twice; the command admission allowance still counts each RPC attempt. Unknown names in `ABUSE_GUARD_FAMILIES`, including
 wrong-case names, are ignored with a one-time warning. Their family stays on the
 legacy path.
 
@@ -65,9 +65,10 @@ One RPC is limited to 16 steps (partitions), 8 commands per step, 32 commands,
 - Generic records, windows, clearance and replay fences get one partition per hashed
   subject key, so there is no hotspot and little storage per object.
 - Password, Meet guest and Nova reservations use one partition per limiter scope, so the
-  source and target budgets reserve atomically. The KDF bounds only admitted
-  attempts. Every check, including one already denied, spends a `res.reserve`
-  command and writes a dedupe row; see the password activation hold.
+  source and target attempt budgets reserve atomically. Before subject execution,
+  `GuardControl` checks durable source/principal command quotas and charges the
+  family in one transaction. A fairness denial never reaches the subject or
+  allocates a dedupe row. A subject denial still spends its admitted command.
   The target window is anchored to its first reservation: after a successful
   login refunds the target to zero, the next attempt keeps the existing expiry.
   The legacy Lua script instead restarts a full window on that 0→1 increment.
@@ -165,14 +166,22 @@ families keep their legacy path.
   default 600,000 offline share, not a quarter, before denial and cache-miss
   overhead. Size the offline share for the expected number of concurrent sources. A
   denied subject is remembered per instance until its reset.
+- **Password:** a subject reservation denial is cached by source and target for
+  at most one second in a bounded 10,000-entry map. This suppresses immediate
+  repeated `res.reserve` calls without treating a target denial as immutable:
+  another successful login can refund the target. Expiry, eviction, concurrent
+  requests and caller restarts can cause another probe; each such admitted probe
+  spends the durable identity allowance below.
 - **Replay:** once `replay` is assigned, a token proven replayed outside its grace
   period is answered from memory until it expires. After a lost concurrent claim,
   the route rereads the winner's timestamp and applies grace without caching. Each
   instance pre-limits refresh attempts to 20 per minute per principal and 60 per
   minute per IP before any store call; excess attempts get 429 with
   `Retry-After: 60`.
-- **Skipped steps:** the Worker refunds steps it skips after a sequential denial
-  while their usage is still buffered. If a concurrent request flushes the buffer
+- **Skipped steps:** fair RPCs conservatively charge the whole requested batch,
+  including skipped steps. They never refund family or identity command usage.
+  Other RPCs refund steps skipped after a sequential denial while their usage is
+  still buffered. If a concurrent request flushes the buffer
   first, the skipped step stays counted. This is accepted conservative
   overcounting: it can stop a family slightly early, never late.
 - **Cache limits:** every in-memory map (replay, denials, outage counters) holds at
@@ -180,6 +189,50 @@ families keep their legacy path.
   restarts, new instances and eviction under pressure reset them. The zero-cost
   claims hold only while an entry stays resident; the store, or the fixed-window
   outage limiter, still enforces the limits.
+
+### Durable command fairness
+
+`replay` and `password` RPCs require a purpose-hashed source identity. Replay also
+requires the verified token principal. Password adds the verified user for Nova;
+anonymous Meet has only a source. Trusted adapters supply these values after
+credential and ingress validation, never from arbitrary body/header identity
+claims. IPv4-mapped IPv6 is canonicalized; IPv6 shares a /64. Missing or invalid
+source IPs share `unknown`, rather than bypassing source fairness.
+
+Each source **and** each available principal may spend at most
+`floor(family daily budget / 20)` commands per UTC day, across all token keys,
+targets, scopes, processes and Worker isolates. With the default 100,000-command
+share this is 5,000 commands. Each command in a batch counts, including a denied
+subject reserve, a replay GET/SET/reread, and a successful-login refund. Retries
+with the same operation id preserve subject idempotency but conservatively spend
+another admission allowance. There are no automatic retries. Limits are not
+refunded after subject errors, timeout-after-admission or skipped steps.
+
+The control object checks both quotas and the remaining family allowance, updates
+both quotas, and records family usage in one `transactionSync`. A fairness denial
+returns `guard_limited` (HTTP 429) without spending the family allowance, issuing
+a subject RPC, allocating new quota/dedupe rows or stopping the family. Clients
+treat it as unavailable and retain each caller's assigned fail-closed response.
+This is a command allowance, separate from the existing 15-minute password attempt
+counters. An operator resume resets family usage but preserves identity quotas.
+UTC rollover resets both; a burst across midnight can use two daily allowances.
+Shares smaller than 20 commands admit no fair commands.
+
+Worker denial shortcuts retain at most 10,000 exhausted identity digests until UTC
+rollover. A cache hit makes no DO request. An evicted entry, new isolate or restart
+always rechecks the durable quota; it never grants a new allowance. Expired quota
+rows are purged in bounded batches, with a terminal control-object cleanup alarm.
+A cleanup failure logs once and stops scheduling until a later admitted write;
+lazy expiry still enforces rollover.
+
+`client.withFairness({ source, principal })` creates an immutable request-scoped
+view and HMAC-hashes identities separately from storage keys. Offline/proxy can
+reuse this protocol and admission path, but their current callers do not supply
+it. Their existing activation holds remain open. Source caps intentionally apply
+to shared NATs and the shared unknown bucket; measure legitimate fan-out and
+resolve ingress gaps before assigning any family. This change does not establish
+botnet/account-rotation fairness or guarantee availability for callers sharing an
+exhausted source.
 
 ### Activation checklist (per environment)
 
@@ -205,33 +258,26 @@ families keep their legacy path.
    - run a staging drill showing that admitted traffic from realistic source
      fan-out cannot exhaust the offline share. The per-source daily windows bound
      one source, not many.
-4. **Replay — HIGH activation hold (open finding R1-REPLAY-DRAIN, not fixed):** do
-   not assign `replay` in production until one of these holds:
-   - cross-instance per-principal fairness has landed in the Worker fence; or
-   - a staging drill with real instance fan-out, run over a full daily budget,
-     shows that one principal cannot exhaust replay's share.
+4. **Replay — R1-REPLAY-DRAIN, family-command drain fixed in source/local runtime:**
+   `GuardControl` now enforces the durable quotas below before spending replay's
+   family share. Concurrency tests use two Worker isolates sharing real SQLite
+   Durable Objects, rotate sources and token/scope keys, and verify that another
+   principal still succeeds. Real runtime restart and cache-eviction coverage
+   preserve the quota. Independent security acceptance is still required to close
+   the HIGH finding; source delivery does not authorize assignment.
+5. **Password — PW-R1-DRAIN, family-command drain fixed in source/local runtime:**
+   durable source/principal quotas include denied reservation probes and verified
+   success refunds. The bounded one-second caller denial cache suppresses repeated
+   subject denials. Tests cover caller restarts, target rotation, real-store
+   concurrency, successful refunds and unrelated caller admission. Independent
+   security acceptance is still required to close the HIGH finding.
 
-   The pre-limits and the replay cache mitigate this risk; they do not close it.
-   Each instance has its own counters, so N instances admit N times the
-   per-principal rate. A family budget stop then fails CLI refresh, app-token
-   exchange and cross-app refresh closed for everyone until 07:00 GMT+7 (UTC
-   midnight), or until an operator resumes.
-5. **Password — HIGH activation hold (open finding PW-R1-DRAIN, not fixed):** do
-   not assign `password` until two things exist: per-source or per-principal
-   fairness before the shared family allowance is spent, and a bounded cache of
-   repeated denials. A scoped, authorized risk disposition under the security
-   rule is the only alternative. Each check spends a `res.reserve` command before
-   learning that its source or target is already blocked. The denial is not
-   refunded and still writes a dedupe row. At 5 rejected attempts per second,
-   one caller drains the default 100,000-command password share in about five
-   and a half hours. The family stop then refuses every unrelated Meet and Nova
-   password check until UTC midnight or an operator resumes. The worker test
-   "denied reservations still spend the password share" documents this.
-   Still owed before activation:
-   - real-store concurrent saturation through the wired callers;
-   - a hosted stop and resume;
-   - restart and unknown-outcome behavior;
-   - scope-partition capacity under bounded traffic.
+   Both families remain unassigned. **Open activation holds:** hosted stop/resume,
+   actual ingress identity coverage, endpoint-to-store end-to-end admission,
+   scope/control-partition capacity and request billing under denial/cache
+   pressure are unproven. Fairness admission RPCs still
+   cost Worker/DO requests on cache misses; see the cost limit below. No full-day
+   hosted drill, publication or production acceptance is claimed.
 6. **Replay cutover:** fence keys consumed before cutover live only in the legacy
    store, and CLI refresh tokens live 90 days. Choose one:
    - **Read-through.** Stop every writer to the legacy fence keys first, so the
@@ -259,21 +305,24 @@ families keep their legacy path.
   There are no retries anywhere.
 - **Stop fence:** `POST /control/stop` with `Authorization: Bearer
   $ABUSE_GUARD_OPERATOR_TOKEN` persists a stop. Every RPC then returns 503
-  `guard_stopped` before any subject call, and stopped requests are not billed.
-  Each isolate caches the fence for at most 5 seconds. `POST /control/resume` clears
+  `guard_stopped` before any subject call. Stopped requests spend no subject
+  commands, but Worker/control requests remain billable. Fair RPCs consult the
+  durable fence on every cache miss; other RPCs cache it for at most 5 seconds. `POST /control/resume` clears
   it, and `GET /control/state` reads it. Stored data is preserved.
 - **Budget:** each family has its own daily allowance, so exhausting one cannot
   stop another. Unauthenticated marked-bulk traffic spends only `offline`'s share.
-  Each isolate reports admitted commands per family every 5 seconds or 200
-  commands. At 80% of a family's budget the control object logs a warning once.
+  Fair RPCs charge commands durably before every subject call, without isolate
+  buffering or overshoot. Other RPCs report admitted commands per family every
+  5 seconds or 200 commands. At 80% of a family's budget the control object logs a warning once.
   When a family exhausts its budget, the control object persists a stop for that
   family only. The stop survives restarts and clears at the next UTC day, so the
-  daily cost cap holds without one flood becoming an open-ended outage. The cap
+  daily command cap holds without one flood becoming an open-ended outage. The cap
   applies per calendar UTC day, not per rolling 24 hours, so a burst across UTC
   midnight can admit up to about twice a family's budget within a short span. An
-  operator resume clears it earlier. Rejected requests are never counted, so a
-  family admits its budget plus a bounded overshoot of isolates × 200 commands and
-  the 5-second refresh lag. Each caller of a stopped family applies its own fail
+  operator resume clears it earlier. Admission rejections spend no commands;
+  admitted subject denials do count. A non-fair family admits its budget plus the buffered overshoot of isolates × 200
+  commands and the 5-second refresh lag. Fair RPCs cannot exceed the remaining
+  family command allowance. Each caller of a stopped family applies its own fail
   policy.
   An invalid budget configuration makes every RPC return 503
   `guard_unavailable`, the same as a bad secret. That covers a malformed total, an
@@ -282,7 +331,7 @@ families keep their legacy path.
   `daily operation budget exhausted` error, filtered per family. A stop at
   10:00 GMT+7 lasts until 07:00 GMT+7, the next UTC midnight, unless an operator
   first checks `GET /control/state` and then resumes or stops globally.
-- **Alarm failures:** a failed cleanup is logged and re-armed with capped
+- **Subject alarm failures:** a failed cleanup is logged and re-armed with capped
   exponential backoff (1, 2, 4, 8 minutes). After five consecutive failures it
   stops until the next write; lazy expiry keeps reads correct meanwhile.
 - **Alarms:** each partition keeps one alarm at its latest expiry, moved only when
@@ -296,8 +345,17 @@ families keep their legacy path.
 - **Ingress:** when the owner attaches a hostname, add a Cloudflare WAF rate-limit
   rule for it, such as per-IP requests to `/v1/rpc` and `/control/*`. It sheds
   unauthenticated floods before Worker billing. It is not a spend cap; the budget is.
-- **Accounting limits:** the budget counts commands, not rows written.
-  Each isolate buffers fewer than 200 commands, and those are lost on eviction.
+- **Accounting limits / open request-cost hold:** the budget counts subject
+  commands, not all billed operations. A fair admission cache miss makes a control
+  DO request, even when rejected. Cache eviction, restarts and multiple instances
+  multiply those probes; their request billing has no demonstrated total cap.
+  Denied probes spend no subject commands, but must not be described as free or
+  protected by a hard dollar cap. A family-command quota cannot cap an unbounded
+  stream of Worker or control-DO requests. Admission/WAF sizing and a separately
+  accepted request-cost envelope remain activation holds.
+  Each accepted fair RPC writes up to two quota rows plus the control state, in
+  addition to subject/dedupe rows, deletes and alarm operations. Non-fair isolates
+  buffer fewer than 200 commands, lost on eviction.
   Stops take up to 5 seconds per isolate to observe. Storage is bounded by
   2 KiB × 120 days × the daily budget. See the
   [adoption guidance](/build/development-tools/oxc-cloudflare-adoption#runaway-work-and-cost-acceptance).
@@ -320,7 +378,7 @@ Idle Durable Objects are not billed for duration.
 | Offline guard, one guarded hop | 1 Worker request, 3 Durable Object requests, about 4 rows written |
 | One mobile "Download all" (172 reads × 2 hops) | About 1,000 Durable Object requests |
 | 1,000 such runs per day | About $5/month above the base |
-| Worst case at the default 1M commands/day | About 30M Durable Object requests ($4.35), 60M rows ($10) and 30M Worker requests ($6): **about $20/month above the base, hard-capped by the budget stop** |
+| Fair admission | Add one control DO request per cache miss and up to two quota rows plus one control-state write per admitted RPC. Rejected probes and ingress requests remain billable; no hard monthly dollar ceiling has been demonstrated. |
 
 The `proxy` family (every API request) has no measured volume and stays off until one exists.
 
@@ -337,9 +395,19 @@ cleanup planning and row-write counts. `src/worker.test.ts` bundles the Worker w
 esbuild and runs it in workerd through Miniflare. It covers auth rejection with
 zero admitted work, secret rotation, a 50-way NX race, clearance expiry,
 sequential windows, the service-binding entrypoint, the operator stop fence, and
-a budget stop that persists across a restart. Client behavior (timeouts, no
+a budget stop that persists across a restart. `src/fairness.test.ts` uses two
+Worker isolates sharing real DO namespaces to exercise both identity axes,
+concurrent admissions, denial probes, caller/runtime restarts, successful refunds
+and unrelated caller success. `src/fair-admission.test.ts` covers UTC rollover,
+batch accounting and bounded denial-cache pressure. Focused negative controls
+remove principal fairness, source fairness and denial caching separately; their
+corresponding assertions must fail before the original source is restored. Client behavior (timeouts, no
 retries, family gating, configuration validation) lives in
 `packages/utils/src/abuse-guard/__tests__/`.
+
+The real-store password cases call the shared limiter through real HTTP and
+service-binding transports. Meet/Nova endpoint and entrypoint suites use fixtures;
+they do not prove an end-to-end request through the deployed app and hosted store.
 
 Local Durable Objects do not prove hosted placement, latency or billing. Before
 production, the admitted staging publication must record each of these:

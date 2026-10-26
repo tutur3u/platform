@@ -1407,3 +1407,16 @@ Vercel invocation. Retain the web boundary gate through rollback; an expired or
 unknown operation requires reconciliation with its original identity. Validate
 the real local workerd SQLite stop and restart test as well as the pure ledger
 tests before enabling a job. This preparation grants no deployment authority.
+
+
+## Abuse-guard command fairness
+
+For assigned replay/password callers, pass trusted source and verified principal
+identity through a request-scoped `client.withFairness` view. Never mutate a shared
+client, key quotas by token/target, or replace durable quotas with a local cache.
+The control object checks identity quotas and family spend in one transaction;
+subject denials, retries and successful refunds still count. Bounded caches are
+shortcuts whose misses recheck durable admission after eviction or restart.
+Follow the [store runbook](../../../../../apps/docs/build/devops/abuse-guard-store.mdx#durable-command-fairness)
+for defaults, canonical IP buckets, tests and remaining activation holds. Command
+allowances do not establish a total bound on Worker/control-DO request billing.

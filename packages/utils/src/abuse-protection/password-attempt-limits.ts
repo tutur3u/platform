@@ -7,12 +7,13 @@
  */
 
 import { createHash, randomUUID } from 'node:crypto';
-import { isIP } from 'node:net';
 import type { AbuseGuardClient } from '../abuse-guard/client';
+import { createExpiringMap } from '../abuse-guard/local-cache';
 import {
   type AbuseGuardSelection,
   selectAbuseGuard,
 } from '../abuse-guard/select';
+import { guardSourceBucket as passwordAttemptIPBucket } from '../abuse-guard/source';
 import {
   getUpstashRatelimitRedisClient,
   hasUpstashRestEnv,
@@ -37,42 +38,13 @@ export type PasswordAttemptScope =
 
 export type PasswordAttemptSubject = { target: string } & (
   | { scope: 'meet-guest' | 'meet-guest-create'; ip?: string | null }
-  | { scope: 'nova-challenge'; userId: string }
+  | { scope: 'nova-challenge'; userId: string; ip?: string | null }
 );
 
 type CounterClient = Pick<UpstashRatelimitRedisClient, 'eval'>;
 type AttemptResult = AbuseCheckResult & { refund?: () => Promise<void> };
 
-/** Canonical IPv4 or IPv6 /64; invalid/missing addresses share one bucket. */
-export function passwordAttemptIPBucket(value?: string | null) {
-  const ip = value?.trim() ?? '';
-  if (isIP(ip) === 4) return ip;
-  if (isIP(ip) !== 6 || ip.includes('%')) return 'unknown';
-  // URL canonicalization handles compression and IPv4-mapped addresses.
-  const canonical = new URL(`http://[${ip}]/`).hostname.slice(1, -1);
-  const [left = '', right = ''] = canonical.split('::');
-  const head = left ? left.split(':') : [];
-  const tail = right ? right.split(':') : [];
-  const groups = canonical.includes('::')
-    ? [
-        ...head,
-        ...Array<string>(8 - head.length - tail.length).fill('0'),
-        ...tail,
-      ]
-    : head;
-  if (
-    groups.slice(0, 5).every((group) => Number.parseInt(group, 16) === 0) &&
-    Number.parseInt(groups[5] ?? '', 16) === 0xffff
-  ) {
-    const high = Number.parseInt(groups[6] ?? '0', 16);
-    const low = Number.parseInt(groups[7] ?? '0', 16);
-    return [high >> 8, high & 255, low >> 8, low & 255].join('.');
-  }
-  return `${groups
-    .slice(0, 4)
-    .map((group) => group.padStart(4, '0'))
-    .join(':')}::/64`;
-}
+export { guardSourceBucket as passwordAttemptIPBucket } from '../abuse-guard/source';
 
 function digest(value: string) {
   return createHash('sha256').update(value).digest('hex').slice(0, 32);
@@ -183,6 +155,12 @@ async function reserveInGuardStore(
   client: AbuseGuardClient,
   subject: PasswordAttemptSubject
 ): Promise<AttemptResult> {
+  client = client.withFairness({
+    source: passwordAttemptIPBucket(subject.ip),
+    ...(subject.scope === 'nova-challenge'
+      ? { principal: subject.userId }
+      : {}),
+  });
   const keys = getPasswordAttemptKeys(subject);
   const budgets = attemptBudgets(subject);
   const partition = `pwd:${subject.scope}`;
@@ -228,6 +206,8 @@ export function createPasswordAttemptLimiter(
   getRedis: () => Promise<CounterClient | null> = defaultRedis,
   selectStore: () => AbuseGuardSelection = () => selectAbuseGuard('password')
 ) {
+  // A short shortcut, never the authority: refunds may reopen a target.
+  const denials = createExpiringMap<AttemptResult>();
   /** Reserve before KDF; call refund only after verifying the stored secret. */
   async function check(
     subject: PasswordAttemptSubject
@@ -241,7 +221,13 @@ export function createPasswordAttemptLimiter(
     }
     if (selection.kind === 'durable-object') {
       try {
-        return await reserveInGuardStore(selection.client, subject);
+        const keys = getPasswordAttemptKeys(subject);
+        const cacheKey = JSON.stringify([keys.source, keys.target]);
+        const cached = denials.get(cacheKey);
+        if (cached) return cached;
+        const result = await reserveInGuardStore(selection.client, subject);
+        if (!result.allowed) denials.set(cacheKey, result, Date.now() + 1000);
+        return result;
       } catch (error) {
         failOpen('Password attempt reservation failed:', error);
         return storeUnavailable();

@@ -542,7 +542,7 @@ describe('daily operation budget', () => {
     await mf.dispose();
   });
 
-  it('denied reservations still spend the password share (PW-R1-DRAIN)', async () => {
+  it('denied reservations are counted conservatively within durable identity quotas', async () => {
     const mf = createRuntime();
     const client = await bindingClient(mf);
     const reserve = (receipt: string) =>
@@ -557,8 +557,6 @@ describe('daily operation budget', () => {
         ok: false,
       });
     }
-    // One more command flushes the buffered usage.
-    // All six attempts are already durably charged.
     expect((await control(mf, 'state')).body.families.password.used).toBe(6);
     await mf.dispose();
   });
