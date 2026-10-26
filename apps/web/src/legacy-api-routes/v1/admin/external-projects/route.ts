@@ -48,11 +48,11 @@ export async function POST(request: Request) {
         adapter: payload.adapter,
         allowed_collections: payload.allowed_collections,
         allowed_features: payload.allowed_features,
-        delivery_profile: payload.delivery_profile as Json,
+        delivery_profile: payload.delivery_profile as NonNullable<Json>,
         display_name: payload.display_name,
         id: payload.id,
         is_active: payload.is_active,
-        metadata: payload.metadata as Json,
+        metadata: payload.metadata as NonNullable<Json>,
       },
       access.admin
     );

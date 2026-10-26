@@ -20,6 +20,19 @@ and its focused regression coverage before adding a reason or changing middlewar
   Use the [Nova/Inventory qualification guide](../../../../../apps/docs/build/devops/nova-inventory-start-bridge.mdx)
   for action/offline parity and separate raw-Host, header and browser acceptance.
 
+- Workspace ID boundary pilot: `@tuturuuu/utils/workspace-id` exports
+  `workspaceIdSchema` and its inferred `WorkspaceId` brand. The schema is the
+  only constructor; it reuses `normalizeWorkspaceContextId` for `personal` and
+  `internal` (the root UUID), accepts UUID literals, and has no framework imports.
+  In template background GET/HEAD, retain authentication and
+  `normalizeWorkspaceId` first so personal workspaces and existing handles keep
+  their resolution behavior, then parse the result inside the existing 400
+  handler. Pass `WorkspaceId` to the downstream `getBackgroundTemplate` query;
+  never cast raw route params into the brand. Parsing does not grant access:
+  preserve membership, workspace filters, visibility and creator checks.
+  Expand one resource at a time with its existing error envelope and regression
+  coverage. See [typed workspace boundaries](../../../../../apps/docs/build/development-tools/codex-plugin.mdx#typed-workspace-boundaries).
+
 - Calendar provider cron failures retain failed dashboard diagnostics while
   isolating accounts and bounding work. Rejected Google credentials stop siblings
   and become inactive only if storage still matches; transient failures retry.
@@ -634,6 +647,16 @@ transfer. A completion callback must not navigate away from edits made while the
 request was pending: offer a separate guarded open action. Fence double submits
 synchronously and avoid automatic retries for non-idempotent creation.
 Lettin's duplicate-entry D1 and component tests exercise these boundaries.
+
+## Calendar consent restart admission
+
+Automatic Google consent restarts use `admitGoogleConsentRestart` after callback
+authorization and the scoped provider-account lookup. Keep admission in the
+existing atomic nonce ledger (one account/user/workspace slot per ten-minute
+window), fail closed on unavailable storage, and preserve fresh-state/PKCE and
+quarantine reuse guards. HTTP 429 includes Retry-After and localized Calendar
+copy. A fresh provider refresh token bypasses restart admission. See the
+Calendar product decision and callback/consent-restart tests.
 
 ## Notification email admission
 
@@ -1266,3 +1289,11 @@ section in [storage egress protection](../../../../../apps/docs/build/devops/sto
 ## Standalone API foundation
 
 For the explicitly authorized `apps/api` Worker migration, use the [standalone API runbook](../../../../../apps/docs/build/devops/standalone-api.mdx). Domain operations register through one policy/schema pipeline. Protected operations fail closed until the concrete Web guard and principal adapter is verified; retained Next routes keep their existing guards. Do not import Node-only graphs or treat generated inventory as runtime acceptance.
+
+
+Calendar provider-sync envelopes distinguish productive `ok` runs from a
+provider whose entire nonempty sample failed transiently. Keep the bounded
+`degraded` / `transientProviders` contract wired through Cron Control's real
+reader and durable ledger. Degraded runs reset the fatal streak without
+advancing the last productive completion; holds and revocations remain nonfatal.
+See `apps/docs/platform/applications/calendar.mdx` and the scheduler contract tests.
