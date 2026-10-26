@@ -10,8 +10,8 @@ export default defineConfig({
     name: 'tuturuuu-forms-vite-staging',
     main: './cloudflare/worker.ts',
     compatibility_date: '2026-10-12',
-    compatibility_flags: ['nodejs_compat'],
-    workers_dev: true,
+    compatibility_flags: ['nodejs_compat', 'global_fetch_strictly_public'],
+    workers_dev: false,
     vars: { TUTURUUU_NOINDEX: '1' },
     assets: {
       binding: 'ASSETS',

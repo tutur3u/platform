@@ -21,7 +21,13 @@ def load():
     spec = importlib.util.spec_from_file_location("forms_native_artifact_base", path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    module.IDENTITY = {**module.IDENTITY, "name": WORKER}
+    module.IDENTITY = {
+        **module.IDENTITY,
+        "name": WORKER,
+        "compatibility_date": "2026-10-12",
+        "compatibility_flags": ["nodejs_compat","global_fetch_strictly_public"],
+        "workers_dev": False,
+    }
     module.NORMALIZED_DEFAULTS = {**module.NORMALIZED_DEFAULTS, "topLevelName": WORKER}
     module.RECEIPT = "forms-native-artifact.json"
     module.PUBLIC_FILES = PUBLIC_FILES
