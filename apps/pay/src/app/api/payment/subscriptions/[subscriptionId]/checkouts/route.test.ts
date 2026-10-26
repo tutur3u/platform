@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({ resolve: vi.fn(), create: vi.fn() }));
 vi.mock('@tuturuuu/payment/polar/server', () => ({
@@ -16,18 +16,17 @@ const adminFixture = (options: Parameters<typeof fixture>[0] = {}) =>
 
 import { POST } from './route';
 
-async function checkout() {
-  return POST(
-    new NextRequest(
-      'https://pay.tuturuuu.com/api/payment/subscriptions/sub/checkouts',
-      {
-        method: 'POST',
-        body: JSON.stringify({ wsId: 'workspace', productId: 'product' }),
-      }
-    ),
+async function checkout(post = POST, origin = 'https://pay.tuturuuu.com') {
+  return post(
+    new NextRequest(`${origin}/api/payment/subscriptions/sub/checkouts`, {
+      method: 'POST',
+      body: JSON.stringify({ wsId: 'workspace', productId: 'product' }),
+    }),
     { params: Promise.resolve({ subscriptionId: 'sub' }) }
   );
 }
+
+afterEach(() => vi.unstubAllEnvs());
 
 describe('workspace checkout boundary', () => {
   beforeEach(() => {
@@ -139,5 +138,22 @@ describe('workspace checkout boundary', () => {
       expect((await checkout()).status).toBe(status);
     }
     expect(mocks.create).not.toHaveBeenCalled();
+  });
+  it('returns sandbox checkouts to the staging Pay origin in production mode', async () => {
+    const origin = 'https://pay-staging.tuturuuu.com';
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('PAY_APP_URL', origin);
+    vi.resetModules();
+    const { POST: stagingPost } = await import('./route');
+    const f = adminFixture({ currentTier: 'FREE' });
+    mocks.resolve.mockResolvedValue({ admin: f.admin, user: { id: 'user' } });
+
+    expect((await checkout(stagingPost, origin)).status).toBe(200);
+    expect(mocks.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        embedOrigin: origin,
+        successUrl: `${origin}/workspace/billing/success?checkoutId={CHECKOUT_ID}`,
+      })
+    );
   });
 });

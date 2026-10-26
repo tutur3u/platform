@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@tuturuuu/payment/polar', () => ({ Polar: mocks.polar }));
 
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
+import appConfig from '../start-bridge.config';
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -21,6 +22,8 @@ it('selects only Polar sandbox for the declared Pay staging profile', async () =
     await readFile(new URL('./staging-profile.json', import.meta.url), 'utf8')
   );
   expect(profile.POLAR_SANDBOX).toBe('true');
+  expect(appConfig.mounts.rootHosts).toEqual(['pay-staging.tuturuuu.com']);
+  expect(appConfig.mounts.unknownHost).toBe('reject');
   expect(profile.PAY_APP_URL).toBe('https://pay-staging.tuturuuu.com');
   expect(profile.INTERNAL_WEB_API_ORIGIN).toBe('https://staging.tuturuuu.com');
   expect(profile.NEXT_PUBLIC_WEB_APP_URL).toBe('https://staging.tuturuuu.com');
