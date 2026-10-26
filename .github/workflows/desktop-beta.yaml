@@ -96,7 +96,7 @@ jobs:
       - name: Smoke installed Windows dry run
         run: pwsh -NoProfile -File scripts/desktop-deployment/smoke-windows.ps1
       - name: Upload Windows dry-run installer and checksum receipt
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: desktop-windows-x64-dry-run
           path: |
@@ -261,7 +261,7 @@ jobs:
         if: matrix.platform == 'windows'
         run: pwsh -NoProfile -File scripts/desktop-deployment/smoke-windows.ps1
       - name: Upload isolated beta package
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: desktop-beta-${{ matrix.platform }}
           path: ${{ runner.temp }}/desktop-artifacts/*
@@ -270,7 +270,7 @@ jobs:
           compression-level: 0
       - name: Upload Windows installation inventory
         if: matrix.platform == 'windows'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: windows-installation-inventory
           path: ${{ runner.temp }}/windows-installed-files.json

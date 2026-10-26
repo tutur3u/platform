@@ -79,7 +79,7 @@ jobs:
         run: ./scripts/desktop-deployment/verify-windows-store.ps1 -DiagnosticsOnly:($env:STORE_DIAGNOSTICS_ONLY -eq 'true') -Package "$env:RUNNER_TEMP/store-draft/Tuturuuu-windows-store-x64.msix" -ReportDirectory "$env:RUNNER_TEMP/store-validation"
       - name: Upload Windows validation evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: windows-store-validation-${{ github.run_id }}
           path: ${{ runner.temp }}/store-validation/*
@@ -87,7 +87,7 @@ jobs:
           retention-days: 7
       - name: Upload production submission package
         if: success() && !inputs.diagnostics_only
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: windows-store-draft-${{ github.run_id }}
           path: ${{ runner.temp }}/store-draft/*.msix
