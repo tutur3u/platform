@@ -333,6 +333,42 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantAttachmentUploadFailed => 'Không tải được tệp đính kèm. Hãy xóa tệp và thử lại trước khi gửi.';
 
   @override
+  String get assistantAttachmentFailureForbidden => 'Cuộc trò chuyện này không nhận tệp đính kèm. Hãy xóa tệp hoặc bắt đầu cuộc trò chuyện mới.';
+
+  @override
+  String get assistantAttachmentFailureNetwork => 'Tải lên bị gián đoạn. Kiểm tra kết nối rồi nhấn Thử lại.';
+
+  @override
+  String get assistantAttachmentFailureServer => 'Tải lên chưa hoàn tất. Nhấn Thử lại.';
+
+  @override
+  String get assistantAttachmentFailureTooLarge => 'Tệp lớn hơn 32 MB. Hãy xóa tệp hoặc đính kèm tệp nhỏ hơn.';
+
+  @override
+  String get assistantAttachmentFailureUnsupported => 'Không hỗ trợ loại tệp này. Hãy xóa tệp để gửi.';
+
+  @override
+  String assistantAttachmentNotSentMany(int count) {
+    return '$count tệp đính kèm chưa tải lên. Thử lại hoặc xóa chúng để gửi.';
+  }
+
+  @override
+  String assistantAttachmentNotSentOne(String name, String reason) {
+    return '$name chưa tải lên. $reason';
+  }
+
+  @override
+  String get assistantAttachmentPreparing => 'Đang chuẩn bị';
+
+  @override
+  String get assistantAttachmentRetry => 'Thử lại';
+
+  @override
+  String assistantAttachmentUploadingPercent(int percent) {
+    return '$percent%';
+  }
+
+  @override
   String get assistantAttachmentUploadPending => 'Hãy đợi tải tệp lên xong rồi gửi.';
 
   @override
@@ -996,7 +1032,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantSaveAction => 'Lưu';
 
   @override
-  String get assistantScrollToBottomAction => 'Cuộn xuống cuối';
+  String get assistantScrollToBottomAction => 'Tới tin mới nhất';
 
   @override
   String get assistantSearchModels => 'Tìm mô hình';

@@ -309,6 +309,13 @@ admission and manage_chat for later explicit edits. Credit scope must follow the
 existing actor-personal/active-workspace billing rules, not arbitrary client IDs.
 Do not substitute model defaults for a rejected explicit selection.
 
+Empty-state Send bypasses only the follow-up queue debounce. `AssistantCreatedChat`
+is returned only after the repository durably saves the creation selection; the
+Cubit skips a duplicate selection write for that result. History/cache decoding
+must not recreate this marker. Keep origin checks before reply dispatch and retain
+explicit attachment-driven creation. `assistant_first_send_pipeline_test.dart`
+and `assistant_created_chat_test.dart` cover this boundary.
+
 A source fixture passing is not atomic SQL proof: retain migration execution under
 an admitted isolated exact-commit workflow as a separate gate. Malformed/stale or
 unknown sent outcomes retain the original creation hold and draft. Regression
