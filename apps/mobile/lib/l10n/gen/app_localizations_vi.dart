@@ -8332,6 +8332,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailColorYellow => 'Vàng';
 
   @override
+  String get taskBoardDetailCompleteTask => 'Hoàn thành';
+
+  @override
   String get taskBoardDetailCreateList => 'Tạo danh sách';
 
   @override
@@ -8406,6 +8409,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String taskBoardDetailDueAt(String date) {
     return 'Hạn $date';
   }
+
+  @override
+  String get taskBoardDetailDueDateUpdated => 'Đã cập nhật hạn chót.';
 
   @override
   String get taskBoardDetailEditList => 'Chỉnh sửa danh sách';
@@ -8655,9 +8661,15 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailRenameList => 'Đổi tên danh sách';
 
   @override
+  String get taskBoardDetailReopenTask => 'Mở lại';
+
+  @override
   String taskBoardDetailRestoreTasks(int count) {
     return 'Khôi phục ($count)';
   }
+
+  @override
+  String get taskBoardDetailScheduleTask => 'Lên lịch';
 
   @override
   String get taskBoardDetailSearchDone => 'Xong';

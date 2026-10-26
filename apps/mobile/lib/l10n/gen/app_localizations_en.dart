@@ -8413,6 +8413,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardDetailColorYellow => 'Yellow';
 
   @override
+  String get taskBoardDetailCompleteTask => 'Complete';
+
+  @override
   String get taskBoardDetailCreateList => 'Create list';
 
   @override
@@ -8493,6 +8496,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String taskBoardDetailDueAt(String date) {
     return 'Due $date';
   }
+
+  @override
+  String get taskBoardDetailDueDateUpdated => 'Due date updated.';
 
   @override
   String get taskBoardDetailEditList => 'Edit list';
@@ -8754,9 +8760,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardDetailRenameList => 'Rename list';
 
   @override
+  String get taskBoardDetailReopenTask => 'Reopen';
+
+  @override
   String taskBoardDetailRestoreTasks(int count) {
     return 'Restore ($count)';
   }
+
+  @override
+  String get taskBoardDetailScheduleTask => 'Schedule';
 
   @override
   String get taskBoardDetailSearchDone => 'Done';

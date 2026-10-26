@@ -197,6 +197,11 @@ localization changes.
   post-success close/toast path.
 - Assignee avatar stacks should size from actual occupied width so overflow
   badges do not create stray gaps or clipping.
+- List-view task rows use `AppSwipeActions` plus a long-press
+  `showAppActionSheet` menu that reuses the board cubit mutations. Selection
+  mode disables swipes. Board-page tests whose mutations invalidate caches
+  never settle in fake async, so assert on the repository call and the busy
+  dialog instead of `pumpAndSettle` after confirming.
 
 ## Finance
 
