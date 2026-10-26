@@ -215,6 +215,9 @@ for roles, independent review, publication, receipts and retirement.
     `packages/internal-api`, keep domain libraries framework-independent, and
     preserve active app contracts; TanStack Query remains the active client
     library. `apps/web` stays on Next.js until separately scheduled.
+  - Target platform is Cloudflare (Workers, Hyperdrive→Postgres, R2, DOs, Queues);
+    Supabase and Vercel are transitional. Follow the [stop-list](apps/docs/build/devops/cloudflare-backend-ownership.mdx#stop-list):
+    no new Supabase-only features, Vercel crons/edge config or mobile direct-Supabase calls.
   - New or substantially reworked Web API handlers belong under
     `apps/web/src/app/api/**`, not `legacy-api-routes/**`. Move colocated tests
     with the implementation and remove obsolete generated wrappers. Inactive
