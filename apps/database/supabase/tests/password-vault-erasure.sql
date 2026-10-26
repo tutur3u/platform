@@ -43,7 +43,7 @@ SELECT is(pg_temp.pw_op('grant.create',jsonb_build_object('expected_revision',pg
  'e7000000-0000-0000-0000-000000000002')->>'error',NULL,'separate owner creates machine grant');
 CREATE TEMP TABLE old_audit AS SELECT id,metadata FROM private.password_vault_audit_events;
 SAVEPOINT member_erasure;
-SELECT is(pg_temp.pw_as('supabase_auth_admin',$$DELETE FROM auth.users WHERE id='e7000000-0000-0000-0000-000000000003' RETURNING jsonb_build_object('id',id)$$)->>'error',NULL,'auth admin member self-delete succeeds');
+SELECT lives_ok($$DELETE FROM auth.users WHERE id='e7000000-0000-0000-0000-000000000003'$$,'member account deletion succeeds');
 DO $$ BEGIN PERFORM pg_temp.pw_as('service_role','SELECT private.password_vault_retry_lifecycle(25)'); END $$;
 SELECT ok(NOT EXISTS(SELECT 1 FROM auth.users WHERE id='e7000000-0000-0000-0000-000000000003'),'member account removed');
 SELECT is((SELECT count(*)::integer FROM private.password_vault_members WHERE user_id IS NULL AND revoked_at IS NOT NULL),1,'deleted member link nulled and revoked');
@@ -52,13 +52,13 @@ SELECT ok(EXISTS(SELECT 1 FROM private.password_vault_audit_events WHERE event_t
 SELECT is(jsonb_array_length(pg_temp.pw_op('member.list','{}')->'members'),2,'member list excludes erased identity links');
 ROLLBACK TO member_erasure;
 SAVEPOINT creator_erasure;
-SELECT is(pg_temp.pw_as('supabase_auth_admin',$$DELETE FROM auth.users WHERE id='e7000000-0000-0000-0000-000000000001' RETURNING jsonb_build_object('id',id)$$)->>'error',NULL,'creator self-delete succeeds');
+SELECT lives_ok($$DELETE FROM auth.users WHERE id='e7000000-0000-0000-0000-000000000001'$$,'creator self-delete succeeds');
 DO $$ BEGIN PERFORM pg_temp.pw_as('service_role','SELECT private.password_vault_retry_lifecycle(25)'); END $$;
 SELECT ok((SELECT created_by IS NULL AND rotation_required FROM private.password_vaults WHERE id='e7200000-0000-0000-0000-000000000001'),'creator link nulled and remaining owners must rotate');
 SELECT is(pg_temp.pw_op('item.read','{"item_id":"e7300000-0000-0000-0000-000000000001"}','e7000000-0000-0000-0000-000000000002')->>'error','55000','surviving owner cannot reveal before rotation');
 ROLLBACK TO creator_erasure;
 SAVEPOINT issuer_erasure;
-SELECT is(pg_temp.pw_as('supabase_auth_admin',$$DELETE FROM auth.users WHERE id='e7000000-0000-0000-0000-000000000002' RETURNING jsonb_build_object('id',id)$$)->>'error',NULL,'grant issuer self-delete succeeds');
+SELECT lives_ok($$DELETE FROM auth.users WHERE id='e7000000-0000-0000-0000-000000000002'$$,'grant issuer self-delete succeeds');
 DO $$ BEGIN PERFORM pg_temp.pw_as('service_role','SELECT private.password_vault_retry_lifecycle(25)'); END $$;
 SELECT ok((SELECT issuer_user_id IS NULL AND revoked_at IS NOT NULL FROM private.password_vault_machine_grants WHERE id='e7500000-0000-0000-0000-000000000001'),'issuer link nulled and grant revoked');
 ROLLBACK TO issuer_erasure;
@@ -67,7 +67,7 @@ SELECT is(pg_temp.pw_op('member.set',jsonb_build_object('expected_revision',pg_t
  'user_id','e7000000-0000-0000-0000-000000000002','role','owner','revoked',true))->>'error',NULL,'remove secondary owner');
 SELECT is(pg_temp.pw_op('member.set',jsonb_build_object('expected_revision',pg_temp.pw_revision(),
  'user_id','e7000000-0000-0000-0000-000000000001','role','viewer','revoked',true))->>'error','23514','ordinary sharing cannot revoke last owner');
-SELECT is(pg_temp.pw_as('supabase_auth_admin',$$DELETE FROM auth.users WHERE id='e7000000-0000-0000-0000-000000000001' RETURNING jsonb_build_object('id',id)$$)->>'error',NULL,'last owner may delete their account');
+SELECT lives_ok($$DELETE FROM auth.users WHERE id='e7000000-0000-0000-0000-000000000001'$$,'last owner may delete their account');
 DO $$ BEGIN PERFORM pg_temp.pw_as('service_role','SELECT private.password_vault_retry_lifecycle(25)'); END $$;
 SELECT is((SELECT count(*)::integer FROM private.password_vault_members WHERE role='owner' AND revoked_at IS NULL AND user_id IS NOT NULL),0,'ownerless vault does not transfer authority');
 SELECT is(pg_temp.pw_op('item.read','{"item_id":"e7300000-0000-0000-0000-000000000001"}','e7000000-0000-0000-0000-000000000003')->>'error','55000','remaining viewer is frozen');

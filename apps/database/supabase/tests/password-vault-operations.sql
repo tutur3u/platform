@@ -58,25 +58,40 @@ SELECT ok((SELECT bool_and(relrowsecurity AND relforcerowsecurity) FROM pg_class
 SELECT ok(NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='private' AND tablename LIKE 'password_vault%'),
   'no client RLS policies exist');
 SELECT is(pg_temp.pw_sql_as(role, format('SELECT to_jsonb(x) FROM private.password_vault_items x LIMIT 1'))->>'error',
-  '42501', role || ' cannot select ciphertext directly') FROM (VALUES ('anon'),('authenticated'),('supabase_auth_admin'),('service_role')) r(role);
+  '42501', role || ' cannot select ciphertext directly') FROM (VALUES ('anon'),('authenticated'),('service_role')) r(role);
 SELECT is(pg_temp.pw_sql_as(role, $$SELECT private.password_vault_execute(
  'f7100000-0000-0000-0000-000000000001','f7200000-0000-0000-0000-000000000001',
  'f7000000-0000-0000-0000-000000000001',gen_random_uuid(),'item.list','{}')$$)->>'error',
- '42501',role || ' cannot invoke the trusted operation') FROM (VALUES ('anon'),('authenticated'),('supabase_auth_admin')) r(role);
+ '42501',role || ' cannot invoke the trusted operation') FROM (VALUES ('anon'),('authenticated')) r(role);
 SELECT ok(NOT EXISTS (SELECT 1 FROM information_schema.role_table_grants
   WHERE table_schema='private' AND table_name LIKE 'password_vault%' AND grantee IN ('PUBLIC','anon','authenticated','supabase_auth_admin','service_role')),
   'there are no direct table grants that bypass audit');
 -- Exercise every table boundary, not only privilege catalogs.
 SELECT is(pg_temp.pw_sql_as(r.role, format('SELECT to_jsonb(x) FROM private.%I x LIMIT 1', t.name))->>'error',
  '42501', r.role || ' cannot select ' || t.name)
- FROM (VALUES ('anon'),('authenticated'),('supabase_auth_admin'),('service_role')) r(role)
+ FROM (VALUES ('anon'),('authenticated'),('service_role')) r(role)
  CROSS JOIN (VALUES ('password_vaults'),('password_vault_members'),('password_vault_versions'),
  ('password_vault_items'),('password_vault_files'),('password_vault_machine_grants'),
  ('password_vault_machine_tokens'),('password_vault_requests'),('password_vault_audit_events')) t(name);
 SELECT is(pg_temp.pw_sql_as(role, $$SELECT private.password_vault_list(
  'f7100000-0000-0000-0000-000000000001','f7000000-0000-0000-0000-000000000001',gen_random_uuid())$$)->>'error',
  '42501',role || ' cannot bypass the vault list service boundary')
- FROM (VALUES ('anon'),('authenticated'),('supabase_auth_admin')) r(role);
+ FROM (VALUES ('anon'),('authenticated')) r(role);
+-- The CLI pgTAP connection is postgres, which cannot SET ROLE to this provider-owned role.
+-- Check its effective privileges without impersonation; retain runtime checks above for client roles.
+SELECT ok(NOT has_table_privilege('supabase_auth_admin','private.password_vault_items','SELECT'),
+ 'supabase_auth_admin cannot select ciphertext directly');
+SELECT ok(NOT has_function_privilege('supabase_auth_admin',
+ 'private.password_vault_execute(uuid,uuid,uuid,uuid,text,jsonb,uuid,text)','EXECUTE'),
+ 'supabase_auth_admin cannot invoke the trusted operation');
+SELECT ok(NOT has_table_privilege('supabase_auth_admin',format('private.%I',name),'SELECT'),
+ 'supabase_auth_admin cannot select ' || name)
+ FROM (VALUES ('password_vaults'),('password_vault_members'),('password_vault_versions'),
+ ('password_vault_items'),('password_vault_files'),('password_vault_machine_grants'),
+ ('password_vault_machine_tokens'),('password_vault_requests'),('password_vault_audit_events')) t(name);
+SELECT ok(NOT has_function_privilege('supabase_auth_admin',
+ 'private.password_vault_list(uuid,uuid,uuid,uuid,integer)','EXECUTE'),
+ 'supabase_auth_admin cannot bypass the vault list service boundary');
 SELECT is(pg_temp.pw_sql_as('service_role', sql)->>'error','42501','service role cannot directly invoke helper ' || name)
  FROM (VALUES
  ('membership', $$SELECT private.password_vault_require_workspace_member(NULL,NULL)$$),
@@ -362,13 +377,36 @@ CREATE POLICY pw_test_allow_objects ON storage.objects FOR ALL TO anon,authentic
 CREATE POLICY pw_test_allow_buckets ON storage.buckets FOR ALL TO anon,authenticated,supabase_auth_admin USING(true) WITH CHECK(true);
 SELECT ok(r->>'n'='0' OR r->>'error'='42501',role || ' cannot list Passwords files despite permissive legacy policies')
  FROM (SELECT role,pg_temp.pw_sql_as(role,$$SELECT jsonb_build_object('n',count(*)) FROM storage.objects
- WHERE bucket_id='password-vault-files'$$) r FROM (VALUES('anon'),('authenticated'),('supabase_auth_admin')) roles(role)) x;
+ WHERE bucket_id='password-vault-files'$$) r FROM (VALUES('anon'),('authenticated')) roles(role)) x;
 SELECT is(pg_temp.pw_sql_as(role,$$INSERT INTO storage.objects(bucket_id,name) VALUES('password-vault-files','user/path')
  RETURNING '{}'::jsonb$$)->>'error','42501',role || ' cannot upload Passwords files directly')
- FROM (VALUES('anon'),('authenticated'),('supabase_auth_admin')) roles(role);
+ FROM (VALUES('anon'),('authenticated')) roles(role);
 SELECT ok(r->>'n'='0' OR r->>'error'='42501',role || ' cannot list the dedicated bucket')
  FROM (SELECT role,pg_temp.pw_sql_as(role,$$SELECT jsonb_build_object('n',count(*)) FROM storage.buckets
- WHERE id='password-vault-files'$$) r FROM (VALUES('anon'),('authenticated'),('supabase_auth_admin')) roles(role)) x;
+ WHERE id='password-vault-files'$$) r FROM (VALUES('anon'),('authenticated')) roles(role)) x;
+-- Evaluate the actual restrictive policy expressions for the provider-owned Auth role.
+-- This verifies its fence despite the broad fixture policies without SET ROLE or extra grants.
+CREATE FUNCTION pg_temp.pw_auth_storage_denied(p_table regclass,p_policy name,p_field name,p_check boolean)
+RETURNS boolean LANGUAGE plpgsql AS $$
+DECLARE expression text; permitted boolean;
+BEGIN
+ SELECT pg_get_expr(CASE WHEN p_check THEN p.polwithcheck ELSE p.polqual END,p.polrelid)
+ INTO expression FROM pg_policy p JOIN pg_class c ON c.oid=p.polrelid
+ JOIN pg_roles r ON r.rolname='supabase_auth_admin'
+ WHERE p.polrelid=p_table AND p.polname=p_policy AND NOT p.polpermissive AND p.polcmd='*'
+ AND r.oid=ANY(p.polroles) AND NOT r.rolsuper AND NOT r.rolbypassrls
+ AND c.relrowsecurity AND c.relowner<>r.oid;
+ IF expression IS NULL THEN RETURN false; END IF;
+ EXECUTE format('SELECT (%s) FROM (VALUES (%L::text)) fixture(%I)',
+   expression,'password-vault-files',p_field) INTO permitted;
+ RETURN permitted IS FALSE;
+END $$;
+SELECT ok(pg_temp.pw_auth_storage_denied('storage.objects','password_vault_objects_client_fence','bucket_id',false),
+ 'supabase_auth_admin restrictive fence denies listing Passwords files despite permissive legacy policies');
+SELECT ok(pg_temp.pw_auth_storage_denied('storage.objects','password_vault_objects_client_fence','bucket_id',true),
+ 'supabase_auth_admin restrictive fence denies uploading Passwords files directly');
+SELECT ok(pg_temp.pw_auth_storage_denied('storage.buckets','password_vault_bucket_client_fence','id',false),
+ 'supabase_auth_admin restrictive fence denies listing the dedicated bucket');
 -- Restore a viewer, rotate, then archive their linked workspace-user record.
 SELECT is(pg_temp.pw_op('member.set',jsonb_build_object('expected_revision',pg_temp.pw_revision(),
  'user_id','f7000000-0000-0000-0000-000000000003','role','viewer','revoked',false))->>'error',NULL,'owner explicitly restores viewer membership');
