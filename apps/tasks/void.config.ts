@@ -22,6 +22,10 @@ export default defineConfig({
       binding: 'ASSETS',
       run_worker_first: true,
       not_found_handling: 'none',
+      // The offline worker precaches the exact /offline.html. The default
+      // html_handling answers it with an internal redirect to /offline, which
+      // only works because the bridge follows asset redirects.
+      html_handling: 'none',
     },
     workers_dev: false,
   },

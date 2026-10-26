@@ -948,6 +948,16 @@
       },
       "digest": "932ccfa6ecd7b462680d904df026cd9b5b144a11f36e7e1d1548c98d7f146ad5"
     },
+    "apps/tasks/cloudflare/offline-fallback.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6849",
+        "reason": "Tasks native candidate (#6849) starts its sealed built Worker in the Wrangler SDK to prove the exact /offline.html fallback; Tasks on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "e139bd3b3961b60527b5aa98419fb40cde9679450f4c651769242014bfec1e29"
+    },
     "apps/tasks/package.json": {
       "lines": 1,
       "uses": 1,
@@ -1837,6 +1847,16 @@
         "reason": "Shortener Worker acceptance mirrors the Apps Wave 1 template: Void rebuilds on deploy, so CI qualifies the exact Void-emitted Worker with the pinned Wrangler adapter (emitted binding types, deploy --dry-run without publication, built-Worker harness, artifact receipts). Publication stays held; remove with the Apps gap when cf deploy --prebuilt parity is proven."
       },
       "digest": "06dc1c0c44ba14771d1cc73b5b7eae49f602a795d50959122913be5847fad3fd"
+    },
+    "scripts/ci/tasks-native-artifact.test.py": {
+      "lines": 7,
+      "uses": 8,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6849",
+        "reason": "Tasks native artifact regressions (#6849) build the same emitted-config fixture as Finance's: the .void-wrangler.jsonc producer metadata, the deploy pointer and the emitted wrangler.json; Tasks on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "9ea2206674d3b1e3377608f589805a6ced065510d62b53a861625a083edc4e3a"
     },
     "scripts/ci/turbo-cache-config.test.js": {
       "lines": 2,
