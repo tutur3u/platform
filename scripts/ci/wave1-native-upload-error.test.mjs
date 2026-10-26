@@ -28,7 +28,7 @@ test('upload failure exposes only numeric exit, signal and CF code metadata', as
       env: { RUNNER_TEMP: '/tmp' },
       app: 'calendar',
       environment: 'production',
-      config: '/tmp/calendar/dist/wave1/wrangler.json',
+      config: '/tmp/calendar/dist/wave1/upload-config.json',
       sha: 'a'.repeat(40),
       digest: 'b'.repeat(64),
       cfToken: secret,

@@ -79,7 +79,7 @@ function sanitize(message, secrets) {
 export class NativeUploadError extends Error {
   constructor(error, secrets = []) {
     super(
-      'Wrangler publication outcome is uncertain; inspect the matching version and retained receipt before any retry'
+      'Native publication outcome is uncertain; inspect the matching version and retained receipt before any retry'
     );
     const rawStderr = Buffer.isBuffer(error?.stderr)
       ? error.stderr.subarray(0, 1024 * 1024).toString('utf8')
