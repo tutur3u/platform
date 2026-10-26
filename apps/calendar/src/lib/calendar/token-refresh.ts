@@ -264,7 +264,7 @@ export async function ensureValidToken(
 
   // If refreshed successfully, update the database
   if (result.refreshed && !result.error) {
-    const { error: updateError } = await supabase
+    let save = supabase
       .from('calendar_auth_tokens')
       .update({
         access_token: result.accessToken,
@@ -272,6 +272,10 @@ export async function ensureValidToken(
         expires_at: result.expiresAt?.toISOString() || null,
       })
       .eq('id', authToken.id);
+    // A reconnect rewrites created_at; never overwrite its newer credential.
+    if (authToken.created_at)
+      save = save.eq('created_at', authToken.created_at);
+    const { error: updateError } = await save;
 
     if (updateError) {
       console.error('[TokenRefresh] Failed to persist refreshed credential');

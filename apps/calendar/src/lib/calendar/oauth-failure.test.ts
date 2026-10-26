@@ -33,7 +33,6 @@ describe('Google refresh failures', () => {
       gaxios(400, 'invalid_grant', 'Account has been deleted'),
       'google_access_revoked',
     ],
-    [gaxios(401, 'unauthorized_client'), 'google_unauthorized_client'],
     [gaxios(400, 'access_denied'), 'google_access_revoked'],
     [gaxios(400, 'brand_new_code'), 'unknown_permanent'],
   ])('quarantines %o as %s', (error, reason) => {
@@ -58,14 +57,16 @@ describe('Google refresh failures', () => {
     );
   });
 
-  it.each([gaxios(401, 'invalid_client'), gaxios(400, 'invalid_request')])(
-    'treats our own client configuration %o as systemic',
-    (error) => {
-      expect(classifyCalendarOAuthFailure('google', error)?.kind).toBe(
-        'systemic'
-      );
-    }
-  );
+  it.each([
+    gaxios(401, 'invalid_client'),
+    gaxios(400, 'invalid_request'),
+    gaxios(401, 'unauthorized_client'),
+    gaxios(400, 'invalid_scope'),
+  ])('treats our own client configuration %o as systemic', (error) => {
+    expect(classifyCalendarOAuthFailure('google', error)?.kind).toBe(
+      'systemic'
+    );
+  });
 
   it('ignores errors that are not credential failures', () => {
     expect(
@@ -90,7 +91,6 @@ describe('Microsoft refresh failures', () => {
       msal('invalid_grant', undefined, { subError: 'consent_required' }),
       'microsoft_consent_revoked',
     ],
-    [msal('unauthorized_client', '700016'), 'microsoft_unauthorized_client'],
   ])('quarantines %o as %s', (error, reason) => {
     expect(classifyCalendarOAuthFailure('microsoft', error)).toMatchObject({
       kind: 'permanent',
@@ -113,13 +113,19 @@ describe('Microsoft refresh failures', () => {
       );
   });
 
-  it('treats an expired client secret as systemic', () => {
-    expect(
-      classifyCalendarOAuthFailure(
-        'microsoft',
-        msal('invalid_client', '7000222')
-      )
-    ).toMatchObject({ kind: 'systemic' });
+  it.each([
+    msal('invalid_client', '7000222'),
+    msal('invalid_client', '7000215'),
+    msal('invalid_grant', '700016'),
+    msal('unauthorized_client', '700016'),
+    msal('invalid_grant', '700027'),
+    msal('invalid_grant', '50012'),
+    msal('invalid_grant', '7000112'),
+    msal('invalid_scope', '70011'),
+  ])('treats application-level failure %o as systemic', (error) => {
+    expect(classifyCalendarOAuthFailure('microsoft', error)).toMatchObject({
+      kind: 'systemic',
+    });
   });
 
   it('logs only machine-readable provider codes', () => {

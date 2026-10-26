@@ -5,6 +5,7 @@ import {
   recordCalendarTokenOutcome,
 } from './oauth-token-health';
 import { providerSyncSignal } from './provider-sync-budget';
+import type { CalendarSyncErrorType } from './sync-errors';
 import {
   type CalendarAuthToken,
   ensureValidToken,
@@ -34,6 +35,15 @@ function wait(ms: number): Promise<void> {
     };
     signal?.addEventListener('abort', onAbort, { once: true });
   });
+}
+
+/** Sync error type for calendars whose credential check failed. */
+export function credentialSyncErrorType(
+  result: TokenRefreshResult
+): CalendarSyncErrorType {
+  if (result.failure?.kind === 'systemic' || result.quarantine === 'systemic')
+    return 'configuration';
+  return result.failure?.kind === 'permanent' ? 'auth' : 'network';
 }
 
 function outcomeOf(result: TokenRefreshResult): CalendarTokenOutcome {

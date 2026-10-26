@@ -28,7 +28,9 @@ type Row = Record<string, unknown>;
 type Query = Promise<{ data: Row[]; error: null }> & {
   select: () => Query;
   eq: Mock<(column: string, value: unknown) => Query>;
+  gte: (column: string, value: string) => Query;
   in: (column: string, values: string[]) => Query;
+  limit: () => Query;
 };
 function database() {
   const tokens: Row[] = ['revoked', 'healthy'].map((id) => ({
@@ -59,10 +61,15 @@ function database() {
         filters.set(column, value);
         return query;
       }),
+      gte: (column: string, value: string) => {
+        rows = rows.filter((row) => String(row[column] ?? '') >= value);
+        return query;
+      },
       in: (column: string, values: string[]) => {
         rows = rows.filter((row) => values.includes(String(row[column])));
         return query;
       },
+      limit: () => query,
     });
     return query;
   }
@@ -79,7 +86,7 @@ function database() {
       Object.assign(row, {
         is_active: false,
         deactivated_reason: args.p_reason,
-        deactivated_at: 'now',
+        deactivated_at: new Date().toISOString(),
       });
       return { data: 'deactivated', error: null };
     }
@@ -209,6 +216,25 @@ it.each([
   expect(db.rpc).not.toHaveBeenCalled();
   expect(db.tokens.every((token) => token.is_active)).toBe(true);
   expect(JSON.stringify(warn.mock.calls)).not.toContain('private-secret');
+});
+
+it('records a mid-sync OAuth client failure as systemic without writing', async () => {
+  const db = database();
+  vi.spyOn(console, 'warn').mockImplementation(() => {});
+  sync
+    .mockRejectedValueOnce(
+      Object.assign(new Error('invalid_client'), {
+        response: { status: 401, data: { error: 'invalid_client' } },
+      })
+    )
+    .mockResolvedValue(synced);
+  const result = await syncGoogleInbound(args(db));
+  expect(db.rpc).not.toHaveBeenCalled();
+  expect(db.tokens.every((token) => token.is_active)).toBe(true);
+  expect(result.tokenOutcomes[0]).toMatchObject({
+    outcome: 'systemic',
+    providerCode: 'invalid_client/http_401',
+  });
 });
 
 it('skips every calendar of an account whose credential check failed', async () => {

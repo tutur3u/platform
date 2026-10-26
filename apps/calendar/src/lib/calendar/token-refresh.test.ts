@@ -36,9 +36,23 @@ const token: CalendarAuthToken = {
   created_at: '2020-01-01T00:00:00Z',
 };
 function database(error: unknown = null) {
-  const eq = vi.fn(async () => ({ error }));
-  const update = vi.fn(() => ({ eq }));
-  return { from: vi.fn(() => ({ update })), update, eq };
+  const query = Object.assign(Promise.resolve({ error }), {
+    eq: vi.fn(() => query),
+  });
+  const eq = query.eq;
+  const update = vi.fn(() => query);
+  // Quarantine history read by the consensus breaker: none recent.
+  const history: Record<string, unknown> = {
+    select: () => history,
+    eq: () => history,
+    gte: () => history,
+    limit: async () => ({ data: [], error: null }),
+  };
+  return {
+    from: vi.fn(() => ({ update, select: history.select })),
+    update,
+    eq,
+  };
 }
 
 describe('server-side calendar credential refresh', () => {
@@ -99,6 +113,7 @@ describe('server-side calendar credential refresh', () => {
       })
     );
     expect(db.eq).toHaveBeenCalledWith('id', 'token');
+    expect(db.eq).toHaveBeenCalledWith('created_at', token.created_at);
   });
   it('does not call the provider when the old callback stored no offline credential', async () => {
     const result = await ensureValidToken(database(), {

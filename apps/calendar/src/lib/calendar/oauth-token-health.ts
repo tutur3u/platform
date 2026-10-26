@@ -12,7 +12,7 @@ export type CalendarTokenOutcome =
   | 'deactivated'
   | 'already_inactive'
   | 'fenced'
-  // Permanent failure seen after this run's quarantine budget ran out.
+  // Permanent failure left active because its history could not be read.
   | 'deactivation_deferred';
 
 export interface CalendarTokenOutcomeEntry {
@@ -25,15 +25,18 @@ export interface CalendarTokenOutcomeEntry {
 }
 
 export const WORKSPACE_SYNC_ROUTE = '/api/v1/workspaces/[wsId]/calendar/sync';
-// One run may quarantine at most this many credentials. A provider incident
-// that rejects many healthy credentials at once stops here and alerts instead.
-export const MAX_DEACTIVATIONS_PER_RUN = 20;
 export const DEACTIVATION_SPIKE_THRESHOLD = 5;
+
+interface ConsensusBreakerState {
+  // Account id -> arrival order, so concurrent workspaces admit first-come.
+  accounts: Map<string, number>;
+  recent?: Promise<number | null>;
+}
 
 interface TokenHealthRun {
   route: string;
-  quarantineAttempts: number;
   outcomes: CalendarTokenOutcomeEntry[];
+  breakers: Map<CalendarOAuthReasonCode, ConsensusBreakerState>;
 }
 
 const runScope = new AsyncLocalStorage<TokenHealthRun>();
@@ -42,20 +45,29 @@ export function withCalendarTokenHealthRun<T>(
   route: string,
   run: () => Promise<T>
 ): Promise<{ result: T; outcomes: CalendarTokenOutcomeEntry[] }> {
-  const state: TokenHealthRun = { route, quarantineAttempts: 0, outcomes: [] };
+  const state: TokenHealthRun = {
+    route,
+    outcomes: [],
+    breakers: new Map(),
+  };
   return runScope.run(state, async () => ({
     result: await run(),
     outcomes: state.outcomes,
   }));
 }
 
-/** Reserves one quarantine write from the current run's budget. */
-export function reserveQuarantineAttempt(): boolean {
+/** Per-reason failure tally, shared across one run's workspaces. */
+export function consensusBreaker(
+  reason: CalendarOAuthReasonCode
+): ConsensusBreakerState {
   const run = runScope.getStore();
-  if (!run) return true;
-  if (run.quarantineAttempts >= MAX_DEACTIVATIONS_PER_RUN) return false;
-  run.quarantineAttempts += 1;
-  return true;
+  if (!run) return { accounts: new Map() };
+  let state = run.breakers.get(reason);
+  if (!state) {
+    state = { accounts: new Map() };
+    run.breakers.set(reason, state);
+  }
+  return state;
 }
 
 // Stable, non-reversible handle for correlating logs with a row id.
@@ -111,9 +123,10 @@ export function summarizeCalendarTokenOutcomes(
 }
 
 /**
- * Deactivation-spike alert hook. Emits one error-level line that the cron
- * log drain stores with its metadata; Infrastructure monitoring filters on
- * the event name.
+ * Deactivation-spike alert hook. Fires on many quarantines, deferred
+ * quarantines, or any systemic failure (including a tripped consensus
+ * breaker). Emits one error-level line that the cron log drain stores with
+ * its metadata; Infrastructure monitoring filters on the event name.
  */
 export function reportCalendarDeactivationSpike(
   route: string,
@@ -122,7 +135,8 @@ export function reportCalendarDeactivationSpike(
   const counts = summarizeCalendarTokenOutcomes(outcomes);
   if (
     counts.deactivated < DEACTIVATION_SPIKE_THRESHOLD &&
-    counts.deactivation_deferred === 0
+    counts.deactivation_deferred === 0 &&
+    counts.systemic === 0
   )
     return false;
   const reasons: Record<string, number> = {};
@@ -134,6 +148,7 @@ export function reportCalendarDeactivationSpike(
     route,
     deactivated: counts.deactivated,
     deferred: counts.deactivation_deferred,
+    systemic: counts.systemic,
     evaluated: outcomes.length,
     reasons,
   });

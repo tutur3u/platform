@@ -5,7 +5,10 @@ import {
 } from '@tuturuuu/microsoft/calendar';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { providerReadonlyProjection } from '@tuturuuu/utils/calendar-provider-readonly';
-import { ensureHealthyCalendarCredential } from './credential-health';
+import {
+  credentialSyncErrorType,
+  ensureHealthyCalendarCredential,
+} from './credential-health';
 import type { CalendarTokenOutcomeEntry } from './oauth-token-health';
 import {
   checkProviderSyncBudget,
@@ -117,11 +120,7 @@ export async function syncMicrosoftInbound(args: {
       if (refreshed.error) {
         throw new CalendarProviderSyncError(
           'Microsoft calendar credential refresh failed',
-          refreshed.failure?.kind === 'permanent'
-            ? 'auth'
-            : refreshed.failure?.kind === 'systemic'
-              ? 'configuration'
-              : 'network'
+          credentialSyncErrorType(refreshed)
         );
       }
       const graphClient = providerSyncSignal()

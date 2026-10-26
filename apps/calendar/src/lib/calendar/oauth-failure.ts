@@ -1,6 +1,10 @@
 // Classifies provider credential failures. Only permanent failures may
 // quarantine a credential; transient and systemic failures never do.
+// Anything that can mean our OAuth client is wrong is systemic: one
+// misconfiguration must never look like many individually revoked accounts.
 
+// Mirrors the database CHECK. The two *_unauthorized_client codes are
+// reserved there but never emitted: that error means our client is wrong.
 export const CALENDAR_OAUTH_REASON_CODES = [
   'google_invalid_grant',
   'google_unauthorized_client',
@@ -35,6 +39,8 @@ const TRANSIENT_OAUTH_CODES = new Set([
 const SYSTEMIC_OAUTH_CODES = new Set([
   'invalid_client',
   'invalid_request',
+  'invalid_scope',
+  'unauthorized_client',
   'unsupported_grant_type',
 ]);
 const NETWORK_CODES = new Set([
@@ -57,7 +63,16 @@ const MSAL_NETWORK_CODES = new Set([
 ]);
 // Entra ID returns these numbers under invalid_grant/interaction_required.
 const MICROSOFT_CONSENT_ERRORS = new Set(['65001', '65004']);
-const MICROSOFT_UNAUTHORIZED_ERRORS = new Set(['700016', '7000112']);
+// Application-level Entra ID errors: unknown or disabled app, bad or
+// expired client secret or assertion, invalid client credentials.
+const MICROSOFT_APPLICATION_ERRORS = new Set([
+  '50012',
+  '700016',
+  '700027',
+  '7000112',
+  '7000215',
+  '7000222',
+]);
 const MICROSOFT_THROTTLED_ERRORS = new Set(['50196']);
 
 type ProviderErrorFields = {
@@ -156,8 +171,6 @@ function googleReason(
       return /deleted|disabled|suspended/.test(fields.description)
         ? 'google_access_revoked'
         : 'google_invalid_grant';
-    case 'unauthorized_client':
-      return 'google_unauthorized_client';
     case 'access_denied':
       return 'google_access_revoked';
     default:
@@ -174,11 +187,6 @@ function microsoftReason(
     fields.subError === 'consent_required'
   )
     return 'microsoft_consent_revoked';
-  if (
-    fields.oauthCode === 'unauthorized_client' ||
-    (fields.aadsts && MICROSOFT_UNAUTHORIZED_ERRORS.has(fields.aadsts))
-  )
-    return 'microsoft_unauthorized_client';
   if (
     fields.oauthCode === 'invalid_grant' ||
     fields.oauthCode === 'interaction_required'
@@ -203,7 +211,12 @@ export function classifyCalendarOAuthFailure(
       : readProviderError(error);
   const providerCode = providerCodeOf(fields);
 
-  if (fields.oauthCode && SYSTEMIC_OAUTH_CODES.has(fields.oauthCode))
+  if (
+    (fields.oauthCode && SYSTEMIC_OAUTH_CODES.has(fields.oauthCode)) ||
+    (provider === 'microsoft' &&
+      fields.aadsts &&
+      MICROSOFT_APPLICATION_ERRORS.has(fields.aadsts))
+  )
     return { kind: 'systemic', providerCode };
   if (isTransient(fields)) return { kind: 'transient', providerCode };
 

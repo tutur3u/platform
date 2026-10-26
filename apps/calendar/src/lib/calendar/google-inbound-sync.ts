@@ -1,6 +1,9 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { NextResponse } from 'next/server';
-import { ensureHealthyCalendarCredential } from './credential-health';
+import {
+  credentialSyncErrorType,
+  ensureHealthyCalendarCredential,
+} from './credential-health';
 import { performIncrementalActiveSync } from './incremental-active-sync';
 import { classifyCalendarOAuthFailure } from './oauth-failure';
 import {
@@ -102,6 +105,8 @@ export async function syncGoogleInbound(args: {
 
   // Accounts whose credential cannot be used this run, by sync error type.
   const rejectedAccounts = new Map<string, CalendarSyncErrorType>();
+  // Accounts whose mid-sync credential failure already has an outcome.
+  const reportedAccounts = new Set<string>();
   const batch = providerSyncSignal()
     ? rotatingSyncBatch(
         [...googleConnections].sort((a, b) => a.id.localeCompare(b.id)),
@@ -120,14 +125,7 @@ export async function syncGoogleInbound(args: {
     );
     tokenOutcomes.push(outcome);
     if (result.error)
-      rejectedAccounts.set(
-        token.id,
-        result.failure?.kind === 'permanent'
-          ? 'auth'
-          : result.failure?.kind === 'systemic'
-            ? 'configuration'
-            : 'network'
-      );
+      rejectedAccounts.set(token.id, credentialSyncErrorType(result));
   }
 
   let skippedByBudget = 0;
@@ -180,31 +178,44 @@ export async function syncGoogleInbound(args: {
       const token = googleTokens.find(
         (row) => row.id === connection.auth_token_id
       );
+      // A credential refresh inside the provider call failed. Record one
+      // outcome per account; quarantine and skip the account only for a
+      // permanent failure.
       if (
-        oauthFailure?.kind === 'permanent' &&
         token &&
-        !rejectedAccounts.has(token.id)
+        !reportedAccounts.has(token.id) &&
+        !rejectedAccounts.has(token.id) &&
+        (oauthFailure?.kind === 'permanent' ||
+          oauthFailure?.kind === 'systemic')
       ) {
-        rejectedAccounts.set(token.id, 'auth');
-        let outcome: CalendarTokenOutcomeEntry['outcome'];
-        try {
-          outcome = await quarantineCalendarAuthToken(
-            args.sbAdmin,
-            token,
-            oauthFailure.reason
-          );
-        } catch {
-          console.error('calendar.oauth.quarantine_failed', {
-            provider: 'google',
-            reason: oauthFailure.reason,
-          });
-          outcome = 'transient';
+        let outcome: CalendarTokenOutcomeEntry['outcome'] = 'systemic';
+        if (oauthFailure.kind === 'permanent') {
+          try {
+            outcome = await quarantineCalendarAuthToken(
+              args.sbAdmin,
+              token,
+              oauthFailure.reason
+            );
+          } catch {
+            console.error('calendar.oauth.quarantine_failed', {
+              provider: 'google',
+              reason: oauthFailure.reason,
+            });
+            outcome = 'transient';
+          }
         }
+        reportedAccounts.add(token.id);
+        if (oauthFailure.kind === 'permanent')
+          rejectedAccounts.set(
+            token.id,
+            outcome === 'systemic' ? 'configuration' : 'auth'
+          );
         const entry = recordCalendarTokenOutcome({
           tokenId: token.id,
           provider: 'google',
           outcome,
-          reason: oauthFailure.reason,
+          reason:
+            oauthFailure.kind === 'permanent' ? oauthFailure.reason : undefined,
           providerCode: oauthFailure.providerCode,
           attempts: 1,
         });
