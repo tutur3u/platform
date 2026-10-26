@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(14);
+select plan(17);
 
 select has_trigger(
   'public',
@@ -88,9 +88,15 @@ values
   ('00000000-0000-4000-8000-00000000c403', 'Foreign Task', '00000000-0000-4000-8000-00000000c302', '00000000-0000-4000-8000-00000000c903')
 on conflict (id) do nothing;
 
+-- A task whose workspace cannot be resolved (no list).
+insert into public.tasks (id, name, list_id, creator_id)
+values ('00000000-0000-4000-8000-00000000c404', 'Listless Task', null, '00000000-0000-4000-8000-00000000c903')
+on conflict (id) do nothing;
+
 insert into public.task_cycles (id, ws_id, name, creator_id)
 values
-  ('00000000-0000-4000-8000-00000000c501', '00000000-0000-4000-8000-00000000c101', 'Local Cycle', '00000000-0000-4000-8000-00000000c903')
+  ('00000000-0000-4000-8000-00000000c501', '00000000-0000-4000-8000-00000000c101', 'Local Cycle', '00000000-0000-4000-8000-00000000c903'),
+  ('00000000-0000-4000-8000-00000000c502', '00000000-0000-4000-8000-00000000c102', 'Foreign Cycle', '00000000-0000-4000-8000-00000000c903')
 on conflict (id) do nothing;
 
 -- Authenticated member path: the Data API role has no table grant on
@@ -140,6 +146,33 @@ select throws_ok(
   '42501',
   'Task and cycle must belong to the same workspace',
   'service-role write cannot repoint a link at a foreign task'
+);
+
+select throws_ok(
+  $$update public.task_cycle_tasks
+    set cycle_id = '00000000-0000-4000-8000-00000000c502'
+    where task_id = '00000000-0000-4000-8000-00000000c401'$$,
+  '42501',
+  'Task and cycle must belong to the same workspace',
+  'service-role write cannot repoint a link at another workspace''s cycle'
+);
+
+select throws_ok(
+  $$insert into public.task_cycle_tasks (task_id, cycle_id)
+    values ('00000000-0000-4000-8000-00000000c401', '00000000-0000-4000-8000-00000000c501')
+    on conflict (task_id, cycle_id)
+    do update set cycle_id = '00000000-0000-4000-8000-00000000c502'$$,
+  '42501',
+  'Task and cycle must belong to the same workspace',
+  'an upsert cannot move a link into another workspace''s cycle'
+);
+
+select throws_ok(
+  $$insert into public.task_cycle_tasks (task_id, cycle_id)
+    values ('00000000-0000-4000-8000-00000000c404', '00000000-0000-4000-8000-00000000c501')$$,
+  '42501',
+  'Task and cycle must belong to the same workspace',
+  'a task with no resolvable workspace cannot join a cycle'
 );
 
 select throws_ok(
