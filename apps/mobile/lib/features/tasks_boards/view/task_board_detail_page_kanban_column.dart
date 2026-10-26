@@ -11,7 +11,7 @@ class _KanbanColumn extends StatelessWidget {
     required this.hasLoadError,
     required this.hasMoreTasks,
     required this.onTaskTap,
-    required this.onTaskMove,
+    required this.onTaskMenu,
     required this.isBulkSelectMode,
     required this.selectedTaskIds,
     required this.onToggleTaskSelection,
@@ -32,7 +32,7 @@ class _KanbanColumn extends StatelessWidget {
   final bool hasMoreTasks;
   final VoidCallback? onLoadMoreTasks;
   final void Function(TaskBoardTask task) onTaskTap;
-  final void Function(TaskBoardTask task) onTaskMove;
+  final void Function(TaskBoardTask task) onTaskMenu;
   final bool isBulkSelectMode;
   final Set<String> selectedTaskIds;
   final void Function(TaskBoardTask task) onToggleTaskSelection;
@@ -234,13 +234,13 @@ class _KanbanColumn extends StatelessWidget {
                                       listStyle: style,
                                       task: task,
                                       onTap: () => onTaskTap(task),
-                                      onMove: () => onTaskMove(task),
                                       isBulkSelectMode: isBulkSelectMode,
                                       isSelected: selectedTaskIds.contains(
                                         task.id,
                                       ),
                                       onToggleSelected: () =>
                                           onToggleTaskSelection(task),
+                                      onOpenMenu: () => onTaskMenu(task),
                                     );
                                   },
                                 ),

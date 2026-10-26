@@ -102,6 +102,7 @@ part 'task_board_detail_page_states.dart';
 part 'task_board_detail_page_task_actions_sheet.dart';
 part 'task_board_detail_page_task_focus.dart';
 part 'task_board_detail_page_task_row_actions.dart';
+part 'task_board_detail_page_task_row_assign.dart';
 part 'task_board_detail_page_task_row_swipe.dart';
 part 'task_board_detail_page_timeline.dart';
 part 'task_board_detail_page_utils.dart';
