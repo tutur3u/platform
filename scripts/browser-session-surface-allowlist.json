@@ -132,10 +132,6 @@
       "reason": "Calendar provider (Google/Microsoft) OAuth tokens, stored and used server-side; not a Tuturuuu session"
     },
     {
-      "file": "apps/calendar/src/lib/calendar/google-inbound-sync.ts",
-      "reason": "Calendar provider (Google/Microsoft) OAuth tokens, stored and used server-side; not a Tuturuuu session"
-    },
-    {
       "file": "apps/calendar/src/lib/calendar/incremental-active-sync.ts",
       "reason": "Calendar provider (Google/Microsoft) OAuth tokens, stored and used server-side; not a Tuturuuu session"
     },

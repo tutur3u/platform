@@ -29,7 +29,7 @@ generated output and the paused `backend` and `tanstack-web` runtimes.
 | `browserSupabaseClientImports` | Imports, dynamic imports or `require` of `@tuturuuu/supabase/next/client` or `next/auth-browser`; `createBrowserClient` from `@supabase/ssr`; `@supabase/supabase-js` `createClient` in a `'use client'` module | 91 files, including the `packages/supabase` definition sites |
 | `postgresChangesSubscriptions` | A `'postgres_changes'` string literal (a realtime subscription that needs a JS-held session) | 0 |
 | `sessionCookieScriptAccess` | A file that uses `document.cookie` and names `sb-`, `auth-token` or `app_session` anywhere | 0 |
-| `sessionTokenResponses` | An `access_token`/`refresh_token` (or camelCase) key, plain, quoted or shorthand, in a file that builds JSON responses, `{ body: … }` results or `new Response(JSON.stringify(…))`; or a `.json(session)` dump | 42 files, each with a reason |
+| `sessionTokenResponses` | An `access_token`/`refresh_token` (or camelCase) key, plain, quoted or shorthand, in a file that builds JSON responses, `{ body: … }` results or `new Response(JSON.stringify(…))`; or a `.json(session)` dump | 41 files, each with a reason |
 
 The allowlist is `scripts/browser-session-surface-allowlist.json`, and it only
 shrinks:
