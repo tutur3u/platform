@@ -91,6 +91,23 @@ describe('next-intl/navigation getPathname', () => {
       'https://x.test'
     );
   });
+
+  it('accepts hyphenated locales such as zh-CN', () => {
+    const regional = createNavigation({
+      defaultLocale: 'en',
+      localePrefix: 'as-needed',
+      locales: ['en', 'zh-CN'] as const,
+    });
+    expect(regional.getPathname({ href: '/zh-CN/people', locale: 'en' })).toBe(
+      '/people'
+    );
+    expect(regional.getPathname({ href: '/zh-CN', locale: 'zh-CN' })).toBe(
+      '/zh-CN'
+    );
+    expect(regional.getPathname({ href: '/zh-CNx', locale: 'en' })).toBe(
+      '/zh-CNx'
+    );
+  });
 });
 
 describe('generic next-intl/server', () => {

@@ -180,10 +180,11 @@ execution are not supported.
 The Colab endpoint deduplicates billing using the validated workshop job ID
 and provider-call sequence. Sponsored models must have a positive known price
 before any reservation or generation starts. A pricing failure during settlement
-finalizes the run as failed and releases the reservation; it does not represent
-free successful usage. Inspect `pricing_status: unavailable` and
-`reconciliation_required: true` in run metadata, restore model pricing, and
-reconcile the retained token counts before treating sponsorship totals as complete.
+records a `settlement_reconciliation` system step with
+`reconciliation_required: true` and the retained usage and identity. It does not
+issue a zero-credit settlement or refund. Restore model pricing and reconcile
+the retained token counts before treating sponsorship totals as complete. The
+separate reservation-expiry limitation is recorded below.
 Step pricing failures likewise do not create misleading priced-zero steps.
 
 Apply and test the private-schema migrations before running the app:
@@ -204,3 +205,105 @@ bun --filter @tuturuuu/ai-studio build
 
 Keep model grants, budgets, rates, capture policy, and legal publication
 controls conservative while expanding API-key issuance workspace by workspace.
+
+## Native staging candidate
+
+AI Studio retains its Next routes while the staging candidate renders them with
+TanStack Start and the shared Start bridge. Generate the adapters with
+`node scripts/start-bridge-codemod/cli.mjs ai --apply`; rerun the generator
+rather than editing its marked files. The app route registry includes the public
+`/v1/**` provider endpoints as well as `/api/**`. Public provider authentication
+continues to use API keys or scoped external-app tokens, independently of browser
+sessions. The existing Web workspace API rewrites keep precedence over AI routes.
+
+The bridge remains mount-aware, while this profile admits only the AI root hosts. App-owned API
+paths use the shared internal-api resolver; Web-owned paths stay at root `/api`.
+Login and locale redirects use the current bridge request's document origin and
+mount, with the configured AI origin retained for the legacy production runtime.
+`src/lib/bridge-routing.test.ts` covers concurrent mounted and root requests.
+
+Run `bun run routes:check`, `bun run type-check:cloudflare`, and
+`bun run build:cloudflare` from `apps/ai` on an admitted validation host. The generated `ai-cloudflare.yaml` workflow uses the shared native template to
+check binding types, seal the emitted Worker, and repeat runtime acceptance after
+restoring the archive into a fresh checkout. Run `bun run test:runtime` only
+after a native build, with the exact source identity required by the workflow.
+
+Initial promotion serves `ai.tuturuuu.com` in root mode. Root browser flows,
+public credential denials, and apex/unknown-host rejection are required.
+The `/ai` mount is rejected by this root-only profile; apex cutover waits for the
+shared-session decision and auth-boundary guard. Hosted provider calls are
+separate acceptance; local fixtures do not prove billable provider behavior.
+The candidate has no production publisher. A separate cutover-prep PR must add the production hold before a canonical traffic change.
+
+Client currency pickers import only the values and normalization helpers from
+`src/lib/display-currency.ts`. The database rate lookup lives in
+`display-currency.server.ts` and is imported only by server pages. Keep this
+boundary: the native build rejects a client import of the Supabase server
+adapter; do not relax that import protection to bundle a mixed utility module.
+
+Exact GET and HEAD `/api/build-info` requests expose only public build identity.
+The proxy strips ambient cookies and authorization before the existing API guard
+and local handler, without refreshing a session or writing cookies. Other methods,
+siblings and nested paths keep normal authentication. `proxy-build-info.test.ts`
+covers admission, guard denials and negative method/path controls; the emitted
+runtime suite still requires the exact compiled app name and source commit.
+
+### Root-only response and staging contract
+
+`start-bridge.config.ts` admits only `ai.tuturuuu.com` and
+`ai-staging.tuturuuu.com`. Empty mount hosts and `unknownHost: 'reject'`
+reject apex and unknown hosts before route execution. These allowlist entries
+do not provision DNS or authorize publication. The shared generator derives `workers_dev: false` from this fail-closed
+profile and seals that setting with the app-owned request-signal flag.
+
+Every native response denies framing and content sniffing, sets the strict-origin
+referrer policy, and remains noindex. Every response except GET/HEAD reads under `/assets/` or the enumerated
+`/robots.txt` file receives `Cache-Control: private, no-store` and varies by
+Cookie, overriding endpoint and upstream public cache headers. Only those static
+reads retain their cache policy; non-read asset requests remain private. Source tests cover the defaults,
+endpoint overrides and variation merging; `cloudflare/response-policy.runtime.mjs`
+checks the emitted Worker on every admitted host, rejects apex/unknown hosts,
+and probes upstream public cache headers and non-read asset paths.
+
+Staging profile verification is an explicit cutover-prep gate. Supply and verify
+`INTERNAL_WEB_API_ORIGIN`, `SUPABASE_SERVER_URL`, the public Supabase URL/key,
+and server-only `SUPABASE_SECRET_KEY` with its intended service role, plus
+`GOOGLE_GENERATIVE_AI_API_KEY` for the configured provider. No conversion PR publishes production or qualifies
+hosted auth, provider behavior or checkout. Keep credentials out of artifacts
+and receipts; record only variable names and verification outcomes.
+
+AI additionally requires `enable_request_signal` so an incoming disconnect
+aborts the provider operation. Retain the stream completion and metering
+settlement with the bridge request context's `waitUntil`; otherwise the Worker
+invocation can end before settlement finishes after a disconnect. Cloudflare documents this as an explicit opt-in
+[compatibility flag](https://developers.cloudflare.com/workers/configuration/compatibility-flags/#enable-requestsignal-for-incoming-requests).
+`cloudflare/stream-cancellation.runtime.mjs` drives the emitted public streaming
+route with disposable API credentials, synthetic provider and database responses,
+and a real client disconnect. It requires one reservation and one settlement
+with status `aborted`; external egress and live billing remain forbidden.
+
+The anonymous root outcome is a redirect to `/login`, matching the existing
+AI proxy authentication rule. The app-owned `runtime` declaration requires that
+redirect to stay on the requested root host, rather than accepting a generic
+non-error response. Unauthenticated `/v1/models` must return 401.
+
+Uploaded WebGL documents forwarded from central under
+`/api/v1/workspaces/<ws>/external-projects/assets/<asset>/webgl` retain the
+upstream CSP byte for byte and receive no X-Frame-Options. Central's sandbox
+is the security boundary for uploaded JavaScript. The wrapper never uses the
+handler-level CSP option. Neighbouring paths retain the normal framing denial;
+source and emitted regressions cover the exact path boundary and sandbox policy.
+
+Settlement uses its own scoped admin fetch transport and AbortController. Pricing
+and settlement share a ten-second I/O budget; a separate four-second budget
+records an unknown outcome and measured usage in the existing run-step ledger.
+Both budgets shrink to stay inside the remaining post-disconnect grace. The
+already-aborted client signal is never used for this work, and global fetch is
+not modified. Unknown completions retain their original run, request, actor and
+workspace identifiers and are never retried or replaced by a zero-credit charge.
+
+Reservation-expiry policy is a separate, recorded DB-owner dependency:
+`_release_expired_ai_credit_reservations`, last defined in
+`20260803150000_meter_mira_live_sessions.sql`, still refunds expired reserved
+rows regardless of the reconciliation marker. This conversion adds no migration;
+the expiry fence needs a separate migration and Mastermind approval.

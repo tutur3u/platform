@@ -1074,6 +1074,58 @@ when the gateway and owning app both enforce the guard. Ordinary unmarked
 foreground reads do not consume these additional bulk-download budgets.
 The additional server download protection applies only to eligible GET/HEAD requests explicitly marked `x-tuturuuu-offline-download: 1`. Ordinary daily enterprise operations in Finance, Inventory, Contacts, Tasks and other apps always continue through existing authentication, authorization, MFA, abuse and API protections without accessing this additional guard's Redis clients, quotas or CAPTCHA, even when it is activated. This scope applies to the web API and every registered satellite proxy. `OFFLINE_DOWNLOAD_PROTECTION_ENABLED` defaults to inactive and activates only for the exact value `true`; while inactive, marked bulk downloads return 503 with `Retry-After: 30`. Omitting the bulk marker never bypasses baseline protections or grants access.
 
+### Guard rejection diagnostics
+
+Every rejection emitted by the shared API proxy/offline-download/account-assurance
+guards, including Infrastructure's early app-session failures, carries one fixed
+scalar `X-Tuturuuu-Guard-Reason`. These diagnostics apply across registered
+satellites and Web; guard decisions, statuses, limits and fail-closed behavior
+remain unchanged. The reason values are:
+
+| Reason | Existing rejection |
+| --- | --- |
+| `offline-download-inactive` | 503: marked bulk read while protection is inactive. |
+| `offline-download-unavailable` | 503: activated protection cannot complete (including missing distributed storage or an unavailable subject). |
+| `offline-download-rate-limited` | 429: bulk read budget exhausted. |
+| `offline-download-authentication-required` | 401: bulk read lacks a session subject. |
+| `offline-download-challenge-required` | 403: Turnstile verification missing or rejected. |
+| `auth-assurance-unavailable` | 503: account assurance cannot be verified. |
+| `auth-assurance-required` | 403: MFA verification required. |
+| `auth-assurance-unauthenticated` | 401: account credentials invalid. |
+| `app-session-refresh-unavailable` | 503: app-session refresh unavailable before the API guard. |
+| `app-session-unauthenticated` | 401: app-session authentication failed before the API guard. |
+| `proxy-ip-blocked` | 429: existing IP block. |
+| `proxy-rate-limited` | 429: route budget exhausted. |
+| `proxy-payload-too-large` | 413: payload exceeds its existing bound. |
+| `proxy-content-rejected` | 400: request content validation rejected the payload. |
+
+`X-Tuturuuu-Auth-Assurance`, retry and cookie behavior remain intact.
+`X-Tuturuuu-Guard-Request-Id` is a locally generated random correlation ID;
+request-provided IDs, identities and credentials are never copied into diagnostics.
+Both diagnostic headers are listed in `Access-Control-Expose-Headers`, retaining
+existing entries. This permits browser clients to read them when the existing
+origin policy allows the response; it does not grant new origins access. Native
+mobile clients can read response headers directly.
+
+Infrastructure returns these shared guard responses through its middleware,
+before the mobile Calendar gateway runs. Always emit one `console.warn` event
+named `Guard rejected request` per rejection, containing only the fixed reason,
+a fixed route template (for example `/api/v1/mobile-calendar/:path*`) and the
+same generated request ID. This provides runtime-log evidence without depending
+on whether a deployment's Vercel request-log view retains response headers.
+Infrastructure omits its older Calendar preference 429 warning when this shared
+diagnostic is present, keeping one warning per rejection.
+Do not log raw paths, queries, bodies, user/workspace IDs, cookies or tokens.
+A gateway-owned 503 without this header remains a distinct failure; absence of
+the header alone does not prove which downstream service failed.
+
+Regression coverage: `guard-rejection.test.ts`, `offline-download-guard.test.ts`,
+`required-mfa-runtime.test.ts`, `api-proxy-guard.test.ts`, auth's
+`mfa-failure.test.ts`, and Infrastructure's `proxy.test.ts` cover reason values,
+privacy, existing status/retry behavior and middleware header propagation.
+Mobile's existing 503 diagnostics do not yet record the reason; adding that
+client field is a follow-up and does not block server-side correlation.
+
 ### Mobile download protection readiness
 
 The default production mobile Download all path needs protection readiness at
