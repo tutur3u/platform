@@ -112,6 +112,12 @@ and exclude unrelated baseline drift; never hand-edit generated declarations.
   side effects when no row matched.
 - Membership lookup errors are `500`; successful lookups with no membership are
   `403`.
+- Never filter by a credential value (`access_token`, `refresh_token`):
+  PostgREST puts every filter in the request URL, where gateway logs keep it.
+  Fence by row id and metadata such as `created_at`, compare a sha256
+  fingerprint inside an RPC body (see `quarantine_calendar_auth_token`), or
+  compare in process. `packages/utils/src/oauth-credential-url-filter.test.ts`
+  scans every app and package source for this pattern.
 
 ## Storage
 
