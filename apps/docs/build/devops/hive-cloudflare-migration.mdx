@@ -208,6 +208,42 @@ runtime policy, build restrictions and source/data-owner custody.
 
 ## Staging, cutover and rollback acceptance
 
+### Unit 1 contract and local transaction spike
+
+`apps/hive/src/lib/hive/persistence/contract.ts` defines only the world-event
+and trade/ledger persistence port. Caller operation IDs and writer scopes are
+explicit; changed input under an existing ID conflicts. World snapshot, event,
+sequence and receipt must be atomic, as must trade, wallets, ledger and receipt.
+An unknown outcome stays unresolved until its original writer observes a
+durable receipt. The fake conformance tests exercise these requirements without
+wiring an adapter into the app or changing authentication or live data paths.
+
+Run the separate disposable local-runtime spike from the repository root:
+
+```bash
+ttr resources run -- node apps/hive/transaction-spike/transactions.runtime.mjs
+```
+
+The spike resolves Miniflare through the existing pinned Wrangler dependency,
+uses loopback-only listeners and a tested outbound deny service, and removes its
+temporary D1/DO SQLite files on completion. Miniflare 5 uses
+`resourcePersistencePath`; its V4 converter ignores legacy `d1Persist` and
+`durableObjectsPersist` settings. The restart assertion verifies actual durable
+receipt retention rather than assuming those old options work.
+It has no deployment configuration, account IDs, credentials, routes or hosted
+resources. It compares a deterministic D1 read/decide/write double-spend negative
+control, a D1 predeclared batch with SQL triggers that abort on zero-row changes,
+and the ledger/economy DO `transactionSync` fallback. Both correct candidates must
+reject competing spends, preserve totals, reject changed-ID input, roll back a
+failure after debit, and retain deduplication receipts after runtime restart.
+Fixture wallets represent Hive NPC currency, never platform AI credits. Values
+use integer minor units; conversion of production `numeric(18,2)`
+values and full trade inventory semantics remain later adapter qualification.
+These fixtures do not establish staging acceptance, production migration or a
+final persistence selection. No live callers use this port yet.
+
+### Promotion gates
+
 1. Admit staging resources/hostname and spending scope separately. Publish an
    immutable exact-commit artifact; run the actual Worker and DO runtime, then
    browser checks with disposable identities. Keep provenance and config/binding
