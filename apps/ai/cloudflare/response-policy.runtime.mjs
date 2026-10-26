@@ -15,6 +15,12 @@ test('emitted ai Worker applies security and personalized cache policy', {
         {
           headers: {
             'Cache-Control': 'public, max-age=0, s-maxage=0, must-revalidate',
+            ...(request.url.includes('/external-projects/assets/')
+              ? {
+                  'Content-Security-Policy':
+                    "sandbox allow-scripts; default-src 'none'",
+                }
+              : {}),
           },
         }
       );
@@ -51,6 +57,23 @@ test('emitted ai Worker applies security and personalized cache policy', {
     upstream.includes(`https://central.invalid${publicPath}`),
     'Probe must reach the upstream public cache fixture'
   );
+  const sandbox = "sandbox allow-scripts; default-src 'none'";
+  const webgl =
+    '/api/v1/workspaces/fixture/external-projects/assets/fixture/webgl/game.js';
+  const sandboxed = await worker.request(webgl);
+  assert.equal(sandboxed.status, 200);
+  assert.equal(sandboxed.headers['content-security-policy'], sandbox);
+  assert.equal(sandboxed.headers['x-frame-options'], undefined);
+  assert.ok(upstream.includes(`https://central.invalid${webgl}`));
+  const neighbouring = await worker.request(
+    webgl.replace('/webgl/', '/webgl-other/')
+  );
+  assert.equal(neighbouring.status, 200);
+  assert.equal(
+    neighbouring.headers['content-security-policy'],
+    `${sandbox}; frame-ancestors 'none'`
+  );
+  assert.equal(neighbouring.headers['x-frame-options'], 'DENY');
   for (const path of ['/assets/client.js', '/robots.txt']) {
     for (const method of ['POST', 'PUT']) {
       const response = await worker.request(path, { method });

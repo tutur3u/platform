@@ -89,3 +89,27 @@ it.each(['POST', 'PUT', 'PATCH', 'DELETE'])(
     }
   }
 );
+
+describe('sandboxed uploaded WebGL documents', () => {
+  const sandbox = "sandbox allow-scripts; default-src 'none'";
+  it.each([
+    '/api/v1/workspaces/ws/external-projects/assets/asset/webgl',
+    '/api/v1/workspaces/ws/external-projects/assets/asset/webgl/game.js',
+  ])('preserves central sandbox CSP unchanged on %s', async (path) => {
+    const response = await decorate(path, {
+      'Content-Security-Policy': sandbox,
+    });
+    expect(response.headers.get('Content-Security-Policy')).toBe(sandbox);
+    expect(response.headers.has('X-Frame-Options')).toBe(false);
+  });
+  it('denies framing on a neighbouring path', async () => {
+    const response = await decorate(
+      '/api/v1/workspaces/ws/external-projects/assets/asset/webgl-other/game.js',
+      { 'Content-Security-Policy': sandbox }
+    );
+    expect(response.headers.get('Content-Security-Policy')).toBe(
+      `${sandbox}; frame-ancestors 'none'`
+    );
+    expect(response.headers.get('X-Frame-Options')).toBe('DENY');
+  });
+});

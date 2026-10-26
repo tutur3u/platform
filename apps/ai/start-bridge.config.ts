@@ -13,23 +13,31 @@ export default defineBridgeAppConfig({
   wrapResponse(response, { request }) {
     const result = new Response(response.body, response);
     result.headers.set('X-Robots-Tag', 'noindex, nofollow');
-    const csp = result.headers.get('Content-Security-Policy');
-    const directives =
-      csp
-        ?.split(';')
-        .filter(
-          (directive) =>
-            directive.trim() &&
-            !/^frame-ancestors(?:\s|$)/iu.test(directive.trim())
-        ) ?? [];
-    result.headers.set(
-      'Content-Security-Policy',
-      [...directives, "frame-ancestors 'none'"].join('; ')
-    );
-    result.headers.set('X-Frame-Options', 'DENY');
+    const path = new URL(request.url).pathname;
+    const sandboxedWebgl =
+      /^\/api\/v1\/workspaces\/[^/]+\/external-projects\/assets\/[^/]+\/webgl(?:\/|$)/u.test(
+        path
+      );
+    if (sandboxedWebgl) {
+      result.headers.delete('X-Frame-Options');
+    } else {
+      const csp = result.headers.get('Content-Security-Policy');
+      const directives =
+        csp
+          ?.split(';')
+          .filter(
+            (directive) =>
+              directive.trim() &&
+              !/^frame-ancestors(?:\s|$)/iu.test(directive.trim())
+          ) ?? [];
+      result.headers.set(
+        'Content-Security-Policy',
+        [...directives, "frame-ancestors 'none'"].join('; ')
+      );
+      result.headers.set('X-Frame-Options', 'DENY');
+    }
     result.headers.set('X-Content-Type-Options', 'nosniff');
     result.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-    const path = new URL(request.url).pathname;
     const isAsset =
       (request.method === 'GET' || request.method === 'HEAD') &&
       (path.startsWith('/assets/') || path === '/robots.txt');

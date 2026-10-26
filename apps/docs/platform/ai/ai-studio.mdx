@@ -285,3 +285,10 @@ The anonymous root outcome is a redirect to `/login`, matching the existing
 AI proxy authentication rule. The app-owned `runtime` declaration requires that
 redirect to stay on the requested root host, rather than accepting a generic
 non-error response. Unauthenticated `/v1/models` must return 401.
+
+Uploaded WebGL documents forwarded from central under
+`/api/v1/workspaces/<ws>/external-projects/assets/<asset>/webgl` retain the
+upstream CSP byte for byte and receive no X-Frame-Options. Central's sandbox
+is the security boundary for uploaded JavaScript. The wrapper never uses the
+handler-level CSP option. Neighbouring paths retain the normal framing denial;
+source and emitted regressions cover the exact path boundary and sandbox policy.
