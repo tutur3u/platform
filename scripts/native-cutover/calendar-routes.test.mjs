@@ -24,7 +24,10 @@ test('capture retains separate native and scriptless ACME IDs', () => {
     native,
   ]);
   assert.deepEqual(handles, { native, acme });
-  assert.deepEqual(calendarRollbackRoutes(handles), [native, acme]);
+  assert.deepEqual(
+    calendarRollbackRoutes(handles, { createdAcmeRouteId: acme.id }),
+    [native, acme]
+  );
 });
 test('capture accepts a provider-omitted script on the ACME exclusion', () => {
   const { script: _script, ...scriptless } = acme;
@@ -50,5 +53,21 @@ test('rollback refuses shared route IDs', () => {
   assert.throws(
     () => calendarRollbackRoutes({ native, acme: { ...acme, id: native.id } }),
     /must differ/
+  );
+});
+
+test('empty script is normalized only for the scriptless exclusion', () => {
+  assert.deepEqual(calendarRouteHandles([{ ...acme, script: '' }]).acme, acme);
+  assert.throws(() => calendarRouteHandles([{ ...native, script: '' }]));
+});
+test('rollback preserves an ACME exclusion without a cutover creation receipt', () => {
+  assert.deepEqual(calendarRollbackRoutes({ native, acme }), [native]);
+  assert.throws(
+    () =>
+      calendarRollbackRoutes(
+        { native, acme },
+        { createdAcmeRouteId: 'c'.repeat(32) }
+      ),
+    /creation receipt must match/
   );
 });

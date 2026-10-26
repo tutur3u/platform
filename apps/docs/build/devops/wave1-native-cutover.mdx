@@ -101,8 +101,11 @@ scriptless exclusions. Rehearse rollback using both exact IDs. Delete the main
 route first, confirm the Vercel fallback, then delete the owned ACME exclusion.
 Preserve any exclusion that predates this cutover instead of deleting another
 operator's route. `calendarRollbackRoutes` validates both handles and deletion
-order; API observations must confirm the captured pattern and owner before each
-delete. The accepted proxied baseline avoids a DNS propagation wait.
+order; its `createdAcmeRouteId` must match the ID returned by this cutover's
+route-creation operation. Record that creation receipt with the capture. Without
+that proof, rollback preserves the existing ACME exclusion. API observations must
+confirm the captured pattern and owner before each delete. The accepted proxied
+baseline avoids a DNS propagation wait.
 The rollback target is Vercel serving the same legacy behavior as before cutover.
 The accepted CF baseline has robots 200, login redirects 307, protected requests
 401, uncached Vercel identity and GET/HEAD ACME origin reachability. The legacy
