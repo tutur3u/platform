@@ -170,3 +170,40 @@ test('metadata-only runs cannot cancel validation or each other, including the a
 test('cancellation prevents the aggregate from allocating a runner', () => {
   assert.equal(workflow.jobs.gate.if, '!cancelled()');
 });
+
+test('metadata-only aggregates cannot replace the full-validation check name on the same head', () => {
+  const normal = context();
+  const canonical = renderTemplate(workflow.jobs.gate.name, normal);
+  assert.equal(canonical, 'Cheap PR Checks');
+  for (const action of ['labeled', 'unlabeled']) {
+    for (const ready of [true, false]) {
+      const labelOnly = context(action, 'security-review-required', ready, 2);
+      assert.equal(labelOnly.github.sha, normal.github.sha);
+      assert.equal(
+        renderTemplate(workflow.jobs.gate.name, labelOnly),
+        'Cheap PR Checks (label event)'
+      );
+      assert.notEqual(
+        renderTemplate(workflow.jobs.gate.name, labelOnly),
+        canonical
+      );
+    }
+    assert.equal(
+      renderTemplate(workflow.jobs.gate.name, context(action, 'ready-for-ci')),
+      canonical
+    );
+  }
+  for (const action of ['opened', 'reopened', 'ready_for_review'])
+    assert.equal(
+      renderTemplate(workflow.jobs.gate.name, context(action)),
+      canonical
+    );
+});
+
+test('stacked-base PRs defer mobile API mappings while main-base PRs select them', () => {
+  const main = context();
+  assert.equal(runnable('mobile', main), true);
+  const stacked = context();
+  stacked.github.base_ref = 'feature/parent';
+  assert.equal(runnable('mobile', stacked), false);
+});

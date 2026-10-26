@@ -745,8 +745,10 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   pre-label run stays skipped. Most heavy workflows admit by label presence.
   In the consolidated `pr-checks.yaml`, only `ready-for-ci` label changes rerun
   selected validators; other label changes run CI admission and its aggregate
-  in unique non-cancelling groups, including the admission callee. They provide
-  admission evidence only, not a new validation pass. Skipped checks are not
+  in unique non-cancelling groups, including the admission callee. Their gate
+  is named `Cheap PR Checks (label event)` so it cannot replace full validation
+  evidence under `Cheap PR Checks` on the same SHA. They provide admission
+  evidence only, not a new validation pass. Skipped checks are not
   evidence once the label is removed. The always-on CI Admitted check
   (`pr-checks.yaml` → `ci-admitted.yaml`) reads current labels from a base-commit script. It is red
   without the label, and on the push/label race, which it reports with re-add

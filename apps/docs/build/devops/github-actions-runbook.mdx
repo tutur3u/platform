@@ -494,7 +494,9 @@ Among label events, only adding or removing `ready-for-ci` retriggers the
 consolidated validators.
 Other `labeled`/`unlabeled` events run only CI admission and its aggregate;
 each receives a unique non-cancelling group in both parent and admission callee.
-Those runs do not establish a new validation pass. Unadmitted validation stays
+Those runs report **Cheap PR Checks (label event)**, preserving the latest
+**Cheap PR Checks** result for full validation on the same SHA. They do not
+establish a new validation pass. Unadmitted validation stays
 in a separate group and cannot cancel an admitted run. This exception applies
 to the consolidated workflow; other heavy workflows retain label-presence
 admission until separately migrated.

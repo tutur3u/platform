@@ -194,7 +194,7 @@ jobs:
       deployments: read
 
   gate:
-    name: Cheap PR Checks
+    name: ${{ (github.event_name == 'pull_request' && (github.event.action == 'labeled' || github.event.action == 'unlabeled') && github.event.label.name != 'ready-for-ci') && 'Cheap PR Checks (label event)' || 'Cheap PR Checks' }}
     if: '!cancelled()'
     needs: [scope, branch-name, admitted, biome, i18n, docs, migration-timestamps, migrations, mobile, plugin]
     runs-on: ubuntu-latest

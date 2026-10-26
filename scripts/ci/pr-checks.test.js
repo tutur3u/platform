@@ -71,7 +71,12 @@ test('existing check display names remain stable in the consolidated run', () =>
       assert.equal(workflows[file].jobs[id].name, name);
   }
   assert.equal(workflow.jobs['branch-name'].name, 'Check branch name');
-  assert.equal(workflow.jobs.gate.name, 'Cheap PR Checks');
+  assert.equal(
+    renderTemplate(workflow.jobs.gate.name, {
+      github: { event_name: 'pull_request', event: { action: 'synchronize' } },
+    }),
+    'Cheap PR Checks'
+  );
   assert.equal(workflow.jobs.gate.if, '!cancelled()');
 });
 
