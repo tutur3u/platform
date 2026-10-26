@@ -1044,17 +1044,9 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
   }
 
   Widget _buildInformationSection(BuildContext context) {
-    final assignees = _task.assignees
-        .where(
-          (assignee) =>
-              (assignee.displayName?.trim().isNotEmpty ?? false) ||
-              assignee.id.trim().isNotEmpty,
-        )
-        .toList(growable: false);
     final description = _taskDescriptionParsed(_task.description);
-
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (description != null) ...[
           _TaskBoardDescriptionAccordion(
@@ -1067,90 +1059,11 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
           ),
           const shad.Gap(12),
         ],
-        if (_task.priority?.trim().isNotEmpty == true) ...[
-          _TaskBoardTaskDetailRow(
-            label: context.l10n.taskBoardDetailPriority,
-            child: _TaskPriorityChip(priority: _task.priority),
-          ),
-          const shad.Gap(12),
-        ],
-        if (_task.startDate != null) ...[
-          _TaskBoardTaskDetailRow(
-            label: context.l10n.taskBoardDetailTaskStartDate,
-            value: DateFormat.yMd().format(_task.startDate!),
-          ),
-          const shad.Gap(12),
-        ],
-        if (_task.endDate != null) ...[
-          _TaskBoardTaskDetailRow(
-            label: context.l10n.taskBoardDetailTaskEndDate,
-            value: DateFormat.yMd().format(_task.endDate!),
-          ),
-          const shad.Gap(12),
-        ],
-        if (_task.estimationPoints != null) ...[
-          _TaskBoardTaskDetailRow(
-            label: context.l10n.taskBoardDetailTaskEstimation,
-            child: shad.OutlineBadge(
-              child: Text(
-                _taskEstimationPointLabel(
-                  points: _task.estimationPoints!,
-                  board: widget.board,
-                ),
-              ),
-            ),
-          ),
-          const shad.Gap(12),
-        ],
-        if (assignees.isNotEmpty) ...[
-          _TaskBoardTaskDetailRow(
-            label: context.l10n.taskBoardDetailTaskAssignees,
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: assignees
-                  .map(
-                    (assignee) => _AssigneeChip(
-                      label: assignee.displayName?.trim().isNotEmpty == true
-                          ? assignee.displayName!.trim()
-                          : assignee.id,
-                      avatarUrl: assignee.avatarUrl,
-                    ),
-                  )
-                  .toList(growable: false),
-            ),
-          ),
-          const shad.Gap(12),
-        ],
-        if (_task.labels.isNotEmpty) ...[
-          _TaskBoardTaskDetailRow(
-            label: context.l10n.taskBoardDetailTaskLabels,
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _task.labels
-                  .map(_TaskLabelBadge.new)
-                  .toList(growable: false),
-            ),
-          ),
-          const shad.Gap(12),
-        ],
-        if (_task.projects.isNotEmpty) ...[
-          _TaskBoardTaskDetailRow(
-            label: context.l10n.taskBoardDetailTaskProjects,
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _task.projects
-                  .map(
-                    (project) =>
-                        _ProjectBadge(label: _taskProjectLabel(project)),
-                  )
-                  .toList(growable: false),
-            ),
-          ),
-          const shad.Gap(12),
-        ],
+        _TaskDetailFieldsCard(
+          task: _task,
+          board: widget.board,
+          lists: widget.lists,
+        ),
       ],
     );
   }

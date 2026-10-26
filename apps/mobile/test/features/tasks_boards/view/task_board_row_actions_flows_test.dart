@@ -25,11 +25,24 @@ class _TimerRepository extends Fake implements ITimeTrackerRepository {
   /// Pauses that fail before one succeeds.
   int failPauses = 0;
 
-  @override
-  Future<TimeTrackingSession?> getRunningSession(String wsId) async => running;
+  /// What the server reports once a re-pause has been attempted.
+  TimeTrackingSession? rereadRunning;
+  TimeTrackingSession? rereadPaused;
+  bool failReread = false;
 
   @override
-  Future<TimeTrackingSession?> getPausedSession(String wsId) async => paused;
+  Future<TimeTrackingSession?> getRunningSession(String wsId) async {
+    if (pauses.isEmpty) return running;
+    if (failReread) throw Exception('offline');
+    return rereadRunning;
+  }
+
+  @override
+  Future<TimeTrackingSession?> getPausedSession(String wsId) async {
+    if (pauses.isEmpty) return paused;
+    if (failReread) throw Exception('offline');
+    return rereadPaused;
+  }
 
   @override
   Future<TimeTrackingSession> stopSession(String wsId, String sessionId) async {
@@ -300,7 +313,8 @@ void main() {
               paused: const TimeTrackingSession(id: 'paused', taskId: 'task-9'),
             )
             ..failStart = true
-            ..failPauses = 2;
+            ..failPauses = 2
+            ..rereadRunning = const TimeTrackingSession(id: 'paused-resumed');
       await pumpBoard(tester, timer: timer);
 
       await replacePaused(tester);
@@ -314,6 +328,47 @@ void main() {
         findsOneWidget,
       );
       expect(find.textContaining('was ended'), findsNothing);
+      await drainToasts(tester);
+    });
+
+    testWidgets('a pause whose response was lost still reads as paused', (
+      tester,
+    ) async {
+      final timer =
+          _TimerRepository(
+              paused: const TimeTrackingSession(id: 'paused', taskId: 'task-9'),
+            )
+            ..failStart = true
+            ..failPauses = 2
+            ..rereadPaused = const TimeTrackingSession(id: 'paused-resumed');
+      await pumpBoard(tester, timer: timer);
+
+      await replacePaused(tester);
+
+      expect(
+        find.text("Couldn't start focus. Your paused timer is back as it was."),
+        findsOneWidget,
+      );
+      expect(find.textContaining('running again'), findsNothing);
+      await drainToasts(tester);
+    });
+
+    testWidgets('an unconfirmed state is reported as unconfirmed', (
+      tester,
+    ) async {
+      final timer =
+          _TimerRepository(
+              paused: const TimeTrackingSession(id: 'paused', taskId: 'task-9'),
+            )
+            ..failStart = true
+            ..failPauses = 2
+            ..failReread = true;
+      await pumpBoard(tester, timer: timer);
+
+      await replacePaused(tester);
+
+      expect(find.textContaining("couldn't be confirmed"), findsOneWidget);
+      expect(find.textContaining('running again'), findsNothing);
       await drainToasts(tester);
     });
 

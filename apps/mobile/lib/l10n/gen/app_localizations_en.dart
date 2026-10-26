@@ -8911,6 +8911,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardDetailFocusStartFailedRunning => 'Couldn\'t start focus. Your previous timer is running again.';
 
   @override
+  String get taskBoardDetailFocusStartFailedUnknown => 'Couldn\'t start focus, and the previous timer\'s state couldn\'t be confirmed. Open the timer to check it.';
+
+  @override
   String get taskBoardDetailFocusStarted => 'Timer started for this task.';
 
   @override
@@ -9338,6 +9341,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get taskBoardDetailTaskLabels => 'Labels';
+
+  @override
+  String get taskBoardDetailTaskList => 'List';
 
   @override
   String get taskBoardDetailTaskListLabel => 'List';
@@ -10548,10 +10554,46 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timerPomodoro => 'Pomodoro';
 
   @override
+  String get timerPomodoroBreakDoneBody => 'Ready for the next focus?';
+
+  @override
+  String get timerPomodoroBreakDoneTitle => 'Break over';
+
+  @override
+  String timerPomodoroCycle(int current, int total) {
+    return 'Focus $current of $total';
+  }
+
+  @override
+  String get timerPomodoroFocusDoneBody => 'Time for a break.';
+
+  @override
+  String get timerPomodoroFocusDoneTitle => 'Focus done';
+
+  @override
+  String get timerPomodoroOtherRunning => 'Another timer is running. Stop it on the Timer page to continue this focus.';
+
+  @override
+  String timerPomodoroRemaining(String minutes, String seconds) {
+    return '$minutes:$seconds left';
+  }
+
+  @override
   String get timerPomodoroSettings => 'Pomodoro settings';
 
   @override
   String get timerPomodoroSettingsDescription => 'Tune focus sessions, breaks, and the automation between them.';
+
+  @override
+  String get timerPomodoroSkip => 'Skip';
+
+  @override
+  String get timerPomodoroStart => 'Start focus';
+
+  @override
+  String timerPomodoroSummary(int focus, int rest) {
+    return '$focus min focus · $rest min break';
+  }
 
   @override
   String get timerProofOfWorkRequired => 'At least one proof image is required.';

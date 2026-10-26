@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/layout/grouped_rows.dart';
 import 'package:mobile/core/layout/grouped_section.dart';
@@ -90,7 +91,7 @@ void main() {
             matching: find.byType(AppGroupedRow),
           );
           // One grouped card: the starters stack in a single column at
-          // every width, each row at least the 44dp touch target.
+          // every width, each row at least the 48dp touch target.
           final first = tester.getRect(card(labels.first));
           final second = tester.getRect(card(labels[1]));
           expect(second.top, greaterThanOrEqualTo(first.bottom));
@@ -99,7 +100,7 @@ void main() {
           for (final label in labels) {
             expect(
               tester.getSize(card(label)).height,
-              greaterThanOrEqualTo(44),
+              greaterThanOrEqualTo(48),
             );
           }
 
@@ -114,10 +115,13 @@ void main() {
               lessThan(navigation.top),
             );
           }
+          // Starter labels allow four lines; they fit without reaching that
+          // cap in every locale and scale here.
           for (final label in labels) {
-            final text = tester.widget<Text>(find.text(label));
-            expect(text.maxLines, isNull);
-            expect(text.overflow, isNot(TextOverflow.ellipsis));
+            final paragraph = tester.renderObject<RenderParagraph>(
+              find.text(label),
+            );
+            expect(paragraph.didExceedMaxLines, isFalse, reason: label);
           }
           await tester.ensureVisible(find.text(labels.last));
           await tester.pumpAndSettle();

@@ -1942,16 +1942,19 @@ gestures. The same behavior applies on Android and iOS.
 - **Long press** opens the row's context menu: Complete or Reopen, Start
   focus, Schedule, Change priority, Move task, Select task, Open full details
   and Delete task.
-- **Start focus** starts an ordinary time-tracking session linked to the task.
-  A Pomodoro entry point for tasks is planned for phase 6 of the mobile
-  native pass plan. Starting a
+- **Start focus** starts a device Pomodoro focus phase for the task: an
+  ordinary time-tracking session linked to the task, with a countdown and a
+  phase-end notification (see the Timer page). Starting a
   session closes any running one on the server, so a running or paused timer
   for another task is replaced only after confirmation. A paused one is stopped
   first, which closes its break. If the new start then fails, the paused work
-  is resumed and paused again, so it looks as it did. If that also fails, the
-  timer is resumed but cannot be paused again (after one retry), the toast
-  says it is running. Only when nothing could be restored does the toast say
-  the paused timer ended. Both offer **Open timer**. A timer running
+  is resumed and paused again, so it looks as it did. If the pause still
+  fails after one retry, the toast says the timer is running. Before saying
+  so, the app re-reads the paused and running sessions, because a lost pause
+  response may hide a pause that succeeded. It reports what it finds (paused,
+  running, or that it could not confirm). Only when nothing could be resumed
+  does the toast say the paused timer ended. All of these offer **Open
+  timer**. A timer running
   for this task is kept, and one paused on this task is resumed. The success
   toast offers **Open timer**.
 - **Failures** roll the row back, then show the server's error as a toast:
@@ -2008,4 +2011,23 @@ search opens Apps search), `assistant_starter_prompts_test.dart` (grouped rows
 at phone and tablet sizes, 2x text, English and Vietnamese),
 `profile_you_rows_test.dart`, `profile_render_cases.dart` and
 `profile_overview_shell_test.dart` (Focus Time beside identity on desktop).
+
+### Task detail fields
+
+Task details show the task's fields as one grouped card of icon rows, in this
+order:
+
+1. **List**, always shown;
+2. **Due**;
+3. **Start**;
+4. **Priority**;
+5. **Estimation**;
+6. **Assignees**;
+7. **Labels**;
+8. **Projects**.
+
+Fields from Due onwards appear only when set. Values sit at the trailing edge;
+assignee, label and project chips wrap under the field name, so enlarged text
+never clips them. The description accordion stays above the card, and editing
+still happens in the task editor. Back stays on the dock.
 

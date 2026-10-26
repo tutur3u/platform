@@ -1111,6 +1111,36 @@
       }
     }
   },
+  "@timerPomodoroCycle": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "@timerPomodoroRemaining": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      },
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "@timerPomodoroSummary": {
+    "placeholders": {
+      "focus": {
+        "type": "int"
+      },
+      "rest": {
+        "type": "int"
+      }
+    }
+  },
   "@timerRequestActivityPageInfo": {
     "placeholders": {
       "current": {
@@ -4059,6 +4089,7 @@
   "taskBoardDetailFocusStartFailedPausedEnded": "Couldn't start focus, and your paused timer was ended. Open the timer to resume it.",
   "taskBoardDetailFocusStartFailedRestored": "Couldn't start focus. Your paused timer is back as it was.",
   "taskBoardDetailFocusStartFailedRunning": "Couldn't start focus. Your previous timer is running again.",
+  "taskBoardDetailFocusStartFailedUnknown": "Couldn't start focus, and the previous timer's state couldn't be confirmed. Open the timer to check it.",
   "taskBoardDetailFocusStarted": "Timer started for this task.",
   "taskBoardDetailFromList": "from: {list}",
   "taskBoardDetailInDays": "{count, plural, one{in {count} day} other{in {count} days}}",
@@ -4188,6 +4219,7 @@
   "taskBoardDetailTaskEstimation": "Estimation",
   "taskBoardDetailTaskEstimationNone": "No estimate",
   "taskBoardDetailTaskLabels": "Labels",
+  "taskBoardDetailTaskList": "List",
   "taskBoardDetailTaskListLabel": "List",
   "taskBoardDetailTaskListSelect": "Choose list",
   "taskBoardDetailTaskMoved": "Task moved.",
@@ -4565,8 +4597,18 @@
   "timerPause": "Pause",
   "timerPaused": "Paused",
   "timerPomodoro": "Pomodoro",
+  "timerPomodoroBreakDoneBody": "Ready for the next focus?",
+  "timerPomodoroBreakDoneTitle": "Break over",
+  "timerPomodoroCycle": "Focus {current} of {total}",
+  "timerPomodoroFocusDoneBody": "Time for a break.",
+  "timerPomodoroFocusDoneTitle": "Focus done",
+  "timerPomodoroOtherRunning": "Another timer is running. Stop it on the Timer page to continue this focus.",
+  "timerPomodoroRemaining": "{minutes}:{seconds} left",
   "timerPomodoroSettings": "Pomodoro settings",
   "timerPomodoroSettingsDescription": "Tune focus sessions, breaks, and the automation between them.",
+  "timerPomodoroSkip": "Skip",
+  "timerPomodoroStart": "Start focus",
+  "timerPomodoroSummary": "{focus} min focus · {rest} min break",
   "timerProofOfWorkRequired": "At least one proof image is required.",
   "timerReasonOptional": "Reason (optional)",
   "timerRecentSessions": "Recent sessions",
