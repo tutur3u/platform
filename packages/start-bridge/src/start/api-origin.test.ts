@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/dist/server/web/spec-extension/response';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { AssetsBinding } from '../core/assets';
 import { createBridgeHandler } from './handler';
 
 afterEach(() => vi.unstubAllGlobals());
 
 type Env = {
-  ASSETS: { fetch(request: Request): Promise<Response> };
+  ASSETS: AssetsBinding;
   INVENTORY_APP_URL: string;
 };
 

@@ -4511,6 +4511,7 @@
     "app": "Ứng dụng",
     "apps": {
       "ai": "AI",
+      "api": "API",
       "apps": "Ứng dụng",
       "backend": "backend",
       "calendar": "Lịch",
@@ -4597,6 +4598,7 @@
       "ai_5": "Khóa API và tích hợp",
       "aiCredits": "Tín dụng AI hằng tháng",
       "aiLab": "Phòng thí nghiệm AI",
+      "api_0": "Dịch vụ nền tảng và vận hành",
       "apps_0": "Khám phá và chuyển ứng dụng",
       "attachments": "Tệp đính kèm mỗi giao dịch",
       "automation": "Lượt tự động hóa hằng tháng",
@@ -11399,6 +11401,12 @@
       "enable": "Bật thông báo",
       "permission-denied": "Thông báo trình duyệt đã bị chặn. Vui lòng bật trong cài đặt trình duyệt.",
       "permission-request": "Bật thông báo trình duyệt để cập nhật"
+    },
+    "codes": {
+      "calendar_reconnect_required": {
+        "description": "Đồng bộ lịch đã tạm dừng vì nhà cung cấp không còn chấp nhận quyền truy cập. Hãy kết nối lại tài khoản để tiếp tục.",
+        "title": "Kết nối lại lịch của bạn"
+      }
     },
     "date_earlier": "Trước đó",
     "date_this_week": "Tuần này",

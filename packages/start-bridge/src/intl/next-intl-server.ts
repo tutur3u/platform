@@ -36,6 +36,13 @@ export function getRequestConfig(create: CreateRequestConfig) {
   return create;
 }
 
+/** A promise carrying React's thenable status, so `use()` reads it in place. */
+type TrackedConfig = Promise<BridgeRequestConfig> & {
+  status?: 'pending' | 'fulfilled' | 'rejected';
+  value?: BridgeRequestConfig;
+  reason?: unknown;
+};
+
 const requestLocale = createRequestLocal<string>('next-intl request locale');
 const configs = createRequestLocal<Map<string, Promise<BridgeRequestConfig>>>(
   'next-intl request configs'
@@ -49,7 +56,29 @@ async function detectLocale(): Promise<string | undefined> {
   return requestLocale.get() ?? (await getRootParam('locale'));
 }
 
-async function resolveConfig(locale?: string): Promise<BridgeRequestConfig> {
+function trackConfig(
+  promise: Promise<BridgeRequestConfig>
+): Promise<BridgeRequestConfig> {
+  const tracked = promise as TrackedConfig;
+  tracked.status = 'pending';
+  tracked.then(
+    (value) => {
+      tracked.status = 'fulfilled';
+      tracked.value = value;
+    },
+    (reason) => {
+      tracked.status = 'rejected';
+      tracked.reason = reason;
+    }
+  );
+  return tracked;
+}
+
+// Returns the request's cached promise itself, never a fresh wrapper: an
+// `async` wrapper made every RSC `use()` suspend, so Flight outlined each
+// translated component as a lazy row, including Suspense fallbacks, which
+// React's streaming renderer can leave unresolved.
+function resolveConfig(locale?: string): Promise<BridgeRequestConfig> {
   const create = nextIntlConfig as unknown as CreateRequestConfig;
   const key = locale ?? '';
   const inRequest = maybeBridgeRequest() !== undefined;
@@ -60,8 +89,10 @@ async function resolveConfig(locale?: string): Promise<BridgeRequestConfig> {
   }
   const cached = cache?.get(key);
   if (cached) return cached;
-  const pending = Promise.resolve(
-    create({ requestLocale: detectLocale(), locale })
+  const pending = trackConfig(
+    new Promise((resolve) =>
+      resolve(create({ requestLocale: detectLocale(), locale }))
+    )
   );
   cache?.set(key, pending);
   return pending;

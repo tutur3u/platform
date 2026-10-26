@@ -23,9 +23,9 @@ export interface CronJob {
   path: string;
   target: ProcessorTarget;
   timeoutMs: number;
-  // Job ids listed in CRON_CONTROL_WORKER_PROCESSORS run this Worker port
-  // instead of calling the legacy processor route.
-  workerProcessor?: 'checkout-expiry';
+  // Legacy ports require CRON_CONTROL_WORKER_PROCESSORS selection. Native
+  // maintenance always uses its Worker processor once the job is enabled.
+  workerProcessor?: 'checkout-expiry' | 'cron-history-retention';
 }
 
 export const IMMEDIATE_NOTIFICATIONS_CRON = '*/5 * * * *';
@@ -61,6 +61,14 @@ function job(
 
 // Cadences preserve the live legacy owner, not the stale source catalogs.
 export const CRON_JOBS: readonly CronJob[] = Object.freeze([
+  job(
+    'database-cron-history-retention',
+    '*/10 * * * *',
+    'web',
+    '/rest/v1/rpc/prune_cron_history',
+    'idempotent',
+    { workerProcessor: 'cron-history-retention', timeoutMs: 30_000 }
+  ),
   job(
     'tasks-cleanup-media',
     '17 3 * * *',

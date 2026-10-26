@@ -5,17 +5,20 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { DEPENDENCIES } from './contract.mjs';
 import { unifiedDiff } from './diff.mjs';
 import { VERCEL_WORKFLOW } from './fixture-repo.mjs';
 import {
   addBiomeRouteTreeOverride,
   addCiWorkflow,
+  addGitignoreEntries,
   addHeldRecord,
   addPackageScripts,
   addPolicyTestApp,
   addProtectedSurface,
   addVercelProductionPolicyGate,
   dependencyCommands,
+  VOID_OUTPUT_IGNORES,
 } from './repo-edits.mjs';
 
 const ROOT = path.resolve(
@@ -218,4 +221,39 @@ test('check:changed Biome skips an explicit routeTree.gen.ts but checks other fi
     ).status;
   assert.equal(check('apps/probe/src/routeTree.gen.ts'), 0);
   assert.notEqual(check('apps/probe/src/other.ts'), 0);
+});
+
+test('the Workers types pin matches the repository exact pin', () => {
+  const pinned = DEPENDENCIES.devDependencies['@cloudflare/workers-types'];
+  const exact = fs
+    .readdirSync(path.join(ROOT, 'apps'))
+    .map((app) => path.join('apps', app, 'package.json'))
+    .filter((file) => fs.existsSync(path.join(ROOT, file)))
+    .map((file) => JSON.parse(real(file)).devDependencies ?? {})
+    .map((dev) => dev['@cloudflare/workers-types'])
+    .filter((version) => version && /^\d/u.test(version));
+  // Native apps (Shortener, Apps, Calendar, ...) already pin it exactly.
+  assert.ok(exact.length > 0);
+  assert.deepEqual([...new Set(exact)], [pinned]);
+});
+
+test('app .gitignore gains the Void build output, appended once', () => {
+  const entries = VOID_OUTPUT_IGNORES;
+  assert.deepEqual(entries, ['.void/', '.void-wrangler.jsonc']);
+  assert.equal(
+    addGitignoreEntries(null, entries),
+    '.void/\n.void-wrangler.jsonc\n'
+  );
+  // Existing lines keep their order; only the missing entries are appended.
+  const hand = '# app\nnode_modules\n/.next/\n.void/';
+  const added = addGitignoreEntries(hand, entries);
+  assert.equal(added, `${hand}\n.void-wrangler.jsonc\n`);
+  assert.equal(addGitignoreEntries(added, entries), added);
+  // Equivalent forms already cover the entries (Tasks, Track by hand).
+  for (const existing of [
+    '.void/\n.void-wrangler.jsonc\n',
+    '/.void\n/.void-wrangler.jsonc\n',
+    'dist\n  .void  \n.void-wrangler.jsonc',
+  ])
+    assert.equal(addGitignoreEntries(existing, entries), existing);
 });

@@ -5,6 +5,7 @@
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { readAppConfig } from './app-config.mjs';
 import {
   artifactHelper,
   callerPath,
@@ -21,6 +22,7 @@ import {
   API_REGISTRY,
   APP_BASE,
   APP_CONFIG,
+  BRIDGE_DIR,
   CENTRAL_FIRST,
   DEPENDENCIES,
   GENERATED_MARKER,
@@ -36,6 +38,7 @@ import { inventoryApp, walk } from './inventory.mjs';
 import {
   addBiomeRouteTreeOverride,
   addCiWorkflow,
+  addGitignoreEntries,
   addHeldRecord,
   addPackageScripts,
   addPolicyTestApp,
@@ -43,8 +46,14 @@ import {
   addTsconfigExcludes,
   addVercelProductionPolicyGate,
   dependencyCommands,
+  VOID_OUTPUT_IGNORES,
 } from './repo-edits.mjs';
+import { runtimeExpectationProblems } from './runtime-outcome.mjs';
 import * as templates from './templates.mjs';
+import {
+  effectiveWorkerConfig,
+  workerConfigProblems,
+} from './worker-config.mjs';
 
 export const DEFAULT_SERVER_ONLY = [
   '@tuturuuu/satellite/auth',
@@ -59,14 +68,25 @@ function read(repoRoot, relative) {
   return fs.existsSync(full) ? fs.readFileSync(full, 'utf8') : null;
 }
 
+/** JSON with sorted object keys: equal values compare equal in any layout. */
+const canonicalJson = (value) =>
+  JSON.stringify(value, (_key, item) =>
+    item && typeof item === 'object' && !Array.isArray(item)
+      ? Object.fromEntries(
+          Object.entries(item).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+        )
+      : item
+  );
+
 const NEXT_CONFIGS = ['next.config.ts', 'next.config.mjs', 'next.config.js'];
 
 /**
  * Generator inputs read from the app's existing configuration, so apps
  * regenerate instead of forking generated files: the proxy's own
  * `config.matcher`, the Web workspace API paths its `next.config` rewrites
- * `beforeFiles` (`centralFirst`), `next/og` use, and whether internal-api
- * offers the default app-base resolver (#6764).
+ * `beforeFiles` (`centralFirst`), `next/og` use, whether internal-api
+ * offers the default app-base resolver (#6764), and whether the bridge
+ * exports the portable `AssetsBinding` (#6753).
  */
 export function detectInputs(repoRoot, appPath, inventory, manifest) {
   const proxySource = inventory.proxy
@@ -81,6 +101,9 @@ export function detectInputs(repoRoot, appPath, inventory, manifest) {
   const internalApi =
     read(repoRoot, 'packages/internal-api/src/internal-api-url.ts') ?? '';
   const deps = { ...manifest.dependencies, ...manifest.devDependencies };
+  const bridgeExports =
+    JSON.parse(read(repoRoot, `${BRIDGE_DIR}/package.json`) ?? '{}').exports ??
+    {};
   return {
     proxyMatcher: /export\s+const\s+config\b/u.test(proxySource),
     workspaceApiCentralFirst: /createTuturuuuWebWorkspaceApiRewrites/u.test(
@@ -90,6 +113,7 @@ export function detectInputs(repoRoot, appPath, inventory, manifest) {
     appBase:
       /export function registerDefaultAppBaseResolver/u.test(internalApi) &&
       '@tuturuuu/internal-api' in deps,
+    assetsBinding: './assets' in bridgeExports,
   };
 }
 
@@ -112,6 +136,9 @@ export function routesConfig(existing, inventory, locale) {
     stripSegments: inventory.hasLocaleSegment ? { '[locale]': { locale } } : {},
     owned: {},
     ignored: {},
+    // What the generated runtime test expects of public pages: a status, or
+    // `{ "redirect": "<path or URL prefix>" }`. Not merely "no 5xx".
+    runtime: { '/': 200 },
   };
   // Hand-maintained owned/ignored entries and overrides always win; an
   // existing `api` gains the client-safe pattern list unless it opts out.
@@ -163,6 +190,16 @@ export function planConversion(repoRoot, app, options = {}) {
     ...detectInputs(repoRoot, appPath, inventory, manifest),
   };
   const problems = [];
+  // App-owned Worker options shape the generated Worker config.
+  const appConfig = (options.loadAppConfig ?? readAppConfig)(
+    path.join(appRoot, APP_CONFIG)
+  );
+  if (appConfig.error)
+    problems.push(`${appPath}/${APP_CONFIG}: ${appConfig.error}`);
+  const mounts = templates.defaultMounts(resolved);
+  for (const problem of workerConfigProblems(appConfig.config, mounts))
+    problems.push(`${appPath}/${APP_CONFIG}: ${problem}`);
+  resolved.worker = effectiveWorkerConfig(appConfig.config, mounts);
   if (!inventory.proxy)
     problems.push(`${appPath}: no src/proxy.ts; the bridge handler needs one`);
 
@@ -185,9 +222,18 @@ export function planConversion(repoRoot, app, options = {}) {
     inventory,
     defaultLocale(repoRoot, app)
   );
+  for (const problem of runtimeExpectationProblems(config.runtime))
+    problems.push(`${appPath}/${ROUTES_CONFIG_FILE}: ${problem}`);
+  // An unchanged config keeps its bytes (however Biome laid it out); a
+  // changed one is formatted with the owned output.
+  const unchanged =
+    existingConfig !== null &&
+    canonicalJson(JSON.parse(existingConfig)) === canonicalJson(config);
   writes.push({
     path: `${appPath}/${ROUTES_CONFIG_FILE}`,
-    content: `${JSON.stringify(config, null, 2)}\n`,
+    content: unchanged
+      ? existingConfig
+      : `${JSON.stringify(config, null, 2)}\n`,
     owner: 'merged',
   });
 
@@ -302,11 +348,18 @@ export function planConversion(repoRoot, app, options = {}) {
       edited(vercelWorkflow, addVercelProductionPolicyGate(vercelSource, app));
   }
   edited('biome.json', addBiomeRouteTreeOverride(read(repoRoot, 'biome.json')));
+  // Local `vp build` output must not show up as changes (check:changed).
+  const gitignorePath = `${appPath}/.gitignore`;
+  const gitignore = read(repoRoot, gitignorePath);
+  const ignored = addGitignoreEntries(gitignore, VOID_OUTPUT_IGNORES);
+  if (ignored !== (gitignore ?? ''))
+    writes.push({ path: gitignorePath, content: ignored, owner: 'edit' });
   if (nativeCi) {
     owned(
       RUNTIME_TEST,
       runtimeTest({
         ...resolved,
+        expectations: config.runtime,
         hasBuildInfo: inventory.routes.some(
           (route) => route.file === 'api/build-info/route.ts'
         ),
@@ -318,7 +371,16 @@ export function planConversion(repoRoot, app, options = {}) {
         content: callerWorkflow({
           ...resolved,
           packageName: manifest.name,
-          closure: workspaceClosure(repoRoot, manifest),
+          // Include the workspace packages --apply is about to add
+          // (@tuturuuu/start-bridge), so the first run's filters equal the
+          // re-run's.
+          closure: workspaceClosure(repoRoot, {
+            ...manifest,
+            dependencies: {
+              ...manifest.dependencies,
+              ...DEPENDENCIES.dependencies,
+            },
+          }),
           hasTestScript: Boolean(manifest.scripts?.test),
           formatPaths: NATIVE_FORMAT_PATHS,
         }),
@@ -410,10 +472,12 @@ export function createBiomeFormatter(repoRoot, spawn = spawnSync) {
 
 function formatWrites(writes, format, appPath) {
   if (!format) return writes;
-  // Owned files, plus the app's own JSON edits (package.json, tsconfig.json).
+  // Owned files, the merged routes config, and the app's own JSON edits
+  // (package.json, tsconfig.json).
   const formattable = (write) =>
     write.owner === 'generated' ||
     write.owner === 'app-owned' ||
+    write.owner === 'merged' ||
     (write.owner === 'edit' &&
       write.path.startsWith(`${appPath}/`) &&
       write.path.endsWith('.json'));

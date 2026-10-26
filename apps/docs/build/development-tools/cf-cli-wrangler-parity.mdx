@@ -1,7 +1,7 @@
 ---
 title: "cf CLI and Void over Wrangler"
 description: "Per-operation parity matrix, native Worker template, rollback, the Wrangler usage guard and the per-service cutover checklist."
-updatedAt: '2026-10-24'
+updatedAt: '2026-10-26'
 ---
 
 ## Decision
@@ -289,7 +289,8 @@ data-only fixture; no CLI invocation). The latter recognizes both legacy and
 | Colab | Wrangler bundler with assets and AI | Local Worker preview uses Vite+; release build-output conversion pending | `pending-migration` |
 | Meet realtime | Wrangler, three SQLite DO classes | Needs DO `exports` and runtime fixtures | `pending-migration` |
 | Mail email routing | Wrangler config, email handler | Needs the email trigger mapping | `pending-migration` |
-| Meet, Apps, Calendar, Mail, Shortener | Void build, Wrangler publication | Wave 1 owner | `void-wave1-publication` |
+| API | None yet; Vite+ build from `wrangler.jsonc` | Needs `cloudflare.config.ts` and a cf runtime harness | `pending-migration` |
+| Meet, Apps, Calendar, Mail, Shortener; CMS, Finance, Tasks and Track native candidates | Void build, Wrangler publication | Wave 1 owner | `void-wave1-publication` |
 | Parley, Lettin | OpenNext, Wrangler | Start on Void migration | `opennext-adapter` |
 | Backend, TanStack Web | Paused | Excluded | `paused-runtime` |
 

@@ -14,8 +14,15 @@ const HOLD_FILES = [
   'scripts/ci/production-publication-policy.test.js',
   '.github/workflows/vercel-production-demo.yaml',
 ];
+// Hermetic: the real start-bridge.config.ts loader has its own test.
 const plan = (root, options = {}) =>
-  planConversion(root, 'demo', { codegen: fakeCodegen(), ...options });
+  planConversion(root, 'demo', {
+    codegen: fakeCodegen(),
+    loadAppConfig: () => ({ config: {} }),
+    ...options,
+  });
+const generated = (result, file) =>
+  result.writes.find((write) => write.path === `apps/demo/${file}`)?.content;
 
 test('dry run reads only and plans the full owned file set', (t) => {
   const root = createFixtureRepo(t);
@@ -103,6 +110,16 @@ test('generated config targets the staging Worker and keeps Next build', (t) => 
     read('vite.config.mts'),
     /'bridge-pages': new URL\(\n?\s*'\.\/src\/start-bridge\/page-modules\.bridge\.gen\.ts',/
   );
+  // SSR converts CommonJS requires of Node built-ins like rsc does (Forms:
+  // sanitize-html -> postcss -> require('path')), before Void's plugin.
+  assert.match(
+    read('vite.config.mts'),
+    /import \{\n {2}startBridgeNodeBuiltinsPlugin,\n {2}startBridgeRscPlugin,\n\} from '@tuturuuu\/start-bridge\/vite\/rsc';/
+  );
+  assert.match(
+    read('vite.config.mts'),
+    /startBridgeRscPlugin\([\s\S]*?\),\n(?: {4}\/\/.*\n)* {4}startBridgeNodeBuiltinsPlugin\(\),\n {4}voidPlugin\(\),/
+  );
   assert.match(
     read('src/start-bridge/public-assets.bridge.gen.ts'),
     /'\/favicon\.ico',\n {2}'\/robots\.txt',/
@@ -154,8 +171,6 @@ test('generated config targets the staging Worker and keeps Next build', (t) => 
 
 test('generator inputs come from the app configuration, not hand edits', (t) => {
   const root = createFixtureRepo(t);
-  const generated = (result, file) =>
-    result.writes.find((write) => write.path === `apps/demo/${file}`)?.content;
   // Defaults: no proxy config, no Web rewrites, no app-base resolver.
   const plain = plan(root);
   assert.doesNotMatch(generated(plain, 'cloudflare/worker.ts'), /matches:/);
@@ -210,7 +225,7 @@ test('generator inputs come from the app configuration, not hand edits', (t) => 
   );
   assert.match(
     generated(full, 'src/start-bridge/app-base.ts'),
-    /registerDefaultAppBaseResolver\(\n {2}createAppBaseResolver\(appApiPatterns, centralFirst\)/
+    /registerDefaultAppBaseResolver\(\n {2}createAppBaseResolver\(appApiPatterns, centralFirst\),\n {2}\{ app: 'demo' \}\n\);/
   );
   // Registered in every environment bundle: browser/ssr, rsc pages, rsc API.
   assert.match(
@@ -227,61 +242,28 @@ test('generator inputs come from the app configuration, not hand edits', (t) => 
   );
 });
 
-test('native CI is a thin caller of the reusable template, once it exists', (t) => {
+test('types ASSETS as the portable binding once the bridge exports it (#6753)', (t) => {
   const root = createFixtureRepo(t);
-  assert.equal(
-    pendingWrites(plan(root)).some((write) =>
-      write.path.endsWith('demo-cloudflare.yaml')
-    ),
-    false
-  );
-  writeTree(root, {
-    '.github/workflows/native-start-app.yaml': 'on: workflow_call\n',
-    'packages/ui/package.json': JSON.stringify({
-      name: '@tuturuuu/ui',
-      dependencies: { '@tuturuuu/utils': 'workspace:*', react: '^19' },
-    }),
-    'packages/utils/package.json': JSON.stringify({ name: '@tuturuuu/utils' }),
-  });
-  const manifestPath = path.join(root, 'apps/demo/package.json');
-  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-  manifest.dependencies['@tuturuuu/ui'] = 'workspace:*';
-  fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
-  const result = plan(root);
-  const content = (file) =>
-    result.writes.find((write) => write.path === file)?.content ?? '';
-  const caller = content('.github/workflows/demo-cloudflare.yaml');
-  for (const expected of [
-    "'apps/demo/**',",
-    "'packages/ui/**',",
-    "'packages/utils/**',",
-    "'scripts/ci/demo-native-artifact.py',",
-    "'.github/workflows/native-start-app.yaml',",
-    'uses: ./.github/workflows/native-start-app.yaml',
-    "package: '@tuturuuu/demo'",
-    'artifact-script: scripts/ci/demo-native-artifact.py',
-    'env-interface: DemoGeneratedEnv',
-    'worker-environment-type: DemoEnvironment',
-    'workflow_name: demo-cloudflare.yaml',
-    'unit-command: bun x --no-install vitest run --passWithNoTests',
-    'NEXT_PUBLIC_APP_URL=https://demo.tuturuuu.com',
-  ])
-    assert.ok(caller.includes(expected), expected);
+  const legacy = generated(plan(root), 'cloudflare/worker.ts');
   assert.match(
-    content('scripts/ci/demo-native-artifact.py'),
-    /WORKER = "tuturuuu-demo-vite-staging"[\s\S]*"favicon\.ico",[\s\S]*DEMO_SOURCE_SHA/
+    legacy,
+    /\n {2}ASSETS: \{ fetch\(request: Request\): Promise<Response> \};\n/
   );
-  const runtime = content(
-    'apps/demo/cloudflare/native-built-worker.runtime.mjs'
+  assert.doesNotMatch(legacy, /AssetsBinding/);
+
+  writeTree(root, {
+    'packages/start-bridge/package.json': `${JSON.stringify({
+      name: '@tuturuuu/start-bridge',
+      exports: { './assets': './src/core/assets.ts' },
+    })}\n`,
+  });
+  const worker = generated(plan(root), 'cloudflare/worker.ts');
+  assert.match(
+    worker,
+    /^import type \{ AssetsBinding \} from '@tuturuuu\/start-bridge\/assets';$/m
   );
-  assert.match(runtime, /const WORKER = "tuturuuu-demo-vite-staging";/);
-  assert.match(runtime, /build identity is the exact compiled source/);
-  assert.match(runtime, /statusFor\('\/demo', 'tuturuuu\.com'\)/);
-  assert.match(content('tuturuuu.ci.ts'), /'demo-cloudflare\.yaml': true,/);
-  assert.equal(
-    JSON.parse(content('apps/demo/package.json')).scripts['test:runtime'],
-    'node --test cloudflare/*.runtime.mjs'
-  );
+  assert.match(worker, /\n {2}ASSETS: AssetsBinding;\n/);
+  assert.match(worker, /\n {4}assets: \(env\) => env\.ASSETS,\n/);
 });
 
 test('the app-owned Worker config is created once and never overwritten', (t) => {
@@ -341,7 +323,25 @@ test('dependencies are installed by package commands, never by edits', (t) => {
     '--dev',
     '--exact',
   ]);
+  assert.ok(
+    result.commands[1].argv.includes('@cloudflare/workers-types@5.20261022.1')
+  );
   assert.ok(result.commands.every((command) => command.cwd === 'apps/demo'));
+  // An app that already pinned it with `bun add --dev --exact` re-applies
+  // without touching it.
+  const manifestPath = path.join(root, 'apps/demo/package.json');
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  manifest.devDependencies = {
+    ...manifest.devDependencies,
+    '@cloudflare/workers-types': '5.20261022.1',
+  };
+  fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+  assert.equal(
+    plan(root).commands.some((command) =>
+      command.argv.some((arg) => arg.startsWith('@cloudflare/workers-types@'))
+    ),
+    false
+  );
   const calls = [];
   applyPlan(root, result, {
     spawn: (bin, args, options) => {
@@ -370,6 +370,56 @@ test('hand-maintained route config entries survive a re-run', (t) => {
     pendingWrites(again).some((write) => write.path.endsWith('routes.json')),
     false
   );
+});
+
+test('a Biome-formatted route config is unchanged; a changed one is formatted', (t) => {
+  const root = createFixtureRepo(t);
+  applyPlan(root, plan(root), { spawn: noCommands });
+  const file = path.join(root, 'apps/demo/start-bridge.routes.json');
+  const config = JSON.parse(fs.readFileSync(file, 'utf8'));
+  config.api.forwarded = ['/api/v1/inventory/[...path]'];
+  // Biome keeps a short array on one line (Storefront's api.forwarded).
+  const biomeLayout = `${JSON.stringify(config, null, 2).replace(
+    /\[\n\s+("\/api\/v1\/inventory\/\[\.\.\.path\]")\n\s+\]/u,
+    '[$1]'
+  )}\n`;
+  assert.match(biomeLayout, /"forwarded": \["\/api\/v1\/inventory/u);
+  fs.writeFileSync(file, biomeLayout);
+  const formatted = [];
+  const format = (relativePath, content) => {
+    formatted.push(relativePath);
+    return content;
+  };
+  const again = plan(root, { format });
+  assert.equal(
+    pendingWrites(again).some((write) => write.path.endsWith('routes.json')),
+    false
+  );
+  assert.equal(fs.readFileSync(file, 'utf8'), biomeLayout);
+
+  // Key order is layout too.
+  const reordered = `${JSON.stringify(
+    Object.fromEntries(Object.entries(config).reverse()),
+    null,
+    2
+  )}\n`;
+  fs.writeFileSync(file, reordered);
+  assert.equal(
+    pendingWrites(plan(root, { format })).some((write) =>
+      write.path.endsWith('routes.json')
+    ),
+    false
+  );
+
+  // A missing default is restored, so the merged config is rewritten.
+  const { pages: _pages, ...withoutPages } = config;
+  fs.writeFileSync(file, `${JSON.stringify(withoutPages)}\n`);
+  formatted.length = 0;
+  const changed = plan(root, { format });
+  assert.ok(
+    pendingWrites(changed).some((write) => write.path.endsWith('routes.json'))
+  );
+  assert.ok(formatted.includes('apps/demo/start-bridge.routes.json'));
 });
 
 test('an unmarked hand-written owned file is a conflict unless adopted', (t) => {
@@ -491,4 +541,30 @@ test('owned output is formatted; generator output keeps its bytes', (t) => {
   );
   assert.equal(seen.includes('tuturuuu.ci.ts'), false);
   assert.ok(seen.includes('apps/demo/tsconfig.json'));
+});
+
+test('apply ignores the local Void build output, idempotently', (t) => {
+  const root = createFixtureRepo(t);
+  const file = path.join(root, 'apps/demo/.gitignore');
+  const ignoreWrite = (result) =>
+    pendingWrites(result).find(
+      (write) => write.path === 'apps/demo/.gitignore'
+    );
+  // Created when the app has none.
+  assert.equal(
+    ignoreWrite(plan(root))?.content,
+    '.void/\n.void-wrangler.jsonc\n'
+  );
+  // Appended after the app's own lines, which keep their order.
+  fs.writeFileSync(file, '# demo\n/.next/\nnode_modules\n');
+  const first = plan(root);
+  assert.equal(
+    ignoreWrite(first)?.content,
+    '# demo\n/.next/\nnode_modules\n.void/\n.void-wrangler.jsonc\n'
+  );
+  applyPlan(root, first, { spawn: noCommands });
+  assert.equal(ignoreWrite(plan(root)), undefined);
+  // An app that added them by hand (Tasks, Track) is left alone.
+  fs.writeFileSync(file, '/.void\n.void-wrangler.jsonc\n.next\n');
+  assert.equal(ignoreWrite(plan(root)), undefined);
 });

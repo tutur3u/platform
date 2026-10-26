@@ -90,6 +90,57 @@ function nodeScriptTests(files, exists) {
   return [...selected].sort();
 }
 
+function runtimeImports(source, filename) {
+  const { parse } = require('@babel/parser');
+  const ast = parse(source, {
+    sourceType: 'unambiguous',
+    sourceFilename: filename,
+    plugins: ['typescript', 'jsx'],
+    createImportExpressions: true,
+    allowReturnOutsideFunction: true,
+  });
+  const imports = new Set();
+  function visit(node) {
+    if (!node || typeof node !== 'object') return;
+    let specifier;
+    if (
+      node.type === 'ImportDeclaration' &&
+      node.importKind !== 'type' &&
+      (node.specifiers.length === 0 ||
+        node.specifiers.some((entry) => entry.importKind !== 'type'))
+    ) {
+      specifier = node.source;
+    } else if (
+      (node.type === 'ExportNamedDeclaration' ||
+        node.type === 'ExportAllDeclaration') &&
+      node.exportKind !== 'type'
+    ) {
+      specifier = node.source;
+    } else if (node.type === 'ImportExpression') {
+      specifier = node.source;
+    } else if (
+      node.type === 'CallExpression' &&
+      node.callee.type === 'Identifier' &&
+      node.callee.name === 'require'
+    ) {
+      specifier = node.arguments[0];
+    } else if (
+      node.type === 'TSImportEqualsDeclaration' &&
+      node.importKind !== 'type' &&
+      node.moduleReference.type === 'TSExternalModuleReference'
+    ) {
+      specifier = node.moduleReference.expression;
+    }
+    if (specifier?.type === 'StringLiteral') imports.add(specifier.value);
+    for (const child of Object.values(node)) {
+      if (Array.isArray(child)) child.forEach(visit);
+      else if (child?.type) visit(child);
+    }
+  }
+  visit(ast);
+  return imports;
+}
+
 /**
  * Which runner owns a test file: 'vitest', 'node' (node --test) or 'bun'
  * (`bun test`, for Worker/Durable Object suites that CI runs with Bun and that
@@ -102,13 +153,10 @@ function testRunnerOf(file, context) {
     (entry) => entry.workspace === workspace
   )?.testScript;
   const source = context.readSource?.(file) ?? '';
-  const imports = (module) =>
-    new RegExp(
-      `(?:from\\s*|require\\s*\\(\\s*|import\\s*\\(\\s*)['"]${module}['"]`
-    ).test(source);
-  if (imports('vitest')) return 'vitest';
-  if (imports('bun:test')) return 'bun';
-  if (imports('node:test')) return 'node';
+  const imports = runtimeImports(source, file);
+  if (imports.has('vitest')) return 'vitest';
+  if (imports.has('bun:test')) return 'bun';
+  if (imports.has('node:test')) return 'node';
   return /\bnode\s+--test(?:\s|$)/.test(script ?? '') ? 'node' : 'vitest';
 }
 function isNodeTest(file, context) {
