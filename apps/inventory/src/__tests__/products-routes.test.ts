@@ -569,7 +569,10 @@ describe('product routes', () => {
     expect(mocks.adminSupabase.from).toHaveBeenCalledWith('workspace_products');
     expect(mocks.privateSupabase.rpc).toHaveBeenCalledWith(
       'edit_inventory_priced_product',
-      expect.objectContaining({ p_product_id: 'product-1', p_ws_id: 'normalized-ws' })
+      expect.objectContaining({
+        p_product_id: 'product-1',
+        p_ws_id: 'normalized-ws',
+      })
     );
     expect(mocks.sessionSupabase.from).not.toHaveBeenCalledWith(
       'inventory_products'
@@ -750,7 +753,10 @@ describe('product routes', () => {
     expect(mocks.adminSupabase.from).toHaveBeenCalledWith('workspace_products');
     expect(mocks.privateSupabase.rpc).toHaveBeenCalledWith(
       'edit_inventory_priced_product',
-      expect.objectContaining({ p_product_id: 'product-1', p_ws_id: 'normalized-ws' })
+      expect.objectContaining({
+        p_product_id: 'product-1',
+        p_ws_id: 'normalized-ws',
+      })
     );
   });
 });
