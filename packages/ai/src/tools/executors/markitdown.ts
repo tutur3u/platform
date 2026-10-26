@@ -26,9 +26,14 @@ const YOUTUBE_HOSTS = new Set([
   'www.youtu.be',
 ]);
 
+// Signed-URL remediation re-keys objects to `{uuidv4}-{original name}`.
+const REKEY_PREFIX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}-/i;
+
 function stripTimestampPrefix(name: string): string {
-  const match = name.match(/^\d+_(.+)$/);
-  return match?.[1] ?? name;
+  const original = name.replace(REKEY_PREFIX, '');
+  const match = original.match(/^\d+_(.+)$/);
+  return match?.[1] ?? original;
 }
 
 function isUnsafeStoragePath(value: string): boolean {
