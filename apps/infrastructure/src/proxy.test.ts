@@ -1,3 +1,4 @@
+import { guardRejection } from '@tuturuuu/utils/guard-rejection';
 import { NextRequest, NextResponse } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { proxy } from './proxy';
@@ -178,6 +179,37 @@ describe('Infra proxy', () => {
         'X-Tuturuuu-Guard-Reason'
       );
       expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
+    }
+  );
+
+  it.each(['users', 'workspaces/private-workspace'])(
+    'emits only one warning for a rejected %s calendar preference read',
+    async (subject) => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const request = new NextRequest(
+        `https://infrastructure.tuturuuu.com/api/v1/mobile-calendar/api/v1/${subject}/calendar-settings`
+      );
+      mocks.hasAuthenticatedBearerToken.mockReturnValue(true);
+      mocks.guardApiProxyRequest.mockImplementationOnce(() =>
+        guardRejection(
+          request,
+          NextResponse.json({ error: 'Too Many Requests' }, { status: 429 }),
+          'proxy-rate-limited'
+        )
+      );
+      try {
+        const response = await proxy(request);
+        expect(response.status).toBe(429);
+        expect(warn).toHaveBeenCalledExactlyOnceWith(
+          `Guard rejected request ${JSON.stringify({
+            reason: 'proxy-rate-limited',
+            route: '/api/v1/mobile-calendar/:path*',
+            requestId: response.headers.get('X-Tuturuuu-Guard-Request-Id'),
+          })}`
+        );
+      } finally {
+        warn.mockRestore();
+      }
     }
   );
 

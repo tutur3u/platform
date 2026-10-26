@@ -1113,6 +1113,8 @@ named `Guard rejected request` per rejection, containing only the fixed reason,
 a fixed route template (for example `/api/v1/mobile-calendar/:path*`) and the
 same generated request ID. This provides runtime-log evidence without depending
 on whether a deployment's Vercel request-log view retains response headers.
+Infrastructure omits its older Calendar preference 429 warning when this shared
+diagnostic is present, keeping one warning per rejection.
 Do not log raw paths, queries, bodies, user/workspace IDs, cookies or tokens.
 A gateway-owned 503 without this header remains a distinct failure; absence of
 the header alone does not prove which downstream service failed.
