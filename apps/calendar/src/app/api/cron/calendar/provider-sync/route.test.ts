@@ -14,6 +14,10 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
   withCronLogDrain: (_: unknown, run: () => unknown) => run(),
 }));
 
+import {
+  type CalendarTokenOutcome,
+  recordCalendarTokenOutcome,
+} from '@/lib/calendar/oauth-token-health';
 import { GET } from './route';
 
 const filters = vi.fn();
@@ -80,6 +84,97 @@ describe('Calendar provider cron ownership', () => {
       ['calendar_connections.sync_inbound_enabled', true],
     ]);
   });
+  function workspacesWithOutcomes(
+    perWorkspace: Record<string, CalendarTokenOutcome[]>
+  ) {
+    page.mockResolvedValue({
+      data: Object.keys(perWorkspace).map((ws_id) => ({ ws_id })),
+      error: null,
+    });
+    sync.mockImplementation(async (_request, context) => {
+      const { wsId } = await context.params;
+      const outcomes = perWorkspace[wsId] ?? [];
+      outcomes.forEach((outcome, index) => {
+        recordCalendarTokenOutcome({
+          tokenId: `${wsId}-token-${index}`,
+          provider: 'google',
+          outcome,
+          ...(outcome === 'deactivated'
+            ? { reason: 'google_invalid_grant' as const }
+            : {}),
+          attempts: outcome === 'transient' ? 3 : 1,
+        });
+      });
+      return NextResponse.json({
+        ok: outcomes.every((outcome) => outcome === 'ok'),
+        summary: {},
+      });
+    });
+  }
+
+  it('returns 200 with per-token outcomes for a mixed batch', async () => {
+    vi.spyOn(console, 'info').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    workspacesWithOutcomes({
+      'workspace-a': ['deactivated', 'ok'],
+      'workspace-b': ['transient'],
+      'workspace-c': ['ok'],
+    });
+    const response = await GET(cronRequest());
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body).toMatchObject({
+      ok: false,
+      processed: 3,
+      successful: 1,
+      failed: 2,
+      tokens: {
+        counts: { ok: 2, deactivated: 1, transient: 1, systemic: 0 },
+      },
+    });
+    expect(body.tokens.outcomes).toHaveLength(4);
+    expect(body.tokens.outcomes[0]).toMatchObject({
+      provider: 'google',
+      outcome: 'deactivated',
+      reason: 'google_invalid_grant',
+    });
+    expect(JSON.stringify(body)).not.toContain('token-0');
+    expect(error).not.toHaveBeenCalledWith(
+      'calendar.oauth.deactivation_spike',
+      expect.anything()
+    );
+  });
+
+  it('raises the deactivation spike hook', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    workspacesWithOutcomes({
+      'workspace-a': Array(5).fill('deactivated'),
+    });
+    expect((await GET(cronRequest())).status).toBe(200);
+    expect(error).toHaveBeenCalledWith(
+      'calendar.oauth.deactivation_spike',
+      expect.objectContaining({
+        route: '/api/cron/calendar/provider-sync',
+        deactivated: 5,
+        reasons: { google_invalid_grant: 5 },
+      })
+    );
+  });
+
+  it('fails the job only for a systemic OAuth client failure', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    workspacesWithOutcomes({ 'workspace-a': ['systemic', 'systemic'] });
+    const response = await GET(cronRequest());
+    expect(response.status).toBe(500);
+    expect(await response.json()).toMatchObject({
+      ok: false,
+      error: 'Calendar OAuth client failure',
+      tokens: { counts: { systemic: 2 } },
+    });
+  });
+
   it('rejects unauthorized calls before enumerating workspaces', async () => {
     expect(
       (

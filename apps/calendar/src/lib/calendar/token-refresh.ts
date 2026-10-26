@@ -6,9 +6,9 @@
  */
 
 // Use generic supabase client type to avoid direct dependency
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SupabaseClientLike = {
   from: (table: string) => any;
+  rpc?: (fn: string, args: Record<string, unknown>) => any;
 };
 
 import { OAuth2Client } from '@tuturuuu/google';
@@ -19,6 +19,14 @@ import {
   type MicrosoftOAuthConfig,
 } from '@tuturuuu/microsoft';
 import { microsoftRefreshCredential } from './microsoft-refresh-credential';
+import {
+  type CalendarOAuthFailure,
+  classifyCalendarOAuthFailure,
+} from './oauth-failure';
+import {
+  type QuarantineOutcome,
+  quarantineCalendarAuthToken,
+} from './oauth-token-quarantine';
 import { providerSyncSignal } from './provider-sync-budget';
 import { providerSyncNetworkClient } from './provider-sync-network';
 
@@ -42,9 +50,14 @@ export interface TokenRefreshResult {
   refreshed: boolean;
   refreshToken?: string;
   error?: string;
+  failure?: CalendarOAuthFailure;
+  quarantine?: QuarantineOutcome;
 }
 
-function refreshFailure(error: unknown, provider: string): string {
+function refreshFailure(
+  error: unknown,
+  provider: 'google' | 'microsoft'
+): Pick<TokenRefreshResult, 'error' | 'failure'> {
   const candidate = error as {
     errorCode?: unknown;
     code?: unknown;
@@ -53,9 +66,17 @@ function refreshFailure(error: unknown, provider: string): string {
   const code = candidate?.errorCode ?? candidate?.code;
   const message =
     typeof candidate?.message === 'string' ? candidate.message : '';
-  return code === 'invalid_grant' || message.includes('invalid_grant')
-    ? 'invalid_grant'
-    : `${provider} token refresh failed`;
+  return {
+    error:
+      code === 'invalid_grant' || message.includes('invalid_grant')
+        ? 'invalid_grant'
+        : `${provider === 'google' ? 'Google' : 'Microsoft'} token refresh failed`,
+    // An unrecognized refresh error is retried, never quarantined.
+    failure: classifyCalendarOAuthFailure(provider, error) ?? {
+      kind: 'transient',
+      providerCode: null,
+    },
+  };
 }
 
 // Buffer time before token expiry to trigger refresh (5 minutes)
@@ -88,6 +109,7 @@ async function refreshGoogleToken(
       expiresAt: authToken.expires_at ? new Date(authToken.expires_at) : null,
       refreshed: false,
       error: 'Google OAuth credentials not configured',
+      failure: { kind: 'systemic', providerCode: 'client_not_configured' },
     };
   }
 
@@ -126,7 +148,7 @@ async function refreshGoogleToken(
       accessToken: authToken.access_token,
       expiresAt: authToken.expires_at ? new Date(authToken.expires_at) : null,
       refreshed: false,
-      error: refreshFailure(error, 'Google'),
+      ...refreshFailure(error, 'google'),
     };
   }
 }
@@ -150,6 +172,7 @@ async function refreshMicrosoftToken(
       expiresAt: authToken.expires_at ? new Date(authToken.expires_at) : null,
       refreshed: false,
       error: 'Microsoft OAuth credentials not configured',
+      failure: { kind: 'systemic', providerCode: 'client_not_configured' },
     };
   }
 
@@ -189,7 +212,7 @@ async function refreshMicrosoftToken(
       accessToken: authToken.access_token,
       expiresAt: authToken.expires_at ? new Date(authToken.expires_at) : null,
       refreshed: false,
-      error: refreshFailure(error, 'Microsoft'),
+      ...refreshFailure(error, 'microsoft'),
     };
   }
 }
@@ -225,6 +248,11 @@ export async function ensureValidToken(
       expiresAt: null,
       refreshed: false,
       error: 'Reconnect calendar to grant offline access',
+      ...(await quarantinePermanentFailure(supabase, authToken, {
+        kind: 'permanent',
+        reason: 'unknown_permanent',
+        providerCode: 'missing_refresh_credential',
+      })),
     };
   }
 
@@ -247,7 +275,11 @@ export async function ensureValidToken(
 
     if (updateError) {
       console.error('[TokenRefresh] Failed to persist refreshed credential');
-      return { ...result, error: 'Failed to persist refreshed credential' };
+      return {
+        ...result,
+        error: 'Failed to persist refreshed credential',
+        failure: { kind: 'transient', providerCode: 'persist_failed' },
+      };
     } else {
       console.log(
         `[TokenRefresh] Successfully refreshed and stored ${authToken.provider} token`
@@ -255,24 +287,44 @@ export async function ensureValidToken(
     }
   }
 
-  // If refresh failed, mark token as inactive
   if (result.error) {
     console.warn('[TokenRefresh] Provider credential refresh failed');
-
-    // Don't mark as inactive immediately - the token might still be valid
-    // Only mark inactive on specific errors like 'invalid_grant'
-    if (
-      result.error.includes('invalid_grant') ||
-      result.error.includes('Token has been revoked')
-    ) {
-      await supabase
-        .from('calendar_auth_tokens')
-        .update({ is_active: false })
-        .eq('id', authToken.id);
-    }
+    return {
+      ...result,
+      ...(await quarantinePermanentFailure(
+        supabase,
+        authToken,
+        result.failure
+      )),
+    };
   }
 
   return result;
+}
+
+async function quarantinePermanentFailure(
+  supabase: SupabaseClientLike,
+  authToken: CalendarAuthToken,
+  failure: CalendarOAuthFailure | undefined
+): Promise<Pick<TokenRefreshResult, 'failure' | 'quarantine'>> {
+  if (failure?.kind !== 'permanent') return { failure };
+  try {
+    return {
+      failure,
+      quarantine: await quarantineCalendarAuthToken(
+        supabase,
+        authToken,
+        failure.reason
+      ),
+    };
+  } catch {
+    // Leave the credential active; the next run classifies it again.
+    console.error('calendar.oauth.quarantine_failed', {
+      provider: authToken.provider,
+      reason: failure.reason,
+    });
+    return { failure };
+  }
 }
 
 /**

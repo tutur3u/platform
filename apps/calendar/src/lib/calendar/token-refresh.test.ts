@@ -129,12 +129,47 @@ describe('server-side calendar credential refresh', () => {
     );
     const result = await ensureValidToken(db, token);
     expect(result.error).toBe('Microsoft token refresh failed');
+    expect(result.failure).toMatchObject({ kind: 'transient' });
     expect(db.update).not.toHaveBeenCalled();
   });
-  it('marks revoked consent inactive', async () => {
+  it('quarantines revoked consent through the fenced RPC', async () => {
     const db = database();
-    refresh.mockRejectedValue({ errorCode: 'invalid_grant' });
-    expect((await ensureValidToken(db, token)).error).toBe('invalid_grant');
-    expect(db.update).toHaveBeenCalledWith({ is_active: false });
+    const rpc = vi.fn(async () => ({ data: 'deactivated', error: null }));
+    refresh.mockRejectedValue({
+      errorCode: 'invalid_grant',
+      errorNo: '70008',
+      status: 400,
+    });
+    const result = await ensureValidToken({ ...db, rpc }, token);
+    expect(result).toMatchObject({
+      error: 'invalid_grant',
+      failure: { kind: 'permanent', reason: 'microsoft_invalid_grant' },
+      quarantine: 'deactivated',
+    });
+    expect(rpc).toHaveBeenCalledWith(
+      'quarantine_calendar_auth_token',
+      expect.objectContaining({
+        p_token_id: 'token',
+        p_observed_created_at: token.created_at,
+        p_reason: 'microsoft_invalid_grant',
+      })
+    );
+    expect(JSON.stringify(rpc.mock.calls)).not.toContain('old-test-refresh');
+    expect(db.update).not.toHaveBeenCalled();
+  });
+  it('never quarantines a transient refresh failure', async () => {
+    const db = database();
+    const rpc = vi.fn();
+    refresh.mockRejectedValue({ errorCode: 'server_error', status: 503 });
+    const result = await ensureValidToken({ ...db, rpc }, token);
+    expect(result.failure).toMatchObject({ kind: 'transient' });
+    expect(rpc).not.toHaveBeenCalled();
+  });
+  it('treats a misconfigured OAuth client as systemic', async () => {
+    vi.stubEnv('MICROSOFT_CLIENT_SECRET', '');
+    const rpc = vi.fn();
+    const result = await ensureValidToken({ ...database(), rpc }, token);
+    expect(result.failure).toMatchObject({ kind: 'systemic' });
+    expect(rpc).not.toHaveBeenCalled();
   });
 });
