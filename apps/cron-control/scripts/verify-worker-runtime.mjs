@@ -10,7 +10,7 @@ import { startCfViteWorker } from '../../../scripts/ci/cf-vite-worker.mjs';
 // that `cf deploy --prebuilt` publishes. Enabled-job slot claims, restarts,
 // stop/resume and the failure budget are covered by the ledger, dispatch and
 // control unit tests: this harness takes only declared secrets and the
-// configured (default-off) job list.
+// configured job list; the production configuration enables only retention.
 const root = fileURLToPath(new URL('..', import.meta.url));
 const TRIGGERS = [
   '*/5 * * * *',
@@ -32,6 +32,7 @@ before(async () => {
       process.env.CRON_TEST_BUILD_OUTPUT === '1' ? 'build-output' : 'source',
     secrets: {
       CRON_CONTROL_DELIVERY_TOKEN: randomUUID() + randomUUID(),
+      CRON_CONTROL_OPERATOR_TOKEN: randomUUID() + randomUUID(),
       SUPABASE_SECRET_KEY: 'isolated-cron-runtime-fixture',
       SUPABASE_URL: 'https://unreachable.example.invalid',
     },
@@ -41,7 +42,7 @@ after(async () => {
   await worker?.close();
 });
 
-test('source config keeps every legacy schedule; jobs and processors default off', async () => {
+test('source config keeps every schedule and enables only database history retention', async () => {
   const { default: config } = await import(
     pathToFileURL(`${root}/cloudflare.config.ts`).href
   );
@@ -51,12 +52,13 @@ test('source config keeps every legacy schedule; jobs and processors default off
   );
   assert.deepEqual(config.worker.env.CRON_CONTROL_ENABLED_JOBS, {
     type: 'text',
-    value: '',
+    value: 'database-cron-history-retention',
   });
   assert.deepEqual(config.worker.env.CRON_CONTROL_WORKER_PROCESSORS, {
     type: 'text',
     value: '',
   });
+  assert.equal(config.worker.env.CRON_CONTROL_OPERATOR_TOKEN.type, 'secret');
   assert.equal(config.worker.env.CRON_LEDGER.type, 'durable-object');
   assert.ok(config.worker.exports.CronLedger, 'CronLedger is exported');
 });

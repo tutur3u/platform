@@ -27,7 +27,7 @@ const fractionDigitsCache = new Map<string, number>();
  * `101`, not `100`). Trimming to 4 extra decimals before rounding removes the
  * noise without affecting legitimate values.
  */
-function roundScaled(value: number): number {
+export function roundScaled(value: number): number {
   return Math.round(Number(value.toFixed(4)));
 }
 

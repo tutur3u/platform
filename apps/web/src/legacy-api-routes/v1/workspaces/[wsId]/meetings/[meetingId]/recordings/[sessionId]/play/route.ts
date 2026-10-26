@@ -1,5 +1,8 @@
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
@@ -84,12 +87,29 @@ export async function GET(
       );
     }
 
+    // Recordings are private storage; sign with the service role only for
+    // chunk paths inside this verified session's folder.
+    const sbAdmin = await createAdminClient();
+    const sessionPrefix = `${wsId}/recordings/${meetingId}/${sessionId}/`;
+
     // Generate signed URLs for each chunk
     const chunkUrls = await Promise.all(
       audioChunks.map(async (chunk) => {
-        const { data: urlData } = await supabase.storage
+        const storagePath = chunk.storage_path;
+        if (
+          !storagePath?.startsWith(sessionPrefix) ||
+          storagePath.split('/').some((s: string) => s === '..' || s === '.')
+        ) {
+          return {
+            chunkId: chunk.id,
+            chunkOrder: chunk.chunk_order,
+            url: null,
+            createdAt: chunk.created_at,
+          };
+        }
+        const { data: urlData } = await sbAdmin.storage
           .from('workspaces')
-          .createSignedUrl(chunk.storage_path, 3600); // 1 hour expiry
+          .createSignedUrl(storagePath, 3600); // 1 hour expiry
 
         return {
           chunkId: chunk.id,
