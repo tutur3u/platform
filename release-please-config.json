@@ -159,6 +159,10 @@
       "component": "agent-quota",
       "package-name": "@tuturuuu/agent-quota"
     },
+    "packages/start-bridge": {
+      "component": "start-bridge",
+      "package-name": "@tuturuuu/start-bridge"
+    },
     "packages/ai": {
       "component": "ai",
       "package-name": "@tuturuuu/ai"

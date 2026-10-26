@@ -1417,6 +1417,8 @@
     "connect_microsoft_desc": "Kết nối tài khoản Microsoft của bạn",
     "connected_accounts": "Tài khoản đã kết nối",
     "connected_calendars": "Lịch đã kết nối",
+    "consent_restart_limited": "Google chưa cấp mã làm mới. Vui lòng chờ trước khi kết nối lại tài khoản này.",
+    "consent_restart_unavailable": "Tạm thời không thể kết nối lại lịch. Vui lòng thử lại sau.",
     "create": "Tạo",
     "create_calendar": "Tạo lịch mới",
     "creation_recovery_notice": "Lần tạo trước chưa được xác nhận. Hãy thử lại yêu cầu ban đầu; các chỉnh sửa vẫn được giữ để lưu sau khi xác nhận.",
@@ -6335,6 +6337,12 @@
       "enable": "Bật thông báo",
       "permission-denied": "Thông báo trình duyệt đã bị chặn. Vui lòng bật trong cài đặt trình duyệt.",
       "permission-request": "Bật thông báo trình duyệt để cập nhật"
+    },
+    "codes": {
+      "calendar_reconnect_required": {
+        "description": "Đồng bộ lịch đã tạm dừng vì nhà cung cấp không còn chấp nhận quyền truy cập. Hãy kết nối lại tài khoản để tiếp tục.",
+        "title": "Kết nối lại lịch của bạn"
+      }
     },
     "date_earlier": "Trước đó",
     "date_this_week": "Tuần này",

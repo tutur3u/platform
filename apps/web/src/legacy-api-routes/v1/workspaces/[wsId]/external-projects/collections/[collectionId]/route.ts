@@ -36,7 +36,7 @@ export async function PATCH(
       {
         actorId: access.user.id,
         collection_type: payload.collection_type,
-        config: payload.config as Json | undefined,
+        config: payload.config as NonNullable<Json> | undefined,
         description: payload.description,
         is_enabled: payload.is_enabled,
         slug: payload.slug,

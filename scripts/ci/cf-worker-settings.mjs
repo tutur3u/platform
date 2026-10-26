@@ -6,6 +6,8 @@ import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { isDeepStrictEqual } from 'node:util';
+import { currentDeployment } from './cf-worker-current-deployment.mjs';
+import { settingsList } from './cf-worker-settings-pagination.mjs';
 
 function canonical(value) {
   if (Array.isArray(value))
@@ -208,9 +210,12 @@ async function readSettings({ identity, accountId, token, fetchImpl = fetch }) {
   let requests = 0;
   // Diagnostics name a request by a display path built only from trusted
   // config (account, Worker) and constants; zones appear as ordinals.
-  async function get(path, display = path) {
-    assert.ok(++requests <= 28, 'settings snapshot request budget exceeded');
+  async function request(path, display = path) {
     const target = `GET ${display}`;
+    assert.ok(
+      ++requests <= 28,
+      `settings snapshot request budget exceeded for ${target}`
+    );
     const response = await fetchImpl(
       `https://api.cloudflare.com/client/v4${path}`,
       {
@@ -230,20 +235,18 @@ async function readSettings({ identity, accountId, token, fetchImpl = fetch }) {
       body?.success === true,
       `settings snapshot API failed for ${target}${errorCodes(body)}`
     );
-    assert.ok(
-      (body.result_info?.total_pages ?? 1) <= 1,
-      'settings snapshot refuses truncated pagination'
-    );
-    return body.result;
+    return body;
   }
-  async function list(path, display) {
-    const items = await get(path, display);
+  async function get(path) {
+    const { result } = await request(path);
+    // These endpoints return one settings object, not a top-level result page.
     assert.ok(
-      Array.isArray(items) && items.length < 50,
-      'settings snapshot refuses unbounded/truncated list'
+      result && typeof result === 'object' && !Array.isArray(result),
+      `settings snapshot object unavailable for GET ${path}`
     );
-    return items;
+    return result;
   }
+  const list = (path, display) => settingsList(request, path, display);
   const settings = await get(`${script}/settings`);
   const subdomain = await get(`${script}/subdomain`);
   const schedules = await get(`${script}/schedules`);
@@ -264,7 +267,7 @@ async function readSettings({ identity, accountId, token, fetchImpl = fetch }) {
     ))
       zoneRoutes.push({ zone: zone.id, route });
   }
-  const deployments = await get(`${script}/deployments`);
+  const deployments = await currentDeployment(request, `${script}/deployments`);
   return {
     settings,
     subdomain,

@@ -14,13 +14,24 @@ import { createElement } from 'react';
 
 export type { NavLink } from '@tuturuuu/ui/custom/navigation';
 
+type NavigationTranslator = Parameters<typeof createWorkspaceMembersNavLink>[0];
+
 export async function getNavigationLinks({
   personalOrWsId,
 }: {
   personalOrWsId: string;
 }): Promise<(NavLink | null)[]> {
-  const t = await getTranslations();
+  return buildNavigationLinks(await getTranslations(), personalOrWsId);
+}
 
+/**
+ * The workspace sidebar links for a translator, shared by the Next layout and
+ * the native Start shell (which translates on the client).
+ */
+export function buildNavigationLinks(
+  t: NavigationTranslator,
+  personalOrWsId: string
+): (NavLink | null)[] {
   return [
     {
       title: t('sidebar_tabs.tasks'),

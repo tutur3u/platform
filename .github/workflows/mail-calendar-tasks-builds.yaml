@@ -1,6 +1,7 @@
 name: Mail Calendar Tasks builds
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
     paths:
       - 'scripts/safe-fs.js'
       - 'apps/mail/**'
@@ -20,6 +21,7 @@ on:
       - 'scripts/ci/calendar-cf-output*'
       - 'scripts/ci/calendar-cf-archive.py'
       - 'scripts/ci/native-source-identity-test-helper.js'
+      - 'scripts/ci/apps-native-runtime-pointer.mjs'
       - 'scripts/ci/calendar-emitted-defaults*'
       - '.github/actions/**'
       - '.github/workflows/ci-check.yml'
@@ -46,6 +48,7 @@ on:
       - 'scripts/ci/calendar-cf-output*'
       - 'scripts/ci/calendar-cf-archive.py'
       - 'scripts/ci/native-source-identity-test-helper.js'
+      - 'scripts/ci/apps-native-runtime-pointer.mjs'
       - 'scripts/ci/calendar-emitted-defaults*'
       - '.github/actions/**'
       - '.github/workflows/ci-check.yml'
@@ -59,6 +62,7 @@ concurrency:
   cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 jobs:
   check-ci:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     permissions:
       contents: read
       deployments: read

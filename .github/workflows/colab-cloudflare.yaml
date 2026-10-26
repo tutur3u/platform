@@ -16,6 +16,7 @@ on:
       - 'tuturuuu.ts'
       - '.github/workflows/colab-cloudflare.yaml'
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
     paths:
       - 'apps/colab/**'
       - 'packages/multiplayer/**'
@@ -44,6 +45,7 @@ concurrency:
 
 jobs:
   check-ci:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     uses: ./.github/workflows/ci-check.yml
     permissions:
       contents: read

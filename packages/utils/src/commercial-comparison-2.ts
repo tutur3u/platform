@@ -259,4 +259,11 @@ export const features2: ComparisonFeature[] = [
     values: ['internal', 'internal', 'internal', 'internal'],
     detail: 'standard',
   },
+  {
+    id: 'api_0',
+    app: 'api',
+    category: 'internal',
+    values: ['internal', 'internal', 'internal', 'internal'],
+    detail: 'standard',
+  },
 ];

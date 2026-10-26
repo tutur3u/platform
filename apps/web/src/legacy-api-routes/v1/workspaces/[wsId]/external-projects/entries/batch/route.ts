@@ -90,8 +90,8 @@ async function runOperation(
         {
           actorId: access.user.id,
           collection_id: payload.collection_id,
-          metadata: payload.metadata as Json,
-          profile_data: payload.profile_data as Json,
+          metadata: payload.metadata as NonNullable<Json>,
+          profile_data: payload.profile_data as NonNullable<Json>,
           scheduled_for: payload.scheduled_for ?? null,
           slug: payload.slug,
           status: payload.status,
@@ -117,8 +117,8 @@ async function runOperation(
         operation.entryId,
         {
           actorId: access.user.id,
-          metadata: payload.metadata as Json | undefined,
-          profile_data: payload.profile_data as Json | undefined,
+          metadata: payload.metadata as NonNullable<Json> | undefined,
+          profile_data: payload.profile_data as NonNullable<Json> | undefined,
           scheduled_for: payload.scheduled_for,
           slug: payload.slug,
           status: payload.status,
