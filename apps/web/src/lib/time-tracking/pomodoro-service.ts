@@ -293,9 +293,9 @@ export async function commandPomodoro(
     }
     if (!row) return applied({ ...IDLE_ROW }, serverNow, false);
     if (!plan.ok) {
-      if (expectedRevision < 1) return conflict(deps, 'revision_conflict');
-      // A retry of an applied command arrives with an old revision; the
-      // database replays it from its receipt or reports the conflict.
+      // A retry of an applied command arrives with an old revision (even the
+      // 0 of the start that created the control); the database replays it
+      // from its receipt by command id or reports the conflict.
       const replay = await deps.store.apply({
         expectedRevision,
         commandId: command.commandId,
