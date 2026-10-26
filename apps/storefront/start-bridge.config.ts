@@ -49,6 +49,7 @@ export default defineBridgeAppConfig<StorefrontApiEnvironment>({
       const directives =
         csp
           ?.split(';')
+          .map((directive) => directive.trim())
           .filter(
             (directive) =>
               directive.trim() &&
