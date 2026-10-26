@@ -193,6 +193,9 @@ localization changes.
 - Root tabs are Home, Apps, Mira, Inbox and You on an icon-only dock;
   `shell_viewport_checks.dart` asserts the dock has no text. Root-tab search
   without its own field goes through `ShellRootSearchAction`.
+- Before editing `assistant_page.dart` or `assistant_page_layout.dart`, check
+  the open Mira chat PRs that own them; keep tab polish in owned widgets such
+  as `assistant_starter_prompts.dart` until those land.
 
 ## Task Board
 
