@@ -271,6 +271,23 @@ describe('Pomodoro route commands', () => {
     });
   });
 
+  it('a stale revision 0 against an existing control is a 409', async () => {
+    db.row = { ...breakEnded(), revision: 1, phase: 'idle', mode: 'off' };
+    const response = await post({
+      type: 'start',
+      commandId: id(9),
+      expectedRevision: 0,
+      title: 'Write',
+    });
+
+    expect(response.status).toBe(409);
+    expect((await response.json()).error).toBe('revision_conflict');
+    expect(commandCalls()).toEqual([]);
+    expect(db.calls.map((call) => call.name)).not.toContain(
+      'configure_time_tracker_control'
+    );
+  });
+
   it('a running manual timer is a 409 the client can explain', async () => {
     db.row = { ...breakEnded(), phase: 'idle', mode: 'off' };
     db.error = { code: '40001', message: 'Timer running session conflict' };
