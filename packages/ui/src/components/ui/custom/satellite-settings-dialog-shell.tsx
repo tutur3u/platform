@@ -62,6 +62,7 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import type { ComponentType, KeyboardEvent, ReactNode } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { resolveSettingsTab } from '../../../hooks/settings-dialog-url';
 import type { createSettingsSearchEngine } from './settings-dialog-search';
 import { loadSettingsSearchEngine } from './settings-dialog-search-loader';
 
@@ -221,6 +222,20 @@ export function SatelliteSettingsDialogShell({
       onActiveTabChange(persistedItem.name);
     }
   }, [activeTab, onActiveTabChange, persistedItem]);
+
+  // Unknown tabs (stale or mistyped deep links) fall back to the first enabled
+  // tab. The URL is left untouched so a tab that registers later still wins.
+  const activeTabIsKnown = allNavItems.some((item) => item.name === activeTab);
+  const fallbackTab = resolveSettingsTab(
+    null,
+    allNavItems
+      .filter((item) => !item.disabled && item.name !== 'onboarding_guide')
+      .map((item) => item.name)
+  );
+  useEffect(() => {
+    if (activeTabIsKnown || persistedItem || !fallbackTab) return;
+    onActiveTabChange(fallbackTab);
+  }, [activeTabIsKnown, fallbackTab, onActiveTabChange, persistedItem]);
 
   const selectActiveTab = useCallback(
     (tab: string) => {

@@ -12,7 +12,9 @@ import 'package:mobile/core/cache/offline_read_through.dart';
 import 'package:mobile/core/cache/offline_repository_write.dart';
 import 'package:mobile/core/cache/pending_collection_overlay.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
+import 'package:mobile/core/utils/timezone.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/assistant/bridge/assistant_client_actions.dart';
 import 'package:mobile/features/chat/data/chat_creation_receipt.dart';
 import 'package:mobile/features/chat/data/chat_stream_completion.dart';
 import 'package:mobile/features/chat/data/chat_stream_parser.dart';
@@ -27,12 +29,19 @@ class ChatRepository {
     http.Client? httpClient,
     bool ownsApiClient = false,
     OfflineMutationQueue? mutationQueue,
+    Future<String> Function()? deviceTimezone,
+    List<String> Function()? miraClientCapabilities,
   }) : _apiClient = apiClient ?? ApiClient(),
        _httpClient = httpClient ?? http.Client(),
        _ownsApiClient = ownsApiClient || apiClient == null,
-       _messageMutationQueue = mutationQueue ?? OfflineMutationQueue.instance;
+       _messageMutationQueue = mutationQueue ?? OfflineMutationQueue.instance,
+       _deviceTimezone = deviceTimezone ?? getVerifiedDeviceTimezoneIdentifier,
+       _miraClientCapabilities =
+           miraClientCapabilities ?? AssistantClientActions.chatCapabilities;
 
   final ApiClient _apiClient;
+  final Future<String> Function() _deviceTimezone;
+  final List<String> Function() _miraClientCapabilities;
   final http.Client _httpClient;
   final bool _ownsApiClient;
   final OfflineMutationQueue _messageMutationQueue;
@@ -273,6 +282,17 @@ class ChatRepository {
     return url;
   }
 
+  /// Mira date tools need the device zone; an unverified lookup is omitted so
+  /// Web can fall back to the saved preference instead of assuming UTC.
+  Future<String?> _miraTimezone() async {
+    try {
+      final timezone = (await _deviceTimezone()).trim();
+      return timezone.isEmpty ? null : timezone;
+    } on Object {
+      return null;
+    }
+  }
+
   Stream<ChatMessageStreamEvent> sendMessageStream(
     String wsId,
     String conversationId, {
@@ -288,6 +308,8 @@ class ChatRepository {
     final path = '${_conversationPath(wsId, conversationId)}/messages';
     final requestId = clientRequestId ?? newLocalMutationId();
     final localId = newLocalMutationId();
+    final timezone = miraMode ? await _miraTimezone() : null;
+    admission?.check();
     final payload = <String, dynamic>{
       'content': content,
       'kind': kind.name,
@@ -297,6 +319,8 @@ class ChatRepository {
       if (replyToMessageId != null) 'replyToMessageId': replyToMessageId,
       'clientRequestId': requestId,
       if (miraMode) 'miraMode': true,
+      if (timezone != null) 'timezone': timezone,
+      if (miraMode) 'clientCapabilities': _miraClientCapabilities(),
     };
     ChatMessage pendingMessage() => ChatMessage.fromJson({
       ...payload,

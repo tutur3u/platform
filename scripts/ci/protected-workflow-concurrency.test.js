@@ -92,7 +92,12 @@ const mainExceptions = {
   'biome-check.yaml':
     'Job-level validation and separate repository mutation locks',
   'tanstack-route-manifest.yaml': 'TanStack runtime is paused',
+  'codeql.yml':
+    'Main-push baselines queue so PR new-alert gates compare against a completed scan',
 };
+// Main pushes of these workflows queue (one running, newest pending) instead of
+// cancelling; every other qualification assertion still applies.
+const queuedMainBaselines = new Set(['codeql.yml']);
 const workflows = Object.fromEntries(
   fs
     .readdirSync(workflowRoot)
@@ -363,7 +368,7 @@ test('preview workflows retain latest-run cancellation instead of a conflicting 
   }
 });
 
-function assertQualification(policy, workflowName) {
+function assertQualification(policy, workflowName, mainPushCancels = true) {
   const first = { ...context('refs/heads/main'), workflow: workflowName };
   const later = { ...first, sha: 'later', run_id: 2 };
   const ordinary = render(policy.group, later);
@@ -387,7 +392,7 @@ function assertQualification(policy, workflowName) {
     qualified.push(group);
   }
   assert.equal(new Set(qualified).size, qualified.length);
-  assert.equal(render(policy['cancel-in-progress'], later), true);
+  assert.equal(render(policy['cancel-in-progress'], later), mainPushCancels);
 }
 for (const [file, workflow] of Object.entries(workflows)) {
   const policies = workflow.concurrency
@@ -398,7 +403,11 @@ for (const [file, workflow] of Object.entries(workflows)) {
   for (const [index, policy] of policies.entries()) {
     if (!policy.group.includes('github.run_attempt')) continue;
     test(`${file} policy ${index}: rerun and dispatch qualify immutable attempts`, () => {
-      assertQualification(policy, workflow.name);
+      assertQualification(
+        policy,
+        workflow.name,
+        !queuedMainBaselines.has(file)
+      );
     });
   }
 }

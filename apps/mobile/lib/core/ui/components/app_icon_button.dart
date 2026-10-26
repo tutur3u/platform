@@ -38,23 +38,17 @@ class AppIconButton extends StatelessWidget {
           ? AppButtonDensity.iconDense
           : AppButtonDensity.icon,
     );
-    return Tooltip(
-      message: tooltip,
-      excludeFromSemantics: true,
-      child: AppButtonFrame(
-        style: style,
-        shape: shape,
-        onPressed: onPressed,
-        onLongPress: onLongPress,
-        focusNode: focusNode,
-        semanticLabel: tooltip,
-        child: IconTheme.merge(
-          data: IconThemeData(
-            color: style.foreground,
-            size: style.iconSize + 4,
-          ),
-          child: icon,
-        ),
+    return AppButtonFrame(
+      style: style,
+      shape: shape,
+      onPressed: onPressed,
+      onLongPress: onLongPress,
+      focusNode: focusNode,
+      semanticLabel: tooltip,
+      tooltip: tooltip,
+      child: IconTheme.merge(
+        data: IconThemeData(color: style.foreground, size: style.iconSize + 4),
+        child: icon,
       ),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 enum DownloadNetworkConsent { wifiOnly, allowCellular }
@@ -23,22 +24,22 @@ Future<DownloadNetworkConsent?> requestDownloadNetworkConsent(
     return DownloadNetworkConsent.wifiOnly;
   }
   final l10n = context.l10n;
-  return await showDialog<DownloadNetworkConsent>(
+  return await showAppDialog<DownloadNetworkConsent>(
     context: context,
-    builder: (context) => AlertDialog(
-      title: Text(l10n.downloadNetworkWarningTitle),
+    builder: (context) => AppDialog(
+      title: l10n.downloadNetworkWarningTitle,
       content: Text(l10n.downloadNetworkWarningBody),
       actions: [
-        TextButton(
+        AppButton.ghost(
           onPressed: () => Navigator.pop(context),
           child: Text(l10n.commonCancel),
         ),
-        TextButton(
+        AppButton.ghost(
           onPressed: () =>
               Navigator.pop(context, DownloadNetworkConsent.wifiOnly),
           child: Text(l10n.downloadNetworkUseWifi),
         ),
-        FilledButton(
+        AppButton.primary(
           onPressed: () =>
               Navigator.pop(context, DownloadNetworkConsent.allowCellular),
           child: Text(l10n.downloadNetworkContinue),

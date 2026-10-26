@@ -1,6 +1,7 @@
 name: Security egress database contract
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
     paths:
       - 'apps/database/supabase/migrations/**'
       - 'apps/database/supabase/tests/security-*.sql'

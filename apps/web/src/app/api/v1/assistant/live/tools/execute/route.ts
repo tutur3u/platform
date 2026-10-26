@@ -1,3 +1,8 @@
+import { resolveMiraTimezone } from '@tuturuuu/ai/chat/google/mira-timezone';
+import {
+  miraClientCapabilitiesInputSchema,
+  resolveMiraClientCapabilities,
+} from '@tuturuuu/ai/tools/mira-client-capabilities';
 import { createMiraStreamTools } from '@tuturuuu/ai/tools/mira-tools';
 import { resolveWorkspaceContextState } from '@tuturuuu/ai/tools/workspace-context';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
@@ -22,6 +27,9 @@ const inputSchema = z.object({
   functionName: z.enum(['search_workspace_tools', 'execute_workspace_tool']),
   args: z.record(z.string(), z.unknown()),
   toolCallId: z.string().min(1).max(256),
+  // Canonical clients apply no UI markers unless they declare the effect.
+  clientCapabilities: miraClientCapabilitiesInputSchema.default([]),
+  timezone: z.string().trim().max(64).optional(),
 });
 const json = (body: unknown, status = 200) =>
   Response.json(body, { status, headers: { 'Cache-Control': 'no-store' } });
@@ -82,13 +90,23 @@ export async function POST(request: Request) {
     ]);
     if (!permissions)
       return json({ error: 'Workspace permissions unavailable' }, 503);
+    const { timezone } = await resolveMiraTimezone({
+      requestTimezone: parsed.data.timezone,
+      supabase,
+      userId: user.id,
+      wsId,
+    });
     const tools = createMiraStreamTools(
       {
         userId: user.id,
         wsId,
         workspaceContext,
         supabase,
+        timezone,
         requestHeaders: request.headers,
+        clientCapabilities: resolveMiraClientCapabilities(
+          parsed.data.clientCapabilities
+        ),
         // Live has no negotiated workspace switch. Never reuse current-workspace
         // permissions for a registry operation targeting another workspace.
         authorizeWorkspaceTools: async (targetWsId, required) => {

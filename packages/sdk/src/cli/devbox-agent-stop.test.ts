@@ -8,6 +8,7 @@ vi.mock('../platform-devbox', () => ({ pollDevboxAgentJobs: pollJobs }));
 vi.mock('./devbox-runner', () => ({ executeDevboxAgentJob: executeJob }));
 vi.mock('./devbox-agent-capabilities', () => ({
   createDevboxAgentCapabilities: vi.fn().mockResolvedValue({}),
+  heartbeatStorageTrigger: vi.fn().mockResolvedValue(undefined),
 }));
 
 import { runDevboxAgentLoop } from './devbox-agent';

@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import type { AccountUsage, UsageWindow } from '../types';
 import { homeIdentity } from '../usage-import';
 import { PROVIDER_USAGE_SNAPSHOT_MAX_AGE_MS } from '../window-freshness';
-import { windowScope } from '../window-scope';
+import { providerWindowScope } from '../window-scope';
 import { defaultCollectorPaths } from './paths';
 
 // Provider status caches are distinct from provider profiles and authentication files.
@@ -86,10 +86,11 @@ export async function collectSnapshot(
           {
             id: typeof window.id === 'string' ? window.id : undefined,
             label: typeof window.label === 'string' ? window.label : undefined,
-            scope: windowScope(
+            scope: providerWindowScope(
               account.provider,
               typeof window.id === 'string' ? window.id : '',
-              typeof window.label === 'string' ? window.label : ''
+              typeof window.label === 'string' ? window.label : '',
+              providerWindowKind
             ),
             kind:
               providerWindowKind === 'weekly' ||

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_live_ui_state.dart';
 import 'package:mobile/features/assistant/widgets/assistant_status_badge.dart';
@@ -83,10 +84,10 @@ class AssistantLiveStatusPanel extends StatelessWidget {
               const SizedBox(height: 14),
               Align(
                 alignment: Alignment.centerLeft,
-                child: FilledButton.tonalIcon(
+                child: AppButton.secondary(
                   onPressed: onRetry,
-                  icon: const Icon(Icons.refresh_rounded),
-                  label: Text(l10n.assistantLiveRetryAction),
+                  leading: const Icon(LucideIcons.refreshCw),
+                  child: Text(l10n.assistantLiveRetryAction),
                 ),
               ),
             ],
@@ -107,12 +108,12 @@ class AssistantLiveStatusPanel extends StatelessWidget {
       liveUiState.kind == AssistantLiveUiKind.permissionDenied;
 
   IconData get _icon => switch (liveUiState.kind) {
-    AssistantLiveUiKind.preparing => Icons.token_rounded,
-    AssistantLiveUiKind.connecting => Icons.wifi_tethering_rounded,
-    AssistantLiveUiKind.reconnecting => Icons.sync_problem_rounded,
-    AssistantLiveUiKind.permissionDenied => Icons.no_photography_rounded,
-    AssistantLiveUiKind.error => Icons.error_outline_rounded,
-    _ => Icons.info_outline_rounded,
+    AssistantLiveUiKind.preparing => LucideIcons.coins,
+    AssistantLiveUiKind.connecting => LucideIcons.radio,
+    AssistantLiveUiKind.reconnecting => LucideIcons.refreshCwOff,
+    AssistantLiveUiKind.permissionDenied => LucideIcons.cameraOff,
+    AssistantLiveUiKind.error => LucideIcons.circleAlert,
+    _ => LucideIcons.info,
   };
 
   String _statusLabel(AppLocalizations l10n) {

@@ -3,10 +3,9 @@ import 'package:mobile/core/theme/appearance/appearance_contrast.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
 import 'package:mobile/core/theme/appearance/appearance_theme.dart';
 import 'package:mobile/core/theme/colors.dart';
-import 'package:mobile/core/ui/icons/app_icons.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/settings/view/appearance/appearance_labels.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Circular accent swatches; the first follows the selected theme.
 class AppearanceAccentPicker extends StatelessWidget {
@@ -24,7 +23,7 @@ class AppearanceAccentPicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final scheme = shad.Theme.of(context).colorScheme;
+    final scheme = AppTokens.of(context).colorScheme;
     return Wrap(
       spacing: 10,
       runSpacing: 10,

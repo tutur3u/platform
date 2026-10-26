@@ -72,11 +72,29 @@ export async function GET(request: Request): Promise<NextResponse> {
       microsoft: accounts?.filter((a) => a.provider === 'microsoft') || [],
     };
 
+    // Accounts sync quarantined after the provider rejected their credential.
+    // Best effort: the list is empty while the quarantine columns are pending.
+    const { data: needsReconnect, error: reconnectError } = await supabase
+      .from('calendar_auth_tokens')
+      .select(
+        'id, provider, account_email, account_name, deactivated_reason, deactivated_at'
+      )
+      .eq('user_id', user.id)
+      .eq('ws_id', normalizedWsId)
+      .eq('is_active', false)
+      .not('deactivated_reason', 'is', null)
+      .order('deactivated_at', { ascending: false });
+    if (reconnectError)
+      console.warn('Calendar reconnect list unavailable', {
+        code: reconnectError.code,
+      });
+
     return NextResponse.json(
       {
         accounts: accounts || [],
         grouped,
         total: accounts?.length || 0,
+        needsReconnect: reconnectError ? [] : (needsReconnect ?? []),
       },
       { status: 200 }
     );

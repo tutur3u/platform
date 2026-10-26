@@ -86,6 +86,13 @@ and provide `DESKTOP_WINDOWS_VAULT_CI_TOKEN` after approving the matching Window
 signing material in the vault. SignPath or Azure integration requires a separate
 reviewed change after provisioning; their credentials are not PFX replacements.
 
+### Signing later
+
+Authenticode needs an OV/EV certificate, compatible hardware/cloud key integration and timestamping.
+EV does not guarantee SmartScreen reputation. For Azure Trusted Signing (now Artifact Signing), review identity, bounded usage and costs before enabling it.
+MSIX is separate: reuse `desktop-store-draft.yaml` and `windows-store-manifest.xml`, then verify publisher identity,
+signing, URI activation, upgrades and Store certification. See [Microsoft's signing overview](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/code-signing-options).
+
 ### Install an unsigned Windows beta
 
 The download page includes the x64 installer and installation guidance in English
@@ -106,19 +113,29 @@ matching publisher signatures and rejects unsigned installers.
 
 ### Build Windows artifacts without publishing
 
-Dispatch `desktop-beta.yaml` on the implementation branch with `dry_run=true`.
-This job runs on `windows-latest`, uses placeholder public configuration, and has
-only `contents: read`. It does not enter the protected `desktop-beta` environment,
-receive signing credentials, attest a release, or run the publisher. Its installer
-is for CI inspection, not a working production client. The release jobs are skipped
-even if the dry run is dispatched on `production`.
+Dispatch `desktop-beta.yaml` on the implementation branch with `dry_run=true`. The `windows-latest` job
+uses placeholder public configuration and `contents: read`, without signing credentials or publication rights.
+Dry runs skip release jobs, including on `production`. Production sign-in and updates need separate qualification.
 
-The `desktop-windows-x64-dry-run` artifact contains the Inno Setup installer and
-`verified-windows.json`, including its SHA-256 checksum, exact source SHA, workflow
-run ID, and `unsigned-windows` status. Artifacts expire after seven days. A successful
-build is not installation, sign-in, or update acceptance on a Windows device.
-The packaging and updater currently use x64 paths and filenames. ARM64 needs
-separate native-plugin, installer, and updater qualification before advertising it.
+The seven-day `desktop-windows-x64-dry-run` artifact contains:
+
+- `desktop-artifacts/Tuturuuu-windows-x64-setup.exe`: Inno Setup installer.
+- `desktop-artifacts/verified-windows.json`: installer SHA-256, source SHA, run ID and `unsigned-windows` status.
+- `windows-installed-files.json`: installed filenames, sizes/hashes, source SHA, run ID/attempt and installer hash.
+
+The smoke verifies the receipt, required Flutter files and hidden/system files, using literal paths.
+Reject all reparse points. Root files match the runner/DLL/uninstaller allowlist; `data/` permits ICU, AOT and Flutter assets, rejecting `.env*` path segments, MZ headers and executable/script/debug/credential types.
+The runner stays hidden until Flutter's first frame. After 15 seconds the smoke requires a visible main window
+with the exact title `Tuturuuu`. Installation and uninstallation each have a 120-second wait, then a 10-second
+owned-process-tree stop attempt. Uninstall is skipped if the installer is still running; original errors survive cleanup.
+[Inno's uninstaller exit code](https://jrsoftware.org/ishelp/topic_uninstexitcodes.htm) signals completion of its actual work; its clone may still finish deleting the original EXE.
+
+This proves a first frame, not healthy Firebase, Supabase, caches or widgets: caught startup failures and ErrorWidgets can render.
+OIDC/runtime variables are removed, but same-user process access is not isolated; a separate smoke job without OIDC is a follow-up.
+Slow bootstrap leaves the window hidden. A native splash/watchdog is a separate product follow-up; the 15-second gate is unchanged.
+The production matrix uses the same gate and separate inventory. Fixtures cover hidden files, wrong titles and phase timeouts; the installed-app check is the native gate.
+See [Flutter's first-frame guidance](https://docs.flutter.dev/release/breaking-changes/windows-show-window-migration).
+Packaging/updating targets x64; ARM64 needs separate native qualification.
 
 | Platform | Configuration |
 | --- | --- |

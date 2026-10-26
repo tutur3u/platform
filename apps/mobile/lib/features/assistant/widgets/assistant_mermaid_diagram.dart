@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 
@@ -57,7 +58,7 @@ class _AssistantMermaidDiagramCardState
             padding: const EdgeInsets.fromLTRB(14, 12, 10, 8),
             child: Row(
               children: [
-                Icon(Icons.account_tree_outlined, size: 18, color: mutedColor),
+                Icon(LucideIcons.workflow, size: 18, color: mutedColor),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -68,13 +69,10 @@ class _AssistantMermaidDiagramCardState
                     ),
                   ),
                 ),
-                Tooltip(
-                  message: context.l10n.assistantEnterFullscreenAction,
-                  child: IconButton(
-                    onPressed: _openFullscreen,
-                    icon: const Icon(Icons.open_in_full_rounded),
-                    visualDensity: VisualDensity.compact,
-                  ),
+                AppIconButton(
+                  tooltip: context.l10n.assistantEnterFullscreenAction,
+                  onPressed: _openFullscreen,
+                  icon: const Icon(LucideIcons.maximize2),
                 ),
               ],
             ),
@@ -140,12 +138,11 @@ class _AssistantMermaidDiagramCardState
   }
 
   Future<void> _openFullscreen() async {
-    await Navigator.of(context, rootNavigator: true).push(
-      MaterialPageRoute<void>(
-        builder: (_) =>
-            AssistantMermaidViewerPage(definition: widget.definition),
-        fullscreenDialog: true,
-      ),
+    await showAppSheet<void>(
+      context: context,
+      size: AppSheetSize.full,
+      enableDrag: false,
+      builder: (_) => AssistantMermaidViewerPage(definition: widget.definition),
     );
   }
 }
@@ -169,73 +166,67 @@ class _AssistantMermaidViewerPageState
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
-    return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
-      appBar: AppBar(
-        title: Text(context.l10n.assistantMermaidDiagramLabel),
-        actions: [
-          Tooltip(
-            message: context.l10n.assistantMermaidZoomOut,
-            child: IconButton(
-              onPressed: _isDiagramReady ? _zoomOut : null,
-              icon: const Icon(Icons.zoom_out_rounded),
-            ),
-          ),
-          Tooltip(
-            message: context.l10n.assistantMermaidZoomReset,
-            child: IconButton(
-              onPressed: _isDiagramReady ? _resetZoom : null,
-              icon: const Icon(Icons.fit_screen_rounded),
-            ),
-          ),
-          Tooltip(
-            message: context.l10n.assistantMermaidZoomIn,
-            child: IconButton(
-              onPressed: _isDiagramReady ? _zoomIn : null,
-              icon: const Icon(Icons.zoom_in_rounded),
-            ),
-          ),
-        ],
-      ),
-      body: SafeArea(
-        top: false,
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-              child: Text(
-                context.l10n.assistantMermaidZoomHint,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ),
-            Expanded(
-              child: ColoredBox(
-                color: theme.colorScheme.surfaceContainerLowest,
-                child: _renderError == null
-                    ? AssistantMermaidWebView(
-                        definition: widget.definition,
-                        interactive: true,
-                        onControllerReady: _handleControllerReady,
-                        onDiagramReady: _handleDiagramReady,
-                        onRenderError: (error) {
-                          if (!mounted) {
-                            return;
-                          }
-                          setState(() {
-                            _renderError = error;
-                            _isDiagramReady = false;
-                          });
-                        },
-                      )
-                    : _AssistantMermaidErrorState(error: _renderError!),
-              ),
-            ),
-          ],
+    return AppSheetScaffold(
+      title: context.l10n.assistantMermaidDiagramLabel,
+      actions: [
+        AppIconButton(
+          tooltip: context.l10n.assistantMermaidZoomOut,
+          onPressed: _isDiagramReady ? _zoomOut : null,
+          icon: const Icon(LucideIcons.zoomOut),
         ),
-      ),
+        AppIconButton(
+          tooltip: context.l10n.assistantMermaidZoomReset,
+          onPressed: _isDiagramReady ? _resetZoom : null,
+          icon: const Icon(LucideIcons.scan),
+        ),
+        AppIconButton(
+          tooltip: context.l10n.assistantMermaidZoomIn,
+          onPressed: _isDiagramReady ? _zoomIn : null,
+          icon: const Icon(LucideIcons.zoomIn),
+        ),
+      ],
+      slivers: [
+        SliverFillRemaining(
+          child: SafeArea(
+            top: false,
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                  child: Text(
+                    context.l10n.assistantMermaidZoomHint,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: ColoredBox(
+                    color: theme.colorScheme.surfaceContainerLowest,
+                    child: _renderError == null
+                        ? AssistantMermaidWebView(
+                            definition: widget.definition,
+                            interactive: true,
+                            onControllerReady: _handleControllerReady,
+                            onDiagramReady: _handleDiagramReady,
+                            onRenderError: (error) {
+                              if (!mounted) {
+                                return;
+                              }
+                              setState(() {
+                                _renderError = error;
+                                _isDiagramReady = false;
+                              });
+                            },
+                          )
+                        : _AssistantMermaidErrorState(error: _renderError!),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -445,7 +436,7 @@ class _AssistantMermaidErrorState extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.error_outline_rounded,
+              LucideIcons.circleAlert,
               color: theme.colorScheme.error,
               size: 28,
             ),

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createAppCoordinationToken } from '../app-coordination-token';
 import {
   createMeetGuestSession,
+  MEET_GUEST_SESSION_PURPOSE,
   MEET_GUEST_SESSION_TTL_SECONDS,
   normalizeMeetPlanId,
   verifyMeetGuestSession,
@@ -85,9 +86,9 @@ describe('signed access tokens', () => {
       { targetApp: 'meet', userId: 'user-1' },
       opts
     );
-    expect(verifySignedAccessToken('meet-guest-session', token, opts)).toBe(
-      null
-    );
+    expect(
+      verifySignedAccessToken(MEET_GUEST_SESSION_PURPOSE, token, opts)
+    ).toBe(null);
   });
 });
 
@@ -135,7 +136,7 @@ describe('Meet guest sessions', () => {
 
   it('rejects a token minted for a different purpose', () => {
     const { token } = createSignedAccessToken(
-      'nova-challenge-access',
+      'nova-challenge-access-v2',
       { sub: 'guest-1', pid: PLAN_ID },
       60,
       opts

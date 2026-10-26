@@ -24,9 +24,35 @@ const volume =
   async () => ({
     freeBytes: freeGiB * GiB,
     totalBytes: totalGiB * GiB,
+    inodeFreePercent: 50,
   });
 
 describe('disk gate (REV-6480-2)', () => {
+  it('refuses exhausted inodes with ample bytes, including a configured floor', async () => {
+    const probe = async () => ({
+      ...(await volume(100, 300)()),
+      inodeFreePercent: 1,
+    });
+    expect(await diskGate('/work', {}, probe)).toMatchObject({
+      admit: false,
+      unknown: false,
+    });
+    expect(
+      await diskGate(
+        '/work',
+        { TTR_STORAGE_MIN_FREE_INODE_PERCENT: '0' },
+        probe
+      )
+    ).toMatchObject({ admit: true });
+    expect(
+      await diskGate(
+        '/work',
+        { TTR_STORAGE_MIN_FREE_INODE_PERCENT: 'bad' },
+        probe
+      )
+    ).toMatchObject({ admit: false, unknown: true });
+  });
+
   it('reads the real volume', async () => {
     const probe = await probeDisk(tmpdir());
     expect(probe.totalBytes).toBeGreaterThan(0);
@@ -50,7 +76,7 @@ describe('disk gate (REV-6480-2)', () => {
     expect(await diskGate('/work', {}, volume(20, 1024))).toMatchObject({
       admit: false,
     });
-    expect(await diskGate('/work', {}, volume(21, 300))).toMatchObject({
+    expect(await diskGate('/work', {}, volume(51, 300))).toMatchObject({
       admit: true,
     });
     // The measured M4 (20 GiB of 460 GiB, 4.3%) is below the 5% floor.
@@ -99,9 +125,17 @@ describe('disk gate (REV-6480-2)', () => {
   it('bounds a hung probe and never stacks a second one (REV-6503-6)', async () => {
     let release!: () => void;
     const hung = () =>
-      new Promise<{ freeBytes: number; totalBytes: number }>((resolve) => {
+      new Promise<{
+        freeBytes: number;
+        totalBytes: number;
+        inodeFreePercent: number;
+      }>((resolve) => {
         release = () =>
-          resolve({ freeBytes: 100 * GiB, totalBytes: 300 * GiB });
+          resolve({
+            freeBytes: 100 * GiB,
+            totalBytes: 300 * GiB,
+            inodeFreePercent: 50,
+          });
       });
     const first = probeDiskWithTimeout('/hung', 50, hung);
     await expect(first).rejects.toMatchObject({ code: 'ETIMEDOUT' });
@@ -164,6 +198,35 @@ describe('dequeue-time disk re-check (REV-6480-1)', { timeout: 40_000 }, () => {
     expect(Date.now() - started).toBeLessThan(2_000);
     release();
     expect(await job).toBe(0);
+  });
+
+  it('rechecks the effective command directory after waiting for inodes', async () => {
+    const home = await realpath(
+      await mkdtemp(join(tmpdir(), 'ttr-resources-disk-'))
+    );
+    dirs.push(home);
+    const calls: string[] = [];
+    const check = async (cwd: string) => {
+      calls.push(cwd);
+      return diskGate(cwd, {}, async () => ({
+        ...(await volume(100, 300)()),
+        inodeFreePercent: calls.length === 1 ? 1 : 50,
+      }));
+    };
+    const job = queuedResourceCommand(
+      home,
+      process.execPath,
+      ['--cwd', home, '-e', ''],
+      { ...process.env, TTR_RESOURCES_IGNORE_DISK: undefined },
+      true,
+      1,
+      undefined,
+      undefined,
+      check
+    );
+    // Node rejects --cwd only after admission; the check must run twice before launch.
+    expect(await job).not.toBe(0);
+    expect(calls).toEqual([home, home]);
   });
 
   it('holds a queued job until disk is known and sufficient, then starts it', async () => {

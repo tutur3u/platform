@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.app.json",
+  "compilerOptions": {
+    "plugins": [],
+    "types": ["node"],
+    "noEmit": true,
+    "composite": false,
+    "incremental": true,
+    "declaration": false,
+    "declarationMap": false,
+    "emitDeclarationOnly": false,
+    "tsBuildInfoFile": ".turbo/tsconfig.config.tsbuildinfo"
+  },
+  "include": ["vite.config.ts", "void.config.ts", "void.staging.config.ts"],
+  "exclude": ["node_modules", "dist", ".turbo", ".typecheck"]
+}

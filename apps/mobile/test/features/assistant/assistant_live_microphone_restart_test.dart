@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_live_audio_player.dart';
 import 'package:mobile/features/assistant/data/assistant_live_camera_service.dart';
@@ -8,7 +10,12 @@ import 'package:mobile/features/assistant/data/assistant_live_recorder.dart';
 import 'package:mobile/features/assistant/data/assistant_live_repository.dart';
 import 'package:mobile/features/assistant/data/assistant_live_socket.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
+import 'package:mobile/features/assistant/view/assistant_page.dart';
+import 'package:mobile/features/assistant/widgets/assistant_live_call_controls.dart';
+import 'package:mobile/l10n/l10n.dart';
 import 'package:mocktail/mocktail.dart';
+
+import 'assistant_live_startup_test_helpers.dart';
 
 class _Repository extends Mock implements AssistantLiveRepository {}
 
@@ -27,7 +34,9 @@ class _Fixture {
     when(player.initialize).thenAnswer((_) async {});
     when(player.pause).thenAnswer((_) async {});
     when(player.dispose).thenAnswer((_) async {});
-    when(recorder.stop).thenAnswer((_) async {});
+    when(recorder.stop).thenAnswer((_) async {
+      stops++;
+    });
     when(recorder.dispose).thenAnswer((_) async {});
     when(camera.stopStreaming).thenAnswer((_) async {});
     when(camera.dispose).thenAnswer((_) async {});
@@ -81,6 +90,50 @@ class _Fixture {
   final events = StreamController<AssistantLiveSocketEvent>();
   late final AssistantLiveCubit cubit;
   int captures = 0;
+  int stops = 0;
+  int microphoneStartCompletions = 0;
+
+  Future<void>? microphoneStartup;
+
+  Future<void> toggleMicrophoneFromNavbar() {
+    if (cubit.state.isMicrophoneActive) return cubit.toggleMicrophone();
+    return microphoneStartup = _startMicrophoneFromNavbar();
+  }
+
+  Future<void> _startMicrophoneFromNavbar() async {
+    await enableAssistantLiveMicrophone(
+      liveCubit: cubit,
+      prepareSession:
+          cubit.state.status == AssistantLiveConnectionStatus.connected
+          ? null
+          : () => cubit.prepareSession(wsId: 'ws'),
+      isCurrent: () => true,
+    );
+    microphoneStartCompletions++;
+  }
+
+  Widget navbar({Future<void> Function()? onText}) => MaterialApp(
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
+    home: Scaffold(
+      body: StreamBuilder<AssistantLiveState>(
+        stream: cubit.stream,
+        initialData: cubit.state,
+        builder: (context, snapshot) => AssistantLiveCallControls(
+          state: snapshot.data!,
+          onMicrophone: toggleMicrophoneFromNavbar,
+          onCamera: cubit.toggleCamera,
+          onText: onText ?? () async {},
+          onDisconnect: () => cubit.disconnect(clearSession: true),
+        ),
+      ),
+    ),
+  );
+
+  Future<void> disposeWidget(WidgetTester tester) async {
+    await tester.pumpWidget(const SizedBox.shrink());
+    await drainLiveFixtureCleanup(tester, close());
+  }
 
   Future<void> close() async {
     await cubit.close();
@@ -90,6 +143,268 @@ class _Fixture {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  startupTest(
+    'navbar cancels delayed startup before permission can open media',
+    (tester, cleanup) async {
+      final fixture = _Fixture();
+      cleanup(() => fixture.disposeWidget(tester));
+      final token = Completer<AssistantLiveTokenEnvelope>();
+      final permission = Completer<bool>();
+      when(
+        () => fixture.repository.fetchLiveToken(
+          wsId: 'ws',
+          chatId: any(named: 'chatId'),
+          model: any(named: 'model'),
+          forceFresh: any(named: 'forceFresh'),
+        ),
+      ).thenAnswer((_) => token.future);
+      when(
+        fixture.recorder.ensurePermission,
+      ).thenAnswer((_) => permission.future);
+      var keyboard = 0;
+      await tester.pumpWidget(
+        fixture.navbar(
+          onText: () async {
+            keyboard++;
+          },
+        ),
+      );
+      await tester.tap(find.byKey(const ValueKey('live-control-microphone')));
+      await tester.pump();
+      expect(
+        fixture.cubit.state.status,
+        AssistantLiveConnectionStatus.preparing,
+      );
+      expect(find.byType(AppIconButton), findsNWidgets(4));
+      await tester.tap(find.byKey(const ValueKey('live-control-camera')));
+      await tester.tap(find.byKey(const ValueKey('live-control-exit')));
+      await tester.pump();
+      expect(
+        fixture.cubit.state.status,
+        AssistantLiveConnectionStatus.disconnected,
+      );
+      permission.complete(true);
+      token.complete(_Fixture.envelope);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(fixture.captures, 0);
+      expect(fixture.cubit.state.isMicrophoneActive, isFalse);
+      verifyNever(fixture.camera.ensurePermission);
+      verifyNever(
+        () => fixture.socket.connect(
+          token: 'token',
+          model: 'model',
+          seedHistory: const [],
+          sessionHandle: any(named: 'sessionHandle'),
+        ),
+      );
+      await tester.tap(find.byKey(const ValueKey('live-control-keyboard')));
+      await tester.pump();
+      expect(keyboard, 1);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  startupTest(
+    'navbar stops capture before connection completes without restarting it',
+    (tester, cleanup) async {
+      final fixture = _Fixture();
+      cleanup(() => fixture.disposeWidget(tester));
+      final permission = Completer<bool>();
+      final connection = Completer<void>();
+      final stopped = Completer<void>();
+      var permissionRequests = 0;
+      var connectionRequests = 0;
+      when(fixture.recorder.ensurePermission).thenAnswer((_) {
+        permissionRequests++;
+        return permission.future;
+      });
+      when(
+        () => fixture.socket.connect(
+          token: 'token',
+          model: 'model',
+          seedHistory: const [],
+          sessionHandle: any(named: 'sessionHandle'),
+        ),
+      ).thenAnswer((_) async {
+        connectionRequests++;
+        await connection.future;
+        fixture.events.add(const AssistantLiveSocketReady());
+      });
+      await tester.pumpWidget(fixture.navbar());
+      final mic = find.byKey(const ValueKey('live-control-microphone'));
+      final identity = tester.element(mic);
+      final center = tester.getCenter(mic);
+      await tester.tap(mic);
+      await tester.pump();
+      await tester.tap(mic);
+      await tester.pump();
+      expect(permissionRequests, 1);
+      expect(connectionRequests, 1);
+      expect(fixture.captures, 0);
+
+      permission.complete(true);
+      await tester.pump();
+      expect(fixture.cubit.state.isMicrophoneActive, isTrue);
+      expect(fixture.captures, 1);
+      expect(fixture.microphoneStartCompletions, 0);
+      expect(connection.isCompleted, isFalse);
+      expect(find.byTooltip('Mute mic'), findsOneWidget);
+      final activeButton = tester.widget<AppIconButton>(
+        find.descendant(of: mic, matching: find.byType(AppIconButton)),
+      );
+      expect(activeButton.onPressed, isNotNull);
+      when(fixture.recorder.stop).thenAnswer((_) async {
+        fixture.stops++;
+        await stopped.future;
+      });
+      await tester.tap(mic);
+      await tester.pump();
+      await tester.tap(mic);
+      await tester.pump();
+      expect(fixture.stops, 1);
+      expect(fixture.captures, 1);
+      stopped.complete();
+      await tester.pump();
+      expect(fixture.cubit.state.isMicrophoneActive, isFalse);
+      expect(connection.isCompleted, isFalse);
+      expect(fixture.microphoneStartCompletions, 0);
+      verify(fixture.socket.endAudioStream).called(1);
+      await tester.tap(mic);
+      await tester.pump();
+      expect(permissionRequests, 1);
+      expect(fixture.captures, 1);
+
+      connection.complete();
+      await tester.pump();
+      expect(
+        fixture.cubit.state.status,
+        AssistantLiveConnectionStatus.connected,
+        reason: 'The ready event must reach the current session first.',
+      );
+      await expectLiveStartupCompletion(
+        tester,
+        fixture.microphoneStartup!,
+        reason: 'The original navbar start must finish after ready and mute.',
+      );
+      expect(fixture.microphoneStartCompletions, 1);
+      expect(fixture.cubit.state.isMicrophoneActive, isFalse);
+      expect(fixture.captures, 1);
+      expect(fixture.stops, 1);
+      expect(permissionRequests, 1);
+      expect(connectionRequests, 1);
+      expect(tester.element(mic), same(identity));
+      expect(tester.getCenter(mic), center);
+      verifyNever(fixture.camera.ensurePermission);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  startupTest('denied microphone waits for the next explicit navbar tap', (
+    tester,
+    cleanup,
+  ) async {
+    final fixture = _Fixture();
+    cleanup(() => fixture.disposeWidget(tester));
+    final permission = Completer<bool>();
+    final connection = Completer<void>();
+    var permissionRequests = 0;
+    when(fixture.recorder.ensurePermission).thenAnswer((_) {
+      permissionRequests++;
+      return permission.future;
+    });
+    when(
+      () => fixture.socket.connect(
+        token: 'token',
+        model: 'model',
+        seedHistory: const [],
+        sessionHandle: any(named: 'sessionHandle'),
+      ),
+    ).thenAnswer((_) async {
+      await connection.future;
+      fixture.events.add(const AssistantLiveSocketReady());
+    });
+    await tester.pumpWidget(fixture.navbar());
+    await tester.tap(find.byKey(const ValueKey('live-control-microphone')));
+    await tester.pump();
+    permission.complete(false);
+    await tester.pump();
+    expect(fixture.cubit.state.status, AssistantLiveConnectionStatus.error);
+    expect(
+      fixture.cubit.state.microphonePermission,
+      AssistantLivePermissionState.denied,
+    );
+    expect(fixture.captures, 0);
+    final stopsAfterDenial = fixture.stops;
+    expect(stopsAfterDenial, greaterThan(0));
+    await expectLiveStartupCompletion(
+      tester,
+      fixture.microphoneStartup!,
+      reason: 'Permission denial must release startup before connection.',
+    );
+    expect(fixture.microphoneStartCompletions, 1);
+    expect(connection.isCompleted, isFalse);
+    connection.complete();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(fixture.microphoneStartCompletions, 1);
+    expect(fixture.cubit.state.status, AssistantLiveConnectionStatus.error);
+    expect(fixture.cubit.state.isMicrophoneActive, isFalse);
+    expect(
+      fixture.cubit.state.microphonePermission,
+      AssistantLivePermissionState.denied,
+    );
+    expect(permissionRequests, 1);
+    expect(fixture.captures, 0);
+    expect(fixture.stops, stopsAfterDenial);
+    when(fixture.recorder.ensurePermission).thenAnswer((_) async {
+      permissionRequests++;
+      return true;
+    });
+    await tester.tap(find.byKey(const ValueKey('live-control-microphone')));
+    await tester.pump();
+    expect(permissionRequests, 2);
+    expect(fixture.captures, 1);
+    expect(fixture.cubit.state.isMicrophoneActive, isTrue);
+    expect(
+      fixture.cubit.state.microphonePermission,
+      AssistantLivePermissionState.granted,
+    );
+    await expectLiveStartupCompletion(
+      tester,
+      fixture.microphoneStartup!,
+      reason: 'The explicit retry must finish its admitted startup.',
+    );
+    expect(fixture.microphoneStartCompletions, 2);
+    expect(fixture.stops, stopsAfterDenial);
+    expect(tester.takeException(), isNull);
+  });
+
+  test(
+    'existing connected session enables microphone only for current scope',
+    () async {
+      final fixture = _Fixture();
+      addTearDown(fixture.close);
+      when(fixture.recorder.ensurePermission).thenAnswer((_) async => true);
+      await fixture.cubit.prepareSession(wsId: 'ws');
+      await enableAssistantLiveMicrophone(
+        liveCubit: fixture.cubit,
+        prepareSession: null,
+        isCurrent: () => false,
+      );
+      verifyNever(fixture.recorder.ensurePermission);
+      expect(fixture.captures, 0);
+      await enableAssistantLiveMicrophone(
+        liveCubit: fixture.cubit,
+        prepareSession: null,
+        isCurrent: () => true,
+      );
+      expect(fixture.cubit.state.isMicrophoneActive, isTrue);
+      expect(fixture.captures, 1);
+      verify(fixture.recorder.ensurePermission).called(1);
+    },
+  );
 
   test(
     'cancelled permission cleanup cannot clear replacement startup',
@@ -129,11 +444,12 @@ void main() {
     },
   );
 
-  testWidgets('cancelled ready wait cannot block replacement capture', (
+  startupTest('cancelled ready wait cannot block replacement capture', (
     tester,
+    cleanup,
   ) async {
     final fixture = _Fixture();
-    addTearDown(fixture.close);
+    cleanup(() => fixture.disposeWidget(tester));
     final oldToken = Completer<AssistantLiveTokenEnvelope>();
     final nextToken = Completer<AssistantLiveTokenEnvelope>();
     final nextPermission = Completer<bool>();

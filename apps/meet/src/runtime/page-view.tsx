@@ -1,17 +1,31 @@
 import VerifyTokenPage from '@tuturuuu/satellite/verify-token-page';
 import { SatelliteWorkspaceInvitationCard } from '@tuturuuu/satellite/workspace-invitation';
-import { MeetPlanLiveRoot } from '@tuturuuu/ui/legacy/meet/planId/meet-plan-live-root';
 import { useTranslations } from 'next-intl';
-import { Suspense } from 'react';
+import { lazy, Suspense } from 'react';
 import { MeetingsContent } from '../app/[locale]/[wsId]/meetings/meetings-content';
-import { BASE_URL } from '../constants/common';
-import { NativeCollaboration } from '../features/call/components/native-collaboration';
-import { MeetingView } from './meeting-view';
 import type { MeetPageModel } from './page-model.server';
 import { PlansView } from './plans-view';
 import { PublicLayout } from './public-layout';
-import { RoomView } from './room-view';
+import { Pending } from './router-shell';
 import { WorkspaceView } from './workspace-view';
+
+// The call shell, collaboration editors, live plan editor and meeting detail
+// pull in realtime, rich-text and code-editor dependencies. Loading them on
+// demand keeps the workspace lists and the public shell on a small bundle;
+// the server still renders them, and hydration waits for the chunk instead of
+// replacing the server markup.
+const RoomView = lazy(() =>
+  import('./room-view').then((module) => ({ default: module.RoomView }))
+);
+const NativeCollaboration = lazy(() =>
+  import('../features/call/components/native-collaboration').then((module) => ({
+    default: module.NativeCollaboration,
+  }))
+);
+const PlanLiveView = lazy(() => import('./plan-live-view'));
+const MeetingView = lazy(() =>
+  import('./meeting-view').then((module) => ({ default: module.MeetingView }))
+);
 
 export function PageView({ model }: { model: MeetPageModel }) {
   const t = useTranslations('meet.call');
@@ -26,18 +40,16 @@ export function PageView({ model }: { model: MeetPageModel }) {
       );
     case 'public-invite':
     case 'room':
-      return <RoomView model={model} />;
+      return (
+        <Suspense fallback={<Pending />}>
+          <RoomView model={model} />
+        </Suspense>
+      );
     case 'plan':
       return (
-        <PublicLayout>
-          <div className="flex min-h-screen w-full flex-col items-center">
-            <MeetPlanLiveRoot
-              platformUser={model.profile}
-              baseUrl={BASE_URL}
-              initialSnapshot={model.snapshot}
-            />
-          </div>
-        </PublicLayout>
+        <Suspense fallback={<Pending />}>
+          <PlanLiveView model={model} />
+        </Suspense>
       );
     case 'public-plans':
       return (
@@ -64,7 +76,9 @@ export function PageView({ model }: { model: MeetPageModel }) {
     case 'meeting':
       return (
         <WorkspaceView workspace={model.workspace} locale={model.locale}>
-          <MeetingView model={model} />
+          <Suspense fallback={null}>
+            <MeetingView model={model} />
+          </Suspense>
         </WorkspaceView>
       );
     case 'meetings':

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_live_config.dart';
@@ -62,13 +63,12 @@ class AssistantLiveInfoSheetBody extends StatelessWidget {
                       ],
                     ),
                   ),
-                  IconButton(
-                    visualDensity: VisualDensity.compact,
+                  AppIconButton(
                     tooltip: MaterialLocalizations.of(
                       context,
                     ).closeButtonTooltip,
                     onPressed: onClose,
-                    icon: const Icon(Icons.close_rounded),
+                    icon: const Icon(LucideIcons.x),
                   ),
                 ],
               ),
@@ -137,14 +137,14 @@ class AssistantLiveInfoSheetBody extends StatelessWidget {
               ),
               if (onPrimaryAction != null) ...[
                 const SizedBox(height: 20),
-                FilledButton(
+                AppButton.primary(
                   onPressed: () async => await onPrimaryAction?.call(),
                   child: Text(l10n.assistantLiveConnect),
                 ),
               ],
               if (onPrimaryAction == null) ...[
                 const SizedBox(height: 22),
-                FilledButton.tonal(
+                AppButton.secondary(
                   onPressed: onClose,
                   child: Text(l10n.assistantLiveInfoDismiss),
                 ),
@@ -166,14 +166,14 @@ class _LiveInfoHeaderIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final icon = switch (kind) {
-      AssistantLiveUiKind.unavailable => Icons.mic_off_outlined,
-      AssistantLiveUiKind.permissionDenied => Icons.mic_none_outlined,
-      AssistantLiveUiKind.error => Icons.error_outline_rounded,
-      AssistantLiveUiKind.available => Icons.mic_none_outlined,
+      AssistantLiveUiKind.unavailable => LucideIcons.micOff,
+      AssistantLiveUiKind.permissionDenied => LucideIcons.mic,
+      AssistantLiveUiKind.error => LucideIcons.circleAlert,
+      AssistantLiveUiKind.available => LucideIcons.mic,
       AssistantLiveUiKind.preparing ||
       AssistantLiveUiKind.connecting ||
-      AssistantLiveUiKind.reconnecting => Icons.more_horiz_rounded,
-      AssistantLiveUiKind.live => Icons.graphic_eq_rounded,
+      AssistantLiveUiKind.reconnecting => LucideIcons.ellipsis,
+      AssistantLiveUiKind.live => LucideIcons.audioLines,
     };
     final color = switch (kind) {
       AssistantLiveUiKind.error => theme.colorScheme.error,

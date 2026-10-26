@@ -52,12 +52,7 @@ extension _AssistantAttachments on _AssistantPageState {
       isCurrentActor: isCurrent,
     );
     if (sendNow && isCurrent()) {
-      await _handleSend(
-        wsId,
-        _shellCubit.state,
-        _chatCubit.state,
-        _liveCubit.state,
-      );
+      await _handleSend(wsId);
     }
   }
 
@@ -111,7 +106,7 @@ extension _AssistantAttachments on _AssistantPageState {
   Future<void> _showAttachmentSheet(BuildContext context, String wsId) async {
     final guard = _remoteGuard(wsId);
     if (!guard.current) return;
-    await showAdaptiveSheet<void>(
+    await showAppSheet<void>(
       context: context,
       builder: (sheetContext) => AssistantAttachmentSheetBody(
         hasAttachments: _chatCubit.state.composerAttachments.isNotEmpty,
@@ -167,7 +162,7 @@ extension _AssistantAttachments on _AssistantPageState {
         !kIsWeb &&
         (defaultTargetPlatform == TargetPlatform.iOS ||
             defaultTargetPlatform == TargetPlatform.android);
-    await showAdaptiveSheet<void>(
+    await showAppSheet<void>(
       context: context,
       builder: (sheetContext) => AssistantCaptureSheet(
         cameraSupported: cameraSupported,

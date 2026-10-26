@@ -4037,6 +4037,14 @@
     "finalized": "Finalized",
     "guest": "Guest",
     "guest_account": "Guest account",
+    "guest_password_reset_description": "Enter the guest name exactly as used to sign in. Only passwords marked for reset can be replaced. Existing availability and votes are kept; share the new password privately.",
+    "guest_password_reset_failed": "Could not reset the guest password. Only the plan creator can reset it. Refresh the plan and try again.",
+    "guest_password_reset_guest": "Guest name",
+    "guest_password_reset_new_password": "New guest password",
+    "guest_password_reset_not_required": "This guest password does not require a reset.",
+    "guest_password_reset_required": "This guest password must be reset. Ask the plan creator to set a new password, then sign in again. You can also use your Tuturuuu account or a new guest name.",
+    "guest_password_reset_success": "Password reset. The guest can now sign in with the new password.",
+    "guest_password_reset_title": "Reset a guest password",
     "hourly_availability": "Hourly availability",
     "hourly_availability_description": "Confirmed and tentative coverage across candidate dates.",
     "identity_protection": "Identity protection",
@@ -4173,6 +4181,12 @@
       "enable": "Enable notifications",
       "permission-denied": "Browser notifications are blocked. Please enable them in your browser settings.",
       "permission-request": "Enable browser notifications to stay updated"
+    },
+    "codes": {
+      "calendar_reconnect_required": {
+        "description": "Calendar sync paused because the provider stopped accepting access. Reconnect the account to resume.",
+        "title": "Reconnect your calendar"
+      }
     },
     "date_earlier": "Earlier",
     "date_this_week": "This Week",
@@ -10651,5 +10665,33 @@
     "try_different_search_term": "Try a different search term",
     "wallet": "Payment Method",
     "wallet_deleted": "Wallet deleted successfully"
+  },
+  "satellite-account-settings": {
+    "email_managed_centrally": "Email changes need confirmation, so they are made in your Tuturuuu account settings.",
+    "title": "Account",
+    "preferences": "Preferences",
+    "profile": "Profile",
+    "profile_description": "Manage your name, avatar and email",
+    "accounts": "Accounts",
+    "accounts_description": "Manage multiple accounts and switch between them",
+    "security": "Security",
+    "security_description": "Password, two-factor authentication, passkeys and sign-in methods",
+    "sessions": "Sessions & Devices",
+    "sessions_description": "Manage your active sessions and devices",
+    "appearance": "Appearance",
+    "appearance_description": "Theme and language",
+    "managed_centrally_title": "Managed in your Tuturuuu account",
+    "managed_centrally_description": "For your protection, {section} changes are made in Tuturuuu, which may ask you to confirm your identity. Changes apply to every Tuturuuu app.",
+    "signed_in_as": "Signed in as {email}",
+    "open_in_tuturuuu": "Open in Tuturuuu",
+    "accounts_switch": "Switch between signed-in accounts",
+    "accounts_add": "Add another account",
+    "accounts_remove": "Remove an account from this browser",
+    "security_password": "Change or reset your password",
+    "security_two_factor": "Two-factor authentication with an authenticator app",
+    "security_passkeys": "Passkeys",
+    "security_linked_identities": "Linked sign-in methods",
+    "sessions_devices": "See every device signed in to your account",
+    "sessions_revoke": "Sign out other devices"
   }
 }

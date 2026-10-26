@@ -6,6 +6,7 @@ import {
 import {
   hashPassword,
   MAX_PASSWORD_LENGTH,
+  passwordRequiresReset,
   verifyPassword,
 } from '@tuturuuu/utils/crypto';
 import { NextResponse } from 'next/server';
@@ -73,6 +74,16 @@ export async function POST(request: Request) {
       );
     }
 
+    if (passwordRequiresReset(challenge.password_hash)) {
+      return NextResponse.json(
+        {
+          code: 'PASSWORD_RESET_REQUIRED',
+          message: 'A challenge manager must reset this password.',
+        },
+        { status: 409 }
+      );
+    }
+
     const attempt: PasswordAttemptSubject = {
       scope: 'nova-challenge',
       target: `${challenge.id}:${user.id}`,
@@ -100,7 +111,7 @@ export async function POST(request: Request) {
     }
 
     if (verification.needsRehash) {
-      // Upgrade legacy hashes in place, guarded by the old value so a
+      // Upgrade older scrypt parameters, guarded by the old value so a
       // concurrent password change is never overwritten.
       const { error: rehashError } = await sbAdmin
         .schema('private')

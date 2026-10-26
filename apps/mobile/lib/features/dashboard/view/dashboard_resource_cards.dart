@@ -85,28 +85,34 @@ class _DashboardFinanceCardState extends State<_DashboardFinanceCard> {
   }
 
   @override
-  Widget build(BuildContext context) => _SectionCard(
-    accentModuleId: 'finance',
+  Widget build(BuildContext context) => _HomeSection(
     title: context.l10n.financeTitle,
-    icon: Icons.account_balance_wallet_outlined,
     actionLabel: context.l10n.dashboardOpenTasks,
-    onTap: () => context.go(Routes.finance),
-    child: !_loaded
-        ? const FinanceSkeletonBlock(height: 64, radius: 14)
-        : _wallets.isEmpty
-        ? Text(context.l10n.financeWallets)
-        : Column(
-            children: [
-              for (final wallet in _wallets.take(2))
-                ListTile(
-                  dense: true,
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(wallet.name ?? context.l10n.financeWallets),
-                  trailing: const Icon(Icons.chevron_right_rounded),
-                  onTap: () => context.go(Routes.walletDetailPath(wallet.id)),
-                ),
-            ],
-          ),
+    onOpen: () => context.go(Routes.finance),
+    children:
+        _homeStateRows(
+          context,
+          loading: !_loaded,
+          failed: false,
+          empty: _wallets.isEmpty,
+          emptyIcon: LucideIcons.wallet,
+          emptyTitle: context.l10n.financeWallets,
+        ) ??
+        [
+          for (final wallet in _wallets.take(2))
+            AppGroupedRow(
+              leading: const AppIconTile(
+                icon: LucideIcons.wallet,
+                tone: AppTone.success,
+              ),
+              title: Text(
+                wallet.name ?? context.l10n.financeWallets,
+                maxLines: 1,
+              ),
+              showChevron: true,
+              onTap: () => context.go(Routes.walletDetailPath(wallet.id)),
+            ),
+        ],
   );
 }
 
@@ -177,31 +183,30 @@ class _DashboardNotesCardState extends State<_DashboardNotesCard> {
   }
 
   @override
-  Widget build(BuildContext context) => _SectionCard(
-    accentModuleId: 'notes',
+  Widget build(BuildContext context) => _HomeSection(
     title: context.l10n.notesTitle,
-    icon: Icons.edit_note_rounded,
     actionLabel: context.l10n.dashboardOpenTasks,
-    onTap: () => context.go(Routes.notes),
-    child: !_loaded
-        ? const FinanceSkeletonBlock(height: 64, radius: 14)
-        : _notes.isEmpty
-        ? Text(context.l10n.notesEmpty)
-        : Column(
-            children: [
-              for (final note in _notes.take(2))
-                ListTile(
-                  dense: true,
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(
-                    note.title.isEmpty ? context.l10n.notesTitle : note.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  trailing: const Icon(Icons.chevron_right_rounded),
-                  onTap: () => context.go(Routes.noteDetailPath(note.id)),
-                ),
-            ],
-          ),
+    onOpen: () => context.go(Routes.notes),
+    children:
+        _homeStateRows(
+          context,
+          loading: !_loaded,
+          failed: false,
+          empty: _notes.isEmpty,
+          emptyIcon: LucideIcons.notebookPen,
+          emptyTitle: context.l10n.notesEmpty,
+        ) ??
+        [
+          for (final note in _notes.take(2))
+            AppGroupedRow(
+              leading: const AppIconTile(icon: LucideIcons.notebookPen),
+              title: Text(
+                note.title.isEmpty ? context.l10n.notesTitle : note.title,
+                maxLines: 1,
+              ),
+              showChevron: true,
+              onTap: () => context.go(Routes.noteDetailPath(note.id)),
+            ),
+        ],
   );
 }

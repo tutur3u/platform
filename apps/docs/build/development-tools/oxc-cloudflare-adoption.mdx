@@ -1,7 +1,7 @@
 ---
 title: "Oxc and Cloudflare adoption"
 description: "Incremental Oxlint/Oxfmt tooling, portable first-party libraries, and Vite-native Worker migration boundaries."
-updatedAt: '2026-10-10'
+updatedAt: '2026-10-24'
 ---
 
 ## Decision and current state
@@ -17,9 +17,11 @@ release/generated-file formatting remain authoritative. No workspace has complet
 the switch merely because these tools are installed.
 
 Lettin and Parley already have Next.js/OpenNext Worker deployments. Their next
-architecture milestone is a Vite-native runtime preserving existing contracts.
-React Router Framework Mode with the Cloudflare Vite plugin is a candidate requiring
-a scoped compatibility proof. The retained `apps/tanstack-web` remains paused.
+architecture milestone is the same per-app TanStack Start + Void + Vite+ Worker
+runtime as the other web apps, reaching `next/*` only through
+`@tuturuuu/start-bridge` and preserving existing contracts. See the
+[native Start migration runbook](/build/devops/native-start-migration). The
+retired `apps/tanstack-web` is not revived.
 
 ## Platform-wide target and daily checkpoints
 
@@ -133,7 +135,27 @@ explicit target identity and isolate discovery before touching app worktrees;
 review any resulting local files. Neither command discovery nor `--dry-run`
 authorizes migration, configuration mutation, resource creation or deployment.
 
-The current foundation does not install cf or convert Worker configurations.
+Cron Control, Devbox Control and Coordination pin `cf@1.0.0-beta.20` and use
+`cloudflare.config.ts`, `vp dev` and `cf workers types`. Their existing per-service
+CI checks qualify configuration and emitted output; this does not qualify legacy
+Void or OpenNext configuration consumers. See the operation matrix for retained
+publication gaps. The package pin requires Node `^22.23 || ^24.22 || ^26.12`;
+the older Node 22.18 discovery minimum does not satisfy that package's engines.
+
+Do not replace `wrangler types --config <emitted-config>` with a bare cf command:
+type generation must read the same Worker identity and preserve the declarations
+consumed by the app. Retain legacy local dev, D1 migration and tail commands until
+their exact configuration, persistence and output contracts pass independently.
+Calendar is the first emitted-config type-generation profile: its existing
+validator admits only ASSETS, and the adapter runs the pinned cf CLI on a
+supported Node executor. CI compares exact binding keys/requiredness/types against
+the existing producer, verifies unchanged artifact bytes and retains a receipt.
+Its self-contained declaration does not require shipping a generated config.
+Other resource and framework profiles still require separate qualification.
+Calendar's build-output comparison copies sealed ESM/assets into the cf format
+and verifies the same bytes after restore. It retains the publisher because
+secondary upload-module names and asset/runtime semantics need separate proof.
+
 Track CLI capability gaps independently from app migration so an unsupported
 operation does not block portable libraries or Oxc adoption.
 
@@ -240,7 +262,7 @@ MFA, consent, membership and revocation checks in reusable policy services.
 Current seams include Lettin's Actor/Store context and SQL permission fences,
 with bindings/identity/HTTP as framework adapters. Parley/Meet domain contracts can
 remain shared while routes, session lookup and meeting UI adapters are extracted.
-A package can support Next.js, React Router or other React hosts by implementing
+A package can support Next.js, TanStack Start or other React hosts by implementing
 these small adapters; support for every framework is a goal requiring consumer
 verification, not an automatic guarantee.
 
@@ -298,6 +320,24 @@ prove bounds under repeated wakes in isolated fixtures and the real local Worker
 Exact-commit CI must exercise the emitted artifact. Keep live account settings,
 alert delivery and hosted shutdown verification as separate production evidence.
 
+Cron Control's default-off checkout Worker uses a 5,000-item combined active and
+quarantine bound, pre-expiry capacity checks, three durable attempts per item,
+per-workspace invalidation receipts and a 240-second whole-run deadline. Stop is
+checked before each expiry batch and invalidation chunk. See the
+[processor runbook](/build/devops/cloudflare-processor-migration) for counted
+operation bounds, restart/deadline/poison regressions and remaining hosted stop
+and cache-freshness evidence. Source and mocked requests do not establish billed
+usage or crash-atomic database-to-ledger persistence.
+
+Cron Control's default-off database history job adds one RPC per enabled ten-minute
+slot, deleting at most 1,000 completed rows per table. It has no in-slot retry or
+drain loop; the existing durable slot claim, pre-delete stop fence and five-failure
+budget survive ledger restarts. Counted dispatch/stop regressions and full-chain
+pgTAP cover the bounds and seven-day cutoff. The
+[history retention runbook](/build/devops/cloudflare-cron-control#seven-day-database-cron-history)
+records the daily operation envelope and stop procedure. Hosted scheduled execution,
+independent operator-stop acceptance and billed usage remain rollout evidence.
+
 CPU limits constrain an invocation, not the number of invocations or all billable
 services. Usage notifications are detection, not an automatic spending cutoff.
 Choose service-specific limits with measured workloads; do not silently apply an
@@ -331,6 +371,36 @@ owns provisioning, HMAC/token rotation, finite counts and the stop procedure.
 Hosted credential scope, private runtime acceptance and actual serving state remain
 separate release evidence. Production publication stays held for all four apps.
 
+### Turbo remote cache: R2 operation envelope
+
+`apps/turbo-cache` ships with `TURBO_CACHE_MODE=off`, which performs no R2
+or DO operations on artifact paths. `budget-v2` in the global Durable Object is
+the authoritative fence/counters. Every reservation and admin mutation uses a
+storage transaction, committed before allowance. Missing/corrupt/unavailable
+state fails closed. Denials and repeated unchanged admin actions do not write;
+unknown reservation outcomes are denied without retry or refund. Native DO
+storage/output gates preserve charges and fences across restart.
+
+There are **zero R2 control writes**, including initialization, admin actions and
+bursts. `_control/budget-v1` is read only on explicit first initialization to
+import prior usage; it is never an admission source or live checkpoint. Delayed
+legacy writes cannot overwrite migrated DO state. Disable/drain the old revision
+and reconcile unresolved writes before import. No periodic job, alarm or retry
+loop exists; each request has at most one admission transaction.
+
+The maximum batch is 50 hashes × four scopes (200 HEADs). Including DO and
+rate-limit calls, its conservative operation count is 202 under the configured
+208 ceiling. `apps/turbo-cache/src/stop-regression.test.ts` and
+`budget-integrity.test.ts` cover counts, failed/unknown transactions, concurrent
+reservations, delayed legacy completion after stop and restart, a 600-request
+burst with simulated control-write 429s, migration and coalesced admin actions.
+The workerd script verifies actual transactional initialization and fence/restart.
+Exact-commit build/runtime CI remains required. DO requests/storage and denied
+or status ingress remain traffic-dependent costs outside R2 admission counters;
+there is no fixed total-spend guarantee. Set mode off to stop artifact storage/DO
+calls or disable the Worker route to stop invocations. The
+[runbook](../devops/turbo-remote-cache.mdx) owns migration, pricing review and stop.
+
 ## Incident evidence
 
 Correlate scoped failing requests with authenticated Worker tail exceptions and
@@ -349,4 +419,4 @@ CI; a migration direction does not authorize production cutover.
 - [Oxlint configuration](https://oxc.rs/docs/guide/usage/linter/config.html)
 - [Oxfmt configuration](https://oxc.rs/docs/guide/usage/formatter/config.html)
 - [Vite+ migration](https://viteplus.dev/guide/migrate)
-- [React Router on Cloudflare](https://developers.cloudflare.com/workers/framework-guides/web-apps/react-router/)
+- [TanStack Start on Cloudflare](https://developers.cloudflare.com/workers/framework-guides/web-apps/tanstack-start/)

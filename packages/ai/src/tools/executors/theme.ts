@@ -2,6 +2,7 @@ import {
   manageWorkspaceSchema,
   showWorkspaceArtifactSchema,
 } from '../../workspace-artifacts';
+import { MIRA_APP_DESTINATIONS } from '../mira-client-capabilities';
 import type { MiraToolContext } from '../mira-tools';
 import { getWorkspaceContextWorkspaceId } from '../workspace-context';
 
@@ -35,6 +36,24 @@ export async function executeSetSidebar(args: Record<string, unknown>) {
     return { error: 'Invalid sidebar behavior' };
   }
   return { success: true, action: 'set_sidebar', behavior };
+}
+
+export async function executeOpenApp(
+  args: Record<string, unknown>,
+  ctx: MiraToolContext
+) {
+  const destination = MIRA_APP_DESTINATIONS.find(
+    (value) => value === args.destination
+  );
+  if (!destination) return { error: 'Invalid app destination' };
+  return {
+    success: true,
+    action: 'open_app',
+    destination,
+    wsId: getWorkspaceContextWorkspaceId(ctx),
+    message:
+      'Navigation command completed. It did not read or change data. Do not repeat it; answer once the requested actions are done.',
+  };
 }
 
 export async function executeShowWorkspaceArtifact(

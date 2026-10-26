@@ -142,6 +142,13 @@ describe('prepareMiraRuntime', () => {
       supabase: sessionSupabase,
       toolSupabase,
       timezone: 'UTC',
+      clientCapabilities: [
+        'theme',
+        'sidebar',
+        'artifact_panels',
+        'immersive',
+        'navigate',
+      ],
     });
 
     expect(mocks.resolveWorkspaceContextState).toHaveBeenCalledWith({
@@ -386,5 +393,107 @@ describe('prepareMiraRuntime', () => {
     expect(result.miraSystemPrompt).not.toContain(
       'Client says this board is authoritative'
     );
+  });
+
+  it('gives Mira tools the saved timezone when the client omits one', async () => {
+    mocks.resolveWorkspaceContextState.mockResolvedValue({
+      workspaceContextId: 'workspace-1',
+      wsId: 'workspace-1',
+      name: 'Personal',
+      personal: true,
+      memberCount: 1,
+    });
+    mocks.getPermissions.mockResolvedValue({ withoutPermission: () => false });
+    mocks.buildMiraContext.mockResolvedValue({
+      contextString: 'ctx',
+      soul: null,
+      isFirstInteraction: false,
+    });
+    mocks.buildMiraSystemInstruction.mockReturnValue('instruction');
+    mocks.createMiraStreamTools.mockReturnValue({});
+    const { client } = createTaskBoardSupabaseMock({
+      timezone: 'Asia/Ho_Chi_Minh',
+    });
+
+    const { prepareMiraRuntime } = await import('./route-mira-runtime');
+    await prepareMiraRuntime({
+      isMiraMode: true,
+      wsId: 'workspace-1',
+      request: new NextRequest('http://localhost/api/ai/chat'),
+      userId: 'user-1',
+      chatId: 'chat-1',
+      supabase: client,
+    });
+
+    expect(mocks.createMiraStreamTools).toHaveBeenCalledWith(
+      expect.objectContaining({ timezone: 'Asia/Ho_Chi_Minh' }),
+      expect.any(Function),
+      undefined
+    );
+  });
+
+  it('tells Mira which UI effects a declaring client cannot apply', async () => {
+    mocks.resolveWorkspaceContextState.mockResolvedValue({
+      workspaceContextId: 'workspace-1',
+      wsId: 'workspace-1',
+      name: 'Personal',
+      personal: true,
+      memberCount: 1,
+    });
+    mocks.getPermissions.mockResolvedValue({ withoutPermission: () => false });
+    mocks.buildMiraContext.mockRejectedValue(new Error('context unavailable'));
+    mocks.buildMiraSystemInstruction.mockReturnValue('instruction');
+    mocks.createMiraStreamTools.mockReturnValue({});
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { client } = createTaskBoardSupabaseMock(null);
+
+    const { prepareMiraRuntime } = await import('./route-mira-runtime');
+    const result = await prepareMiraRuntime({
+      isMiraMode: true,
+      wsId: 'workspace-1',
+      request: new NextRequest('http://localhost/api/ai/chat'),
+      userId: 'user-1',
+      chatId: 'chat-1',
+      supabase: client,
+      clientCapabilities: ['theme', 'navigate'],
+    });
+    error.mockRestore();
+
+    expect(result.miraSystemPrompt).toContain('## Client capabilities');
+    expect(result.miraSystemPrompt).toContain('use open_app');
+    const ctx = mocks.createMiraStreamTools.mock.calls.at(-1)?.[0];
+    expect([...ctx.clientCapabilities].sort()).toEqual(['navigate', 'theme']);
+  });
+
+  it('gives clients without a declaration, such as the legacy mobile route, no UI effects', async () => {
+    mocks.resolveWorkspaceContextState.mockResolvedValue({
+      workspaceContextId: 'workspace-1',
+      wsId: 'workspace-1',
+      name: 'Personal',
+      personal: true,
+      memberCount: 1,
+    });
+    mocks.getPermissions.mockResolvedValue({ withoutPermission: () => false });
+    mocks.buildMiraContext.mockRejectedValue(new Error('context unavailable'));
+    mocks.buildMiraSystemInstruction.mockReturnValue('instruction');
+    mocks.createMiraStreamTools.mockReturnValue({});
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { client } = createTaskBoardSupabaseMock(null);
+
+    const { prepareMiraRuntime } = await import('./route-mira-runtime');
+    const result = await prepareMiraRuntime({
+      isMiraMode: true,
+      wsId: 'workspace-1',
+      request: new NextRequest('http://localhost/api/ai/chat'),
+      userId: 'user-1',
+      chatId: 'chat-1',
+      supabase: client,
+    });
+    error.mockRestore();
+
+    const ctx = mocks.createMiraStreamTools.mock.calls.at(-1)?.[0];
+    expect([...ctx.clientCapabilities]).toEqual([]);
+    expect(result.miraSystemPrompt).toContain('## Client capabilities');
+    expect(result.miraSystemPrompt).toContain('answer in chat');
   });
 });

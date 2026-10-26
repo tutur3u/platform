@@ -36,13 +36,13 @@ runs:
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
       with:
         path: ${{ steps.identity.outputs.PUB-CACHE-PATH }}
-        key: ${{ steps.identity.outputs.PUB-CACHE-KEY }}-${{ hashFiles('**/pubspec.lock') }}
+        key: flutter-pub-v2-${{ runner.os }}-${{ runner.arch }}-${{ steps.identity.outputs.CHANNEL }}-${{ steps.identity.outputs.VERSION }}
     - name: Restore pub downloads without saving
       if: "!(github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch'))"
       uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
       with:
         path: ${{ steps.identity.outputs.PUB-CACHE-PATH }}
-        key: ${{ steps.identity.outputs.PUB-CACHE-KEY }}-${{ hashFiles('**/pubspec.lock') }}
+        key: flutter-pub-v2-${{ runner.os }}-${{ runner.arch }}-${{ steps.identity.outputs.CHANNEL }}-${{ steps.identity.outputs.VERSION }}
     - name: Install resolved Flutter release
       uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
       with:

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
 import 'package:mobile/features/assistant/models/assistant_model_eligibility.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
@@ -25,19 +26,14 @@ class AssistantModelPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return IconButton(
+    return AppIconButton(
       tooltip: '${context.l10n.assistantModelLabel}: ${selected.label}',
-      visualDensity: VisualDensity.compact,
-      constraints: const BoxConstraints.tightFor(width: 34, height: 34),
-      padding: EdgeInsets.zero,
-      icon: const Icon(Icons.auto_awesome_outlined, size: 18),
+      icon: const Icon(LucideIcons.sparkles, size: 18),
       onPressed: models.isEmpty
           ? null
           : () async {
-              final choice = await showModalBottomSheet<AssistantGatewayModel>(
+              final choice = await showAppSheet<AssistantGatewayModel>(
                 context: context,
-                showDragHandle: true,
-                isScrollControlled: true,
                 builder: (_) => AssistantModelPickerSheet(
                   selected: selected,
                   models: models,

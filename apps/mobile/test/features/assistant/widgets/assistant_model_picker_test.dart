@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_model_picker.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 void main() {
@@ -40,14 +44,14 @@ void main() {
         ),
       ),
     );
-    await tester.tap(find.byIcon(Icons.auto_awesome_outlined).first);
+    await tester.tap(find.byIcon(LucideIcons.sparkles).first);
     await tester.pumpAndSettle();
     expect(find.text('Vision'), findsNothing);
-    await tester.tap(find.byType(Switch).first);
+    await tester.tap(find.byType(AppSwitch).first);
     await tester.pumpAndSettle();
     expect(
-      tester.widget<ListTile>(find.widgetWithText(ListTile, 'Vision')).enabled,
-      false,
+      tester.widget<AppCard>(find.widgetWithText(AppCard, 'Vision')).onTap,
+      isNull,
     );
     await tester.enterText(find.byType(TextField), 'reasoning');
     await tester.pumpAndSettle();
@@ -85,7 +89,7 @@ void main() {
         ),
       ),
     );
-    await tester.tap(find.byIcon(Icons.auto_awesome_outlined).first);
+    await tester.tap(find.byIcon(LucideIcons.sparkles).first);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Favorites'));
     await tester.pumpAndSettle();
@@ -96,12 +100,95 @@ void main() {
     expect(repository.toggledModelId, 'provider/fast');
     expect(repository.wasFavorite, false);
     expect(find.text('No models match these filters'), findsOneWidget);
-    await tester.tap(find.byType(Switch).first);
+    await tester.tap(find.byType(AppSwitch).first);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Other'));
     await tester.pumpAndSettle();
     expect(find.text('Vision'), findsOneWidget);
   });
+  testWidgets(
+    'model search belongs to the dock and system Back dismisses its sheet',
+    (tester) async {
+      final chrome = ShellChromeActionsCubit()
+        ..register(
+          registrationId: 'page',
+          ownerId: 'page',
+          locations: const {'/models'},
+          actions: [
+            ShellActionSpec(
+              id: 'page-action',
+              icon: LucideIcons.plus,
+              onPressed: () {},
+            ),
+          ],
+        );
+      addTearDown(chrome.close);
+      const fast = AssistantGatewayModel(
+        value: 'fixture/fast',
+        label: 'Fast',
+        provider: 'Fixture',
+      );
+      const reasoning = AssistantGatewayModel(
+        value: 'fixture/reasoning',
+        label: 'Reasoning',
+        provider: 'Fixture',
+      );
+      final router = GoRouter(
+        initialLocation: '/models',
+        routes: [
+          ShellRoute(
+            builder: (_, _, child) => child,
+            routes: [
+              GoRoute(
+                path: '/models',
+                builder: (_, _) => Scaffold(
+                  body: AssistantModelPicker(
+                    selected: fast,
+                    models: const [fast, reasoning],
+                    allowedModels: const ['fixture/fast', 'fixture/reasoning'],
+                    onSelected: (_) async {},
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+      await tester.pumpWidget(
+        BlocProvider.value(
+          value: chrome,
+          child: MaterialApp.router(
+            routerConfig: router,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+          ),
+        ),
+      );
+
+      await tester.tap(find.byType(AppIconButton));
+      await tester.pumpAndSettle();
+      final action = chrome.state.resolveForLocation('/models').single;
+      expect(action.inDock, isTrue);
+      expect(find.byType(EditableText), findsNothing);
+      action.onPressed!();
+      await tester.pump();
+      final search = chrome.state.resolveForLocation('/models').single;
+      search.searchController!.text = 'Reasoning';
+      search.onSearchChanged!('Reasoning');
+      await tester.pumpAndSettle();
+      expect(find.text('Reasoning'), findsOneWidget);
+      expect(find.text('Fast'), findsNothing);
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(find.byType(AssistantModelPicker), findsOneWidget);
+      expect(chrome.state.topmostModalOwner, isNull);
+      expect(
+        chrome.state.resolveForLocation('/models').single.id,
+        'page-action',
+      );
+    },
+  );
 }
 
 class _FavoritesRepository extends AssistantRepository {

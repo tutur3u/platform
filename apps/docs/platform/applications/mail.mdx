@@ -45,13 +45,59 @@ smart-label configuration, custom folders/labels and group membership.
 
 Account or workspace changes dispose the entire Mail navigation stack. Attachment
 downloads reject redirects and oversized responses. Original HTML renders in an
-isolated, script-disabled web view; remote images require an explicit action.
+isolated, script-disabled web view. Remote images follow the saved Mail image
+preference, which is on until the user turns it off; notification-opened
+readers suppress them until revealed (see
+[Mail inbound notifications](/platform/applications/mail-inbound-notifications)).
 Downloaded attachments use the device's native share sheet.
 
 Run `ttr resources run -- bun check:mobile` after native changes, and the Mail
 proxy auth tests plus the actual Mail build after auth-routing changes. Unit and
 widget checks do not prove real-provider sending, receiving, or store delivery;
 verify those separately with the intended authenticated account.
+
+### Tablet reading pane and instant open
+
+Scope: the Flutter Mail inbox on every platform. When the Mail body is at
+least 720dp wide (portrait and landscape tablets, desktops), the inbox list and
+the open conversation sit side by side. Without a selection, the pane shows a
+localized empty state. Narrower bodies keep the pushed reader. The open
+conversation survives rotation and window resizing, moving between the pane and
+the pushed reader. Notification deep links open in the pane on wide layouts. On
+wide layouts, the first Back (dock, rail or system) and Escape close the pane;
+the next Back leaves Mail. The pane header carries the subject and message
+actions; the shell navbar and dock keep the inbox title, filters and actions.
+
+Opening never waits for the network. The reader renders the inbox row's
+subject, participants and snippet in the opening frame, then hydrates from the
+in-memory preview store, the encrypted Mail cache, or one detail request (one
+retry on transient failures). A conversation shown from memory or from the
+encrypted snapshot is revalidated with one refresh request when it opens. A
+failed load stays in the reader with an inline Retry, keeping
+notification-entry image suppression. Drafts bypass the preview store: each
+open loads the saved draft through the repository before the composer opens.
+Switching mailbox closes the open conversation, and a resize never reopens a
+conversation from another mailbox.
+
+Prefetching is bounded. For verified mailboxes it fetches the rows currently
+built in the list, after scrolling pauses for 250ms: conversations in thread
+folders and message details in Sent; never drafts. At most two
+requests run, eight are queued, and each makes one attempt. A failure is not
+retried in the background. The queue is replaced when the visible rows change,
+and the neighbours of an opened conversation are queued next. Prefetching
+fetches message JSON only; images load only when a body is shown, under the
+saved remote-image preference (or the notification-entry suppression). The
+preview store lives in memory for one signed-in workspace view, holds 40
+details, and is cleared on access denial. Rendered HTML documents of plain
+bodies are memoized by their exact HTML and rendering options (12 entries) in
+the same view. The memo is cleared on access denial and discarded with the
+view, which is keyed by account and workspace; a render finishing after its
+reader or view closed is not stored.
+
+Regression coverage: `mail_master_detail_test.dart`,
+`mail_preview_latency_test.dart`, `mail_preview_revalidation_test.dart`,
+`mail_rendered_documents_test.dart` and `mail_workspace_test.dart` in
+`apps/mobile/test/features/mail`, and `core/layout/master_detail_test.dart`.
 
 ## Read state and archive actions
 
@@ -740,9 +786,11 @@ change group membership. No grouping occurs across mailbox access boundaries.
 
 ### Mobile inbox restoration
 
-Mail is a core mobile app for accounts whose email domain is exactly
-`tuturuuu.com`; other accounts do not see its launcher or direct-route content.
-API authorization still controls mailbox access.
+Mail is a core mobile app for accounts whose email domain is `tuturuuu.com` or
+one of its managed subdomains, and for marked review accounts on `tutur3u.com`
+(see [Flutter Mail](#flutter-mail)); other accounts do not see its launcher or
+direct-route content. Discovery is only a hint: API authorization still controls
+mailbox access.
 
 The mobile inbox restores its last mailbox, folder, search, labels, and message
 list from encrypted, account- and workspace-scoped storage. Snapshots expire
@@ -751,11 +799,12 @@ send permissions are never trusted. A denied access response clears the cached
 view and prevents late requests from restoring it. Draft editing and attachment
 downloads continue to use authenticated network requests.
 
-Opening a mobile message keeps its request active while the inbox revalidates.
-Cached thread detail opens immediately; transient detail failures get one
-bounded retry. If opening still fails, the inbox shows a Retry action above the
-floating dock. The reader leaves enough bottom scroll space to reveal the end
-of long messages above that dock.
+Opening a mobile message shows the reader immediately from the inbox row and
+keeps its detail request active while the inbox revalidates. Cached thread
+detail renders at once; transient detail failures get one bounded retry. If
+loading still fails, the reader shows the error with an inline Retry. A failed
+draft open still shows a Retry action above the floating dock. The reader leaves
+enough bottom scroll space to reveal the end of long messages above that dock.
 
 ## Mobile incoming-mail notifications
 
@@ -992,8 +1041,28 @@ Configure these server-only variables for the Mail deployment:
 - `MAIL_MICROSOFT_CLIENT_ID`, `MAIL_MICROSOFT_CLIENT_SECRET`,
   `MAIL_MICROSOFT_REDIRECT_URI`.
 
-Both registered callback URLs point to the Mail origin's
-`/api/v1/mail/connected/callback`. Enable the Gmail API and grant
+When the primary redirect URI is unset, both providers default to the canonical
+subdomain callback below. Malformed explicitly configured values fail closed.
+The existing provider callback stays at
+`https://mail.tuturuuu.com/api/v1/mail/connected/callback`. Before admitting the
+apex mount, register `https://tuturuuu.com/mail/api/v1/mail/connected/callback`
+**alongside** the old callback in both providers. Configure the additional
+server-only `MAIL_GOOGLE_APEX_REDIRECT_URI` and
+`MAIL_MICROSOFT_APEX_REDIRECT_URI` only after registration. Each request selects
+an exact configured callback by its serving origin and `/mail` mount; it never
+trusts a forwarded host or redirects authorization across hosts. The callback
+exchanges the code using that same registered URI, clears state at its matching
+cookie path, and returns to the inbox under the serving mount. An unconfigured
+host fails closed. Existing subdomain configuration remains the default.
+
+Webhooks, OAuth callbacks and WebSockets also continue to be served on the old
+subdomain until it only redirects. Provider registration and production routes
+remain separate owner operations.
+Callback selection and both providers' mounted start/completion behavior are
+covered by `oauth-callback-url.test.ts`, `oauth.test.ts` and
+`oauth-callback.test.ts` under `apps/mail/src/lib/mail/connected/`.
+
+Enable the Gmail API and grant
 `https://www.googleapis.com/auth/gmail.modify`. This is a restricted Google scope;
 complete the provider's required consent verification before public rollout.
 Register the Microsoft app for organizational and personal Microsoft accounts

@@ -32,6 +32,14 @@ After global installation, use `ttr ...` directly. Do not diagnose `bun ttr logi
 as a registry install failure: Bun interprets that form as a workspace package-script
 lookup, so inspect the local script and its error first.
 
+Check an older installation using only `ttr --version` or its package.json.
+Do not probe upgrade-subcommand support by invoking `ttr upgrade list`: old
+parsers can silently perform a global install instead. Drain shared-host jobs
+before upgrading. Bare upgrade installs npm `latest`, not main; check dev
+publication with `npm view tuturuuu@dev version` or the SDK dev workflow.
+Supported `upgrade list [--json]` is read-only, and unsupported upgrade flags or
+arguments must fail with usage before an installer runs.
+
 Upgrade an existing global install with:
 
 ```bash
@@ -274,6 +282,17 @@ new shell configuration. This is cooperative scheduling, not a memory cgroup.
 Prefer remote `ttr box` validation for broad checks; verify the runner's actual
 host because same-machine runners and containers are not resource offload.
 
+
+### Turbo summary ownership
+
+Snapshot `.turbo/runs/` in the spawn hook after admission, never at enqueue or
+plan time. Keep stdout/stderr inherited and finish on process exit; output pipes
+held by an escaped process must not hold a resource lane. Report only one new
+JSON file with an ID matching its basename. Preserve all pre-spawn files, skip
+zero or multiple candidates, and skip a command cancelled before spawn.
+`resources-summary-lifecycle.test.ts` exercises the queued cancellation, spawn
+snapshot and escaped-child boundaries; `resources-turbo-summary.test.ts` covers
+file selection, ID validation and user-owned summaries.
 
 ### Resource offload failure boundary
 

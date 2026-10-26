@@ -108,6 +108,7 @@ class AppSheetScaffold extends StatelessWidget {
           ),
           if (showCloseButton && scope != null)
             AppIconButton(
+              key: const ValueKey('app-sheet-close'),
               tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
               icon: const Icon(AppIcons.close),
               onPressed: scope.close,

@@ -4,8 +4,14 @@ import {
 } from '@tuturuuu/realtime/meet';
 
 export { MEET_ASSISTANT_ID };
-// A renderer-local marker survives sanitization without treating authored URLs as mentions.
-export const MEET_MENTION_MARKER = `meet-mention:${crypto.randomUUID()}`;
+
+let mentionMarker: string | undefined;
+
+// Generate during rendering, retaining one unguessable marker per module instance.
+export function getMeetMentionMarker(): string {
+  mentionMarker ??= `meet-mention:${crypto.randomUUID()}`;
+  return mentionMarker;
+}
 export const MEET_ASSISTANT_PROFILE =
   'https://meet.tuturuuu.com/#tuturuuu-assistant';
 
@@ -53,7 +59,7 @@ export function remarkMeetMentions() {
           result.push({
             type: 'link',
             url: MEET_ASSISTANT_PROFILE,
-            title: MEET_MENTION_MARKER,
+            title: getMeetMentionMarker(),
             children: [{ type: 'text', value: value.slice(start, match.end) }],
           });
           end = match.end;

@@ -217,3 +217,16 @@ CI must pass before merging; production migration application and
 activation remain separate from merging this change. Public asset metadata also
 rewrites nested Supabase provenance URLs to the asset API path to avoid exposing
 a second direct download route.
+
+## Object key transport
+
+Storage object names remain logical strings in metadata and duplicate-name
+queries. At Supabase URL-based upload boundaries, pass object keys through
+`encodeStoragePath` from `@tuturuuu/utils/storage-path` exactly once. Preserve
+path separators while encoding each segment; literal `%41`, `?`, `#`, and
+Vietnamese NFC/NFD filenames must address the same object on write and read.
+Return logical paths to callers rather than the SDK's encoded transport path.
+This applies to web and Rewise chat uploads and the Nova, Rewise, and shared
+`uploadObject` helpers. Regression coverage uses the installed Supabase SDK
+against a synthetic fetch transport in `chat-panel-upload.test.ts` and
+`storage-client-uploads.test.ts` under `apps/web/src/components`.

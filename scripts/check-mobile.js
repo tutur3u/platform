@@ -67,6 +67,15 @@ const checks = [
     },
   },
   {
+    name: 'mira-compat-fold-table',
+    command: 'node',
+    args: ['apps/mobile/tool/generate_assistant_compat_fold.mjs', '--check'],
+    parseOutput: (stdout) => {
+      const match = stdout.match(/ok \((\d+) folds\)/);
+      return match ? `${match[1]} folds current` : 'Passed';
+    },
+  },
+  {
     name: 'dart-format',
     command: TURBO_COMMAND,
     args: [...TURBO_ARGS, 'run', 'dart-format', '--filter=@tuturuuu/mobile'],

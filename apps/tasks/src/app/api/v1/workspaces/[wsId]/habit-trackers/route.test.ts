@@ -13,10 +13,13 @@ vi.mock('@/lib/habit-trackers/service', async () => {
 
   return {
     ...actual,
-    createHabitTracker: mocks.createHabitTracker,
     listHabitTrackerCards: mocks.listHabitTrackerCards,
   };
 });
+
+vi.mock('@/lib/habit-trackers/writes', () => ({
+  createHabitTracker: mocks.createHabitTracker,
+}));
 
 vi.mock('@/lib/habit-trackers/route-utils', async () => {
   const actual = await vi.importActual('@/lib/habit-trackers/route-utils');
@@ -73,8 +76,8 @@ describe('habit trackers route', () => {
 
   it('creates trackers through the shared service', async () => {
     mocks.createHabitTracker.mockResolvedValue({
-      id: 'tracker-1',
-      name: 'Hydration',
+      tracker: { id: 'tracker-1', name: 'Hydration' },
+      created: true,
     });
 
     const { POST } = await import(
@@ -122,6 +125,10 @@ describe('habit trackers route', () => {
     );
 
     expect(response.status).toBe(201);
+    expect(await response.json()).toEqual({
+      tracker: { id: 'tracker-1', name: 'Hydration' },
+      created: true,
+    });
     expect(mocks.createHabitTracker).toHaveBeenCalledWith(
       {},
       'ws-1',
@@ -130,6 +137,51 @@ describe('habit trackers route', () => {
         name: 'Hydration',
         primary_metric_key: 'glasses',
       })
+    );
+  });
+
+  it('returns an existing keyed tracker without creating another', async () => {
+    mocks.createHabitTracker.mockResolvedValue({
+      tracker: { id: 'tracker-1', name: 'Body Weight' },
+      created: false,
+    });
+
+    const { POST } = await import(
+      '@/app/api/v1/workspaces/[wsId]/habit-trackers/route'
+    );
+
+    const response = await POST(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/habit-trackers',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: 'Body Weight',
+            color: 'INDIGO',
+            icon: 'SlidersHorizontal',
+            tracking_mode: 'daily_summary',
+            target_period: 'daily',
+            target_operator: 'gte',
+            target_value: 70,
+            primary_metric_key: 'weight',
+            aggregation_strategy: 'max',
+            input_schema: [{ key: 'weight', label: 'Weight', type: 'number' }],
+            use_case: 'body_weight',
+            creation_key: 'mira:body_weight',
+          }),
+        }
+      ),
+      { params: Promise.resolve({ wsId: 'ws-1' }) }
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ created: false });
+    expect(mocks.createHabitTracker).toHaveBeenCalledWith(
+      {},
+      'ws-1',
+      'user-1',
+      expect.objectContaining({ creation_key: 'mira:body_weight' })
     );
   });
 

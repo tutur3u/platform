@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/widgets/assistant_markdown_body.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -78,14 +79,8 @@ class _AssistantMessageTextState extends State<AssistantMessageText> {
               ),
             Align(
               alignment: Alignment.centerLeft,
-              child: TextButton(
+              child: AppButton.ghost(
                 onPressed: () => setState(() => _expanded = !_expanded),
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.only(top: 8),
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  visualDensity: VisualDensity.compact,
-                ),
                 child: Text(
                   _expanded
                       ? l10n.assistantSeeLessLabel

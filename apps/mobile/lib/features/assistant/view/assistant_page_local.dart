@@ -70,7 +70,7 @@ extension _AssistantPageLocal on _AssistantPageState {
   ) {
     final scope = _localScope();
     final selection = _localCubit.selectionVersion;
-    final localLane = state.local || state.blocked;
+    final localLane = state.local || state.failure != null;
     final label = state.failure != null
         ? context.l10n.assistantLocalHeaderIssue
         : state.ready
@@ -112,7 +112,7 @@ extension _AssistantPageLocal on _AssistantPageState {
         scope == _localScope() &&
         selection == _localCubit.selectionVersion;
     if (!current()) return;
-    await showAdaptiveSheet<void>(
+    await showAppSheet<void>(
       context: context,
       builder: (sheetContext) =>
           BlocBuilder<AssistantLocalChatCubit, AssistantLocalChatState>(

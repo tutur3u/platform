@@ -1,16 +1,22 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:mobile/core/responsive/adaptive_sheet.dart';
+import 'package:mobile/core/interaction/app_haptics.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
+import 'package:mobile/features/assistant/theme/assistant_theme_scope.dart';
 import 'package:mobile/features/assistant/widgets/assistant_attachment_preview.dart';
 import 'package:mobile/features/assistant/widgets/assistant_markdown_body.dart';
+import 'package:mobile/features/assistant/widgets/assistant_message_actions.dart';
+import 'package:mobile/features/assistant/widgets/assistant_message_reactions.dart';
 import 'package:mobile/features/assistant/widgets/assistant_message_receipt.dart';
 import 'package:mobile/features/assistant/widgets/assistant_message_text.dart';
 import 'package:mobile/features/assistant/widgets/assistant_ordered_parts.dart';
 import 'package:mobile/features/assistant/widgets/assistant_tool_names.dart';
 import 'package:mobile/features/assistant/widgets/assistant_tool_results_section.dart';
+import 'package:mobile/features/chat/models/chat_models.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/app_dialog_scaffold.dart';
 
 class AssistantTranscriptBubble extends StatefulWidget {
   const AssistantTranscriptBubble({
@@ -26,6 +32,13 @@ class AssistantTranscriptBubble extends StatefulWidget {
     this.isDraft = false,
     this.activityActive = false,
     this.receipt,
+    this.reactions = const [],
+    this.actorId,
+    this.onReply,
+    this.onReact,
+    this.onRefreshReactions,
+    this.isActionCurrent,
+    this.replyPreview,
     super.key,
   });
 
@@ -41,6 +54,13 @@ class AssistantTranscriptBubble extends StatefulWidget {
   final bool isDraft;
   final bool activityActive;
   final AssistantMessageReceiptStatus? receipt;
+  final List<ChatReactionSummary> reactions;
+  final String? actorId;
+  final VoidCallback? onReply;
+  final ValueChanged<String>? onReact;
+  final VoidCallback? onRefreshReactions;
+  final bool Function()? isActionCurrent;
+  final Widget? replyPreview;
 
   @override
   State<AssistantTranscriptBubble> createState() =>
@@ -64,8 +84,44 @@ class _AssistantTranscriptBubbleState extends State<AssistantTranscriptBubble> {
   Future<void> _openActions(String payload) async {
     if (_selected) return;
     setState(() => _selected = true);
+    unawaited(AppHaptics.pickup());
     try {
-      await _showMessageActions(context, payload);
+      final onReply = widget.onReply;
+      final onReact = widget.onReact;
+      final onRefresh = widget.onRefreshReactions;
+      final current = widget.isActionCurrent;
+      final action = await showAppSheet<AssistantMessageAction>(
+        context: context,
+        builder: (_) => AssistantMessageActions(
+          canCopy: payload.isNotEmpty,
+          canReply: onReply != null,
+          canReact: onReact != null,
+          canRefresh: onRefresh != null,
+          selectedReactions: {
+            for (final reaction in widget.reactions)
+              if (reaction.userIds.contains(widget.actorId)) reaction.emoji,
+          },
+        ),
+      );
+      if (!mounted || !(current?.call() ?? true)) return;
+      switch (action) {
+        case AssistantCopyMessage():
+          await Clipboard.setData(ClipboardData(text: payload));
+          if (mounted && (current?.call() ?? true)) {
+            showAppToast(
+              context,
+              message: context.l10n.assistantCopiedMessageAction,
+            );
+          }
+        case AssistantReplyToMessage():
+          onReply?.call();
+        case AssistantReactToMessage(:final reaction):
+          onReact?.call(reaction);
+        case AssistantRefreshReactions():
+          onRefresh?.call();
+        case null:
+          break;
+      }
     } finally {
       if (mounted) setState(() => _selected = false);
     }
@@ -73,6 +129,8 @@ class _AssistantTranscriptBubbleState extends State<AssistantTranscriptBubble> {
 
   Widget _surface(BuildContext context, Widget child) {
     final theme = Theme.of(context);
+    final colors = AssistantThemeScope.maybeOf(context);
+    final message = alignEnd ? colors?.userMessage : colors?.assistantMessage;
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
     final duration = reduceMotion
         ? Duration.zero
@@ -83,19 +141,23 @@ class _AssistantTranscriptBubbleState extends State<AssistantTranscriptBubble> {
       child: AnimatedContainer(
         key: const ValueKey('assistant-message-content'),
         duration: duration,
-        padding: alignEnd
+        padding: alignEnd || message != null
             ? const EdgeInsets.all(14)
             : const EdgeInsets.symmetric(vertical: 4),
         decoration: BoxDecoration(
-          color: alignEnd
-              ? theme.colorScheme.primaryContainer
-              : Colors.transparent,
+          color:
+              message?.background ??
+              (alignEnd
+                  ? theme.colorScheme.primaryContainer
+                  : Colors.transparent),
           borderRadius: BorderRadius.circular(22),
           border: Border.all(
             color: _selected ? theme.colorScheme.primary : Colors.transparent,
           ),
         ),
-        child: child,
+        child: message == null
+            ? child
+            : Theme(data: message.theme(theme), child: child),
       ),
     );
   }
@@ -107,6 +169,11 @@ class _AssistantTranscriptBubbleState extends State<AssistantTranscriptBubble> {
       if (text.trim().isNotEmpty) text.trim(),
       if (transcript.trim().isNotEmpty) transcript.trim(),
     ].join('\n\n').trim();
+    final canOpenActions =
+        copyPayload.isNotEmpty ||
+        widget.onReply != null ||
+        widget.onReact != null ||
+        widget.onRefreshReactions != null;
 
     return Align(
       alignment: alignEnd ? Alignment.centerRight : Alignment.centerLeft,
@@ -120,15 +187,13 @@ class _AssistantTranscriptBubbleState extends State<AssistantTranscriptBubble> {
         child: Semantics(
           label: label,
           selected: _selected,
-          onLongPress: copyPayload.isEmpty
-              ? null
-              : () => _openActions(copyPayload),
+          onLongPress: !canOpenActions ? null : () => _openActions(copyPayload),
           child: GestureDetector(
             excludeFromSemantics: true,
-            onLongPress: copyPayload.isEmpty
+            onLongPress: !canOpenActions
                 ? null
                 : () => _openActions(copyPayload),
-            onSecondaryTap: copyPayload.isEmpty
+            onSecondaryTap: !canOpenActions
                 ? null
                 : () => _openActions(copyPayload),
             child: Column(
@@ -136,6 +201,7 @@ class _AssistantTranscriptBubbleState extends State<AssistantTranscriptBubble> {
                   ? CrossAxisAlignment.end
                   : CrossAxisAlignment.start,
               children: [
+                if (widget.replyPreview != null) widget.replyPreview!,
                 if (!alignEnd && orderedParts.isNotEmpty)
                   ..._orderedAssistantChildren(context)
                 else if (text.trim().isNotEmpty ||
@@ -194,6 +260,12 @@ class _AssistantTranscriptBubbleState extends State<AssistantTranscriptBubble> {
                     AssistantToolNames(toolNames: toolNames),
                   ],
                 ],
+                if (widget.reactions.isNotEmpty)
+                  AssistantMessageReactions(
+                    reactions: widget.reactions,
+                    actorId: widget.actorId,
+                    onReact: widget.onReact,
+                  ),
                 if (alignEnd && timestamp != null && !isDraft)
                   AssistantMessageReceipt(
                     timestamp: timestamp!,
@@ -230,28 +302,4 @@ class _AssistantTranscriptBubbleState extends State<AssistantTranscriptBubble> {
         ],
       ),
   ];
-}
-
-Future<void> _showMessageActions(BuildContext context, String text) async {
-  final copy = await showAdaptiveSheet<bool>(
-    context: context,
-    builder: (sheetContext) => AppDialogScaffold(
-      title: context.l10n.assistantMessageActionsTitle,
-      child: Material(
-        color: Colors.transparent,
-        child: ListTile(
-          dense: true,
-          leading: const Icon(Icons.content_copy_rounded),
-          title: Text(context.l10n.assistantCopyMessageAction),
-          onTap: () => Navigator.of(sheetContext).pop(true),
-        ),
-      ),
-    ),
-  );
-  if (copy != true) return;
-  await Clipboard.setData(ClipboardData(text: text));
-  if (!context.mounted) return;
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text(context.l10n.assistantCopiedMessageAction)),
-  );
 }

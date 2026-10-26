@@ -90,7 +90,12 @@ describe('SatelliteProfileSettingsPanel', () => {
       new_email: null,
     } as unknown as WorkspaceUser;
 
-    renderWithClient(<SatelliteProfileSettingsPanel user={sessionUser} />);
+    renderWithClient(
+      <SatelliteProfileSettingsPanel
+        centralUrl="https://tuturuuu.com"
+        user={sessionUser}
+      />
+    );
 
     await waitFor(() => expect(getCurrentUserProfile).toHaveBeenCalledOnce());
     await waitFor(() => {

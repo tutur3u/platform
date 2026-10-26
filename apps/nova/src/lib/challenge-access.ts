@@ -1,3 +1,4 @@
+import { passwordRequiresReset } from '@tuturuuu/utils/crypto';
 import {
   createSignedAccessToken,
   type SignedAccessTokenOptions,
@@ -12,7 +13,7 @@ import {
  * stored password hash is never sent to the browser.
  */
 
-export const CHALLENGE_ACCESS_PURPOSE = 'nova-challenge-access';
+export const CHALLENGE_ACCESS_PURPOSE = 'nova-challenge-access-v2';
 /** Cookie that held password material before signed grants; always cleared. */
 export const LEGACY_CHALLENGE_ACCESS_COOKIE = 'token';
 const DEFAULT_TTL_SECONDS = 60 * 60;
@@ -72,6 +73,7 @@ export function hasChallengeAccess(
   userId: string | null | undefined
 ) {
   if (!challenge.password_hash) return true;
+  if (passwordRequiresReset(challenge.password_hash)) return false;
   return verifyChallengeAccessGrant(
     cookieStore.get(challengeAccessCookieName(challenge.id))?.value,
     { challengeId: challenge.id, userId }

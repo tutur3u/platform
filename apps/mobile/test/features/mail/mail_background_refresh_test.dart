@@ -10,6 +10,7 @@ import 'package:mobile/features/mail/view/mail_reader.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../helpers/phone_surface.dart';
 import '../../helpers/pump_app.dart';
 
 class _Repository extends Mock implements MailRepository {}
@@ -22,6 +23,8 @@ Map<String, dynamic> _inbox() => {
 };
 
 void main() {
+  // These suites cover the compact (pushed reader) flow.
+  usePhoneSurface();
   late _Repository repository;
   setUp(() {
     SharedPreferences.setMockInitialValues({});

@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/ui.dart';
+import 'package:mobile/features/assistant/widgets/assistant_tool_labels.dart';
+import 'package:mobile/features/assistant/widgets/assistant_tool_steps.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 class AssistantToolNames extends StatefulWidget {
@@ -16,7 +19,17 @@ class _AssistantToolNamesState extends State<AssistantToolNames> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final names = widget.toolNames;
+    final identifier = RegExp(r'^[a-z][a-z0-9_]*$');
+    final names = [
+      for (final name in widget.toolNames.where(
+        (name) => !isAssistantMetaTool(name),
+      ))
+        if (identifier.hasMatch(name))
+          assistantToolStepLabel(l10n, name, running: false)
+        else
+          name,
+    ];
+    if (names.isEmpty) return const SizedBox.shrink();
     if (names.length == 1) {
       return _AssistantToolNameChip(label: names.single);
     }
@@ -28,14 +41,8 @@ class _AssistantToolNamesState extends State<AssistantToolNames> {
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           _AssistantToolNameChip(label: names.last),
-          TextButton(
+          AppButton.ghost(
             onPressed: () => setState(() => _expanded = true),
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              visualDensity: VisualDensity.compact,
-            ),
             child: Text(l10n.assistantSeeMoreLabel),
           ),
         ],
@@ -52,14 +59,8 @@ class _AssistantToolNamesState extends State<AssistantToolNames> {
               .map((tool) => _AssistantToolNameChip(label: tool))
               .toList(growable: false),
         ),
-        TextButton(
+        AppButton.ghost(
           onPressed: () => setState(() => _expanded = false),
-          style: TextButton.styleFrom(
-            padding: const EdgeInsets.only(top: 4),
-            minimumSize: Size.zero,
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            visualDensity: VisualDensity.compact,
-          ),
           child: Text(l10n.assistantSeeLessLabel),
         ),
       ],

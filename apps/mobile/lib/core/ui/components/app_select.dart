@@ -44,26 +44,11 @@ class AppSelect<T> extends StatelessWidget {
   final String? placeholder;
 
   Future<void> _open(BuildContext context) async {
-    final picked = await showAppSheet<AppSelectOption<T>>(
+    final picked = await showAppSelectSheet<T>(
       context: context,
-      builder: (sheetContext) => AppSheetScaffold(
-        title: title,
-        slivers: [
-          SliverList.builder(
-            itemCount: options.length,
-            itemBuilder: (_, index) {
-              final option = options[index];
-              return AppOptionTile(
-                title: option.label,
-                subtitle: option.description,
-                leading: option.icon == null ? null : Icon(option.icon),
-                selected: option.value == value,
-                onTap: () => Navigator.of(sheetContext).pop(option),
-              );
-            },
-          ),
-        ],
-      ),
+      title: title,
+      options: options,
+      value: value,
     );
     if (picked != null) onChanged?.call(picked.value);
   }
@@ -123,3 +108,32 @@ class AppSelect<T> extends StatelessWidget {
     );
   }
 }
+
+/// Opens the option sheet used by [AppSelect]; resolves to the picked option,
+/// or null when dismissed.
+Future<AppSelectOption<T>?> showAppSelectSheet<T>({
+  required BuildContext context,
+  required String title,
+  required List<AppSelectOption<T>> options,
+  required T? value,
+}) => showAppSheet<AppSelectOption<T>>(
+  context: context,
+  builder: (sheetContext) => AppSheetScaffold(
+    title: title,
+    slivers: [
+      SliverList.builder(
+        itemCount: options.length,
+        itemBuilder: (_, index) {
+          final option = options[index];
+          return AppOptionTile(
+            title: option.label,
+            subtitle: option.description,
+            leading: option.icon == null ? null : Icon(option.icon),
+            selected: option.value == value,
+            onTap: () => Navigator.of(sheetContext).pop(option),
+          );
+        },
+      ),
+    ],
+  ),
+);

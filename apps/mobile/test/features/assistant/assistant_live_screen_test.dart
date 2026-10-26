@@ -9,6 +9,7 @@ import 'package:mobile/features/assistant/data/assistant_live_recorder.dart';
 import 'package:mobile/features/assistant/data/assistant_live_repository.dart';
 import 'package:mobile/features/assistant/data/assistant_live_screen_service.dart';
 import 'package:mobile/features/assistant/data/assistant_live_socket.dart';
+import 'package:mobile/features/assistant/models/assistant_live_dispatch.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -104,6 +105,9 @@ void main() {
     screen = _Screen();
     events = StreamController<AssistantLiveSocketEvent>.broadcast();
     when(() => socket.events).thenAnswer((_) => events.stream);
+    when(
+      () => socket.sendVideoFrame(any()),
+    ).thenReturn(AssistantLiveSinkAdmission.admitted);
     when(socket.disconnect).thenAnswer((_) async {});
     when(player.clear).thenAnswer((_) async {});
     when(player.pause).thenAnswer((_) async {});

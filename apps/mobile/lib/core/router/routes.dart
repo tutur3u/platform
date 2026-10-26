@@ -62,13 +62,13 @@ abstract final class Routes {
     queryParameters: focus == null ? null : {'focus': focus},
   ).toString();
 
-  /// Apps whose settings render as a routed Settings sub-screen. Mail and
-  /// Assistant keep their account-scoped hubs in the same Settings section.
+  /// Apps whose settings render as a routed Settings sub-screen.
   static const centralAppSettingsIds = {
     'tasks',
     'calendar',
     'finance',
     'timer',
+    'assistant',
   };
 
   /// Central settings location for [appId], or `null` without a sub-screen.

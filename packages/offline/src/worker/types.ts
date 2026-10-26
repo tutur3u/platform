@@ -17,6 +17,7 @@ export interface RuntimeCachingRule {
   matcher: string | RegExp | ((context: OfflineRequestContext) => boolean);
 
   strategy: OfflineCacheStrategy;
+  /** Defaults to the namespaced runtime cache; a custom name is not namespaced. */
   cacheName?: string;
 }
 
@@ -26,6 +27,14 @@ export interface PrecacheEntry {
 }
 
 export interface ServiceWorkerConfig {
+  /**
+   * Prefix for this app's precache and runtime cache names. Apps sharing one
+   * origin need distinct namespaces: activation prunes stale precaches only
+   * within its own namespace. Lowercase letters and digits joined by hyphens.
+   * @default 'tuturuuu-offline' (Web's original cache names)
+   */
+  cacheNamespace?: string;
+
   /** Keep authenticated HTML out of disk caches. Defaults to true for legacy hosts. */
   cacheNavigations?: boolean;
   /** Cache only hashed Next assets and public app icons, never API/private images. */
@@ -56,6 +65,15 @@ export interface ServiceWorkerConfig {
    * @default true
    */
   navigationPreload?: boolean;
+
+  /**
+   * Same-origin path prefixes owned by another app (for example `/meet` on the
+   * shared `tuturuuu.com` origin). The worker never caches them or serves its
+   * offline fallback for them; navigations reuse the preload response so the
+   * browser does not fetch them twice. Each prefix starts with `/` and has no
+   * trailing slash, and matches itself and its descendants only.
+   */
+  bypassPathPrefixes?: readonly string[];
 
   /**
    * Additional runtime caching strategies

@@ -20,6 +20,7 @@ on:
       - "scripts/dart-directive-uris.js"
       - ".github/actions/setup-flutter-with-cache/**"
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
     paths:
       - "apps/mobile/**"
       - "apps/meet-realtime/**"
@@ -359,6 +360,9 @@ jobs:
       - name: 🔣 Lucide icons match the web
         run: node ../../scripts/check-mobile-lucide-sync.js
 
+      - name: 🔡 Mira compatibility fold table is current
+        run: node tool/generate_assistant_compat_fold.mjs --check
+
       - name: 🧹 shadcn_flutter import ratchet
         env:
           # The allowlist may only shrink relative to the PR base or the
@@ -380,7 +384,7 @@ jobs:
   tests:
     name: Mobile Tests (${{ matrix.shard }})
     needs: [check-ci]
-    if: needs.check-ci.outputs.should_run == 'true'
+    if: needs.check-ci.outputs.should_run == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
@@ -430,7 +434,7 @@ jobs:
   realtime-parity:
     name: Mobile and web Cloudflare parity
     needs: [check-ci]
-    if: needs.check-ci.outputs.should_run == 'true'
+    if: needs.check-ci.outputs.should_run == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -454,7 +458,7 @@ jobs:
   build:
     name: build
     needs: [check-ci, quality, tests, realtime-parity]
-    if: always() && needs.check-ci.outputs.should_run == 'true'
+    if: always() && needs.check-ci.outputs.should_run == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
     runs-on: ubuntu-latest
     steps:
       - name: Require every mobile check

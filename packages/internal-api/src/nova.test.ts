@@ -1,5 +1,9 @@
-import { describe, expect, it, vi } from 'vitest';
-import { searchNovaSubmissionUsers } from './nova';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { searchNovaSubmissionUsers, verifyNovaChallengePassword } from './nova';
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 function createJsonResponse(payload: unknown) {
   return {
@@ -11,6 +15,27 @@ function createJsonResponse(payload: unknown) {
 }
 
 describe('Nova internal API helpers', () => {
+  it('keeps the browser password request on the Nova origin and preserves reset status', async () => {
+    vi.stubGlobal('window', {});
+    const response = new Response(
+      JSON.stringify({ code: 'PASSWORD_RESET_REQUIRED' }),
+      { status: 409 }
+    );
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(response);
+    const result = await verifyNovaChallengePassword(
+      { challengeId: 'challenge', password: 'fixture' },
+      { fetch: fetchMock }
+    );
+    expect(result).toBe(response);
+    expect(result.status).toBe(409);
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/auth/challenges/verify-password',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ challengeId: 'challenge', password: 'fixture' }),
+      })
+    );
+  });
   it('calls the bounded submission-user search with isolated query inputs', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       createJsonResponse({
