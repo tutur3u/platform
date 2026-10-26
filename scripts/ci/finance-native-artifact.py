@@ -1,34 +1,39 @@
-"""Qualify Finance's staging artifact using the shared Apps seal/restore helper."""
+"""Qualify a Finance native artifact (staging by default) using the shared Apps seal/restore helper."""
 import importlib.util
+import json
 import os
 from pathlib import Path
 
-WORKER = "tuturuuu-finance-vite-staging"
-PUBLIC_ROOT = Path(__file__).resolve().parents[2] / "apps/finance/public"
+APP_ROOT = Path(__file__).resolve().parents[2] / "apps/finance"
+PROFILE_ENV = "VITE_FINANCE_NATIVE_PROFILE"
+PROFILES = json.loads((APP_ROOT / "cloudflare/native-profiles.json").read_text())
+PUBLIC_ROOT = APP_ROOT / "public"
 PUBLIC_FILES = tuple(sorted(
     path.relative_to(PUBLIC_ROOT).as_posix()
     for path in PUBLIC_ROOT.rglob("*") if path.is_file()
 ))
 
 
-def load():
+def profile(name=None):
+    name = name if name is not None else os.environ.get(PROFILE_ENV) or "staging"
+    if name not in PROFILES:
+        raise ValueError(f"unknown {PROFILE_ENV}: {name}")
+    return name, PROFILES[name]
+
+
+def load(name=None):
+    _, selected = profile(name)
+    worker = selected["workerName"]
     source = Path(__file__).with_name("apps-native-artifact.py")
     spec = importlib.util.spec_from_file_location("finance_artifact_base", source)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     module.IDENTITY = {
-        **module.IDENTITY, "name": WORKER, "workers_dev": False,
+        **module.IDENTITY, "name": worker, "workers_dev": False,
         "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
-        "vars": {
-            "TUTURUUU_NOINDEX": "1",
-            "INTERNAL_WEB_API_ORIGIN": "https://staging.tuturuuu.com",
-            "NEXT_PUBLIC_WEB_APP_URL": "https://staging.tuturuuu.com",
-            "NEXT_PUBLIC_APP_URL": "https://finance-staging.tuturuuu.com",
-            "FINANCE_APP_URL": "https://finance-staging.tuturuuu.com",
-            "NEXT_PUBLIC_SUPABASE_URL": "https://fxefojytwimjiqxseqag.supabase.co",
-        },
+        "vars": dict(selected["vars"]),
     }
-    module.NORMALIZED_DEFAULTS = {**module.NORMALIZED_DEFAULTS, "topLevelName": WORKER}
+    module.NORMALIZED_DEFAULTS = {**module.NORMALIZED_DEFAULTS, "topLevelName": worker}
     module.RECEIPT = "finance-native-artifact.json"
     module.PUBLIC_FILES = PUBLIC_FILES
     return module

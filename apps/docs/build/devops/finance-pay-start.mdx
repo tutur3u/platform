@@ -137,13 +137,23 @@ aliases, invitations, permission denial, and query preservation. Inspect every
 workspaces to detect request-context leakage.
 
 Before any hosted staging publish, declare and admit its exact account, Worker,
-hostname, bindings and rollback mapping. Finance's declared staging profile uses
-`https://finance-staging.tuturuuu.com`, with `FINANCE_APP_URL` set to that
-Finance origin, `INTERNAL_WEB_API_ORIGIN` and
-`NEXT_PUBLIC_WEB_APP_URL` both set to `https://staging.tuturuuu.com`, and
-`NEXT_PUBLIC_SUPABASE_URL` set from the repository's `STAGING_SUPABASE_URL`.
-Never forward staging tokens to production Web. This staging-data artifact
-requires a separately reviewed production profile before the production flip.
+hostname, bindings and rollback mapping. Finance declares two native profiles in
+`apps/finance/cloudflare/native-profiles.json`, selected at build time with
+`VITE_FINANCE_NATIVE_PROFILE`. Staging is the default: Worker
+`tuturuuu-finance-vite-staging`, root host `finance-staging.tuturuuu.com`,
+`INTERNAL_WEB_API_ORIGIN` and `NEXT_PUBLIC_WEB_APP_URL` set to
+`https://staging.tuturuuu.com`, and the staging Supabase URL. `production` must be
+requested explicitly: Worker `tuturuuu-finance`, root host
+`finance.tuturuuu.com`, Web at `https://tuturuuu.com` and the production Supabase
+URL. Each profile admits only its own root host, so the staging-data Worker
+answers 404 for `finance.tuturuuu.com` and the production Worker answers 404 for
+the staging host. Both keep `workers_dev` off and declare no routes or custom
+domains; hostnames are attached by the operator at admission or flip time. The
+qualifier seals each profile's identity and rejects the other's output. Secrets
+(`SUPABASE_SECRET_KEY`, `TUTURUUU_APP_COORDINATION_SECRET` and the Supabase
+publishable key) are provisioned on the Worker by the owner, never in source.
+Never forward staging tokens to production Web, and never attach the staging
+Worker to the production hostname.
 Keep `global_fetch_strictly_public` enabled and verify hosted same-zone SSR
 self-fetches reach the Finance Worker, including its public build identity;
 the retained Vercel origin must not answer those subrequests. Source configuration alone
@@ -261,9 +271,11 @@ If its `check:changed` gate refuses admission, run the same committed source
 through a Thanh bundle. Never bypass the gate.
 
 An independent Claude review is required before integration. Conversion runs
-without `--hold`, preserving the existing Vercel publisher. The cutover-prep PR
-adds the Finance or Pay hold in `tuturuuu.ci.ts` and protects its publisher with
-the shared publication policy. Finance already owns its CSP in the app config. Merge that freeze only
-when preparing the flip; keep native publication held until the explicit cutover
-PR admits it. Preparation cannot stand
-in for the real Start build, provider sandbox, hosted acceptance, or cutover.
+without `--hold`, preserving the existing Vercel publisher. No CI workflow
+publishes either Finance profile: `finance-cloudflare.yaml` only qualifies the
+staging build, and native deploys are operator actions inside an approved
+custody window. The Vercel publisher (`vercel-production-finance.yaml`) still
+runs on `production` pushes, so freeze production sync for the flip and watch;
+a new Vercel deployment would move the alias the DNS-only rollback relies on.
+Finance owns its CSP in the app config. Preparation cannot stand in for the real
+Start build, provider sandbox, hosted acceptance, or cutover.

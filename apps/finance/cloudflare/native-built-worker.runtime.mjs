@@ -12,7 +12,9 @@ import {
   app,
   financeBrowserListener,
   financeRuntime,
+  foreignOrigins,
   modes,
+  profile,
 } from './native-runtime-fixture.mjs';
 import {
   fixtureWorkspaceId,
@@ -21,6 +23,7 @@ import {
   syntheticSessionHeaders,
 } from './signed-ssr-fixture.mjs';
 
+const webOrigin = profile.vars.NEXT_PUBLIC_WEB_APP_URL;
 const runtimeExpectations = JSON.parse(
   await readFile(join(app, 'start-bridge.routes.json'), 'utf8')
 ).runtime;
@@ -175,7 +178,7 @@ async function qualifyMode(t, mode) {
         );
         assert.equal(protectedPage.status, 307);
         const login = new URL(protectedPage.headers.get('location'));
-        assert.equal(login.origin, 'https://staging.tuturuuu.com');
+        assert.equal(login.origin, webOrigin);
         assert.equal(login.pathname, '/login');
       }
       for (const path of [
@@ -314,7 +317,7 @@ async function qualifyMode(t, mode) {
         const result = await withNativeBrowserFence(
           browser,
           origin,
-          ['https://staging.tuturuuu.com'],
+          [webOrigin],
           async (page) => {
             const errors = [];
             page.on('pageerror', (error) => errors.push(error.message));
@@ -322,9 +325,7 @@ async function qualifyMode(t, mode) {
               waitUntil: 'domcontentloaded',
             });
             await page.waitForURL(
-              (url) =>
-                url.origin === 'https://staging.tuturuuu.com' &&
-                url.pathname === '/login'
+              (url) => url.origin === webOrigin && url.pathname === '/login'
             );
             assert.equal(new URL(page.url()).pathname, '/login');
             assert.equal(await page.title(), 'Disposable destination fixture');
@@ -340,7 +341,7 @@ async function qualifyMode(t, mode) {
   );
 
   await t.test(
-    'raw Host admits configured roots and rejects apex/unlisted hosts',
+    "raw Host admits its profile root and rejects apex, other profiles' and unlisted hosts",
     async () => {
       for (const mode of modes) {
         const admitted = await runtime.rawFetch(
@@ -350,6 +351,7 @@ async function qualifyMode(t, mode) {
         assert.equal((await admitted.json()).commitHash, runtime.source);
       }
       for (const origin of [
+        ...foreignOrigins,
         'https://tuturuuu.com/finance',
         'https://unknown.example.test',
       ]) {

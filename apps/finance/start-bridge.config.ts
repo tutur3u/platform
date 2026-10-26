@@ -1,15 +1,19 @@
 import { defaultContentSecurityPolicy } from '@tuturuuu/start-bridge/csp';
 import { defineBridgeAppConfig } from '@tuturuuu/start-bridge/start/app-config';
 import { framablePathRegexes } from '@tuturuuu/utils/framable-paths';
+import { resolveFinanceNativeProfile } from './cloudflare/native-profile.ts';
 import type { FinanceEnvironment } from './cloudflare/worker';
 import { publicAssets } from './src/start-bridge/public-assets.bridge.gen.ts';
 
 const framablePaths = framablePathRegexes();
+const profile = resolveFinanceNativeProfile(
+  import.meta.env?.VITE_FINANCE_NATIVE_PROFILE
+);
 
 export default defineBridgeAppConfig<FinanceEnvironment>({
   csp: defaultContentSecurityPolicy,
   mounts: {
-    rootHosts: ['finance.tuturuuu.com', 'finance-staging.tuturuuu.com'],
+    rootHosts: [profile.rootHost],
     mountHosts: [],
     unknownHost: 'reject',
   },

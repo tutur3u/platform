@@ -12,16 +12,20 @@ HERE = Path(__file__).parent
 spec = importlib.util.spec_from_file_location("finance_artifact", HERE / "finance-native-artifact.py")
 wrapper = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(wrapper)
+os.environ.pop(wrapper.PROFILE_ENV, None)
 artifact = wrapper.load()
+production = wrapper.load("production")
 base_spec = importlib.util.spec_from_file_location("apps_artifact", HERE / "apps-native-artifact.py")
 base = importlib.util.module_from_spec(base_spec)
 base_spec.loader.exec_module(base)
 SHA = "b" * 40
 WORKER = "tuturuuu-finance-vite-staging"
+PRODUCTION_WORKER = "tuturuuu-finance"
 
 
 class FinanceArtifactTest(unittest.TestCase):
-    def fixture(self):
+    def fixture(self, module=None):
+        module = module or artifact
         temporary = tempfile.TemporaryDirectory(prefix="finance-output-fixture-")
         self.addCleanup(temporary.cleanup)
         app = Path(temporary.name)
@@ -35,7 +39,7 @@ class FinanceArtifactTest(unittest.TestCase):
         (app / "dist/client/assets/entry.js").write_text("export const hydrated = true")
         (app / "dist/native/index.js").write_text("export default {fetch(){return new Response('fixture')}}")
         config = {
-            **artifact.IDENTITY, **artifact.NORMALIZED_DEFAULTS,
+            **module.IDENTITY, **module.NORMALIZED_DEFAULTS,
             "configPath": str(app / ".void-wrangler.jsonc"), "userConfigPath": str(app / ".void-wrangler.jsonc"),
             "main": "index.js",
             "assets": {"binding": "ASSETS", "directory": "../client", "run_worker_first": True, "not_found_handling": "none"},
@@ -105,6 +109,62 @@ class FinanceArtifactTest(unittest.TestCase):
         env["FINANCE_SOURCE_SHA"] = SHA
         subprocess.run([sys.executable, str(HERE / "finance-native-artifact.py"), "seal", str(app), "--receipt", str(receipt)], env=env, check=True)
         self.assertEqual(json.loads(receipt.read_text())["sourceSha"], SHA)
+
+    def test_production_profile_identity(self):
+        self.assertEqual(production.IDENTITY["name"], PRODUCTION_WORKER)
+        self.assertEqual(production.NORMALIZED_DEFAULTS["topLevelName"], PRODUCTION_WORKER)
+        self.assertIs(production.IDENTITY["workers_dev"], False)
+        self.assertEqual(production.IDENTITY["compatibility_flags"], ["nodejs_compat", "global_fetch_strictly_public"])
+        self.assertEqual(production.IDENTITY["vars"], {
+            "INTERNAL_WEB_API_ORIGIN": "https://tuturuuu.com",
+            "NEXT_PUBLIC_WEB_APP_URL": "https://tuturuuu.com",
+            "NEXT_PUBLIC_APP_URL": "https://finance.tuturuuu.com",
+            "FINANCE_APP_URL": "https://finance.tuturuuu.com",
+            "NEXT_PUBLIC_SUPABASE_URL": "https://nzamlzqfdwaaxdefwraj.supabase.co",
+        })
+        self.assertEqual(wrapper.PROFILES["staging"]["rootHost"], "finance-staging.tuturuuu.com")
+        self.assertEqual(wrapper.PROFILES["production"]["rootHost"], "finance.tuturuuu.com")
+        self.assertEqual(set(wrapper.PROFILES), {"staging", "production"})
+        with self.assertRaisesRegex(ValueError, "unknown VITE_FINANCE_NATIVE_PROFILE"):
+            wrapper.load("prod")
+
+    def test_profiles_reject_each_others_output(self):
+        for sealed, other, worker in ((artifact, production, PRODUCTION_WORKER), (production, artifact, WORKER)):
+            with self.subTest(worker=worker):
+                app, config = self.fixture(other)
+                with self.assertRaisesRegex(ValueError, "contract drift: (name|topLevelName|vars)"):
+                    sealed.validate_output(app)
+                for key in ("name", "topLevelName"):
+                    config[key] = sealed.IDENTITY["name"]
+                (app / "dist/native/wrangler.json").write_text(json.dumps(config))
+                with self.assertRaisesRegex(ValueError, "contract drift: vars"):
+                    sealed.validate_output(app)
+
+    def test_profile_receipts_are_not_interchangeable(self):
+        app, _ = self.fixture(production)
+        receipt = production.artifact(app, SHA)
+        self.assertEqual(receipt["worker"], PRODUCTION_WORKER)
+        production.verify(app, receipt, SHA)
+        with self.assertRaisesRegex(ValueError, "contract drift"):
+            artifact.verify(app, receipt, SHA)
+
+    def test_routes_are_flip_time_actions_not_config(self):
+        for module in (artifact, production):
+            app, config = self.fixture(module)
+            (app / "dist/native/wrangler.json").write_text(json.dumps({**config, "routes": [{"pattern": "finance.tuturuuu.com/*", "zone_name": "tuturuuu.com"}]}))
+            with self.assertRaisesRegex(ValueError, "unreviewed emitted config field"):
+                module.validate_output(app)
+
+    def test_cli_selects_the_production_profile_explicitly(self):
+        app, _ = self.fixture(production)
+        env = {k: v for k, v in os.environ.items() if k not in ("APPS_SOURCE_SHA", wrapper.PROFILE_ENV)}
+        env["FINANCE_SOURCE_SHA"] = SHA
+        receipt = app / "receipt.json"
+        staging = subprocess.run([sys.executable, str(HERE / "finance-native-artifact.py"), "seal", str(app), "--receipt", str(receipt)], env=env, capture_output=True)
+        self.assertNotEqual(staging.returncode, 0)
+        env[wrapper.PROFILE_ENV] = "production"
+        subprocess.run([sys.executable, str(HERE / "finance-native-artifact.py"), "seal", str(app), "--receipt", str(receipt)], env=env, check=True)
+        self.assertEqual(json.loads(receipt.read_text())["worker"], PRODUCTION_WORKER)
 
 
 if __name__ == "__main__":
