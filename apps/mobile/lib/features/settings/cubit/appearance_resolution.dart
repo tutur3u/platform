@@ -4,19 +4,24 @@ import 'package:mobile/data/repositories/settings_repository.dart';
 /// Which stored appearance is shown.
 ///
 /// The device override wins, then the signed-in account, then the default.
-/// An account with no stored look yet uses this device's look, which is also
-/// what it is seeded with. Signed out there is no account, so the device's
-/// own look shows and an account's look never leaks onto sign-in screens.
+/// Until this device has seeded an account ([seedAvailable]), an account
+/// with no stored look shows the device's look it is about to be seeded
+/// with, so upgrading never flashes the default. Signed out there is no
+/// account, so the device's own look shows and an account's look never
+/// leaks onto sign-in screens.
 AppearanceSettings resolveAppearance({
   required bool deviceOverride,
   required String? userId,
   required AppearanceSettings? device,
   required AppearanceSettings? account,
+  bool seedAvailable = false,
 }) {
   if (deviceOverride || userId == null) {
     return device ?? const AppearanceSettings();
   }
-  return account ?? device ?? const AppearanceSettings();
+  return account ??
+      (seedAvailable ? device : null) ??
+      const AppearanceSettings();
 }
 
 /// Stored inputs for [resolveAppearance], read once at launch so the first
@@ -27,6 +32,7 @@ class StoredAppearance {
     this.userId,
     this.device,
     this.account,
+    this.seedAvailable = false,
   });
 
   final bool deviceOverride;
@@ -34,11 +40,15 @@ class StoredAppearance {
   final AppearanceSettings? device;
   final AppearanceSettings? account;
 
+  /// This device has not seeded an account with its look yet.
+  final bool seedAvailable;
+
   AppearanceSettings get resolved => resolveAppearance(
     deviceOverride: deviceOverride,
     userId: userId,
     device: device,
     account: account,
+    seedAvailable: seedAvailable,
   );
 
   static Future<StoredAppearance> read(
@@ -56,6 +66,7 @@ class StoredAppearance {
       account: rawAccount == null
           ? null
           : AppearanceSettings.decode(rawAccount),
+      seedAvailable: !await settings.getAppearanceSeedConsumed(),
     );
   }
 }

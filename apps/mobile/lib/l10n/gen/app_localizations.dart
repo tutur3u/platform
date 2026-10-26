@@ -13753,6 +13753,12 @@ abstract class AppLocalizations {
   /// **'Use different appearance on this device'**
   String get appearanceDeviceOverride;
 
+  /// No description provided for @appearanceDeviceOverrideDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes here stay on this device and don\'t sync to your account.'**
+  String get appearanceDeviceOverrideDescription;
+
   /// No description provided for @appearanceFeedbackTitle.
   ///
   /// In en, this message translates to:

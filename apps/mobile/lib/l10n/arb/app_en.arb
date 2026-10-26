@@ -3523,6 +3523,7 @@
   "appearanceDensityCompact": "Compact",
   "appearanceDensityTitle": "Density",
   "appearanceDeviceOverride": "Use different appearance on this device",
+  "appearanceDeviceOverrideDescription": "Changes here stay on this device and don't sync to your account.",
   "appearanceFeedbackTitle": "Feedback and motion",
   "appearanceHapticsDescription": "Light vibrations when you choose, swipe or confirm.",
   "appearanceIntensity": "Intensity",

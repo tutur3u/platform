@@ -14,6 +14,11 @@ class _Accounts extends AccountAppearanceRepository {
   final Map<String, String> stored = {};
   final List<(String, String)> saves = [];
   final Map<String, Completer<void>> holds = {};
+
+  /// Gates for the next saves, in order; each save waits on one if queued.
+  final List<Completer<void>> saveGates = [];
+  int inFlight = 0;
+  int maxInFlight = 0;
   bool failSave = false;
 
   @override
@@ -26,7 +31,14 @@ class _Accounts extends AccountAppearanceRepository {
   Future<void> save(String userId, String encoded) async {
     if (failSave) throw Exception('offline');
     saves.add((userId, encoded));
-    stored[userId] = encoded;
+    inFlight++;
+    if (inFlight > maxInFlight) maxInFlight = inFlight;
+    try {
+      if (saveGates.isNotEmpty) await saveGates.removeAt(0).future;
+      stored[userId] = encoded;
+    } finally {
+      inFlight--;
+    }
   }
 }
 
@@ -65,11 +77,13 @@ void main() {
         String? user = 'u1',
         AppearanceSettings? device,
         AppearanceSettings? account,
+        bool seed = false,
       }) => resolveAppearance(
         deviceOverride: override,
         userId: user,
         device: device,
         account: account,
+        seedAvailable: seed,
       );
 
       expect(
@@ -77,8 +91,10 @@ void main() {
         _compact,
       );
       expect(resolve(device: _compact, account: _aurora), _aurora);
-      // An account without a stored look starts from this device's look.
-      expect(resolve(device: _compact), _compact);
+      // An empty account shows the default, except while this device's
+      // look is about to seed it.
+      expect(resolve(device: _compact), const AppearanceSettings());
+      expect(resolve(device: _compact, seed: true), _compact);
       expect(resolve(), const AppearanceSettings());
       expect(resolve(override: true), const AppearanceSettings());
       // Signed out there is no account, so only the device's look shows.
@@ -132,11 +148,100 @@ void main() {
     expect(other.state.appearance, _sunset);
   });
 
-  test('an existing device look seeds an empty account once', () async {
-    await SettingsRepository().setAppearance(_compact.encode());
-    await theme.bindAccount('u1');
-    expect(theme.state.appearance, _compact);
-    expect(accounts.saves, [('u1', _compact.encode())]);
+  group('seeding', () {
+    test('the device look seeds only the first account, once', () async {
+      await SettingsRepository().setAppearance(_compact.encode());
+      await theme.bindAccount('u1');
+      expect(theme.state.appearance, _compact);
+      expect(accounts.saves, [('u1', _compact.encode())]);
+      expect(await SettingsRepository().getAppearanceSeedConsumed(), isTrue);
+
+      // A later empty account shows the default and writes nothing.
+      await theme.bindAccount('u2');
+      expect(theme.state.appearance, const AppearanceSettings());
+      expect(accounts.saves, hasLength(1));
+
+      // Nor does one bound after a relaunch.
+      final relaunched = cubit();
+      addTearDown(relaunched.close);
+      await relaunched.bindAccount('u3');
+      expect(relaunched.state.appearance, const AppearanceSettings());
+      expect(accounts.saves, hasLength(1));
+    });
+
+    test('a first account with its own look uses the seed up', () async {
+      await SettingsRepository().setAppearance(_compact.encode());
+      accounts.stored['u1'] = _aurora.encode();
+      await theme.bindAccount('u1');
+      expect(theme.state.appearance, _aurora);
+      await theme.bindAccount('u2');
+      expect(theme.state.appearance, const AppearanceSettings());
+      expect(accounts.saves, isEmpty);
+    });
+
+    test('the device override never seeds', () async {
+      final settings = SettingsRepository();
+      await settings.setAppearance(_compact.encode());
+      await settings.setAppearanceDeviceOverride(value: true);
+      await theme.bindAccount('u1');
+      expect(theme.state.appearance, _compact);
+      expect(accounts.saves, isEmpty);
+      expect(await settings.getAppearanceSeedConsumed(), isTrue);
+    });
+
+    test('a fresh install has nothing to seed', () async {
+      await theme.bindAccount('u1');
+      expect(theme.state.appearance, const AppearanceSettings());
+      expect(accounts.saves, isEmpty);
+    });
+  });
+
+  group('uploads', () {
+    test(
+      'a newer choice is sent after an older slow one, never before',
+      () async {
+        await theme.bindAccount('u1');
+        final first = Completer<void>();
+        accounts.saveGates.add(first);
+
+        final older = theme.setAppearance(_aurora);
+        await pumpEventQueue();
+        expect(accounts.saves, [('u1', _aurora.encode())]);
+        final newer = theme.setAppearance(_sunset);
+        await pumpEventQueue();
+        // One request per user: the newer choice waits for the older one.
+        expect(accounts.saves, hasLength(1));
+
+        first.complete();
+        await Future.wait([older, newer]);
+        expect(accounts.maxInFlight, 1);
+        expect(accounts.saves, [
+          ('u1', _aurora.encode()),
+          ('u1', _sunset.encode()),
+        ]);
+        expect(accounts.stored['u1'], _sunset.encode());
+        final cached = await SettingsRepository().getAccountAppearance('u1');
+        expect(cached.encoded, _sunset.encode());
+        expect(cached.pendingUpload, isFalse);
+      },
+    );
+
+    test('pending stays while a newer choice is still unsent', () async {
+      await theme.bindAccount('u1');
+      final first = Completer<void>();
+      accounts.saveGates.add(first);
+      final older = theme.setAppearance(_aurora);
+      await pumpEventQueue();
+      final newer = theme.setAppearance(_sunset);
+      await pumpEventQueue();
+      // The newer save fails after the older one lands.
+      accounts.failSave = true;
+      first.complete();
+      await Future.wait([older, newer]);
+      final cached = await SettingsRepository().getAccountAppearance('u1');
+      expect(cached.encoded, _sunset.encode());
+      expect(cached.pendingUpload, isTrue);
+    });
   });
 
   test('a failed upload stays pending and retries on next sign-in', () async {

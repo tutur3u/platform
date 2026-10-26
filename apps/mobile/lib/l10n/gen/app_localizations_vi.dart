@@ -7134,6 +7134,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get appearanceDeviceOverride => 'Dùng giao diện riêng trên thiết bị này';
 
   @override
+  String get appearanceDeviceOverrideDescription => 'Thay đổi tại đây chỉ áp dụng cho thiết bị này, không đồng bộ với tài khoản.';
+
+  @override
   String get appearanceFeedbackTitle => 'Phản hồi và chuyển động';
 
   @override

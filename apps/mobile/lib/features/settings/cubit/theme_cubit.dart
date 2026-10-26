@@ -31,6 +31,13 @@ class ThemeCubit extends Cubit<ThemeState> {
   AppearanceSettings? _device;
   AppearanceSettings? _account;
 
+  /// The device look may still seed the first account bound after the
+  /// upgrade; [_seedClaimed] keeps a second bind from also claiming it.
+  bool _seedAvailable = false;
+  bool _seedClaimed = false;
+  final Map<String, Future<void>> _uploads = {};
+  final Set<String> _uploadAgain = {};
+
   /// Loads the persisted theme mode.
   Future<void> loadThemeMode() async {
     try {
@@ -58,6 +65,7 @@ class ThemeCubit extends Cubit<ThemeState> {
       if (revision != _appearanceRevision) return;
       _device = stored.device;
       _account = stored.account;
+      _seedAvailable = stored.seedAvailable;
       _publishOverride(stored.deviceOverride);
     } on Exception catch (e) {
       debugPrint('Error loading appearance: $e');
@@ -89,60 +97,94 @@ class ThemeCubit extends Cubit<ThemeState> {
     final repository = _accountRepository;
     if (repository == null) return;
     final revision = _appearanceRevision;
+    bool current() => !isClosed && scope == _scopeRevision;
+    // Only the first account bound after the upgrade may be seeded with the
+    // device's pre-sync look; later empty accounts start from the default.
+    final claimsSeed = _seedAvailable && !_seedClaimed;
+    if (claimsSeed) _seedClaimed = true;
     try {
       final cached = await _settingsRepository.getAccountAppearance(userId);
       if (cached.pendingUpload && cached.encoded != null) {
-        await _upload(userId, cached.encoded!);
+        // This account already holds a local choice, so it uses the seed up.
+        if (claimsSeed) await _settingsRepository.setAppearanceSeedConsumed();
+        await _upload(userId);
         return;
       }
       final remote = await repository.load(userId);
-      if (isClosed || scope != _scopeRevision) return;
+      final seed = claimsSeed && !state.deviceOverride ? _device : null;
+      if (claimsSeed) {
+        await _settingsRepository.setAppearanceSeedConsumed();
+        if (current()) _seedAvailable = false;
+      }
       // A choice made while loading wins and uploads on its own.
-      if (revision != _appearanceRevision) return;
+      if (!current() || revision != _appearanceRevision) return;
+      var seeded = false;
       if (remote != null) {
         await _settingsRepository.setAccountAppearance(
           userId,
           remote,
           pendingUpload: false,
         );
-        if (isClosed || scope != _scopeRevision) return;
+        if (!current()) return;
         _account = AppearanceSettings.decode(remote);
-        emit(state.copyWith(appearance: _resolved()));
-        return;
+      } else if (seed != null && _account == null) {
+        await _settingsRepository.setAccountAppearance(
+          userId,
+          seed.encode(),
+          pendingUpload: true,
+        );
+        seeded = true;
+        if (current()) _account = seed;
       }
-      // First sign-in with this store: carry the device's look over.
-      final seed = cached.encoded ?? _device?.encode();
-      if (seed == null) return;
-      await _settingsRepository.setAccountAppearance(
-        userId,
-        seed,
-        pendingUpload: true,
-      );
-      _account = AppearanceSettings.decode(seed);
-      emit(state.copyWith(appearance: _resolved()));
-      await _upload(userId, seed);
+      if (current()) emit(state.copyWith(appearance: _resolved()));
+      if (seeded) await _upload(userId);
     } on Exception catch (e) {
       debugPrint('Error syncing account appearance: $e');
     }
   }
 
-  /// Sends [encoded] to the account; clears the pending mark only while it
-  /// is still the newest local choice for [userId].
-  Future<void> _upload(String userId, String encoded) async {
+  /// Uploads the newest pending choice for [userId], one request at a time.
+  /// A choice made while a request is in flight is sent after it, so an
+  /// older request can never land last.
+  Future<void> _upload(String userId) {
+    final running = _uploads[userId];
+    if (running != null) {
+      _uploadAgain.add(userId);
+      return running;
+    }
+    // Must not return the removed future: the run would await itself.
+    final run = _drainUploads(
+      userId,
+    ).whenComplete(() => _uploads.removeWhere((key, _) => key == userId));
+    _uploads[userId] = run;
+    return run;
+  }
+
+  Future<void> _drainUploads(String userId) async {
     final repository = _accountRepository;
     if (repository == null) return;
-    try {
-      await repository.save(userId, encoded);
+    while (true) {
+      _uploadAgain.remove(userId);
       final cached = await _settingsRepository.getAccountAppearance(userId);
-      if (cached.encoded != encoded) return;
-      await _settingsRepository.setAccountAppearance(
+      final encoded = cached.encoded;
+      if (encoded == null || !cached.pendingUpload) {
+        if (_uploadAgain.contains(userId)) continue;
+        return;
+      }
+      try {
+        await repository.save(userId, encoded);
+      } on Exception catch (e) {
+        // Stays pending; the next launch or sign-in retries it.
+        debugPrint('Error uploading appearance: $e');
+        return;
+      }
+      // Cleared only when nothing newer was stored meanwhile; otherwise
+      // the loop sends the newer choice.
+      final cleared = await _settingsRepository.clearAccountAppearancePending(
         userId,
         encoded,
-        pendingUpload: false,
       );
-    } on Exception catch (e) {
-      // Stays pending; the next launch or sign-in retries it.
-      debugPrint('Error uploading appearance: $e');
+      if (cleared && !_uploadAgain.contains(userId)) return;
     }
   }
 
@@ -169,6 +211,7 @@ class ThemeCubit extends Cubit<ThemeState> {
     userId: _userId,
     device: _device,
     account: _account,
+    seedAvailable: _seedAvailable && !_seedClaimed,
   );
 
   void _publishOverride(bool deviceOverride) {
@@ -248,7 +291,7 @@ class ThemeCubit extends Cubit<ThemeState> {
         pendingUpload: true,
       );
       if (!current()) return;
-      await _upload(userId, encoded);
+      await _upload(userId);
     } on Exception catch (e) {
       debugPrint('Error saving appearance: $e');
     }

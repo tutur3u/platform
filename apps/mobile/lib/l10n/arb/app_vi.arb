@@ -3469,6 +3469,7 @@
   "appearanceDensityCompact": "Gọn",
   "appearanceDensityTitle": "Mật độ",
   "appearanceDeviceOverride": "Dùng giao diện riêng trên thiết bị này",
+  "appearanceDeviceOverrideDescription": "Thay đổi tại đây chỉ áp dụng cho thiết bị này, không đồng bộ với tài khoản.",
   "appearanceFeedbackTitle": "Phản hồi và chuyển động",
   "appearanceHapticsDescription": "Rung nhẹ khi bạn chọn, vuốt hoặc xác nhận.",
   "appearanceIntensity": "Cường độ",

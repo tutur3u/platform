@@ -7208,6 +7208,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appearanceDeviceOverride => 'Use different appearance on this device';
 
   @override
+  String get appearanceDeviceOverrideDescription => 'Changes here stay on this device and don\'t sync to your account.';
+
+  @override
   String get appearanceFeedbackTitle => 'Feedback and motion';
 
   @override

@@ -13,6 +13,7 @@ class SettingsRepository {
   static const _appearanceKey = 'appearance-v1';
   static const _appearanceIntroSeenKey = 'appearance-intro-seen';
   static const _appearanceDeviceOverrideKey = 'appearance-device-override';
+  static const _appearanceSeedConsumedKey = 'appearance-seed-consumed';
   static const _accountAppearancePrefix = 'appearance-account';
   static const _accountAppearancePendingPrefix = 'appearance-account-pending';
   static const _calendarViewKey = 'calendar-view';
@@ -166,10 +167,40 @@ class SettingsRepository {
     required bool pendingUpload,
   }) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('$_accountAppearancePrefix:$userId', encoded);
-    await prefs.setBool(
-      '$_accountAppearancePendingPrefix:$userId',
-      pendingUpload,
+    // Both are dispatched in one event so a reader never sees a new value
+    // with a stale pending mark.
+    await Future.wait([
+      prefs.setString('$_accountAppearancePrefix:$userId', encoded),
+      prefs.setBool('$_accountAppearancePendingPrefix:$userId', pendingUpload),
+    ]);
+  }
+
+  /// Marks [encoded] as confirmed by the server, unless a newer local
+  /// choice replaced it meanwhile. Returns whether it was cleared.
+  Future<bool> clearAccountAppearancePending(
+    String userId,
+    String encoded,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getString('$_accountAppearancePrefix:$userId') != encoded) {
+      return false;
+    }
+    await prefs.setBool('$_accountAppearancePendingPrefix:$userId', false);
+    return true;
+  }
+
+  /// Whether this device already seeded an account with its pre-sync look.
+  /// Only the first account bound after the upgrade is seeded.
+  Future<bool> getAppearanceSeedConsumed() async =>
+      (await SharedPreferences.getInstance()).getBool(
+        _appearanceSeedConsumedKey,
+      ) ??
+      false;
+
+  Future<void> setAppearanceSeedConsumed() async {
+    await (await SharedPreferences.getInstance()).setBool(
+      _appearanceSeedConsumedKey,
+      true,
     );
   }
 

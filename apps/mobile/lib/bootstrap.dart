@@ -18,6 +18,7 @@ import 'package:mobile/core/observability/mobile_observability.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
 import 'package:mobile/core/ui/icons/lucide_licenses.dart';
+import 'package:mobile/data/repositories/auth_repository.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:mobile/features/assistant/local/assistant_model_downloads.dart';
@@ -166,9 +167,14 @@ shad.ThemeMode _parseThemeMode(String mode) {
   }
 }
 
+/// The signed-in user whose appearance shows at launch. Like the app, an
+/// account still awaiting MFA counts as signed out.
 String? _currentUserIdOrNull() {
   try {
-    return supabase.auth.currentUser?.id;
+    final auth = AuthRepository(supabaseClient: supabase);
+    final user = auth.getCurrentUserSync();
+    if (user == null || auth.checkMfaRequired()) return null;
+    return user.id;
   } on Object {
     // Supabase failed to initialize; start signed out.
     return null;
