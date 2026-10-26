@@ -13,7 +13,7 @@ function sanitize(message, secrets) {
     .replace(/\b[a-z][a-z0-9+.-]*:\/\/[^\s/]*@[^\s]*/giu, '[REDACTED URL]')
     .replace(/\b(?:Bearer|Basic)\s+[^\s,;]+/giu, '[REDACTED AUTH]')
     .replace(
-      /\b((?:[a-z_-]*(?:token|key|secret|password)[a-z_-]*)\s*[:=]\s*)(?:"[^"]*"|'[^']*'|[^\s,;]+)/giu,
+      /\b((?:[a-z_-]*(?:token|key|secret|password)[a-z_-]*)["']?\s*[:=]\s*)(?:"[^"]*"|'[^']*'|[^\s,;]+)/giu,
       '$1[REDACTED]'
     )
     .replace(/[A-Za-z0-9_+/.=-]{24,}/gu, '[REDACTED]')

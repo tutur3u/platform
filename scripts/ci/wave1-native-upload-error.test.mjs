@@ -104,6 +104,17 @@ test('structured provider pairs are bounded and sanitize embedded secrets', () =
   );
 });
 
+test('quoted credential fields are redacted inside ERROR headlines', () => {
+  for (const field of ['api_key', 'apiToken', 'password']) {
+    const secret = 'short-key';
+    const error = new NativeUploadError({
+      stderr: `[ERROR] {"${field}":"${secret}"}`,
+    });
+    assert.equal(JSON.stringify(error).includes(secret), false);
+    assert.equal(productionFailureMessage(error).includes(secret), false);
+  }
+});
+
 test('unrecognized fields and conflicting numeric codes are not retained', () => {
   const secret = 'cf_secret_fixture_UNRECOGNIZED';
   const error = new NativeUploadError({
