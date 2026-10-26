@@ -188,6 +188,26 @@ describe('POST assign task to cycle', () => {
   });
 });
 
+describe('malformed route params', () => {
+  it('returns 404 for a malformed cycle id without querying', async () => {
+    const response = await POST(request('POST'), {
+      params: Promise.resolve({ cycleId: 'not-a-uuid', wsId: WS_ID }),
+    });
+
+    expect(response.status).toBe(404);
+    expect(admin.from).not.toHaveBeenCalled();
+  });
+
+  it('returns 404 when the workspace does not normalize to a uuid', async () => {
+    mocks.normalizeWorkspaceId.mockResolvedValue('not-a-uuid');
+
+    const response = await GET(request('GET'), context);
+
+    expect(response.status).toBe(404);
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
+  });
+});
+
 describe('DELETE unassign task from cycle', () => {
   it('rejects a foreign cycle without deleting', async () => {
     mocks.cycle = { ws_id: FOREIGN_WS_ID };
