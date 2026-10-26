@@ -10,10 +10,10 @@ A source build is not payment-provider acceptance or production cutover.
 
 ## Use root-only staging
 
-The candidate admits `pay-staging.tuturuuu.com` and `pay.tuturuuu.com` as host
-roots. It rejects apex mounts and unknown hosts before app code. The first
-release targets `pay.tuturuuu.com`; apex hosting remains held by the shared auth
-guard. Pay consumes the bridge's shared session model without a per-app cookie.
+The staging candidate admits only `pay-staging.tuturuuu.com` as a host root.
+It rejects `pay.tuturuuu.com`, apex mounts and unknown hosts before app code.
+The cutover-prep PR must add `pay.tuturuuu.com` together with its separately
+reviewed production profile; apex hosting remains held by the shared auth guard. Pay consumes the bridge's shared session model without a per-app cookie.
 
 `cloudflare/staging-profile.json` owns the staging values used by Void, artifact
 qualification and runtime checks. It pins Pay to `https://pay-staging.tuturuuu.com`,
@@ -26,7 +26,7 @@ Every response sends noindex, X-Frame-Options DENY, nosniff and the strict-origi
 referrer policy. CSP includes `frame-ancestors 'none'`. The exact shared WebGL
 asset path is the framing exception: its upstream sandbox CSP passes through
 unchanged and X-Frame-Options is removed. Exact-path, descendant and neighbouring
-framing controls run against both Pay root hosts. Personalized SSR and API
+framing controls run against the staging root; the production host is explicitly rejected. Personalized SSR and API
 responses use private/no-store caching and vary on Cookie, Authorization and
 Accept-Language. Only successful GET/HEAD compiled-asset responses keep their
 static caching. `global_fetch_strictly_public` is required; hosted acceptance
@@ -70,7 +70,10 @@ profile/bindings and test identities through the release owner. Exercise:
 
 - EN/VI signed-in workspace billing and permission denial across workspaces.
 - Checkout completion and cancellation, credit packs and subscription changes.
-- Valid signed webhook delivery, invalid signature rejection and replay handling.
+- Valid signed webhook delivery and invalid signature rejection.
+- Replay the same valid delivery with the same `webhook-id` and verify deduplication:
+  no duplicate credits, invoices, subscription changes or other payment side effects.
+  Webhook-id deduplication remains a sandbox acceptance gate; this migration adds no dedupe code.
 - Seat changes, invoice delivery, billing details and the customer portal.
 - Auth verification, refresh, logout and same-zone self-fetch on hosted staging.
 

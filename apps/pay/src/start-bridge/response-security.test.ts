@@ -18,7 +18,7 @@ describe('Pay response security independent of staging flags', () => {
         }),
         {
           request: new Request(
-            `https://pay.tuturuuu.com/api/v1/workspaces/ws/external-projects/assets/asset/webgl${suffix}`
+            `https://pay-staging.tuturuuu.com/api/v1/workspaces/ws/external-projects/assets/asset/webgl${suffix}`
           ),
           env: { ASSETS: { fetch: async () => new Response('asset') } },
         }
@@ -34,7 +34,7 @@ describe('Pay response security independent of staging flags', () => {
     async (suffix) => {
       const response = await wrap(new Response('fixture'), {
         request: new Request(
-          `https://pay.tuturuuu.com/api/v1/workspaces/ws/external-projects/assets/asset${suffix}`
+          `https://pay-staging.tuturuuu.com/api/v1/workspaces/ws/external-projects/assets/asset${suffix}`
         ),
         env: { ASSETS: { fetch: async () => new Response('asset') } },
       });
@@ -50,7 +50,7 @@ describe('Pay response security independent of staging flags', () => {
           headers: { 'cache-control': 'public, max-age=3600', vary: 'Origin' },
         }),
         {
-          request: new Request('https://pay.tuturuuu.com/en/personal'),
+          request: new Request('https://pay-staging.tuturuuu.com/en/personal'),
           env: {
             ASSETS: { fetch: async () => new Response('asset') },
             ...(flag === undefined ? {} : { TUTURUUU_NOINDEX: flag }),
@@ -83,9 +83,12 @@ describe('Pay response security independent of staging flags', () => {
           },
         }),
         {
-          request: new Request('https://pay.tuturuuu.com/assets/fixture.js', {
-            method,
-          }),
+          request: new Request(
+            'https://pay-staging.tuturuuu.com/assets/fixture.js',
+            {
+              method,
+            }
+          ),
           env: { ASSETS: { fetch: async () => new Response('asset') } },
         }
       );
@@ -103,7 +106,9 @@ describe('Pay response security independent of staging flags', () => {
         },
       }),
       {
-        request: new Request('https://pay.tuturuuu.com/assets/fixture.js'),
+        request: new Request(
+          'https://pay-staging.tuturuuu.com/assets/fixture.js'
+        ),
         env: { ASSETS: { fetch: async () => new Response('asset') } },
       }
     );
