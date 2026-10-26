@@ -23,7 +23,7 @@ on:
         default: true
 
 concurrency:
-  group: desktop-beta-${{ github.ref }}
+  group: desktop-beta-${{ github.ref }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
   cancel-in-progress: false
   queue: max
 
