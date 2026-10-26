@@ -978,6 +978,16 @@
       },
       "digest": "932ccfa6ecd7b462680d904df026cd9b5b144a11f36e7e1d1548c98d7f146ad5"
     },
+    "apps/tasks/cloudflare/offline-fallback.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6849",
+        "reason": "Tasks native candidate (#6849) starts its sealed built Worker in the Wrangler SDK to prove the exact /offline.html fallback; Tasks on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "e139bd3b3961b60527b5aa98419fb40cde9679450f4c651769242014bfec1e29"
+    },
     "apps/tasks/package.json": {
       "lines": 1,
       "uses": 1,
@@ -1868,6 +1878,16 @@
       },
       "digest": "06dc1c0c44ba14771d1cc73b5b7eae49f602a795d50959122913be5847fad3fd"
     },
+    "scripts/ci/tasks-native-artifact.test.py": {
+      "lines": 7,
+      "uses": 8,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6849",
+        "reason": "Tasks native artifact regressions (#6849) build the same emitted-config fixture as Finance's: the .void-wrangler.jsonc producer metadata, the deploy pointer and the emitted wrangler.json; Tasks on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "9ea2206674d3b1e3377608f589805a6ced065510d62b53a861625a083edc4e3a"
+    },
     "scripts/ci/turbo-cache-config.test.js": {
       "lines": 2,
       "uses": 2,
@@ -1877,6 +1897,16 @@
         "reason": "Retain recognition of legacy binding-type generators alongside cf so cache policy verifies declaration outputs and environment inputs. This detector invokes no CLI; remove when no legacy declaration producer remains."
       },
       "digest": "dea61c5925b68295ab2c201cfdecd29b970bf4a0c96c53e000e8b2a77313bf4f"
+    },
+    "scripts/ci/turbo-cache-workflow.test.js": {
+      "lines": 1,
+      "uses": 1,
+      "digest": "58dfb7537e9c61f13527818bc82479d0d8d9440bb1f30d1d9f9e461ae7825f4e",
+      "gap": "shared-toolchain",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6484",
+        "reason": "Read-only workflow assertion rejects Wrangler deployment text; this test never invokes Wrangler."
+      }
     },
     "scripts/ci/verify-meet-start-output.js": {
       "lines": 1,

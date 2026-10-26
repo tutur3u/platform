@@ -1512,6 +1512,8 @@
     "no_google_accounts": "No Google accounts connected yet.",
     "no_microsoft_accounts": "No Microsoft accounts connected yet.",
     "no_outbound_calendar": "No outbound calendar",
+    "oauth_spike_alert_description": "Quarantined / deferred / held / systemic / transient accounts",
+    "oauth_spike_alert_title": "Calendar OAuth needs attention",
     "outlook": "Outlook",
     "overridden_by_settings": "Overridden by your settings",
     "personal_first_day_override_desc": "You have set your personal first day of week to <bold>{firstDay}</bold>, which overrides this workspace setting. Your effective first day is <bold>{effectiveFirstDay}</bold>. Change it in Appearance & Theme settings.",

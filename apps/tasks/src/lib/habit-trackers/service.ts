@@ -230,8 +230,8 @@ function normalizeEntryValues(input: unknown): HabitTrackerEntry['values'] {
 
 export function serializeEntryValues(
   values: HabitTrackerEntry['values']
-): Json {
-  return values as Json;
+): NonNullable<Json> {
+  return values as NonNullable<Json>;
 }
 
 function applyLatestStatsToMemberSummary(
@@ -1032,8 +1032,8 @@ export async function updateHabitTracker(
     target_value: payload.target_value,
     primary_metric_key: payload.primary_metric_key,
     aggregation_strategy: payload.aggregation_strategy,
-    input_schema: payload.input_schema as unknown as Json,
-    quick_add_values: payload.quick_add_values as unknown as Json,
+    input_schema: payload.input_schema as unknown as NonNullable<Json>,
+    quick_add_values: payload.quick_add_values as unknown as NonNullable<Json>,
     freeze_allowance: payload.freeze_allowance ?? 0,
     recovery_window_periods: payload.recovery_window_periods ?? 0,
     use_case: payload.use_case ?? current.use_case ?? 'generic',
@@ -1043,7 +1043,7 @@ export async function updateHabitTracker(
       payload.composer_mode ?? current.composer_mode ?? 'advanced_custom',
     composer_config: (payload.composer_config ??
       current.composer_config ??
-      {}) as unknown as Json,
+      {}) as unknown as NonNullable<Json>,
     start_date: payload.start_date ?? current.start_date,
     is_active: payload.is_active ?? true,
   };

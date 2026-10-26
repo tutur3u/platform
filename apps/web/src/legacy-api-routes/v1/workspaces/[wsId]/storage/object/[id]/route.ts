@@ -1,5 +1,5 @@
 import { canAccessFinanceTransactionStoragePath } from '@tuturuuu/finance-core/storage-access';
-import { isReservedMobileDeploymentDrivePath } from '@tuturuuu/storage-core/mobile-deployment/storage-policy';
+import { isExcludedDrivePath } from '@tuturuuu/storage-core/drive-path-policy';
 import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
 import { sanitizePath } from '@tuturuuu/utils/storage-path';
 import { NextResponse } from 'next/server';
@@ -66,7 +66,7 @@ export async function GET(
       );
     }
 
-    if (isReservedMobileDeploymentDrivePath(normalizedWsId, sanitizedPath)) {
+    if (isExcludedDrivePath(normalizedWsId, sanitizedPath)) {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 

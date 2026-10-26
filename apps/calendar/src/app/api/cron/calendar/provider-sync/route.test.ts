@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { sync, admin, page } = vi.hoisted(() => ({
+const { sync, admin, page, notification } = vi.hoisted(() => ({
+  notification: vi.fn(),
   sync: vi.fn(),
   admin: vi.fn(),
   page: vi.fn(),
@@ -15,6 +16,7 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
 }));
 
 import type { CalendarOAuthReasonCode } from '@/lib/calendar/oauth-failure';
+import { calendarSpikeOperatorFixture } from '@/lib/calendar/oauth-spike-route.test-utils';
 import {
   type CalendarTokenOutcome,
   recordCalendarTokenOutcome,
@@ -35,6 +37,12 @@ function cronRequest(signal?: AbortSignal) {
 describe('Calendar provider cron ownership', () => {
   beforeEach(() => {
     vi.stubEnv('CRON_SECRET', 'test-cron-secret');
+    vi.stubEnv('CALENDAR_OAUTH_ALERT_RECIPIENTS', 'ops@example.test');
+    notification.mockResolvedValue({
+      data: 'notification-id',
+      error: null,
+      status: 200,
+    });
     vi.stubEnv('INTERNAL_WEB_API_ORIGIN', 'https://old-web.example');
     vi.stubEnv('VERCEL_URL', 'protected-preview.example');
     const query = {
@@ -44,7 +52,12 @@ describe('Calendar provider cron ownership', () => {
       },
       order: () => ({ range: page }),
     };
-    admin.mockResolvedValue({ from: () => ({ select: () => query }) });
+    const operator = calendarSpikeOperatorFixture();
+    admin.mockResolvedValue({
+      from: (table: string) => operator.from(table) ?? { select: () => query },
+      auth: operator.auth,
+      rpc: notification,
+    });
     page.mockResolvedValue({
       data: [{ ws_id: 'workspace-a' }, { ws_id: 'workspace-a' }],
       error: null,
@@ -162,6 +175,7 @@ describe('Calendar provider cron ownership', () => {
       }),
       expect.objectContaining({ outcome: 'transient' }),
     ]);
+    expect(notification).not.toHaveBeenCalled();
     expect(body).not.toHaveProperty('results');
     expect(JSON.stringify(body)).not.toContain('token-0');
     expect(error).not.toHaveBeenCalledWith(
@@ -182,13 +196,25 @@ describe('Calendar provider cron ownership', () => {
     });
   });
 
-  it('raises the deactivation spike hook', async () => {
+  it('raises the deactivation spike hook and queues the operator alert', async () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     const error = vi.spyOn(console, 'error').mockImplementation(() => {});
     workspacesWithOutcomes({
       'workspace-a': Array(5).fill('deactivated'),
     });
-    expect((await GET(cronRequest())).status).toBe(200);
+    const response = await GET(cronRequest());
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      ok: true,
+      alerts: { status: 'queued', queued: 1, failed: 0 },
+    });
+    expect(notification).toHaveBeenCalledWith(
+      'create_notification',
+      expect.objectContaining({
+        p_user_id: 'operator-id',
+        p_code: 'calendar_oauth_health_spike',
+      })
+    );
     expect(error).toHaveBeenCalledWith(
       'calendar.oauth.deactivation_spike',
       expect.objectContaining({
@@ -197,6 +223,49 @@ describe('Calendar provider cron ownership', () => {
         reasons: { google_invalid_grant: 5 },
       })
     );
+  });
+
+  it('keeps holds nonfatal when alert delivery fails', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(Date, 'now').mockReturnValue(Date.UTC(2026, 9, 26, 4, 5));
+    notification.mockResolvedValue({
+      data: null,
+      error: { message: 'AbortError: synthetic', code: '' },
+      status: 0,
+    });
+    workspacesWithOutcomes({ 'workspace-a': ['consensus_hold'] });
+    const response = await GET(cronRequest());
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      ok: true,
+      alerts: { status: 'unknown', queued: 0, failed: 0, unknown: 1 },
+    });
+    expect(notification).toHaveBeenCalledTimes(1);
+  });
+
+  it('queues hourly alerts for an all-transient provider and suppresses healthy mixed samples', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.spyOn(console, 'info').mockImplementation(() => {});
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const clock = vi
+      .spyOn(Date, 'now')
+      .mockReturnValue(Date.UTC(2026, 9, 26, 4, 5));
+    workspacesWithOutcomes({ 'workspace-a': ['transient'] });
+    await GET(cronRequest());
+    expect(notification).toHaveBeenCalledTimes(1);
+    expect(error).toHaveBeenCalledWith(
+      'calendar.oauth.deactivation_spike',
+      expect.objectContaining({ transientProviders: ['google'], transient: 1 })
+    );
+    notification.mockClear();
+    clock.mockReturnValue(Date.UTC(2026, 9, 26, 4, 35));
+    await GET(cronRequest());
+    expect(notification).not.toHaveBeenCalled();
+    clock.mockReturnValue(Date.UTC(2026, 9, 26, 5, 5));
+    workspacesWithOutcomes({ 'workspace-a': ['transient', 'ok'] });
+    await GET(cronRequest());
+    expect(notification).not.toHaveBeenCalled();
   });
 
   // The first run of an hour, when recurring holds and systemic failures alert.
