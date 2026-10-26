@@ -1917,6 +1917,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonSave => 'Save';
 
   @override
+  String get commonSearch => 'Search';
+
+  @override
   String get commonSelectDate => 'Select a date';
 
   @override
@@ -5884,6 +5887,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navHome => 'Home';
 
   @override
+  String get navInbox => 'Inbox';
+
+  @override
+  String get navMira => 'Mira';
+
+  @override
   String get navMore => 'More';
 
   @override
@@ -5894,6 +5903,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get navTimer => 'Timer';
+
+  @override
+  String get navYou => 'You';
 
   @override
   String get notesArchive => 'Archive note';
@@ -8658,6 +8670,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get taskBoardDetailFocusReplaceTitle => 'Stop the running timer?';
+
+  @override
+  String get taskBoardDetailFocusStartFailedPausedEnded => 'Couldn\'t start focus, and your paused timer was ended. Open the timer to resume it.';
+
+  @override
+  String get taskBoardDetailFocusStartFailedRestored => 'Couldn\'t start focus. Your paused timer is back as it was.';
 
   @override
   String get taskBoardDetailFocusStarted => 'Timer started for this task.';

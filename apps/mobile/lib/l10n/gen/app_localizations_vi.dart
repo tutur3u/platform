@@ -1916,6 +1916,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get commonSave => 'Lưu';
 
   @override
+  String get commonSearch => 'Tìm kiếm';
+
+  @override
   String get commonSelectDate => 'Chọn ngày';
 
   @override
@@ -5840,6 +5843,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get navHome => 'Trang chủ';
 
   @override
+  String get navInbox => 'Hộp thư';
+
+  @override
+  String get navMira => 'Mira';
+
+  @override
   String get navMore => 'Thêm';
 
   @override
@@ -5850,6 +5859,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get navTimer => 'Bấm giờ';
+
+  @override
+  String get navYou => 'Bạn';
 
   @override
   String get notesArchive => 'Lưu trữ ghi chú';
@@ -8571,6 +8583,12 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get taskBoardDetailFocusReplaceTitle => 'Dừng bộ bấm giờ đang chạy?';
+
+  @override
+  String get taskBoardDetailFocusStartFailedPausedEnded => 'Không thể bắt đầu tập trung và bộ bấm giờ đang tạm dừng đã kết thúc. Mở bộ bấm giờ để tiếp tục.';
+
+  @override
+  String get taskBoardDetailFocusStartFailedRestored => 'Không thể bắt đầu tập trung. Bộ bấm giờ đang tạm dừng đã được giữ nguyên.';
 
   @override
   String get taskBoardDetailFocusStarted => 'Đã bắt đầu bấm giờ cho công việc này.';

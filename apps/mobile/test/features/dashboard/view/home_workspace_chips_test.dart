@@ -2,6 +2,7 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
@@ -27,8 +28,19 @@ class _Pins extends WorkspacePinsRepository {
   final List<List<String>> saves = [];
   bool failSave = false;
 
+  /// Loads that fail before one succeeds.
+  int failLoads = 0;
+  int loads = 0;
+
   @override
-  Future<List<String>> load() async => stored;
+  Future<List<String>> load() async {
+    loads++;
+    if (failLoads > 0) {
+      failLoads--;
+      throw Exception('offline');
+    }
+    return stored;
+  }
 
   @override
   Future<void> save(List<String> workspaceIds) async {
@@ -147,7 +159,7 @@ void main() {
 
       for (final id in ['ws-0', 'ws-1', 'ws-2', 'more']) {
         expect(chip(id), findsOneWidget, reason: id);
-        expect(tester.getSize(chip(id)).height, greaterThanOrEqualTo(44));
+        expect(tester.getSize(chip(id)).height, greaterThanOrEqualTo(48));
       }
       await tester.tap(chip('ws-2'));
       await tester.pumpAndSettle();
@@ -216,6 +228,38 @@ void main() {
       await tester.pumpAndSettle();
     });
 
+    testWidgets('a failed pins load retries with backoff', (tester) async {
+      final pins = _Pins(['ws-3', 'ws-4'])..failLoads = 1;
+      await pump(tester, _workspaces(6), pins);
+
+      // Until the retry lands, only the current workspace has a chip.
+      expect(chip('ws-3'), findsNothing);
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pumpAndSettle();
+      expect(pins.loads, 2);
+      expect(chip('ws-3'), findsOneWidget);
+      expect(chip('ws-4'), findsOneWidget);
+    });
+
+    testWidgets('the pins editor follows a rolled-back save', (tester) async {
+      final pins = _Pins(['ws-3'])..failSave = true;
+      await pump(tester, _workspaces(6), pins);
+
+      await tester.tap(chip('more'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Edit pinned workspaces'));
+      await tester.pumpAndSettle();
+      final row = find.byKey(const ValueKey('home-workspace-pin-ws-5'));
+      await tester.tap(row);
+      await tester.pumpAndSettle();
+
+      expect(pins.saves.single, ['ws-3', 'ws-5']);
+      final checkbox = tester.widget<AppCheckboxRow>(row);
+      expect(checkbox.value, isFalse);
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+    });
+
     testWidgets('chips scroll instead of clipping at 2x text on 320dp', (
       tester,
     ) async {
@@ -229,7 +273,7 @@ void main() {
       await pump(tester, _workspaces(4), _Pins());
 
       expect(tester.takeException(), isNull);
-      expect(tester.getSize(chip('ws-0')).height, greaterThanOrEqualTo(44));
+      expect(tester.getSize(chip('ws-0')).height, greaterThanOrEqualTo(48));
       await tester.dragUntilVisible(
         chip('more'),
         find.byKey(const ValueKey('home-workspace-chips')),

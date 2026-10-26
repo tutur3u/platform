@@ -24,9 +24,12 @@ with the redesign.
   unpins it. Pins are stored per user, not per device, in the
   `MOBILE_PINNED_WORKSPACES` user config through `/api/v1/users/me/configs`.
   They are fetched only from five workspaces, and edits wait until the stored
-  pins have loaded, so a failed load never overwrites them. A failed save
-  restores the previous pins and says so. Chips are at least 44dp tall, and
-  long names ellipsize inside a chip while the row scrolls.
+  pins have loaded, so a failed load never overwrites them. A failed load
+  retries after 2, 8 and 30 seconds and again when the app resumes. A failed
+  save restores the previous pins, and the Edit pinned workspaces checkboxes
+  follow what is stored, not the tap. Chip pills are 44dp tall with 48dp
+  touch targets, and long names ellipsize inside a chip while the row
+  scrolls.
 - **Widgets.** The existing widgets keep their order, visibility and
   **Customize Home** editor. The tasks widget shows two sections: **Today**
   (overdue first, then due today) and **Up next** (later due dates), up to
