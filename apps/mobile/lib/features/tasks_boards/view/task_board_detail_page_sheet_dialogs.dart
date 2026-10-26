@@ -1,5 +1,16 @@
 part of 'task_board_detail_page.dart';
 
+/// Board pickers open on the shared dialog host above the shell, as the
+/// shadcn dialogs they replace did.
+Future<T?> _showBoardDialog<T>({
+  required BuildContext context,
+  required WidgetBuilder builder,
+}) => showAppDialog<T>(
+  context: context,
+  useRootNavigator: true,
+  builder: builder,
+);
+
 class _MoveTaskListDialog extends StatelessWidget {
   const _MoveTaskListDialog({required this.lists});
 

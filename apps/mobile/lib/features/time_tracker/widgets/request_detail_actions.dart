@@ -171,7 +171,21 @@ class _RequestManagerActionsBarState extends State<RequestManagerActionsBar> {
 
   Future<void> _handleApprove() async {
     final toastContext = Navigator.of(context, rootNavigator: true).context;
-    Future<bool> dismissOverlay() => Navigator.maybePop(context);
+    // Capture the sheet that owns these actions before awaiting. Closing it
+    // through its scope is a no-op when another route (such as the Edit
+    // sheet) now sits above it or it is already leaving, so a late approval
+    // never pops someone else's route or draft.
+    final modal = AppModalScope.maybeOf(context);
+    final route = ModalRoute.of(context);
+    Future<void> dismissOverlay() async {
+      if (modal != null) {
+        await modal.close();
+        return;
+      }
+      if (route != null && route.isCurrent && route.isActive && mounted) {
+        Navigator.of(context).pop();
+      }
+    }
 
     setState(() => _isProcessing = true);
 
@@ -230,7 +244,8 @@ class _RequestManagerActionsBarState extends State<RequestManagerActionsBar> {
     final rootNav = Navigator.of(context, rootNavigator: true);
 
     unawaited(
-      shad.showDialog<void>(
+      showAppDialog<void>(
+        useRootNavigator: true,
         context: context,
         builder: (dialogCtx) => _ReasonDialogContent(
           title: title,

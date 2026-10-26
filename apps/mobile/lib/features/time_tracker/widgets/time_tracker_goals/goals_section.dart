@@ -140,7 +140,7 @@ class _TimeTrackerGoalsSectionState extends State<TimeTrackerGoalsSection> {
     final l10n = rootContext.l10n;
     final cubit = rootContext.read<TimeTrackerCubit>();
     final toastContext = Navigator.of(rootContext, rootNavigator: true).context;
-    final shouldDelete = await showDialog<bool>(
+    final shouldDelete = await showAppDialog<bool>(
       context: rootContext,
       builder: (dialogContext) => AppDialog(
         title: l10n.timerGoalsDeleteTitle,

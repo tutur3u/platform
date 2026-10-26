@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/data/models/time_tracking/request.dart';
 import 'package:mobile/data/models/time_tracking/request_comment.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
@@ -384,6 +387,92 @@ void main() {
       expect(find.textContaining('Unable to save request'), findsOneWidget);
 
       await tester.drainShadToastTimers();
+    });
+
+    Future<Completer<void>> openHostedSheet(WidgetTester tester) async {
+      final approval = Completer<void>();
+      await tester.pumpApp(
+        Builder(
+          builder: (context) => Scaffold(
+            body: Center(
+              child: TextButton(
+                onPressed: () => showAdaptiveSheet<void>(
+                  context: context,
+                  builder: (_) => RequestDetailSheet(
+                    request: request,
+                    wsId: 'test_ws_id',
+                    repository: repository,
+                    isManager: true,
+                    canEdit: true,
+                    onApprove: () => approval.future,
+                    onReject: (_) async {},
+                    onRequestInfo: (_) async {},
+                    onResubmit: () async {},
+                    onEdit:
+                        (
+                          title,
+                          startTime,
+                          endTime, {
+                          description,
+                          removedImages,
+                          newImageLocalPaths,
+                        }) async => request,
+                  ),
+                ),
+                child: const Text('Open request'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Open request'));
+      await tester.pumpAndSettle();
+      return approval;
+    }
+
+    testWidgets('a late approval never closes the Edit sheet or its draft', (
+      tester,
+    ) async {
+      _setCompactViewport(tester);
+      addTearDown(tester.view.reset);
+      final approval = await openHostedSheet(tester);
+
+      await tester.tap(find.text('Approve'));
+      await tester.pump();
+      await tester.tap(find.text('Edit'));
+      await tester.pumpAndSettle();
+      expect(find.text('Edit request'), findsOneWidget);
+      await tester.enterText(find.byType(EditableText).first, 'Draft title');
+      await tester.pump();
+
+      approval.complete();
+      await tester.pumpAndSettle();
+
+      // The Edit sheet, its draft and the page underneath all survive.
+      expect(find.text('Edit request'), findsOneWidget);
+      expect(find.text('Draft title'), findsOneWidget);
+      expect(find.text('Open request'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('approval finishing during the exit animation pops nothing', (
+      tester,
+    ) async {
+      _setCompactViewport(tester);
+      addTearDown(tester.view.reset);
+      final approval = await openHostedSheet(tester);
+
+      await tester.tap(find.text('Approve'));
+      await tester.pump();
+      // Start closing the request sheet, then finish the approval mid-exit.
+      await tester.binding.handlePopRoute();
+      await tester.pump(const Duration(milliseconds: 50));
+      approval.complete();
+      await tester.pumpAndSettle();
+
+      expect(find.text('Open request'), findsOneWidget);
+      expect(find.text('Approve'), findsNothing);
+      expect(tester.takeException(), isNull);
     });
   });
 }

@@ -76,7 +76,7 @@ class _MailOrganizationPageState extends State<MailOrganizationPage> {
     var autoApply = item?['aiAutoApply'] as bool? ?? false;
     var saving = false;
     var failed = false;
-    await showDialog<void>(
+    await showAppDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) => StatefulBuilder(
@@ -172,7 +172,8 @@ class _MailOrganizationPageState extends State<MailOrganizationPage> {
                     : () => Navigator.of(dialogContext).pop(),
                 child: Text(l10n.commonCancel),
               ),
-              AppButton.ghost(
+              AppButton.primary(
+                key: const ValueKey('mail-organization-save'),
                 onPressed: saving
                     ? null
                     : () async {

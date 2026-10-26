@@ -1501,7 +1501,7 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
       return;
     }
 
-    final selectedTaskId = await shad.showDialog<String>(
+    final selectedTaskId = await _showBoardDialog<String>(
       context: context,
       builder: (context) => _TaskRelationshipPickerDialog(
         title: _relationshipPickerTitle(context, role),
@@ -1843,7 +1843,7 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
       return;
     }
 
-    final targetListId = await shad.showDialog<String>(
+    final targetListId = await _showBoardDialog<String>(
       context: context,
       builder: (context) => _MoveTaskListDialog(lists: availableLists),
     );

@@ -109,7 +109,9 @@ Widget _sheetSurface(BuildContext context, Widget child, Color surface) {
       sigma: 20,
       child: Material(
         color: surface.withValues(alpha: GlassEffects.fillAlpha(context, 0.88)),
-        child: AppearanceScope.opaqueScaffolds(child),
+        child: AppSheetSurface.markHosted(
+          AppearanceScope.opaqueScaffolds(child),
+        ),
       ),
     ),
   );
