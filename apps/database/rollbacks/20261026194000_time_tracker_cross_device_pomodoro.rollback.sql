@@ -1,6 +1,6 @@
--- Rollback for 20261026180000_time_tracker_cross_device_pomodoro.sql.
+-- Rollback for 20261026194000_time_tracker_cross_device_pomodoro.sql.
 -- Not a migration: apply manually only with release-authority approval, then
--- record it with `supabase migration repair --status reverted 20261026180000`.
+-- record it with `supabase migration repair --status reverted 20261026194000`.
 --
 -- 1. Reset: every control returns to the inert OFF shape. Focus sessions stay
 --    as ordinary `pomodoro`-tagged sessions; session rows are never touched.

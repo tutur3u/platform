@@ -1,4 +1,4 @@
--- Catalog snapshot of every object 20261026180000 changes. Take it before the
+-- Catalog snapshot of every object 20261026194000 changes. Take it before the
 -- migration and after its rollback (psql -At); the two outputs must be equal.
 select 'fn|'||p.oid::regprocedure::text||'|'||md5(pg_get_functiondef(p.oid))
   ||'|'||coalesce(p.proacl::text,'')
