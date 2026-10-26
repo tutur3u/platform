@@ -1,4 +1,3 @@
-import VerifyTokenPage from '@tuturuuu/satellite/verify-token-page';
 import { SatelliteWorkspaceInvitationCard } from '@tuturuuu/satellite/workspace-invitation';
 import { useTranslations } from 'next-intl';
 import { lazy, Suspense } from 'react';
@@ -7,6 +6,7 @@ import type { MeetPageModel } from './page-model.server';
 import { PlansView } from './plans-view';
 import { PublicLayout } from './public-layout';
 import { Pending } from './router-shell';
+import VerifyTokenPage from './verify-token-page';
 import { WorkspaceView } from './workspace-view';
 
 // The call shell, collaboration editors, live plan editor and meeting detail

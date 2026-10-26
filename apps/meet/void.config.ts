@@ -59,6 +59,8 @@ const production = defineConfig({
       ],
     },
     vars: {
+      APP_ORIGIN: 'https://tuturuuu.com',
+      APP_BASE_PATH: '/meet',
       NEXT_PUBLIC_APP_URL: 'https://meet.tuturuuu.com',
       NEXT_PUBLIC_WEB_APP_URL: 'https://tuturuuu.com',
       MEET_REALTIME_URL: 'wss://meet-realtime.tuturuuu.com/realtime',

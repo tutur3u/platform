@@ -53,7 +53,11 @@ export async function loadMeetSupplier(
   return { startWorker: sdk.unstable_startWorker, receipt: after };
 }
 
-export function createMeetOwner(startWorker, inputs) {
+export function createMeetOwner(
+  startWorker,
+  inputs,
+  beforeProbe = async () => {}
+) {
   const acquired = [],
     phases = [],
     errors = [];
@@ -81,6 +85,8 @@ export function createMeetOwner(startWorker, inputs) {
           await worker.ready;
           const url = await worker.url;
           assert.equal(url.hostname, '127.0.0.1');
+          if (role === 'app')
+            await beforeProbe((...args) => worker.fetch(...args));
           phases.push({ role, phase: 'ready', ok: true });
         } catch (error) {
           phases.push({ role, phase: 'ready', ok: false, error });
@@ -140,6 +146,32 @@ function egressCounts(policies) {
   );
 }
 
+async function assertAppHealthy(fetchApp) {
+  const app = await fetchApp(
+    'https://meet.tuturuuu.com/.well-known/meeting-runtime',
+    {
+      method: 'GET',
+      redirect: 'manual',
+    }
+  );
+  const appBody = await app.text();
+  assert.equal(app.status, 200, 'Meet startup health status');
+  let health;
+  try {
+    health = JSON.parse(appBody);
+  } catch {
+    throw new Error('Meet startup health body');
+  }
+  assert.ok(
+    health &&
+      typeof health === 'object' &&
+      !Array.isArray(health) &&
+      Object.keys(health).length === 1 &&
+      health.version === 1,
+    'Meet startup health body'
+  );
+}
+
 export function createMeetStartup(
   owner,
   policies,
@@ -154,26 +186,7 @@ export function createMeetStartup(
       try {
         const adapters = await owner.start();
         const before = egressCounts(policies);
-        const app = await adapters.fetchApp(
-          'https://meet.tuturuuu.com/.well-known/meeting-runtime',
-          { method: 'GET', redirect: 'manual' }
-        );
-        const appBody = await app.text();
-        assert.equal(app.status, 200, 'Meet startup health status');
-        let health;
-        try {
-          health = JSON.parse(appBody);
-        } catch {
-          throw new Error('Meet startup health body');
-        }
-        assert.ok(
-          health &&
-            typeof health === 'object' &&
-            !Array.isArray(health) &&
-            Object.keys(health).length === 1 &&
-            health.version === 1,
-          'Meet startup health body'
-        );
+        await assertAppHealthy(adapters.fetchApp);
         const probe = await adapters.fetchProbe(
           'https://meet-ci-probe.invalid/startup-denial',
           { method: 'POST', redirect: 'manual' }
@@ -277,8 +290,9 @@ export async function createMeetGraph(
           registry: prepared.registry,
           server: { hostname: '127.0.0.1', port: 0 },
           origin: {
-            hostname:
-              role === 'app' ? 'meet.tuturuuu.com' : 'meet-ci-probe.invalid',
+            // A fixed app hostname rewrites every public Worker.fetch URL,
+            // preventing the same graph from exercising both document origins.
+            ...(role === 'probe' ? { hostname: 'meet-ci-probe.invalid' } : {}),
             secure: true,
           },
           inferOriginFromRoutes: false,
@@ -291,7 +305,15 @@ export async function createMeetGraph(
       },
     ])
   );
-  const owner = createMeetOwner(startWorker, inputs);
+  const owner = createMeetOwner(startWorker, inputs, async (fetchApp) => {
+    const before = egressCounts(policies);
+    await assertAppHealthy(fetchApp);
+    assert.deepEqual(
+      egressCounts(policies),
+      before,
+      'Meet dependency readiness changed HTTP egress counters'
+    );
+  });
   const startedAt = Date.now();
   const startup = createMeetStartup(
     owner,

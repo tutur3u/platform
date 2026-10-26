@@ -5,19 +5,24 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const ports = vi.hoisted(() => ({
   start: vi.fn<(request: Request) => Promise<Response>>(),
   proxy: vi.fn(),
-  endpoint: vi.fn(async () => undefined),
+  endpoint: vi.fn(async (_request: Request) => undefined),
   native: vi.fn(() => {
     throw Error('Unexpected native proxy');
   }),
-  web: vi.fn(() => {
-    throw Error('Unexpected external API destination');
+  web: vi.fn(() => 'https://tuturuuu.com'),
+  externalFetch: vi.fn(() => {
+    throw Error('Unexpected external API request');
   }),
 }));
-vi.mock('@tanstack/react-start/server-entry', () => ({
-  default: { fetch: ports.start },
+vi.mock('@tuturuuu/start-bridge/start/server-entry', () => ({
+  createBridgeStartHandler: () => ({ fetch: ports.start }),
 }));
 vi.mock('../proxy', () => ({ proxy: ports.proxy }));
-vi.mock('./api-registry', () => ({ dispatchMeetEndpoint: ports.endpoint }));
+vi.mock('./api-registry', () => ({ meetEndpoints: [] }));
+vi.mock('@tuturuuu/start-bridge/endpoints', () => ({
+  dispatchEndpoint: (_endpoints: unknown, request: Request) =>
+    ports.endpoint(request),
+}));
 vi.mock('./native-function-proxy', () => ({
   nativeFunctionProxy: ports.native,
 }));
@@ -69,11 +74,13 @@ const ctx = { waitUntil() {} };
 beforeEach(() => {
   vi.clearAllMocks();
   ports.proxy.mockImplementation(async () => NextResponse.next());
+  vi.stubGlobal('fetch', ports.externalFetch);
 });
 afterEach(() => {
   expect(ports.native).not.toHaveBeenCalled();
-  expect(ports.web).not.toHaveBeenCalled();
+  expect(ports.externalFetch).not.toHaveBeenCalled();
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
 describe('R21 actual handler request-local diagnostic handoff with fixed dependency ports', () => {
@@ -90,7 +97,7 @@ describe('R21 actual handler request-local diagnostic handoff with fixed depende
       }
     });
     ports.proxy.mockImplementation(async () => {
-      late = meetRequest().observeLoginNavigation;
+      late = meetRequest().observeNavigation;
       const middleware = NextResponse.rewrite('https://meet.invalid/en/login');
       middleware.headers.set('location', '/vi/verify-token');
       return middleware;
@@ -98,7 +105,7 @@ describe('R21 actual handler request-local diagnostic handoff with fixed depende
     ports.start.mockImplementation(async (request) => {
       expect(request.url).toBe('https://meet.invalid/login?SECRET_REQUEST=one');
       expect(meetRequest().request.url).toBe('https://meet.invalid/en/login');
-      expect(meetRequest().observeLoginNavigation).toBe(late);
+      expect(meetRequest().observeNavigation).toBe(late);
       withMeetRequest({ ...meetRequest() }, () =>
         navigate('https://tuturuuu.com/login?SECRET_NAV=two')
       );
@@ -170,7 +177,7 @@ describe('R21 actual handler request-local diagnostic handoff with fixed depende
     const original = new Error('SECRET_PRIMARY');
     let late: ObserveLoginNavigation | undefined;
     ports.start.mockImplementation(async () => {
-      late = meetRequest().observeLoginNavigation;
+      late = meetRequest().observeNavigation;
       navigate('https://tuturuuu.com/login');
       throw original;
     });
@@ -200,7 +207,7 @@ describe('R21 actual handler request-local diagnostic handoff with fixed depende
     const entered = deferred<void>();
     const callbacks: ObserveLoginNavigation[] = [];
     ports.start.mockImplementation(async (request) => {
-      const callback = meetRequest().observeLoginNavigation;
+      const callback = meetRequest().observeNavigation;
       if (!callback) throw Error('Missing probe');
       callbacks.push(callback);
       if (callbacks.length === 2) entered.resolve();
@@ -268,11 +275,11 @@ it('R21 late asynchronous navigation keeps inherited ALS wiring after terminal r
   const release = deferred<void>();
   let lateWork: Promise<void> | undefined;
   ports.start.mockImplementation(async () => {
-    const callback = meetRequest().observeLoginNavigation;
+    const callback = meetRequest().observeNavigation;
     if (!callback) throw Error('Missing handler probe');
     navigate('https://tuturuuu.com/login');
     lateWork = release.promise.then(() => {
-      expect(meetRequest().observeLoginNavigation).toBe(callback);
+      expect(meetRequest().observeNavigation).toBe(callback);
       navigate('/vi/verify-token');
     });
     return new Response(null, { status: 307, headers: { location: '/login' } });
@@ -291,4 +298,31 @@ it('R21 late asynchronous navigation keeps inherited ALS wiring after terminal r
   expect(records(sink.mock.calls).at(-1)?.loginRedirect?.navigationCalls).toBe(
     'one'
   );
+});
+
+it('uses the resolved mounted base without claiming adjacent or root Web API paths', async () => {
+  const { runtimeAppBase } = await import('@tuturuuu/start-bridge/app-url');
+  ports.start.mockImplementation(async (request) =>
+    Response.json({ url: request.url, appBase: runtimeAppBase() })
+  );
+  const env = { APP_ORIGIN: 'https://tuturuuu.com', APP_BASE_PATH: '/meet' };
+  const result = await handleMeetRequest(
+    new Request('https://tuturuuu.com/meet/vi/r/code?tag=one&tag=two'),
+    env,
+    ctx
+  );
+  expect(await result.json()).toEqual({
+    url: 'https://tuturuuu.com/meet/vi/r/code?tag=one&tag=two',
+    appBase: '/meet',
+  });
+  const count = ports.start.mock.calls.length;
+  for (const path of ['/api/meet-call/one', '/meet-together', '/meeting']) {
+    const denied = await handleMeetRequest(
+      new Request(`https://tuturuuu.com${path}`),
+      env,
+      ctx
+    );
+    expect(denied.status).toBe(404);
+  }
+  expect(ports.start).toHaveBeenCalledTimes(count);
 });

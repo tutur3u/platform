@@ -27,6 +27,7 @@ import {
   MFA_MOBILE_APPROVAL_KIND,
   parseMfaMobileApprovalCookie,
 } from '../mfa-mobile-approval';
+import { resolveAuthApiUrl } from './auth-api-url';
 import { appSessionFailureResponse } from './mfa-failure';
 import {
   decodeURIComponentSafely,
@@ -224,25 +225,8 @@ function isTuturuuuLocalhostRequest(req: NextRequest) {
   return getRequestHostnames(req).some(isTuturuuuLocalhost);
 }
 
-function getLocalPortlessAuthApiUrl(req: NextRequest, apiPath: string) {
-  const port = process.env.PORT?.trim();
-
-  if (
-    process.env.NODE_ENV === 'production' ||
-    !port ||
-    !/^\d+$/u.test(port) ||
-    !isTuturuuuLocalhostRequest(req)
-  ) {
-    return null;
-  }
-  return new URL(withRequestBasePath(req, apiPath), `http://127.0.0.1:${port}`);
-}
-
 function getAuthApiUrl(req: NextRequest, apiPath: string) {
-  return (
-    getLocalPortlessAuthApiUrl(req, apiPath) ??
-    new URL(withRequestBasePath(req, apiPath), req.url)
-  );
+  return resolveAuthApiUrl(req, apiPath, isTuturuuuLocalhostRequest(req));
 }
 
 function shouldUseClientVerifyTokenFlow(req: NextRequest) {

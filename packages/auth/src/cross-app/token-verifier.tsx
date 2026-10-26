@@ -1,9 +1,15 @@
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { TuturuuLogo } from '@tuturuuu/ui/custom/tuturuuu-logo';
 import { Suspense } from 'react';
-import { TokenVerifierCore } from './token-verifier-core';
+import {
+  TokenVerifierCore,
+  type TokenVerifierOptions,
+} from './token-verifier-core';
 
-export function TokenVerifier({ failurePath }: { failurePath?: string }) {
+export function TokenVerifier({
+  failurePath,
+  verifyApiPath,
+}: TokenVerifierOptions) {
   return (
     <div className="fixed inset-0 flex h-screen w-screen flex-col items-center justify-center gap-2">
       <div className="flex items-center justify-center">
@@ -18,7 +24,10 @@ export function TokenVerifier({ failurePath }: { failurePath?: string }) {
           </div>
         }
       >
-        <TokenVerifierCore failurePath={failurePath} />
+        <TokenVerifierCore
+          failurePath={failurePath}
+          verifyApiPath={verifyApiPath}
+        />
       </Suspense>
     </div>
   );

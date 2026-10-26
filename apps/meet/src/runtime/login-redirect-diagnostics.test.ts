@@ -13,12 +13,12 @@ afterEach(() => vi.restoreAllMocks());
 
 const base = 'https://meet.invalid/en/login?SECRET_REQUEST=one';
 const context = (
-  observeLoginNavigation?: (href: string, result: unknown) => void
+  observeNavigation?: (href: string, result: unknown) => void
 ) => ({
   request: new Request(base),
   responseHeaders: new Headers(),
   waitUntil() {},
-  observeLoginNavigation,
+  observeNavigation,
 });
 
 describe('closed login redirect probe', () => {

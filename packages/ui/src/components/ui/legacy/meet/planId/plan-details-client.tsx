@@ -42,6 +42,7 @@ interface PlanDetailsClientProps {
   isCreator: boolean;
   isRefreshing: boolean;
   baseUrl: string;
+  planBaseUrl?: string;
 }
 
 export default function PlanDetailsClient({
@@ -53,6 +54,7 @@ export default function PlanDetailsClient({
   isCreator,
   isRefreshing,
   baseUrl,
+  planBaseUrl,
 }: PlanDetailsClientProps) {
   const { resolvedTheme } = useTheme();
   const t = useTranslations('meet-together-plan-details');
@@ -124,7 +126,11 @@ export default function PlanDetailsClient({
                   {plan.description || t('default_plan_description')}
                 </p>
               </div>
-              <UtilityButtons plan={plan} handlePNG={downloadAsPNG} />
+              <UtilityButtons
+                plan={plan}
+                handlePNG={downloadAsPNG}
+                planBaseUrl={planBaseUrl}
+              />
             </div>
           </header>
 

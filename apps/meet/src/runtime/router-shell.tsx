@@ -6,6 +6,7 @@ import {
   useLocation,
   useMatches,
 } from '@tanstack/react-router';
+import { appPath } from '@tuturuuu/start-bridge/app-url';
 import { AppErrorBoundary } from '@tuturuuu/ui/custom/app-error-boundary';
 import type { ReactElement } from 'react';
 import { AppProviders } from './app-providers';
@@ -55,14 +56,14 @@ export function Pending(): ReactElement {
     <main className="grid min-h-dvh place-items-center bg-background p-6 text-foreground">
       <section className="max-w-sm text-center">
         <img
-          src="/media/branding/brand-mark-light.svg"
+          src={appPath('/media/branding/brand-mark-light.svg')}
           width="2369"
           height="512"
           alt="Tuturuuu"
           className="mb-9 h-auto w-full dark:hidden"
         />
         <img
-          src="/media/branding/brand-mark-dark.svg"
+          src={appPath('/media/branding/brand-mark-dark.svg')}
           width="2369"
           height="512"
           alt="Tuturuuu"

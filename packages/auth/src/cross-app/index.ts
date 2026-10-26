@@ -289,11 +289,13 @@ export const verifyRouteToken = async ({
   token,
   router,
   failurePath,
+  verifyApiPath,
 }: {
   searchParams: URLSearchParams;
   token: string | null;
   router: ReturnType<typeof useRouter>;
   failurePath?: string;
+  verifyApiPath?: string;
 }) => {
   try {
     const safeNextUrl = normalizeClientRedirectPath(
@@ -324,6 +326,7 @@ export const verifyRouteToken = async ({
 
     const verification = verifyRouteTokenOnce({
       failurePath,
+      verifyApiPath,
       router,
       searchParams,
       token,
@@ -339,11 +342,13 @@ export const verifyRouteToken = async ({
 
 async function verifyRouteTokenOnce({
   failurePath,
+  verifyApiPath,
   searchParams,
   token,
   router,
 }: {
   failurePath?: string;
+  verifyApiPath?: string;
   searchParams: URLSearchParams;
   token: string;
   router: ReturnType<typeof useRouter>;
@@ -351,7 +356,7 @@ async function verifyRouteTokenOnce({
   try {
     // Always verify the token when present — it represents fresh auth from web
     // and should override any existing (potentially stale aal1) session
-    const res = await fetch('/api/auth/verify-app-token', {
+    const res = await fetch(verifyApiPath ?? '/api/auth/verify-app-token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

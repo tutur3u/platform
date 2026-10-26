@@ -31,7 +31,7 @@ vi.mock('@tuturuuu/utils/api-proxy-guard', () => ({
 import { nativeFunctionProxy } from './native-function-proxy';
 
 function request(method: string, headers: HeadersInit = {}) {
-  return new NextRequest('https://meet.tuturuuu.com/_meet/functions/fixture', {
+  return new NextRequest('https://meet.tuturuuu.com/_fn/fixture', {
     method,
     headers,
   });
@@ -117,7 +117,7 @@ describe('native function boundary', () => {
           {},
           {
             request: request('POST', headers),
-            pathname: '/_meet/functions/fixture',
+            pathname: '/_fn/fixture',
             context: undefined,
             handlerType: 'serverFn',
             next: dispatch,

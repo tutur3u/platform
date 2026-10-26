@@ -1,3 +1,4 @@
+import { meetingAppPath } from '@tuturuuu/meet-core/runtime';
 export function encodeMeetWav(samples: Float32Array): Blob {
   const data = new ArrayBuffer(44 + samples.length * 2);
   const view = new DataView(data);
@@ -65,7 +66,9 @@ export class MeetAudioCapture {
     this.context = context;
     if (context.sampleRate !== 16000)
       throw new Error('Unsupported audio sample rate');
-    await context.audioWorklet.addModule('/meet-audio-processor.js');
+    await context.audioWorklet.addModule(
+      meetingAppPath('/meet-audio-processor.js')
+    );
     this.silent = context.createGain();
     this.silent.gain.value = 0;
     this.silent.connect(context.destination);

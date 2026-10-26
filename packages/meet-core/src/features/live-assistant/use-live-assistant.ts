@@ -1,10 +1,18 @@
 'use client';
+
 import {
   controlMeetLive,
   type MeetLiveVoice,
   reviewMeetLiveTool,
 } from '@tuturuuu/internal-api';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { meetingAppPath } from '@tuturuuu/meet-core/runtime';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import {
   MIRA_VOLUME_ID,
   usePlaybackVolume,
@@ -46,7 +54,6 @@ export function useLiveAssistant(
 ) {
   const volume = usePlaybackVolume(MIRA_VOLUME_ID);
   const volumeRef = useRef(volume);
-  volumeRef.current = volume;
   const [status, setStatus] = useState('idle');
   const [mode, setMode] = useState<LiveAudience>('personal');
   const [transcript, setTranscript] = useState<
@@ -60,7 +67,10 @@ export function useLiveAssistant(
   const startGeneration = useRef(0);
   const starting = useRef(false);
   const roomAudioRef = useRef(roomAudio);
-  roomAudioRef.current = roomAudio;
+  useLayoutEffect(() => {
+    volumeRef.current = volume;
+    roomAudioRef.current = roomAudio;
+  }, [roomAudio, volume]);
   const send = useCallback((message: LiveClientCommand) => {
     const current = active.current;
     if (!current) return false;
@@ -128,7 +138,10 @@ export function useLiveAssistant(
   const connect = async (token: string) => {
     const current = active.current;
     if (!current || current.stopped) return;
-    const url = new URL('/live-connect', window.location.origin);
+    const url = new URL(
+      meetingAppPath('/live-connect'),
+      window.location.origin
+    );
     url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
     const socket = new WebSocket(url, ['meet-live', `auth.${token}`]);
     current.socket = socket;

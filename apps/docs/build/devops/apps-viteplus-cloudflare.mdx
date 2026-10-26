@@ -192,3 +192,63 @@ release gates. Publish only the already qualified restored artifact through the
 existing Wrangler path after one final hash check; ordinary Void CLI deployment
 rebuilds/preflights and cannot stand in for exact-artifact publication. Do not
 borrow Meet's no-staging exception or another SHA's success.
+
+
+## Meet shared bridge adoption
+
+Meet's app-local adapters now consume `@tuturuuu/start-bridge` while retaining
+its page models, plan actions and bounded SSR diagnostics. The bridge owns one
+request-local store across middleware and all framework aliases. Thin app-local
+re-exports preserve existing imports; do not reintroduce a second cookie or
+request store when extending Meet.
+
+`apps/meet/start-bridge.routes.json` inventories retained pages and API handlers.
+After a route change, run `bun packages/start-bridge/src/codegen/cli.ts generate
+apps/meet`, then `bun packages/start-bridge/src/codegen/cli.ts check apps/meet`.
+Commit generated files with the route. The generated page pattern union also
+requires an explicit dispatch kind in `src/runtime/page-routing.ts`; a registry
+alone does not implement a new page. CI checks registry freshness before building.
+Public room previews keep both localized and unlocalized routes.
+
+This adoption preserves the subdomain baseline. A root-mode bridge build is not
+acceptance of one artifact serving both the subdomain and the `/meet` mount.
+Shared-session security, assets, function transports, API ownership, bilingual browser
+hydration and hosted SFU/TURN still require their own exact-artifact checks.
+Keep the production publication hold and use the dedicated cutover procedure.
+
+
+Meet's mounting candidate resolves its host/base per request and hands that base
+to the client before hydration. Its own API, function, asset and Vietnamese paths
+are under `/meet`; Web's central `/api` stays at the apex. Shared Meet libraries
+receive URL functions from the app adapter, and the public `internal-api` client
+keeps an identity default rather than importing the private bridge package.
+Explicit API destinations remain authoritative.
+
+The staging candidate rejects canonical hosts and returns noindex headers.
+Cookies pass through unchanged under the user's shared-session decision.
+App-owned refresh and verification use the resolved mount; logout uses Web's
+root endpoints and ends the shared session globally. Shared-session security
+acceptance remains a cutover requirement. The temporary
+`vp build --configLoader runner` command does not waive real build or artifact
+acceptance.
+
+The finite Meet SDK fixture leaves the app's `dev.origin.hostname` unset and
+sets only `secure: true`. A fixed hostname rewrites every public `Worker.fetch`
+URL to that host, so sending an apex URL alone does not exercise a mounted
+request. Keep the probe's fixed origin and all HTTP denial controls. Both fresh
+graphs must render root and mounted bilingual callbacks, fetch their emitted
+assets and check the app/API ownership boundaries. Do not repair sealed output
+to resolve a fixture or runtime failure.
+
+Complete the app's public health response before starting the dependent probe,
+then retain the full graph health and registry checks. The SDK proxy-ready
+promise can precede app publication in the local registry; creating the probe
+then can leave its external bindings disconnected. Keep the same supplier,
+denial assertions and deadlines when checking this boundary.
+
+Meet's Vitest config disables the filesystem module cache for exact-source
+checks. Reusing a checkout across workspace export-map changes otherwise can
+reuse the old module entry even though the package now exports a new server
+adapter. A source import succeeding is not proof that the current export map
+was executed. Do not weaken cookie or request-store assertions to accommodate
+stale transformed modules.

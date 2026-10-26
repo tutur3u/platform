@@ -1,7 +1,8 @@
-import { meetRequest } from './request-context';
+import { getCloudflareContext as getBridgeCloudflareContext } from '@tuturuuu/start-bridge/next/cloudflare-context';
+import type { MeetExecutionContext, MeetRuntimeBindings } from './worker-port';
 
-export function getCloudflareContext(_options?: { async?: boolean }) {
-  const cloudflare = meetRequest().cloudflare;
-  if (!cloudflare) throw new Error('Meet Cloudflare bindings are unavailable');
-  return cloudflare;
+export function getCloudflareContext(options?: { async?: boolean }) {
+  return getBridgeCloudflareContext<MeetRuntimeBindings, MeetExecutionContext>(
+    options
+  );
 }

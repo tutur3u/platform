@@ -30,6 +30,7 @@ export default defineConfig({
     },
   },
   test: {
+    fsModuleCache: false,
     environment: 'node',
     include: ['src/**/*.test.{ts,tsx}'],
     exclude: [...configDefaults.exclude, 'src/proxy.public-callback.test.ts'],

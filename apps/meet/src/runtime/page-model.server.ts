@@ -26,6 +26,7 @@ import {
   getSidebarCollapsedState,
   parseSidebarBehavior,
 } from '@tuturuuu/satellite/workspace-layout-helpers';
+import { appUrl } from '@tuturuuu/start-bridge/app-url';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getMeetTogetherPlansData } from '@tuturuuu/ui/legacy/meet/page';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
@@ -36,6 +37,7 @@ import { loadMeetingCalendarEvent } from '../app/[locale]/[wsId]/meetings/[meeti
 import { getMeetWorkspaceContext } from '../app/[locale]/[wsId]/workspace-context';
 import { getLocale, getTranslations } from './intl-server';
 import type { MeetPageMeta } from './page-head';
+import { matchMeetPage } from './page-routing';
 import { meetPlanPolls } from './plan-polls';
 import {
   cookies,
@@ -50,7 +52,10 @@ async function roomModel(code: string, locale: string, url: URL) {
   const t = await getTranslations('meet.call');
   const publicCopy = await getTranslations('meet.public');
   const info = await getMeetingPublicInfo(code);
-  const canonical = `https://meet.tuturuuu.com${locale === 'vi' ? '/vi' : ''}/r/${encodeRoomCode(meetingId)}`;
+  const canonical = appUrl(
+    `${locale === 'vi' ? '/vi' : ''}/r/${encodeRoomCode(meetingId)}`,
+    url.origin
+  );
   const meta: MeetPageMeta = {
     title: info?.title || publicCopy('meta_title'),
     description: info
@@ -234,14 +239,10 @@ export async function loadPageModel(path: string) {
 }
 
 async function loadResolvedPageModel(url: URL) {
-  const segments = url.pathname.split('/').filter(Boolean);
-  const locale =
-    segments[0] === 'vi'
-      ? 'vi'
-      : segments[0] === 'en'
-        ? 'en'
-        : await getLocale();
-  if (segments[0] === 'en' || segments[0] === 'vi') segments.shift();
+  const matched = matchMeetPage(url.pathname);
+  if (!matched) throw notFound();
+  const { segments, kind } = matched;
+  const locale = matched.locale ?? (await getLocale());
   const actor = await getSatelliteAppSessionUser('meet');
   const params: Record<string, string> = { locale };
   if (segments[0] === 'r' && segments[1]) params.code = segments[1];
@@ -262,22 +263,25 @@ async function loadResolvedPageModel(url: URL) {
           ? 'Họp với âm thanh rõ ràng, chép lời trực tiếp và ghi chú kết nối với Tuturuuu Tasks và Calendar.'
           : 'Meet with clear audio, live transcription, and meeting notes connected to Tuturuuu Tasks and Calendar.',
       indexable: false,
-      canonical: `https://meet.tuturuuu.com${locale === 'vi' ? '/vi' : ''}${segments.length ? `/${segments.join('/')}` : ''}`,
+      canonical: appUrl(
+        `${locale === 'vi' ? '/vi' : ''}${segments.length ? `/${segments.join('/')}` : '/'}`,
+        url.origin
+      ),
     } satisfies MeetPageMeta,
   };
-  if (segments[0] === 'login' && segments.length === 1) {
+  if (kind === 'login') {
     await LoginPage({
       searchParams: Promise.resolve(Object.fromEntries(url.searchParams)),
     });
     throw new Error('Meet login did not redirect');
   }
-  if (segments[0] === 'verify-token' && segments.length === 1)
+  if (kind === 'verify-token')
     return { ...common, kind: 'verify-token' as const };
-  if (segments[0] === 'native-collaboration' && segments.length === 1)
+  if (kind === 'native-collaboration')
     return { ...common, kind: 'native-collaboration' as const };
-  if (segments[0] === 'r' && segments[1] && segments.length === 2)
+  if (kind === 'room' && segments[1])
     return { ...common, ...(await roomModel(segments[1], locale, url)) };
-  if (segments[0] === 'plans' && segments[1] && segments.length === 2) {
+  if (kind === 'plan' && segments[1]) {
     const profilePromise = actor
       ? getSatelliteCurrentUser('meet').catch(() => null)
       : Promise.resolve(null);
@@ -305,7 +309,7 @@ async function loadResolvedPageModel(url: URL) {
       },
     };
   }
-  if (segments.length === 0) {
+  if (kind === 'public-plans') {
     if (actor)
       throw redirect({
         href: `${locale === 'vi' ? '/vi' : ''}/personal/meetings`,
@@ -321,7 +325,7 @@ async function loadResolvedPageModel(url: URL) {
   }
   const workspaceId = segments[0];
   if (!workspaceId || segments.length > 3) throw notFound();
-  if (segments.length === 1)
+  if (kind === 'workspace')
     throw redirect({
       href: `${locale === 'vi' ? '/vi' : ''}/${workspaceId}/meetings`,
     });
@@ -341,7 +345,7 @@ async function loadResolvedPageModel(url: URL) {
   );
   if (workspace.kind === 'invitation')
     return { ...common, kind: 'workspace-invitation' as const, workspace };
-  if (segments[1] === 'plans' && segments.length === 2) {
+  if (kind === 'workspace-plans') {
     const paging = pagination(url, 9);
     return {
       ...common,
@@ -357,14 +361,14 @@ async function loadResolvedPageModel(url: URL) {
       }),
     };
   }
-  if (segments[1] === 'meetings' && segments[2])
+  if (kind === 'meeting' && segments[2])
     return {
       ...common,
       kind: 'meeting' as const,
       workspace,
       detail: await detailModel(workspace, segments[2]),
     };
-  if (segments[1] === 'meetings')
+  if (kind === 'meetings')
     return {
       ...common,
       kind: 'meetings' as const,

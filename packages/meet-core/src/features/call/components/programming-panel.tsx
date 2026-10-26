@@ -1,4 +1,5 @@
 'use client';
+
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   checkpointMeetProgramming,
@@ -11,6 +12,7 @@ import {
   selectMeetProgramming,
   testMeetProgramming,
 } from '@tuturuuu/internal-api';
+import { meetingAppPath } from '@tuturuuu/meet-core/runtime';
 import type { MeetingProgramming } from '@tuturuuu/realtime/meet';
 import dynamic from 'next/dynamic';
 import { useLocale, useTranslations } from 'next-intl';
@@ -160,7 +162,9 @@ export function ProgrammingPanel({
             previewUrl={
               previewUrl ??
               ((port) =>
-                `/api/meet-call/${encodeURIComponent(meetingId)}/programming/preview/${port}/`)
+                meetingAppPath(
+                  `/api/meet-call/${encodeURIComponent(meetingId)}/programming/preview/${port}/`
+                ))
             }
             execution={{
               run: (payload) => api.run(meetingId, payload),
