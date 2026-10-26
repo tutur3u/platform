@@ -292,3 +292,17 @@ upstream CSP byte for byte and receive no X-Frame-Options. Central's sandbox
 is the security boundary for uploaded JavaScript. The wrapper never uses the
 handler-level CSP option. Neighbouring paths retain the normal framing denial;
 source and emitted regressions cover the exact path boundary and sandbox policy.
+
+Settlement uses its own scoped admin fetch transport and AbortController. Pricing
+and settlement share a ten-second I/O budget; a separate four-second budget
+records an unknown outcome and measured usage in the existing run-step ledger.
+Both budgets shrink to stay inside the remaining post-disconnect grace. The
+already-aborted client signal is never used for this work, and global fetch is
+not modified. Unknown completions retain their original run, request, actor and
+workspace identifiers and are never retried or replaced by a zero-credit charge.
+
+Reservation-expiry policy is a separate, recorded DB-owner dependency:
+`_release_expired_ai_credit_reservations`, last defined in
+`20260803150000_meter_mira_live_sessions.sql`, still refunds expired reserved
+rows regardless of the reconciliation marker. This conversion adds no migration;
+the expiry fence needs a separate migration and Mastermind approval.
