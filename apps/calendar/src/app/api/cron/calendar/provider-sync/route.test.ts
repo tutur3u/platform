@@ -16,6 +16,7 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
 }));
 
 import type { CalendarOAuthReasonCode } from '@/lib/calendar/oauth-failure';
+import { calendarSpikeOperatorFixture } from '@/lib/calendar/oauth-spike-route.test-utils';
 import {
   type CalendarTokenOutcome,
   recordCalendarTokenOutcome,
@@ -37,7 +38,11 @@ describe('Calendar provider cron ownership', () => {
   beforeEach(() => {
     vi.stubEnv('CRON_SECRET', 'test-cron-secret');
     vi.stubEnv('CALENDAR_OAUTH_ALERT_RECIPIENTS', 'ops@example.test');
-    notification.mockResolvedValue({ data: 'notification-id', error: null });
+    notification.mockResolvedValue({
+      data: 'notification-id',
+      error: null,
+      status: 200,
+    });
     vi.stubEnv('INTERNAL_WEB_API_ORIGIN', 'https://old-web.example');
     vi.stubEnv('VERCEL_URL', 'protected-preview.example');
     const query = {
@@ -47,8 +52,10 @@ describe('Calendar provider cron ownership', () => {
       },
       order: () => ({ range: page }),
     };
+    const operator = calendarSpikeOperatorFixture();
     admin.mockResolvedValue({
-      from: () => ({ select: () => query }),
+      from: (table: string) => operator.from(table) ?? { select: () => query },
+      auth: operator.auth,
       rpc: notification,
     });
     page.mockResolvedValue({
@@ -192,7 +199,7 @@ describe('Calendar provider cron ownership', () => {
     expect(notification).toHaveBeenCalledWith(
       'create_notification',
       expect.objectContaining({
-        p_email: 'ops@example.test',
+        p_user_id: 'operator-id',
         p_code: 'calendar_oauth_health_spike',
       })
     );
@@ -210,7 +217,11 @@ describe('Calendar provider cron ownership', () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.spyOn(Date, 'now').mockReturnValue(Date.UTC(2026, 9, 26, 4, 5));
-    notification.mockRejectedValue(new Error('unknown notification write'));
+    notification.mockResolvedValue({
+      data: null,
+      error: { message: 'AbortError: synthetic', code: '' },
+      status: 0,
+    });
     workspacesWithOutcomes({ 'workspace-a': ['consensus_hold'] });
     const response = await GET(cronRequest());
     expect(response.status).toBe(200);

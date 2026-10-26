@@ -722,8 +722,11 @@ markers lazy and unguessable; see the [native import checks](../../../../../apps
 ## Calendar OAuth operator alerts
 
 Calendar OAuth spike alerts use the existing `create_notification` queue. Configure
-`CALENDAR_OAUTH_ALERT_RECIPIENTS` on Calendar and verify queue acceptance separately
-from actual operator delivery. Keep the five-recipient bound, aggregate-only
+`CALENDAR_OAUTH_ALERT_RECIPIENTS` on Calendar. Resolve each address to a confirmed
+root-workspace member and pass only p_user_id to create_notification; email-only
+account_update rows are unsupported. Distinguish unresolved, preference-suppressed,
+HTTP-failed and status0/unknown writes. Verify queue acceptance separately from
+actual operator delivery. Keep the five-recipient bound, aggregate-only
 payload, hourly recurring-hold cadence and nonfatal delivery status; never retry
 an unknown notification write in the same run. The Calendar product decision
 and `oauth-spike-notification`/provider-cron tests define this contract.
