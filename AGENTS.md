@@ -200,6 +200,9 @@ for roles, independent review, publication, receipts and retirement.
     bilingual routes, storage and consent. This does not resume the paused TanStack
     app or authorize canonical traffic changes. Require exact-commit CI, Worker
     runtime acceptance and a scoped promotion/rollback plan before cutover.
+  - Target platform is Cloudflare (Workers, Hyperdrive→Postgres, R2, DOs, Queues);
+    Supabase and Vercel are transitional. Follow the [stop-list](apps/docs/build/devops/cloudflare-backend-ownership.mdx#stop-list):
+    no new Supabase-only features, Vercel crons/edge config or mobile direct-Supabase calls.
   - New or substantially reworked Web API handlers belong under
     `apps/web/src/app/api/**`, not `legacy-api-routes/**`. Move colocated tests
     with the implementation and remove obsolete generated wrappers. Inactive
