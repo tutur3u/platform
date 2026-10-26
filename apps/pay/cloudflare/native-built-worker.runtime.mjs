@@ -22,6 +22,7 @@ import {
   runtimeExpectationProblems,
   runtimeOutcomeFailure,
 } from '../../../scripts/start-bridge-codemod/runtime-outcome.mjs';
+import { effectiveWorkerConfig } from '../../../scripts/start-bridge-codemod/worker-config.mjs';
 
 const app = await realpath(fileURLToPath(new URL('../', import.meta.url)));
 const require = createRequire(join(app, 'package.json'));
@@ -45,6 +46,11 @@ const { default: appConfig } = await import(
   pathToFileURL(join(app, 'start-bridge.config.ts')).href
 );
 const MOUNTS = { ...DEFAULT_MOUNTS, ...appConfig.mounts };
+// The Worker settings the codemod emitted from start-bridge.config.ts `worker`.
+const WORKER_CONFIG = {
+  workersDev: false,
+  compatibilityFlags: ['nodejs_compat', 'global_fetch_strictly_public'],
+};
 const APEX = 'tuturuuu.com';
 const MOUNTED = (MOUNTS.mountHosts ?? []).some(
   (host) => host.toLowerCase() === APEX
@@ -94,10 +100,16 @@ test('emitted pay Worker serves its root, mount and unknown paths', {
   assert.equal(config.name, WORKER);
   assert.equal(config.no_bundle, true);
   assert.equal(config.assets.run_worker_first, true);
-  assert.deepEqual(config.compatibility_flags, [
-    'nodejs_compat',
-    'global_fetch_strictly_public',
-  ]);
+  assert.deepEqual(
+    effectiveWorkerConfig(appConfig, DEFAULT_MOUNTS),
+    WORKER_CONFIG,
+    'start-bridge.config.ts changed since the codemod ran: re-run it'
+  );
+  assert.deepEqual(
+    config.compatibility_flags,
+    WORKER_CONFIG.compatibilityFlags
+  );
+  assert.equal(config.workers_dev, WORKER_CONFIG.workersDev);
   assert.equal(config.vars?.TUTURUUU_NOINDEX, '1');
   for (const name of PUBLIC_FILES)
     assert.equal(

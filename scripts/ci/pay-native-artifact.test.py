@@ -48,6 +48,7 @@ class PayArtifactTest(unittest.TestCase):
     def test_identity_is_pay_and_base_module_is_untouched(self):
         self.assertIn("robots.txt", wrapper.PUBLIC_FILES)
         self.assertEqual(artifact.IDENTITY["name"], WORKER)
+        self.assertIs(artifact.IDENTITY["workers_dev"], False)
         self.assertEqual(artifact.NORMALIZED_DEFAULTS["topLevelName"], WORKER)
         self.assertEqual(artifact.IDENTITY["vars"]["INTERNAL_WEB_API_ORIGIN"], "https://staging.tuturuuu.com")
         self.assertEqual(artifact.IDENTITY["vars"]["NEXT_PUBLIC_WEB_APP_URL"], "https://staging.tuturuuu.com")
@@ -93,12 +94,19 @@ class PayArtifactTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "contract drift: name"):
             artifact.validate_output(app)
         (app / "dist/native/wrangler.json").write_text(json.dumps(config))
-        (app / "dist/client/favicon.ico").write_bytes(b"tampered")
-        with self.assertRaisesRegex(ValueError, "public asset drift: favicon.ico"):
+        (app / "dist/client/robots.txt").write_bytes(b"tampered")
+        with self.assertRaisesRegex(ValueError, "public asset drift: robots.txt"):
             artifact.validate_output(app)
-        (app / "dist/client/favicon.ico").write_bytes(b"source favicon.ico")
+        (app / "dist/client/robots.txt").write_bytes(b"source robots.txt")
         (app / "dist/client/index.html").write_text("<html></html>")
         with self.assertRaisesRegex(ValueError, "unreviewed static HTML"):
+            artifact.validate_output(app)
+
+    def test_rejects_workers_dev_for_root_only_artifact(self):
+        app, config = self.fixture()
+        config["workers_dev"] = True
+        (app / "dist/native/wrangler.json").write_text(json.dumps(config))
+        with self.assertRaisesRegex(ValueError, "contract drift: workers_dev"):
             artifact.validate_output(app)
 
     def test_cli_requires_the_pay_source_channel(self):

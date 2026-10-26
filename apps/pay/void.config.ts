@@ -12,7 +12,7 @@ export default defineConfig({
     main: './cloudflare/worker.ts',
     compatibility_date: '2026-10-12',
     compatibility_flags: ['nodejs_compat', 'global_fetch_strictly_public'],
-    workers_dev: true,
+    workers_dev: false,
     vars: stagingProfile,
     assets: {
       binding: 'ASSETS',
