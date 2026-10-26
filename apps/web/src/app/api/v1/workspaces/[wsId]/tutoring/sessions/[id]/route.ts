@@ -8,6 +8,7 @@ import {
   type TutoringSessionSlotInput,
   TutoringSessionUpdateSchema,
 } from '@/legacy-api-routes/v1/workspaces/[wsId]/tutoring/shared';
+import { notifyCompletionSafely } from '@/lib/tutoring/completion-notification';
 import {
   freezeLinkedLessonContent,
   LINKED_CONTENT_NOT_STORED,
@@ -21,10 +22,8 @@ interface Params {
 
 export async function PUT(request: Request, { params }: Params) {
   const { wsId, id } = await params;
-  const { normalizedWsId, permissions } = await resolveTutoringRouteAccess(
-    request,
-    wsId
-  );
+  const { normalizedWsId, permissions, user } =
+    await resolveTutoringRouteAccess(request, wsId);
 
   if (!permissions) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -251,8 +250,16 @@ export async function PUT(request: Request, { params }: Params) {
 
   // Completing with no (or blank) content keeps the linked notes; only real
   // text sent alongside the completion counts as a manual edit.
-  if (parsed.data.attendanceStatus === 'DONE' && !parsed.data.content?.trim()) {
-    const frozen = await freezeLinkedLessonContent({
+  if (parsed.data.attendanceStatus === 'DONE') {
+    const frozen = parsed.data.content?.trim()
+      ? 'skipped'
+      : await freezeLinkedLessonContent({
+          sbAdmin,
+          sessionId: id,
+          wsId: normalizedWsId,
+        });
+    await notifyCompletionSafely({
+      actorUserId: user?.id ?? null,
       sbAdmin,
       sessionId: id,
       wsId: normalizedWsId,
