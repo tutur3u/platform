@@ -51,20 +51,20 @@ describe('CMS root-only host policy', () => {
     expect(outbound).not.toHaveBeenCalled();
   });
 
-  it.each([
-    'cms.tuturuuu.com',
-    'cms-staging.tuturuuu.com',
-  ])('admits the explicit root host %s', async (host) => {
-    const { handle, ctx, start, proxy, assets, outbound } = fixture();
-    const response = await handle(
-      new Request(`https://${host}/root-fixture`),
-      {},
-      ctx
-    );
-    expect(response.status).toBe(200);
-    expect(start).toHaveBeenCalledOnce();
-    expect(proxy).toHaveBeenCalledOnce();
-    expect(assets).not.toHaveBeenCalled();
-    expect(outbound).not.toHaveBeenCalled();
-  });
+  it.each(['cms.tuturuuu.com', 'cms-staging.tuturuuu.com'])(
+    'admits the explicit root host %s',
+    async (host) => {
+      const { handle, ctx, start, proxy, assets, outbound } = fixture();
+      const response = await handle(
+        new Request(`https://${host}/root-fixture`),
+        {},
+        ctx
+      );
+      expect(response.status).toBe(200);
+      expect(start).toHaveBeenCalledOnce();
+      expect(proxy).toHaveBeenCalledOnce();
+      expect(assets).not.toHaveBeenCalled();
+      expect(outbound).not.toHaveBeenCalled();
+    }
+  );
 });

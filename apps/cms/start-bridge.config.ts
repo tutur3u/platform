@@ -5,10 +5,7 @@ import { defineBridgeAppConfig } from '@tuturuuu/start-bridge/start/app-config';
 
 export default defineBridgeAppConfig({
   mounts: {
-    rootHosts: [
-      'cms.tuturuuu.com',
-      'cms-staging.tuturuuu.com',
-    ],
+    rootHosts: ['cms.tuturuuu.com', 'cms-staging.tuturuuu.com'],
     mountHosts: [],
     unknownHost: 'reject',
   },
