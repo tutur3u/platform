@@ -1316,7 +1316,6 @@ boundaries decision and its route/policy regressions.
 
 For the explicitly authorized `apps/api` Worker migration, use the [standalone API runbook](../../../../../apps/docs/build/devops/standalone-api.mdx). Domain operations register through one policy/schema pipeline. Protected operations fail closed until the concrete Web guard and principal adapter is verified; retained Next routes keep their existing guards. Do not import Node-only graphs or treat generated inventory as runtime acceptance.
 
-
 Calendar provider-sync envelopes distinguish productive `ok` runs from a
 provider whose entire nonempty sample failed transiently. Keep the bounded
 `degraded` / `transientProviders` contract wired through Cron Control's real

@@ -206,14 +206,11 @@ export async function GET(request: Request) {
         ? tokens.refresh_token
         : null;
     // Asking again with consent makes Google issue a new refresh token.
-    const askAgainWithConsent = async () => {
+    const askAgainWithConsent = async (account: string) => {
       const admission = await admitGoogleConsentRestart({
         userId: user.id,
         wsId,
-        account:
-          existingToken?.id ??
-          accountEmail?.trim().toLowerCase() ??
-          'unknown-account',
+        account,
         clientSecret: oauthConfig.config.clientSecret,
       });
       if (admission.kind !== 'allowed') {
@@ -260,7 +257,7 @@ export async function GET(request: Request) {
       existingToken?.is_active === false &&
       existingToken.deactivated_reason
     )
-      return askAgainWithConsent();
+      return askAgainWithConsent(existingToken.id);
 
     const refreshToken =
       receivedRefreshToken ||
@@ -310,7 +307,8 @@ export async function GET(request: Request) {
           { status: 500 }
         );
       }
-      if (!receivedRefreshToken && !matched) return askAgainWithConsent();
+      if (!receivedRefreshToken && !matched)
+        return askAgainWithConsent(existingToken.id);
       calendarOAuthDebug('✅ [DEBUG] Token updated successfully');
     } else {
       calendarOAuthDebug('🔍 [DEBUG] Inserting new token...');

@@ -78,6 +78,7 @@ export async function queueCalendarOAuthSpikeAlert(
           .from('workspace_members')
           .select('user_id')
           .eq('ws_id', ROOT_WORKSPACE_ID)
+          .eq('type', 'MEMBER')
           .eq('user_id', candidate.user_id)
           .retry(false)
           .maybeSingle();

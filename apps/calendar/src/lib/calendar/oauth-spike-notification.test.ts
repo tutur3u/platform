@@ -28,6 +28,7 @@ const env = {
 type FixtureOptions = {
   profile?: boolean | 'error';
   member?: boolean;
+  role?: 'MEMBER' | 'GUEST';
   confirmed?: boolean;
   email?: string;
   rpc?: 'ok' | 'suppressed' | 'http-error' | 'abort';
@@ -57,7 +58,11 @@ function transport(options: FixtureOptions = {}) {
         expect(url.searchParams.get('ws_id')).toBe(`eq.${ROOT_WORKSPACE_ID}`);
         expect(url.searchParams.get('user_id')).toBe(`eq.${OPERATOR_ID}`);
         return Response.json(
-          options.member === false ? [] : [{ user_id: OPERATOR_ID }]
+          options.member === false ||
+            (options.role === 'GUEST' &&
+              url.searchParams.get('type') === 'eq.MEMBER')
+            ? []
+            : [{ user_id: OPERATOR_ID }]
         );
       }
       if (url.pathname === `/auth/v1/admin/users/${OPERATOR_ID}`) {
@@ -132,6 +137,11 @@ it('uses the real admin client to resolve a confirmed root member and serialize 
     p_priority: 'high',
   });
   expect(h.writes[0]).not.toHaveProperty('p_email');
+  expect(
+    h.requests
+      .find(({ url }) => url.pathname === '/rest/v1/workspace_members')
+      ?.url.searchParams.get('type')
+  ).toBe('eq.MEMBER');
   expect(result).toEqual({
     status: 'queued',
     queued: 1,
@@ -242,4 +252,15 @@ it('does not retry unavailable recipient metadata reads or write a notification'
   });
   expect(h.requests).toHaveLength(1);
   expect(h.writes).toHaveLength(0);
+});
+
+it('makes no alert write for a confirmed GUEST in the root workspace', async () => {
+  const h = transport({ role: 'GUEST' });
+  const result = await queueCalendarOAuthSpikeAlert(outcomes, { env });
+  expect(h.writes).toHaveLength(0);
+  expect(result).toMatchObject({
+    status: 'unresolved',
+    unresolved: 1,
+    queued: 0,
+  });
 });

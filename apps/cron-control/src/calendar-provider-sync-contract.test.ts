@@ -3,6 +3,7 @@
 // budget, while a run that genuinely failed still does. The envelope builder
 // is the real Calendar module the route returns.
 import { expect, it, vi } from 'vite-plus/test';
+import type { CalendarOAuthProvider } from '../../calendar/src/lib/calendar/oauth-failure';
 import type { CalendarTokenOutcomeEntry } from '../../calendar/src/lib/calendar/oauth-token-health';
 import {
   buildProviderSyncEnvelope,
@@ -294,3 +295,30 @@ it('does not let a malformed degraded flag conceal a failed or unreadable run', 
   const failed = await runPastBudget(envelope);
   expect(failed.state).toMatchObject({ stopped: true, lastOutcome: 'failed' });
 });
+
+// Exhaustive: extending CalendarOAuthProvider must extend these reader cases.
+const providerReaderCases: Record<
+  CalendarOAuthProvider,
+  CalendarOAuthProvider
+> = {
+  google: 'google',
+  microsoft: 'microsoft',
+};
+it.each(Object.values(providerReaderCases))(
+  'reads all canonical %s provider degradation without charging failures',
+  async (provider) => {
+    const envelope = buildProviderSyncEnvelope(
+      {
+        processed: 1,
+        deferred: 0,
+        results: [workspace(1, { success: false })],
+      },
+      [account(1, provider, 'transient')]
+    );
+    const { outcomes, state } = await runPastBudget(envelope);
+    expect(outcomes).toEqual(
+      Array(MAX_CONSECUTIVE_FAILURES + 2).fill('degraded')
+    );
+    expect(state).toMatchObject({ stopped: false, consecutiveFailures: 0 });
+  }
+);
