@@ -389,6 +389,13 @@ class/physical-lane/budget checks and exclude only the dispatcher's own
 reservation during its final check. Current aggregate telemetry may conservatively
 overcount a running job; it must never erase an unconfirmed reservation.
 
+Multi-host dispatch tests use one fixed timestamp for server time and heartbeat:
+separate wall-clock reads can make the heartbeat appear future-dated and refuse
+dispatch. Keep real ledger reservation checks, hold concurrent work with promises,
+and fail a start barrier if its producer exits. Supply disk inputs and an explicit
+environment; skip fixture polling delays while retaining ledger mutex backoff.
+See [resource fixture guidance](../../../../apps/docs/reference/packages/sdk.mdx#local-resource-control).
+
 Known `sb:*` wrappers infer Supabase plus Docker. Mobile/Flutter scripts and
 Dart/Melos wrappers infer Flutter, with Apple build requirements preserved.
 Ambiguous heavy scripts need explicit `--requires` for automatic placement.

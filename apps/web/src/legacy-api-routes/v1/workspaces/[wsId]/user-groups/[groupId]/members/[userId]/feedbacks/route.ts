@@ -5,6 +5,7 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { denyWeakContentEdit } from '@/lib/tutoring/weak-content-access';
 import { revalidateUserGroupCache } from '@/lib/user-groups/revalidate';
 import {
   FeedbackContentSchema,
@@ -125,6 +126,13 @@ export async function POST(req: Request, { params }: Params) {
 
   const supabase = await createClient(req);
   const sbAdmin = await createAdminClient();
+  const denied = await denyWeakContentEdit({
+    permissions,
+    sbAdmin,
+    touchesWeakContent: require_attention,
+    wsId: permissions.wsId,
+  });
+  if (denied) return denied;
 
   const { user: authUser } = await resolveAuthenticatedSessionUser(supabase);
   if (!authUser) {
@@ -207,7 +215,7 @@ export async function PUT(req: Request, { params }: Params) {
   // Verify feedback belongs to the workspace and group
   const { data: existingFeedback, error: fetchError } = await sbAdmin
     .from('user_feedbacks')
-    .select('id')
+    .select('id, require_attention')
     .eq('id', feedbackId)
     .eq('group_id', groupId)
     .eq('user_id', userId)
@@ -219,6 +227,14 @@ export async function PUT(req: Request, { params }: Params) {
       { status: 404 }
     );
   }
+
+  const denied = await denyWeakContentEdit({
+    permissions,
+    sbAdmin,
+    touchesWeakContent: existingFeedback.require_attention || require_attention,
+    wsId: permissions.wsId,
+  });
+  if (denied) return denied;
 
   const { error } = await sbAdmin
     .from('user_feedbacks')
@@ -270,7 +286,7 @@ export async function DELETE(req: Request, { params }: Params) {
   // Verify feedback belongs to the workspace and group
   const { data: existingFeedback, error: fetchError } = await sbAdmin
     .from('user_feedbacks')
-    .select('id')
+    .select('id, require_attention')
     .eq('id', feedbackId)
     .eq('group_id', groupId)
     .eq('user_id', userId)
@@ -282,6 +298,14 @@ export async function DELETE(req: Request, { params }: Params) {
       { status: 404 }
     );
   }
+
+  const denied = await denyWeakContentEdit({
+    permissions,
+    sbAdmin,
+    touchesWeakContent: existingFeedback.require_attention,
+    wsId: permissions.wsId,
+  });
+  if (denied) return denied;
 
   const { error } = await sbAdmin
     .from('user_feedbacks')

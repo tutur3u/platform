@@ -1,20 +1,10 @@
-import { OAuth2Client } from '@tuturuuu/google';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
 import { checkCalendarOAuthRuntime } from '@/lib/calendar/calendar-oauth-runtime';
-import {
-  createCalendarOAuthState,
-  deriveCalendarOAuthPkce,
-} from '@/lib/calendar/calendar-oauth-state';
+import { buildGoogleCalendarAuthUrl } from '@/lib/calendar/google-calendar-auth-url';
 import { getGoogleCalendarOAuthConfig } from '@/lib/calendar/google-oauth-config';
-import { resolveGoogleCalendarOAuthRedirectUri } from '@/lib/calendar/google-oauth-urls';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
-
-type GenerateAuthUrlOptions = NonNullable<
-  Parameters<InstanceType<typeof OAuth2Client>['generateAuthUrl']>[0]
->;
-const S256 = 'S256' as GenerateAuthUrlOptions['code_challenge_method'];
 
 export async function GET(request: NextRequest) {
   const wsId = request.nextUrl.searchParams.get('wsId');
@@ -63,34 +53,31 @@ export async function GET(request: NextRequest) {
   const runtime = checkCalendarOAuthRuntime();
   if (!runtime.ok) return runtime.response;
 
-  const auth = new OAuth2Client({
+  // Google omits the refresh token for an existing grant unless consent is
+  // shown, so reconnecting a quarantined account would keep the rejected one.
+  // Normal reconnects stay consent-free.
+  const { data: quarantined } = await supabase
+    .from('calendar_auth_tokens')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('ws_id', normalizedWsId)
+    .eq('provider', 'google')
+    .eq('is_active', false)
+    .not('deactivated_reason', 'is', null)
+    .limit(1);
+  // The reconnect prompt also asks for consent for accounts the breaker
+  // held, which stay active and so are not visible here.
+  const needsConsent =
+    (quarantined?.length ?? 0) > 0 ||
+    request.nextUrl.searchParams.get('reconnect') === '1';
+
+  const authUrl = buildGoogleCalendarAuthUrl({
+    request,
+    userId: user.id,
+    wsId: normalizedWsId,
     clientId: oauthConfig.config.clientId,
     clientSecret: oauthConfig.config.clientSecret,
-    redirectUri: resolveGoogleCalendarOAuthRedirectUri(request),
-  });
-
-  const { nonce, state } = createCalendarOAuthState(
-    'google',
-    { userId: user.id, wsId: normalizedWsId },
-    oauthConfig.config.clientSecret
-  );
-  const { codeChallenge } = deriveCalendarOAuthPkce(
-    'google',
-    nonce,
-    oauthConfig.config.clientSecret
-  );
-
-  const authUrl = auth.generateAuthUrl({
-    state,
-    code_challenge: codeChallenge,
-    code_challenge_method: S256,
-    scope: [
-      'https://www.googleapis.com/auth/calendar', // Full calendar access
-      'https://www.googleapis.com/auth/userinfo.email', // Get user email
-      'https://www.googleapis.com/auth/userinfo.profile', // Get user profile/name
-    ],
-    access_type: 'offline',
-    include_granted_scopes: true,
+    consent: needsConsent,
   });
 
   return NextResponse.json({ authUrl }, { status: 200 });

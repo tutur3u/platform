@@ -26,6 +26,13 @@ describe('complete bounded planning reads', () => {
         () => true
       )
     ).toEqual([]));
+  it('accepts the sessions API one-page empty window', async () =>
+    expect(
+      await completeTutoringPages(
+        async () => ({ ...page(1, 0), totalPages: 1 }),
+        () => true
+      )
+    ).toEqual([]));
   it.each(['count', 'totalPages', 'page', 'pageSize'] as const)(
     'rejects inconsistent %s metadata',
     async (field) => {

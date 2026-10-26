@@ -25,6 +25,7 @@ const satelliteRouteRoots = [
   'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/chat',
   'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/encryption',
   'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/storage',
+  'apps/web/src/app/api/v1/workspaces/[wsId]/storage',
   'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/inventory',
   'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/mail',
   // Mind routes migrated to the dedicated mind app (apps/mind).
@@ -311,9 +312,12 @@ describe('satellite app-session route inventory', () => {
       resolve(repoRoot, 'apps/web/src/lib/api-auth-audiences.ts'),
       'utf8'
     );
-    const storageRouteFiles = walkRouteFiles(
-      'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/storage'
-    );
+    const storageRouteFiles = [
+      ...walkRouteFiles(
+        'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/storage'
+      ),
+      ...walkRouteFiles('apps/web/src/app/api/v1/workspaces/[wsId]/storage'),
+    ];
     const financeTargetRoutes = storageRouteFiles
       .map(relative)
       .filter((file) =>
@@ -339,11 +343,11 @@ describe('satellite app-session route inventory', () => {
     );
     expect(routeAuthSource).not.toContain('ALL_SATELLITE_APP_SESSION_TARGETS');
     expect(financeTargetRoutes).toEqual([
+      'apps/web/src/app/api/v1/workspaces/[wsId]/storage/list/route.ts',
+      'apps/web/src/app/api/v1/workspaces/[wsId]/storage/share/route.ts',
       'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/storage/finalize-upload/route.ts',
-      'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/storage/list/route.ts',
       'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/storage/object/[id]/route.ts',
       'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/storage/object/route.ts',
-      'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/storage/share/route.ts',
       'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/storage/upload-url/route.ts',
     ]);
     expect(financeTargetRoutes).toEqual(financeStorageAccessRoutes);

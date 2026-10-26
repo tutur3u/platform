@@ -11,6 +11,15 @@ vi.mock('next/navigation', async (importOriginal) => ({
   redirect: redirectMock,
 }));
 
+vi.mock('next/server', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('next/server')>()),
+  connection: vi.fn(async () => {}),
+}));
+
+vi.mock('@tuturuuu/satellite/auth', () => ({
+  getSatelliteAppSessionUser: vi.fn(async () => null),
+}));
+
 describe('Inventory commerce route redirects', () => {
   it('redirects legacy checkout pages to the checkout commerce tab', async () => {
     const { default: CheckoutPage } = await import('./checkout/page');

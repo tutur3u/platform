@@ -10,6 +10,18 @@ import { hostLedger, remoteDispatchBlocker } from './resources-hosts-ledger';
 import type { Reservation } from './resources-hosts-plan';
 import type { HostProbe } from './resources-hosts-probe';
 
+vi.mock('node:timers/promises', async (importOriginal) => {
+  const timers = await importOriginal<typeof import('node:timers/promises')>();
+  return {
+    ...timers,
+    // Skip fixture admission polls; preserve the real ledger mutex backoff.
+    setTimeout: (...args: Parameters<typeof timers.setTimeout>) =>
+      args[0] === 1 ? Promise.resolve(args[1]) : timers.setTimeout(...args),
+  };
+});
+
+// Freshness is relative to server_time, never the test runner's wall clock.
+const snapshotTime = '2026-10-25T00:00:00.000Z';
 const registry: HostRegistry = {
   version: 1,
   hubHostname: hostname(),
@@ -48,7 +60,7 @@ const registry: HostRegistry = {
   ],
 };
 const fleet = async (): Promise<DevboxFleetSnapshot> => ({
-  server_time: new Date().toISOString(),
+  server_time: snapshotTime,
   runs: [],
   leases: [],
   runners: [
@@ -56,7 +68,7 @@ const fleet = async (): Promise<DevboxFleetSnapshot> => ({
       id: 'sonha',
       name: 'sonha',
       status: 'online',
-      last_heartbeat_at: new Date().toISOString(),
+      last_heartbeat_at: snapshotTime,
       heartbeat_enabled: true,
       enabled_features: { run: true },
       resource_limits: null,
@@ -116,6 +128,7 @@ const run = (
 ) =>
   hostsRun({
     home: path,
+    env: {},
     command: 'bun',
     args: ['test'],
     registry,
@@ -150,7 +163,12 @@ describe('review: remote lane custody', () => {
     };
     const a = run(path, dependencies);
     try {
-      await started;
+      await Promise.race([
+        started,
+        a.then((code) => {
+          throw new Error(`First run exited before remote dispatch: ${code}`);
+        }),
+      ]);
       expect(await run(path, dependencies)).toBe(0);
       expect(selected).toEqual(['sonha', 'm4']);
     } finally {
@@ -198,6 +216,7 @@ describe('review: remote lane custody', () => {
     const invoke = () =>
       hostsRun({
         home: path,
+        env: {},
         command: 'bun',
         args: ['test'],
         registry,
@@ -207,7 +226,12 @@ describe('review: remote lane custody', () => {
       });
     const a = invoke();
     try {
-      await started;
+      await Promise.race([
+        started,
+        a.then((code) => {
+          throw new Error(`First run exited before remote dispatch: ${code}`);
+        }),
+      ]);
       expect(running).toBe(1);
       expect(await invoke()).toBe(0);
       expect(selected).toEqual(['sonha', 'sonha']);
@@ -258,7 +282,12 @@ describe('review: remote lane custody', () => {
     };
     const a = run(path, dependencies);
     try {
-      await started;
+      await Promise.race([
+        started,
+        a.then((code) => {
+          throw new Error(`First run exited before remote dispatch: ${code}`);
+        }),
+      ]);
       expect(await run(path, dependencies)).toBe(0);
       expect(selected).toEqual(['sonha', 'm4']);
       expect(observed).toContain(0);

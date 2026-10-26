@@ -172,7 +172,9 @@ it('blocks positional admission for a stale near-limit window with a future rese
     t3ObservedAt: now.toISOString(),
   });
   try {
-    await runPositionalAdmit(['claudeAgent', 'claude-opus-4-6']);
+    await runPositionalAdmit(['claudeAgent', 'claude-opus-4-6'], undefined, {
+      now: () => now,
+    });
     expect(process.exitCode).toBe(3);
     expect(JSON.parse(String(log.mock.calls.at(-1)?.[0])).reasons).toContain(
       'pool-near-or-exhausted'

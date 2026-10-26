@@ -46,3 +46,13 @@ util/events. Keep their adapters restricted to workerd server require calls.
 Email-service cache cleanup must run lazily during use, never through import-time
 setInterval: workerd forbids timers outside a handler. Preserve TTL/rate-limit
 checks and the timer-free import/expiry regression when changing this path.
+
+## Subdomain rollback capture and smoke
+
+Follow the [cutover tools runbook](../../../../../apps/docs/build/devops/wave1-native-cutover.mdx#subdomain-cutover-tools).
+Capture every zone route, including wildcard routes and scriptless exclusions; a
+root-URL match cannot establish which routes serve deeper paths. Use the dedicated
+zone-scoped `CLOUDFLARE_READONLY_API_TOKEN` (DNS:Read and Workers Routes:Read),
+keep capture artifacts in ignored `tmp/` or the private ledger, and never commit
+production origin URLs. Run `node --test scripts/native-cutover/*.test.mjs` for
+credential isolation, route semantics and smoke failure-continuation coverage.
