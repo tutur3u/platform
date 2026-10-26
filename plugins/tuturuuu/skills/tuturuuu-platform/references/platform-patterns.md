@@ -1247,3 +1247,11 @@ section in [storage egress protection](../../../../../apps/docs/build/devops/sto
 ## Standalone API foundation
 
 For the explicitly authorized `apps/api` Worker migration, use the [standalone API runbook](../../../../../apps/docs/build/devops/standalone-api.mdx). Domain operations register through one policy/schema pipeline. Protected operations fail closed until the concrete Web guard and principal adapter is verified; retained Next routes keep their existing guards. Do not import Node-only graphs or treat generated inventory as runtime acceptance.
+
+
+Calendar provider-sync envelopes distinguish productive `ok` runs from a
+provider whose entire nonempty sample failed transiently. Keep the bounded
+`degraded` / `transientProviders` contract wired through Cron Control's real
+reader and durable ledger. Degraded runs reset the fatal streak without
+advancing the last productive completion; holds and revocations remain nonfatal.
+See `apps/docs/platform/applications/calendar.mdx` and the scheduler contract tests.

@@ -434,7 +434,7 @@ requests. Nobody repairs a rejected credential by hand.
   (`consensus_hold`): nothing is written, the account stays active and is still
   shown as needing reconnect, and the spike alert fires. A misconfigured client
   therefore cannot drain accounts.
-- **Isolation.** The scheduler reads only `ok` from a body of at most 64 KiB,
+- **Isolation.** The scheduler reads `ok` and a bounded provider-degradation signal from a body of at most 64 KiB,
   and five failed or unreadable runs stop the job for everyone. So `ok` reports
   whether the run worked, not whether every account synced: a run that
   completed returns `ok: true` with `partialFailure`, per-workspace `failures`
@@ -449,6 +449,17 @@ requests. Nobody repairs a rejected credential by hand.
   never fail the job. `cron-control`'s
   `calendar-provider-sync-contract.test.ts` drives these responses through the
   scheduler's real reader and ledger.
+- **Transient provider outages.** A nonempty provider sample where every evaluated
+  account failed transiently returns `ok: true`, `degraded: true` and
+  `transientProviders` (at most Google and Microsoft). A healthy account in the
+  same provider prevents that flag; a healthy sibling provider does not hide it.
+  Cron Control records `lastOutcome: degraded` durably without spending the
+  fatal failure budget, including a single blip and repeated outages. This
+  completed nonfatal run resets the fatal streak but preserves the timestamp of
+  the last productive completion. Healthy later runs restore `lastOutcome: ok`.
+  Holds and revocations retain their existing nonfatal behavior, and explicit
+  systemic failures still take priority. Coverage: the real dispatch/ledger
+  `calendar-provider-sync-contract.test.ts` and `ledger.test.ts`.
 - **Recovery.** The calendar sync warning is the durable signal: it lists
   quarantined accounts (by email, or name when there is none) with the
   provider's Reconnect action. The owner also gets at most one
