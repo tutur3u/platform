@@ -10,6 +10,7 @@ import {
   verify,
 } from './wave1-native-artifact.mjs';
 import { assertNoEarlierUpload } from './wave1-native-production-history.mjs';
+import { assertResolvedVersionsAbsent } from './wave1-native-production-resolution.mjs';
 import { profiles } from './wave1-native-profile.mjs';
 import {
   boundedJson,
@@ -17,6 +18,10 @@ import {
   requireRollback,
   uploadArtifact,
 } from './wave1-native-publish.mjs';
+import {
+  NativeUploadError,
+  productionFailureMessage,
+} from './wave1-native-upload-error.mjs';
 
 export function assertRouteFree(config) {
   assert.deepEqual(
@@ -218,11 +223,18 @@ export async function main({
       'Version history exceeds bounded reconciliation'
     );
     const matches = [];
+    const observedVersions = [];
     for (const item of versions.items) {
       assert.match(item.id ?? '', /^[a-f0-9-]{36}$/);
       const version = await provider(`${script}/versions/${item.id}`);
+      observedVersions.push(version);
       if (matchesVersion(version, sha, digest)) matches.push(version.id);
     }
+    assertResolvedVersionsAbsent({
+      app,
+      worker: p.name,
+      versions: observedVersions,
+    });
     assert.ok(matches.length <= 1, 'Ambiguous matching production versions');
     if (matches.length)
       assert.deepEqual(
@@ -322,17 +334,25 @@ export async function main({
       record.state = 'pending';
       save();
       // One bounded upload. Exceptions remain pending, including a lost CLI receipt.
-      record.versionId = await uploadArtifact({
-        env,
-        app,
-        environment: 'production',
-        config,
-        sha,
-        digest,
-        cfToken: token,
-        p,
-        exec,
-      });
+      try {
+        record.versionId = await uploadArtifact({
+          env,
+          app,
+          environment: 'production',
+          config,
+          sha,
+          digest,
+          cfToken: token,
+          p,
+          exec,
+        });
+      } catch (error) {
+        if (error instanceof NativeUploadError) {
+          record.uploadFailure = error.uploadFailure;
+          save();
+        }
+        throw error;
+      }
     }
     record.state = 'uploaded';
     save();
@@ -354,10 +374,8 @@ if (
     .then((record) =>
       console.log(`${record.state}: ${record.worker}; routing remains separate`)
     )
-    .catch(() => {
-      console.error(
-        'Production upload refused or uncertain; inspect the retained receipt and provider versions before another attempt'
-      );
+    .catch((error) => {
+      console.error(productionFailureMessage(error));
       process.exitCode = 1;
     });
 }
