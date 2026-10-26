@@ -1,6 +1,7 @@
 import type { TopicAnnouncementUpdatePayload } from '@tuturuuu/users-core/routes/topic-announcements';
 import { NextResponse } from 'next/server';
 import {
+  buildTopicAnnouncementTeacherFilter,
   computeTopicAnnouncementSendDueAt,
   getWorkspaceSchedulingTimezone,
   insertTopicAnnouncementAttachmentDrafts,
@@ -47,6 +48,8 @@ async function replaceRecipients({
 }
 
 const TEACHER_EDITABLE_STATUSES = ['draft', 'queued', 'failed', 'skipped'];
+/** Attachments are part of what was (or is being) emailed; keep them fixed. */
+const ATTACHMENT_LOCKED_STATUSES = ['sent', 'processing'];
 
 type ExistingAnnouncement = {
   group_id: string | null;
@@ -157,7 +160,6 @@ export async function PATCH(request: Request, { params }: Params) {
     );
   }
   const teacherWriteError = validateTeacherTopicAnnouncementWrite({
-    existing,
     next: payload,
     scope,
   });
@@ -212,6 +214,16 @@ export async function PATCH(request: Request, { params }: Params) {
     }
   }
 
+  if (
+    payload.attachmentDrafts?.length &&
+    ATTACHMENT_LOCKED_STATUSES.includes(existing.status)
+  ) {
+    return NextResponse.json(
+      { message: 'Attachments cannot be added to a sent announcement' },
+      { status: 409 }
+    );
+  }
+
   const invalidAttachments = await validateAttachmentAdditions({
     announcementId,
     attachmentDrafts: payload.attachmentDrafts,
@@ -255,7 +267,7 @@ export async function PATCH(request: Request, { params }: Params) {
     topic: payload.topic,
     video_url: payload.videoUrl,
   };
-  const { data, error } = await sbAdmin
+  let update = sbAdmin
     .from('topic_announcements')
     .update({
       ...Object.fromEntries(
@@ -264,9 +276,15 @@ export async function PATCH(request: Request, { params }: Params) {
       updated_by: actorUserId,
     })
     .eq('id', announcementId)
-    .eq('ws_id', normalizedWsId)
-    .select('*')
-    .maybeSingle();
+    .eq('ws_id', normalizedWsId);
+  // Re-check the assignment in the write itself, so a reassignment between
+  // the load above and this update cannot let the previous teacher write.
+  if (scope?.kind === 'teacher') {
+    update = update
+      .or(buildTopicAnnouncementTeacherFilter(scope))
+      .in('status', TEACHER_EDITABLE_STATUSES);
+  }
+  const { data, error } = await update.select('*').maybeSingle();
 
   if (error) throw error;
   if (!data) {

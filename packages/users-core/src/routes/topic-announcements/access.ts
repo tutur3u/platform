@@ -6,15 +6,13 @@ import type { TopicAnnouncementsSupabaseClient } from './read-helpers';
  *
  * Supervisors keep the workspace-wide scope (`manage_users`). A teacher without
  * `manage_users` may still work on a topic when they hold the matching user
- * group post permission AND the topic is assigned to them, either directly
- * (`teacher_workspace_user_id` is their linked workspace user) or through the
- * class (`group_id` is a group where they are a TEACHER).
+ * group post permission AND the topic is assigned to them: directly
+ * (`teacher_workspace_user_id` is their linked workspace user), or, only while
+ * no teacher is assigned, through the class (`group_id` is a group where they
+ * are a TEACHER). A co-teacher of the class cannot act on a topic assigned to
+ * another teacher. Teachers never create topics; supervisors do.
  */
-export type TopicAnnouncementTeacherAccess =
-  | 'create'
-  | 'read'
-  | 'send'
-  | 'update';
+export type TopicAnnouncementTeacherAccess = 'read' | 'send' | 'update';
 
 export interface TopicAnnouncementAccessOptions {
   requireManage?: boolean;
@@ -33,7 +31,6 @@ export const TOPIC_ANNOUNCEMENT_TEACHER_PERMISSIONS: Record<
   TopicAnnouncementTeacherAccess,
   readonly string[]
 > = {
-  create: ['create_user_groups_posts'],
   read: ['create_user_groups_posts', 'update_user_groups_posts'],
   send: ['send_user_group_post_emails'],
   update: ['update_user_groups_posts'],
@@ -73,24 +70,58 @@ export function isTopicAnnouncementAssignedToScope(
   scope: TopicAnnouncementAccessScope | undefined
 ) {
   if (!scope || scope.kind === 'manager') return true;
-  if (
-    row.teacher_workspace_user_id &&
-    row.teacher_workspace_user_id === scope.workspaceUserId
-  ) {
-    return true;
+  if (row.teacher_workspace_user_id) {
+    return row.teacher_workspace_user_id === scope.workspaceUserId;
   }
   return Boolean(row.group_id && scope.groupIds.includes(row.group_id));
 }
 
-/** PostgREST `or` filter limiting a list query to the teacher's topics. */
+/**
+ * PostgREST `or` filter body limiting a query to the teacher's topics. Matches
+ * {@link isTopicAnnouncementAssignedToScope}.
+ */
 export function buildTopicAnnouncementTeacherFilter(
   scope: Extract<TopicAnnouncementAccessScope, { kind: 'teacher' }>
 ) {
   const filters = [`teacher_workspace_user_id.eq.${scope.workspaceUserId}`];
   if (scope.groupIds.length > 0) {
-    filters.push(`group_id.in.(${scope.groupIds.join(',')})`);
+    filters.push(
+      `and(teacher_workspace_user_id.is.null,group_id.in.(${scope.groupIds.join(',')}))`
+    );
   }
   return filters.join(',');
+}
+
+/** Quotes a value for a PostgREST logic-tree filter so `,()` stay literal. */
+function quotePostgrestValue(value: string) {
+  return `"${value.replaceAll('\\', '\\\\').replaceAll('"', '\\"')}"`;
+}
+
+/** PostgREST `or` filter body for the list search box. */
+export function buildTopicAnnouncementSearchFilter(q: string) {
+  const pattern = quotePostgrestValue(`%${q}%`);
+  return ['title', 'topic', 'class_label']
+    .map((column) => `${column}.ilike.${pattern}`)
+    .join(',');
+}
+
+/**
+ * Single `or` filter body for the list: the teacher scope AND the search.
+ * Both are nested in one logic tree, so the search can only narrow the
+ * teacher's rows and never widen them.
+ */
+export function buildTopicAnnouncementListOrFilter({
+  q,
+  scope,
+}: {
+  q?: string;
+  scope: TopicAnnouncementAccessScope | undefined;
+}) {
+  const teacher =
+    scope?.kind === 'teacher' ? buildTopicAnnouncementTeacherFilter(scope) : '';
+  const search = q ? buildTopicAnnouncementSearchFilter(q) : '';
+  if (teacher && search) return `and(or(${teacher}),or(${search}))`;
+  return teacher || search || null;
 }
 
 /**
@@ -174,52 +205,44 @@ export async function loadScopedTopicAnnouncement<
   return { row: data as Row & TopicAnnouncementAssignmentRow };
 }
 
+/** Fields a teacher may change on a topic assigned to them. */
+export const TEACHER_EDITABLE_TOPIC_FIELDS = [
+  'attachmentDrafts',
+  'body',
+  'courseBook',
+  'status',
+  'topic',
+  'videoUrl',
+] as const;
+
 /**
- * Validates teacher-scoped write intent. Teachers cannot reassign a topic to
- * another teacher or move it outside their assignment, and may only save
- * drafts (sending goes through the send routes).
+ * Validates teacher-scoped write intent. Teachers may only edit the topic
+ * content (topic, body, course book, video link, attachments) and save it as a
+ * draft; schedule, class, title, recipients and assignment stay with
+ * supervisors (that also keeps teachers from moving their own deadline).
  */
 export function validateTeacherTopicAnnouncementWrite({
-  existing,
   next,
   scope,
 }: {
-  existing?: TopicAnnouncementAssignmentRow;
-  next: {
-    groupId?: string | null;
-    status?: string;
-    teacherWorkspaceUserId?: string | null;
-  };
+  next: Record<string, unknown>;
   scope: TopicAnnouncementAccessScope | undefined;
 }): { message: string; status: number } | null {
   if (!scope || scope.kind === 'manager') return null;
 
-  const currentTeacher = existing
-    ? (existing.teacher_workspace_user_id ?? null)
-    : scope.workspaceUserId;
-  if (
-    next.teacherWorkspaceUserId !== undefined &&
-    next.teacherWorkspaceUserId !== currentTeacher
-  ) {
-    return { message: 'Teachers cannot reassign topics', status: 403 };
+  const allowed = new Set<string>(TEACHER_EDITABLE_TOPIC_FIELDS);
+  const forbidden = Object.entries(next)
+    .filter(([key, value]) => value !== undefined && !allowed.has(key))
+    .map(([key]) => key)
+    .sort();
+  if (forbidden.length > 0) {
+    return {
+      message: `Teachers cannot change: ${forbidden.join(', ')}`,
+      status: 403,
+    };
   }
   if (next.status !== undefined && next.status !== 'draft') {
     return { message: 'Teachers can only save topic drafts', status: 403 };
-  }
-
-  const groupChanged =
-    next.groupId !== undefined && next.groupId !== (existing?.group_id ?? null);
-  if (groupChanged && next.groupId && !scope.groupIds.includes(next.groupId)) {
-    return { message: 'You do not teach this class', status: 403 };
-  }
-
-  const resulting = {
-    group_id:
-      next.groupId !== undefined ? next.groupId : (existing?.group_id ?? null),
-    teacher_workspace_user_id: currentTeacher,
-  };
-  if (!isTopicAnnouncementAssignedToScope(resulting, scope)) {
-    return { message: 'Topic is not assigned to you', status: 403 };
   }
   return null;
 }

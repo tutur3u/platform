@@ -12,7 +12,6 @@ import {
   TopicAnnouncementPayloadSchema,
   type TopicAnnouncementsSupabaseClient,
   topicAnnouncementAttachmentValidationResponse,
-  validateTeacherTopicAnnouncementWrite,
   validateTopicAnnouncementAttachmentDraftObjects,
   validateTopicAnnouncementGroupId,
   validateTopicAnnouncementWorkspaceUserId,
@@ -54,9 +53,9 @@ export const GET = createTopicAnnouncementListHandler(
 
 export async function POST(request: Request, { params }: Params) {
   const { wsId } = await params;
+  // Supervisor only: a teacher creating a topic could pick its recipients.
   const access = await resolveTopicAnnouncementsAccess(request, wsId, {
     requireManage: true,
-    teacherAccess: 'create',
   });
   if (access.response) return access.response;
 
@@ -75,23 +74,9 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
-  const { actorUserId, normalizedWsId, sbAdmin, scope } = access.context;
+  const { actorUserId, normalizedWsId, sbAdmin } = access.context;
   const payload = parsed.data;
-  const teacherWriteError = validateTeacherTopicAnnouncementWrite({
-    next: payload,
-    scope,
-  });
-  if (teacherWriteError) {
-    return NextResponse.json(
-      { message: teacherWriteError.message },
-      { status: teacherWriteError.status }
-    );
-  }
-  // Teachers always own the topics they create.
-  const teacherWorkspaceUserId =
-    scope?.kind === 'teacher'
-      ? scope.workspaceUserId
-      : (payload.teacherWorkspaceUserId ?? null);
+  const teacherWorkspaceUserId = payload.teacherWorkspaceUserId ?? null;
 
   const { data: contacts, error: contactsError } = await sbAdmin
     .from('topic_announcement_contacts')

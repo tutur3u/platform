@@ -34,6 +34,12 @@ export async function POST(request: Request, { params }: Params) {
   }
 
   const { actorUserId, normalizedWsId, sbAdmin, scope } = access.context;
+  if (parsed.data.resend && scope?.kind === 'teacher') {
+    return NextResponse.json(
+      { message: 'Only supervisors can resend topics' },
+      { status: 403 }
+    );
+  }
   const loaded = await loadScopedTopicAnnouncement({
     announcementId,
     columns: 'id',

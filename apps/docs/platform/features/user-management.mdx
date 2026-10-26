@@ -275,17 +275,25 @@ teacher, no deadline, existing behavior unchanged.
   `manage_users` plus `send_user_group_post_emails`.
 - **Assignment-scoped teachers.** Without `manage_users`, a member may list,
   preview, upload page images for, and edit a topic only when they hold
-  `create_user_groups_posts` (create) or `update_user_groups_posts` (edit) and
-  the topic is assigned to them: their linked workspace user is
-  `teacher_workspace_user_id`, or they are a `TEACHER` of the topic's class
-  (`group_id`). Teacher sending, scheduling, and cancelling a schedule require
+  `create_user_groups_posts` or `update_user_groups_posts` (edit) and the
+  topic is assigned to them: their linked workspace user is
+  `teacher_workspace_user_id`, or, only while no teacher is assigned, they are
+  a `TEACHER` of the topic's class (`group_id`). A co-teacher of the class
+  cannot act on a topic assigned to another teacher. The PATCH write repeats
+  the assignment filter, so a reassignment during an edit wins. Teacher
+  sending, scheduling, and cancelling a schedule require
   `send_user_group_post_emails` plus the same assignment check. Topics outside
   the assignment answer 404; a member with no linked workspace user is denied.
   `ENABLE_TOPIC_ANNOUNCEMENTS` remains the gate for both scopes.
-- **Teacher write limits.** Teachers save drafts only (sending goes through the
-  send routes), cannot reassign a topic, cannot change recipients, can only
-  move a topic to a class they teach, and cannot edit sent, processing, or
-  cancelled topics. A topic a teacher creates is assigned to them.
+- **Teacher write limits.** Teachers may change only `topic`, `body`,
+  `courseBook`, `videoUrl`, and `attachmentDrafts`, and may set `status` only
+  to `draft`. Any other field (title, class, room, place, day, date, times,
+  source, recipients, assignment) answers 403, so a teacher cannot move their
+  own deadline. They cannot edit sent, processing, or cancelled topics, cannot
+  resend (`resend=true` is supervisor-only, single and bulk), and cannot create
+  topics: creation is supervisor-only because the creator picks recipients.
+- **Attachments are fixed once sent.** Nobody can add or remove attachments on
+  a sent or processing topic (409).
 - **Validation before the database.** A teacher from another workspace is
   rejected with 400 instead of relying on the trigger. A blank topic outside a
   draft returns `TOPIC_REQUIRED` from update, schedule, and send.

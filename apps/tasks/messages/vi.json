@@ -6562,6 +6562,7 @@
         "task_start_date_changed": "Thay đổi ngày bắt đầu",
         "task_title_changed": "Thay đổi tiêu đề",
         "task_updated": "Cập nhật nhiệm vụ",
+        "topic_assigned": "Chủ đề được giao cho bạn",
         "workspace_activity": "Hoạt động không gian làm việc",
         "workspace_invite": "Lời mời không gian làm việc"
       },
@@ -6639,6 +6640,7 @@
       "task_start_date_changed": "Thay đổi ngày bắt đầu",
       "task_title_changed": "Thay đổi tiêu đề",
       "task_updated": "Nhiệm vụ cập nhật",
+      "topic_assigned": "Được giao chủ đề",
       "workspace_invite": "Lời mời không gian làm việc"
     },
     "unified_view": "Gộp",
