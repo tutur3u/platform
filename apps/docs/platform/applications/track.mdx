@@ -68,5 +68,7 @@ set; only `GET`/`HEAD` of hashed assets and public files keep their caching. `GE
 /api/build-info` is public on both builds: the proxy skips session work and
 removes cookies and `Authorization` before the handler runs. The Worker uses
 `global_fetch_strictly_public`. Covered by
-`apps/track/src/start-bridge-config.test.ts`, `apps/track/src/proxy.test.ts`
-and the emitted Worker gate.
+`apps/track/src/start-bridge-config.test.ts`, `apps/track/src/proxy.test.ts`,
+the emitted Worker gate and the signed-in root browser gate
+(`apps/track/cloudflare/root-browser.profile.mjs`: signed-in `/` and `/vi`
+land on the personal timer in English and Vietnamese).
