@@ -1,3 +1,7 @@
+begin;
+set local lock_timeout = '5s';
+set local statement_timeout = '30s';
+
 -- User-approved 2026-10-25 ~20:20 GMT+7. Service-only first-message creation.
 -- No conversation FK: this minimal identity survives a conversation deletion and
 -- prevents an old creation retry from resurrecting it. Account/workspace erasure cascades.
@@ -407,3 +411,4 @@ revoke all on function private.chat_create_ai_first_message(uuid, uuid, jsonb, t
   from public, anon, authenticated;
 grant execute on function private.chat_create_ai_first_message(uuid, uuid, jsonb, text) to service_role;
 notify pgrst, 'reload schema';
+commit;
