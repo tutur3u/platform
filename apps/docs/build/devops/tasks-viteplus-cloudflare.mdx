@@ -95,6 +95,51 @@ runtime header. `--local-upstream` makes the Worker see the admitted host; with
 `scripts/native-cutover/smoke.mjs` against the same origin. This smoke does not replace exact-commit CI, sealed-artifact
 checks or signed-in acceptance on staging.
 
+## Sealed artifact and signed-in browser gate
+
+`scripts/ci/tasks-native-artifact.py` seals and restores the Tasks staging
+artifact with the shared Apps helper. The Worker identity it requires is the
+one `void.config.ts` declares:
+
+- `tuturuuu-tasks-vite-staging`, compatibility date `2026-10-19`
+- `nodejs_compat` and `global_fetch_strictly_public`
+- `workers_dev: false`, no vars and no observability block
+- static assets with `html_handling: 'none'`, so the offline worker's exact
+  `/offline.html` is read directly rather than through the default internal
+  redirect to `/offline` (a missing value or an `auto`/trailing-slash policy
+  fails the contract)
+
+`public/offline.html` is a declared public file, byte-checked like the others;
+any other HTML in the output is rejected as prerender output. Run the
+regressions with `python3 scripts/ci/tasks-native-artifact.test.py` (CI runs
+them in the `build (tasks)` job). That job also builds the native candidate,
+checks and seals its emitted config, runs `bun run --cwd apps/tasks
+test:runtime` and verifies the sealed output is unchanged.
+`cloudflare/offline-fallback.runtime.mjs` checks that `/offline.html` and
+`/offline.css` answer `200` with their exact bytes and no egress. The app's
+asset fetch follows redirects, which would hide a redirecting policy, so a
+probe Worker also reads the `ASSETS` binding directly (`redirect: 'manual'`)
+under the sealed `assets` block. A negative control with `html_handling`
+dropped must get the `307` to `/offline`. Only `offline.html` may be HTML in
+the output (`PUBLIC_HTML` in the wrapper).
+
+After a real `bun run build:cloudflare`:
+
+```bash
+export TASKS_SOURCE_SHA=$(git rev-parse HEAD)
+python3 scripts/ci/tasks-native-artifact.py seal apps/tasks --receipt sealed.json
+python3 scripts/ci/tasks-native-artifact.py pack apps/tasks --receipt sealed.json --archive tasks-native.tar.gz
+# On the browser host, into a fresh checkout at the same commit:
+python3 scripts/ci/tasks-native-artifact.py restore apps/tasks --archive tasks-native.tar.gz --receipt restored.json
+node scripts/ci/native-root-browser.mjs tasks --receipt restored.json
+```
+
+The browser gate uses `apps/tasks/cloudflare/root-browser.profile.mjs`: the
+fixture user has a personal workspace with its default board, so a signed-in
+`/` and `/vi` open that board in English and Vietnamese. The task-board APIs
+the root resolves run in the same Worker. See
+[Signed-in root browser gate](/build/devops/start-bridge-codemod#signed-in-root-browser-gate).
+
 ## Shared Calendar task ports
 
 The Calendar task model and view live in `packages/tasks-ui/tu-do/shared`.

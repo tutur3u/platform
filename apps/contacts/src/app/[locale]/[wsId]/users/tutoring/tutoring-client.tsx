@@ -261,8 +261,14 @@ export function TutoringClient({ wsId, canManage, canConfigure }: Props) {
       id: string;
       status: Parameters<typeof markTutoringSession>[2];
     }) => markTutoringSession(wsId, id, status),
-    onSuccess: () => {
+    onSuccess: (result) => {
       toast.success(t('marked'));
+      // A completion stands even when its lesson notes were not stored.
+      if (
+        (result as { warning?: string } | undefined)?.warning ===
+        'LINKED_CONTENT_NOT_STORED'
+      )
+        toast.warning(t('linked_content_not_stored'));
       invalidateTutoring();
     },
     onError: (error) => {
@@ -348,6 +354,8 @@ export function TutoringClient({ wsId, canManage, canConfigure }: Props) {
           ? item.feedback_content
           : makeupContent,
       groupId: item.group_id,
+      linkedContent:
+        item.reason_type === 'WEAK_SUPPORT' ? undefined : makeupContent,
       missedClassDate: oldestMissedDate(item.missed_class_dates),
       reasonDetail: item.feedback_content,
       reasonType:

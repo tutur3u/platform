@@ -18,6 +18,10 @@ import {
   UserPlus,
 } from '@tuturuuu/icons';
 import type { Json } from '@tuturuuu/types';
+import {
+  LOCALIZED_NOTIFICATION_CODES,
+  notificationDisplayText,
+} from '@tuturuuu/ui/custom/notification-code-text';
 import { getDescriptionText } from '@tuturuuu/utils/text-helper';
 import dayjs from 'dayjs';
 import type { ReactNode } from 'react';
@@ -451,4 +455,23 @@ export function filterNotificationsByTab(
     default:
       return notifications;
   }
+}
+
+/** Title and description, localized for notifications rendered by code. */
+export function localizedNotificationText(
+  notification: Notification,
+  t: TranslationFn
+) {
+  const code = notification.code;
+  return notificationDisplayText(
+    notification,
+    code && (LOCALIZED_NOTIFICATION_CODES as readonly string[]).includes(code)
+      ? {
+          [code]: {
+            title: t(`codes.${code}.title`),
+            description: t(`codes.${code}.description`),
+          },
+        }
+      : undefined
+  );
 }
