@@ -1,6 +1,8 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:mobile/core/input/platform_text_context_menu.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// A personal-name draft. Success closes the editor without claiming
@@ -85,15 +87,15 @@ class _AssistantNameDialogState extends State<AssistantNameDialog> {
   @override
   Widget build(BuildContext context) {
     if (_expired) return const SizedBox.shrink();
-    return AlertDialog(
-      title: Text(context.l10n.assistantRenameTitle),
-      scrollable: true,
+    return AppDialog(
+      title: context.l10n.assistantRenameTitle,
       content: SizedBox(
         width: 320,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(
+            AppTextField(
+              placeholder: context.l10n.inputPlaceholderAssistantName,
               key: const ValueKey('assistant-name-input'),
               controller: _controller,
               focusNode: _focus,
@@ -103,11 +105,9 @@ class _AssistantNameDialogState extends State<AssistantNameDialog> {
               textInputAction: TextInputAction.done,
               contextMenuBuilder: platformTextContextMenuBuilder(),
               selectionControls: platformTextSelectionControls(),
-              decoration: InputDecoration(
-                labelText: context.l10n.assistantRenameLabel,
-              ),
               onChanged: (_) => setState(() => _failed = false),
               onSubmitted: (_) => unawaited(_save()),
+              label: context.l10n.assistantRenameLabel,
             ),
             if (_failed)
               Text(
@@ -119,11 +119,11 @@ class _AssistantNameDialogState extends State<AssistantNameDialog> {
         ),
       ),
       actions: [
-        TextButton(
+        AppButton.ghost(
           onPressed: () => Navigator.of(context).pop(),
           child: Text(context.l10n.commonCancel),
         ),
-        TextButton(
+        AppButton.primary(
           key: const ValueKey('assistant-name-save'),
           onPressed: _busy || _controller.text.trim().isEmpty
               ? null

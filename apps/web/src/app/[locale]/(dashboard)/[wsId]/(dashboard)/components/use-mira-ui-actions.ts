@@ -6,8 +6,10 @@ import {
   showWorkspaceArtifactSchema,
 } from '@tuturuuu/ai/workspace-artifacts';
 import { SidebarContext } from '@tuturuuu/ui/custom/sidebar-context';
+import { useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { useCallback, useContext, useEffect, useRef } from 'react';
+import { getMiraOpenAppPath } from './mira-open-app';
 import { getMiraToolCallId, getMiraToolName } from './mira-tool-part-utils';
 import { useMiraWorkspace } from './mira-workspace-state';
 
@@ -42,6 +44,7 @@ export function useMiraUiActions(messages: UIMessage[], status: string) {
 }
 
 export function useMiraUiActionDispatcher() {
+  const router = useRouter();
   const { setTheme } = useTheme();
   const sidebar = useContext(SidebarContext);
   const workspace = useMiraWorkspace();
@@ -93,8 +96,11 @@ export function useMiraUiActionDispatcher() {
           workspace?.close(kind, output.wsId);
         else if (operation === 'focus_artifact' && kind)
           workspace?.focus(kind, output.wsId);
+      } else if (toolName === 'open_app') {
+        const path = getMiraOpenAppPath(output.wsId, output.destination);
+        if (path) router.push(path);
       }
     },
-    [setTheme, sidebar, workspace]
+    [router, setTheme, sidebar, workspace]
   );
 }

@@ -2,8 +2,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile/features/settings/view/settings_row_layout.dart';
 import 'package:mobile/features/shell/avatar_url_identity.dart';
-import 'package:mobile/features/workspace/widgets/workspace_picker_sheet.dart';
-import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Equal-width outlined pill used for Settings quick actions.
@@ -61,10 +59,11 @@ class SettingsProfileAvatar extends StatelessWidget {
     required this.url,
     required this.name,
     this.cacheKey,
+    this.size = 64,
     super.key,
   });
 
-  static const double size = 64;
+  final double size;
 
   final String? url;
   final String? cacheKey;
@@ -79,7 +78,8 @@ class SettingsProfileAvatar extends StatelessWidget {
       child: Center(
         child: Text(
           initial,
-          style: theme.typography.xLarge.copyWith(fontWeight: FontWeight.w700),
+          style: (size < 56 ? theme.typography.large : theme.typography.xLarge)
+              .copyWith(fontWeight: FontWeight.w700),
         ),
       ),
     );
@@ -98,103 +98,6 @@ class SettingsProfileAvatar extends StatelessWidget {
                 gaplessPlayback: true,
                 errorBuilder: (_, _, _) => fallback,
               ),
-      ),
-    );
-  }
-}
-
-/// Workspace count; opens the workspace list.
-class SettingsWorkspaceStat extends StatelessWidget {
-  const SettingsWorkspaceStat({
-    required this.count,
-    required this.radius,
-    this.inline = false,
-    super.key,
-  });
-
-  final int count;
-  final BorderRadius radius;
-
-  /// One line, "3 workspaces", under the identity row.
-  final bool inline;
-
-  static const _padding = 16.0;
-
-  /// Width of the stacked stat at the current text scale.
-  static double naturalWidth(BuildContext context, int count) {
-    final theme = shad.Theme.of(context);
-    double measure(String text, TextStyle style) =>
-        SettingsRowLayout.textWidth(context, text, style);
-
-    return _padding +
-        [
-          measure(
-            '$count',
-            theme.typography.large.copyWith(fontWeight: FontWeight.w700),
-          ),
-          measure(
-            context.l10n.settingsProfileWorkspaceCount(count),
-            theme.typography.small,
-          ),
-        ].reduce((a, b) => a > b ? a : b);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    final label = context.l10n.settingsProfileWorkspaceCount(count);
-    return Semantics(
-      button: true,
-      label: '$count $label',
-      excludeSemantics: true,
-      child: InkWell(
-        key: const ValueKey('settings-profile-workspaces'),
-        borderRadius: radius,
-        onTap: () => showWorkspacePickerSheet(context),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            child: inline
-                ? Text.rich(
-                    TextSpan(
-                      children: [
-                        TextSpan(
-                          text: '$count ',
-                          style: theme.typography.base.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        TextSpan(
-                          text: label,
-                          style: theme.typography.base.copyWith(
-                            color: theme.colorScheme.mutedForeground,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                : Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        '$count',
-                        style: theme.typography.large.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      Text(
-                        label,
-                        maxLines: 1,
-                        softWrap: false,
-                        style: theme.typography.small.copyWith(
-                          color: theme.colorScheme.mutedForeground,
-                        ),
-                      ),
-                    ],
-                  ),
-          ),
-        ),
       ),
     );
   }

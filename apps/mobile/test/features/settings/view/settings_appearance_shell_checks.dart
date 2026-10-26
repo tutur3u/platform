@@ -79,7 +79,7 @@ void registerSettingsAppearanceShellChecks() {
         find.byKey(const ValueKey('settings-appearance-row')),
       );
       expect(row.trailingValue, isNotEmpty);
-      expect(find.byKey(const ValueKey('settings-profile-header')), findsOne);
+      expect(find.byKey(const ValueKey('settings-profile-row')), findsOne);
       expect(find.byType(AppBar), findsNothing);
       await _capture(tester, 'settings-${sample.$1}');
 
@@ -126,7 +126,7 @@ void registerSettingsAppearanceShellChecks() {
     await _settle(tester);
     final slider = find.descendant(
       of: find.byKey(const ValueKey('appearance-intensity')),
-      matching: find.byType(Slider),
+      matching: find.byType(AppSlider),
     );
     final before = h.theme.state.appearance.intensity;
     await tester.drag(slider, const Offset(-120, 0));
@@ -325,21 +325,27 @@ void registerSettingsAppearanceShellChecks() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('workspace stat stays on one line beside the name', (
+  testWidgets('profile and workspace are rows in the Account group', (
     tester,
   ) async {
     await _pumpAppearance(tester, const AppearanceSettings());
-    final stat = find.byKey(const ValueKey('settings-profile-workspaces'));
-    final header = find.byKey(const ValueKey('settings-profile-header'));
-    expect(stat, findsOneWidget);
-    // Beside the identity, not wrapped under it.
+    final profile = find.byKey(const ValueKey('settings-profile-row'));
+    final workspace = find.byKey(const ValueKey('settings-workspace-row'));
+    expect(profile, findsOneWidget);
+    expect(workspace, findsOneWidget);
+    expect(find.text('Account'), findsWidgets);
+    // No standalone header actions or workspace count remain.
+    expect(find.text('Edit profile'), findsNothing);
+    expect(find.byKey(const ValueKey('settings-edit-profile')), findsNothing);
     expect(
-      tester.getRect(stat).left,
-      greaterThan(tester.getRect(header).right),
+      find.byKey(const ValueKey('settings-profile-workspaces')),
+      findsNothing,
     );
-    final label = find.descendant(of: stat, matching: find.text('workspace'));
-    final line = tester.getSize(label).height;
-    expect(line, lessThan(tester.getSize(find.text('1')).height));
+    expect(
+      tester.getRect(profile).bottom,
+      lessThanOrEqualTo(tester.getRect(workspace).top + 1),
+    );
+    expect(tester.getRect(profile).left, tester.getRect(workspace).left);
     expect(tester.takeException(), isNull);
   });
 

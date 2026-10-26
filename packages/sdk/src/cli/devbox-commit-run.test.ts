@@ -3,9 +3,11 @@ import {
   mkdir,
   mkdtemp,
   readdir,
+  readFile,
   realpath,
   rm,
   stat,
+  symlink,
   writeFile,
 } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -20,10 +22,21 @@ import { executeDevboxAgentJob } from './devbox-runner';
 
 const dirs: string[] = [];
 afterEach(async () => {
+  vi.unstubAllEnvs();
   await Promise.all(
     dirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true }))
   );
 });
+
+async function plantCommitRunTrap(directory: string) {
+  const planted = join(directory, 'ttr-commit-run-run-commit');
+  await mkdir(planted, { mode: 0o700 });
+  await writeFile(join(planted, 'value.txt'), 'attacker\n', {
+    flag: 'wx',
+    mode: 0o600,
+  });
+  return planted;
+}
 const git = (cwd: string, ...args: string[]) =>
   execFileSync('git', args, {
     cwd,
@@ -128,6 +141,19 @@ describe('commit run envelope', () => {
 });
 
 describe('commit run on a trusted runner', { timeout: 30_000 }, () => {
+  it('refuses a pre-created trap symlink without overwriting its target', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'ttr-trap-safety-'));
+    dirs.push(root);
+    const target = join(root, 'target');
+    await mkdir(target);
+    const sentinel = join(target, 'value.txt');
+    await writeFile(sentinel, 'preserved\n');
+    await symlink(target, join(root, 'ttr-commit-run-run-commit'));
+
+    await expect(plantCommitRunTrap(root)).rejects.toThrow();
+    expect(await readFile(sentinel, 'utf8')).toBe('preserved\n');
+  });
+
   it('runs the exact unfetched commit from its directory and cleans up', async () => {
     const { runner, sha } = await repositories();
     await writeFile(join(runner, 'pkg', 'value.txt'), 'dirty runner state\n');
@@ -149,12 +175,12 @@ describe('commit run on a trusted runner', { timeout: 30_000 }, () => {
     );
   });
 
-  it('never uses a pre-created shared /tmp path', async () => {
-    const { runner, sha, stateDir } = await repositories();
-    // The old predictable path another local account could pre-create.
-    const planted = join(tmpdir(), 'ttr-commit-run-run-commit');
-    await mkdir(planted, { recursive: true });
-    await writeFile(join(planted, 'value.txt'), 'attacker\n');
+  it('never uses a pre-created path in its temporary directory', async () => {
+    const { root, runner, sha, stateDir } = await repositories();
+    vi.stubEnv('TMPDIR', root);
+    vi.stubEnv('TMP', root);
+    vi.stubEnv('TEMP', root);
+    const planted = await plantCommitRunTrap(tmpdir());
     try {
       const { result, messages } = await run(
         encodeCommitRun({

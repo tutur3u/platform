@@ -5,6 +5,8 @@ import 'package:mobile/core/theme/appearance/appearance_scope.dart';
 import 'package:mobile/core/ui/overlays/app_modal_scope.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 
+part 'app_sheet_surface.dart';
+
 /// Height policy of a compact sheet.
 enum AppSheetSize {
   /// Content height, capped at [AppSheetSize.large].
@@ -71,11 +73,14 @@ Future<T?> showAppSheet<T>({
             ),
           );
       return switch (size) {
-        AppSheetSize.fit => ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.sizeOf(sheetContext).height * _largeFraction,
+        AppSheetSize.fit => _AboveKeyboard(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight:
+                  MediaQuery.sizeOf(sheetContext).height * _largeFraction,
+            ),
+            child: frame(null, expands: false),
           ),
-          child: frame(null, expands: false),
         ),
         AppSheetSize.medium => DraggableScrollableSheet(
           expand: false,
@@ -103,25 +108,29 @@ Future<T?> showAppDialog<T>({
   bool barrierDismissible = true,
   bool useRootNavigator = false,
   double maxWidth = 440,
+  bool? requestFocus,
 }) => showDialog<T>(
+  requestFocus: requestFocus,
   context: context,
   useRootNavigator: useRootNavigator,
   barrierDismissible: barrierDismissible,
   barrierColor: _barrier,
   builder: (dialogContext) => AppModalBinding(
     dismissible: barrierDismissible,
-    child: SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xl),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: maxWidth,
-              maxHeight: MediaQuery.sizeOf(dialogContext).height * 0.85,
-            ),
-            child: _AppSheetSurface(
-              dialog: true,
-              child: builder(dialogContext),
+    child: _AboveKeyboard(
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.xl),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: maxWidth,
+                maxHeight: MediaQuery.sizeOf(dialogContext).height * 0.85,
+              ),
+              child: _AppSheetSurface(
+                dialog: true,
+                child: builder(dialogContext),
+              ),
             ),
           ),
         ),
@@ -129,65 +138,3 @@ Future<T?> showAppDialog<T>({
     ),
   ),
 );
-
-class _AppSheetSurface extends StatelessWidget {
-  const _AppSheetSurface({
-    required this.child,
-    this.showHandle = false,
-    this.expands = false,
-    this.dialog = false,
-  });
-
-  final Widget child;
-  final bool showHandle;
-  final bool expands;
-  final bool dialog;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = AppTokens.of(context).colorScheme;
-    final radius = dialog
-        ? BorderRadius.circular(AppRadius.sheet)
-        : const BorderRadius.vertical(top: Radius.circular(AppRadius.sheet));
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: radius,
-        boxShadow: AppElevation.overlay(c),
-      ),
-      child: Material(
-        color: c.popover,
-        borderRadius: radius,
-        clipBehavior: Clip.antiAlias,
-        child: DefaultTextStyle.merge(
-          style: TextStyle(color: c.popoverForeground),
-          child: Column(
-            mainAxisSize: expands ? MainAxisSize.max : MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (showHandle)
-                Padding(
-                  padding: const EdgeInsets.only(top: AppSpacing.sm),
-                  child: Center(
-                    child: Container(
-                      width: 40,
-                      height: 5,
-                      decoration: BoxDecoration(
-                        color: c.mutedForeground.withValues(alpha: 0.35),
-                        borderRadius: BorderRadius.circular(AppRadius.pill),
-                      ),
-                    ),
-                  ),
-                )
-              else
-                const SizedBox(height: AppSpacing.sm),
-              Flexible(
-                fit: expands ? FlexFit.tight : FlexFit.loose,
-                child: AppearanceScope.opaqueScaffolds(child),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class AssistantLocalStatusSheet extends StatelessWidget {
   const AssistantLocalStatusSheet({
@@ -42,7 +42,7 @@ class AssistantLocalStatusSheet extends StatelessWidget {
           const SizedBox(height: 12),
           Text(context.l10n.assistantLocalHelp),
           const SizedBox(height: 20),
-          shad.PrimaryButton(
+          AppButton.primary(
             onPressed: onManage,
             child: Text(context.l10n.assistantLocalModeAction),
           ),

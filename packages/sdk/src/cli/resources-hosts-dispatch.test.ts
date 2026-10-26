@@ -1,7 +1,14 @@
 import { type ChildProcess, spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import {
+  mkdir,
+  mkdtemp,
+  readFile,
+  realpath,
+  rm,
+  writeFile,
+} from 'node:fs/promises';
+import { hostname, tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -12,7 +19,11 @@ import {
   type HostRegistry,
   proposedHostRegistry,
 } from './resources-hosts-config';
-import { type HostDispatchDeps, hostsRun } from './resources-hosts-dispatch';
+import {
+  type HostDispatchDeps,
+  hostsRun,
+  projectIdentity,
+} from './resources-hosts-dispatch';
 import {
   hostLedger,
   hostReservationMarker,
@@ -50,7 +61,10 @@ const until = async (path: string) => {
     await sleep(20);
   }
 };
-const base = proposedHostRegistry('runner-linux');
+const base = {
+  ...proposedHostRegistry('runner-linux'),
+  hubHostname: hostname(),
+};
 const fleet = async () =>
   ({
     runners: [
@@ -65,8 +79,11 @@ const fleet = async () =>
         capabilities: {
           executionMode: 'trusted',
           protocols: { commitRun: [1] },
-          disk: { freeGiB: 400 },
-          resources: { loadAverage: [4, 4, 4], cpu: { cores: 20 } },
+          resources: {
+            loadAverage: [4, 4, 4],
+            cpu: { cores: 20 },
+            disk: { freeGiB: 400, freePct: 85 },
+          },
         },
         drain_requested_at: null,
         activity: { queued_runs: 0, running_runs: 0, active_leases: 0 },
@@ -81,6 +98,22 @@ const quiet: Pick<HostDispatchDeps, 'log' | 'pollMs' | 'localDiskFreeGiB'> = {
   pollMs: 10,
   localDiskFreeGiB: async () => 100,
 };
+
+describe('project identity', () => {
+  it('shares one identity between a repository and its linked worktrees', async () => {
+    const root = await home();
+    const repo = join(root, 'repo');
+    const gitdir = join(repo, '.git', 'worktrees', 'lane');
+    await mkdir(gitdir, { recursive: true });
+    await writeFile(join(gitdir, 'commondir'), '../..\n');
+    const worktree = join(root, 'lane');
+    await mkdir(join(worktree, 'src'), { recursive: true });
+    await writeFile(join(worktree, '.git'), `gitdir: ${gitdir}\n`);
+    expect(projectIdentity(join(repo, 'src'))).toBe(join(repo, '.git'));
+    expect(projectIdentity(join(worktree, 'src'))).toBe(join(repo, '.git'));
+    expect(projectIdentity(join(root, 'none'))).toBe(join(root, 'none'));
+  });
+});
 
 describe('--hosts job class (REV-6503-4)', () => {
   it('treats explicit --hosts jobs as heavy unless --class light', () => {
@@ -113,7 +146,7 @@ describe('--hosts job class (REV-6503-4)', () => {
       await hostsRun({
         home: path,
         command: 'eslint',
-        args: ['file.ts'],
+        args: ['--cwd', path, 'file.ts'],
         jobClass: 'light',
         registry,
         deps: {
@@ -127,6 +160,8 @@ describe('--hosts job class (REV-6503-4)', () => {
       })
     ).toBe(0);
     expect(gate).toHaveBeenCalledTimes(2);
+    expect(gate).toHaveBeenNthCalledWith(1, path);
+    expect(gate).toHaveBeenNthCalledWith(2, path);
     expect(runLocal).toHaveBeenCalledTimes(1);
   });
 });
@@ -222,6 +257,114 @@ describe('nested --hosts under an admitted reservation (REV-6503-5)', {
 });
 
 describe('remote dispatch safeguards', { timeout: 30_000 }, () => {
+  it('rechecks Apple OS telemetry before dispatch, retaining the original ticket when requeued', async () => {
+    const path = await home();
+    const registry: HostRegistry = {
+      ...base,
+      hosts: [
+        {
+          ...base.hosts[1]!,
+          platform: 'darwin',
+          capabilities: ['flutter', 'ios'],
+        },
+      ],
+    };
+    let calls = 0;
+    const reserved: string[] = [];
+    const telemetry = async () => {
+      calls++;
+      const snapshot = await fleet();
+      snapshot.runners[0]!.capabilities = {
+        ...snapshot.runners[0]!.capabilities,
+        os: { platform: calls === 2 ? 'linux' : 'darwin' },
+      };
+      if (calls % 2 === 0)
+        reserved.push((await hostLedger(path)).reservations[0]!.token);
+      return snapshot;
+    };
+    const runRemote = vi.fn(async () => 0);
+    const runLocal = vi.fn(async () => 1);
+    expect(
+      await hostsRun({
+        home: path,
+        command: 'flutter',
+        args: ['build', 'ios'],
+        jobClass: 'heavy',
+        registry,
+        deps: {
+          ...quiet,
+          fleet: telemetry,
+          commitPlan: async () => ({ sha: 'a'.repeat(40), prefix: '' }),
+          runLocal,
+          runRemote,
+        },
+      })
+    ).toBe(0);
+    expect(calls).toBe(4);
+    expect(reserved).toHaveLength(2);
+    expect(reserved[0]).toBe(reserved[1]);
+    expect(runRemote).toHaveBeenCalledTimes(1);
+    expect(runLocal).not.toHaveBeenCalled();
+  });
+
+  it('passes the reserved ticket identity to remote creation and never retries an unknown outcome', async () => {
+    const path = await home();
+    const registry: HostRegistry = { ...base, hosts: [base.hosts[1]!] };
+    let token: string | undefined;
+    const runRemote = vi.fn(
+      async (input: Parameters<HostDispatchDeps['runRemote']>[0]) => {
+        token = (await hostLedger(path)).reservations[0]?.token;
+        expect(input.operationId).toBe(token);
+        throw new Error('creation acknowledgement lost');
+      }
+    );
+    const runLocal = vi.fn(async () => 0);
+    await expect(
+      hostsRun({
+        home: path,
+        command: 'vitest',
+        args: ['run'],
+        jobClass: 'heavy',
+        registry,
+        deps: {
+          ...quiet,
+          fleet,
+          commitPlan: async () => ({ sha: 'a'.repeat(40), prefix: '' }),
+          runLocal,
+          runRemote,
+        },
+      })
+    ).rejects.toThrow('creation acknowledgement lost');
+    expect(token).toMatch(/^[0-9a-f-]{36}$/u);
+    expect(runRemote).toHaveBeenCalledTimes(1);
+    expect(runLocal).not.toHaveBeenCalled();
+  });
+
+  it('checks the hub before telemetry, queue writes or remote creation', async () => {
+    const path = await home();
+    const remote = vi.fn(async () => 0);
+    const telemetry = vi.fn(fleet);
+    await expect(
+      hostsRun({
+        home: path,
+        command: 'vitest',
+        args: [],
+        jobClass: 'heavy',
+        registry: { ...base, hubHostname: `${hostname()}-another-host` },
+        deps: {
+          ...quiet,
+          fleet: telemetry,
+          commitPlan: async () => undefined,
+          runLocal: remote,
+          runRemote: remote,
+        },
+      })
+    ).rejects.toThrow(/M4 hub/u);
+    expect(telemetry).not.toHaveBeenCalled();
+    expect(remote).not.toHaveBeenCalled();
+    expect(await hostLedger(path)).toEqual({ tickets: [], reservations: [] });
+  });
+
   const twoHosts: HostRegistry = {
     ...base,
     hosts: [
@@ -303,7 +446,7 @@ describe('remote dispatch safeguards', { timeout: 30_000 }, () => {
     await writeFile(
       script,
       `import {hostsRun} from ${JSON.stringify(dispatchModule)};import {writeFileSync} from 'node:fs';
-      const fleet=async()=>({runners:[{id:'runner-linux',name:'l',status:'online',last_heartbeat_at:new Date().toISOString(),heartbeat_enabled:true,enabled_features:{run:true},resource_limits:null,capabilities:{executionMode:'trusted',protocols:{commitRun:[1]},disk:{freeGiB:400},resources:{loadAverage:[4,4,4],cpu:{cores:20}}},drain_requested_at:null,activity:{queued_runs:0,running_runs:0,active_leases:0}}],runs:[],leases:[],server_time:new Date().toISOString()});
+      const fleet=async()=>({runners:[{id:'runner-linux',name:'l',status:'online',last_heartbeat_at:new Date().toISOString(),heartbeat_enabled:true,enabled_features:{run:true},resource_limits:null,capabilities:{executionMode:'trusted',protocols:{commitRun:[1]},resources:{loadAverage:[4,4,4],cpu:{cores:20},disk:{freeGiB:400,freePct:85}}},drain_requested_at:null,activity:{queued_runs:0,running_runs:0,active_leases:0}}],runs:[],leases:[],server_time:new Date().toISOString()});
       process.exitCode=await hostsRun({home:${JSON.stringify(path)},command:'vitest',args:[],jobClass:'heavy',registry:${JSON.stringify(remoteOnly)},deps:{
         fleet,commitPlan:async()=>({sha:'${'c'.repeat(40)}',prefix:''}),localDiskFreeGiB:async()=>100,pollMs:10,log:()=>{},runLocal:async()=>1,
         // Like runBoxOffload: stops the remote run on SIGTERM/SIGINT only.

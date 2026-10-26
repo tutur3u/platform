@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation } from '@tanstack/react-query';
+import { MIRA_APP_DESTINATIONS } from '@tuturuuu/ai/tools/mira-client-capabilities';
 import {
   manageWorkspaceSchema,
   showWorkspaceArtifactSchema,
@@ -88,27 +89,32 @@ export function useLiveTools(wsId: string) {
           'set_sidebar',
           'show_workspace_artifact',
           'manage_workspace',
+          'open_app',
         ].includes(fc.name)
       ) {
         const output =
-          fc.name === 'set_theme'
+          fc.name === 'open_app'
             ? z
-                .object({ theme: z.enum(['light', 'dark', 'system']) })
+                .object({ destination: z.enum(MIRA_APP_DESTINATIONS) })
                 .parse(fc.args)
-            : fc.name === 'set_sidebar'
+            : fc.name === 'set_theme'
               ? z
-                  .object({
-                    behavior: z.enum([
-                      'expanded',
-                      'collapsed',
-                      'hover',
-                      'hidden',
-                    ]),
-                  })
+                  .object({ theme: z.enum(['light', 'dark', 'system']) })
                   .parse(fc.args)
-              : fc.name === 'manage_workspace'
-                ? manageWorkspaceSchema.parse(fc.args)
-                : showWorkspaceArtifactSchema.parse(fc.args);
+              : fc.name === 'set_sidebar'
+                ? z
+                    .object({
+                      behavior: z.enum([
+                        'expanded',
+                        'collapsed',
+                        'hover',
+                        'hidden',
+                      ]),
+                    })
+                    .parse(fc.args)
+                : fc.name === 'manage_workspace'
+                  ? manageWorkspaceSchema.parse(fc.args)
+                  : showWorkspaceArtifactSchema.parse(fc.args);
         const response = {
           ...output,
           success: true,

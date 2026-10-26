@@ -63,3 +63,27 @@ and preserves the timezone/endpoint (`timezone_settings_http_widget_test.dart`).
 See [Native Calendar API protection](/build/devops/calendar-native-api-protection) for the full limiter inventory,
 read-only WAF policy audit, exact operator items and native attestation design. An unclassified device 429 does not prove the cold-cache mechanism.
 Correlate owning host/path and safe metadata; never log credentials, bodies, actor/workspace IDs or IPs here.
+
+## Mira assistant timezone
+
+Mira's date-aware tools (tasks, calendar, scheduling, time tracking) resolve the
+user's timezone in this order:
+
+1. A valid IANA timezone sent by the client with the request.
+2. The saved personal preference.
+3. The workspace preference.
+
+`auto`, invalid names, and failed preference reads fall through to the next
+step. If nothing resolves, the executors keep their existing UTC fallback. The
+order applies to Web chat and to mobile chat through the native
+`/chat/conversations/:id/messages` route, which accepts an optional `timezone`
+and forwards it to the shared AI chat route.
+
+Mobile sends the verified device timezone only for Mira sends. An unverified
+lookup is omitted instead of being sent as `UTC`, so the saved preference still
+applies. Previously the native route dropped the timezone, so mobile Mira
+treated "today" and "9am" as UTC.
+
+Regression coverage: `packages/ai/src/chat/google/mira-timezone.test.ts`,
+`route-mira-runtime.test.ts`, the native messages `route.test.ts`, and
+`apps/mobile/test/features/chat/data/chat_mira_timezone_test.dart`.

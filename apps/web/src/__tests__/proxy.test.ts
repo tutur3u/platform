@@ -44,7 +44,6 @@ vi.mock('@tuturuuu/auth/cli-session', () => ({
     ...args: Parameters<typeof mocks.verifyCliAccessToken>
   ) => mocks.verifyCliAccessToken(...args),
 }));
-
 vi.mock('@tuturuuu/utils/api-proxy-guard', () => ({
   guardApiProxyRequest: (
     ...args: Parameters<typeof mocks.guardApiProxyRequest>
@@ -52,9 +51,8 @@ vi.mock('@tuturuuu/utils/api-proxy-guard', () => ({
   hasSupabaseSessionCookie: (
     ...args: Parameters<typeof mocks.hasSupabaseSessionCookie>
   ) => mocks.hasSupabaseSessionCookie(...args),
-  isTrustedProxyBypassRequest: (
-    ...args: Parameters<typeof mocks.isTrustedProxyBypassRequest>
-  ) => mocks.isTrustedProxyBypassRequest(...args),
+  isTrustedProxyBypassForRequest: (req: NextRequest) =>
+    mocks.isTrustedProxyBypassRequest(req.nextUrl.pathname, req.headers),
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({

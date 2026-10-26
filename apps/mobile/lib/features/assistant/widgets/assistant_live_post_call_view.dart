@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// Ending a call keeps Live selected. Calling again remains an explicit action.
@@ -37,17 +38,15 @@ class _PostCallState extends State<AssistantLivePostCallView> {
       spacing: 12,
       runSpacing: 12,
       children: [
-        FilledButton.icon(
+        AppButton.primary(
           onPressed: _starting ? null : _call,
-          icon: const Icon(Icons.call_rounded),
-          label: Text(context.l10n.assistantLiveCallAgain),
+          leading: const Icon(LucideIcons.phone),
+          child: Text(context.l10n.assistantLiveCallAgain),
         ),
-        OutlinedButton.icon(
+        AppButton.outline(
           onPressed: () => setState(() => _showTranscript = !_showTranscript),
-          icon: Icon(
-            _showTranscript ? Icons.close_rounded : Icons.subject_rounded,
-          ),
-          label: Text(context.l10n.assistantLiveViewTranscript),
+          leading: Icon(_showTranscript ? LucideIcons.x : LucideIcons.text),
+          child: Text(context.l10n.assistantLiveViewTranscript),
         ),
       ],
     );

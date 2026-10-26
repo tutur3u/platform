@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/cache/download_network_consent.dart';
 import 'package:mobile/core/router/mobile_link_launcher.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/local/assistant_local_model.dart';
 import 'package:mobile/features/assistant/local/assistant_local_model_store.dart';
 import 'package:mobile/features/assistant/local/assistant_local_models_cubit.dart';
@@ -81,9 +82,7 @@ class _AssistantLocalModelsSectionState
       await _models.import(model, File(path));
     } on Object {
       if (mounted && widget.isScopeCurrent()) {
-        ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-          SnackBar(content: Text(context.l10n.assistantLocalUnavailable)),
-        );
+        showAppToast(context, message: context.l10n.assistantLocalUnavailable);
       }
     } finally {
       if (mounted) setState(() => _picking = false);
@@ -98,9 +97,7 @@ class _AssistantLocalModelsSectionState
       /* Report a generic message without native file/credential details. */
     }
     if (mounted && widget.isScopeCurrent()) {
-      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-        SnackBar(content: Text(context.l10n.assistantLocalUnavailable)),
-      );
+      showAppToast(context, message: context.l10n.assistantLocalUnavailable);
     }
   }
 
@@ -115,7 +112,7 @@ class _AssistantLocalModelsSectionState
       final enabled =
           state.loaded && state.supported && !state.busy && !_picking;
       return Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        padding: const EdgeInsets.only(top: 8, bottom: 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -124,7 +121,7 @@ class _AssistantLocalModelsSectionState
                 Expanded(
                   child: Text(
                     l10n.assistantLocalTitle,
-                    style: Theme.of(context).textTheme.titleLarge,
+                    style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ),
                 AssistantSettingsInfo(
@@ -132,6 +129,7 @@ class _AssistantLocalModelsSectionState
                   description: [
                     l10n.assistantLocalHelp,
                     l10n.assistantLocalBudgetDescription,
+                    l10n.assistantLocalHardware,
                     if (_models.supportsBackgroundDownloads)
                       l10n.assistantDownloadBackgroundNotice,
                     l10n.assistantLocalModeSwitch,
@@ -142,16 +140,26 @@ class _AssistantLocalModelsSectionState
             ),
             if (state.loaded && !state.supported) ...[
               const SizedBox(height: 12),
-              Text(l10n.assistantLocalHardware),
+              Text(l10n.assistantLocalUnsupported),
             ],
-            ListTile(
+            AppListTile(
               contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.cloud_outlined),
+              leading: const Icon(LucideIcons.cloud),
               title: Text(l10n.assistantLocalRemote),
-              subtitle: Text(l10n.assistantLocalRemoteHint),
-              trailing: state.loaded && state.selected == null
-                  ? const Icon(Icons.check_circle_outline_rounded)
-                  : null,
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (state.loaded && state.selected == null)
+                    const SizedBox.square(
+                      dimension: 44,
+                      child: Icon(LucideIcons.circleCheck),
+                    ),
+                  AssistantSettingsInfo(
+                    title: l10n.assistantLocalRemote,
+                    description: l10n.assistantLocalRemoteHint,
+                  ),
+                ],
+              ),
               selected: state.loaded && state.selected == null,
               onTap: state.loaded && !state.busy
                   ? () => unawaited(_models.select(null))
@@ -214,7 +222,7 @@ class _AssistantLocalModelsSectionState
                 ),
                 if (state.operation == LocalModelsOperation.downloading &&
                     _models.supportsBackgroundDownloads)
-                  TextButton(
+                  AppButton.ghost(
                     onPressed: () => unawaited(
                       state.paused ? _models.resume() : _models.pause(),
                     ),
@@ -226,7 +234,7 @@ class _AssistantLocalModelsSectionState
                   ),
                 if (state.operation == LocalModelsOperation.downloading ||
                     state.operation == LocalModelsOperation.importing)
-                  TextButton(
+                  AppButton.ghost(
                     onPressed: _models.cancel,
                     child: Text(l10n.commonCancel),
                   ),
@@ -241,7 +249,7 @@ class _AssistantLocalModelsSectionState
               const SizedBox(height: 12),
               Text(_error(context, state.error!)),
               if (!state.loaded)
-                TextButton(
+                AppButton.ghost(
                   onPressed: () => unawaited(_models.load()),
                   child: Text(l10n.commonRetry),
                 ),

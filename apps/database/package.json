@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/database",
-  "version": "1.43.0",
+  "version": "1.44.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -30,7 +30,7 @@
     "@electric-sql/pglite": "0.5.11",
     "@electric-sql/pglite-pgtap": "0.0.12",
     "@supabase/supabase-js": "2.117.1",
-    "supabase": "2.117.0",
+    "supabase": "2.121.0",
     "typescript": "7.0.2",
     "zod": "4.6.7"
   },

@@ -1,0 +1,134 @@
+// The @tuturuuu/start-bridge surface this codemod targets. Keep every bridge
+// specifier, pinned toolchain version and generated-file name here so a bridge
+// API change is a one-file update. Pure data; no I/O.
+
+import { REQUIRED_FLAGS } from './worker-config.mjs';
+
+export const BRIDGE_PACKAGE = '@tuturuuu/start-bridge';
+export const BRIDGE_DIR = 'packages/start-bridge';
+
+export const BRIDGE = {
+  vitePreset: `${BRIDGE_PACKAGE}/vite`,
+  handler: `${BRIDGE_PACKAGE}/start/handler`,
+  assets: `${BRIDGE_PACKAGE}/assets`,
+  serverEntry: `${BRIDGE_PACKAGE}/start/server-entry`,
+  basePath: `${BRIDGE_PACKAGE}/base-path`,
+  startBasePath: `${BRIDGE_PACKAGE}/start/base-path`,
+  functionProxy: `${BRIDGE_PACKAGE}/function-proxy`,
+  csp: `${BRIDGE_PACKAGE}/csp`,
+  proxyBridge: `${BRIDGE_PACKAGE}/proxy-bridge`,
+  proxyMatcher: `${BRIDGE_PACKAGE}/proxy-matcher`,
+  appBase: `${BRIDGE_PACKAGE}/start/app-base`,
+  appConfig: `${BRIDGE_PACKAGE}/start/app-config`,
+  responsePolicy: `${BRIDGE_PACKAGE}/response-policy`,
+  pages: `${BRIDGE_PACKAGE}/pages`,
+  pageRoute: `${BRIDGE_PACKAGE}/start/page-route`,
+  pageRender: `${BRIDGE_PACKAGE}/start/page-render`,
+  pageLocation: `${BRIDGE_PACKAGE}/start/page-location`,
+  viteRsc: `${BRIDGE_PACKAGE}/vite/rsc`,
+  serverActions: `${BRIDGE_PACKAGE}/start/server-actions`,
+};
+
+/** Route-registry config read by the bridge codegen (`planRegistries`). */
+export const ROUTES_CONFIG_FILE = 'start-bridge.routes.json';
+export const GENERATED_DIR = 'src/start-bridge';
+// `*.bridge.gen.ts` is excluded from Biome by the bridge.
+export const API_REGISTRY = `${GENERATED_DIR}/api-registry.bridge.gen.ts`;
+export const PAGE_MANIFEST = `${GENERATED_DIR}/page-registry.bridge.gen.ts`;
+export const PAGE_MODULES = `${GENERATED_DIR}/page-modules.bridge.gen.ts`;
+/** Client-safe app API patterns (bridge codegen `api.patternsOut`). */
+export const API_PATTERNS = `${GENERATED_DIR}/api-patterns.bridge.gen.ts`;
+/** The rsc API entry: registers the app base, then exports the registry. */
+export const API_ENTRY = `${GENERATED_DIR}/api-entry.ts`;
+export const CENTRAL_FIRST = `${GENERATED_DIR}/central-first.ts`;
+/** App-owned Worker options; created once, never overwritten. */
+export const APP_CONFIG = 'start-bridge.config.ts';
+/** Per-app robots allowlist shared with Next (`@tuturuuu/utils/seo`). */
+export const SEO_POLICY = 'packages/utils/src/seo-policy.json';
+export const APP_BASE = `${GENERATED_DIR}/app-base.ts`;
+/** `next/og` on Workers, as Meet runs it. */
+export const OG_PACKAGE = '@cloudflare/pages-plugin-vercel-og';
+export const OG_VERSION = '0.1.2';
+export const PUBLIC_ASSETS = `${GENERATED_DIR}/public-assets.bridge.gen.ts`;
+/**
+ * The `rsc` environment entry that carries the API registry: route handlers
+ * run where `server-only` is valid, and the Worker (`ssr`) loads it lazily.
+ */
+export const API_RSC_ENTRY = 'bridge-api';
+/**
+ * The `rsc` entry that carries the page modules, so plugin-rsc's scan finds
+ * client components and `'use server'` modules (their action registry).
+ */
+export const PAGES_RSC_ENTRY = 'bridge-pages';
+/** App-relative server-function base (the preset default). */
+export const FUNCTION_BASE = '/_serverFn';
+
+/** Specifiers the bridge aliases to shims (mirrors `NEXT_SHIMS`). */
+export const SHIMMED_SPECIFIERS = new Set([
+  'next/headers',
+  'next/server',
+  'next/cache',
+  'next/navigation',
+  'next/link',
+  'next/image',
+  'next/dynamic',
+  'next-intl',
+  'next-intl/server',
+  '@opennextjs/cloudflare',
+  // Through the preset `og` option, which the codemod wires when used.
+  'next/og',
+]);
+
+/** Framework specifiers that are type-only or framework-neutral. */
+export const NEUTRAL_SPECIFIERS = new Set(['next', 'next/types']);
+
+/**
+ * Exact versions shared with the native Apps/Shortener candidates. Installed
+ * through `bun add --exact` in the owning workspace, never by editing
+ * package.json dependencies.
+ */
+export const DEPENDENCIES = {
+  dependencies: {
+    [BRIDGE_PACKAGE]: 'workspace:*',
+    '@tanstack/react-router': '1.170.45',
+    '@tanstack/react-start': '1.169.3',
+  },
+  devDependencies: {
+    // The native binding type check resolves it from the owning app (#6787).
+    '@cloudflare/workers-types': '5.20261022.1',
+    '@tailwindcss/vite': '4.3.3',
+    '@vitejs/plugin-react': '6.1.2',
+    '@vitejs/plugin-rsc': '0.5.38',
+    vite: 'npm:@voidzero-dev/vite-plus-core@1.3.0',
+    'vite-plus': '1.3.0',
+    void: '1.1.12',
+    wrangler: '4.151.2',
+  },
+};
+
+export const RUNTIME = {
+  compatibilityDate: '2026-10-12',
+  // Same-zone self-fetches (app-base `appUrl(path, request.url)`) must reach
+  // this Worker, not the zone origin (the retained Vercel app), as Calendar,
+  // Mail and Meet already do. Apps add flags in start-bridge.config.ts.
+  compatibilityFlags: REQUIRED_FLAGS,
+  bun: '1.4.4',
+  node: '24.22.0',
+};
+
+/**
+ * Package scripts added for the native candidate. `build` stays Next's. The
+ * runner config loader resolves the bridge's TypeScript preset source.
+ */
+export function nativeScripts(port) {
+  return {
+    'build:cloudflare': 'vp build --configLoader runner',
+    'dev:cloudflare': `vp dev --configLoader runner --host 127.0.0.1 --port \${PORT:-${port}}`,
+    'preview:cloudflare': `vp preview --configLoader runner --host 127.0.0.1 --port \${PORT:-${port}}`,
+    'routes:check': `bun ../../${BRIDGE_DIR}/src/codegen/cli.ts check .`,
+    'type-check:cloudflare': 'tsc --noEmit -p tsconfig.cloudflare.json',
+  };
+}
+
+/** Marker on every file the codemod owns; unmarked files are never replaced. */
+export const GENERATED_MARKER = 'Generated by the start-bridge codemod';

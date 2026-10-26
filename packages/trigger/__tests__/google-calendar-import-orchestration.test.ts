@@ -28,11 +28,20 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: async () => ({
     rpc: m.rpc,
     from: () => {
+      // Keyset read of the workspace's active Google rows; the token is
+      // matched in process against the access token the test passes.
       const query = {
         select: () => query,
         eq: () => query,
+        gt: () => query,
+        order: () => query,
         limit: async () => ({
-          data: [{ id: 'bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb' }],
+          data: [
+            {
+              id: 'bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb',
+              access_token: 'fixture-access',
+            },
+          ],
           error: null,
         }),
       };

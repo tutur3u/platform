@@ -116,10 +116,14 @@ extension _ShellPageLayout on _ShellPageState {
                               _lastRootLocation,
                             ),
                             builders: [
-                              (_) => HomePage(
-                                replayToken:
+                              (_) =>
+                                  widget.homePageBuilder?.call(
                                     _rootTabReplayTokens[Routes.home] ?? 0,
-                              ),
+                                  ) ??
+                                  HomePage(
+                                    replayToken:
+                                        _rootTabReplayTokens[Routes.home] ?? 0,
+                                  ),
                               (_) =>
                                   widget.assistantPageBuilder?.call(
                                     _rootTabReplayTokens[Routes.assistant] ?? 0,
@@ -135,12 +139,18 @@ extension _ShellPageLayout on _ShellPageState {
                                 replayToken:
                                     _rootTabReplayTokens[Routes.apps] ?? 0,
                               ),
-                              (_) => const NotificationsPage(),
-                              (_) => ProfileOverviewPage(
-                                replayToken:
+                              (context) =>
+                                  widget.notificationsPageBuilder?.call(
+                                    context,
+                                  ) ??
+                                  const NotificationsPage(),
+                              (_) {
+                                final token =
                                     _rootTabReplayTokens[Routes.profileRoot] ??
-                                    0,
-                              ),
+                                    0;
+                                return widget.profilePageBuilder?.call(token) ??
+                                    ProfileOverviewPage(replayToken: token);
+                              },
                             ],
                           ),
                         ),

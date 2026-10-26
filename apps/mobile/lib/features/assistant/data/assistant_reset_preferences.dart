@@ -395,10 +395,38 @@ final class AssistantResetPreferences {
         value.selectedChatId == null;
   }
 
-  Future<bool> hasUnknownCreation() async {
-    final value = await read();
-    return value == null || !_canCreate(value);
-  }
+  Future<bool> hasUnknownCreation() => serialized(key, () async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _check();
+      // A vanished inspected envelope is prior state, not a fresh scope.
+      final inspectedEnvelope =
+          AssistantResetConsentTarget._issued[key]?._hadEnvelope ?? false;
+      final value = await _read(prefs);
+      if (value != null) return !_canCreate(value);
+      if (inspectedEnvelope) {
+        hold();
+        return true;
+      }
+      final legacy = _legacy(prefs);
+      if (legacy.selectedChatId != null ||
+          legacy.contextId != null ||
+          prefs.containsKey('$actorId::mira-chat-creation::$workspaceId') ||
+          _holds.contains(key) ||
+          _tickets.containsKey(key)) {
+        return true;
+      }
+      final fresh = _decode({
+        ...legacy._value,
+        'creation': {'status': 'clear', 'attemptId': null},
+      });
+      return await _write(prefs, fresh) !=
+          AssistantResetDisposition.committedCurrent;
+    } on Object {
+      hold();
+      rethrow;
+    }
+  });
 
   Future<bool> update({
     String? selectedChatId,

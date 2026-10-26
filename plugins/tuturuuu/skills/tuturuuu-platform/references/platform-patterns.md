@@ -6,6 +6,33 @@ shared-package changes.
 
 ## Web And Shared UI
 
+Shared middleware rejections use `@tuturuuu/utils/guard-rejection` to attach a
+fixed scalar reason and a generated correlation ID, expose them alongside
+existing CORS headers, and emit one warning with a fixed route template. Keep
+credentials, request-provided IDs and raw paths out of diagnostics. Preserve
+status/retry/MFA-cookie behavior. See the [guard diagnostics decision](../../../../../apps/docs/platform/features/mobile-workspace-tools.mdx#guard-rejection-diagnostics)
+and its focused regression coverage before adding a reason or changing middleware.
+
+- Native satellites consume shared `@tuturuuu/start-bridge` adapters; app configs
+  own hosts and SEO/security headers. Preserve forwarded WebGL sandbox CSP without
+  handler-level CSP. Limit asset caching to GET/HEAD paths; keep config imports strippable.
+  Suppliers authorize direct calls; preserve disabled service-worker registration.
+  Use the [Nova/Inventory qualification guide](../../../../../apps/docs/build/devops/nova-inventory-start-bridge.mdx)
+  for action/offline parity and separate raw-Host, header and browser acceptance.
+
+- Workspace ID boundary pilot: `@tuturuuu/utils/workspace-id` exports
+  `workspaceIdSchema` and its inferred `WorkspaceId` brand. The schema is the
+  only constructor; it reuses `normalizeWorkspaceContextId` for `personal` and
+  `internal` (the root UUID), accepts UUID literals, and has no framework imports.
+  In template background GET/HEAD, retain authentication and
+  `normalizeWorkspaceId` first so personal workspaces and existing handles keep
+  their resolution behavior, then parse the result inside the existing 400
+  handler. Pass `WorkspaceId` to the downstream `getBackgroundTemplate` query;
+  never cast raw route params into the brand. Parsing does not grant access:
+  preserve membership, workspace filters, visibility and creator checks.
+  Expand one resource at a time with its existing error envelope and regression
+  coverage. See [typed workspace boundaries](../../../../../apps/docs/build/development-tools/codex-plugin.mdx#typed-workspace-boundaries).
+
 - Calendar provider cron failures retain failed dashboard diagnostics while
   isolating accounts and bounding work. Rejected Google credentials stop siblings
   and become inactive only if storage still matches; transient failures retry.
@@ -91,10 +118,24 @@ shared-package changes.
   `useEffect`.
 - Client/shared UI app API calls should go through `packages/internal-api/src/*`
   helpers instead of scattered raw `fetch('/api/...')` calls.
+- Mounted app adapters register `registerDefaultAppBaseResolver` from
+  `@tuturuuu/internal-api/client` once at startup for helpers without options.
+  Read request-local context inside the callback and return an absolute URL on
+  SSR; never capture an incoming request in the registered closure. Select
+  app-owned routes when the adapter also calls central APIs. See the
+  [bridge resolver contract](../../../../../apps/docs/build/devops/start-bridge.mdx#internal-api-resolver-registration)
+  for browser setup, teardown and regression coverage.
 - Every `fetch` inside a query function should include `{ cache: 'no-store' }`.
 - Use `@tuturuuu/icons`, `@tuturuuu/ui/dialog`, and dynamic design tokens.
   Native browser dialogs, emojis in UI code, and hard-coded hue classes are not
   acceptable.
+- Operational status surfaces use `@tuturuuu/ui/custom/ops` (`StatusPill`,
+  `StatTile`, `ResourceMeter`, `StatePanel`, `OpsSection`, `OpsPageHeader`,
+  `LogLines`) and
+  the `OpsTone` vocabulary instead of app-local tone maps. `unknown` is not
+  `neutral`: stale or missing telemetry and unreachable workers render as
+  unknown, never as zero or healthy. `OpsPageHeader` shares FeatureSummary's
+  surface for read-only pages; keep FeatureSummary for create/settings flows.
 - If a client admin surface grows large, keep the main shell focused on query
   state, mutations, and routing; extract heavy render branches nearby.
 - **Tiptap extensions are fixed at editor creation.** `Editor.setOptions({
@@ -431,6 +472,27 @@ Rules:
   bug above (it broke all 20 contacts users pages). Use an app-local wrapper built
   on the app's `src/lib/workspace.ts`. `check-internal-app-auth` enforces both
   halves; the actorless rule is per-app via `ACTORLESS_CHECK_APPS`.
+- **`@tuturuuu/internal-api` is emitted as CommonJS** (`tsconfig.build.json`
+  uses `NodeNext` without `"type": "module"`), so a Vite+ app that imports it
+  from `dist/` bundles the whole client (~1 MB raw, every zod schema) into its
+  entry chunk; this was the single largest download on every Meet and Mail
+  page. Vite+ satellites alias `@tuturuuu/internal-api` and its subpaths to
+  `packages/internal-api/src/*.ts` in `vite.config.ts`, and the package declares
+  `"sideEffects": false`, so rolldown keeps only the readers a page uses. Keep
+  new internal-api modules free of import-time side effects, and check
+  `dist/client/assets` for a `dist-*.js`/`join-outcome-*.js`-sized chunk after
+  changing the alias list.
+- **Client bundles must not import both message bundles.** Meet's `en.json` and
+  `vi.json` weigh ~940 KB raw; `NextIntlClientProvider` now reads them through
+  `runtime/locale-messages.ts`, which keeps the static import on the server
+  (`createIsomorphicFn`) and fetches only the active locale from the hashed
+  `?url` asset the route head preloads. Route pending copy lives in
+  `loading-labels.ts` with a test that pins it to the JSON. Load heavy views
+  (call shell, collaboration editors, live plan editor, meeting detail) with
+  `lazy()` inside `page-view.tsx`; the server still renders them and hydration
+  waits for the chunk, so no layout shift. Preload the Noto Sans subsets and
+  use `font-display: swap` with the metric-matched `Noto Sans Fallback` face in
+  `typography.css` rather than `block`, which hid text until the font arrived.
 - A satellite that renders broad shared UI must be in the **checked** `APPS` list
   in `scripts/i18n-namespace-check.js`, not `UNCHECKED_APPS`. Scanning only the
   app's own source cannot see namespaces used *inside* `@tuturuuu/ui` /
@@ -517,6 +579,18 @@ Docker setup is inactive and the Docker cron runner is retired; local docs use
 
 ## Bounded billing projections
 
+Inventory reconciliation totals use `@tuturuuu/utils/finance-money` at API/database
+and display boundaries. Parse raw minor units once into `Money`, add with
+`addMoney`, and format with `formatMoney`; derive major-unit JSON only when
+serializing. Keep other Finance flows scoped to their existing contracts. See
+`apps/docs/platform/applications/finance.mdx` and the deterministic money/token
+property tests for the supported invariants and the separate #6840 follow-up.
+Inventory allocations retain their distinct Intl unit scale. Use the safe
+`finance-reconciliation-display` boundaries for rendered totals and allocations;
+malformed values render a neutral placeholder. Summary rows must validate every
+affected bucket before mutation; skip invalid/overflowing rows and warn with a
+count so one bad row cannot fail the whole summary or leave partial totals.
+
 Keep subscription group defaults separate from explicit operator choices. An
 empty selection after clearing a paid class is intentional; do not reapply
 select-all defaults during context or membership refetches. Reset that preference
@@ -573,6 +647,16 @@ transfer. A completion callback must not navigate away from edits made while the
 request was pending: offer a separate guarded open action. Fence double submits
 synchronously and avoid automatic retries for non-idempotent creation.
 Lettin's duplicate-entry D1 and component tests exercise these boundaries.
+
+## Calendar consent restart admission
+
+Automatic Google consent restarts use `admitGoogleConsentRestart` after callback
+authorization and the scoped provider-account lookup. Keep admission in the
+existing atomic nonce ledger (one account/user/workspace slot per ten-minute
+window), fail closed on unavailable storage, and preserve fresh-state/PKCE and
+quarantine reuse guards. HTTP 429 includes Retry-After and localized Calendar
+copy. A fresh provider refresh token bypasses restart admission. See the
+Calendar product decision and callback/consent-restart tests.
 
 ## Notification email admission
 
@@ -671,12 +755,23 @@ the shared runtime’s `BASE_URL` points at Parley when running there. Participa
 invitations must instead remain on the current Parley origin at `/r/<code>`,
 never `/sessions/<id>`. Codes do not confer authorization.
 
-Reset participation acknowledgement when switching the selected scenario. Keep
-the selection visible when search filters hide its option. Load saved private
-rubrics only after both session-owner and meeting-host checks; render the session
-snapshot rather than the current scenario revision. See the Parley product guide
-and studio setup, invitation, review-route and Meet-link regression tests.
+Reset participation acknowledgement when switching scenarios. Keep filtered selections
+visible. Load private rubrics only after session-owner and meeting-host checks;
+render the session snapshot. See the Parley product guide and studio setup,
+invitation, review-route and Meet-link regression tests. Keep shared chat mention
+markers lazy and unguessable; see the [native import checks](../../../../../apps/docs/build/development-tools/thanh-local-e2e.mdx#native-worker-imports).
 
+## Calendar OAuth operator alerts
+
+Calendar OAuth spike alerts use the existing `create_notification` queue. Configure
+`CALENDAR_OAUTH_ALERT_RECIPIENTS` on Calendar. Resolve each address to a confirmed
+root-workspace member and pass only p_user_id to create_notification; email-only
+account_update rows are unsupported. Distinguish unresolved, preference-suppressed,
+HTTP-failed and status0/unknown writes. Verify queue acceptance separately from
+actual operator delivery. Keep the five-recipient bound, aggregate-only
+payload, hourly recurring-hold cadence and nonfatal delivery status; never retry
+an unknown notification write in the same run. The Calendar product decision
+and `oauth-spike-notification`/provider-cron tests define this contract.
 
 ## Immediate notification selection
 
@@ -1191,3 +1286,39 @@ restoring real timers; see the Calendar application decision and tracker tests.
 Trace mobile preference requests through `ApiOrigins.baseUrlForPath`, not only `ownerForPath`: personal/workspace calendar-settings GET/PATCH now default directly to Web, while older published builds retain Infrastructure-to-Calendar routing. Keep Web settings paths out of satellite rewrites; changing the mobile host alone can still send traffic back to Calendar. Inspect `apps/web/vercel.json` and the active hosting policy separately: application MFA cannot bypass a provider challenge before application execution. Reuse the Bearer actor already verified by the MFA guard for exact preference GET/PATCH quotas; do not add an authentication request or rely on a warm trust cache.
 Keep preferences bounded and separate from unrelated gateway traffic. Retain anonymous quotas, MFA, IP blocks and route permissions. Test cold-cache/shared-IP rejection, token rotation, actor isolation, forged credentials and Settings mount request counts.
 Middleware logs alone cannot attribute a TestFlight incident; obtain safe rejection headers and correlate both hosts. See the Calendar settings decision, native API protection runbook and `api-proxy-calendar-preference-reads.test.ts`. Keep the calendar preference Web routing fix independently deliverable before native integrity. `NATIVE_INTEGRITY_MODE` defaults to `off`; `monitor` may record only scalar verification verdicts and must continue through existing auth/MFA/quota/permission controls on every integrity failure. Enforce only after operator acceptance of real providers, signed devices, nonce/counter replay storage, key deletion and unsupported/older-client policy. The guard also covers existing Web browser/server consumers without proofs, so keep enforce inactive until their proof coverage or a separately reviewed trusted-browser policy is accepted; never bypass by omitted header or User-Agent. Do not infer Vercel hosting clearance from a valid app proof. Follow the [native integrity runbook](../../../../../apps/docs/build/devops/calendar-native-api-protection.mdx#native-integrity-rollout-default-off) for configuration, acceptance and rollback; keep tokens, key IDs and request bindings out of logs. Turnstile fallback is separately default-off and requires server-owned unsupported-actor eligibility; live Apple or verified Play capability bars the downgrade. Request-owned verified-user reuse applies only to the exact unchanged Request in one process; distinct proxy/route objects or runtimes resolve identity normally, never through a trusted client header or assumed cross-runtime WeakMap.
+
+### Storage object key transport
+
+At Supabase URL-interpolating upload boundaries, encode logical object keys once
+with `encodeStoragePath` from `@tuturuuu/utils/storage-path`. Keep metadata,
+duplicate checks and returned application paths logical. Audit components,
+hooks and generic file helpers: even UUID prefixes can carry raw user filename
+extensions. Use the real installed SDK and a synthetic fetch transport to
+assert the once-decoded request pathname and empty URL search/hash, including
+`%41`, `?`, `#`, and Vietnamese NFC/NFD names. See the object key transport
+section in [storage egress protection](../../../../../apps/docs/build/devops/storage-egress-protection.mdx).
+
+
+### Drive and private attachment storage
+
+Use `@tuturuuu/storage-core/drive-path-policy` at Drive boundaries, including
+mutations and export capabilities. `view_drive` and `manage_drive` never authorize
+`chat/**`, `chats/**` (AI chat, Mind, temporary/native/voice resources),
+`external-apps/**`, `AI Agent Imports/**`, `mira/images/**`, or `recordings/**` private
+media. Use the owning application's authorization and content guard for private
+reads. Preserve private-byte quota accounting while
+excluding private filenames/sizes from Drive listings and analytics. Do not put
+this Drive-only denial in the generic storage read signer: authorized native chat
+and Meet callers also use it. See the Drive application's private attachment
+boundaries decision and its route/policy regressions.
+
+## Standalone API foundation
+
+For the explicitly authorized `apps/api` Worker migration, use the [standalone API runbook](../../../../../apps/docs/build/devops/standalone-api.mdx). Domain operations register through one policy/schema pipeline. Protected operations fail closed until the concrete Web guard and principal adapter is verified; retained Next routes keep their existing guards. Do not import Node-only graphs or treat generated inventory as runtime acceptance.
+
+Calendar provider-sync envelopes distinguish productive `ok` runs from a
+provider whose entire nonempty sample failed transiently. Keep the bounded
+`degraded` / `transientProviders` contract wired through Cron Control's real
+reader and durable ledger. Degraded runs reset the fatal streak without
+advancing the last productive completion; holds and revocations remain nonfatal.
+See `apps/docs/platform/applications/calendar.mdx` and the scheduler contract tests.

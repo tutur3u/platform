@@ -2,6 +2,7 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
@@ -112,7 +113,9 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.textContaining('sự kiện'), findsWidgets);
-      final rows = tester.widgetList<ListTile>(find.byType(ListTile)).toList();
+      final rows = tester
+          .widgetList<AppGroupedRow>(find.byType(AppGroupedRow))
+          .toList();
       expect(rows.last.onTap, isNull);
       expect(tester.takeException(), isNull);
     },

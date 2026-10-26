@@ -70,6 +70,51 @@ staff mailbox or root-workspace access.
   without the keyword.
 </Note>
 
+## Raw session tokens are native-only
+
+Password login and OTP verification (`/api/v1/auth/password-login`,
+`/api/v1/auth/otp/verify` and their `/api/v1/auth/mobile/*` aliases) return a
+raw Supabase access and refresh token pair only for `client: 'mobile'`, and only
+when the request carries no `Origin` and no `Sec-Fetch-*` header. Every browser
+sends at least one of those, so a browser page, including script injected into
+any `tuturuuu.com` app, gets `403 MOBILE_SESSION_BROWSER_REFUSED` before the
+credential is checked, and must sign in through the cookie session
+(`client: 'web'`). The Flutter app's `dart:io` HTTP client sends neither header,
+so native sign-in is unchanged.
+
+The fence is by design for any browser runtime: a Flutter web build would also
+get `403` (no Flutter web build ships today). It does not stop injected script
+from phishing a password and relaying it through its own server; native app
+attestation is the planned control for that.
+
+`GET /api/cli/auth/start` mints the CLI handoff token only for a top-level
+browser navigation (`Sec-Fetch-Mode: navigate`, `Sec-Fetch-Dest: document`).
+`fetch`, iframe loads and requests without Fetch Metadata get
+`403 CLI_LOGIN_NAVIGATION_REQUIRED` and mint nothing; the CLI only opens the URL
+in a browser. Browsers send Fetch Metadata only to trustworthy origins (HTTPS
+and `localhost`), so a CLI pointed at a non-localhost `http://` dev origin gets
+`403`; use HTTPS, `localhost` or `127.0.0.1`. The route has no JSON response
+and answers `404` for any non-canonical (percent-encoded) spelling of its path,
+which the config header rule would not match. Every response on the canonical
+path carries
+`Content-Security-Policy: sandbox; default-src 'none'; style-src 'unsafe-inline';
+frame-ancestors 'none'` and `Cross-Origin-Opener-Policy: same-origin`, set in
+`apps/web/next.config.ts` after the platform anti-framing rule (Next applies
+config headers before the handler, so a handler-set CSP alone would be
+dropped). The copy page renders in an opaque origin without script and a
+same-origin opener cannot read the token. The loopback callback is validated
+before a token is minted.
+
+`GET /api/auth/me/session`, which returned every `sb-*` cookie and the full
+session including the refresh token, has been removed.
+
+Scope: Web auth routes. Regression coverage: `lib/auth/password.test.ts`,
+`lib/auth/otp.test.ts`, `__tests__/mobile-session-browser-fence-route.test.ts`,
+`app/api/cli/auth/start/route.test.ts`, `apps/web/next.config.test.ts`. Remaining cookie-authenticated minting
+paths (cross-app handoff tokens, CLI device approval, API keys) are fenced by the
+shared-session plan's step-up and token-lifetime work; see
+[Start bridge](/build/devops/start-bridge).
+
 ## Email sign-in method preference
 
 The canonical web login (including satellite app redirects) and Flutter mobile
@@ -834,6 +879,30 @@ WEB_APP_URL })` so the handoff also stores the Web-issued app-session cookie.
 
 If either piece is missing, centralized login can stall on the web login spinner or land on `/verify-token` with no token-verification endpoint to finish the handoff.
 
+Signing out of Web (`POST /api/auth/logout`) and changing the password
+(`POST /api/v1/users/me/password`) revoke the user's outstanding cross-app tokens
+through `revokeAllCrossAppTokens`, before sign-out and after a successful
+password update respectively. A revocation failure is logged and never blocks
+either action. Coverage: `__tests__/cross-app-token-revocation-routes.test.ts`.
+
+### Apps mounted on the platform apex
+
+An app served at `tuturuuu.com/<app>` (one-origin super-app) returns from
+login through `tuturuuu.com/<app>/verify-token`. Web's login form and
+`POST /api/v1/auth/cross-app-return` treat that URL as `<app>` only when the
+app is listed in `NEXT_PUBLIC_TUTURUUU_ACTIVE_APP_MOUNTS` (comma-separated,
+**empty by default**). The cross-app token is then issued for `<app>`, and its
+`nextUrl` stays app-relative inside the mount. Add an app to the list only
+after the apex actually routes `/<app>/*` to it. Until then the URL keeps the
+existing platform flow, so a live token is never sent to a path nothing
+serves. Cross-app returns always use a full document navigation. Web's Vercel
+Analytics and Speed Insights redact `token`, `code` and OAuth token query
+parameters (and parameter-bearing fragments) before sending a URL. Regression
+coverage: `packages/utils/src/internal-app-mounts.test.ts`,
+`apps/web/src/app/[locale]/(auth)/login/form-mounted-return.test.tsx`,
+`apps/web/src/app/api/v1/auth/cross-app-return/route.test.ts`,
+`packages/vercel/src/core/redact-url.test.ts`.
+
 ### Generate Cross-App Token
 
 `generateCrossAppToken(supabase, targetApp, originApp, expirySeconds?)` is the
@@ -1241,3 +1310,15 @@ authentication, database and storage provider, without realtime subscriptions.
 See [the realtime runbook](/build/devops/programming-realtime-runbook).
 
 Administrative policy/recovery metadata transitions use a row-locked database compare-and-swap with a unique generation. A delayed completion cannot overwrite a newer recovery marker, even after the application coordination lease expires. Provider password changes remain GoTrue operations; optional-account password reset does not promise immediate revocation of every previously issued JWT, including when an administrator concurrently enables required MFA. Fresh required-policy and factor checks still apply to every protected request.
+
+## Satellite login return destinations
+
+Satellite login pages normalize untrusted `next` and `nextUrl` destinations with
+`normalizeAuthRedirectPath` before a signed-in redirect or a central login
+handoff. Origin-changing inputs, including slash-backslash authorities and
+encoded or control-character variants, use the app's existing fallback. Valid
+same-origin paths and encoded query data remain intact. Repeated parameters use
+the first value. Storefront, Inventory, Chat, Mind and Nova share this rule;
+Nova retains its central-only handoff and each app retains its existing landing
+path. Their colocated `redirect-security.test.ts` suites execute the real pages
+and shared normalizer for signed-in and central handoff paths.

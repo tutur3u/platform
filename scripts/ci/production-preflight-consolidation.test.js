@@ -106,8 +106,33 @@ test('Cloudflare release relevance shares the existing config job and gates vali
       planner.jobs[`deploy-${app}-cloudflare`].uses,
       `./.github/workflows/${file}`
     );
-    assert.equal(workflow.concurrency['cancel-in-progress'], false);
-    assert.equal(workflow.concurrency.queue, 'max');
+    // Validation supersedes at workflow level; the deploy job holds the
+    // non-cancelling, queued production lock (#6494).
+    assert.deepEqual(workflow.jobs.deploy.concurrency, {
+      group: `${app}-cloudflare-production-deploy`,
+      'cancel-in-progress': false,
+      queue: 'max',
+    });
+    const cancels = (event_name, ref, run_attempt = 1) =>
+      vm.runInNewContext(
+        workflow.concurrency['cancel-in-progress'].replace(
+          /^\s*\$\{\{\s*|\s*\}\}\s*$/g,
+          ''
+        ),
+        {
+          github: { event_name, ref, run_attempt },
+          startsWith: (value, prefix) => String(value).startsWith(prefix),
+        },
+        { timeout: 100 }
+      );
+    assert.equal(cancels('push', 'refs/heads/production'), false);
+    assert.equal(
+      cancels('push', 'refs/heads/release-please--branches--production'),
+      false
+    );
+    assert.equal(cancels('workflow_dispatch', 'refs/heads/production'), false);
+    assert.equal(cancels('pull_request', 'refs/pull/1/merge', 2), false);
+    assert.equal(cancels('pull_request', 'refs/pull/1/merge'), true);
   }
 });
 

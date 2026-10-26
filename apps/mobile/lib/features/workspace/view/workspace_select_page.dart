@@ -2,13 +2,14 @@ import 'package:flutter/material.dart'
     hide AppBar, Chip, CircleAvatar, FilledButton, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
+import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/features/workspace/widgets/create_workspace_dialog.dart';
-import 'package:mobile/features/workspace/widgets/workspace_avatar.dart';
 import 'package:mobile/features/workspace/widgets/workspace_picker_sheet.dart';
-import 'package:mobile/features/workspace/widgets/workspace_tier_badge.dart';
+import 'package:mobile/features/workspace/widgets/workspace_result_tile.dart';
 import 'package:mobile/features/workspace/workspace_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
@@ -70,9 +71,8 @@ class _WorkspaceSelectPageState extends State<WorkspaceSelectPage> {
             return const Center(child: NovaLoadingIndicator());
           }
           if (state.workspaces.isNotEmpty && state.visibleWorkspaces.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
+            return AppPageBody(
+              child: Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -179,178 +179,58 @@ class _WorkspaceListView extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final sections = splitWorkspaceSections(state.visibleWorkspaces);
+    // Flattened so the list builds rows lazily, however many there are.
+    final items = <WidgetBuilder>[
+      if (state.limits != null && state.limits!.limit > 0) ...[
+        (_) => _LimitsBar(
+          currentCount: state.limits!.currentCount,
+          limit: state.limits!.limit,
+        ),
+        (_) => const shad.Gap(16),
+      ],
+      for (final (title, icon, workspaces) in [
+        (l10n.workspacePersonalSection, LucideIcons.user, sections.personal),
+        (l10n.workspaceSystemSection, LucideIcons.building2, sections.system),
+        (l10n.workspaceTeamSection, LucideIcons.users, sections.team),
+      ])
+        if (workspaces.isNotEmpty) ...[
+          (_) => AppSectionHeader(
+            title: title,
+            icon: icon,
+            count: workspaces.length,
+          ),
+          for (final (index, workspace) in workspaces.indexed)
+            (_) => AppGroupedSlice(
+              position: AppSlicePosition.of(index, workspaces.length),
+              dividerInset: AppLayout.rowHorizontalPadding + 40 + 12,
+              child: _buildTile(workspace),
+            ),
+          (_) => const shad.Gap(20),
+        ],
+    ];
 
     return NovaRefreshIndicator(
       onRefresh: onRefresh,
-      child: AppPageListView(
+      child: AppPageListView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
-        children: [
-          // Limits bar
-          if (state.limits != null && state.limits!.limit > 0) ...[
-            _LimitsBar(
-              currentCount: state.limits!.currentCount,
-              limit: state.limits!.limit,
-            ),
-            const shad.Gap(16),
-          ],
-
-          // Personal workspace section
-          if (sections.personal.isNotEmpty) ...[
-            _SectionHeader(title: l10n.workspacePersonalSection),
-            const shad.Gap(8),
-            for (final w in sections.personal) _buildTile(w),
-          ],
-
-          if (sections.system.isNotEmpty) ...[
-            if (sections.personal.isNotEmpty) const shad.Gap(16),
-            _SectionHeader(title: l10n.workspaceSystemSection),
-            const shad.Gap(8),
-            for (final w in sections.system) _buildTile(w),
-          ],
-
-          // Team workspaces section
-          if (sections.team.isNotEmpty) ...[
-            if (sections.personal.isNotEmpty || sections.system.isNotEmpty)
-              const shad.Gap(16),
-            _SectionHeader(title: l10n.workspaceTeamSection),
-            const shad.Gap(8),
-            for (final w in sections.team) _buildTile(w),
-          ],
-        ],
+        itemCount: items.length,
+        itemBuilder: (context, index) => items[index](context),
       ),
     );
   }
 
-  Widget _buildTile(Workspace workspace) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: _WorkspaceTile(
-        workspace: workspace,
-        isSelected: workspace.id == state.currentWorkspace?.id,
-        isLoading: isSelecting && selectingWorkspaceId == workspace.id,
-        enabled: !isSelecting,
-        onTap: () => onSelect(workspace),
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Section header (uppercase label)
-// ---------------------------------------------------------------------------
-
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.title});
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(left: 4),
-      child: Text(
-        title.toUpperCase(),
-        style: theme.typography.small.copyWith(
-          color: theme.colorScheme.mutedForeground,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.8,
-        ),
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Card-based workspace tile with animated selection state
-// ---------------------------------------------------------------------------
-
-class _WorkspaceTile extends StatelessWidget {
-  const _WorkspaceTile({
-    required this.workspace,
-    required this.isSelected,
-    required this.isLoading,
-    required this.enabled,
-    required this.onTap,
-  });
-
-  final Workspace workspace;
-  final bool isSelected;
-  final bool isLoading;
-  final bool enabled;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final theme = shad.Theme.of(context);
-
-    return GestureDetector(
-      onTap: enabled ? onTap : null,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeInOut,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected
-                ? theme.colorScheme.primary
-                : theme.colorScheme.border,
-          ),
-          color: isSelected
-              ? theme.colorScheme.primary.withValues(alpha: 0.05)
-              : Colors.transparent,
-        ),
-        child: Row(
-          children: [
-            WorkspaceAvatar(workspace: workspace),
-            const shad.Gap(14),
-            Expanded(
-              child: Row(
-                children: [
-                  Flexible(
-                    child: Text(
-                      displayWorkspacePickerName(context, workspace),
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.p.copyWith(
-                        fontWeight: isSelected
-                            ? FontWeight.w600
-                            : FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                  const shad.Gap(8),
-                  WorkspaceTierBadge(tier: workspace.tier),
-                  if (workspace.personal || isSystemWorkspace(workspace)) ...[
-                    const shad.Gap(8),
-                    shad.OutlineBadge(
-                      child: Text(
-                        workspace.personal
-                            ? l10n.workspacePersonalBadge
-                            : l10n.workspaceSystemBadge,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            const shad.Gap(8),
-            if (isLoading)
-              const NovaLoadingIndicator(size: 16)
-            else if (isSelected)
-              const Icon(Icons.check_circle_rounded, size: 22)
-            else
-              Icon(
-                Icons.chevron_right_rounded,
-                color: theme.colorScheme.mutedForeground,
-                size: 20,
-              ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget _buildTile(Workspace workspace) => WorkspaceResultTile(
+    key: ValueKey('workspace-select-${workspace.id}'),
+    workspace: workspace,
+    selected: workspace.id == state.currentWorkspace?.id,
+    current: workspace.id == state.currentWorkspace?.id,
+    isDefault: workspace.id == state.defaultWorkspace?.id,
+    pending: false,
+    loading: isSelecting && selectingWorkspaceId == workspace.id,
+    onSelect: isSelecting ? null : () => onSelect(workspace),
+    onVisibility: null,
+    actionLabel: '',
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -425,9 +305,8 @@ class _ErrorView extends StatelessWidget {
     final l10n = context.l10n;
     final theme = shad.Theme.of(context);
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
+    return AppPageBody(
+      child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -470,9 +349,8 @@ class _EmptyView extends StatelessWidget {
     final l10n = context.l10n;
     final theme = shad.Theme.of(context);
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
+    return AppPageBody(
+      child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

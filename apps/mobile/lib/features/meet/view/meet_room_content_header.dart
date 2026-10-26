@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout.dart';
-import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/features/meet/data/meet_call_controller.dart';
 import 'package:mobile/features/meet/view/meet_room_exit_actions.dart';
 import 'package:mobile/features/meet/view/meet_room_sheets.dart';
@@ -26,9 +25,17 @@ class MeetRoomContentHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (!joinRequested || call.ended) return const SizedBox.shrink();
+    return LayoutBuilder(
+      builder: (context, constraints) => _buildHeader(
+        context,
+        AppPageInsets.gutterOf(context, width: constraints.maxWidth),
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context, double gutter) {
     final l10n = context.l10n;
     final remaining = formatMeetRemainingTime(call.roomExpiresAt);
-    final gutter = AppLayout.gutter(context.deviceClass);
     return Padding(
       padding: EdgeInsets.fromLTRB(
         gutter,

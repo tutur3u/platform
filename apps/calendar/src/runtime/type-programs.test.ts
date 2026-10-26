@@ -17,13 +17,11 @@ describe('Calendar native type host boundaries', () => {
   it('retains the full DOM app while separately checking both service-worker roots', () => {
     const app = config('tsconfig.json');
     const sw = config('tsconfig.sw.json');
-    expect(app.include).toEqual([
-      'src',
-      'vite.config.mts',
-      'void.config.ts',
-      'global.d.ts',
-      'messages',
-    ]);
+    const build = config('tsconfig.config.json');
+    expect(build.include).toEqual(['vite.config.mts', 'void.config.ts']);
+    expect(build.compilerOptions.types).toEqual(['node']);
+    expect(build.compilerOptions.noEmit).toBe(true);
+    expect(app.include).toEqual(['src', 'global.d.ts', 'messages']);
     expect(app.compilerOptions.lib).toEqual(['ESNext', 'DOM', 'DOM.Iterable']);
     expect(app.compilerOptions.types).toEqual(['vite/client', 'node']);
     expect(app.compilerOptions.noEmit).toBe(true);
@@ -96,7 +94,7 @@ describe('Calendar native type host boundaries', () => {
       })
       .parse(JSON.parse(readFileSync(join(appRoot, 'package.json'), 'utf8')));
     expect(pkg.scripts['type-check']).toBe(
-      'bun run type-check:app && bun run type-check:boundary && bun run type-check:worker && bun run type-check:sw'
+      'bun run type-check:app && bun run type-check:boundary && bun run type-check:worker && bun run type-check:sw && bun run type-check:config'
     );
     expect(pkg.scripts['type-check:app']).toBe(
       'tsc --noEmit --project tsconfig.json'

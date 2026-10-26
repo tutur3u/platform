@@ -55,7 +55,17 @@ export function createMiraSdkToolSearch(
     if (workspaceId !== getWorkspaceContextWorkspaceId(ctx)) {
       return { toolChoice: 'none' as const, activeTools: [] };
     }
-    const selected = new Set(policy.activeTools);
+    let selected = new Set(policy.activeTools);
+    let toolChoice = policy.toolChoice;
+    // A forced tool may be absent for this client or permission set; fall back
+    // to discovery instead of requiring a call nothing can satisfy.
+    if (
+      toolChoice === 'required' &&
+      !policy.activeTools.some((name) => allowed.has(name))
+    ) {
+      selected = new Set(['search_tools']);
+      toolChoice = undefined;
+    }
     const canDiscover = selected.has('search_tools');
     const activeTools = [...allowed].filter(
       (name) => canDiscover || selected.has(name)
@@ -67,7 +77,7 @@ export function createMiraSdkToolSearch(
         tools[name] = { ...definition, deferLoading: !selected.has(name) };
       }
     }
-    return { ...policy, activeTools };
+    return { ...policy, toolChoice, activeTools };
   }
   return { tools, prepareStep };
 }

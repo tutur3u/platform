@@ -36,10 +36,14 @@ class TaskProjectDetailPage extends StatelessWidget {
     required this.projectId,
     super.key,
     this.repository,
+    @visibleForTesting this.createCubit,
   });
 
   final String projectId;
   final TaskRepository? repository;
+
+  /// Builds the page cubit; tests inject one seeded with project state.
+  final TaskPortfolioCubit Function(TaskRepository repository)? createCubit;
 
   @override
   Widget build(BuildContext context) {
@@ -47,9 +51,10 @@ class TaskProjectDetailPage extends StatelessWidget {
       create: (_) => repository ?? TaskRepository(),
       child: BlocProvider(
         create: (context) {
-          final cubit = TaskPortfolioCubit(
-            taskRepository: context.read<TaskRepository>(),
-          );
+          final taskRepository = context.read<TaskRepository>();
+          final cubit =
+              createCubit?.call(taskRepository) ??
+              TaskPortfolioCubit(taskRepository: taskRepository);
           final wsId = context
               .read<WorkspaceCubit>()
               .state

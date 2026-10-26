@@ -1,5 +1,11 @@
 part of 'task_board_detail_page.dart';
 
+/// Whether the kanban canvas pages one column at a time. Decided from the
+/// width the board body receives, not the window, so a board beside the shell
+/// rail picks the layout for its own width.
+bool _usesPagedKanban(double bodyWidth) =>
+    Breakpoints.fromWidth(bodyWidth) == DeviceClass.compact;
+
 class _TaskBoardKanbanView extends StatelessWidget {
   const _TaskBoardKanbanView({
     required this.boardId,
@@ -120,16 +126,16 @@ class _TaskBoardKanbanView extends StatelessWidget {
       );
     }
 
-    final columnHeight = context.isCompact
-        ? viewportHeight.clamp(280.0, 2000.0)
-        : math.max<double>(280, viewportHeight);
-
     return LayoutBuilder(
       builder: (context, constraints) {
         final viewportWidth = constraints.maxWidth.isFinite
             ? constraints.maxWidth
             : MediaQuery.sizeOf(context).width;
-        if (!context.isCompact) {
+        final paged = _usesPagedKanban(viewportWidth);
+        final columnHeight = paged
+            ? viewportHeight.clamp(280.0, 2000.0)
+            : math.max<double>(280, viewportHeight);
+        if (!paged) {
           final columns = math.max(2, (viewportWidth / 340).floor());
           final columnWidth = (viewportWidth - 24) / columns;
           return ListView(

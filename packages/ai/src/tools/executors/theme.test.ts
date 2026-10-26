@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { MiraToolContext } from '../mira-tool-types';
 import {
   executeManageWorkspace,
+  executeOpenApp,
   executeSetSidebar,
   executeSetTheme,
   executeShowWorkspaceArtifact,
@@ -83,5 +84,17 @@ describe('Mira UI tool markers', () => {
     expect(await executeSetTheme({ theme: 'invalid' }, ctx)).toHaveProperty(
       'error'
     );
+  });
+
+  it('returns an open_app marker for known destinations in the selected workspace', async () => {
+    expect(await executeOpenApp({ destination: 'mail' }, ctx)).toMatchObject({
+      success: true,
+      action: 'open_app',
+      destination: 'mail',
+      wsId: 'selected-workspace',
+    });
+    expect(
+      await executeOpenApp({ destination: '../admin' }, ctx)
+    ).toHaveProperty('error');
   });
 });

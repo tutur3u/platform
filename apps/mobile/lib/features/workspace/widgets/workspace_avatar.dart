@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/features/workspace/workspace_presentation.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
-/// Displays a workspace avatar with initials and a consistent color.
+/// Identity tile of a workspace: its avatar image, or initials on the
+/// workspace's brand colour ([workspaceAccent]).
 ///
-/// Personal workspaces use the primary theme color with 'P' initial.
-/// Team workspaces get a unique color derived from the workspace ID
-/// so each workspace has a recognizable, stable visual identity.
+/// The colour comes from the workspace id, so a workspace keeps one
+/// recognisable colour across renames, devices and appearance themes. The
+/// internal root workspace shows the Tuturuuu logo. The tile is decorative;
+/// rows announce the workspace name.
 class WorkspaceAvatar extends StatelessWidget {
   const WorkspaceAvatar({required this.workspace, this.radius = 18, super.key});
 
@@ -16,57 +18,71 @@ class WorkspaceAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    final isSystem = isSystemWorkspace(workspace);
+    final tokens = AppTokens.of(context);
+    final c = tokens.colorScheme;
+    final accent = workspaceAccent(workspace);
     final size = radius * 2;
-    final borderRadius = BorderRadius.circular(radius * 0.72);
-    final initials = workspace.personal
-        ? 'P'
-        : isSystem
-        ? 'S'
-        : (workspace.name != null && workspace.name!.isNotEmpty
-              ? workspace.name![0].toUpperCase()
-              : 'W');
-
-    final backgroundColor = workspace.personal
-        ? theme.colorScheme.primary
-        : _colorFromId(workspace.id);
-    final imageProvider = isSystem
-        ? const AssetImage('assets/logos/light.png') as ImageProvider<Object>
-        : workspace.avatarUrl != null
-        ? NetworkImage(workspace.avatarUrl!) as ImageProvider<Object>
-        : null;
-    final fallback = Center(
-      child: Text(
-        initials,
-        style: theme.typography.small.copyWith(
-          color: Colors.white,
-          fontWeight: FontWeight.w700,
+    final borderRadius = BorderRadius.circular(radius * 0.64);
+    final initials = workspaceInitials(
+      displayWorkspacePickerName(context, workspace),
+    );
+    final fallback = ColoredBox(
+      color: accent.fill(c.brightness),
+      child: Center(
+        child: Text(
+          initials,
+          maxLines: 1,
+          textScaler: TextScaler.noScaling,
+          style: tokens.typography.small.copyWith(
+            color: accent.onFill(c.brightness),
+            fontSize: radius * (initials.length > 1 ? 0.72 : 0.86),
+            fontWeight: FontWeight.w700,
+            height: 1,
+            letterSpacing: 0.2,
+          ),
         ),
       ),
     );
 
-    return ClipRRect(
-      borderRadius: borderRadius,
+    final Widget content;
+    if (isSystemWorkspace(workspace)) {
+      content = ColoredBox(
+        color: c.card,
+        child: Padding(
+          padding: EdgeInsets.all(radius * 0.32),
+          child: Image.asset(
+            'assets/logos/transparent.png',
+            fit: BoxFit.contain,
+            errorBuilder: (_, _, _) => fallback,
+          ),
+        ),
+      );
+    } else if (workspace.avatarUrl case final url? when url.isNotEmpty) {
+      content = Image.network(
+        url,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => fallback,
+        loadingBuilder: (_, child, progress) =>
+            progress == null ? child : fallback,
+      );
+    } else {
+      content = fallback;
+    }
+
+    return ExcludeSemantics(
       child: Container(
         width: size,
         height: size,
-        color: backgroundColor,
-        child: imageProvider != null
-            ? Image(
-                image: imageProvider,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => fallback,
-              )
-            : fallback,
+        decoration: BoxDecoration(
+          borderRadius: borderRadius,
+          border: Border.all(
+            color: c.border.withValues(alpha: 0.5),
+            width: 0.5,
+          ),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: content,
       ),
     );
-  }
-
-  /// Generates a stable HSL color from a workspace ID hash.
-  static Color _colorFromId(String id) {
-    final hash = id.hashCode.abs();
-    final hue = (hash % 360).toDouble();
-    return HSLColor.fromAHSL(1, hue, 0.45, 0.55).toColor();
   }
 }

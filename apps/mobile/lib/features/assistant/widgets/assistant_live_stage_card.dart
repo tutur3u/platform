@@ -1,6 +1,7 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
 import 'package:mobile/features/assistant/models/assistant_live_ui_state.dart';
@@ -42,7 +43,7 @@ class AssistantLiveStageCard extends StatelessWidget {
           if (liveState.isScreenSharing || liveState.isScreenSharingPending)
             _CompactLiveAction(
               tooltip: context.l10n.assistantLiveStopScreen,
-              icon: Icons.stop_screen_share_outlined,
+              icon: LucideIcons.screenShareOff,
               onPressed: context.read<AssistantLiveCubit>().stopScreenSharing,
             ),
           Container(
@@ -57,8 +58,8 @@ class AssistantLiveStageCard extends StatelessWidget {
             ),
             child: Icon(
               liveState.isMicrophoneActive
-                  ? Icons.mic_rounded
-                  : Icons.graphic_eq_rounded,
+                  ? LucideIcons.mic
+                  : LucideIcons.audioLines,
               size: 18,
               color: _statusColor(theme, liveState.status),
             ),
@@ -101,13 +102,13 @@ class AssistantLiveStageCard extends StatelessWidget {
           if (liveState.status == AssistantLiveConnectionStatus.error)
             _CompactLiveAction(
               tooltip: context.l10n.assistantLiveRetryAction,
-              icon: Icons.refresh_rounded,
+              icon: LucideIcons.refreshCw,
               onPressed: onRetry,
             )
           else ...[
             _CompactLiveAction(
               tooltip: context.l10n.assistantLiveOpenMode,
-              icon: Icons.graphic_eq_rounded,
+              icon: LucideIcons.audioLines,
               onPressed: onOpenLiveMode,
             ),
             _CompactLiveAction(
@@ -115,13 +116,13 @@ class AssistantLiveStageCard extends StatelessWidget {
                   ? context.l10n.assistantLiveHideCamera
                   : context.l10n.assistantLiveShowCamera,
               icon: liveState.isCameraActive
-                  ? Icons.videocam_rounded
-                  : Icons.videocam_off_rounded,
+                  ? LucideIcons.video
+                  : LucideIcons.videoOff,
               onPressed: onCameraToggle,
             ),
             _CompactLiveAction(
               tooltip: context.l10n.assistantLiveDisconnect,
-              icon: Icons.close_rounded,
+              icon: LucideIcons.x,
               onPressed: onDisconnect,
             ),
           ],
@@ -149,11 +150,8 @@ class _CompactLiveAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return IconButton(
+    return AppIconButton(
       tooltip: tooltip,
-      visualDensity: VisualDensity.compact,
-      constraints: const BoxConstraints.tightFor(width: 34, height: 34),
-      padding: EdgeInsets.zero,
       onPressed: onPressed,
       icon: Icon(icon, size: 18),
     );

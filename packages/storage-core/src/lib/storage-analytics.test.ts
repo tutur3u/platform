@@ -27,11 +27,18 @@ describe('private app-managed storage accounting', () => {
               },
             ];
       if (depth === 0)
-        data.push({
-          id: 'public-file',
-          name: 'notes.txt',
-          metadata: { size: 100 },
-        });
+        data.push(
+          {
+            id: 'public-file',
+            name: 'notes.txt',
+            metadata: { size: 100 },
+          },
+          {
+            id: 'double-dot-filename',
+            name: 'v1..final.pdf',
+            metadata: { size: 50 },
+          }
+        );
       return { data, error: null };
     });
     const client = { storage: { from: () => ({ list }) } };
@@ -41,8 +48,38 @@ describe('private app-managed storage accounting', () => {
       ROOT_WORKSPACE_ID,
       true
     );
-    expect(visible.totalSize).toBe(100);
+    expect(visible.totalSize).toBe(150);
     expect(visible.largestFile?.name).toBe('notes.txt');
-    expect(quota.totalSize).toBe(1000);
+    expect(quota.totalSize).toBe(1050);
   });
+});
+
+it('omits private chat names and sizes from Drive analytics while retaining quota usage', async () => {
+  const list = vi.fn(async (path: string) => ({
+    error: null,
+    data:
+      path === 'ws-1'
+        ? [
+            { name: 'chats' },
+            { id: 'drive', name: 'notes.txt', metadata: { size: 100 } },
+          ]
+        : [
+            {
+              id: 'private',
+              name: 'private-mind-attachment.pdf',
+              metadata: { size: 900 },
+            },
+          ],
+  }));
+  const client = { storage: { from: () => ({ list }) } };
+  const visible = await getWorkspaceStorageMetrics(client, 'ws-1');
+  expect(visible).toMatchObject({
+    totalSize: 100,
+    fileCount: 1,
+    largestFile: { name: 'notes.txt' },
+    smallestFile: { name: 'notes.txt' },
+  });
+  expect(
+    (await getWorkspaceStorageMetrics(client, 'ws-1', true)).totalSize
+  ).toBe(1000);
 });

@@ -1,8 +1,13 @@
+import 'package:mobile/data/repositories/theme_preference_ledger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+export 'package:mobile/data/repositories/theme_preference_ledger.dart'
+    show PreferenceWriteOutcome;
 
 /// Repository for user preferences (theme, calendar view, etc.).
 ///
 /// Ported from apps/native/lib/stores/ui-store.ts.
+
 class SettingsRepository {
   static const _themeModeKey = 'theme-mode';
   static const _appearanceKey = 'appearance-v1';
@@ -93,10 +98,19 @@ class SettingsRepository {
     return prefs.getString(_themeModeKey) ?? 'system';
   }
 
-  Future<void> setThemeMode(String mode, {bool Function()? shouldWrite}) async {
+  /// Persists the theme mode. The linearization point is the synchronous
+  /// [shouldWrite] check together with the `setString` dispatch, which
+  /// updates the in-process preference cache in the same event: a scope
+  /// change either lands before it (the write is skipped) or after it (the
+  /// write stands and cannot be cancelled). Overlapping writes are ordered by
+  /// [PreferenceWriteLedger]; see it for the outcomes.
+  Future<PreferenceWriteOutcome> setThemeMode(
+    String mode, {
+    bool Function()? shouldWrite,
+  }) async {
     final prefs = await SharedPreferences.getInstance();
-    if (shouldWrite?.call() == false) return;
-    await prefs.setString(_themeModeKey, mode);
+    if (shouldWrite?.call() == false) return PreferenceWriteOutcome.skipped;
+    return await PreferenceWriteLedger.of(prefs, _themeModeKey).write(mode);
   }
 
   /// Encoded appearance customisation, or `null` before the first change.

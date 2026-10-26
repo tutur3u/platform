@@ -83,6 +83,36 @@ export async function authorizeDevboxRootMember(request: Request) {
   };
 }
 
+// Read access to fleet records matches the Infrastructure layout gate: root
+// membership plus view_infrastructure.
+export async function authorizeDevboxRootViewer(request: Request) {
+  const resolvedUser = await resolveDevboxRequestUser(request);
+  if (!resolvedUser.ok) {
+    return resolvedUser;
+  }
+
+  const permissions = await getPermissions({
+    request,
+    user: resolvedUser.user,
+    wsId: ROOT_WORKSPACE_ID,
+  });
+
+  if (
+    permissions?.membershipType !== 'MEMBER' ||
+    permissions.withoutPermission('view_infrastructure')
+  ) {
+    return {
+      ok: false as const,
+      response: NextResponse.json({ message: 'Forbidden' }, { status: 403 }),
+    };
+  }
+
+  return {
+    ok: true as const,
+    user: resolvedUser.user,
+  };
+}
+
 // Runner trust changes (features, drain) match the Infrastructure dashboard
 // gate: root membership plus a root secrets/roles management permission.
 export async function authorizeDevboxRootAdmin(request: Request) {

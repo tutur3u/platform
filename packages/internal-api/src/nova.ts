@@ -1,5 +1,19 @@
 import { getInternalApiClient, type InternalApiClientOptions } from './client';
 
+export function verifyNovaChallengePassword(
+  input: { challengeId: string; password: string | undefined },
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).fetch(
+    '/api/auth/challenges/verify-password',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(input),
+    }
+  );
+}
+
 export interface NovaSubmissionUser {
   display_name: string | null;
   email: string | null;

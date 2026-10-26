@@ -28,6 +28,7 @@ import 'assistant_calendar_insight.dart';
 import 'assistant_chat_persistence_contract.dart';
 import 'assistant_history_message.dart';
 import 'assistant_history_parts.dart';
+import 'assistant_reaction_journal.dart';
 import 'assistant_reset_preferences.dart';
 import 'assistant_settings_selection.dart';
 import 'assistant_soul_name_writer.dart';
@@ -38,6 +39,7 @@ part 'assistant_repository_cache.dart';
 part 'assistant_repository_settings.dart';
 part 'assistant_repository_chat.dart';
 part 'assistant_repository_native_receipt.dart';
+part 'assistant_repository_reactions.dart';
 part 'assistant_repository_creation.dart';
 part 'assistant_repository_legacy_stream.dart';
 part 'assistant_repository_preferences.dart';
@@ -52,6 +54,7 @@ class AssistantRepository
     ChatRepository? chatRepository,
     String? Function()? currentUserId,
     CacheStore? chatCacheStore,
+    AssistantReactionJournal? reactionJournal,
   }) : this._(
          apiClient ?? ApiClient(),
          tasksApiClient ?? ApiClient(baseUrl: ApiConfig.tasksBaseUrl),
@@ -59,6 +62,7 @@ class AssistantRepository
          chatRepository,
          currentUserId ?? currentCacheUserId,
          chatCacheStore ?? CacheStore.instance,
+         reactionJournal ?? AssistantReactionJournal(),
        );
 
   AssistantRepository._(
@@ -68,12 +72,14 @@ class AssistantRepository
     ChatRepository? chatRepository,
     this._currentUserId,
     this._chatCacheStore,
+    this._reactionJournal,
   ) : _chatRepository =
           chatRepository ??
           ChatRepository(apiClient: _apiClient, httpClient: _httpClient);
 
   @override
   final ApiClient _apiClient;
+  final AssistantReactionJournal _reactionJournal;
   final ApiClient _tasksApiClient;
   final http.Client _httpClient;
   @override

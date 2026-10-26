@@ -13,6 +13,7 @@ class ShellActionSpec extends Equatable {
     this.isLoading = false,
     this.highlighted = false,
     this.inDock = false,
+    this.keepVisibleWithKeyboard = false,
     this.segmentGroup,
     this.searchController,
     this.searchHint,
@@ -30,6 +31,7 @@ class ShellActionSpec extends Equatable {
   final bool isLoading;
   final bool highlighted;
   final bool inDock;
+  final bool keepVisibleWithKeyboard;
   final String? segmentGroup;
   final TextEditingController? searchController;
   final String? searchHint;
@@ -51,6 +53,7 @@ class ShellActionSpec extends Equatable {
     isLoading,
     highlighted,
     inDock,
+    keepVisibleWithKeyboard,
     segmentGroup,
     searchController,
     searchHint,

@@ -486,31 +486,87 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantLiveCameraPreview => 'Live camera';
 
   @override
+  String get assistantLiveCallCamera => 'Camera';
+
+  @override
+  String get assistantLiveCallCaptions => 'Captions';
+
+  @override
+  String get assistantLiveCallCaptionsEmpty => 'Captions appear here as you talk.';
+
+  @override
+  String get assistantLiveCallClose => 'Close';
+
+  @override
+  String get assistantLiveCallConnected => 'Connected';
+
+  @override
+  String get assistantLiveCallConnecting => 'Connecting…';
+
+  @override
+  String get assistantLiveCallDuration => 'Call duration';
+
+  @override
+  String get assistantLiveCallEnd => 'End';
+
+  @override
+  String assistantLiveCallEndedWithDuration(String duration) {
+    return 'Call ended · $duration';
+  }
+
+  @override
+  String get assistantLiveCallFailed => 'Couldn\'t connect';
+
+  @override
+  String get assistantLiveCallKeyboard => 'Keyboard';
+
+  @override
+  String get assistantLiveCallMinimize => 'Minimize';
+
+  @override
+  String get assistantLiveCallMute => 'Mute';
+
+  @override
+  String get assistantLiveCallMuted => 'Muted';
+
+  @override
+  String get assistantLiveCallReconnecting => 'Reconnecting…';
+
+  @override
+  String get assistantLiveCallRetry => 'Retry';
+
+  @override
+  String get assistantLiveCallReturn => 'Return to call';
+
+  @override
+  String get assistantLiveCallYou => 'You';
+
+  @override
   String get assistantLiveCancelCall => 'Cancel call';
 
   @override
   String get assistantLiveConnect => 'Start live session';
 
   @override
-  String get assistantLiveDescriptionConnecting => 'Creating a direct Gemini Live session for text, audio, and camera input.';
+  String get assistantLiveDescriptionConnecting => 'Connecting your live conversation.';
 
   @override
   String get assistantLiveDescriptionError => 'The live session hit an error. Retry or start a fresh session.';
 
   @override
-  String get assistantLiveDescriptionIdle => 'Start a live session to talk, type, or stream camera context into the same assistant chat.';
+  String get assistantLiveDescriptionIdle => 'Tap the microphone to start talking. Your conversation stays here.';
 
   @override
   String get assistantLiveDescriptionListening => 'Microphone streaming is active. Mira will keep listening for new audio input.';
 
   @override
-  String get assistantLiveDescriptionPreparing => 'Minting an ephemeral token and restoring the last resumable live session.';
+  String get assistantLiveDescriptionPreparing => 'Getting your live conversation ready.';
 
   @override
   String get assistantLiveDescriptionReady => 'Live text and audio are ready. Type a turn, talk, or share your camera feed.';
 
   @override
-  String get assistantLiveDescriptionReconnecting => 'The session is reconnecting with the latest resumable handle and restored history.';
+  String get assistantLiveDescriptionReconnecting => 'Reconnecting your conversation. Your transcript is still here.';
 
   @override
   String get assistantLiveDisconnect => 'End live session';
@@ -525,7 +581,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantLiveHideCamera => 'Hide camera';
 
   @override
-  String get assistantLiveIdleHeading => 'Talk with Mira';
+  String get assistantLiveIdleHeading => 'Ready to talk';
 
   @override
   String get assistantLiveInfoAccessHeading => 'Current access';
@@ -564,6 +620,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String assistantLiveReconnectBanner(String timeLeft) {
     return 'Session rotation detected. Reconnecting with about $timeLeft remaining.';
   }
+
+  @override
+  String get assistantLiveReconnectExhausted => 'The connection kept dropping. Check your network, then retry the live session.';
 
   @override
   String get assistantLiveRetryAction => 'Retry live session';
@@ -1030,6 +1089,233 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantToolsLabel => 'Tools';
 
   @override
+  String get assistantToolLabelTasksRead => 'Checked your tasks';
+
+  @override
+  String get assistantToolLabelTasksReadRunning => 'Checking your tasks';
+
+  @override
+  String get assistantToolLabelTaskCreate => 'Created a task';
+
+  @override
+  String get assistantToolLabelTaskCreateRunning => 'Creating a task';
+
+  @override
+  String get assistantToolLabelTaskUpdate => 'Updated a task';
+
+  @override
+  String get assistantToolLabelTaskUpdateRunning => 'Updating a task';
+
+  @override
+  String get assistantToolLabelTaskComplete => 'Completed a task';
+
+  @override
+  String get assistantToolLabelTaskCompleteRunning => 'Completing a task';
+
+  @override
+  String get assistantToolLabelTaskDelete => 'Deleted a task';
+
+  @override
+  String get assistantToolLabelTaskDeleteRunning => 'Deleting a task';
+
+  @override
+  String get assistantToolLabelBoardsRead => 'Checked your boards';
+
+  @override
+  String get assistantToolLabelBoardsReadRunning => 'Checking your boards';
+
+  @override
+  String get assistantToolLabelBoardsWrite => 'Updated your boards';
+
+  @override
+  String get assistantToolLabelBoardsWriteRunning => 'Updating your boards';
+
+  @override
+  String get assistantToolLabelCalendarRead => 'Checked your calendar';
+
+  @override
+  String get assistantToolLabelCalendarReadRunning => 'Checking your calendar';
+
+  @override
+  String get assistantToolLabelCalendarWrite => 'Updated your calendar';
+
+  @override
+  String get assistantToolLabelCalendarWriteRunning => 'Updating your calendar';
+
+  @override
+  String get assistantToolLabelEmailRead => 'Checked your email';
+
+  @override
+  String get assistantToolLabelEmailReadRunning => 'Checking your email';
+
+  @override
+  String get assistantToolLabelEmailDraft => 'Drafted a reply';
+
+  @override
+  String get assistantToolLabelEmailDraftRunning => 'Drafting a reply';
+
+  @override
+  String get assistantToolLabelFinanceRead => 'Checked your finances';
+
+  @override
+  String get assistantToolLabelFinanceReadRunning => 'Checking your finances';
+
+  @override
+  String get assistantToolLabelFinanceWrite => 'Updated your finances';
+
+  @override
+  String get assistantToolLabelFinanceWriteRunning => 'Updating your finances';
+
+  @override
+  String get assistantToolLabelTimeRead => 'Checked your time tracking';
+
+  @override
+  String get assistantToolLabelTimeReadRunning => 'Checking your time tracking';
+
+  @override
+  String get assistantToolLabelTimeWrite => 'Updated your time tracking';
+
+  @override
+  String get assistantToolLabelTimeWriteRunning => 'Updating your time tracking';
+
+  @override
+  String get assistantToolLabelHealthRead => 'Checked your health and habits';
+
+  @override
+  String get assistantToolLabelHealthReadRunning => 'Checking your health and habits';
+
+  @override
+  String get assistantToolLabelHealthWrite => 'Logged your progress';
+
+  @override
+  String get assistantToolLabelHealthWriteRunning => 'Logging your progress';
+
+  @override
+  String get assistantToolLabelDayOverview => 'Reviewed your day';
+
+  @override
+  String get assistantToolLabelDayOverviewRunning => 'Reviewing your day';
+
+  @override
+  String get assistantToolLabelMemorySave => 'Saved to memory';
+
+  @override
+  String get assistantToolLabelMemorySaveRunning => 'Saving to memory';
+
+  @override
+  String get assistantToolLabelMemoryRead => 'Checked memory';
+
+  @override
+  String get assistantToolLabelMemoryReadRunning => 'Checking memory';
+
+  @override
+  String get assistantToolLabelMemoryWrite => 'Updated memory';
+
+  @override
+  String get assistantToolLabelMemoryWriteRunning => 'Updating memory';
+
+  @override
+  String get assistantToolLabelImage => 'Created an image';
+
+  @override
+  String get assistantToolLabelImageRunning => 'Creating an image';
+
+  @override
+  String get assistantToolLabelQrCode => 'Created a QR code';
+
+  @override
+  String get assistantToolLabelQrCodeRunning => 'Creating a QR code';
+
+  @override
+  String get assistantToolLabelWebSearch => 'Searched the web';
+
+  @override
+  String get assistantToolLabelWebSearchRunning => 'Searching the web';
+
+  @override
+  String get assistantToolLabelChecks => 'Ran checks';
+
+  @override
+  String get assistantToolLabelChecksRunning => 'Running checks';
+
+  @override
+  String get assistantToolLabelFile => 'Read a file';
+
+  @override
+  String get assistantToolLabelFileRunning => 'Reading a file';
+
+  @override
+  String get assistantToolLabelWorkspace => 'Checked your workspace';
+
+  @override
+  String get assistantToolLabelWorkspaceRunning => 'Checking your workspace';
+
+  @override
+  String get assistantToolLabelSettings => 'Updated your settings';
+
+  @override
+  String get assistantToolLabelSettingsRunning => 'Updating your settings';
+
+  @override
+  String get assistantToolLabelOpenApp => 'Opened an app';
+
+  @override
+  String get assistantToolLabelOpenAppRunning => 'Opening an app';
+
+  @override
+  String get assistantToolLabelView => 'Prepared a view';
+
+  @override
+  String get assistantToolLabelViewRunning => 'Preparing a view';
+
+  @override
+  String assistantToolStepCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count steps',
+      one: '1 step',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String assistantToolStepResultCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count results',
+      one: '1 result',
+      zero: 'No results',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get assistantToolStepWorking => 'Working…';
+
+  @override
+  String get assistantToolStepDetails => 'Details';
+
+  @override
+  String get assistantToolStepHideDetails => 'Hide details';
+
+  @override
+  String get assistantToolStepRunning => 'In progress';
+
+  @override
+  String get assistantToolStepDone => 'Done';
+
+  @override
+  String get assistantToolStepFailed => 'Couldn\'t finish this step';
+
+  @override
+  String get assistantToolStepsInProgress => 'Steps in progress';
+
+  @override
+  String get assistantToolStepsDone => 'Steps done';
+
+  @override
   String get assistantUntitledChat => 'Untitled chat';
 
   @override
@@ -1256,9 +1542,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get calendarConnectionsEmpty => 'No accounts connected';
-
-  @override
-  String get calendarConnectionsSubtitle => 'Connect Google and Microsoft accounts to sync calendars.';
 
   @override
   String get calendarConnectionsTitle => 'Manage Calendar Accounts';
@@ -1697,6 +1980,60 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cmsTitleApp => 'CMS';
+
+  @override
+  String get cmsPipelineEyebrow => 'Publishing pipeline';
+
+  @override
+  String cmsPublishedOfTotal(int published, int total) {
+    return '$published of $total published';
+  }
+
+  @override
+  String cmsPipelineSupporting(int drafts, int scheduled) {
+    return '$drafts in draft · $scheduled scheduled';
+  }
+
+  @override
+  String cmsEntryCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count entries',
+      one: '1 entry',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get cmsCollectionDisabled => 'Disabled';
+
+  @override
+  String get cmsCollectionsProgress => 'Publishing by collection';
+
+  @override
+  String get cmsNoCollectionsMessage => 'Collections group one kind of content, such as articles or events. Create one to start writing entries.';
+
+  @override
+  String get cmsNoEntriesMatch => 'No entries match these filters.';
+
+  @override
+  String get cmsNoEntriesMatchMessage => 'Try another status or collection, or clear the search.';
+
+  @override
+  String get cmsFilterByCollection => 'Filter by collection';
+
+  @override
+  String get cmsDetailsSection => 'Details';
+
+  @override
+  String get cmsPublishingSection => 'Publishing';
+
+  @override
+  String get cmsLoadFailed => 'Could not load content';
+
+  @override
+  String get cmsRefreshFailed => 'Could not refresh. Showing the last loaded content.';
 
   @override
   String get commonActive => 'Active';
@@ -2139,6 +2476,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dashboardTodayTitle => 'Today at a glance';
+
+  @override
+  String get dashboardUntitledEvent => 'Untitled event';
 
   @override
   String get dashboardUpcomingEvents => 'Upcoming events';
@@ -3927,6 +4267,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeCustomize => 'Customize Home';
 
   @override
+  String get homeGreetingAfternoon => 'Good afternoon';
+
+  @override
+  String homeGreetingAfternoonNamed(String name) {
+    return 'Good afternoon, $name';
+  }
+
+  @override
+  String get homeGreetingEvening => 'Good evening';
+
+  @override
+  String homeGreetingEveningNamed(String name) {
+    return 'Good evening, $name';
+  }
+
+  @override
+  String get homeGreetingMorning => 'Good morning';
+
+  @override
+  String homeGreetingMorningNamed(String name) {
+    return 'Good morning, $name';
+  }
+
+  @override
   String get homeHiddenWidgets => 'Hidden widgets';
 
   @override
@@ -3937,6 +4301,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homePersonalAgendaUnavailable => 'Personal calendar is unavailable.';
+
+  @override
+  String get homeSectionLoadFailed => 'Pull down to try again.';
 
   @override
   String get homeShowWidget => 'Show widget';
@@ -5007,6 +5374,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mailOwner => 'Owner';
 
   @override
+  String get mailPreviewEmptyMessage => 'Pick a conversation from the list to read it here.';
+
+  @override
+  String get mailPreviewEmptyTitle => 'Select a conversation';
+
+  @override
   String get mailRemoveAttachment => 'Remove attachment';
 
   @override
@@ -6036,6 +6409,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notificationsDeclineInvite => 'Decline';
 
   @override
+  String get notificationsGroupEarlier => 'Earlier';
+
+  @override
+  String get notificationsGroupLastWeek => 'Last 7 days';
+
+  @override
+  String get notificationsGroupToday => 'Today';
+
+  @override
+  String get notificationsGroupYesterday => 'Yesterday';
+
+  @override
   String notificationsHoursAgo(int count) {
     return '${count}h ago';
   }
@@ -6417,6 +6802,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileDisplayNameRequired => 'Display name cannot be empty';
 
   @override
+  String profileDurationHours(int hours) {
+    return '${hours}h';
+  }
+
+  @override
+  String profileDurationHoursMinutes(int hours, int minutes) {
+    return '${hours}h ${minutes}m';
+  }
+
+  @override
+  String profileDurationMinutes(int minutes) {
+    return '${minutes}m';
+  }
+
+  @override
   String get profileEmail => 'Email';
 
   @override
@@ -6742,9 +7142,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get remindersDescription => 'Task deadlines and calendar events, kept ready on this device.';
-
-  @override
   String get remindersEnableNotifications => 'Enable notifications';
 
   @override
@@ -6779,8 +7176,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String remindersOccurrenceDetails(String leadTime, String occurrence, String timezone) {
-    return '$leadTime · $occurrence ($timezone)';
+  String remindersOccurrenceDetails(String leadTime, String occurrence) {
+    return '$leadTime · $occurrence';
   }
 
   @override
@@ -10853,12 +11250,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantSettingsSelectionUnconfirmed => 'The chat settings could not be confirmed. Your draft is retained. Check the conversation settings before choosing again.';
 
   @override
-  String get assistantExpandPrompt => 'Expand prompt';
-
-  @override
-  String get assistantMinimizePrompt => 'Minimize prompt';
-
-  @override
   String assistantSettingInfo(String setting) {
     return 'About $setting';
   }
@@ -10871,9 +11262,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get feedbackTitle => 'Send feedback';
-
-  @override
-  String get feedbackPrivate => 'Share product feedback privately with Tuturuuu staff. Do not include passwords or secrets. One optional PNG, JPEG or WebP screenshot, up to 2 MB.';
 
   @override
   String get feedbackSubject => 'Subject';
@@ -11101,4 +11489,490 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileMediaSet => 'Set';
+
+  @override
+  String get assistantSubmitSuccess => 'Submitted successfully';
+
+  @override
+  String get offlineDownloadsPaused => 'Downloads paused. Saved data is still available. We will retry in the background.';
+
+  @override
+  String get offlineDownloadsRetryLimit => 'Downloads are still unavailable. Try again later; saved data is still available.';
+
+  @override
+  String get mailSettingsReadOnly => 'Saved settings are read-only until access can be verified.';
+
+  @override
+  String get calendarSettingsError => 'Could not load or save calendar preferences. Retry when online.';
+
+  @override
+  String get assistantReactionCelebrate => 'Celebrate';
+
+  @override
+  String get assistantReactionInsightful => 'Insightful';
+
+  @override
+  String get assistantReactionLabel => 'Reaction';
+
+  @override
+  String get assistantReactionLike => 'Like';
+
+  @override
+  String get assistantReactionLove => 'Love';
+
+  @override
+  String get assistantReactionUnconfirmed => 'The reaction could not be confirmed. Refresh reactions to reconcile it safely.';
+
+  @override
+  String get assistantReactionUnavailable => 'Reactions are unavailable right now. Try again.';
+
+  @override
+  String get assistantRefreshReactions => 'Refresh reactions';
+
+  @override
+  String get assistantReplyMessageAction => 'Reply';
+
+  @override
+  String get assistantReplyUnavailable => 'Original message unavailable';
+
+  @override
+  String get assistantThemeAdvanced => 'Advanced';
+
+  @override
+  String get assistantThemeBackground => 'Background colors';
+
+  @override
+  String get assistantThemeBackgroundStyle => 'Background style';
+
+  @override
+  String get assistantThemeCustom => 'Custom';
+
+  @override
+  String get assistantThemeDeviceScope => 'For your Assistant chats on this device, across workspaces.';
+
+  @override
+  String get assistantThemeIntensity => 'Background intensity';
+
+  @override
+  String get assistantThemeLoading => 'Loading appearance…';
+
+  @override
+  String get assistantThemeMessages => 'Message colors';
+
+  @override
+  String get assistantThemeOmbre => 'Ombre';
+
+  @override
+  String get assistantThemePreset => 'Preset';
+
+  @override
+  String get assistantThemePreview => 'Chat appearance preview';
+
+  @override
+  String get assistantThemePreviewAssistant => 'Let’s make room for what matters.';
+
+  @override
+  String get assistantThemePreviewUser => 'Help me plan a focused day.';
+
+  @override
+  String get assistantThemeReset => 'Reset appearance';
+
+  @override
+  String get assistantThemeRetry => 'Retry';
+
+  @override
+  String get assistantThemeSaving => 'Saving appearance…';
+
+  @override
+  String get assistantThemeStorageError => 'Appearance could not be saved or loaded on this device.';
+
+  @override
+  String get assistantThemeText => 'Text colors';
+
+  @override
+  String get assistantThemeTitle => 'Chat appearance';
+
+  @override
+  String get assistantReplyPending => 'The earlier message is still unconfirmed. Clear this reply and retry the earlier message first.';
+
+  @override
+  String get assistantReplyLiveUnavailable => 'Replies are unavailable while Live is connected. End the call or cancel the reply before sending.';
+
+  @override
+  String get assistantReplyChangedBeforeSend => 'The reply changed before sending. Your draft was kept. Review it and send again.';
+
+  @override
+  String get assistantLiveSendRefused => 'Live did not accept this message. Your draft was kept. Check the connection before trying again.';
+
+  @override
+  String get assistantLiveSendUnknown => 'Live delivery is uncertain. Your draft was kept. Check the conversation before resending to avoid duplicates.';
+
+  @override
+  String get inputPlaceholderAddress => 'e.g. 12 Nguyen Hue, District 1';
+
+  @override
+  String get inputPlaceholderAssistantBoundaries => 'e.g. Ask before changing or deleting my data';
+
+  @override
+  String get inputPlaceholderAssistantMemory => 'e.g. Brief answers';
+
+  @override
+  String get inputPlaceholderAssistantName => 'e.g. Mira';
+
+  @override
+  String get inputPlaceholderAssistantPersonality => 'e.g. Patient, curious, and practical';
+
+  @override
+  String get inputPlaceholderAssistantTone => 'e.g. Warm and professional';
+
+  @override
+  String get inputPlaceholderAssistantVerbosity => 'e.g. Brief answers with key details';
+
+  @override
+  String get inputPlaceholderCmsCollectionDescription => 'Describe what this collection contains';
+
+  @override
+  String get inputPlaceholderCmsCollectionTitle => 'e.g. Product guides';
+
+  @override
+  String get inputPlaceholderCmsCollectionType => 'e.g. article';
+
+  @override
+  String get inputPlaceholderCmsEntryTitle => 'e.g. Getting started with your workspace';
+
+  @override
+  String get inputPlaceholderCmsSlug => 'e.g. getting-started';
+
+  @override
+  String get inputPlaceholderCmsSubtitle => 'Add a short line introducing this entry';
+
+  @override
+  String get inputPlaceholderCmsSummary => 'Summarize the main points for readers';
+
+  @override
+  String get inputPlaceholderComment => 'Write your comment here';
+
+  @override
+  String get inputPlaceholderCourseDescription => 'Describe what learners will achieve';
+
+  @override
+  String get inputPlaceholderCourseName => 'e.g. Everyday English';
+
+  @override
+  String get inputPlaceholderDate => 'Tap to choose a date';
+
+  @override
+  String get inputPlaceholderDays => 'e.g. 2';
+
+  @override
+  String get inputPlaceholderDisplayName => 'e.g. Linh';
+
+  @override
+  String get inputPlaceholderDocumentName => 'e.g. Weekly planning';
+
+  @override
+  String get inputPlaceholderEmailConfirmation => 'Enter the account email to confirm';
+
+  @override
+  String get inputPlaceholderFeedback => 'Describe what happened and what could improve';
+
+  @override
+  String get inputPlaceholderFieldKey => 'e.g. water_intake';
+
+  @override
+  String get inputPlaceholderFieldLabel => 'e.g. Water intake';
+
+  @override
+  String get inputPlaceholderFieldUnit => 'e.g. ml, km, or minutes';
+
+  @override
+  String get inputPlaceholderFlashcardBack => 'e.g. Paris';
+
+  @override
+  String get inputPlaceholderFlashcardFront => 'e.g. What is the capital of France?';
+
+  @override
+  String get inputPlaceholderFullName => 'e.g. Nguyen Minh Linh';
+
+  @override
+  String get inputPlaceholderHabitDescription => 'Describe how you will practice this habit';
+
+  @override
+  String get inputPlaceholderHabitName => 'e.g. Drink water';
+
+  @override
+  String get inputPlaceholderInventoryManufacturer => 'e.g. Acme';
+
+  @override
+  String get inputPlaceholderInventoryName => 'e.g. Office supplies';
+
+  @override
+  String get inputPlaceholderLinkText => 'e.g. Project handbook';
+
+  @override
+  String get inputPlaceholderLinkUrl => 'https://example.com';
+
+  @override
+  String get inputPlaceholderListingTitle => 'e.g. Handmade notebook';
+
+  @override
+  String get inputPlaceholderMailCalendarUrl => 'Paste a Google Calendar event link';
+
+  @override
+  String get inputPlaceholderMailDescription => 'Describe which messages belong here';
+
+  @override
+  String get inputPlaceholderMailDraftInstructions => 'e.g. Write a friendly follow-up about our meeting';
+
+  @override
+  String get inputPlaceholderMailLabelInstructions => 'e.g. Apply to invoices and payment receipts';
+
+  @override
+  String get inputPlaceholderMailName => 'e.g. Customer support';
+
+  @override
+  String get inputPlaceholderMailSubject => 'e.g. Follow-up on our meeting';
+
+  @override
+  String get inputPlaceholderMeetingName => 'e.g. Weekly team check-in';
+
+  @override
+  String get inputPlaceholderNote => 'Add details you want to remember';
+
+  @override
+  String get inputPlaceholderPassphrase => 'Enter at least 8 characters';
+
+  @override
+  String get inputPlaceholderPassphraseConfirmation => 'Enter the same passphrase again';
+
+  @override
+  String get inputPlaceholderPassphraseUnlock => 'Enter the passphrase for this note';
+
+  @override
+  String get inputPlaceholderPassword => 'Use 12–72 characters';
+
+  @override
+  String get inputPlaceholderPhone => 'e.g. +84 912 345 678';
+
+  @override
+  String get inputPlaceholderPin => 'Enter a 6-digit PIN';
+
+  @override
+  String get inputPlaceholderPinConfirmation => 'Enter the same 6-digit PIN again';
+
+  @override
+  String get inputPlaceholderPrice => 'e.g. 150000';
+
+  @override
+  String get inputPlaceholderQuantity => 'e.g. 10';
+
+  @override
+  String get inputPlaceholderQuizExplanation => 'Explain why this answer is correct or incorrect';
+
+  @override
+  String get inputPlaceholderQuizOption => 'e.g. Paris';
+
+  @override
+  String get inputPlaceholderQuizQuestion => 'e.g. What is the capital of France?';
+
+  @override
+  String get inputPlaceholderQuizSetName => 'e.g. World capitals';
+
+  @override
+  String get inputPlaceholderSaleTitle => 'e.g. Office supplies order';
+
+  @override
+  String get inputPlaceholderSharedMessage => 'Edit the message you want to share';
+
+  @override
+  String get inputPlaceholderStorefrontCurrency => 'e.g. VND';
+
+  @override
+  String get inputPlaceholderStorefrontDescription => 'Describe what customers can find here';
+
+  @override
+  String get inputPlaceholderStorefrontName => 'e.g. Linh’s stationery';
+
+  @override
+  String get inputPlaceholderStorefrontSearch => 'Search by storefront name';
+
+  @override
+  String get inputPlaceholderStorefrontSlug => 'e.g. linh-stationery';
+
+  @override
+  String get inputPlaceholderTableCell => 'Enter cell content';
+
+  @override
+  String get inputPlaceholderTargetValue => 'e.g. 2000';
+
+  @override
+  String get inputPlaceholderTimeDescription => 'Describe what you worked on';
+
+  @override
+  String get inputPlaceholderTimeTitle => 'e.g. Prepare project proposal';
+
+  @override
+  String get inputPlaceholderUpdate => 'Share progress, decisions, or next steps';
+
+  @override
+  String get inputPlaceholderUserId => 'Paste the user ID';
+
+  @override
+  String get inputPlaceholderUsername => 'e.g. minh_linh';
+
+  @override
+  String get inputPlaceholderWorkoutExercise => 'e.g. Squats';
+
+  @override
+  String get inputPlaceholderWorkoutReps => 'e.g. 12';
+
+  @override
+  String get inputPlaceholderWorkoutSets => 'e.g. 3';
+
+  @override
+  String get inputPlaceholderWorkoutWeight => 'e.g. 20';
+
+  @override
+  String get mailSenderNamePlaceholder => 'e.g. Alex Nguyen';
+
+  @override
+  String get mailSignaturePlaceholder => 'e.g. Best regards,\nAlex Nguyen\nProduct team';
+
+  @override
+  String get mailDraftInstructionsPlaceholder => 'e.g. Keep replies short and friendly. Sign off with my first name.';
+
+  @override
+  String get mailForwardToPlaceholder => 'name@example.com';
+
+  @override
+  String get feedbackSubjectPlaceholder => 'e.g. Calendar doesn\'t sync on Wi-Fi';
+
+  @override
+  String get feedbackDetailsPlaceholder => 'What happened, what you expected, and the steps to get there.';
+
+  @override
+  String settingsWorkspaceCountValue(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count workspaces',
+      one: '1 workspace',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get offlineStoredOnDevice => 'Stored on this device';
+
+  @override
+  String get offlineStorageUsed => 'Storage used';
+
+  @override
+  String offlineQueuedChanges(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count changes waiting to sync',
+      one: '1 change waiting to sync',
+      zero: 'No changes waiting to sync',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String offlineCollectionSummary(int items, String size, String time) {
+    String _temp0 = intl.Intl.pluralLogic(
+      items,
+      locale: localeName,
+      other: '$items items',
+      one: '1 item',
+    );
+    return '$_temp0 · $size · Updated $time';
+  }
+
+  @override
+  String get offlineManageData => 'Manage data';
+
+  @override
+  String get offlineEvictRowDescription => 'Frees space. Data downloads again when you are online.';
+
+  @override
+  String get offlineTechnicalDetails => 'Technical details';
+
+  @override
+  String get mailSettingsReadingGroup => 'Reading';
+
+  @override
+  String get mailSettingsComposeGroup => 'Sender and signature';
+
+  @override
+  String get mailSettingsAiGroup => 'AI drafts';
+
+  @override
+  String get mailSettingsDeliveryGroup => 'Delivery and routing';
+
+  @override
+  String get mailSettingsGroupPermissions => 'Group permissions';
+
+  @override
+  String get mailSettingsOrganizeGroup => 'Organize';
+
+  @override
+  String get mailSenderNameHelper => 'Recipients see this name next to your address.';
+
+  @override
+  String get mailSignatureHelper => 'Added to the end of new messages and replies.';
+
+  @override
+  String get mailAutoDraftDescription => 'Prepare reply drafts for you to review before sending.';
+
+  @override
+  String get mailDraftInstructions => 'Draft instructions';
+
+  @override
+  String get mailDraftInstructionsHelper => 'Tells the assistant how to write your reply drafts.';
+
+  @override
+  String get feedbackIntro => 'Tell us what works and what doesn\'t. Only the Tuturuuu team reads your feedback.';
+
+  @override
+  String get feedbackYourFeedback => 'Your feedback';
+
+  @override
+  String get feedbackDetailsHelper => 'Do not include passwords or other secrets.';
+
+  @override
+  String get feedbackScreenshotGroup => 'Screenshot (optional)';
+
+  @override
+  String get feedbackAttachDescription => 'PNG, JPEG or WebP, up to 2 MB';
+
+  @override
+  String workspacePickerCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count workspaces',
+      one: '1 workspace',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get workspacePickerCreateDescription => 'Start a new space for a team or project';
+
+  @override
+  String get workspacePickerCurrentLabel => 'Current workspace';
+
+  @override
+  String get workspacePickerDefaultDescription => 'Opens first when you launch the app';
+
+  @override
+  String get workspacePickerEmptyMessage => 'Workspaces you create or are invited to appear here.';
+
+  @override
+  String get workspacePickerNoResultsMessage => 'Try another name or plan, or clear the search.';
+
+  @override
+  String get workspacePickerTeamBadge => 'Team';
 }

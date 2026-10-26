@@ -8,6 +8,11 @@ const participant = z.object({
 });
 
 export const legacyActionSchemas = {
+  resetGuestPassword: z.tuple([
+    id,
+    z.string().min(1).max(255),
+    z.string().min(1).max(1024),
+  ]),
   guestLogin: z.tuple([
     id,
     z.object({ name: z.string(), password: z.string() }).strict(),

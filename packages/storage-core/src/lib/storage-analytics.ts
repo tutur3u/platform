@@ -1,6 +1,7 @@
 import { posix } from 'node:path';
 import { EMPTY_FOLDER_PLACEHOLDER_NAME } from '@tuturuuu/types/primitives/StorageObject';
-import { isReservedMobileDeploymentDrivePath } from './mobile-deployment/storage-policy';
+import { sanitizePath } from '@tuturuuu/utils/storage-path';
+import { isExcludedDrivePath } from './drive-path-policy';
 import { readStorageUsageBytes } from './storage-quota';
 
 const STORAGE_ANALYTICS_PAGE_SIZE = 1000;
@@ -30,7 +31,9 @@ export interface WorkspaceStorageMetrics {
 }
 
 function normalizeRelativePath(path?: string) {
-  return (path ?? '').replace(/^\/+|\/+$/g, '');
+  const normalizedPath = sanitizePath(path ?? '');
+  if (normalizedPath === null) throw new Error('Invalid storage path');
+  return normalizedPath;
 }
 
 function buildWorkspaceStoragePath(wsId: string, path?: string) {
@@ -125,10 +128,7 @@ export async function getWorkspaceStorageMetrics(
         ? fullPath.slice(wsId.length + 1)
         : fullPath;
 
-      if (
-        !includeReservedForQuota &&
-        isReservedMobileDeploymentDrivePath(wsId, relativePath)
-      ) {
+      if (!includeReservedForQuota && isExcludedDrivePath(wsId, relativePath)) {
         return;
       }
 
@@ -176,7 +176,7 @@ export async function countWorkspaceStorageObjects(
       ? fullPath.slice(wsId.length + 1)
       : fullPath;
 
-    if (isReservedMobileDeploymentDrivePath(wsId, relativePath)) {
+    if (isExcludedDrivePath(wsId, relativePath)) {
       return;
     }
 

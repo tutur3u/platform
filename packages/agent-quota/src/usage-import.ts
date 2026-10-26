@@ -12,6 +12,7 @@ import { PROVIDER_USAGE_SNAPSHOT_MAX_AGE_MS } from './window-freshness';
 import {
   coversModel,
   noResetWindowMaxAgeMs,
+  providerWindowScope,
   windowScope,
 } from './window-scope';
 
@@ -275,10 +276,11 @@ export function snapshotWindows(
     return {
       id: window.id,
       label: typeof window.label === 'string' ? window.label : '',
-      scope: windowScope(
+      scope: providerWindowScope(
         account.provider,
         window.id,
-        typeof window.label === 'string' ? window.label : ''
+        typeof window.label === 'string' ? window.label : '',
+        providerWindowKind
       ),
       kind:
         providerWindowKind === 'weekly' ||

@@ -49,7 +49,48 @@ final List<(String, AppPageKind, Widget Function())> _screens = [
   ),
 ];
 
-Future<void> _pump(WidgetTester tester, Size size, Widget page) async {
+/// Width of a synthetic leading rail that narrows the page body.
+const double _railWidth = 96;
+
+/// Expects the page's content box to match the shared insets for [bodyWidth].
+void _expectInsets(
+  WidgetTester tester, {
+  required double bodyWidth,
+  required AppPageKind kind,
+}) {
+  final expected = AppPageInsets.resolve(
+    width: bodyWidth,
+    kind: kind,
+    bottom: _dockClearance + AppLayout.scrollEndGap,
+  );
+  final list = find.byType(ListView).first;
+  final padding = tester
+      .widget<ListView>(list)
+      .padding!
+      .resolve(TextDirection.ltr);
+  expect(padding, expected);
+  // The scrollable keeps the full body width; only padding centres content.
+  expect(tester.getSize(list).width, bodyWidth);
+
+  final deviceClass = Breakpoints.fromWidth(bodyWidth);
+  final gutter = AppLayout.gutter(deviceClass);
+  final maxWidth = AppLayout.maxContentWidth(kind, deviceClass);
+  final contentWidth = bodyWidth - padding.horizontal;
+  if (maxWidth == null || bodyWidth <= maxWidth) {
+    // Narrower than the kind's box: the content fills the body inside gutters.
+    expect(contentWidth, bodyWidth - 2 * gutter);
+  } else {
+    // The box is capped at the kind's max width, gutters included.
+    expect(contentWidth, maxWidth - 2 * gutter);
+  }
+}
+
+Future<void> _pump(
+  WidgetTester tester,
+  Size size,
+  Widget page, {
+  double railWidth = 0,
+}) async {
   tester.view
     ..devicePixelRatio = 1
     ..physicalSize = size;
@@ -72,7 +113,14 @@ Future<void> _pump(WidgetTester tester, Size size, Widget page) async {
             data: MediaQuery.of(
               context,
             ).copyWith(padding: const EdgeInsets.only(bottom: _dockClearance)),
-            child: Material(child: page),
+            child: Material(
+              child: Row(
+                children: [
+                  SizedBox(width: railWidth),
+                  Expanded(child: page),
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -117,35 +165,24 @@ void main() {
         tester,
       ) async {
         await _pump(tester, size, build());
-
-        final expected = AppPageInsets.resolve(
-          width: size.width,
-          kind: kind,
-          bottom: _dockClearance + AppLayout.scrollEndGap,
-        );
-        final list = find.byType(ListView).first;
-        final padding = tester
-            .widget<ListView>(list)
-            .padding!
-            .resolve(TextDirection.ltr);
-        expect(padding, expected);
-        // The scrollable keeps the full width; only padding centres content.
-        expect(tester.getSize(list).width, size.width);
-
-        final maxWidth = AppLayout.maxContentWidth(
-          kind,
-          Breakpoints.fromWidth(size.width),
-        );
-        final contentWidth = size.width - padding.horizontal;
-        if (maxWidth == null) {
-          expect(padding.left, AppLayout.gutter(DeviceClass.compact));
-        } else {
-          // Content never stretches past the page kind's max width.
-          expect(contentWidth, lessThanOrEqualTo(maxWidth));
-        }
+        _expectInsets(tester, bodyWidth: size.width, kind: kind);
 
         await _capture(tester, '$screen-$viewport');
       });
     }
+
+    testWidgets('$screen resolves insets from the rail-narrowed body', (
+      tester,
+    ) async {
+      // An expanded window whose body falls into the medium class once the
+      // rail takes its share: gutters and max width follow the body.
+      const size = Size(900, 1024);
+      const bodyWidth = 900 - _railWidth;
+      expect(Breakpoints.fromWidth(size.width), DeviceClass.expanded);
+      expect(Breakpoints.fromWidth(bodyWidth), DeviceClass.medium);
+
+      await _pump(tester, size, build(), railWidth: _railWidth);
+      _expectInsets(tester, bodyWidth: bodyWidth, kind: kind);
+    });
   }
 }

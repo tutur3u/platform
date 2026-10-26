@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 
+export 'app_checkbox.dart';
+export 'app_switch.dart';
+
 /// Hairline separator. Replaces `shad.Divider` / `shad.VerticalDivider`.
 class AppDivider extends StatelessWidget {
   const AppDivider({
@@ -48,70 +51,6 @@ class AppDivider extends StatelessWidget {
             endIndent: endIndent,
             color: resolved,
           );
-  }
-}
-
-/// Token-styled on/off switch. Replaces `shad.Switch`.
-class AppSwitch extends StatelessWidget {
-  const AppSwitch({
-    required this.value,
-    required this.onChanged,
-    this.semanticLabel,
-    super.key,
-  });
-
-  final bool value;
-  final ValueChanged<bool>? onChanged;
-  final String? semanticLabel;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = AppTokens.of(context).colorScheme;
-    return Semantics(
-      label: semanticLabel,
-      child: Switch.adaptive(
-        value: value,
-        onChanged: onChanged,
-        activeTrackColor: c.primary,
-        activeThumbColor: c.primaryForeground,
-        inactiveTrackColor: c.input,
-        inactiveThumbColor: c.background,
-        trackOutlineColor: const WidgetStatePropertyAll(Colors.transparent),
-      ),
-    );
-  }
-}
-
-/// Token-styled checkbox; `null` is the indeterminate state when [tristate].
-/// Replaces `shad.Checkbox` (`CheckboxState.checked` -> `true`).
-class AppCheckbox extends StatelessWidget {
-  const AppCheckbox({
-    required this.value,
-    required this.onChanged,
-    this.tristate = false,
-    this.semanticLabel,
-    super.key,
-  });
-
-  final bool? value;
-  final ValueChanged<bool?>? onChanged;
-  final bool tristate;
-  final String? semanticLabel;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = AppTokens.of(context);
-    final c = tokens.colorScheme;
-    return Checkbox(
-      value: value,
-      tristate: tristate,
-      onChanged: onChanged,
-      semanticLabel: semanticLabel,
-      activeColor: c.primary,
-      checkColor: c.primaryForeground,
-      side: BorderSide(color: c.mutedForeground, width: 1.5),
-      shape: RoundedRectangleBorder(borderRadius: tokens.borderRadiusSm / 2),
-    );
   }
 }
 

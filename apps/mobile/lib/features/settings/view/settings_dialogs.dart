@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/settings/view/settings_scoped_sheet.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/app_dialog_scaffold.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class SettingsChoiceOption<T> {
   const SettingsChoiceOption({
@@ -27,14 +26,13 @@ Future<T?> showSettingsChoiceDialog<T>({
 }) {
   return showScopedSettingsSheet<T>(
     context: context,
+    sheetSize: AppSheetSize.fit,
     builder: (dialogContext) {
-      return AppDialogScaffold(
+      return AppSheetScaffold(
         title: title,
-        icon: Icons.tune_rounded,
-        scrollHeader: true,
-        maxWidth: 420,
+        icon: LucideIcons.slidersHorizontal,
         actions: [
-          shad.OutlineButton(
+          AppButton.outline(
             onPressed: () => Navigator.of(dialogContext).pop(),
             child: Text(dialogContext.l10n.commonCancel),
           ),
@@ -45,14 +43,14 @@ Future<T?> showSettingsChoiceDialog<T>({
             if (description?.trim().isNotEmpty ?? false) ...[
               Text(
                 description!.trim(),
-                style: shad.Theme.of(dialogContext).typography.textSmall
+                style: AppTokens.of(dialogContext).typography.textSmall
                     .copyWith(
-                      color: shad.Theme.of(
+                      color: AppTokens.of(
                         dialogContext,
                       ).colorScheme.mutedForeground,
                     ),
               ),
-              const shad.Gap(12),
+              const AppGap(12),
             ],
             for (final option in options)
               _SettingsChoiceTile<T>(
@@ -97,25 +95,24 @@ Future<bool?> showSettingsConfirmationDialog({
 }) {
   return showScopedSettingsSheet<bool>(
     context: context,
+    sheetSize: AppSheetSize.fit,
     builder: (dialogContext) {
-      return AppDialogScaffold(
+      return AppSheetScaffold(
         title: title,
         description: description,
         icon: icon,
-        maxWidth: 420,
-        maxHeightFactor: 0.42,
         actions: [
-          shad.OutlineButton(
+          AppButton.outline(
             onPressed: () => Navigator.of(dialogContext).pop(false),
             child: Text(dialogContext.l10n.commonCancel),
           ),
           if (isDestructive)
-            shad.DestructiveButton(
+            AppButton.destructive(
               onPressed: () => Navigator.of(dialogContext).pop(true),
               child: Text(confirmLabel),
             )
           else
-            shad.PrimaryButton(
+            AppButton.primary(
               onPressed: () => Navigator.of(dialogContext).pop(true),
               child: Text(confirmLabel),
             ),
@@ -138,90 +135,11 @@ class _SettingsChoiceTile<T> extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-
-    return Semantics(
-      selected: isSelected,
-      button: true,
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 10),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(18),
-            onTap: onTap,
-            child: Ink(
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? theme.colorScheme.primary.withValues(alpha: 0.10)
-                    : theme.colorScheme.card,
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(
-                  color: isSelected
-                      ? theme.colorScheme.primary.withValues(alpha: 0.55)
-                      : theme.colorScheme.border.withValues(alpha: 0.75),
-                ),
-              ),
-              padding: const EdgeInsets.all(14),
-              child: Row(
-                children: [
-                  Container(
-                    width: 38,
-                    height: 38,
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? theme.colorScheme.primary.withValues(alpha: 0.14)
-                          : theme.colorScheme.background,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      option.icon,
-                      size: 18,
-                      color: isSelected
-                          ? theme.colorScheme.primary
-                          : theme.colorScheme.foreground,
-                    ),
-                  ),
-                  const shad.Gap(12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          option.label,
-                          style: theme.typography.small.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        if (option.description?.trim().isNotEmpty ?? false) ...[
-                          const shad.Gap(4),
-                          Text(
-                            option.description!,
-                            style: theme.typography.textSmall.copyWith(
-                              color: theme.colorScheme.mutedForeground,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  const shad.Gap(12),
-                  Icon(
-                    isSelected
-                        ? Icons.check_circle_rounded
-                        : Icons.radio_button_unchecked_rounded,
-                    size: 20,
-                    color: isSelected
-                        ? theme.colorScheme.primary
-                        : theme.colorScheme.mutedForeground,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => AppOptionTile(
+    title: option.label,
+    subtitle: option.description,
+    selected: isSelected,
+    leading: Icon(option.icon),
+    onTap: onTap,
+  );
 }

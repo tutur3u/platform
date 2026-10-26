@@ -113,6 +113,22 @@ const RunnerCapabilitiesSchema = z
           })
           .optional(),
         uptimeSeconds: z.number().nonnegative().finite().optional(),
+        // Bucketed headroom lower bounds from `ttr storage`; offload selection
+        // skips hosts reporting critical disk. Never an authorization input.
+        disk: z
+          .object({
+            freeGiB: z.number().int().min(0).max(1_000_000),
+            freePct: z.number().int().min(0).max(100).multipleOf(5),
+            inodeFreePct: z
+              .number()
+              .int()
+              .min(0)
+              .max(100)
+              .multipleOf(5)
+              .optional(),
+          })
+          .strict()
+          .optional(),
       })
       .optional(),
     runtimes: z

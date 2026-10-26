@@ -2,6 +2,7 @@ const fs = require('node:fs');
 const crypto = require('node:crypto');
 const os = require('node:os');
 const path = require('node:path');
+const { readFileSnapshotSync } = require('../safe-fs.js');
 
 const {
   getComposeCommandArgs,
@@ -1851,21 +1852,20 @@ function hashBlueGreenBuildInputFiles(
 
   for (const filePath of files) {
     const resolvedPath = path.join(rootDir, filePath);
-
     try {
-      const stats = fsImpl.statSync(resolvedPath);
-
-      if (!stats.isFile()) {
-        continue;
-      }
+      const { data, stat } = readFileSnapshotSync(
+        fsImpl.realpathSync(resolvedPath),
+        { fsImpl }
+      );
 
       hash.update(filePath);
       hash.update('\0');
-      hash.update(String(stats.size));
+      hash.update(String(stat.size));
       hash.update('\0');
-      hash.update(fsImpl.readFileSync(resolvedPath));
+      hash.update(data);
       hash.update('\0');
-    } catch {
+    } catch (error) {
+      if (error?.code === 'ERR_FS_NOT_REGULAR') continue;
       hash.update(filePath);
       hash.update('\0missing\0');
     }

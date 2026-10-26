@@ -1,7 +1,7 @@
 import { type ChildProcess, spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { hostname, tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -16,6 +16,7 @@ import {
   enqueueHostTicket,
   type HostTicket,
   hostLedger,
+  releaseHostReservation,
 } from './resources-hosts-ledger';
 import { bun } from './resources-test-fixtures';
 
@@ -37,7 +38,10 @@ async function home() {
   dirs.push(path);
   return path;
 }
-const base = proposedHostRegistry('runner-linux');
+const base = {
+  ...proposedHostRegistry('runner-linux'),
+  hubHostname: hostname(),
+};
 const localOnly = (light: number, heavy = 0): HostRegistry => ({
   ...base,
   hosts: [{ ...base.hosts[0]!, slots: { light, heavy } }],
@@ -84,6 +88,60 @@ const events = async (path: string) =>
     );
 
 describe('canonical reservations', { timeout: 60_000 }, () => {
+  it('reuses an unchanged queued ticket without erasing its bypass count', async () => {
+    const path = await home();
+    const original = ticket();
+    await enqueueHostTicket(path, { ...original, bypassed: 3 });
+    await enqueueHostTicket(path, original);
+    expect((await hostLedger(path)).tickets).toMatchObject([
+      { token: original.token, bypassed: 3 },
+    ]);
+    const result = await admitHostTicket(path, original, localOnly(1), {
+      localDiskFreeGiB: 100,
+    });
+    expect(result.admitted && result.ticket.bypassed).toBe(3);
+    if (result.admitted) await releaseHostReservation(path, result.reservation);
+  });
+
+  it('refuses to replace a ticket owner, age or capability requirement', async () => {
+    const path = await home();
+    const original: HostTicket = { ...ticket(), requires: ['ios'] };
+    await enqueueHostTicket(path, original);
+    for (const changed of [
+      { ...original, pid: original.pid + 1 },
+      { ...original, queuedAt: original.queuedAt + 1 },
+      { ...original, requires: [] },
+    ]) {
+      await expect(enqueueHostTicket(path, changed)).rejects.toThrow(
+        /identity changed/u
+      );
+      await expect(
+        admitHostTicket(path, changed, localOnly(1), { localDiskFreeGiB: 100 })
+      ).rejects.toThrow(/identity changed/u);
+    }
+    expect((await hostLedger(path)).tickets).toEqual([original]);
+  });
+
+  it('refuses to enqueue an already reserved token or admit it twice', async () => {
+    const path = await home();
+    const original = ticket();
+    await enqueueHostTicket(path, original);
+    const result = await admitHostTicket(path, original, localOnly(2), {
+      localDiskFreeGiB: 100,
+    });
+    expect(result.admitted).toBe(true);
+    await expect(enqueueHostTicket(path, original)).rejects.toThrow(
+      /already has a reservation/u
+    );
+    expect(
+      await admitHostTicket(path, original, localOnly(2), {
+        localDiskFreeGiB: 100,
+      })
+    ).toEqual({ admitted: false, reason: 'ticket is no longer queued' });
+    expect((await hostLedger(path)).reservations).toHaveLength(1);
+    if (result.admitted) await releaseHostReservation(path, result.reservation);
+  });
+
   it('never double-assigns a slot under concurrent requests', async () => {
     const path = await home();
     const log = join(path, 'events.jsonl');
@@ -207,8 +265,11 @@ describe('multi-host dispatch', { timeout: 30_000 }, () => {
           capabilities: {
             executionMode: 'trusted',
             protocols: { commitRun: [1] },
-            disk: { freeGiB: 400 },
-            resources: { loadAverage: [4, 4, 4], cpu: { cores: 20 } },
+            resources: {
+              loadAverage: [4, 4, 4],
+              cpu: { cores: 20 },
+              disk: { freeGiB: 400, freePct: 85 },
+            },
           },
           drain_requested_at: null,
           activity: { queued_runs: 0, running_runs: 0, active_leases: 0 },

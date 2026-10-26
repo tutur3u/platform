@@ -1,64 +1,41 @@
 import tailwindcss from '@tailwindcss/vite';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
+import { startBridgePreset } from '@tuturuuu/start-bridge/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite-plus';
 import { voidPlugin } from 'void';
 
-const native = (path: string) =>
-  new URL(`./src/native/${path}`, import.meta.url).pathname;
+// The gateway navigates by document load, so it keeps the document-mode
+// navigation adapter and only the next/* shims it has always aliased.
+const bridge = startBridgePreset({
+  appRoot: import.meta.url,
+  app: 'apps',
+  navigation: 'document',
+  shims: [
+    'next/headers',
+    'next/server',
+    'next/navigation',
+    'next/link',
+    'next-intl',
+  ],
+  serverOnlySpecifiers: [
+    '@tuturuuu/satellite/auth',
+    '@tuturuuu/utils/api-proxy-guard',
+    '@tuturuuu/supabase/next/server',
+  ],
+});
+
 export default defineConfig(({ command }) => ({
+  base: bridge.base,
+  define: bridge.define,
   plugins: [
     voidPlugin(),
-    tanstackStart({
-      start: { entry: './start.ts' },
-      router: {
-        enableRouteGeneration: true,
-        routesDirectory: 'routes',
-        generatedRouteTree: 'routeTree.gen.ts',
-        routeTreeFileHeader: [],
-        disableTypes: false,
-      },
-      serverFns: { base: '/_serverFn' },
-      importProtection: {
-        behavior: 'error',
-        client: {
-          specifiers: [
-            'node:async_hooks',
-            '@tuturuuu/satellite/auth',
-            '@tuturuuu/utils/api-proxy-guard',
-            '@tuturuuu/supabase/next/server',
-          ],
-          files: [/\.server\.[cm]?[jt]sx?$/],
-        },
-      },
-    }),
+    tanstackStart(bridge.tanstackStart),
     react(),
     tailwindcss(),
   ],
   environments: {
-    client: {
-      define: {
-        'process.env': JSON.stringify({
-          ...Object.fromEntries(
-            Object.entries(process.env).filter(([name]) =>
-              name.startsWith('NEXT_PUBLIC_')
-            )
-          ),
-          NODE_ENV:
-            process.env.NODE_ENV ??
-            (command === 'build' ? 'production' : 'development'),
-        }),
-      },
-    },
+    client: { define: bridge.clientDefine(command) },
   },
-  resolve: {
-    alias: [
-      { find: /^next\/headers$/, replacement: native('request-context.ts') },
-      { find: /^next\/server$/, replacement: native('next-server.ts') },
-      { find: /^next\/navigation$/, replacement: native('navigation.tsx') },
-      { find: /^next\/link$/, replacement: native('navigation.tsx') },
-      { find: /^next-intl$/, replacement: native('intl.tsx') },
-      { find: '@/', replacement: new URL('./src/', import.meta.url).pathname },
-    ],
-  },
+  resolve: { alias: bridge.alias },
 }));

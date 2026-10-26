@@ -6,6 +6,7 @@ import 'package:mobile/features/apps/widgets/apps_reorder_grid.dart';
 import 'package:mobile/features/shell/view/custom_navigation_bar.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/shell/view/persistent_shell_dock.dart';
+import 'package:mobile/features/shell/view/shell_dock_surface.dart';
 import 'package:mobile/features/shell/view/shell_navigation_rail.dart';
 
 void registerShellViewportChecks(
@@ -76,7 +77,7 @@ void registerShellViewportChecks(
         expect(
           find.descendant(
             of: find.byType(PersistentShellDock),
-            matching: find.byType(BackdropFilter),
+            matching: find.byType(ShellDockSurface),
           ),
           findsOneWidget,
         );
@@ -223,7 +224,7 @@ Future<void> _expectRailViewport(WidgetTester tester, Size size) async {
   expect(
     find.descendant(
       of: find.byType(PersistentShellDock),
-      matching: find.byType(BackdropFilter),
+      matching: find.byType(ShellDockSurface),
     ),
     findsNothing,
   );

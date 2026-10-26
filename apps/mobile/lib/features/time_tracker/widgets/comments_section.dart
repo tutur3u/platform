@@ -189,6 +189,7 @@ class _CommentTileState extends State<_CommentTile> {
             const shad.Gap(4),
             if (_isEditing) ...[
               shad.TextField(
+                placeholder: Text(context.l10n.inputPlaceholderComment),
                 selectionControls: platformTextSelectionControls(),
                 contextMenuBuilder: platformTextContextMenuBuilder(),
                 controller: _editController,

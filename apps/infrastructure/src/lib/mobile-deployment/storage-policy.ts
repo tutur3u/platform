@@ -3,12 +3,13 @@ import {
   ROOT_WORKSPACE_ID,
   resolveWorkspaceId,
 } from '@tuturuuu/utils/constants';
-import { sanitizePathStrict } from '@tuturuuu/utils/storage-path';
+import { sanitizePath } from '@tuturuuu/utils/storage-path';
 import { MOBILE_DEPLOYMENT_DRIVE_PREFIX } from './constants';
 
 function normalizeRelativePath(path: string) {
-  if (sanitizePathStrict(path) === null) return null;
-  let normalized = path.replaceAll('\\', '/').trim();
+  const canonicalPath = sanitizePath(path);
+  if (canonicalPath === null) return null;
+  let normalized = canonicalPath;
   for (let pass = 0; pass < 5; pass += 1) {
     const decoded = normalized.replace(
       /%([\da-f]{2})/gi,
@@ -37,6 +38,13 @@ export function isReservedMobileDeploymentDrivePath(
 
   const normalizedPath = normalizeRelativePath(path);
   if (normalizedPath === null) return true;
+
+  if (
+    normalizedPath.startsWith(`${MOBILE_DEPLOYMENT_DRIVE_PREFIX}?`) ||
+    normalizedPath.startsWith(`${MOBILE_DEPLOYMENT_DRIVE_PREFIX}#`)
+  ) {
+    return true;
+  }
 
   return (
     normalizedPath === MOBILE_DEPLOYMENT_DRIVE_PREFIX ||

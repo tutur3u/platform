@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/widgets/assistant_scroll_to_bottom_overlay.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -57,7 +58,7 @@ void main() {
         }
 
         await mount(visible: true);
-        final button = find.byIcon(Icons.arrow_downward_rounded);
+        final button = find.byIcon(LucideIcons.arrowDown);
         final rect = tester.getRect(button);
         final dockTop = 844 - (keyboard ? 300 : safe) - 96;
         expect(rect.bottom, lessThanOrEqualTo(dockTop - 16));

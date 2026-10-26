@@ -3,6 +3,10 @@ import type { PermissionId } from '@tuturuuu/types';
 import { normalizeWorkspaceContextId } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
+import {
+  buildMiraClientCapabilityInstruction,
+  resolveMiraClientCapabilities,
+} from '../../tools/mira-client-capabilities';
 import { createMiraSdkToolSearch } from '../../tools/mira-sdk-tool-search';
 import {
   createMiraStreamTools,
@@ -13,6 +17,7 @@ import { resolveWorkspaceContextState } from '../../tools/workspace-context';
 import { buildMiraPrompt } from '../mira-prompt';
 import { buildMiraSystemInstruction } from '../mira-system-instruction';
 import type { ChatRequestTaskBoardContext } from './chat-request-schema';
+import { resolveMiraTimezone } from './mira-timezone';
 
 type PermissionResultLike = {
   withoutPermission?: (permission: PermissionId) => boolean;
@@ -53,6 +58,8 @@ type PrepareMiraRuntimeParams = {
   toolSupabase?: SupabaseClientLike;
   timezone?: string;
   taskBoardContext?: ChatRequestTaskBoardContext;
+  /** UI effects declared by the client; omitted means none. */
+  clientCapabilities?: readonly string[];
   /** Optional callback for render_ui context-aware fallback. */
   getSteps?: () => unknown[];
 };
@@ -169,6 +176,7 @@ export async function prepareMiraRuntime({
   toolSupabase,
   timezone,
   taskBoardContext,
+  clientCapabilities,
   getSteps,
 }: PrepareMiraRuntimeParams): Promise<{
   miraSystemPrompt?: string;
@@ -223,6 +231,13 @@ export async function prepareMiraRuntime({
     console.error('Failed to get permissions for Mira tools:', permErr);
   }
 
+  const { timezone: resolvedTimezone } = await resolveMiraTimezone({
+    requestTimezone: timezone,
+    supabase: miraSupabase,
+    userId,
+    wsId: resolvedWorkspaceContext.wsId,
+  });
+
   const ctx: MiraToolContext = {
     userId,
     wsId,
@@ -230,8 +245,9 @@ export async function prepareMiraRuntime({
     workspaceContext: resolvedWorkspaceContext,
     chatId,
     supabase: miraSupabase,
-    timezone,
+    timezone: resolvedTimezone,
     requestHeaders: request.headers,
+    clientCapabilities: resolveMiraClientCapabilities(clientCapabilities),
     authorizeWorkspaceTools: async (targetWsId, permissions) => {
       let pending = permissionCache.get(targetWsId);
       if (!pending) {
@@ -266,7 +282,7 @@ export async function prepareMiraRuntime({
       userId,
       wsId: resolvedWorkspaceContext.wsId,
       supabase: miraSupabase,
-      timezone,
+      timezone: resolvedTimezone,
       withoutPermission,
       workspaceContext: resolvedWorkspaceContext,
       taskBoardInstruction,
@@ -277,6 +293,12 @@ export async function prepareMiraRuntime({
       ctxErr
     );
     miraSystemPrompt = buildMiraSystemInstruction({ withoutPermission });
+  }
+  const capabilityInstruction = buildMiraClientCapabilityInstruction(
+    ctx.clientCapabilities
+  );
+  if (capabilityInstruction) {
+    miraSystemPrompt = `${miraSystemPrompt}\n\n${capabilityInstruction}`;
   }
 
   const discovery = createMiraSdkToolSearch(

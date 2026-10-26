@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/infrastructure",
-  "version": "0.37.0",
+  "version": "0.38.0",
   "private": true,
   "scripts": {
     "type-check": "node ../../scripts/run-tsc-build.js --build",
@@ -31,6 +31,7 @@
     "@tiptap/react": "3.32.0",
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/auth": "workspace:*",
+    "@tuturuuu/devbox": "workspace:*",
     "@tuturuuu/email-service": "workspace:*",
     "@tuturuuu/icons": "workspace:*",
     "@tuturuuu/internal-api": "workspace:*",

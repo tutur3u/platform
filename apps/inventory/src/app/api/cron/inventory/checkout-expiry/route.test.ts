@@ -2,11 +2,20 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   expireCheckoutReservations: vi.fn(),
+  safelyRevalidateWorkspaceStorefronts: vi.fn(),
+  revalidateWorkspaceStorefronts: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/inventory-core/commerce/checkouts', () => ({
   expireCheckoutReservations: (...args: unknown[]) =>
     mocks.expireCheckoutReservations(...args),
+}));
+
+vi.mock('@tuturuuu/inventory-core/commerce/public-storefront', () => ({
+  revalidateWorkspaceStorefronts: (...args: unknown[]) =>
+    mocks.revalidateWorkspaceStorefronts(...args),
+  safelyRevalidateWorkspaceStorefronts: (...args: unknown[]) =>
+    mocks.safelyRevalidateWorkspaceStorefronts(...args),
 }));
 
 vi.mock('@tuturuuu/utils/constants', () => ({ DEV_MODE: false }));
@@ -77,6 +86,83 @@ describe('inventory checkout expiry cron', () => {
     expect(response.status).toBe(500);
     await expect(response.json()).resolves.toEqual({
       error: 'Internal Server Error',
+    });
+  });
+
+  describe('storefront revalidation for the Cron Control processor', () => {
+    const WS = '00000000-0000-4000-8000-000000000001';
+    const post = (body: string, authorization = 'Bearer cron-secret') =>
+      import('./route').then(({ POST }) =>
+        POST(
+          new Request('http://localhost/api/cron/inventory/checkout-expiry', {
+            body,
+            headers: { Authorization: authorization },
+            method: 'POST',
+          }) as never
+        )
+      );
+
+    it('requires the cron secret', async () => {
+      const response = await post(
+        JSON.stringify({ revalidateWorkspaceIds: [WS] }),
+        'Bearer wrong'
+      );
+      expect(response.status).toBe(401);
+      expect(mocks.safelyRevalidateWorkspaceStorefronts).not.toHaveBeenCalled();
+    });
+
+    it('revalidates each distinct workspace once without expiring checkouts', async () => {
+      const response = await post(
+        JSON.stringify({ revalidateWorkspaceIds: [WS, WS] })
+      );
+      expect(response.status).toBe(200);
+      await expect(response.json()).resolves.toEqual({
+        ok: true,
+        revalidated: 1,
+        results: [{ wsId: WS, ok: true }],
+      });
+      expect(mocks.revalidateWorkspaceStorefronts).toHaveBeenCalledTimes(1);
+      expect(mocks.revalidateWorkspaceStorefronts).toHaveBeenCalledWith(WS);
+      expect(mocks.expireCheckoutReservations).not.toHaveBeenCalled();
+    });
+
+    it('reports a failed invalidation and continues with the next workspace', async () => {
+      const next = '00000000-0000-4000-8000-000000000002';
+      mocks.revalidateWorkspaceStorefronts
+        .mockRejectedValueOnce(new Error('invalidation failed'))
+        .mockResolvedValueOnce(undefined);
+      mocks.safelyRevalidateWorkspaceStorefronts.mockResolvedValue(undefined);
+      const response = await post(
+        JSON.stringify({ revalidateWorkspaceIds: [WS, next] })
+      );
+      expect(response.status).toBe(200);
+      await expect(response.json()).resolves.toEqual({
+        ok: false,
+        revalidated: 1,
+        results: [
+          { wsId: WS, ok: false },
+          { wsId: next, ok: true },
+        ],
+      });
+      expect(mocks.revalidateWorkspaceStorefronts).toHaveBeenCalledTimes(2);
+      expect(mocks.safelyRevalidateWorkspaceStorefronts).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['malformed JSON', '{'],
+      ['a non-array', JSON.stringify({ revalidateWorkspaceIds: WS })],
+      ['a non-UUID', JSON.stringify({ revalidateWorkspaceIds: ['../x'] })],
+      [
+        'too many workspaces',
+        JSON.stringify({ revalidateWorkspaceIds: Array(101).fill(WS) }),
+      ],
+    ])('rejects %s before any work', async (_label, body) => {
+      expect((await post(body)).status).toBe(400);
+      expect(mocks.safelyRevalidateWorkspaceStorefronts).not.toHaveBeenCalled();
+    });
+
+    it('rejects an oversized body', async () => {
+      expect((await post(' '.repeat(8_193))).status).toBe(413);
     });
   });
 });

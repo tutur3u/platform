@@ -327,14 +327,45 @@ Cache archive restoration is separate from Turbo task reuse. Compare exact-head
 hosted runs before claiming push-to-green savings; removing runner demand does
 not promise a particular hosted queue delay.
 
+### Draft PR runner admission
+
+Heavy PR verification defers non-security database contracts, platform builds
+and runtime suites until the PR is ready. Heavy-only workflows skip their
+`check-ci` call before runner allocation. Mixed workflows retain light lint,
+type and translation checks. Security jobs always remain eligible on drafts,
+including CodeQL analysis and the security-egress contract and its preflight.
+The mobile aggregate skips on drafts and still requires every quality, test and
+realtime result on ready PRs.
+
+These workflows listen for `ready_for_review` to run the same checks without a
+new commit. `converted_to_draft` supersedes cancellable PR runs and starts
+replacement security checks even when the PR becomes a draft. Existing
+workflow/PR concurrency identities, pinned rerun isolation and serialized
+publication, environment, security-classifier and sandbox-cleanup locks remain
+unchanged. Push-only verification keeps its existing behavior.
+
+Draft PRs cannot merge. Before adding a required check, verify that its workflow
+reports on every merge-eligible PR. Keep path relevance in the existing
+`ci-check` switchboard or trusted security selectors instead of adding trigger
+filters that leave a required check pending. Regression coverage:
+`scripts/ci/pr-verification-scheduling.test.js` and
+`scripts/ci/protected-workflow-concurrency.test.js`. Supersession and draft
+admission reduce demand; they do not reserve hosted capacity for production.
+
 ### Mobile PR build selection
 
 Ordinary mobile PRs build Android as the portable application smoke. iOS, macOS,
 Linux and Windows builds run when their native directory changes. Dependency
 manifests, localization configuration, workflow/tooling inputs and unrecognized
 paths retain every platform build. Missing or empty changed-file data also runs
-all platforms. Every matching main push retains all five builds; release and
-production workflows are unchanged.
+all platforms. Matching main pushes retain Android and Linux builds. iOS, macOS
+and Windows development builds run nightly at 01:10, 01:30 and 01:50 (GMT+7),
+respectively, plus published releases and manual dispatch. Store publication and
+production workflows keep their existing triggers and gates.
+
+This is an explicit coverage exception: nightly builds validate the default-branch
+head selected for that run, rather than every merged SHA. Release and manual
+builds validate their selected snapshots.
 
 Keep all existing PR triggers and named checks. The reusable `ci-check` switchboard
 skips the heavy job before runner allocation; do not remove a required-check
@@ -568,9 +599,11 @@ failure, timeout, or output-buffer exhaustion. Other failures retain the generic
 diagnostic instruction. Never print the raw child error, stdout, or stderr to CI.
 Active Supabase-starting jobs run `.github/actions/cache-supabase-images` after
 the owning dependency install. Image versions come from the installed pinned CLI's
-`services -o json`, which includes local version overrides. The CLI omits Kong,
-Mailpit and imgproxy there; the helper carries their reviewed 2.117.0 Dockerfile
-pins and rejects a different CLI until those pins are reviewed. Registry rewriting
+`services -o json`, which includes local version overrides. CLI 2.121.0 omits Kong,
+Mailpit and imgproxy there; the helper carries their reviewed Dockerfile pins
+(2.8.1, v1.31.3 and v3.26.0) and rejects a different CLI until those pins are
+reviewed. Catalog entries take precedence over fallback pins, including local
+overrides; repeated catalog image names fail rather than silently choosing a tag. Registry rewriting
 matches the CLI, including `postgrest/postgrest` becoming `supabase/postgrest`.
 
 The exact image list, registry, OS and architecture form the SHA256 cache key;
@@ -705,16 +738,38 @@ not reserve capacity or guarantee image retention.
 | Cache family | Observed pressure | Save policy |
 | --- | --- | --- |
 | Supabase images | About 1.1 GiB and 717 MiB per observed profile | Main push/dispatch only; exact image keys |
-| Android Gradle | About 3.6 GiB plus 366 MiB wrapper in one PR | Explicit restore everywhere; save only on main pushes |
-| Flutter SDK/pub | SDK archives can exceed 1 GiB | Shared wrapper restores on every ref and saves on main push/dispatch, including desktop, release and employee jobs |
+| Android Gradle | Previous broad archive reached 4.29 GB | Only wrapper distributions and module downloads; skip saves above 512 MiB; one main-push producer |
+| Flutter SDK/pub | SDK archives can exceed 1 GiB | Shared wrapper restores on every ref and saves on main push/dispatch; SDK/pub identities use platform and release, without lockfile generations |
 | Bun downloads | About 1 GiB per observed Linux archive | Main push/dispatch only; one v2 archive per OS, architecture and pinned Bun version |
 | CocoaPods | About 82 MiB per observed iOS PR copy | Explicit restore everywhere; save only on main pushes, including macOS pods |
 
-These are incident measurements, not fixed sizes or a guaranteed total. New
-Gradle keys use the `gradle-v1-` namespace; their first main push must populate
-them. PRs cannot warm missing heavyweight caches. The static budget gate is
-`node --test scripts/ci/heavyweight-cache-budget.test.js`, also discovered by
-`bun test:scripts`. It inventories every save-capable cache action and setup cache input in
+These are incident measurements, not fixed sizes or a guaranteed total. Gradle
+uses one `gradle-downloads-v2-<OS>-<arch>-java17` entry per platform, without
+build-file hashes or fallback to `gradle-v1-`. Only `mobile-build-android.yaml`
+saves it, after `scripts/ci/gradle-cache-budget.js` measures the selected paths
+with archive header/padding allowance. Empty or over-budget trees skip saving;
+builds retain their local downloads. Transforms, build caches, daemon and native
+state stay out of the archive. A restored immutable entry may lack newer modules;
+Gradle downloads those normally. Pub downloads similarly use `flutter-pub-v2-`
+platform/channel/release keys; `pub get` still resolves each checked-in lockfile.
+Changing a lockfile does not need a new archive of the entire download store.
+
+After this policy merges, an operator should remove the obsolete `gradle-v1-`
+entries, and obsolete lock-hashed Flutter pub entries once the v2 entries are
+available. Inspect live usage before reseeding: leave room for every selected
+Supabase profile, not just the first archive. Dispatch the main-only Supabase
+image seed described below, verify its saves, then verify a contract consumer
+reports a cache hit without registry pulls. Do not delete active SDK, Bun,
+Supabase or CodeQL entries as routine cleanup. Old mobile workflows already
+running at pre-policy commits may still save old keys; drain those before cleanup.
+No cache is deleted or seed dispatched by this policy change. The Gradle gate
+bounds its selected uncompressed bytes to 512 MiB; hosted archive sizes and the
+aggregate footprint still require the read-only storage report. Flutter releases
+and Supabase profiles can overlap, so this is not a reserved capacity guarantee.
+
+PRs cannot warm missing heavyweight caches. The static budget gates are
+`node --test scripts/ci/heavyweight-cache-budget.test.js scripts/ci/mobile-cache-budget.test.js`, also discovered by
+`bun test:scripts`. The inventory covers every save-capable cache action and setup cache input in
 workflows and composites, checking trusted and untrusted events/refs. Combined `actions/cache` still registers a post-job save when
 `lookup-only` is enabled, so it remains in the inventory. Unknown keys and paths
 have no implicit exemption. The explicit exceptions compare the complete input
@@ -1898,8 +1953,8 @@ SDK/pub downloads (Windows retains its deliberate cache-off setup). The wrapper
 resolves identity through the SHA-pinned upstream action before restoring the
 exact cache, then installs that resolved version. SDK keys bind upstream OS,
 channel, version, architecture and release hash; they exclude `pubspec.lock` so
-analysis, test and build jobs share main's SDK archive. Pub download keys still
-include the lock hash. Every ref can restore; only main push/manual runs attach
+analysis, test and build jobs share main's SDK archive. Pub download keys
+(`flutter-pub-v2-`) also exclude the lock hash. Every ref can restore; only main push/manual runs attach
 the cache save post-step, so mobile runs on PRs, feature branches and
 production do not upload duplicate archives. Desktop beta/store-draft and the
 employee schema contract still set up Flutter with upstream caching on their own

@@ -345,7 +345,8 @@
     "upload": "Upload",
     "view": "View",
     "whats_the_title": "What's the title?",
-    "write_something": "Write something"
+    "write_something": "Write something",
+    "select-language": "Select Language"
   },
   "course-details-tabs": {
     "extra_reading": "Extra Reading",
@@ -454,6 +455,12 @@
     "accept": "Accept",
     "archive": "Archive",
     "archive-all": "Archive all",
+    "codes": {
+      "calendar_reconnect_required": {
+        "description": "Calendar sync paused because the provider stopped accepting access. Reconnect the account to resume.",
+        "title": "Reconnect your calendar"
+      }
+    },
     "decline": "Decline",
     "empty-archive": "No archived notifications yet.",
     "inbox": "Inbox",
@@ -1492,5 +1499,60 @@
       "private": "Private",
       "workspace": "Workspace"
     }
+  },
+  "satellite-account-settings": {
+    "email_managed_centrally": "Email changes need confirmation, so they are made in your Tuturuuu account settings.",
+    "title": "Account",
+    "preferences": "Preferences",
+    "profile": "Profile",
+    "profile_description": "Manage your name, avatar and email",
+    "accounts": "Accounts",
+    "accounts_description": "Manage multiple accounts and switch between them",
+    "security": "Security",
+    "security_description": "Password, two-factor authentication, passkeys and sign-in methods",
+    "sessions": "Sessions & Devices",
+    "sessions_description": "Manage your active sessions and devices",
+    "appearance": "Appearance",
+    "appearance_description": "Theme and language",
+    "managed_centrally_title": "Managed in your Tuturuuu account",
+    "managed_centrally_description": "For your protection, {section} changes are made in Tuturuuu, which may ask you to confirm your identity. Changes apply to every Tuturuuu app.",
+    "signed_in_as": "Signed in as {email}",
+    "open_in_tuturuuu": "Open in Tuturuuu",
+    "accounts_switch": "Switch between signed-in accounts",
+    "accounts_add": "Add another account",
+    "accounts_remove": "Remove an account from this browser",
+    "security_password": "Change or reset your password",
+    "security_two_factor": "Two-factor authentication with an authenticator app",
+    "security_passkeys": "Passkeys",
+    "security_linked_identities": "Linked sign-in methods",
+    "sessions_devices": "See every device signed in to your account",
+    "sessions_revoke": "Sign out other devices"
+  },
+  "settings-account": {
+    "account-status": "Account Status",
+    "account-status-description": "Your account information",
+    "active": "Active",
+    "avatar": "Avatar",
+    "avatar-description": "Personalize your profile with a custom avatar.",
+    "avatar_remove_error": "There was an error removing your avatar. Please try again.",
+    "avatar_removed": "Avatar removed",
+    "avatar_update_error": "There was an error updating your avatar. Please try again.",
+    "avatar_updated": "Avatar updated",
+    "check-email-verify": "Check your email to verify {email}",
+    "display-name": "Display name",
+    "display-name-description": "Enter your name as you would like it to be displayed on your profile.",
+    "email-address": "Email Address",
+    "email-description": "Your email address that you used to login with.",
+    "error-occurred": "An error occurred",
+    "full-name": "Full name",
+    "full-name-description": "Your full name will be used to display on certificates",
+    "new_avatar": "New avatar",
+    "please-try-again": "Please try again",
+    "profile-updated": "Profile Updated",
+    "remove_avatar": "Remove avatar",
+    "user-id": "User ID",
+    "user-id-description": "Your account's unique identifier. This is automatically managed by Tuturuuu, and cannot be changed.",
+    "verified": "Verified",
+    "language-description": "Change the language of the website."
   }
 }

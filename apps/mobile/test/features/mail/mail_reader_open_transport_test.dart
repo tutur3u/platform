@@ -6,11 +6,14 @@ import 'package:mobile/features/mail/view/mail_page.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../helpers/phone_surface.dart';
 import '../../helpers/pump_app.dart';
 
 class _Repository extends Mock implements MailRepository {}
 
 void main() {
+  // These suites cover the compact (pushed reader) flow.
+  usePhoneSurface();
   testWidgets(
     'closing inbox during transport retry never starts a new detail request',
     (tester) async {
@@ -59,7 +62,7 @@ void main() {
         () => repository.detail('ws', 'box', 'message', thread: true),
       ).thenAnswer((_) async {
         reads++;
-        if (reads == 2) {
+        if (reads == 1) {
           throw const ApiException.transport(message: 'Request timed out');
         }
         return {
@@ -73,10 +76,12 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Synthetic message'));
       await tester.pump();
-      expect(reads, 2);
+      await tester.pump();
+      // The open's first attempt failed and its one retry is scheduled.
+      expect(reads, 1);
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump(const Duration(milliseconds: 400));
-      expect(reads, 2);
+      expect(reads, 1);
       expect(tester.takeException(), isNull);
     },
   );

@@ -2,25 +2,68 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
-import 'package:mobile/features/assistant/widgets/assistant_markdown_body.dart';
-import 'package:mobile/features/assistant/widgets/assistant_tool_json_preview.dart';
+import 'package:mobile/features/assistant/widgets/assistant_tool_step_tile.dart';
+import 'package:mobile/features/assistant/widgets/assistant_tool_steps.dart';
 import 'package:mobile/features/assistant/widgets/assistant_tool_summary.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 
-/// A compact transparent summary; detailed tool output stays inspectable.
+part 'assistant_generated_image_viewer.dart';
+
+/// The turn's single tool accordion; meta tools never render on their own.
 class AssistantToolResultsSection extends StatelessWidget {
-  const AssistantToolResultsSection({required this.parts, super.key});
+  const AssistantToolResultsSection({
+    required this.parts,
+    this.active = false,
+    super.key,
+  });
 
   final List<AssistantMessagePart> parts;
 
+  /// Whether the owning message is still streaming.
+  final bool active;
+
   @override
-  Widget build(BuildContext context) => AssistantToolSummary(
-    parts: _visibleToolParts(parts),
-    tileBuilder: (part) => _AssistantToolResultTile(part: part),
-  );
+  Widget build(BuildContext context) {
+    final steps = assistantVisibleToolSteps(parts);
+    if (steps.isEmpty) {
+      return active ? const _AssistantToolWorking() : const SizedBox.shrink();
+    }
+    return AssistantToolSummary(
+      parts: steps,
+      running: assistantToolStepsRunning(steps, active: active),
+      tileBuilder: (part) => AssistantToolStepTile(part: part, active: active),
+    );
+  }
+}
+
+class _AssistantToolWorking extends StatelessWidget {
+  const _AssistantToolWorking();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      key: const ValueKey('assistant-tools-working'),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const NovaLoadingIndicator(size: 16),
+          const SizedBox(width: 8),
+          Text(
+            context.l10n.assistantToolStepWorking,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class AssistantInlineToolImages extends StatelessWidget {
@@ -30,229 +73,34 @@ class AssistantInlineToolImages extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final imageParts = assistantImageToolParts(parts);
-    if (imageParts.isEmpty) {
+    final images = [
+      for (final part in assistantImageToolParts(parts))
+        assistantToolImageFields(part.output)!,
+    ];
+    if (images.isEmpty) {
       return const SizedBox.shrink();
     }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        for (var i = 0; i < imageParts.length; i++) ...[
+        for (var i = 0; i < images.length; i++) ...[
           _AssistantGeneratedImage(
-            imageUrl: _toolImageResult(imageParts[i])?.imageUrl,
-            storagePath: _toolImageResult(imageParts[i])?.storagePath,
+            imageUrl: images[i].imageUrl,
+            storagePath: images[i].storagePath,
             alt: context.l10n.assistantToolGeneratedImage,
           ),
-          if (i != imageParts.length - 1) const SizedBox(height: 12),
+          if (i != images.length - 1) const SizedBox(height: 12),
         ],
       ],
     );
   }
 }
 
-List<AssistantMessagePart> _visibleToolParts(List<AssistantMessagePart> parts) {
-  final hasNonSelectorTool = parts.any(
-    (part) => part.toolName != 'select_tools' && !_isInlineImageToolPart(part),
-  );
-  return parts
-      .where((part) {
-        if (_isInlineImageToolPart(part)) {
-          return false;
-        }
-        if (part.toolName == 'select_tools' && hasNonSelectorTool) {
-          return false;
-        }
-        return true;
-      })
-      .toList(growable: false);
-}
-
 List<AssistantMessagePart> assistantImageToolParts(
   List<AssistantMessagePart> parts,
 ) {
-  return parts.where(_isInlineImageToolPart).toList(growable: false);
-}
-
-bool _isInlineImageToolPart(AssistantMessagePart part) {
-  return part.toolName == 'create_image' && _toolImageResult(part) != null;
-}
-
-class _AssistantToolResultTile extends StatefulWidget {
-  const _AssistantToolResultTile({required this.part});
-
-  final AssistantMessagePart part;
-
-  @override
-  State<_AssistantToolResultTile> createState() =>
-      _AssistantToolResultTileState();
-}
-
-class _AssistantToolResultTileState extends State<_AssistantToolResultTile> {
-  var _expanded = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final title = widget.part.toolName ?? context.l10n.assistantToolLabel;
-    final subtitle = _toolCollapsedSummary(context, widget.part);
-    final imageResult = _toolImageResult(widget.part);
-
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(16),
-              onTap: () => setState(() => _expanded = !_expanded),
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Row(
-                  children: [
-                    Icon(
-                      _toolIcon(widget.part.toolName),
-                      size: 18,
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            title,
-                            style: theme.textTheme.labelLarge?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          if (subtitle != null)
-                            Text(
-                              subtitle,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                    AnimatedRotation(
-                      turns: _expanded ? 0.5 : 0,
-                      duration: const Duration(milliseconds: 180),
-                      child: Icon(
-                        Icons.keyboard_arrow_down_rounded,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          if (!_expanded && imageResult != null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-              child: _AssistantGeneratedImage(
-                imageUrl: imageResult.imageUrl,
-                storagePath: imageResult.storagePath,
-                alt: context.l10n.assistantToolGeneratedImage,
-              ),
-            ),
-          AnimatedCrossFade(
-            duration: const Duration(milliseconds: 180),
-            crossFadeState: _expanded
-                ? CrossFadeState.showSecond
-                : CrossFadeState.showFirst,
-            firstChild: const SizedBox.shrink(),
-            secondChild: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-              child: _buildExpandedContent(context, imageResult),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildExpandedContent(
-    BuildContext context,
-    _AssistantToolImageResult? imageResult,
-  ) {
-    final outputRecord = _asMap(widget.part.output);
-    final selectedTools = _selectedTools(outputRecord);
-    final theme = Theme.of(context);
-
-    if (widget.part.toolName == 'select_tools') {
-      if (selectedTools.length == 1 &&
-          selectedTools.single == 'no_action_needed') {
-        return Text(
-          context.l10n.assistantToolNoActionNeeded,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        );
-      }
-
-      return Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: selectedTools
-            .map((tool) => _AssistantResultChip(label: tool))
-            .toList(growable: false),
-      );
-    }
-
-    if (imageResult != null) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _AssistantGeneratedImage(
-            imageUrl: imageResult.imageUrl,
-            storagePath: imageResult.storagePath,
-            alt: context.l10n.assistantToolGeneratedImage,
-          ),
-          if (imageResult.prompt case final prompt?
-              when prompt.trim().isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: 10),
-              child: AssistantMarkdownBody(data: prompt.trim(), subdued: true),
-            ),
-        ],
-      );
-    }
-
-    final markdownSummary = _toolOutputSummary(context, widget.part);
-    if (markdownSummary != null) {
-      return AssistantMarkdownBody(data: markdownSummary, subdued: true);
-    }
-
-    return AssistantToolJsonPreview(data: widget.part.output);
-  }
-}
-
-class _AssistantResultChip extends StatelessWidget {
-  const _AssistantResultChip({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(label, style: theme.textTheme.labelMedium),
-    );
-  }
+  return parts.where(isAssistantInlineImageToolPart).toList(growable: false);
 }
 
 class _AssistantGeneratedImage extends StatefulWidget {
@@ -387,111 +235,20 @@ class _AssistantGeneratedImageState extends State<_AssistantGeneratedImage> {
   }
 
   Future<void> _openFullscreen(String imageUrl) async {
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => _AssistantGeneratedImageViewer(
-          heroTag: _heroTag(imageUrl),
-          initialUrl: imageUrl,
-          storagePath: widget.storagePath,
-          alt: widget.alt,
-        ),
+    await showAppSheet<void>(
+      context: context,
+      size: AppSheetSize.full,
+      enableDrag: false,
+      builder: (_) => _AssistantGeneratedImageViewer(
+        initialUrl: imageUrl,
+        storagePath: widget.storagePath,
+        alt: widget.alt,
       ),
     );
   }
 
   String _heroTag(String imageUrl) =>
       'assistant-tool-image:${widget.storagePath ?? imageUrl}';
-}
-
-class _AssistantGeneratedImageViewer extends StatefulWidget {
-  const _AssistantGeneratedImageViewer({
-    required this.heroTag,
-    required this.initialUrl,
-    required this.storagePath,
-    required this.alt,
-  });
-
-  final String heroTag;
-  final String initialUrl;
-  final String? storagePath;
-  final String alt;
-
-  @override
-  State<_AssistantGeneratedImageViewer> createState() =>
-      _AssistantGeneratedImageViewerState();
-}
-
-class _AssistantGeneratedImageViewerState
-    extends State<_AssistantGeneratedImageViewer> {
-  final _repository = AssistantRepository();
-  late Future<String?> _imageUrlFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    _imageUrlFuture = _resolveImageUrl();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
-      ),
-      body: SafeArea(
-        top: false,
-        child: FutureBuilder<String?>(
-          future: _imageUrlFuture,
-          builder: (context, snapshot) {
-            final url = snapshot.data ?? widget.initialUrl;
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: NovaLoadingIndicator());
-            }
-            return Center(
-              child: InteractiveViewer(
-                minScale: 0.75,
-                maxScale: 5,
-                child: Hero(
-                  tag: widget.heroTag,
-                  child: Image.network(
-                    url,
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) {
-                      return const Icon(
-                        Icons.broken_image_outlined,
-                        color: Colors.white70,
-                        size: 44,
-                      );
-                    },
-                  ),
-                ),
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  Future<String?> _resolveImageUrl() async {
-    if (!_isSignedUrlExpired(widget.initialUrl)) {
-      return widget.initialUrl;
-    }
-
-    final storagePath = widget.storagePath?.trim();
-    if (storagePath == null || storagePath.isEmpty) {
-      return widget.initialUrl;
-    }
-
-    try {
-      final urls = await _repository.fetchSignedReadUrls([storagePath]);
-      return urls[storagePath] ?? widget.initialUrl;
-    } on Exception {
-      return widget.initialUrl;
-    }
-  }
 }
 
 class _AssistantImageFrame extends StatelessWidget {
@@ -525,7 +282,7 @@ class _AssistantImageErrorState extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                Icons.broken_image_outlined,
+                LucideIcons.imageOff,
                 color: theme.colorScheme.onSurfaceVariant,
               ),
               const SizedBox(height: 8),
@@ -542,120 +299,6 @@ class _AssistantImageErrorState extends StatelessWidget {
       ),
     );
   }
-}
-
-IconData _toolIcon(String? toolName) {
-  return switch (toolName) {
-    'create_image' => Icons.image_outlined,
-    'select_tools' => Icons.tune_rounded,
-    _ => Icons.handyman_outlined,
-  };
-}
-
-String? _toolCollapsedSummary(BuildContext context, AssistantMessagePart part) {
-  final inputRecord = _asMap(part.input);
-  final outputRecord = _asMap(part.output);
-
-  if (part.toolName == 'create_image') {
-    return context.l10n.assistantToolGeneratedImage;
-  }
-
-  if (part.toolName == 'select_tools') {
-    final selectedTools = _selectedTools(outputRecord);
-    if (selectedTools.length == 1 &&
-        selectedTools.single == 'no_action_needed') {
-      return context.l10n.assistantToolNoActionNeeded;
-    }
-    if (selectedTools.isNotEmpty) {
-      return selectedTools.join(', ');
-    }
-  }
-
-  final prompt = inputRecord?['prompt']?.toString().trim();
-  if (prompt != null && prompt.isNotEmpty) {
-    return prompt;
-  }
-
-  return _toolOutputSummary(context, part) ??
-      context.l10n.assistantToolCompleted;
-}
-
-Map<String, dynamic>? _asMap(dynamic value) {
-  if (value is Map<String, dynamic>) {
-    return value;
-  }
-  if (value is Map) {
-    return Map<String, dynamic>.from(value);
-  }
-  return null;
-}
-
-List<String> _selectedTools(Map<String, dynamic>? outputRecord) {
-  final selected = outputRecord?['selectedTools'];
-  if (selected is! List) {
-    return const [];
-  }
-  return selected.map((tool) => tool.toString()).toList(growable: false);
-}
-
-String? _toolOutputSummary(BuildContext context, AssistantMessagePart part) {
-  final output = part.output;
-  if (output is String && output.trim().isNotEmpty) {
-    return output.trim();
-  }
-
-  final outputRecord = _asMap(output);
-  if (outputRecord == null) {
-    return null;
-  }
-
-  if (outputRecord['success'] == true && outputRecord['prompt'] is String) {
-    return outputRecord['prompt'] as String;
-  }
-
-  if (outputRecord['ok'] == true && outputRecord['selectedTools'] is List) {
-    final tools = _selectedTools(outputRecord);
-    if (tools.isNotEmpty) {
-      return [
-        context.l10n.assistantToolSelectedTools,
-        tools.map((tool) => '- `$tool`').join('\n'),
-      ].join('\n\n');
-    }
-  }
-
-  return null;
-}
-
-_AssistantToolImageResult? _toolImageResult(AssistantMessagePart part) {
-  final outputRecord = _asMap(part.output);
-  if (outputRecord == null) {
-    return null;
-  }
-
-  final imageUrl = outputRecord['imageUrl']?.toString().trim();
-  final storagePath = outputRecord['storagePath']?.toString().trim();
-  if ((imageUrl == null || imageUrl.isEmpty) &&
-      (storagePath == null || storagePath.isEmpty)) {
-    return null;
-  }
-
-  return _AssistantToolImageResult(
-    imageUrl: imageUrl,
-    storagePath: storagePath,
-    prompt: outputRecord['prompt']?.toString(),
-  );
-}
-
-class _AssistantToolImageResult {
-  const _AssistantToolImageResult({
-    required this.imageUrl,
-    required this.storagePath,
-    required this.prompt,
-  });
-
-  final String? imageUrl;
-  final String? storagePath;
-  final String? prompt;
 }
 
 bool _isSignedUrlExpired(String url) {

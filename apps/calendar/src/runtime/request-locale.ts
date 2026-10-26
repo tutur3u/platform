@@ -3,6 +3,7 @@ import { LOCALE_COOKIE_NAME } from '@tuturuuu/satellite/constants';
 import Negotiator from 'negotiator';
 import { RequestCookies } from 'next/dist/compiled/@edge-runtime/cookies';
 import { defaultLocale, type Locale, supportedLocales } from '../i18n/routing';
+import { calendarBase } from './calendar-mount';
 
 function supported(value: string | undefined): Locale | undefined {
   return value === 'en' || value === 'vi' ? value : undefined;
@@ -11,7 +12,9 @@ function supported(value: string | undefined): Locale | undefined {
 export function resolveCalendarLocale(
   request: Pick<Request, 'url' | 'headers'>
 ): Locale {
-  const path = supported(new URL(request.url).pathname.split('/')[1]);
+  const url = new URL(request.url);
+  const pathname = calendarBase(url)?.strip(url.pathname) ?? url.pathname;
+  const path = supported(pathname.split('/')[1]);
   if (path) return path;
   const cookie = supported(
     new RequestCookies(request.headers).get(LOCALE_COOKIE_NAME)?.value

@@ -1,15 +1,12 @@
 'use client';
 
+import { FileText, Keyboard, Paintbrush, PanelLeft } from '@tuturuuu/icons';
 import {
-  FileText,
-  Keyboard,
-  Paintbrush,
-  PanelLeft,
-  User,
-} from '@tuturuuu/icons';
+  createAccountSettingsNavGroup,
+  SatelliteAccountSettingsPanel,
+} from '@tuturuuu/satellite/account-settings';
 import {
   createWorkspaceSettingsNavGroup,
-  SatelliteProfileSettingsPanel,
   SatelliteWorkspaceSettingsPanel,
   SettingsWorkspaceBreadcrumb,
 } from '@tuturuuu/satellite/workspace-settings';
@@ -28,12 +25,14 @@ import { FormsAutosaveSettings } from './forms-autosave-settings';
 interface SettingsDialogProps {
   wsId?: string;
   user: WorkspaceUser | null;
+  centralUrl: string;
   defaultTab?: string;
 }
 
 export function SettingsDialog({
   wsId,
   user,
+  centralUrl,
   defaultTab = 'profile',
 }: SettingsDialogProps) {
   const t = useTranslations();
@@ -57,18 +56,7 @@ export function SettingsDialog({
       ],
     },
     ...(wsId ? [createWorkspaceSettingsNavGroup(t)] : []),
-    {
-      label: t('settings.user.title'),
-      items: [
-        {
-          name: 'profile',
-          label: t('settings.user.profile'),
-          icon: User,
-          description: t('settings.user.profile_description'),
-          keywords: ['Profile'],
-        },
-      ],
-    },
+    createAccountSettingsNavGroup(t),
     {
       label: t('settings.preferences.title'),
       items: [
@@ -122,9 +110,11 @@ export function SettingsDialog({
 
       {activeTab === 'forms_autosave' && <FormsAutosaveSettings />}
 
-      {activeTab === 'profile' && user && (
-        <SatelliteProfileSettingsPanel user={user} />
-      )}
+      <SatelliteAccountSettingsPanel
+        activeTab={activeTab}
+        centralUrl={centralUrl}
+        user={user}
+      />
 
       {activeTab === 'appearance' && (
         <div className="h-full">

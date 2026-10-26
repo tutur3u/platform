@@ -27,13 +27,11 @@ import 'package:mobile/l10n/gen/app_localizations.dart';
   final occurrence = entry.isAllDay
       ? format.format(wall)
       : format.add_jm().format(wall);
-  final timezone = entry.timezone ?? entry.dueAt.toLocal().timeZoneName;
   return (
     title: '${l10n.navCalendar}: ${entry.title}',
     body: l10n.remindersOccurrenceDetails(
       when ?? l10n.remindersEventTitle,
       occurrence,
-      timezone,
     ),
   );
 }

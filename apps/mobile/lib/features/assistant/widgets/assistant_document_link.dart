@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -21,8 +22,6 @@ Future<void> openAssistantDocument(BuildContext context, Uri uri) async {
     // Signed attachment URLs must not be included in diagnostics.
   }
   if (!opened && context.mounted) {
-    ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-      SnackBar(content: Text(context.l10n.settingsLinkOpenError)),
-    );
+    showAppToast(context, message: context.l10n.settingsLinkOpenError);
   }
 }

@@ -1,6 +1,6 @@
+import 'package:flutter/material.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Localised names for appearance options.
 extension AppearanceLabels on AppLocalizations {
@@ -35,9 +35,9 @@ extension AppearanceLabels on AppLocalizations {
         AppearanceBackgroundStyle.blobs => appearanceBackgroundBlobs,
       };
 
-  String appearanceMode(shad.ThemeMode mode) => switch (mode) {
-    shad.ThemeMode.system => settingsThemeSystem,
-    shad.ThemeMode.light => settingsThemeLight,
-    shad.ThemeMode.dark => settingsThemeDark,
+  String appearanceMode(ThemeMode mode) => switch (mode) {
+    ThemeMode.system => settingsThemeSystem,
+    ThemeMode.light => settingsThemeLight,
+    ThemeMode.dark => settingsThemeDark,
   };
 }
