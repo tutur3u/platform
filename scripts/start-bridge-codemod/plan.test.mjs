@@ -14,8 +14,13 @@ const HOLD_FILES = [
   'scripts/ci/production-publication-policy.test.js',
   '.github/workflows/vercel-production-demo.yaml',
 ];
+// Hermetic: the real start-bridge.config.ts loader has its own test.
 const plan = (root, options = {}) =>
-  planConversion(root, 'demo', { codegen: fakeCodegen(), ...options });
+  planConversion(root, 'demo', {
+    codegen: fakeCodegen(),
+    loadAppConfig: () => ({ config: {} }),
+    ...options,
+  });
 const generated = (result, file) =>
   result.writes.find((write) => write.path === `apps/demo/${file}`)?.content;
 

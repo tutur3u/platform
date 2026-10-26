@@ -21,6 +21,17 @@ export interface BridgeAppConfig<Env = unknown> {
     request: Request,
     context: { env: Env; path: string }
   ) => string | undefined;
+  /**
+   * Generated Worker settings, applied by the codemod to `void.config.ts`,
+   * the sealed artifact identity and the runtime test (re-run it after a
+   * change; the runtime test fails on drift). `workersDev` defaults to off
+   * when `mounts.unknownHost` is `reject`, otherwise on; `compatibilityFlags`
+   * add to the always-on `nodejs_compat` and `global_fetch_strictly_public`.
+   */
+  worker?: {
+    workersDev?: boolean;
+    compatibilityFlags?: readonly string[];
+  };
   /** Decorates every response the Worker returns (e.g. a staging noindex header). */
   wrapResponse?: (
     response: Response,

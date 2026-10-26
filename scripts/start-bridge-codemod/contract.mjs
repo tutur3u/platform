@@ -2,6 +2,8 @@
 // specifier, pinned toolchain version and generated-file name here so a bridge
 // API change is a one-file update. Pure data; no I/O.
 
+import { REQUIRED_FLAGS } from './worker-config.mjs';
+
 export const BRIDGE_PACKAGE = '@tuturuuu/start-bridge';
 export const BRIDGE_DIR = 'packages/start-bridge';
 
@@ -105,8 +107,8 @@ export const RUNTIME = {
   compatibilityDate: '2026-10-12',
   // Same-zone self-fetches (app-base `appUrl(path, request.url)`) must reach
   // this Worker, not the zone origin (the retained Vercel app), as Calendar,
-  // Mail and Meet already do.
-  compatibilityFlags: ['nodejs_compat', 'global_fetch_strictly_public'],
+  // Mail and Meet already do. Apps add flags in start-bridge.config.ts.
+  compatibilityFlags: REQUIRED_FLAGS,
   bun: '1.4.4',
   node: '24.22.0',
 };
