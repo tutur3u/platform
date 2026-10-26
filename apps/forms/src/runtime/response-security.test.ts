@@ -133,8 +133,14 @@ describe('Forms response security', () => {
   );
 
   it.each([
-    { path: '/assets/missing.js', headers: { 'Content-Type': 'text/html' } },
-    { path: '/embed.js', headers: { 'Set-Cookie': 'fixture=value; HttpOnly' } },
+    {
+      path: '/assets/missing.js',
+      headers: new Headers({ 'Content-Type': 'text/html' }),
+    },
+    {
+      path: '/embed.js',
+      headers: new Headers({ 'Set-Cookie': 'fixture=value; HttpOnly' }),
+    },
     { path: '/assets/private.js', method: 'POST' },
     { path: '/assets/missing.js', status: 404 },
   ])('does not cache a non-static response: %j', async (input) => {
