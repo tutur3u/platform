@@ -133,6 +133,16 @@ export async function cyclesModel(scope: Scope) {
   return { kind: 'cycles' as const, wsId, cycles };
 }
 
+export async function cyclePlanningModel(scope: Scope) {
+  const { wsId, cycles } = await cyclesModel(scope);
+  return {
+    kind: 'cycle-planning' as const,
+    wsId,
+    userId: scope.user.id,
+    cycles,
+  };
+}
+
 export function newTaskModel(
   scope: Scope,
   routeWsId: string,
