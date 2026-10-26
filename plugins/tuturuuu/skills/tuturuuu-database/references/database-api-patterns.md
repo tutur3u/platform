@@ -139,6 +139,15 @@ and exclude unrelated baseline drift; never hand-edit generated declarations.
   storage clients because `createSignedUploadUrl` writes storage metadata.
 - Do not request signed read URLs before the client uploads the object.
 - Storage key builders must sanitize parent paths and terminal names.
+- The `workspaces` bucket RLS is path-scoped
+  (`workspace_storage.object_access`). Pass
+  `(select workspace_storage.actor_access())` so permissions resolve once per
+  statement, not per row. Browsers never write private
+  roots (`chat`, `chats`, `external-apps`, `AI Agent Imports`, `mira/images`,
+  `recordings`, `.tuturuuu`). Issue signed upload URLs from the owning API
+  after an ownership check. When you add a private root, update the helper,
+  the Drive path policy and `tests/workspace-storage-least-privilege-rls.sql`
+  together. See `apps/docs/build/devops/workspace-storage-rls.mdx`.
 - Folder deletes should recurse through the Storage API; do not depend on
   direct `storage.objects` SQL scans.
 - Mixed Supabase/R2 upload helpers must preserve Authorization headers when
