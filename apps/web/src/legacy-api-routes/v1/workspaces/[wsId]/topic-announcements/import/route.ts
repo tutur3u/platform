@@ -1,3 +1,4 @@
+import { normalizeTopicAnnouncementTopic } from '@tuturuuu/users-core/routes/topic-announcements';
 import { NextResponse } from 'next/server';
 import {
   computeTopicAnnouncementSendDueAt,
@@ -145,7 +146,7 @@ export async function POST(request: Request, { params }: Params) {
         status: 'draft',
         teacher_workspace_user_id: row.teacherWorkspaceUserId,
         title: row.title,
-        topic: row.topic,
+        topic: normalizeTopicAnnouncementTopic(row.topic),
         updated_by: actorUserId,
         ws_id: normalizedWsId,
       }))

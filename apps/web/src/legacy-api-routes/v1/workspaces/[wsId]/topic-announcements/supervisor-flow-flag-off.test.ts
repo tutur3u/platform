@@ -151,6 +151,18 @@ describe('supervisor flow with teacher assignments off', () => {
     );
   });
 
+  it('resends exactly as before', async () => {
+    row(OTHER_TOPIC).status = 'sent';
+    row(OTHER_TOPIC).sent_at = '2026-11-01T00:00:00.000Z';
+    const response = await SEND(json({ resend: true }), {
+      params: Promise.resolve({ announcementId: OTHER_TOPIC, wsId: WS_ID }),
+    });
+    expect(response.status).toBe(200);
+    expect(mocks.sendTopicAnnouncement).toHaveBeenCalledWith(
+      expect.objectContaining({ announcementId: OTHER_TOPIC, resend: true })
+    );
+  });
+
   it('keeps update rules: topic required when written, no deadline', async () => {
     const patch = (body: unknown) =>
       PATCH(json(body, 'PATCH'), {

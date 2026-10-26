@@ -157,6 +157,20 @@ const ATTACHMENT_TOTAL_ISSUE = {
  * A topic may be blank only while the announcement stays a draft (the
  * database enforces the same rule with topic_announcements_topic_ready_check).
  */
+/**
+ * Topic value to store: trimmed text, or NULL when blank. A topic-less draft
+ * is always NULL (never ''), so it is easy to find and the non-blank rule
+ * cannot trip on it later.
+ */
+export function normalizeTopicAnnouncementTopic(topic: string): string | null;
+export function normalizeTopicAnnouncementTopic(
+  topic: string | undefined
+): string | null | undefined;
+export function normalizeTopicAnnouncementTopic(topic: string | undefined) {
+  if (topic === undefined) return undefined;
+  return topic.trim() || null;
+}
+
 export function isTopicAnnouncementTopicReady({
   status,
   topic,
