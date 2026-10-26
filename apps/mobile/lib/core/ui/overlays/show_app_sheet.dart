@@ -69,7 +69,9 @@ Future<T?> showAppSheet<T>({
             child: AppSheetSurface(
               showHandle: enableDrag,
               expands: expands,
-              child: builder(sheetContext),
+              // Build below the host so the body sees the consumed keyboard
+              // inset and the modal scope, never the raw view insets.
+              child: Builder(builder: builder),
             ),
           );
       return switch (size) {
@@ -129,7 +131,7 @@ Future<T?> showAppDialog<T>({
               ),
               child: AppSheetSurface(
                 dialog: true,
-                child: builder(dialogContext),
+                child: Builder(builder: builder),
               ),
             ),
           ),

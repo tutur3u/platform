@@ -44,28 +44,32 @@ Future<T?> showAdaptiveSheet<T>({
       useSafeArea: useSafeArea,
       isDismissible: isDismissible,
       enableDrag: enableDrag,
-      builder: (sheetContext) {
-        final child = builder(sheetContext);
-        // Bodies that bring their own card keep it; everything else gets
-        // the shared sheet surface, handle and keyboard inset.
-        if (child is AppDialogScaffold || surface.a == 0) {
-          return AppModalBinding(
-            dismissible: isDismissible || enableDrag,
-            child: AppearanceScope.opaqueScaffolds(child),
-          );
-        }
-        return AppSheetKeyboardInset(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.94,
-            ),
-            child: AppModalBinding(
-              dismissible: isDismissible || enableDrag,
-              child: AppSheetSurface(showHandle: enableDrag, child: child),
-            ),
-          ),
-        );
-      },
+      // The caller's builder runs below the consumed keyboard inset, so a
+      // body that still pads for the keyboard does not reserve it twice.
+      builder: (sheetContext) => AppSheetKeyboardInset(
+        child: Builder(
+          builder: (bodyContext) {
+            final child = builder(bodyContext);
+            // Bodies that bring their own card keep it; everything else
+            // gets the shared sheet surface and handle.
+            if (child is AppDialogScaffold || surface.a == 0) {
+              return AppModalBinding(
+                dismissible: isDismissible || enableDrag,
+                child: AppearanceScope.opaqueScaffolds(child),
+              );
+            }
+            return ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.94,
+              ),
+              child: AppModalBinding(
+                dismissible: isDismissible || enableDrag,
+                child: AppSheetSurface(showHandle: enableDrag, child: child),
+              ),
+            );
+          },
+        ),
+      ),
     );
   }
 
