@@ -23,23 +23,43 @@ export interface TaskCycleAssignment {
   cycleId: string | null;
 }
 
-export interface TaskBacklogItem {
+/**
+ * One planning row from the cycle-task and backlog endpoints. Structurally
+ * matches `CyclePlanningTask` in `@tuturuuu/tasks-ui/tu-do/cycles/planning`.
+ */
+export interface TaskCyclePlanningTask {
   id: string;
   name: string;
+  display_number: number | null;
+  ticket_prefix: string | null;
   priority: TaskPriority | null;
-  end_date: string | null;
-  estimation_points: number | null;
-  created_at: string | null;
-  list: {
+  status: 'not_started' | 'active' | 'review' | 'done' | 'closed' | 'documents';
+  board_id: string;
+  cycle_id: string | null;
+  assignees: {
     id: string;
-    name: string | null;
-    status: 'not_started' | 'active' | 'review';
-    board: { id: string; name: string | null; ws_id: string };
-  };
+    display_name: string | null;
+    avatar_url: string | null;
+  }[];
+  projects: { id: string; name: string }[];
+  labels: { id: string; name: string }[];
 }
 
-export interface TaskBacklogResponse {
-  tasks: TaskBacklogItem[];
+export interface TaskCyclePlanningTasksResponse {
+  tasks: TaskCyclePlanningTask[];
+}
+
+/** Lists the tasks in a cycle. */
+export async function listTaskCycleTasks(
+  workspaceId: string,
+  cycleId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getTaskApiClient(options);
+  return client.json<TaskCyclePlanningTasksResponse>(
+    cycleTasksPath(workspaceId, cycleId),
+    { cache: 'no-store' }
+  );
 }
 
 /** Puts a task into a cycle. A task is in at most one cycle, so this moves it. */
@@ -70,19 +90,24 @@ export async function unassignTaskFromCycle(
 ) {
   const client = getTaskApiClient(options);
   return client.json<TaskCycleAssignment>(
-    `${cycleTasksPath(workspaceId, cycleId)}/${encodePathSegment(taskId)}`,
-    { method: 'DELETE', cache: 'no-store' }
+    cycleTasksPath(workspaceId, cycleId),
+    {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ taskId }),
+      cache: 'no-store',
+    }
   );
 }
 
-/** Lists open tasks in the workspace that are in no cycle. */
+/** Lists open tasks in the workspace that are in no cycle (max 500). */
 export async function listWorkspaceTaskBacklog(
   workspaceId: string,
   query?: { limit?: number },
   options?: InternalApiClientOptions
 ) {
   const client = getTaskApiClient(options);
-  return client.json<TaskBacklogResponse>(
+  return client.json<TaskCyclePlanningTasksResponse>(
     `${cyclesBasePath(workspaceId)}/backlog`,
     { cache: 'no-store', query }
   );
