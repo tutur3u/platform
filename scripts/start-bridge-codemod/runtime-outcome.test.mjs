@@ -223,10 +223,35 @@ test('skipped probes name a real replacement and one probe always runs', () => {
     ).problems.join('\n'),
     /runtimeProbes\.page\.fixture: cloudflare\/missing\.runtime\.mjs does not exist/
   );
+  // R3-1: the generated gate cannot be its own replacement, and a hidden
+  // fixture exists but is never selected by test:runtime's glob.
+  const everything = { ...context, fixtureExists: () => true };
+  assert.match(
+    resolveRuntimeProbes(
+      {
+        page: skip('cloudflare/native-built-worker.runtime.mjs'),
+        notFound: skip('cloudflare/native-built-worker.runtime.mjs'),
+      },
+      everything
+    ).problems.join('\n'),
+    /runtimeProbes\.page\.fixture: cloudflare\/native-built-worker\.runtime\.mjs is the generated gate[\s\S]*runtimeProbes\.notFound\.fixture: cloudflare\/native-built-worker\.runtime\.mjs is the generated gate/
+  );
+  for (const hidden of [
+    'cloudflare/.hidden.runtime.mjs',
+    'cloudflare/.runtime.mjs',
+  ])
+    assert.match(
+      resolveRuntimeProbes({ page: skip(hidden) }, everything).problems.join(
+        '\n'
+      ),
+      /runtimeProbes\.page: declare/,
+      hidden
+    );
   for (const fixture of [
     'signed-ssr.runtime.mjs',
     '../x.runtime.mjs',
     'cloudflare/x.mjs',
+    'cloudflare/nested/x.runtime.mjs',
   ])
     assert.notDeepEqual(
       resolveRuntimeProbes({ page: skip(fixture) }, context).problems,

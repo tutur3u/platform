@@ -86,7 +86,17 @@ export function mountedPath(base, path) {
 const PROBE_KINDS = ['page', 'api', 'notFound'];
 /** Probes whose skip must name the replacement runtime fixture. */
 const FIXTURE_KINDS = new Set(['page', 'notFound']);
-const FIXTURE = /^cloudflare\/[\w.-]+\.runtime\.mjs$/u;
+/**
+ * The generated runtime gate. It can never be a skipped probe's replacement:
+ * the gate would only prove its own existence.
+ */
+export const RUNTIME_GATE = 'cloudflare/native-built-worker.runtime.mjs';
+/**
+ * A replacement fixture that `test:runtime` (`node --test
+ * cloudflare/*.runtime.mjs`) actually runs: a direct child of cloudflare/
+ * whose basename does not start with a dot, since the glob skips dotfiles.
+ */
+export const FIXTURE = /^cloudflare\/(?!\.)[\w.-]+\.runtime\.mjs$/u;
 
 function isSkip(value, kind) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
@@ -143,7 +153,11 @@ export function resolveRuntimeProbes(
     else if (isSkip(value, kind)) {
       // A skipped page or 404 probe names the app's own runtime test that
       // covers it (e.g. its isolated-auth fixture), which test:runtime runs.
-      if (FIXTURE_KINDS.has(kind) && !fixtureExists(value.fixture))
+      if (FIXTURE_KINDS.has(kind) && value.fixture === RUNTIME_GATE)
+        problems.push(
+          `runtimeProbes.${kind}.fixture: ${RUNTIME_GATE} is the generated gate; name a distinct app-owned cloudflare/*.runtime.mjs that covers this probe`
+        );
+      else if (FIXTURE_KINDS.has(kind) && !fixtureExists(value.fixture))
         problems.push(
           `runtimeProbes.${kind}.fixture: ${value.fixture} does not exist in the app`
         );
@@ -156,7 +170,7 @@ export function resolveRuntimeProbes(
       problems.push(
         `runtimeProbes.${kind}: declare ${PROBE_DEFAULTS[kind]} (an app-relative path), or { "skip": "<reason>"${
           FIXTURE_KINDS.has(kind)
-            ? ', "fixture": "cloudflare/<name>.runtime.mjs"'
+            ? ', "fixture": "cloudflare/<name>.runtime.mjs" (not hidden, not the generated gate)'
             : ''
         } }`
       );

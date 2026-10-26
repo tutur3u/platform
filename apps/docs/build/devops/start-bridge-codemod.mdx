@@ -260,9 +260,11 @@ Shortener:
   `{ "skip": "<reason>" }`. A skipped page or 404 probe must also name the
   app's own runtime test that covers it, as
   `"fixture": "cloudflare/<name>.runtime.mjs"`. For example, an auth-only app
-  whose `/` redirects to login names its isolated-auth fixture. The codemod and
-  the gate both check that the fixture exists, and at least one probe must
-  always run. A probe the codemod can neither default nor find declared, or a
+  whose `/` redirects to login names its isolated-auth fixture. The fixture must
+  be a distinct app-owned file that `test:runtime`'s `cloudflare/*.runtime.mjs`
+  glob selects: never the generated gate itself, and never a dotfile, which the
+  glob skips. The codemod and the gate both check this and that the fixture
+  exists, and at least one probe must always run. A probe the codemod can neither default nor find declared, or a
   set that skips every probe, is a codemod problem.
   The test reads the Worker's effective mounts (the generated defaults plus
   `mounts` in the app-owned `start-bridge.config.ts`, loaded with Node's type

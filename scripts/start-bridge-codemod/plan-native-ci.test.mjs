@@ -379,6 +379,8 @@ test('the generated Worker states its effective mounts and fails safely', (t) =>
     /assert\.equal\(status, probe\.kind === 'page' \? 200 : 404, where\);\s*assert\.match\(type, \/text\\\/html\/u, where\);\s*assert\.match\(body, \/<html\[\\s>\]\/iu/,
     /assert\.ok\(executed > 0, 'no response-policy probe ran'\);/,
     /assert\.ok\(existsSync\(join\(app, probe\.fixture\)\)/,
+    /assert\.match\(probe\.fixture, FIXTURE,/,
+    /assert\.notEqual\(probe\.fixture, RUNTIME_GATE,/,
     /no-store/,
     /headers\['x-robots-tag'\]/,
     /headers\['x-frame-options'\], 'DENY'/,
