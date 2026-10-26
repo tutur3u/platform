@@ -123,21 +123,25 @@ describe('filterCycleTasks', () => {
 
 describe('canMoveToScope', () => {
   it('keeps finished tasks out of the open-only backlog', () => {
-    expect(canMoveToScope(makeTask({ status: 'done' }), 'backlog')).toBe(false);
-    expect(canMoveToScope(makeTask({ status: 'closed' }), 'backlog')).toBe(
-      false
-    );
-    expect(canMoveToScope(makeTask({ status: 'done' }), 'next')).toBe(true);
-    expect(canMoveToScope(makeTask({ status: 'active' }), 'backlog')).toBe(
+    expect(
+      canMoveToScope(makeTask({ id: 't', status: 'done' }), 'backlog')
+    ).toBe(false);
+    expect(
+      canMoveToScope(makeTask({ id: 't', status: 'closed' }), 'backlog')
+    ).toBe(false);
+    expect(canMoveToScope(makeTask({ id: 't', status: 'done' }), 'next')).toBe(
       true
     );
+    expect(
+      canMoveToScope(makeTask({ id: 't', status: 'active' }), 'backlog')
+    ).toBe(true);
   });
 });
 
 describe('pruneFilters', () => {
   it('drops values with no option in the scope and keeps sentinels', () => {
     const options = collectFilterOptions(
-      [makeTask({ assignees: [ALICE], projects: [APOLLO] })],
+      [makeTask({ id: 't', assignees: [ALICE], projects: [APOLLO] })],
       ME
     );
     const filters = {
