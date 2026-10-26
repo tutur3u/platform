@@ -228,6 +228,52 @@ Shortener:
 There is no publisher: production stays with the held record and the
 cutover PR.
 
+### Signed-in root browser gate
+
+`scripts/ci/native-root-browser.mjs` checks what the generated runtime test
+cannot reach: signed-in SSR and client hydration in a real browser. It runs on
+a build host with Chromium (Thanh) against the app's restored, sealed artifact:
+
+```bash
+python3 scripts/ci/<app>-native-artifact.py restore apps/<app> --archive native.tar.gz --receipt restored.json
+<APP>_SOURCE_SHA=<sha> node scripts/ci/native-root-browser.mjs <app> --receipt restored.json
+```
+
+The gate:
+
+- Verifies the artifact against the receipt, starts it in local workerd at
+  the app's root host, and checks that build-info names the exact source.
+- Signs a disposable app session with a random coordination secret.
+- Answers every Supabase and Web request in-process: the fixture user, the
+  profile's rows and Web responses, empty reads, and 401 for any other Web
+  API read. Any other Worker or browser request fails the run.
+- For each locale, follows the signed-in SSR redirects. They must stay on the
+  root host and end on a `200` page with `<html lang>`, emitted assets and
+  `private, no-store`. Chromium then loads the same path and must hydrate.
+- Fails on page errors or failed `/assets/*`, and re-verifies the artifact
+  at the end.
+
+The gate only drives a Worker it started on loopback. It takes no URL and
+refuses a non-loopback origin, so it never runs against a hosted deployment.
+Hosted signed-in acceptance stays a staging step with real accounts.
+
+Each app owns its profile at `apps/<app>/cloudflare/root-browser.profile.mjs`
+(a default-export object, no imports):
+
+| Field | Meaning |
+| --- | --- |
+| `rootHost` | Canonical `<app>.tuturuuu.com` host the Worker serves |
+| `robots` | Expected `X-Robots-Tag` on SSR responses (optional) |
+| `session` | Fixture cookies: `app` (`tuturuuu_app_session` for the app), `web` (`tuturuuu_web_app_session`) |
+| `locales` | `{ locale, path, finalPath, cookies? }`: start path, the `RegExp` the signed-in chain must end on, extra cookies (e.g. `NEXT_LOCALE`) |
+| `supabase` | Table name to a row factory `({ actorId, wsId }) => row`, returned for `GET /rest/v1/<table>` |
+| `web` | `'GET /api/...'` to a response factory for Web API reads the page needs |
+| `hydration` | `request(context)`: a path prefix the client must request, or `text(context)`: a marker only the client renders. Polling pages never reach network idle |
+| `browser` | Extra browser origins: `{ origin, fulfill: 'image' \| 401 }` (e.g. a default avatar host) |
+
+Regressions for the profile, session, egress and SSR rules run with
+`node --test scripts/ci/native-root-browser.test.mjs`.
+
 ### Generator inputs
 
 The codemod reads app-specific behaviour from the app's existing
