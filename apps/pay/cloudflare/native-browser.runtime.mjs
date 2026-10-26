@@ -68,10 +68,30 @@ test('Pay staging: identity, denial, sandbox isolation and anonymous browser red
       const neighbours = [`${webglRoot}-extra`, `${webglRoot};params`];
       const sandbox = "sandbox allow-scripts; default-src 'none'";
       const forwarded = [];
+      const authorityReads = [];
       const runtime = await payRuntime(context, {
         payOrigin: mode.origin,
         fixtureResponse(request) {
           const url = new URL(request.url);
+          if (
+            url.origin === 'https://pay-fixture.invalid' &&
+            url.pathname ===
+              '/auth/v1/admin/users/46cb11ba-cf10-44db-9f66-d47a4fc9df14' &&
+            request.method === 'GET' &&
+            request.headers.has('authorization')
+          ) {
+            authorityReads.push(url.pathname);
+            const user = {
+              id: '46cb11ba-cf10-44db-9f66-d47a4fc9df14',
+              email: 'pay-native@example.test',
+              aud: 'authenticated',
+              role: 'authenticated',
+              app_metadata: {},
+              user_metadata: {},
+              created_at: '2026-10-01T00:00:00Z',
+            };
+            return Response.json({ ...user, user });
+          }
           if (
             url.origin !== 'https://pay-fixture.invalid' ||
             ![...webglPaths, ...neighbours].includes(url.pathname)
@@ -119,6 +139,10 @@ test('Pay staging: identity, denial, sandbox isolation and anonymous browser red
             }
           }
           assert.deepEqual(forwarded, [...webglPaths, ...neighbours]);
+          assert.ok(
+            authorityReads.length > 0,
+            'Signed sessions require live user-authority checks'
+          );
         }
       );
       await context.test(
