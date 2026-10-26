@@ -5,5 +5,6 @@ import { appApiPatterns } from './api-patterns.bridge.gen';
 import { centralFirst } from './central-first';
 
 registerDefaultAppBaseResolver(
-  createAppBaseResolver(appApiPatterns, centralFirst)
+  createAppBaseResolver(appApiPatterns, centralFirst),
+  { app: 'nova' }
 );
