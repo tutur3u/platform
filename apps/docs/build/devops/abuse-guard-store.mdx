@@ -142,9 +142,16 @@ families keep their legacy path.
   does not seed those counters, so a store outage starts them at zero.
 - **Offline:** on the guard store, the session windows and clearance are spent only
   for an actor the proxy verified (`useVerifiedBearerActor`). Unverified or rotating
-  bearers cost one IP operation and get 401. Daily windows (50,000 reads per IP
-  and per session) keep any one source below the family share. A denied subject is
-  remembered per instance until its reset.
+  bearers cost one IP operation and get 401. Daily windows of 50,000 reads per IP
+  and per session bound each source. A read costs at most four commands:
+  - IP and session `win.hit`;
+  - the clearance read;
+  - a clearance write when a Turnstile proof is granted.
+
+  So one source can spend up to 200,000 commands a day. That is one third of the
+  default 600,000 offline share, not a quarter, before denial and cache-miss
+  overhead. Size the offline share for the expected number of concurrent sources. A
+  denied subject is remembered per instance until its reset.
 - **Replay:** once `replay` is assigned, a token proven replayed outside its grace
   period is answered from memory until it expires. After a lost concurrent claim,
   the route rereads the winner's timestamp and applies grace without caching. Each
@@ -167,12 +174,24 @@ families keep their legacy path.
 2. **Proxy:** measure staging and production API volume first. Size the `proxy`
    share of `ABUSE_GUARD_FAMILY_BUDGETS` so a normal day uses at most 50% of it.
    Do not assign `proxy` without that measurement.
-3. **Offline — gate:** every proxy hop that serves marked reads must run with
-   `useVerifiedBearerActor` (today Calendar and Infrastructure). On any other hop,
-   marked reads get 401 under the guard store. Do not assign `offline` in
-   production until a staging drill demonstrates per-source fairness. The drill
-   must show that admitted traffic from realistic source fan-out cannot exhaust the
-   offline share; per-source daily windows bound one source, not many.
+3. **Offline — gate (unmet):** verified admission is not yet wired on every
+   marked-read path. Today the opt-in has gaps:
+   - Calendar and Infrastructure pass a verified actor only on their
+     calendar-preference routes. HEAD preference requests miss the opt-in.
+   - Web marked reads have no verified-actor callback.
+   - Cookie-only and app-coordination-token sessions never produce a verified
+     actor.
+
+   Under the guard store, every such request gets 401 even with valid credentials.
+   Before assigning `offline`:
+   - enumerate every hop that serves marked reads, and every credential type it
+     accepts;
+   - wire or implement the verified-actor path for each;
+   - prove end to end that authenticated reads succeed and that forged or opaque
+     bearers are denied;
+   - run a staging drill showing that admitted traffic from realistic source
+     fan-out cannot exhaust the offline share. The per-source daily windows bound
+     one source, not many.
 4. **Replay — HIGH activation hold (open finding R1-REPLAY-DRAIN, not fixed):** do
    not assign `replay` in production until one of these holds:
    - cross-instance per-principal fairness has landed in the Worker fence; or
