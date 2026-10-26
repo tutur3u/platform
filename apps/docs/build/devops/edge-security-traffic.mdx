@@ -16,7 +16,7 @@ Captured DNS/settings 2026-10-26 13: 57: 37 +0700; traffic window **2026-10-25 1
 
 The ~24-hour Vercel plan retention is task-provided context, not a newly verified account entitlement. The requested interval stays within the most recent 24 hours; pagination, absent project rows, and the inventory timeout remain explicit gaps.
 
-## Current zone security
+## Zone security at the original snapshot
 
 | Control | Observed read-only state | Evidence |
 | --- | --- | --- |
@@ -35,6 +35,8 @@ The ~24-hour Vercel plan retention is task-provided context, not a newly verifie
 The generic settings endpoint and Ruleset Engine entrypoints describe different controls. The managed executions are enabled despite legacy `waf=off`. A `link_maze_injected`/`linkMaze` analytics result is an injection observation, not by itself proof of a 403 or block. Current permissions allow these reads; this run did not test mutation acceptance or create disabled rules to discover plan capabilities.
 
 Two additional bounded GETs at 14:16 GMT+7 read the executed managed definitions. Cloudflare Managed version 418 has 866 block and 8 vendor log rules. OWASP version 88 has 178 score rules and one block rule. Neither returned enabled challenge actions. These vendor-managed log actions do not grant custom/rate-rule log entitlement. The complete lane used **42 read-only provider requests** and no provider writes. `managed-actions.json` records the sanitized response summary.
+
+At 14:53 GMT+7, a later read found the Finance-owned TEMP skip at custom position 1, ID/ref `3543f90df80b4019a381dd34294dc3f5`. The empty custom snapshot above is historical. Normalization was cloudflare/both. The 14:55 DNS read confirms 31/36 original policy names DNS-only, or 34/39 after adding store/stores/api. See `inventory/review-prerequisites.json`; no secret-bearing expression was retained. Four bounded provider GETs were used for this amendment (normalization, custom phase, DNS and a failed SBFM-phase read), with zero writes.
 
 ## Host coverage
 

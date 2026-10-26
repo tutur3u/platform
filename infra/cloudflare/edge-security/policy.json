@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "status": "draft-disabled",
   "zone": "tuturuuu.com",
   "plan": "Pro",
@@ -40,17 +40,18 @@
     "tasks.tuturuuu.com",
     "teach.tuturuuu.com",
     "tools.tuturuuu.com",
-    "track.tuturuuu.com"
+    "track.tuturuuu.com",
+    "store.tuturuuu.com",
+    "stores.tuturuuu.com",
+    "api.tuturuuu.com"
   ],
-  "applicationMachinePrefixes": ["/api/", "/_next/", "/.well-known/"],
+  "applicationMachinePrefixes": ["/api/", "/_next/static/", "/.well-known/"],
   "applicationMachineExact": [
     "/api",
     "/verify-token",
     "/robots.txt",
     "/sitemap.xml",
     "/manifest.webmanifest",
-    "/auth/login",
-    "/auth/callback",
     "/site.webmanifest",
     "/sw.js"
   ],
@@ -72,6 +73,16 @@
         "/collaboration/runner-files"
       ],
       "prefixes": []
+    },
+    {
+      "host": "colab.tuturuuu.com",
+      "exact": ["/auth/login", "/auth/callback"],
+      "prefixes": []
+    },
+    {
+      "host": "hive.tuturuuu.com",
+      "exact": ["/realtime"],
+      "prefixes": []
     }
   ],
   "probe": {
@@ -79,18 +90,35 @@
     "methods": ["GET", "HEAD"],
     "paths": ["/api/build-info", "/", "/en", "/vi"],
     "header": "x-tuturuuu-edge-probe",
-    "secretPlaceholder": "__EDGE_PROBE_SECRET_REQUIRED__"
+    "secretPlaceholders": [
+      "__EDGE_PROBE_SECRET_CURRENT_REQUIRED__",
+      "__EDGE_PROBE_SECRET_NEXT_REQUIRED__"
+    ],
+    "stripBeforeOrigin": true,
+    "rotation": {
+      "maxAcceptedValues": 2,
+      "overlapMinutes": 10,
+      "classification": "low-value-rotating-transport-exemption",
+      "rulesetReadersCanReadPlaintext": true
+    }
   },
   "rateLimit": {
-    "hosts": ["meet.tuturuuu.com"],
-    "prefixes": ["/api/"],
-    "excludedPrefixes": ["/api/webhooks/", "/api/cron/"],
+    "hosts": [
+      "colab.tuturuuu.com",
+      "hive.tuturuuu.com",
+      "lettin.tuturuuu.com",
+      "meet.tuturuuu.com",
+      "parley.tuturuuu.com"
+    ],
+    "prefixes": ["/api/v1/auth/", "/api/auth/", "/api/cli/auth/"],
     "characteristics": ["ip.src", "cf.colo.id"],
     "period": 60,
-    "requestsPerPeriod": 6000,
-    "mitigationTimeout": 10,
+    "requestsPerPeriod": 20,
+    "mitigationTimeout": 60,
     "existingRuleCount": 1,
-    "maximumRuleCount": 2
+    "maximumRuleCount": 2,
+    "mode": "low-threshold-auth-candidate",
+    "client429AcceptanceRequired": true
   },
   "prerequisites": [
     "Independent security review and explicit provider-write admission; this proposal authorizes neither.",
@@ -102,6 +130,46 @@
     "Per-token limits remain authenticated application responsibilities; Pro edge counters are per IP and colo.",
     "Probe secret must be independently provisioned and substituted privately; never enable the placeholder.",
     "Existing webhook signature checks and origin authentication remain required for every skip match.",
-    "R2 storage and unknown/custom external host ownership must be established before extending selectors."
-  ]
+    "R2 storage and unknown/custom external host ownership must be established before extending selectors.",
+    "Origin lock, current URL normalization scope both, and controlled client 429 acceptance are required before enforcing the low auth limit or browser controls.",
+    "Re-read the custom entrypoint; preserve the Finance-owned TEMP rule and its position, and capture every new rule ID and relative position.",
+    "Probe values are plaintext to ruleset readers; rotate low-value values with at most two accepted values during a bounded overlap, and strip the header in late request transforms.",
+    "No blanket Block AI Bots exception is established by an SBFM-only skip; resolve actual AI policy behavior per admitted machine path before applying."
+  ],
+  "urlNormalization": {
+    "type": "cloudflare",
+    "scope": "both",
+    "reReadBeforeApply": true
+  },
+  "originLock": {
+    "requiredBeforeEnforcement": true,
+    "workersDev": false,
+    "previewUrls": false,
+    "workerConfigPaths": [
+      "apps/meet-realtime/wrangler.jsonc",
+      "apps/lettin/wrangler.jsonc",
+      "apps/parley/wrangler.jsonc"
+    ],
+    "vercel": {
+      "requireCloudflareSourceNetwork": true,
+      "requireEdgeInjectedSecret": true,
+      "secretHeader": "x-tuturuuu-edge-origin",
+      "overwriteClientHeader": true,
+      "protectAllDeploymentAliases": true,
+      "aliasPattern": "<app>-tuturuuu.vercel.app"
+    },
+    "reReadBeforeApply": true
+  },
+  "entrypointCustody": {
+    "reReadBeforeApply": true,
+    "preserveForeignRules": true,
+    "captureRuleIdsAndPositions": true,
+    "skipBeforeBlockOrChallenge": true,
+    "financeOwnerApprovalRequired": true
+  },
+  "behaviorAcknowledgements": {
+    "browserBicAlreadyOn": true,
+    "machineSecurityLevelOffBypassesUnderAttack": true,
+    "sbfmSkipDoesNotProveAllAiPolicyBypass": true
+  }
 }

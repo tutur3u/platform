@@ -1,0 +1,21 @@
+{
+  "name": "Remove probe credential before origin",
+  "kind": "zone",
+  "phase": "http_request_late_transform",
+  "rules": [
+    {
+      "ref": "edge_strip_probe_header",
+      "description": "Remove every probe header value, including unmatched values",
+      "expression": "(not (http.host in {\"finance.tuturuuu.com\" \"finance-staging.tuturuuu.com\"}) and http.host in {\"tuturuuu.com\" \"www.tuturuuu.com\" \"beta.tuturuuu.com\" \"staging.tuturuuu.com\" \"canary.tuturuuu.com\" \"vercel.tuturuuu.com\" \"next.tuturuuu.com\" \"ai.tuturuuu.com\" \"apps.tuturuuu.com\" \"calendar.tuturuuu.com\" \"chat.tuturuuu.com\" \"cms.tuturuuu.com\" \"colab.tuturuuu.com\" \"contacts.tuturuuu.com\" \"drive.tuturuuu.com\" \"forms.tuturuuu.com\" \"git.tuturuuu.com\" \"hive.tuturuuu.com\" \"infrastructure.tuturuuu.com\" \"inventory.tuturuuu.com\" \"learn.tuturuuu.com\" \"lettin.tuturuuu.com\" \"mail.tuturuuu.com\" \"meet.tuturuuu.com\" \"mind.tuturuuu.com\" \"noah.tuturuuu.com\" \"nova.tuturuuu.com\" \"parley.tuturuuu.com\" \"pay.tuturuuu.com\" \"shortener.tuturuuu.com\" \"storefront.tuturuuu.com\" \"storefronts.tuturuuu.com\" \"tasks.tuturuuu.com\" \"teach.tuturuuu.com\" \"tools.tuturuuu.com\" \"track.tuturuuu.com\" \"store.tuturuuu.com\" \"stores.tuturuuu.com\" \"api.tuturuuu.com\" \"meet-realtime.tuturuuu.com\"})",
+      "action": "rewrite",
+      "enabled": false,
+      "action_parameters": {
+        "headers": {
+          "x-tuturuuu-edge-probe": {
+            "operation": "remove"
+          }
+        }
+      }
+    }
+  ]
+}

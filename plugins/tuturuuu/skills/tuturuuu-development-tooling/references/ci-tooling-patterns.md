@@ -9,7 +9,11 @@ The [edge proposal](../../../../../apps/docs/build/devops/edge-security.mdx)
 separates source/auth signals, current proxy state, sampled traffic and supported
 Pro actions. Run `node scripts/edge-security-rules.mjs` and its sibling Node test
 for its disabled rules. These checks make no provider calls and do not establish
-Cloudflare expression acceptance. Preserve existing entrypoints and exemptions;
+Cloudflare expression acceptance. Origin lock, normalization scope both and client
+429 acceptance are prerequisites. Strip probe headers in the late transform phase
+and preserve a bounded dual-value rotation. Re-read current IDs/order and Finance
+custody before apply; keep custom skips before block/challenge rules. Preserve
+existing entrypoints and exemptions;
 legacy `waf=off` does not disable Ruleset Engine managed rules. Labyrinth
 injection events are not block events. Provider writes need separate admission.
 

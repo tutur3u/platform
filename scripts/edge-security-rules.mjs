@@ -52,11 +52,15 @@ export function validatePolicy(policy) {
       'serviceMachines',
       'probe',
       'rateLimit',
+      'urlNormalization',
+      'originLock',
+      'entrypointCustody',
+      'behaviorAcknowledgements',
       'prerequisites',
     ],
     'policy'
   );
-  assert.equal(policy.version, 1);
+  assert.equal(policy.version, 2);
   assert.equal(policy.status, 'draft-disabled');
   assert.equal(policy.zone, 'tuturuuu.com');
   assert.equal(policy.plan, 'Pro');
@@ -64,6 +68,12 @@ export function validatePolicy(policy) {
   const hostPattern = /^(?:[a-z0-9-]+\.)*tuturuuu\.com$/;
   const pathPattern = /^\/[A-Za-z0-9_./-]*$/;
   strings(policy.applicationHosts, hostPattern, 'applicationHosts');
+  for (const host of [
+    'store.tuturuuu.com',
+    'stores.tuturuuu.com',
+    'api.tuturuuu.com',
+  ])
+    assert(policy.applicationHosts.includes(host), 'Required alias missing');
   strings(
     policy.applicationMachinePrefixes,
     pathPattern,
@@ -76,11 +86,18 @@ export function validatePolicy(policy) {
   );
   assert.deepEqual(policy.applicationMachinePrefixes, [
     '/api/',
-    '/_next/',
+    '/_next/static/',
     '/.well-known/',
   ]);
   assert(policy.applicationMachineExact.includes('/api'));
   assert(policy.applicationMachineExact.includes('/verify-token'));
+  assert(
+    !policy.applicationMachineExact.some((path) => path.startsWith('/auth/'))
+  );
+  assert.equal(
+    new Set(policy.serviceMachines.map((service) => service.host)).size,
+    policy.serviceMachines.length
+  );
   assert(
     Array.isArray(policy.serviceMachines) && policy.serviceMachines.length > 0
   );
@@ -89,15 +106,19 @@ export function validatePolicy(policy) {
     strings([service.host], hostPattern, 'service.host');
     strings(service.exact, pathPattern, 'service.exact');
     strings(service.prefixes, pathPattern, 'service.prefixes', true);
-    assert(
-      !policy.applicationHosts.includes(service.host),
-      'service/app overlap'
-    );
     assert(!service.prefixes.includes('/'), 'unbounded service skip');
   }
   exactKeys(
     policy.probe,
-    ['hosts', 'methods', 'paths', 'header', 'secretPlaceholder'],
+    [
+      'hosts',
+      'methods',
+      'paths',
+      'header',
+      'secretPlaceholders',
+      'stripBeforeOrigin',
+      'rotation',
+    ],
     'probe'
   );
   strings(policy.probe.hosts, hostPattern, 'probe.hosts');
@@ -105,38 +126,63 @@ export function validatePolicy(policy) {
   assert.deepEqual(policy.probe.paths, ['/api/build-info', '/', '/en', '/vi']);
   assert.equal(policy.probe.header, 'x-tuturuuu-edge-probe');
   assert(
-    policy.probe.secretPlaceholder === '__EDGE_PROBE_SECRET_REQUIRED__',
-    'Probe secret must remain a placeholder in the public proposal'
+    isDeepStrictEqual(policy.probe.secretPlaceholders, [
+      '__EDGE_PROBE_SECRET_CURRENT_REQUIRED__',
+      '__EDGE_PROBE_SECRET_NEXT_REQUIRED__',
+    ]),
+    'Probe secrets must remain placeholders in the public proposal'
+  );
+  assert.equal(policy.probe.stripBeforeOrigin, true);
+  exactKeys(
+    policy.probe.rotation,
+    [
+      'maxAcceptedValues',
+      'overlapMinutes',
+      'classification',
+      'rulesetReadersCanReadPlaintext',
+    ],
+    'probe.rotation'
+  );
+  assert.equal(policy.probe.rotation.maxAcceptedValues, 2);
+  assert.equal(
+    policy.probe.rotation.classification,
+    'low-value-rotating-transport-exemption'
+  );
+  assert.equal(policy.probe.rotation.rulesetReadersCanReadPlaintext, true);
+  assert(
+    Number.isInteger(policy.probe.rotation.overlapMinutes) &&
+      policy.probe.rotation.overlapMinutes > 0 &&
+      policy.probe.rotation.overlapMinutes <= 15
   );
   exactKeys(
     policy.rateLimit,
     [
       'hosts',
       'prefixes',
-      'excludedPrefixes',
       'characteristics',
       'period',
       'requestsPerPeriod',
       'mitigationTimeout',
       'existingRuleCount',
       'maximumRuleCount',
+      'mode',
+      'client429AcceptanceRequired',
     ],
     'rateLimit'
   );
   strings(policy.rateLimit.hosts, hostPattern, 'rateLimit.hosts');
   strings(policy.rateLimit.prefixes, pathPattern, 'rateLimit.prefixes');
-  assert.deepEqual(policy.rateLimit.prefixes, ['/api/']);
-  assert.deepEqual(policy.rateLimit.excludedPrefixes, [
-    '/api/webhooks/',
-    '/api/cron/',
+  assert.deepEqual(policy.rateLimit.prefixes, [
+    '/api/v1/auth/',
+    '/api/auth/',
+    '/api/cli/auth/',
   ]);
   assert.deepEqual(policy.rateLimit.characteristics, ['ip.src', 'cf.colo.id']);
   assert.equal(policy.rateLimit.period, 60);
-  assert(
-    Number.isInteger(policy.rateLimit.requestsPerPeriod) &&
-      policy.rateLimit.requestsPerPeriod >= 6000
-  );
-  assert.equal(policy.rateLimit.mitigationTimeout, 10);
+  assert.equal(policy.rateLimit.requestsPerPeriod, 20);
+  assert.equal(policy.rateLimit.mitigationTimeout, 60);
+  assert.equal(policy.rateLimit.mode, 'low-threshold-auth-candidate');
+  assert.equal(policy.rateLimit.client429AcceptanceRequired, true);
   assert.equal(policy.rateLimit.maximumRuleCount, 2);
   assert.equal(policy.rateLimit.existingRuleCount, 1);
   assert(
@@ -156,7 +202,89 @@ export function validatePolicy(policy) {
     assert(policy.applicationHosts.includes(host), 'unknown candidate app');
   }
   strings(policy.prerequisites, /\S/, 'prerequisites');
+  validateRolloutPrerequisites(policy);
   return policy;
+}
+
+function validateRolloutPrerequisites(policy) {
+  exactKeys(
+    policy.urlNormalization,
+    ['type', 'scope', 'reReadBeforeApply'],
+    'urlNormalization'
+  );
+  assert.equal(policy.urlNormalization.type, 'cloudflare');
+  assert.equal(policy.urlNormalization.scope, 'both');
+  assert.equal(policy.urlNormalization.reReadBeforeApply, true);
+  exactKeys(
+    policy.originLock,
+    [
+      'requiredBeforeEnforcement',
+      'workersDev',
+      'previewUrls',
+      'workerConfigPaths',
+      'vercel',
+      'reReadBeforeApply',
+    ],
+    'originLock'
+  );
+  assert.equal(policy.originLock.requiredBeforeEnforcement, true);
+  assert.equal(policy.originLock.workersDev, false);
+  assert.equal(policy.originLock.previewUrls, false);
+  assert.equal(policy.originLock.reReadBeforeApply, true);
+  assert.deepEqual(policy.originLock.workerConfigPaths, [
+    'apps/meet-realtime/wrangler.jsonc',
+    'apps/lettin/wrangler.jsonc',
+    'apps/parley/wrangler.jsonc',
+  ]);
+  exactKeys(
+    policy.originLock.vercel,
+    [
+      'requireCloudflareSourceNetwork',
+      'requireEdgeInjectedSecret',
+      'secretHeader',
+      'overwriteClientHeader',
+      'protectAllDeploymentAliases',
+      'aliasPattern',
+    ],
+    'originLock.vercel'
+  );
+  for (const flag of [
+    'requireCloudflareSourceNetwork',
+    'requireEdgeInjectedSecret',
+    'overwriteClientHeader',
+    'protectAllDeploymentAliases',
+  ])
+    assert.equal(policy.originLock.vercel[flag], true);
+  assert.equal(policy.originLock.vercel.secretHeader, 'x-tuturuuu-edge-origin');
+  assert.notEqual(policy.originLock.vercel.secretHeader, policy.probe.header);
+  assert.equal(
+    policy.originLock.vercel.aliasPattern,
+    '<app>-tuturuuu.vercel.app'
+  );
+  exactKeys(
+    policy.entrypointCustody,
+    [
+      'reReadBeforeApply',
+      'preserveForeignRules',
+      'captureRuleIdsAndPositions',
+      'skipBeforeBlockOrChallenge',
+      'financeOwnerApprovalRequired',
+    ],
+    'entrypointCustody'
+  );
+  for (const flag of Object.values(policy.entrypointCustody))
+    assert.equal(flag, true);
+  exactKeys(
+    policy.behaviorAcknowledgements,
+    [
+      'browserBicAlreadyOn',
+      'machineSecurityLevelOffBypassesUnderAttack',
+      'sbfmSkipDoesNotProveAllAiPolicyBypass',
+    ],
+    'behaviorAcknowledgements'
+  );
+  for (const flag of Object.values(policy.behaviorAcknowledgements))
+    assert.equal(flag, true);
 }
 
 export function machineExpression(policy) {
@@ -179,13 +307,25 @@ function rule(ref, description, expression, action, extra = {}) {
 export function compilePolicy(input) {
   const policy = validatePolicy(input);
   const machine = machineExpression(policy);
-  const probe = `(${exclusion} and ${hostExpression(policy.probe.hosts)} and http.request.method in ${set(policy.probe.methods)} and http.request.uri.path in ${set(policy.probe.paths)} and any(http.request.headers[${quote(policy.probe.header)}][*] eq ${quote(policy.probe.secretPlaceholder)}))`;
+  const acceptedSecrets = policy.probe.secretPlaceholders
+    .map(
+      (secret) =>
+        `any(http.request.headers[${quote(policy.probe.header)}][*] eq ${quote(secret)})`
+    )
+    .join(' or ');
+  const probe = `(${exclusion} and ${hostExpression(policy.probe.hosts)} and http.request.method in ${set(policy.probe.methods)} and http.request.uri.path in ${set(policy.probe.paths)} and (${acceptedSecrets}))`;
   const transportSkip = {
     products: ['bic', 'securityLevel'],
     phases: ['http_request_sbfm'],
   };
   const ratelimit = policy.rateLimit;
-  const rateExpression = `(${exclusion} and ${hostExpression(ratelimit.hosts)} and (${pathExpression([], ratelimit.prefixes)}) and not (${pathExpression([], ratelimit.excludedPrefixes)}))`;
+  const rateExpression = `(${exclusion} and ${hostExpression(ratelimit.hosts)} and (${pathExpression([], ratelimit.prefixes)}))`;
+  const admittedHosts = [
+    ...new Set([
+      ...policy.applicationHosts,
+      ...policy.serviceMachines.map((service) => service.host),
+    ]),
+  ];
   return {
     'custom.json': {
       name: 'Edge machine transport proposal',
@@ -221,7 +361,7 @@ export function compilePolicy(input) {
       rules: [
         rule(
           'edge_browser_bic',
-          'Browser pages retain BIC',
+          'Baseline BIC already on; no additional protection',
           `(${exclusion} and ${hostExpression(policy.applicationHosts)} and not ${machine})`,
           'set_config',
           {
@@ -230,7 +370,7 @@ export function compilePolicy(input) {
         ),
         rule(
           'edge_machine_bic',
-          'Machine transport avoids browser checks',
+          'Machine transport opts out of BIC and Under Attack checks',
           machine,
           'set_config',
           {
@@ -240,21 +380,49 @@ export function compilePolicy(input) {
       ],
     },
     'rate-limit.json': {
-      name: 'Edge high-threshold machine flood proposal',
+      name: 'Edge low-threshold authentication limit proposal',
       kind: 'zone',
       phase: 'http_ratelimit',
       rules: [
         rule(
-          'edge_machine_flood',
-          'Candidate only: shared-IP effects require measurement',
+          'edge_auth_attempts',
+          'Pre-auth low threshold; origin lock and client 429 acceptance required',
           rateExpression,
           'block',
           {
+            action_parameters: {
+              response: {
+                status_code: 429,
+                content_type: 'application/json',
+                content: JSON.stringify({
+                  error: 'AUTH_RATE_LIMITED',
+                  retryAfter: ratelimit.mitigationTimeout,
+                }),
+              },
+            },
             ratelimit: {
               characteristics: ratelimit.characteristics,
               period: ratelimit.period,
               requests_per_period: ratelimit.requestsPerPeriod,
               mitigation_timeout: ratelimit.mitigationTimeout,
+            },
+          }
+        ),
+      ],
+    },
+    'late-transform.json': {
+      name: 'Remove probe credential before origin',
+      kind: 'zone',
+      phase: 'http_request_late_transform',
+      rules: [
+        rule(
+          'edge_strip_probe_header',
+          'Remove every probe header value, including unmatched values',
+          `(${exclusion} and ${hostExpression(admittedHosts)})`,
+          'rewrite',
+          {
+            action_parameters: {
+              headers: { [policy.probe.header]: { operation: 'remove' } },
             },
           }
         ),
@@ -268,6 +436,13 @@ export function classifyRequest(policy, request) {
   if (protectedHosts.includes(host)) return 'held';
   const matches = (exact, prefixes) =>
     exact.includes(path) || prefixes.some((prefix) => path.startsWith(prefix));
+  if (
+    policy.serviceMachines.some(
+      (service) =>
+        service.host === host && matches(service.exact, service.prefixes)
+    )
+  )
+    return 'machine';
   if (policy.applicationHosts.includes(host)) {
     return matches(
       policy.applicationMachineExact,
@@ -276,19 +451,21 @@ export function classifyRequest(policy, request) {
       ? 'machine'
       : 'browser';
   }
-  return policy.serviceMachines.some(
-    (service) =>
-      service.host === host && matches(service.exact, service.prefixes)
-  )
-    ? 'machine'
-    : 'unclassified';
+  return 'unclassified';
 }
 
-export function matchesProbe(policy, request, expectedSecret) {
+export function matchesProbe(policy, request, expectedSecrets) {
   if (
-    typeof expectedSecret !== 'string' ||
-    expectedSecret.length < 32 ||
-    expectedSecret === policy.probe.secretPlaceholder
+    !Array.isArray(expectedSecrets) ||
+    expectedSecrets.length < 1 ||
+    expectedSecrets.length > policy.probe.rotation.maxAcceptedValues ||
+    expectedSecrets.some(
+      (secret) =>
+        typeof secret !== 'string' ||
+        secret.length < 32 ||
+        policy.probe.secretPlaceholders.includes(secret)
+    ) ||
+    new Set(expectedSecrets).size !== expectedSecrets.length
   )
     return false;
   return (
@@ -296,7 +473,24 @@ export function matchesProbe(policy, request, expectedSecret) {
     policy.probe.hosts.includes(request.host) &&
     policy.probe.paths.includes(request.path) &&
     policy.probe.methods.includes(request.method) &&
-    request.headers?.[policy.probe.header] === expectedSecret
+    expectedSecrets.includes(request.headers?.[policy.probe.header])
+  );
+}
+
+export function stripProbeHeader(policy, request) {
+  const host = request.host;
+  if (
+    protectedHosts.includes(host) ||
+    ![
+      ...policy.applicationHosts,
+      ...policy.serviceMachines.map((service) => service.host),
+    ].includes(host)
+  )
+    return request.headers;
+  return Object.fromEntries(
+    Object.entries(request.headers).filter(
+      ([name]) => name.toLowerCase() !== policy.probe.header
+    )
   );
 }
 
@@ -399,6 +593,6 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     JSON.parse(readFileSync(new URL('webhook-origins.json', directory), 'utf8'))
   );
   console.log(
-    'Edge proposals valid: 5 disabled rules; no provider access or apply operation.'
+    'Edge proposals valid: 6 disabled rules; no provider access or apply operation.'
   );
 }

@@ -6,6 +6,7 @@ import {
   compilePolicy,
   loadPolicy,
   matchesProbe,
+  stripProbeHeader,
   validateCompiled,
   validatePolicy,
   validateWebhookOrigins,
@@ -14,7 +15,12 @@ import {
 test('draft compiles into bounded disabled Pro proposals', () => {
   const policy = loadPolicy();
   const compiled = Object.fromEntries(
-    ['custom.json', 'configuration.json', 'rate-limit.json'].map((name) => [
+    [
+      'custom.json',
+      'configuration.json',
+      'rate-limit.json',
+      'late-transform.json',
+    ].map((name) => [
       name,
       JSON.parse(
         readFileSync(
@@ -30,12 +36,12 @@ test('draft compiles into bounded disabled Pro proposals', () => {
   validateCompiled(policy, compiled);
   assert.equal(
     Object.values(compiled).flatMap((entry) => entry.rules).length,
-    5
+    6
   );
   const probe = compiled['custom.json'].rules[0];
   assert(
     probe.expression.includes(
-      'any(http.request.headers["x-tuturuuu-edge-probe"][*] eq "__EDGE_PROBE_SECRET_REQUIRED__")'
+      'any(http.request.headers["x-tuturuuu-edge-probe"][*] eq "__EDGE_PROBE_SECRET_CURRENT_REQUIRED__")'
     )
   );
   assert(probe.expression.includes('http.request.method in {"GET" "HEAD"}'));
@@ -46,12 +52,30 @@ test('draft compiles into bounded disabled Pro proposals', () => {
   );
   const flood = compiled['rate-limit.json'].rules[0];
   assert.equal(flood.action, 'block');
-  assert.equal(flood.ratelimit.requests_per_period, 6000);
-  assert.equal(flood.ratelimit.mitigation_timeout, 10);
+  assert.equal(flood.ratelimit.requests_per_period, 20);
+  assert.equal(flood.ratelimit.mitigation_timeout, 60);
+  for (const prefix of ['/api/v1/auth/', '/api/auth/', '/api/cli/auth/'])
+    assert(
+      flood.expression.includes(
+        `starts_with(http.request.uri.path, "${prefix}")`
+      )
+    );
+  assert(!flood.expression.includes('http.request.headers'));
   assert(
-    flood.expression.includes(
-      'not (starts_with(http.request.uri.path, "/api/webhooks/")'
-    )
+    !flood.expression.includes('starts_with(http.request.uri.path, "/api/")')
+  );
+  assert.equal(flood.action_parameters.response.status_code, 429);
+  assert.deepEqual(JSON.parse(flood.action_parameters.response.content), {
+    error: 'AUTH_RATE_LIMITED',
+    retryAfter: 60,
+  });
+  assert.equal(
+    compiled['late-transform.json'].phase,
+    'http_request_late_transform'
+  );
+  assert.deepEqual(
+    compiled['late-transform.json'].rules[0].action_parameters.headers,
+    { 'x-tuturuuu-edge-probe': { operation: 'remove' } }
   );
 });
 
@@ -64,7 +88,7 @@ test('page probe exemptions require the exact secret, host, path and read method
     method: 'GET',
     headers: { 'x-tuturuuu-edge-probe': secret },
   };
-  assert(matchesProbe(policy, request, secret));
+  assert(matchesProbe(policy, request, [secret]));
   for (const invalid of [
     { ...request, headers: {} },
     { ...request, headers: { 'x-tuturuuu-edge-probe': 'wrong' } },
@@ -73,10 +97,10 @@ test('page probe exemptions require the exact secret, host, path and read method
     { ...request, path: '/en/settings' },
     { ...request, host: 'finance.tuturuuu.com' },
   ])
-    assert.equal(matchesProbe(policy, invalid, secret), false);
+    assert.equal(matchesProbe(policy, invalid, [secret]), false);
   assert.equal(matchesProbe(policy, request, undefined), false);
   assert.equal(
-    matchesProbe(policy, request, policy.probe.secretPlaceholder),
+    matchesProbe(policy, request, policy.probe.secretPlaceholders),
     false
   );
 });
@@ -98,6 +122,15 @@ test('machine callers, browser pages, Finance and unknown hosts remain distinct'
     ['meet.tuturuuu.com', '/_next/static/chunk.js', 'machine'],
     ['tuturuuu.com', '/en/login', 'browser'],
     ['tuturuuu.com', '/auth/register', 'browser'],
+    ['meet.tuturuuu.com', '/auth/login', 'browser'],
+    ['meet.tuturuuu.com', '/auth/callback', 'browser'],
+    ['meet.tuturuuu.com', '/_next/image', 'browser'],
+    ['meet.tuturuuu.com', '/_next/data/build/page.json', 'browser'],
+    ['hive.tuturuuu.com', '/realtime', 'machine'],
+    ['hive.tuturuuu.com', '/', 'browser'],
+    ['store.tuturuuu.com', '/api/v1/storage', 'machine'],
+    ['stores.tuturuuu.com', '/api/auth/verify', 'machine'],
+    ['api.tuturuuu.com', '/api/auth/verify', 'machine'],
     ['colab.tuturuuu.com', '/auth/login', 'machine'],
     ['colab.tuturuuu.com', '/auth/callback', 'machine'],
     ['tuturuuu.com', '/.well-known/assetlinks.json', 'machine'],
@@ -122,6 +155,52 @@ test('machine callers, browser pages, Finance and unknown hosts remain distinct'
   }
 });
 
+test('rotation accepts at most two values and strips all probe header variants before origin', () => {
+  const policy = loadPolicy();
+  const oldValue = 'fixture-only-old-probe-secret-32-characters';
+  const newValue = 'fixture-only-new-probe-secret-32-characters';
+  const request = {
+    host: 'meet.tuturuuu.com',
+    path: '/en',
+    method: 'GET',
+    headers: {
+      'x-tuturuuu-edge-probe': oldValue,
+      Authorization: 'Bearer fixture',
+    },
+  };
+  assert(matchesProbe(policy, request, [oldValue, newValue]));
+  assert(
+    matchesProbe(
+      policy,
+      { ...request, headers: { 'x-tuturuuu-edge-probe': newValue } },
+      [oldValue, newValue]
+    )
+  );
+  assert.equal(matchesProbe(policy, request, [newValue]), false);
+  assert.equal(
+    matchesProbe(policy, request, [
+      oldValue,
+      newValue,
+      'fixture-only-third-probe-secret-32-characters',
+    ]),
+    false
+  );
+  assert.deepEqual(stripProbeHeader(policy, request), {
+    Authorization: 'Bearer fixture',
+  });
+  assert.deepEqual(
+    stripProbeHeader(policy, {
+      ...request,
+      headers: { 'X-Tuturuuu-Edge-Probe': 'unmatched', Cookie: 'fixture' },
+    }),
+    { Cookie: 'fixture' }
+  );
+  assert.deepEqual(
+    stripProbeHeader(policy, { ...request, host: 'finance.tuturuuu.com' }),
+    request.headers
+  );
+});
+
 test('negative controls reject Finance, accidental broad scopes and unsupported Pro features', () => {
   const changes = [
     (policy) => policy.applicationHosts.push('finance.tuturuuu.com'),
@@ -130,6 +209,40 @@ test('negative controls reject Finance, accidental broad scopes and unsupported 
       policy.excludedHosts = [];
     },
     (policy) => policy.applicationMachinePrefixes.push('/'),
+    (policy) => {
+      policy.applicationMachinePrefixes[1] = '/_next/';
+    },
+    (policy) => policy.applicationMachineExact.push('/auth/callback'),
+    (policy) => {
+      policy.urlNormalization.scope = 'incoming';
+    },
+    (policy) => {
+      policy.urlNormalization.reReadBeforeApply = false;
+    },
+    (policy) => {
+      policy.originLock.workersDev = true;
+    },
+    (policy) => {
+      policy.originLock.previewUrls = true;
+    },
+    (policy) => {
+      policy.originLock.vercel.requireEdgeInjectedSecret = false;
+    },
+    (policy) => {
+      policy.originLock.vercel.protectAllDeploymentAliases = false;
+    },
+    (policy) => {
+      policy.entrypointCustody.skipBeforeBlockOrChallenge = false;
+    },
+    (policy) => {
+      policy.rateLimit.client429AcceptanceRequired = false;
+    },
+    (policy) => {
+      policy.probe.stripBeforeOrigin = false;
+    },
+    (policy) => {
+      policy.probe.rotation.overlapMinutes = 0;
+    },
     (policy) => policy.serviceMachines[0].prefixes.push('/'),
     (policy) => {
       policy.rateLimit.characteristics = [
@@ -137,13 +250,13 @@ test('negative controls reject Finance, accidental broad scopes and unsupported 
       ];
     },
     (policy) => {
-      policy.rateLimit.requestsPerPeriod = 10;
+      policy.rateLimit.requestsPerPeriod = 6000;
     },
     (policy) => {
       policy.rateLimit.existingRuleCount = 2;
     },
     (policy) => {
-      policy.probe.secretPlaceholder = 'published-real-value';
+      policy.probe.secretPlaceholders = ['published-real-value'];
     },
     (policy) => {
       policy.probe.header = 'user-agent';
@@ -186,6 +299,14 @@ test('validator catches enabling, drift and dangerous skip expansion in actual J
     },
     (data) => {
       data['rate-limit.json'].rules[0].action = 'log';
+    },
+    (data) => {
+      delete data['late-transform.json'];
+    },
+    (data) => {
+      data['late-transform.json'].rules[0].action_parameters.headers[
+        'x-tuturuuu-edge-probe'
+      ].operation = 'set';
     },
   ]) {
     const compiled = compilePolicy(policy);

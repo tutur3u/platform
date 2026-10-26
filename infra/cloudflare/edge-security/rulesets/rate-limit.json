@@ -1,19 +1,26 @@
 {
-  "name": "Edge high-threshold machine flood proposal",
+  "name": "Edge low-threshold authentication limit proposal",
   "kind": "zone",
   "phase": "http_ratelimit",
   "rules": [
     {
-      "ref": "edge_machine_flood",
-      "description": "Candidate only: shared-IP effects require measurement",
-      "expression": "(not (http.host in {\"finance.tuturuuu.com\" \"finance-staging.tuturuuu.com\"}) and http.host in {\"meet.tuturuuu.com\"} and (starts_with(http.request.uri.path, \"/api/\")) and not (starts_with(http.request.uri.path, \"/api/webhooks/\") or starts_with(http.request.uri.path, \"/api/cron/\")))",
+      "ref": "edge_auth_attempts",
+      "description": "Pre-auth low threshold; origin lock and client 429 acceptance required",
+      "expression": "(not (http.host in {\"finance.tuturuuu.com\" \"finance-staging.tuturuuu.com\"}) and http.host in {\"colab.tuturuuu.com\" \"hive.tuturuuu.com\" \"lettin.tuturuuu.com\" \"meet.tuturuuu.com\" \"parley.tuturuuu.com\"} and (starts_with(http.request.uri.path, \"/api/v1/auth/\") or starts_with(http.request.uri.path, \"/api/auth/\") or starts_with(http.request.uri.path, \"/api/cli/auth/\")))",
       "action": "block",
       "enabled": false,
+      "action_parameters": {
+        "response": {
+          "status_code": 429,
+          "content_type": "application/json",
+          "content": "{\"error\":\"AUTH_RATE_LIMITED\",\"retryAfter\":60}"
+        }
+      },
       "ratelimit": {
         "characteristics": ["ip.src", "cf.colo.id"],
         "period": 60,
-        "requests_per_period": 6000,
-        "mitigation_timeout": 10
+        "requests_per_period": 20,
+        "mitigation_timeout": 60
       }
     }
   ]
