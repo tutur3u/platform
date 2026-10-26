@@ -532,3 +532,29 @@ test('owned output is formatted; generator output keeps its bytes', (t) => {
   assert.equal(seen.includes('tuturuuu.ci.ts'), false);
   assert.ok(seen.includes('apps/demo/tsconfig.json'));
 });
+
+test('apply ignores the local Void build output, idempotently', (t) => {
+  const root = createFixtureRepo(t);
+  const file = path.join(root, 'apps/demo/.gitignore');
+  const ignoreWrite = (result) =>
+    pendingWrites(result).find(
+      (write) => write.path === 'apps/demo/.gitignore'
+    );
+  // Created when the app has none.
+  assert.equal(
+    ignoreWrite(plan(root))?.content,
+    '.void/\n.void-wrangler.jsonc\n'
+  );
+  // Appended after the app's own lines, which keep their order.
+  fs.writeFileSync(file, '# demo\n/.next/\nnode_modules\n');
+  const first = plan(root);
+  assert.equal(
+    ignoreWrite(first)?.content,
+    '# demo\n/.next/\nnode_modules\n.void/\n.void-wrangler.jsonc\n'
+  );
+  applyPlan(root, first, { spawn: noCommands });
+  assert.equal(ignoreWrite(plan(root)), undefined);
+  // An app that added them by hand (Tasks, Track) is left alone.
+  fs.writeFileSync(file, '/.void\n.void-wrangler.jsonc\n.next\n');
+  assert.equal(ignoreWrite(plan(root)), undefined);
+});
