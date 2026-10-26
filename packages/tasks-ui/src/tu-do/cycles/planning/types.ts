@@ -24,7 +24,7 @@ export interface CyclePlanningTag {
 
 /**
  * One row of the cycle view. Mirrors the task payload of the cycle-task and
- * backlog endpoints (see `cycle-planning-api.ts`).
+ * backlog endpoints (`TaskCyclePlanningTask` in `@tuturuuu/internal-api/task-cycles`).
  */
 export interface CyclePlanningTask {
   id: string;

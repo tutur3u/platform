@@ -1,8 +1,9 @@
 import {
-  encodePathSegment,
-  getInternalApiClient,
-  withTaskApiBaseUrl,
-} from '@tuturuuu/internal-api/client';
+  assignTaskToCycle,
+  listTaskCycleTasks,
+  listWorkspaceTaskBacklog,
+  unassignTaskFromCycle,
+} from '@tuturuuu/internal-api/task-cycles';
 import type { CyclePlanningTask } from './types';
 
 /**
@@ -24,51 +25,26 @@ export interface CyclePlanningDataSource {
   }) => Promise<void>;
 }
 
-function client() {
-  return getInternalApiClient(withTaskApiBaseUrl());
-}
-
-function cycleTasksPath(wsId: string, cycleId: string) {
-  return `/api/v1/workspaces/${encodePathSegment(wsId)}/task-cycles/${encodePathSegment(cycleId)}/tasks`;
-}
-
-/**
- * Integration point with the cycle data lane: replace these calls with the
- * `@tuturuuu/internal-api` cycle helpers (assign, unassign, backlog) once
- * they land. Endpoint shapes follow the sprint-planning proposal.
- */
+/** The cycle view's data source over the `@tuturuuu/internal-api` helpers. */
 export const internalApiCyclePlanningSource: CyclePlanningDataSource = {
   async listCycleTasks(wsId, cycleId) {
-    const payload = await client().json<{ tasks: CyclePlanningTask[] }>(
-      cycleTasksPath(wsId, cycleId),
-      { cache: 'no-store' }
-    );
-    return payload.tasks ?? [];
+    const payload = await listTaskCycleTasks(wsId, cycleId);
+    return (payload.tasks ?? []) as CyclePlanningTask[];
   },
   async listBacklogTasks(wsId) {
-    const payload = await client().json<{ tasks: CyclePlanningTask[] }>(
-      `/api/v1/workspaces/${encodePathSegment(wsId)}/task-cycles/backlog`,
-      { cache: 'no-store' }
-    );
-    return payload.tasks ?? [];
+    const payload = await listWorkspaceTaskBacklog(wsId);
+    return (payload.tasks ?? []) as CyclePlanningTask[];
   },
   async moveTask({ wsId, taskId, fromCycleId, toCycleId }) {
     if (fromCycleId === toCycleId) return;
-    const body = JSON.stringify({ taskId });
-    const headers = { 'Content-Type': 'application/json' };
-    if (fromCycleId) {
-      await client().json(cycleTasksPath(wsId, fromCycleId), {
-        method: 'DELETE',
-        headers,
-        body,
-      });
-    }
+    // Assigning moves the task between cycles, so only a move to the backlog
+    // needs an explicit removal.
     if (toCycleId) {
-      await client().json(cycleTasksPath(wsId, toCycleId), {
-        method: 'POST',
-        headers,
-        body,
-      });
+      await assignTaskToCycle(wsId, toCycleId, taskId);
+      return;
+    }
+    if (fromCycleId) {
+      await unassignTaskFromCycle(wsId, fromCycleId, taskId);
     }
   },
 };
