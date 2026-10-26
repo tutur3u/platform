@@ -16483,6 +16483,12 @@ abstract class AppLocalizations {
   /// **'Yellow'**
   String get taskBoardDetailColorYellow;
 
+  /// No description provided for @taskBoardDetailCompleteTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete'**
+  String get taskBoardDetailCompleteTask;
+
   /// No description provided for @taskBoardDetailCreateList.
   ///
   /// In en, this message translates to:
@@ -16602,6 +16608,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Due {date}'**
   String taskBoardDetailDueAt(String date);
+
+  /// No description provided for @taskBoardDetailDueDateUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Due date updated.'**
+  String get taskBoardDetailDueDateUpdated;
 
   /// No description provided for @taskBoardDetailEditList.
   ///
@@ -17065,11 +17077,23 @@ abstract class AppLocalizations {
   /// **'Rename list'**
   String get taskBoardDetailRenameList;
 
+  /// No description provided for @taskBoardDetailReopenTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Reopen'**
+  String get taskBoardDetailReopenTask;
+
   /// No description provided for @taskBoardDetailRestoreTasks.
   ///
   /// In en, this message translates to:
   /// **'Restore ({count})'**
   String taskBoardDetailRestoreTasks(int count);
+
+  /// No description provided for @taskBoardDetailScheduleTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule'**
+  String get taskBoardDetailScheduleTask;
 
   /// No description provided for @taskBoardDetailSearchDone.
   ///

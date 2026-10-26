@@ -444,6 +444,10 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                               sortedLists,
                               targetStatus,
                             ),
+                        rowActions: _taskRowActionHandlers(
+                          context,
+                          sortedLists,
+                        ),
                         isBulkSelectMode: state.isBulkSelectMode,
                         selectedTaskIds: state.selectedTaskIds,
                         onToggleTaskSelection: (task) => context
@@ -1096,64 +1100,6 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
         },
       ),
     );
-  }
-
-  Future<void> _changeTaskPriority(
-    BuildContext context,
-    TaskBoardTask task,
-    String priority,
-  ) async {
-    final normalizedPriority = _normalizeTaskPriority(
-      priority,
-      _taskQuickActionPriorityOptions,
-    );
-    if (task.priority == normalizedPriority) {
-      return;
-    }
-
-    final cubit = context.read<TaskBoardDetailCubit>();
-    final toastContext = Navigator.of(context, rootNavigator: true).context;
-    final fallbackErrorMessage = context.l10n.commonSomethingWentWrong;
-    final updatedMessage = context.l10n.taskBoardDetailPriorityUpdated;
-
-    try {
-      await cubit.updateTask(
-        taskId: task.id,
-        name: task.name?.trim().isNotEmpty == true
-            ? task.name!.trim()
-            : context.l10n.taskBoardDetailUntitledTask,
-        priority: normalizedPriority,
-        startDate: task.startDate,
-        endDate: task.endDate,
-        estimationPoints: task.estimationPoints,
-        labelIds: task.labelIds,
-        projectIds: task.projectIds,
-        assigneeIds: task.assigneeIds,
-      );
-      if (!context.mounted || !toastContext.mounted) return;
-      shad.showToast(
-        context: toastContext,
-        builder: (context, overlay) =>
-            shad.Alert(content: Text(updatedMessage)),
-      );
-    } on ApiException catch (error) {
-      if (!context.mounted || !toastContext.mounted) return;
-      shad.showToast(
-        context: toastContext,
-        builder: (context, overlay) => shad.Alert.destructive(
-          content: Text(
-            error.message.trim().isEmpty ? fallbackErrorMessage : error.message,
-          ),
-        ),
-      );
-    } on Exception {
-      if (!context.mounted || !toastContext.mounted) return;
-      shad.showToast(
-        context: toastContext,
-        builder: (context, overlay) =>
-            shad.Alert.destructive(content: Text(fallbackErrorMessage)),
-      );
-    }
   }
 
   Future<void> _openBulkActionsSheet(BuildContext context) async {
