@@ -15,6 +15,7 @@ import {
 } from './tutoring-suggestion';
 
 const GROUP = '11111111-1111-4111-8111-111111111111';
+const OTHER = '22222222-2222-4222-8222-222222222222';
 // Monday 2026-10-26 18:00 in Asia/Ho_Chi_Minh.
 const now = new Date('2026-10-26T11:00:00Z');
 
@@ -137,6 +138,36 @@ describe('carrying assignments across shift renames', () => {
       carryTutoringShiftAssignments({ [GROUP]: 'Shift 1' }, labels, renamed)
         .assignments
     ).toEqual({ [GROUP]: 'Shift 1' });
+  });
+
+  it('never moves a deleted middle shift to the next shift', () => {
+    const byLabel = (label: string) =>
+      rules.find((rule) => rule.label === label)!;
+    const [s1, s3] = [byLabel('Shift 1'), byLabel('Shift 3')];
+    expect(
+      carryTutoringShiftAssignments(
+        { [GROUP]: 'Shift 2', [OTHER]: 'Shift 3' },
+        ['Shift 1', 'Shift 2', 'Shift 3'],
+        [s1!, s3!]
+      )
+    ).toEqual({
+      assignments: { [GROUP]: 'Shift 2', [OTHER]: 'Shift 3' },
+      orphaned: 1,
+    });
+  });
+
+  it('does not reassign groups when shifts are reordered', () => {
+    const [s1, s2] = rules;
+    expect(
+      carryTutoringShiftAssignments(
+        { [GROUP]: 'Shift 1', [OTHER]: 'Shift 2' },
+        ['Shift 1', 'Shift 2'],
+        [s2!, s1!]
+      )
+    ).toEqual({
+      assignments: { [GROUP]: 'Shift 1', [OTHER]: 'Shift 2' },
+      orphaned: 0,
+    });
   });
 
   it('counts groups left on a removed shift', () => {

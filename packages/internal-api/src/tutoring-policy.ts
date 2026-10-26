@@ -452,8 +452,9 @@ export function getAssignedTutoringShift(
 
 /**
  * Carry group assignments across shift renames made in one edit. Labels are
- * matched by rule position against the labels the edit started with; a label
- * still used by another rule keeps its groups.
+ * matched by rule position against the labels the edit started with. Only a
+ * brand-new label counts as a rename, so a deleted or reordered shift never
+ * hands its groups to another existing shift; they stay unmatched instead.
  */
 export function carryTutoringShiftAssignments(
   assignments: Record<string, string>,
@@ -463,10 +464,12 @@ export function carryTutoringShiftAssignments(
   const live = new Set(
     rules.map((rule) => rule.label?.trim()).filter((label) => label)
   );
+  const original = new Set(originalLabels.filter((label) => label));
   const renames = new Map<string, string>();
   originalLabels.forEach((from, index) => {
     const to = rules[index]?.label?.trim();
-    if (from && to && from !== to && !live.has(from)) renames.set(from, to);
+    if (from && to && !original.has(to) && !live.has(from))
+      renames.set(from, to);
   });
   const next = Object.fromEntries(
     Object.entries(assignments).map(([groupId, label]) => [

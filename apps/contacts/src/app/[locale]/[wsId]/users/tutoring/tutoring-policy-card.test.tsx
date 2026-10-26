@@ -113,6 +113,11 @@ describe('tutoring section settings', () => {
     expect(screen.getByRole('alert')).toHaveTextContent(
       'policy_group_shift_orphaned'
     );
+    fireEvent.click(screen.getByRole('button', { name: 'policy_save' }));
+    // Shift 3 now sits where Shift 2 was; its groups must not move there.
+    expect(state.mutate).toHaveBeenCalledWith(
+      expect.objectContaining({ shiftByGroupId: { [GROUP]: 'Shift 2' } })
+    );
   });
   it('shows each group with its assigned shift', () => {
     render(
