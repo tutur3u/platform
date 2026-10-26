@@ -834,6 +834,12 @@ WEB_APP_URL })` so the handoff also stores the Web-issued app-session cookie.
 
 If either piece is missing, centralized login can stall on the web login spinner or land on `/verify-token` with no token-verification endpoint to finish the handoff.
 
+Signing out of Web (`POST /api/auth/logout`) and changing the password
+(`POST /api/v1/users/me/password`) revoke the user's outstanding cross-app tokens
+through `revokeAllCrossAppTokens`, before sign-out and after a successful
+password update respectively. A revocation failure is logged and never blocks
+either action. Coverage: `__tests__/cross-app-token-revocation-routes.test.ts`.
+
 ### Apps mounted on the platform apex
 
 An app served at `tuturuuu.com/<app>` (one-origin super-app) returns from
