@@ -114,7 +114,6 @@ abstract class ITimeTrackerRepository {
 
   Future<TimeTrackingBreak?> getActiveBreak(String wsId, String sessionId);
 
-  /// Counts only sessions with [tag] or, with [taskLinked], a task.
   Future<TimeTrackerStats> getStats(
     String wsId,
     String? userId, {

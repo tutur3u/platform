@@ -13,11 +13,11 @@ const {
   tagPinned,
 } = require('./supabase-image-cache-seed.js');
 
-// CLI embeds pkg/config/templates/Dockerfile. `services` omits these images.
-// https://github.com/supabase/cli/blob/v2.117.0/apps/cli-go/pkg/config/templates/Dockerfile
+// Fallback pins from the CLI Dockerfile for images absent from `services`.
+// https://github.com/supabase/cli/blob/v2.121.0/apps/cli-go/pkg/config/templates/Dockerfile
 const SUPPLEMENTAL = {
-  version: '2.117.0',
-  images: { kong: '2.8.1', mailpit: 'v1.30.2', imgproxy: 'v3.8.0' },
+  version: '2.121.0',
+  images: { kong: '2.8.1', mailpit: 'v1.31.3', imgproxy: 'v3.26.0' },
 };
 const MAX_ARCHIVE_BYTES = 6 * 1024 ** 3;
 const PROFILES = {
@@ -66,7 +66,7 @@ function imageList({ services, cliVersion, registry, profile, config = '' }) {
         throw new Error(`Uncached service enabled: ${section}`);
   }
   if (!names) throw new Error('Unknown Supabase image profile');
-  const versions = new Map(Object.entries(SUPPLEMENTAL.images));
+  const versions = new Map();
   for (const service of services) {
     if (
       !/^[a-z0-9-]+\/[a-z0-9-]+$/.test(service.name) ||
@@ -78,7 +78,7 @@ function imageList({ services, cliVersion, registry, profile, config = '' }) {
     versions.set(name, service.local);
   }
   return [...new Set(names)].sort().map((name) => {
-    const tag = versions.get(name);
+    const tag = versions.get(name) ?? SUPPLEMENTAL.images[name];
     if (!tag) throw new Error(`Missing CLI image metadata: ${name}`);
     // GetRegistryImageUrl rewrites even postgrest/postgrest to /supabase/.
     return `${registry}/supabase/${name}:${tag}`;

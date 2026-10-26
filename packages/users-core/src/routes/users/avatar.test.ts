@@ -7,6 +7,7 @@ const f = vi.hoisted(() => ({
   permissions: vi.fn(),
   sign: vi.fn(),
   bucket: vi.fn(),
+  list: vi.fn(),
 }));
 vi.mock('server-only', () => ({}));
 vi.mock(
@@ -58,7 +59,9 @@ beforeEach(() => {
     data: { signedUrl: 'https://storage.test/ticket' },
     error: null,
   });
+  f.list.mockResolvedValue({ data: [], error: null });
   f.bucket.mockReturnValue({
+    list: f.list,
     createSignedUploadUrl: f.sign,
     createSignedUrl: f.sign,
     getPublicUrl: () => ({
@@ -199,11 +202,33 @@ it.each([
   expect((await GET(getRequest(path), context)).status).toBe(400);
   expect(f.sign).not.toHaveBeenCalled();
 });
-it('signs only the allowed workspace user object for reads', async () => {
+it('returns the stable public URL for avatars in the public bucket', async () => {
   const path = `${workspace}/users/avatar.webp`;
-  expect((await GET(getRequest(path), context)).status).toBe(200);
-  expect(f.sign).toHaveBeenCalledExactlyOnceWith(path, 60 * 60 * 24 * 365);
-  expect(f.bucket).toHaveBeenCalledExactlyOnceWith('workspaces');
+  f.list.mockResolvedValue({ data: [{ name: 'avatar.webp' }], error: null });
+  const response = await GET(getRequest(path), context);
+  expect(response.status).toBe(200);
+  expect(await response.json()).toEqual({
+    path,
+    publicUrl: 'https://storage.test/avatar',
+    signedUrl: 'https://storage.test/avatar',
+  });
+  expect(f.list).toHaveBeenCalledWith(`${workspace}/users`, {
+    limit: 1,
+    search: 'avatar.webp',
+  });
+  expect(f.sign).not.toHaveBeenCalled();
+  expect(f.bucket).not.toHaveBeenCalledWith('workspaces');
+});
+it('signs legacy private avatars for one hour only', async () => {
+  const path = `${workspace}/users/avatar.webp`;
+  const response = await GET(getRequest(path), context);
+  expect(response.status).toBe(200);
+  expect(await response.json()).toEqual({
+    path,
+    signedUrl: 'https://storage.test/ticket',
+  });
+  expect(f.sign).toHaveBeenCalledExactlyOnceWith(path, 3600);
+  expect(f.bucket).toHaveBeenLastCalledWith('workspaces');
 });
 it.each(unsafeNames)(
   'rejects unsafe upload filename %j without charging or signing',

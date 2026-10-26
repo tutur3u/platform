@@ -100,6 +100,32 @@ therefore forwarded to `apps/web`:
 - `/api/ai/chat/upload-url`, `/api/ai/chat/delete-file`, and
   `/api/ai/chat/file-urls`, which provide shared Mind chat attachments
 
+Chat attachments are private to the chat creator. `file-urls` and
+`signed-read-url` apply the same path rules as the `workspaces` bucket RLS
+through `@tuturuuu/storage-core/workspace-storage-access`. Other members,
+non-members and missing chats get 403, and traversal or encoded aliases get
+400. Shared public chats show messages without attachment URLs. See
+[Workspace storage server access](/build/devops/workspace-storage-server-access).
+
+A `{wsId}/chats/ai/resources/{id}/` folder is owned only by the `ai_chats`
+row the actor created, matching that bucket RLS. Mind threads do not own a
+folder there, so their folders are denied for listing, reading and deleting
+like any other id. `upload-url` signs into the chat folder only for an
+owned chat, returns 403 for another user's chat, and sends any other id
+(a chat not created yet, or a Mind thread) to the actor's `temp/{actorId}/`
+folder. Upload URLs never overwrite existing objects. Signed upload URLs
+cannot bound size or type, so an uploaded object is readable through these
+routes, and eligible for the model, only after its stored size (32 MiB cap)
+and leading bytes match its extension. Read/list verification never deletes
+objects, including historical 33–50 MiB attachments that exceed the new
+limit. Rejected or unavailable objects remain stored but are not served.
+UTF-16 text with a little-endian or big-endian BOM is accepted. Upload
+requests exceeding the new limit are rejected before signing; only an
+explicit authorized delete removes objects. Coverage:
+`apps/web/src/app/api/ai/chat/_lib/resource-routes-access.test.ts`,
+`apps/web/src/app/api/ai/chat/chat-file-read-access.test.ts`
+and `packages/ai/src/chat/attachment-content-guard.test.ts`.
+
 The separate `/api/v1/hive/servers/:serverId/mind-simulations` integration is
 Hive-owned in `apps/hive`, not a Mind product handler. It imports a Mind board
 as Hive agents plus a saved interaction workflow.

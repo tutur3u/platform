@@ -666,6 +666,33 @@ scheme, so its destructive buttons also change from a translucent to a solid
 fill. Segmented-control labels (Mode, Background) scale down to fit rather than
 truncate.
 
+### Interface style options (planned)
+
+The default interface looks the same on Android and iOS: the Tuturuuu style.
+A planned **Interface** group in Appearance lets each user choose:
+
+| Option | Choices | Default |
+| --- | --- | --- |
+| Style | Tuturuuu, iOS-like, Material-like | Tuturuuu |
+| Density | Comfortable, Compact | Comfortable |
+| Corner radius | Rounded, Soft, Square | Rounded |
+| Accent | Existing accents | Match theme |
+| Haptics | On, Off | On |
+| Reduce motion | Follow system, Always reduce | Follow system |
+
+Rules:
+
+- **Stored per device.** Choices persist alongside the existing appearance
+  payload and are not synced to the account.
+- **Applied through the theme.** Choices take effect through theme
+  extensions read via `AppTokens`; widgets never fork on the platform.
+- **Accessibility floors.** Compact density never shrinks touch targets below
+  44pt. Every Style and Radius combination keeps the contrast guarantees
+  above.
+- **Reset.** Reset to default restores every option.
+
+See the [native pass plan](/build/development-tools/mobile-native-pass-plan#appearance-style-system).
+
 ### App-wide application and cost
 
 `AppearanceBackdrop` sits in the app builder around the router. For Gradient and

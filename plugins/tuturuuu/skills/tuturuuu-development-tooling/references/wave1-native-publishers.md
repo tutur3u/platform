@@ -46,3 +46,34 @@ util/events. Keep their adapters restricted to workerd server require calls.
 Email-service cache cleanup must run lazily during use, never through import-time
 setInterval: workerd forbids timers outside a handler. Preserve TTL/rate-limit
 checks and the timer-free import/expiry regression when changing this path.
+
+## Subdomain rollback capture and smoke
+
+Follow the [cutover tools runbook](../../../../../apps/docs/build/devops/wave1-native-cutover.mdx#subdomain-cutover-tools).
+Capture every zone route, including wildcard routes and scriptless exclusions; a
+root-URL match cannot establish which routes serve deeper paths. Use the dedicated
+zone-scoped `CLOUDFLARE_READONLY_API_TOKEN` (DNS:Read and Workers Routes:Read),
+keep capture artifacts in ignored `tmp/` or the private ledger, and never commit
+production origin URLs. Run `node --test scripts/native-cutover/*.test.mjs` for
+credential isolation, route semantics and smoke failure-continuation coverage.
+
+
+For Calendar's private production preparation, use `wave1-native-production.yaml`
+on the production branch after the app's explicit policy admission. Its protected
+`wave1-calendar-production` environment requires only the production branch, an
+no required reviewer and disabled admin bypass. It supplies only the named
+`WAVE1_PRODUCTION_CLOUDFLARE_API_TOKEN` to the final upload step. The sealed Calendar/Mail/Apps production profiles have
+no routes, workers.dev or preview ingress. Refuse existing hosted Route/Custom
+Domain attachments as well: a code deploy to an already attached Worker changes
+traffic even with an empty local route list. Preserve the initial private rollback
+baseline, exact public inputs and before/after topology. Earlier production runs,
+reruns and absent versions never authorize replay of an uncertain upload. Keep
+pending/uploaded receipts and reconcile the original operation. Inspect earlier
+upload steps across SHAs and all attempts, allowing proven pre-upload refusals.
+A matching version needs a distinct earlier rollback. Bound all preflight reads
+under one deadline, filter attachments to the Worker across all account zones,
+and pass only the CLI environment it needs. Dry-run output belongs outside the
+sealed artifact; preserve archive rejection of hidden output. No canonical
+marker is emitted before the later routing flip and hosted acceptance.
+Run `scripts/ci/wave1-native-production.test.mjs` for counting transport/CLI,
+no-route profile, held-policy, unknown-outcome and workflow-secret regressions.
