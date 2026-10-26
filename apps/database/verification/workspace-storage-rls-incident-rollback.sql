@@ -1,7 +1,7 @@
 -- Proof for the INCIDENT rollback of
--- 20261026100000_least_privilege_workspace_storage_rls.sql.
+-- 20261026170000_least_privilege_workspace_storage_rls.sql.
 -- Run ONLY against a disposable local stack, after applying
--- apps/database/rollbacks/20261026100000_least_privilege_workspace_storage_rls.incident-rollback.sql:
+-- apps/database/rollbacks/20261026170000_least_privilege_workspace_storage_rls.incident-rollback.sql:
 --   psql "$DB_URL" -v ON_ERROR_STOP=1 -f apps/database/verification/workspace-storage-rls-incident-rollback.sql
 -- Expected: member-only Drive access is back, private roots and non-member
 -- writes stay closed, service_role keeps full access.

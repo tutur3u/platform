@@ -1,4 +1,4 @@
--- Contract for 20261026100000_least_privilege_workspace_storage_rls.sql:
+-- Contract for 20261026170000_least_privilege_workspace_storage_rls.sql:
 -- every root of the `workspaces` bucket (including the Drive private upload
 -- census roots and the spaced `AI Agent Imports` root) x {non-member, member, view_drive,
 -- manage_drive, chat owner/uploader, service_role} x {select, insert,

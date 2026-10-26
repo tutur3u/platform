@@ -1,7 +1,7 @@
--- Rollback proof for 20261026100000_least_privilege_workspace_storage_rls.sql.
+-- Rollback proof for 20261026170000_least_privilege_workspace_storage_rls.sql.
 -- Run ONLY against a disposable local stack, after applying
--- apps/database/rollbacks/20261026100000_least_privilege_workspace_storage_rls.rollback.sql:
---   psql "$DB_URL" -v ON_ERROR_STOP=1 -f apps/database/rollbacks/20261026100000_least_privilege_workspace_storage_rls.rollback.sql
+-- apps/database/rollbacks/20261026170000_least_privilege_workspace_storage_rls.rollback.sql:
+--   psql "$DB_URL" -v ON_ERROR_STOP=1 -f apps/database/rollbacks/20261026170000_least_privilege_workspace_storage_rls.rollback.sql
 --   psql "$DB_URL" -v ON_ERROR_STOP=1 -f apps/database/verification/workspace-storage-rls-rollback-roundtrip.sql
 -- then re-apply the forward migration and re-run
 -- supabase/tests/workspace-storage-least-privilege-rls.sql (370 assertions).

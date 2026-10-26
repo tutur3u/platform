@@ -1,5 +1,5 @@
 -- INCIDENT (safer) rollback for
--- 20261026100000_least_privilege_workspace_storage_rls.sql.
+-- 20261026170000_least_privilege_workspace_storage_rls.sql.
 --
 -- Use when the path-scoped helper misbehaves (wrong denials, performance) and
 -- Drive needs member-level access back quickly, without reopening the worst

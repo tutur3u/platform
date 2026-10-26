@@ -1,10 +1,10 @@
--- Rollback for 20261026100000_least_privilege_workspace_storage_rls.sql.
+-- Rollback for 20261026170000_least_privilege_workspace_storage_rls.sql.
 --
 -- FAITHFUL variant. Restores the exact 20231004102905 policies: every
 -- workspace MEMBER can select/insert/update/delete every `<wsId>/**` object in
 -- the `workspaces` bucket, and the legacy WITH CHECK (true) insert policy again
 -- lets non-members insert. This reopens the HIGH finding. Prefer
--- 20261026100000_least_privilege_workspace_storage_rls.incident-rollback.sql
+-- 20261026170000_least_privilege_workspace_storage_rls.incident-rollback.sql
 -- unless exact prior behaviour is required. Run it in one transaction as an
 -- approved incident action. It does not touch objects or data. Either rollback
 -- can run from the forward state or from the other rollback's state.

@@ -38,9 +38,9 @@
 -- RLS and keeps full access.
 --
 -- Rollbacks (apps/database/rollbacks/):
---   20261026100000_least_privilege_workspace_storage_rls.rollback.sql
+--   20261026170000_least_privilege_workspace_storage_rls.rollback.sql
 --     faithful: restores the exact 20231004102905 policies
---   20261026100000_least_privilege_workspace_storage_rls.incident-rollback.sql
+--   20261026170000_least_privilege_workspace_storage_rls.incident-rollback.sql
 --     safer: member-only access without private roots or non-member inserts
 
 begin;

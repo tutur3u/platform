@@ -8,7 +8,7 @@ description: Path-scoped Row Level Security for the workspaces Storage bucket, i
 The `workspaces` bucket stores objects as `<wsId>/<root>/...`. Supabase Storage
 enforces `storage.objects` RLS for browser and user-token clients. Owning server
 APIs use the service role, which bypasses RLS. Migration
-`20261026100000_least_privilege_workspace_storage_rls.sql` replaced the original
+`20261026170000_least_privilege_workspace_storage_rls.sql` replaced the original
 policies. Those let any workspace member read, write and delete every object.
 
 All rules require a `MEMBER` workspace membership; guests are excluded.
@@ -111,7 +111,7 @@ rollback's state. Re-applying the forward migration body also removes either
 rollback's policies.
 
 - **Incident (preferred):**
-  `20261026100000_least_privilege_workspace_storage_rls.incident-rollback.sql`.
+  `20261026170000_least_privilege_workspace_storage_rls.incident-rollback.sql`.
   Members regain 2023-style access to non-private objects, with no `view_drive`
   check.
   - Private roots stay service-role only.
@@ -120,7 +120,7 @@ rollback's policies.
   - It is plain SQL and drops the helpers.
   - Proof: `apps/database/verification/workspace-storage-rls-incident-rollback.sql`
     (14 assertions).
-- **Faithful:** `20261026100000_least_privilege_workspace_storage_rls.rollback.sql`.
+- **Faithful:** `20261026170000_least_privilege_workspace_storage_rls.rollback.sql`.
   It restores the exact 20231004102905 policies.
   - This reopens the HIGH finding and non-member inserts.
   - Use it only when exact prior behaviour is required.
