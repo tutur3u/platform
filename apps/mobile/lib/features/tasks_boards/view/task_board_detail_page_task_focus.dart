@@ -123,14 +123,18 @@ extension _TaskFocusActions on _TaskBoardDetailPageViewState {
           ? context.read<PomodoroController?>()
           : null;
       if (focusSession != null && userId != null && pomodoro != null) {
-        await pomodoro.adoptFocus(
-          userId: userId,
-          wsId: wsId,
-          sessionId: focusSession.id,
-          title: title,
-          taskId: task.id,
-          taskName: title,
-        );
+        try {
+          await pomodoro.adoptFocus(
+            userId: userId,
+            wsId: wsId,
+            sessionId: focusSession.id,
+            title: title,
+            taskId: task.id,
+            taskName: title,
+          );
+        } on Exception {
+          // Tracking succeeded; keep its success feedback and Open timer action.
+        }
       }
       if (!toastContext.mounted) return;
       showAppToast(

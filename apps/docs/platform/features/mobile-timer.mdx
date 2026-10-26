@@ -196,7 +196,7 @@ does the same for that task.
 
 Every focus session the Pomodoro starts carries the `pomodoro` tag. This
 includes Start focus on a task row. The session API accepts `tags`: lowercase
-slugs, at most 10, stored in the existing `tags` column. You's **Focus Time**
+slugs, at most 10, stored in the existing `tags` column. **Focus Time** on the You tab
 counts only `pomodoro`-tagged sessions. The stats endpoint takes an optional
 `tag`. With a tag, it computes today, the week from Monday, the month, daily
 activity and the streak from the tagged sessions, in the user's timezone.
@@ -226,3 +226,6 @@ tracker that behaves like the server. It covers:
 `task_board_row_actions_flows_test.dart` covers Start focus. Widget tests do
 not establish notification delivery or timing on devices.
 
+
+`pomodoro_waiting_focus_test.dart` verifies that a waiting or automatic focus phase
+leaves an unrelated running timer intact.
