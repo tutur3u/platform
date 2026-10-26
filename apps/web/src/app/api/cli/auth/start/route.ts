@@ -2,6 +2,7 @@ import { generateAssuredCrossAppToken } from '@tuturuuu/auth/cross-app/server';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
+import { CLI_LOGIN_PAGE_SECURITY_HEADERS } from '@/lib/auth/cli-login-page-headers';
 
 function isLoopbackCallback(value: string) {
   try {
@@ -149,15 +150,9 @@ function isTopLevelNavigation(request: NextRequest) {
   );
 }
 
-// The copy page renders in an opaque origin with no script, so a same-origin
-// opener (window.open from injected script) cannot read the token, and COOP
-// severs the opener handle.
-const COPY_PAGE_SECURITY_HEADERS = {
-  'Content-Security-Policy':
-    "sandbox; default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'",
-  'Cross-Origin-Opener-Policy': 'same-origin',
-  'Referrer-Policy': 'no-referrer',
-};
+const COPY_PAGE_SECURITY_HEADERS = Object.fromEntries(
+  CLI_LOGIN_PAGE_SECURITY_HEADERS.map(({ key, value }) => [key, value])
+);
 
 function renderCopyTokenPage(token: string, email: string | null) {
   const safeToken = escapeHtml(token);
