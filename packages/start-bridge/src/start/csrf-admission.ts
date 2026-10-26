@@ -2,7 +2,10 @@ import {
   type CsrfExemption,
   type CsrfMode,
   checkCsrf,
+  createCsrfReportLimiter,
 } from '@tuturuuu/auth/csrf';
+
+const shouldReport = createCsrfReportLimiter();
 
 export interface BridgeCsrfOptions<Env> {
   /** Resolved by the app from its own bindings; `off` admits everything. */
@@ -38,15 +41,17 @@ export function admitMountedMutation({
   });
   if (verdict.ok) return null;
 
-  console.warn('CSRF check failed', {
-    method: request.method,
-    mode,
-    mounted: true,
-    origin: verdict.origin,
-    reason: verdict.reason,
-    route: appPath,
-    secFetchSite: verdict.secFetchSite,
-  });
+  if (shouldReport(`${appPath}|${verdict.reason}|${verdict.origin}`)) {
+    console.warn('CSRF check failed', {
+      method: request.method,
+      mode,
+      mounted: true,
+      origin: verdict.origin,
+      reason: verdict.reason,
+      route: appPath,
+      secFetchSite: verdict.secFetchSite,
+    });
+  }
 
   if (mode === 'report') return null;
 

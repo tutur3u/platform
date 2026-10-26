@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   type CsrfExemption,
   checkCsrf,
+  createCsrfReportLimiter,
   isDefaultSessionCookieName,
   parseCsrfMode,
 } from './csrf';
@@ -204,5 +205,31 @@ describe('checkCsrf', () => {
       reason: 'cross-site',
       secFetchSite: 'cross-site',
     });
+  });
+});
+
+describe('createCsrfReportLimiter', () => {
+  it('reports a key once per interval', () => {
+    const shouldReport = createCsrfReportLimiter({ intervalMs: 60_000 });
+
+    expect(shouldReport('route|same-site|origin', 0)).toBe(true);
+    expect(shouldReport('route|same-site|origin', 59_999)).toBe(false);
+    expect(shouldReport('other|same-site|origin', 59_999)).toBe(true);
+    expect(shouldReport('route|same-site|origin', 60_000)).toBe(true);
+  });
+
+  it('keeps the tracked key set bounded under a flood of distinct keys', () => {
+    const shouldReport = createCsrfReportLimiter({
+      intervalMs: 60_000,
+      maxKeys: 3,
+    });
+
+    expect(['a', 'b', 'c'].map((key) => shouldReport(key, 0))).toEqual([
+      true,
+      true,
+      true,
+    ]);
+    expect(shouldReport('d', 1_000)).toBe(false);
+    expect(shouldReport('d', 61_000)).toBe(true);
   });
 });

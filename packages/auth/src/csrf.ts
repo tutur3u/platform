@@ -171,3 +171,33 @@ export function checkCsrf(input: CsrfCheckInput): CsrfVerdict {
     ? { ok: true, reason: 'origin-match' }
     : reject('origin-mismatch');
 }
+
+/**
+ * Bounds report logging: each key (e.g. route + reason + origin) is reported
+ * at most once per interval, and the tracked key set stays bounded, so a flood
+ * of failing requests cannot flood the logs. One limiter per isolate.
+ */
+export function createCsrfReportLimiter({
+  intervalMs = 60_000,
+  maxKeys = 1_000,
+}: {
+  intervalMs?: number;
+  maxKeys?: number;
+} = {}) {
+  const lastReportedAt = new Map<string, number>();
+
+  return (key: string, now = Date.now()) => {
+    const last = lastReportedAt.get(key);
+    if (last !== undefined && now - last < intervalMs) return false;
+
+    if (!lastReportedAt.has(key) && lastReportedAt.size >= maxKeys) {
+      for (const [entry, at] of lastReportedAt) {
+        if (now - at >= intervalMs) lastReportedAt.delete(entry);
+      }
+      if (lastReportedAt.size >= maxKeys) return false;
+    }
+
+    lastReportedAt.set(key, now);
+    return true;
+  };
+}

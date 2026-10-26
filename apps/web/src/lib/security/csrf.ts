@@ -2,6 +2,7 @@ import {
   type CsrfExemption,
   type CsrfMode,
   checkCsrf,
+  createCsrfReportLimiter,
   parseCsrfMode,
 } from '@tuturuuu/auth/csrf';
 import { type NextRequest, NextResponse } from 'next/server';
@@ -16,6 +17,8 @@ export const WEB_CSRF_EXEMPTIONS: readonly CsrfExemption[] = [
     reason: 'Provider webhooks are verified by their URL secret or signature',
   },
 ];
+
+const shouldReportCsrfFailure = createCsrfReportLimiter();
 
 /**
  * Web adapter for the framework-free CSRF check. The mode comes from
@@ -39,14 +42,17 @@ export function guardWebApiCsrf(
   });
   if (verdict.ok) return null;
 
-  console.warn('CSRF check failed', {
-    method: req.method,
-    mode,
-    origin: verdict.origin,
-    reason: verdict.reason,
-    route: req.nextUrl.pathname,
-    secFetchSite: verdict.secFetchSite,
-  });
+  const reportKey = `${req.nextUrl.pathname}|${verdict.reason}|${verdict.origin}`;
+  if (shouldReportCsrfFailure(reportKey)) {
+    console.warn('CSRF check failed', {
+      method: req.method,
+      mode,
+      origin: verdict.origin,
+      reason: verdict.reason,
+      route: req.nextUrl.pathname,
+      secFetchSite: verdict.secFetchSite,
+    });
+  }
 
   if (mode === 'report') return null;
 

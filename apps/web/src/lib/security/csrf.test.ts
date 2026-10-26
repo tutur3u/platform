@@ -61,6 +61,24 @@ describe('guardWebApiCsrf', () => {
     });
   });
 
+  it('logs a repeated failure for the same route, reason and origin once a minute', () => {
+    const repeated = () =>
+      request('/api/v1/workspaces/ws/repeat', {
+        cookie: SESSION_COOKIE,
+        origin: 'https://evil.example',
+        'sec-fetch-site': 'cross-site',
+      });
+
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      guardWebApiCsrf(repeated(), {
+        configuredOrigin: 'https://tuturuuu.com',
+        mode: 'report',
+      });
+    }
+
+    expect(warn).toHaveBeenCalledTimes(1);
+  });
+
   it('rejects with 403 CSRF_REJECTED in enforce mode', async () => {
     const response = guardWebApiCsrf(siblingPost(), {
       configuredOrigin: 'https://tuturuuu.com',

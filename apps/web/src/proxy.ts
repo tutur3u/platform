@@ -41,7 +41,6 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { BASE_URL, PUBLIC_PATHS } from './constants/common';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
-import { guardApiCost } from './lib/api-cost-guard';
 import {
   calendarPreferenceGuardOptions,
   handleCalendarPreferenceGuardResponse,
@@ -57,7 +56,7 @@ import { getMailAppOrigin } from './lib/mail-app-url';
 import { getMeetAppOrigin } from './lib/meet-app-url';
 import { feedbackProxyPayloadLimit } from './lib/product-feedback-limits';
 import { profileMediaProxyPayloadLimit } from './lib/profile-media-proxy';
-import { guardWebApiCsrf } from './lib/security/csrf';
+import { guardApiCostAndCsrf } from './lib/security/api-request-guard';
 import { getToolsAppOrigin } from './lib/tools-app-url';
 import { getTrackAppOrigin } from './lib/track-app-url';
 import { workspaceHomeRedirectUrl } from './lib/workspace-home-redirect';
@@ -1042,8 +1041,6 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     req.nextUrl.pathname.startsWith('/api') ||
     req.nextUrl.pathname === '/native-integrity/turnstile'
   ) {
-    const csrf = guardWebApiCsrf(req, { configuredOrigin: WEB_APP_URL });
-    if (csrf) return csrf;
     const versionedAsset = isVersionedExternalProjectAssetDeliveryRequest(
       req.method,
       req.nextUrl
@@ -1054,7 +1051,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
       const suspicious = await blockSuspiciousAnonymousApiRequest(req);
       if (suspicious) return suspicious;
     }
-    const costResponse = await guardApiCost(req);
+    const costResponse = await guardApiCostAndCsrf(req, WEB_APP_URL);
     if (costResponse) return costResponse;
     if (versionedAsset) return NextResponse.next();
     const additionalRoutePolicies = (await hasWorkspaceEmailRateLimitOverrides(
@@ -1443,8 +1440,18 @@ export const config = {
      * - sw.js (service worker)
      * - monitoring (analytics)
      * - .well-known (domain verification files)
-     * Excludes static asset extensions: svg, png, jpg, jpeg, mp3, wav, ogg,
-     * m4a, pdf, gif and webp.
+     * Excludes files with the following extensions for static assets:
+     * - svg
+     * - png
+     * - jpg
+     * - jpeg
+     * - mp3
+     * - wav
+     * - ogg
+     * - m4a
+     * - pdf
+     * - gif
+     * - webp
      */
 
     '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|site.webmanifest|manifest.webmanifest|sw.js|serwist|monitoring|\\.well-known|.*\\.(?:svg|png|jpg|jpeg|mp3|wav|ogg|m4a|pdf|gif|webp)$).*)',
