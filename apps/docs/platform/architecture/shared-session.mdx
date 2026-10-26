@@ -33,7 +33,7 @@ plan, with its owner PR not yet merged.
 | **Log out everywhere** ends every session of the account on every device | Explicit second action | Planned |
 | Logout clears site cookies with `Clear-Site-Data: "cookies"`, so subdomain app sessions in the same browser end too | Always | Planned |
 | Logout never clears local app data (`"storage"` is not sent), so unsent drafts survive | Always | Planned |
-| Logout and a password change revoke outstanding cross-app handoff tokens | Always | Pending (#6839) |
+| Logout and a password change revoke outstanding cross-app handoff tokens | Always | Enforced |
 | After logout, another app on a subdomain stops accepting the session within 15 minutes | 15 min bound | Planned (app access-token lifetime 8 h to 15 min) |
 | A signed-out session's access token stops working within 15 minutes | 15 min bound | Planned (hosted access-token lifetime 60 min to 15 min) |
 
