@@ -24,7 +24,10 @@ const fixture = vi.hoisted(() => ({
 vi.mock('@tuturuuu/satellite/auth', () => ({
   getSatelliteAppSessionUser: fixture.getSatelliteAppSessionUser,
 }));
-vi.mock('@tuturuuu/utils/topic-announcements', () => ({
+vi.mock('@tuturuuu/utils/topic-announcements', async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import('@tuturuuu/utils/topic-announcements')
+  >()),
   TOPIC_ANNOUNCEMENTS_SECRET: 'TOPIC_ANNOUNCEMENTS_ENABLED',
 }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
@@ -59,7 +62,9 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
                 : false,
         }
       : null,
-  getSecrets: async () => [],
+  getSecrets: async () => [
+    { name: 'ENABLE_TOPIC_TEACHER_ASSIGNMENTS', value: 'true' },
+  ],
   getSecret: () => ({ value: fixture.enabled ? 'true' : 'false' }),
 }));
 vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({

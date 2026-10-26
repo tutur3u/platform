@@ -56,8 +56,18 @@ describe('decideTopicAnnouncementAccessMode', () => {
           requireManage: access !== 'send',
           requireSend: access === 'send',
           teacherAccess: access,
+          teacherAssignmentsEnabled: true,
         })
       ).toBe('teacher');
+      // The teacher branch does not exist while the workspace flag is off.
+      expect(
+        decideTopicAnnouncementAccessMode({
+          hasPermission: has(permission),
+          requireManage: access !== 'send',
+          requireSend: access === 'send',
+          teacherAccess: access,
+        })
+      ).toBe('denied');
     }
   );
 

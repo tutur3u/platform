@@ -10,6 +10,11 @@ export interface TopicAnnouncementsAccessContext {
   sbAdmin: TopicAnnouncementsSupabaseClient;
   /** Absent only for legacy callers; treated as the supervisor scope. */
   scope?: TopicAnnouncementAccessScope;
+  /**
+   * `ENABLE_TOPIC_TEACHER_ASSIGNMENTS` for the workspace. Absent or false keeps
+   * the pre-teacher supervisor behavior on every write path.
+   */
+  teacherAssignmentsEnabled?: boolean;
   supabase: TopicAnnouncementsSupabaseClient;
 }
 

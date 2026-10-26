@@ -1,4 +1,7 @@
-import { createTopicAnnouncementListHandler } from '@tuturuuu/users-core/routes/topic-announcements';
+import {
+  createTopicAnnouncementListHandler,
+  gateTopicAnnouncementTeacherFields,
+} from '@tuturuuu/users-core/routes/topic-announcements';
 import { NextResponse } from 'next/server';
 import {
   attachTopicAnnouncementGroups,
@@ -74,8 +77,15 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
-  const { actorUserId, normalizedWsId, sbAdmin } = access.context;
-  const payload = parsed.data;
+  const { actorUserId, normalizedWsId, sbAdmin, teacherAssignmentsEnabled } =
+    access.context;
+  const enabled = teacherAssignmentsEnabled === true;
+  const gated = gateTopicAnnouncementTeacherFields(parsed.data, {
+    enabled,
+    topicRequired: true,
+  });
+  if (gated.error) return NextResponse.json(gated.error, { status: 400 });
+  const payload = gated.payload;
   const teacherWorkspaceUserId = payload.teacherWorkspaceUserId ?? null;
 
   const { data: contacts, error: contactsError } = await sbAdmin
@@ -115,10 +125,13 @@ export async function POST(request: Request, { params }: Params) {
     return topicAnnouncementAttachmentValidationResponse(attachmentValidation);
   }
 
-  const timezone = await getWorkspaceSchedulingTimezone(
-    sbAdmin,
-    normalizedWsId
-  );
+  const sendDueAt = enabled
+    ? computeTopicAnnouncementSendDueAt({
+        sessionDate: payload.sessionDate,
+        startTime: payload.startTime,
+        timeZone: await getWorkspaceSchedulingTimezone(sbAdmin, normalizedWsId),
+      })
+    : null;
   const { data: announcement, error } = await sbAdmin
     .from('topic_announcements')
     .insert({
@@ -131,11 +144,7 @@ export async function POST(request: Request, { params }: Params) {
       group_id: payload.groupId ?? null,
       place: payload.place,
       room: payload.room,
-      send_due_at: computeTopicAnnouncementSendDueAt({
-        sessionDate: payload.sessionDate,
-        startTime: payload.startTime,
-        timeZone: timezone,
-      }),
+      send_due_at: sendDueAt,
       session_date: payload.sessionDate ?? null,
       source_type: payload.sourceType,
       start_time: payload.startTime ?? null,

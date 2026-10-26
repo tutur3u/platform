@@ -1,4 +1,7 @@
-import type { TopicAnnouncementUpdatePayload } from '@tuturuuu/users-core/routes/topic-announcements';
+import {
+  gateTopicAnnouncementTeacherFields,
+  type TopicAnnouncementUpdatePayload,
+} from '@tuturuuu/users-core/routes/topic-announcements';
 import { NextResponse } from 'next/server';
 import { notifyTopicAnnouncementTeachers } from '@/lib/topic-announcement-teacher-notifications';
 import {
@@ -169,8 +172,20 @@ export async function PATCH(request: Request, { params }: Params) {
     );
   }
 
-  const { actorUserId, normalizedWsId, sbAdmin, scope } = access.context;
-  const payload = parsed.data;
+  const {
+    actorUserId,
+    normalizedWsId,
+    sbAdmin,
+    scope,
+    teacherAssignmentsEnabled,
+  } = access.context;
+  const enabled = teacherAssignmentsEnabled === true;
+  const gated = gateTopicAnnouncementTeacherFields(parsed.data, {
+    enabled,
+    topicRequired: false,
+  });
+  if (gated.error) return NextResponse.json(gated.error, { status: 400 });
+  const payload = gated.payload;
 
   const loaded = await loadScopedTopicAnnouncement<ExistingAnnouncement>({
     announcementId,
@@ -270,7 +285,8 @@ export async function PATCH(request: Request, { params }: Params) {
   if (invalidAttachments) return invalidAttachments;
 
   const scheduleChanged =
-    payload.sessionDate !== undefined || payload.startTime !== undefined;
+    enabled &&
+    (payload.sessionDate !== undefined || payload.startTime !== undefined);
   const sendDueAt = scheduleChanged
     ? computeTopicAnnouncementSendDueAt({
         sessionDate:
