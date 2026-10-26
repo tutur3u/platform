@@ -13,6 +13,8 @@ const SESSION_COOKIES = {
   web: 'tuturuuu_web_app_session',
 };
 const LOOPBACK = new Set(['127.0.0.1', 'localhost', '[::1]']);
+/** A self-fetch loop nests (or fans out); stop it instead of hanging the run. */
+export const SELF_FETCH_LIMITS = { inFlight: 8, total: 200 };
 
 /**
  * The gate only drives a Worker it started itself on loopback. There is no
@@ -141,10 +143,19 @@ export function sessionCookies(app, profile, { secret, actorId, now }) {
 /**
  * Answers the Worker's outbound requests in-process: the fixture user from
  * Supabase auth admin, profile rows by table, empty reads otherwise, the
- * profile's Web responses, and 401 for any other Web API read. Every other
- * request is recorded as unexpected and denied.
+ * profile's Web responses, and 401 for any other Web API read. A request to
+ * the app's own root host goes back to the Worker under test (`self`), as a
+ * same-zone fetch does in production under `global_fetch_strictly_public`.
+ * Every other request is recorded as unexpected and denied.
  */
-export function createWorkerEgress(profile, context) {
+export function createWorkerEgress(
+  profile,
+  context,
+  { self, limits = SELF_FETCH_LIMITS } = {}
+) {
+  const rootOrigin = `https://${profile.rootHost}`;
+  let selfInFlight = 0;
+  let selfTotal = 0;
   const supabase = new URL(context.supabaseUrl).origin;
   const seen = [];
   const unexpected = [];
@@ -200,6 +211,22 @@ export function createWorkerEgress(profile, context) {
       const url = new URL(request.url);
       const label = `${request.method} ${url.origin}${url.pathname}`;
       seen.push(label);
+      if (url.origin === rootOrigin && self) {
+        if (selfInFlight >= limits.inFlight || selfTotal >= limits.total) {
+          unexpected.push(`self-fetch loop ${label}`);
+          return new Response(
+            'Self-fetch loop stopped by the root-browser gate',
+            {
+              status: 508,
+            }
+          );
+        }
+        selfInFlight += 1;
+        selfTotal += 1;
+        return Promise.resolve(self(request)).finally(() => {
+          selfInFlight -= 1;
+        });
+      }
       const response = answer(request, url);
       if (response) return response;
       unexpected.push(`worker ${label}`);

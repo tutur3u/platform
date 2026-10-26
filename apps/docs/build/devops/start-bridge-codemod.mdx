@@ -250,7 +250,11 @@ The gate:
 - Signs a disposable app session with a random coordination secret.
 - Answers every Supabase and Web request in-process: the fixture user, the
   profile's rows and Web responses, empty reads, and 401 for any other Web
-  API read. Any other Worker or browser request fails the run.
+  API read. A request to the app's own root host goes back to the Worker
+  under test, as a same-zone fetch does in production under
+  `global_fetch_strictly_public`. A self-fetch loop (more than 8 nested or
+  200 total) is stopped with `508` and fails the run. Any other Worker or browser request fails
+  the run, and an SSR failure lists it.
 - For each locale, follows the signed-in SSR redirects. They must stay on the
   root host and end on a `200` page with `<html lang>`, emitted assets and
   `private, no-store`. Chromium then loads the same path and must hydrate.
@@ -276,8 +280,9 @@ Each app owns its profile at `apps/<app>/cloudflare/root-browser.profile.mjs`
 | `browser` | Extra browser origins: `{ origin, fulfill: 'image' \| 401 }` (e.g. a default avatar host) |
 | `serviceWorkers` | Omitted or `'block'` (default): the fixture browser blocks service workers, because a registered one answers requests before the gate's routing and would be measured instead of the Worker; the gate also asserts no service worker controls the page. `{ mode: 'allow', reason }` only for an explicit offline/service-worker run. Any other value fails validation. Every `PASS` line and the `ROOT_BROWSER_PASS` receipt record the mode |
 
-Regressions for the profile, session, egress and SSR rules run with
-`node --test scripts/ci/native-root-browser.test.mjs`.
+Regressions for the profile, session, egress, self-fetch and SSR rules, and a
+check that every `apps/*/cloudflare/root-browser.profile.mjs` is valid, run
+with `node --test scripts/ci/native-root-browser.test.mjs`.
 
 ### Generator inputs
 
