@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 HERE = Path(__file__).parent
 spec = importlib.util.spec_from_file_location("tasks_artifact", HERE / "tasks-native-artifact.py")
@@ -47,6 +48,8 @@ class TasksArtifactTest(unittest.TestCase):
     def test_identity_is_the_declared_tasks_worker(self):
         self.assertIn("robots.txt", wrapper.PUBLIC_FILES)
         self.assertIn("offline.html", wrapper.PUBLIC_FILES)
+        self.assertEqual(artifact.PUBLIC_HTML, ("offline.html",))
+        self.assertEqual(base.PUBLIC_HTML, ())
         self.assertEqual(artifact.IDENTITY["name"], WORKER)
         self.assertEqual(artifact.NORMALIZED_DEFAULTS["topLevelName"], WORKER)
         self.assertEqual(artifact.IDENTITY["compatibility_date"], "2026-10-19")
@@ -107,6 +110,13 @@ class TasksArtifactTest(unittest.TestCase):
         (app / "dist/client/index.html").write_text("<html></html>")
         with self.assertRaisesRegex(ValueError, "unreviewed static HTML"):
             artifact.validate_output(app)
+        (app / "dist/client/index.html").unlink()
+        # Even a byte-checked public HTML file needs the explicit admission.
+        for root in ("public", "dist/client"):
+            (app / root / "promo.html").write_text("<html>promo</html>")
+        with mock.patch.object(artifact, "PUBLIC_FILES", (*artifact.PUBLIC_FILES, "promo.html")):
+            with self.assertRaisesRegex(ValueError, "unreviewed static HTML"):
+                artifact.validate_output(app)
 
     def test_offline_fallback_requires_exact_html_handling(self):
         app, config = self.fixture()

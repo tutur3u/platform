@@ -13,6 +13,8 @@ const SESSION_COOKIES = {
   web: 'tuturuuu_web_app_session',
 };
 const LOOPBACK = new Set(['127.0.0.1', 'localhost', '[::1]']);
+/** A self-fetch loop nests (or fans out); stop it instead of hanging the run. */
+export const SELF_FETCH_LIMITS = { inFlight: 8, total: 200 };
 
 /**
  * The gate only drives a Worker it started itself on loopback. There is no
@@ -120,8 +122,14 @@ export function sessionCookies(app, profile, { secret, actorId, now }) {
  * same-zone fetch does in production under `global_fetch_strictly_public`.
  * Every other request is recorded as unexpected and denied.
  */
-export function createWorkerEgress(profile, context, { self } = {}) {
+export function createWorkerEgress(
+  profile,
+  context,
+  { self, limits = SELF_FETCH_LIMITS } = {}
+) {
   const rootOrigin = `https://${profile.rootHost}`;
+  let selfInFlight = 0;
+  let selfTotal = 0;
   const supabase = new URL(context.supabaseUrl).origin;
   const seen = [];
   const unexpected = [];
@@ -177,7 +185,22 @@ export function createWorkerEgress(profile, context, { self } = {}) {
       const url = new URL(request.url);
       const label = `${request.method} ${url.origin}${url.pathname}`;
       seen.push(label);
-      if (url.origin === rootOrigin && self) return self(request);
+      if (url.origin === rootOrigin && self) {
+        if (selfInFlight >= limits.inFlight || selfTotal >= limits.total) {
+          unexpected.push(`self-fetch loop ${label}`);
+          return new Response(
+            'Self-fetch loop stopped by the root-browser gate',
+            {
+              status: 508,
+            }
+          );
+        }
+        selfInFlight += 1;
+        selfTotal += 1;
+        return Promise.resolve(self(request)).finally(() => {
+          selfInFlight -= 1;
+        });
+      }
       const response = answer(request, url);
       if (response) return response;
       unexpected.push(`worker ${label}`);

@@ -252,7 +252,8 @@ The gate:
   profile's rows and Web responses, empty reads, and 401 for any other Web
   API read. A request to the app's own root host goes back to the Worker
   under test, as a same-zone fetch does in production under
-  `global_fetch_strictly_public`. Any other Worker or browser request fails
+  `global_fetch_strictly_public`. A self-fetch loop (more than 8 nested or
+  200 total) is stopped with `508` and fails the run. Any other Worker or browser request fails
   the run, and an SSR failure lists it.
 - For each locale, follows the signed-in SSR redirects. They must stay on the
   root host and end on a `200` page with `<html lang>`, emitted assets and
@@ -278,8 +279,9 @@ Each app owns its profile at `apps/<app>/cloudflare/root-browser.profile.mjs`
 | `hydration` | `request(context)`: a path prefix the client must request, or `text(context)`: a marker only the client renders. Polling pages never reach network idle |
 | `browser` | Extra browser origins: `{ origin, fulfill: 'image' \| 401 }` (e.g. a default avatar host) |
 
-Regressions for the profile, session, egress and SSR rules run with
-`node --test scripts/ci/native-root-browser.test.mjs`.
+Regressions for the profile, session, egress, self-fetch and SSR rules, and a
+check that every `apps/*/cloudflare/root-browser.profile.mjs` is valid, run
+with `node --test scripts/ci/native-root-browser.test.mjs`.
 
 ### Generator inputs
 

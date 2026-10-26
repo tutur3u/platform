@@ -38,6 +38,8 @@ def load():
     module.ASSET_POLICY = {**module.ASSET_POLICY, "html_handling": "none"}
     module.RECEIPT = "tasks-native-artifact.json"
     module.PUBLIC_FILES = PUBLIC_FILES
+    # The offline worker's fallback page is the only HTML Tasks may emit.
+    module.PUBLIC_HTML = ("offline.html",)
     return module
 
 

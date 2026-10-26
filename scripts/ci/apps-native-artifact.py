@@ -47,6 +47,9 @@ RECEIPT = "apps-native-artifact.json"
 # may require more (Tasks requires html_handling "none").
 ASSET_POLICY = {"binding": "ASSETS", "run_worker_first": True, "not_found_handling": "none"}
 PUBLIC_FILES = ("robots.txt", "sitemap.xml")
+# Public files that may be HTML (each also in PUBLIC_FILES, so byte-checked);
+# any other HTML in the output is prerender output.
+PUBLIC_HTML = ()
 MAX_FILES = 50000
 MAX_BYTES = 1024 * 1024 * 1024
 
@@ -137,10 +140,8 @@ def validate_output(directory, source=None):
     for name in PUBLIC_FILES:
         require((assets_path / name).is_file(), "missing public asset: " + name)
         require((assets_path / name).read_bytes() == (source / "public" / name).read_bytes(), "public asset drift: " + name)
-    # A declared public file (byte-equal to the source above) may be HTML, such
-    # as an offline fallback page; any other HTML is prerender output.
     html = {path.relative_to(assets_path).as_posix() for path in assets_path.rglob("*.html")}
-    require(html <= set(PUBLIC_FILES), "unreviewed static HTML/prerender output")
+    require(html <= set(PUBLIC_HTML) & set(PUBLIC_FILES), "unreviewed static HTML/prerender output")
     return {"app": app, "config": config_path, "main": main, "assets": assets_path}
 
 

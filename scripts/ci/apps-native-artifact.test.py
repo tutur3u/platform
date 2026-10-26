@@ -350,7 +350,14 @@ class ArtifactTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "unreviewed static HTML"):
                 artifact.validate_output(app)
             target.unlink()
+        (app / "public/offline.html").write_text("<html>offline</html>")
+        (app / "dist/client/offline.html").write_text("<html>offline</html>")
         with mock.patch.object(artifact, "PUBLIC_FILES", (*artifact.PUBLIC_FILES, "offline.html")):
+            # A public HTML file still needs its explicit HTML admission.
+            with self.assertRaisesRegex(ValueError, "unreviewed static HTML"):
+                artifact.validate_output(app)
+        with mock.patch.object(artifact, "PUBLIC_FILES", (*artifact.PUBLIC_FILES, "offline.html")), \
+                mock.patch.object(artifact, "PUBLIC_HTML", ("offline.html",)):
             (app / "public/offline.html").write_text("<html>offline</html>")
             (app / "dist/client/offline.html").write_text("<html>offline</html>")
             artifact.validate_output(app)

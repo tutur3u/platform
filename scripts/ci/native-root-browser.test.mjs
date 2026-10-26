@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { createHmac } from 'node:crypto';
+import { existsSync, readdirSync } from 'node:fs';
 import test from 'node:test';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
   assertLoopbackOrigin,
   browserDecision,
@@ -224,6 +226,57 @@ test('same-host requests go back to the Worker under test', async () => {
     new Request('https://tasks.tuturuuu.com/x')
   );
   assert.equal(otherApp.status, 599);
+});
+
+test('a self-fetch loop is stopped by nesting and total limits', async () => {
+  const limits = { inFlight: 2, total: 5 };
+  let egress;
+  egress = createWorkerEgress(profile, context, {
+    limits,
+    // Every self-fetch issues another one: an unbounded loop.
+    self: (request) => egress.handle(new Request(request.url)),
+  });
+  const looped = await egress.handle(
+    new Request('https://track.tuturuuu.com/x')
+  );
+  assert.equal(looped.status, 508);
+  assert.deepEqual(egress.unexpected, [
+    'self-fetch loop GET https://track.tuturuuu.com/x',
+  ]);
+
+  let calls = 0;
+  const fanOut = createWorkerEgress(profile, context, {
+    limits,
+    self: async () => {
+      calls += 1;
+      return new Response('ok');
+    },
+  });
+  const statuses = [];
+  for (let i = 0; i < 7; i++)
+    statuses.push(
+      (await fanOut.handle(new Request(`https://track.tuturuuu.com/${i}`)))
+        .status
+    );
+  assert.deepEqual(statuses, [200, 200, 200, 200, 200, 508, 508]);
+  assert.equal(calls, 5);
+});
+
+test('every app root-browser profile is valid', async () => {
+  const apps = fileURLToPath(new URL('../../apps/', import.meta.url));
+  const profiled = readdirSync(apps, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .filter((app) =>
+      existsSync(`${apps}${app}/cloudflare/root-browser.profile.mjs`)
+    );
+  assert.ok(profiled.includes('tasks'), 'the Tasks profile exists');
+  for (const app of profiled) {
+    const { default: appProfile } = await import(
+      pathToFileURL(`${apps}${app}/cloudflare/root-browser.profile.mjs`).href
+    );
+    assert.deepEqual(profileProblems(app, appProfile), [], app);
+  }
 });
 
 test('the browser loads only the Worker, Web fixtures and the profile allowlist', () => {
