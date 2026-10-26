@@ -27,7 +27,6 @@ test('emitted storefront Worker applies security and personalized cache policy',
     },
   });
   for (const host of [
-    'storefront.tuturuuu.com',
     'store.tuturuuu.com',
     'storefront-staging.tuturuuu.com',
   ]) {
@@ -108,6 +107,24 @@ test('emitted storefront Worker applies security and personalized cache policy',
         `${method} ${path}`
       );
       assert.match(response.headers.vary ?? '', /(?:^|,\s*)cookie(?:,|$)/i);
+    }
+  }
+  for (const host of [
+    'storefront.tuturuuu.com',
+    'stores.tuturuuu.com',
+    'storefronts.tuturuuu.com',
+  ]) {
+    for (const path of [
+      '/',
+      '/api/build-info?tag=one&tag=two',
+      '/login?next=%2Fdemo',
+    ]) {
+      const response = await worker.request(path, { host });
+      assert.equal(response.status, 307);
+      assert.equal(
+        response.headers.location,
+        `https://store.tuturuuu.com${path}`
+      );
     }
   }
   for (const host of ['tuturuuu.com', 'www.tuturuuu.com', 'unknown.invalid']) {

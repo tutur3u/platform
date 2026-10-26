@@ -5,7 +5,7 @@ function decorate(path: string, headers: HeadersInit = {}, method = 'GET') {
   const wrapResponse = config.wrapResponse;
   if (!wrapResponse) throw new Error('Native response policy is required');
   return wrapResponse(new Response('body', { headers }), {
-    request: new Request(`https://storefront.tuturuuu.com${path}`, { method }),
+    request: new Request(`https://store.tuturuuu.com${path}`, { method }),
     env: {},
   });
 }
@@ -13,11 +13,7 @@ function decorate(path: string, headers: HeadersInit = {}, method = 'GET') {
 describe('native root response policy', () => {
   it('rejects apex mounts and unknown hosts in the bridge configuration', () => {
     expect(config.mounts).toEqual({
-      rootHosts: [
-        'storefront.tuturuuu.com',
-        'store.tuturuuu.com',
-        'storefront-staging.tuturuuu.com',
-      ],
+      rootHosts: ['store.tuturuuu.com', 'storefront-staging.tuturuuu.com'],
       mountHosts: [],
       unknownHost: 'reject',
     });
@@ -115,5 +111,30 @@ describe('sandboxed uploaded WebGL documents', () => {
       `${sandbox}; frame-ancestors 'none'`
     );
     expect(response.headers.get('X-Frame-Options')).toBe('DENY');
+  });
+});
+
+describe('Storefront production redirect aliases', () => {
+  it.each([
+    'storefront.tuturuuu.com',
+    'stores.tuturuuu.com',
+    'storefronts.tuturuuu.com',
+  ])('redirects %s without serving app content', async (host) => {
+    const wrapResponse = config.wrapResponse;
+    if (!wrapResponse) throw new Error('Response policy is required');
+    const response = await wrapResponse(
+      new Response('Not Found', { status: 404 }),
+      {
+        request: new Request(
+          `https://${host}/shop/orders?tag=a&tag=b&next=%2Fdemo`
+        ),
+        env: {},
+      }
+    );
+    expect(response.status).toBe(307);
+    expect(response.headers.get('Location')).toBe(
+      'https://store.tuturuuu.com/shop/orders?tag=a&tag=b&next=%2Fdemo'
+    );
+    expect(await response.text()).toBe('');
   });
 });

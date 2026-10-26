@@ -66,7 +66,7 @@ export async function startFixtureWorker(
     origin,
     request(
       path,
-      { method = 'GET', headers = {}, host = 'storefront.tuturuuu.com' } = {}
+      { method = 'GET', headers = {}, host = 'store.tuturuuu.com' } = {}
     ) {
       return new Promise((resolve, reject) => {
         const target = new URL(path, origin);

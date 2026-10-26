@@ -26,16 +26,28 @@ export const selectStorefrontApiOrigin: ApiOrigin = (
 export default defineBridgeAppConfig<StorefrontApiEnvironment>({
   apiOrigin: selectStorefrontApiOrigin,
   mounts: {
-    rootHosts: [
-      'storefront.tuturuuu.com',
-      'store.tuturuuu.com',
-      'storefront-staging.tuturuuu.com',
-    ],
+    rootHosts: ['store.tuturuuu.com', 'storefront-staging.tuturuuu.com'],
     mountHosts: [],
     unknownHost: 'reject',
   },
   wrapResponse(response, { request }) {
-    const result = new Response(response.body, response);
+    const url = new URL(request.url);
+    const redirects = new Set([
+      'storefront.tuturuuu.com',
+      'stores.tuturuuu.com',
+      'storefronts.tuturuuu.com',
+    ]);
+    const result = redirects.has(url.hostname)
+      ? new Response(null, {
+          status: 307,
+          headers: {
+            Location: new URL(
+              `${url.pathname}${url.search}`,
+              'https://store.tuturuuu.com'
+            ).href,
+          },
+        })
+      : new Response(response.body, response);
     result.headers.set('X-Robots-Tag', 'noindex, nofollow');
     const path = new URL(request.url).pathname;
     const sandboxedWebgl =
