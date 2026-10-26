@@ -496,6 +496,12 @@ starts its reusable callee.
   merge tooling such as `watch_pr_ready` counts `SKIPPED` as passing. Once the
   label is removed, the PR has no hosted evidence. Re-add the label for a fresh
   admitted run, or rely on the exact-head local pass.
+- **Push/label race.** A `synchronize` payload carries the labels present at
+  push time. If the label is added seconds after a push, that unlabelled push
+  run can land after the admitted `labeled` run and supersede it with skipped
+  checks. Add the label only after the PR shows the new head SHA. If a labelled
+  PR shows skipped heavy checks, remove and re-add the label. Pushes to an
+  already-labelled PR are admitted.
 - **Always on for every PR push:** Branch Name Check, Check Migration
   Timestamps, Check Database Migrations, Mobile API Mappings, Codex Plugin
   Check, Security Checks (gitleaks, dependency review and audit) and Security
