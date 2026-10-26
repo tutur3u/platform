@@ -1,10 +1,14 @@
 const { execFileSync } = require('node:child_process');
 const path = require('node:path');
 
+const { withoutWorkflowLabelGate } = require('./pr-label-gate');
+
 const workflowsDir = path.resolve(__dirname, '../../.github/workflows');
 
-function readWorkflow(name) {
-  return JSON.parse(
+// Job conditions are returned without the ready-for-ci PR label gate so tests
+// assert each job's own admission; pass { raw: true } to see the gate.
+function readWorkflow(name, { raw = false } = {}) {
+  const workflow = JSON.parse(
     execFileSync(
       'bun',
       [
@@ -15,11 +19,12 @@ function readWorkflow(name) {
       { encoding: 'utf8' }
     )
   );
+  return raw ? workflow : withoutWorkflowLabelGate(workflow);
 }
 
 // Parses every workflow in one Bun process; keyed by file name.
-function readAllWorkflows(dir = workflowsDir) {
-  return JSON.parse(
+function readAllWorkflows(dir = workflowsDir, { raw = false } = {}) {
+  const workflows = JSON.parse(
     execFileSync(
       'bun',
       [
@@ -35,6 +40,13 @@ console.log(JSON.stringify(out));`,
       ],
       { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }
     )
+  );
+  if (raw) return workflows;
+  return Object.fromEntries(
+    Object.entries(workflows).map(([file, workflow]) => [
+      file,
+      withoutWorkflowLabelGate(workflow),
+    ])
   );
 }
 

@@ -26,6 +26,7 @@ import {
   browserDecision,
   createWorkerEgress,
   profileProblems,
+  serviceWorkerMode,
   sessionCookies,
   ssrProblems,
 } from './native-root-browser-core.mjs';
@@ -43,6 +44,11 @@ const { default: profile } = await import(
 );
 const problems = profileProblems(app, profile);
 assert.deepEqual(problems, [], `invalid ${app} root-browser profile`);
+// Routing and acceptance runs block service workers (the default); only a
+// profile's explicit offline/service-worker mode allows them.
+const workers = serviceWorkerMode(profile);
+const workersLabel =
+  workers.mode === 'block' ? 'block' : `allow (${workers.reason})`;
 const envSha = `${app.replace(/-/gu, '_').toUpperCase()}_SOURCE_SHA`;
 const sha = values.sha ?? process.env[envSha];
 assert.match(sha ?? '', /^[a-f0-9]{40}$/u, `pass --sha or set ${envSha}`);
@@ -69,7 +75,22 @@ const context = {
 };
 const secret = randomBytes(32).toString('hex');
 const cookies = sessionCookies(app, profile, { ...context, secret });
-const egress = createWorkerEgress(profile, context);
+// Same-zone self-fetches reach this Worker, as in production.
+let worker;
+// A fresh request: the outbound one carries Workers `cf` options that
+// worker.fetch rejects alongside its own.
+const egress = createWorkerEgress(profile, context, {
+  self: async (request) =>
+    worker.fetch(request.url, {
+      method: request.method,
+      headers: request.headers,
+      body:
+        request.method === 'GET' || request.method === 'HEAD'
+          ? undefined
+          : await request.arrayBuffer(),
+      redirect: 'manual',
+    }),
+});
 const { configPath } = readNativeRuntimeConfig(appDir);
 const { unstable_startWorker } = createRequire(join(appDir, 'package.json'))(
   'wrangler'
@@ -82,7 +103,7 @@ const scratch = await mkdtemp(join(tmpdir(), `${app}-root-browser-`));
 await cp(join(appDir, 'dist'), join(scratch, 'dist'), { recursive: true });
 await writeFile(join(scratch, 'empty.env'), '');
 
-const worker = await unstable_startWorker({
+worker = await unstable_startWorker({
   config: join(scratch, relative(appDir, configPath)),
   envFiles: [join(scratch, 'empty.env')],
   sendMetrics: false,
@@ -180,11 +201,14 @@ try {
     assert.deepEqual(
       ssr,
       [],
-      `${entry.locale} SSR (${chain.join(' -> ')}): ${html.slice(0, 400)}`
+      `${entry.locale} SSR (${chain.join(' -> ')}): ${html.slice(0, 400)}\nunexpected egress: ${[...new Set(egress.unexpected)].join(', ') || 'none'}`
     );
     assert.match(url.pathname, entry.finalPath, `${entry.locale} final path`);
 
-    const browserContext = await browser.newContext({ locale: entry.locale });
+    const browserContext = await browser.newContext({
+      locale: entry.locale,
+      serviceWorkers: workers.mode,
+    });
     await browserContext.addCookies(
       Object.entries(cookieMap).map(([name, value]) => ({
         name,
@@ -249,6 +273,12 @@ try {
         })
         .first()
         .waitFor({ timeout: 60000 });
+    if (workers.mode === 'block')
+      assert.equal(
+        await page.evaluate(() => navigator.serviceWorker?.controller ?? null),
+        null,
+        `${entry.locale}: a service worker controls the page`
+      );
     assert.equal(await page.locator('html').getAttribute('lang'), entry.locale);
     assert.match(
       new URL(page.url()).pathname,
@@ -256,7 +286,7 @@ try {
       `${entry.locale} browser path`
     );
     console.log(
-      `PASS ${app} ${entry.locale}: ${chain.join(' -> ')} -> 200, lang=${entry.locale}, title="${await page.title()}", hydrated`
+      `PASS ${app} ${entry.locale}: ${chain.join(' -> ')} -> 200, lang=${entry.locale}, title="${await page.title()}", hydrated, serviceWorkers=${workersLabel}`
     );
     await browserContext.close();
   }
@@ -271,7 +301,7 @@ try {
     'unexpected egress'
   );
   verify();
-  console.log(`ROOT_BROWSER_PASS ${app} ${sha}`);
+  console.log(`ROOT_BROWSER_PASS ${app} ${sha} serviceWorkers=${workersLabel}`);
 } finally {
   if (browser) await browser.close();
   await worker.dispose();
