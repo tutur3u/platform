@@ -13,6 +13,8 @@ const SESSION_COOKIES = {
   web: 'tuturuuu_web_app_session',
 };
 const LOOPBACK = new Set(['127.0.0.1', 'localhost', '[::1]']);
+/** A self-fetch loop nests (or fans out); stop it instead of hanging the run. */
+export const SELF_FETCH_LIMITS = { inFlight: 8, total: 200 };
 
 /**
  * The gate only drives a Worker it started itself on loopback. There is no
@@ -23,6 +25,28 @@ export function assertLoopbackOrigin(origin) {
   if (url.protocol !== 'http:' || !LOOPBACK.has(url.hostname))
     throw new Error(`refusing a non-loopback Worker origin: ${url.origin}`);
   return url.origin;
+}
+
+/**
+ * The fixture browser's service-worker mode. A registered service worker
+ * answers requests before Playwright routing sees them, so the gate would
+ * measure the worker cache instead of the Worker: routing and acceptance runs
+ * block service workers. Only an explicit offline/service-worker run allows
+ * them, and must say why: `{ mode: 'allow', reason: '...' }`.
+ */
+export function serviceWorkerMode(profile) {
+  const setting = profile?.serviceWorkers;
+  if (setting === undefined || setting === 'block')
+    return { mode: 'block', reason: null };
+  if (
+    typeof setting === 'object' &&
+    setting !== null &&
+    setting.mode === 'allow' &&
+    typeof setting.reason === 'string' &&
+    setting.reason.trim()
+  )
+    return { mode: 'allow', reason: setting.reason.trim() };
+  return null;
 }
 
 /** Problems with an app's `cloudflare/root-browser.profile.mjs`. */
@@ -55,6 +79,10 @@ export function profileProblems(app, profile) {
   )
     problems.push(
       'hydration needs a request(context) path prefix or a text(context) marker'
+    );
+  if (!serviceWorkerMode(profile))
+    problems.push(
+      "serviceWorkers must be 'block' (the default) or { mode: 'allow', reason } for an explicit offline/service-worker run"
     );
   for (const [index, rule] of (profile.browser ?? []).entries()) {
     let origin = null;
@@ -115,10 +143,19 @@ export function sessionCookies(app, profile, { secret, actorId, now }) {
 /**
  * Answers the Worker's outbound requests in-process: the fixture user from
  * Supabase auth admin, profile rows by table, empty reads otherwise, the
- * profile's Web responses, and 401 for any other Web API read. Every other
- * request is recorded as unexpected and denied.
+ * profile's Web responses, and 401 for any other Web API read. A request to
+ * the app's own root host goes back to the Worker under test (`self`), as a
+ * same-zone fetch does in production under `global_fetch_strictly_public`.
+ * Every other request is recorded as unexpected and denied.
  */
-export function createWorkerEgress(profile, context) {
+export function createWorkerEgress(
+  profile,
+  context,
+  { self, limits = SELF_FETCH_LIMITS } = {}
+) {
+  const rootOrigin = `https://${profile.rootHost}`;
+  let selfInFlight = 0;
+  let selfTotal = 0;
   const supabase = new URL(context.supabaseUrl).origin;
   const seen = [];
   const unexpected = [];
@@ -174,6 +211,22 @@ export function createWorkerEgress(profile, context) {
       const url = new URL(request.url);
       const label = `${request.method} ${url.origin}${url.pathname}`;
       seen.push(label);
+      if (url.origin === rootOrigin && self) {
+        if (selfInFlight >= limits.inFlight || selfTotal >= limits.total) {
+          unexpected.push(`self-fetch loop ${label}`);
+          return new Response(
+            'Self-fetch loop stopped by the root-browser gate',
+            {
+              status: 508,
+            }
+          );
+        }
+        selfInFlight += 1;
+        selfTotal += 1;
+        return Promise.resolve(self(request)).finally(() => {
+          selfInFlight -= 1;
+        });
+      }
       const response = answer(request, url);
       if (response) return response;
       unexpected.push(`worker ${label}`);

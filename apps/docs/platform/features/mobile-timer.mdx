@@ -28,6 +28,33 @@ session timing and dock transition smoothness require device verification;
 widget tests do not establish either.
 
 
+## Focus Time and Pomodoro (planned)
+
+Focus Time is part of time tracking; there is no separate focus store. A
+Pomodoro focus interval is an ordinary tracking session, linked to a task
+when started from one, and tagged `pomodoro`. Focus Time totals (today, last
+week, the month and a seven-day chart) are tracker statistics filtered to
+those sessions.
+
+Breaks between intervals are control phases, not tracked work, so billing and
+productivity totals do not change.
+
+Pomodoro becomes a first-class timer on mobile and web with:
+
+- configurable focus, short-break and long-break lengths;
+- a long break after a configurable number of intervals;
+- auto-start for breaks and for focus;
+- phase-end notifications;
+- task linking.
+
+Until shared control activation ships, the timer is device-driven, and
+notifications fire only on the device that started it. Cross-device phases
+and all-clients-closed notifications need the database contract described
+below, plus a Cloudflare deadline scheduler. That database migration is
+flagged in the
+[native pass plan](/build/development-tools/mobile-native-pass-plan#pomodoro-and-focus-time)
+and has not been written.
+
 ## Shared Pomodoro preparation is inactive
 
 The private time-tracker control foundation prepares actor/workspace-scoped

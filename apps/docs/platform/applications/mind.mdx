@@ -100,6 +100,13 @@ therefore forwarded to `apps/web`:
 - `/api/ai/chat/upload-url`, `/api/ai/chat/delete-file`, and
   `/api/ai/chat/file-urls`, which provide shared Mind chat attachments
 
+Chat attachments are private to the chat creator. `file-urls` and
+`signed-read-url` apply the same path rules as the `workspaces` bucket RLS
+through `@tuturuuu/storage-core/workspace-storage-access`. Other members,
+non-members and missing chats get 403, and traversal or encoded aliases get
+400. Shared public chats show messages without attachment URLs. See
+[Workspace storage server access](/build/devops/workspace-storage-server-access).
+
 The separate `/api/v1/hive/servers/:serverId/mind-simulations` integration is
 Hive-owned in `apps/hive`, not a Mind product handler. It imports a Mind board
 as Hive agents plus a saved interaction workflow.

@@ -49,6 +49,7 @@ interface TopicAnnouncementPendingState {
   send: boolean;
   updateTemplate: boolean;
   verify: boolean;
+  verifyMany: boolean;
 }
 
 interface TopicAnnouncementActions {
@@ -75,6 +76,7 @@ interface TopicAnnouncementActions {
     payload: Partial<TopicAnnouncementTemplatePayload>
   ) => void;
   verify: (contactId: string) => void;
+  verifyMany: (contactIds: string[]) => void;
 }
 
 interface TopicAnnouncementFilters {
@@ -320,6 +322,7 @@ export function TopicAnnouncementsProvider({
         send: mutations.sendMutation.isPending,
         updateTemplate: mutations.updateTemplateMutation.isPending,
         verify: mutations.verifyMutation.isPending,
+        verifyMany: mutations.verifyManyMutation.isPending,
       },
       schedulingTimezone,
       templates,
@@ -431,5 +434,6 @@ function createActions({
     updateTemplate: (templateId, payload) =>
       mutations.updateTemplateMutation.mutate({ payload, templateId }),
     verify: (contactId) => mutations.verifyMutation.mutate(contactId),
+    verifyMany: (contactIds) => mutations.verifyManyMutation.mutate(contactIds),
   };
 }

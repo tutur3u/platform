@@ -12,6 +12,21 @@ import {
 import type { useTutoringHandoff } from './use-tutoring-handoff';
 
 type Handoff = ReturnType<typeof useTutoringHandoff>;
+
+/**
+ * Make-up content left as drafted from the lesson notes is saved empty, so the
+ * server keeps following the class notes until the session is completed.
+ */
+export function storedTutoringContent(
+  draft: Pick<TutoringFormValues, 'content' | 'linkedContent' | 'reasonType'>
+) {
+  if (
+    draft.reasonType === 'ABSENT_RECOVERY' &&
+    draft.content.trim() === (draft.linkedContent ?? '').trim()
+  )
+    return '';
+  return draft.content;
+}
 interface Intent {
   scope: Handoff['scope'];
   current: () => boolean;
@@ -70,7 +85,7 @@ export function useTutoringCreate({
       }
       if (!current(intent)) return null;
       return createTutoringSession(intent.scope.wsId, {
-        content: draft.content,
+        content: storedTutoringContent(draft),
         groupId: draft.groupId,
         reasonDetail: draft.reasonDetail,
         reasonType: draft.reasonType,
