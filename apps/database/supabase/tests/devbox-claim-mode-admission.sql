@@ -1,4 +1,4 @@
--- Devbox claim mode admission (migration 20261024094600).
+-- Devbox claim mode admission (migration 20261026145000).
 begin;
 
 create extension if not exists pgtap with schema extensions;
