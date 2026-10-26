@@ -8597,6 +8597,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailFocusStartFailedRunning => 'Không thể bắt đầu tập trung. Bộ bấm giờ trước đó đang chạy lại.';
 
   @override
+  String get taskBoardDetailFocusStartFailedUnknown => 'Không thể bắt đầu tập trung và không xác nhận được trạng thái của bộ bấm giờ trước đó. Mở bộ bấm giờ để kiểm tra.';
+
+  @override
   String get taskBoardDetailFocusStarted => 'Đã bắt đầu bấm giờ cho công việc này.';
 
   @override
@@ -9012,6 +9015,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get taskBoardDetailTaskLabels => 'Nhãn';
+
+  @override
+  String get taskBoardDetailTaskList => 'Danh sách';
 
   @override
   String get taskBoardDetailTaskListLabel => 'Danh sách';
@@ -10222,10 +10228,43 @@ class AppLocalizationsVi extends AppLocalizations {
   String get timerPomodoro => 'Pomodoro';
 
   @override
+  String get timerPomodoroBreakDoneBody => 'Sẵn sàng cho lượt tập trung tiếp theo?';
+
+  @override
+  String get timerPomodoroBreakDoneTitle => 'Hết giờ nghỉ';
+
+  @override
+  String timerPomodoroCycle(int current, int total) {
+    return 'Lượt tập trung $current/$total';
+  }
+
+  @override
+  String get timerPomodoroFocusDoneBody => 'Đến giờ nghỉ rồi.';
+
+  @override
+  String get timerPomodoroFocusDoneTitle => 'Đã xong lượt tập trung';
+
+  @override
+  String timerPomodoroRemaining(String minutes, String seconds) {
+    return 'Còn $minutes:$seconds';
+  }
+
+  @override
   String get timerPomodoroSettings => 'Cài đặt Pomodoro';
 
   @override
   String get timerPomodoroSettingsDescription => 'Điều chỉnh thời gian tập trung, thời gian nghỉ và tự động chuyển giữa các phiên.';
+
+  @override
+  String get timerPomodoroSkip => 'Bỏ qua';
+
+  @override
+  String get timerPomodoroStart => 'Bắt đầu tập trung';
+
+  @override
+  String timerPomodoroSummary(int focus, int rest) {
+    return '$focus phút tập trung · $rest phút nghỉ';
+  }
 
   @override
   String get timerProofOfWorkRequired => 'Cần ít nhất một ảnh minh chứng.';

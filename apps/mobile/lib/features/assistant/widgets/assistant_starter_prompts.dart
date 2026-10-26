@@ -48,7 +48,9 @@ class AssistantStarterPrompts extends StatelessWidget {
         ),
         const SizedBox(height: 24),
         // One grouped card of rows, like Settings: no shadows or gradients on
-        // list content, and labels wrap instead of truncating.
+        // list content. Labels allow four lines (AppGroupedRow's default is
+        // two) so long translations at large text are not cut; captions wrap
+        // in full.
         StaggeredEntrance(
           replayKey: 'assistant-starter-rows-$replayToken',
           delay: const Duration(milliseconds: 140),
@@ -58,7 +60,11 @@ class AssistantStarterPrompts extends StatelessWidget {
                 AppGroupedRow(
                   key: ValueKey('assistant-starter-${prompt.prompt}'),
                   leading: AppIconTile(icon: prompt.icon, tone: prompt.tone),
-                  title: Text(prompt.label),
+                  title: Text(
+                    prompt.label,
+                    maxLines: 4,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   subtitle: Text(prompt.caption),
                   onTap: () => onPromptSelected(prompt.prompt),
                 ),

@@ -86,6 +86,11 @@ extension _AppPushNavigation on _AppState {
       }
       await _workspaceCubit.selectWorkspace(targetWorkspace);
     }
+    // A device Pomodoro phase ended; the Timer shows what is next.
+    if (request.openTarget == 'timer') {
+      _router.go(Routes.timer);
+      return;
+    }
     if (request.opensTask) {
       _router.go(
         taskBoardDetailLocation(

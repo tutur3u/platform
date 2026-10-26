@@ -196,6 +196,10 @@ localization changes.
 - Before editing `assistant_page.dart` or `assistant_page_layout.dart`, check
   the open Mira chat PRs that own them; keep tab polish in owned widgets such
   as `assistant_starter_prompts.dart` until those land.
+- The device Pomodoro is `PomodoroController` (app-level). Focus phases are
+  ordinary tracker sessions; restore catch-up never auto-starts focus and
+  trims late stops to the deadline. In widget tests, close the controller in
+  the test body only; a second close in `tearDown` hangs outside fake time.
 
 ## Task Board
 

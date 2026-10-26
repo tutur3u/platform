@@ -38,6 +38,7 @@ extension _TaskFocusActions on _TaskBoardDetailPageViewState {
           ? await repository.getPausedSession(wsId)
           : null;
       final current = running ?? paused;
+      TimeTrackingSession? focusSession;
       if (!context.mounted) return;
       if (current != null && current.taskId != task.id) {
         final confirmed = await showAppConfirmDialog(
@@ -57,7 +58,11 @@ extension _TaskFocusActions on _TaskBoardDetailPageViewState {
         if (paused != null) {
           await repository.stopSession(wsId, paused.id);
           try {
-            await repository.startSession(wsId, title: title, taskId: task.id);
+            focusSession = await repository.startSession(
+              wsId,
+              title: title,
+              taskId: task.id,
+            );
           } on Exception {
             // Never lose the paused work silently: put it back as it was,
             // or say plainly that it ended and offer the timer.
@@ -74,6 +79,8 @@ extension _TaskFocusActions on _TaskBoardDetailPageViewState {
                   l10n.taskBoardDetailFocusStartFailedRestored,
                 _PausedRestore.running =>
                   l10n.taskBoardDetailFocusStartFailedRunning,
+                _PausedRestore.unknown =>
+                  l10n.taskBoardDetailFocusStartFailedUnknown,
                 _PausedRestore.failed =>
                   l10n.taskBoardDetailFocusStartFailedPausedEnded,
               },
@@ -86,13 +93,41 @@ extension _TaskFocusActions on _TaskBoardDetailPageViewState {
             return;
           }
         } else {
-          await repository.startSession(wsId, title: title, taskId: task.id);
+          focusSession = await repository.startSession(
+            wsId,
+            title: title,
+            taskId: task.id,
+          );
         }
       } else if (current == null) {
-        await repository.startSession(wsId, title: title, taskId: task.id);
+        focusSession = await repository.startSession(
+          wsId,
+          title: title,
+          taskId: task.id,
+        );
       } else if (paused != null) {
         // Paused on this task: pick it back up.
-        await repository.resumeSession(wsId, paused.id);
+        focusSession = await repository.resumeSession(wsId, paused.id);
+      } else {
+        // Already running for this task: count down on it.
+        focusSession = running;
+      }
+      // Start focus is a device Pomodoro focus phase on that session.
+      final userId = context.mounted
+          ? context.read<AuthCubit?>()?.state.user?.id
+          : null;
+      final pomodoro = context.mounted
+          ? context.read<PomodoroController?>()
+          : null;
+      if (focusSession != null && userId != null && pomodoro != null) {
+        await pomodoro.adoptFocus(
+          userId: userId,
+          wsId: wsId,
+          sessionId: focusSession.id,
+          title: title,
+          taskId: task.id,
+          taskName: title,
+        );
       }
       if (!toastContext.mounted) return;
       showAppToast(
@@ -112,7 +147,7 @@ extension _TaskFocusActions on _TaskBoardDetailPageViewState {
 
   /// Resumes the stopped [paused] session (the server links the new one to
   /// it) and pauses it again, retrying the pause once, so the timer looks as
-  /// it did before. Reports how far that got.
+  /// it did before. Reports the state the server confirms afterwards.
   Future<_PausedRestore> _restorePausedSession(
     ITimeTrackerRepository repository,
     String wsId,
@@ -129,10 +164,20 @@ extension _TaskFocusActions on _TaskBoardDetailPageViewState {
         await repository.pauseSession(wsId, resumed.id);
         return _PausedRestore.paused;
       } on Exception {
-        // One retry, then report the timer as running.
+        // One retry, then settle what actually happened.
       }
     }
-    return _PausedRestore.running;
+    // A pause whose response was lost may still have succeeded, so re-read
+    // the server's state before reporting it.
+    try {
+      final pausedNow = await repository.getPausedSession(wsId);
+      if (pausedNow?.id == resumed.id) return _PausedRestore.paused;
+      final runningNow = await repository.getRunningSession(wsId);
+      if (runningNow?.id == resumed.id) return _PausedRestore.running;
+      return _PausedRestore.unknown;
+    } on Exception {
+      return _PausedRestore.unknown;
+    }
   }
 }
 
@@ -141,8 +186,11 @@ enum _PausedRestore {
   /// Resumed and paused again: as it was.
   paused,
 
-  /// Resumed, but the pause failed twice: the timer is running.
+  /// Resumed, but the pause failed twice and the re-read shows it running.
   running,
+
+  /// Resumed, but neither the pause nor a re-read could confirm the state.
+  unknown,
 
   /// Not resumed: the paused session stays ended.
   failed,

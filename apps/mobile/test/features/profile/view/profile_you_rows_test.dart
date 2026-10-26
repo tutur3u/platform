@@ -84,7 +84,7 @@ void main() {
     for (final key in ['workspaces', 'timeline', 'settings']) {
       expect(
         tester.getSize(find.byKey(ValueKey('you-row-$key'))).height,
-        greaterThanOrEqualTo(44),
+        greaterThanOrEqualTo(48),
         reason: key,
       );
     }
