@@ -54,8 +54,35 @@ extension _TaskFocusActions on _TaskBoardDetailPageViewState {
         if (!confirmed || !context.mounted) return;
         // Starting only closes running sessions; stopping a paused one also
         // closes its open break.
-        if (paused != null) await repository.stopSession(wsId, paused.id);
-        await repository.startSession(wsId, title: title, taskId: task.id);
+        if (paused != null) {
+          await repository.stopSession(wsId, paused.id);
+          try {
+            await repository.startSession(wsId, title: title, taskId: task.id);
+          } on Exception {
+            // Never lose the paused work silently: put it back as it was,
+            // or say plainly that it ended and offer the timer.
+            final restored = await _restorePausedSession(
+              repository,
+              wsId,
+              paused,
+            );
+            if (!toastContext.mounted) return;
+            showAppToast(
+              toastContext,
+              message: restored
+                  ? l10n.taskBoardDetailFocusStartFailedRestored
+                  : l10n.taskBoardDetailFocusStartFailedPausedEnded,
+              variant: AppAlertVariant.destructive,
+              actionLabel: l10n.taskBoardDetailOpenTimer,
+              onAction: router == null
+                  ? null
+                  : () => unawaited(router.push<void>(Routes.timer)),
+            );
+            return;
+          }
+        } else {
+          await repository.startSession(wsId, title: title, taskId: task.id);
+        }
       } else if (current == null) {
         await repository.startSession(wsId, title: title, taskId: task.id);
       } else if (paused != null) {
@@ -75,6 +102,23 @@ extension _TaskFocusActions on _TaskBoardDetailPageViewState {
       showError(error.message);
     } on Exception {
       showError(null);
+    }
+  }
+
+  /// Resumes the stopped [paused] session (the server links the new one to
+  /// it) and pauses it again, so the timer looks as it did before. Returns
+  /// whether that worked.
+  Future<bool> _restorePausedSession(
+    ITimeTrackerRepository repository,
+    String wsId,
+    TimeTrackingSession paused,
+  ) async {
+    try {
+      final resumed = await repository.resumeSession(wsId, paused.id);
+      await repository.pauseSession(wsId, resumed.id);
+      return true;
+    } on Exception {
+      return false;
     }
   }
 }

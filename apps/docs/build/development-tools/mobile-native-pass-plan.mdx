@@ -102,7 +102,7 @@ forks.
 | Option | Choices | Default | Applied through |
 | --- | --- | --- | --- |
 | Style | Tuturuuu, iOS-like, Material-like | Tuturuuu, on both platforms | An `AppInterfaceStyle` `ThemeExtension`: page transitions (Cupertino or zoom), scroll physics (bouncing or clamping), switch and checkbox shapes, sheet corner treatment, list dividers (inset or full), and the action-sheet presentation (grouped card or menu) |
-| Density | Comfortable, Compact | Comfortable | `AppLayout` row heights and `AppSpacing` scale. Never below the 44pt target |
+| Density | Comfortable, Compact | Comfortable | `AppInterfaceTokens.rowMinHeight`: grouped row minimum height only (56dp or 48dp). Gaps and padding do not scale. Never below the 44pt target |
 | Corner radius | Rounded, Soft, Square | Rounded | `AppRadius` scale (card, sheet, pill) |
 | Accent | The existing accents | Match theme | Existing `AppearanceAccentId` (no change) |
 | Haptics | On, Off | On | Existing `AppHaptics.enabled` preference, moved into this group |

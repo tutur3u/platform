@@ -186,8 +186,13 @@ localization changes.
   not by changing it mid-test.
 - Home workspace chips read pins from the `MOBILE_PINNED_WORKSPACES` user
   config only from five workspaces, and allow edits only after a successful
-  load. Start focus treats a paused session (stopped with an open break,
-  `type=paused`) like a running one, and stops it before starting.
+  load, retrying a failed load with backoff and on resume. Start focus treats
+  a paused session (stopped with an open break, `type=paused`) like a running
+  one and stops it before starting; a failed start resumes and re-pauses it
+  rather than losing it.
+- Root tabs are Home, Apps, Mira, Inbox and You on an icon-only dock;
+  `shell_viewport_checks.dart` asserts the dock has no text. Root-tab search
+  without its own field goes through `ShellRootSearchAction`.
 
 ## Task Board
 

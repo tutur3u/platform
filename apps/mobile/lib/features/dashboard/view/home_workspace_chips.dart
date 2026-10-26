@@ -28,7 +28,16 @@ class HomeWorkspaceChips extends StatefulWidget {
   State<HomeWorkspaceChips> createState() => _HomeWorkspaceChipsState();
 }
 
-class _HomeWorkspaceChipsState extends State<HomeWorkspaceChips> {
+class _HomeWorkspaceChipsState extends State<HomeWorkspaceChips>
+    with WidgetsBindingObserver {
+  /// Delays between retries of a failed pins load; resuming the app also
+  /// retries.
+  static const _retryDelays = [
+    Duration(seconds: 2),
+    Duration(seconds: 8),
+    Duration(seconds: 30),
+  ];
+
   late final WorkspacePinsRepository _repository =
       widget.pinsRepository ?? WorkspacePinsRepository();
   List<String> _pins = const [];
@@ -39,10 +48,28 @@ class _HomeWorkspaceChipsState extends State<HomeWorkspaceChips> {
   /// never overwrites pins that failed to load.
   bool _loaded = false;
 
+  Timer? _retry;
+  int _failures = 0;
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _ensurePins(context.read<WorkspaceCubit>().state.workspaces.length);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed || !_requested || _loaded) return;
+    _retry?.cancel();
+    unawaited(_load());
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _retry?.cancel();
+    super.dispose();
   }
 
   /// Pins only change the row from [homeChipShowAllBelow] workspaces, so
@@ -62,23 +89,35 @@ class _HomeWorkspaceChipsState extends State<HomeWorkspaceChips> {
     try {
       final pins = await _repository.load();
       if (!mounted || revision != _revision) return;
+      _retry?.cancel();
+      _failures = 0;
       setState(() {
         _pins = pins;
         _loaded = true;
       });
     } on Exception {
-      // Without stored pins the row still shows the current workspace.
+      // The row still shows the current workspace meanwhile. Retry a few
+      // times with growing gaps, then wait for the app to resume.
+      if (!mounted || revision != _revision) return;
+      if (_failures < _retryDelays.length) {
+        _retry?.cancel();
+        _retry = Timer(_retryDelays[_failures++], () {
+          if (mounted && !_loaded) unawaited(_load());
+        });
+      }
     }
   }
 
-  Future<void> _savePins(List<String> pins) async {
+  /// Saves [pins] optimistically and returns the pins that are persisted
+  /// afterwards: [pins] on success, the previous pins after a rollback.
+  Future<List<String>> _savePins(List<String> pins) async {
     final previous = _pins;
     final revision = ++_revision;
     setState(() => _pins = pins);
     try {
       await _repository.save(pins);
     } on Exception {
-      if (!mounted || revision != _revision) return;
+      if (!mounted || revision != _revision) return _pins;
       setState(() => _pins = previous);
       showAppToast(
         context,
@@ -86,6 +125,7 @@ class _HomeWorkspaceChipsState extends State<HomeWorkspaceChips> {
         variant: AppAlertVariant.destructive,
       );
     }
+    return _pins;
   }
 
   Future<void> _togglePin(Workspace workspace) async {
@@ -121,6 +161,8 @@ class _HomeWorkspaceChipsState extends State<HomeWorkspaceChips> {
               previous.user?.id != current.user?.id,
           listener: (context, state) {
             _revision++;
+            _retry?.cancel();
+            _failures = 0;
             setState(() {
               _pins = const [];
               _loaded = false;

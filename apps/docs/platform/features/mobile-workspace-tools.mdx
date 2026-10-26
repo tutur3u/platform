@@ -1945,9 +1945,13 @@ gestures. The same behavior applies on Android and iOS.
 - **Start focus** starts an ordinary time-tracking session linked to the task.
   A Pomodoro entry point for tasks is planned for phase 6 of the mobile
   native pass plan. Starting a
-  session closes any running one on the server, so a timer running for another
-  task is replaced only after confirmation. A timer already running for this
-  task is kept. The confirmation toast offers **Open timer**.
+  session closes any running one on the server, so a running or paused timer
+  for another task is replaced only after confirmation. A paused one is stopped
+  first, which closes its break. If the new start then fails, the paused work
+  is resumed and paused again, so it looks as it did. If that also fails, the
+  toast says the paused timer ended and offers **Open timer**. A timer running
+  for this task is kept, and one paused on this task is resumed. The success
+  toast offers **Open timer**.
 - **Failures** roll the row back, then show the server's error as a toast:
   a failed complete returns the task to its list, and a failed priority or due
   date change restores the previous value.
@@ -1965,4 +1969,22 @@ toasts, the Schedule picker, Start focus), `task_board_bulk_selection_test.dart`
 and `app_swipe_actions_test.dart` (thresholds, the fling minimum, reveal,
 right-to-left, semantics, enlarged text). Widget tests do
 not establish gesture feel on devices.
+
+### Root tabs and dock search
+
+The floating dock's five root tabs are named **Home**, **Apps**, **Mira**,
+**Inbox** and **You** (Vietnamese: Trang chủ, Ứng dụng, Mira, Hộp thư, Bạn).
+The names are the tabs' accessible labels and the shell titles of their root
+pages. The dock stays icon-only (no captions), and Back stays on the dock;
+there is no top-left back button.
+
+Home, Inbox and You show a **Search** dock action that opens Apps with its
+search field focused (`AppTabCubit.openWithSearch`). Apps keeps its own search
+action, and Mira's dock belongs to its composer. The notifications bell stays
+beside the Inbox tab until the Inbox-versus-bell decision is made, and it keeps
+the "Notifications" name.
+
+Regression coverage: `shell_viewport_checks.dart` (icon-only dock and labels
+across phone, tablet and rail sizes) and `apps_search_submit_test.dart` (Home
+search opens Apps search).
 
