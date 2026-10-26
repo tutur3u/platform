@@ -67,6 +67,8 @@ class _PomodoroPanelState extends State<PomodoroPanel> {
       }
     } on PomodoroSessionConflict {
       if (mounted) _error(l10n.timerPomodoroOtherRunning, '');
+    } on PomodoroOrphanedSession {
+      if (mounted) _error(l10n.timerPomodoroOrphanedSession, '');
     } on ApiException catch (error) {
       if (mounted) _error(error.message, l10n.commonSomethingWentWrong);
     } on Exception {

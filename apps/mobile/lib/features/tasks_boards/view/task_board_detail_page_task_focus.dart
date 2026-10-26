@@ -62,6 +62,7 @@ extension _TaskFocusActions on _TaskBoardDetailPageViewState {
               wsId,
               title: title,
               taskId: task.id,
+              tags: const [pomodoroSessionTag],
             );
           } on Exception {
             // Never lose the paused work silently: put it back as it was,
@@ -97,6 +98,7 @@ extension _TaskFocusActions on _TaskBoardDetailPageViewState {
             wsId,
             title: title,
             taskId: task.id,
+            tags: const [pomodoroSessionTag],
           );
         }
       } else if (current == null) {
@@ -104,6 +106,7 @@ extension _TaskFocusActions on _TaskBoardDetailPageViewState {
           wsId,
           title: title,
           taskId: task.id,
+          tags: const [pomodoroSessionTag],
         );
       } else if (paused != null) {
         // Paused on this task: pick it back up.
@@ -120,14 +123,18 @@ extension _TaskFocusActions on _TaskBoardDetailPageViewState {
           ? context.read<PomodoroController?>()
           : null;
       if (focusSession != null && userId != null && pomodoro != null) {
-        await pomodoro.adoptFocus(
-          userId: userId,
-          wsId: wsId,
-          sessionId: focusSession.id,
-          title: title,
-          taskId: task.id,
-          taskName: title,
-        );
+        try {
+          await pomodoro.adoptFocus(
+            userId: userId,
+            wsId: wsId,
+            sessionId: focusSession.id,
+            title: title,
+            taskId: task.id,
+            taskName: title,
+          );
+        } on Exception {
+          // Tracking succeeded; keep its feedback and Open timer action.
+        }
       }
       if (!toastContext.mounted) return;
       showAppToast(

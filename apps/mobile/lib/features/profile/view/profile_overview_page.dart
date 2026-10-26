@@ -20,6 +20,7 @@ import 'package:mobile/features/shell/cubit/shell_profile_state.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_title_override.dart';
+import 'package:mobile/features/time_tracker/pomodoro/pomodoro_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// Account home. Opening personal activity never implies consent to share it.
@@ -173,6 +174,9 @@ class _ProfileOverviewPageState extends State<ProfileOverviewPage> {
                                 onAction: () => context.go(Routes.timerStats),
                               ),
                               ProfileActivitySection(
+                                showHeader: false,
+                                // Focus Time counts Pomodoro focus only.
+                                tag: pomodoroSessionTag,
                                 replayToken: widget.replayToken,
                                 cacheUserId: widget.cacheUserId,
                                 statsLoader: widget.statsLoader,

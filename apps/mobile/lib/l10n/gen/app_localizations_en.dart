@@ -10607,6 +10607,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timerPomodoroFocusDoneTitle => 'Focus done';
 
   @override
+  String get timerPomodoroOrphanedSession => 'Focus couldn\'t start, and a timer it created may still be running. Check the Timer page.';
+
+  @override
   String get timerPomodoroOtherRunning => 'Another timer is running. Stop it on the Timer page to continue this focus.';
 
   @override

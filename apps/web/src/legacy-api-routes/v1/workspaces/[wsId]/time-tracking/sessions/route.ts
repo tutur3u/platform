@@ -16,8 +16,13 @@ import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { NextResponse } from 'next/server';
-import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import {
+  cursorSchema,
+  type SessionRequestBody,
+  sessionCreateSchema,
+} from '@/lib/time-tracking/session-request-schemas';
+import { normalizeSessionTags } from '@/lib/time-tracking/session-tags';
 import {
   getWorkspaceConfig,
   isPersonalWorkspace,
@@ -26,22 +31,6 @@ import {
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
-
-const cursorSchema = z.object({
-  lastStartTime: z.iso.datetime({ offset: true }),
-  lastId: z.guid().or(z.string().regex(/^\d+$/)),
-});
-
-const sessionCreateSchema = z.object({
-  title: z.string().optional(),
-  description: z.string().nullable().optional(),
-  categoryId: z.guid().nullable().optional(),
-  taskId: z.guid().nullable().optional(),
-  startTime: z.iso.datetime({ offset: true }).optional(),
-  endTime: z.iso.datetime({ offset: true }).optional(),
-});
-
-type SessionRequestBody = z.infer<typeof sessionCreateSchema>;
 
 type AdminClient = TypedSupabaseClient;
 
@@ -360,7 +349,7 @@ async function createRunningSession({
   normalizedWsId: string;
   sbAdmin: AdminClient;
 }): Promise<NextResponse> {
-  const { title, description, categoryId, taskId } = requestBody;
+  const { title, description, categoryId, taskId, tags } = requestBody;
 
   const { data: existingRunningSession, error: existingRunningSessionError } =
     await sbAdmin
@@ -429,6 +418,7 @@ async function createRunningSession({
       description: description?.trim() || null,
       category_id: categoryId || null,
       task_id: taskId || null,
+      tags: normalizeSessionTags(tags),
       start_time: new Date().toISOString(),
       is_running: true,
       created_at: new Date().toISOString(),

@@ -4,6 +4,13 @@ import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
 export 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart'
     show PomodoroPhase;
 
+/// The tag on every focus session the Pomodoro starts, so Focus Time can
+/// count Pomodoro focus only.
+const pomodoroSessionTag = 'pomodoro';
+
+/// A span in which a focus phase ran; `end` is null while it runs.
+typedef PomodoroRun = ({DateTime start, DateTime? end});
+
 /// The device's Pomodoro: one phase at a time, counting down to [deadline]
 /// while running, or holding [remaining] while paused or waiting to start.
 ///
@@ -22,8 +29,7 @@ class PomodoroState extends Equatable {
     this.taskId,
     this.taskName,
     this.title,
-    this.startedAt,
-    this.pausedAt,
+    this.runs = const [],
   });
 
   factory PomodoroState.fromJson(Map<String, dynamic> json) {
@@ -43,8 +49,16 @@ class PomodoroState extends Equatable {
       taskId: json['taskId'] as String?,
       taskName: json['taskName'] as String?,
       title: json['title'] as String?,
-      startedAt: DateTime.tryParse(json['startedAt'] as String? ?? ''),
-      pausedAt: DateTime.tryParse(json['pausedAt'] as String? ?? ''),
+      runs: [
+        for (final run in json['runs'] as List<dynamic>? ?? const [])
+          if (run is Map<String, dynamic>)
+            if (DateTime.tryParse(run['start'] as String? ?? '')
+                case final start?)
+              (
+                start: start,
+                end: DateTime.tryParse(run['end'] as String? ?? ''),
+              ),
+      ],
     );
   }
 
@@ -59,19 +73,29 @@ class PomodoroState extends Equatable {
   final String? taskName;
   final String? title;
 
-  /// When the current focus phase began; the start of its session window.
-  final DateTime? startedAt;
+  /// The spans in which the current focus phase actually ran: one per start
+  /// or resume, closed by each pause. The open run ends at [deadline].
+  final List<PomodoroRun> runs;
 
-  /// When the phase was paused; the end of a paused phase's session window.
-  final DateTime? pausedAt;
+  /// Whether a session starting at [time] started while this focus phase
+  /// was running, so never during a pause or after the phase ended.
+  bool ranAt(DateTime time) => runs.any((run) {
+    final end = run.end ?? deadline;
+    return end != null && !time.isBefore(run.start) && time.isBefore(end);
+  });
 
-  /// The span in which a session for this phase's task belongs to it: from
-  /// the phase start to its deadline, or to the pause. Null when unknown.
-  ({DateTime start, DateTime end})? get sessionWindow {
-    final start = startedAt;
-    final end = deadline ?? pausedAt;
-    return start == null || end == null ? null : (start: start, end: end);
-  }
+  /// Opens a run at [at] (a start or resume).
+  List<PomodoroRun> runsOpenedAt(DateTime at) => [
+    for (final run in runs)
+      if (run.end != null) run,
+    (start: at, end: null),
+  ];
+
+  /// Closes the open run at [at] (a pause).
+  List<PomodoroRun> runsClosedAt(DateTime at) => [
+    for (final run in runs)
+      if (run.end == null) (start: run.start, end: at) else run,
+  ];
 
   bool get isIdle => phase == PomodoroPhase.idle;
   bool get isRunning => !isIdle && deadline != null;
@@ -92,8 +116,7 @@ class PomodoroState extends Equatable {
     Duration? remaining,
     int? completedFocus,
     String? Function()? sessionId,
-    DateTime? Function()? startedAt,
-    DateTime? Function()? pausedAt,
+    List<PomodoroRun>? runs,
   }) => PomodoroState(
     phase: phase ?? this.phase,
     deadline: deadline == null ? this.deadline : deadline(),
@@ -105,8 +128,7 @@ class PomodoroState extends Equatable {
     taskId: taskId,
     taskName: taskName,
     title: title,
-    startedAt: startedAt == null ? this.startedAt : startedAt(),
-    pausedAt: pausedAt == null ? this.pausedAt : pausedAt(),
+    runs: runs ?? this.runs,
   );
 
   Map<String, Object?> toJson() => {
@@ -120,8 +142,13 @@ class PomodoroState extends Equatable {
     'taskId': taskId,
     'taskName': taskName,
     'title': title,
-    'startedAt': startedAt?.toUtc().toIso8601String(),
-    'pausedAt': pausedAt?.toUtc().toIso8601String(),
+    'runs': [
+      for (final run in runs)
+        {
+          'start': run.start.toUtc().toIso8601String(),
+          'end': run.end?.toUtc().toIso8601String(),
+        },
+    ],
   };
 
   @override
@@ -136,7 +163,6 @@ class PomodoroState extends Equatable {
     taskId,
     taskName,
     title,
-    startedAt,
-    pausedAt,
+    runs,
   ];
 }
