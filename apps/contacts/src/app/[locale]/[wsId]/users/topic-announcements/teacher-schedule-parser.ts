@@ -179,14 +179,23 @@ export function applySheetMerges(
 ) {
   const filled = matrix.map((row) => [...row]);
 
+  const width = filled.reduce((max, row) => Math.max(max, row.length), 0);
   for (const merge of merges) {
-    const value = filled[merge.s.r]?.[merge.s.c];
+    // Clamp to the data area: a sheet can declare merges far beyond its
+    // values (or before the parsed origin), which must not drive the loops.
+    const startRow = Math.max(0, merge.s.r);
+    const endRow = Math.min(filled.length - 1, merge.e.r);
+    const startCol = Math.max(0, merge.s.c);
+    const endCol = Math.min(width - 1, merge.e.c);
+    if (startRow > endRow || startCol > endCol) continue;
+
+    const value = filled[startRow]?.[startCol];
     if (isBlank(value)) continue;
 
-    for (let r = merge.s.r; r <= merge.e.r; r += 1) {
+    for (let r = startRow; r <= endRow; r += 1) {
       const row = filled[r];
       if (!row) continue;
-      for (let c = merge.s.c; c <= merge.e.c; c += 1) {
+      for (let c = startCol; c <= endCol; c += 1) {
         if (isBlank(row[c])) row[c] = value;
       }
     }

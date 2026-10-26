@@ -3,6 +3,7 @@
 import { Download } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
+import { TeacherScheduleImportPanel } from '../teacher-schedule-import';
 import {
   downloadTopicAnnouncementTemplate,
   ImportPanel,
@@ -12,8 +13,15 @@ import { useTopicAnnouncements } from '../topic-announcements-shell';
 
 export function TopicAnnouncementsImportPageClient() {
   const t = useTranslations('ws-topic-announcements');
-  const { actions, canSend, contacts, importResult, pending, workspaceUsers } =
-    useTopicAnnouncements();
+  const {
+    actions,
+    canSend,
+    contacts,
+    importResult,
+    pending,
+    teacherAssignmentsEnabled,
+    wsId,
+  } = useTopicAnnouncements();
 
   return (
     <div className="space-y-4">
@@ -32,16 +40,27 @@ export function TopicAnnouncementsImportPageClient() {
         }
       />
 
-      <ImportPanel
-        canSend={canSend}
-        contacts={contacts}
-        importResult={importResult}
-        isImporting={pending.importRows}
-        isSending={pending.importAndSendRows}
-        onImportAndSend={actions.importAndSendRows}
-        onImport={actions.importRows}
-        workspaceUsers={workspaceUsers}
-      />
+      {teacherAssignmentsEnabled ? (
+        <TeacherScheduleImportPanel
+          canSend={canSend}
+          contacts={contacts}
+          importResult={importResult}
+          isImporting={pending.importRows}
+          isSending={pending.importAndSendRows}
+          onImportAndSend={actions.importAndSendRows}
+          onImport={actions.importRows}
+          wsId={wsId}
+        />
+      ) : (
+        <ImportPanel
+          canSend={canSend}
+          importResult={importResult}
+          isImporting={pending.importRows}
+          isSending={pending.importAndSendRows}
+          onImportAndSend={actions.importAndSendRows}
+          onImport={actions.importRows}
+        />
+      )}
     </div>
   );
 }

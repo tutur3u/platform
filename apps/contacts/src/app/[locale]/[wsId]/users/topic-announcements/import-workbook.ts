@@ -74,10 +74,23 @@ function relativeMerges(sheet: WorkSheet): {
   return { merges, rowOffset: origin.r + 1 };
 }
 
+/** Monthly schedules are small; refuse larger files before parsing them. */
+export const MAX_IMPORT_WORKBOOK_BYTES = 5 * 1024 * 1024;
+
+export class ImportWorkbookTooLargeError extends Error {
+  constructor() {
+    super('IMPORT_WORKBOOK_TOO_LARGE');
+    this.name = 'ImportWorkbookTooLargeError';
+  }
+}
+
 export async function parseImportWorkbook(
   file: File,
   durationMinutes: number
 ): Promise<ParsedImportWorkbook> {
+  if (file.size > MAX_IMPORT_WORKBOOK_BYTES) {
+    throw new ImportWorkbookTooLargeError();
+  }
   const data = await file.arrayBuffer();
   const workbook = XLSX.read(data, { type: 'array' });
   const firstSheetName = workbook.SheetNames[0];

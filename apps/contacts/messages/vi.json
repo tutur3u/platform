@@ -8863,6 +8863,8 @@
     "import_error_unmatched_teacher": "Không tìm thấy giáo viên",
     "import_failed": "Nhập dữ liệu thất bại",
     "import_file_failed": "Không thể đọc bảng tính này",
+    "import_file_too_large": "Tệp lớn hơn {size}. Hãy tách lịch hoặc xoá bớt trang tính rồi thử lại.",
+    "import_teacher_lookup_failed": "Không tra cứu được giáo viên. Hãy kiểm tra kết nối rồi thử lại.",
     "import_invalid_rows": "Cần sửa",
     "import_page_description": "Tạo nhiều thông báo trong một bảng chỉnh sửa, rồi lưu nháp hoặc gửi các dòng hợp lệ.",
     "import_preview": "Xem trước các dòng",

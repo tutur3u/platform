@@ -236,7 +236,11 @@ Topic Announcements live under Users and are gated by the workspace secret `ENAB
 
 Supervisors can load a monthly teacher schedule spreadsheet on the import page
 instead of retyping it. Scope: the contacts app import page and
-`POST /api/v1/workspaces/{wsId}/topic-announcements/import`. Default: a sheet
+`POST /api/v1/workspaces/{wsId}/topic-announcements/import`. **Gate:** only
+with `ENABLE_TOPIC_TEACHER_ASSIGNMENTS=true` (see "Rollout gate" below). With
+it off, the import page and API are the pre-feature ones: the original import
+panel, a topic required on every row, unparseable times stored as empty, no
+teacher ids and no deadline. Default with the flag on: a sheet
 is treated as a teacher schedule only when its header has `TIME`, a `DATE` or
 `DAY` column, and a `TEACHER-CLASS`, `AM/PM` or `TEACHER` column; every other
 sheet keeps the generic announcement template behavior.
@@ -260,9 +264,11 @@ sheet keeps the generic announcement template behavior.
   plus the session length, 30 minutes by default. Operators can change the
   length in the preview and apply it to every row. Sessions that would end
   after midnight are row errors.
-- **Matching.** The teacher in charge is matched against the workspace user list
-  the page already loads (full name, display name or email; exact match first,
-  then accent-insensitive). A foreign teacher without an email is matched
+- **Matching.** Each teacher name is looked up with the server-side workspace
+  user search (the same search as the composer's teacher picker), so any user
+  in a large workspace can match; candidates are then matched on full name,
+  display name or email, exact match first, then accent-insensitive.
+  Importing waits for the lookups to finish. A foreign teacher without an email is matched
   against existing contacts by name. No match or more than one match is a row
   error; the import never guesses.
 - **Row errors.** Unmatched or ambiguous teacher, unknown or ambiguous contact,
@@ -276,14 +282,22 @@ sheet keeps the generic announcement template behavior.
 - **Server checks.** The import API accepts an optional
   `teacherWorkspaceUserId` per row and returns `400` with the offending row
   numbers when any id is not a workspace user of the same workspace, before
-  anything is written (the database trigger stays as a backstop). Invalid start
-  or end times are now reported as row errors instead of being dropped.
-- The import does not set `send_due_at`; deadline handling belongs to the
-  teacher-assigned topic write paths.
+  anything is written (the database trigger stays as a backstop). That check is
+  workspace membership only: any workspace user can be the teacher in charge.
+  Invalid start or end times are reported as row errors instead of being
+  dropped.
+- **Limits.** Workbooks over 5 MB are refused before parsing, and merged
+  ranges are clamped to the sheet's data. Import rows have the same length
+  limits as creating one announcement (title 300, topic 20,000, labels 500)
+  regardless of the flag.
+- **Deadline.** With the flag on, the import stores `send_due_at` from each
+  row's normalized date and start time in the workspace timezone.
 
 Regression coverage: `apps/contacts/src/app/[locale]/[wsId]/users/topic-announcements/teacher-schedule-parser.test.ts`,
 `apps/contacts/src/app/[locale]/[wsId]/users/topic-announcements/teacher-schedule-values.test.ts`, `apps/contacts/src/app/[locale]/[wsId]/users/topic-announcements/import-row-preview.test.ts`,
-`apps/contacts/src/app/[locale]/[wsId]/users/topic-announcements/topic-announcements-import.test.tsx`, and
+`apps/contacts/src/app/[locale]/[wsId]/users/topic-announcements/teacher-schedule-import.test.tsx`,
+`apps/contacts/src/app/[locale]/[wsId]/users/topic-announcements/import/import-page-client.test.tsx`
+(pre-feature panel with the flag off),
 `apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/topic-announcements/import/import-rows.test.ts`.
 
 ### Teacher-assigned topics

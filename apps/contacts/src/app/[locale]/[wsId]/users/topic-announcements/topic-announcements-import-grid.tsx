@@ -1,6 +1,7 @@
 'use client';
 
 import { Plus, Trash2 } from '@tuturuuu/icons';
+import type { TopicAnnouncementImportRow } from '@tuturuuu/internal-api';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
@@ -15,23 +16,12 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import type { ClipboardEvent } from 'react';
-import {
-  createEmptyImportRows,
-  type EditableImportRow,
-  hasImportRowContent,
-  type ImportRowPreview,
-  padImportRows,
-} from './import-row-preview';
+import { validateTopicAnnouncementImportRows } from './import-utils';
 import { TopicAnnouncementsHelpTip } from './topic-announcements-help-tip';
 
-export {
-  BULK_IMPORT_MIN_ROWS,
-  createEmptyImportRows,
-  hasImportRowContent,
-  padImportRows,
-} from './import-row-preview';
+export const BULK_IMPORT_MIN_ROWS = 8;
 
-type ImportFieldKey = keyof EditableImportRow;
+type ImportFieldKey = keyof TopicAnnouncementImportRow;
 type ImportColumnLabelKey =
   | 'announcement_title'
   | 'classLabel'
@@ -43,20 +33,12 @@ type ImportColumnLabelKey =
   | 'room'
   | 'session_date'
   | 'startTime'
-  | 'teacher_in_charge'
   | 'topic';
+type PreviewRows = ReturnType<typeof validateTopicAnnouncementImportRows>;
 
-const IMPORT_ISSUE_LABEL_KEYS = {
-  ambiguous_contact: 'import_error_ambiguous_contact',
-  ambiguous_teacher: 'import_error_ambiguous_teacher',
-  bad_date: 'import_error_bad_date',
-  bad_time: 'import_error_bad_time',
-  missing_date: 'import_error_missing_date',
+const IMPORT_ERROR_LABEL_KEYS = {
   missing_email: 'import_error_missing_email',
-  missing_time: 'import_error_missing_time',
   missing_topic: 'import_error_missing_topic',
-  unknown_contact: 'import_error_unknown_contact',
-  unmatched_teacher: 'import_error_unmatched_teacher',
 } as const;
 
 type ImportColumnHelpKey =
@@ -68,7 +50,6 @@ type ImportColumnHelpKey =
   | 'import_col_end_help'
   | 'import_col_name_help'
   | 'import_col_email_help'
-  | 'import_col_teacher_help'
   | 'import_col_place_help'
   | 'import_col_topic_help'
   | 'import_col_title_help';
@@ -131,12 +112,6 @@ const GRID_COLUMNS: {
   },
   {
     className: 'w-44',
-    helpKey: 'import_col_teacher_help',
-    key: 'teacherName',
-    labelKey: 'teacher_in_charge',
-  },
-  {
-    className: 'w-44',
     helpKey: 'import_col_place_help',
     key: 'place',
     labelKey: 'place',
@@ -146,6 +121,7 @@ const GRID_COLUMNS: {
     helpKey: 'import_col_topic_help',
     key: 'topic',
     labelKey: 'topic',
+    required: true,
   },
   {
     className: 'w-56',
@@ -154,6 +130,42 @@ const GRID_COLUMNS: {
     labelKey: 'announcement_title',
   },
 ];
+
+export function createEmptyImportRows(count = BULK_IMPORT_MIN_ROWS) {
+  return Array.from({ length: count }, () => ({}));
+}
+
+export function hasImportRowContent(row: TopicAnnouncementImportRow) {
+  return Object.values(row).some((value) => value?.trim());
+}
+
+export function padImportRows(rows: TopicAnnouncementImportRow[]) {
+  const nextRows = rows.length > 0 ? rows : createEmptyImportRows();
+  if (nextRows.length >= BULK_IMPORT_MIN_ROWS) return nextRows;
+
+  return [
+    ...nextRows,
+    ...createEmptyImportRows(BULK_IMPORT_MIN_ROWS - nextRows.length),
+  ];
+}
+
+export function previewEditableImportRows(rows: TopicAnnouncementImportRow[]) {
+  return rows.map((row, index) => {
+    if (!hasImportRowContent(row)) {
+      return {
+        errors: [],
+        row,
+        rowNumber: index + 1,
+      };
+    }
+
+    const [preview] = validateTopicAnnouncementImportRows([row]);
+    return {
+      ...(preview ?? { errors: [], row }),
+      rowNumber: index + 1,
+    };
+  });
+}
 
 function parseSpreadsheetPaste(value: string) {
   return value
@@ -171,9 +183,9 @@ export function BulkAnnouncementGrid({
   rows,
 }: {
   disabled: boolean;
-  onRowsChange: (rows: EditableImportRow[]) => void;
-  previewRows: ImportRowPreview[];
-  rows: EditableImportRow[];
+  onRowsChange: (rows: TopicAnnouncementImportRow[]) => void;
+  previewRows: PreviewRows;
+  rows: TopicAnnouncementImportRow[];
 }) {
   const t = useTranslations('ws-topic-announcements');
 
@@ -250,7 +262,7 @@ export function BulkAnnouncementGrid({
       </div>
 
       <div className="max-h-[58vh] overflow-auto">
-        <Table className="min-w-[1680px]">
+        <Table className="min-w-[1500px]">
           <TableHeader className="sticky top-0 z-10 bg-background">
             <TableRow>
               <TableHead className="w-14">#</TableHead>
@@ -305,21 +317,21 @@ export function BulkAnnouncementGrid({
                   ))}
                   <TableCell>
                     {hasContent ? (
-                      <div className="flex flex-wrap gap-1">
-                        {preview?.errors.length === 0 ? (
-                          <Badge variant="success">{t('import_ready')}</Badge>
-                        ) : null}
-                        {preview?.errors.map((error) => (
-                          <Badge key={error} variant="warning">
-                            {t(IMPORT_ISSUE_LABEL_KEYS[error])}
-                          </Badge>
-                        ))}
-                        {preview?.warnings.map((warning) => (
-                          <Badge key={warning} variant="secondary">
-                            {t(IMPORT_ISSUE_LABEL_KEYS[warning])}
-                          </Badge>
-                        ))}
-                      </div>
+                      preview?.errors.length === 0 ? (
+                        <Badge variant="success">{t('import_ready')}</Badge>
+                      ) : (
+                        <div className="flex flex-wrap gap-1">
+                          {preview?.errors.map((error) => (
+                            <Badge key={error} variant="warning">
+                              {t(
+                                IMPORT_ERROR_LABEL_KEYS[
+                                  error as keyof typeof IMPORT_ERROR_LABEL_KEYS
+                                ]
+                              )}
+                            </Badge>
+                          ))}
+                        </div>
+                      )
                     ) : (
                       <span className="text-muted-foreground text-sm">
                         {t('bulk_empty_row')}

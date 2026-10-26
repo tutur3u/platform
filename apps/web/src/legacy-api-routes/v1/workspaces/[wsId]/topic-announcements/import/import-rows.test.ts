@@ -162,6 +162,29 @@ describe('normalizeImportRows', () => {
 });
 
 describe('TopicAnnouncementImportSchema', () => {
+  it('applies the create length limits to import rows', () => {
+    const row = { contactEmail: 'a@example.com' };
+    for (const overrides of [
+      { title: 'x'.repeat(301) },
+      { topic: 'x'.repeat(20_001) },
+      { classLabel: 'x'.repeat(501) },
+      { place: 'x'.repeat(501) },
+      { room: 'x'.repeat(501) },
+      { dayLabel: 'x'.repeat(501) },
+    ]) {
+      expect(
+        TopicAnnouncementImportSchema.safeParse({
+          rows: [{ ...row, ...overrides }],
+        }).success
+      ).toBe(false);
+    }
+    expect(
+      TopicAnnouncementImportSchema.safeParse({
+        rows: [{ ...row, title: 'x'.repeat(300), topic: 'x'.repeat(20_000) }],
+      }).success
+    ).toBe(true);
+  });
+
   it('accepts an optional teacher id and rejects malformed ids', () => {
     expect(
       TopicAnnouncementImportSchema.safeParse({

@@ -8863,6 +8863,8 @@
     "import_error_unmatched_teacher": "Teacher not found",
     "import_failed": "Import failed",
     "import_file_failed": "Could not read this spreadsheet",
+    "import_file_too_large": "This file is larger than {size}. Split the schedule or remove extra sheets and try again.",
+    "import_teacher_lookup_failed": "Could not look up teachers. Check your connection and try again.",
     "import_invalid_rows": "Need fixes",
     "import_page_description": "Create many announcements in one editable table, then save drafts or send valid rows.",
     "import_preview": "Preview rows",

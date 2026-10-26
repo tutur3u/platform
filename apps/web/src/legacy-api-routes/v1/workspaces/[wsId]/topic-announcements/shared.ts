@@ -290,19 +290,20 @@ export async function validateTopicAnnouncementAttachmentDraftObjects({
 export const TopicAnnouncementImportSchema = z.object({
   rows: z
     .array(
+      // Same length limits as creating one announcement.
       z.object({
-        classLabel: z.string().trim().optional(),
+        classLabel: z.string().trim().max(500).optional(),
         contactEmail: EMAIL_SCHEMA.optional(),
-        contactName: z.string().trim().optional(),
-        dayLabel: z.string().trim().optional(),
-        endTime: z.string().trim().optional(),
-        place: z.string().trim().optional(),
-        room: z.string().trim().optional(),
+        contactName: z.string().trim().max(500).optional(),
+        dayLabel: z.string().trim().max(500).optional(),
+        endTime: z.string().trim().max(20).optional(),
+        place: z.string().trim().max(500).optional(),
+        room: z.string().trim().max(500).optional(),
         sessionDate: z.string().date().optional(),
-        startTime: z.string().trim().optional(),
+        startTime: z.string().trim().max(20).optional(),
         teacherWorkspaceUserId: z.string().uuid().optional(),
-        title: z.string().trim().optional(),
-        topic: z.string().trim().optional(),
+        title: z.string().trim().max(300).optional(),
+        topic: z.string().trim().max(20_000).optional(),
       })
     )
     .min(1)

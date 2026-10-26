@@ -7,54 +7,97 @@ import type {
   TopicAnnouncementImportRow,
 } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
+import { XLSX } from '@tuturuuu/ui/xlsx';
 import { useTranslations } from 'next-intl';
 import type { ChangeEvent } from 'react';
 import { useMemo, useState } from 'react';
 import {
+  parseTopicAnnouncementCsv,
+  parseTopicAnnouncementRowsFromMatrix,
+  TOPIC_ANNOUNCEMENT_IMPORT_COLUMNS,
+} from './import-utils';
+import { TopicAnnouncementsHelpTip } from './topic-announcements-help-tip';
+import {
+  BulkAnnouncementGrid,
   createEmptyImportRows,
-  type EditableImportRow,
   hasImportRowContent,
   padImportRows,
-  previewImportRows,
-} from './import-row-preview';
-import { parseTopicAnnouncementCsv } from './import-utils';
-import {
-  downloadTopicAnnouncementTemplate,
-  parseImportWorkbook,
-} from './import-workbook';
-import type {
-  MatchableContact,
-  MatchableWorkspaceUser,
-} from './teacher-schedule-matching';
-import { TeacherScheduleOptions } from './teacher-schedule-options';
-import {
-  clampScheduleDuration,
-  DEFAULT_SCHEDULE_DURATION_MINUTES,
-} from './teacher-schedule-parser';
-import {
-  addMinutesToTime,
-  normalizeScheduleTime,
-} from './teacher-schedule-values';
-import { TopicAnnouncementsHelpTip } from './topic-announcements-help-tip';
-import { BulkAnnouncementGrid } from './topic-announcements-import-grid';
+  previewEditableImportRows,
+} from './topic-announcements-import-grid';
 import { ImportSourcePanel } from './topic-announcements-import-source-panel';
 import { ImportSummary } from './topic-announcements-import-summary';
 
-export { downloadTopicAnnouncementTemplate } from './import-workbook';
-
 const BULK_SEND_LIMIT = 50;
-const EMPTY_CONTACTS: MatchableContact[] = [];
-const EMPTY_USERS: MatchableWorkspaceUser[] = [];
 
 interface Props {
   canSend: boolean;
-  contacts?: MatchableContact[];
   importResult: TopicAnnouncementImportResult | null;
   isImporting: boolean;
   isSending: boolean;
   onImport: (payload: TopicAnnouncementImportPayload) => void;
   onImportAndSend: (payload: TopicAnnouncementImportPayload) => void;
-  workspaceUsers?: MatchableWorkspaceUser[];
+}
+
+function downloadBlob(blob: Blob, filename: string) {
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.setAttribute('download', filename);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(link.href);
+}
+
+export function downloadTopicAnnouncementTemplate() {
+  const workbook = XLSX.utils.book_new();
+  const worksheet = XLSX.utils.json_to_sheet(
+    [
+      {
+        class: 'EGET1',
+        date: '2026-06-01',
+        day: 'Monday',
+        email: 'teacher@example.com',
+        'end time': '18:00',
+        place: 'Center 1',
+        room: 'A201',
+        'start time': '17:00',
+        teacher: 'Teacher Name',
+        title: 'Unit 3 speaking practice',
+        topic: 'Unit 3 speaking practice',
+      },
+    ],
+    { header: [...TOPIC_ANNOUNCEMENT_IMPORT_COLUMNS] }
+  );
+
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Announcements');
+  const excelBuffer = XLSX.write(workbook, {
+    bookType: 'xlsx',
+    type: 'array',
+  });
+  downloadBlob(
+    new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    }),
+    'topic-announcements-template.xlsx'
+  );
+}
+
+async function parseWorkbook(file: File) {
+  const data = await file.arrayBuffer();
+  const workbook = XLSX.read(data, { type: 'array' });
+  const firstSheetName = workbook.SheetNames[0];
+  if (!firstSheetName) return [];
+
+  const sheet = workbook.Sheets[firstSheetName];
+  if (!sheet) return [];
+
+  const rows = XLSX.utils.sheet_to_json(sheet, {
+    defval: '',
+    header: 1,
+    raw: false,
+  }) as unknown[][];
+
+  return parseTopicAnnouncementRowsFromMatrix(rows);
 }
 
 function buildImportPayload(
@@ -68,57 +111,34 @@ function buildImportPayload(
   };
 }
 
-function applyDuration(rows: EditableImportRow[], minutes: number) {
-  return rows.map((row) => {
-    const start = row.startTime && normalizeScheduleTime(row.startTime);
-    const end = start && addMinutesToTime(start, minutes);
-    return end ? { ...row, endTime: end } : row;
-  });
-}
-
 export function ImportPanel({
   canSend,
-  contacts = EMPTY_CONTACTS,
   importResult,
   isImporting,
   isSending,
   onImport,
   onImportAndSend,
-  workspaceUsers = EMPTY_USERS,
 }: Props) {
   const t = useTranslations('ws-topic-announcements');
   const [sourceName, setSourceName] = useState('');
   const [csv, setCsv] = useState('');
   const [fileName, setFileName] = useState('');
   const [fileError, setFileError] = useState<string | null>(null);
-  const [scheduleMode, setScheduleMode] = useState(false);
-  const [durationMinutes, setDurationMinutes] = useState(
-    DEFAULT_SCHEDULE_DURATION_MINUTES
-  );
-  const [rows, setRows] = useState<EditableImportRow[]>(
+  const [rows, setRows] = useState<TopicAnnouncementImportRow[]>(
     createEmptyImportRows()
   );
-  const previewRows = useMemo(
-    () =>
-      previewImportRows(rows, {
-        contacts,
-        requireSchedule: scheduleMode,
-        workspaceUsers,
-      }),
-    [contacts, rows, scheduleMode, workspaceUsers]
-  );
+  const previewRows = useMemo(() => previewEditableImportRows(rows), [rows]);
   const filledRows = previewRows.filter((preview) =>
     hasImportRowContent(preview.row)
   );
-  const validRows = filledRows.flatMap((preview) =>
-    preview.submitRow ? [preview.submitRow] : []
-  );
+  const validRows = filledRows
+    .filter((preview) => preview.errors.length === 0)
+    .map((preview) => preview.row);
   const invalidCount = filledRows.length - validRows.length;
   const isBusy = isImporting || isSending;
   const sendTooLarge = validRows.length > BULK_SEND_LIMIT;
-  const sendNeedsTopics = validRows.some((row) => !row.topic?.trim());
 
-  const loadRows = (nextRows: EditableImportRow[]) => {
+  const loadRows = (nextRows: TopicAnnouncementImportRow[]) => {
     setRows(padImportRows(nextRows));
   };
 
@@ -128,11 +148,10 @@ export function ImportPanel({
 
     try {
       setFileError(null);
-      const parsed = await parseImportWorkbook(file, durationMinutes);
+      const parsedRows = await parseWorkbook(file);
       setFileName(file.name);
       setCsv('');
-      setScheduleMode(parsed.kind === 'schedule');
-      loadRows(parsed.rows);
+      loadRows(parsedRows);
     } catch {
       setFileName('');
       setFileError(t('import_file_failed'));
@@ -142,7 +161,6 @@ export function ImportPanel({
   const loadCsvRows = () => {
     const csvRows = parseTopicAnnouncementCsv(csv);
     setFileName('');
-    setScheduleMode(false);
     loadRows(csvRows);
   };
 
@@ -150,7 +168,6 @@ export function ImportPanel({
     setCsv('');
     setFileName('');
     setFileError(null);
-    setScheduleMode(false);
     setRows(createEmptyImportRows());
   };
 
@@ -169,18 +186,6 @@ export function ImportPanel({
         onSourceNameChange={setSourceName}
         sourceName={sourceName}
       />
-
-      {scheduleMode ? (
-        <TeacherScheduleOptions
-          disabled={isBusy}
-          durationMinutes={durationMinutes}
-          onApplyDuration={() =>
-            setRows(applyDuration(rows, clampScheduleDuration(durationMinutes)))
-          }
-          onDurationChange={setDurationMinutes}
-          rowCount={filledRows.length}
-        />
-      ) : null}
 
       <BulkAnnouncementGrid
         disabled={isBusy}
@@ -217,11 +222,7 @@ export function ImportPanel({
             <Button
               className="gap-2"
               disabled={
-                !canSend ||
-                isBusy ||
-                sendTooLarge ||
-                sendNeedsTopics ||
-                validRows.length === 0
+                !canSend || isBusy || sendTooLarge || validRows.length === 0
               }
               onClick={() =>
                 onImportAndSend(buildImportPayload(validRows, sourceName))
@@ -238,11 +239,6 @@ export function ImportPanel({
               {t('bulk_send_limit', {
                 count: BULK_SEND_LIMIT.toString(),
               })}
-            </p>
-          ) : null}
-          {sendNeedsTopics ? (
-            <p className="max-w-80 text-muted-foreground text-xs">
-              {t('bulk_send_requires_topic')}
             </p>
           ) : null}
           {!canSend ? (

@@ -206,6 +206,25 @@ describe('splitTeacherClass', () => {
 });
 
 describe('applySheetMerges', () => {
+  it('clamps merges declared beyond the data area', () => {
+    expect(
+      applySheetMerges(
+        [
+          ['Mon', 'A'],
+          ['', 'B'],
+        ],
+        [
+          { e: { c: 16_383, r: 1_048_575 }, s: { c: 0, r: 0 } },
+          { e: { c: 1, r: 1 }, s: { c: -5, r: -3 } },
+          { e: { c: 9, r: 9 }, s: { c: 5, r: 5 } },
+        ]
+      )
+    ).toEqual([
+      ['Mon', 'A'],
+      ['Mon', 'B'],
+    ]);
+  });
+
   it('copies the top-left value into blank merged cells only', () => {
     expect(
       applySheetMerges(

@@ -75,21 +75,9 @@ describe('ImportPanel', () => {
     expect(screen.getByText('import_error_missing_topic')).toBeInTheDocument();
     expect(screen.getByText('import_error_missing_email')).toBeInTheDocument();
 
-    // A topic-less row is still a valid draft, so sending stays blocked until
-    // the operator fills the topic or drops the row.
-    const sendButton = screen.getByRole('button', {
-      name: 'bulk_create_and_send',
-    });
-    expect(sendButton).toBeDisabled();
-    expect(screen.getByText('bulk_send_requires_topic')).toBeInTheDocument();
-
     fireEvent.click(
-      screen.getAllByRole('button', {
-        name: 'bulk_remove_row',
-      })[1] as HTMLElement
+      screen.getByRole('button', { name: 'bulk_create_and_send' })
     );
-    expect(sendButton).toBeEnabled();
-    fireEvent.click(sendButton);
 
     expect(onImportAndSend).toHaveBeenCalledWith({
       rows: [
@@ -97,54 +85,6 @@ describe('ImportPanel', () => {
           contactEmail: 'ready@example.com',
           title: 'Ready title',
           topic: 'Ready topic',
-        },
-      ],
-      sourceName: undefined,
-      sourceType: 'foreign_teacher_schedule',
-    });
-  });
-
-  it('creates topic-less drafts with the resolved teacher in charge', () => {
-    const onImport = vi.fn();
-
-    render(
-      <ImportPanel
-        {...defaultProps}
-        onImport={onImport}
-        workspaceUsers={[
-          {
-            display_name: null,
-            email: null,
-            full_name: 'Trần Mai',
-            id: '00000000-0000-4000-8000-000000000001',
-          },
-        ]}
-      />
-    );
-
-    fireEvent.change(screen.getByLabelText('email 1'), {
-      target: { value: 'ready@example.com' },
-    });
-    fireEvent.change(screen.getByLabelText('teacher_in_charge 1'), {
-      target: { value: 'Nobody' },
-    });
-    expect(
-      screen.getByText('import_error_unmatched_teacher')
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: 'bulk_create_drafts' })
-    ).toBeDisabled();
-
-    fireEvent.change(screen.getByLabelText('teacher_in_charge 1'), {
-      target: { value: 'tran mai' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'bulk_create_drafts' }));
-
-    expect(onImport).toHaveBeenCalledWith({
-      rows: [
-        {
-          contactEmail: 'ready@example.com',
-          teacherWorkspaceUserId: '00000000-0000-4000-8000-000000000001',
         },
       ],
       sourceName: undefined,
