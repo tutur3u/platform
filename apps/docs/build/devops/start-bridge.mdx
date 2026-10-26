@@ -317,6 +317,17 @@ RSC-environment shims for `next-intl/*` and `next/root-params`. The bridge
 keeps its request store on a global Symbol so every bundled environment
 observes the same request.
 
+The RSC `next-intl` hooks call `use()` on the request's single cached config
+promise. That promise carries React's `status`/`value`, and
+`NextIntlClientProvider` settles it before rendering children, so translated
+server components render inline. A hook that suspends makes Flight outline the
+component as a lazy row. React's streaming renderer (19.2.8, and still 19.3.1)
+can leave a Suspense boundary unresolved when a boundary rendered after the
+shell has a fallback that suspends. The browser then reports React error #419.
+Keep Suspense fallbacks synchronous. Assert emitted HTML with
+`findUnresolvedSuspenseBoundaries` from `@tuturuuu/start-bridge/start/suspense-boundaries`,
+which must return no pending `B:`/`P:` placeholders.
+
 ## Runtime tag
 
 Cutovers are direct, with an instant one-step rollback prepared before the
