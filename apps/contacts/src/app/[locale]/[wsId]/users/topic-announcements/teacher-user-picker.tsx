@@ -1,5 +1,6 @@
 'use client';
 
+import type { WorkspaceBasicUserRecord } from '@tuturuuu/internal-api';
 import { Combobox, type ComboboxOption } from '@tuturuuu/ui/custom/combobox';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
@@ -32,7 +33,7 @@ export function TeacherUserPicker({
   const results = useWorkspaceUserSearch(wsId, search);
   const selectedId = selected !== noneValue ? selected : null;
   const selectedInResults = results.data?.some(
-    (user) => user.id === selectedId
+    (user: WorkspaceBasicUserRecord) => user.id === selectedId
   );
   const selectedUser = useWorkspaceUser(
     wsId,

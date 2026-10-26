@@ -74,6 +74,7 @@ function renderForm(
     onTimezoneRequired: vi.fn(),
     onUploadAttachment: vi.fn(),
     schedulingTimezone: 'Asia/Ho_Chi_Minh',
+    teacherAssignmentsEnabled: true,
     templates: [],
     workspaceUsers: [],
     wsId: 'workspace-1',
@@ -110,6 +111,82 @@ function completeRequiredSteps() {
 describe('AnnouncementForm', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  describe('with teacher assignments off (live workspaces)', () => {
+    const PRE_FEATURE_DRAFT_PAYLOAD = {
+      attachmentDrafts: [],
+      classLabel: null,
+      contactIds: ['contact-1'],
+      dayLabel: null,
+      endTime: null,
+      groupId: null,
+      place: null,
+      room: null,
+      sessionDate: null,
+      sourceType: 'manual',
+      startTime: null,
+      title: 'Unit 3 speaking practice',
+      topic: 'Practice speaking about weekend plans.',
+    };
+
+    it('shows no teacher UI and saves the pre-feature draft payload', async () => {
+      const onNotifyTeachers = vi.fn();
+      const onCreate = vi.fn().mockResolvedValue(undefined);
+      renderForm({
+        onCreate,
+        onNotifyTeachers,
+        teacherAssignmentsEnabled: false,
+      });
+
+      expect(screen.queryByText('teacher_assignment_title')).toBeNull();
+      expect(screen.getByRole('button', { name: 'next' })).toBeDisabled();
+      completeRequiredSteps();
+      expect(screen.queryByLabelText('course_book_label')).toBeNull();
+      fireEvent.click(
+        screen.getByRole('button', { name: 'announcement_submit_draft' })
+      );
+
+      await waitFor(() => expect(onCreate).toHaveBeenCalledTimes(1));
+      expect(onCreate.mock.calls[0]).toEqual([PRE_FEATURE_DRAFT_PAYLOAD]);
+      expect(onNotifyTeachers).not.toHaveBeenCalled();
+      await waitFor(() =>
+        expect(screen.getByLabelText('announcement_title')).toHaveValue('')
+      );
+    });
+
+    it('still requires a topic before the recipients step', () => {
+      renderForm({ teacherAssignmentsEnabled: false });
+      fireEvent.change(screen.getByLabelText('announcement_title'), {
+        target: { value: 'Unit 3 speaking practice' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'next' }));
+      expect(screen.queryByLabelText('course_book_label')).toBeNull();
+      expect(screen.getByRole('button', { name: 'next' })).toBeDisabled();
+    });
+
+    it('creates and sends with the pre-feature call and keeps the draft on failure', async () => {
+      const onCreateAndSend = vi.fn().mockRejectedValue(new Error('down'));
+      renderForm({ onCreateAndSend, teacherAssignmentsEnabled: false });
+
+      completeRequiredSteps();
+      fireEvent.click(
+        screen.getByRole('button', { name: 'announcement_delivery_send' })
+      );
+      fireEvent.click(
+        screen.getByRole('button', { name: 'announcement_submit_send' })
+      );
+
+      await waitFor(() => expect(onCreateAndSend).toHaveBeenCalledTimes(1));
+      expect(onCreateAndSend.mock.calls[0]).toEqual([
+        PRE_FEATURE_DRAFT_PAYLOAD,
+      ]);
+      // The draft is kept: the composer stays on the review step.
+      expect(
+        screen.getByRole('button', { name: 'announcement_submit_send' })
+      ).toBeInTheDocument();
+      expect(screen.queryByLabelText('announcement_title')).toBeNull();
+    });
   });
 
   it('gates each step and saves a reviewed draft payload', async () => {

@@ -59,6 +59,11 @@ interface Props {
     payload: TopicAnnouncementPayload,
     onCreated?: (announcementId: string) => void
   ) => Promise<string | undefined>;
+  /**
+   * ENABLE_TOPIC_TEACHER_ASSIGNMENTS. Off: the composer, payload and submit
+   * flow are the pre-feature ones (no teacher, course book or video fields).
+   */
+  teacherAssignmentsEnabled?: boolean;
   /** Supervisor "save & notify" for the assigned teacher. */
   onNotifyTeachers?: (announcementIds: string[]) => Promise<void>;
   onSaveTemplate: (values: TemplateFormValues) => void;
@@ -84,6 +89,7 @@ export function AnnouncementForm({
   onCreateAndSchedule,
   onCreateAndSend,
   onNotifyTeachers,
+  teacherAssignmentsEnabled = false,
   onSaveTemplate,
   onTimezoneRequired,
   onUploadAttachment,
@@ -136,7 +142,26 @@ export function AnnouncementForm({
       return;
     }
 
-    const payload = buildTopicAnnouncementPayload(form);
+    const payload = buildTopicAnnouncementPayload(form, {
+      teacherAssignments: teacherAssignmentsEnabled,
+    });
+    if (!teacherAssignmentsEnabled) {
+      // Pre-feature flow, unchanged.
+      try {
+        if (deliveryMode === 'send') {
+          await onCreateAndSend(payload);
+        } else if (deliveryMode === 'schedule' && scheduledAt) {
+          await onCreateAndSchedule(payload, scheduledAt.toISOString());
+        } else {
+          await onCreate(payload);
+        }
+        resetForm();
+      } catch {
+        // Mutation handlers already surface errors through toasts; keep the draft.
+      }
+      return;
+    }
+
     const shouldNotify =
       Boolean(onNotifyTeachers) &&
       form.notifyTeacher &&
@@ -218,18 +243,21 @@ export function AnnouncementForm({
               setForm={setForm}
               templates={templates}
             />
-            <AnnouncementTeacherFields
-              disabled={isSubmitting}
-              form={form}
-              setForm={setForm}
-              wsId={wsId}
-            />
+            {teacherAssignmentsEnabled ? (
+              <AnnouncementTeacherFields
+                disabled={isSubmitting}
+                form={form}
+                setForm={setForm}
+                wsId={wsId}
+              />
+            ) : null}
           </>
         ) : null}
 
         {step === 'message' ? (
           <AnnouncementFormMessageStep
             disabled={isSubmitting}
+            teacherAssignmentsEnabled={teacherAssignmentsEnabled}
             form={form}
             onUploadAttachment={onUploadAttachment}
             setForm={setForm}

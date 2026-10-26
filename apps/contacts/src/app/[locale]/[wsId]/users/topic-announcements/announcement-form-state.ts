@@ -61,9 +61,10 @@ export type AnnouncementFormValues = typeof INITIAL_ANNOUNCEMENT_FORM;
 export type AnnouncementStep = (typeof ANNOUNCEMENT_STEPS)[number];
 
 export function buildTopicAnnouncementPayload(
-  form: AnnouncementFormValues
+  form: AnnouncementFormValues,
+  { teacherAssignments = true }: { teacherAssignments?: boolean } = {}
 ): TopicAnnouncementPayload {
-  return {
+  const payload: TopicAnnouncementPayload = {
     attachmentDrafts: form.attachmentDrafts.map(
       toTopicAnnouncementAttachmentDraft
     ),
@@ -86,6 +87,15 @@ export function buildTopicAnnouncementPayload(
     topic: form.topic.trim(),
     videoUrl: form.videoUrl.trim() || null,
   };
+  if (teacherAssignments) return payload;
+  // Without teacher assignments, send the pre-feature payload shape.
+  const {
+    courseBook: _courseBook,
+    teacherWorkspaceUserId: _teacherWorkspaceUserId,
+    videoUrl: _videoUrl,
+    ...legacy
+  } = payload;
+  return legacy;
 }
 
 function normalizeTime(value: string | null) {

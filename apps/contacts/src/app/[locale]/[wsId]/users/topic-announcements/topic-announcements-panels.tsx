@@ -44,6 +44,7 @@ const STATUSES = Object.keys(STATUS_LABEL_KEYS) as Array<
 interface Props {
   announcements: TopicAnnouncementRecord[];
   canSend: boolean;
+  teacherAssignmentsEnabled?: boolean;
   contacts: TopicAnnouncementContact[];
   groups: UserGroup[];
   isCreating: boolean;
@@ -82,6 +83,7 @@ interface Props {
 export function AnnouncementsPanel({
   announcements,
   canSend,
+  teacherAssignmentsEnabled = false,
   contacts,
   groups,
   isCreating,
@@ -126,6 +128,7 @@ export function AnnouncementsPanel({
       <div id="topic-announcement-composer">
         <AnnouncementForm
           canSend={canSend}
+          teacherAssignmentsEnabled={teacherAssignmentsEnabled}
           contacts={contacts}
           forkSeedId={forkSeed?.seedId ?? null}
           forkSource={forkSeed?.announcement ?? null}
