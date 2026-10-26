@@ -1,10 +1,14 @@
 import { google } from '@ai-sdk/google';
+import { clampSignedUrlTtl } from '@tuturuuu/storage-core/signed-url-policy';
 import { isGoogleModelId, toBareModelName } from '../../credits/model-mapping';
 import {
   PlanModelResolutionError,
   resolvePlanModel,
 } from '../../credits/resolve-plan-model';
 import type { MiraToolContext } from '../mira-tools';
+
+// Requested lifetime for result URLs; clamped to the 7-day signing cap.
+const AI_TOOL_OUTPUT_SIGNED_URL_TTL_SECONDS = 60 * 60 * 24 * 7;
 
 export async function executeGenerateImage(
   args: Record<string, unknown>,
@@ -131,7 +135,12 @@ export async function executeGenerateImage(
 
     const { data: urlData, error: urlError } = await sbAdmin.storage
       .from('workspaces')
-      .createSignedUrl(storagePath, 60 * 60 * 24 * 30);
+      .createSignedUrl(
+        storagePath,
+        // Tool output is stored in chat history; bearer URLs never exceed
+        // the 7-day policy. `storagePath` is returned so callers re-sign.
+        clampSignedUrlTtl(AI_TOOL_OUTPUT_SIGNED_URL_TTL_SECONDS)
+      );
 
     if (urlError || !urlData) {
       throw new Error(

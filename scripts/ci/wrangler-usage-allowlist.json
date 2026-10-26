@@ -318,6 +318,16 @@
       },
       "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
     },
+    "apps/calendar/src/runtime/offline-page.browser.mjs": {
+      "gap": "void-wave1-publication",
+      "lines": 1,
+      "uses": 1,
+      "digest": "23238e55e45b6b35303bdc58ddbf3e07d58fd8aeda1dd60b3dbea2e5e7e1a9fd",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6859",
+        "reason": "CAL-R1-01: the sealed offline Retry browser regression needs the owning SDK to run the real emitted Worker and its CSP locally. Same native fixture gap and Wave 1 owner/removal condition as the shared root-browser gate; no publication command is added."
+      }
+    },
     "apps/cms/.gitignore": {
       "lines": 1,
       "uses": 1,
@@ -1309,14 +1319,14 @@
       "digest": "14043e7e482dea6e55205cd6acc2171197043635420db43a734cc6235ae2a624"
     },
     "scripts/ci/calendar-native-artifact.test.mjs": {
-      "lines": 22,
-      "uses": 22,
+      "lines": 21,
+      "uses": 21,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+        "decision": "https://github.com/tutur3u/platform/pull/6859",
+        "reason": "Calendar artifact fixtures reuse caller-owned pointer/config paths instead of adding usage in a new helper. Update only this test’s lowered token counts and digest; negative controls, sealed output and source binding are retained."
       },
-      "digest": "a43ecb06e766f543e9d6796ff0b3c9e049f76849ba901833991c24d20928e452"
+      "digest": "f19a7422576c029e735df74b8aa26912501b364cb855ec8972ab6ffe11c210bb"
     },
     "scripts/ci/calendar-native-inventory.mjs": {
       "lines": 2,
