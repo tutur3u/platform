@@ -37,10 +37,10 @@ values (
 
 -- Notification types: validated superset, used through the existing mail path.
 select ok(
-  (select convalidated from pg_constraint
+  (select not convalidated from pg_constraint
    where conname = 'notifications_type_check'
      and conrelid = 'public.notifications'::regclass),
-  'notification type constraint is validated'
+  'notification type constraint is NOT VALID: no scan under the exclusive lock'
 );
 select lives_ok(
   $q$insert into public.notifications(user_id, type, title, scope)
