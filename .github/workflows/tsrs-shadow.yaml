@@ -19,7 +19,7 @@ on:
       - 'scripts/ci/tsrs-shadow.js'
       - '.github/workflows/tsrs-shadow.yaml'
   pull_request:
-    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
+    types: [opened, synchronize, reopened, ready_for_review, labeled, converted_to_draft]
     paths:
       - 'scripts/ts-diagnostics.js'
       - 'scripts/ts-diagnostics.test.js'
@@ -40,7 +40,7 @@ env:
 
 jobs:
   shadow:
-    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    if: (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     name: tsrs shadow (advisory)
     runs-on: ubuntu-latest
     timeout-minutes: 25

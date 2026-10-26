@@ -15,7 +15,7 @@ on:
       - "scripts/ci/run-with-backoff.sh"
       - "turbo.json"
   pull_request:
-    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
+    types: [opened, synchronize, reopened, ready_for_review, labeled, converted_to_draft]
     paths:
       - ".github/actions/run-with-turbo-remote-cache/**"
       - ".github/actions/setup-bun-with-retry/**"
@@ -40,7 +40,7 @@ env:
 
 jobs:
   Build:
-    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    if: (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     runs-on: ubuntu-latest
     steps:
       - name: Check out code

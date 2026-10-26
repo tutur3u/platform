@@ -460,6 +460,66 @@ reserves capacity. Keep PR load small:
   required, replace its trigger filter with a job-level `check-ci` skip that
   still reports success. A trigger-filtered required check never reports.
 
+### Label-gated heavy PR CI (`ready-for-ci`)
+
+Heavy PR workflows run their jobs only when the PR carries the `ready-for-ci`
+label. These include Test, Type Check, Biome, CodeQL, i18n, docs/SEO, coverage,
+the per-app and Cloudflare Source builds, mobile builds and database contracts.
+`scripts/ci/pr-label-gate.js` is the inventory of record. On an unlabelled PR,
+every job is skipped by a job-level `if:`. The checks show as skipped rather
+than pending, and no runner is allocated. The gate sits on top-level caller
+jobs, including each `check-ci` switchboard call, so a skipped caller never
+starts its reusable callee.
+
+- **Add the label only when the PR is ready to merge.** Before that, verify
+  locally or on the remote fleet. An exact-head local pass (`bun check:changed`
+  plus the focused suites) still counts as green under the speed grant, so a
+  PR can merge on that evidence without hosted CI.
+- **Trigger CI** with `gh pr edit <number> --add-label ready-for-ci`. The
+  `labeled` event starts every heavy workflow immediately.
+- **Retrigger.** A new push to a labelled PR (`synchronize`) runs again, and
+  PR concurrency cancels the superseded run. To retrigger without a push,
+  remove and re-add the label (`gh pr edit <n> --remove-label ready-for-ci`,
+  then `--add-label ready-for-ci`). Do not use `gh run rerun` for this: a
+  rerun replays its original event, so a run started before the label was
+  added is skipped again. Use `gh run rerun` only to retry an admitted run,
+  for example after a flaky failure.
+- **Other labels on a ready PR rerun CI.** Admission checks only that the label
+  is present, so any later `labeled` event on a labelled PR is a real admitted
+  run on the same SHA. It joins the same PR group and supersedes the
+  in-progress run. The newest check per name is therefore always genuine
+  evidence, never a skipped run masking an earlier red one. Labels added with
+  `GITHUB_TOKEN` (such as `security-review-required`) start no run.
+- **Masking caveat.** Skipped is not evidence. While a PR carries no
+  `ready-for-ci`, every later run skips its heavy jobs. GitHub shows only the
+  newest run per check name, so those skipped checks replace earlier results;
+  merge tooling such as `watch_pr_ready` counts `SKIPPED` as passing. Once the
+  label is removed, the PR has no hosted evidence. Re-add the label for a fresh
+  admitted run, or rely on the exact-head local pass.
+- **Push/label race.** A `synchronize` payload carries the labels present at
+  push time. If the label is added seconds after a push, that unlabelled push
+  run can land after the admitted `labeled` run and supersede it with skipped
+  checks. Add the label only after the PR shows the new head SHA. If a labelled
+  PR shows skipped heavy checks, remove and re-add the label. Pushes to an
+  already-labelled PR are admitted.
+- **Always on for every PR push:** Branch Name Check, Check Migration
+  Timestamps, Check Database Migrations, Mobile API Mappings, Codex Plugin
+  Check, Security Checks (gitleaks, dependency review and audit) and Security
+  Review Classification. These are script-only or security checks. Paused
+  Docker, Rust, TanStack and E2E workflows keep their retained policy.
+- **Unchanged:** `main`, `production` and release-please pushes,
+  `workflow_dispatch`, schedules and `workflow_call`. Test, Type Check, Biome,
+  Discord Python CI and the Supabase baseline previously validated every branch
+  push. They now push-validate only protected and generated refs, and validate
+  feature branches through the gated `pull_request` trigger. Biome's
+  auto-format PR and outdated-PR cleanup stay push-only. Its PR comment is
+  limited to same-repository PRs.
+- `scripts/ci/pr-label-gate.test.js` enforces this. It checks that every heavy
+  job is gated, that always-on and paused checks carry no gate, and that every
+  PR-reachable workflow is classified. It also pins digests of each heavy
+  workflow's push, schedule, manual and reusable triggers. When adding a PR
+  workflow, classify it there and gate every job with `PR_LABEL_GATE`.
+
 A possible follow-up is to move PR CI onto self-hosted fleet runners so hosted
 capacity serves only protected refs. That needs runner custody, untrusted-fork
 isolation and secret-scoping review first, and is not implemented.

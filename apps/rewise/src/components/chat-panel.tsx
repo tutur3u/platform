@@ -1,9 +1,8 @@
 /* eslint-disable no-unused-vars */
 
 import type { UIMessage, UseChatHelpers } from '@tuturuuu/ai/types';
-import { getCurrentUserProfile } from '@tuturuuu/internal-api';
+import { uploadAiChatFile } from '@tuturuuu/internal-api';
 import type { RealtimePresenceState } from '@tuturuuu/internal-api/realtime';
-import { createDynamicClient } from '@tuturuuu/supabase/next/client';
 import type { AIChat, AIModelUI } from '@tuturuuu/types';
 import {
   FileUploader,
@@ -16,12 +15,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import { encodeStoragePath } from '@tuturuuu/utils/storage-path';
-import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
 import type React from 'react';
 import { useState } from 'react';
-import sanitize from 'sanitize-filename';
 import { ChatPermissions } from '@/components/chat-permissions';
 import { AssistantHeader } from './assistant-header';
 import { AssistantToolbar } from './assistant-toolbar';
@@ -216,6 +212,12 @@ export function ChatPanel({
   );
 }
 
+/**
+ * Uploads a chat attachment through the owning server API, which checks
+ * workspace membership and chat ownership before issuing a signed upload URL.
+ * Without a chat id the server stores it under the caller's temp folder; the
+ * AI route moves it into the chat on the first message.
+ */
 export async function uploadFile(
   file: StatedFile,
   chatId?: string,
@@ -234,42 +236,24 @@ export async function uploadFile(
       finalPath: undefined,
     };
 
-  const fileName = sanitize(file.rawFile.name);
-
-  let uploadPath = '';
-  let tempPath: string | undefined;
-  let finalPath: string | undefined;
-
-  if (!chatId) {
-    const user = await getCurrentUserProfile();
-
-    if (!user?.id)
-      return {
-        data: null,
-        error: 'No user id provided',
-        tempPath: undefined,
-        finalPath: undefined,
-      };
-
-    const randomId = `${dayjs().unix()}-${Math.random().toString(36).substring(2, 10)}`;
-    const fileExtension = fileName.split('.').pop();
-    uploadPath = `${wsId}/chats/ai/resources/temp/${user.id}/${randomId}.${fileExtension}`;
-    tempPath = uploadPath;
-  } else {
-    uploadPath = `${wsId}/chats/ai/resources/${chatId}/${fileName}`;
-    finalPath = uploadPath;
+  try {
+    const { path } = await uploadAiChatFile({
+      chatId,
+      file: file.rawFile,
+      workspaceId: wsId,
+    });
+    return {
+      data: { path },
+      error: null,
+      tempPath: chatId ? undefined : path,
+      finalPath: chatId ? path : undefined,
+    };
+  } catch (error) {
+    return {
+      data: null,
+      error,
+      tempPath: undefined,
+      finalPath: undefined,
+    };
   }
-
-  const sbDynamic = createDynamicClient();
-
-  const { data, error } = await sbDynamic.storage
-    .from('workspaces')
-    .upload(encodeStoragePath(uploadPath), file.rawFile);
-
-  return {
-    data: data ? { ...data, path: uploadPath } : null,
-    error,
-    tempPath,
-    finalPath,
-  };
 }
