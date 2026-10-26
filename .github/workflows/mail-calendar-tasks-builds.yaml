@@ -29,6 +29,8 @@ on:
       - '.github/workflows/ci-check.yml'
       - 'tuturuuu.ci.ts'
       - '.github/workflows/mail-calendar-tasks-builds.yaml'
+      - '!**/*.md'
+      - '!**/*.mdx'
   push:
     branches: [main]
     paths:

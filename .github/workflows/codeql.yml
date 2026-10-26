@@ -7,6 +7,12 @@ name: CodeQL Manual Fallback
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
+    # Prose-only PRs have nothing to scan. Main pushes stay unfiltered so the
+    # baseline the PR new-alert gate compares against is always complete.
+    paths-ignore:
+      - '**/*.md'
+      - '**/*.mdx'
+      - 'apps/docs/**'
   push:
     branches:
       - main
