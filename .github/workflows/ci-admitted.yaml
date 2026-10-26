@@ -1,0 +1,58 @@
+name: CI Admitted
+
+# Always-on PR check: red unless heavy hosted CI was admitted by ready-for-ci
+# for this event, so skipped heavy checks never read as passing. Advisory: no
+# ruleset requires it, so draft and WIP PRs stay unblocked. One small job per
+# PR event; it reads the current labels and runs no PR-provided command.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
+
+permissions: {}
+
+concurrency:
+  group: ci-admitted-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  admitted:
+    name: CI admitted (ready-for-ci)
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+    steps:
+      # Base-commit copy, so a pull request cannot rewrite its own admission.
+      - name: Check out admission script
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          persist-credentials: false
+          sparse-checkout: |
+            scripts/ci/ci-admission.js
+            scripts/ci/pr-label-gate.js
+          sparse-checkout-cone-mode: false
+
+      - name: Read current labels
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          gh api "repos/$REPOSITORY/issues/$PR_NUMBER/labels" --paginate \
+            --jq '[.[].name]' | jq -s 'add // []' > "$RUNNER_TEMP/labels.json"
+
+      - name: Require ready-for-ci
+        env:
+          PAYLOAD_LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+        run: |
+          set -euo pipefail
+          if [ ! -f scripts/ci/ci-admission.js ]; then
+            # Bootstrap: the base commit predates the admission script.
+            echo "::warning::Admission script is not on the base commit yet; skipping."
+            exit 0
+          fi
+          CURRENT_LABELS_FILE="$RUNNER_TEMP/labels.json" node scripts/ci/ci-admission.js

@@ -744,8 +744,13 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   pre-label run stays skipped. Admission checks only label presence: any later
   label event on a ready PR is a real admitted run in the same group, so a
   skipped run can never mask a red one on a labelled PR. Skipped checks are not
-  evidence once the label is removed. Label only after the PR shows the new
-  head: an unlabelled push run that lands after the label run supersedes it. Gate every job of a new heavy PR workflow
+  evidence once the label is removed. The always-on CI Admitted check
+  (`ci-admitted.yaml`) reads current labels from a base-commit script. It is red
+  without the label, and on the push/label race, which it reports with re-add
+  guidance. Unadmitted PR runs use `UNADMITTED_GROUP_SUFFIX`, so they never
+  cancel an admitted run. Append that suffix to every new heavy workflow's
+  cancelling group. Do not add per-workflow admission jobs: they would allocate
+  a hosted job on every unlabelled push. Gate every job of a new heavy PR workflow
   with `PR_LABEL_GATE` from `scripts/ci/pr-label-gate.js`, ANDed at the top
   level. Add `labeled` to `pull_request.types`, keep label events in the
   ordinary cancelling PR group, and classify the workflow there. Gate callers, never reusable callees; never use workflow-level
