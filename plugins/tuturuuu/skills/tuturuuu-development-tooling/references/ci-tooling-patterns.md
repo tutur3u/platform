@@ -103,6 +103,27 @@ Do not copy upstream examples that deliberately retry forever into finite jobs.
 See the adoption guidance's runaway-work acceptance table; live settings are
 separate evidence, never implied by documentation or build success.
 
+For Turbo cache admission, `budget-v2` in the global DO is the single durable
+authority. Use one storage transaction for each reservation/admin mutation and
+commit before artifact access. Never use R2 snapshots, isolate memory or an
+eventually consistent cache as positive admission authority. Preserve committed
+charges after unknown outcomes; do not retry reservations or refund failed
+artifact work. Denials and unchanged admin actions perform no writes. There are
+no R2 control writes or background checkpoint jobs, avoiding the same-key write
+limit. Legacy `_control/budget-v1` is read only on explicit first initialization;
+disable/drain the previous revision and reconcile unknown writes before import.
+Never reset lost usage to zero or delete DO state as recovery. Count artifact
+operations, DO/rate-limit calls and separate DO storage costs. Denied ingress and
+failed attempts remain traffic-dependent costs requiring the independent mode-off
+stop. `apps/turbo-cache/src/{stop-regression,budget-integrity}.test.ts` cover
+failure/unknown outcomes, delayed legacy writes after stop, restart, burst 429s,
+concurrency and maximum batches. The nonpublishing
+`turbo-cache-cloudflare.yaml` / `build-acceptance` job must build the exact PR
+head without compiled-artifact caches and exercise source and emitted Workers in
+workerd. The shared cf harness uses disposable secrets and isolated persistence;
+it verifies default-off, transactional initialization and stop/restart. Keep
+hosted enabled-traffic/cost acceptance separate from local-runtime evidence.
+
 ## Cloudflare backend ownership guard
 
 New crons, queues, schedulers and heavy/long-running backend work go to Cloudflare
