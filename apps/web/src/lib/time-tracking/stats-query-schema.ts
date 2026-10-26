@@ -24,6 +24,11 @@ export const statsQuerySchema = z.object({
     .transform((val) =>
       Math.min(val ? Number.parseInt(val, 10) : 365, MAX_STATS_DAYS_BACK)
     ),
-  // Counts only sessions with this tag, e.g. `pomodoro` for Focus Time.
+  // Counts only sessions with this tag, e.g. `pomodoro`.
   tag: sessionTagSchema.optional(),
+  // Counts only sessions linked to a task: Focus Time.
+  taskLinked: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((val) => val === 'true'),
 });

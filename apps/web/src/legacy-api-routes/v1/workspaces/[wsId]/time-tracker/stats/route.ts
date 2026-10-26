@@ -51,8 +51,15 @@ export async function GET(
       );
     }
 
-    const { userId, isPersonal, timezone, summaryOnly, daysBack, tag } =
-      result.data;
+    const {
+      userId,
+      isPersonal,
+      timezone,
+      summaryOnly,
+      daysBack,
+      tag,
+      taskLinked,
+    } = result.data;
 
     // Verify authentication
     const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
@@ -81,9 +88,9 @@ export async function GET(
       );
     }
 
-    // Tagged stats come from the tagged sessions; no database function
-    // filters by tag.
-    if (tag) {
+    // Filtered stats (a tag, or task-linked Focus Time) come from the
+    // sessions themselves; no database function filters that way.
+    if (tag || taskLinked) {
       if (!isSupportedTimezone(timezone)) {
         return NextResponse.json(
           { error: 'Invalid timezone' },
@@ -97,6 +104,7 @@ export async function GET(
           isPersonal,
           timezone,
           tag,
+          taskLinked,
           daysBack: summaryOnly ? 0 : daysBack,
         })
       );

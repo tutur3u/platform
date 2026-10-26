@@ -169,15 +169,17 @@ does the same for that task.
 
 Every focus session the Pomodoro starts carries the `pomodoro` tag. This
 includes Start focus on a task row. The session API accepts `tags`: lowercase
-slugs, at most 10, stored in the existing `tags` column. You's **Focus Time**
-counts only `pomodoro`-tagged sessions. The stats endpoint takes an optional
-`tag`. With a tag, it computes today, the week from Monday, the month, daily
-activity and the streak from the tagged sessions, in the user's timezone.
-This is done in TypeScript, so the stats database function is unchanged and
-there is no migration. One difference from the untagged stats: a session
-counts on the local day it started. Sessions from before tagging was
-introduced do not count. The Timer's own statistics still count all tracked
-time.
+slugs, at most 10, stored in the existing `tags` column.
+
+You's **Focus Time** is all tracked time linked to a task (`task_id` set),
+Pomodoro or not (decided 2026-10-26). The stats endpoint takes two optional
+filters: `taskLinked=true` (Focus Time) and `tag` (for example `pomodoro`,
+kept as a capability). With either, it computes today, the week from Monday,
+the month, daily activity and the streak from the matching sessions, in the
+user's timezone. This is done in TypeScript, so the stats database function
+is unchanged and there is no migration. One difference from the unfiltered
+stats: a session counts on the local day it started. The Timer's own
+statistics still count all tracked time.
 
 Shared, cross-device phases need the database contract flagged in the native
 pass plan (phase 7, a draft PR).

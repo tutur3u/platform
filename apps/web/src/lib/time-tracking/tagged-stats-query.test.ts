@@ -95,6 +95,26 @@ describe('loadTaggedTimeStats', () => {
     expect((await loadTaggedTimeStats(small, options)).truncated).toBe(false);
   });
 
+  it('counts every task-linked session for Focus Time, with no tag', async () => {
+    const { client, filters } = fakeClient([
+      [{ start_time: '2026-10-28T01:00:00Z', duration_seconds: 900 }],
+    ]);
+
+    const stats = await loadTaggedTimeStats(client, {
+      userId: 'u1',
+      wsId: 'ws1',
+      isPersonal: false,
+      timezone: 'UTC',
+      taskLinked: true,
+      daysBack: 7,
+      now,
+    });
+
+    expect(stats.todayTime).toBe(900);
+    expect(filters).toContain('not:["task_id","is",null]');
+    expect(filters.some((f) => f.startsWith('contains:'))).toBe(false);
+  });
+
   it('recognizes supported timezones', () => {
     expect(isSupportedTimezone('Asia/Ho_Chi_Minh')).toBe(true);
     expect(isSupportedTimezone('Not/AZone')).toBe(false);
