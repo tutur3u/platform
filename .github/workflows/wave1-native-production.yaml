@@ -1,0 +1,202 @@
+name: Upload private wave-1 production Worker
+on:
+  workflow_dispatch:
+    inputs:
+      app:
+        description: App admitted by its separate cutover PR
+        type: choice
+        options: [calendar]
+        required: true
+permissions:
+  contents: read
+  actions: read
+  deployments: read
+concurrency:
+  group: wave1-native-production-${{ inputs.app }}
+  cancel-in-progress: false
+  queue: max
+jobs:
+  production-policy:
+    if: github.ref == 'refs/heads/production'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      allowed: ${{ steps.policy.outputs.allowed }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.0
+      - id: policy
+        env:
+          APP: ${{ inputs.app }}
+        run: node scripts/ci/production-publication-policy.ts "$APP-cloudflare.yaml" "$GITHUB_STEP_SUMMARY"
+  qualify:
+    needs: production-policy
+    if: github.ref == 'refs/heads/production' && needs.production-policy.outputs.allowed == 'true'
+    runs-on: ubuntu-latest
+    environment: wave1-calendar-production
+    timeout-minutes: 45
+    env:
+      APP: ${{ inputs.app }}
+      PROFILE: production
+      SOURCE_SHA: ${{ github.sha }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
+      WRANGLER_SEND_METRICS: 'false'
+      WRANGLER_WRITE_LOGS: 'false'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.0
+      - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+      - name: Configure exact production public inputs and identity
+        run: |
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          node --input-type=module <<'JS'
+          import { appendFileSync } from 'node:fs';
+          import { profileFor } from './scripts/ci/wave1-native-profile.mjs';
+          const p = profileFor(process.env.APP, 'production');
+          if (!process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL.includes('.invalid') || !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) throw new Error('Production public inputs are required');
+          appendFileSync(process.env.GITHUB_ENV, `NEXT_PUBLIC_APP_URL=https://${p.host}\nNEXT_PUBLIC_${p.app.toUpperCase()}_APP_URL=https://${p.host}\nNEXT_PUBLIC_WEB_APP_URL=https://tuturuuu.com\n`);
+          JS
+      - name: Generate exact source metadata
+        env:
+          PLATFORM_BUILD_COMMIT_HASH: ${{ env.SOURCE_SHA }}
+          PLATFORM_BUILD_REF_NAME: production
+          PLATFORM_BUILD_ENVIRONMENT: production
+        run: bun run --silent scripts/ci/generate-build-metadata.ts
+      - name: Build admitted production frontend and transitive suppliers
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --filter=@tuturuuu/${{ inputs.app }} --concurrency=2
+          token: ''
+          team: ''
+      - name: Seal and exercise the original route-free production bytes
+        timeout-minutes: 5
+        run: |
+          node scripts/ci/wave1-native-artifact.mjs prepare "$APP" production "$SOURCE_SHA"
+          node scripts/ci/wave1-native-runtime.mjs "$APP" production "$SOURCE_SHA"
+          node scripts/ci/wave1-native-publish.mjs dry-run "$APP" production "$SOURCE_SHA"
+          node scripts/ci/wave1-native-artifact.mjs verify "$APP" production "$SOURCE_SHA"
+          python3 scripts/ci/wave1-native-archive.py pack "apps/$APP" "$RUNNER_TEMP/wave1-native.tar.gz"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: wave1-${{ inputs.app }}-production-${{ env.SOURCE_SHA }}
+          path: ${{ runner.temp }}/wave1-native.tar.gz
+          retention-days: 14
+          if-no-files-found: error
+  restored:
+    needs: qualify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      APP: ${{ inputs.app }}
+      SOURCE_SHA: ${{ github.sha }}
+      WRANGLER_SEND_METRICS: 'false'
+      WRANGLER_WRITE_LOGS: 'false'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.0
+      - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: wave1-${{ inputs.app }}-production-${{ env.SOURCE_SHA }}
+          path: ${{ runner.temp }}/native-production
+      - name: Restore and requalify without deploy credentials
+        timeout-minutes: 5
+        run: |
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          python3 scripts/ci/wave1-native-archive.py restore "apps/$APP" "$RUNNER_TEMP/native-production/wave1-native.tar.gz"
+          node scripts/ci/wave1-native-artifact.mjs verify "$APP" production "$SOURCE_SHA"
+          node scripts/ci/wave1-native-runtime.mjs "$APP" production "$SOURCE_SHA"
+          node scripts/ci/wave1-native-publish.mjs dry-run "$APP" production "$SOURCE_SHA"
+          node scripts/ci/wave1-native-artifact.mjs verify "$APP" production "$SOURCE_SHA"
+  publish:
+    name: publish-${{ inputs.app }}
+    needs: [production-policy, qualify, restored]
+    if: github.ref == 'refs/heads/production' && needs.production-policy.outputs.allowed == 'true'
+    runs-on: ubuntu-latest
+    environment: wave1-calendar-production
+    timeout-minutes: 15
+    env:
+      APP: ${{ inputs.app }}
+      SOURCE_SHA: ${{ github.sha }}
+      PUBLICATION_ENVIRONMENT: wave1-calendar-production
+      WRANGLER_SEND_METRICS: 'false'
+      WRANGLER_WRITE_LOGS: 'false'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.0
+      - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile --ignore-scripts
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: wave1-${{ inputs.app }}-production-${{ env.SOURCE_SHA }}
+          path: ${{ runner.temp }}/native-production
+      - name: Restore same-run production artifact
+        run: |
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          python3 scripts/ci/wave1-native-archive.py restore "apps/$APP" "$RUNNER_TEMP/native-production/wave1-native.tar.gz"
+          node scripts/ci/wave1-native-artifact.mjs verify "$APP" production "$SOURCE_SHA"
+      - name: Recheck restored runtime without provider credentials
+        timeout-minutes: 3
+        run: node scripts/ci/wave1-native-runtime.mjs "$APP" production "$SOURCE_SHA"
+      - name: Read-only production preflight
+        id: preflight
+        timeout-minutes: 2
+        env:
+          WAVE1_PRODUCTION_CLOUDFLARE_READ_TOKEN: ${{ secrets.WAVE1_PRODUCTION_CLOUDFLARE_READ_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
+        run: node scripts/ci/wave1-native-production.mjs "$APP" "$SOURCE_SHA" preflight
+      - name: Upload once without attaching serving topology
+        id: upload
+        timeout-minutes: 4
+        env:
+          WAVE1_PRODUCTION_CLOUDFLARE_API_TOKEN: ${{ secrets.WAVE1_PRODUCTION_CLOUDFLARE_API_TOKEN }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
+        run: node scripts/ci/wave1-native-production.mjs "$APP" "$SOURCE_SHA" upload
+      - name: Read-only post-upload topology verification
+        id: verify
+        timeout-minutes: 2
+        env:
+          WAVE1_PRODUCTION_CLOUDFLARE_READ_TOKEN: ${{ secrets.WAVE1_PRODUCTION_CLOUDFLARE_READ_TOKEN }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
+        run: node scripts/ci/wave1-native-production.mjs "$APP" "$SOURCE_SHA" verify
+      - name: Retain private upload and rollback receipt, including unknown outcomes
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: wave1-${{ inputs.app }}-production-publication-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/${{ inputs.app }}-production-publication.json
+          retention-days: 30
+          if-no-files-found: warn

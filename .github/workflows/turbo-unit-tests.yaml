@@ -159,7 +159,9 @@ jobs:
       # Configure production Supabase client
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
-      SUPABASE_SECRET_KEY: ${{ secrets.PRODUCTION_SUPABASE_SECRET_KEY }}
+      # Unit tests run on same-repo pull requests, so they never receive the
+      # production service-role key. Tests needing a real key bring their own.
+      SUPABASE_SECRET_KEY: sb_secret_ci_placeholder
 
       # Configure infrastructure
       PROXY_API_KEY: ${{ secrets.PROXY_API_KEY }}
