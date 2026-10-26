@@ -1,5 +1,8 @@
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
@@ -88,9 +91,12 @@ export async function POST(
     // Upload the complete recording to storage
     const timestamp = Date.now();
     const recordingId = `${sessionId}-complete-${timestamp}`;
+    // Recordings are private storage: write with the service role after the
+    // membership and session checks above.
+    const sbAdmin = await createAdminClient();
     const storagePath = `${wsId}/recordings/${meetingId}/${sessionId}/${recordingId}.webm`;
 
-    const { error: uploadError } = await supabase.storage
+    const { error: uploadError } = await sbAdmin.storage
       .from('workspaces')
       .upload(storagePath, audioBlob, {
         contentType: audioBlob.type || 'audio/webm',
@@ -120,7 +126,7 @@ export async function POST(
     if (chunkError) {
       console.error('Error saving recording metadata:', chunkError);
       // Try to clean up the uploaded file
-      await supabase.storage.from('workspaces').remove([storagePath]);
+      await sbAdmin.storage.from('workspaces').remove([storagePath]);
       return NextResponse.json(
         { error: 'Failed to save recording metadata' },
         { status: 500 }

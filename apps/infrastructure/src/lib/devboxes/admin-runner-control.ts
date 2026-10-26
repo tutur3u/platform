@@ -43,6 +43,27 @@ export async function setDevboxRunnerDrain(
   return { drain_requested_at: data ?? null };
 }
 
+/** Upper bound for one operator sweep; the RPC also clamps to 500. */
+export const STALE_RUN_REAP_LIMIT = 200;
+
+/**
+ * Finishes stale runs across all runners (the global operator sweep); every
+ * claim already reaps the claiming runner's own stale runs. Bounded and
+ * idempotent: reaped runs are terminal and leave the candidate set.
+ */
+export async function reapStaleDevboxRuns() {
+  const client = await createPrivateDevboxClient();
+  const { data, error } = await client.rpc<number | null>(
+    'reap_stale_devbox_runs',
+    { p_limit: STALE_RUN_REAP_LIMIT }
+  );
+  if (error) throw getDevboxStorageError(error);
+  return {
+    limit: STALE_RUN_REAP_LIMIT,
+    reaped: typeof data === 'number' ? data : 0,
+  };
+}
+
 // Production applies migrations after the app deploys, so a missing column or
 // function degrades to unknown activity instead of failing the snapshot.
 export async function listDevboxRunnerControl(

@@ -23,6 +23,7 @@ test('Calendar workflow packaging assertions run cold in owning CI and root Node
     'scripts/ci/calendar-ssr-capture.mjs',
     'apps/calendar/src/runtime/ssr-diagnostics.ts',
     'scripts/ci/workflow-yaml-test-helper.js',
+    'scripts/ci/pr-label-gate.js',
     '.github/workflows/mail-calendar-tasks-builds.yaml',
   ]) {
     await mkdir(dirname(join(cold, name)), { recursive: true });
