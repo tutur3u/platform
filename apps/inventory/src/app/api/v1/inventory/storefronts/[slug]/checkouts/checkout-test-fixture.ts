@@ -91,10 +91,6 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
     mocks.verifyWorkspaceMembershipType(...args),
 }));
 
-vi.mock('@/lib/infrastructure/log-drain', () => ({
-  serverLogger: { error: vi.fn() },
-}));
-
 export function resetCheckoutMocks() {
   vi.clearAllMocks();
   mocks.schema.mockReturnValue({

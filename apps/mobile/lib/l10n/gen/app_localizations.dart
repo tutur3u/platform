@@ -739,6 +739,66 @@ abstract class AppLocalizations {
   /// **'An attachment failed to upload. Remove it and try again before sending.'**
   String get assistantAttachmentUploadFailed;
 
+  /// No description provided for @assistantAttachmentFailureForbidden.
+  ///
+  /// In en, this message translates to:
+  /// **'This chat can\'t accept attachments. Remove it or start a new chat.'**
+  String get assistantAttachmentFailureForbidden;
+
+  /// No description provided for @assistantAttachmentFailureNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload interrupted. Check your connection and tap Retry.'**
+  String get assistantAttachmentFailureNetwork;
+
+  /// No description provided for @assistantAttachmentFailureServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload didn\'t finish. Tap Retry.'**
+  String get assistantAttachmentFailureServer;
+
+  /// No description provided for @assistantAttachmentFailureTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'File is larger than 32 MB. Remove it or attach a smaller file.'**
+  String get assistantAttachmentFailureTooLarge;
+
+  /// No description provided for @assistantAttachmentFailureUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'This file type isn\'t supported. Remove it to send.'**
+  String get assistantAttachmentFailureUnsupported;
+
+  /// No description provided for @assistantAttachmentNotSentMany.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} attachments didn\'t upload. Retry or remove them to send.'**
+  String assistantAttachmentNotSentMany(int count);
+
+  /// No description provided for @assistantAttachmentNotSentOne.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} didn\'t upload. {reason}'**
+  String assistantAttachmentNotSentOne(String name, String reason);
+
+  /// No description provided for @assistantAttachmentPreparing.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing'**
+  String get assistantAttachmentPreparing;
+
+  /// No description provided for @assistantAttachmentRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get assistantAttachmentRetry;
+
+  /// No description provided for @assistantAttachmentUploadingPercent.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}%'**
+  String assistantAttachmentUploadingPercent(int percent);
+
   /// No description provided for @assistantAttachmentUploadPending.
   ///
   /// In en, this message translates to:
@@ -2020,7 +2080,7 @@ abstract class AppLocalizations {
   /// No description provided for @assistantScrollToBottomAction.
   ///
   /// In en, this message translates to:
-  /// **'Scroll to bottom'**
+  /// **'Jump to latest'**
   String get assistantScrollToBottomAction;
 
   /// No description provided for @assistantSearchModels.

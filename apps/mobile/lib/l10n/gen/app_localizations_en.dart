@@ -333,6 +333,42 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantAttachmentUploadFailed => 'An attachment failed to upload. Remove it and try again before sending.';
 
   @override
+  String get assistantAttachmentFailureForbidden => 'This chat can\'t accept attachments. Remove it or start a new chat.';
+
+  @override
+  String get assistantAttachmentFailureNetwork => 'Upload interrupted. Check your connection and tap Retry.';
+
+  @override
+  String get assistantAttachmentFailureServer => 'Upload didn\'t finish. Tap Retry.';
+
+  @override
+  String get assistantAttachmentFailureTooLarge => 'File is larger than 32 MB. Remove it or attach a smaller file.';
+
+  @override
+  String get assistantAttachmentFailureUnsupported => 'This file type isn\'t supported. Remove it to send.';
+
+  @override
+  String assistantAttachmentNotSentMany(int count) {
+    return '$count attachments didn\'t upload. Retry or remove them to send.';
+  }
+
+  @override
+  String assistantAttachmentNotSentOne(String name, String reason) {
+    return '$name didn\'t upload. $reason';
+  }
+
+  @override
+  String get assistantAttachmentPreparing => 'Preparing';
+
+  @override
+  String get assistantAttachmentRetry => 'Retry';
+
+  @override
+  String assistantAttachmentUploadingPercent(int percent) {
+    return '$percent%';
+  }
+
+  @override
   String get assistantAttachmentUploadPending => 'Wait for attachment uploads to finish before sending.';
 
   @override
@@ -996,7 +1032,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantSaveAction => 'Save';
 
   @override
-  String get assistantScrollToBottomAction => 'Scroll to bottom';
+  String get assistantScrollToBottomAction => 'Jump to latest';
 
   @override
   String get assistantSearchModels => 'Search models';
