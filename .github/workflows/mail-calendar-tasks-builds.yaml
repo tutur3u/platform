@@ -22,6 +22,8 @@ on:
       - 'scripts/ci/calendar-cf-archive.py'
       - 'scripts/ci/native-source-identity-test-helper.js'
       - 'scripts/ci/calendar-emitted-defaults*'
+      - 'scripts/ci/tasks-native-artifact*'
+      - 'scripts/ci/apps-native-artifact.py'
       - '.github/actions/**'
       - '.github/workflows/ci-check.yml'
       - 'tuturuuu.ci.ts'
@@ -48,6 +50,8 @@ on:
       - 'scripts/ci/calendar-cf-archive.py'
       - 'scripts/ci/native-source-identity-test-helper.js'
       - 'scripts/ci/calendar-emitted-defaults*'
+      - 'scripts/ci/tasks-native-artifact*'
+      - 'scripts/ci/apps-native-artifact.py'
       - '.github/actions/**'
       - '.github/workflows/ci-check.yml'
       - 'tuturuuu.ci.ts'
@@ -183,6 +187,8 @@ jobs:
         with:
           node-version: 24.22.0
       - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+      - name: Tasks native artifact helper regressions
+        run: python3 scripts/ci/tasks-native-artifact.test.py
       - name: Build application and shared dependencies without deployment
         id: mail-frontend-build
         uses: ./.github/actions/run-with-turbo-remote-cache

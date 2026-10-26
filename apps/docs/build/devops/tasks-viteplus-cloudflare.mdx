@@ -95,6 +95,37 @@ runtime header. `--local-upstream` makes the Worker see the admitted host; with
 `scripts/native-cutover/smoke.mjs` against the same origin. This smoke does not replace exact-commit CI, sealed-artifact
 checks or signed-in acceptance on staging.
 
+## Sealed artifact and signed-in browser gate
+
+`scripts/ci/tasks-native-artifact.py` seals and restores the Tasks staging
+artifact with the shared Apps helper. The Worker identity it requires is the
+one `void.config.ts` declares:
+
+- `tuturuuu-tasks-vite-staging`, compatibility date `2026-10-19`
+- `nodejs_compat` and `global_fetch_strictly_public`
+- `workers_dev: false`, no vars and no observability block
+
+`public/offline.html` is a declared public file, byte-checked like the others;
+any other HTML in the output is rejected as prerender output. Run the
+regressions with `python3 scripts/ci/tasks-native-artifact.test.py` (CI runs
+them in the `build (tasks)` job).
+
+After a real `bun run build:cloudflare`:
+
+```bash
+export TASKS_SOURCE_SHA=$(git rev-parse HEAD)
+python3 scripts/ci/tasks-native-artifact.py seal apps/tasks --receipt sealed.json
+python3 scripts/ci/tasks-native-artifact.py pack apps/tasks --receipt sealed.json --archive tasks-native.tar.gz
+# On the browser host, into a fresh checkout at the same commit:
+python3 scripts/ci/tasks-native-artifact.py restore apps/tasks --archive tasks-native.tar.gz --receipt restored.json
+node scripts/ci/native-root-browser.mjs tasks --receipt restored.json
+```
+
+The browser gate uses `apps/tasks/cloudflare/root-browser.profile.mjs`. With
+no board to open, a signed-in `/` and `/vi` render the personal task entrypoint
+in place, in English and Vietnamese. See
+[Signed-in root browser gate](/build/devops/start-bridge-codemod#signed-in-root-browser-gate).
+
 ## Shared Calendar task ports
 
 The Calendar task model and view live in `packages/tasks-ui/tu-do/shared`.

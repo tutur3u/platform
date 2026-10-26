@@ -341,6 +341,23 @@ class ArtifactTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "unreviewed emitted config field"):
             artifact.validate_output(app)
 
+    def test_html_only_as_a_declared_public_file(self):
+        app, _, _ = self.fixture()
+        for name in ("index.html", "assets/route.html", "nested/offline.html"):
+            target = app / "dist/client" / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text("<html></html>")
+            with self.assertRaisesRegex(ValueError, "unreviewed static HTML"):
+                artifact.validate_output(app)
+            target.unlink()
+        with mock.patch.object(artifact, "PUBLIC_FILES", (*artifact.PUBLIC_FILES, "offline.html")):
+            (app / "public/offline.html").write_text("<html>offline</html>")
+            (app / "dist/client/offline.html").write_text("<html>offline</html>")
+            artifact.validate_output(app)
+            (app / "dist/client/offline.html").write_text("<html>prerendered</html>")
+            with self.assertRaisesRegex(ValueError, "public asset drift: offline.html"):
+                artifact.validate_output(app)
+
     def test_config_containment_identity_resources_and_static_controls(self):
         mutations = [
             lambda c: c.update(name="guessed-canonical-worker"),

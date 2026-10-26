@@ -134,7 +134,10 @@ def validate_output(directory, source=None):
     for name in PUBLIC_FILES:
         require((assets_path / name).is_file(), "missing public asset: " + name)
         require((assets_path / name).read_bytes() == (source / "public" / name).read_bytes(), "public asset drift: " + name)
-    require(not any(assets_path.rglob("*.html")), "unreviewed static HTML/prerender output")
+    # A declared public file (byte-equal to the source above) may be HTML, such
+    # as an offline fallback page; any other HTML is prerender output.
+    html = {path.relative_to(assets_path).as_posix() for path in assets_path.rglob("*.html")}
+    require(html <= set(PUBLIC_FILES), "unreviewed static HTML/prerender output")
     return {"app": app, "config": config_path, "main": main, "assets": assets_path}
 
 
