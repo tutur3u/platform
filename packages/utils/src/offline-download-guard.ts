@@ -81,7 +81,21 @@ function challenge(request: NextRequest) {
   );
 }
 
-type OfflineSubject = { key: string; minute: number; hour: number };
+type OfflineSubject = {
+  key: string;
+  minute: number;
+  hour: number;
+  /** Daily reads; enforced on the guard store only. */
+  day?: number;
+};
+
+/**
+ * Daily marked reads per IP and per session on the guard store. With up to
+ * three operations per read this keeps one source at a quarter of the default
+ * offline share (600,000), so no single source can exhaust it.
+ */
+export const SOURCE_DAILY_READS = 50_000;
+const DAY_MS = 24 * 60 * 60_000;
 
 /** Storage operations of the offline guard; every failure throws. */
 type OfflineGuardStore = {
@@ -121,6 +135,16 @@ function durableObjectStore(client: AbuseGuardClient): OfflineGuardStore {
               windowMs: HOUR_MS,
               algo: 'sliding' as const,
             },
+            ...(subject.day
+              ? [
+                  {
+                    key: '1d',
+                    limit: subject.day,
+                    windowMs: DAY_MS,
+                    algo: 'fixed' as const,
+                  },
+                ]
+              : []),
           ],
         }))
       );
@@ -174,7 +198,13 @@ async function upstashStore(): Promise<OfflineGuardStore | null> {
  * Ordinary enterprise reads retain their existing API/auth protections.
  * Clearance never satisfies authentication, authorization, IP blocks, required
  * MFA, or either rate-limit budget. Runtime failures remain fail-closed. */
-export async function guardOfflineDownloadRequest(request: NextRequest) {
+export async function guardOfflineDownloadRequest(
+  request: NextRequest,
+  options: {
+    /** User id the proxy verified for this request's bearer, if any. */
+    verifiedActor?: string | null;
+  } = {}
+) {
   if (!isOfflineCapableRead(request) || process.env.NODE_ENV !== 'production')
     return null;
   const bulk = request.headers.get(OFFLINE_DOWNLOAD_HEADER) === '1';
@@ -201,16 +231,40 @@ export async function guardOfflineDownloadRequest(request: NextRequest) {
           request.headers.get('cookie')
         );
     const ip = extractIPFromRequest(request.headers);
+    // On the guard store, session windows and clearance are spent only for a
+    // verified actor: rotating opaque bearers cost a single IP operation and
+    // never reach the session or clearance partitions.
+    const admittedSessionKey =
+      selection.kind === 'durable-object' && !options.verifiedActor
+        ? null
+        : sessionKey;
     // IP remains bounded even when a caller rotates unverified bearer values.
     // Internal authenticated gateways may lack a client IP. Never combine
     // their unrelated sessions into a shared unknown-IP bucket. Public ingress
     // still supplies a real IP, retaining the rotating-token budget.
-    if (ip === 'unknown' && !sessionKey) return unavailable(request);
-    const subjects = [
+    if (ip === 'unknown' && !admittedSessionKey) return unavailable(request);
+    // Daily windows bound one source's share below the family allowance.
+    const subjects: OfflineSubject[] = [
       ...(ip !== 'unknown'
-        ? [{ key: `ip:${ip}`, minute: 1200, hour: 30000 }]
+        ? [
+            {
+              key: `ip:${ip}`,
+              minute: 1200,
+              hour: 30000,
+              day: SOURCE_DAILY_READS,
+            },
+          ]
         : []),
-      ...(sessionKey ? [{ key: sessionKey, minute: 600, hour: 12000 }] : []),
+      ...(admittedSessionKey
+        ? [
+            {
+              key: admittedSessionKey,
+              minute: 600,
+              hour: 12000,
+              day: SOURCE_DAILY_READS,
+            },
+          ]
+        : []),
     ];
     const denial = await store.limit(subjects);
     if (denial) {
@@ -232,7 +286,7 @@ export async function guardOfflineDownloadRequest(request: NextRequest) {
         'offline-download-rate-limited'
       );
     }
-    if (!sessionKey)
+    if (!admittedSessionKey)
       return guardRejection(
         request,
         NextResponse.json(
@@ -241,11 +295,13 @@ export async function guardOfflineDownloadRequest(request: NextRequest) {
         ),
         'offline-download-authentication-required'
       );
-    const trust = (await getCachedTrustEntries([sessionKey])).get(sessionKey);
+    const trust = (await getCachedTrustEntries([admittedSessionKey])).get(
+      admittedSessionKey
+    );
     // Reuse established account trust. This check does not write trust markers.
     if (trust?.verified && (trust.m > 1 || trust.mode === 'unlimited'))
       return null;
-    const clearanceKey = `offline:clearance:${sessionKey}`;
+    const clearanceKey = `offline:clearance:${admittedSessionKey}`;
     if (await store.hasClearance(clearanceKey)) return null;
     const token = request.headers.get('x-tuturuuu-turnstile-token');
     if (!token) return challenge(request);

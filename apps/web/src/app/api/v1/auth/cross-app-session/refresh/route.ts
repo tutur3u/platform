@@ -6,11 +6,6 @@ import { resolveInternalAppSessionPolicy } from '@tuturuuu/auth/app-session-poli
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getConfirmedAuthEmail } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import {
-  isKnownReplay,
-  preLimitReplayAttempt,
-  rememberReplay,
-} from '@tuturuuu/utils/abuse-guard/replay-guard';
 import { extractIPFromRequest } from '@tuturuuu/utils/abuse-protection/edge';
 import {
   type AppName,
@@ -20,9 +15,9 @@ import {
   readRequiredMfaPolicy,
   satisfiesRequiredMfaPolicy,
 } from '@tuturuuu/utils/required-mfa-policy';
-import { getUpstashRestRedisClient } from '@tuturuuu/utils/upstash-rest';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { consumeRefreshTokenWithGrace } from '@/lib/app-coordination/refresh-replay';
 import { getAppCoordinationSessionPolicy } from '@/lib/app-coordination/session-policy';
 import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 
@@ -33,12 +28,6 @@ const refreshSchema = z.object({
   targetApp: z.string().trim().toLowerCase().min(1).max(64),
 });
 
-type RefreshConsumeResult =
-  | 'consumed'
-  | 'grace'
-  | 'limited'
-  | 'replayed'
-  | 'unavailable';
 type RefreshVerificationResult =
   | {
       kind: 'verified';
@@ -65,65 +54,6 @@ function jsonNoStore(body: unknown, init?: ResponseInit) {
   });
 }
 
-async function consumeRefreshTokenWithGrace({
-  exp,
-  graceSeconds,
-  ip,
-  jti,
-  sub,
-}: {
-  exp: number;
-  graceSeconds: number;
-  ip: string;
-  jti: string;
-  sub: string;
-}): Promise<RefreshConsumeResult> {
-  const nowSeconds = Math.floor(Date.now() / 1000);
-  const ttlSeconds = exp - nowSeconds;
-
-  if (ttlSeconds <= 0 || !jti.trim() || !sub.trim()) {
-    return 'replayed';
-  }
-
-  const key = `${REFRESH_REPLAY_KEY_PREFIX}:${sub}:${jti}`;
-  // Known replays and over-limit callers cost no store operation.
-  if (isKnownReplay(key)) return 'replayed';
-  if (preLimitReplayAttempt(sub, ip) !== null) return 'limited';
-
-  const redis = await getUpstashRestRedisClient({
-    family: 'replay',
-  }).catch(() => null);
-  if (!redis) {
-    return 'unavailable';
-  }
-
-  try {
-    const firstUsedAt = await redis.get<number | string>(key);
-    const firstUsedAtSeconds =
-      typeof firstUsedAt === 'number'
-        ? firstUsedAt
-        : Number.parseInt(firstUsedAt ?? '', 10);
-
-    if (Number.isFinite(firstUsedAtSeconds)) {
-      if (firstUsedAtSeconds + graceSeconds >= nowSeconds) return 'grace';
-      rememberReplay(key, exp);
-      return 'replayed';
-    }
-
-    const consumed = await redis.set(key, String(nowSeconds), {
-      ex: ttlSeconds,
-      nx: true,
-    });
-
-    if (consumed === 'OK') return 'consumed';
-    rememberReplay(key, exp);
-    return 'replayed';
-  } catch {
-    console.warn('App-session refresh replay check failed');
-    return 'unavailable';
-  }
-}
-
 async function verifyRefreshToken({
   ip,
   refreshToken,
@@ -144,6 +74,8 @@ async function verifyRefreshToken({
   }
 
   const consumeResult = await consumeRefreshTokenWithGrace({
+    keyPrefix: REFRESH_REPLAY_KEY_PREFIX,
+    onError: () => console.warn('App-session refresh replay check failed'),
     exp: verification.claims.exp,
     graceSeconds: replayGraceSeconds,
     ip,

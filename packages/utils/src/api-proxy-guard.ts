@@ -1160,7 +1160,9 @@ export async function guardApiProxyRequest(
     }
   }
 
-  const offlineResponse = await guardOfflineDownloadRequest(req);
+  const offlineResponse = await guardOfflineDownloadRequest(req, {
+    verifiedActor: authenticatedActor,
+  });
   if (offlineResponse) return offlineResponse;
 
   const allowDescriptionYjsState =

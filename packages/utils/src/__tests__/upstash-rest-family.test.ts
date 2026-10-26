@@ -11,6 +11,7 @@ vi.mock('@upstash/redis', () => ({
 
 import {
   getUpstashRestRedisClient,
+  replayLegacyState,
   withLegacyReplayReads,
 } from '../upstash-rest';
 
@@ -126,5 +127,63 @@ describe('withLegacyReplayReads', () => {
       'OK'
     );
     vi.unstubAllEnvs();
+  });
+});
+
+describe('replay legacy migration state', () => {
+  const now = Date.parse('2026-10-26T00:00:00Z');
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  function withCredentials(url = 'https://redis.example.test', token = 'x') {
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', url);
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', token);
+  }
+
+  it('is disabled without a deadline or after it passes', () => {
+    withCredentials();
+    vi.stubEnv('ABUSE_GUARD_REPLAY_LEGACY_UNTIL', '');
+    expect(replayLegacyState(now)).toBe('disabled');
+    vi.stubEnv('ABUSE_GUARD_REPLAY_LEGACY_UNTIL', '2026-01-01T00:00:00Z');
+    expect(replayLegacyState(now)).toBe('disabled');
+  });
+
+  it('is active only with a future deadline and both credentials', () => {
+    withCredentials();
+    vi.stubEnv('ABUSE_GUARD_REPLAY_LEGACY_UNTIL', '2027-01-24T00:00:00Z');
+    expect(replayLegacyState(now)).toBe('active');
+  });
+
+  it.each([
+    ['missing token', () => withCredentials('https://redis.example.test', '')],
+    ['missing URL', () => withCredentials('', 'x')],
+    ['blank URL', () => withCredentials('   ', 'x')],
+  ])('is invalid for a future deadline with a %s', (_, setup) => {
+    setup();
+    vi.stubEnv('ABUSE_GUARD_REPLAY_LEGACY_UNTIL', '2027-01-24T00:00:00Z');
+    expect(replayLegacyState(now)).toBe('invalid');
+  });
+
+  it.each(['tomorrow', '   ', '2027-01-24', '2027-13-45T00:00:00Z', '1e12'])(
+    'is invalid for the malformed deadline %j',
+    (deadline) => {
+      withCredentials();
+      vi.stubEnv('ABUSE_GUARD_REPLAY_LEGACY_UNTIL', deadline);
+      expect(replayLegacyState(now)).toBe('invalid');
+    }
+  );
+
+  it('reports the replay store unavailable for an invalid migration', async () => {
+    mocks.select.mockReturnValue({
+      kind: 'durable-object',
+      client: { get: vi.fn(), set: vi.fn() },
+    });
+    withCredentials('https://redis.example.test', '');
+    vi.stubEnv('ABUSE_GUARD_REPLAY_LEGACY_UNTIL', '2999-01-01T00:00:00Z');
+    await expect(
+      getUpstashRestRedisClient({ family: 'replay' })
+    ).resolves.toBeNull();
   });
 });

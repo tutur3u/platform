@@ -40,7 +40,13 @@ vi.mock('../api-proxy-guard', () => ({
 import {
   guardOfflineDownloadRequest,
   OFFLINE_DOWNLOAD_HEADER,
+  SOURCE_DAILY_READS,
 } from '../offline-download-guard';
+
+/** The proxy verified the bearer's user unless a test says otherwise. */
+function guard(req: NextRequest, verifiedActor: string | null = 'user-1') {
+  return guardOfflineDownloadRequest(req, { verifiedActor });
+}
 
 function request(token?: string, bearer = 'synthetic-session') {
   return new NextRequest(
@@ -77,7 +83,7 @@ describe('offline download guard on the Durable Object store', () => {
 
   it('charges IP then session windows in one sequential call', async () => {
     mocks.get.mockResolvedValue('passed');
-    await expect(guardOfflineDownloadRequest(request())).resolves.toBeNull();
+    await expect(guard(request())).resolves.toBeNull();
     expect(mocks.select).toHaveBeenCalledWith('offline');
     expect(mocks.hitWindows).toHaveBeenCalledTimes(1);
     const [subjects] = mocks.hitWindows.mock.calls[0]!;
@@ -87,6 +93,12 @@ describe('offline download guard on the Durable Object store', () => {
         windows: [
           { key: '1m', limit: 1200, windowMs: 60_000, algo: 'sliding' },
           { key: '1h', limit: 30_000, windowMs: 3_600_000, algo: 'sliding' },
+          {
+            key: '1d',
+            limit: SOURCE_DAILY_READS,
+            windowMs: 86_400_000,
+            algo: 'fixed',
+          },
         ],
       },
       {
@@ -94,6 +106,12 @@ describe('offline download guard on the Durable Object store', () => {
         windows: [
           { key: '1m', limit: 600, windowMs: 60_000, algo: 'sliding' },
           { key: '1h', limit: 12_000, windowMs: 3_600_000, algo: 'sliding' },
+          {
+            key: '1d',
+            limit: SOURCE_DAILY_READS,
+            windowMs: 86_400_000,
+            algo: 'fixed',
+          },
         ],
       },
     ]);
@@ -109,9 +127,7 @@ describe('offline download guard on the Durable Object store', () => {
       windows: [],
     });
     // A dedicated session: the deny cache is per process.
-    const response = await guardOfflineDownloadRequest(
-      request(undefined, 'denied-session')
-    );
+    const response = await guard(request(undefined, 'denied-session'));
     expect(response?.status).toBe(429);
     expect(Number(response?.headers.get('Retry-After'))).toBeGreaterThan(0);
     expect(response?.headers.get('X-RateLimit-Policy')).toBe(
@@ -119,12 +135,26 @@ describe('offline download guard on the Durable Object store', () => {
     );
     expect(mocks.get).not.toHaveBeenCalled();
 
-    const repeat = await guardOfflineDownloadRequest(
-      request(undefined, 'denied-session')
-    );
+    const repeat = await guard(request(undefined, 'denied-session'));
     expect(repeat?.status).toBe(429);
     // The repeat cost no store operation.
     expect(mocks.hitWindows).toHaveBeenCalledTimes(1);
+  });
+
+  it('spends one IP operation for unverified rotating bearers', async () => {
+    // Admitted (not denied) traffic with fresh opaque bearers every request.
+    for (let index = 0; index < 5; index += 1) {
+      const response = await guard(request(undefined, `opaque-${index}`), null);
+      expect(response?.status).toBe(401);
+    }
+    expect(mocks.hitWindows).toHaveBeenCalledTimes(5);
+    for (const [subjects] of mocks.hitWindows.mock.calls) {
+      expect(subjects).toHaveLength(1);
+      expect(subjects[0].partition).toBe('ip:192.0.2.1');
+    }
+    // No session window and no clearance read for an unverified bearer.
+    expect(mocks.get).not.toHaveBeenCalled();
+    expect(SOURCE_DAILY_READS * 3).toBeLessThan(600_000);
   });
 
   it('fails closed on a malformed reply from a real client', async () => {
@@ -136,25 +166,19 @@ describe('offline download guard on the Durable Object store', () => {
         transport: async () => ({ v: 1, steps: [{ unexpected: true }] }),
       }),
     });
-    const response = await guardOfflineDownloadRequest(
-      request(undefined, 'malformed-session')
-    );
+    const response = await guard(request(undefined, 'malformed-session'));
     expect(response?.status).toBe(503);
   });
 
   it('fails closed when reading clearance fails', async () => {
     mocks.get.mockRejectedValue(new AbuseGuardUnavailableError('timeout'));
-    const response = await guardOfflineDownloadRequest(
-      request(undefined, 'clearance-read-session')
-    );
+    const response = await guard(request(undefined, 'clearance-read-session'));
     expect(response?.status).toBe(503);
   });
 
   it('challenges, then grants a 15-minute reusable clearance', async () => {
-    expect((await guardOfflineDownloadRequest(request()))?.status).toBe(403);
-    await expect(
-      guardOfflineDownloadRequest(request('real-proof'))
-    ).resolves.toBeNull();
+    expect((await guard(request()))?.status).toBe(403);
+    await expect(guard(request('real-proof'))).resolves.toBeNull();
     expect(mocks.set).toHaveBeenCalledWith(
       expect.stringMatching(/^offline:clearance:session:/u),
       'passed',
@@ -168,20 +192,20 @@ describe('offline download guard on the Durable Object store', () => {
     new AbuseGuardUnavailableError('unauthorized'),
   ])('fails closed when the store throws $code', async (error) => {
     mocks.hitWindows.mockRejectedValue(error);
-    const response = await guardOfflineDownloadRequest(request());
+    const response = await guard(request());
     expect(response?.status).toBe(503);
     expect(response?.headers.get('Retry-After')).toBe('30');
   });
 
   it('fails closed when granting clearance fails', async () => {
     mocks.set.mockRejectedValue(new AbuseGuardUnavailableError('network'));
-    const response = await guardOfflineDownloadRequest(request('real-proof'));
+    const response = await guard(request('real-proof'));
     expect(response?.status).toBe(503);
   });
 
   it('fails closed without falling back when the backend is off', async () => {
     mocks.select.mockReturnValue({ kind: 'off' });
-    const response = await guardOfflineDownloadRequest(request());
+    const response = await guard(request());
     expect(response?.status).toBe(503);
     expect(mocks.redis).not.toHaveBeenCalled();
   });

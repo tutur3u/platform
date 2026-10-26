@@ -35,14 +35,28 @@ export function hasUpstashRestEnv(): boolean {
  * cannot be replayed against the new store. Legacy errors fail like store
  * errors (callers fail closed once `replay` is assigned).
  */
-function replayLegacyReadsActive(now = Date.now()) {
-  const until = Date.parse(
-    (typeof process === 'undefined'
+type ReplayLegacyState = 'disabled' | 'active' | 'invalid';
+
+/**
+ * `disabled` when no deadline is set or it has passed; `active` for a future
+ * deadline with both legacy credentials; `invalid` for a malformed or blank
+ * deadline, or an active deadline missing a credential. An invalid migration
+ * must never silently skip the legacy check: callers treat it as unavailable.
+ */
+export function replayLegacyState(now = Date.now()): ReplayLegacyState {
+  const raw =
+    typeof process === 'undefined'
       ? undefined
-      : process.env.ABUSE_GUARD_REPLAY_LEGACY_UNTIL
-    )?.trim() ?? ''
-  );
-  return Number.isFinite(until) && until > now && hasUpstashRestEnv();
+      : process.env.ABUSE_GUARD_REPLAY_LEGACY_UNTIL;
+  if (raw === undefined || raw === '') return 'disabled';
+  const trimmed = raw.trim();
+  if (!/^\d{4}-\d{2}-\d{2}T[\d:.]+(?:Z|[+-]\d{2}:\d{2})$/u.test(trimmed)) {
+    return 'invalid';
+  }
+  const until = Date.parse(trimmed);
+  if (!Number.isFinite(until)) return 'invalid';
+  if (until <= now) return 'disabled';
+  return hasUpstashRestEnv() ? 'active' : 'invalid';
 }
 
 type ReplayView = {
@@ -91,13 +105,21 @@ export async function getUpstashRestRedisClient(options?: {
     if (selection.kind === 'durable-object') {
       // Covers GET/MGET/SET/DEL/INCR/DECR/EXPIRE/TTL; SCAN throws.
       const view = createGuardRedisView(selection.client);
-      const legacy =
-        options.family === 'replay' && replayLegacyReadsActive()
-          ? await legacyRestClient()
-          : null;
-      return (legacy
-        ? withLegacyReplayReads(view, legacy)
-        : view) as unknown as UpstashRestRedisClient;
+      if (options.family !== 'replay') {
+        return view as unknown as UpstashRestRedisClient;
+      }
+      const migration = replayLegacyState();
+      if (migration === 'disabled') {
+        return view as unknown as UpstashRestRedisClient;
+      }
+      // An active cutover needs a usable legacy client; anything else is
+      // unavailable, so the replay routes fail closed instead of skipping it.
+      const legacy = migration === 'active' ? await legacyRestClient() : null;
+      if (!legacy) return null;
+      return withLegacyReplayReads(
+        view,
+        legacy
+      ) as unknown as UpstashRestRedisClient;
     }
   }
   return legacyRestClient();

@@ -8,18 +8,12 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import {
-  isKnownReplay,
-  preLimitReplayAttempt,
-  rememberReplay,
-} from '@tuturuuu/utils/abuse-guard/replay-guard';
 import { isAbuseGuardFamilyAssigned } from '@tuturuuu/utils/abuse-guard/select';
 import { extractIPFromRequest } from '@tuturuuu/utils/abuse-protection/edge';
 import { getAppDomainMap } from '@tuturuuu/utils/internal-domains';
 import { isRequiredMfaProofAllowed } from '@tuturuuu/utils/required-mfa-app-session';
 import type { MfaSessionProof } from '@tuturuuu/utils/required-mfa-policy';
 import { readMfaTransfer } from '@tuturuuu/utils/required-mfa-transfer';
-import { getUpstashRestRedisClient } from '@tuturuuu/utils/upstash-rest';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { BASE_URL } from '@/constants/common';
@@ -32,6 +26,7 @@ import {
   INVITATION_ACTION_TOKEN_TTL_SECONDS,
   invitationWorkspaceScope,
 } from '@/lib/app-coordination/invitation-action-token';
+import { consumeRefreshTokenWithGrace } from '@/lib/app-coordination/refresh-replay';
 import { getAppCoordinationSessionPolicy } from '@/lib/app-coordination/session-policy';
 import { authorizeWorkspaceSessionAppTokenExchange } from '@/lib/app-coordination/workspace-session';
 import {
@@ -75,13 +70,6 @@ type CrossAppValidationRow = {
   } | null;
   user_id?: string | null;
 };
-
-type RefreshConsumeResult =
-  | 'consumed'
-  | 'grace'
-  | 'limited'
-  | 'replayed'
-  | 'unavailable';
 
 function getValidationRow(value: unknown): CrossAppValidationRow | null {
   if (Array.isArray(value)) {
@@ -328,67 +316,6 @@ function createPendingInvitationResponse({
   );
 }
 
-async function consumeRefreshTokenWithGrace({
-  exp,
-  graceSeconds,
-  ip,
-  jti,
-  sub,
-}: {
-  exp: number;
-  graceSeconds: number;
-  ip: string;
-  jti: string;
-  sub: string;
-}): Promise<RefreshConsumeResult> {
-  const nowSeconds = Math.floor(Date.now() / 1000);
-  const ttlSeconds = exp - nowSeconds;
-
-  if (ttlSeconds <= 0 || !jti.trim() || !sub.trim()) {
-    return 'replayed';
-  }
-
-  const key = `${APP_TOKEN_REFRESH_REPLAY_KEY_PREFIX}:${sub}:${jti}`;
-  // Known replays and over-limit callers cost no store operation.
-  if (isKnownReplay(key)) return 'replayed';
-  if (preLimitReplayAttempt(sub, ip) !== null) return 'limited';
-
-  const redis = await getUpstashRestRedisClient({
-    family: 'replay',
-  }).catch(() => null);
-  if (!redis) {
-    return 'unavailable';
-  }
-
-  try {
-    const firstUsedAt = await redis.get<number | string>(key);
-    const firstUsedAtSeconds =
-      typeof firstUsedAt === 'number'
-        ? firstUsedAt
-        : Number.parseInt(firstUsedAt ?? '', 10);
-
-    if (Number.isFinite(firstUsedAtSeconds)) {
-      if (firstUsedAtSeconds + graceSeconds >= nowSeconds) return 'grace';
-      rememberReplay(key, exp);
-      return 'replayed';
-    }
-
-    const consumed = await redis.set(key, String(nowSeconds), {
-      ex: ttlSeconds,
-      nx: true,
-    });
-
-    if (consumed === 'OK') return 'consumed';
-    rememberReplay(key, exp);
-    return 'replayed';
-  } catch (error) {
-    console.warn('External app refresh replay check failed', {
-      error: error instanceof Error ? error.message : String(error),
-    });
-    return 'unavailable';
-  }
-}
-
 async function verifyExchangeRefreshToken({
   ip,
   replayGraceSeconds,
@@ -422,6 +349,11 @@ async function verifyExchangeRefreshToken({
   }
 
   const consumeResult = await consumeRefreshTokenWithGrace({
+    keyPrefix: APP_TOKEN_REFRESH_REPLAY_KEY_PREFIX,
+    onError: (error) =>
+      console.warn('External app refresh replay check failed', {
+        error: error instanceof Error ? error.message : String(error),
+      }),
     exp: claims.exp,
     graceSeconds: replayGraceSeconds,
     ip,
