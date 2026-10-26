@@ -16,12 +16,21 @@ Cloudflare challenge-platform script/iframe code and a `speculation-rules`
 header to the public response. Record these as edge-injected, zone-wide and
 CSP-blocked; the Worker's `default-src 'none'` stays intact. Do not change shared
 zone settings or silently edit an approved module to remove those additions.
+The edge also rewrites the Worker's `Referrer-Policy: no-referrer` to
+`same-origin` and adds `X-Frame-Options: SAMEORIGIN`; record the effective headers
+separately from source headers. The Worker's CSP `frame-ancestors 'none'`
+remains intact and is stricter than that framing header.
 
 Source: `apps/hive/maintenance/worker.mjs`. The upload metadata is beside it.
 Tests cover all paths/methods, HEAD, WebSocket rejection, unreflected input and
 zero upstream/binding/background work.
 
-**Draft only.** The integration owner relays the user's approval of the exact
+**Interim completed.** The approved Worker, subdomain disablement, hostname route
+and proxied discard DNS record are live. The release owner completed step 5 by
+removing Hive's tunnel ingress; the main hostname rule and catch-all remain.
+The calls below are retained for reproducibility and rollback review, not replay.
+
+For future changes, the integration owner relays the user's approval of the exact
 Worker source, DNS body, route pattern and tunnel diff, and names the token file
 before execution. Normal commits and PR pushes do not grant infrastructure
 write authority. Keep Finance's hostname, DNS, Workers, routes, rules and
@@ -30,7 +39,8 @@ Take the shared tunnel configuration write window from its current owner.
 
 ## Routing and DNS
 
-The observed Hive record is an orange-clouded CNAME to the shared tunnel. A
+The original Hive record was an orange-clouded CNAME to the shared tunnel; the
+approved operation replaced it with proxied AAAA `100::`. A
 proxied DNS record already satisfies the Worker route prerequisite: **no DNS
 change is necessary to invoke `hive.tuturuuu.com/*` once that route exists**.
 The Worker returns its own response and never calls the tunnel origin.
@@ -103,7 +113,10 @@ jq '.result[0] | {type,name,content,ttl,proxied,comment,tags,settings}' \
   "$HIVE_EVIDENCE/dns-get.json" > "$HIVE_EVIDENCE/dns-before-body.json"
 ```
 
-Version 18 is the investigated snapshot, not a permanent version assumption.
+The tunnel UUID in `prepare-tunnel.mjs` is a public resource identifier, not a
+credential; retaining it provides an explicit identity fence. It is intentionally
+unchanged. Version 18 is the original baseline, not the current post-removal
+version or a permanent version assumption.
 Any drift requires a refreshed diff and renewed approval. The helper checks the
 tunnel, source, version, main hostname/port, Hive hostname/port and catch-all.
 It removes exactly one Hive rule and retains every surviving rule's JSON bytes
