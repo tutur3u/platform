@@ -5,7 +5,7 @@
  * timeout or response-shape failure throws `AbuseGuardUnavailableError`;
  * callers keep deciding whether that fails open or closed.
  */
-import { hashGuardValue, signGuardRequest } from './crypto';
+import { hashGuardValue, resolveGuardOrigin, signGuardRequest } from './crypto';
 import {
   ABUSE_GUARD_PROTOCOL_VERSION,
   type AbuseGuardFamily,
@@ -63,7 +63,10 @@ function isAbortError(error: unknown) {
   );
 }
 
-/** Signed HTTPS transport for Vercel-hosted callers. */
+/**
+ * Signed HTTPS transport for Vercel-hosted callers. Throws before anything is
+ * signed or sent when the origin is not HTTPS (loopback HTTP excepted).
+ */
 export function createHttpGuardTransport(options: {
   url: string;
   secret: string;
@@ -71,7 +74,9 @@ export function createHttpGuardTransport(options: {
   fetch?: typeof fetch;
   now?: () => number;
 }): AbuseGuardTransport {
-  const endpoint = new URL(ABUSE_GUARD_RPC_PATH, options.url);
+  const origin = resolveGuardOrigin(options.url);
+  if (!origin) throw new AbuseGuardUnavailableError('bad_request');
+  const endpoint = new URL(ABUSE_GUARD_RPC_PATH, origin);
   const fetchImpl = options.fetch ?? fetch;
   const now = options.now ?? Date.now;
 
@@ -213,6 +218,14 @@ export interface AbuseGuardClient {
 
 type StepInput = { partition: string; cmds: GuardCommand[] };
 
+function resultMatches(result: GuardResult, cmd: GuardCommand | undefined) {
+  if (!cmd || result.op !== cmd.op) return false;
+  // Every window of a hit reports its own state, allowed or denied.
+  return result.op === 'win.hit' && cmd.op === 'win.hit'
+    ? result.windows.length === cmd.windows.length
+    : true;
+}
+
 function matchesRequest(rpc: GuardRpc, response: GuardRpcResponse) {
   if (response.steps.length !== rpc.steps.length) return false;
   return response.steps.every((step, index) => {
@@ -220,7 +233,7 @@ function matchesRequest(rpc: GuardRpc, response: GuardRpcResponse) {
     const cmds = rpc.steps[index]?.cmds ?? [];
     return (
       step.results.length === cmds.length &&
-      step.results.every((result, at) => result.op === cmds[at]?.op)
+      step.results.every((result, at) => resultMatches(result, cmds[at]))
     );
   });
 }
@@ -241,6 +254,7 @@ export function createAbuseGuardClient(options: {
   ): Promise<(GuardResult[] | null)[]> {
     const rpc: GuardRpc = {
       v: ABUSE_GUARD_PROTOCOL_VERSION,
+      id: crypto.randomUUID(),
       family,
       ...(sequential ? { sequential: true } : {}),
       steps: await Promise.all(

@@ -10,6 +10,34 @@ export const GUARD_TIMESTAMP_HEADER = 'x-guard-ts';
 export const GUARD_SIGNATURE_HEADER = 'x-guard-sig';
 /** Accepted clock skew between the signer and the Worker. */
 export const GUARD_SIGNATURE_MAX_SKEW_MS = 60_000;
+/** Minimum length of every signing secret, operator token and key pepper. */
+export const ABUSE_GUARD_MIN_SECRET_LENGTH = 32;
+
+export function isStrongGuardSecret(value: string) {
+  return value.length >= ABUSE_GUARD_MIN_SECRET_LENGTH;
+}
+
+/**
+ * Returns the store origin, or null unless it is HTTPS. Plain HTTP is accepted
+ * only on loopback for local workerd verification.
+ */
+export function resolveGuardOrigin(value: string | undefined | null) {
+  const trimmed = value?.trim();
+  if (!trimmed) return null;
+  try {
+    const url = new URL(trimmed);
+    if (url.username || url.password) return null;
+    const loopback =
+      url.hostname === '127.0.0.1' ||
+      url.hostname === 'localhost' ||
+      url.hostname === '[::1]';
+    return url.protocol === 'https:' || (url.protocol === 'http:' && loopback)
+      ? url.origin
+      : null;
+  } catch {
+    return null;
+  }
+}
 
 const hmacKeys = new Map<string, Promise<CryptoKey>>();
 
@@ -110,6 +138,7 @@ export function constantTimeEqual(left: string, right: string) {
 /**
  * Verifies a signed request against every accepted secret (current, then the
  * previous one during rotation). Every secret is checked to keep timing flat.
+ * A configuration containing any short secret verifies nothing.
  */
 export async function verifyGuardRequest(input: {
   secrets: readonly string[];
@@ -120,7 +149,12 @@ export async function verifyGuardRequest(input: {
   signature: string | null;
   now: number;
 }) {
-  if (!input.timestamp || !input.signature || input.secrets.length === 0) {
+  if (
+    !input.timestamp ||
+    !input.signature ||
+    input.secrets.length === 0 ||
+    !input.secrets.every(isStrongGuardSecret)
+  ) {
     return false;
   }
   if (!/^\d{1,16}$/u.test(input.timestamp)) return false;

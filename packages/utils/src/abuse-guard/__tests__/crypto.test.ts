@@ -4,6 +4,7 @@ import {
   constantTimeEqual,
   hashGuardValue,
   parseGuardSecrets,
+  resolveGuardOrigin,
   signGuardRequest,
   verifyGuardRequest,
 } from '../crypto';
@@ -93,6 +94,75 @@ describe('request signatures', () => {
         now: 1_000_000,
       })
     ).resolves.toBe(true);
+  });
+});
+
+describe('secret policy', () => {
+  it('rejects a configuration containing any short accepted secret', async () => {
+    const { timestamp, signature } = await signGuardRequest({
+      method: 'POST',
+      path: '/v1/rpc',
+      body: '{}',
+      secret: SECRET,
+      timestamp: 1_000_000,
+    });
+    const verify = (secrets: string[]) =>
+      verifyGuardRequest({
+        method: 'POST',
+        path: '/v1/rpc',
+        body: '{}',
+        secrets,
+        timestamp,
+        signature,
+        now: 1_000_000,
+      });
+    await expect(verify([SECRET])).resolves.toBe(true);
+    await expect(verify([SECRET, 'x'])).resolves.toBe(false);
+    await expect(verify([SECRET, 'y'.repeat(31)])).resolves.toBe(false);
+  });
+
+  it('verifies nothing with a one-character key, even when it signed', async () => {
+    const { timestamp, signature } = await signGuardRequest({
+      method: 'POST',
+      path: '/v1/rpc',
+      body: '{}',
+      secret: 'k',
+      timestamp: 1_000_000,
+    });
+    await expect(
+      verifyGuardRequest({
+        method: 'POST',
+        path: '/v1/rpc',
+        body: '{}',
+        secrets: ['k'],
+        timestamp,
+        signature,
+        now: 1_000_000,
+      })
+    ).resolves.toBe(false);
+  });
+});
+
+describe('resolveGuardOrigin', () => {
+  it('accepts HTTPS and loopback HTTP only', () => {
+    expect(resolveGuardOrigin('https://guard.example.test/x')).toBe(
+      'https://guard.example.test'
+    );
+    expect(resolveGuardOrigin('http://127.0.0.1:8797')).toBe(
+      'http://127.0.0.1:8797'
+    );
+    expect(resolveGuardOrigin('http://localhost:8797')).toBe(
+      'http://localhost:8797'
+    );
+    expect(resolveGuardOrigin('http://[::1]:8797')).toBe('http://[::1]:8797');
+    expect(resolveGuardOrigin('http://guard.example.test')).toBeNull();
+    expect(resolveGuardOrigin('http://127.0.0.1.example.test')).toBeNull();
+    expect(
+      resolveGuardOrigin('https://user:pass@guard.example.test')
+    ).toBeNull();
+    expect(resolveGuardOrigin('ftp://guard.example.test')).toBeNull();
+    expect(resolveGuardOrigin('not a url')).toBeNull();
+    expect(resolveGuardOrigin(undefined)).toBeNull();
   });
 });
 

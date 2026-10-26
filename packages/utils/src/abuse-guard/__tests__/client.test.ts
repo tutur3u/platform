@@ -38,7 +38,7 @@ function hitReply(
             op: 'win.hit',
             ok,
             resetAt,
-            windows: ok ? [{ remaining: 5 - index, resetAt }] : [],
+            windows: [{ remaining: ok ? 5 - index : 0, resetAt }],
           },
         ],
       };
@@ -68,6 +68,8 @@ describe('createHttpGuardTransport', () => {
       expect(valid).toBe(true);
       expect(body).not.toContain('203.0.113.4');
       expect(body).not.toContain('session-secret');
+      expect(JSON.parse(body).id).toMatch(/^[A-Za-z0-9_-]{22,64}$/u);
+      expect(init?.redirect).toBe('error');
       return jsonResponse(hitReply(JSON.parse(body), () => true));
     });
     const client = createAbuseGuardClient({
@@ -148,6 +150,66 @@ describe('createHttpGuardTransport', () => {
     });
   });
 
+  it('refuses cleartext non-loopback origins before signing or fetching', () => {
+    const fetchMock = vi.fn();
+    for (const url of [
+      'http://guard.example.test',
+      'http://10.0.0.2:8797',
+      'not a url',
+    ]) {
+      expect(() =>
+        createHttpGuardTransport({
+          url,
+          secret: SECRET,
+          timeoutMs: 500,
+          fetch: fetchMock as unknown as typeof fetch,
+        })
+      ).toThrow(AbuseGuardUnavailableError);
+    }
+    for (const url of [
+      'https://guard.example.test',
+      'http://127.0.0.1:8797',
+      'http://localhost:8797',
+      'http://[::1]:8797',
+    ]) {
+      expect(() =>
+        createHttpGuardTransport({ url, secret: SECRET, timeoutMs: 500 })
+      ).not.toThrow();
+    }
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('treats a refused redirect as a network failure', async () => {
+    const client = createAbuseGuardClient({
+      family: 'replay',
+      pepper: PEPPER,
+      transport: createHttpGuardTransport({
+        url: 'https://guard.example.test',
+        secret: SECRET,
+        timeoutMs: 500,
+        fetch: (async () => {
+          throw new TypeError('fetch failed: unexpected redirect');
+        }) as unknown as typeof fetch,
+      }),
+    });
+    await expect(client.get('k')).rejects.toMatchObject({ code: 'network' });
+  });
+
+  it('sends a fresh operation id with every call', async () => {
+    const ids: string[] = [];
+    const client = createAbuseGuardClient({
+      family: 'replay',
+      pepper: PEPPER,
+      transport: async (rpc) => {
+        ids.push(rpc.id);
+        return { v: 1, steps: [{ results: [{ op: 'kv.get', v: null }] }] };
+      },
+    });
+    await client.get('a');
+    await client.get('a');
+    expect(new Set(ids).size).toBe(2);
+  });
+
   it('rejects malformed or mismatched replies', async () => {
     const replies = [
       { v: 1, steps: [] },
@@ -187,6 +249,27 @@ describe('createHttpGuardTransport', () => {
 });
 
 describe('hitWindows', () => {
+  it('rejects a hit reply without one result per window', async () => {
+    const client = createAbuseGuardClient({
+      family: 'offline',
+      pepper: PEPPER,
+      transport: async () => ({
+        v: 1,
+        steps: [
+          { results: [{ op: 'win.hit', ok: true, resetAt: 1, windows: [] }] },
+        ],
+      }),
+    });
+    await expect(
+      client.hitWindows([
+        {
+          partition: 'ip:a',
+          windows: [{ key: '1m', limit: 5, windowMs: 60_000, algo: 'fixed' }],
+        },
+      ])
+    ).rejects.toMatchObject({ code: 'invalid_response' });
+  });
+
   it('reports the first denied subject and its reset', async () => {
     const client = createAbuseGuardClient({
       family: 'offline',
@@ -218,7 +301,12 @@ describe('createBindingGuardTransport', () => {
       100
     );
     await expect(
-      stopped({ v: 1, family: 'password', steps: [] })
+      stopped({
+        v: 1,
+        id: 'op-id-0000000000000000000',
+        family: 'password',
+        steps: [],
+      })
     ).rejects.toMatchObject({ code: 'guard_stopped' });
 
     const hung = createBindingGuardTransport(
@@ -226,7 +314,12 @@ describe('createBindingGuardTransport', () => {
       100
     );
     await expect(
-      hung({ v: 1, family: 'password', steps: [] })
+      hung({
+        v: 1,
+        id: 'op-id-0000000000000000000',
+        family: 'password',
+        steps: [],
+      })
     ).rejects.toMatchObject({ code: 'timeout' });
 
     const thrown = createBindingGuardTransport(
@@ -238,7 +331,12 @@ describe('createBindingGuardTransport', () => {
       100
     );
     await expect(
-      thrown({ v: 1, family: 'password', steps: [] })
+      thrown({
+        v: 1,
+        id: 'op-id-0000000000000000000',
+        family: 'password',
+        steps: [],
+      })
     ).rejects.toMatchObject({ code: 'network' });
   });
 });
@@ -272,30 +370,54 @@ describe('selectAbuseGuard', () => {
     ).toBe('off');
   });
 
-  it('never selects a weak or insecure configuration', () => {
+  it.each([
+    ['missing URL', { ABUSE_GUARD_URL: undefined }],
+    ['cleartext URL', { ABUSE_GUARD_URL: 'http://guard.example.test' }],
+    ['missing secret', { ABUSE_GUARD_SECRET: undefined }],
+    ['short secret', { ABUSE_GUARD_SECRET: 'short' }],
+    ['missing pepper', { ABUSE_GUARD_KEY_PEPPER: undefined }],
+    ['short pepper', { ABUSE_GUARD_KEY_PEPPER: 'p'.repeat(31) }],
+  ])(
+    'reports an assigned family with a %s as off, never legacy',
+    (_, broken) => {
+      const env = { ...configured, ABUSE_GUARD_FAMILIES: 'offline', ...broken };
+      expect(selectAbuseGuard('offline', env).kind).toBe('off');
+      expect(
+        selectAbuseGuard('offline', {
+          ...env,
+          ABUSE_GUARD_BACKEND: 'durable-object',
+        }).kind
+      ).toBe('off');
+      // An unassigned family is genuinely unconfigured and keeps the legacy path.
+      expect(selectAbuseGuard('replay', env).kind).toBe('legacy');
+    }
+  );
+
+  it('serves loopback HTTP for local verification', () => {
     const env = { ...configured, ABUSE_GUARD_FAMILIES: 'offline' };
-    expect(
-      selectAbuseGuard('offline', { ...env, ABUSE_GUARD_SECRET: 'short' }).kind
-    ).toBe('legacy');
-    expect(
-      selectAbuseGuard('offline', {
-        ...env,
-        ABUSE_GUARD_URL: 'http://guard.example.test',
-      }).kind
-    ).toBe('legacy');
-    expect(
-      selectAbuseGuard('offline', {
-        ...env,
-        ABUSE_GUARD_BACKEND: 'durable-object',
-        ABUSE_GUARD_KEY_PEPPER: undefined,
-      }).kind
-    ).toBe('off');
     expect(
       selectAbuseGuard('offline', {
         ...env,
         ABUSE_GUARD_URL: 'http://127.0.0.1:8799',
       }).kind
     ).toBe('durable-object');
+  });
+
+  it('reports binding-assigned families as off when the pepper is invalid', () => {
+    configureAbuseGuardRuntime({
+      binding: { run: vi.fn() },
+      pepper: 'short',
+      families: 'password',
+    });
+    expect(selectAbuseGuard('password', {}).kind).toBe('off');
+    // Even a complete HTTP configuration must not take over an assigned family.
+    expect(
+      selectAbuseGuard('password', {
+        ...configured,
+        ABUSE_GUARD_FAMILIES: 'password',
+      }).kind
+    ).toBe('off');
+    expect(selectAbuseGuard('offline', {}).kind).toBe('legacy');
   });
 
   it('uses an injected service binding for native Workers', async () => {

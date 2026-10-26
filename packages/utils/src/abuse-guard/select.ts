@@ -4,9 +4,10 @@
  * - `durable-object`: the family is named in ABUSE_GUARD_FAMILIES and the
  *   store is configured (HTTP env, or a native Worker's injected binding).
  * - `legacy`: keep today's Upstash path (or its missing-store behavior).
- *   This is the default for every family.
- * - `off`: ABUSE_GUARD_BACKEND=off. Callers treat the store as unavailable and
- *   apply their own fail policy, without falling back to Upstash.
+ *   This is the default for every unassigned family.
+ * - `off`: ABUSE_GUARD_BACKEND=off, or an assigned family whose configuration
+ *   is incomplete. Callers treat the store as unavailable and apply their own
+ *   fail policy, without falling back to Upstash.
  */
 import {
   type AbuseGuardBinding,
@@ -16,6 +17,7 @@ import {
   createBindingGuardTransport,
   createHttpGuardTransport,
 } from './client';
+import { isStrongGuardSecret, resolveGuardOrigin } from './crypto';
 import { ABUSE_GUARD_FAMILIES, type AbuseGuardFamily } from './protocol';
 
 export type AbuseGuardEnv = Partial<
@@ -35,8 +37,6 @@ export type AbuseGuardSelection =
   | { kind: 'legacy' }
   | { kind: 'off' };
 
-/** Secrets and peppers shorter than this are treated as unconfigured. */
-export const ABUSE_GUARD_MIN_SECRET_LENGTH = 32;
 export const ABUSE_GUARD_DEFAULT_TIMEOUT_MS = 750;
 
 export function parseAbuseGuardFamilies(value: string | undefined) {
@@ -59,40 +59,20 @@ export function parseAbuseGuardTimeout(value: string | undefined) {
 
 function strong(value: string | undefined) {
   const trimmed = value?.trim();
-  return trimmed && trimmed.length >= ABUSE_GUARD_MIN_SECRET_LENGTH
-    ? trimmed
-    : null;
+  return trimmed && isStrongGuardSecret(trimmed) ? trimmed : null;
 }
-
-function validUrl(value: string | undefined) {
-  const trimmed = value?.trim();
-  if (!trimmed) return null;
-  try {
-    const url = new URL(trimmed);
-    const loopback =
-      url.hostname === '127.0.0.1' ||
-      url.hostname === 'localhost' ||
-      url.hostname === '[::1]';
-    // Plain HTTP is accepted only for local workerd verification.
-    return url.protocol === 'https:' || (url.protocol === 'http:' && loopback)
-      ? url.origin
-      : null;
-  } catch {
-    return null;
-  }
-}
-
-type RuntimeOverride = {
-  transport: AbuseGuardTransport;
-  pepper: string;
-  families: ReadonlySet<AbuseGuardFamily>;
-};
 
 type RuntimeInput = {
   binding: AbuseGuardBinding;
   pepper: string | undefined;
   families: string | undefined;
   timeoutMs?: string;
+};
+
+type RuntimeOverride = {
+  families: ReadonlySet<AbuseGuardFamily>;
+  /** Null when the injected configuration is unusable: assigned families are off. */
+  usable: { transport: AbuseGuardTransport; pepper: string } | null;
 };
 
 let runtimeOverride: RuntimeOverride | null = null;
@@ -117,18 +97,23 @@ export function configureAbuseGuardRuntime(input: RuntimeInput | null) {
   }
   runtimeInput = input;
   clientCache.clear();
-  const pepper = strong(input?.pepper);
-  runtimeOverride =
-    input && pepper
+  if (!input) {
+    runtimeOverride = null;
+    return;
+  }
+  const pepper = strong(input.pepper);
+  runtimeOverride = {
+    families: parseAbuseGuardFamilies(input.families),
+    usable: pepper
       ? {
           transport: createBindingGuardTransport(
             input.binding,
             parseAbuseGuardTimeout(input.timeoutMs)
           ),
           pepper,
-          families: parseAbuseGuardFamilies(input.families),
         }
-      : null;
+      : null,
+  };
 }
 
 function processEnv(): AbuseGuardEnv {
@@ -137,6 +122,25 @@ function processEnv(): AbuseGuardEnv {
     : (process.env as unknown as AbuseGuardEnv);
 }
 
+function cachedClient(
+  cacheKey: string,
+  create: () => AbuseGuardClient
+): AbuseGuardClient {
+  let client = clientCache.get(cacheKey);
+  if (!client) {
+    if (clientCache.size >= 16) clientCache.clear();
+    client = create();
+    clientCache.set(cacheKey, client);
+  }
+  return client;
+}
+
+/**
+ * Once a family is assigned to the Durable Object store, an incomplete or
+ * invalid configuration reports `off` and never falls back to the legacy
+ * store: a fresh legacy store would forget consumed tokens and spent limits.
+ * `legacy` is only for an unassigned family or ABUSE_GUARD_BACKEND=upstash.
+ */
 export function selectAbuseGuard(
   family: AbuseGuardFamily,
   env: AbuseGuardEnv = processEnv()
@@ -145,44 +149,40 @@ export function selectAbuseGuard(
   if (backend === 'off') return { kind: 'off' };
   if (backend === 'upstash') return { kind: 'legacy' };
 
-  if (runtimeOverride) {
-    if (!runtimeOverride.families.has(family)) return { kind: 'legacy' };
-    const cacheKey = `binding:${family}`;
-    let client = clientCache.get(cacheKey);
-    if (!client) {
-      client = createAbuseGuardClient({
-        family,
-        pepper: runtimeOverride.pepper,
-        transport: runtimeOverride.transport,
-      });
-      clientCache.set(cacheKey, client);
-    }
-    return { kind: 'durable-object', client };
+  if (runtimeOverride?.families.has(family)) {
+    const usable = runtimeOverride.usable;
+    if (!usable) return { kind: 'off' };
+    return {
+      kind: 'durable-object',
+      client: cachedClient(`binding:${family}`, () =>
+        createAbuseGuardClient({
+          family,
+          pepper: usable.pepper,
+          transport: usable.transport,
+        })
+      ),
+    };
   }
 
   if (!parseAbuseGuardFamilies(env.ABUSE_GUARD_FAMILIES).has(family)) {
     return { kind: 'legacy' };
   }
-  const url = validUrl(env.ABUSE_GUARD_URL);
+  const url = resolveGuardOrigin(env.ABUSE_GUARD_URL);
   const secret = strong(env.ABUSE_GUARD_SECRET);
   const pepper = strong(env.ABUSE_GUARD_KEY_PEPPER);
-  if (!url || !secret || !pepper) {
-    // A family explicitly enabled for a broken configuration must not fall
-    // back to another store silently; callers apply their failure policy.
-    return backend === 'durable-object' ? { kind: 'off' } : { kind: 'legacy' };
-  }
+  if (!url || !secret || !pepper) return { kind: 'off' };
 
   const timeoutMs = parseAbuseGuardTimeout(env.ABUSE_GUARD_TIMEOUT_MS);
-  const cacheKey = `http:${family}:${url}:${timeoutMs}:${secret}:${pepper}`;
-  let client = clientCache.get(cacheKey);
-  if (!client) {
-    if (clientCache.size >= 16) clientCache.clear();
-    client = createAbuseGuardClient({
-      family,
-      pepper,
-      transport: createHttpGuardTransport({ url, secret, timeoutMs }),
-    });
-    clientCache.set(cacheKey, client);
-  }
-  return { kind: 'durable-object', client };
+  return {
+    kind: 'durable-object',
+    client: cachedClient(
+      `http:${family}:${url}:${timeoutMs}:${secret}:${pepper}`,
+      () =>
+        createAbuseGuardClient({
+          family,
+          pepper,
+          transport: createHttpGuardTransport({ url, secret, timeoutMs }),
+        })
+    ),
+  };
 }

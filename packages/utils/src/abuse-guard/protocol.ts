@@ -36,6 +36,14 @@ export const ABUSE_GUARD_LIMITS = {
 
 /** base64url SHA-256 HMAC digest without padding. */
 export const GUARD_DIGEST_PATTERN = /^[A-Za-z0-9_-]{43}$/u;
+/** Random per-operation id (a UUID or other 22-64 character token). */
+export const GUARD_OPERATION_ID_PATTERN = /^[A-Za-z0-9_-]{22,64}$/u;
+/**
+ * How long the Worker remembers an operation id. Must exceed the window in
+ * which a signed request is replayable: the signature skew in both directions
+ * (2 × 60 s, covering future timestamps) plus margin.
+ */
+export const GUARD_OPERATION_RETENTION_MS = 180_000;
 
 const digest = z.string().regex(GUARD_DIGEST_PATTERN);
 const ttlMs = z
@@ -122,6 +130,12 @@ export const guardStepSchema = z.object({
 export const guardRpcSchema = z
   .object({
     v: z.literal(ABUSE_GUARD_PROTOCOL_VERSION),
+    /**
+     * Fresh random id per operation, inside the signed body. The Worker
+     * records it with each step's result before returning, so a replayed or
+     * concurrent duplicate gets the original result instead of mutating again.
+     */
+    id: z.string().regex(GUARD_OPERATION_ID_PATTERN),
     family: z.enum(ABUSE_GUARD_FAMILIES),
     /** Run steps in order and skip the rest after the first denial. */
     sequential: z.boolean().optional(),
