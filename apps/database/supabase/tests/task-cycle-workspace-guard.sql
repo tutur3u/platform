@@ -93,31 +93,17 @@ values
   ('00000000-0000-4000-8000-00000000c501', '00000000-0000-4000-8000-00000000c101', 'Local Cycle', '00000000-0000-4000-8000-00000000c903')
 on conflict (id) do nothing;
 
--- Authenticated member path (RLS + trigger).
+-- Authenticated member path: the Data API role has no table grant on
+-- task_cycles/tasks, so a direct link attempt is denied before the trigger.
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-4000-8000-00000000c901', true);
-
-select lives_ok(
-  $$insert into public.task_cycle_tasks (task_id, cycle_id)
-    values ('00000000-0000-4000-8000-00000000c401', '00000000-0000-4000-8000-00000000c501')$$,
-  'member can link a same-workspace task to the cycle'
-);
 
 select throws_ok(
   $$insert into public.task_cycle_tasks (task_id, cycle_id)
     values ('00000000-0000-4000-8000-00000000c403', '00000000-0000-4000-8000-00000000c501')$$,
   '42501',
-  'Task and cycle must belong to the same workspace',
-  'member cannot link a task from another workspace into their cycle'
-);
-
-select throws_ok(
-  $$update public.task_cycle_tasks
-    set task_id = '00000000-0000-4000-8000-00000000c403'
-    where task_id = '00000000-0000-4000-8000-00000000c401'$$,
-  '42501',
-  'Task and cycle must belong to the same workspace',
-  'member cannot repoint an existing link at a foreign task'
+  null,
+  'authenticated member cannot link a foreign task into their cycle'
 );
 
 select throws_ok(
@@ -125,20 +111,19 @@ select throws_ok(
     set ws_id = '00000000-0000-4000-8000-00000000c102'
     where id = '00000000-0000-4000-8000-00000000c501'$$,
   '42501',
-  'A task cycle cannot move to another workspace',
-  'member cannot move a cycle to another workspace'
+  null,
+  'authenticated member cannot move a cycle to another workspace'
 );
 
-select lives_ok(
-  $$update public.task_cycles
-    set name = 'Renamed Cycle'
-    where id = '00000000-0000-4000-8000-00000000c501'$$,
-  'member can still edit cycle fields other than ws_id'
-);
-
--- API route path: service-role writes bypass RLS but not the trigger.
+-- API route path: service-role writes bypass RLS and grants, not the trigger.
 reset role;
 set local role service_role;
+
+select lives_ok(
+  $$insert into public.task_cycle_tasks (task_id, cycle_id)
+    values ('00000000-0000-4000-8000-00000000c401', '00000000-0000-4000-8000-00000000c501')$$,
+  'service-role write can link a same-workspace task'
+);
 
 select throws_ok(
   $$insert into public.task_cycle_tasks (task_id, cycle_id)
@@ -157,10 +142,26 @@ select throws_ok(
   'service-role write cannot repoint a link at a foreign task'
 );
 
+select throws_ok(
+  $$update public.task_cycles
+    set ws_id = '00000000-0000-4000-8000-00000000c102'
+    where id = '00000000-0000-4000-8000-00000000c501'$$,
+  '42501',
+  'A task cycle cannot move to another workspace',
+  'service-role write cannot move a cycle to another workspace'
+);
+
+select lives_ok(
+  $$update public.task_cycles
+    set name = 'Renamed Cycle'
+    where id = '00000000-0000-4000-8000-00000000c501'$$,
+  'cycle fields other than ws_id stay editable'
+);
+
 select lives_ok(
   $$insert into public.task_cycle_tasks (task_id, cycle_id)
     values ('00000000-0000-4000-8000-00000000c402', '00000000-0000-4000-8000-00000000c501')$$,
-  'service-role write can link a same-workspace task'
+  'a second same-workspace task can join the cycle'
 );
 
 select is(
