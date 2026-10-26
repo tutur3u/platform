@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(7);
+select plan(8);
 
 select ok(
   exists (
@@ -53,8 +53,13 @@ insert into public.tasks (id, name, list_id, creator_id)
 values ('00000000-0000-4000-8000-00000000f401', 'Task', '00000000-0000-4000-8000-00000000f301', '00000000-0000-4000-8000-00000000f901')
 on conflict (id) do nothing;
 
+insert into public.workspaces (id, name, creator_id, personal)
+values ('00000000-0000-4000-8000-00000000f102', 'Foreign One Cycle Workspace', '00000000-0000-4000-8000-00000000f901', false)
+on conflict (id) do nothing;
+
 insert into public.task_cycles (id, ws_id, name, creator_id)
 values
+  ('00000000-0000-4000-8000-00000000f503', '00000000-0000-4000-8000-00000000f102', 'Foreign Cycle', '00000000-0000-4000-8000-00000000f901'),
   ('00000000-0000-4000-8000-00000000f501', '00000000-0000-4000-8000-00000000f101', 'Cycle One', '00000000-0000-4000-8000-00000000f901'),
   ('00000000-0000-4000-8000-00000000f502', '00000000-0000-4000-8000-00000000f101', 'Cycle Two', '00000000-0000-4000-8000-00000000f901')
 on conflict (id) do nothing;
@@ -82,6 +87,15 @@ select lives_ok(
     values ('00000000-0000-4000-8000-00000000f401', '00000000-0000-4000-8000-00000000f502')
     on conflict (task_id) do update set cycle_id = excluded.cycle_id$$,
   'upserting on task_id moves the task to another cycle'
+);
+
+select throws_ok(
+  $$insert into public.task_cycle_tasks (task_id, cycle_id)
+    values ('00000000-0000-4000-8000-00000000f401', '00000000-0000-4000-8000-00000000f501')
+    on conflict (task_id) do update set cycle_id = '00000000-0000-4000-8000-00000000f503'$$,
+  '42501',
+  'Task and cycle must belong to the same workspace',
+  'the task_id upsert cannot move a task into another workspace''s cycle'
 );
 
 select results_eq(
