@@ -140,6 +140,15 @@ function withoutWorkflowLabelGate(workflow) {
   return { ...workflow, jobs };
 }
 
+// Rewrites the label `contains(...labels.*.name, '...')` into plain
+// JavaScript for tests that evaluate GitHub expressions with vm/Function.
+function labelExpressionToJs(expression) {
+  return expression.replace(
+    /contains\(github\.event\.pull_request\.labels\.\*\.name, ('[^']*')\)/gu,
+    '((github.event?.pull_request?.labels ?? []).some((label) => label.name === $1))'
+  );
+}
+
 // Digest of every non-PR trigger. Converted workflows drop only the push
 // branch selector, so their paths and other triggers must stay identical.
 function protectedTriggerDigest(file, on) {
@@ -170,6 +179,7 @@ function protectedTriggerDigest(file, on) {
 }
 
 module.exports = {
+  labelExpressionToJs,
   ADMISSION_PR_WORKFLOWS,
   ALWAYS_ON_PR_WORKFLOWS,
   HEAVY_PR_WORKFLOWS,

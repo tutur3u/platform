@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
+const { labelExpressionToJs } = require('./pr-label-gate');
 const { readWorkflow } = require('./workflow-yaml-test-helper');
 
 const root = path.resolve(__dirname, '../..');
@@ -398,7 +399,7 @@ function evaluateConcurrency(value, github) {
       'github',
       'startsWith',
       'format',
-      `return (${body});`
+      `return (${labelExpressionToJs(body)});`
     )(
       github,
       (text, prefix) => text.startsWith(prefix),
