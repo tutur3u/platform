@@ -346,7 +346,16 @@ describe('Mind chat file routes', () => {
       data: [{ signedUrl: 'https://storage.example.com/read' }],
       error: null,
     });
+    // Storage access mirrors RLS: a UUID workspace and the caller's own chat.
+    const fileWsId = '22222222-2222-4222-8222-222222222222';
+    mocks.normalizeWorkspaceId.mockResolvedValueOnce(fileWsId);
+    const maybeSingle = vi
+      .fn()
+      .mockResolvedValue({ data: { creator_id: 'user-1' }, error: null });
     mocks.createDynamicAdminClient.mockResolvedValue({
+      from: vi.fn(() => ({
+        select: vi.fn(() => ({ eq: vi.fn(() => ({ maybeSingle })) })),
+      })),
       storage: {
         from: vi.fn(() => ({
           createSignedUrls,
@@ -381,11 +390,13 @@ describe('Mind chat file routes', () => {
       request
     );
     expect(list).toHaveBeenCalledWith(
-      `ws-1/chats/ai/resources/${chatId}`,
+      `${fileWsId}/chats/ai/resources/${chatId}`,
       expect.any(Object)
     );
     expect(createSignedUrls).toHaveBeenCalledWith(
-      [`ws-1/chats/ai/resources/${chatId}/123_Tuturuuu_Technical_Planning.jpg`],
+      [
+        `${fileWsId}/chats/ai/resources/${chatId}/123_Tuturuuu_Technical_Planning.jpg`,
+      ],
       3600
     );
   });

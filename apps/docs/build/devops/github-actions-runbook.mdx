@@ -429,6 +429,41 @@ Inspect the actual conclusion of each run when reporting validation. A cancelled
 run is not a successful check and does not by itself establish a repository
 failure. Cache retention continues to follow GitHub Actions retention settings.
 
+### Hosted runner reservation and PR queue pressure
+
+GitHub-hosted runners are reserved for `main`, `production` and release work.
+When PR CI fans out across many workflows, production deployments wait behind
+it in the same account queue. Concurrency serializes or replaces runs but never
+reserves capacity. Keep PR load small:
+
+- Verify PRs primarily with local or remote-fleet runs. An exact-head local
+  pass is green evidence under the delivery speed grant; hosted PR CI is a
+  backstop, not the primary gate.
+- Batch pushes. Push a reviewable head once instead of pushing WIP commits in
+  rapid succession. Each push still allocates a `check-ci` runner per workflow,
+  even when the newer head immediately supersedes the older one.
+- Every `pull_request` and `pull_request_target` workflow uses a PR-scoped
+  group with `cancel-in-progress` enabled, except the explicit exceptions in
+  `scripts/ci/protected-workflow-concurrency.test.js`. Calendar and Mail
+  Cloudflare cancel superseded PR revisions. Running main/manual jobs never
+  cancel; an older pending main/manual run is superseded by a newer one.
+  Uploads keep their independent, non-cancelling `queue: max` lock inside
+  `wave1-native-publish.yaml`.
+- Heavy PR workflows are path-filtered. The Cloudflare Source workflows, Mail
+  Calendar Tasks builds and Programming app builds exclude `**/*.md` and
+  `**/*.mdx` from their PR `paths`. i18n Check and CodeQL use PR `paths-ignore`
+  for docs and agent-instruction content. Their `main` push triggers stay
+  unchanged, so promotion baselines and CodeQL new-alert comparisons stay
+  complete.
+- No ruleset or branch protection requires a status check (verify with
+  `gh api repos/tutur3u/platform/rulesets`). If a filtered workflow becomes
+  required, replace its trigger filter with a job-level `check-ci` skip that
+  still reports success. A trigger-filtered required check never reports.
+
+A possible follow-up is to move PR CI onto self-hosted fleet runners so hosted
+capacity serves only protected refs. That needs runner custody, untrusted-fork
+isolation and secret-scoping review first, and is not implemented.
+
 ## Authorized CI Queue Cleanup
 
 Manual cancellation requires explicit authorization for the cleanup scope. Start

@@ -318,6 +318,16 @@
       },
       "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
     },
+    "apps/calendar/src/runtime/offline-page.browser.mjs": {
+      "gap": "void-wave1-publication",
+      "lines": 1,
+      "uses": 1,
+      "digest": "23238e55e45b6b35303bdc58ddbf3e07d58fd8aeda1dd60b3dbea2e5e7e1a9fd",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6859",
+        "reason": "CAL-R1-01: the sealed offline Retry browser regression needs the owning SDK to run the real emitted Worker and its CSP locally. Same native fixture gap and Wave 1 owner/removal condition as the shared root-browser gate; no publication command is added."
+      }
+    },
     "apps/cms/.gitignore": {
       "lines": 1,
       "uses": 1,
@@ -445,6 +455,36 @@
       "admitted": {
         "decision": "https://github.com/tutur3u/platform/pull/6757",
         "reason": "Finance native candidate (#6757, #6822) pins the Wrangler devDependency, runs its runtime fixture in the Wrangler SDK, ignores .void-wrangler.jsonc and tests the emitted wrangler.json artifact; Finance on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
+    },
+    "apps/forms/.gitignore": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "shared-toolchain",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6858",
+        "reason": "Forms keeps the generated local adapter scratch config excluded from Git while Void emits that state. This is a state-path policy reference under the shared-toolchain owner/removal condition; it invokes no CLI."
+      },
+      "digest": "eaa5c36b89bb2cc16b4b93bbe4ccfdddcddacc00b12726e591d57c46be30f9e8"
+    },
+    "apps/forms/cloudflare/native-built-worker.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6858",
+        "reason": "Forms generated emitted-Worker acceptance uses the owning SDK locally to qualify the exact sealed artifact without publication. Retained under the Wave 1 native owner until the existing Void publication/runtime parity gap closes."
+      },
+      "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
+    },
+    "apps/forms/package.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6858",
+        "reason": "Forms pins its owning SDK/CLI supplier for the native build, binding types, dry-run and local emitted-Worker acceptance. The Wave 1 owner removes this dependency when equivalent cf + Void exact-artifact qualification/publication is established."
       },
       "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
     },
@@ -948,6 +988,16 @@
       },
       "digest": "932ccfa6ecd7b462680d904df026cd9b5b144a11f36e7e1d1548c98d7f146ad5"
     },
+    "apps/tasks/cloudflare/offline-fallback.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6849",
+        "reason": "Tasks native candidate (#6849) starts its sealed built Worker in the Wrangler SDK to prove the exact /offline.html fallback; Tasks on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "e139bd3b3961b60527b5aa98419fb40cde9679450f4c651769242014bfec1e29"
+    },
     "apps/tasks/package.json": {
       "lines": 1,
       "uses": 1,
@@ -1269,14 +1319,14 @@
       "digest": "14043e7e482dea6e55205cd6acc2171197043635420db43a734cc6235ae2a624"
     },
     "scripts/ci/calendar-native-artifact.test.mjs": {
-      "lines": 22,
-      "uses": 22,
+      "lines": 21,
+      "uses": 21,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+        "decision": "https://github.com/tutur3u/platform/pull/6859",
+        "reason": "Calendar artifact fixtures reuse caller-owned pointer/config paths instead of adding usage in a new helper. Update only this test’s lowered token counts and digest; negative controls, sealed output and source binding are retained."
       },
-      "digest": "a43ecb06e766f543e9d6796ff0b3c9e049f76849ba901833991c24d20928e452"
+      "digest": "f19a7422576c029e735df74b8aa26912501b364cb855ec8972ab6ffe11c210bb"
     },
     "scripts/ci/calendar-native-inventory.mjs": {
       "lines": 2,
@@ -1427,16 +1477,6 @@
         "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
       },
       "digest": "798346c7eea556728b8e9a0f306200404120c8bb7061d59459dc208b2b35e513"
-    },
-    "scripts/ci/fixtures/cf-worker-parity/cron-control.json": {
-      "lines": 1,
-      "uses": 1,
-      "gap": "parity-tooling",
-      "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
-      },
-      "digest": "73ef7c58b3b698db84910c1906315acd822ea31ff5b91f429b9617829cdab384"
     },
     "scripts/ci/fixtures/cf-worker-parity/devbox-control.json": {
       "lines": 1,
@@ -1838,6 +1878,16 @@
       },
       "digest": "06dc1c0c44ba14771d1cc73b5b7eae49f602a795d50959122913be5847fad3fd"
     },
+    "scripts/ci/tasks-native-artifact.test.py": {
+      "lines": 7,
+      "uses": 8,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6849",
+        "reason": "Tasks native artifact regressions (#6849) build the same emitted-config fixture as Finance's: the .void-wrangler.jsonc producer metadata, the deploy pointer and the emitted wrangler.json; Tasks on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "9ea2206674d3b1e3377608f589805a6ced065510d62b53a861625a083edc4e3a"
+    },
     "scripts/ci/turbo-cache-config.test.js": {
       "lines": 2,
       "uses": 2,
@@ -1847,6 +1897,16 @@
         "reason": "Retain recognition of legacy binding-type generators alongside cf so cache policy verifies declaration outputs and environment inputs. This detector invokes no CLI; remove when no legacy declaration producer remains."
       },
       "digest": "dea61c5925b68295ab2c201cfdecd29b970bf4a0c96c53e000e8b2a77313bf4f"
+    },
+    "scripts/ci/turbo-cache-workflow.test.js": {
+      "lines": 1,
+      "uses": 1,
+      "digest": "58dfb7537e9c61f13527818bc82479d0d8d9440bb1f30d1d9f9e461ae7825f4e",
+      "gap": "shared-toolchain",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6484",
+        "reason": "Read-only workflow assertion rejects Wrangler deployment text; this test never invokes Wrangler."
+      }
     },
     "scripts/ci/verify-meet-start-output.js": {
       "lines": 1,

@@ -7,7 +7,19 @@ const { DEFAULT_MATRIX } = require('./e2e-result-plan');
 test('translation checks run once per PR update and still cover both protected branches and forks', () => {
   const workflow = readWorkflow('i18n-check.yaml');
   assert.deepEqual(workflow.on.push.branches, ['main', 'production']);
-  assert.equal(workflow.on.pull_request, null);
+  // Only prose and agent-instruction PRs skip; no locale bundle lives there.
+  assert.deepEqual(workflow.on.pull_request, {
+    'paths-ignore': [
+      '**/*.md',
+      '**/*.mdx',
+      'apps/docs/**',
+      'plans/**',
+      'plugins/**',
+      '.agents/**',
+      '.claude/**',
+      '.codex/**',
+    ],
+  });
   assert.ok(Object.hasOwn(workflow.on, 'workflow_dispatch'));
   // PR and main runs coalesce; production and manual attempts retain exact evidence.
   assert.equal(

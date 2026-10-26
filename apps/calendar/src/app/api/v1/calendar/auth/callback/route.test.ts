@@ -467,6 +467,32 @@ describe('Google Calendar OAuth callback route', () => {
     );
   });
 
+  it('returns retryable503 without redirect or token write when restart consumption fails', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const supabase = createSupabaseClient({
+      existingToken: {
+        id: 'existing-token-id',
+        refresh_token: 'rejected',
+        is_active: false,
+        deactivated_reason: 'google_invalid_grant',
+      },
+    });
+    mockResolvedAuthContext(supabase.client);
+    getTokenMock.mockImplementation(async () => {
+      nonceLedger.failure = { code: 'PGRST202', message: 'unavailable' };
+      return createTokenResponse(null);
+    });
+    const response = await GET(callbackRequest(signedState()));
+    expect(response.status).toBe(503);
+    expect(Number(response.headers.get('Retry-After'))).toBeGreaterThan(0);
+    expect(response.headers.has('location')).toBe(false);
+    expect(supabase.tokenUpdateMock).not.toHaveBeenCalled();
+    expect(supabase.tokenInsertMock).not.toHaveBeenCalled();
+    expect(await response.json()).toMatchObject({
+      code: 'google_calendar_consent_restart_unavailable',
+    });
+  });
+
   it('asks again with consent when sync rejected the reused token after the read', async () => {
     getTokenMock.mockResolvedValue(createTokenResponse(null));
     // The callback read an active row; sync quarantined it before the write.

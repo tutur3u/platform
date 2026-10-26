@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Trash2 } from '@tuturuuu/icons';
+import { Trash2 } from '@tuturuuu/icons';
 import { updateTutoringPolicy } from '@tuturuuu/internal-api/tutoring';
 import {
   EASY_CENTER_TUTORING_POLICY,
@@ -18,10 +18,12 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { TutoringGroupShifts } from './tutoring-group-shifts';
 import {
   type PolicySectionId,
   TutoringPolicySection,
 } from './tutoring-policy-section';
+import { TutoringShiftRulesEditor } from './tutoring-shift-rules-editor';
 import { TutoringWeakRules } from './tutoring-weak-rules';
 
 interface Props {
@@ -56,7 +58,8 @@ export function TutoringPolicyCard({
     (keyof TutoringPolicy)[]
   > = {
     timing: NUMERIC_FIELDS.map(([field]) => field),
-    exceptions: ['timeRules'],
+    exceptions: ['timeRules', 'shiftByGroupId'],
+    groupShifts: ['shiftByGroupId'],
     weak: ['weakContentReviewDays', 'groupExclusions'],
     campuses: ['campusByGroupId'],
     message: ['parentMessageTemplate'],
@@ -100,15 +103,6 @@ export function TutoringPolicyCard({
 
   const edit = (next: Partial<TutoringPolicy>) =>
     setDraft((current) => ({ ...current, ...next, preset: 'custom' }));
-  const editRule = (
-    index: number,
-    next: Partial<TutoringPolicy['timeRules'][number]>
-  ) =>
-    edit({
-      timeRules: draft.timeRules.map((rule, ruleIndex) =>
-        ruleIndex === index ? { ...rule, ...next } : rule
-      ),
-    });
 
   const sectionProps = {
     canConfigure,
@@ -156,6 +150,7 @@ export function TutoringPolicyCard({
               setDraft({
                 ...STANDARD_TUTORING_POLICY,
                 campusByGroupId: draft.campusByGroupId,
+                shiftByGroupId: draft.shiftByGroupId,
               })
             }
             size="sm"
@@ -169,8 +164,15 @@ export function TutoringPolicyCard({
               setDraft({
                 ...EASY_CENTER_TUTORING_POLICY,
                 campusByGroupId: draft.campusByGroupId,
+                shiftByGroupId: draft.shiftByGroupId,
                 timeRules: EASY_CENTER_TUTORING_POLICY.timeRules.map(
-                  (rule) => ({ ...rule, weekdays: [...rule.weekdays] })
+                  (rule) => ({
+                    ...rule,
+                    weekdays: [...rule.weekdays],
+                    ...(rule.classWeekdays
+                      ? { classWeekdays: [...rule.classWeekdays] }
+                      : {}),
+                  })
                 ),
               })
             }
@@ -213,152 +215,20 @@ export function TutoringPolicyCard({
       </TutoringPolicySection>
 
       <TutoringPolicySection {...sectionProps} id="exceptions">
-        <div className="flex flex-wrap items-start justify-between gap-2">
-          <div>
-            <h3 className="font-medium">{t('policy_exceptions')}</h3>
-            <p className="text-muted-foreground text-sm">
-              {t('policy_exceptions_description')}
-            </p>
-          </div>
-          {canConfigure ? (
-            <Button
-              disabled={draft.timeRules.length >= 30}
-              onClick={() =>
-                edit({
-                  timeRules: [
-                    ...draft.timeRules,
-                    {
-                      weekdays: [0, 6],
-                      classStartTime: '08:00',
-                      tutoringStartTime: '09:30',
-                      durationMinutes: 60,
-                    },
-                  ],
-                })
-              }
-              size="sm"
-              variant="outline"
-            >
-              <Plus className="h-4 w-4" />
-              {t('policy_add_exception')}
-            </Button>
-          ) : null}
-        </div>
-        {draft.timeRules.length === 0 ? (
-          <p className="rounded-lg bg-muted/50 p-3 text-muted-foreground text-sm">
-            {t('policy_no_exceptions')}
-          </p>
-        ) : null}
-        {draft.timeRules.map((rule, index) => (
-          <div
-            className="space-y-3 rounded-lg border bg-muted/20 p-3"
-            key={`policy-rule-${index}`}
-          >
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex flex-wrap gap-1">
-                {Array.from({ length: 7 }, (_, day) => (
-                  <Button
-                    aria-pressed={rule.weekdays.includes(day)}
-                    disabled={!canConfigure}
-                    key={day}
-                    onClick={() =>
-                      editRule(index, {
-                        weekdays: rule.weekdays.includes(day)
-                          ? rule.weekdays.filter((value) => value !== day)
-                          : [...rule.weekdays, day].sort(),
-                      })
-                    }
-                    size="sm"
-                    type="button"
-                    variant={
-                      rule.weekdays.includes(day) ? 'default' : 'outline'
-                    }
-                  >
-                    {t(`policy_weekday_${day}`)}
-                  </Button>
-                ))}
-              </div>
-              {canConfigure ? (
-                <Button
-                  aria-label={t('policy_remove_exception')}
-                  onClick={() =>
-                    edit({
-                      timeRules: draft.timeRules.filter(
-                        (_, ruleIndex) => ruleIndex !== index
-                      ),
-                    })
-                  }
-                  size="icon"
-                  variant="ghost"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              ) : null}
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="space-y-1">
-                <Label htmlFor={`policy-label-${index}`}>
-                  {t('policy_shift_label')}
-                </Label>
-                <Input
-                  disabled={!canConfigure}
-                  id={`policy-label-${index}`}
-                  maxLength={50}
-                  onChange={(event) =>
-                    editRule(index, { label: event.target.value })
-                  }
-                  value={rule.label ?? ''}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor={`policy-class-${index}`}>
-                  {t('policy_class_time')}
-                </Label>
-                <Input
-                  disabled={!canConfigure}
-                  id={`policy-class-${index}`}
-                  onChange={(event) =>
-                    editRule(index, { classStartTime: event.target.value })
-                  }
-                  type="time"
-                  value={rule.classStartTime}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor={`policy-tutor-${index}`}>
-                  {t('policy_tutoring_time')}
-                </Label>
-                <Input
-                  disabled={!canConfigure}
-                  id={`policy-tutor-${index}`}
-                  onChange={(event) =>
-                    editRule(index, { tutoringStartTime: event.target.value })
-                  }
-                  type="time"
-                  value={rule.tutoringStartTime}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor={`policy-duration-${index}`}>
-                  {t('policy_rule_duration')}
-                </Label>
-                <Input
-                  disabled={!canConfigure}
-                  id={`policy-duration-${index}`}
-                  max={480}
-                  min={1}
-                  onChange={(event) =>
-                    editRule(index, {
-                      durationMinutes: Number(event.target.value),
-                    })
-                  }
-                  type="number"
-                  value={rule.durationMinutes}
-                />
-              </div>
-            </div>
-          </div>
-        ))}
+        <TutoringShiftRulesEditor
+          canConfigure={canConfigure}
+          onChange={edit}
+          policy={draft}
+        />
+      </TutoringPolicySection>
+
+      <TutoringPolicySection {...sectionProps} id="groupShifts">
+        <TutoringGroupShifts
+          canConfigure={canConfigure}
+          groups={groups}
+          onChange={edit}
+          policy={draft}
+        />
       </TutoringPolicySection>
 
       <TutoringPolicySection {...sectionProps} id="weak">

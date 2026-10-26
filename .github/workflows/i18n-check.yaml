@@ -6,6 +6,16 @@ on:
       - main
       - production
   pull_request:
+    # Docs and agent-instruction PRs carry no locale bundles; skip the runner.
+    paths-ignore:
+      - '**/*.md'
+      - '**/*.mdx'
+      - 'apps/docs/**'
+      - 'plans/**'
+      - 'plugins/**'
+      - '.agents/**'
+      - '.claude/**'
+      - '.codex/**'
   workflow_dispatch:
 
 concurrency:

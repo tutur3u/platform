@@ -2,7 +2,7 @@ name: Native Calendar Cloudflare
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
-    paths: ['apps/calendar/**', 'packages/**', 'scripts/ci/wave1-*', '.github/workflows/wave1-*', '.github/workflows/calendar-cloudflare.yaml', 'tuturuuu.ci.ts', 'tuturuuu.ts', 'bun.lock', 'turbo.json', 'package.json']
+    paths: ['apps/calendar/**', 'packages/**', 'scripts/ci/wave1-*', '.github/workflows/wave1-*', '.github/workflows/calendar-cloudflare.yaml', 'tuturuuu.ci.ts', 'tuturuuu.ts', 'bun.lock', 'turbo.json', 'package.json', '!**/*.md', '!**/*.mdx']
   push:
     branches: [main]
     paths: ['apps/calendar/**', 'packages/**', 'scripts/ci/wave1-*', '.github/workflows/wave1-*', '.github/workflows/calendar-cloudflare.yaml', 'tuturuuu.ci.ts', 'tuturuuu.ts', 'bun.lock', 'turbo.json', 'package.json']
@@ -12,11 +12,12 @@ permissions:
   contents: read
   actions: read
   deployments: read
-# Staging publication consumes a durable attempt ledger; never cancel an upload.
+# PR revisions supersede. Running main/production/manual jobs never cancel;
+# older pending main/manual runs coalesce. Uploads retain the independent
+# queue:max / cancel-in-progress:false lock in wave1-native-publish.yaml.
 concurrency:
   group: native-calendar-cloudflare-${{ github.ref }}
-  cancel-in-progress: false
-  queue: max
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   check-ci:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
