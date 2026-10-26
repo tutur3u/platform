@@ -48,7 +48,7 @@ function setup() {
   };
   const run = (now: number, ...cmds: ParsedGuardCommand[]) =>
     runOp(now, undefined, ...cmds);
-  return { engine, run, runOp, writes: () => writes };
+  return { engine, run, runOp, db, writes: () => writes };
 }
 
 const minute = (algo: 'fixed' | 'sliding', limit: number, name = 'm') => ({
@@ -423,6 +423,21 @@ describe('cleanup planning', () => {
     expect(planCleanupRetry(0, 4)).toBe(480_000);
     expect(planCleanupRetry(0, 5)).toBeNull();
     expect(planCleanupRetry(0, 50)).toBeNull();
+  });
+
+  it('recreates its schema after storage is wiped', () => {
+    const { engine, run, db } = setup();
+    run(0, { op: 'kv.set', k: K('w'), v: 'x', ttlMs: 60_000, mode: 'always' });
+    db.exec('DROP TABLE entries');
+    db.exec('DROP TABLE meta');
+    engine.markStorageCleared();
+    expect(run(1, { op: 'kv.get', k: K('w') })[0]).toEqual({
+      op: 'kv.get',
+      v: null,
+    });
+    expect(engine.rowCount()).toBe(0);
+    engine.setAlarmFailures(1);
+    expect(engine.alarmFailures()).toBe(1);
   });
 
   it('keeps a usable schema after an idle cleanup', () => {

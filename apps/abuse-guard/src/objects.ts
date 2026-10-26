@@ -5,6 +5,13 @@ import type {
   ParsedGuardCommand,
 } from '@tuturuuu/utils/abuse-guard/protocol';
 import {
+  type ControlState,
+  createControlState,
+  recordUsage,
+  rollover,
+  setOperatorStop,
+} from './control-state';
+import {
   ALARM_PURGE_LIMIT,
   createGuardEngine,
   GuardCommandError,
@@ -80,11 +87,16 @@ export class GuardSubject extends DurableObject {
         rowCount: this.engine.rowCount(),
         maxExpiry: this.engine.maxExpiry(),
       });
-      this.engine.setAlarmFailures(0);
       if (plan.idle) {
-        await this.ctx.storage.deleteAlarm();
+        // Wipe the object, including its alarm and tables, so an emptied
+        // partition stores nothing. No abort(): throwing from an alarm would
+        // trigger the runtime's retries. The engine recreates its schema
+        // lazily if this warm instance is used again.
+        await this.ctx.storage.deleteAll();
+        this.engine.markStorageCleared();
         return;
       }
+      this.engine.setAlarmFailures(0);
       await this.ctx.storage.setAlarm(plan.nextAlarmAt);
     } catch (error) {
       console.error('[abuse-guard] subject cleanup failed', error);
@@ -100,39 +112,13 @@ export class GuardSubject extends DurableObject {
   }
 }
 
-export type FamilyUsage = {
-  used: number;
-  budget: number;
-  warned: boolean;
-  /** Budget stop for this family only; other families keep serving. */
-  stopped: boolean;
-};
-
-export type ControlState = {
-  /** Operator stop: every family fails closed. */
-  stopped: boolean;
-  day: string;
-  families: Partial<Record<AbuseGuardFamily, FamilyUsage>>;
-  changedAt: number;
-};
-
-/** Share of the daily budget that emits the warning. */
-export const BUDGET_WARNING_RATIO = 0.8;
-
-function utcDay(now: number) {
-  return new Date(now).toISOString().slice(0, 10);
-}
-
-/** Whether a family may run: neither the operator nor its budget stopped it. */
-export function familyOpen(state: ControlState, family: AbuseGuardFamily) {
-  return !state.stopped && !state.families[family]?.stopped;
-}
+export { type ControlState, familyOpen } from './control-state';
 
 /**
  * Durable stop fence and per-family daily operation budgets. Budgets are per
  * family so exhausting one (for example unauthenticated offline traffic)
- * cannot stop the others. A stop persists until an operator resumes,
- * including a budget stop on a new day.
+ * cannot stop the others; a family budget stop clears at the next UTC day.
+ * The operator stop persists until an operator resumes.
  */
 export class GuardControl extends DurableObject {
   constructor(ctx: DurableObjectState, env: unknown) {
@@ -144,22 +130,14 @@ export class GuardControl extends DurableObject {
       .toArray();
   }
 
-  private load(now: number): ControlState {
+  private load(now: number): { state: ControlState; changed: boolean } {
     const [row] = this.ctx.storage.sql
       .exec('SELECT state FROM control WHERE id = 1')
       .toArray();
-    const state: ControlState = row
+    const state = row
       ? (JSON.parse(String(row.state)) as ControlState)
-      : { stopped: false, day: utcDay(now), families: {}, changedAt: now };
-    if (state.day !== utcDay(now)) {
-      state.day = utcDay(now);
-      for (const usage of Object.values(state.families)) {
-        if (!usage) continue;
-        usage.used = 0;
-        usage.warned = false;
-      }
-    }
-    return state;
+      : createControlState(now);
+    return { state, changed: !row || rollover(state, now) };
   }
 
   private save(state: ControlState) {
@@ -178,58 +156,24 @@ export class GuardControl extends DurableObject {
     budget: number
   ): Promise<ControlState> {
     const now = Date.now();
-    const state = this.load(now);
-    const usage = state.families[family] ?? {
-      used: 0,
-      budget,
-      warned: false,
-      stopped: false,
-    };
-    state.families[family] = usage;
-    usage.budget = budget;
-    // A stopped fence admits nothing, so nothing it rejects is billed.
-    if (familyOpen(state, family)) {
-      usage.used += Math.max(0, Math.trunc(delta));
+    const { state, changed } = this.load(now);
+    // A zero-delta refresh with no flag change is a pure read: no row write.
+    if (recordUsage(state, family, delta, budget, now) || changed) {
+      this.save(state);
     }
-    if (!usage.warned && usage.used >= budget * BUDGET_WARNING_RATIO) {
-      usage.warned = true;
-      console.warn(
-        `[abuse-guard] ${family} daily operation budget at ${usage.used}/${budget}`
-      );
-    }
-    // `used` counts only admitted operations, so stopping at the budget
-    // admits exactly `budget` commands per family per day.
-    if (!usage.stopped && usage.used >= budget) {
-      usage.stopped = true;
-      state.changedAt = now;
-      console.error(
-        `[abuse-guard] ${family} daily operation budget exhausted (${usage.used}/${budget}); family stopped`
-      );
-    }
-    this.save(state);
     return state;
   }
 
   /** Operator stop or resume. Resume also clears every family budget stop. */
   async setStopped(stopped: boolean): Promise<ControlState> {
     const now = Date.now();
-    const state = this.load(now);
-    state.stopped = stopped;
-    state.changedAt = now;
-    if (!stopped) {
-      // Resuming starts a fresh allowance for the day.
-      for (const usage of Object.values(state.families)) {
-        if (!usage) continue;
-        usage.used = 0;
-        usage.warned = false;
-        usage.stopped = false;
-      }
-    }
+    const { state } = this.load(now);
+    setOperatorStop(state, stopped, now);
     this.save(state);
     return state;
   }
 
   async read(): Promise<ControlState> {
-    return this.load(Date.now());
+    return this.load(Date.now()).state;
   }
 }

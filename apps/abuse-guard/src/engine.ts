@@ -66,7 +66,15 @@ type Row = { v: string; exp: number };
 type WindowState = { i: number; c: number; p: number };
 
 export function createGuardEngine(sql: SqlRunner) {
-  for (const statement of SCHEMA_STATEMENTS) sql.exec(statement).toArray();
+  // `deleteAll()` drops the tables of a SQLite-backed object; a still-warm
+  // instance recreates them before its next use instead of failing.
+  let schemaReady = false;
+  function ensureSchema() {
+    if (schemaReady) return;
+    for (const statement of SCHEMA_STATEMENTS) sql.exec(statement).toArray();
+    schemaReady = true;
+  }
+  ensureSchema();
 
   function read(k: string, now: number): Row | null {
     const [row] = sql
@@ -261,6 +269,7 @@ export function createGuardEngine(sql: SqlRunner) {
   }
 
   function purgeExpired(now: number, limit: number) {
+    ensureSchema();
     return sql
       .exec(
         'DELETE FROM entries WHERE k IN (SELECT k FROM entries WHERE exp <= ? LIMIT ?) RETURNING k',
@@ -283,6 +292,7 @@ export function createGuardEngine(sql: SqlRunner) {
       now: number,
       operation?: GuardOperation
     ): GuardResult[] {
+      ensureSchema();
       purgeExpired(now, REQUEST_PURGE_LIMIT);
       if (operation) {
         const prior = read(operation.key, now);
@@ -310,18 +320,26 @@ export function createGuardEngine(sql: SqlRunner) {
 
     purgeExpired,
 
+    /** Call after `deleteAll()`: the next use recreates the schema. */
+    markStorageCleared() {
+      schemaReady = false;
+    },
+
     /** Latest expiry of any row, or null when the partition is empty. */
     maxExpiry(): number | null {
+      ensureSchema();
       const [row] = sql.exec('SELECT MAX(exp) AS m FROM entries').toArray();
       return row?.m == null ? null : Number(row.m);
     },
 
     rowCount(): number {
+      ensureSchema();
       const [row] = sql.exec('SELECT COUNT(*) AS n FROM entries').toArray();
       return Number(row?.n ?? 0);
     },
 
     alarmFailures(): number {
+      ensureSchema();
       const [row] = sql
         .exec("SELECT v FROM meta WHERE k = 'alarm_failures'")
         .toArray();
@@ -329,6 +347,7 @@ export function createGuardEngine(sql: SqlRunner) {
     },
 
     setAlarmFailures(failures: number) {
+      ensureSchema();
       if (failures <= 0) {
         sql.exec("DELETE FROM meta WHERE k = 'alarm_failures'").toArray();
         return;
@@ -349,10 +368,9 @@ export type GuardEngine = ReturnType<typeof createGuardEngine>;
 export const ALARM_SLACK_MS = 60_000;
 
 /**
- * Decides the next alarm after a cleanup pass. An empty partition clears its
- * alarm and is never re-armed; otherwise the alarm moves to a finite future
- * expiry. Storage is not wiped with deleteAll(): on SQLite-backed objects that
- * also drops the tables a still-warm instance keeps using.
+ * Decides the next alarm after a cleanup pass. An empty partition is wiped
+ * with `deleteAll()` (no residual storage) and never re-armed; otherwise the
+ * alarm moves to a finite future expiry.
  */
 export function planCleanup(input: {
   now: number;

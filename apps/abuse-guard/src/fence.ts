@@ -6,7 +6,8 @@ import {
   ABUSE_GUARD_FAMILIES,
   type AbuseGuardFamily,
 } from '@tuturuuu/utils/abuse-guard/protocol';
-import { familyOpen, type GuardControl } from './objects';
+import { familyOpen } from './control-state';
+import type { GuardControl } from './objects';
 
 export interface FenceEnv {
   GUARD_CONTROL: DurableObjectNamespace<GuardControl>;
@@ -35,31 +36,75 @@ export const FAMILY_BUDGET_SHARES: Record<AbuseGuardFamily, number> = {
   password: 0.1,
 };
 
-function positiveInteger(value: string | undefined) {
-  const parsed = Number(value?.trim());
-  return Number.isSafeInteger(parsed) && parsed > 0
-    ? Math.min(parsed, MAX_BUDGET)
+/** Thrown when the budget configuration is invalid; RPCs return 503. */
+export class GuardConfigError extends Error {}
+
+function strictPositiveInteger(value: string) {
+  if (!/^\d{1,10}$/u.test(value)) return null;
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) && parsed > 0 && parsed <= MAX_BUDGET
+    ? parsed
     : null;
 }
 
-export function dailyBudget(env: FenceEnv) {
-  return (
-    positiveInteger(env.ABUSE_GUARD_DAILY_OP_BUDGET) ?? DEFAULT_DAILY_BUDGET
-  );
-}
+export type FamilyBudgets = Record<AbuseGuardFamily, number>;
 
-export function familyBudget(env: FenceEnv, family: AbuseGuardFamily) {
-  for (const entry of (env.ABUSE_GUARD_FAMILY_BUDGETS ?? '').split(',')) {
-    const [name, value] = entry.split('=');
-    if (name?.trim() === family) {
-      const explicit = positiveInteger(value);
-      if (explicit) return explicit;
+const budgetCache = new Map<string, FamilyBudgets | null>();
+
+/**
+ * Resolves every family's daily budget, or null when the configuration is
+ * invalid: a malformed total, an unknown or duplicate family, a malformed
+ * value, or explicit entries plus implied shares above the total. Nothing
+ * silently falls back to a default once a value is set.
+ */
+export function resolveFamilyBudgets(
+  env: Pick<
+    FenceEnv,
+    'ABUSE_GUARD_DAILY_OP_BUDGET' | 'ABUSE_GUARD_FAMILY_BUDGETS'
+  >
+): FamilyBudgets | null {
+  const totalRaw = env.ABUSE_GUARD_DAILY_OP_BUDGET?.trim() ?? '';
+  const splitRaw = env.ABUSE_GUARD_FAMILY_BUDGETS?.trim() ?? '';
+  const cacheKey = `${totalRaw}|${splitRaw}`;
+  if (budgetCache.has(cacheKey)) return budgetCache.get(cacheKey) ?? null;
+
+  const resolve = (): FamilyBudgets | null => {
+    const total = totalRaw
+      ? strictPositiveInteger(totalRaw)
+      : DEFAULT_DAILY_BUDGET;
+    if (total === null) return null;
+    const known = new Set<string>(ABUSE_GUARD_FAMILIES);
+    const explicit = new Map<AbuseGuardFamily, number>();
+    if (splitRaw) {
+      for (const entry of splitRaw.split(',')) {
+        const match = /^\s*([a-z]+)\s*=\s*(\S+)\s*$/u.exec(entry);
+        if (!match) return null;
+        const [, name = '', raw = ''] = match;
+        if (!known.has(name) || explicit.has(name as AbuseGuardFamily)) {
+          return null;
+        }
+        const value = strictPositiveInteger(raw);
+        if (value === null) return null;
+        explicit.set(name as AbuseGuardFamily, value);
+      }
     }
-  }
-  return Math.max(
-    1,
-    Math.floor(dailyBudget(env) * FAMILY_BUDGET_SHARES[family])
-  );
+    const budgets = {} as FamilyBudgets;
+    let sum = 0;
+    for (const family of ABUSE_GUARD_FAMILIES) {
+      const budget =
+        explicit.get(family) ??
+        Math.floor(total * FAMILY_BUDGET_SHARES[family]);
+      if (budget < 1) return null;
+      budgets[family] = budget;
+      sum += budget;
+    }
+    return sum <= total ? budgets : null;
+  };
+
+  const budgets = resolve();
+  if (budgetCache.size >= 16) budgetCache.clear();
+  budgetCache.set(cacheKey, budgets);
+  return budgets;
 }
 
 function controlCacheMs(env: FenceEnv) {
@@ -101,11 +146,11 @@ async function refreshFence(env: FenceEnv, family: AbuseGuardFamily) {
   const delta = fence.pending;
   fence.pending = 0;
   try {
-    const state = await controlStub(env).report(
-      family,
-      delta,
-      familyBudget(env, family)
-    );
+    const budgets = resolveFamilyBudgets(env);
+    if (!budgets) {
+      throw new GuardConfigError('invalid abuse-guard budget configuration');
+    }
+    const state = await controlStub(env).report(family, delta, budgets[family]);
     fence.stopped = !familyOpen(state, family);
     fence.checkedAt = Date.now();
   } catch (error) {

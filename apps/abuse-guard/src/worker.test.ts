@@ -385,6 +385,16 @@ describe('secret configuration', () => {
   });
 });
 
+describe('budget configuration', () => {
+  it('serves nothing when the family budgets are invalid', async () => {
+    const mf = createRuntime({ familyBudgets: 'offline=99999999' });
+    await expect(httpClient(mf, 'replay').get('k')).rejects.toMatchObject({
+      code: 'guard_unavailable',
+    });
+    await mf.dispose();
+  });
+});
+
 describe('daily operation budget', () => {
   it('persists a budget stop across restarts until an operator resumes', async () => {
     const persist = join(workDir, 'budget-state');

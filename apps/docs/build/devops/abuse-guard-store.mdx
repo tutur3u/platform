@@ -91,9 +91,19 @@ forget consumed replay fences and spent limits.
 Native Workers call `configureAbuseGuardRuntime({ binding: env.ABUSE_GUARD,
 pepper, families })` in their adapter instead of the HTTP variables.
 
-Every store failure throws `AbuseGuardUnavailableError`, and the caller applies
-its existing policy. Those policies are unchanged: offline downloads fail closed
-with a 503, refresh replay fences report `unavailable`, and password limits fail open.
+Every store failure throws `AbuseGuardUnavailableError`. That includes a timeout,
+an auth or configuration error, a stop, and `off`. Once a family is assigned, its
+callers fail as follows:
+
+- `offline`: the marked bulk read gets 503.
+- `replay`: all three refresh routes fail closed (503). Cross-app session refresh
+  always did. CLI refresh and app-token exchange continue on error only while
+  `replay` is unassigned.
+- `password`: the attempt is refused with `retryAfter: 30`.
+- `proxy`: fails open by design. Route limits are skipped, and IP blocks, auth and
+  edge controls still apply.
+
+Unassigned families keep their legacy behavior.
 
 ## Cost safety
 
@@ -110,17 +120,27 @@ with a 503, refresh replay fences report `unavailable`, and password limits fail
   Each isolate reports admitted commands per family every 5 seconds or 200
   commands. At 80% of a family's budget the control object logs a warning once.
   When a family exhausts its budget, the control object persists a stop for that
-  family only. The stop survives restarts and new days until an operator resumes.
-  Rejected requests are never counted, so a family admits exactly its budget.
-  Each caller of a stopped family applies its own fail policy.
+  family only. The stop survives restarts and clears at the next UTC day, so the
+  daily cost cap holds without one flood becoming an open-ended outage. An
+  operator resume clears it earlier. Rejected requests are never counted, so a
+  family admits its budget plus a bounded overshoot of isolates × 200 commands and
+  the 5-second refresh lag. Each caller of a stopped family applies its own fail
+  policy.
+  An invalid budget configuration makes every RPC return 503
+  `guard_unavailable`, the same as a bad secret. That covers a malformed total, an
+  unknown or duplicate family, a malformed value, or entries above the total.
+- **Alerting:** alert on the `daily operation budget at` warning and the
+  `daily operation budget exhausted` error, filtered per family. A stop at
+  10:00 GMT+7 lasts until 07:00 GMT+7, the next UTC midnight, unless an operator
+  first checks `GET /control/state` and then resumes or stops globally.
 - **Alarm failures:** a failed cleanup is logged and re-armed with capped
   exponential backoff (1, 2, 4, 8 minutes). After five consecutive failures it
-  stops until the next write; lazy expiry keeps reads correct meanwhile. An emptied
-  partition keeps its tables, because `deleteAll()` on SQLite-backed objects drops
-  them under a still-warm instance.
+  stops until the next write; lazy expiry keeps reads correct meanwhile.
 - **Alarms:** each partition keeps one alarm at its latest expiry, moved only when
   a write extends it by more than 60 seconds. Cleanup purges at most 1,000 rows per
-  wake. An empty partition clears its alarm and is never re-armed; otherwise it re-arms
+  wake. An empty partition is wiped with `deleteAll()` and stores nothing. A
+  still-warm instance recreates its tables before its next use, and no `abort()`
+  is needed. It is never re-armed; otherwise it re-arms
   once at a future expiry. Cleanup makes no network calls, and it logs errors
   instead of throwing so automatic alarm retries cannot loop. Without new writes,
   a partition's alarms end within its longest TTL.
