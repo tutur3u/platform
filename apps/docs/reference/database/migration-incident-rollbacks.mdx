@@ -45,51 +45,61 @@ session or reset both timeouts if execution stopped before the file's resets.
 ## Topic teacher assignment rollback
 
 `20261026193000_topic_announcement_teacher_assignment.rollback.sql` (#6924) is
-a manual artifact like the batch above. Stop topic announcement writers first:
-the teacher topic form, the schedule import, and the queue cron. Then:
+a manual artifact like the batch above. Run these steps in order, in one
+approved `psql -X` session against the approved database.
 
-- **It refuses while any announcement has no topic.** The migration allows
-  `topic is null` only for drafts, and the rollback restores `topic not null`.
-  It raises `topic announcements without a topic exist` and changes nothing.
-  Before running it, in the same approved session, do **one** of these:
-  - Keep the drafts with a placeholder topic:
+1. **Remove the callers first.** Revert or disable the teacher-assignment app
+   code from #6928 (and the UI and import built on it) and deploy that, then
+   stop the queue cron. Code from #6928 reads and writes the columns this
+   rollback drops, so rolling back the schema under it breaks every topic
+   write.
+2. **Export what will be lost.** The rollback drops
+   `teacher_workspace_user_id`, `course_book`, `video_url`, and `send_due_at`,
+   and step 3 may delete drafts. Export both before changing anything:
 
-    ```sql
-    update private.topic_announcements set topic = '(topic pending)' where status = 'draft' and (topic is null or btrim(topic) = '');
-    ```
+   ```sql
+   \copy (select id, ws_id, teacher_workspace_user_id, course_book, video_url, send_due_at from private.topic_announcements where teacher_workspace_user_id is not null or course_book is not null or video_url is not null or send_due_at is not null) to 'topic-teacher-columns.csv' with csv header
+   \copy (select * from private.topic_announcements where status = 'draft' and topic is null) to 'topic-drafts-without-topic.csv' with csv header
+   \copy (select r.* from private.topic_announcement_recipients r join private.topic_announcements a on a.id = r.announcement_id where a.status = 'draft' and a.topic is null) to 'topic-drafts-without-topic-recipients.csv' with csv header
+   \copy (select t.* from private.topic_announcement_attachments t join private.topic_announcements a on a.id = t.announcement_id where a.status = 'draft' and a.topic is null) to 'topic-drafts-without-topic-attachments.csv' with csv header
+   ```
 
-    The drafts keep their recipients, attachments, and schedule. The
-    placeholder is real topic text: it shows in the UI and is emailed if
-    someone sends the draft unchanged, so tell supervisors to replace it before
-    sending. Covering blank topics as well keeps those rows editable under the
-    restored non-blank rule.
-  - Delete the drafts:
+   These files hold confidential customer data: lesson content, teacher
+   assignments, and contact links. Write them only to storage approved for
+   incident data, never to a ticket, chat, repository, or shared drive. Record
+   where they are, and delete them once the incident is closed and nothing
+   needs to be restored from them.
+3. **Clear the refusal.** The migration allows `topic is null` only for
+   drafts, and the rollback restores `topic not null`, so it raises `topic
+   announcements without a topic exist` and changes nothing while any such
+   draft exists. Only drafts can lack a topic. Do **one** of these:
+   - Keep the drafts with a bilingual placeholder topic:
 
-    ```sql
-    delete from private.topic_announcements where status = 'draft' and topic is null;
-    ```
+     ```sql
+     update private.topic_announcements set topic = 'Topic pending / Chưa có chủ đề' where status = 'draft' and (topic is null or btrim(topic) = '');
+     ```
 
-    Their recipient and attachment rows are deleted with them (`on delete
-    cascade`), but the uploaded files stay in storage as orphans. Delivery
-    attempt rows block the delete (`on delete restrict`). Drafts are never
-    dispatched, so a block means the row is not what you expect: stop and
-    inspect it.
+     The drafts keep their recipients, attachments, and schedule. The
+     placeholder is real topic text: it shows in the UI and is emailed if
+     someone sends the draft unchanged, so tell supervisors to replace it
+     before sending. Covering blank topics as well keeps those rows editable
+     under the restored non-blank rule.
+   - Delete the drafts (step 2 exported them):
 
-  Only drafts can lack a topic, so these filters cover every row the rollback
-  checks.
-- **Data loss either way.** The rollback drops `teacher_workspace_user_id`,
-  `course_book`, `video_url`, and `send_due_at`. If that data matters, export
-  it first:
+     ```sql
+     delete from private.topic_announcements where status = 'draft' and topic is null;
+     ```
 
-  ```sql
-  copy (select id, ws_id, teacher_workspace_user_id, course_book, video_url, send_due_at from private.topic_announcements where teacher_workspace_user_id is not null or course_book is not null or video_url is not null or send_due_at is not null) to stdout with csv header;
-  ```
-
-- **Constraints.** The restored `topic_announcements_topic_not_blank` and
-  `notifications_type_check` (without `topic_assigned`) are added `NOT VALID`,
-  so nothing is validated under the lock, and new and updated rows are still
-  checked. `set not null` on `topic` scans the table once. Existing
-  `topic_assigned` notifications are kept.
+     Their recipient and attachment rows are deleted with them (`on delete
+     cascade`), but the uploaded files stay in storage as orphans. Delivery
+     attempt rows block the delete (`on delete restrict`). Drafts are never
+     dispatched, so a block means the row is not what you expect: stop and
+     inspect it.
+4. **Run the rollback file.** The restored `topic_announcements_topic_not_blank`
+   and `notifications_type_check` (without `topic_assigned`) are added `NOT
+   VALID`, so nothing is validated under the lock, and new and updated rows are
+   still checked. `set not null` on `topic` scans the table once. Existing
+   `topic_assigned` notifications are kept.
 
 The disposable proof is
 `apps/database/verification/topic-announcement-teacher-assignment-rollback-roundtrip.sql`.
