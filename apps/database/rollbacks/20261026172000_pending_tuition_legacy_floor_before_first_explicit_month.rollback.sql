@@ -1,5 +1,6 @@
 -- Rollback for 20261026172000_pending_tuition_legacy_floor_before_first_explicit_month.sql.
--- Restores the 20260929090000 definition verbatim (legacy cutoff ignores
+-- Restores the 20260929090000 body with the search_path that
+-- 20261024025000 hardened it to (legacy cutoff ignores
 -- explicit-month invoices; enumeration starts at the cutoff or join date).
 -- Not a migration: apply manually only with release-authority approval.
 begin;
@@ -24,7 +25,7 @@ returns table (
 language plpgsql
 stable
 security definer
-set search_path = public
+set search_path = public, pg_temp
 as $$
 begin
   perform set_config('statement_timeout', '20s', true);

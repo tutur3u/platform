@@ -147,8 +147,8 @@ select is((select prosecdef from pg_proc where oid = 'public.get_pending_invoice
   'The guarded function remains security definer');
 select ok(not has_function_privilege('authenticated', 'public.get_pending_invoices_base_guarded(uuid, boolean)', 'execute'),
   'Authenticated callers still cannot execute the guarded function');
-select is((select proconfig from pg_proc where oid = 'public.get_pending_invoices_base_guarded(uuid, boolean)'::regprocedure), array['search_path=""'],
-  'The guarded function pins an empty search_path');
+select is((select proconfig from pg_proc where oid = 'public.get_pending_invoices_base_guarded(uuid, boolean)'::regprocedure), array['search_path=pg_catalog, pg_temp'],
+  'The guarded function pins a catalog-first search_path with pg_temp last');
 
 select * from finish();
 rollback;

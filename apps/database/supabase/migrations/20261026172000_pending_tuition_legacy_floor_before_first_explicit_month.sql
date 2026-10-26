@@ -29,7 +29,7 @@ returns table (
 language plpgsql
 stable
 security definer
-set search_path = ''
+set search_path = pg_catalog, pg_temp
 as $$
 begin
   perform pg_catalog.set_config('statement_timeout', '20s', true);
