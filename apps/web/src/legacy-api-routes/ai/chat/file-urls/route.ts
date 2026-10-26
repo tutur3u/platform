@@ -1,8 +1,12 @@
+import { resolveWorkspaceStorageFolderAccess } from '@tuturuuu/storage-core/workspace-storage-access';
 import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
-import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import {
+  createWorkspaceStorageAccessContext,
+  WorkspaceStorageAccessLookupError,
+} from '@/lib/storage/workspace-storage-access-context';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 import { AI_CHAT_FILE_APP_SESSION_TARGETS } from '../_lib/session-targets';
 
@@ -22,6 +26,11 @@ const SIGNED_URL_EXPIRY_SECONDS = 3600;
  * (e.g. when loading an existing chat from history).
  *
  * Storage path: `{wsId}/chats/ai/resources/{chatId}/`
+ *
+ * Authorization mirrors the `workspaces` bucket RLS
+ * (`@tuturuuu/storage-core/workspace-storage-access`): only a workspace
+ * MEMBER who created the chat may list it. Public chat pages do not use this
+ * route; they render shared messages without attachment URLs.
  */
 export const POST = withSessionAuth(
   async (req, { user, supabase }) => {
@@ -37,34 +46,33 @@ export const POST = withSessionAuth(
         );
       }
 
-      const membership = await verifyWorkspaceMembershipType({
-        wsId: wsId,
-        userId: user.id,
-        supabase: supabase,
-      });
+      const sbAdmin = await createDynamicAdminClient();
+      const storagePath = `${wsId}/chats/ai/resources/${chatId}`;
+      const access = await resolveWorkspaceStorageFolderAccess(
+        storagePath,
+        'select',
+        createWorkspaceStorageAccessContext({
+          sbAdmin,
+          supabase,
+          userId: user.id,
+        })
+      );
 
-      if (membership.error === 'membership_lookup_failed') {
-        console.error('Error validating workspace membership for file-urls', {
-          error: membership.error,
-          wsId,
-        });
+      if (access === 'invalid') {
         return NextResponse.json(
-          { message: 'Failed to verify workspace access' },
-          { status: 500 }
+          { message: 'Invalid storage path' },
+          { status: 400 }
         );
       }
 
-      if (!membership.ok) {
+      if (access === 'forbidden') {
         return NextResponse.json(
-          { message: "You don't have access to this workspace" },
+          { message: "You don't have access to this chat" },
           { status: 403 }
         );
       }
 
-      const sbAdmin = await createDynamicAdminClient();
-
       // List all files in the chat's storage folder
-      const storagePath = `${wsId}/chats/ai/resources/${chatId}`;
       const { data: fileList, error: listError } = await sbAdmin.storage
         .from('workspaces')
         .list(storagePath, {
@@ -143,6 +151,14 @@ export const POST = withSessionAuth(
         return NextResponse.json(
           { message: 'Invalid request data', errors: err.issues },
           { status: 400 }
+        );
+      }
+
+      if (err instanceof WorkspaceStorageAccessLookupError) {
+        console.error('Error verifying chat file access', err);
+        return NextResponse.json(
+          { message: 'Failed to verify chat access' },
+          { status: 500 }
         );
       }
 

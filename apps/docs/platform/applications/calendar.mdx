@@ -488,12 +488,62 @@ requests. Nobody repairs a rejected credential by hand.
   recovery. Explicit user-initiated reconnects retain their consent behavior;
   ordinary connects stay consent-free. Coverage: `google-consent-restart.test.ts`
   and the Google callback route tests.
+- **Consent restart diagnostics.** Limited and unavailable automatic restarts
+  emit callback-only `consent_restart_limited` and `consent_restart_unavailable`
+  events under `calendar.oauth.token_outcome`, with a hashed account handle.
+  These events do not enter provider-sync counters. Restart ledger expiry is at
+  least one minute ahead of the app clock to tolerate modest database clock skew
+  at a window boundary. HTTP 429 and 503 retain explicit localized JSON errors
+  and `Retry-After`; Calendar has no consumer for a post-auth error parameter,
+  so redirecting to its normal workspace page would hide the recovery error.
 - **Observability.** One `calendar.oauth.token_outcome` log line per outcome
   carries the route template, provider, outcome, reason, provider code and a
   hashed account id. `calendar.oauth.deactivation_spike` fires on five or more
   quarantines, any deferred quarantine, any breaker hold or any systemic
-  outcome. Both reach the
-  cron log drain; routing that event to an alert sink is a pending follow-up.
+  outcome. The provider cron also sends due spikes to the existing
+  `create_notification` delivery queue as high-priority account updates, with
+  bilingual English/Vietnamese operator copy and aggregate counts only. Configure
+  `CALENDAR_OAUTH_ALERT_RECIPIENTS` as a comma-separated operator email list on
+  Calendar. Each address must resolve to a confirmed auth account that is a
+  current `MEMBER` of the root workspace; `GUEST` memberships are excluded. The notification is addressed only by
+  that account id, never by a copied email address. At most five distinct valid
+  configured addresses are processed per run. No affected provider account
+  identity, credential or provider payload enters the notification content. Recurring
+  holds/deferrals/systemic and all-transient provider alerts are due only in the
+  first quarter-hour of each hour; five newly quarantined accounts alert immediately. The response exposes
+  `alerts.status` and queued/failed/unknown/unresolved/suppressed counts; missing recipients are explicitly
+  `unconfigured`. Unresolved or unconfirmed non-operator addresses make no
+  notification write; an account preference that suppresses creation is reported
+  as `suppressed`. A transport result without an HTTP response (`status: 0`) is
+  an unknown write, while HTTP errors are failures. A queue failure stays visible in logs and the response while
+  holds and revocations remain nonfatal. There are at most three metadata reads
+  and one notification-write attempt per configured address, sharing one
+  five-second transport deadline. Recipient metadata reads are not retried, and
+  an unknown notification write is never replayed in the same run. Queue acceptance
+  does not prove recipient delivery; verify the existing notification sender and
+  operator receipt during release. Coverage: `oauth-spike-notification.test.ts`
+  and provider cron route tests. The five-or-more-deactivations branch is not
+  hourly-gated: the normal fifteen-minute schedule permits at most four due runs
+  and twenty notification rows per hour. A re-dispatch can repeat an alert; there
+  is no cross-run idempotency key. Recipient preferences and existing batching
+  still apply.
+- **Degradation scope.** The provider degradation signal covers OAuth token
+  refresh outcomes. A single transient account degrades the job when it is the
+  only evaluated account for that provider, even beside many healthy accounts
+  from another provider. A still-valid token counted as `ok` prevents that
+  provider's all-transient signal. Events API 5xx/quota failures with valid tokens
+  can therefore still return plain scheduler `ok` and advance
+  `lastCompletedAt`; per-workspace failure diagnostics remain the signal for
+  those failures. Degraded runs preserve the last productive completion time
+  even if another provider synced successfully. The hourly spike sink includes
+  the all-transient provider signal, including one-account samples. The default
+  minimum sample is one because single-account workspaces need outage visibility.
+  The normal fifteen-minute schedule alerts only on the hourly due run for this
+  branch, and a healthy account in the same provider suppresses it. This bounded
+  hourly noise is intentional; the signal never spends the fatal failure budget.
+  Direct re-dispatch can repeat an alert as described above. Coverage:
+  `oauth-token-health.test.ts` pins the one-account hourly and healthy-mixed cases;
+  `oauth-spike-notification.test.ts` excludes root guests.
 - **Exception.** Before the quarantine columns reach a database, quarantine is
   deferred and accounts keep failing as before.
 
