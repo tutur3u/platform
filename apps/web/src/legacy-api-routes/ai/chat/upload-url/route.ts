@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
+import { resolveAiChatResourceAccess } from '../_lib/chat-resource-ownership';
 import { AI_CHAT_FILE_APP_SESSION_TARGETS } from '../_lib/session-targets';
 
 const ALLOWED_EXTENSIONS = new Set([
@@ -41,6 +42,8 @@ const UploadUrlRequestSchema = z.object({
  *
  * Generates a signed upload URL for direct file upload to Supabase Storage.
  * - Authenticated users only (session auth)
+ * - An existing chat must belong to the caller; chat storage is private
+ *   and clients cannot write it directly (storage RLS denies client writes)
  * - Files go to temp path when no chatId, or directly to the chat path
  * - The AI route automatically moves temp files on first message
  */
@@ -118,10 +121,33 @@ export const POST = withSessionAuth(
       // Membership checks stay request-scoped; storage signed-upload creation uses admin.
       const storageAdmin = await createDynamicAdminClient();
 
-      // Generate signed upload URL (valid for 120 seconds)
+      if (chatId) {
+        const access = await resolveAiChatResourceAccess(
+          storageAdmin,
+          chatId,
+          user.id,
+          'upload'
+        );
+        if (access === 'lookup_failed') {
+          return NextResponse.json(
+            { message: 'Failed to verify chat access' },
+            { status: 500 }
+          );
+        }
+        if (access === 'forbidden') {
+          return NextResponse.json(
+            { message: "You don't have access to this chat" },
+            { status: 403 }
+          );
+        }
+      }
+
+      // Generate a signed upload URL. Supabase signed upload tokens have a fixed
+      // 2-hour lifetime. Never overwrite: a draft chat id must not let a caller
+      // pre-seed or replace objects in a chat folder.
       const { data, error } = await storageAdmin.storage
         .from('workspaces')
-        .createSignedUploadUrl(storagePath, { upsert: true });
+        .createSignedUploadUrl(storagePath, { upsert: false });
 
       if (error || !data) {
         console.error('Error creating signed upload URL', {

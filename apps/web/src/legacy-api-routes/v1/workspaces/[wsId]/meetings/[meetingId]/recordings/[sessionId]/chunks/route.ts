@@ -1,5 +1,8 @@
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
@@ -109,10 +112,13 @@ export async function POST(
     // Generate a unique filename for this chunk
     const timestamp = Date.now();
     const chunkId = `${sessionId}-chunk-${chunkOrder}-${timestamp}`;
+    // Recordings are private storage: write with the service role after the
+    // membership and session checks above.
+    const sbAdmin = await createAdminClient();
     const storagePath = `${wsId}/recordings/${meetingId}/${sessionId}/${chunkId}.webm`;
 
     // Upload the audio chunk to storage
-    const { error: uploadError } = await supabase.storage
+    const { error: uploadError } = await sbAdmin.storage
       .from('workspaces')
       .upload(storagePath, audioBlob, {
         contentType: contentType,
@@ -141,7 +147,7 @@ export async function POST(
     if (chunkError) {
       console.error('Error saving audio chunk metadata:', chunkError);
       // Try to clean up the uploaded file
-      await supabase.storage.from('workspaces').remove([storagePath]);
+      await sbAdmin.storage.from('workspaces').remove([storagePath]);
       return NextResponse.json(
         { error: 'Failed to save audio chunk metadata' },
         { status: 500 }

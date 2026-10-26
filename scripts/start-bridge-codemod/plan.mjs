@@ -33,6 +33,7 @@ import {
   PAGE_MODULES,
   PUBLIC_ASSETS,
   ROUTES_CONFIG_FILE,
+  SEO_POLICY,
 } from './contract.mjs';
 import { inventoryApp, walk } from './inventory.mjs';
 import {
@@ -48,7 +49,10 @@ import {
   dependencyCommands,
   VOID_OUTPUT_IGNORES,
 } from './repo-edits.mjs';
-import { runtimeExpectationProblems } from './runtime-outcome.mjs';
+import {
+  resolveRuntimeProbes,
+  runtimeExpectationProblems,
+} from './runtime-outcome.mjs';
 import * as templates from './templates.mjs';
 import {
   effectiveWorkerConfig,
@@ -200,6 +204,12 @@ export function planConversion(repoRoot, app, options = {}) {
   for (const problem of workerConfigProblems(appConfig.config, mounts))
     problems.push(`${appPath}/${APP_CONFIG}: ${problem}`);
   resolved.worker = effectiveWorkerConfig(appConfig.config, mounts);
+  // The Worker's mounts as the app configured them (root-only apps claim no
+  // apex mount in the generated source).
+  resolved.mounts = { ...mounts, ...appConfig.config?.mounts };
+  // The app's robots allowlist, emitted into the Worker (no runtime JSON).
+  resolved.seoPolicy =
+    JSON.parse(read(repoRoot, SEO_POLICY) ?? '{}')[app] ?? null;
   if (!inventory.proxy)
     problems.push(`${appPath}: no src/proxy.ts; the bridge handler needs one`);
 
@@ -224,6 +234,14 @@ export function planConversion(repoRoot, app, options = {}) {
   );
   for (const problem of runtimeExpectationProblems(config.runtime))
     problems.push(`${appPath}/${ROUTES_CONFIG_FILE}: ${problem}`);
+  const hasBuildInfo = inventory.routes.some(
+    (route) => route.file === 'api/build-info/route.ts'
+  );
+  const probes = resolveRuntimeProbes(config.runtimeProbes, {
+    expectations: config.runtime,
+    hasBuildInfo,
+    fixtureExists: (file) => fs.existsSync(path.join(appRoot, file)),
+  });
   // An unchanged config keeps its bytes (however Biome laid it out); a
   // changed one is formatted with the owned output.
   const unchanged =
@@ -355,14 +373,15 @@ export function planConversion(repoRoot, app, options = {}) {
   if (ignored !== (gitignore ?? ''))
     writes.push({ path: gitignorePath, content: ignored, owner: 'edit' });
   if (nativeCi) {
+    for (const problem of probes.problems)
+      problems.push(`${appPath}/${ROUTES_CONFIG_FILE}: ${problem}`);
     owned(
       RUNTIME_TEST,
       runtimeTest({
         ...resolved,
         expectations: config.runtime,
-        hasBuildInfo: inventory.routes.some(
-          (route) => route.file === 'api/build-info/route.ts'
-        ),
+        hasBuildInfo,
+        probes: probes.probes,
       })
     );
     writes.push(

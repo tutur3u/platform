@@ -2203,6 +2203,426 @@ abstract class AppLocalizations {
   /// **'Tools'**
   String get assistantToolsLabel;
 
+  /// No description provided for @assistantToolLabelTasksRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked your tasks'**
+  String get assistantToolLabelTasksRead;
+
+  /// No description provided for @assistantToolLabelTasksReadRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking your tasks'**
+  String get assistantToolLabelTasksReadRunning;
+
+  /// No description provided for @assistantToolLabelTaskCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Created a task'**
+  String get assistantToolLabelTaskCreate;
+
+  /// No description provided for @assistantToolLabelTaskCreateRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Creating a task'**
+  String get assistantToolLabelTaskCreateRunning;
+
+  /// No description provided for @assistantToolLabelTaskUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated a task'**
+  String get assistantToolLabelTaskUpdate;
+
+  /// No description provided for @assistantToolLabelTaskUpdateRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Updating a task'**
+  String get assistantToolLabelTaskUpdateRunning;
+
+  /// No description provided for @assistantToolLabelTaskComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed a task'**
+  String get assistantToolLabelTaskComplete;
+
+  /// No description provided for @assistantToolLabelTaskCompleteRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Completing a task'**
+  String get assistantToolLabelTaskCompleteRunning;
+
+  /// No description provided for @assistantToolLabelTaskDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted a task'**
+  String get assistantToolLabelTaskDelete;
+
+  /// No description provided for @assistantToolLabelTaskDeleteRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleting a task'**
+  String get assistantToolLabelTaskDeleteRunning;
+
+  /// No description provided for @assistantToolLabelBoardsRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked your boards'**
+  String get assistantToolLabelBoardsRead;
+
+  /// No description provided for @assistantToolLabelBoardsReadRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking your boards'**
+  String get assistantToolLabelBoardsReadRunning;
+
+  /// No description provided for @assistantToolLabelBoardsWrite.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated your boards'**
+  String get assistantToolLabelBoardsWrite;
+
+  /// No description provided for @assistantToolLabelBoardsWriteRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Updating your boards'**
+  String get assistantToolLabelBoardsWriteRunning;
+
+  /// No description provided for @assistantToolLabelCalendarRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked your calendar'**
+  String get assistantToolLabelCalendarRead;
+
+  /// No description provided for @assistantToolLabelCalendarReadRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking your calendar'**
+  String get assistantToolLabelCalendarReadRunning;
+
+  /// No description provided for @assistantToolLabelCalendarWrite.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated your calendar'**
+  String get assistantToolLabelCalendarWrite;
+
+  /// No description provided for @assistantToolLabelCalendarWriteRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Updating your calendar'**
+  String get assistantToolLabelCalendarWriteRunning;
+
+  /// No description provided for @assistantToolLabelEmailRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked your email'**
+  String get assistantToolLabelEmailRead;
+
+  /// No description provided for @assistantToolLabelEmailReadRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking your email'**
+  String get assistantToolLabelEmailReadRunning;
+
+  /// No description provided for @assistantToolLabelEmailDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Drafted a reply'**
+  String get assistantToolLabelEmailDraft;
+
+  /// No description provided for @assistantToolLabelEmailDraftRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Drafting a reply'**
+  String get assistantToolLabelEmailDraftRunning;
+
+  /// No description provided for @assistantToolLabelFinanceRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked your finances'**
+  String get assistantToolLabelFinanceRead;
+
+  /// No description provided for @assistantToolLabelFinanceReadRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking your finances'**
+  String get assistantToolLabelFinanceReadRunning;
+
+  /// No description provided for @assistantToolLabelFinanceWrite.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated your finances'**
+  String get assistantToolLabelFinanceWrite;
+
+  /// No description provided for @assistantToolLabelFinanceWriteRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Updating your finances'**
+  String get assistantToolLabelFinanceWriteRunning;
+
+  /// No description provided for @assistantToolLabelTimeRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked your time tracking'**
+  String get assistantToolLabelTimeRead;
+
+  /// No description provided for @assistantToolLabelTimeReadRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking your time tracking'**
+  String get assistantToolLabelTimeReadRunning;
+
+  /// No description provided for @assistantToolLabelTimeWrite.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated your time tracking'**
+  String get assistantToolLabelTimeWrite;
+
+  /// No description provided for @assistantToolLabelTimeWriteRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Updating your time tracking'**
+  String get assistantToolLabelTimeWriteRunning;
+
+  /// No description provided for @assistantToolLabelHealthRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked your health and habits'**
+  String get assistantToolLabelHealthRead;
+
+  /// No description provided for @assistantToolLabelHealthReadRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking your health and habits'**
+  String get assistantToolLabelHealthReadRunning;
+
+  /// No description provided for @assistantToolLabelHealthWrite.
+  ///
+  /// In en, this message translates to:
+  /// **'Logged your progress'**
+  String get assistantToolLabelHealthWrite;
+
+  /// No description provided for @assistantToolLabelHealthWriteRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Logging your progress'**
+  String get assistantToolLabelHealthWriteRunning;
+
+  /// No description provided for @assistantToolLabelDayOverview.
+  ///
+  /// In en, this message translates to:
+  /// **'Reviewed your day'**
+  String get assistantToolLabelDayOverview;
+
+  /// No description provided for @assistantToolLabelDayOverviewRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Reviewing your day'**
+  String get assistantToolLabelDayOverviewRunning;
+
+  /// No description provided for @assistantToolLabelMemorySave.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to memory'**
+  String get assistantToolLabelMemorySave;
+
+  /// No description provided for @assistantToolLabelMemorySaveRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving to memory'**
+  String get assistantToolLabelMemorySaveRunning;
+
+  /// No description provided for @assistantToolLabelMemoryRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked memory'**
+  String get assistantToolLabelMemoryRead;
+
+  /// No description provided for @assistantToolLabelMemoryReadRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking memory'**
+  String get assistantToolLabelMemoryReadRunning;
+
+  /// No description provided for @assistantToolLabelMemoryWrite.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated memory'**
+  String get assistantToolLabelMemoryWrite;
+
+  /// No description provided for @assistantToolLabelMemoryWriteRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Updating memory'**
+  String get assistantToolLabelMemoryWriteRunning;
+
+  /// No description provided for @assistantToolLabelImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Created an image'**
+  String get assistantToolLabelImage;
+
+  /// No description provided for @assistantToolLabelImageRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Creating an image'**
+  String get assistantToolLabelImageRunning;
+
+  /// No description provided for @assistantToolLabelQrCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Created a QR code'**
+  String get assistantToolLabelQrCode;
+
+  /// No description provided for @assistantToolLabelQrCodeRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Creating a QR code'**
+  String get assistantToolLabelQrCodeRunning;
+
+  /// No description provided for @assistantToolLabelWebSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Searched the web'**
+  String get assistantToolLabelWebSearch;
+
+  /// No description provided for @assistantToolLabelWebSearchRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Searching the web'**
+  String get assistantToolLabelWebSearchRunning;
+
+  /// No description provided for @assistantToolLabelChecks.
+  ///
+  /// In en, this message translates to:
+  /// **'Ran checks'**
+  String get assistantToolLabelChecks;
+
+  /// No description provided for @assistantToolLabelChecksRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Running checks'**
+  String get assistantToolLabelChecksRunning;
+
+  /// No description provided for @assistantToolLabelFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Read a file'**
+  String get assistantToolLabelFile;
+
+  /// No description provided for @assistantToolLabelFileRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading a file'**
+  String get assistantToolLabelFileRunning;
+
+  /// No description provided for @assistantToolLabelWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked your workspace'**
+  String get assistantToolLabelWorkspace;
+
+  /// No description provided for @assistantToolLabelWorkspaceRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking your workspace'**
+  String get assistantToolLabelWorkspaceRunning;
+
+  /// No description provided for @assistantToolLabelSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated your settings'**
+  String get assistantToolLabelSettings;
+
+  /// No description provided for @assistantToolLabelSettingsRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Updating your settings'**
+  String get assistantToolLabelSettingsRunning;
+
+  /// No description provided for @assistantToolLabelOpenApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Opened an app'**
+  String get assistantToolLabelOpenApp;
+
+  /// No description provided for @assistantToolLabelOpenAppRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening an app'**
+  String get assistantToolLabelOpenAppRunning;
+
+  /// No description provided for @assistantToolLabelView.
+  ///
+  /// In en, this message translates to:
+  /// **'Prepared a view'**
+  String get assistantToolLabelView;
+
+  /// No description provided for @assistantToolLabelViewRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing a view'**
+  String get assistantToolLabelViewRunning;
+
+  /// No description provided for @assistantToolStepCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 step} other{{count} steps}}'**
+  String assistantToolStepCount(int count);
+
+  /// No description provided for @assistantToolStepResultCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No results} =1{1 result} other{{count} results}}'**
+  String assistantToolStepResultCount(int count);
+
+  /// No description provided for @assistantToolStepWorking.
+  ///
+  /// In en, this message translates to:
+  /// **'Working…'**
+  String get assistantToolStepWorking;
+
+  /// No description provided for @assistantToolStepDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get assistantToolStepDetails;
+
+  /// No description provided for @assistantToolStepHideDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide details'**
+  String get assistantToolStepHideDetails;
+
+  /// No description provided for @assistantToolStepRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'In progress'**
+  String get assistantToolStepRunning;
+
+  /// No description provided for @assistantToolStepDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get assistantToolStepDone;
+
+  /// No description provided for @assistantToolStepFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t finish this step'**
+  String get assistantToolStepFailed;
+
+  /// No description provided for @assistantToolStepsInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Steps in progress'**
+  String get assistantToolStepsInProgress;
+
+  /// No description provided for @assistantToolStepsDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Steps done'**
+  String get assistantToolStepsDone;
+
   /// No description provided for @assistantUntitledChat.
   ///
   /// In en, this message translates to:
