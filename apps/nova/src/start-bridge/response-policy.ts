@@ -7,6 +7,8 @@ const publicPatterns = policy.publicPatterns.map(
   (pattern) => new RegExp(`^(?:${pattern})$`)
 );
 const canonicalHost = new URL(policy.origin).host;
+const webglPath =
+  /^\/api\/v1\/workspaces\/[^/]+\/external-projects\/assets\/[^/]+\/webgl(?:\/|$)/u;
 
 export function applyResponsePolicy(request: Request, response: Response) {
   const url = new URL(request.url);
@@ -23,13 +25,17 @@ export function applyResponsePolicy(request: Request, response: Response) {
     'X-Robots-Tag',
     isPublic ? 'index, follow' : PRIVATE_ROBOTS_HEADER
   );
-  const directives = (result.headers.get('Content-Security-Policy') ?? '')
-    .split(';')
-    .map((value) => value.trim())
-    .filter((value) => value && !/^frame-ancestors(?:\s|$)/iu.test(value));
-  directives.push("frame-ancestors 'none'");
-  result.headers.set('Content-Security-Policy', directives.join('; '));
-  result.headers.set('X-Frame-Options', 'DENY');
+  if (webglPath.test(url.pathname)) {
+    result.headers.delete('X-Frame-Options');
+  } else {
+    const directives = (result.headers.get('Content-Security-Policy') ?? '')
+      .split(';')
+      .map((value) => value.trim())
+      .filter((value) => value && !/^frame-ancestors(?:\s|$)/iu.test(value));
+    directives.push("frame-ancestors 'none'");
+    result.headers.set('Content-Security-Policy', directives.join('; '));
+    result.headers.set('X-Frame-Options', 'DENY');
+  }
   result.headers.set('X-Content-Type-Options', 'nosniff');
   result.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   const isAsset =

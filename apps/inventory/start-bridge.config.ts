@@ -6,7 +6,6 @@ export default defineBridgeAppConfig({
     mountHosts: [],
     unknownHost: 'reject',
   },
-  csp: () => "frame-ancestors 'none'",
   async wrapResponse(response, { request }) {
     const { applyResponsePolicy } = await import(
       './src/start-bridge/response-policy'

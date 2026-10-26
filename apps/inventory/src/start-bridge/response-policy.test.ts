@@ -1,6 +1,8 @@
 import { resolveAppBase } from '@tuturuuu/start-bridge/mounts';
 import type { BridgeAppConfig } from '@tuturuuu/start-bridge/start/app-config';
+import { createBridgeHandler } from '@tuturuuu/start-bridge/start/handler';
 import { APP_SEO_POLICY, PRIVATE_ROBOTS_HEADER } from '@tuturuuu/utils/seo';
+import { NextResponse } from 'next/server';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import appConfig from '../../start-bridge.config';
 
@@ -40,7 +42,10 @@ function expectSecurityHeaders(response: Response) {
   );
 }
 
-afterEach(() => vi.unstubAllEnvs());
+afterEach(() => {
+  vi.unstubAllEnvs();
+  vi.restoreAllMocks();
+});
 
 describe('inventory root-only response policy', () => {
   it.each([canonical, staging])('admits only the declared root %s', (host) => {
@@ -150,6 +155,71 @@ describe('inventory root-only response policy', () => {
       expect(
         (await apply('/', 'GET', staging)).headers.get('X-Robots-Tag')
       ).toBe(PRIVATE_ROBOTS_HEADER);
+    }
+  );
+});
+
+const sandboxCsp =
+  "sandbox allow-scripts; default-src 'none'; script-src 'unsafe-inline'";
+const webglPath =
+  '/api/v1/workspaces/workspace/external-projects/assets/asset/webgl';
+
+async function forwarded(path: string) {
+  const request = new Request(`https://${canonical}${path}?version=fixture`);
+  const upstream = new Response('sandbox fixture', {
+    headers: {
+      'Content-Security-Policy': sandboxCsp,
+      'Cache-Control': 'private, max-age=600',
+    },
+  });
+  const fetcher = vi.spyOn(globalThis, 'fetch').mockResolvedValue(upstream);
+  const handler = createBridgeHandler({
+    mounts: { app: 'inventory', rootHosts: [canonical], ...config.mounts },
+    csp: config.csp,
+    proxy: async () => NextResponse.next(),
+    start: {
+      fetch: () => new Response('Unexpected page dispatch', { status: 500 }),
+    },
+    assets: () => undefined,
+    centralApiOrigin: () => 'https://web-fixture.invalid',
+  });
+  const response = await handler(request, {}, { waitUntil() {} });
+  expect(fetcher).toHaveBeenCalledOnce();
+  expect(fetcher.mock.calls[0]?.[0]).toBeInstanceOf(Request);
+  expect(fetcher).toHaveBeenCalledWith(
+    expect.objectContaining({
+      url: `https://web-fixture.invalid${path}?version=fixture`,
+    })
+  );
+  return Promise.resolve(
+    config.wrapResponse?.(response, { request, env: {} }) ?? response
+  );
+}
+
+describe('inventory central WebGL sandbox boundary', () => {
+  it.each([webglPath, `${webglPath}/Build/index.html`])(
+    'preserves the upstream sandbox exactly for %s',
+    async (path) => {
+      const response = await forwarded(path);
+      expect(response.headers.get('Content-Security-Policy')).toBe(sandboxCsp);
+      expect(response.headers.get('X-Frame-Options')).toBeNull();
+      expect(response.headers.get('Cache-Control')).toBe('private, no-store');
+      expect(response.headers.get('Vary')).toContain('Cookie');
+      expect(await response.text()).toBe('sandbox fixture');
+    }
+  );
+
+  it.each([`${webglPath}-preview`, `${webglPath}ish`])(
+    'keeps the neighbouring path denied: %s',
+    async (path) => {
+      const response = await forwarded(path);
+      expect(response.headers.get('Content-Security-Policy')).toContain(
+        "frame-ancestors 'none'"
+      );
+      expect(response.headers.get('Content-Security-Policy')).toContain(
+        sandboxCsp
+      );
+      expect(response.headers.get('X-Frame-Options')).toBe('DENY');
     }
   );
 });

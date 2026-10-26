@@ -58,20 +58,34 @@ Both native apps are root-only while apex cutover is held. Their app-owned
 
 | App | Production root | Staging root |
 | --- | --- | --- |
-| Nova | `nova.tuturuuu.com` | `nova-staging.tuturuuu.com` |
+| Nova | `nova.ai.vn` | `nova-staging.tuturuuu.com` |
 | Inventory | `inventory.tuturuuu.com` | `inventory-staging.tuturuuu.com` |
+
+Nova's `nova.tuturuuu.com` alias is a routing-layer 307 redirect to
+`nova.ai.vn`, not a Worker root. Preserve that redirect at cutover, including
+the requested path and query; the native Worker rejects the alias host.
 
 Apex paths, suffix lookalikes and unlisted hosts, including Workers preview
 hosts, return the bridge's 404 before app dispatch. The generated runtime gate
 uses raw Host headers to test each allowed root and the rejected hosts.
 Inventory declares its anonymous root outcome as 307; Nova declares 200.
 
-Every response receives the app's robots policy, anti-framing CSP,
+Every response receives the app's robots policy; ordinary paths also receive anti-framing CSP,
 `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff` and
 `Referrer-Policy: strict-origin-when-cross-origin`. The CSP retains the existing
 Next `frame-ancestors 'none'` policy from `packages/utils/src/next-config.ts`.
 A stricter script policy also requires nonce support for app-owned and library
 inline scripts; verify that compatibility in the real browser before adopting it.
+
+App configs leave handler-level `csp` unset: it would overwrite an upstream
+policy before the response decorator runs. The Web-owned
+`/api/v1/workspaces/:wsId/external-projects/assets/:assetId/webgl` subtree
+is the same intentional framing exception as Next's shared config. Forwarded
+responses retain their upstream sandbox CSP unchanged and have no
+`X-Frame-Options`; neighboring paths retain the framing denial. The exception
+does not bypass API authorization, robots, no-store or Cookie variance.
+Regressions exercise the real bridge and central forwarder, with authentication
+and upstream network responses isolated at fixture boundaries.
 
 Robots decisions read `APP_SEO_POLICY`, not a deployment environment switch.
 Nova preserves its policy's public learning and competition pages on the

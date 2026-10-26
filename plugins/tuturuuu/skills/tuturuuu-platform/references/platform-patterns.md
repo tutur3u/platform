@@ -7,8 +7,8 @@ shared-package changes.
 ## Web And Shared UI
 
 - Native satellites consume shared `@tuturuuu/start-bridge` adapters; app configs
-  own exact hosts and SEO/security headers. Asset caching exemptions require GET/HEAD
-  and an asset path; force non-asset no-store. Keep config imports Node-strippable.
+  own hosts and SEO/security headers. Preserve forwarded WebGL sandbox CSP without
+  handler-level CSP. Limit asset caching to GET/HEAD paths; keep config imports strippable.
   Suppliers authorize direct calls; preserve disabled service-worker registration.
   Use the [Nova/Inventory qualification guide](../../../../../apps/docs/build/devops/nova-inventory-start-bridge.mdx)
   for action/offline parity and separate raw-Host, header and browser acceptance.

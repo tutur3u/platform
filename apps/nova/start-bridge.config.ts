@@ -2,11 +2,10 @@ import { defineBridgeAppConfig } from '@tuturuuu/start-bridge/start/app-config';
 
 export default defineBridgeAppConfig({
   mounts: {
-    rootHosts: ['nova.tuturuuu.com', 'nova-staging.tuturuuu.com'],
+    rootHosts: ['nova.ai.vn', 'nova-staging.tuturuuu.com'],
     mountHosts: [],
     unknownHost: 'reject',
   },
-  csp: () => "frame-ancestors 'none'",
   async wrapResponse(response, { request }) {
     const { applyResponsePolicy } = await import(
       './src/start-bridge/response-policy'
