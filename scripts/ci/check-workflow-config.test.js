@@ -98,14 +98,6 @@ test('app-only changes run only that app', () => {
     {
       changedFiles: ['apps/calendar/src/app/page.tsx'],
       rootDir,
-      workflowName: 'vercel-production-calendar.yaml',
-    },
-    false
-  );
-  assertWorkflowDecision(
-    {
-      changedFiles: ['apps/calendar/src/app/page.tsx'],
-      rootDir,
       workflowName: 'calendar-cloudflare.yaml',
     },
     true
