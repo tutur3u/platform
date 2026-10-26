@@ -13,6 +13,13 @@ credentials, request-provided IDs and raw paths out of diagnostics. Preserve
 status/retry/MFA-cookie behavior. See the [guard diagnostics decision](../../../../../apps/docs/platform/features/mobile-workspace-tools.mdx#guard-rejection-diagnostics)
 and its focused regression coverage before adding a reason or changing middleware.
 
+- Native satellites consume shared `@tuturuuu/start-bridge` adapters; app configs
+  own hosts and SEO/security headers. Preserve forwarded WebGL sandbox CSP without
+  handler-level CSP. Limit asset caching to GET/HEAD paths; keep config imports strippable.
+  Suppliers authorize direct calls; preserve disabled service-worker registration.
+  Use the [Nova/Inventory qualification guide](../../../../../apps/docs/build/devops/nova-inventory-start-bridge.mdx)
+  for action/offline parity and separate raw-Host, header and browser acceptance.
+
 - Calendar provider cron failures retain failed dashboard diagnostics while
   isolating accounts and bounding work. Rejected Google credentials stop siblings
   and become inactive only if storage still matches; transient failures retry.
