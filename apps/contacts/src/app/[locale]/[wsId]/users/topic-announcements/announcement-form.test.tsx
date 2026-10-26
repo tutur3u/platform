@@ -117,6 +117,7 @@ describe('AnnouncementForm', () => {
         attachmentDrafts: [],
         classLabel: null,
         contactIds: ['contact-1'],
+        courseBook: null,
         dayLabel: null,
         endTime: null,
         groupId: null,
@@ -125,8 +126,10 @@ describe('AnnouncementForm', () => {
         sessionDate: null,
         sourceType: 'manual',
         startTime: null,
+        teacherWorkspaceUserId: null,
         title: 'Unit 3 speaking practice',
         topic: 'Practice speaking about weekend plans.',
+        videoUrl: null,
       })
     );
   });
@@ -253,6 +256,78 @@ describe('AnnouncementForm', () => {
         topic: 'Practice speaking about weekend plans.',
       })
     );
+  });
+
+  it('saves a teacher-assigned draft without a topic and notifies the teacher', async () => {
+    const onNotifyTeachers = vi.fn().mockResolvedValue(undefined);
+    const props = renderForm({
+      forkSeedId: 1,
+      forkSource: {
+        attachments: [],
+        class_label: null,
+        contacts: [verifiedContact],
+        course_book: 'Starter',
+        day_label: null,
+        end_time: null,
+        group_id: null,
+        place: null,
+        room: null,
+        session_date: '2026-11-05',
+        start_time: '18:30:00',
+        teacher_workspace_user_id: 'teacher-wu',
+        title: 'Monday session',
+        topic: '',
+        video_url: null,
+      } as never,
+      onCreate: vi.fn().mockResolvedValue('announcement-new'),
+      onNotifyTeachers,
+    });
+
+    expect(screen.getByLabelText('teacher_notify_label')).toBeChecked();
+    fireEvent.click(screen.getByRole('button', { name: 'next' }));
+    expect(screen.getByText('topic_pending_teacher')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'next' }));
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'announcement_delivery_send' })
+    );
+    expect(
+      screen.getByRole('button', { name: 'announcement_submit_send' })
+    ).toBeDisabled();
+    fireEvent.click(
+      screen.getByRole('button', { name: 'announcement_delivery_draft' })
+    );
+    fireEvent.click(
+      screen.getByRole('button', { name: 'announcement_submit_draft' })
+    );
+
+    await waitFor(() =>
+      expect(onNotifyTeachers).toHaveBeenCalledWith(['announcement-new'])
+    );
+    expect(props.onCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        courseBook: 'Starter',
+        teacherWorkspaceUserId: 'teacher-wu',
+        topic: '',
+      })
+    );
+  });
+
+  it('blocks a non-https video link on the message step', () => {
+    renderForm();
+    fireEvent.change(screen.getByLabelText('announcement_title'), {
+      target: { value: 'Session' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'next' }));
+    fireEvent.change(screen.getByLabelText('topic_primary_label'), {
+      target: { value: 'Topic' },
+    });
+    fireEvent.change(screen.getByLabelText('video_url_label'), {
+      target: { value: 'http://video.example.com' },
+    });
+    expect(screen.getByText('video_url_invalid')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'next' })).toBeDisabled();
   });
 
   it('creates and schedules from the final delivery step', async () => {

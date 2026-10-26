@@ -53,13 +53,14 @@ interface Props {
   isScheduling: boolean;
   isSending: boolean;
   onCancelSchedule: (announcementId: string) => void;
-  onCreate: (payload: TopicAnnouncementPayload) => Promise<void>;
+  onCreate: (payload: TopicAnnouncementPayload) => Promise<string>;
   onCreateAndSchedule: (
     payload: TopicAnnouncementPayload,
     scheduledSendAt: string
-  ) => Promise<void>;
-  onCreateAndSend: (payload: TopicAnnouncementPayload) => Promise<void>;
+  ) => Promise<string>;
+  onCreateAndSend: (payload: TopicAnnouncementPayload) => Promise<string>;
   onDelete: (announcementId: string) => void;
+  onNotifyTeachers: (announcementIds: string[]) => Promise<void>;
   onPageChange: (page: number) => void;
   onQueryChange: (query: string) => void;
   onSaveTemplate: (values: TemplateFormValues) => void;
@@ -94,6 +95,7 @@ export function AnnouncementsPanel({
   onCreateAndSchedule,
   onCreateAndSend,
   onDelete,
+  onNotifyTeachers,
   onPageChange,
   onQueryChange,
   onSaveTemplate,
@@ -135,6 +137,7 @@ export function AnnouncementsPanel({
           onCreate={onCreate}
           onCreateAndSchedule={onCreateAndSchedule}
           onCreateAndSend={onCreateAndSend}
+          onNotifyTeachers={onNotifyTeachers}
           onSaveTemplate={onSaveTemplate}
           onTimezoneRequired={onTimezoneRequired}
           onUploadAttachment={(file) =>

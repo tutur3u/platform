@@ -26,6 +26,7 @@ import {
   createDefaultScheduledDate,
   getAnnouncementStepValidity,
   INITIAL_ANNOUNCEMENT_FORM,
+  NO_TEACHER,
 } from './announcement-form-state';
 import {
   AnnouncementStepIndicator,
@@ -33,6 +34,7 @@ import {
 } from './announcement-form-stepper';
 import { AnnouncementRecipientsPicker } from './announcement-recipients-picker';
 import { AnnouncementSaveTemplateDialog } from './announcement-save-template-dialog';
+import { AnnouncementTeacherFields } from './announcement-teacher-fields';
 import type { TemplateFormValues } from './template-form-dialog';
 import { TopicAnnouncementsHelpTip } from './topic-announcements-help-tip';
 
@@ -46,12 +48,17 @@ interface Props {
   isSavingTemplate: boolean;
   isScheduling: boolean;
   isSending: boolean;
-  onCreate: (payload: TopicAnnouncementPayload) => Promise<void>;
+  /** Each create callback resolves to the new announcement id. */
+  onCreate: (payload: TopicAnnouncementPayload) => Promise<string | undefined>;
   onCreateAndSchedule: (
     payload: TopicAnnouncementPayload,
     scheduledSendAt: string
-  ) => Promise<void>;
-  onCreateAndSend: (payload: TopicAnnouncementPayload) => Promise<void>;
+  ) => Promise<string | undefined>;
+  onCreateAndSend: (
+    payload: TopicAnnouncementPayload
+  ) => Promise<string | undefined>;
+  /** Supervisor "save & notify" for the assigned teacher. */
+  onNotifyTeachers?: (announcementIds: string[]) => Promise<void>;
   onSaveTemplate: (values: TemplateFormValues) => void;
   onTimezoneRequired: () => void;
   onUploadAttachment: (file: File) => Promise<TopicAnnouncementAttachmentDraft>;
@@ -74,6 +81,7 @@ export function AnnouncementForm({
   onCreate,
   onCreateAndSchedule,
   onCreateAndSend,
+  onNotifyTeachers,
   onSaveTemplate,
   onTimezoneRequired,
   onUploadAttachment,
@@ -99,6 +107,7 @@ export function AnnouncementForm({
   const canSubmit =
     validSteps.review &&
     canUseDeliveryMode &&
+    (deliveryMode === 'draft' || form.topic.trim().length > 0) &&
     (deliveryMode !== 'schedule' || Boolean(scheduledAt && schedulingTimezone));
   const submitLabel = getSubmitLabel(deliveryMode, t);
 
@@ -128,12 +137,24 @@ export function AnnouncementForm({
     const payload = buildTopicAnnouncementPayload(form);
 
     try {
+      let announcementId: string | undefined;
       if (deliveryMode === 'send') {
-        await onCreateAndSend(payload);
+        announcementId = await onCreateAndSend(payload);
       } else if (deliveryMode === 'schedule' && scheduledAt) {
-        await onCreateAndSchedule(payload, scheduledAt.toISOString());
+        announcementId = await onCreateAndSchedule(
+          payload,
+          scheduledAt.toISOString()
+        );
       } else {
-        await onCreate(payload);
+        announcementId = await onCreate(payload);
+      }
+      if (
+        announcementId &&
+        onNotifyTeachers &&
+        form.notifyTeacher &&
+        form.teacherWorkspaceUserId !== NO_TEACHER
+      ) {
+        await onNotifyTeachers([announcementId]);
       }
       resetForm();
     } catch {
@@ -173,13 +194,21 @@ export function AnnouncementForm({
         />
 
         {step === 'details' ? (
-          <AnnouncementFormDetailsStep
-            form={form}
-            groups={groups}
-            isDisabled={isSubmitting}
-            setForm={setForm}
-            templates={templates}
-          />
+          <>
+            <AnnouncementFormDetailsStep
+              form={form}
+              groups={groups}
+              isDisabled={isSubmitting}
+              setForm={setForm}
+              templates={templates}
+            />
+            <AnnouncementTeacherFields
+              disabled={isSubmitting}
+              form={form}
+              setForm={setForm}
+              workspaceUsers={workspaceUsers}
+            />
+          </>
         ) : null}
 
         {step === 'message' ? (

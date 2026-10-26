@@ -6,7 +6,11 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import type { Dispatch, SetStateAction } from 'react';
 import { AnnouncementAttachmentsField } from './announcement-attachments-field';
-import type { AnnouncementFormValues } from './announcement-form-state';
+import {
+  type AnnouncementFormValues,
+  NO_TEACHER,
+} from './announcement-form-state';
+import { TopicExtrasFields } from './announcement-teacher-fields';
 
 interface Props {
   disabled: boolean;
@@ -45,7 +49,24 @@ export function AnnouncementFormMessageStep({
           placeholder={t('topic_primary_placeholder')}
           value={form.topic}
         />
+        {form.teacherWorkspaceUserId !== NO_TEACHER && !form.topic.trim() ? (
+          <p className="text-muted-foreground text-xs">
+            {t('topic_pending_teacher')}
+          </p>
+        ) : null}
       </div>
+      <TopicExtrasFields
+        courseBook={form.courseBook}
+        disabled={disabled}
+        idPrefix="topic"
+        onCourseBookChange={(courseBook) =>
+          setForm((current) => ({ ...current, courseBook }))
+        }
+        onVideoUrlChange={(videoUrl) =>
+          setForm((current) => ({ ...current, videoUrl }))
+        }
+        videoUrl={form.videoUrl}
+      />
       <AnnouncementAttachmentsField
         attachments={form.attachmentDrafts}
         disabled={disabled}
