@@ -20,6 +20,19 @@ and its focused regression coverage before adding a reason or changing middlewar
   Use the [Nova/Inventory qualification guide](../../../../../apps/docs/build/devops/nova-inventory-start-bridge.mdx)
   for action/offline parity and separate raw-Host, header and browser acceptance.
 
+- Workspace ID boundary pilot: `@tuturuuu/utils/workspace-id` exports
+  `workspaceIdSchema` and its inferred `WorkspaceId` brand. The schema is the
+  only constructor; it reuses `normalizeWorkspaceContextId` for `personal` and
+  `internal` (the root UUID), accepts UUID literals, and has no framework imports.
+  In template background GET/HEAD, retain authentication and
+  `normalizeWorkspaceId` first so personal workspaces and existing handles keep
+  their resolution behavior, then parse the result inside the existing 400
+  handler. Pass `WorkspaceId` to the downstream `getBackgroundTemplate` query;
+  never cast raw route params into the brand. Parsing does not grant access:
+  preserve membership, workspace filters, visibility and creator checks.
+  Expand one resource at a time with its existing error envelope and regression
+  coverage. See [typed workspace boundaries](../../../../../apps/docs/build/development-tools/codex-plugin.mdx#typed-workspace-boundaries).
+
 - Calendar provider cron failures retain failed dashboard diagnostics while
   isolating accounts and bounding work. Rejected Google credentials stop siblings
   and become inactive only if storage still matches; transient failures retry.
