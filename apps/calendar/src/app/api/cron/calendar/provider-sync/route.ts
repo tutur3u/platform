@@ -1,6 +1,7 @@
 import { Effect } from '@tuturuuu/utils/effect';
 import { NextRequest, NextResponse } from 'next/server';
 import { POST as syncWorkspaceCalendar } from '@/app/api/v1/workspaces/[wsId]/calendar/sync/route';
+import { queueCalendarOAuthSpikeAlert } from '@/lib/calendar/oauth-spike-notification';
 import {
   reportCalendarDeactivationSpike,
   withCalendarTokenHealthRun,
@@ -74,9 +75,15 @@ async function handleGET(request: NextRequest) {
       () => dispatchWorkspaces(request, cronSecret)
     );
     if (dispatch instanceof NextResponse) return dispatch;
-    reportCalendarDeactivationSpike(ROUTE, outcomes);
+    const spike = reportCalendarDeactivationSpike(ROUTE, outcomes);
+    const alerts = spike
+      ? await queueCalendarOAuthSpikeAlert(outcomes)
+      : undefined;
     const { body, status } = buildProviderSyncEnvelope(dispatch, outcomes);
-    return NextResponse.json(body, { status });
+    return NextResponse.json(
+      { ...body, ...(alerts ? { alerts } : {}) },
+      { status }
+    );
   } catch (error) {
     console.error(
       'Calendar provider sync dispatch failed',
