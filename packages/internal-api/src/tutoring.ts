@@ -241,6 +241,23 @@ export async function markTutoringSession(
   );
 }
 
+/** Ends weak-support tutoring ("Thoát kèm") for a learner in one class. */
+export async function endTutoringWeakSupport(
+  workspaceId: string,
+  payload: { groupId: string; studentUserId: string },
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string; cleared: number }>(
+    `${basePath(workspaceId)}/weak-support/end`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }
+  );
+}
+
 export async function generateTutoringMessagePreview(
   workspaceId: string,
   sessionId: string,

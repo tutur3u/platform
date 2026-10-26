@@ -1,7 +1,7 @@
 ---
 title: 'Tutoring'
 description: 'Schedule make-up and remedial sessions, work the support queue, and enable the module per workspace.'
-updatedAt: '2026-10-04'
+updatedAt: '2026-10-26'
 ---
 
 Tutoring lives in the Contacts satellite at `/{wsId}/users/tutoring`. It turns
@@ -216,6 +216,37 @@ content, the field stays empty for staff to fill. A weak-support draft uses the
 teacher's flagged feedback content. Staff can review and edit either draft
 before saving; content is never invented from a class title or an unrelated
 lesson.
+
+### Weak-support content comes from the homeroom teacher
+
+Decision (applies to `WEAK_SUPPORT` tutoring in Contacts; the restriction is
+off by default):
+
+- The text the homeroom teacher (GVCN) enters when flagging feedback as
+  **Requires Attention** is the learner's tutoring content (Nội dung kèm). The
+  feedback dialogs say so while the flag is on. The support queue labels the
+  column **Tutoring content** and prefills it into weak-support drafts.
+- **Only class managers set tutoring content** is an optional policy switch
+  (`restrictWeakContentEditors`, default off, in the weak-support section of
+  Settings). When on, creating, editing or deleting flagged feedback, or ending
+  weak support, also needs the existing `update_user_groups` class-management
+  permission, on top of the usual `update_user_groups_scores`. Unflagged feedback
+  is unaffected. No role is added. Groups' homeroom teachers are expected to
+  hold that permission through their workspace role.
+- **End tutoring** (Thoát kèm) is an explicit queue action for weak-support and
+  office-review rows, confirmed in an in-app dialog. It calls
+  `POST /api/v1/workspaces/{wsId}/tutoring/weak-support/end`, which clears the
+  attention flag on that learner's feedback for that class. The feedback text
+  stays as history, and sessions already scheduled remain for staff to complete
+  or cancel. Flagging the learner again puts them back on the list.
+
+Regression coverage:
+[`weak-content-access.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/tutoring/weak-content-access.test.ts),
+[`weak-support/end/route.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/tutoring/weak-support/end/route.test.ts),
+the weak-support policy cases in
+[`users/feedbacks/route.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/legacy-api-routes/v1/workspaces/%5BwsId%5D/users/feedbacks/route.test.ts),
+and
+[`tutoring-policy.test.ts`](https://github.com/tutur3u/platform/blob/main/packages/internal-api/src/tutoring-policy.test.ts).
 
 Policies are validated at `GET/PUT /api/v1/workspaces/{wsId}/tutoring/policy`
 and stored under `TUTORING_POLICY` with bounded `TUTORING_POLICY_PART_*` rows in
