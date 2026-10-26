@@ -360,7 +360,8 @@ begin
 
   perform private._lock_time_tracker_actor_rows(p_ws_id,p_actor_id);
   -- The focus session, following resumes made elsewhere (each resume links
-  -- only to the session right before it).
+  -- only to the session right before it). Bounded, and only through this
+  -- actor's sessions in this workspace.
   v_session:=v_control.prepared_session_id;
   for i in 1..64 loop
     exit when v_session is null;
@@ -375,6 +376,13 @@ begin
   for v_effect in select value from jsonb_array_elements(p_effects) loop
     exit when v_mismatch;
     v_kind:=v_effect->>'kind';
+    -- Nothing but a user command starts or resumes work: a `reconcile` may
+    -- only stop a focus that ended, so the server never starts focus.
+    if (v_kind='start' and p_command->>'type' not in ('start','resume','skip'))
+      or (v_kind='resume' and p_command->>'type'<>'resume')
+      or (v_kind='pause' and p_command->>'type'<>'pause') then
+      raise exception 'Pomodoro effect not allowed for this command' using errcode='22023';
+    end if;
     if v_kind in ('stop','pause','resume') and ((v_effect->>'sessionId') is null
       or (v_effect->>'sessionId') is distinct from v_control.prepared_session_id::text) then
       raise exception 'Pomodoro effect targets another session' using errcode='22023';
@@ -449,6 +457,13 @@ begin
     end if;
     perform set_config('time_tracking.bypass_update_limit',v_update_limit,true);
   end loop;
+
+  -- Session writes move the operation scope like every other session writer,
+  -- so a replace planned before this command fails its CAS.
+  if jsonb_array_length(p_effects)>0 then
+    update private.time_tracker_operation_scopes set revision=revision+1,updated_at=v_now
+      where ws_id=p_ws_id and actor_id=p_actor_id;
+  end if;
 
   if v_mismatch or v_phase='idle' then
     update private.time_tracker_controls set mode='off',phase='idle',deadline_at=null,

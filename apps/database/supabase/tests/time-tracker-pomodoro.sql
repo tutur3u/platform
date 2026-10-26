@@ -66,8 +66,14 @@ select throws_ok($q$select pg_temp.cmd(1,90831,'{"type":"pause"}',pg_temp.state(
 select is(pg_temp.rev(),1::bigint,'rejected commands leave the revision');
 
 -- Start, replay, CAS.
+create function pg_temp.scope_rev() returns bigint language sql as $$
+ select coalesce((select revision from private.time_tracker_operation_scopes where ws_id=pg_temp.fid(90811) and actor_id=pg_temp.fid(90801)),0);
+$$;
+create temp table scope_before(rev bigint);
+insert into scope_before select pg_temp.scope_rev();
 create temp table applied(n integer primary key,result jsonb);
 insert into applied values(1,pg_temp.start(90831));
+select is(pg_temp.scope_rev(),(select rev from scope_before)+1,'session effects bump the operation scope revision');
 select is((select result->>'mode'||'/'||(result->>'phase') from applied where n=1),'pomodoro/focus','start runs a focus phase');
 select is(pg_temp.rev(),2::bigint,'start bumps the revision');
 select is((select tags from public.time_tracking_sessions where id=pg_temp.prepared()),array['pomodoro']::text[],'focus session is tagged pomodoro');
@@ -121,8 +127,18 @@ select pg_temp.cmd(pg_temp.rev(),90839,'{"type":"skip"}',pg_temp.state('short_br
 select is((select end_time from public.time_tracking_sessions where id=(select id from kept)),(select at from deadline),'late focus ends at its deadline');
 select is((select prepared_session_id from private.time_tracker_controls where ws_id=pg_temp.fid(90811) and actor_id=pg_temp.fid(90801)),null,'breaks hold no session');
 
+-- No server path starts focus, at the SQL level too: a reconcile cannot carry
+-- a start or resume effect, whatever the caller plans.
+select throws_ok($q$select pg_temp.cmd(pg_temp.rev(),90848,'{"type":"reconcile"}',pg_temp.state('focus',25,1500000),
+ '[{"kind":"start","title":"Write","taskId":null,"tags":["pomodoro"]}]')$q$,'22023','Pomodoro effect not allowed for this command','reconcile cannot start focus');
+select throws_ok($q$select pg_temp.cmd(pg_temp.rev(),90849,'{"type":"stop"}',pg_temp.state('focus',25,1500000),
+ '[{"kind":"start","title":"Write","taskId":null,"tags":["pomodoro"]}]')$q$,'22023','Pomodoro effect not allowed for this command','stop cannot start focus');
+select is(pg_temp.running(),0::bigint,'refused effects start no session');
+
 -- No server path starts focus: a break ended by reconcile leaves focus waiting.
+update scope_before set rev=pg_temp.scope_rev();
 select pg_temp.cmd(pg_temp.rev(),90840,'{"type":"reconcile"}',pg_temp.state('focus',null,1500000,1),'[]');
+select is(pg_temp.scope_rev(),(select rev from scope_before),'a command without session effects keeps the scope revision');
 select is(pg_temp.running(),0::bigint,'reconcile starts no session');
 select is((select phase||'/'||coalesce(deadline_at::text,'waiting') from private.time_tracker_controls where ws_id=pg_temp.fid(90811) and actor_id=pg_temp.fid(90801)),'focus/waiting','focus waits for the user');
 select pg_temp.cmd(pg_temp.rev(),90841,'{"type":"stop"}',pg_temp.state('idle',null,0),'[]');
