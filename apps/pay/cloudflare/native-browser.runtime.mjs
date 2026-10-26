@@ -195,13 +195,28 @@ test('Pay staging: identity, denial, sandbox isolation and anonymous browser red
         );
       }
       await context.test(
-        'machine endpoints reject absent cron authority and invalid webhook signatures',
+        'machine endpoints reject absent/invalid cron authority and invalid webhook signatures',
         async () => {
-          const cron = await runtime.fetch(
-            `${mode.origin}/api/cron/payment/products`
-          );
-          assert.equal(cron.status, 401);
-          await cron.text();
+          for (const route of ['orders', 'products', 'subscriptions']) {
+            for (const authorization of [
+              undefined,
+              'Bearer wrong',
+              `Bearer ${'x'.repeat(128)}`,
+            ]) {
+              const cron = await runtime.fetch(
+                `${mode.origin}/api/cron/payment/${route}`,
+                {
+                  headers: authorization ? { authorization } : {},
+                }
+              );
+              assert.equal(
+                cron.status,
+                401,
+                `${route}: absent/invalid authority`
+              );
+              await cron.text();
+            }
+          }
           const webhook = await runtime.fetch(
             `${mode.origin}/api/payment/webhooks`,
             {
@@ -221,7 +236,7 @@ test('Pay staging: identity, denial, sandbox isolation and anonymous browser red
         }
       );
       await context.test(
-        'raw Host rejects apex and unlisted hosts',
+        'raw Host rejects production, apex and unlisted hosts',
         async () => {
           for (const host of modes) {
             const info = await runtime.rawFetch(
@@ -231,6 +246,7 @@ test('Pay staging: identity, denial, sandbox isolation and anonymous browser red
             await info.text();
           }
           for (const origin of [
+            'https://pay.tuturuuu.com',
             'https://tuturuuu.com/pay',
             'https://unknown.example.test',
           ]) {
