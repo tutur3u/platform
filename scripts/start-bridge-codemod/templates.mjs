@@ -175,20 +175,22 @@ interface WorkerContext {
 
 type ApiEntry = typeof import('${moduleFrom('../', API_ENTRY)}');
 
+// One artifact: the subdomain root and the tuturuuu.com/${app} mount.
+const mounts = {
+  app: ${quote(app)},
+  rootHosts: [${mounts.rootHosts.map(quote).join(', ')}],
+  mountHosts: [${mounts.mountHosts.map(quote).join(', ')}],
+  basePath: ${quote(mounts.basePath)},
+  ...appConfig.mounts,
+};
+
 // Route handlers are server code (\`server-only\` is valid only in the rsc
 // environment), while this entry is bundled in ssr: load them from rsc.
 const handler = (
   import.meta.viteRsc.loadModule('rsc', ${quote(API_RSC_ENTRY)}) as Promise<ApiEntry>
 ).then(({ endpoints }) =>
   createBridgeHandler<${name}, WorkerContext>({
-    // One artifact: the subdomain root and the tuturuuu.com/${app} mount.
-    mounts: {
-      app: ${quote(app)},
-      rootHosts: [${mounts.rootHosts.map(quote).join(', ')}],
-      mountHosts: [${mounts.mountHosts.map(quote).join(', ')}],
-      basePath: ${quote(mounts.basePath)},
-      ...appConfig.mounts,
-    },
+    mounts,
     csp: appConfig.csp,
     apiOrigin: appConfig.apiOrigin,
     start: createBridgeStartHandler(),
@@ -209,7 +211,7 @@ export default {
   async fetch(request: Request, env: ${name}, ctx: WorkerContext) {
     const response = await (await handler)(request, env, ctx);
     return appConfig.wrapResponse
-      ? appConfig.wrapResponse(response, { request, env })
+      ? appConfig.wrapResponse(response, { request, env, mounts, publicAssets })
       : response;
   },
 };
@@ -221,9 +223,17 @@ export function appConfigModule({ app }) {
   return `// App-owned start-bridge Worker options for ${app}: the codemod created this
 // file and never overwrites it. See "Worker options" in
 // apps/docs/build/devops/start-bridge-codemod.mdx.
+import { createRootResponsePolicy } from '${BRIDGE.responsePolicy}';
 import { defineBridgeAppConfig } from '${BRIDGE.appConfig}';
 
-export default defineBridgeAppConfig({});
+export default defineBridgeAppConfig<{ TUTURUUU_NOINDEX?: string }>({
+  // Robots, framing, sniffing, referrer and private caching on every
+  // response; only GET/HEAD static files keep their own caching.
+  wrapResponse: createRootResponsePolicy({
+    seo: ({ env }) =>
+      env?.TUTURUUU_NOINDEX === '1' ? 'noindex, nofollow' : 'index, follow',
+  }),
+});
 `;
 }
 

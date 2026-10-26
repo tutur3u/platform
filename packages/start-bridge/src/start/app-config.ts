@@ -39,10 +39,22 @@ export interface BridgeAppConfig<Env = unknown> {
     workersDev?: boolean;
     compatibilityFlags?: readonly string[];
   };
-  /** Decorates every response the Worker returns (e.g. a staging noindex header). */
+  /**
+   * Decorates every response the Worker returns; use
+   * `createRootResponsePolicy` from `@tuturuuu/start-bridge/response-policy`
+   * (robots, framing, sniffing, referrer and private caching). The generated
+   * Worker passes its effective `mounts` and `publicAssets`, so the config
+   * never imports generated modules.
+   */
   wrapResponse?: (
     response: Response,
-    context: { request: Request; env: Env }
+    context: {
+      request: Request;
+      env: Env;
+      /** Passed by Workers generated since the shared response policy. */
+      mounts?: Omit<AppMountConfig, 'app'> & { app?: string };
+      publicAssets?: ReadonlySet<string>;
+    }
   ) => Response | Promise<Response>;
 }
 

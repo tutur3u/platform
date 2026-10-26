@@ -20,6 +20,7 @@ export const BRIDGE = {
   proxyMatcher: `${BRIDGE_PACKAGE}/proxy-matcher`,
   appBase: `${BRIDGE_PACKAGE}/start/app-base`,
   appConfig: `${BRIDGE_PACKAGE}/start/app-config`,
+  responsePolicy: `${BRIDGE_PACKAGE}/response-policy`,
   pages: `${BRIDGE_PACKAGE}/pages`,
   pageRoute: `${BRIDGE_PACKAGE}/start/page-route`,
   pageRender: `${BRIDGE_PACKAGE}/start/page-render`,

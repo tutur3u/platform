@@ -114,7 +114,7 @@ test('native CI is a thin caller of the reusable template, once it exists', (t) 
   const worker = content('apps/demo/cloudflare/worker.ts');
   assert.match(worker, /rootHosts: \['demo\.tuturuuu\.com'\],/);
   assert.match(worker, /mountHosts: \['tuturuuu\.com'\],/);
-  assert.match(worker, /basePath: '\/demo',\n {6}\.\.\.appConfig\.mounts,/);
+  assert.match(worker, /basePath: '\/demo',\n {2}\.\.\.appConfig\.mounts,/);
   assert.match(
     runtime,
     /pathToFileURL\(join\(app, 'start-bridge\.config\.ts'\)\)[\s\S]*const MOUNTS = \{ \.\.\.DEFAULT_MOUNTS, \.\.\.appConfig\.mounts \};/

@@ -147,7 +147,7 @@ the hold and merges just before the flip.
 ### Worker options
 
 `start-bridge.config.ts` at the app root is app-owned: the codemod creates
-it once (`defineBridgeAppConfig({})`) and never updates or replaces it. The
+it once (with the shared response policy below) and never updates or replaces it. The
 generated `cloudflare/worker.ts` passes its options on, so an app changes
 Worker behaviour without editing generated files:
 
@@ -156,7 +156,7 @@ Worker behaviour without editing generated files:
 | `csp(nonce, { request, response, path })` | `createBridgeHandler({ csp })`: the response's Content-Security-Policy; the generated router already stamps the nonce. Return `null` to keep the response's own policy. Framable paths (`@tuturuuu/utils/framable-paths`, e.g. Web's uploaded WebGL builds with their `sandbox` CSP) always keep the upstream policy untouched |
 | `mounts` | Overrides the generated hosts, `basePath` or `unknownHost` (`'reject'` answers 404 for unlisted hosts) |
 | `apiOrigin(request, { env, path })` | Origin for one unowned `/api/*` request (e.g. Storefront's `/api/v1/inventory/**` to Inventory); `undefined` keeps the central Web API. Forwarding keeps the central forward's base stripping, loop guard and header removal |
-| `wrapResponse(response, { request, env })` | Decorates every response, e.g. a staging noindex header |
+| `wrapResponse(response, { request, env, mounts, publicAssets })` | Decorates every response; use the shared response policy below. The Worker passes its effective mounts and public files |
 | `worker: { workersDev?, compatibilityFlags? }` | Generated Worker settings, applied when the codemod runs: `workers_dev` (default off when `mounts.unknownHost` is `'reject'`, otherwise on) and flags added to the always-on `nodejs_compat` and `global_fetch_strictly_public` (e.g. AI's `enable_request_signal`). They reach `void.config.ts`, the sealed artifact identity and the runtime test, which fails if the config changed without a re-run. A `workers.dev` root host with `workers_dev` off is a codemod problem |
 
 API paths the app owns but forwards (Storefront's Inventory APIs) are listed
@@ -168,6 +168,48 @@ local routes, and the Worker, finding no local handler, forwards them through
 by the browser. The codemod and the runtime test load it with Node's type
 stripping, so keep its imports strippable (packages, or relative paths with
 their `.ts` extension).
+
+### Response policy
+
+Every app uses one tested policy instead of hand-rolled `wrapResponse` code,
+which in four separate reviews kept repeating the same three bugs:
+- caching set only as a default, so a handler's `public, max-age` survived;
+- an asset exemption that ignored the method, so `POST /assets/x` escaped;
+- an existing CSP passed through without `frame-ancestors`.
+
+```ts
+import { createRootResponsePolicy } from '@tuturuuu/start-bridge/response-policy';
+import { defineBridgeAppConfig } from '@tuturuuu/start-bridge/start/app-config';
+
+export default defineBridgeAppConfig<{ TUTURUUU_NOINDEX?: string }>({
+  wrapResponse: createRootResponsePolicy({
+    seo: ({ env }) =>
+      env?.TUTURUUU_NOINDEX === '1' ? 'noindex, nofollow' : 'index, follow',
+    framable: [/^\/embed\//u], // only if other origins may frame these paths
+  }),
+});
+```
+
+- **Every response** gets:
+  - `X-Robots-Tag` from `seo`, which is a string or a function of `{ request, env }`;
+  - `X-Content-Type-Options: nosniff` and `Referrer-Policy: strict-origin-when-cross-origin`;
+  - outside `framable` paths, `X-Frame-Options: DENY`, and `frame-ancestors 'none'` in every CSP policy. An existing `frame-ancestors` is replaced in any letter case, each comma-separated or repeated header policy is covered, and a response without a CSP gets `csp` (default `frame-ancestors 'none'`).
+- **Caching:** only `GET`/`HEAD` requests for `/assets/*` or the app's public files keep their own caching, unless they answer HTML. Every other response is set, not defaulted, to `Cache-Control: private, no-store`, and gains `Vary: Cookie`.
+- **Paths:** `framable` and the asset paths are matched app-relative, so on the `tuturuuu.com/<app>` mount the base is stripped first. WebSocket upgrades (101) pass through untouched.
+
+Migrating an app with a hand-rolled `wrapResponse` (Finance, Tasks, Track,
+Storefront):
+
+1. Replace the function with `createRootResponsePolicy({ seo, framable? })`.
+   Keep the app's robots value as `seo`, for example `'noindex, nofollow, nosnippet'`.
+2. Drop any import of `./src/start-bridge/public-assets.bridge.gen`. The Worker
+   now passes `publicAssets`, and an extensionless relative import cannot be
+   loaded by the codemod or the runtime test, which read the config with Node's
+   type stripping.
+3. Keep `csp` (the nonce policy) as it is. The response policy adds
+   `frame-ancestors 'none'` to it.
+4. Re-run the codemod for the app, so its `cloudflare/worker.ts` passes
+   `mounts` and `publicAssets`, then run `bun check:changed`.
 
 ### Route handlers load lazily
 

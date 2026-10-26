@@ -263,21 +263,26 @@ test('the app-owned Worker config is created once and never overwritten', (t) =>
     (write) => write.path === 'apps/demo/start-bridge.config.ts'
   );
   assert.equal(config?.owner, 'app-owned');
+  // New conversions get the shared response policy by default.
   assert.match(
     config?.content ?? '',
-    /export default defineBridgeAppConfig\(\{\}\);/
+    /import \{ createRootResponsePolicy \} from '@tuturuuu\/start-bridge\/response-policy';/
+  );
+  assert.match(
+    config?.content ?? '',
+    /wrapResponse: createRootResponsePolicy\(\{\n {4}seo: \(\{ env \}\) =>\n {6}env\?\.TUTURUUU_NOINDEX === '1' \? 'noindex, nofollow' : 'index, follow',/
   );
   const worker = first.writes.find(
     (write) => write.path === 'apps/demo/cloudflare/worker.ts'
   )?.content;
   assert.match(worker, /import appConfig from '\.\.\/start-bridge\.config';/);
+  assert.match(worker, /\.\.\.appConfig\.mounts,\n\};/);
+  assert.match(worker, /\n {4}mounts,\n {4}csp: appConfig\.csp,/);
+  // The policy gets the effective mounts and public files from the Worker,
+  // so app configs import no generated module.
   assert.match(
     worker,
-    /\.\.\.appConfig\.mounts,\n {4}\},\n {4}csp: appConfig\.csp,/
-  );
-  assert.match(
-    worker,
-    /appConfig\.wrapResponse\(response, \{ request, env \}\)/
+    /appConfig\.wrapResponse\(response, \{\s*request,\s*env,\s*mounts,\s*publicAssets,?\s*\}\)/
   );
   assert.match(worker, /\n {4}apiOrigin: appConfig\.apiOrigin,\n/);
   applyPlan(root, first, { spawn: noCommands });
