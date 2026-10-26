@@ -28,7 +28,10 @@ record uses `state: 'admitted'` and explicit `surfaces`: `['frontend']` for Cale
 Mail and Apps, or `['frontend', 'realtime-do']` for Meet. Missing/empty/malformed
 records, unexpected fields and unknown workflow names hold publication. Deleting
 a hold never admits publication. Known unrelated publishers keep normal selection,
-and Supabase production migration eligibility keeps its existing gates. Root
+and Supabase production migration eligibility keeps its existing gates. Calendar's legacy
+Vercel production target stays disabled even after native admission. The planner
+selects Calendar's native workflow only; its legacy native-source guard remains
+intact as a final refusal boundary. Root
 `production-publication-policy.test.js` covers policy mutations, planner outcomes,
 CLI outputs and the direct publishers' dependency on the policy job.
 `production-publisher-secrets.test.js` parses all legacy/native workflow jobs and
@@ -57,7 +60,7 @@ The production-first cutover sequence is:
 2. Capture the current DNS record, proxy flag, TTL, every zone route, immutable
    Vercel fallback and old/new Worker versions. Rehearse the exact rollback and
    measure route detachment through verified fallback in under two minutes.
-3. Attach the single reviewed canonical Worker Route. Source sync alone never
+3. Attach the reviewed canonical Worker Route with its scriptless ACME exclusion. Source sync alone never
    attaches routes or activates schedulers.
 4. Immediately verify signed-in EN/VI, auth handoff, provider connection, one read
    and one write. The operator's production browser owns signed-in checks.
@@ -86,10 +89,20 @@ operator-approved Cloudflare-IP firewall bypass while Vercel is the rollback
 origin, then remove that bypass rule once Calendar leaves Vercel. If this
 baseline fails, restore DNS-only immediately. Do not change zone-wide TLS, cache
 or firewall settings. Measure attach/detach/fallback on a disposable noncanonical
-route, then rehearse canonical rollback before creating exactly
-`calendar.tuturuuu.com/*` → `tuturuuu-calendar`. Record its returned route ID.
-Rollback deletes that exact verified route ID and confirms the retained Vercel
-fallback; the accepted proxied baseline avoids a DNS propagation wait.
+route, then prepare two explicit routes:
+
+- `calendar.tuturuuu.com/.well-known/acme-challenge/*` with **no script assigned**.
+- `calendar.tuturuuu.com/*` → `tuturuuu-calendar`.
+
+Create the scriptless exclusion first and capture its returned ID immediately
+before the main route flip. Record the main route ID after attachment. The capture
+tool retains every zone route and reports both named Calendar handles, including
+scriptless exclusions. Rehearse rollback using both exact IDs. Delete the main
+route first, confirm the Vercel fallback, then delete the owned ACME exclusion.
+Preserve any exclusion that predates this cutover instead of deleting another
+operator's route. `calendarRollbackRoutes` validates both handles and deletion
+order; API observations must confirm the captured pattern and owner before each
+delete. The accepted proxied baseline avoids a DNS propagation wait.
 The rollback target is Vercel serving the same legacy behavior as before cutover.
 The accepted CF baseline has robots 200, login redirects 307, protected requests
 401, uncached Vercel identity and GET/HEAD ACME origin reachability. The legacy
@@ -99,14 +112,20 @@ response headers through and the status paths retain the legacy Next responses.
 Record those differences instead of claiming the legacy target passes native
 acceptance. Native smoke and post-flip security expectations remain unchanged.
 
-
 [Vercel uses HTTP-01 for non-wildcard certificate renewal](https://vercel.com/docs/domains/working-with-ssl).
-Calendar's Worker forwards only GET/HEAD requests on the canonical host under
-`/.well-known/acme-challenge/` to the retained origin, without following redirects.
-Other hosts, paths, methods and nondefault ports keep the native host and request
-checks. Regression coverage lives in `worker-entry-acme.test.ts` and
-`root-cutover.test.ts`. Verify the origin path during baseline and after flip;
-a currently valid certificate alone does not establish future renewal safety.
+The more-specific [scriptless route bypasses Workers](https://developers.cloudflare.com/workers/configuration/routing/routes/#matching-behavior)
+and sends ACME traffic to the retained proxied Vercel origin. There is no Worker
+forwarding path. Keep `global_fetch_strictly_public`: fetching the canonical URL
+inside this Worker would re-enter the public route and could recurse. Route
+exclusions apply to the complete matching path prefix; origin handling still owns
+the HTTP method and challenge response. After the flip, verify GET and HEAD ACME
+requests end to end with uncached Vercel identity and no native Worker execution.
+The production publisher filters attachments by `script === name`, so this
+scriptless exclusion does not attach the Worker or prevent its private upload.
+Regression coverage includes `calendar-routes.test.mjs`, `capture.test.mjs`, the
+cutover-host ACME negative case in `root-cutover.test.ts`, and the publisher's
+scriptless-topology control. A currently valid certificate alone does not prove
+future renewal safety.
 
 For Meet restore the captured frontend version, then realtime if changed; preserve
 Custom Domains. For Calendar/Mail/Apps retain their immutable Vercel deployments.

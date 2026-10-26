@@ -83,6 +83,28 @@ describe('Calendar cutover boundary', () => {
     expect(asset).not.toHaveBeenCalled();
   });
 
+  it('does not forward cutover-host ACME requests through global fetch', async () => {
+    suppliers.proxy.mockImplementation(() => NextResponse.next());
+    suppliers.start.mockResolvedValue(
+      new Response('Not Found', { status: 404 })
+    );
+    const fetchOrigin = vi.spyOn(globalThis, 'fetch');
+    try {
+      const response = await handleCalendarRequest(
+        new Request(
+          'https://calendar-cutover.tuturuuu.com/.well-known/acme-challenge/probe'
+        ),
+        env,
+        ctx,
+        telemetry
+      );
+      expect(response.status).toBe(404);
+      expect(fetchOrigin).not.toHaveBeenCalled();
+    } finally {
+      fetchOrigin.mockRestore();
+    }
+  });
+
   it.each(['GET', 'HEAD'])(
     'serves exact public build-info %s without ambient auth or dispatch',
     async (method) => {

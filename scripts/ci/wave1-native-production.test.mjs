@@ -54,6 +54,7 @@ function setup(t, { admitted = true } = {}) {
     duringUpload: false,
     priorMode: 'started',
     attachedRoute: false,
+    scriptlessAcme: false,
     publicServing: null,
     calls: [],
   };
@@ -165,7 +166,19 @@ function setup(t, { admitted = true } = {}) {
                 script: receipt.profile.name,
               },
             ]
-          : [{ id: 'unrelated', script: 'another-worker' }];
+          : [
+              { id: 'unrelated', script: 'another-worker' },
+              ...(state.scriptlessAcme
+                ? [
+                    {
+                      id: 'acme',
+                      pattern:
+                        'calendar.tuturuuu.com/.well-known/acme-challenge/*',
+                      script: null,
+                    },
+                  ]
+                : []),
+            ];
     else if (url.endsWith('/subdomain'))
       result = {
         enabled: state.publicServing === 'workers.dev',
@@ -656,3 +669,11 @@ for (const [name, mutate] of [
     );
     assert.equal(p.state.writes, 0);
   });
+
+test('scriptless ACME exclusion is not a Worker serving attachment', async (t) => {
+  const p = setup(t);
+  p.state.scriptlessAcme = true;
+  const result = await p.run();
+  assert.equal(result.state, 'accepted-private');
+  assert.equal(p.state.writes, 1);
+});
