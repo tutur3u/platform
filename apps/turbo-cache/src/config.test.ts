@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { admit, BUDGET_SNAPSHOT_BYTES, emptyState } from './budget';
+import { admit, emptyState } from './budget';
 import { LIMITS, parseTokens, readConfig } from './config';
 
 const SHA = 'a'.repeat(64);
@@ -68,7 +68,7 @@ describe('budget accounting', () => {
   const limits = {
     dailyClassA: 12,
     dailyClassB: 20,
-    dailyWriteBytes: BUDGET_SNAPSHOT_BYTES * 2 + 100,
+    dailyWriteBytes: 100,
     monthlyClassAFence: 22,
   };
 
@@ -92,7 +92,7 @@ describe('budget accounting', () => {
       allowed: false,
       reason: 'daily-write-bytes',
     });
-    expect(result.state.dailyClassA).toBe(2);
+    expect(result.state.dailyClassA).toBe(1);
   });
 
   it('resets the monthly counter with the month but never the fence', () => {
@@ -111,10 +111,10 @@ describe('budget accounting', () => {
       nextDay
     );
     expect(fresh.allowed).toBe(true);
-    expect(fresh.state.monthlyClassA).toBe(12);
+    expect(fresh.state.monthlyClassA).toBe(11);
     const tripped = admit(
       fresh.state,
-      { operation: 'class-a', count: 11, bytes: 0 },
+      { operation: 'class-a', count: 12, bytes: 0 },
       limits,
       nextDay
     );
@@ -124,7 +124,7 @@ describe('budget accounting', () => {
     });
     const terminal = admit(
       { ...fresh.state, dailyClassA: 0, dailyWriteBytes: 0 },
-      { operation: 'class-a', count: 9, bytes: 0 },
+      { operation: 'class-a', count: 11, bytes: 0 },
       limits,
       nextDay
     );

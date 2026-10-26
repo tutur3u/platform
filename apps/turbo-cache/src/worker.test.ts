@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { sha256Hex } from './auth';
 import { emptyState } from './budget';
-import { BUDGET_KEY } from './budget-store';
+import { BUDGET_STORAGE_KEY } from './budget-object';
 import type { Env } from './config';
 import {
   createBudgetNamespace,
@@ -29,7 +29,7 @@ async function setup(overrides: Partial<Env> = {}) {
   const now = () => clock;
   bucket = new FakeBucket(now);
   storage = new FakeStorage();
-  await bucket.put(BUDGET_KEY, JSON.stringify(emptyState(clock)));
+  await storage.put(BUDGET_STORAGE_KEY, emptyState(clock));
   const created = createBudgetNamespace(storage, () => env, now);
   budget = created.counter;
   env = {
@@ -214,16 +214,16 @@ describe('operation accounting', () => {
     await call('GET', '/v8/artifacts/1111111111111111', TOKENS.branch);
     expect(bucket.ops.get).toBe(4);
     expect(budget.fetches).toBe(4);
-    expect(bucket.controlOps).toEqual({ get: 8, head: 0, put: 5 });
-    expect(storage.values.size).toBe(0);
+    expect(bucket.controlOps).toEqual({ get: 0, head: 0, put: 0 });
+    expect(storage.values.size).toBe(1);
   });
 
-  it('answers events and status without artifact or admission operations', async () => {
+  it('answers events and status without artifact operations or reservations', async () => {
     await call('POST', '/v8/artifacts/events', TOKENS.main, { body: '[]' });
     await call('GET', '/v8/artifacts/status', TOKENS.main);
-    expect(bucket.controlOps).toEqual({ get: 1, head: 0, put: 1 });
+    expect(bucket.controlOps).toEqual({ get: 0, head: 0, put: 0 });
     expect(bucket.ops).toEqual({ get: 0, head: 0, put: 0 });
-    expect(budget.fetches).toBe(0);
+    expect(budget.fetches).toBe(1);
   });
 
   it('bounds batch queries', async () => {
@@ -259,27 +259,30 @@ describe('operation accounting', () => {
 });
 
 describe('durable stop fence', () => {
-  it('pauses writes at the daily cap and resumes the next UTC day', async () => {
-    await setup({ TURBO_CACHE_DAILY_CLASS_A: '2' });
+  it('pauses capped writes, keeps reads available and resumes writes the next UTC day', async () => {
+    await setup({ TURBO_CACHE_DAILY_CLASS_A: '1' });
     expect((await put(TOKENS.main)).status).toBe(202);
     const denied = await put(TOKENS.main);
     expect(denied.status).toBe(503);
     expect(denied.headers.get('x-turbo-cache-denied')).toBe('daily-class-a');
     expect(bucket.ops.put).toBe(1);
-    // The isolate memo skips the Durable Object while paused.
+    // The first denial queries authority; the isolate memo skips later queries.
     await put(TOKENS.main);
-    expect(budget.fetches).toBe(1);
+    expect(budget.fetches).toBe(2);
     expect(
       await (await call('GET', '/v8/artifacts/status', TOKENS.main)).json()
     ).toEqual({
-      status: 'paused',
+      status: 'enabled',
     });
+    expect(
+      (await call('GET', `/v8/artifacts/${HASH}`, TOKENS.main)).status
+    ).toBe(200);
     clock = new Date(clock.getTime() + DAY_MS);
     expect((await put(TOKENS.main)).status).toBe(202);
   });
 
   it('trips a fence at the monthly cap that survives restarts until an operator reset', async () => {
-    await setup({ TURBO_CACHE_MONTHLY_CLASS_A_FENCE: '2' });
+    await setup({ TURBO_CACHE_MONTHLY_CLASS_A_FENCE: '1' });
     clock = new Date('2026-10-31T23:59:00Z');
     expect((await put(TOKENS.main)).status).toBe(202);
     expect((await put(TOKENS.main)).headers.get('x-turbo-cache-denied')).toBe(

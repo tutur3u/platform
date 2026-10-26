@@ -1,5 +1,5 @@
 import { sha256Hex } from './auth';
-import { TurboCacheBudget } from './budget-object';
+import { type BudgetTransaction, TurboCacheBudget } from './budget-object';
 import type {
   Env,
   R2BucketLike,
@@ -62,12 +62,30 @@ export class FakeBucket implements R2BucketLike {
 }
 
 export class FakeStorage {
+  private pending: Promise<void> = Promise.resolve();
   readonly values = new Map<string, unknown>();
   async get<T>(key: string) {
     return structuredClone(this.values.get(key)) as T | undefined;
   }
   async put<T>(key: string, value: T) {
     this.values.set(key, structuredClone(value));
+  }
+  transaction<T>(callback: (txn: BudgetTransaction) => Promise<T>): Promise<T> {
+    const result = this.pending.then(async () => {
+      const before = new Map(this.values);
+      try {
+        return await callback(this);
+      } catch (error) {
+        this.values.clear();
+        for (const [key, value] of before) this.values.set(key, value);
+        throw error;
+      }
+    });
+    this.pending = result.then(
+      () => {},
+      () => {}
+    );
+    return result;
   }
 }
 

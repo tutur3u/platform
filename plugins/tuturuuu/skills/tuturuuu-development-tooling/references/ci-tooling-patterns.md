@@ -103,25 +103,26 @@ Do not copy upstream examples that deliberately retry forever into finite jobs.
 See the adoption guidance's runaway-work acceptance table; live settings are
 separate evidence, never implied by documentation or build success.
 
-For Turbo cache admission, `_control/budget-v1` in R2 is the single durable
-authority. Check it outside the DO before admission; do not use an isolate memo
-or eventually consistent negative cache as a stop fence. Queue the DO's external
-R2 read/modify/write path explicitly, persist successful reservations before
-artifact access, and perform no writes on denials or unchanged admin actions.
-Account for control GETs/PUTs and the largest hash-by-scope batch when setting
-subrequest limits. Preserve charges after unknown PUT outcomes and never retry
-admission automatically. Keep `_control/` outside artifact lifecycle cleanup.
-The runbook records first initialization and prior DO-state migration; never
-replace lost state with empty counters on an enabled cache. Denied ingress and
+For Turbo cache admission, `budget-v2` in the global DO is the single durable
+authority. Use one storage transaction for each reservation/admin mutation and
+commit before artifact access. Never use R2 snapshots, isolate memory or an
+eventually consistent cache as positive admission authority. Preserve committed
+charges after unknown outcomes; do not retry reservations or refund failed
+artifact work. Denials and unchanged admin actions perform no writes. There are
+no R2 control writes or background checkpoint jobs, avoiding the same-key write
+limit. Legacy `_control/budget-v1` is read only on explicit first initialization;
+disable/drain the previous revision and reconcile unknown writes before import.
+Never reset lost usage to zero or delete DO state as recovery. Count artifact
+operations, DO/rate-limit calls and separate DO storage costs. Denied ingress and
 failed attempts remain traffic-dependent costs requiring the independent mode-off
-stop. `apps/turbo-cache/src/stop-regression.test.ts` owns the operation-count,
-restart, failure, concurrency and maximum-batch fixtures. The nonpublishing
+stop. `apps/turbo-cache/src/{stop-regression,budget-integrity}.test.ts` cover
+failure/unknown outcomes, delayed legacy writes after stop, restart, burst 429s,
+concurrency and maximum batches. The nonpublishing
 `turbo-cache-cloudflare.yaml` / `build-acceptance` job must build the exact PR
-head without a compiled-artifact cache and exercise both source and emitted
-Workers in workerd. The cache runtime script uses the shared cf harness with
-random disposable secrets and isolated temporary persistence; it verifies the
-default-off boundary and authenticated R2/DO initialization, trip and restart.
-Keep hosted enabled-traffic/cost acceptance separate from this local-runtime gate.
+head without compiled-artifact caches and exercise source and emitted Workers in
+workerd. The shared cf harness uses disposable secrets and isolated persistence;
+it verifies default-off, transactional initialization and stop/restart. Keep
+hosted enabled-traffic/cost acceptance separate from local-runtime evidence.
 
 ## Cloudflare backend ownership guard
 

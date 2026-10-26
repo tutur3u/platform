@@ -372,26 +372,32 @@ separate release evidence. Production publication stays held for all four apps.
 ### Turbo remote cache: R2 operation envelope
 
 `apps/turbo-cache` ships with `TURBO_CACHE_MODE=off`, which performs no R2
-operations on artifact paths. Its authoritative budget/fence is an R2 snapshot
-outside the artifact lifecycle prefix. The Worker reads that strongly consistent
-snapshot before DO admission; missing/invalid/unreadable state fails closed.
-The DO queues external I/O and persists successful reservations before artifact
-access, charging the control PUT, two control GETs, artifact operations and a
-4 KiB control-write allowance. Denials and repeated unchanged admin actions do
-not write. The snapshot survives isolate/DO restarts and unknown committed PUT
-outcomes. No admission retries or background scheduling exist.
+or DO operations on artifact paths. `budget-v2` in the global Durable Object is
+the authoritative fence/counters. Every reservation and admin mutation uses a
+storage transaction, committed before allowance. Missing/corrupt/unavailable
+state fails closed. Denials and repeated unchanged admin actions do not write;
+unknown reservation outcomes are denied without retry or refund. Native DO
+storage/output gates preserve charges and fences across restart.
 
-The maximum batch is 50 hashes × four scopes (200 HEADs). Including control,
-DO and rate-limit calls, its conservative operation count is 205; the configured
-subrequest ceiling is 208. `apps/turbo-cache/src/stop-regression.test.ts` checks
-fresh-isolate denial counts, persistent read failure, unknown writes, concurrent
-reservations, coalesced admin actions and this batch envelope with fixtures.
-Exact-commit CI/runtime acceptance remains required. Denied/status ingress still
-costs Worker requests and control reads; failed admission attempts also cost
-resources. The service has no fixed total-spend guarantee. Set mode off to stop
-artifact-path storage/DO calls, or disable the Worker route to stop invocations.
-The [runbook](../devops/turbo-remote-cache.mdx) owns initialization, prior-state
-migration, the revised cost model, cutover and the stop procedure.
+There are **zero R2 control writes**, including initialization, admin actions and
+bursts. `_control/budget-v1` is read only on explicit first initialization to
+import prior usage; it is never an admission source or live checkpoint. Delayed
+legacy writes cannot overwrite migrated DO state. Disable/drain the old revision
+and reconcile unresolved writes before import. No periodic job, alarm or retry
+loop exists; each request has at most one admission transaction.
+
+The maximum batch is 50 hashes × four scopes (200 HEADs). Including DO and
+rate-limit calls, its conservative operation count is 202 under the configured
+208 ceiling. `apps/turbo-cache/src/stop-regression.test.ts` and
+`budget-integrity.test.ts` cover counts, failed/unknown transactions, concurrent
+reservations, delayed legacy completion after stop and restart, a 600-request
+burst with simulated control-write 429s, migration and coalesced admin actions.
+The workerd script verifies actual transactional initialization and fence/restart.
+Exact-commit build/runtime CI remains required. DO requests/storage and denied
+or status ingress remain traffic-dependent costs outside R2 admission counters;
+there is no fixed total-spend guarantee. Set mode off to stop artifact storage/DO
+calls or disable the Worker route to stop invocations. The
+[runbook](../devops/turbo-remote-cache.mdx) owns migration, pricing review and stop.
 
 ## Incident evidence
 

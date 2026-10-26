@@ -1,7 +1,7 @@
 ---
 title: "Turbo Remote Cache"
 description: "Self-hosted Turborepo remote cache on Cloudflare R2: trust model, configuration, cost bounds, cutover, and rollback."
-updatedAt: "2026-10-24"
+updatedAt: "2026-10-26"
 ---
 
 `apps/turbo-cache` is a Cloudflare Worker that implements the Turborepo remote
@@ -30,30 +30,39 @@ the Caching page (`apps/docs/build/devops/caching.mdx`).
   older than the TTL (default 7 days, ceiling 30) are served as misses even if
   the R2 lifecycle rule lags. Batch queries accept at most 50 hashes. A rate
   limiter allows 600 requests per token per 10 seconds.
-- **Durable stop fence:** `_control/budget-v1` in R2 is the authoritative
-  budget and fence. The Worker reads it directly, without edge/KV caching,
-  before contacting `TurboCacheBudget`. Missing, malformed or unreadable state
-  fails closed. The Durable Object serializes reservations with an explicit
-  promise queue because R2 I/O does not use DO storage input gates.
-  - Daily class A, class B and write-byte caps deny reservations until the
-    next UTC day. Reads also consume class A for their control snapshot PUT.
-  - A successful reservation that exhausts the monthly class A allowance
-    persists a fence that survives month rollover until an operator reset.
-    A reservation that does not fit the remaining allowance is denied without
-    mutating state; smaller reservations can still fit.
-  - Every successful reservation persists its full charge before allowing
-    artifact access. There are no admission retries. A lost response can waste
-    a reservation, but cannot erase it after restart.
-  - Denials perform no PUTs or DO storage writes. A fresh isolate sees the same
-    snapshot and skips DO admission. A request already past preflight can reach
-    the DO, which rechecks and denies without writing. The 60-second negative
-    memo only saves additional control reads within one isolate.
-  - Denied reads return a miss; denied writes return `503`.
+- **Durable stop fence:** `budget-v2` in the global `TurboCacheBudget`
+  Durable Object is the authoritative budget and fence. Every reservation and
+  admin mutation reads and writes it in one storage transaction. DO output
+  gates keep responses behind durable commits. Missing, malformed or unreadable
+  state fails closed; no positive allowance is cached in memory.
+  - Daily class A, class B and write-byte caps cover artifact R2 operations
+    and deny reservations until the next UTC day. Exhausting daily class A
+    or write bytes blocks uploads while reads remain available within class B;
+    status stays `enabled` while reads can proceed. The monthly fence stops both.
+  - Exhausting the monthly class A allowance persists a fence that survives
+    month rollover and DO/Worker restarts until an authenticated operator reset.
+  - Charges commit before artifact access. There are no application admission
+    retries, refunds, alarms or checkpoint jobs. An ambiguous response denies
+    access and retains any committed charge.
+  - Denials and unchanged admin actions do not write. A 60-second negative
+    memo saves repeated DO calls within an isolate; fresh isolates consult the
+    same transactional authority. Denied reads return a miss; denied writes
+    return `503`.
+  - R2 `_control/budget-v1` is a read-only migration source, never a live
+    checkpoint or admission source. No control-key PUTs occur, so Turbo bursts
+    cannot hit R2's same-key write limit. Delayed legacy PUTs cannot overwrite
+    the DO fence or counters after migration.
 - **Admin:** `GET /admin/budget` and `POST /admin/fence`
   (`{"action":"trip"}` or `{"action":"reset"}`) require the admin token, whose
-  SHA-256 is `TURBO_CACHE_ADMIN_TOKEN_SHA256`. Repeated trip/reset actions
-  coalesce without rewriting an unchanged fence. Status reads the durable
-  snapshot; events are discarded without storage work.
+  SHA-256 is `TURBO_CACHE_ADMIN_TOKEN_SHA256`. The first fence action imports
+  legacy R2 counters if present; a failed/invalid import fails closed. Status
+  reads DO state without reserving; events are discarded without storage work.
+
+The authority boundary follows Cloudflare's
+[storage transaction guarantees](https://developers.cloudflare.com/durable-objects/api/sqlite-storage-api/#transaction).
+R2's [last-completing-writer semantics](https://developers.cloudflare.com/r2/reference/consistency/)
+and [same-key write limit](https://developers.cloudflare.com/r2/platform/limits/)
+are why live control writes are removed.
 
 ## Trust model
 
@@ -92,7 +101,8 @@ Cloudflare resources (owner creates):
 
 - R2 bucket `tuturuuu-turbo-cache` with a lifecycle rule that deletes objects
   under `v1/` after 7 days. Exclude `_control/` from expiry and cleanup. Never
-  delete the budget snapshot to clear a fence or recover an outage.
+  delete retained migration evidence or DO budget storage to clear a fence or
+  recover an outage.
 - Custom domain `turbo-cache.tuturuuu.com` on the Worker.
 
 GitHub repository settings (owner sets at cutover):
@@ -118,44 +128,36 @@ From the 2026-10-16 to 2026-10-23 CI inventory:
   writes under the default trust model.
 
 A successful lookup costs one Worker request, one Durable Object request,
-two control GETs, one control PUT and up to one artifact GET/HEAD per readable
-scope. An upload costs two control GETs, one control PUT and one artifact PUT.
-The snapshot reserves all these R2 operations, plus a conservative 4 KiB for
-its own write payload, before serving the artifact. An unsuccessful artifact
-write retains its reservation.
+one transactional budget update and up to one R2 artifact GET/HEAD per readable
+scope. An upload reserves one artifact PUT and its declared bytes. A failed
+artifact write retains its reservation. No request writes an R2 control object.
 
-A batch reserves `hashes × readable scopes` HEADs, two control GETs and one
-control PUT. The largest accepted batch is 50 hashes across four scopes:
-200 artifact HEADs plus three control operations, one DO call and one rate-limit
-call. The configured 208-subrequest ceiling covers this conservative 205-operation
-envelope, including nested DO work. There is no retry fan-out.
+A batch reserves `hashes × readable scopes` HEADs. The largest accepted batch
+is 50 hashes across four scopes: 200 artifact HEADs, one DO call and one
+rate-limit call, a conservative 202-operation envelope under the configured
+208-subrequest ceiling. There is no retry fan-out.
 
-With about 1.4M successful monthly lookups and 175,000 uploads, control accounting
-alone adds about 1.575M R2 PUTs and 3.15M R2 GETs; artifact operations are additional.
-The previous estimate that charged only artifact operations is invalid. Validate
-current account pricing and measured traffic before enabling the service.
+The default monthly 2M class A allowance covers artifact PUTs. The daily
+100,000 class A, 1M class B and 20 GiB write-byte allowances cover artifact
+operations/bytes. DO requests, duration and transactional storage have separate
+pricing and are outside these R2 counters. Validate current account pricing
+and measured traffic before enablement; the historical lookup inventory above
+is an input to that review, not a current bill prediction.
 
-The default monthly 2M class A allowance includes control PUTs and artifact PUTs.
-The daily 100,000 class A and 1M class B allowances also include control work for
-successful reservations. Daily write bytes include the control payload allowance.
-Admin trip/reset writes are authenticated operator actions outside these counters;
-repeating an unchanged action performs no write.
+These are bounds on successful artifact reservations, not a total bill cap.
+Denied fresh isolates and status requests still cost Worker/DO requests and
+storage reads. Denials and unchanged admin actions do not write. Failed attempts
+can consume resources; each request attempts admission once, while ingress is
+unbounded. Use `TURBO_CACHE_MODE=off` to stop artifact-path storage/admission
+activity and disable the Worker route to stop invocations. Rate limits, CPU
+caps and alerts do not cap total spend.
 
-These are bounds on successful reservations, not a total bill cap. Denied fresh
-isolates and status requests still cost one Worker request and one R2 control GET.
-Requests already past preflight can add a DO request and control GET after the cap
-is exhausted. Unavailable DOs or failed uncommitted R2 PUTs can also incur failed
-attempt costs; each request attempts admission once, but new ingress is not a
-bounded retry job. No fixed monthly total follows from these counters. Use
-`TURBO_CACHE_MODE=off` to stop all artifact-path storage/admission activity during
-an outage or unexpected ingress, and disable the Worker route to stop Worker
-invocations. Ingress rate limits and billing alerts are operational controls,
-not total-spend caps.
-
-`src/stop-regression.test.ts` pins denied requests across fresh isolates/DO
-restarts, zero denial writes, serialized racing reservations, coalesced admin
-actions, failed reads, unknown committed PUT outcomes and the maximum batch cost.
-These use in-memory R2/DO fixtures.
+`src/stop-regression.test.ts` and `src/budget-integrity.test.ts` cover concurrent
+reservations, zero denial writes, failed/unknown transactions, stop/restart,
+legacy PUT completion after a successful stop, a 600-request burst with simulated
+R2 control-write 429s, migration and the maximum batch cost. These use in-memory
+R2/DO fixtures. The real workerd check below covers native transactional
+initialization, fence writes, duplicate actions and persistence across restart.
 
 ## CI qualification
 
@@ -169,7 +171,7 @@ the source Worker and the emitted cf Build Output (the latter with
 SHA. This workflow qualifies artifacts only and has no publication job.
 
 The real local workerd checks exercise the default-disabled API, unauthorized
-admin rejection, missing-snapshot refusal, authenticated R2 initialization through
+admin rejection, missing-state refusal, authenticated transactional initialization through
 the Durable Object, repeated trip, fence persistence across workerd restart and
 operator reset. They use random disposable credentials, loopback HTTP and an
 isolated temporary persistence directory cleaned on close or failure. Run the
@@ -184,15 +186,24 @@ account pricing and live storage/stop acceptance remain release-owner gates.
    domain, and the two Worker secrets. Generate tokens locally, store only
    their SHA-256 digests in `TURBO_CACHE_TOKENS`, and hand the raw tokens to
    their holders through the secret store.
-2. Deploy the Worker with `TURBO_CACHE_MODE=off`. Before first enablement,
-   initialize the missing snapshot with authenticated `POST /admin/fence` and
-   `{"action":"reset"}`. This seeds empty counters only for a never-enabled
-   cache. If an older deployment used DO-local accounting, keep mode off, drain
-   its requests, retain that state and migrate the reviewed counters/fence to
-   R2 before enabling this revision; never reset prior usage to zero. Confirm
-   `GET /v8/artifacts/status` returns `disabled`, then verify ordinary
-   disabled artifact requests add no R2 operations. Admin initialization itself
-   performs one control GET and one control PUT.
+2. Deploy with `TURBO_CACHE_MODE=off`. For an existing service, disable and
+   drain the previous deployment first. Reconcile every unknown legacy R2 PUT
+   before importing usage; a missing/readable old snapshot does not prove an
+   in-flight operation failed. Preserve the previous counters and fence as
+   migration evidence. First initialization uses authenticated
+   `POST /admin/fence` with `{"action":"trip"}` to import the legacy snapshot
+   into DO storage while remaining fenced. If there is no prior usage, it seeds
+   empty counters and trips. Verify `GET /admin/budget` against the reviewed
+   usage, then explicitly reset the fence when enabling is authorized. An older
+   DO-local budget needs reviewed migration into this state; do not erase it.
+   Never initialize empty counters as outage recovery. Confirm status is
+   `disabled` and disabled artifact requests add no R2/DO operations. The first
+   admin initialization reads legacy R2 once and commits one DO transaction;
+   subsequent actions do no R2 control work. Keep the same DO identity/binding
+   and `budget-v2` storage across upgrades and rollback. Rolling back to an
+   R2-authoritative version requires a separate reviewed counter migration,
+   with service disabled and requests drained.
+
 3. Set `TURBO_CACHE_MODE=read-write`. From one trusted machine, run a small
    task twice with the new `TURBO_API` and token, then confirm a `remote` hit
    and the budget counters (`GET /admin/budget`).
@@ -210,8 +221,8 @@ account pricing and live storage/stop acceptance remain release-owner gates.
 ## Rollback
 
 - **Durable pause:** `POST /admin/fence` with `{"action":"trip"}`. New
-  artifact requests read the fence and skip DO admission and artifact I/O;
-  control reads and Worker invocations continue. Already reserved work may
+  artifact requests consult the DO and skip artifact I/O; Worker/DO reads
+  continue. Already reserved work may
   finish.
 - **Independent storage/admission stop:** set `TURBO_CACHE_MODE=off`, including
   when the DO is unavailable. Drain the prior revision. Ordinary disabled

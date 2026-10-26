@@ -24,7 +24,7 @@ export default defineConfig({
         exportName: 'TurboCacheBudget',
       }),
       // 600 requests per token per 10 s: ingress smoothing only. The
-      // Durable snapshot bounds admissions; ingress still costs control reads.
+      // DO transactions bound admissions; denied ingress still costs DO reads.
       REQUEST_LIMITER: bindings.rateLimit({
         namespace: '4207',
         simple: { limit: 600, period: 10 },

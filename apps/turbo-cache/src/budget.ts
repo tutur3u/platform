@@ -1,8 +1,6 @@
 import type { BudgetLimits } from './config';
 
-// Successful reservations include the control snapshot PUT and two GETs.
-// Denied ingress still costs a control GET; that traffic-dependent cost is
-// outside these admitted-operation counters.
+// R2 counters cover artifact operations only. DO requests/storage are separate.
 
 export type OperationClass = 'class-a' | 'class-b';
 
@@ -99,9 +97,9 @@ export function admit(
   const state = rollState(previous, now);
   if (state.fence.tripped) return { allowed: false, reason: 'fenced', state };
 
-  const classA = 1 + (request.operation === 'class-a' ? request.count : 0);
-  const classB = 2 + (request.operation === 'class-b' ? request.count : 0);
-  const writeBytes = BUDGET_SNAPSHOT_BYTES + request.bytes;
+  const classA = request.operation === 'class-a' ? request.count : 0;
+  const classB = request.operation === 'class-b' ? request.count : 0;
+  const writeBytes = request.bytes;
   if (state.monthlyClassA + classA > limits.monthlyClassAFence)
     return { allowed: false, reason: 'monthly-class-a', state };
   if (state.dailyClassA + classA > limits.dailyClassA)

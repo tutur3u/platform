@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 import { sha256Hex } from './auth';
 import { emptyState } from './budget';
-import { TurboCacheBudget } from './budget-object';
+import { BUDGET_STORAGE_KEY, TurboCacheBudget } from './budget-object';
 import type { Env } from './config';
 import {
   createBudgetNamespace,
@@ -13,7 +13,6 @@ import {
 } from './test-fakes';
 import { createHandler } from './worker';
 
-const KEY = '_control/budget-v1';
 const HASH = '0123456789abcdef';
 
 async function fixture(overrides: Partial<Env> = {}) {
@@ -34,7 +33,7 @@ async function fixture(overrides: Partial<Env> = {}) {
     TURBO_CACHE_ADMIN_TOKEN_SHA256: await sha256Hex(TOKENS.admin),
     ...overrides,
   };
-  await bucket.put(KEY, JSON.stringify(emptyState(clock)));
+  await storage.put(BUDGET_STORAGE_KEY, emptyState(clock));
   const call = (
     method = 'PUT',
     path = `/v8/artifacts/${HASH}`,
@@ -66,8 +65,8 @@ async function fixture(overrides: Partial<Env> = {}) {
 }
 
 describe('durable admission cost regressions', () => {
-  it('stops DO requests and all writes for repeated denials across fresh isolates and DO restarts', async () => {
-    const f = await fixture({ TURBO_CACHE_DAILY_CLASS_A: '2' });
+  it('bounds fresh-isolate denials to one DO call and zero writes across restarts', async () => {
+    const f = await fixture({ TURBO_CACHE_DAILY_CLASS_A: '1' });
     expect((await f.call()).status).toBe(202);
     await f.call();
     await f.call();
@@ -75,7 +74,7 @@ describe('durable admission cost regressions', () => {
     const writes = vi.spyOn(f.bucket, 'put');
     const storageWrites = vi.spyOn(f.storage, 'put');
     for (let i = 0; i < 12; i++) expect((await f.call()).status).toBe(503);
-    expect(f.counter.fetches).toBe(requests);
+    expect(f.counter.fetches).toBe(requests + 12);
     expect(writes).not.toHaveBeenCalled();
     expect(storageWrites).not.toHaveBeenCalled();
     f.advance();
@@ -88,8 +87,7 @@ describe('durable admission cost regressions', () => {
       ...emptyState(new Date('2026-10-23T00:00:00Z')),
       fence: { tripped: true, reason: 'operator' },
     };
-    await f.storage.put('budget', state);
-    await f.bucket.put(KEY, JSON.stringify(state));
+    await f.storage.put(BUDGET_STORAGE_KEY, state);
     const storageWrites = vi.spyOn(f.storage, 'put');
     const puts = f.bucket.ops.put;
     const stub = f.env.BUDGET.get(f.env.BUDGET.idFromName('global'));
@@ -104,48 +102,37 @@ describe('durable admission cost regressions', () => {
     expect(f.bucket.ops.put).toBe(puts);
   });
 
-  it('fails closed without a provisioned durable snapshot, before calling the DO', async () => {
+  it('fails closed without provisioned DO state', async () => {
     const f = await fixture();
-    f.bucket.objects.delete(KEY);
+    f.storage.values.delete(BUDGET_STORAGE_KEY);
     expect((await f.call()).status).toBe(503);
-    expect(f.counter.fetches).toBe(0);
-  });
-
-  it('stops before the DO on persistent snapshot-read failures across fresh isolates', async () => {
-    const f = await fixture();
-    vi.spyOn(f.bucket, 'get').mockRejectedValue(
-      new Error('storage unavailable')
-    );
-    const writes = vi.spyOn(f.bucket, 'put');
-    for (let i = 0; i < 12; i++) expect((await f.call()).status).toBe(503);
-    expect(f.counter.fetches).toBe(0);
-    expect(writes).not.toHaveBeenCalled();
-    expect(f.bucket.ops).toEqual({ get: 0, head: 0, put: 0 });
+    expect(f.counter.fetches).toBe(1);
+    expect(f.bucket.ops.put).toBe(0);
   });
 
   it('retains an unknown committed reservation after restart without retrying', async () => {
-    const f = await fixture({ TURBO_CACHE_DAILY_CLASS_A: '2' });
-    const original = f.bucket.put.bind(f.bucket);
+    const f = await fixture({ TURBO_CACHE_DAILY_CLASS_A: '1' });
+    const transaction = f.storage.transaction.bind(f.storage);
     const writes = vi
-      .spyOn(f.bucket, 'put')
-      .mockImplementation(async (...args) => {
-        const result = await original(...args);
-        if (args[0] === KEY) throw new Error('response lost after commit');
-        return result;
+      .spyOn(f.storage, 'transaction')
+      .mockImplementationOnce(async (callback) => {
+        await transaction(callback);
+        throw new Error('response lost after commit');
       });
     expect((await f.call()).status).toBe(503);
     expect(writes).toHaveBeenCalledTimes(1);
-    expect(f.counter.fetches).toBe(1);
-    for (let i = 0; i < 12; i++) expect((await f.call()).status).toBe(503);
-    expect(writes).toHaveBeenCalledTimes(1);
-    expect(f.counter.fetches).toBe(1);
     expect(f.bucket.ops.put).toBe(0);
+    for (let i = 0; i < 12; i++) expect((await f.call()).status).toBe(503);
+    expect(f.bucket.ops.put).toBe(0);
+    expect(await f.storage.get(BUDGET_STORAGE_KEY)).toMatchObject({
+      dailyClassA: 1,
+    });
   });
 
   it('does not retry a failed reservation or grant artifact access', async () => {
     const f = await fixture();
     const writes = vi
-      .spyOn(f.bucket, 'put')
+      .spyOn(f.storage, 'put')
       .mockRejectedValue(new Error('unavailable'));
     expect((await f.call()).status).toBe(503);
     expect(writes).toHaveBeenCalledTimes(1);
@@ -153,14 +140,14 @@ describe('durable admission cost regressions', () => {
     expect(f.bucket.ops.put).toBe(0);
   });
 
-  it('serializes racing external reads and coalesces repeated stop/reset mutations', async () => {
-    const f = await fixture({ TURBO_CACHE_DAILY_CLASS_A: '2' });
+  it('serializes racing transactions and coalesces repeated stop/reset mutations', async () => {
+    const f = await fixture({ TURBO_CACHE_DAILY_CLASS_A: '1' });
     const object = new TurboCacheBudget(
-      {},
+      { storage: f.storage },
       f.env,
       () => new Date('2026-10-23T00:00:00Z')
     );
-    const writes = vi.spyOn(f.bucket, 'put');
+    const writes = vi.spyOn(f.storage, 'put');
     const responses = await Promise.all(
       Array.from({ length: 20 }, () =>
         object.fetch(
@@ -231,7 +218,7 @@ describe('durable admission cost regressions', () => {
       controlBefore.get +
       f.bucket.controlOps.put -
       controlBefore.put;
-    expect(r2 + control + f.counter.fetches + 1).toBe(205);
+    expect(r2 + control + f.counter.fetches + 1).toBe(202);
     expect(r2 + control + f.counter.fetches + 1).toBeLessThanOrEqual(limit);
   });
 });

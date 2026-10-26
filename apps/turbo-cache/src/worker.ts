@@ -7,8 +7,7 @@ import {
   writeArtifact,
 } from './artifacts';
 import { bearerDigest, findToken, timingSafeEqualHex } from './auth';
-import { type OperationClass, admit as reserve } from './budget';
-import { readBudget } from './budget-store';
+import { isBudgetState, type OperationClass, admit as reserve } from './budget';
 import {
   type CacheConfig,
   type Env,
@@ -19,8 +18,7 @@ import {
 export { TurboCacheBudget } from './budget-object';
 
 const ARTIFACT_PATH = /^\/v8\/artifacts\/([^/]+)$/;
-// A short negative cache saves control reads. Correctness across isolates
-// comes from the authoritative R2 snapshot, never this optimization.
+// Denials are memoized per isolate; every allowance is durably reserved in the DO.
 const DENIAL_MEMO_MS = 60_000;
 
 export interface HandlerState {
@@ -54,19 +52,6 @@ async function admit(
   if ((state.deniedUntil[operation] ?? 0) > now)
     return { allowed: false, reason: 'paused' };
   try {
-    const snapshot = await readBudget(env.ARTIFACTS);
-    const preflight = snapshot
-      ? reserve(
-          snapshot,
-          { operation, count, bytes },
-          readConfig(env).budget,
-          state.now()
-        )
-      : { allowed: false, reason: 'budget_unavailable' };
-    if (!preflight.allowed) {
-      state.deniedUntil[operation] = now + DENIAL_MEMO_MS;
-      return { allowed: false, reason: preflight.reason };
-    }
     const response = await budgetStub(env).fetch('https://budget/admit', {
       method: 'POST',
       body: JSON.stringify({ operation, count, bytes }),
@@ -81,7 +66,16 @@ async function admit(
     )
       return { allowed: true, reason: undefined };
     state.deniedUntil[operation] = now + DENIAL_MEMO_MS;
-    return { allowed: false, reason: 'budget_unavailable' };
+    return {
+      allowed: false,
+      reason:
+        result &&
+        typeof result === 'object' &&
+        'reason' in result &&
+        typeof result.reason === 'string'
+          ? result.reason
+          : 'budget_unavailable',
+    };
   } catch {
     state.deniedUntil[operation] = now + DENIAL_MEMO_MS;
     return { allowed: false, reason: 'budget_unavailable' };
@@ -119,9 +113,12 @@ async function handleArtifacts(
   const method = request.method;
 
   if (pathname === '/v8/artifacts/status' && method === 'GET') {
-    const snapshot = await readBudget(env.ARTIFACTS).catch(() => null);
+    const snapshot: unknown = await budgetStub(env)
+      .fetch('https://budget/state')
+      .then((response) => (response.ok ? response.json() : null))
+      .catch(() => null);
     const paused =
-      !snapshot ||
+      !isBudgetState(snapshot) ||
       !reserve(
         snapshot,
         {

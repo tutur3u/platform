@@ -7,7 +7,7 @@ import { startCfViteWorker } from '../../../scripts/ci/cf-vite-worker.mjs';
 const root = fileURLToPath(new URL('..', import.meta.url));
 const digest = (value) => createHash('sha256').update(value).digest('hex');
 
-test('real Worker initializes R2 through the DO and retains its fence after restart', {
+test('real Worker initializes transactional DO storage and retains its fence after restart', {
   timeout: 120_000,
 }, async () => {
   const admin = randomUUID() + randomUUID();
@@ -40,7 +40,10 @@ test('real Worker initializes R2 through the DO and retains its fence after rest
       signal: AbortSignal.timeout(10_000),
     });
   const fence = (action) =>
-    call('/admin/fence', { method: 'POST', body: JSON.stringify({ action }) });
+    call('/admin/fence', {
+      method: 'POST',
+      body: JSON.stringify({ action }),
+    });
   try {
     // The production default must stay off in both source and emitted output.
     const status = await call('/v8/artifacts/status', { auth: token });
