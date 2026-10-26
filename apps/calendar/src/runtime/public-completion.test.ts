@@ -52,7 +52,7 @@ import { withCalendarRequest } from './request-context';
 import { resolveCalendarLocale } from './request-locale';
 import { applyCalendarResponsePolicy } from './response-policy';
 
-const origin = 'https://calendar-ci.invalid';
+const origin = 'https://calendar.tuturuuu.com';
 const cases: [string, 'en' | 'vi', Record<string, string>][] = [
   ['/verify-token', 'en', {}],
   ['/vi/verify-token', 'vi', {}],

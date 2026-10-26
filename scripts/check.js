@@ -20,6 +20,7 @@ const fs = require('node:fs');
 const { writeExclusiveFileSync } = require('./safe-fs');
 const os = require('node:os');
 const path = require('node:path');
+const { authGuardChecks } = require('./auth-guards.js');
 const { sourceSizeCheck } = require('./check-source-size.js');
 const {
   assertCheckCliAllowed,
@@ -273,24 +274,7 @@ const checks = [
   },
   sourceSizeCheck,
   publicSeoCheck,
-  {
-    name: 'server-console',
-    command: 'node',
-    args: ['scripts/check-server-console.js'],
-    parseOutput: () => 'Server logs use native console methods',
-  },
-  {
-    name: 'internal-app-auth',
-    command: 'node',
-    args: ['scripts/check-internal-app-auth.js'],
-    parseOutput: () => 'Registered app auth surfaces use app sessions',
-  },
-  {
-    name: 'satellite-cookie-auth',
-    command: 'node',
-    args: ['scripts/check-satellite-cookie-auth.js'],
-    parseOutput: () => 'Satellites authorize with app-session-aware clients',
-  },
+  ...authGuardChecks,
   {
     name: 'offline-worker-wiring',
     command: 'node',

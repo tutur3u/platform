@@ -6,6 +6,7 @@ import {
 import type { SupabaseSession } from '@tuturuuu/supabase/next/user';
 import { revokeUserAiTempAuthTokens } from '@tuturuuu/utils/ai-temp-auth';
 import { BASE_URL } from '@/constants/common';
+import { revokeCurrentUserSignOutCredentials } from '../sign-out-credentials';
 import {
   createDeviceSecret,
   decryptSession,
@@ -620,7 +621,7 @@ export async function removeWebAccount(
   }
 
   const supabase = await createClient(request);
-  await revokeCurrentUserTempAuth(supabase);
+  await revokeCurrentUserSignOutCredentials(supabase);
   await supabase.auth.signOut({ scope: 'local' });
   await updateDeviceActiveUser(device.deviceId, null);
 
@@ -638,7 +639,7 @@ export async function logoutCurrentWebAccount(
 
   if (!device?.activeUserId) {
     const supabase = await createClient(request);
-    await revokeCurrentUserTempAuth(supabase);
+    await revokeCurrentUserSignOutCredentials(supabase);
     await supabase.auth.signOut({ scope: 'local' });
     return {
       ...(await listAccountsForDevice(device)),
@@ -656,7 +657,7 @@ export async function logoutAllWebAccounts(
   const device = await resolveDevice(request, { create: false });
   const supabase = await createClient(request);
 
-  await revokeCurrentUserTempAuth(supabase);
+  await revokeCurrentUserSignOutCredentials(supabase);
   await supabase.auth.signOut({ scope: 'local' });
 
   if (device) {

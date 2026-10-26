@@ -1139,10 +1139,13 @@ must verify every serving replica and fallback, using exact deployment identitie
 | Inventory | Catalog, setup, sales, audit and inventory access reads. |
 | Tasks | Tasks, boards, labels, projects and initiatives; some supporting reads go to Web. |
 | Infrastructure | Inbound `/api/v1/mobile-calendar/` gateway reads. |
-| Calendar | Also required for direct marked Calendar reads. The current Infrastructure gateway constructs upstream headers without the bulk marker, so that specific upstream hop is unmarked. |
+| Calendar | Marked reads forwarded by Infrastructure, plus direct marked Calendar reads. |
 
 This serving map follows `core/config/api_origins.dart` in mobile, each app's
 `proxy.ts`, and `apps/infrastructure/src/lib/mobile-calendar/gateway.ts`.
+Infrastructure forwards the bulk marker and Turnstile token to Calendar. Both
+hops enforce the guard and need shared Redis clearance, so Calendar can reuse
+the verified clearance without submitting the one-use Turnstile token again.
 No checked-in workflow or application configuration assigns the activation flag.
 That establishes source wiring only: deployed flag values, Redis/Turnstile
 provisioning, mixed-replica consistency and authenticated canary results remain
