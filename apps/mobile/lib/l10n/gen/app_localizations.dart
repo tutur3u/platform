@@ -16981,6 +16981,12 @@ abstract class AppLocalizations {
   /// **'Couldn\'t start focus. Your previous timer is running again.'**
   String get taskBoardDetailFocusStartFailedRunning;
 
+  /// No description provided for @taskBoardDetailFocusStartFailedUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t start focus, and the previous timer\'s state couldn\'t be confirmed. Open the timer to check it.'**
+  String get taskBoardDetailFocusStartFailedUnknown;
+
   /// No description provided for @taskBoardDetailFocusStarted.
   ///
   /// In en, this message translates to:
@@ -17754,6 +17760,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Labels'**
   String get taskBoardDetailTaskLabels;
+
+  /// No description provided for @taskBoardDetailTaskList.
+  ///
+  /// In en, this message translates to:
+  /// **'List'**
+  String get taskBoardDetailTaskList;
 
   /// No description provided for @taskBoardDetailTaskListLabel.
   ///
@@ -20017,6 +20029,48 @@ abstract class AppLocalizations {
   /// **'Pomodoro'**
   String get timerPomodoro;
 
+  /// No description provided for @timerPomodoroBreakDoneBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready for the next focus?'**
+  String get timerPomodoroBreakDoneBody;
+
+  /// No description provided for @timerPomodoroBreakDoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Break over'**
+  String get timerPomodoroBreakDoneTitle;
+
+  /// No description provided for @timerPomodoroCycle.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus {current} of {total}'**
+  String timerPomodoroCycle(int current, int total);
+
+  /// No description provided for @timerPomodoroFocusDoneBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Time for a break.'**
+  String get timerPomodoroFocusDoneBody;
+
+  /// No description provided for @timerPomodoroFocusDoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus done'**
+  String get timerPomodoroFocusDoneTitle;
+
+  /// No description provided for @timerPomodoroOtherRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Another timer is running. Stop it on the Timer page to continue this focus.'**
+  String get timerPomodoroOtherRunning;
+
+  /// No description provided for @timerPomodoroRemaining.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes}:{seconds} left'**
+  String timerPomodoroRemaining(String minutes, String seconds);
+
   /// No description provided for @timerPomodoroSettings.
   ///
   /// In en, this message translates to:
@@ -20028,6 +20082,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tune focus sessions, breaks, and the automation between them.'**
   String get timerPomodoroSettingsDescription;
+
+  /// No description provided for @timerPomodoroSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get timerPomodoroSkip;
+
+  /// No description provided for @timerPomodoroStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start focus'**
+  String get timerPomodoroStart;
+
+  /// No description provided for @timerPomodoroSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{focus} min focus · {rest} min break'**
+  String timerPomodoroSummary(int focus, int rest);
 
   /// No description provided for @timerProofOfWorkRequired.
   ///
