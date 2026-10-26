@@ -2,6 +2,7 @@
 // biome-ignore-all lint/suspicious/noUndeclaredEnvVars: Protected store credentials are hydrated only inside the beta release job.
 import { sign } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
+import { setTimeout as wait } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
 
 const appleOrigin = 'https://api.appstoreconnect.apple.com';
@@ -44,28 +45,69 @@ function appleToken(privateKey, keyId, issuerId) {
   return `${input}.${signature.toString('base64url')}`;
 }
 
-export async function appleGet(path, credentials) {
-  const response = await fetch(`${appleOrigin}${path}`, {
-    headers: {
-      Authorization: `Bearer ${appleToken(
-        credentials.privateKey,
-        credentials.keyId,
-        credentials.issuerId
-      )}`,
-    },
-    redirect: 'error',
-    signal: AbortSignal.timeout(30_000),
-  });
-  if (!response.ok) {
-    throw new Error(`App Store Connect lookup failed (${response.status})`);
+// One deadline covers app lookup and every page, including retry backoff.
+const lookupDeadlineMs = 240_000;
+const retryBackoffMs = [5_000, 15_000];
+
+export async function appleGet(
+  path,
+  credentials,
+  { signal = AbortSignal.timeout(lookupDeadlineMs), sleep = wait } = {}
+) {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    signal.throwIfAborted();
+    const authorization = `Bearer ${appleToken(
+      credentials.privateKey,
+      credentials.keyId,
+      credentials.issuerId
+    )}`;
+    let response;
+    try {
+      response = await fetch(`${appleOrigin}${path}`, {
+        headers: { Authorization: authorization },
+        redirect: 'error',
+        signal: AbortSignal.any([signal, AbortSignal.timeout(60_000)]),
+      });
+      if (response.ok) {
+        const body = await response.json();
+        signal.throwIfAborted();
+        return body;
+      }
+    } catch (error) {
+      signal.throwIfAborted();
+      // Fetch network failures are TypeErrors; invalid JSON fails immediately.
+      if (
+        attempt === 2 ||
+        !(error instanceof TypeError || error?.name === 'TimeoutError')
+      ) {
+        throw error;
+      }
+      response = undefined;
+    }
+    if (response) {
+      await response.body?.cancel();
+      if (
+        attempt === 2 ||
+        !(
+          response.status === 429 ||
+          (response.status >= 500 && response.status < 600)
+        )
+      ) {
+        throw new Error(`App Store Connect lookup failed (${response.status})`);
+      }
+    }
+    await sleep(retryBackoffMs[attempt], undefined, { signal });
   }
-  return response.json();
 }
 
-export async function listIosPrereleaseVersionRecords(credentials) {
+export async function listIosPrereleaseVersionRecords(
+  credentials,
+  { signal = AbortSignal.timeout(lookupDeadlineMs) } = {}
+) {
   const apps = await appleGet(
     `/v1/apps?${new URLSearchParams({ 'filter[bundleId]': bundleId, limit: '2' })}`,
-    credentials
+    credentials,
+    { signal }
   );
   if (apps.data?.length !== 1) {
     throw new Error('Expected one App Store Connect app for the mobile bundle');
@@ -77,7 +119,7 @@ export async function listIosPrereleaseVersionRecords(credentials) {
     limit: '200',
   })}`;
   while (path) {
-    const page = await appleGet(path, credentials);
+    const page = await appleGet(path, credentials, { signal });
     versions.push(...(page.data ?? []));
     const next = page.links?.next;
     if (!next) break;
