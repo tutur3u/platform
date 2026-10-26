@@ -10245,6 +10245,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get timerPomodoroFocusDoneTitle => 'Đã xong lượt tập trung';
 
   @override
+  String get timerPomodoroOtherRunning => 'Một bộ bấm giờ khác đang chạy. Dừng nó ở trang Bấm giờ để tiếp tục lượt tập trung này.';
+
+  @override
   String timerPomodoroRemaining(String minutes, String seconds) {
     return 'Còn $minutes:$seconds';
   }

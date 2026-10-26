@@ -10,6 +10,7 @@ import 'package:mobile/data/sources/api_exception.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_cubit.dart';
 import 'package:mobile/features/time_tracker/pomodoro/pomodoro_controller.dart';
+import 'package:mobile/features/time_tracker/pomodoro/pomodoro_sessions.dart';
 import 'package:mobile/features/time_tracker/pomodoro/pomodoro_state.dart';
 import 'package:mobile/features/time_tracker/widgets/focus_timer_ring.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -64,6 +65,8 @@ class _PomodoroPanelState extends State<PomodoroPanel> {
           ),
         );
       }
+    } on PomodoroSessionConflict {
+      if (mounted) _error(l10n.timerPomodoroOtherRunning, '');
     } on ApiException catch (error) {
       if (mounted) _error(error.message, l10n.commonSomethingWentWrong);
     } on Exception {

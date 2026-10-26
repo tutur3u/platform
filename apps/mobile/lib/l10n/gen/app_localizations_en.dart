@@ -10344,6 +10344,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timerPomodoroFocusDoneTitle => 'Focus done';
 
   @override
+  String get timerPomodoroOtherRunning => 'Another timer is running. Stop it on the Timer page to continue this focus.';
+
+  @override
   String timerPomodoroRemaining(String minutes, String seconds) {
     return '$minutes:$seconds left';
   }

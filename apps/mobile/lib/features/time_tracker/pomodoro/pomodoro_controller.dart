@@ -110,6 +110,7 @@ class PomodoroController extends Cubit<PomodoroState> {
   Future<void> reconcile() => _exclusive(_reconcile);
 
   Future<void> _reconcile() async {
+    await _follow();
     while (!isClosed && state.isRunning && !state.deadline!.isAfter(_now())) {
       await _completePhase();
     }
@@ -119,6 +120,10 @@ class PomodoroController extends Cubit<PomodoroState> {
   /// Starts a focus phase with a new tracking session. When [replacingPaused]
   /// is given (a confirmed replacement), that paused session is stopped
   /// first, closing its break, and put back if the new start fails.
+  ///
+  /// The whole flow holds the lock, so no phase end interleaves, and the
+  /// settings load before any session changes, so a failure never leaves an
+  /// orphan running session.
   Future<void> startFocus({
     required String userId,
     required String wsId,
@@ -126,7 +131,8 @@ class PomodoroController extends Cubit<PomodoroState> {
     String? taskId,
     String? taskName,
     TimeTrackingSession? replacingPaused,
-  }) async {
+  }) => _exclusive(() async {
+    final settings = await _loadSettings();
     if (replacingPaused != null) {
       await _repository.stopSession(wsId, replacingPaused.id);
     }
@@ -143,15 +149,30 @@ class PomodoroController extends Cubit<PomodoroState> {
       }
       rethrow;
     }
-    await adoptFocus(
-      userId: userId,
-      wsId: wsId,
-      sessionId: session.id,
-      title: title,
-      taskId: taskId,
-      taskName: taskName,
-    );
-  }
+    try {
+      await _adopt(
+        settings,
+        userId: userId,
+        wsId: wsId,
+        sessionId: session.id,
+        title: title,
+        taskId: taskId,
+        taskName: taskName,
+      );
+    } on Exception {
+      // Leave nothing half-started: end the new session and put the
+      // replaced one back.
+      try {
+        await _repository.stopSession(wsId, session.id);
+      } on Exception {
+        // Shown on the Timer page.
+      }
+      if (replacingPaused != null) {
+        await _restorePaused(wsId, replacingPaused);
+      }
+      rethrow;
+    }
+  });
 
   /// Puts a stopped paused session back: resumed, then paused again.
   Future<void> _restorePaused(String wsId, TimeTrackingSession paused) async {
@@ -172,24 +193,55 @@ class PomodoroController extends Cubit<PomodoroState> {
     required String title,
     String? taskId,
     String? taskName,
-  }) async {
+  }) => _exclusive(() async {
     final settings = await _loadSettings();
+    await _adopt(
+      settings,
+      userId: userId,
+      wsId: wsId,
+      sessionId: sessionId,
+      title: title,
+      taskId: taskId,
+      taskName: taskName,
+    );
+  });
+
+  Future<void> _adopt(
+    PomodoroSettings settings, {
+    required String userId,
+    required String wsId,
+    required String sessionId,
+    required String title,
+    String? taskId,
+    String? taskName,
+  }) {
     final length = Duration(minutes: settings.focusMinutes);
-    await _exclusive(
-      () => _set(
-        PomodoroState(
-          phase: PomodoroPhase.focus,
-          deadline: _now().add(length),
-          remaining: length,
-          userId: userId,
-          wsId: wsId,
-          sessionId: sessionId,
-          taskId: taskId,
-          taskName: taskName,
-          title: title,
-        ),
+    final now = _now();
+    return _set(
+      PomodoroState(
+        phase: PomodoroPhase.focus,
+        deadline: now.add(length),
+        remaining: length,
+        userId: userId,
+        wsId: wsId,
+        sessionId: sessionId,
+        taskId: taskId,
+        taskName: taskName,
+        title: title,
+        startedAt: now,
       ),
     );
+  }
+
+  /// Moves the stored session id to the phase's current session, following
+  /// the server's one-step resume chain. Read failures change nothing.
+  Future<void> _follow() async {
+    if (!state.isFocus || state.sessionId == null) return;
+    final found = await _sessions.current(state);
+    final id = found.session?.id;
+    if (id != null && id != state.sessionId) {
+      await _set(state.copyWith(sessionId: () => id), arm: false);
+    }
   }
 
   /// The tracker's running and paused sessions, so a caller can confirm
@@ -215,11 +267,13 @@ class PomodoroController extends Cubit<PomodoroState> {
         await _repository.pauseSession(state.wsId!, found.session!.id);
       }
     }
+    final now = _now();
     await _set(
       state.copyWith(
         deadline: () => null,
-        remaining: state.remainingAt(_now()),
+        remaining: state.remainingAt(now),
         sessionId: () => sessionId,
+        pausedAt: () => now,
       ),
     );
   });
@@ -229,26 +283,42 @@ class PomodoroController extends Cubit<PomodoroState> {
   Future<void> resume() => _exclusive(() async {
     if (!state.isPaused) return;
     String? sessionId;
+    var startedAt = state.startedAt;
     if (state.isFocus) {
       final wsId = state.wsId!;
-      final found = await _sessions.current(state);
-      sessionId = switch (found.status) {
-        FocusSessionStatus.running => found.session!.id,
-        FocusSessionStatus.paused => (await _repository.resumeSession(
-          wsId,
-          found.session!.id,
-        )).id,
-        _ => (await _repository.startSession(
-          wsId,
-          title: state.title,
-          taskId: state.taskId,
-        )).id,
-      };
+      final stored = state.sessionId;
+      final found = stored == null
+          ? (status: FocusSessionStatus.gone, session: null)
+          : await _sessions.current(state);
+      switch (found.status) {
+        case FocusSessionStatus.running:
+          sessionId = found.session!.id;
+        case FocusSessionStatus.paused:
+          sessionId = (await _repository.resumeSession(
+            wsId,
+            found.session!.id,
+          )).id;
+        case FocusSessionStatus.unknown:
+          // Unreadable: resume the stored session rather than add another.
+          sessionId = (await _repository.resumeSession(wsId, stored!)).id;
+        case FocusSessionStatus.elsewhere:
+          // Starting now would close the user's own running timer.
+          throw const PomodoroSessionConflict();
+        case FocusSessionStatus.gone:
+          sessionId = (await _repository.startSession(
+            wsId,
+            title: state.title,
+            taskId: state.taskId,
+          )).id;
+          startedAt = _now();
+      }
     }
     await _set(
       state.copyWith(
         deadline: () => _now().add(state.remaining),
         sessionId: () => sessionId,
+        startedAt: () => startedAt,
+        pausedAt: () => null,
       ),
     );
   });
@@ -321,6 +391,8 @@ class PomodoroController extends Cubit<PomodoroState> {
         remaining: length,
         deadline: () => sessionId == null ? null : _now().add(length),
         sessionId: () => sessionId,
+        startedAt: () => sessionId == null ? null : _now(),
+        pausedAt: () => null,
       ),
       arm: false,
     );

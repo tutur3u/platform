@@ -19639,6 +19639,12 @@ abstract class AppLocalizations {
   /// **'Focus done'**
   String get timerPomodoroFocusDoneTitle;
 
+  /// No description provided for @timerPomodoroOtherRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Another timer is running. Stop it on the Timer page to continue this focus.'**
+  String get timerPomodoroOtherRunning;
+
   /// No description provided for @timerPomodoroRemaining.
   ///
   /// In en, this message translates to:

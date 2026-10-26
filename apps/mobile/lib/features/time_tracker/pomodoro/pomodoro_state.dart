@@ -22,6 +22,8 @@ class PomodoroState extends Equatable {
     this.taskId,
     this.taskName,
     this.title,
+    this.startedAt,
+    this.pausedAt,
   });
 
   factory PomodoroState.fromJson(Map<String, dynamic> json) {
@@ -41,6 +43,8 @@ class PomodoroState extends Equatable {
       taskId: json['taskId'] as String?,
       taskName: json['taskName'] as String?,
       title: json['title'] as String?,
+      startedAt: DateTime.tryParse(json['startedAt'] as String? ?? ''),
+      pausedAt: DateTime.tryParse(json['pausedAt'] as String? ?? ''),
     );
   }
 
@@ -54,6 +58,20 @@ class PomodoroState extends Equatable {
   final String? taskId;
   final String? taskName;
   final String? title;
+
+  /// When the current focus phase began; the start of its session window.
+  final DateTime? startedAt;
+
+  /// When the phase was paused; the end of a paused phase's session window.
+  final DateTime? pausedAt;
+
+  /// The span in which a session for this phase's task belongs to it: from
+  /// the phase start to its deadline, or to the pause. Null when unknown.
+  ({DateTime start, DateTime end})? get sessionWindow {
+    final start = startedAt;
+    final end = deadline ?? pausedAt;
+    return start == null || end == null ? null : (start: start, end: end);
+  }
 
   bool get isIdle => phase == PomodoroPhase.idle;
   bool get isRunning => !isIdle && deadline != null;
@@ -74,6 +92,8 @@ class PomodoroState extends Equatable {
     Duration? remaining,
     int? completedFocus,
     String? Function()? sessionId,
+    DateTime? Function()? startedAt,
+    DateTime? Function()? pausedAt,
   }) => PomodoroState(
     phase: phase ?? this.phase,
     deadline: deadline == null ? this.deadline : deadline(),
@@ -85,6 +105,8 @@ class PomodoroState extends Equatable {
     taskId: taskId,
     taskName: taskName,
     title: title,
+    startedAt: startedAt == null ? this.startedAt : startedAt(),
+    pausedAt: pausedAt == null ? this.pausedAt : pausedAt(),
   );
 
   Map<String, Object?> toJson() => {
@@ -98,6 +120,8 @@ class PomodoroState extends Equatable {
     'taskId': taskId,
     'taskName': taskName,
     'title': title,
+    'startedAt': startedAt?.toUtc().toIso8601String(),
+    'pausedAt': pausedAt?.toUtc().toIso8601String(),
   };
 
   @override
@@ -112,5 +136,7 @@ class PomodoroState extends Equatable {
     taskId,
     taskName,
     title,
+    startedAt,
+    pausedAt,
   ];
 }

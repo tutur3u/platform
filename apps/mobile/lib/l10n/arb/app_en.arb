@@ -4518,6 +4518,7 @@
   "timerPomodoroCycle": "Focus {current} of {total}",
   "timerPomodoroFocusDoneBody": "Time for a break.",
   "timerPomodoroFocusDoneTitle": "Focus done",
+  "timerPomodoroOtherRunning": "Another timer is running. Stop it on the Timer page to continue this focus.",
   "timerPomodoroRemaining": "{minutes}:{seconds} left",
   "timerPomodoroSettings": "Pomodoro settings",
   "timerPomodoroSettingsDescription": "Tune focus sessions, breaks, and the automation between them.",

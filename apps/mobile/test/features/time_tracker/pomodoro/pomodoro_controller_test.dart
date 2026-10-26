@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/models/time_tracking/pomodoro_settings.dart';
 import 'package:mobile/features/time_tracker/pomodoro/pomodoro_controller.dart';
+import 'package:mobile/features/time_tracker/pomodoro/pomodoro_sessions.dart';
 import 'package:mobile/features/time_tracker/pomodoro/pomodoro_state.dart';
 
 import 'pomodoro_fakes.dart';
@@ -12,6 +13,7 @@ void main() {
   late DateTime now;
   late DateTime t0;
   var settings = const PomodoroSettings();
+  var failSettings = false;
   const autoBoth = PomodoroSettings(
     autoStartBreaks: true,
     autoStartFocus: true,
@@ -19,7 +21,10 @@ void main() {
 
   PomodoroController build() => PomodoroController(
     repository: tracker,
-    loadSettings: () async => settings,
+    loadSettings: () async {
+      if (failSettings) throw Exception('settings unavailable');
+      return settings;
+    },
     notificationCopy: (phase) => (
       title: phase == PomodoroPhase.focus ? 'Focus done' : 'Break over',
       body: '',
@@ -36,6 +41,7 @@ void main() {
     notifier = FakeNotifier();
     store = FakeStore();
     settings = const PomodoroSettings();
+    failSettings = false;
   });
 
   Future<PomodoroController> focusing() async {
@@ -192,6 +198,153 @@ void main() {
 
       expect(tracker.runningId, isNotNull);
       expect(tracker.calls.where((c) => c.startsWith('stop')), isEmpty);
+    });
+  });
+
+  group('manual sessions on the same task (re-review 1)', () {
+    test('one started after the phase ended is never touched', () async {
+      final controller = await focusing();
+      addTearDown(controller.close);
+      now = t0.add(const Duration(minutes: 5));
+      tracker.stopElsewhere('s1');
+      // After the 25-minute phase ended, the user times the task by hand.
+      now = t0.add(const Duration(minutes: 40));
+      final manual = (await tracker.startSession('ws', taskId: 't1')).id;
+      now = t0.add(const Duration(minutes: 50));
+
+      await controller.reconcile();
+
+      expect(tracker.runningId, manual);
+      expect(tracker.calls, isNot(contains('stop:$manual')));
+      expect(tracker.trimmedTo, isEmpty);
+    });
+
+    test('stop of a paused phase leaves a later manual session', () async {
+      final controller = await focusing();
+      addTearDown(controller.close);
+      now = t0.add(const Duration(minutes: 5));
+      await controller.pause();
+      tracker.stopElsewhere('s1');
+      now = t0.add(const Duration(minutes: 8));
+      final manual = (await tracker.startSession('ws', taskId: 't1')).id;
+
+      await controller.stop();
+
+      expect(controller.state.isIdle, isTrue);
+      expect(tracker.runningId, manual);
+      expect(tracker.calls, isNot(contains('stop:$manual')));
+    });
+
+    test('resume will not close a manual session', () async {
+      final controller = await focusing();
+      addTearDown(controller.close);
+      now = t0.add(const Duration(minutes: 5));
+      await controller.pause();
+      tracker.stopElsewhere('s1');
+      now = t0.add(const Duration(minutes: 8));
+      final manual = (await tracker.startSession('ws', taskId: 't1')).id;
+      final starts = tracker.startCount;
+
+      await expectLater(
+        controller.resume(),
+        throwsA(isA<PomodoroSessionConflict>()),
+      );
+
+      expect(tracker.startCount, starts);
+      expect(tracker.runningId, manual);
+      expect(controller.state.isPaused, isTrue);
+    });
+
+    test("a task session inside the phase window is the phase's", () async {
+      final controller = await focusing();
+      addTearDown(controller.close);
+      // Two unobserved pause/resume cycles on the main Timer break the
+      // one-step parent link; the window still identifies the session.
+      now = t0.add(const Duration(minutes: 3));
+      tracker.pauseAndResumeElsewhere();
+      now = t0.add(const Duration(minutes: 6));
+      final real = tracker.pauseAndResumeElsewhere();
+
+      await controller.skip();
+
+      expect(tracker.calls.last, 'stop:$real');
+    });
+  });
+
+  group('resume chain (re-review 2)', () {
+    test('the stored id follows every resume of a taskless phase', () async {
+      final controller = build();
+      addTearDown(controller.close);
+      await controller.startFocus(userId: 'u1', wsId: 'ws', title: 'Deep');
+      String? last;
+      for (var cycle = 0; cycle < 3; cycle++) {
+        now = now.add(const Duration(minutes: 2));
+        last = tracker.pauseAndResumeElsewhere();
+        // Resume and the phase timer reconcile, following the chain.
+        await controller.reconcile();
+        expect(controller.state.sessionId, last);
+      }
+
+      await controller.skip();
+
+      expect(tracker.calls.last, 'stop:$last');
+      expect(tracker.runningId, isNull);
+    });
+
+    test('the fake links a resume only to the session before it', () async {
+      await tracker.startSession('ws');
+      final second = tracker.pauseAndResumeElsewhere();
+      final third = tracker.pauseAndResumeElsewhere();
+      final running = await tracker.getRunningSession('ws');
+
+      expect(running!.id, third);
+      expect(running.parentSessionId, second);
+    });
+  });
+
+  group('startFocus holds the lock (re-review 3)', () {
+    test('a phase end due at the same time runs first, then focus', () async {
+      final controller = await focusing();
+      addTearDown(controller.close);
+      now = t0.add(const Duration(minutes: 25));
+
+      await Future.wait([
+        controller.reconcile(),
+        controller.startFocus(
+          userId: 'u1',
+          wsId: 'ws',
+          title: 'Next',
+          taskId: 't2',
+        ),
+      ]);
+
+      expect(tracker.calls, ['start:s1:t1', 'stop:s1', 'start:s2:t2']);
+      expect(controller.state.phase, PomodoroPhase.focus);
+      expect(controller.state.sessionId, 's2');
+      expect(tracker.runningId, 's2');
+    });
+
+    test('settings that fail to load leave no orphan session', () async {
+      final controller = build();
+      addTearDown(controller.close);
+      await tracker.startSession('ws', taskId: 'old');
+      await tracker.pauseSession('ws', 's1');
+      failSettings = true;
+
+      await expectLater(
+        controller.startFocus(
+          userId: 'u1',
+          wsId: 'ws',
+          title: 'New',
+          taskId: 't1',
+          replacingPaused: (await controller.currentTracking('ws')).paused,
+        ),
+        throwsException,
+      );
+
+      expect(tracker.startCount, 1, reason: 'only the setup start');
+      expect(tracker.pausedId, 's1', reason: 'the paused session is kept');
+      expect(controller.state.isIdle, isTrue);
     });
   });
 

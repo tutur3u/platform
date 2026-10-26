@@ -4450,6 +4450,7 @@
   "timerPomodoroCycle": "Lượt tập trung {current}/{total}",
   "timerPomodoroFocusDoneBody": "Đến giờ nghỉ rồi.",
   "timerPomodoroFocusDoneTitle": "Đã xong lượt tập trung",
+  "timerPomodoroOtherRunning": "Một bộ bấm giờ khác đang chạy. Dừng nó ở trang Bấm giờ để tiếp tục lượt tập trung này.",
   "timerPomodoroRemaining": "Còn {minutes}:{seconds}",
   "timerPomodoroSettings": "Cài đặt Pomodoro",
   "timerPomodoroSettingsDescription": "Điều chỉnh thời gian tập trung, thời gian nghỉ và tự động chuyển giữa các phiên.",

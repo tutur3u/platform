@@ -141,15 +141,28 @@ does the same for that task.
   workspace's edit rules allow it.
 - **The real session.** Before ending, pausing, resuming or stopping a focus
   phase, the app re-reads the tracker. Pausing and resuming on the main Timer
-  issues a new session id, so the phase acts on the session that is running
-  or paused for it: the same id, one resumed from it, or one for its task.
-  It never stops a stale id or an unrelated session.
+  issues a new session id that the server links only to the session right
+  before it, so the app stores each new id it finds and follows that chain
+  (it also does so on every reconcile).
+- **Which session belongs to the phase.** A session is the phase's when it
+  has the stored id or was resumed from it. A session for the phase's task
+  also counts, but only if it started inside the phase's window: from the
+  phase start to its deadline, or to the pause. A session the user starts
+  by hand after the phase ended or paused is never stopped, trimmed or
+  adopted. The app never stops a stale id or an unrelated session.
+- **Resuming with another timer running.** Resume will not start a session
+  while an unrelated one runs, because the server would close the user's
+  timer. It explains instead.
 - **Stop.** Stop clears the device Pomodoro first, then stops the phase's
   session. A session already stopped elsewhere counts as stopped, so the
   Pomodoro can never get stuck.
 - **Replacing a session.** Pomodoro **Start focus** asks before replacing a
   running or paused session, as Start focus on a task row does. A paused one
   is stopped first (closing its break) and put back if the start fails.
+- **Starting a phase.** The whole start runs under the Pomodoro's lock, so a
+  phase end cannot interleave. Settings load before any session changes,
+  and a failure afterwards ends the new session and puts the replaced one
+  back, so no orphan session is left.
 
 Shared, cross-device phases need the database contract flagged in the native
 pass plan. Tagging focus sessions as Pomodoro (for a Pomodoro-only Focus Time)
@@ -163,7 +176,9 @@ tracker that behaves like the server. It covers:
 - a sleep across many cycles with both auto-starts on, and late timers;
 - focus deadlines counted from the real start;
 - no trimming before a session's start;
-- stale and unrelated sessions;
+- stale and unrelated sessions, resume chains of several cycles, and manual
+  sessions after a phase ends or pauses;
+- `startFocus` concurrent with a phase end, and settings that fail to load;
 - stop when the session ended elsewhere;
 - paused replacement;
 - concurrent restores and account isolation;
