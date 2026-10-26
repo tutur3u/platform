@@ -32,7 +32,6 @@ const reviewedMachines = [
     exact: ['/auth/login', '/auth/callback'],
     prefixes: [],
   },
-  { host: 'hive.tuturuuu.com', exact: ['/realtime'], prefixes: [] },
 ];
 export const authExcludedPaths = [
   '/api/auth/refresh-app-session',
@@ -51,6 +50,28 @@ export function deriveWorkerConfigPaths(catalog = loadPublisherMap()) {
     'scripts/ci/production-publication-policy.ts',
   ]);
   const canonicalTargets = read('tuturuuu.ts');
+  const maintenance = catalog.maintenanceWorkers;
+  assert.equal(maintenance?.length, 1, 'Maintenance origin omitted');
+  const hive = maintenance[0];
+  assert.equal(hive.host, 'hive.tuturuuu.com');
+  assert.equal(hive.worker, 'tuturuuu-hive-maintenance');
+  const evidence = JSON.parse(
+    read(`infra/cloudflare/edge-security/${hive.liveEvidence}`)
+  ).hive;
+  assert.equal(evidence.status, 200);
+  assert.equal(evidence.routesStatus, 200);
+  assert.equal(evidence.worker, hive.worker);
+  assert.equal(evidence.workersDev, hive.workersDev);
+  assert.equal(evidence.previewUrls, hive.previewUrls);
+  assert.equal(typeof hive.workersDev, 'boolean');
+  assert.equal(typeof hive.previewUrls, 'boolean');
+  assert(
+    evidence.routes.some(
+      (route) =>
+        route.pattern === `${hive.host}/*` && route.script === hive.worker
+    ),
+    'Maintenance origin lacks live route evidence'
+  );
   const hosts = catalog.workers.map((worker) => worker.host);
   assert.equal(new Set(hosts).size, hosts.length);
   for (const required of [
@@ -94,7 +115,11 @@ export function eligibleVercelHosts(
   catalog = loadPublisherMap(),
   inventory = loadDnsInventory()
 ) {
-  const workerHosts = new Set(catalog.workers.map((worker) => worker.host));
+  const workerHosts = new Set(
+    [...catalog.workers, ...catalog.maintenanceWorkers].map(
+      (worker) => worker.host
+    )
+  );
   return catalog.vercelOrigins
     .filter(
       (origin) =>

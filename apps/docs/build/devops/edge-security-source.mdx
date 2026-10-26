@@ -127,7 +127,7 @@ These are required exceptions to any rule whose browser predicate is merely
 | Same Worker | `/channels`; `/channels/publish`; `/channels/document` | Signed expiring typed join/publish/document ticket; join query token or HTTP Bearer | `apps/meet-realtime/src/worker.ts:29`; `apps/meet-realtime/src/channel-worker.ts:5` |
 | Same Worker | `/collaboration`; `/collaboration/seed`; `/collaboration/checkpoint`; `/collaboration/runner-files` | Signed expiring typed ticket; join query token or HTTP Bearer | `apps/meet-realtime/src/worker.ts:36`; `apps/meet-realtime/src/collaboration-worker.ts:5` |
 | Chat realtime, live host unresolved | `/health`; `/publish`; `/realtime` | Public health; signed publish/subscribe tokens; SSE stream | `apps/chat-realtime/src/server.ts:91`, `:119`, `:134` |
-| Hive realtime, public source maps hive.tuturuuu.com/realtime | Public `/realtime`; internal process `/health` is not automatically public on the page host | Verified join token then WebSocket upgrade; live handshake unverified | `apps/hive-realtime/src/server.ts:233`, `:245`; `apps/hive/src/app/api/v1/hive/servers/[serverId]/realtime-token/route.ts:59`; `scripts/docker-web/blue-green.js:1510` |
+| Hive retained realtime source; historical hive.tuturuuu.com/realtime mapping | Current host is the maintenance Worker, not this receiver. Tunnel ingress removed; no live socket path is established. | Retained implementation verifies join token before WebSocket upgrade; not current serving acceptance | `apps/hive-realtime/src/server.ts:233`, `:245`; `apps/hive/src/app/api/v1/hive/servers/[serverId]/realtime-token/route.ts:59`; `scripts/docker-web/blue-green.js:1510` |
 | Devbox control, publisher config has no canonical route | `/health`; `/v1/notify`; `/v1/heartbeat`; `/v1/poll`; `/v1/connect` | Public health; internal notify token; authorized registered runner identity for heartbeat/poll/socket | `apps/devbox-control/src/worker.ts:380`, `:391`, `:428`; `apps/devbox-control/wrangler.publish.jsonc:3` |
 | Coordination, publisher config has no canonical route | `/health`; `/v1/coordinate` | Public health; required >=32-character configured Bearer with hashed timing-safe comparison | `apps/coordination/src/worker.ts:21`, `:27` |
 | Cron control, live host unresolved | `/health`; `/control/jobs`; `/control/jobs/[id]/stop`; `/control/jobs/[id]/resume` | Public health; >=32-character operator Bearer; no config gives 404; durable stop/resume path | `apps/cron-control/src/worker.ts:32`; `apps/cron-control/src/control.ts:14`, `:29`, `:43` |
@@ -224,6 +224,23 @@ Each route record joins its source host candidate to the [DNS snapshot](https://
 
 App `public/robots.txt` and selected `public/sitemap.xml` files, plus Web `src/app/robots.ts`, `sitemap.ts`, and `manifest.ts`, are discovery endpoints used without an app session. Web proxy exclusions also reserve `/.well-known`, `site.webmanifest`, `manifest.webmanifest`, and `sw.js` (`apps/web/src/proxy.ts:1460`). The proposal preserves these transport classes and static `/_next/` requests. Colab `/auth/login` and `/auth/callback` are central-auth redirects and token redemption (`apps/colab/src/server/auth.ts:104`, `:132`). Only these exact auth redirect paths on Colab are selected; a future `/auth/register` page keeps browser protection. Actual deep-link/domain-verification files and unresolved host bindings still require owner acceptance.
 
-The [review readiness amendment](/build/devops/edge-security#client-429-acceptance-is-still-required) records actual Dart/CLI 429 source behavior, the Hive page/socket mapping and remaining runtime acceptance. Separate lanes own the three source findings; this proposal does not fix or redeploy them.
+The [review readiness amendment](/build/devops/edge-security#client-429-acceptance-is-still-required) records actual Dart/CLI 429 source behavior, the historical Hive page/socket mapping and remaining runtime acceptance. Separate lanes own the three source findings; this proposal does not fix or redeploy them.
 
 The [app-owned header inventory](/build/devops/edge-security-headers) joins intended XFO/CSP framing with live proxied responses and records the managed-transform end state. Retained Next policy is not proof that native Meet applies it; unknown runtime/storage ownership remains open. Server self-origin maintenance and recurring QR/MFA polling are separately classified in the [readiness gates](/build/devops/edge-security#shared-refresh-and-polling-must-not-use-the-login-attempt-counter).
+
+
+## Hive current origin supersedes the retained tunnel source
+
+At 16:37 GMT+7 on 2026-10-26, authenticated GETs confirmed route
+`hive.tuturuuu.com/*` targets `tuturuuu-hive-maintenance`, with workers.dev and
+preview URLs both disabled. `publishers.json` records this operator-owned
+maintenance publisher separately from repository app publishers; the sanitized
+receipt is `inventory/preparation-readiness.json`. The release owner reports the
+tunnel ingress removed. The old `compose.web.prod.sidecars.yml:26` and
+`scripts/docker-web/blue-green.js:1510` describe retained source, not today's origin.
+
+The former `/realtime` transport exception has been removed from the active
+proposal. The generic app/API and auth-limit fragments remain disabled. Before
+step 5 admits Hive, its owner must identify the restored app publisher, API and
+socket paths, repeat origin closure and complete caller acceptance. A maintenance
+503 or disabled workers.dev URL does not prove the future application works.

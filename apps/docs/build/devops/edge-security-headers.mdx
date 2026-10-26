@@ -37,7 +37,7 @@ stated. Retained Next configuration does not prove a native Worker applies it.
 | lettin.tuturuuu.com | Next shared DENY +frame-ancestors 'none' outside exact WebGL exception; inside, upstream CSP owns policy. | 200, SAMEORIGIN, frame-ancestors 'none'. | Verify emitted OpenNext and all route classes; source intended DENY differs from observed XFO. |
 | parley.tuturuuu.com | Next shared DENY +frame-ancestors 'none' outside exact WebGL; direct upgrade/auth branches can bypass Next header handling. | 307, SAMEORIGIN, no frame-ancestors observed; redirect to same-host /login. | Final pages, upgrade failures and socket responses remain unverified. |
 | colab.tuturuuu.com | Worker sets frame-ancestors 'none' in its full CSP on non101 responses; no XFO setter found. Direct assets may bypass the Worker. | 302, SAMEORIGIN, frame-ancestors 'none'; redirect to same-host /auth/login. | Decide XFO policy and verify direct assets independently; preserve the full existing CSP, not just one directive. |
-| hive.tuturuuu.com | Next shared DENY +frame-ancestors 'none' outside WebGL for pages. Same-host /realtime reaches a separate receiver with no framing setter traced. | 503, SAMEORIGIN, frame-ancestors 'none'. | Error-page headers do not prove page/room/socket availability or intended response coverage. |
+| hive.tuturuuu.com | Retained Next intent: DENY +frame-ancestors 'none' outside WebGL. Current origin is tuturuuu-hive-maintenance; its exact source/header policy needs owner proof. | 503, SAMEORIGIN, frame-ancestors 'none'. | Maintenance response only; no current room/socket service is established. Prove maintenance and replacement app policies separately. |
 | workspaces.r2.storage.tuturuuu.com | Exact hostname's application/header owner and framing policy are unknown; object content type/disposition must be established. | 404, SAMEORIGIN, no frame-ancestors observed. | Storage owner must prove bucket/domain binding, inline HTML versus attachments and header policy. Do not assume WebGL policy applies to raw R2 objects. |
 
 Canonical `finance.tuturuuu.com` was DNS-only in this read and was not probed.
@@ -115,3 +115,10 @@ rollback before this end state. The readiness remains incomplete today: no globa
 transform was changed, no app header fix was shipped by this amendment, and no
 iframe/browser acceptance was executed. The source/config and live-header matrix
 are evidence for the next admitted per-app work, not approval to turn it off.
+
+
+The Meet, Colab, Lettin and Parley rows each record the Managed Transform's
+`SAMEORIGIN` override against that satellite's source intent. These observations
+remain root-response evidence only. Hive's current maintenance Worker identity
+and URL flags were separately verified at 16:37 GMT+7; its historical socket
+source is not a live path claim. No Managed Transform setting changed.

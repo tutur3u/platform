@@ -133,7 +133,7 @@ test('machine callers, browser pages, Finance and unknown hosts remain distinct'
     ['meet.tuturuuu.com', '/auth/callback', 'browser'],
     ['meet.tuturuuu.com', '/_next/image', 'browser'],
     ['meet.tuturuuu.com', '/_next/data/build/page.json', 'browser'],
-    ['hive.tuturuuu.com', '/realtime', 'machine'],
+    ['hive.tuturuuu.com', '/realtime', 'browser'],
     ['hive.tuturuuu.com', '/', 'browser'],
     ['store.tuturuuu.com', '/api/v1/storage', 'inactive'],
     ['stores.tuturuuu.com', '/api/auth/verify', 'inactive'],
@@ -461,4 +461,32 @@ test('auth-attempt rule excludes shared refresh and recurring poll routes', () =
   const dnsOnly = structuredClone(policy);
   dnsOnly.rateLimit.hosts.push('tuturuuu.com');
   assert.throws(() => validateCatalogBindings(dnsOnly));
+});
+
+test('Hive maintenance origin cannot disappear or fall back to the removed tunnel', () => {
+  const map = loadPublisherMap();
+  assert.equal(map.maintenanceWorkers[0].worker, 'tuturuuu-hive-maintenance');
+  assert.equal(map.maintenanceWorkers[0].workersDev, false);
+  assert.equal(map.maintenanceWorkers[0].previewUrls, false);
+  deriveWorkerConfigPaths(map);
+  for (const mutate of [
+    (data) => {
+      data.maintenanceWorkers = [];
+    },
+    (data) => {
+      data.maintenanceWorkers[0].worker = 'legacy-tunnel';
+    },
+    (data) => {
+      data.maintenanceWorkers[0].workersDev = true;
+    },
+  ]) {
+    const changed = structuredClone(map);
+    mutate(changed);
+    assert.throws(() => deriveWorkerConfigPaths(changed));
+  }
+  assert(
+    !loadPolicy().serviceMachines.some(
+      (entry) => entry.host === 'hive.tuturuuu.com'
+    )
+  );
 });

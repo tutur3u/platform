@@ -87,13 +87,13 @@ that can reach an origin alias directly can avoid every Cloudflare rule.
 
 | Origin | Required future control | Acceptance and rollback |
 | --- | --- | --- |
-| Cloudflare Workers | Set both `workers_dev=false` and `preview_urls=false` in the authoritative publisher configuration and reconcile hosted production/version URLs. Coverage derives from `publishers.json`, joined to the canonical targets and actual publisher config. Include native Meet `apps/meet/void.config.ts:45`, Meet realtime, Lettin, Parley and Colab. Colab now explicitly sets both URL flags false in source; this is not a deployment. | Prove canonical host works and production/preview workers.dev URLs cannot bypass zone controls. Capture previous route/version settings. Roll back only the admitted Worker settings under its owner; stop enforcement while any bypass is reopened. |
+| Cloudflare Workers | Set both `workers_dev=false` and `preview_urls=false` in the authoritative publisher configuration and reconcile hosted production/version URLs. Coverage derives from `publishers.json`, joined to the canonical targets and actual publisher config. Include native Meet `apps/meet/void.config.ts:45`, Meet realtime, Lettin, Parley, Colab and the operator-owned Hive maintenance Worker. Colab now explicitly sets both URL flags false in source; this is not a deployment. | Prove canonical host works and production/preview workers.dev URLs cannot bypass zone controls. Capture previous route/version settings. Roll back only the admitted Worker settings under its owner; stop enforcement while any bypass is reopened. |
 | Existing Vercel origins | Vercel Firewall must deny unless the actual provider-observed source is in Cloudflare's published source ranges **and** an exact, separate edge-injected secret header is valid. Overwrite client-supplied `x-tuturuuu-edge-origin` at the authorized edge. Header presence or Cloudflare source IP alone is insufficient. | Establish current Vercel plan support and source-IP semantics; do not trust client X-Forwarded-For. Prove direct requests fail with no header, forged header and wrong secret, while authorized edge traffic succeeds. If this cannot be enforced, hold rollout. |
 | Vercel aliases | Apply the origin restriction to every project deployment URL, including `<app>-tuturuuu.vercel.app`, branch aliases and immutable deployment URLs. Preserve approved deployment protection. Inventory direct internal/CI callbacks before restricting them. | Verify canonical host and aliases separately. Roll back the new project rule by captured ID/version, with browser/auth enforcement paused. Do not add a broad alias/IP/UA bypass to repair a probe. |
 | DNS-only hosts | Separately authorize and prove proxy/canonical ingress plus header injection before enabling the origin restriction for that host. | A Cloudflare-only restriction on a still-DNS-only app would reject its callers. Restore that host's recorded ingress/origin rule together under the release owner, never change Finance from this lane. |
 
 Workers.dev and version URLs are independent settings; changing only one does
-not prove origin closure. No Worker config is edited or deployed by this PR.
+not prove origin closure. Colab URL flags are explicit false/false in this PR; no Worker is deployed.
 These are temporary protections for existing origins during the Cloudflare
 migration, not new runtime or scheduler dependencies.
 [workers.dev](https://developers.cloudflare.com/workers/configuration/routing/workers-dev/),
@@ -324,7 +324,7 @@ Never replace an entrypoint with this fragment's whole rule array.
 | --- | --- | --- |
 | 1. Resolve source gaps | Separate fix owners handle External, Playground and legacy Supermemory. Review other auth/signature and host-binding gaps. | No infrastructure change; preserve open blockers. |
 | 2. Read and prove readiness | Re-read normalization cloudflare/both, DNS, quotas, all relevant phases and Finance custody. Capture IDs/positions. Resolve AI-policy coverage and controlled client 429 behavior. | Stop before apply if any fact or caller behavior is unknown. |
-| 3. Prepare disabled fragments/probes | Under fresh admission, add only owned disabled fragments, header removal and private A/B rotation configuration in safe order. Establish caller updates and origin header absence before enabling the probe exemption. | Remove/disable only newly owned rules by captured ID; preserve foreign rules and origin auth. |
+| 3. Prepare disabled fragments/probes | After every readiness fact and validate-only payload check passes, add only owned disabled fragments and private placeholder configuration in safe order. Record each created ID and position. Runtime caller updates, header removal and probe enablement remain separately gated. | Remove/disable only newly owned rules by captured ID; preserve foreign rules and origin auth. |
 | 4. ORIGIN LOCK | Fresh GET every Worker, resolve legacy/rollback aliases and actual rule-reader identities first. Per host, separately admit proxy/canonical ingress, edge-origin header injection, Vercel Firewall/alias protection or workers.dev/version URL closure. Prove positive canonical traffic and negative direct-origin cases. | Restore that host's recorded origin/ingress controls with enforcement stopped. Do not restore a compromised secret. Finance remains separately owned. |
 | 5. Auth limit and transport canary | After origin lock, server/poll exclusions, client 429 and measured per-IP p99/CGNAT acceptance, admit the low auth rule with the matching machine transport exceptions on one host. Place skips before custom block/challenge rules. No interstitials for API/socket traffic. | Disable the new auth rule and owned transport/config rules by ID. Retain leaked-password protection, app auth and header removal. |
 | 6. Browser enforcement | Preserve the BIC baseline. Admit stronger bot controls only after all machine/control/object paths and specific AI policy behavior are proven and Finance releases its hold. | Restore only captured bot/config values under the zone owner. Record any Under Attack exception that remains. |
@@ -364,9 +364,77 @@ provider compilation, live origin lock or executed Dart/CLI acceptance.
 | P2 pre-auth APIs | Last Pro slot reserved for low auth-path limit; 429 source gaps explicitly hold enforcement. |
 | P2 probe secret | Plaintext-reader risk, low-value A/B overlap and late header removal encoded. |
 | P2 normalization | cloudflare/both and re-read required by policy/validator; observed both at 14:53 GMT+7. |
-| P3 path scopes/aliases | Static-only Next paths, Colab-only redirects, store/stores/api aliases and Hive exact socket path encoded. |
+| P3 path scopes/aliases | Static-only Next paths, Colab-only redirects and store/stores/api aliases encoded. Hive historical socket exception removed after maintenance-origin verification. |
 | P3 no-op/UAM | Browser BIC no-op and machine Under Attack opt-out documented explicitly. |
 | P3 plan/crawler behavior | Custom headers and path prefixes documented by phase; broad AI-policy bypass remains unverified and blocks apply. |
 | r3 Worker/secret/counter gates | Publisher-derived config coverage, fresh GET per Worker, legacy aliases, high-value origin-secret reader/rotation evidence, strict server/poll exclusions and p99/CGNAT acceptance encoded. Step 4/5 runtime acceptance remains open. |
 | Framing end state | Per-host intended/live matrix added; app-owned policy first, global Managed Transform off only after every affected app accepts; no global change now. |
 | Current Finance rule/order | New sanitized entrypoint receipt supersedes empty-state assumption; preserve owner and capture IDs/positions before each step. |
+
+
+## Disabled preparation admission and current halt
+
+Mastermind approved steps 1–3 at `061f6214` on 2026-10-26, below Finance c4.
+**All seven rules must stay `enabled:false`.** Any enabling, including a log
+action, and steps 4–5 require separate user approval. Step 3 may only append
+owned disabled rules after step 2 passes and the correct credential is supplied.
+It does not establish probes or header removal at runtime while they are disabled.
+Record each returned ruleset/rule ID, version, ref and position immediately;
+rollback removes only those newly created IDs. Never replace a shared entrypoint.
+
+The sanitized `inventory/preparation-readiness.json` records seven authenticated
+GETs, zero writes and `createdRuleIds: []` at 16:37 GMT+7. Step 1's separate source
+fix dispositions remain owned by their lanes. Step 2 is **HALTED**: the SBFM
+entrypoint read returned HTTP 400 (unknown phase); complete Block AI bots skip
+coverage and controlled client 429 acceptance remain unknown. No step 3 creation
+was attempted. Resolve every unknown and rerun the complete readiness snapshot
+before proceeding; this partial preflight does not establish current quotas.
+
+The custom entrypoint changed since the earlier packet: its current version is 7
+and the first foreign enabled skip has ID `a414878b9a91447787f404b1265ec8c7`.
+This is foreign Finance custody, not a new rollback ID for this lane. Preserve it
+and re-read IDs, order, quota and custody immediately before any admitted write.
+
+### Literal false: rejected parser, Rulesets acceptance unknown
+
+The documented read-only GET `/filters/validate-expr?expression=false` returned
+HTTP 400 with `false` reported as an unknown identifier. An invalid-IP negative
+control also returned a parser error. This legacy Filters endpoint is not proof
+of Rulesets phase/plan acceptance; it supplies a concrete rejection, not approval.
+[Expression validation](https://developers.cloudflare.com/firewall/api/cf-filters/validation/).
+
+Cloudflare now documents `dry_run=true` on supported Rulesets mutations as
+nonpersistent validation of syntax, phases, entitlements and quota, using the
+same authorization as a write. No Rulesets dry run was attempted with broader
+credentials. The literal `false` is retained, every fragment stays disabled, and
+**nothing may be created while its acceptance is unresolved or rejected**. Validate this fragment first, then all seven payloads, before any creation. If a
+Rulesets dry run rejects it, stop with zero created rules and report. A replacement
+predicate needs the user's approval; do not silently substitute one.
+[Rulesets dry run](https://developers.cloudflare.com/ruleset-engine/rulesets-api/dry-run/).
+
+### Credential scope for a future step 3
+
+Request a dedicated token, supplied by the release authority, restricted to
+**zone tuturuuu.com (`618b9966111b23a37113d30865f1fbb0`)**:
+
+| Dashboard permission | API permission name | Owned disabled fragment phase |
+| --- | --- | --- |
+| Zone → Zone WAF → Edit | Zone WAF Write | http_request_firewall_custom, http_ratelimit |
+| Zone → Config Rules → Edit | Config Settings Write | http_config_settings |
+| Zone → Transform Rules → Edit | Zone Transform Rules Write | http_request_late_transform (probe removal and origin set) |
+
+The request-header API guide additionally specifies **Account → Account Rulesets
+→ Read** for the owning account `e8912e2867beecc673d171907bf09649`; this grants no
+account mutation. Keep that read scope separate from the zone write resource.
+Existing read credentials can continue DNS/settings observations; no DNS, Worker,
+Managed Transform, Zone Settings or account write permission is requested.
+[Permission names](https://developers.cloudflare.com/fundamentals/api/reference/permissions/),
+[WAF rate rules](https://developers.cloudflare.com/terraform/additional-configurations/rate-limiting-rules/),
+[configuration API](https://developers.cloudflare.com/rules/configuration-rules/create-api/),
+[request-header permissions](https://developers.cloudflare.com/rules/transform/request-header-modification/create-api/#required-api-token-permissions).
+
+A zone token cannot enforce our host/disabled-only custody boundary by itself.
+Preserve Finance rules and validate the exact payload and resulting IDs. Do not
+reuse a Finance-reserved token, create/widen tokens, or treat possession of an
+edit credential as approval to enable anything. The current step-2 halt remains
+in force even after a credential is supplied.

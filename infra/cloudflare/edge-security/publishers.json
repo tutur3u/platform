@@ -83,5 +83,16 @@
   ],
   "vercelOrigins": [],
   "vercelOriginLimit": "No non-Finance proxied host has been proven to target Vercel in this snapshot. Populate host/project bindings only after provider verification; the origin-secret set fragment therefore starts with expression false.",
-  "coverage": "Joined canonical app/workflow inventory, publication fences and actual input/emitted config authorities. This map is not live deployment acceptance or permission to deploy. Reconcile every unresolved candidate before claiming platform-wide origin closure."
+  "coverage": "Joined canonical app/workflow inventory, publication fences and actual input/emitted config authorities. This map is not live deployment acceptance or permission to deploy. Reconcile every unresolved candidate before claiming platform-wide origin closure.",
+  "maintenanceWorkers": [
+    {
+      "host": "hive.tuturuuu.com",
+      "worker": "tuturuuu-hive-maintenance",
+      "publisher": "operator-owned maintenance deployment; not the retained Next/Docker publisher",
+      "workersDev": false,
+      "previewUrls": false,
+      "liveEvidence": "inventory/preparation-readiness.json",
+      "publication": "Live route verified 2026-10-26 16:37 GMT+7; tunnel ingress removed per release owner. Re-read subdomain status with every other Worker before step 4; full Hive migration and runtime acceptance remain separate."
+    }
+  ]
 }

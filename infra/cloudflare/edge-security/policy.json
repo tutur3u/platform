@@ -44,11 +44,6 @@
       "host": "colab.tuturuuu.com",
       "exact": ["/auth/login", "/auth/callback"],
       "prefixes": []
-    },
-    {
-      "host": "hive.tuturuuu.com",
-      "exact": ["/realtime"],
-      "prefixes": []
     }
   ],
   "probe": {
