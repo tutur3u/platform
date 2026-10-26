@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+export 'package:mobile/core/ui/components/app_loading_indicator.dart';
 export 'nova_refresh_indicator.dart';
 
 class NovaLoadingIndicator extends StatefulWidget {

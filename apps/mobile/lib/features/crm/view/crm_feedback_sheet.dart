@@ -163,7 +163,7 @@ class _FeedbackSheetState extends State<_FeedbackSheet> {
             const SizedBox(height: 16),
             Expanded(
               child: _loading
-                  ? const Center(child: NovaLoadingIndicator())
+                  ? const AppLoadingIndicator.page()
                   : ListView(
                       children: _items
                           .map(

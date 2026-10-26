@@ -369,9 +369,7 @@ class _RequestDetailSheetState extends State<RequestDetailSheet> {
                           () => _commentsExpanded = !_commentsExpanded,
                         ),
                         child: _isLoadingComments
-                            ? const Center(
-                                child: NovaLoadingIndicator(size: 20),
-                              )
+                            ? const AppLoadingIndicator()
                             : CommentsSection(
                                 comments: _comments,
                                 workspaceId: widget.wsId,

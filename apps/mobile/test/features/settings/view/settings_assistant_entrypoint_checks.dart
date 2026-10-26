@@ -101,7 +101,7 @@ void registerSettingsAssistantEntrypointChecks() {
           await _settle(tester);
           expect(find.text(l10n.assistantHistoryTitle), findsNothing);
           final settingsAction = find.widgetWithText(
-            AppListTile,
+            AppGroupedRow,
             l10n.assistantSettingsTitle,
           );
           // The nested sheet shares the bottom edge with the floating dock.

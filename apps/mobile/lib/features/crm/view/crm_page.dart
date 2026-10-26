@@ -13,6 +13,7 @@ import 'package:mime/mime.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/overlays/show_app_sheet.dart' show showAppSheet;
 import 'package:mobile/core/widgets/network_avatar.dart';
 import 'package:mobile/data/models/crm/crm_models.dart';
 import 'package:mobile/data/repositories/crm_repository.dart';

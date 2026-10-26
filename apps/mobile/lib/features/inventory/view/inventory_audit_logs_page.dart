@@ -229,9 +229,7 @@ class _InventoryAuditLogsPageState extends State<InventoryAuditLogsPage>
           child: Builder(
             builder: (context) {
               if (_isLoadingInitial && _entries.isEmpty) {
-                return const AppPageBody(
-                  child: Center(child: NovaLoadingIndicator()),
-                );
+                return const AppPageBody(child: AppLoadingIndicator.page());
               }
 
               if (_error != null && _entries.isEmpty) {
@@ -353,7 +351,7 @@ class _InventoryAuditLogsPageState extends State<InventoryAuditLogsPage>
                       if (_isLoadingMore)
                         const Padding(
                           padding: EdgeInsets.symmetric(vertical: 16),
-                          child: Center(child: NovaLoadingIndicator(size: 20)),
+                          child: AppLoadingIndicator(),
                         ),
                     ],
                   ],

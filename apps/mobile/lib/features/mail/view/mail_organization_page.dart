@@ -295,7 +295,7 @@ class _MailOrganizationPageState extends State<MailOrganizationPage> {
         child: const Icon(Icons.add),
       ),
       body: _busy
-          ? const Center(child: NovaLoadingIndicator(size: 20))
+          ? const AppLoadingIndicator.page()
           : _failed
           ? Center(
               child: TextButton(

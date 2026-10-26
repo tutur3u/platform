@@ -2091,6 +2091,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get commonLoading => 'Đang tải';
 
   @override
+  String get commonMoreOptions => 'Tùy chọn khác';
+
+  @override
   String get commonNext => 'Tiếp';
 
   @override
@@ -10208,6 +10211,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get timerHeatmapViewOriginal => 'Gốc';
+
+  @override
+  String get timerHeatmapViewTitle => 'Chế độ xem';
 
   @override
   String get timerHeatmapWed => 'T4';

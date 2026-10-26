@@ -135,7 +135,7 @@ class _SettingsWorkspaceSecretsPageState
                 if (_isLoading)
                   const Padding(
                     padding: EdgeInsets.only(top: 36),
-                    child: Center(child: NovaLoadingIndicator()),
+                    child: AppLoadingIndicator.page(),
                   )
                 else if (_error != null)
                   _MessagePanel(

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/data/models/time_tracking/goal.dart';
 import 'package:mobile/data/models/time_tracking/session.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -16,7 +17,6 @@ import 'package:mobile/features/time_tracker/widgets/time_tracker_goals/goal_det
 import 'package:mobile/features/time_tracker/widgets/time_tracker_goals/goal_form_sheet.dart';
 import 'package:mobile/features/time_tracker/widgets/time_tracker_goals/goals_empty_state.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:mobile/widgets/pending_sync_frame.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -69,7 +69,7 @@ class _TimeTrackerGoalsSectionState extends State<TimeTrackerGoalsSection> {
             if (shouldShowLoading)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 24),
-                child: Center(child: NovaLoadingIndicator()),
+                child: AppLoadingIndicator(),
               )
             else if (goals.isEmpty)
               GoalsEmptyState(

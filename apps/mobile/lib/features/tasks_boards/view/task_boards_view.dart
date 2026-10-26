@@ -149,10 +149,7 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
         !_hasResolvedPermissions &&
         !hasVisibleBoards) {
       return Stack(
-        children: [
-          shellActionRegistration,
-          const Center(child: NovaLoadingIndicator()),
-        ],
+        children: [shellActionRegistration, const AppLoadingIndicator.page()],
       );
     }
     if (_permissionsLoadFailed && !hasVisibleBoards) {
@@ -184,7 +181,7 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
           return Stack(
             children: [
               shellActionRegistration,
-              const Center(child: NovaLoadingIndicator()),
+              const AppLoadingIndicator.page(),
             ],
           );
         }
@@ -229,7 +226,7 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
               if (state.isLoadingMore)
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 16),
-                  child: Center(child: NovaLoadingIndicator()),
+                  child: AppLoadingIndicator(),
                 ),
             ],
           ),

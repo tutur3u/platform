@@ -66,14 +66,16 @@ Future<T?> showAppSheet<T>({
             dismissible: isDismissible,
             scrollController: controller,
             expands: expands,
-            child: _AppSheetSurface(
+            child: AppSheetSurface(
               showHandle: enableDrag,
               expands: expands,
-              child: builder(sheetContext),
+              // Build below the host so the body sees the consumed keyboard
+              // inset and the modal scope, never the raw view insets.
+              child: Builder(builder: builder),
             ),
           );
       return switch (size) {
-        AppSheetSize.fit => _AboveKeyboard(
+        AppSheetSize.fit => AppSheetKeyboardInset(
           child: ConstrainedBox(
             constraints: BoxConstraints(
               maxHeight:
@@ -117,7 +119,7 @@ Future<T?> showAppDialog<T>({
   barrierColor: _barrier,
   builder: (dialogContext) => AppModalBinding(
     dismissible: barrierDismissible,
-    child: _AboveKeyboard(
+    child: AppSheetKeyboardInset(
       child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.xl),
@@ -127,9 +129,9 @@ Future<T?> showAppDialog<T>({
                 maxWidth: maxWidth,
                 maxHeight: MediaQuery.sizeOf(dialogContext).height * 0.85,
               ),
-              child: _AppSheetSurface(
+              child: AppSheetSurface(
                 dialog: true,
-                child: builder(dialogContext),
+                child: Builder(builder: builder),
               ),
             ),
           ),
