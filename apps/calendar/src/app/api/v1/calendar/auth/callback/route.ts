@@ -202,15 +202,9 @@ export async function GET(request: Request) {
       typeof tokens.refresh_token === 'string' && tokens.refresh_token.trim()
         ? tokens.refresh_token
         : null;
-    // A quarantined row's stored refresh token is the one Google rejected.
-    // Without a fresh one, keep the quarantine and ask again with consent,
-    // which makes Google issue a new refresh token.
-    if (
-      !receivedRefreshToken &&
-      existingToken?.is_active === false &&
-      existingToken.deactivated_reason
-    ) {
-      return NextResponse.redirect(
+    // Asking again with consent makes Google issue a new refresh token.
+    const askAgainWithConsent = () =>
+      NextResponse.redirect(
         buildGoogleCalendarAuthUrl({
           request,
           userId: user.id,
@@ -220,7 +214,14 @@ export async function GET(request: Request) {
           consent: true,
         })
       );
-    }
+    // A quarantined row's stored refresh token is the one Google rejected;
+    // never revive it.
+    if (
+      !receivedRefreshToken &&
+      existingToken?.is_active === false &&
+      existingToken.deactivated_reason
+    )
+      return askAgainWithConsent();
 
     const refreshToken =
       receivedRefreshToken ||
@@ -247,7 +248,7 @@ export async function GET(request: Request) {
     if (existingToken) {
       calendarOAuthDebug('🔍 [DEBUG] Updating existing token...');
       // Update existing token
-      const { error: updateError } = await reactivateCalendarAuthToken(
+      const { error: updateError, matched } = await reactivateCalendarAuthToken(
         supabase,
         existingToken.id,
         {
@@ -255,7 +256,12 @@ export async function GET(request: Request) {
           refresh_token: refreshToken,
           expires_at: expiresAt,
           account_name: accountName,
-        }
+        },
+        // Reusing the stored token is only safe if sync has not rejected
+        // it since this callback read the row.
+        receivedRefreshToken
+          ? undefined
+          : { createdAt: existingToken.created_at }
       );
 
       if (updateError) {
@@ -265,6 +271,7 @@ export async function GET(request: Request) {
           { status: 500 }
         );
       }
+      if (!receivedRefreshToken && !matched) return askAgainWithConsent();
       calendarOAuthDebug('✅ [DEBUG] Token updated successfully');
     } else {
       calendarOAuthDebug('🔍 [DEBUG] Inserting new token...');

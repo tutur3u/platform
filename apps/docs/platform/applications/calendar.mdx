@@ -434,14 +434,20 @@ requests. Nobody repairs a rejected credential by hand.
   (`consensus_hold`): nothing is written, the account stays active and is still
   shown as needing reconnect, and the spike alert fires. A misconfigured client
   therefore cannot drain accounts.
-- **Isolation.** `provider-sync` returns 200 with `tokens.counts` and per-token
-  `tokens.outcomes` (hashed account, provider, outcome, reason). It returns 5xx
-  only when, for one provider, at least three accounts failed systemically or
-  were held for a reason a broken client can cause (`*_unauthorized_client`,
-  `unknown_permanent`) and no account obtained a fresh credential in the run,
-  or for the existing enumeration/dispatch failures. Revocation holds,
-  ordinary churn, one tenant's removal and another provider's failures never
-  spend the scheduler's failure budget.
+- **Isolation.** The scheduler reads only `ok` from a body of at most 64 KiB,
+  and five failed or unreadable runs stop the job for everyone. So `ok` reports
+  whether the run worked, not whether every account synced: a run that
+  completed returns `ok: true` with `partialFailure`, per-workspace `failures`
+  codes, `tokens.counts` and at most 50 non-ok `tokens.attention` entries
+  (hashed account, provider, outcome, reason); complete detail is in the
+  per-outcome logs. The run fails (`ok: false`) only when, for one provider,
+  at least three accounts failed with an explicit client-wide diagnosis
+  (`systemic`) and none obtained a fresh credential (HTTP 500), when no
+  workspace sync completed, or on the existing enumeration/dispatch failures.
+  Breaker holds of any reason, revocations and one tenant removing our app
+  never fail the job. `cron-control`'s
+  `calendar-provider-sync-contract.test.ts` drives these responses through the
+  scheduler's real reader and ledger.
 - **Recovery.** The calendar sync warning is the durable signal: it lists
   quarantined accounts (by email, or name when there is none) with the
   provider's Reconnect action. The owner also gets at most one
@@ -453,11 +459,14 @@ requests. Nobody repairs a rejected credential by hand.
 - **Reconnect.** A successful reconnect updates the same row, reactivates it and
   clears both quarantine fields in one statement. While any of the user's
   Google rows in the workspace is quarantined, every Google connect there shows
-  the consent screen so Google issues a fresh refresh token; the warning's
-  Reconnect action asks for consent too, which covers held accounts. If Google
-  still returns no new refresh token for a quarantined row, the callback keeps
-  the quarantine and sends the user through consent again instead of reviving
-  the rejected credential. Ordinary reconnects stay consent-free.
+  the consent screen so Google issues a fresh refresh token; the Reconnect
+  actions in the warning and in calendar settings ask for consent too, which
+  covers held accounts. When Google returns no new refresh token, the stored one
+  is reused only through a guarded update that matches a row still active,
+  unquarantined and unchanged since the callback read it; otherwise (including
+  a quarantined row) the callback keeps the quarantine and sends the user
+  through consent again instead of reviving the rejected credential. Ordinary
+  reconnects stay consent-free.
 - **Observability.** One `calendar.oauth.token_outcome` log line per outcome
   carries the route template, provider, outcome, reason, provider code and a
   hashed account id. `calendar.oauth.deactivation_spike` fires on five or more

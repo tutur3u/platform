@@ -323,7 +323,14 @@ describe('Microsoft Calendar OAuth callback route', () => {
   });
 
   it('reactivates a quarantined account and clears its reason in the same update', async () => {
-    const update = vi.fn(() => ({ eq: vi.fn(async () => ({ error: null })) }));
+    const update = vi.fn(() => ({
+      eq: vi.fn(() => ({
+        select: vi.fn(async () => ({
+          data: [{ id: 'existing-token-id' }],
+          error: null,
+        })),
+      })),
+    }));
     const query = {
       eq: () => query,
       insert: vi.fn(async () => ({ error: null })),

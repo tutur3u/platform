@@ -108,6 +108,7 @@ function callbackRequest(
 interface ExistingCalendarToken {
   id: string;
   refresh_token: string | null;
+  created_at?: string;
   is_active?: boolean;
   deactivated_reason?: string | null;
   deactivated_at?: string | null;
@@ -126,15 +127,32 @@ function createTokenResponse(refreshToken: string | null = 'refresh-token') {
 
 function createSupabaseClient({
   existingToken = null,
+  updateMatches = true,
 }: {
   existingToken?: ExistingCalendarToken | null;
+  updateMatches?: boolean;
 } = {}) {
   const calendarConnectionsUpsertMock = vi.fn(async () => ({ error: null }));
   const tokenInsertMock = vi.fn(async () => ({ error: null }));
-  const tokenUpdateEqMock = vi.fn(async () => ({ error: null }));
-  const tokenUpdateMock = vi.fn(() => ({
-    eq: tokenUpdateEqMock,
-  }));
+  // The update chain records its filters; `updateMatches: false` simulates
+  // a guarded write that lost to a concurrent quarantine.
+  const tokenUpdateFilters: Array<[string, unknown]> = [];
+  const tokenUpdateChain = {
+    eq: vi.fn((column: string, value: unknown) => {
+      tokenUpdateFilters.push([column, value]);
+      return tokenUpdateChain;
+    }),
+    is: vi.fn((column: string, value: unknown) => {
+      tokenUpdateFilters.push([`is.${column}`, value]);
+      return tokenUpdateChain;
+    }),
+    select: vi.fn(async () => ({
+      data: updateMatches ? [{ id: existingToken?.id ?? 'token-id' }] : [],
+      error: null,
+    })),
+  };
+  const tokenUpdateEqMock = tokenUpdateChain.eq;
+  const tokenUpdateMock = vi.fn(() => tokenUpdateChain);
 
   const client = {
     from: vi.fn((table: string) => {
@@ -186,6 +204,7 @@ function createSupabaseClient({
     client,
     tokenInsertMock,
     tokenUpdateEqMock,
+    tokenUpdateFilters,
     tokenUpdateMock,
   };
 }
@@ -392,6 +411,53 @@ describe('Google Calendar OAuth callback route', () => {
     expect(supabase.tokenUpdateMock).not.toHaveBeenCalled();
     expect(supabase.tokenInsertMock).not.toHaveBeenCalled();
     expect(fullSyncMock).not.toHaveBeenCalled();
+  });
+
+  it('asks again with consent when sync rejected the reused token after the read', async () => {
+    getTokenMock.mockResolvedValue(createTokenResponse(null));
+    // The callback read an active row; sync quarantined it before the write.
+    const supabase = createSupabaseClient({
+      existingToken: {
+        id: 'existing-token-id',
+        refresh_token: 'stored-refresh-token',
+        is_active: true,
+        created_at: '2026-10-26T01:00:00Z',
+      },
+      updateMatches: false,
+    });
+    mockResolvedAuthContext(supabase.client);
+
+    const response = await GET(callbackRequest(signedState()));
+    const location = new URL(response.headers.get('location') ?? '');
+
+    expect(location.host).toBe('accounts.google.com');
+    expect(location.searchParams.get('prompt')).toBe('consent');
+    expect(supabase.tokenUpdateFilters).toEqual(
+      expect.arrayContaining([
+        ['id', 'existing-token-id'],
+        ['is_active', true],
+        ['created_at', '2026-10-26T01:00:00Z'],
+        ['is.deactivated_reason', null],
+      ])
+    );
+    expect(fullSyncMock).not.toHaveBeenCalled();
+  });
+
+  it('reactivates a fresh credential without the reuse guard', async () => {
+    getTokenMock.mockResolvedValue(createTokenResponse('fresh-refresh-token'));
+    const supabase = createSupabaseClient({
+      existingToken: {
+        id: 'existing-token-id',
+        refresh_token: 'stored-refresh-token',
+        is_active: true,
+        created_at: '2026-10-26T01:00:00Z',
+      },
+    });
+    mockResolvedAuthContext(supabase.client);
+
+    await GET(callbackRequest(signedState()));
+
+    expect(supabase.tokenUpdateFilters).toEqual([['id', 'existing-token-id']]);
   });
 
   it('does not save an active Google connection without any refresh token', async () => {

@@ -1,6 +1,7 @@
 import { AlertTriangle, RefreshCw } from '@tuturuuu/icons';
 import { Alert, AlertDescription, AlertTitle } from '../../alert';
 import { Button } from '../../button';
+import { reconnectCalendarProvider } from './calendar-reconnect-action';
 import type { CalendarConnectionsManagerState } from './use-calendar-connections-manager';
 
 type RecoveryState = Pick<
@@ -200,9 +201,7 @@ export function CalendarSyncRecovery({ state }: { state: RecoveryState }) {
             <Button
               size="sm"
               disabled={state.googleAuthMutation.isPending}
-              onClick={() =>
-                state.googleAuthMutation.mutate({ reconnect: true })
-              }
+              onClick={() => reconnectCalendarProvider(state, 'google')}
             >
               {t('sync_recovery.reconnect_google')}
             </Button>
@@ -211,7 +210,7 @@ export function CalendarSyncRecovery({ state }: { state: RecoveryState }) {
             <Button
               size="sm"
               disabled={state.microsoftAuthMutation.isPending}
-              onClick={() => state.microsoftAuthMutation.mutate()}
+              onClick={() => reconnectCalendarProvider(state, 'microsoft')}
             >
               {t('sync_recovery.reconnect_microsoft')}
             </Button>
