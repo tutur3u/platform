@@ -245,9 +245,11 @@ mixin _AssistantChatRepository {
         'Assistant durable creation receipt could not be retained',
       );
     }
-    return _assistantChatRecordFromConversation(
-      acknowledged.conversation,
-      modelId: modelId,
+    return AssistantCreatedChat(
+      id: acknowledged.conversation.id,
+      title: acknowledged.conversation.title,
+      model: modelId,
+      createdAt: acknowledged.conversation.createdAt,
     );
   }
 
