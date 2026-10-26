@@ -460,6 +460,39 @@ rows to appear; a deployed UI and a green application build do not prove the
 database function changed. Check the migration marker and a read-only customer
 row after sync. Never manually push the migration from an agent checkout.
 
+#### Legacy cutoff before the first exact-month invoice (draft)
+
+Status: proposed in
+`20261026180000_pending_tuition_legacy_floor_before_first_explicit_month.sql`;
+it needs a product decision and per-workspace migration approval before
+release.
+
+- **Scope:** every workspace's pending tuition, per student and class. It
+  affects the Finance and web Pending invoices tab, its badge and pagination,
+  grouped-by-student mode, and the CSV/Excel unpaid export, which all read
+  `get_pending_invoices_base`.
+- **Default:** a student-class pair with a completed legacy invoice (no
+  `subscription_months`) starts pending months at the later of the legacy
+  paid-through month and the first month of the student's first completed
+  exact-month invoice for that class. Earlier months keep the legacy
+  high-water-mark meaning and do not reappear after an exact-month payment.
+  From the first exact month onward only listed months are covered, so a
+  later payment still never hides an earlier gap. The legacy cutoff month is
+  read in the Ho Chi Minh time zone.
+- **Exceptions:** a pair without a legacy invoice keeps the join-date start
+  above. Uncompleted invoices neither cover nor move the start. An exact month
+  older than the legacy cutoff never moves the start earlier.
+- **Open question:** should months before a student's first exact-month
+  invoice ever reappear? Under this rule, an unpaid month between the legacy
+  cutoff and the first exact month is hidden, as it was before exact months
+  existed.
+
+Regression coverage: `apps/database/supabase/tests/pending-tuition-legacy-floor.sql`
+(legacy plus exact month, gaps after the first exact month, exact-only students,
+Ho Chi Minh month boundaries) and `apps/database/supabase/tests/subscription-coverage.sql`.
+Rollback restores the previous definition with
+`apps/database/rollbacks/20261026180000_pending_tuition_legacy_floor_before_first_explicit_month.rollback.sql`.
+
 ### Exchange-rate session boundary
 
 Exchange rates are authenticated global reference data. Web Supabase sessions and
