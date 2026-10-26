@@ -120,8 +120,14 @@ describe('AI chat resource routes', () => {
 
   describe('cross-workspace access', () => {
     it('denies file-urls in a workspace the actor is not a member of', async () => {
-      mocks.state.objects.set(resource(OWN_CHAT, '1_a.jpg', OTHER_WS), JPEG_BYTES);
-      const response = await post(fileUrls, { chatId: OWN_CHAT, wsId: OTHER_WS });
+      mocks.state.objects.set(
+        resource(OWN_CHAT, '1_a.jpg', OTHER_WS),
+        JPEG_BYTES
+      );
+      const response = await post(fileUrls, {
+        chatId: OWN_CHAT,
+        wsId: OTHER_WS,
+      });
       expect(response.status).toBe(403);
       expect(mocks.admin.bucket.list).not.toHaveBeenCalled();
     });

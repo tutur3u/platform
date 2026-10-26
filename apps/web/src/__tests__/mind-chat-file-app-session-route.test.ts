@@ -274,7 +274,9 @@ describe('Mind chat file routes', () => {
     // No owned ai_chats row yet: the upload goes to the caller's temp folder.
     expect(createSignedUploadUrl).toHaveBeenCalledTimes(1);
     expect(createSignedUploadUrl).toHaveBeenCalledWith(
-      expect.stringMatching(/^ws-1\/chats\/ai\/resources\/temp\/user-1\/\d+_a\.png$/),
+      expect.stringMatching(
+        /^ws-1\/chats\/ai\/resources\/temp\/user-1\/\d+_a\.png$/
+      ),
       { upsert: false }
     );
   });
