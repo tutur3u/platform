@@ -20,6 +20,7 @@ const fs = require('node:fs');
 const { writeExclusiveFileSync } = require('./safe-fs');
 const os = require('node:os');
 const path = require('node:path');
+const { authGuardChecks } = require('./auth-guards.js');
 const { sourceSizeCheck } = require('./check-source-size.js');
 const {
   assertCheckCliAllowed,
@@ -106,6 +107,9 @@ function validateBiomeOutput(output) {
   return `Found ${stats.totalIssues} Biome issue(s): ${formatBiomeIssueStats(stats)}`;
 }
 
+/**
+ * Calculate the display width of a string
+ */
 function getDisplayWidth(str) {
   return stripAnsi(str).length;
 }
@@ -270,30 +274,7 @@ const checks = [
   },
   sourceSizeCheck,
   publicSeoCheck,
-  {
-    name: 'server-console',
-    command: 'node',
-    args: ['scripts/check-server-console.js'],
-    parseOutput: () => 'Server logs use native console methods',
-  },
-  {
-    name: 'internal-app-auth',
-    command: 'node',
-    args: ['scripts/check-internal-app-auth.js'],
-    parseOutput: () => 'Registered app auth surfaces use app sessions',
-  },
-  {
-    name: 'satellite-cookie-auth',
-    command: 'node',
-    args: ['scripts/check-satellite-cookie-auth.js'],
-    parseOutput: () => 'Satellites authorize with app-session-aware clients',
-  },
-  {
-    name: 'browser-session-surface',
-    command: 'node',
-    args: ['scripts/check-browser-session-surface.js'],
-    parseOutput: () => 'Browser session surfaces stay within the allowlist',
-  },
+  ...authGuardChecks,
   {
     name: 'offline-worker-wiring',
     command: 'node',
@@ -1247,6 +1228,9 @@ function printSummary(results, options = {}) {
   }
 }
 
+/**
+ * Main function
+ */
 async function main(options = {}) {
   const queueHandle = await acquireCheckQueueLock({
     ...options,

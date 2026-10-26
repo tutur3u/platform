@@ -12,15 +12,24 @@ whenever app or package source changes, and in `bun check`/`bun validate`.
 
 ## Rules
 
-The guard scans `apps/*/src` and `packages/*/src`. It skips tests, stories and
-the paused `backend` and `tanstack-web` runtimes.
+The guard scans `apps/*/src` and `packages/*/src`. It skips tests, stories,
+generated output and the paused `backend` and `tanstack-web` runtimes.
+
+**Limits.**
+- Only `src/` trees are scanned. App-root files such as `next.config.ts`,
+  Worker entries outside `src/`, and `scripts/` are not covered.
+- The Flutter app (Dart) is excluded. It holds bearer tokens in native secure
+  storage by design.
+- The rules are lexical. A token returned through an indirect variable, or a
+  client created through a re-exported helper, needs review rather than this
+  guard.
 
 | Rule | Matches | Baseline |
 | --- | --- | --- |
-| `browserSupabaseClientImports` | Static or dynamic imports of `@tuturuuu/supabase/next/client` or `@tuturuuu/supabase/next/auth-browser` | 88 files, to migrate in the BFF and data-access work |
+| `browserSupabaseClientImports` | Imports, dynamic imports or `require` of `@tuturuuu/supabase/next/client` or `next/auth-browser`; `createBrowserClient` from `@supabase/ssr`; `@supabase/supabase-js` `createClient` in a `'use client'` module | 91 files, including the `packages/supabase` definition sites |
 | `postgresChangesSubscriptions` | A `'postgres_changes'` string literal (a realtime subscription that needs a JS-held session) | 0 |
-| `sessionCookieScriptAccess` | `document.cookie` on the same line as `sb-`, `auth-token` or `app_session` | 0 |
-| `sessionTokenResponses` | A `refresh_token:`/`refreshToken:` object key in a file that builds JSON responses or `{ body: … }` route results | 35 files, each with a reason |
+| `sessionCookieScriptAccess` | A file that uses `document.cookie` and names `sb-`, `auth-token` or `app_session` anywhere | 0 |
+| `sessionTokenResponses` | An `access_token`/`refresh_token` (or camelCase) key, plain, quoted or shorthand, in a file that builds JSON responses, `{ body: … }` results or `new Response(JSON.stringify(…))`; or a `.json(session)` dump | 42 files, each with a reason |
 
 The allowlist is `scripts/browser-session-surface-allowlist.json`, and it only
 shrinks:

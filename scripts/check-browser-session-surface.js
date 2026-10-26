@@ -6,13 +6,17 @@
  * The shared session must end up unreadable by page script. This guard keeps
  * the surfaces that can expose it from growing while they are migrated:
  *
- * - browserSupabaseClientImports: imports of the browser Supabase clients
- *   (`@tuturuuu/supabase/next/client`, `@tuturuuu/supabase/next/auth-browser`).
+ * - browserSupabaseClientImports: imports or requires of the browser Supabase
+ *   clients (`@tuturuuu/supabase/next/client`, `next/auth-browser`),
+ *   `createBrowserClient` from `@supabase/ssr`, and `@supabase/supabase-js`
+ *   `createClient` in a `'use client'` module.
  * - postgresChangesSubscriptions: `postgres_changes` realtime subscriptions,
  *   which need a JS-held session.
- * - sessionCookieScriptAccess: `document.cookie` next to a session cookie name.
- * - sessionTokenResponses: a session/refresh-token object key in a file that
- *   builds JSON responses or `{ body: ... }` route results. Each entry records why the token may leave the
+ * - sessionCookieScriptAccess: `document.cookie` in a file that names a
+ *   session cookie.
+ * - sessionTokenResponses: an access/refresh-token key (plain, quoted or
+ *   shorthand) in a file that builds JSON responses, `{ body: ... }` route
+ *   results or `new Response(JSON.stringify(...))`, or a `.json(session)` dump. Each entry records why the token may leave the
  *   server (native or CLI bearer, provider OAuth storage, ...).
  *
  * The allowlist is shrink-only: a new match fails, and an entry whose file no
@@ -39,27 +43,40 @@ const EXCLUDED_DIRECTORIES = new Set([
   'generated',
 ]);
 
+const BROWSER_CLIENT_MODULE =
+  '[\'"]@tuturuuu/supabase/next/(?:client|auth-browser)[\'"]';
+const TOKEN_FIELD = '(?:refresh_token|refreshToken|access_token|accessToken)';
+const USE_CLIENT_DIRECTIVE = /^\s*['"]use client['"]/mu;
+
 const RULES = {
   browserSupabaseClientImports: (source) =>
-    /from\s+['"]@tuturuuu\/supabase\/next\/(?:client|auth-browser)['"]/u.test(
+    new RegExp(`from\\s+${BROWSER_CLIENT_MODULE}`, 'u').test(source) ||
+    new RegExp(
+      `(?:import|require)\\(\\s*${BROWSER_CLIENT_MODULE}\\s*\\)`,
+      'u'
+    ).test(source) ||
+    /import\s*\{[^}]*\bcreateBrowserClient\b[^}]*\}\s*from\s*['"]@supabase\/ssr['"]/u.test(
       source
     ) ||
-    /import\(\s*['"]@tuturuuu\/supabase\/next\/(?:client|auth-browser)['"]\s*\)/u.test(
-      source
-    ),
+    (USE_CLIENT_DIRECTIVE.test(source) &&
+      /from\s*['"]@supabase\/supabase-js['"]/u.test(source) &&
+      /\bcreateClient\s*\(/u.test(source)),
   postgresChangesSubscriptions: (source) =>
     /['"]postgres_changes['"]/u.test(source),
   sessionCookieScriptAccess: (source) =>
-    source
-      .split('\n')
-      .some(
-        (line) =>
-          line.includes('document.cookie') &&
-          /sb-|auth-token|app_session/u.test(line)
-      ),
-  sessionTokenResponses: (source) =>
-    /\b(?:refresh_token|refreshToken)\s*:/u.test(source) &&
-    /(?:\.json\s*\(|jsonWithCors\s*\(|\bbody\s*:\s*\{)/u.test(source),
+    source.includes('document.cookie') &&
+    /\bsb-|auth-token|app_session/u.test(source),
+  sessionTokenResponses: (source) => {
+    const tokenKey =
+      new RegExp(`['"]?\\b${TOKEN_FIELD}\\b['"]?\\s*:`, 'u').test(source) ||
+      new RegExp(`[{,]\\s*${TOKEN_FIELD}\\s*(?=[,}])`, 'u').test(source);
+    const response =
+      /(?:\.json\s*\(|jsonWithCors\s*\(|\bbody\s*:\s*\{|new\s+Response\s*\(\s*JSON\.stringify\s*\()/u.test(
+        source
+      );
+    const sessionDump = /\.json\s*\(\s*(?:data\.)?session\s*[,)]/u.test(source);
+    return (tokenKey && response) || sessionDump;
+  },
 };
 
 function listSourceFiles(directory, files = []) {

@@ -32,6 +32,39 @@ test('flags browser Supabase client imports, static and dynamic', () => {
   );
 });
 
+test('flags required, SSR and use-client supabase-js browser clients', () => {
+  assert.equal(
+    RULES.browserSupabaseClientImports(
+      "const { createClient } = require('@tuturuuu/supabase/next/client');"
+    ),
+    true
+  );
+  assert.equal(
+    RULES.browserSupabaseClientImports(
+      "import {\n  createBrowserClient,\n} from '@supabase/ssr';"
+    ),
+    true
+  );
+  assert.equal(
+    RULES.browserSupabaseClientImports(
+      "'use client';\nimport { createClient } from '@supabase/supabase-js';\nconst c = createClient(url, key);"
+    ),
+    true
+  );
+  assert.equal(
+    RULES.browserSupabaseClientImports(
+      "import { createClient } from '@supabase/supabase-js';\nconst admin = createClient(url, key);"
+    ),
+    false
+  );
+  assert.equal(
+    RULES.browserSupabaseClientImports(
+      "import { createServerClient } from '@supabase/ssr';"
+    ),
+    false
+  );
+});
+
 test('flags postgres_changes subscriptions but not prose about them', () => {
   assert.equal(
     RULES.postgresChangesSubscriptions(
@@ -44,6 +77,15 @@ test('flags postgres_changes subscriptions but not prose about them', () => {
       '// postgres_changes is not available here'
     ),
     false
+  );
+});
+
+test('matches session cookie names anywhere in a file that touches document.cookie', () => {
+  assert.equal(
+    RULES.sessionCookieScriptAccess(
+      "const NAME = 'tuturuuu_app_session';\nconst all = document.cookie;\nread(all, NAME);"
+    ),
+    true
   );
 });
 
@@ -81,6 +123,25 @@ test('flags a refresh-token key in a file that builds responses', () => {
   assert.equal(
     RULES.sessionTokenResponses(
       "await db.from('tokens').insert({ refresh_token: token });"
+    ),
+    false
+  );
+});
+
+test('flags quoted, shorthand and access-token keys, raw JSON responses and session dumps', () => {
+  for (const source of [
+    "return NextResponse.json({ 'refresh_token': token });",
+    'return NextResponse.json({ refresh_token, user });',
+    'return Response.json({ access_token: token });',
+    'return new Response(JSON.stringify({ accessToken: token }));',
+    'return NextResponse.json(data.session);',
+    'return NextResponse.json(session, { status: 200 });',
+  ]) {
+    assert.equal(RULES.sessionTokenResponses(source), true, source);
+  }
+  assert.equal(
+    RULES.sessionTokenResponses(
+      'headers.set("Authorization", "Bearer " + (await accessToken()));'
     ),
     false
   );

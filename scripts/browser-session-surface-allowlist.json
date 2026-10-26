@@ -72,6 +72,9 @@
     "packages/payment-core/src/subscription-helper.ts",
     "packages/storage-core/src/lib/storage-helper.ts",
     "packages/supabase/src/index.ts",
+    "packages/supabase/src/next/browser-base.ts",
+    "packages/supabase/src/next/server.ts",
+    "packages/supabase/src/request/server.ts",
     "packages/tasks-ui/src/calendar/components/scheduling-dialog.tsx",
     "packages/tasks-ui/src/tu-do/boards/boardId/task-actions.tsx",
     "packages/tasks-ui/src/tu-do/boards/boardId/task-list-form.tsx",
@@ -121,12 +124,24 @@
       "reason": "Calendar provider (Google/Microsoft) OAuth tokens, stored and used server-side; not a Tuturuuu session"
     },
     {
+      "file": "apps/calendar/src/app/api/v1/calendar/auth/sync-to-google/route.ts",
+      "reason": "Calendar provider (Google/Microsoft) OAuth tokens, stored and used server-side; not a Tuturuuu session"
+    },
+    {
+      "file": "apps/calendar/src/app/api/v1/calendar/auth/sync/route.ts",
+      "reason": "Calendar provider (Google/Microsoft) OAuth tokens, stored and used server-side; not a Tuturuuu session"
+    },
+    {
       "file": "apps/calendar/src/lib/calendar/google-inbound-sync.ts",
       "reason": "Calendar provider (Google/Microsoft) OAuth tokens, stored and used server-side; not a Tuturuuu session"
     },
     {
       "file": "apps/calendar/src/lib/calendar/incremental-active-sync.ts",
       "reason": "Calendar provider (Google/Microsoft) OAuth tokens, stored and used server-side; not a Tuturuuu session"
+    },
+    {
+      "file": "apps/calendar/src/lib/calendar/provider-sync-network.ts",
+      "reason": "Calendar provider access token used as an upstream bearer, server-side"
     },
     {
       "file": "apps/calendar/src/lib/calendar/provider-writes.ts",
@@ -159,6 +174,18 @@
     {
       "file": "apps/mail/src/lib/mail/connected/repository.ts",
       "reason": "Connected mail provider OAuth tokens, stored and used server-side"
+    },
+    {
+      "file": "apps/mail/src/lib/mail/connected/transport.ts",
+      "reason": "Connected mail provider access token used as an upstream bearer, server-side"
+    },
+    {
+      "file": "apps/nova/src/app/api/v1/sessions/[sessionId]/route.ts",
+      "reason": "Nova challenge-session record (a domain object), not an auth session"
+    },
+    {
+      "file": "apps/nova/src/app/api/v1/sessions/route.ts",
+      "reason": "Nova challenge-session record (a domain object), not an auth session"
     },
     {
       "file": "apps/tasks/src/lib/calendar/incremental-active-sync.ts",
@@ -211,6 +238,10 @@
     {
       "file": "apps/web/src/lib/chatgpt/oauth.ts",
       "reason": "ChatGPT OAuth tokens, stored and used server-side"
+    },
+    {
+      "file": "apps/web/src/lib/chatgpt/provider.ts",
+      "reason": "ChatGPT OAuth access token used as an upstream bearer, server-side"
     },
     {
       "file": "apps/web/src/lib/sepay-api.ts",
