@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/components/app_toggle_row.dart';
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as compat;
 import 'package:mobile/features/security/device_mfa/device_mfa_repository.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -104,8 +105,7 @@ class TrustedAuthenticatorsPanel extends StatelessWidget {
               ],
             ),
           ),
-        SwitchListTile.adaptive(
-          contentPadding: EdgeInsets.zero,
+        AppToggleRow(
           title: Text(l10n.deviceMfaLockTitle),
           subtitle: Text(l10n.deviceMfaLockHint),
           value: registry.locked,

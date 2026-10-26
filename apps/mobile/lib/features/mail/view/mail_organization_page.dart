@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/ui/components/app_toggle_row.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
@@ -141,7 +142,8 @@ class _MailOrganizationPageState extends State<MailOrganizationPage> {
                         labelText: l10n.mailAiInstructions,
                       ),
                     ),
-                    SwitchListTile(
+                    AppToggleRow(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
                       title: Text(l10n.mailSmartLabels),
                       value: aiEnabled,
                       onChanged: saving
@@ -151,7 +153,8 @@ class _MailOrganizationPageState extends State<MailOrganizationPage> {
                               if (!v) autoApply = false;
                             }),
                     ),
-                    SwitchListTile(
+                    AppToggleRow(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
                       title: Text(l10n.mailAutoApply),
                       value: autoApply,
                       onChanged: saving || !aiEnabled

@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/components/app_loading_indicator.dart';
+import 'package:mobile/core/ui/components/app_toggle_row.dart';
 import 'package:mobile/data/models/documents/workspace_document.dart';
 import 'package:mobile/data/repositories/document_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -288,8 +289,7 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
                                   onChanged: (_) => setState(() {}),
                                 ),
                                 const SizedBox(height: 10),
-                                SwitchListTile(
-                                  contentPadding: EdgeInsets.zero,
+                                AppToggleRow(
                                   title: Text(context.l10n.documentsPublic),
                                   value: _isPublic,
                                   onChanged: (value) {

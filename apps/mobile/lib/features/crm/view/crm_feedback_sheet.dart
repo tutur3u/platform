@@ -90,7 +90,8 @@ class _FeedbackSheetState extends State<_FeedbackSheet> {
                   labelText: context.l10n.crmFeedback,
                 ),
               ),
-              SwitchListTile(
+              AppToggleRow(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 value: requireAttention,
                 onChanged: (value) => setState(() => requireAttention = value),
                 title: Text(context.l10n.crmRequireAttention),
