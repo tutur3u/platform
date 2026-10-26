@@ -9,6 +9,7 @@ test('translation checks run once per PR update and still cover both protected b
   assert.deepEqual(workflow.on.push.branches, ['main', 'production']);
   // Only prose and agent-instruction PRs skip; no locale bundle lives there.
   assert.deepEqual(workflow.on.pull_request, {
+    types: ['opened', 'synchronize', 'reopened', 'ready_for_review', 'labeled'],
     'paths-ignore': [
       '**/*.md',
       '**/*.mdx',
