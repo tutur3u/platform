@@ -12,7 +12,8 @@ import { useTopicAnnouncements } from '../topic-announcements-shell';
 
 export function TopicAnnouncementsImportPageClient() {
   const t = useTranslations('ws-topic-announcements');
-  const { actions, canSend, importResult, pending } = useTopicAnnouncements();
+  const { actions, canSend, contacts, importResult, pending, workspaceUsers } =
+    useTopicAnnouncements();
 
   return (
     <div className="space-y-4">
@@ -33,11 +34,13 @@ export function TopicAnnouncementsImportPageClient() {
 
       <ImportPanel
         canSend={canSend}
+        contacts={contacts}
         importResult={importResult}
         isImporting={pending.importRows}
         isSending={pending.importAndSendRows}
         onImportAndSend={actions.importAndSendRows}
         onImport={actions.importRows}
+        workspaceUsers={workspaceUsers}
       />
     </div>
   );

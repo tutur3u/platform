@@ -293,6 +293,7 @@ export const TopicAnnouncementImportSchema = z.object({
         room: z.string().trim().optional(),
         sessionDate: z.string().date().optional(),
         startTime: z.string().trim().optional(),
+        teacherWorkspaceUserId: z.string().uuid().optional(),
         title: z.string().trim().optional(),
         topic: z.string().trim().optional(),
       })

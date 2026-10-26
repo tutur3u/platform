@@ -232,6 +232,60 @@ Topic Announcements live under Users and are gated by the workspace secret `ENAB
 - User group and course storage uploads are quota-sensitive and must use the server-mediated `uploadWorkspaceUserGroupStorageFile` / group storage multipart route. Do not mint signed upload URLs from this route because the app server cannot verify the final object size after a direct provider upload.
 - Attachment rows keep workspace, announcement, storage path, content type, and size metadata. Email delivery downloads the stored files and switches to raw MIME only when attachments exist; regular no-attachment messages should keep the standard SES `SendEmailCommand` path.
 
+### Teacher schedule import
+
+Supervisors can load a monthly teacher schedule spreadsheet on the import page
+instead of retyping it. Scope: the contacts app import page and
+`POST /api/v1/workspaces/{wsId}/topic-announcements/import`. Default: a sheet
+is treated as a teacher schedule only when its header has `TIME`, a `DATE` or
+`DAY` column, and a `TEACHER-CLASS`, `AM/PM` or `TEACHER` column; every other
+sheet keeps the generic announcement template behavior.
+
+- **Columns.** The header row may sit below title rows (the first 20 rows are
+  scanned). Headers are matched case- and accent-insensitively, so English and
+  Vietnamese variants work: `DAY`, `DATE`, `TIME`, `AM/PM`, `END TIME`,
+  `TEACHER-CLASS`, `CLASS`, `PLACE`/campus, `ROOM`, `TEACHER` (the Vietnamese
+  teacher in charge), foreign teacher name, `EMAIL`, `TOPIC`, `TITLE`.
+- **Merged cells.** Merged ranges are filled from the sheet metadata, and
+  `DAY`/`DATE` are also filled down from the row above, so one merged date
+  cell covers every session of that day. Blank separator rows are skipped.
+- **Teacher-class.** A combined cell is split on the first spaced `-`, `/` or
+  `|` (else the first bare one) into foreign teacher name and class. A cell
+  that cannot be split stays as the class and the row asks for a contact.
+- **Dates and times.** Dates accept Excel date serials, `YYYY-MM-DD`, and
+  day-first `D/M/YYYY` (the current year is assumed when it is omitted).
+  `TIME` and `AM/PM` are joined into 24-hour `HH:MM`; `5:30 PM`, `5.30`,
+  `5h30`, Excel time fractions and `sáng`/`chiều` markers are accepted.
+- **Default duration.** Without an `END TIME` column, end time is start time
+  plus the session length, 30 minutes by default. Operators can change the
+  length in the preview and apply it to every row. Sessions that would end
+  after midnight are row errors.
+- **Matching.** The teacher in charge is matched against the workspace user list
+  the page already loads (full name, display name or email; exact match first,
+  then accent-insensitive). A foreign teacher without an email is matched
+  against existing contacts by name. No match or more than one match is a row
+  error; the import never guesses.
+- **Row errors.** Unmatched or ambiguous teacher, unknown or ambiguous contact,
+  missing or invalid date, and missing or invalid time are shown per row in the
+  editable table. Operators fix the cell or remove the row; rows with errors are
+  never submitted.
+- **Drafts.** Imported rows are always created as drafts in one
+  `topic_announcement_batches` batch. A row without a topic is allowed and gets
+  a title from its class, date and start time; create-and-send stays disabled
+  until every row has a topic.
+- **Server checks.** The import API accepts an optional
+  `teacherWorkspaceUserId` per row and returns `400` with the offending row
+  numbers when any id is not a workspace user of the same workspace, before
+  anything is written (the database trigger stays as a backstop). Invalid start
+  or end times are now reported as row errors instead of being dropped.
+- The import does not set `send_due_at`; deadline handling belongs to the
+  teacher-assigned topic write paths.
+
+Regression coverage: `apps/contacts/src/app/[locale]/[wsId]/users/topic-announcements/teacher-schedule-parser.test.ts`,
+`apps/contacts/src/app/[locale]/[wsId]/users/topic-announcements/teacher-schedule-values.test.ts`, `apps/contacts/src/app/[locale]/[wsId]/users/topic-announcements/import-row-preview.test.ts`,
+`apps/contacts/src/app/[locale]/[wsId]/users/topic-announcements/topic-announcements-import.test.tsx`, and
+`apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/topic-announcements/import/import-rows.test.ts`.
+
 ### Teacher-assigned topics
 
 Supervisors can create a month of sessions before topics exist, assign each
