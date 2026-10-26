@@ -17,7 +17,7 @@ function latestSqlInternalAppNames() {
     .map((file) => readFileSync(join(migrationsDir, file), 'utf8'))
     .map((sql) =>
       sql.match(
-        /function private\.cross_app_internal_app_names\(\)[\s\S]*?array\[([\s\S]*?)\]::text\[\]/u
+        /function private\.cross_app_internal_app_names\(\)[\s\S]*?array\[([\s\S]*?)\]::text\[\]/iu
       )
     )
     .find((match) => match !== null);

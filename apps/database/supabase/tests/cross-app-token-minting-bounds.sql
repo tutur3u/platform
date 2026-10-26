@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(34);
+select plan(36);
 
 insert into public.users (id)
 values
@@ -12,9 +12,23 @@ values
   ('00000000-0000-0000-0000-0000000c1a51')
 on conflict (id) do nothing;
 
--- Registered external apps live in the root workspace secrets.
+insert into public.workspaces (id, name, creator_id, personal)
+values (
+  '00000000-0000-0000-0000-0000000c1a5e',
+  'Cross-app bounds non-root workspace',
+  '00000000-0000-0000-0000-0000000c1a50',
+  false
+)
+on conflict (id) do nothing;
+
+-- Registered external apps live in the root workspace secrets only.
 insert into public.workspace_secrets (ws_id, name, value)
 values
+  (
+    '00000000-0000-0000-0000-0000000c1a5e',
+    'EXTERNAL_APP_REGISTRY:rogue-app:displayName',
+    'Registered outside the root workspace'
+  ),
   (
     '00000000-0000-0000-0000-000000000000',
     'EXTERNAL_APP_REGISTRY:acme-crm:displayName',
@@ -159,6 +173,21 @@ select throws_ok(
   '22023',
   'Unknown cross-app token target',
   'a disabled external app is not a valid target'
+);
+
+select throws_ok(
+  $$
+    select public.generate_cross_app_token(
+      '00000000-0000-0000-0000-0000000c1a50',
+      'web',
+      'rogue-app',
+      60,
+      null::jsonb
+    )
+  $$,
+  '22023',
+  'Unknown cross-app token target',
+  'a registry row outside the root workspace does not register an app'
 );
 
 select throws_ok(
@@ -418,7 +447,17 @@ insert into private.cross_app_tokens (
 select lives_ok(
   $$
     select
-      origin_app,
+      case
+        when origin_app in ('web', 'cli') then origin_app
+        when origin_app in (
+          'ai', 'apps', 'calendar', 'chat', 'cms', 'colab', 'contacts', 'docs',
+          'drive', 'finance', 'forms', 'git', 'hive', 'infra', 'inventory', 'learn',
+          'lettin', 'mail', 'meet', 'mind', 'mira', 'nova', 'parley', 'pay',
+          'platform', 'qr', 'rewise', 'storefront', 'tanstack-web', 'tasks', 'teach',
+          'tools', 'track'
+        ) then 'internal'
+        else 'other'
+      end as origin_bucket,
       case
         when expires_at - created_at <= interval '60 seconds' then '1 <=60s'
         when expires_at - created_at <= interval '300 seconds' then '2 61-300s'
@@ -440,13 +479,23 @@ select lives_ok(
     group by 1, 2
     order by 1, 2
   $$,
-  'the minted-lifetime audit parses and runs'
+  'query 1 (minted lifetime) of the audit parses and runs'
 );
 
 select lives_ok(
   $$
     select
-      origin_app,
+      case
+        when origin_app in ('web', 'cli') then origin_app
+        when origin_app in (
+          'ai', 'apps', 'calendar', 'chat', 'cms', 'colab', 'contacts', 'docs',
+          'drive', 'finance', 'forms', 'git', 'hive', 'infra', 'inventory', 'learn',
+          'lettin', 'mail', 'meet', 'mind', 'mira', 'nova', 'parley', 'pay',
+          'platform', 'qr', 'rewise', 'storefront', 'tanstack-web', 'tasks', 'teach',
+          'tools', 'track'
+        ) then 'internal'
+        else 'other'
+      end as origin_bucket,
       case
         when used_at - created_at <= interval '60 seconds' then '1 <=60s'
         when used_at - created_at <= interval '300 seconds' then '2 61-300s'
@@ -460,13 +509,23 @@ select lives_ok(
     group by 1, 2
     order by 1, 2
   $$,
-  'the redemption-delay audit parses and runs'
+  'query 2 (redemption delay) of the audit parses and runs'
 );
 
 select lives_ok(
   $$
     select
-      origin_app,
+      case
+        when origin_app in ('web', 'cli') then origin_app
+        when origin_app in (
+          'ai', 'apps', 'calendar', 'chat', 'cms', 'colab', 'contacts', 'docs',
+          'drive', 'finance', 'forms', 'git', 'hive', 'infra', 'inventory', 'learn',
+          'lettin', 'mail', 'meet', 'mind', 'mira', 'nova', 'parley', 'pay',
+          'platform', 'qr', 'rewise', 'storefront', 'tanstack-web', 'tasks', 'teach',
+          'tools', 'track'
+        ) then 'internal'
+        else 'other'
+      end as origin_bucket,
       count(*) filter (where not is_revoked) as live_over_limit,
       count(*) filter (where is_revoked) as revoked_over_limit
     from private.cross_app_tokens
@@ -475,7 +534,7 @@ select lives_ok(
     group by 1
     order by 1
   $$,
-  'the over-limit audit parses and runs'
+  'query 3 (over-limit) of the audit parses and runs'
 );
 
 select is(
@@ -488,6 +547,12 @@ select is(
   ),
   2,
   'before containment, two unused unrevoked tokens are over the limit'
+);
+
+select set_config(
+  'cross_app_bounds.rows_before_containment',
+  (select count(*)::text from private.cross_app_tokens),
+  true
 );
 
 select is(
@@ -542,15 +607,38 @@ select is(
 );
 
 select is(
-  (select count(*)::integer from private.cross_app_tokens),
-  12,
+  (select count(*)::text from private.cross_app_tokens),
+  current_setting('cross_app_bounds.rows_before_containment'),
   'containment deletes nothing'
 );
 
 select is(
-  public.validate_cross_app_token('containment-unused-day', 'platform'),
+  (
+    select v.user_id
+    from public.validate_cross_app_token_with_session(
+      'containment-unused-day',
+      'platform'
+    ) v
+  ),
   null::uuid,
-  'a contained token can no longer be redeemed'
+  'a contained token can no longer be redeemed through the session validator'
+);
+
+select is(
+  (
+    select v.user_id
+    from public.validate_cross_app_token_with_session(
+      (
+        select token
+        from private.cross_app_tokens
+        where user_id = '00000000-0000-0000-0000-0000000c1a50'
+          and target_app = 'calendar'
+      ),
+      'calendar'
+    ) v
+  ),
+  '00000000-0000-0000-0000-0000000c1a50'::uuid,
+  'a clamped, unrevoked token is still redeemable once (control)'
 );
 
 select is(
