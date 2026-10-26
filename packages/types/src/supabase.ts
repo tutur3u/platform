@@ -25221,6 +25221,10 @@ export type Database = {
         };
         Returns: Json;
       };
+      reap_stale_devbox_runs: {
+        Args: { p_limit?: number; p_runner_id?: string };
+        Returns: number;
+      };
     };
     Enums: {
       [_ in never]: never;
