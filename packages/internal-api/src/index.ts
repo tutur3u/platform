@@ -1,5 +1,6 @@
 export {
   type AiChatFileMutationResponse,
+  type AiChatSignedReadUrl,
   type CreateAiChatUploadUrlPayload,
   type CreateAiChatUploadUrlResponse,
   type CurrentUserAIWhitelistStatus,
@@ -13,6 +14,7 @@ export {
   type GenerateWorkspaceCourseModulesFromStorageResponse,
   generateQuizFromLesson,
   generateWorkspaceCourseModulesFromStorage,
+  getAiChatSignedReadUrls,
   getAiChatUploadContentType,
   getCurrentUserAIWhitelistStatus,
   listCurrentUserAiChats,
