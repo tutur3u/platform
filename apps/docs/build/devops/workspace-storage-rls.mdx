@@ -45,10 +45,11 @@ Workspace creators count as `admin`, which mirrors `has_workspace_permission`.
   an existing chat (UUID segment) the caller created. Orphaned and non-chat
   folders are not deletable through it.
 - Topic announcement attachments (`topic-announcements/attachments/**`) upload
-  through `POST /api/v1/workspaces/[wsId]/topic-announcements/attachments/upload`,
-  which checks `ENABLE_TOPIC_ANNOUNCEMENTS` and `manage_users` before a
-  service-role write. Email delivery downloads them with the service role.
-  Neither `view_drive` nor `manage_drive` grants direct access.
+  through `POST /api/v1/workspaces/[wsId]/storage/upload-url`. Its topic branch
+  checks `ENABLE_TOPIC_ANNOUNCEMENTS` and `manage_users` before it issues a
+  signed upload URL, and it is the only Drive route that accepts the root.
+  Email delivery downloads attachments with the service role. Neither
+  `view_drive` nor `manage_drive` grants direct or Drive-route access.
 - Meeting recording routes check membership and the recording session, then use
   the service role for storage. Playback signs only paths inside the verified
   session folder.
