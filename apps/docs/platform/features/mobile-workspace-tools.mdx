@@ -1252,7 +1252,8 @@ for unsynchronized drafts and destructive confirmation dialogs remain intentiona
 
 Regression evidence: `shell_dock_reselection_checks.dart`,
 `shell_chrome_actions_test.dart`, `profile_overview_shell_test.dart`,
-`profile_timeline_section_test.dart`, and `profile_timeline_races_test.dart`.
+`profile_timeline_section_test.dart`, `profile_timeline_races_test.dart`,
+and `profile_identity_card_test.dart` (icon-only edit, label and destination).
 
 Synthetic Profile renders use placeholder identity and activity data:
 
@@ -1269,8 +1270,10 @@ checks actor membership and Calendar permission before its audited Calendar read
 missing permission omits that source, while lookup failures mark the result partial.
 Finance keeps its permission-aware RPC. Calendar titles are not returned.
 
-Overview is the default view and has no edit shortcut. Profile editing and full
-banner controls live in consolidated account settings. Avatar/banner uploads are
+Overview is the default view. Its only edit control is an icon-only button
+beside the avatar, labelled "Edit profile" for assistive technology, that opens
+the consolidated account settings where profile editing and full banner
+controls live. Avatar/banner uploads are
 optimized off the UI isolate: input is bounded to 20 MiB/40 MP, orientation is
 applied, and JPEG output is limited to 1024/2048 pixels and the existing 2/5 MiB
 bucket ceilings. Animated images become a static first frame; re-encoding strips
@@ -1280,8 +1283,13 @@ avatars/banners enter the scoped disk cache. Signed, private and foreign URLs do
 not. Account changes fence asynchronous profile loads and media dispatch.
 
 Timeline groups records by local day, links to native views, and reveals days near
-the bottom, including an initially short viewport. Day headings and activity rows
-are mounted lazily, with row extents adapted to the effective text scale. Further API pages contain at
+the bottom, including an initially short viewport. Each day heading is the day
+with its activity count. Each row shows the record title, or its kind when the
+record has none ("Task", "Transaction", "Note", "Workspace event"), the kind as one
+supporting line for titled records, and the time on the trailing edge. Rows
+never repeat a per-row count. Day headings and activity rows
+are mounted lazily, with header and row extents adapted to the effective text
+scale so no empty slot precedes a day. Further API pages contain at
 most 200 rows per source, with a pinned upper time boundary and a maximum of 1000
 pages per browsing session. Offset continuation can omit or repeat records during
 concurrent inserts/deletes; client deduplication does not guarantee snapshot
