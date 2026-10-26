@@ -195,6 +195,37 @@ test('Worker egress is answered in-process and anything else is denied', async (
   assert.equal(egress.seen.length, 13);
 });
 
+test('same-host requests go back to the Worker under test', async () => {
+  const forwarded = [];
+  const egress = createWorkerEgress(profile, context, {
+    self: async (request) => {
+      forwarded.push(`${request.method} ${new URL(request.url).pathname}`);
+      return new Response('from the worker');
+    },
+  });
+  const response = await egress.handle(
+    new Request('https://track.tuturuuu.com/api/v1/workspaces/ws-1/boards', {
+      method: 'POST',
+    })
+  );
+  assert.equal(await response.text(), 'from the worker');
+  assert.deepEqual(forwarded, ['POST /api/v1/workspaces/ws-1/boards']);
+  assert.deepEqual(egress.unexpected, []);
+
+  const without = createWorkerEgress(profile, context);
+  const denied = await without.handle(
+    new Request('https://track.tuturuuu.com/x')
+  );
+  assert.equal(denied.status, 599);
+  assert.deepEqual(without.unexpected, [
+    'worker GET https://track.tuturuuu.com/x',
+  ]);
+  const otherApp = await egress.handle(
+    new Request('https://tasks.tuturuuu.com/x')
+  );
+  assert.equal(otherApp.status, 599);
+});
+
 test('the browser loads only the Worker, Web fixtures and the profile allowlist', () => {
   const origin = 'http://127.0.0.1:9000';
   const decide = (method, url) => browserDecision(profile, origin, method, url);

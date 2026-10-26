@@ -115,10 +115,13 @@ export function sessionCookies(app, profile, { secret, actorId, now }) {
 /**
  * Answers the Worker's outbound requests in-process: the fixture user from
  * Supabase auth admin, profile rows by table, empty reads otherwise, the
- * profile's Web responses, and 401 for any other Web API read. Every other
- * request is recorded as unexpected and denied.
+ * profile's Web responses, and 401 for any other Web API read. A request to
+ * the app's own root host goes back to the Worker under test (`self`), as a
+ * same-zone fetch does in production under `global_fetch_strictly_public`.
+ * Every other request is recorded as unexpected and denied.
  */
-export function createWorkerEgress(profile, context) {
+export function createWorkerEgress(profile, context, { self } = {}) {
+  const rootOrigin = `https://${profile.rootHost}`;
   const supabase = new URL(context.supabaseUrl).origin;
   const seen = [];
   const unexpected = [];
@@ -174,6 +177,7 @@ export function createWorkerEgress(profile, context) {
       const url = new URL(request.url);
       const label = `${request.method} ${url.origin}${url.pathname}`;
       seen.push(label);
+      if (url.origin === rootOrigin && self) return self(request);
       const response = answer(request, url);
       if (response) return response;
       unexpected.push(`worker ${label}`);

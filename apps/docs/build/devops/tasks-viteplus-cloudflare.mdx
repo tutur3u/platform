@@ -121,9 +121,10 @@ python3 scripts/ci/tasks-native-artifact.py restore apps/tasks --archive tasks-n
 node scripts/ci/native-root-browser.mjs tasks --receipt restored.json
 ```
 
-The browser gate uses `apps/tasks/cloudflare/root-browser.profile.mjs`. With
-no board to open, a signed-in `/` and `/vi` render the personal task entrypoint
-in place, in English and Vietnamese. See
+The browser gate uses `apps/tasks/cloudflare/root-browser.profile.mjs`: the
+fixture user has a personal workspace with its default board, so a signed-in
+`/` and `/vi` open that board in English and Vietnamese. The task-board APIs
+the root resolves run in the same Worker. See
 [Signed-in root browser gate](/build/devops/start-bridge-codemod#signed-in-root-browser-gate).
 
 ## Shared Calendar task ports

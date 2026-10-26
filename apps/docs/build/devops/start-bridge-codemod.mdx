@@ -250,7 +250,10 @@ The gate:
 - Signs a disposable app session with a random coordination secret.
 - Answers every Supabase and Web request in-process: the fixture user, the
   profile's rows and Web responses, empty reads, and 401 for any other Web
-  API read. Any other Worker or browser request fails the run.
+  API read. A request to the app's own root host goes back to the Worker
+  under test, as a same-zone fetch does in production under
+  `global_fetch_strictly_public`. Any other Worker or browser request fails
+  the run, and an SSR failure lists it.
 - For each locale, follows the signed-in SSR redirects. They must stay on the
   root host and end on a `200` page with `<html lang>`, emitted assets and
   `private, no-store`. Chromium then loads the same path and must hydrate.
