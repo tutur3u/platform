@@ -2,6 +2,7 @@ import 'package:flutter/material.dart'
     hide AppBar, Chip, CircleAvatar, FilledButton, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/data/models/workspace.dart';
@@ -53,7 +54,7 @@ class _WorkspaceSelectPageState extends State<WorkspaceSelectPage> {
       child: BlocBuilder<WorkspaceCubit, WorkspaceState>(
         builder: (context, state) {
           if (state.status == WorkspaceStatus.loading) {
-            return const Center(child: NovaLoadingIndicator());
+            return const AppLoadingIndicator.page();
           }
 
           if (state.status == WorkspaceStatus.error) {
@@ -68,7 +69,7 @@ class _WorkspaceSelectPageState extends State<WorkspaceSelectPage> {
           if (context.read<WorkspaceCubit>().hasAuthenticatedActor &&
               !state.visibilityResolved &&
               state.visibilityStatus != WorkspaceStatus.error) {
-            return const Center(child: NovaLoadingIndicator());
+            return const AppLoadingIndicator.page();
           }
           if (state.workspaces.isNotEmpty && state.visibleWorkspaces.isEmpty) {
             return AppPageBody(

@@ -6,6 +6,7 @@ import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
+import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/data/models/workspace_management.dart';
 import 'package:mobile/data/repositories/workspace_management_repository.dart';
@@ -123,7 +124,7 @@ class _SettingsWorkspaceRolesViewState
                 if (_loading)
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 48),
-                    child: Center(child: NovaLoadingIndicator()),
+                    child: AppLoadingIndicator.page(),
                   )
                 else if (_error != null)
                   _SettingsStatePanel(
@@ -396,7 +397,7 @@ class _WorkspaceRoleEditorPageState extends State<WorkspaceRoleEditorPage> {
       isSaving: _saving,
       onPrimaryPressed: _saving ? null : _save,
       child: _loading
-          ? const Center(child: NovaLoadingIndicator())
+          ? const AppLoadingIndicator.page()
           : _error != null
           ? _SettingsStatePanel(
               message: _error!,

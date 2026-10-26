@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart'
     hide AlertDialog, FilledButton, OutlinedButton, TextField;
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
+import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/data/models/time_tracking/request.dart';
 import 'package:mobile/data/models/time_tracking/request_comment.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
@@ -369,9 +370,7 @@ class _RequestDetailSheetState extends State<RequestDetailSheet> {
                           () => _commentsExpanded = !_commentsExpanded,
                         ),
                         child: _isLoadingComments
-                            ? const Center(
-                                child: NovaLoadingIndicator(size: 20),
-                              )
+                            ? const AppLoadingIndicator()
                             : CommentsSection(
                                 comments: _comments,
                                 workspaceId: widget.wsId,

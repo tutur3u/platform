@@ -20,6 +20,7 @@ export 'package:mobile/core/ui/components/app_disclosure.dart';
 export 'package:mobile/core/ui/components/app_gap.dart';
 export 'package:mobile/core/ui/components/app_icon_button.dart';
 export 'package:mobile/core/ui/components/app_list_tile.dart';
+export 'package:mobile/core/ui/components/app_loading_indicator.dart';
 export 'package:mobile/core/ui/components/app_option_tile.dart';
 export 'package:mobile/core/ui/components/app_scaffold.dart';
 export 'package:mobile/core/ui/components/app_search_field.dart';

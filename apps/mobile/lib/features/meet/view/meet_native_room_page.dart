@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/breakpoints.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/data/repositories/meet_repository.dart';
 import 'package:mobile/features/meet/data/meet_call_controller.dart';
 import 'package:mobile/features/meet/view/meet_collaboration_page.dart';
@@ -392,7 +393,7 @@ class _MeetNativeRoomPageState extends State<MeetNativeRoomPage>
                     ),
                   Expanded(
                     child: _checkingRoom
-                        ? const Center(child: NovaLoadingIndicator(size: 28))
+                        ? const AppLoadingIndicator.page()
                         : _endedReview != null
                         ? MeetEndedReview(
                             review: _endedReview!,
@@ -421,9 +422,7 @@ class _MeetNativeRoomPageState extends State<MeetNativeRoomPage>
                         : _call.requiresDeviceChoice
                         ? buildMeetDeviceChoice(context, _call)
                         : switch ((_call.ended, _call.admission)) {
-                            (true, _) => const Center(
-                              child: NovaLoadingIndicator(size: 28),
-                            ),
+                            (true, _) => const AppLoadingIndicator.page(),
                             _
                                 when _call.error != null &&
                                     _call.status != 'open' =>

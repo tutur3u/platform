@@ -7,6 +7,7 @@ import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/models/finance/wallet_checkpoint.dart';
@@ -111,7 +112,7 @@ class _FinanceCheckpointsViewState extends State<_FinanceCheckpointsView> {
               locations: {Routes.financeCheckpoints},
             ),
             if (_isLoadingSummary && summary == null)
-              const AppPageBody(child: Center(child: NovaLoadingIndicator()))
+              const AppPageBody(child: AppLoadingIndicator.page())
             else if (_error != null && summary == null)
               _CheckpointError(error: _error, onRetry: _load)
             else if (summary == null || summary.wallets.isEmpty)
@@ -137,7 +138,7 @@ class _FinanceCheckpointsViewState extends State<_FinanceCheckpointsView> {
                     if (_isLoadingWallet && _selectedWalletCheckpoints == null)
                       const Padding(
                         padding: EdgeInsets.symmetric(vertical: 48),
-                        child: Center(child: NovaLoadingIndicator()),
+                        child: AppLoadingIndicator(),
                       )
                     else if (selectedWallet != null &&
                         _selectedWalletCheckpoints != null)

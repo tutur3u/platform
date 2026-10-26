@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
+import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/features/inventory/widgets/inventory_ui.dart';
@@ -366,7 +367,7 @@ class _ProductRuleEditorState extends State<_ProductRuleEditor> {
               SizedBox(
                 height: 210,
                 child: widget.loading
-                    ? const Center(child: NovaLoadingIndicator(size: 20))
+                    ? const AppLoadingIndicator()
                     : ListView.builder(
                         itemCount: products.length,
                         itemBuilder: (context, index) {

@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/data/models/time_tracking/session.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
@@ -218,7 +219,7 @@ class _HistoryTabState extends State<HistoryTab> {
                           top: AppSpacing.xxl,
                           bottom: AppSpacing.lg,
                         ),
-                        child: Center(child: NovaLoadingIndicator()),
+                        child: AppLoadingIndicator.page(),
                       ),
                     )
                   else ...[
@@ -288,7 +289,7 @@ class _HistoryTabState extends State<HistoryTab> {
                       const SliverToBoxAdapter(
                         child: Padding(
                           padding: EdgeInsets.symmetric(vertical: 16),
-                          child: Center(child: NovaLoadingIndicator()),
+                          child: AppLoadingIndicator(),
                         ),
                       ),
                     if (state.historyHasMore && !state.isHistoryLoadingMore)

@@ -11,6 +11,7 @@ import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/sliver_responsive_cards.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/theme/appearance/appearance_scope.dart';
+import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/data/models/calendar_event.dart';
@@ -237,9 +238,7 @@ class _DashboardViewState extends State<_DashboardView> {
                     workspaceState.status == WorkspaceStatus.initial ||
                     workspaceState.status == WorkspaceStatus.loading;
                 if (isWorkspaceLoading) {
-                  return const shad.Scaffold(
-                    child: Center(child: NovaLoadingIndicator()),
-                  );
+                  return const shad.Scaffold(child: AppLoadingIndicator.page());
                 }
 
                 return _workspaceUnavailableState(context, workspaceState);

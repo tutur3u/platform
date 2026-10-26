@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
+import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/data/models/habit_tracker.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/habits/cubit/habits_state.dart';
@@ -66,7 +67,7 @@ class HabitTrackerDetailSheet extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: detailStatus == HabitsStatus.loading && detail == null
-                ? const Center(child: NovaLoadingIndicator())
+                ? const AppLoadingIndicator()
                 : detailStatus == HabitsStatus.error && detail == null
                 ? _DetailErrorView(error: detailError, onRetry: onRetry)
                 : detail == null

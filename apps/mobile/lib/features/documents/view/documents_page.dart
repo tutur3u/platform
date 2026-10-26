@@ -262,7 +262,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
                   if (_isLoading && _documents.isEmpty)
                     const SizedBox(
                       height: 240,
-                      child: Center(child: NovaLoadingIndicator()),
+                      child: AppLoadingIndicator.page(),
                     )
                   else if (_error != null)
                     _DocumentsMessageCard(message: _error!)

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
@@ -295,7 +296,7 @@ class _MailOrganizationPageState extends State<MailOrganizationPage> {
         child: const Icon(Icons.add),
       ),
       body: _busy
-          ? const Center(child: NovaLoadingIndicator(size: 20))
+          ? const AppLoadingIndicator.page()
           : _failed
           ? Center(
               child: TextButton(

@@ -17,7 +17,7 @@ extension _TaskPlanningContent on _TaskPlanningViewState {
                 if (_isCheckingPermissions &&
                     !_hasResolvedPermissions &&
                     !hasVisibleData) {
-                  return const Center(child: NovaLoadingIndicator());
+                  return const AppLoadingIndicator.page();
                 }
                 if (_hasResolvedPermissions &&
                     !_canManageProjects &&
@@ -30,7 +30,7 @@ extension _TaskPlanningContent on _TaskPlanningViewState {
                   labelsState,
                   portfolioState,
                 )) {
-                  return const Center(child: NovaLoadingIndicator());
+                  return const AppLoadingIndicator.page();
                 }
 
                 final error = _activeTabError(

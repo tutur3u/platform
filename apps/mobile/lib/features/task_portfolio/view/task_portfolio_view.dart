@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/data/models/task_initiative_summary.dart';
 import 'package:mobile/data/models/task_project_summary.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
@@ -184,7 +185,7 @@ class _TaskPortfolioViewState extends State<TaskPortfolioView> {
     if (_permissionsController.isCheckingPermissions &&
         !_permissionsController.hasResolvedPermissions &&
         !hasVisibleData) {
-      return const Center(child: NovaLoadingIndicator());
+      return const AppLoadingIndicator.page();
     }
     if (_permissionsController.hasResolvedPermissions &&
         !_permissionsController.canManageProjects &&
@@ -197,7 +198,7 @@ class _TaskPortfolioViewState extends State<TaskPortfolioView> {
         if (state.status == TaskPortfolioStatus.loading &&
             state.projects.isEmpty &&
             state.initiatives.isEmpty) {
-          return const Center(child: NovaLoadingIndicator());
+          return const AppLoadingIndicator.page();
         }
         if (state.status == TaskPortfolioStatus.error &&
             state.projects.isEmpty &&

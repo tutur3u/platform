@@ -9,6 +9,7 @@ import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/data/models/time_tracking/session.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
@@ -129,7 +130,7 @@ class _WorkspaceStatsTabState extends State<WorkspaceStatsTab> {
             ],
           ),
           if (_loading && _sessions.isEmpty)
-            const Center(child: NovaLoadingIndicator())
+            const AppLoadingIndicator.page()
           else if (_error != null && _sessions.isEmpty)
             AppPageBody(
               child: Center(

@@ -6,6 +6,7 @@ import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/breakpoints.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/data/repositories/notifications_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
@@ -57,7 +58,7 @@ class MailPage extends StatelessWidget {
     );
     if (user == null) return const SizedBox.shrink();
     if (wsId == null) {
-      return const Center(child: NovaLoadingIndicator(size: 20));
+      return const AppLoadingIndicator.page();
     }
     if (!canDiscoverMail(user.email, appMetadata: user.appMetadata)) {
       return Center(child: Text(context.l10n.mailAccessRequired));

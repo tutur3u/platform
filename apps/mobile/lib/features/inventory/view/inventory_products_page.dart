@@ -7,6 +7,7 @@ import 'package:mobile/core/cache/offline_sync_refresh.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
@@ -432,9 +433,7 @@ class _InventoryProductsPageState extends State<InventoryProductsPage>
                           if (_isLoadingMore)
                             const Padding(
                               padding: EdgeInsets.symmetric(vertical: 16),
-                              child: Center(
-                                child: NovaLoadingIndicator(size: 20),
-                              ),
+                              child: AppLoadingIndicator(),
                             ),
                         ],
                       ],

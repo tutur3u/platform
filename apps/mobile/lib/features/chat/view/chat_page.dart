@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
@@ -139,7 +140,7 @@ class _ChatPageState extends State<_ChatActorHost> {
                 children: [
                   shellActions,
                   miniNav,
-                  const Center(child: NovaLoadingIndicator()),
+                  const AppLoadingIndicator.page(),
                 ],
               );
             }

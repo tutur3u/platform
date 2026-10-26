@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/cache/cache_warmup_coordinator.dart';
 import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
@@ -378,7 +379,7 @@ class _TaskListViewState extends State<_TaskListView> {
             if (state.status == TaskListStatus.loading &&
                 state.totalActiveTasks == 0 &&
                 state.completedTasks.isEmpty) {
-              return const Center(child: NovaLoadingIndicator());
+              return const AppLoadingIndicator.page();
             }
 
             if (state.status == TaskListStatus.error &&
@@ -480,7 +481,7 @@ class _TaskListViewState extends State<_TaskListView> {
                       state.isLoadingMoreCompleted)
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 16),
-                      child: Center(child: NovaLoadingIndicator()),
+                      child: AppLoadingIndicator(),
                     ),
                 ],
               ),

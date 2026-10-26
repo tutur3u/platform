@@ -15,7 +15,6 @@ import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/settings/view/settings_dialogs.dart';
 import 'package:mobile/features/settings/view/settings_scoped_page.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:share_plus/share_plus.dart';
 
 class AssistantPersonalSettingsSection extends StatefulWidget {
@@ -118,7 +117,7 @@ class _AssistantPersonalSettingsSectionState
             if (state.loading && snapshot == null)
               const Padding(
                 padding: EdgeInsets.all(16),
-                child: Center(child: NovaLoadingIndicator(size: 20)),
+                child: AppLoadingIndicator(),
               ),
             if (snapshot != null) ...[
               AppListTile(
@@ -170,9 +169,7 @@ class _AssistantPersonalSettingsSectionState
                   if (snapshot.memoryEnabled == null && state.loading)
                     Semantics(
                       label: l.commonLoading,
-                      child: const Center(
-                        child: NovaLoadingIndicator(size: 20),
-                      ),
+                      child: const AppLoadingIndicator(),
                     ),
                   if (snapshot.memoryEnabled == null && !state.loading)
                     Text(l.assistantPersonalSettingsError),

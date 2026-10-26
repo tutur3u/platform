@@ -83,7 +83,7 @@ extension _EducationLazyList on _EducationPageState {
             );
           }
           if (_isLoading || _isLoadingMore) {
-            return const Center(child: NovaLoadingIndicator());
+            return const AppLoadingIndicator.page();
           }
           if (rows == 0 && _tab != _EducationTab.overview) {
             return Padding(

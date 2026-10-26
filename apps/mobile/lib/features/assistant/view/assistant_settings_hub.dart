@@ -12,7 +12,6 @@ import 'package:mobile/features/assistant/view/assistant_settings_route_frame.da
 import 'package:mobile/features/assistant/widgets/assistant_live_browsing_setting.dart';
 import 'package:mobile/features/assistant/widgets/assistant_personal_settings_section.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
 
 /// Central Settings and Mira quick settings use the same preference editor.
 class AssistantSettingsHub extends StatefulWidget {
@@ -60,7 +59,7 @@ class _AssistantSettingsHubState extends State<AssistantSettingsHub> {
       builder: (context, state) => state.loading
           ? Semantics(
               label: context.l10n.commonLoading,
-              child: const Center(child: NovaLoadingIndicator(size: 20)),
+              child: const AppLoadingIndicator.page(),
             )
           : AppPageListView(
               children: [

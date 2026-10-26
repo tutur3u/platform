@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart' hide Card;
 import 'package:intl/intl.dart';
 import 'package:mobile/core/input/platform_text_context_menu.dart';
+import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/data/models/task_project_update.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
@@ -129,7 +130,7 @@ class _TaskProjectUpdatesSectionState extends State<TaskProjectUpdatesSection> {
           ),
           const shad.Gap(12),
           if (_isLoading)
-            const Center(child: NovaLoadingIndicator())
+            const AppLoadingIndicator()
           else if (_updates.isEmpty)
             Text(
               context.l10n.taskPortfolioNoProjectUpdates,

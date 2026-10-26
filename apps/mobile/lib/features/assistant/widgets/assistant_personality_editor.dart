@@ -8,7 +8,6 @@ import 'package:mobile/features/assistant/view/assistant_settings_editor_page.da
 import 'package:mobile/features/assistant/widgets/assistant_personality_field_editor.dart';
 import 'package:mobile/features/settings/view/settings_scoped_page.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
 
 /// The personality route lists individual settings. Each setting has its own
 /// editor that merges into the latest freshly confirmed full soul.
@@ -32,7 +31,7 @@ class AssistantPersonalityEditor extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 16),
           children: [
             if (state.snapshot == null && state.loading)
-              const Center(child: NovaLoadingIndicator(size: 20)),
+              const AppLoadingIndicator.page(),
             if (state.failed) ...[
               Text(context.l10n.assistantPersonalSettingsError),
               AppButton.ghost(

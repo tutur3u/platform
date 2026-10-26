@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
@@ -147,7 +148,7 @@ class _NoteTaskConversionSheetState extends State<NoteTaskConversionSheet> {
               ),
               const SizedBox(height: 20),
               if (_loading)
-                const Expanded(child: Center(child: NovaLoadingIndicator()))
+                const Expanded(child: AppLoadingIndicator())
               else ...[
                 Text(context.l10n.notesTaskBoard),
                 const SizedBox(height: 8),

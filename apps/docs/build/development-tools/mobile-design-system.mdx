@@ -196,7 +196,12 @@ shadows and durations. Spacing and radii stay in `AppSpacing` / `AppRadius`.
 `destructive`; densities, sizes, `loading`), `AppIconButton` (required
 `tooltip`), `AppTextField`, `AppSearchField`, `AppCard`, `AppBadge`, `AppAlert`,
 `AppDivider`, `AppSwitch`, `AppCheckbox`, `AppSelect`, `AppOptionTile`,
-`AppTooltip`, `showAppToast`, `AppGap`, `AppScaffold` and `AppTopBar`. Icons are
+`AppTooltip`, `showAppToast`, `AppGap`, `AppScaffold` and `AppTopBar`. Loading
+states use `AppLoadingIndicator`, which sizes the Nova mark by the space it
+stands in for: `AppLoadingIndicator.page()` (56dp, centred) for pages, panes
+and full-screen gates, the default section size (32dp) for cards and list
+footers, and `.inline()` (20dp) for buttons and row slots. It announces the
+localized "Loading" by default. Icons are
 the generated web-parity `LucideIcons` and `LucideLabIcons` (see
 [Icons](#icons)), with `AppIcons` for semantic aliases and brand fallbacks.
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/data/models/habit_tracker.dart';
 import 'package:mobile/features/habits/cubit/habits_state.dart';
 import 'package:mobile/features/habits/habit_tracker_presentation.dart';
@@ -24,7 +25,7 @@ class HabitsActivitySection extends StatelessWidget {
         state.activityEntries.isEmpty) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 32),
-        child: Center(child: NovaLoadingIndicator()),
+        child: AppLoadingIndicator(),
       );
     }
 

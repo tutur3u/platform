@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/core/ui/overlays/show_app_sheet.dart' show showAppSheet;
 import 'package:mobile/data/models/education/education_models.dart';
 import 'package:mobile/data/repositories/education_repository.dart';

@@ -12,6 +12,7 @@ import 'package:mobile/core/icons/platform_icon.dart';
 import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/core/utils/color_hex.dart';
 import 'package:mobile/core/utils/currency_formatter.dart';
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
@@ -290,7 +291,7 @@ class _TransactionCategoriesViewState
     bool showAmounts,
   ) {
     if (_categoriesLoading) {
-      return const AppPageBody(child: Center(child: NovaLoadingIndicator()));
+      return const AppPageBody(child: AppLoadingIndicator.page());
     }
     if (_categoriesError != null) {
       return ListView(
@@ -364,7 +365,7 @@ class _TransactionCategoriesViewState
     bool showAmounts,
   ) {
     if (_tagsLoading) {
-      return const AppPageBody(child: Center(child: NovaLoadingIndicator()));
+      return const AppPageBody(child: AppLoadingIndicator.page());
     }
     if (_tagsError != null) {
       return ListView(

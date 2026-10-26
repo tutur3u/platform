@@ -465,7 +465,7 @@ class _MeetPageState extends State<MeetPage> {
                   if (_isLoading && _meetings.isEmpty)
                     const SizedBox(
                       height: 240,
-                      child: Center(child: NovaLoadingIndicator()),
+                      child: AppLoadingIndicator.page(),
                     )
                   else if (_error != null)
                     _MeetMessageCard(message: _error!)

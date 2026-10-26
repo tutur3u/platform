@@ -145,8 +145,11 @@ localization changes.
   text, and renders through `SETTINGS_RENDER_DIR`.
 - Shell actions should open overlays immediately and let overlay content fetch
   or refresh on mount instead of blocking the tap on pre-open network work.
-- Full-surface loaders should use `NovaLoadingIndicator`; native/spinner
-  variants are for compact inline affordances.
+- Loading states use `AppLoadingIndicator` (`core/ui`), never a bare
+  `NovaLoadingIndicator`: `.page()` for a page, pane or full-screen gate (56dp,
+  centred), the default section size (32dp) for cards and list footers, and
+  `.inline()` (20dp) for buttons and row slots. A full-screen loader must not
+  use a section or inline size. Cold list loads still prefer `AppSkeletonRows`.
 
 - Settings rows use `SettingsRowLayout` and `SettingsTile` (re-exported from
   `settings_widgets.dart`) for consistent heading/icon insets, text slots and

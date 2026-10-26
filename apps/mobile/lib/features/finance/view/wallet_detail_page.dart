@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/data/models/finance/exchange_rate.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/models/finance/transaction_stats.dart';
@@ -106,11 +107,7 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
                   child: NovaRefreshIndicator(
                     onRefresh: _onRefresh,
                     child: _isLoadingInitial && wallet == null
-                        ? const AppPageBody(
-                            child: Center(
-                              child: NovaLoadingIndicator(size: 20),
-                            ),
-                          )
+                        ? const AppPageBody(child: AppLoadingIndicator.page())
                         : _error != null
                         ? AppPageListView(
                             physics: const AlwaysScrollableScrollPhysics(),

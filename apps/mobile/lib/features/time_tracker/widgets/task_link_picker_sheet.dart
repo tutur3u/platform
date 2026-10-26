@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
+import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/overlays/show_app_sheet.dart'
     show AppSheetHandle;
@@ -354,7 +355,7 @@ class _TaskLinkPickerSheetState extends State<TaskLinkPickerSheet> {
     final theme = shad.Theme.of(context);
 
     if (_isLoadingInitial && _tasks.isEmpty) {
-      return const Center(child: NovaLoadingIndicator());
+      return const AppLoadingIndicator.page();
     }
 
     if (_errorMessage != null && _tasks.isEmpty) {

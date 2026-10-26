@@ -4,6 +4,7 @@ import 'package:flutter/material.dart' hide AppBar, Scaffold, TextField;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/data/models/mobile_version_policy.dart';
 import 'package:mobile/data/repositories/mobile_version_policy_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
@@ -125,7 +126,7 @@ class _MobileVersionSettingsPageState extends State<MobileVersionSettingsPage> {
               if (_isLoading)
                 const Padding(
                   padding: EdgeInsets.only(top: 36),
-                  child: Center(child: NovaLoadingIndicator()),
+                  child: AppLoadingIndicator.page(),
                 )
               else if (_error != null)
                 _MessagePanel(

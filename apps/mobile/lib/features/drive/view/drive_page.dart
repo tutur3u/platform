@@ -812,7 +812,7 @@ class _DrivePageState extends State<DrivePage> {
             if (_isLoading && _entries.isEmpty)
               const AppPageBody(
                 kind: AppPageKind.root,
-                child: Center(child: NovaLoadingIndicator()),
+                child: AppLoadingIndicator.page(),
               )
             else
               NovaRefreshIndicator(
