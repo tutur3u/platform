@@ -40,12 +40,12 @@ permissions:
 # unique. The literal prefix keeps workflow_call runs from one planner apart.
 # Only the deploy job serializes production with a non-cancelling queue.
 concurrency:
-  group: colab-cloudflare-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}${{ github.event.action == 'labeled' && github.event.label.name != 'ready-for-ci' && format('-label-{0}', github.run_id) || '' }}
+  group: colab-cloudflare-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}
   cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 
 jobs:
   check-ci:
-    if: (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (github.event_name != 'pull_request' || (contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && (github.event.action != 'labeled' || github.event.label.name == 'ready-for-ci')))
+    if: (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     uses: ./.github/workflows/ci-check.yml
     permissions:
       contents: read
@@ -54,7 +54,7 @@ jobs:
       workflow_name: colab-cloudflare.yaml
   validate:
     needs: check-ci
-    if: (needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || (contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && (github.event.action != 'labeled' || github.event.label.name == 'ready-for-ci')))
+    if: (needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -89,7 +89,7 @@ jobs:
           if-no-files-found: error
   deploy:
     needs: validate
-    if: (github.ref == 'refs/heads/production') && (github.event_name != 'pull_request' || (contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && (github.event.action != 'labeled' || github.event.label.name == 'ready-for-ci')))
+    if: (github.ref == 'refs/heads/production') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     permissions:
       contents: read
       deployments: write

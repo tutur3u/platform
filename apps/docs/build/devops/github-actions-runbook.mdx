@@ -478,12 +478,24 @@ starts its reusable callee.
 - **Trigger CI** with `gh pr edit <number> --add-label ready-for-ci`. The
   `labeled` event starts every heavy workflow immediately.
 - **Retrigger.** A new push to a labelled PR (`synchronize`) runs again, and
-  PR concurrency cancels the superseded run. To rerun without pushing, use
-  `gh run rerun <run-id>`, or remove and re-add the label. Removing the label
-  after a run is fine.
-- Adding any other label neither reruns nor cancels CI. Its `labeled` run
-  skips every job and uses a separate concurrency group
-  (`LABEL_EVENT_GROUP_SUFFIX`).
+  PR concurrency cancels the superseded run. To retrigger without a push,
+  remove and re-add the label (`gh pr edit <n> --remove-label ready-for-ci`,
+  then `--add-label ready-for-ci`). Do not use `gh run rerun` for this: a
+  rerun replays its original event, so a run started before the label was
+  added is skipped again. Use `gh run rerun` only to retry an admitted run,
+  for example after a flaky failure.
+- **Other labels on a ready PR rerun CI.** Admission checks only that the label
+  is present, so any later `labeled` event on a labelled PR is a real admitted
+  run on the same SHA. It joins the same PR group and supersedes the
+  in-progress run. The newest check per name is therefore always genuine
+  evidence, never a skipped run masking an earlier red one. Labels added with
+  `GITHUB_TOKEN` (such as `security-review-required`) start no run.
+- **Masking caveat.** Skipped is not evidence. While a PR carries no
+  `ready-for-ci`, every later run skips its heavy jobs. GitHub shows only the
+  newest run per check name, so those skipped checks replace earlier results;
+  merge tooling such as `watch_pr_ready` counts `SKIPPED` as passing. Once the
+  label is removed, the PR has no hosted evidence. Re-add the label for a fresh
+  admitted run, or rely on the exact-head local pass.
 - **Always on for every PR push:** Branch Name Check, Check Migration
   Timestamps, Check Database Migrations, Mobile API Mappings, Codex Plugin
   Check, Security Checks (gitleaks, dependency review and audit) and Security

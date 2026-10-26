@@ -23,7 +23,7 @@ on:
         default: true
 
 concurrency:
-  group: desktop-beta-${{ github.ref }}${{ github.event.action == 'labeled' && github.event.label.name != 'ready-for-ci' && format('-label-{0}', github.run_id) || '' }}
+  group: desktop-beta-${{ github.ref }}
   cancel-in-progress: false
   queue: max
 
@@ -33,7 +33,7 @@ permissions:
 
 jobs:
   check-ci:
-    if: github.event_name != 'pull_request' || (contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && (github.event.action != 'labeled' || github.event.label.name == 'ready-for-ci'))
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
     permissions:
       contents: read
       deployments: read
@@ -44,7 +44,7 @@ jobs:
   validate:
     name: Desktop distribution tests
     needs: check-ci
-    if: (needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || (contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && (github.event.action != 'labeled' || github.event.label.name == 'ready-for-ci')))
+    if: (needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -57,7 +57,7 @@ jobs:
   windows-dry-run:
     name: Windows x64 installer dry run
     needs: [check-ci, validate]
-    if: (needs.check-ci.outputs.should_run == 'true' && github.event_name == 'workflow_dispatch' && inputs.dry_run) && (github.event_name != 'pull_request' || (contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && (github.event.action != 'labeled' || github.event.label.name == 'ready-for-ci')))
+    if: (needs.check-ci.outputs.should_run == 'true' && github.event_name == 'workflow_dispatch' && inputs.dry_run) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     runs-on: windows-latest
     timeout-minutes: 60
     permissions:
@@ -112,7 +112,7 @@ jobs:
   release-status:
     name: Desktop beta availability
     needs: check-ci
-    if: (needs.check-ci.outputs.should_run == 'true' && github.ref == 'refs/heads/production' && !inputs.dry_run) && (github.event_name != 'pull_request' || (contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && (github.event.action != 'labeled' || github.event.label.name == 'ready-for-ci')))
+    if: (needs.check-ci.outputs.should_run == 'true' && github.ref == 'refs/heads/production' && !inputs.dry_run) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     runs-on: ubuntu-latest
     outputs:
       enabled: ${{ steps.status.outputs.enabled }}
@@ -139,7 +139,7 @@ jobs:
   build:
     name: Desktop beta (${{ matrix.platform }})
     needs: [check-ci, validate, release-status]
-    if: (needs.release-status.outputs.enabled == 'true' && github.ref == 'refs/heads/production') && (github.event_name != 'pull_request' || (contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && (github.event.action != 'labeled' || github.event.label.name == 'ready-for-ci')))
+    if: (needs.release-status.outputs.enabled == 'true' && github.ref == 'refs/heads/production') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     environment: desktop-beta
     permissions:
       contents: read
@@ -286,7 +286,7 @@ jobs:
     needs: [build, release-status]
     env:
       DESKTOP_BETA_PLATFORMS: ${{ needs.release-status.outputs.platforms }}
-    if: (always() && !cancelled() && needs.release-status.outputs.enabled == 'true' && github.ref == 'refs/heads/production' && (needs.build.result == 'success' || needs.build.result == 'failure')) && (github.event_name != 'pull_request' || (contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && (github.event.action != 'labeled' || github.event.label.name == 'ready-for-ci')))
+    if: (always() && !cancelled() && needs.release-status.outputs.enabled == 'true' && github.ref == 'refs/heads/production' && (needs.build.result == 'success' || needs.build.result == 'failure')) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     environment: desktop-beta
     runs-on: macos-latest
     timeout-minutes: 45

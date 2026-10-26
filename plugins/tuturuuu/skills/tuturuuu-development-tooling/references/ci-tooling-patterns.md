@@ -739,12 +739,15 @@ Preserve primary errors; receipts or observed errors alone never establish closu
 - Heavy PR jobs require the `ready-for-ci` label. Add it only when the PR is
   ready to merge (`gh pr edit <n> --add-label ready-for-ci`). An exact-head local
   pass still counts as green under the speed grant. A new push to a labelled PR
-  reruns CI and supersedes the old run; `gh run rerun` or removing and re-adding
-  the label reruns without a push. Gate every job of a new heavy PR workflow
+  reruns CI and supersedes the old run. Retrigger without a push by removing and
+  re-adding the label; `gh run rerun` replays the original event, so a
+  pre-label run stays skipped. Admission checks only label presence: any later
+  label event on a ready PR is a real admitted run in the same group, so a
+  skipped run can never mask a red one on a labelled PR. Skipped checks are not
+  evidence once the label is removed. Gate every job of a new heavy PR workflow
   with `PR_LABEL_GATE` from `scripts/ci/pr-label-gate.js`, ANDed at the top
-  level. Add `labeled` to `pull_request.types`, append
-  `LABEL_EVENT_GROUP_SUFFIX` to its cancelling group, and classify the workflow
-  there. Gate callers, never reusable callees; never use workflow-level
+  level. Add `labeled` to `pull_request.types`, keep label events in the
+  ordinary cancelling PR group, and classify the workflow there. Gate callers, never reusable callees; never use workflow-level
   filters. Leave paused `if: false` jobs alone. Branch-push validators keep
   push only for `main`, `production` and `release-please--branches--**`; keep
   mutating jobs (Biome auto-format) push-only. Cheap script-only and security

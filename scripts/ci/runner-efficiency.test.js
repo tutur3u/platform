@@ -3,7 +3,6 @@ const test = require('node:test');
 
 const { readWorkflow } = require('./workflow-yaml-test-helper');
 const { DEFAULT_MATRIX } = require('./e2e-result-plan');
-const { LABEL_EVENT_GROUP_SUFFIX } = require('./pr-label-gate');
 
 test('translation checks run once per PR update and still cover both protected branches and forks', () => {
   const workflow = readWorkflow('i18n-check.yaml');
@@ -27,8 +26,7 @@ test('translation checks run once per PR update and still cover both protected b
   assert.equal(
     workflow.concurrency.group,
     // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub expression
-    "${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}" +
-      LABEL_EVENT_GROUP_SUFFIX
+    "${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}"
   );
   for (const id of [
     'i18n-sort-check',
@@ -101,8 +99,7 @@ test('superseded PR runs cancel, production release evidence does not', () => {
     assert.equal(
       concurrency.group,
       // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub expression
-      "${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}" +
-        (name === 'i18n-check.yaml' ? LABEL_EVENT_GROUP_SUFFIX : '')
+      "${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}"
     );
   }
 });

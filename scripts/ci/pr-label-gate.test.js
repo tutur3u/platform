@@ -1,10 +1,12 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
-const { evaluateExpression } = require('./github-expression-test-helper');
+const {
+  evaluateExpression,
+  renderTemplate,
+} = require('./github-expression-test-helper');
 const {
   ALWAYS_ON_PR_WORKFLOWS,
   HEAVY_PR_WORKFLOWS,
-  LABEL_EVENT_GROUP_SUFFIX,
   PAUSED_PR_WORKFLOWS,
   PR_LABEL_GATE,
   protectedTriggerDigest,
@@ -120,8 +122,13 @@ test('the gate admits only ready-for-ci PRs and never gates other events', () =>
   );
   assert.equal(
     gate(pullRequest([READY_LABEL, 'WIP'], 'labeled', 'WIP')),
+    true,
+    'any label event on a ready PR is a real admitted run, never a skipped mask'
+  );
+  assert.equal(
+    gate(pullRequest(['WIP'], 'labeled', 'WIP')),
     false,
-    'unrelated labels do not rerun CI'
+    'other labels never admit an unready PR'
   );
   for (const event_name of ['push', 'workflow_dispatch', 'schedule']) {
     assert.equal(gate({ github: { event_name, event: {} } }), true);
@@ -173,24 +180,46 @@ for (const file of HEAVY_PR_WORKFLOWS) {
           .filter((c) => c && c['cancel-in-progress'] !== false)
           .map((c) => c.group);
     assert.ok(groups.length, 'PR runs need a superseding group');
-    for (const group of groups) {
-      assert.ok(group.endsWith(LABEL_EVENT_GROUP_SUFFIX), group);
+    // A label event on a ready PR lands in the push run's group and cancels
+    // it, so the newest check per name is always the admitted rerun.
+    const scope = (action, label) => ({
+      github: {
+        ...pullRequest([READY_LABEL, 'WIP'], action, label).github,
+        workflow: workflow.name,
+        ref: 'refs/pull/42/merge',
+        sha: 'head',
+        run_id: action === 'labeled' ? 2 : 1,
+        run_attempt: 1,
+        event: {
+          ...pullRequest([READY_LABEL, 'WIP'], action, label).github.event,
+          pull_request: {
+            number: 42,
+            labels: [{ name: READY_LABEL }, { name: 'WIP' }],
+          },
+        },
+      },
+    });
+    const push = scope('synchronize');
+    const labelled = scope('labeled', 'WIP');
+    for (const policy of workflow.concurrency
+      ? [workflow.concurrency]
+      : Object.values(workflow.jobs)
+          .map((job) => job.concurrency)
+          .filter((c) => c && c['cancel-in-progress'] !== false)) {
+      assert.equal(
+        renderTemplate(policy.group, labelled),
+        renderTemplate(policy.group, push),
+        'label events must share the admitted run group'
+      );
+      if (policy.queue !== 'max') {
+        assert.equal(
+          evaluateExpression(String(policy['cancel-in-progress']), labelled),
+          true
+        );
+      }
     }
   });
 }
-
-test('unrelated label events never share an admitted run group', () => {
-  const suffix = (scope) =>
-    evaluateExpression(LABEL_EVENT_GROUP_SUFFIX, {
-      github: { ...scope.github, run_id: 7 },
-    });
-  assert.equal(suffix(pullRequest([READY_LABEL])), '');
-  assert.equal(suffix(pullRequest([READY_LABEL], 'labeled', READY_LABEL)), '');
-  assert.equal(
-    suffix(pullRequest([READY_LABEL, 'WIP'], 'labeled', 'WIP')),
-    '-label-7'
-  );
-});
 
 for (const file of [...ALWAYS_ON_PR_WORKFLOWS, ...PAUSED_PR_WORKFLOWS]) {
   test(`${file}: cheap and paused PR checks carry no label gate`, () => {

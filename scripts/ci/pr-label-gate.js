@@ -2,11 +2,13 @@
 // ready-for-ci. Push, schedule and manual events are never gated.
 const READY_LABEL = 'ready-for-ci';
 
-const PR_LABEL_GATE = `github.event_name != 'pull_request' || (contains(github.event.pull_request.labels.*.name, '${READY_LABEL}') && (github.event.action != 'labeled' || github.event.label.name == '${READY_LABEL}'))`;
-
-// Unrelated label events land in their own group so they cannot cancel an
-// admitted run and replace it with an all-skipped one.
-const LABEL_EVENT_GROUP_SUFFIX = `\${{ github.event.action == 'labeled' && github.event.label.name != '${READY_LABEL}' && format('-label-{0}', github.run_id) || '' }}`;
+// Admission depends only on the label being present, never on which label
+// event fired. Any label event on a ready PR is therefore a real admitted run
+// in the same PR group: it supersedes the in-progress run, so the newest check
+// per name is always genuine evidence and never a skipped mask over a red run.
+// (Labels added with GITHUB_TOKEN, such as the security classifier's, start no
+// workflow run at all.)
+const PR_LABEL_GATE = `github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, '${READY_LABEL}')`;
 
 // Branch-push validators moved their non-protected pushes to the gated
 // pull_request trigger; protected and generated refs keep push validation.
@@ -162,7 +164,6 @@ function protectedTriggerDigest(file, on) {
 module.exports = {
   ALWAYS_ON_PR_WORKFLOWS,
   HEAVY_PR_WORKFLOWS,
-  LABEL_EVENT_GROUP_SUFFIX,
   PAUSED_PR_WORKFLOWS,
   PR_LABEL_GATE,
   protectedTriggerDigest,

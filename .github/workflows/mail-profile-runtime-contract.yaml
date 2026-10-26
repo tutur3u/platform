@@ -27,11 +27,11 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: mail-profile-runtime-${{ github.event.pull_request.number }}${{ github.event.action == 'labeled' && github.event.label.name != 'ready-for-ci' && format('-label-{0}', github.run_id) || '' }}
+  group: mail-profile-runtime-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 jobs:
   check-ci:
-    if: (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (github.event_name != 'pull_request' || (contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && (github.event.action != 'labeled' || github.event.label.name == 'ready-for-ci')))
+    if: (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     permissions:
       contents: read
       deployments: read
@@ -40,7 +40,7 @@ jobs:
       workflow_name: mail-profile-runtime-contract.yaml
   runtime:
     needs: check-ci
-    if: (always() && needs.check-ci.result == 'success' && needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || (contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && (github.event.action != 'labeled' || github.event.label.name == 'ready-for-ci')))
+    if: (always() && needs.check-ci.result == 'success' && needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     permissions:
       contents: read
     runs-on: ubuntu-latest
