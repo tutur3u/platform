@@ -1868,6 +1868,16 @@
       },
       "digest": "dea61c5925b68295ab2c201cfdecd29b970bf4a0c96c53e000e8b2a77313bf4f"
     },
+    "scripts/ci/turbo-cache-workflow.test.js": {
+      "lines": 1,
+      "uses": 1,
+      "digest": "58dfb7537e9c61f13527818bc82479d0d8d9440bb1f30d1d9f9e461ae7825f4e",
+      "gap": "shared-toolchain",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6484",
+        "reason": "Read-only workflow assertion rejects Wrangler deployment text; this test never invokes Wrangler."
+      }
+    },
     "scripts/ci/verify-meet-start-output.js": {
       "lines": 1,
       "uses": 1,
