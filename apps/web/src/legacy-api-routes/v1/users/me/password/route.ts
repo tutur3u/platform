@@ -1,3 +1,4 @@
+import { revokeAllCrossAppTokens } from '@tuturuuu/auth/cross-app';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
@@ -51,6 +52,11 @@ export const POST = withSessionAuth(async (request, { supabase }) => {
         { status: 400 }
       );
     }
+
+    // Outstanding cross-app handoff tokens must not survive a password change.
+    // The password is already changed, so a revocation failure is logged by
+    // the helper and does not fail the request.
+    await revokeAllCrossAppTokens(supabase);
 
     return NextResponse.json({ success: true });
   } catch (error) {

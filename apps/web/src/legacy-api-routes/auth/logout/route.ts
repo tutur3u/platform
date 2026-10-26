@@ -1,3 +1,4 @@
+import { revokeAllCrossAppTokens } from '@tuturuuu/auth/cross-app';
 import { MFA_MOBILE_APPROVAL_COOKIE_NAME } from '@tuturuuu/auth/mfa-mobile-approval';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
@@ -9,7 +10,12 @@ export async function POST() {
   const { user } = await resolveAuthenticatedSessionUser(supabase);
 
   if (user) {
-    await revokeUserAiTempAuthTokens(user.id);
+    // Revoke while the session still authorizes the RPC; a failure is logged
+    // by the helper and must not block sign-out.
+    await Promise.all([
+      revokeUserAiTempAuthTokens(user.id),
+      revokeAllCrossAppTokens(supabase),
+    ]);
   }
 
   const { error } = await supabase.auth.signOut({
