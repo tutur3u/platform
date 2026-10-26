@@ -1,3 +1,4 @@
+/// <reference path="./cloudflare/native-profile-env.d.ts" />
 import { defaultContentSecurityPolicy } from '@tuturuuu/start-bridge/csp';
 import { defineBridgeAppConfig } from '@tuturuuu/start-bridge/start/app-config';
 import { framablePathRegexes } from '@tuturuuu/utils/framable-paths';
