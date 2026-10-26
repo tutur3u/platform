@@ -1417,6 +1417,8 @@
     "connect_microsoft_desc": "Kết nối tài khoản Microsoft của bạn",
     "connected_accounts": "Tài khoản đã kết nối",
     "connected_calendars": "Lịch đã kết nối",
+    "consent_restart_limited": "Google chưa cấp mã làm mới. Vui lòng chờ trước khi kết nối lại tài khoản này.",
+    "consent_restart_unavailable": "Tạm thời không thể kết nối lại lịch. Vui lòng thử lại sau.",
     "create": "Tạo",
     "create_calendar": "Tạo lịch mới",
     "creation_recovery_notice": "Lần tạo trước chưa được xác nhận. Hãy thử lại yêu cầu ban đầu; các chỉnh sửa vẫn được giữ để lưu sau khi xác nhận.",
@@ -1510,6 +1512,8 @@
     "no_google_accounts": "Chưa có tài khoản Google nào được kết nối.",
     "no_microsoft_accounts": "Chưa có tài khoản Microsoft nào được kết nối.",
     "no_outbound_calendar": "Không có lịch đồng bộ ra ngoài",
+    "oauth_spike_alert_description": "Tài khoản đã cách ly / hoãn / tạm giữ / lỗi hệ thống / lỗi tạm thời",
+    "oauth_spike_alert_title": "OAuth Lịch cần được kiểm tra",
     "outlook": "Outlook",
     "overridden_by_settings": "Bị ghi đè bởi cài đặt của bạn",
     "personal_first_day_override_desc": "Bạn đã đặt ngày bắt đầu tuần cá nhân là <bold>{firstDay}</bold>, việc này ghi đè cài đặt không gian làm việc. Ngày bắt đầu của bạn là <bold>{effectiveFirstDay}</bold>. Thay đổi trong cài đặt Giao diện & Chủ đề.",
@@ -6335,6 +6339,16 @@
       "enable": "Bật thông báo",
       "permission-denied": "Thông báo trình duyệt đã bị chặn. Vui lòng bật trong cài đặt trình duyệt.",
       "permission-request": "Bật thông báo trình duyệt để cập nhật"
+    },
+    "codes": {
+      "calendar_reconnect_required": {
+        "description": "Đồng bộ lịch đã tạm dừng vì nhà cung cấp không còn chấp nhận quyền truy cập. Hãy kết nối lại tài khoản để tiếp tục.",
+        "title": "Kết nối lại lịch của bạn"
+      },
+      "tutoring_session_completed": {
+        "description": "Giáo viên kèm đã đánh dấu hoàn thành một buổi kèm của học viên trong lớp bạn chủ nhiệm.",
+        "title": "Đã hoàn thành buổi kèm"
+      }
     },
     "date_earlier": "Trước đó",
     "date_this_week": "Tuần này",

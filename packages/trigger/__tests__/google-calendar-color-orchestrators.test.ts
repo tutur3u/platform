@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   entry: vi.fn(),
   details: vi.fn(),
   scope: vi.fn(),
+  order: vi.fn(),
   token: vi.fn(),
   rpc: vi.fn(),
   credentials: vi.fn(),
@@ -60,11 +61,18 @@ const tokenWrites = () =>
   );
 beforeEach(() => {
   vi.resetAllMocks();
+  // Mirrors verifiedGoogleImportToken's keyset read of the workspace's
+  // active Google rows; the credential is matched in process.
   mocks.scope.mockImplementation(() => ({
     eq: mocks.scope,
-    limit: mocks.token,
+    gt: mocks.scope,
+    order: mocks.order,
   }));
-  mocks.token.mockResolvedValue({ data: [{ id: token }], error: null });
+  mocks.order.mockImplementation(() => ({ limit: mocks.token }));
+  mocks.token.mockResolvedValue({
+    data: [{ id: token, access_token: 'access' }],
+    error: null,
+  });
   mocks.colors.mockResolvedValue({
     data: {
       event: { '7': { background: '#039be5', foreground: '#ffffff' } },
@@ -145,13 +153,14 @@ for (const [mode, sync] of [
       expect(mocks.colors).toHaveBeenCalledWith();
       expect(mocks.entry).toHaveBeenCalledWith({ calendarId: source });
       expect(mocks.details).toHaveBeenCalledWith({ calendarId: source });
+      // The credential never becomes a URL filter.
       expect(mocks.scope.mock.calls).toEqual([
         ['ws_id', workspace],
         ['provider', 'google'],
         ['is_active', true],
-        ['access_token', 'access'],
       ]);
-      expect(mocks.token).toHaveBeenCalledWith(2);
+      expect(mocks.order).toHaveBeenCalledWith('id', { ascending: true });
+      expect(mocks.token).toHaveBeenCalledWith(200);
       expect(rows()).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
