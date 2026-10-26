@@ -263,7 +263,7 @@ jobs:
           } > "$evidence/source-receipt.txt"
       - name: Retain generated Meet route tree evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: meet-route-tree-${{ env.SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/meet-route-tree-${{ env.SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}/
@@ -284,7 +284,7 @@ jobs:
         run: node scripts/ci/native-emitted-config-receipt.mjs apps/meet "$SOURCE_SHA" "$RUNNER_TEMP/native-emitted-config-meet.json"
       - name: Retain meet diagnostic config receipt
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: meet-native-config-receipt-${{ env.SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/native-emitted-config-meet.json
@@ -321,7 +321,7 @@ jobs:
           fi
       - name: Retain finite Meet graph evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: meet-native-graph-${{ env.SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/meet-native-evidence.tar.gz
@@ -340,7 +340,7 @@ jobs:
             pointer=.void/preview-deploy-config.json
           fi
           tar -czf "$RUNNER_TEMP/meet-worker.tar.gz" -C apps/meet dist "$pointer" meet-artifact.json
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: meet-worker-${{ env.SOURCE_SHA }}
           path: ${{ runner.temp }}/meet-worker.tar.gz
@@ -371,7 +371,7 @@ jobs:
           sha256sum "$RUNNER_TEMP/meet-debug-sealed-source.tar.gz" "apps/meet/meet-artifact.json" >> "$RUNNER_TEMP/meet-debug-sealed-source.txt"
       - name: Retain failed-job sealed source for debugging
         if: ${{ failure() && steps.meet-canonical-seal.outcome == 'success' && steps.meet-debug-pack.outcome == 'success' }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: meet-debug-sealed-source-${{ env.SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
@@ -432,7 +432,7 @@ jobs:
           fi
       - name: Retain restored acceptance finite Meet graph evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: meet-restored-acceptance-native-graph-${{ env.SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/meet-native-evidence.tar.gz
@@ -513,7 +513,7 @@ jobs:
           fi
       - name: Retain restored finite Meet graph evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: meet-restored-native-graph-${{ env.SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/meet-native-evidence.tar.gz
@@ -547,7 +547,7 @@ jobs:
             jq -e '[.[] | {id, created_on, versions}] | select(length > 0) | select(all(.[]; (.id | type == "string") and (.versions | length > 0)))' "$RUNNER_TEMP/meet-$service-deployments-raw.json" > "$RUNNER_TEMP/meet-rollback-$service-deployments.json"
           done
       - name: Retain rollback version evidence
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: meet-rollback-${{ github.sha }}-${{ github.run_id }}
           path: ${{ runner.temp }}/meet-rollback-*.json
