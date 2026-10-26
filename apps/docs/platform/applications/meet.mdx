@@ -124,12 +124,16 @@ are unaffected.
   not share a plan-wide creation cap. IPv6 addresses share their /64; unknown IPs
   share a bucket. Missing plans do no hashing. Creation denials use distinct
   English/Vietnamese copy about attempts to join.
-  The optional Durable Object password store is default-off. When assigned, a
-  network may spend at most 5% of the password family's daily command share,
-  across creation/login scopes, including rejected probes and successful refunds.
-  A repeated denied reservation is cached for at most one second. This also
-  applies to shared NATs and unknown-source requests; see
-  [durable command fairness](/build/devops/abuse-guard-store#durable-command-fairness).
+  The optional Durable Object password store is default-off. When assigned, each
+  IPv4 /32, IPv6 /64 or shared unknown-source bucket, under the same pepper, may
+  spend at most 5% of the password family's daily command share across
+  creation/login scopes, including rejected probes and successful refunds.
+  This bounds one bucket, not a network allocation or one actor: rotating 20 /64s
+  within one /48 can still drain the family. HIGH activation hold
+  `FAIR-R1-SYBIL-DRAIN` remains open. Shared NATs and unknown-source callers can
+  also exhaust their common bucket; P2 `FAIR-R1-SHARED-SOURCE-LOCKOUT` remains open.
+  A repeated denied reservation is cached for at most one second. See the
+  [fairness activation holds](/build/devops/abuse-guard-store#fairness-activation-holds).
   Regression coverage: `apps/abuse-guard/src/fairness.test.ts` and
   `packages/utils/src/abuse-protection/__tests__/password-attempt-store.test.ts`.
   The participant view and guest table are available only to server/admin clients;

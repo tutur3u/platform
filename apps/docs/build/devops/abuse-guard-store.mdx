@@ -199,7 +199,8 @@ credential and ingress validation, never from arbitrary body/header identity
 claims. IPv4-mapped IPv6 is canonicalized; IPv6 shares a /64. Missing or invalid
 source IPs share `unknown`, rather than bypassing source fairness.
 
-Each source **and** each available principal may spend at most
+Each source bucket (one IPv4 /32, IPv6 /64 or the shared `unknown` bucket)
+**and** each available principal may spend at most
 `floor(family daily budget / 20)` commands per UTC day, across all token keys,
 targets, scopes, processes and Worker isolates. With the default 100,000-command
 share this is 5,000 commands. Each command in a batch counts, including a denied
@@ -258,26 +259,27 @@ exhausted source.
    - run a staging drill showing that admitted traffic from realistic source
      fan-out cannot exhaust the offline share. The per-source daily windows bound
      one source, not many.
-4. **Replay — R1-REPLAY-DRAIN, family-command drain fixed in source/local runtime:**
-   `GuardControl` now enforces the durable quotas below before spending replay's
-   family share. Concurrency tests use two Worker isolates sharing real SQLite
-   Durable Objects, rotate sources and token/scope keys, and verify that another
-   principal still succeeds. Real runtime restart and cache-eviction coverage
-   preserve the quota. Independent security acceptance is still required to close
-   the HIGH finding; source delivery does not authorize assignment.
-5. **Password — PW-R1-DRAIN, family-command drain fixed in source/local runtime:**
-   durable source/principal quotas include denied reservation probes and verified
-   success refunds. The bounded one-second caller denial cache suppresses repeated
-   subject denials. Tests cover caller restarts, target rotation, real-store
-   concurrency, successful refunds and unrelated caller admission. Independent
-   security acceptance is still required to close the HIGH finding.
+4. **Replay — R1-REPLAY-DRAIN CLOSED AS SCOPED:** one verified principal or
+   one source cannot drain replay's family command share across instances,
+   isolates, scopes or token keys. Atomic durable admission and the concurrency,
+   restart and cache-pressure evidence support this closure. It does **not**
+   prove that a family stop cannot deny every caller. **HIGH activation hold
+   FAIR-R1-SYBIL-DRAIN remains OPEN:** 20 accounts plus 20 sources can consume
+   the share. Do not assign `replay` until the
+   [successor fairness holds](#fairness-activation-holds) are resolved or receive
+   an authorized scoped risk disposition.
+5. **Password — PW-R1-DRAIN CLOSED AS SCOPED:** one source or one verified Nova
+   user cannot drain password's family command share. Denied subject probes and
+   successful refunds count; the bounded one-second denial cache suppresses
+   repeated reservations. Anonymous Meet has only the source axis. **HIGH
+   activation hold FAIR-R1-SYBIL-DRAIN remains OPEN:** rotating source prefixes
+   can still drain the share and deny all Meet and Nova password checks. The
+   closure does not establish one-actor fairness or family-wide availability.
 
-   Both families remain unassigned. **Open activation holds:** hosted stop/resume,
-   actual ingress identity coverage, endpoint-to-store end-to-end admission,
-   scope/control-partition capacity and request billing under denial/cache
-   pressure are unproven. Fairness admission RPCs still
-   cost Worker/DO requests on cache misses; see the cost limit below. No full-day
-   hosted drill, publication or production acceptance is claimed.
+   Both families remain unassigned. The successor HIGH/P2 holds below and the
+   existing hosted stop/resume, ingress identity, endpoint-to-store end-to-end
+   admission, request-billing and full-day hosted-drill holds remain open. Local
+   tests and independent source review do not establish hosted acceptance.
 6. **Replay cutover:** fence keys consumed before cutover live only in the legacy
    store, and CLI refresh tokens live 90 days. Choose one:
    - **Read-through.** Stop every writer to the legacy fence keys first, so the
@@ -298,6 +300,64 @@ exhausted source.
 7. Alerting is live (see Cost safety) and the operator stop has been exercised in
    staging.
 
+### Fairness activation holds
+
+- **HIGH — FAIR-R1-SYBIL-DRAIN (OPEN).** Each identity receives `budget / 20`,
+  so 20 independent identities can exhaust a family. Anonymous Meet password
+  admission is source-only: one actor rotating 20 IPv6 /64s within one /48 can
+  spend 5,000 commands per /64. At approximately 5 requests/second in aggregate,
+  the default 100,000-command password share can be drained in about 5.6 hours,
+  then its family stop denies every Meet and Nova password check until rollover
+  or operator intervention. Replay needs 20 verified accounts plus 20 sources.
+  This is source arithmetic, not a measured attack or hosted load result.
+  The planned follow-up is aggregate IPv6 /48 or /56 and IPv4 /24 tiers checked
+  atomically with the existing quotas/family spend, and/or a graceful family stop
+  with a known-good reserve. Prove a prefix-rotation drill before activation.
+  Neither aggregate tiers nor a reserve is implemented by this change.
+- **P2 — FAIR-R1-SHARED-SOURCE-LOCKOUT (OPEN).** The fixed 5% daily cap also
+  locks out legitimate shared sources: an office NAT, mobile CGNAT address or
+  every caller when ingress resolves to `unknown`. At the default replay share,
+  5,000 commands allow about 2,500 two-command GET/claim refreshes per day across
+  all users behind that source; actual costs vary by route and grace/reread path.
+  A caller sharing the source can spend this allowance and deny its neighbors
+  until UTC midnight. Operator resume preserves identity quotas, and there is
+  currently no audited fairness reset or configurable per-axis share. Before
+  activation, add configurable source/principal shares (including a larger source
+  allowance for verified-principal families), an audited per-identity/per-family
+  fairness reset and fairness-denial alerts. Measure real per-source peaks and
+  the unknown-source fraction; unresolved ingress coverage remains a blocker.
+- **P2 — FAIR-R1-CONTROL-HOTSPOT (OPEN capacity hold).** Every fair cache miss
+  reaches the single global `control:v1` DO; admitted requests also check its
+  alarm. All families share this object's capacity. A fresh-identity flood can
+  overload it and make offline/proxy fence refreshes fail. Those store admissions
+  fail closed when `admit` cannot refresh the fence (`fence.ts:181-184`); callers
+  retain their documented policy, including proxy's local-counter fallback.
+  Separate family command budgets do not isolate this capacity failure. Require
+  a load test that includes non-fair refresh/fallback behavior and an
+  atomicity-preserving sharding plan before activation.
+- **P3 — FAIR-R1-PEPPER-SCOPE (OPEN).** Quotas are scoped by
+  `ABUSE_GUARD_KEY_PEPPER`. Different peppers on Web, Meet or Nova create separate
+  allowances for the same source/principal. All callers sharing a family and
+  environment must use the same pepper; a dedicated shared fairness pepper would
+  require follow-up implementation. Rotating the current pepper resets all
+  quotas immediately, including mid-day, as well as the other keyed state. Treat
+  rotation as an explicit reset requiring acceptance, not a routine lockout remedy.
+
+Other P3 limits remain recorded:
+
+- A batch larger than the remaining family allowance can return `guard_stopped`
+  while the durable family is not stopped. Do not infer the stored stop flag from
+  that response alone; inspect control state. This is a telemetry limitation.
+- Control cleanup purges at most 1,000 quota rows per wake and re-arms after one
+  second when expired rows remain. The loop is bounded and terminal, but alarm
+  requests, row deletes and scheduling operations belong in the request-cost
+  envelope below.
+- A stolen, spent but unexpired refresh token can charge the victim principal's
+  quota before a local replay-cache hit suppresses another lookup. For a token
+  proven replayed outside grace, this is normally one command per instance;
+  eviction/restart can add probes. This is a low-impact residual, not a token-mint
+  bypass or evidence of family-wide availability.
+
 ## Cost safety
 
 - **Bounds:** the limits above are enforced on the client and again in the Worker
@@ -309,8 +369,11 @@ exhausted source.
   commands, but Worker/control requests remain billable. Fair RPCs consult the
   durable fence on every cache miss; other RPCs cache it for at most 5 seconds. `POST /control/resume` clears
   it, and `GET /control/state` reads it. Stored data is preserved.
-- **Budget:** each family has its own daily allowance, so exhausting one cannot
-  stop another. Unauthenticated marked-bulk traffic spends only `offline`'s share.
+- **Budget:** each family has its own daily allowance and budget-stop flag.
+  Exhausting one allowance does not set another family's flag, but the shared
+  control DO can still make other families' admissions unavailable under overload
+  (FAIR-R1-CONTROL-HOTSPOT). Unauthenticated marked-bulk traffic spends only
+  `offline`'s share.
   Fair RPCs charge commands durably before every subject call, without isolate
   buffering or overshoot. Other RPCs report admitted commands per family every
   5 seconds or 200 commands. At 80% of a family's budget the control object logs a warning once.
@@ -341,7 +404,10 @@ exhausted source.
   is needed. It is never re-armed; otherwise it re-arms
   once at a future expiry. Cleanup makes no network calls, and it logs errors
   instead of throwing so automatic alarm retries cannot loop. Without new writes,
-  a partition's alarms end within its longest TTL.
+  a partition's alarms end within its longest TTL. Control quota cleanup instead
+  purges at most 1,000 rows per wake and re-arms after one second while expired
+  rows remain. Count every such wake, delete and scheduling operation in the
+  cost envelope; a bounded terminal loop is not free.
 - **Ingress:** when the owner attaches a hostname, add a Cloudflare WAF rate-limit
   rule for it, such as per-IP requests to `/v1/rpc` and `/control/*`. It sheds
   unauthenticated floods before Worker billing. It is not a spend cap; the budget is.
