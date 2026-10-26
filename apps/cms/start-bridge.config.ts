@@ -1,9 +1,9 @@
 import { defineBridgeAppConfig } from '@tuturuuu/start-bridge/start/app-config';
+import { framablePathRegexes } from '@tuturuuu/utils/framable-paths';
 import type { CmsEnvironment } from './cloudflare/worker';
 
 const PUBLIC_FILES = new Set(['/robots.txt']);
-const WEBGL =
-  /^\/api\/v1\/workspaces\/[^/]+\/external-projects\/assets\/[^/]+\/webgl(?:\/|$)/u;
+const framablePaths = framablePathRegexes();
 
 export default defineBridgeAppConfig<CmsEnvironment>({
   mounts: {
@@ -17,7 +17,7 @@ export default defineBridgeAppConfig<CmsEnvironment>({
     headers.set('X-Robots-Tag', 'noindex, nofollow, nosnippet');
     headers.set('X-Content-Type-Options', 'nosniff');
     headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-    if (WEBGL.test(path)) {
+    if (framablePaths.some((pattern) => pattern.test(path))) {
       headers.delete('X-Frame-Options');
     } else {
       headers.set('X-Frame-Options', 'DENY');
