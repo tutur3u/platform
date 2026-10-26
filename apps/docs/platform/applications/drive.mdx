@@ -123,21 +123,41 @@ ownership from the folder name or automatically move/delete matching objects.
 
 ### Signed URL lifetime decision
 
-- **Scope:** every signed read URL that an app-side signer issues for
-  workspace storage:
-  - the workspace share route (POST and the GET redirect);
-  - the SDK share and share-batch routes;
-  - `storage-core`'s `createGuardedSupabaseStorageReadUrl`, which every
-    Supabase read URL from `createWorkspaceStorageSignedReadUrl` passes through;
-  - the managed-contact avatar read route.
-- **Default:** one hour (3,600 seconds). Explicit requests are capped at seven
-  days (604,800 seconds).
-  - Older clients that ask for more (up to the previous one-year maximum) are
-    clamped, not rejected.
-  - The rule lives in `@tuturuuu/storage-core/signed-url-policy`
-    (`clampSignedUrlTtl`).
-  - R2 presigned URLs keep their shorter 15-minute default. SigV4 presigning
-    cannot exceed seven days either.
+- **Rule:** new signed read URLs for workspace storage default to one hour
+  (3,600 seconds) and never exceed seven days (604,800 seconds).
+  `clampSignedUrlTtl` in `@tuturuuu/storage-core/signed-url-policy` enforces
+  this. Requests above the cap (up to the previous one-year maximum) are
+  clamped, not rejected.
+- **Where the clamp runs:**
+  - The workspace share route (POST and the GET redirect). Its default changed
+    from one year to one hour.
+  - `createGuardedSupabaseStorageReadUrl`, which signs every Supabase read URL
+    from `createWorkspaceStorageSignedReadUrl`, the SDK share and share-batch
+    routes, and the download route. The SDK routes also validate at most seven
+    days, with a one-hour default.
+  - Mira tool outputs: generated images (`mira/images/`) and QR codes
+    (`drive/mira/qr/`). These were 30 days and are now seven days. The output
+    includes `storagePath` so callers can re-sign.
+- **Fixed short lifetimes:** every other app-side `createSignedUrl` or
+  `createSignedUrls` call on the `workspaces` bucket passes a constant of one
+  hour or less and is not clamped further. That covers:
+  - the managed-contact avatar read route (one hour, or the public URL);
+  - AI chat attachment routes;
+  - task/project-update attachments (15 minutes);
+  - workspace branding and logos (15 minutes);
+  - whiteboards, forms media and templates;
+  - meeting recordings and time-tracking images.
+
+  A multi-line sweep of `createSignedUrl` and `createSignedUrls` found no
+  app-side signer above seven days after this change.
+- **Not clamped by this helper:** R2 presigned URLs from
+  `createWorkspaceStorageSignedReadUrl`. They default to 15 minutes, and SigV4
+  presigning rejects lifetimes above seven days. Client-side defaults (the
+  mobile Drive repository, the SDK and internal API helpers) are only requests;
+  the server applies the cap.
+- **Redirect caching:** the share GET redirect sends
+  `Cache-Control: private, no-store`, so its short-lived Location is not
+  cached.
 - **No stored bearer URLs:** anything that must stay readable longer stores the
   object path and signs on read.
   - Embedded images use the share route's GET redirect
@@ -155,12 +175,14 @@ ownership from the folder name or automatically move/delete matching objects.
   - Stored avatar URLs and other copies stay valid until their original expiry.
   - Nothing is revoked or re-keyed by this change.
 - **Affected surfaces:** Drive share links, SDK share APIs, Web documents,
-  Tasks attachments and media, and Contacts and mobile CRM avatars.
+  Tasks attachments and media, Contacts and mobile CRM avatars, and Mira image
+  and QR results.
 - **Regression coverage:**
   - `packages/storage-core/src/lib/signed-url-policy.test.ts`
   - `packages/storage-core/src/lib/storage-download-sign.test.ts`
   - `apps/web/src/app/api/v1/workspaces/[wsId]/storage/share/route.test.ts`
   - `packages/users-core/src/routes/users/avatar.test.ts`
+  - `packages/ai/src/tools/executors/image.test.ts` and `qr.test.ts`
   - `apps/web/src/app/[locale]/(dashboard)/[wsId]/documents/[documentId]/document-image-sources.test.ts`
 
 ### Previously issued signed URLs
