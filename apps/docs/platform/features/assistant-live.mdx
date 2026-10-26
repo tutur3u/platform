@@ -628,11 +628,17 @@ bounded and scrollable on narrow screens and at enlarged text sizes.
 
 Assistant settings and its field editors reuse the existing custom floating
 navigation for Back. Other settings frames retain their current navigation.
-Live-browsing, local-model and workspace-memory explanations open from labeled
-information buttons. Hardware, upload/download progress, errors and recovery
-controls remain visible; all original explanatory copy stays in the dialogs.
-Personality values use two-line previews with the full value retained for
-accessibility and field editing. The central Assistant tile waits for completed
+Settings are grouped sections in this order: Personality, Memory, Live, Model
+source and On-device models. Model source offers Remote models and On device as
+peer choices with one check; On device selects the first installed model and
+says "Download a model below" until one exists. Each downloadable model row
+keeps one trailing action (Download, Import or Use) and opens a menu for the
+license, the publisher and removal. Live-browsing and memory explanations are
+supporting lines under their toggles; the storage, hardware, background and
+history notes sit behind one information control on the On-device caption.
+Hardware, upload/download progress, errors and recovery controls remain
+visible. Personality values use two-line previews with the full value retained
+for accessibility and field editing. The central Assistant tile waits for completed
 authentication; this presentation does not grant new permissions.
 
 Regression coverage: `assistant_composer_draft_test.dart` observes focused input
