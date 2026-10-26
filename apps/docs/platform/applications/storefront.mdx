@@ -10,7 +10,7 @@ catalog, stock, storefront visibility, and checkout-provider settings in
 
 ## Hosts
 
-- Production: `https://storefront.tuturuuu.com`
+- Production hosts: `https://storefront.tuturuuu.com` and `https://store.tuturuuu.com`
 - Local Portless: `https://storefront.tuturuuu.localhost`
 - Local fallback port: `7822`
 
@@ -147,18 +147,20 @@ runtime suite still requires the exact compiled app name and source commit.
 
 ### Root-only response and staging contract
 
-`start-bridge.config.ts` admits only `storefront.tuturuuu.com` and
-`storefront-staging.tuturuuu.com`. Empty mount hosts and `unknownHost: 'reject'`
+`start-bridge.config.ts` admits `storefront.tuturuuu.com`, the existing production
+alias `store.tuturuuu.com`, and `storefront-staging.tuturuuu.com`. Empty mount hosts and `unknownHost: 'reject'`
 reject apex and unknown hosts before route execution. These allowlist entries
 do not provision DNS or authorize publication. The shared generator derives and seals `workers_dev: false` from this
 fail-closed profile.
 
 Every native response denies framing and content sniffing, sets the strict-origin
-referrer policy, and remains noindex. Documents and APIs default to
-`Cache-Control: private, no-store` and vary by Cookie; explicit endpoint cache
-policies and static asset caching are preserved. Source tests cover the defaults,
+referrer policy, and remains noindex. Every response except GET/HEAD reads under `/assets/` or the enumerated
+`/robots.txt` file receives `Cache-Control: private, no-store` and varies by
+Cookie, overriding endpoint and upstream public cache headers. Only those static
+reads retain their cache policy; non-read asset requests remain private. Source tests cover the defaults,
 endpoint overrides and variation merging; `cloudflare/response-policy.runtime.mjs`
-checks the emitted Worker on both admitted hosts and rejects apex/unknown hosts.
+checks the emitted Worker on every admitted host, rejects apex/unknown hosts,
+and probes upstream public cache headers and non-read asset paths.
 
 Staging profile verification is an explicit cutover-prep gate. Supply and verify
 `INVENTORY_APP_URL` and `INTERNAL_WEB_API_ORIGIN` for the admitted staging
