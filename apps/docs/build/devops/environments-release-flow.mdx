@@ -139,8 +139,11 @@ No package version, dependency resolution or published changelog is rewritten.
   pins the list exactly.
   The direct-push producer blob is eligible only for `push` with
   `run.head_sha == target`; older blobs retain their prior wrapper/dispatch rules.
-  The new workflow's manual repairs are staging-only evidence. Add a changed
-  producer blob and its event-protocol classification in the same PR, preserving
+  The new workflow's manual repairs are staging-only evidence and are excluded
+  from production marker selection after their producer identity and immutable
+  source are verified. A later manual marker cannot displace an earlier eligible
+  push marker; selected evidence retains every run, attempt, status and job check.
+  Add a changed producer blob and its event-protocol classification in the same PR, preserving
   every accepted historical blob and its admission rules.
   Run the full `node scripts/run-script-tests.js` collector, including
   `staging-contract-allowlist`, `production-migration-target` and
