@@ -557,6 +557,7 @@ test('Meet workflow contracts run in a clean snapshot without Node dependencies'
     for (const file of [
       'scripts/ci/meet-build-metadata.test.js',
       'scripts/ci/workflow-yaml-test-helper.js',
+      'scripts/ci/pr-label-gate.js',
       'scripts/run-script-tests.js',
       'scripts/paused-runtimes.js',
       'scripts/ci/verify-meet-start-output.test.js',

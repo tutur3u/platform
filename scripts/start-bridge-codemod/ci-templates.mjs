@@ -6,6 +6,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { GENERATED_MARKER, RUNTIME } from './contract.mjs';
+import { RUNTIME_GATE } from './runtime-outcome.mjs';
 import { defaultMounts, pascal } from './templates.mjs';
 
 export const NATIVE_TEMPLATE = '.github/workflows/native-start-app.yaml';
@@ -14,7 +15,7 @@ export const NATIVE_TEMPLATE = '.github/workflows/native-start-app.yaml';
  * build: not a `*.test.*` name, so source Vitest and check:changed never run
  * it against a missing artifact.
  */
-export const RUNTIME_TEST = 'cloudflare/native-built-worker.runtime.mjs';
+export const RUNTIME_TEST = RUNTIME_GATE;
 /** `test:runtime`: the generated runtime test and any app-owned ones. */
 export const RUNTIME_COMMAND = 'node --test cloudflare/*.runtime.mjs';
 
@@ -231,6 +232,10 @@ export function runtimeTest({
   publicFiles,
   hasBuildInfo,
   expectations = { '/': 200 },
+  probes = [
+    { kind: 'page', path: '/' },
+    { kind: 'notFound', path: '/__native-smoke-missing__' },
+  ],
   worker = { workersDev: true, compatibilityFlags: RUNTIME.compatibilityFlags },
 }) {
   const buildInfo = hasBuildInfo
@@ -254,6 +259,7 @@ export function runtimeTest({
   return `// ${GENERATED_MARKER} for ${app}; re-run it instead of editing.
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
+import { existsSync } from 'node:fs';
 import { request as httpRequest } from 'node:http';
 import { cp, mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
@@ -263,7 +269,9 @@ import test from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { readNativeRuntimeConfig } from '../../../scripts/ci/apps-native-runtime-pointer.mjs';
 import {
+  FIXTURE,
   mountedPath,
+  RUNTIME_GATE,
   runtimeExpectationProblems,
   runtimeOutcomeFailure,
 } from '../../../scripts/start-bridge-codemod/runtime-outcome.mjs';
@@ -275,6 +283,8 @@ const WORKER = ${js(workerName)};
 const PUBLIC_FILES = [${publicFiles.map(js).join(', ')}];
 // From start-bridge.routes.json \`runtime\`: a status, or a redirect prefix.
 const EXPECTED = ${JSON.stringify(expectations)};
+// Response-policy probes (start-bridge.routes.json \`runtimeProbes\`).
+const POLICY_PROBES = ${JSON.stringify(probes)};
 // The Worker's mounts: the generated defaults plus the app-owned
 // start-bridge.config.ts overrides, exactly as cloudflare/worker.ts spreads
 // them (loaded with Node's type stripping).
@@ -398,6 +408,7 @@ test('emitted ${app} Worker serves its root, mount and unknown paths', {
             resolve({
               status: response.statusCode ?? 0,
               location: response.headers.location ?? null,
+              headers: response.headers,
               body: Buffer.concat(chunks).toString('utf8'),
             })
           );
@@ -475,6 +486,47 @@ ${buildInfo}
   await t.test('an unknown path is not a server error', async () => {
     const response = await get('/__native-smoke-missing__');
     assert.ok(response.status < 500, String(response.status));
+  });
+
+  await t.test('the response policy covers a rendered page, an API response and a 404', async () => {
+    // Real responses only: a redirect or an error never stands in for a page.
+    let executed = 0;
+    for (const probe of POLICY_PROBES) {
+      if (probe.skip) {
+        // A skipped page or 404 probe is covered by the named app fixture,
+        // which test:runtime runs alongside this file.
+        if (probe.fixture) {
+          // A distinct, app-owned file that test:runtime's glob selects.
+          assert.match(probe.fixture, FIXTURE, \`\${probe.kind}: \${probe.fixture} is not run by test:runtime\`);
+          assert.notEqual(probe.fixture, RUNTIME_GATE, \`\${probe.kind}: the gate cannot replace its own probe\`);
+          assert.ok(existsSync(join(app, probe.fixture)), \`\${probe.kind}: \${probe.fixture} is missing\`);
+        }
+        t.diagnostic(\`policy probe \${probe.kind} skipped (\${probe.fixture ?? 'no fixture'}): \${probe.skip}\`);
+        continue;
+      }
+      executed += 1;
+      const { status, headers, body } = await get(probe.path);
+      const type = headers['content-type'] ?? '';
+      const where = \`\${probe.kind} \${probe.path} (\${status} \${type})\`;
+      if (probe.kind === 'api') {
+        assert.equal(status, 200, where);
+        assert.match(type, /application\\/json/u, where);
+        assert.doesNotThrow(() => JSON.parse(body), where);
+      } else {
+        assert.equal(status, probe.kind === 'page' ? 200 : 404, where);
+        assert.match(type, /text\\/html/u, where);
+        assert.match(body, /<html[\\s>]/iu, \`\${where}: an HTML document\`);
+      }
+      assert.match(headers['cache-control'] ?? '', /\\bno-store\\b/u, \`\${where}: Cache-Control no-store\`);
+      assert.ok(headers['x-robots-tag'], \`\${where}: X-Robots-Tag\`);
+      assert.equal(headers['x-frame-options'], 'DENY', \`\${where}: X-Frame-Options\`);
+      assert.match(
+        headers['content-security-policy'] ?? '',
+        /frame-ancestors 'none'/u,
+        \`\${where}: CSP frame-ancestors\`
+      );
+    }
+    assert.ok(executed > 0, 'no response-policy probe ran');
   });
 
   t.diagnostic(\`denied egress origins: \${[...new Set(egress)].join(', ') || 'none'}\`);

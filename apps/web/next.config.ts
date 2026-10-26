@@ -9,6 +9,10 @@ import {
 } from '@tuturuuu/utils/next-config';
 import createNextIntlPlugin from 'next-intl/plugin';
 import { generate as generatePublicSeoRoutes } from '../../scripts/generate-public-seo-routes';
+import {
+  CLI_LOGIN_PAGE_SECURITY_HEADERS,
+  CLI_LOGIN_START_PATH,
+} from './src/lib/auth/cli-login-page-headers';
 import { nativeIntegrityFramablePaths } from './src/lib/native-integrity/frame-policy';
 import { createSatelliteApiRewrites } from './src/lib/satellite-api-rewrites';
 
@@ -168,6 +172,10 @@ const nextConfig = createTuturuuuNextConfig({
           },
         ],
       })),
+      {
+        source: CLI_LOGIN_START_PATH,
+        headers: CLI_LOGIN_PAGE_SECURITY_HEADERS,
+      },
     ];
   },
   async rewrites() {

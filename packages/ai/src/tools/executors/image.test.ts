@@ -123,6 +123,11 @@ describe('executeGenerateImage', () => {
     });
     expect(mocks.googleImage).toHaveBeenCalledWith('imagen-4.0-generate-001');
     expect(mocks.gatewayImage).not.toHaveBeenCalled();
+    // Stored tool output never carries a bearer URL beyond the 7-day cap.
+    expect(mocks.createSignedUrl).toHaveBeenCalledWith(
+      expect.stringMatching(/^workspace-1\/mira\/images\/.+\.png$/),
+      604_800
+    );
     expect(mocks.generateImage).toHaveBeenCalledWith(
       expect.objectContaining({
         model: {

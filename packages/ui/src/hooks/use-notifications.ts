@@ -53,6 +53,7 @@ export interface Notification {
   type: NotificationType;
   title: string;
   description: string | null;
+  code?: string | null;
   data: Record<string, any>;
   entity_type: string | null;
   entity_id: string | null;
