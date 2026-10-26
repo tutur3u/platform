@@ -54,6 +54,7 @@ function setup(t, { admitted = true } = {}) {
     duringUpload: false,
     priorMode: 'started',
     attachedRoute: false,
+    scriptlessAcme: false,
     publicServing: null,
     calls: [],
   };
@@ -165,7 +166,19 @@ function setup(t, { admitted = true } = {}) {
                 script: receipt.profile.name,
               },
             ]
-          : [{ id: 'unrelated', script: 'another-worker' }];
+          : [
+              { id: 'unrelated', script: 'another-worker' },
+              ...(state.scriptlessAcme
+                ? [
+                    {
+                      id: 'acme',
+                      pattern:
+                        'calendar.tuturuuu.com/.well-known/acme-challenge/*',
+                      script: null,
+                    },
+                  ]
+                : []),
+            ];
     else if (url.endsWith('/subdomain'))
       result = {
         enabled: state.publicServing === 'workers.dev',
@@ -242,7 +255,7 @@ function setup(t, { admitted = true } = {}) {
     appRoot,
     run: (options = {}) =>
       main({
-        argv: ['calendar', sha],
+        argv: ['calendar', sha, 'all'],
         env,
         fetcher,
         exec,
@@ -470,6 +483,12 @@ test('only the production environment upload step receives the named deploy toke
       );
   }
   assert.equal(workflow.concurrency['cancel-in-progress'], false);
+  assert.equal(
+    workflow.jobs.publish.steps.find((step) =>
+      step.name?.startsWith('Retain private upload')
+    ).with['retention-days'],
+    90
+  );
 });
 
 test('qualification dry-run uses sealed route-free bytes without a provider credential', async (t) => {
@@ -590,3 +609,71 @@ for (const mode of ['preflight', 'upload', 'verify'])
     );
     assert.equal(p.state.writes, 0);
   });
+
+test('an inactive matching version refuses during read-only preflight', async (t) => {
+  const p = setup(t);
+  p.state.ids = [newId];
+  const env = { ...p.env };
+  delete env.WAVE1_PRODUCTION_CLOUDFLARE_API_TOKEN;
+  await assert.rejects(
+    p.run({ argv: ['calendar', sha, 'preflight'], env }),
+    /active at 100%/
+  );
+  assert.equal(p.state.writes, 0);
+});
+
+test('publication mode is required', async (t) => {
+  const p = setup(t);
+  await assert.rejects(p.run({ argv: ['calendar', sha] }));
+  assert.deepEqual(p.state.calls, []);
+});
+
+for (const [name, mutate] of [
+  [
+    'expired preflight',
+    (record) => {
+      record.preflightAt = Date.now() - 120_001;
+    },
+  ],
+  [
+    'another run',
+    (record) => {
+      record.runId = '999';
+    },
+  ],
+  [
+    'another attempt',
+    (record) => {
+      record.runAttempt = '9';
+    },
+  ],
+])
+  test(`${name} refuses before upload`, async (t) => {
+    const p = setup(t);
+    const readEnv = { ...p.env };
+    delete readEnv.WAVE1_PRODUCTION_CLOUDFLARE_API_TOKEN;
+    const record = await p.run({
+      argv: ['calendar', sha, 'preflight'],
+      env: readEnv,
+    });
+    mutate(record);
+    writeFileSync(
+      join(p.appRoot, 'calendar-production-publication.json'),
+      JSON.stringify(record)
+    );
+    const uploadEnv = { ...p.env };
+    delete uploadEnv.GITHUB_TOKEN;
+    delete uploadEnv.WAVE1_PRODUCTION_CLOUDFLARE_READ_TOKEN;
+    await assert.rejects(
+      p.run({ argv: ['calendar', sha, 'upload'], env: uploadEnv })
+    );
+    assert.equal(p.state.writes, 0);
+  });
+
+test('scriptless ACME exclusion is not a Worker serving attachment', async (t) => {
+  const p = setup(t);
+  p.state.scriptlessAcme = true;
+  const result = await p.run();
+  assert.equal(result.state, 'accepted-private');
+  assert.equal(p.state.writes, 1);
+});

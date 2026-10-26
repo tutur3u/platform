@@ -32,15 +32,18 @@ Each app migrates under the [native Start migration runbook](/build/devops/nativ
 one integration writer per app, `next/*` only through
 `@tuturuuu/start-bridge`, basePath readiness for
 both its subdomain and `tuturuuu.com/<app>`, and exact-commit CI, sealed
-emitted-Worker acceptance and staging acceptance before any cutover. Current
+emitted-Worker acceptance and the app's reviewed hosted cutover acceptance.
+Wave-1 uses a private production smoke before routing, then immediate signed-in
+production acceptance and a 30–60 minute watch; hosted staging is not a flip gate. Current
 hosting (Vercel or Next.js/OpenNext Workers) stays canonical until that app's
 explicit cutover PR. See
 [Oxc and Cloudflare adoption](/build/development-tools/oxc-cloudflare-adoption).
 
 ## Wave-1 production publication hold
 
-Meet, Calendar, Mail and Apps are **held for wave-1 cutover** in
-`productionPublicationHolds` in `tuturuuu.ci.ts`. The production planner reports
+Calendar frontend is admitted for route-free production preparation in
+`productionPublicationPolicy` in `tuturuuu.ci.ts`; Meet, Mail and Apps remain
+**held for wave-1 cutover**. The production planner reports
 **Held** with that reason and selects neither their native nor legacy publishers,
 including manual and package recovery selection. Native CI validation stays enabled.
 Meet's direct production job also checks the same policy before publication.
@@ -74,7 +77,8 @@ active. This does not revive `apps/tanstack-web`, resume the Rust/Docker stack, 
 authorize canonical cutover.
 
 Calendar, Mail and Apps have separately sealed native staging/production profiles.
-Production remains held for wave-1 cutover. Only owner-provisioned, explicitly enabled
+Calendar has a separately gated private production publisher, which never attaches
+routes. Other wave-1 apps remain held. Only owner-provisioned, explicitly enabled
 staging can publish from trusted main runs; no workflow creates provider resources or
 changes DNS as setup. The [native publisher runbook](/build/devops/wave1-native-publishers)
 records exact identities, secret names, resource continuity, archive/runtime gates,

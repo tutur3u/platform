@@ -278,3 +278,35 @@ test('successful Vercel stderr remains complete while extracting deployment iden
   });
   assert.equal(capture.vercel.value.deploymentId, 'dpl_synthetic');
 });
+
+test('Calendar capture identifies both route handles and retains scriptless exclusions', async () => {
+  const routes = [
+    {
+      id: 'a'.repeat(32),
+      pattern: 'calendar.tuturuuu.com/*',
+      script: 'tuturuuu-calendar',
+    },
+    {
+      id: 'b'.repeat(32),
+      pattern: 'calendar.tuturuuu.com/.well-known/acme-challenge/*',
+      script: null,
+    },
+    ...zoneRoutes,
+  ];
+  const deps = dependencies();
+  const capture = await captureState(
+    { ...options, host: 'calendar.tuturuuu.com' },
+    {
+      ...deps,
+      fetchImpl: async (url, init) =>
+        url.includes('/workers/routes')
+          ? Response.json({ success: true, result: routes })
+          : deps.fetchImpl(url, init),
+    }
+  );
+  assert.deepEqual(capture.cloudflare.workerRoutes.value, routes);
+  assert.deepEqual(capture.cloudflare.calendarRoutes.value, {
+    native: routes[0],
+    acme: routes[1],
+  });
+});
