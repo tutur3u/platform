@@ -14,6 +14,7 @@ import {
   CLI_LOGIN_START_PATH,
 } from './src/lib/auth/cli-login-page-headers';
 import { nativeIntegrityFramablePaths } from './src/lib/native-integrity/frame-policy';
+import { createProductMarketingRedirects } from './src/lib/product-marketing-redirects';
 import { createSatelliteApiRewrites } from './src/lib/satellite-api-rewrites';
 
 // Discover current indexable pages before configuring HTTP indexing boundaries.
@@ -141,6 +142,9 @@ const nextConfig = createTuturuuuNextConfig({
         hostname: 'models.dev',
       },
     ],
+  },
+  async redirects() {
+    return createProductMarketingRedirects();
   },
   async headers() {
     return [

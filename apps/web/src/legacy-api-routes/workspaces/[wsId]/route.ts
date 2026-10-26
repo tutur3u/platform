@@ -138,9 +138,16 @@ export const PUT = withSessionAuth<{ wsId: string }>(
 
       if (
         nextHandle &&
-        ['internal', 'onboarding', 'home', 'login', 'personal'].includes(
-          nextHandle
-        )
+        [
+          'ai',
+          'calendar',
+          'meet',
+          'internal',
+          'onboarding',
+          'home',
+          'login',
+          'personal',
+        ].includes(nextHandle)
       ) {
         return NextResponse.json(
           { message: 'Workspace handle is reserved' },

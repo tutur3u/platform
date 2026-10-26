@@ -86,7 +86,7 @@ export const MARKETING_PRODUCT_GROUPS: MarketingProductGroup[] = [
       { key: 'tasks', href: '/products/tasks', accent: 'text-dynamic-green' },
       {
         key: 'meet',
-        href: '/products/meet-together',
+        href: '/products/meet',
         accent: 'text-dynamic-purple',
       },
       {

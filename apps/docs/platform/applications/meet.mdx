@@ -1,12 +1,40 @@
 ---
 title: "Meet"
 description: "Meeting plans, collaboration rooms, calls, transcription, assistants, and follow-up review."
-updatedAt: '2026-10-22'
+updatedAt: '2026-10-26'
 ---
 
 Meet (`meet.tuturuuu.com`, `apps/meet`) combines meeting planning and live
 collaboration. Public product explanations live on the main site; operational
 rooms, plans, and workspace meeting records are excluded from search indexing.
+
+## Web product and public-plan pages
+
+Web's public Meet landing and plan pages use `/products/meet` and
+`/products/meet/plans/<id>`, with Vietnamese canonicals below `/vi/products/meet`.
+Their share controls use that product-plan URL. A successful deletion returns to
+the localized product landing page. Meet's operational app retains its separate
+root or `/meet` paths and its existing indexing policy.
+
+The old Web `/meet` landing, `/meet/plans/<id>` and localized equivalents return
+307 redirects only. Exact Calendar and AI landing aliases, including Vietnamese
+equivalents, also use 307 redirects to their existing product pages. `/meet` and
+`/calendar` are reserved for future apex mounts: remove their redirect rules at
+mount cutover, and never use 301 while those paths are reserved. Permanent client
+and crawler caches would prevent reaching the future apps. Nested app routes and
+APIs are excluded. Existing `/meet-together` routes are outside this relocation.
+
+Web and satellite workspace settings reserve the `meet`, `calendar`, and `ai`
+handles so these root aliases cannot be assigned to workspaces. Reservation
+rejections are covered in both workspace route test suites.
+
+Follow-up: the shared `packages/ui` legacy Meet defaults still use
+`planBasePath="/meet/plans"` and copy-link URLs that pass through these redirects.
+They remain unchanged here; migrate those defaults before removing the rules.
+
+`apps/web/src/lib/product-marketing-redirects.test.ts` exercises Next's actual
+redirect matcher for locales, plan ids, repeated/empty query values and excluded
+siblings. Build and browser acceptance remain separate from that matcher test.
 
 ## Choose the meeting surface
 
@@ -309,3 +337,5 @@ browser hydration need independent acceptance. Preserve
 an observed hosted configuration and recoverable prior Worker version before
 traffic changes. Local workerd probes do not qualify hosted SFU/TURN, devices,
 recording or assistant stop behavior.
+
+The Web build gate runs `node scripts/ci/web-product-marketing.runtime.mjs` against the built Next server. It verifies all eight temporary redirects, including repeated query parameters; the focused route tests cover the excluded application and Meet Together paths.
