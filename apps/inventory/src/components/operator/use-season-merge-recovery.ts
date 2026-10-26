@@ -1,6 +1,6 @@
 'use client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { InternalApiError } from '@tuturuuu/internal-api/internal-api-error';
+import { InternalApiError } from '@tuturuuu/internal-api/client';
 import { applyInventorySeasonMerge } from '@tuturuuu/internal-api/inventory';
 import { useEffect, useRef } from 'react';
 import {
