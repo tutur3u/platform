@@ -42,6 +42,58 @@ transactions can delay a concurrent drop. On timeout/cancellation, inspect
 before retrying; do not start another build/drop blindly. Close the dedicated
 session or reset both timeouts if execution stopped before the file's resets.
 
+## Topic teacher assignment rollback
+
+`20261026193000_topic_announcement_teacher_assignment.rollback.sql` (#6924) is
+a manual artifact like the batch above. Stop topic announcement writers first:
+the teacher topic form, the schedule import, and the queue cron. Then:
+
+- **It refuses while any announcement has no topic.** The migration allows
+  `topic is null` only for drafts, and the rollback restores `topic not null`.
+  It raises `topic announcements without a topic exist` and changes nothing.
+  Before running it, in the same approved session, do **one** of these:
+  - Keep the drafts with a placeholder topic:
+
+    ```sql
+    update private.topic_announcements set topic = '(topic pending)' where status = 'draft' and (topic is null or btrim(topic) = '');
+    ```
+
+    The drafts keep their recipients, attachments, and schedule. The
+    placeholder is real topic text: it shows in the UI and is emailed if
+    someone sends the draft unchanged, so tell supervisors to replace it before
+    sending. Covering blank topics as well keeps those rows editable under the
+    restored non-blank rule.
+  - Delete the drafts:
+
+    ```sql
+    delete from private.topic_announcements where status = 'draft' and topic is null;
+    ```
+
+    Their recipient and attachment rows are deleted with them (`on delete
+    cascade`), but the uploaded files stay in storage as orphans. Delivery
+    attempt rows block the delete (`on delete restrict`). Drafts are never
+    dispatched, so a block means the row is not what you expect: stop and
+    inspect it.
+
+  Only drafts can lack a topic, so these filters cover every row the rollback
+  checks.
+- **Data loss either way.** The rollback drops `teacher_workspace_user_id`,
+  `course_book`, `video_url`, and `send_due_at`. If that data matters, export
+  it first:
+
+  ```sql
+  copy (select id, ws_id, teacher_workspace_user_id, course_book, video_url, send_due_at from private.topic_announcements where teacher_workspace_user_id is not null or course_book is not null or video_url is not null or send_due_at is not null) to stdout with csv header;
+  ```
+
+- **Constraints.** The restored `topic_announcements_topic_not_blank` and
+  `notifications_type_check` (without `topic_assigned`) are added `NOT VALID`,
+  so nothing is validated under the lock, and new and updated rows are still
+  checked. `set not null` on `topic` scans the table once. Existing
+  `topic_assigned` notifications are kept.
+
+The disposable proof is
+`apps/database/verification/topic-announcement-teacher-assignment-rollback-roundtrip.sql`.
+
 ## Cross-app token containment is forward-only
 
 The `20261026173000` migration bounds both minting overloads and marks overlong
