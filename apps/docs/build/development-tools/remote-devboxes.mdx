@@ -241,6 +241,41 @@ coverage lives in `apps/database/supabase/tests/devbox-runner-trust-pools.sql`
 and `devbox-runner-drain-hardening.sql` (pgTAP), and the Infrastructure route
 and store tests.
 
+### Claim admission by reported execution mode
+
+Apply `20261026145000_devbox_claim_mode_admission.sql` after the current main
+migrations before enabling capability-report freshness admission.
+
+The database flag `private.devbox_control_settings.require_reported_execution_mode`
+defaults to off and must stay off pending agent and heartbeat-handler support.
+Judge always refuses a runner reporting `trusted`, even when this flag is off.
+With the flag on, `claim_next_devbox_run` additionally enforces trusted-work
+report freshness:
+
+- `run`, `build`, `serve` and `tunnel` claims require the runner to have
+  reported `executionMode: trusted` within the last 90 seconds;
+- Judge claims refuse every runner reporting `trusted`, even with a stale or
+  missing timestamp. `judge-only` and legacy agents without a mode remain eligible;
+- playground and maintenance claims are unchanged.
+
+Report freshness uses `capabilities_updated_at`, which a database trigger owns and stamps
+on inserts and every capabilities or timestamp update. A trusted report older than the
+window cannot admit trusted work; future timestamps are rejected. Identical
+reports and timestamp-only writes are restamped by the server. The agent's clock
+is never trusted.
+
+Agents report `executionMode` from `TUTURUUU_DEVBOX_EXECUTION_MODE`, and both the
+web heartbeat schema and the control Worker's capability allowlist accept it as a
+string enum. Before cutover, deploy agents that report it and verify a fresh
+trusted report from every run-enabled runner; keep the admission flag off until
+that verification.
+
+An authorized operator runs
+`private.set_devbox_require_reported_execution_mode(true)` through the gated
+production database path. It refuses while any run-enabled runner lacks a fresh
+`trusted` report and lists those runners; `p_force => true` overrides that guard
+deliberately; NULL does not override it, and NULL `p_enabled` is rejected. Disable the flag the same way with `false`. Regression coverage
+lives in `apps/database/supabase/tests/devbox-claim-mode-admission.sql`.
 ### Several runner identities on one host
 
 Keep each trust tier on its own runner identity: a separate runner token, OS
