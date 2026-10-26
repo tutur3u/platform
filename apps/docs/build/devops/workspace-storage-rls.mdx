@@ -11,9 +11,10 @@ APIs use the service role, which bypasses RLS. Migration
 `20261026100000_least_privilege_workspace_storage_rls.sql` replaced the original
 policies. Those let any workspace member read, write and delete every object.
 
-All rules require a `MEMBER` workspace membership (`is_org_member`; guests are
-excluded). `public.workspace_storage_object_access(name, operation)` evaluates
-them:
+All rules require a `MEMBER` workspace membership; guests are excluded.
+`workspace_storage.object_access(name, operation, actor)` evaluates them. The
+`workspace_storage` schema is not exposed through PostgREST, so clients cannot
+call the helper with a forged actor:
 
 | Root | select | insert / update | delete |
 | --- | --- | --- | --- |
@@ -23,7 +24,9 @@ them:
 | other `chats/**` (native Chat), `external-apps/**`, `AI Agent Imports/**`, `mira/images/**`, `recordings/**`, `.tuturuuu/**` | none | none | none |
 | `project-updates/**` | member | member | member |
 | `template-backgrounds/**` | member | `manage_drive` | `manage_drive` |
-| everything else, including root-level files (Drive) | `view_drive` or `manage_drive` | `manage_drive` | `manage_drive` |
+| everything else, including root-level files (Drive) | `view_drive`, `manage_drive` or `admin` | `manage_drive` or `admin` | `manage_drive` or `admin` |
+
+Workspace creators count as `admin`, which mirrors `has_workspace_permission`.
 
 - Private roots match case-insensitively and never fall back to Drive permissions.
   `AI Agent Imports` contains spaces; the match uses the literal segment.
@@ -34,6 +37,11 @@ them:
   `POST /api/ai/chat/upload-url`, which checks membership and chat ownership
   before it issues a signed upload URL. An existing chat must belong to the
   caller. An id that does not exist yet is allowed for draft attachments.
+  Uploads never overwrite (`upsert: false`), and Supabase signed upload tokens
+  have a fixed 2-hour lifetime.
+- `POST /api/ai/chat/delete-file` accepts only the caller's own temp folder or
+  an existing chat (UUID segment) the caller created. Orphaned and non-chat
+  folders are not deletable through it.
 - Meeting recording routes check membership and the recording session, then use
   the service role for storage. Playback signs only paths inside the verified
   session folder.
@@ -48,16 +56,38 @@ command. The legacy `Enable insert for authenticated users only` policy
 (`WITH CHECK (true)`) can no longer widen access to this bucket. Before this
 migration, it let non-members insert into any workspace folder.
 
+## Performance
+
+`workspace_storage.actor_access()` resolves the caller's member, view and manage
+workspace sets once per statement. Policies pass it as
+`(select workspace_storage.actor_access())`, which runs as an InitPlan. Each row
+then costs path parsing and array lookups, plus one primary-key probe on
+`ai_chats` for chat attachment rows. Private roots are denied before any table
+lookup. Guards use `CASE` so the bucket check runs first and other buckets never
+call the helper.
+
+Measured on a disposable local stack listing one Drive folder of 20,000 objects
+as a `view_drive` member (median of 5 runs):
+
+| Policy set | `count(*)` of the folder | `storage.search` first page (100) |
+| --- | --- | --- |
+| 2023 member-wide policies | 111 ms | 120 ms |
+| First path-scoped version (per-row permission calls) | 1,493 ms | 1,557 ms |
+| Current path-scoped version | 174 ms | 183 ms |
+| Incident rollback variant | 248 ms | 256 ms |
+
 ## Regression coverage
 
 `apps/database/supabase/tests/workspace-storage-least-privilege-rls.sql` covers
 15 objects across every root. Each is probed by a non-member, a member, a
 `view_drive` viewer, a `manage_drive` manager, the chat owner/uploader and
-`service_role`, for select/insert/update/delete. With 8 structural checks, that
-is 368 assertions. Each probe runs in a rolled-back subtransaction.
+`service_role`, for select/insert/update/delete. With 10 structural checks
+(including the workspace creator and the MEMBER default `admin` paths), that
+is 370 assertions. Each probe runs in a rolled-back subtransaction.
 
 Route tests in `apps/web/src/__tests__/mind-chat-file-app-session-route.test.ts`
-cover the upload-url and delete-file ownership checks.
+cover the upload-url and delete-file ownership checks, including missing-chat
+and non-UUID delete rejection.
 
 ## Verify on a disposable stack
 
@@ -75,24 +105,42 @@ Stop it afterwards with `stop --project-id <id> --no-backup`.
 
 ## Rollback
 
-`apps/database/rollbacks/20261026100000_least_privilege_workspace_storage_rls.rollback.sql`
-restores the exact 20231004102905 policies and drops the helper. It does not
-touch objects. Rolling back reopens the HIGH finding, so run it only as an
-approved incident rollback.
+There are two rollbacks in `apps/database/rollbacks/`. Each is one transaction,
+does not touch objects, and can run from the forward state or from the other
+rollback's state. Re-applying the forward migration body also removes either
+rollback's policies.
 
-To prove the rollback round trip on the disposable stack:
+- **Incident (preferred):**
+  `20261026100000_least_privilege_workspace_storage_rls.incident-rollback.sql`.
+  Members regain 2023-style access to non-private objects, with no `view_drive`
+  check.
+  - Private roots stay service-role only.
+  - RESTRICTIVE insert and update guards keep the legacy `WITH CHECK (true)`
+    policy from letting non-members write.
+  - It is plain SQL and drops the helpers.
+  - Proof: `apps/database/verification/workspace-storage-rls-incident-rollback.sql`
+    (14 assertions).
+- **Faithful:** `20261026100000_least_privilege_workspace_storage_rls.rollback.sql`.
+  It restores the exact 20231004102905 policies.
+  - This reopens the HIGH finding and non-member inserts.
+  - Use it only when exact prior behaviour is required.
+  - Proof: `apps/database/verification/workspace-storage-rls-rollback-roundtrip.sql`
+    (7 assertions).
 
-1. Apply the rollback file with `psql -v ON_ERROR_STOP=1`.
-2. Run `apps/database/verification/workspace-storage-rls-rollback-roundtrip.sql`.
-   It runs 7 assertions: the old policies are back, the new ones are gone, prior
-   member-wide semantics apply, and objects are untouched.
-3. Re-apply the forward migration body in a transaction.
-4. Re-run the 368-assertion test.
+To prove a round trip on the disposable stack:
 
-The migration sets `lock_timeout = '5s'` and `statement_timeout = '30s'`. Its
-policy DDL takes only a brief `ACCESS EXCLUSIVE` lock on `storage.objects`. If
-the lock is not acquired in 5 seconds, it fails without partial changes; retry
-it.
+1. Apply the rollback with `psql -v ON_ERROR_STOP=1`.
+2. Run its verification file.
+3. Re-apply the forward migration file.
+4. Re-run the 370-assertion test.
+
+The migration runs inside an explicit `begin`/`commit` with
+`set local lock_timeout = '5s'` and `statement_timeout = '30s'`. Its policy DDL
+needs a brief `ACCESS EXCLUSIVE` lock on `storage.objects`. On the disposable
+stack, with another session holding `ACCESS SHARE` on the table, the migration
+failed after 5 seconds with `canceling statement due to lock timeout` and left
+no partial changes (no schema, the policies unchanged). Retry it when that
+happens.
 
 ## Related
 

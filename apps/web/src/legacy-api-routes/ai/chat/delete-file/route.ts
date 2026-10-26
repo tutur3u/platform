@@ -21,7 +21,7 @@ const DeleteFileRequestSchema = z.object({
  *
  * Deletes a previously uploaded chat file from Supabase Storage.
  * Path must remain within `{wsId}/chats/ai/resources/` and belong to the
- * caller: their own temp folder, or a chat they created.
+ * caller: their own temp folder, or an existing chat (UUID) they created.
  */
 export const POST = withSessionAuth(
   async (req, { user, supabase }) => {
@@ -79,7 +79,8 @@ export const POST = withSessionAuth(
           : await resolveAiChatResourceAccess(
               sbAdmin,
               resource.chatId,
-              user.id
+              user.id,
+              'delete'
             );
       if (access === 'lookup_failed') {
         return NextResponse.json(

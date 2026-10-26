@@ -173,7 +173,7 @@ describe('Mind chat file routes', () => {
       expect.stringMatching(
         /^ws-1\/chats\/ai\/resources\/11111111-1111-4111-8111-111111111111\/\d+_Tuturuuu_Technical_Planning\.jpg$/u
       ),
-      { upsert: true }
+      { upsert: false }
     );
   });
 
@@ -276,6 +276,11 @@ describe('Mind chat file routes', () => {
       `ws-1/chats/ai/resources/${chatId}/1_a.png`,
       'user-2',
     ],
+    [
+      'a chat folder with no chat row',
+      `ws-1/chats/ai/resources/${chatId}/1_a.png`,
+      null,
+    ],
   ])('rejects delete-file for %s', async (_, path, creatorId) => {
     const remove = vi.fn();
     mocks.createDynamicAdminClient.mockResolvedValue({
@@ -295,6 +300,33 @@ describe('Mind chat file routes', () => {
     );
 
     expect(response.status).toBe(403);
+    expect(remove).not.toHaveBeenCalled();
+  });
+
+  it('rejects delete-file for non-chat folders without a lookup', async () => {
+    const remove = vi.fn();
+    const from = aiChatLookup('user-1');
+    mocks.createDynamicAdminClient.mockResolvedValue({
+      from,
+      storage: { from: vi.fn(() => ({ remove })) },
+    });
+    const { POST } = (await import(
+      '@/legacy-api-routes/ai/chat/delete-file/route'
+    )) as unknown as { POST: ChatFileRoutePost };
+
+    const response = await POST(
+      new Request('https://web.tuturuuu.com/api/ai/chat/delete-file', {
+        body: JSON.stringify({
+          path: 'ws-1/chats/ai/resources/not-a-chat/1_a.png',
+          wsId: 'ws-1',
+        }),
+        method: 'POST',
+      }),
+      createRouteContext()
+    );
+
+    expect(response.status).toBe(400);
+    expect(from).not.toHaveBeenCalled();
     expect(remove).not.toHaveBeenCalled();
   });
 

@@ -140,7 +140,9 @@ and exclude unrelated baseline drift; never hand-edit generated declarations.
 - Do not request signed read URLs before the client uploads the object.
 - Storage key builders must sanitize parent paths and terminal names.
 - The `workspaces` bucket RLS is path-scoped
-  (`public.workspace_storage_object_access`). Browsers never write private
+  (`workspace_storage.object_access`). Pass
+  `(select workspace_storage.actor_access())` so permissions resolve once per
+  statement, not per row. Browsers never write private
   roots (`chat`, `chats`, `external-apps`, `AI Agent Imports`, `mira/images`,
   `recordings`, `.tuturuuu`). Issue signed upload URLs from the owning API
   after an ownership check. When you add a private root, update the helper,

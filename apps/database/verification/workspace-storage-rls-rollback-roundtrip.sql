@@ -4,7 +4,7 @@
 --   psql "$DB_URL" -v ON_ERROR_STOP=1 -f apps/database/rollbacks/20261026100000_least_privilege_workspace_storage_rls.rollback.sql
 --   psql "$DB_URL" -v ON_ERROR_STOP=1 -f apps/database/verification/workspace-storage-rls-rollback-roundtrip.sql
 -- then re-apply the forward migration and re-run
--- supabase/tests/workspace-storage-least-privilege-rls.sql (368 assertions).
+-- supabase/tests/workspace-storage-least-privilege-rls.sql (370 assertions).
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
@@ -17,9 +17,9 @@ select is((select count(*)::int from pg_policies
 select is((select count(*)::int from pg_policies
   where schemaname = 'storage' and tablename = 'objects'
     and policyname like 'workspace_storage_%'), 0,
-  'rollback removes the path-scoped and guard policies');
-select ok(to_regprocedure('public.workspace_storage_object_access(text,text)') is null,
-  'rollback removes the storage access helper');
+  'rollback removes the path-scoped, guard and incident policies');
+select ok(to_regnamespace('workspace_storage') is null,
+  'rollback removes the storage access helpers and schema');
 
 insert into auth.users (id) values
   ('5707a6e0-0000-4000-8000-000000009801'),

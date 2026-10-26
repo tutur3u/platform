@@ -7,7 +7,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(368);
+select plan(370);
 
 -- Actors: creator (seed only), member, viewer, manager, owner, non-member.
 insert into auth.users (id) values
@@ -102,6 +102,7 @@ language sql immutable as $$
     when 'manager' then '5707a6e0-0000-4000-8000-000000009704'
     when 'owner' then '5707a6e0-0000-4000-8000-000000009705'
     when 'nonmember' then '5707a6e0-0000-4000-8000-000000009706'
+    when 'creator' then '5707a6e0-0000-4000-8000-000000009701'
   end::uuid
 $$;
 
@@ -149,7 +150,7 @@ begin
 end;
 $$;
 
--- Structure (1-8).
+-- Structure (1-10).
 select is((select count(*)::int from pg_policies
   where schemaname = 'storage' and tablename = 'objects'
     and policyname like 'Allow workspace members to % workspace folder'), 0,
@@ -162,12 +163,15 @@ select is((select count(*)::int from pg_policies
   where schemaname = 'storage' and tablename = 'objects'
     and policyname like 'workspace_storage_guard_%' and permissive = 'RESTRICTIVE'), 4,
   'four restrictive guards exist');
-select ok(not has_function_privilege('anon',
-  'public.workspace_storage_object_access(text,text)', 'EXECUTE'),
-  'anon cannot call the storage access helper');
-select is((select proconfig::text from pg_proc
-  where oid = 'public.workspace_storage_object_access(text,text)'::regprocedure),
-  '{"search_path=pg_catalog, pg_temp"}', 'storage access helper pins search_path');
+select ok(not has_schema_privilege('anon', 'workspace_storage', 'USAGE')
+  and not has_function_privilege('anon',
+    'workspace_storage.object_access(text,text,workspace_storage.actor_access)', 'EXECUTE')
+  and not has_function_privilege('anon', 'workspace_storage.actor_access()', 'EXECUTE'),
+  'anon cannot reach the storage access helpers');
+select is((select array_agg(proconfig::text order by proname) from pg_proc
+  where pronamespace = 'workspace_storage'::regnamespace),
+  array['{"search_path=pg_catalog, pg_temp"}', '{"search_path=pg_catalog, pg_temp"}'],
+  'storage access helpers pin search_path');
 select ok(not pg_temp.storage_rls_can('manager', 'insert',
   '5707a6e0-0000-4000-8000-000000009711/docs/../chats/x'),
   'traversal segments are rejected even for a Drive manager');
@@ -178,7 +182,17 @@ select ok(not pg_temp.storage_rls_can('manager', 'select',
   '5707a6e0-0000-4000-8000-000000009711/CHATS/ai/resources/5707a6e0-0000-4000-8000-000000009721/c.pdf'),
   'private roots match case-insensitively (no Drive fallback)');
 
--- Matrix (9-368): 6 actors x 15 objects x 4 operations.
+select ok(pg_temp.storage_rls_can('creator', 'insert', '5707a6e0-0000-4000-8000-000000009711/drive.txt'),
+  'workspace creator manages Drive without an explicit role');
+insert into public.workspace_default_permissions (ws_id, permission, member_type, enabled)
+values ('5707a6e0-0000-4000-8000-000000009711', 'admin', 'MEMBER', true);
+select ok(pg_temp.storage_rls_can('member', 'delete', '5707a6e0-0000-4000-8000-000000009711/drive.txt')
+  and not pg_temp.storage_rls_can('member', 'select',
+    '5707a6e0-0000-4000-8000-000000009711/external-apps/app/chat/conv/att'),
+  'MEMBER default admin manages Drive but still cannot read private roots');
+delete from public.workspace_default_permissions where ws_id = '5707a6e0-0000-4000-8000-000000009711';
+
+-- Matrix (11-370): 6 actors x 15 objects x 4 operations.
 select is(
   pg_temp.storage_rls_can(e.actor, op.name, o.name),
   position(op.flag in e.flags) > 0,

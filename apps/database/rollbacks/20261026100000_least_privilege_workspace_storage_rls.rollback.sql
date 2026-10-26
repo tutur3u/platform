@@ -1,10 +1,13 @@
 -- Rollback for 20261026100000_least_privilege_workspace_storage_rls.sql.
 --
--- Restores the exact 20231004102905 policies (every workspace MEMBER can
--- select/insert/update/delete every `<wsId>/**` object in the `workspaces`
--- bucket). This reopens the HIGH finding; run it only as an approved
--- incident rollback, in one transaction, then re-apply the forward migration
--- body once the cause is fixed. It does not touch objects or data.
+-- FAITHFUL variant. Restores the exact 20231004102905 policies: every
+-- workspace MEMBER can select/insert/update/delete every `<wsId>/**` object in
+-- the `workspaces` bucket, and the legacy WITH CHECK (true) insert policy again
+-- lets non-members insert. This reopens the HIGH finding. Prefer
+-- 20261026100000_least_privilege_workspace_storage_rls.incident-rollback.sql
+-- unless exact prior behaviour is required. Run it in one transaction as an
+-- approved incident action. It does not touch objects or data. Either rollback
+-- can run from the forward state or from the other rollback's state.
 --
 -- Proven by apps/database/verification/workspace-storage-rls-rollback-roundtrip.sql.
 
@@ -21,6 +24,12 @@ drop policy if exists workspace_storage_select on storage.objects;
 drop policy if exists workspace_storage_insert on storage.objects;
 drop policy if exists workspace_storage_update on storage.objects;
 drop policy if exists workspace_storage_delete on storage.objects;
+drop policy if exists workspace_storage_incident_select on storage.objects;
+drop policy if exists workspace_storage_incident_insert on storage.objects;
+drop policy if exists workspace_storage_incident_update on storage.objects;
+drop policy if exists workspace_storage_incident_delete on storage.objects;
+drop policy if exists workspace_storage_incident_guard_insert on storage.objects;
+drop policy if exists workspace_storage_incident_guard_update on storage.objects;
 
 drop policy if exists "Allow workspace members to delete items workspace folder"
   on storage.objects;
@@ -63,6 +72,9 @@ create policy "Allow workspace members to view workspace folder"
     and is_org_member(auth.uid(), ((storage.foldername(name))[1])::uuid)
   );
 
-drop function if exists public.workspace_storage_object_access(text, text);
+drop function if exists workspace_storage.object_access(text, text, workspace_storage.actor_access);
+drop function if exists workspace_storage.actor_access();
+drop type if exists workspace_storage.actor_access;
+drop schema if exists workspace_storage;
 
 commit;

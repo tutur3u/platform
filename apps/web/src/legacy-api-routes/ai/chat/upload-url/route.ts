@@ -125,7 +125,8 @@ export const POST = withSessionAuth(
         const access = await resolveAiChatResourceAccess(
           storageAdmin,
           chatId,
-          user.id
+          user.id,
+          'upload'
         );
         if (access === 'lookup_failed') {
           return NextResponse.json(
@@ -141,10 +142,12 @@ export const POST = withSessionAuth(
         }
       }
 
-      // Generate signed upload URL (valid for 120 seconds)
+      // Generate a signed upload URL. Supabase signed upload tokens have a fixed
+      // 2-hour lifetime. Never overwrite: a draft chat id must not let a caller
+      // pre-seed or replace objects in a chat folder.
       const { data, error } = await storageAdmin.storage
         .from('workspaces')
-        .createSignedUploadUrl(storagePath, { upsert: true });
+        .createSignedUploadUrl(storagePath, { upsert: false });
 
       if (error || !data) {
         console.error('Error creating signed upload URL', {
