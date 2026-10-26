@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   assignTaskToCycle,
+  listTaskCycleTasks,
   listWorkspaceTaskBacklog,
   unassignTaskFromCycle,
 } from './task-cycles';
@@ -32,17 +33,35 @@ describe('task cycle internal API helpers', () => {
     );
   });
 
-  it('unassigns a task on the task-scoped path', async () => {
-    const fetch = fetchMock({ taskId: 'task/1', cycleId: null });
+  it('unassigns a task with a JSON body on the cycle path', async () => {
+    const fetch = fetchMock({ taskId: 'task-1', cycleId: null });
 
-    await unassignTaskFromCycle('ws-1', 'cycle-1', 'task/1', {
+    await unassignTaskFromCycle('ws-1', 'cycle-1', 'task-1', {
       baseUrl: 'https://internal.example.com',
       fetch: fetch as typeof globalThis.fetch,
     });
 
     expect(fetch).toHaveBeenCalledWith(
-      'https://internal.example.com/api/v1/workspaces/ws-1/task-cycles/cycle-1/tasks/task%2F1',
-      expect.objectContaining({ method: 'DELETE' })
+      'https://internal.example.com/api/v1/workspaces/ws-1/task-cycles/cycle-1/tasks',
+      expect.objectContaining({
+        method: 'DELETE',
+        body: JSON.stringify({ taskId: 'task-1' }),
+      })
+    );
+  });
+
+  it("lists a cycle's tasks", async () => {
+    const fetch = fetchMock({ tasks: [] });
+
+    const result = await listTaskCycleTasks('ws-1', 'cycle-1', {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetch as typeof globalThis.fetch,
+    });
+
+    expect(result).toEqual({ tasks: [] });
+    expect(fetch).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/workspaces/ws-1/task-cycles/cycle-1/tasks',
+      expect.objectContaining({ headers: expect.any(Headers) })
     );
   });
 

@@ -1,6 +1,7 @@
 import {
   BarChart3,
   CalendarDays,
+  CalendarRange,
   Plus,
   RefreshCcw,
   Target,
@@ -56,7 +57,14 @@ export function buildNavigationLinks(
           title: t('sidebar_tabs.cycles'),
           href: `/${personalOrWsId}/cycles`,
           icon: createElement(RefreshCcw, { className: 'h-4 w-4' }),
-          aliases: [`/${personalOrWsId}/cycles/*`],
+          matchExact: true,
+          disabled: !access.canManageCycles,
+        },
+        {
+          title: t('sidebar_tabs.cycles_planning'),
+          href: `/${personalOrWsId}/cycles/planning`,
+          icon: createElement(CalendarRange, { className: 'h-4 w-4' }),
+          aliases: [`/${personalOrWsId}/cycles/planning/*`],
           disabled: !access.canManageCycles,
         },
       ],

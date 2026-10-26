@@ -1,5 +1,7 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import {
+  getPermissions,
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
@@ -11,6 +13,14 @@ export const OPEN_TASK_LIST_STATUSES = [
   'review',
 ] as const;
 
+export const CYCLE_PLANNABLE_LIST_STATUSES = [
+  ...OPEN_TASK_LIST_STATUSES,
+  'done',
+  'closed',
+] as const;
+
+export const MAX_CYCLE_TASKS = 500;
+
 type AccessResult =
   | { ok: true; wsId: string }
   | { ok: false; response: NextResponse };
@@ -19,10 +29,15 @@ function failure(error: string, status: number): AccessResult {
   return { ok: false, response: NextResponse.json({ error }, { status }) };
 }
 
+/**
+ * Membership is enough to read; writes also need `manage_projects`, the same
+ * permission that gates the Cycles pages.
+ */
 export async function resolveCycleWorkspaceAccess(
   supabase: TypedSupabaseClient,
-  userId: string,
-  rawWsId: string
+  user: SupabaseUser,
+  rawWsId: string,
+  { write = false }: { write?: boolean } = {}
 ): Promise<AccessResult> {
   let wsId: string;
   try {
@@ -33,7 +48,7 @@ export async function resolveCycleWorkspaceAccess(
 
   const membership = await verifyWorkspaceMembershipType({
     wsId,
-    userId,
+    userId: user.id,
     supabase,
   });
 
@@ -45,26 +60,36 @@ export async function resolveCycleWorkspaceAccess(
     return failure('Forbidden', 403);
   }
 
+  if (write) {
+    const permissions = await getPermissions({ user, wsId });
+    if (!permissions) {
+      return failure('Failed to resolve workspace permissions', 500);
+    }
+    if (!permissions.containsPermission('manage_projects')) {
+      return failure(
+        "You don't have permission to perform this operation",
+        403
+      );
+    }
+  }
+
   return { ok: true, wsId };
 }
 
-/**
- * Validates server-side that both the cycle and the task belong to `wsId`
- * before any write. The database trigger enforces the same rule; this keeps
- * the API response a clean 404 instead of a constraint error.
- */
-export async function assertCycleAndTaskInWorkspace(
-  supabase: TypedSupabaseClient,
-  { wsId, cycleId, taskId }: { wsId: string; cycleId: string; taskId: string }
+/** Returns an error response unless `cycleId` belongs to `wsId`. */
+export async function assertCycleInWorkspace(
+  sbAdmin: TypedSupabaseClient,
+  wsId: string,
+  cycleId: string
 ): Promise<NextResponse | null> {
-  const { data: cycle, error: cycleError } = await supabase
+  const { data: cycle, error } = await sbAdmin
     .from('task_cycles')
     .select('ws_id')
     .eq('id', cycleId)
     .maybeSingle();
 
-  if (cycleError) {
-    console.error('Error loading task cycle:', cycleError);
+  if (error) {
+    console.error('Error loading task cycle:', error);
     return NextResponse.json(
       { error: 'Failed to load cycle' },
       { status: 500 }
@@ -75,14 +100,27 @@ export async function assertCycleAndTaskInWorkspace(
     return NextResponse.json({ error: 'Cycle not found' }, { status: 404 });
   }
 
-  const { data: task, error: taskError } = await supabase
+  return null;
+}
+
+/**
+ * Validates server-side that the task belongs to `wsId` before any
+ * service-role write. The database trigger enforces the same rule; this keeps
+ * the API response a clean 404 instead of a constraint error.
+ */
+export async function assertTaskInWorkspace(
+  sbAdmin: TypedSupabaseClient,
+  wsId: string,
+  taskId: string
+): Promise<NextResponse | null> {
+  const { data: task, error } = await sbAdmin
     .from('tasks')
     .select('id, deleted_at, task_lists(status, workspace_boards(ws_id))')
     .eq('id', taskId)
     .maybeSingle();
 
-  if (taskError) {
-    console.error('Error loading task:', taskError);
+  if (error) {
+    console.error('Error loading task:', error);
     return NextResponse.json({ error: 'Failed to load task' }, { status: 500 });
   }
 

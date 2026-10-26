@@ -2,10 +2,15 @@ import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  createAdminClient: vi.fn(),
   normalizeWorkspaceId: vi.fn(),
   verifyWorkspaceMembershipType: vi.fn(),
   calls: [] as Array<[string, ...unknown[]]>,
   result: { data: [] as unknown[], error: null as unknown },
+}));
+
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: (...args: unknown[]) => mocks.createAdminClient(...args),
 }));
 
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
@@ -31,6 +36,7 @@ function query() {
 }
 
 const sessionClient = { from: vi.fn(() => query()) };
+const admin = sessionClient;
 
 vi.mock('@/lib/api-auth', () => ({
   withSessionAuth:
@@ -47,7 +53,7 @@ vi.mock('@/lib/api-auth', () => ({
     ) =>
       handler(
         request,
-        { supabase: sessionClient, user: { id: 'user-1' } },
+        { supabase: {}, user: { id: 'user-1' } },
         await Promise.resolve(routeContext?.params ?? {})
       ),
 }));
@@ -70,6 +76,7 @@ describe('GET task backlog', () => {
     mocks.result = { data: [], error: null };
     mocks.normalizeWorkspaceId.mockResolvedValue(WS_ID);
     mocks.verifyWorkspaceMembershipType.mockResolvedValue({ ok: true });
+    mocks.createAdminClient.mockResolvedValue(admin);
   });
 
   it('rejects nonmembers', async () => {
@@ -86,7 +93,19 @@ describe('GET task backlog', () => {
 
   it('scopes to open, undeleted, uncycled tasks in the workspace', async () => {
     mocks.result = {
-      data: [{ id: 'task-1', name: 'Task', task_cycle_tasks: [] }],
+      data: [
+        {
+          id: 'task-1',
+          name: 'Task',
+          display_number: null,
+          priority: null,
+          list: { status: 'review', board: { id: 'b1', ticket_prefix: null } },
+          cycle_links: [],
+          assignees: [],
+          projects: [],
+          labels: [],
+        },
+      ],
       error: null,
     };
 
@@ -94,7 +113,21 @@ describe('GET task backlog', () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
-      tasks: [{ id: 'task-1', name: 'Task' }],
+      tasks: [
+        {
+          id: 'task-1',
+          name: 'Task',
+          display_number: null,
+          ticket_prefix: null,
+          priority: null,
+          status: 'review',
+          board_id: 'b1',
+          cycle_id: null,
+          assignees: [],
+          projects: [],
+          labels: [],
+        },
+      ],
     });
     expect(sessionClient.from).toHaveBeenCalledWith('tasks');
     expect(mocks.calls).toEqual(
@@ -102,7 +135,7 @@ describe('GET task backlog', () => {
         ['eq', 'list.board.ws_id', WS_ID],
         ['in', 'list.status', ['not_started', 'active', 'review']],
         ['is', 'deleted_at', null],
-        ['is', 'task_cycle_tasks', null],
+        ['is', 'cycle_links', null],
         ['limit', 25],
       ])
     );

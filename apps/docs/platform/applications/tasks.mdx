@@ -921,9 +921,10 @@ export async function convertNoteToProject(data: {
 
 ## Task Cycles (Sprints)
 
-Cycles are time-boxed sets of tasks in one workspace. The Cycles page lives at
-`/{wsId}/cycles` in the Tasks app and appears under **Tasks** in the sidebar for
-members with `manage_projects` (the same permission the page enforces).
+Cycles are time-boxed sets of tasks in one workspace. The Tasks app sidebar
+lists **Cycles** (`/{wsId}/cycles`) and **Cycle planning**
+(`/{wsId}/cycles/planning`) under **Tasks**; both are enabled for members with
+`manage_projects`, the permission both pages enforce.
 
 ```sql
 -- apps/database/supabase/migrations/20250929060000_add_task_cycles.sql
@@ -950,11 +951,12 @@ CREATE TABLE public.task_cycle_tasks (
 
 | Rule | Default and enforcement |
 |------|-------------------------|
-| Same workspace | A task can join a cycle only when its board's workspace equals the cycle's workspace. The `enforce_task_cycle_task_workspace` trigger rejects other links for every role, including service-role writes. API routes also validate both ids server-side and return `404` first. |
+| Same workspace | A task can join a cycle only when its board's workspace equals the cycle's workspace. The `enforce_task_cycle_task_workspace` trigger rejects other links for every role, including service-role writes. The API validates the cycle and task server-side first and returns `404`. |
 | Fixed workspace | A cycle's `ws_id` cannot change once created (`prevent_task_cycle_workspace_change`). |
 | One cycle per task | A task belongs to at most one cycle (unique index on `task_cycle_tasks.task_id`). Assigning a task to another cycle moves it. |
 | Backlog | Open tasks with no cycle: list status `not_started`, `active` or `review`; task not deleted; list and board not deleted or archived. Backlog is derived, not stored. |
 | Excluded | Tasks in `documents` lists cannot join a cycle. |
+| Access | Any workspace member can read cycle tasks and the backlog. Assigning and removing require `manage_projects`. `task_cycles` and `tasks` are not granted to the Data API `authenticated` role, so all reads and writes go through the Tasks API. |
 
 Exceptions: rows that existed before the workspace guard are not rewritten.
 Audit them with `apps/database/verification/task-cycle-cross-workspace-links.sql`
@@ -965,24 +967,18 @@ Regression coverage: `apps/database/supabase/tests/task-cycle-workspace-guard.sq
 `apps/database/supabase/tests/task-cycle-one-per-task.sql`, and the route tests
 under `apps/tasks/src/app/api/v1/workspaces/[wsId]/task-cycles/`.
 
-**Usage** (from a client, through `@tuturuuu/internal-api`):
+**API and client helpers** (`@tuturuuu/internal-api`). Both reads return
+`{ tasks: TaskCyclePlanningTask[] }`, matching `CyclePlanningTask` in
+`packages/tasks-ui/src/tu-do/cycles/planning/types.ts`: `id`, `name`,
+`display_number`, `ticket_prefix`, `priority`, `status` (list status),
+`board_id`, `cycle_id`, `assignees`, `projects` and `labels`.
 
-```typescript
-import {
-  assignTaskToCycle,
-  listWorkspaceTaskBacklog,
-  unassignTaskFromCycle,
-} from "@tuturuuu/internal-api";
-
-// POST /api/v1/workspaces/{wsId}/task-cycles/{cycleId}/tasks
-await assignTaskToCycle(wsId, cycleId, taskId);
-
-// DELETE /api/v1/workspaces/{wsId}/task-cycles/{cycleId}/tasks/{taskId}
-await unassignTaskFromCycle(wsId, cycleId, taskId);
-
-// GET /api/v1/workspaces/{wsId}/task-cycles/backlog?limit=200 (max 200)
-const { tasks } = await listWorkspaceTaskBacklog(wsId, { limit: 50 });
-```
+| Helper | Endpoint |
+|--------|----------|
+| `listTaskCycleTasks(wsId, cycleId)` | `GET /api/v1/workspaces/{wsId}/task-cycles/{cycleId}/tasks` |
+| `assignTaskToCycle(wsId, cycleId, taskId)` | `POST …/task-cycles/{cycleId}/tasks` with `{ taskId }` |
+| `unassignTaskFromCycle(wsId, cycleId, taskId)` | `DELETE …/task-cycles/{cycleId}/tasks` with `{ taskId }` |
+| `listWorkspaceTaskBacklog(wsId, { limit })` | `GET …/task-cycles/backlog?limit=` (max 500) |
 
 ## Task Estimation
 

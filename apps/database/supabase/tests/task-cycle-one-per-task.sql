@@ -59,13 +59,14 @@ values
   ('00000000-0000-4000-8000-00000000f502', '00000000-0000-4000-8000-00000000f101', 'Cycle Two', '00000000-0000-4000-8000-00000000f901')
 on conflict (id) do nothing;
 
-set local role authenticated;
-select set_config('request.jwt.claim.sub', '00000000-0000-4000-8000-00000000f901', true);
+-- Cycle writes go through the Tasks API, which uses the service role after
+-- validating the workspace (authenticated has no task_cycles grant).
+set local role service_role;
 
 select lives_ok(
   $$insert into public.task_cycle_tasks (task_id, cycle_id)
     values ('00000000-0000-4000-8000-00000000f401', '00000000-0000-4000-8000-00000000f501')$$,
-  'member can put a task into a cycle'
+  'a task can be put into a cycle'
 );
 
 select throws_ok(
@@ -93,7 +94,7 @@ select results_eq(
 select lives_ok(
   $$delete from public.task_cycle_tasks
     where task_id = '00000000-0000-4000-8000-00000000f401'$$,
-  'member can return a task to the backlog'
+  'a task can return to the backlog'
 );
 
 select * from finish();

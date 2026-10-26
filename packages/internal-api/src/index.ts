@@ -1367,10 +1367,11 @@ export {
 } from './storage';
 export {
   assignTaskToCycle,
+  listTaskCycleTasks,
   listWorkspaceTaskBacklog,
-  type TaskBacklogItem,
-  type TaskBacklogResponse,
   type TaskCycleAssignment,
+  type TaskCyclePlanningTask,
+  type TaskCyclePlanningTasksResponse,
   unassignTaskFromCycle,
 } from './task-cycles';
 export {
