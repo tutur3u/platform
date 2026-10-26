@@ -93,7 +93,7 @@ in the same refs step.
   no chat, so each object's update scans `ai_chat_messages`. That is
   acceptable for the 3 objects in scope. Scope it by message before using the
   tool on a large Mira set.
-- `private.ai_credit_reservations.metadata` and `public.ai_credit_transactions.metadata` `storagePath`: rewritten, scoped by workspace. These are audit records.
+- `private.ai_credit_reservations.metadata` and `public.ai_credit_transactions.metadata` `storagePath`: rewritten on `image_generation` rows. These are not scoped by workspace, because their `ws_id` is the billing workspace, which can differ from the path. The chat sign-on-read check uses the transaction `storagePath`.
 - The stored `imageUrl` is a signed URL for the old key. The chat UI signs
   `storagePath` on read and falls back to `imageUrl` only when no path is
   available. That UI change must be deployed before the `mira/images` run.

@@ -162,6 +162,19 @@ test('refs SQL: CAS and owner restore only on the forward path; OR clauses are g
     );
 });
 
+test('mira credit refs are not scoped to the path workspace (billing ws can differ)', () => {
+  const entry = { id: 'id-1', wsId: 'path-ws', oldUpdatedAt: 't' };
+  const sql = ROOTS['mira/images'].refsUpdateSql({
+    bucket: 'workspaces',
+    entry,
+    from: 'path-ws/mira/images/a.png',
+    to: 'path-ws/mira/images/n-a.png',
+    guard: true,
+  });
+  assert.match(sql, /update public\.ai_credit_transactions set metadata = .* where feature = 'image_generation'/s);
+  assert.doesNotMatch(sql, /ws_id = 'path-ws'/);
+});
+
 test('selection is metadata-only and covers every root', () => {
   for (const root of Object.values(ROOTS)) {
     const sql = root.selectionSql({ bucket: 'workspaces' });

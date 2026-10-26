@@ -131,8 +131,11 @@ const REF_UPDATES = {
   ],
   // Mira image keys name no chat, so this rewrite scans ai_chat_messages once
   // per object. Fine for the current scope (3 objects); scope it by message id
-  // before running on a large Mira set.
-  'mira/images': ({ from, to, wsId }) => [
+  // before running on a large Mira set. Credit rows are scoped by feature, not
+  // workspace: their ws_id is the billing workspace, which can differ from the
+  // image path's workspace, and the chat UI's sign-on-read owner check reads
+  // ai_credit_transactions.metadata.storagePath.
+  'mira/images': ({ from, to }) => [
     jsonRewrite({
       name: 'ai_chat_messages',
       table: 'public.ai_chat_messages',
@@ -146,7 +149,7 @@ const REF_UPDATES = {
       column: 'metadata',
       from,
       to,
-      scope: `ws_id = ${lit(wsId)}::uuid`,
+      scope: `feature = 'image_generation'`,
     }),
     jsonRewrite({
       name: 'ai_credit_transactions',
@@ -154,7 +157,7 @@ const REF_UPDATES = {
       column: 'metadata',
       from,
       to,
-      scope: `ws_id = ${lit(wsId)}::uuid`,
+      scope: `feature = 'image_generation'`,
     }),
   ],
   '.tuturuuu': ({ from, to }) => [
