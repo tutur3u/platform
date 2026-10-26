@@ -1,7 +1,11 @@
+import { clampSignedUrlTtl } from '@tuturuuu/storage-core/signed-url-policy';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import QRCode from 'qrcode';
 import type { MiraToolContext } from '../mira-tools';
 import { getWorkspaceContextWorkspaceId } from '../workspace-context';
+
+// Requested lifetime for result URLs; clamped to the 7-day signing cap.
+const AI_TOOL_OUTPUT_SIGNED_URL_TTL_SECONDS = 60 * 60 * 24 * 7;
 
 const DEFAULT_SIZE = 512;
 const DEFAULT_FOREGROUND = '#000000';
@@ -141,7 +145,12 @@ export async function executeCreateQrCode(
 
     const { data: urlData, error: signedUrlError } = await sbAdmin.storage
       .from('workspaces')
-      .createSignedUrl(storagePath, 60 * 60 * 24 * 30);
+      .createSignedUrl(
+        storagePath,
+        // Tool output is stored in chat history; bearer URLs never exceed
+        // the 7-day policy. `storagePath` is returned so callers re-sign.
+        clampSignedUrlTtl(AI_TOOL_OUTPUT_SIGNED_URL_TTL_SECONDS)
+      );
 
     if (signedUrlError || !urlData?.signedUrl) {
       throw new Error(

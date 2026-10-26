@@ -37,11 +37,14 @@ export default defineConfig({
       INVENTORY_ORIGIN: bindings.text('https://inventory.tuturuuu.com'),
       PAY_ORIGIN: bindings.text('https://pay.tuturuuu.com'),
       TASKS_ORIGIN: bindings.text('https://tasks.tuturuuu.com'),
-      CRON_CONTROL_ENABLED_JOBS: bindings.text(''),
+      CRON_CONTROL_ENABLED_JOBS: bindings.text(
+        'database-cron-history-retention'
+      ),
       CRON_CONTROL_WORKER_PROCESSORS: bindings.text(''),
       SUPABASE_URL: bindings.secret(),
       SUPABASE_SECRET_KEY: bindings.secret(),
       CRON_CONTROL_DELIVERY_TOKEN: bindings.secret(),
+      CRON_CONTROL_OPERATOR_TOKEN: bindings.secret(),
       CRON_LEDGER: bindings.durableObject({
         worker: 'tuturuuu-cron-control',
         exportName: 'CronLedger',
