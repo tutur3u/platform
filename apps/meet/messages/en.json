@@ -4781,6 +4781,12 @@
       "permission-denied": "Browser notifications are blocked. Please enable them in your browser settings.",
       "permission-request": "Enable browser notifications to stay updated"
     },
+    "codes": {
+      "calendar_reconnect_required": {
+        "description": "Calendar sync paused because the provider stopped accepting access. Reconnect the account to resume.",
+        "title": "Reconnect your calendar"
+      }
+    },
     "date_earlier": "Earlier",
     "date_this_week": "This Week",
     "date_today": "Today",
