@@ -183,16 +183,17 @@ function ownerForPath(filePath) {
   );
 }
 
-// Scan scope for PR/push checks. Unknown change sets scan everything.
+// Scan scope for PR/push checks. Unknown or empty change sets scan
+// everything: an empty list is never trusted as proof that nothing changed.
 function classifyScope(paths, { full = false } = {}) {
-  if (full || paths === null) {
+  const files = (paths ?? []).map(normalize).filter(Boolean);
+  if (full || files.length === 0) {
     return {
       codeqlLanguages: Object.keys(codeqlLanguages),
       dependencies: true,
       workflows: true,
     };
   }
-  const files = paths.map(normalize).filter(Boolean);
   return {
     codeqlLanguages: Object.entries(codeqlLanguages)
       .filter(([, patterns]) =>

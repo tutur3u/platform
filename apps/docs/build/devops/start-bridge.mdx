@@ -317,6 +317,28 @@ RSC-environment shims for `next-intl/*` and `next/root-params`. The bridge
 keeps its request store on a global Symbol so every bundled environment
 observes the same request.
 
+The RSC `next-intl` hooks call `use()` on the request's single cached config
+promise. That promise carries React's `status`/`value`, and
+`NextIntlClientProvider` settles it before rendering children, so translated
+server components render inline. A hook that suspends makes Flight outline the
+component as a lazy row. React's streaming renderer (19.2.8, and still 19.3.1)
+can leave a Suspense boundary unresolved when a boundary rendered after the
+shell has a fallback that suspends. The browser then reports React error #419.
+Keep Suspense fallbacks synchronous. A translated server component rendered
+above or beside the provider still suspends once; in development the bridge
+logs a one-time `console.warn` for it.
+
+Assert emitted HTML with `findUnresolvedSuspenseBoundaries` from
+`@tuturuuu/start-bridge/start/suspense-boundaries`; it must return `[]`. It
+reports:
+- pending boundaries, under any `identifierPrefix`;
+- completions whose segment container (`div`, `svg`, `math` or table) is missing;
+- unfilled `P:` segments;
+- boundaries switched to client rendering (`$RX`, or `<!--$!-->` from the shell).
+
+It reads the inline instruction scripts of stable React and the `data-r*i`
+templates of the external runtime.
+
 ## Runtime tag
 
 Cutovers are direct, with an instant one-step rollback prepared before the
@@ -350,6 +372,16 @@ export default defineConfig(({ command }) => ({
 `basePath` defaults to `TUTURUUU_BASE_PATH` at build time. List `shims`
 explicitly when converting an app whose current config aliases only some
 `next/*` modules, so the bundle does not change.
+
+Worker SSR/RSC environments resolve `workerd`, `worker`, `module` and `browser`
+export conditions, matching Cloudflare's runtime. A package whose `browser`
+entry needs a DOM therefore fails during server rendering, and its `node` entry
+is no substitute when it depends on jsdom. Do not reorder conditions per package;
+use a DOM-free implementation for code that renders on the server. For example,
+`isomorphic-dompurify` throws at import and `dompurify` has no `sanitize`
+without a `window`, so server-rendered rich text uses `sanitize-html` (Forms,
+Mail). Cover the swap with a `@vitest-environment node` test that mocks the
+DOM-only module to throw.
 
 ## CI template
 

@@ -21,7 +21,13 @@ import {
   validateOutput,
   verify,
 } from './calendar-native-artifact.mjs';
-import { fixture } from './calendar-native-artifact-fixture.mjs';
+import { fixture as createFixture } from './calendar-native-artifact-fixture.mjs';
+
+const fixturePaths = {
+  pointerPath: '.wrangler/deploy/config.json',
+  emittedConfigPath: 'dist/server/wrangler.json',
+};
+const fixture = (run) => createFixture(fixturePaths, run);
 
 const sha = 'a'.repeat(40);
 test('seal survives relocation and binds exact SHA, Worker, pointer and client bytes', () =>

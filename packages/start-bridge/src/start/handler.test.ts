@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { AssetsBinding } from '../core/assets';
 import { cookies } from '../server/request-context';
 import { routerBasepath } from './base-path';
-import { createBridgeHandler } from './handler';
+import { type BridgeHandlerOptions, createBridgeHandler } from './handler';
 
 const ctx = { waitUntil: vi.fn() };
 type Env = { ASSETS: AssetsBinding };
@@ -236,5 +236,87 @@ describe('a root-only artifact (no apex mount, unknown hosts rejected)', () => {
     );
     expect(await served.text()).toBe('start');
     expect(hooks.start).toHaveBeenCalledOnce();
+  });
+});
+
+describe('framable paths keep the upstream CSP (uploaded WebGL builds)', () => {
+  const sandbox =
+    'sandbox allow-scripts allow-downloads allow-pointer-lock allow-modals';
+  const appCsp = (nonce: string) =>
+    `default-src 'self'; script-src 'nonce-${nonce}'; frame-ancestors 'none'`;
+  const build = (
+    options: Partial<BridgeHandlerOptions<Env, typeof ctx>> = {}
+  ) =>
+    createBridgeHandler<Env, typeof ctx>({
+      mounts: {
+        app: 'cms',
+        rootHosts: ['cms.tuturuuu.com'],
+        mountHosts: ['tuturuuu.com'],
+        basePath: '/cms',
+      },
+      start: { fetch: async () => new Response('<html></html>') },
+      proxy: async () => NextResponse.next(),
+      assets: (env) => env.ASSETS,
+      centralApiOrigin: () => 'https://central.example',
+      // Web serves uploaded WebGL builds sandboxed.
+      forwardApi: async () =>
+        new Response('game', {
+          headers: { 'Content-Security-Policy': sandbox },
+        }),
+      csp: appCsp,
+      ...options,
+    });
+  const cspOf = async (handler: ReturnType<typeof build>, url: string) =>
+    (await handler(new Request(url), env, ctx)).headers.get(
+      'Content-Security-Policy'
+    );
+  const webgl = '/api/v1/workspaces/ws-1/external-projects/assets/a-1/webgl';
+
+  it('passes the sandbox CSP through on the WebGL path, root and apex', async () => {
+    const handler = build();
+    for (const url of [
+      `https://cms.tuturuuu.com${webgl}`,
+      `https://cms.tuturuuu.com${webgl}/`,
+      `https://cms.tuturuuu.com${webgl}/Build/game.js`,
+      `https://tuturuuu.com/cms${webgl}/index.html`,
+    ])
+      expect(await cspOf(handler, url), url).toBe(sandbox);
+  });
+
+  it('still applies the app CSP on neighbouring and lookalike paths', async () => {
+    const handler = build();
+    for (const path of [
+      '/api/v1/workspaces/ws-1/external-projects/assets/a-1',
+      '/api/v1/workspaces/ws-1/external-projects/assets/a-1/webglx',
+      '/api/v1/workspaces/ws-1/external-projects/assets/a-1/x/webgl',
+      '/en',
+    ]) {
+      const csp = await cspOf(handler, `https://cms.tuturuuu.com${path}`);
+      expect(csp, path).toMatch(/frame-ancestors 'none'$/u);
+      expect(csp, path).not.toContain('sandbox');
+    }
+  });
+
+  it('lets an app keep an upstream policy or add framable paths', async () => {
+    const keep = build({
+      csp: (nonce, { response, path }) =>
+        path.startsWith('/api/') &&
+        response.headers.has('Content-Security-Policy')
+          ? null
+          : appCsp(nonce),
+    });
+    expect(
+      await cspOf(
+        keep,
+        'https://cms.tuturuuu.com/api/v1/workspaces/ws-1/external-projects/assets/a-1'
+      )
+    ).toBe(sandbox);
+    expect(await cspOf(keep, 'https://cms.tuturuuu.com/en')).toMatch(
+      /frame-ancestors 'none'$/u
+    );
+    const extra = build({ framablePaths: [/^\/api\/embed(?:\/|$)/u] });
+    expect(await cspOf(extra, 'https://cms.tuturuuu.com/api/embed/x')).toBe(
+      sandbox
+    );
   });
 });

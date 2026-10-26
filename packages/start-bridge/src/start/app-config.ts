@@ -8,8 +8,15 @@ import type { AppMountConfig } from '../core/mounts';
  * generated files.
  */
 export interface BridgeAppConfig<Env = unknown> {
-  /** Content-Security-Policy for each response's nonce (`createBridgeHandler` `csp`). */
-  csp?: (nonce: string) => string;
+  /**
+   * Content-Security-Policy for each response's nonce (`createBridgeHandler`
+   * `csp`); `null` keeps the response's own policy. Framable paths (Web's
+   * uploaded WebGL builds) always keep their upstream policy.
+   */
+  csp?: (
+    nonce: string,
+    context: { request: Request; response: Response; path: string }
+  ) => string | null | undefined;
   /** Overrides of the generated mounts: hosts, `basePath`, `unknownHost`. */
   mounts?: Partial<Omit<AppMountConfig, 'app'>>;
   /**

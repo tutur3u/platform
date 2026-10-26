@@ -1,8 +1,8 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, resolve } from 'node:path';
+import { dirname, posix, resolve } from 'node:path';
 
-export function fixture(run) {
+export function fixture({ pointerPath, emittedConfigPath }, run) {
   const app = mkdtempSync(resolve(tmpdir(), 'calendar-artifact-'));
   const put = (name, data) => {
     const path = resolve(app, name);
@@ -10,7 +10,7 @@ export function fixture(run) {
     writeFileSync(path, typeof data === 'string' ? data : JSON.stringify(data));
   };
   const pointer = {
-    configPath: '../../dist/server/wrangler.json',
+    configPath: posix.relative(posix.dirname(pointerPath), emittedConfigPath),
     auxiliaryWorkers: [],
   };
   const config = {
@@ -30,8 +30,8 @@ export function fixture(run) {
       html_handling: 'none',
     },
   };
-  put('.wrangler/deploy/config.json', pointer);
-  put('dist/server/wrangler.json', config);
+  put(pointerPath, pointer);
+  put(emittedConfigPath, config);
   put(
     'dist/server/worker.js',
     'export default { fetch() { return new Response("fixture"); } };'
