@@ -2,7 +2,11 @@
 import { readFile } from 'node:fs/promises';
 import { afterEach, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ polar: vi.fn((options) => ({ options })) }));
+const mocks = vi.hoisted(() => ({
+  polar: vi.fn(function Polar(options) {
+    return { options };
+  }),
+}));
 vi.mock('@tuturuuu/payment/polar', () => ({ Polar: mocks.polar }));
 
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
