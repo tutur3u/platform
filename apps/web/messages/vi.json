@@ -11402,6 +11402,12 @@
       "permission-denied": "Thông báo trình duyệt đã bị chặn. Vui lòng bật trong cài đặt trình duyệt.",
       "permission-request": "Bật thông báo trình duyệt để cập nhật"
     },
+    "codes": {
+      "calendar_reconnect_required": {
+        "description": "Đồng bộ lịch đã tạm dừng vì nhà cung cấp không còn chấp nhận quyền truy cập. Hãy kết nối lại tài khoản để tiếp tục.",
+        "title": "Kết nối lại lịch của bạn"
+      }
+    },
     "date_earlier": "Trước đó",
     "date_this_week": "Tuần này",
     "date_today": "Hôm nay",

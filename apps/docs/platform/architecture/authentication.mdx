@@ -840,6 +840,24 @@ through `revokeAllCrossAppTokens`, before sign-out and after a successful
 password update respectively. A revocation failure is logged and never blocks
 either action. Coverage: `__tests__/cross-app-token-revocation-routes.test.ts`.
 
+### Apps mounted on the platform apex
+
+An app served at `tuturuuu.com/<app>` (one-origin super-app) returns from
+login through `tuturuuu.com/<app>/verify-token`. Web's login form and
+`POST /api/v1/auth/cross-app-return` treat that URL as `<app>` only when the
+app is listed in `NEXT_PUBLIC_TUTURUUU_ACTIVE_APP_MOUNTS` (comma-separated,
+**empty by default**). The cross-app token is then issued for `<app>`, and its
+`nextUrl` stays app-relative inside the mount. Add an app to the list only
+after the apex actually routes `/<app>/*` to it. Until then the URL keeps the
+existing platform flow, so a live token is never sent to a path nothing
+serves. Cross-app returns always use a full document navigation. Web's Vercel
+Analytics and Speed Insights redact `token`, `code` and OAuth token query
+parameters (and parameter-bearing fragments) before sending a URL. Regression
+coverage: `packages/utils/src/internal-app-mounts.test.ts`,
+`apps/web/src/app/[locale]/(auth)/login/form-mounted-return.test.tsx`,
+`apps/web/src/app/api/v1/auth/cross-app-return/route.test.ts`,
+`packages/vercel/src/core/redact-url.test.ts`.
+
 ### Generate Cross-App Token
 
 `generateCrossAppToken(supabase, targetApp, originApp, expirySeconds?)` is the

@@ -69,8 +69,8 @@ void main() {
       expect(find.textContaining('Visible first detail.'), findsNothing);
       expect(find.textContaining('Visible later detail.'), findsNothing);
       expect(find.byType(AssistantToolSummary), findsOneWidget);
-      expect(find.text('read_calendar ·'), findsOneWidget);
-      expect(find.text('2'), findsOneWidget);
+      expect(find.text('Checked your calendar'), findsOneWidget);
+      expect(find.text(' · 2 steps'), findsOneWidget);
       final before = find.byKey(const ValueKey('assistant-text-part-1'));
       final tools = find.byKey(const ValueKey('assistant-tool-part-3'));
       final after = find.byKey(const ValueKey('assistant-text-part-5'));
@@ -108,20 +108,20 @@ void main() {
     );
     await tester.pumpApp(_bubble(restored.parts));
     expect(find.byType(AssistantToolSummary), findsOneWidget);
-    expect(find.text('read_calendar ·'), findsOneWidget);
-    expect(find.text('2'), findsOneWidget);
-    expect(find.text('read_tasks'), findsNothing);
+    expect(find.text('Checked your calendar'), findsOneWidget);
+    expect(find.text(' · 2 steps'), findsOneWidget);
+    expect(find.text('Read tasks'), findsNothing);
     await tester.tap(find.byKey(const ValueKey('assistant-tools-toggle')));
     await tester.pumpAndSettle();
     expect(
-      tester.getTopLeft(find.text('read_tasks')).dy,
-      lessThan(tester.getTopLeft(find.text('read_calendar')).dy),
+      tester.getTopLeft(find.text('Read tasks')).dy,
+      lessThan(tester.getTopLeft(find.text('Checked your calendar').last).dy),
     );
     expect(find.byType(BottomSheet), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
-  test('response text and images split tool groups without reordering', () {
+  test('response text and images keep order; tools share one group', () {
     final children = assistantOrderedPartWidgets(const [
       _tool1,
       _tool2,
@@ -137,16 +137,14 @@ void main() {
     expect(children.map((child) => child.key), [
       const ValueKey('assistant-tool-part-0'),
       const ValueKey('assistant-text-part-2'),
-      const ValueKey('assistant-tool-part-3'),
       const ValueKey('assistant-tool-part-4'),
-      const ValueKey('assistant-tool-part-5'),
     ]);
     expect((children[0] as Padding).child, isA<AssistantToolResultsSection>());
     expect(
       ((children[0] as Padding).child! as AssistantToolResultsSection).parts,
-      [_tool1, _tool2],
+      [_tool1, _tool2, _tool1, _tool2],
     );
-    expect((children[3] as Padding).child, isA<AssistantInlineToolImages>());
+    expect((children[2] as Padding).child, isA<AssistantInlineToolImages>());
   });
 
   for (final terminal in [

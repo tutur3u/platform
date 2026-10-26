@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
+import profiles from './native-profiles.json' with { type: 'json' };
 import {
   fixtureWorkspaceId,
   signedSsrFixtureResponse,
 } from './signed-ssr-fixture.mjs';
 
-const origins = [
-  'https://finance.tuturuuu.com',
-  'https://finance-staging.tuturuuu.com',
-];
+const origins = Object.values(profiles).map(
+  ({ rootHost }) => `https://${rootHost}`
+);
 const paths = [
   `/api/workspaces/${fixtureWorkspaceId}/transactions?itemsPerPage=10&page=1`,
   `/api/workspaces/${fixtureWorkspaceId}/finance/overview?includeConfidential=true&view=date`,

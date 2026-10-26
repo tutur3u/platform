@@ -188,6 +188,46 @@
       },
       "digest": "84a45aa3eccd3adcc2055ee0aa8ebc6fd719a2be57fd2643c383b7d3d61d0506"
     },
+    "apps/ai/.gitignore": {
+      "lines": 1,
+      "uses": 1,
+      "digest": "eaa5c36b89bb2cc16b4b93bbe4ccfdddcddacc00b12726e591d57c46be30f9e8",
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6810",
+        "reason": "AI native candidate (#6810) on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      }
+    },
+    "apps/ai/cloudflare/native-built-worker.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20",
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6810",
+        "reason": "AI native candidate (#6810) on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      }
+    },
+    "apps/ai/cloudflare/runtime-fixture.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "digest": "e139bd3b3961b60527b5aa98419fb40cde9679450f4c651769242014bfec1e29",
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6810",
+        "reason": "AI native candidate (#6810) on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      }
+    },
+    "apps/ai/package.json": {
+      "lines": 1,
+      "uses": 1,
+      "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b",
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6810",
+        "reason": "AI native candidate (#6810) on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      }
+    },
     "apps/api/package.json": {
       "lines": 1,
       "uses": 1,
@@ -405,6 +445,46 @@
       "admitted": {
         "decision": "https://github.com/tutur3u/platform/pull/6757",
         "reason": "Finance native candidate (#6757, #6822) pins the Wrangler devDependency, runs its runtime fixture in the Wrangler SDK, ignores .void-wrangler.jsonc and tests the emitted wrangler.json artifact; Finance on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
+    },
+    "apps/inventory/.gitignore": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6771",
+        "reason": "Inventory native candidate (#6771) on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "eaa5c36b89bb2cc16b4b93bbe4ccfdddcddacc00b12726e591d57c46be30f9e8"
+    },
+    "apps/inventory/cloudflare/native-built-worker.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6771",
+        "reason": "Inventory native candidate (#6771) on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
+    },
+    "apps/inventory/cloudflare/response-policy.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6771",
+        "reason": "Inventory native candidate (#6771) on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
+    },
+    "apps/inventory/package.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6771",
+        "reason": "Inventory native candidate (#6771) on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
       },
       "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
     },
@@ -668,6 +748,46 @@
       },
       "digest": "77f45040daaf542945632c42fecae933033ec540b3bcdb453c79ce096bbc6bb6"
     },
+    "apps/nova/.gitignore": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6771",
+        "reason": "Nova native candidate (#6771) on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "eaa5c36b89bb2cc16b4b93bbe4ccfdddcddacc00b12726e591d57c46be30f9e8"
+    },
+    "apps/nova/cloudflare/native-built-worker.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6771",
+        "reason": "Nova native candidate (#6771) on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
+    },
+    "apps/nova/cloudflare/response-policy.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6771",
+        "reason": "Nova native candidate (#6771) on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
+    },
+    "apps/nova/package.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6771",
+        "reason": "Nova native candidate (#6771) on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
+    },
     "apps/parley/.gitignore": {
       "lines": 1,
       "uses": 1,
@@ -755,6 +875,46 @@
       "admitted": {
         "decision": "https://github.com/tutur3u/platform/pull/6432",
         "reason": "Shortener follows the Wave 1 Start + Void Apps template: Void rebuilds on deploy, so the exact Void-emitted Worker is qualified and published with the pinned Wrangler adapter (types, dry-run, built-Worker harness). Publication stays held; remove with the Apps gap when cf deploy --prebuilt parity is proven."
+      },
+      "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
+    },
+    "apps/storefront/.gitignore": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6811",
+        "reason": "Storefront native candidate (#6811) on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "eaa5c36b89bb2cc16b4b93bbe4ccfdddcddacc00b12726e591d57c46be30f9e8"
+    },
+    "apps/storefront/cloudflare/native-built-worker.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6811",
+        "reason": "Storefront native candidate (#6811) on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
+    },
+    "apps/storefront/cloudflare/runtime-fixture.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6811",
+        "reason": "Storefront native candidate (#6811) on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "e139bd3b3961b60527b5aa98419fb40cde9679450f4c651769242014bfec1e29"
+    },
+    "apps/storefront/package.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6811",
+        "reason": "Storefront native candidate (#6811) on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
       },
       "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
     },
@@ -1597,6 +1757,16 @@
         "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
       },
       "digest": "b81d2e0ccf8ab5b2a47882c43502a67fd95374000c05ed43a9bc24946a6c2054"
+    },
+    "scripts/ci/nova-inventory-native-artifact.test.py": {
+      "lines": 7,
+      "uses": 7,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6771",
+        "reason": "Nova/Inventory native candidate (#6771) on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "c63cce5b834793d1c373b7e550aa81958f6e2645afd87d2444ef2e64043b9160"
     },
     "scripts/ci/production-publication-policy.test.js": {
       "lines": 1,
