@@ -26,6 +26,7 @@ def load():
     module.IDENTITY = {
         **module.IDENTITY,
         "name": WORKER,
+        "workers_dev": False,
         "vars": profile,
         "compatibility_date": "2026-10-12",
         "compatibility_flags": ["nodejs_compat","global_fetch_strictly_public"],
