@@ -14,11 +14,10 @@ vi.mock('@tuturuuu/auth/cli-session', () => ({
   verifyCliAccessToken: vi.fn(),
 }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
-  createClient: async () => ({}),
   createAdminClient: (...args: unknown[]) => createAdminClient(...args),
 }));
-vi.mock('@tuturuuu/supabase/next/auth-session-user', () => ({
-  resolveAuthenticatedSessionUser: async () => ({ user: { id: 'member-1' } }),
+vi.mock('@tuturuuu/satellite/workspace-access', () => ({
+  resolveSatelliteRequestActor: async () => ({ user: { id: 'member-1' } }),
 }));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getPermissions: async () => ({

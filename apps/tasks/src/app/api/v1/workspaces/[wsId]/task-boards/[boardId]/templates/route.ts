@@ -271,7 +271,7 @@ export async function POST(req: NextRequest, { params }: Params) {
         name: name.trim(),
         description: description?.trim() || null,
         visibility,
-        content: content as unknown as Json,
+        content: content as unknown as NonNullable<Json>,
         background_path: backgroundPath || null,
       });
 

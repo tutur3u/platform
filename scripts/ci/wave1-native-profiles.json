@@ -17,7 +17,8 @@
         "MICROSOFT_CLIENT_SECRET",
         "CRON_SECRET",
         "MICROSOFT_TENANT_ID"
-      ]
+      ],
+      "stagingHost": "calendar-staging.tuturuuu.com"
     },
     "mail": {
       "stagingWorker": "tuturuuu-mail-wave1-staging",

@@ -207,6 +207,7 @@ Topic Announcements live under Users and are gated by the workspace secret `ENAB
 - Contacts are workspace-scoped and may be raw email contacts or linked to an existing workspace virtual user profile. The linker UI searches workspace users with avatar and email affordances.
 - Announcements may optionally reference a real `workspace_user_groups` row through `group_id` for scheduling and reporting context.
 - A contact cannot receive announcements until its email is verified through the Tuturuuu internal SES verification flow or through a linked Tuturuuu platform account with a confirmed matching email **and membership in the same workspace**. Platform-wide confirmed accounts must not auto-confirm a contact for another workspace.
+- **Unverified recipients block a send; there is no bypass.** A staff member cannot attest an address instead of the recipient clicking the link: in a multi-tenant open-source product that would let any sender in an enabled workspace mail arbitrary addresses from our domain. An interactive send (single, create-and-send, or import-and-send) to an unverified recipient sends nothing, leaves the announcement unchanged, and names the recipients with a **Send verification** action. Only the scheduled queue records the skip on the row (`status = skipped`, `last_error = EMAIL_NOT_VERIFIED: ...`), because nobody is watching it. The contacts page offers **Send verification** for every unverified contact at once; verification email stays rate limited per sender, so a large batch stops at the limit and reports how many are left. Coverage: `send-admission.test.ts`, `topic-announcements-send.test.ts`, `topic-announcements-verification-requests.test.ts`.
 - Announcements can include image and PDF attachments. The composer and API enforce the shared email limits: up to 5 files and 10 MB total per announcement.
 - Verification emails are sent by the root Tuturuuu sender with normal protected delivery checks, not the rate-limit-bypassing system path.
 - Verification links resolve to the public platform origin by default (`https://tuturuuu.com`) so listener hosts such as `0.0.0.0:7803` never leak into recipient inboxes. Set `TOPIC_ANNOUNCEMENT_VERIFICATION_ORIGIN` only when an explicit alternate public origin is required.
@@ -229,8 +230,49 @@ Topic Announcements live under Users and are gated by the workspace secret `ENAB
 - If a contact email changes, previous verification records for the old email must no longer satisfy delivery checks.
 - Linked-account auto-confirm checks must join through `workspace_members` for the contact workspace. Do not treat a confirmed Tuturuuu account as sufficient unless that platform user belongs to the same workspace as the linked virtual user.
 - Attachment uploads must prepare signed upload URLs through the central workspace storage route, then upload bytes directly to the active storage provider. Do not stream attachment bytes through Topic Announcement-specific Next.js routes.
+- Attachments live in the service-role-only `topic-announcements/` storage root (migration `20261026192000`). Drive permissions (`view_drive`, `manage_drive`) never grant direct Storage API or Drive-route access to them; only the feature gate plus `manage_users` can sign uploads. Coverage: `apps/database/supabase/tests/workspace-storage-least-privilege-rls.sql` and the storage upload-url route tests.
 - User group and course storage uploads are quota-sensitive and must use the server-mediated `uploadWorkspaceUserGroupStorageFile` / group storage multipart route. Do not mint signed upload URLs from this route because the app server cannot verify the final object size after a direct provider upload.
 - Attachment rows keep workspace, announcement, storage path, content type, and size metadata. Email delivery downloads the stored files and switches to raw MIME only when attachments exist; regular no-attachment messages should keep the standard SES `SendEmailCommand` path.
+
+### Teacher-assigned topics
+
+Supervisors can create a month of sessions before topics exist, assign each
+session to the teacher who writes its topic, and track whether topics went out
+on time. Schema: `20261026193000_topic_announcement_teacher_assignment.sql`
+(inert until the teacher flow is wired). Default for every workspace: no
+teacher, no deadline, existing behavior unchanged.
+
+- **Draft topics.** `topic` may be empty only while `status = draft`. Every
+  other status still requires a non-blank topic, so nothing without a topic can
+  be queued or sent.
+- **Teacher in charge.** `teacher_workspace_user_id` must be a workspace user of
+  the same workspace (trigger-enforced). Deleting that user clears the
+  assignment. A `topic_assigned` notification type is reserved for the
+  supervisor's save-and-notify action.
+- **24-hour deadline.** On write, the app stores `send_due_at` = session start
+  (`session_date` + `start_time` in the workspace's fixed calendar timezone)
+  minus 24 hours. Sessions without a date or start time have no deadline.
+- **Late is computed on read, never stored.** Sent: `sent_at` is set. Late:
+  `sent_at` is null and `now() > send_due_at`. Not sent: otherwise. There is no
+  status column, sweep, or cron for lateness. A resend to a substitute bumps
+  `delivery_revision` and keeps the first `sent_at`, so it never changes
+  whether the topic went out on time. Proactive late alerts are out of scope
+  until requested; they would run on Cloudflare under the bounded, stop-fenced
+  rules.
+- **Course book and video link.** `course_book` is at most 200 characters.
+  `video_url` must be an `https://` link without whitespace, at most 2000
+  characters.
+- **Email verification is kept.** Teacher-assigned topics use the same
+  recipient verification gate as every other topic email. There is no
+  staff-attested bypass: this is a multi-tenant open-source product, and a
+  bypass would let any sender in an enabled workspace mail arbitrary addresses
+  from our domain. Each recipient verifies once (or is linked to a confirmed
+  same-workspace account).
+
+Regression coverage: `apps/database/supabase/tests/topic-announcement-teacher-assignment.sql`.
+Rollback: `apps/database/rollbacks/20261026193000_topic_announcement_teacher_assignment.rollback.sql`,
+proven by
+`apps/database/verification/topic-announcement-teacher-assignment-rollback-roundtrip.sql`.
 
 
 ### Mobile profile image optimization
