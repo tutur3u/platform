@@ -198,115 +198,102 @@ executes root, Meet and Mail mounts, SSR host selection, interleaved bridge
 requests sharing one client, per-client precedence, unregister, absolute bypass
 and prefix-once behavior. Consumer runtime acceptance remains with each app.
 
-## Shared session on the apex (proposal for security review)
+## Shared session on the apex: decision (b), server-held session
 
-**Decision (user, 2026-10-25):** keep one Tuturuuu session, usable across
-every app; no per-app session cookies. The bridge therefore leaves all cookies
-untouched. Making that safe on the apex needs the auth change below. It is a
-**proposal awaiting security review**; nothing here is implemented yet.
+**Decision (user, 2026-10-26):** every app mounted at `tuturuuu.com/<app>`
+shares one Tuturuuu session that page script cannot read. It is an `HttpOnly`,
+`Secure`, `SameSite=Lax` cookie served through a backend-for-frontend (BFF)
+session layer, with no JavaScript-readable access or refresh token anywhere. CSP
+and Trusted Types stay mandatory per app, but as defense in depth, not the gate.
+Apex cutovers stay held until the admission gate below reports ready.
+Subdomain hosts keep serving throughout. The product rules (logout scope,
+step-up, token lifetimes) are in
+[Shared session](/platform/architecture/shared-session).
 
-### Current model and the apex problems
+### Model
 
-- Each satellite holds a per-app access token in `tuturuuu_app_session`
-  (`target_app` = that app; `verifyAppSessionToken` requires an exact match)
-  plus `tuturuuu_app_session_refresh`, host-only at `Path=/` on its subdomain.
-- With `sessionMode: 'supabase-first'` and the root Supabase cookies
-  (`sb-<ref>-auth-token*`, shared on `.tuturuuu.com`) present,
-  `refreshAppSessionForRequest` already derives the app claims from Supabase,
-  mints the access token **in memory** as `Authorization: Bearer` for that
-  request, and then calls `clearAppSessionCookie`.
-- On the apex, `clearAppSessionCookie` would expire `tuturuuu_app_session`,
-  its refresh cookie **and Web's own `tuturuuu_web_app_session` (+ refresh)**
-  at `Path=/` on every mounted-app request.
-- Web's `createClient` (`packages/supabase/src/next/server.ts` and
-  `request/server.ts`, `requestHasAppSessionAuth`) switches to the isolated
-  app-session client whenever a `tuturuuu_app_session` cookie is present, so
-  any app writing that cookie at `Path=/` on the apex drops Web's Supabase
-  session. If several apps wrote it, they would overwrite each other's
-  per-app token.
+- **One writer.** Web is the only component that creates, refreshes, rotates or
+  clears the session cookie. Mounted Workers and satellites on the apex only
+  read it: they validate the JWT and derive per-app claims in memory per request
+  (as `sessionMode: 'supabase-first'` already does). They never write or clear
+  `sb-*`, `tuturuuu_app_session*` or `tuturuuu_web_app_session*`.
+- **No token in JavaScript.** No access or refresh JWT is readable by page
+  script, returned in a JSON body to a browser request, or kept in Web Storage,
+  IndexedDB or the Cache API. The only exceptions are single-purpose
+  capabilities that are topic- or object-scoped, last at most 5 minutes and
+  cannot be exchanged for a session: realtime join tickets (60 s) and storage
+  signed URLs.
+- **Browser code reaches data only through same-origin `/api/*`** (or the app's
+  own `/<app>/api/*`) with the cookie. Browser Supabase clients are retired.
+- **Bearer clients are untouched.** A request with `Authorization: Bearer` is
+  authenticated by the bearer alone; its cookies are ignored and CSRF rules do
+  not apply. Mobile and CLI keep their native flows.
+- **Mounted mode comes from the URL.** The bridge deletes any client-sent
+  `x-tuturuuu-app-base` and sets its own from the resolved mount; auth code never
+  trusts that header (#6774).
+- **Stages.** Stage A makes the existing `sb-<ref>-auth-token*` cookie
+  `HttpOnly` and keeps `Domain=.tuturuuu.com` so subdomain servers keep reading
+  it; ambiguous duplicate cookies are treated as unauthenticated for unsafe
+  methods. Stage B moves to a host-only `__Host-` cookie after the first
+  cutovers.
+- **End state.** The platform is moving to Cloudflare. The long-term session is
+  a first-party signed `HttpOnly` cookie issued and verified in a Worker, with
+  state in a Durable Object or D1. Supabase Auth becomes one identity provider
+  behind an interface. Stage A and Stage B harden today's cookie in the
+  meantime; build no new features on the Supabase cookie format.
 
-### Decision required: a JavaScript-readable shared session on one origin
+### Mounted no-writer guard
 
-The root Supabase session cookies (`sb-<ref>-auth-token*`) are set with
-`Path=/`, `SameSite=Lax`, `Secure` and `Domain=.tuturuuu.com` but **not
-`HttpOnly`**: `getSupabaseCookieOptions`
-(`packages/supabase/src/next/common.ts`) leaves `@supabase/ssr`'s default
-`httpOnly: false`, because the browser Supabase client reads the session. Do
-not toggle that flag: browser auth depends on it.
+The function-proxy change (#6774) covers server-function middleware only. The
+app's ordinary `proxy.ts` and endpoint registry still reach the auth writers,
+for example `/api/auth/verify-app-token` and `/api/auth/refresh-app-session`,
+whose `createPOST` and `createRefreshPOST`
+(`packages/auth/src/cross-app/server.ts`) set `Path=/` app-session cookies.
+Under (b) the guard is permanent:
 
-**Blast radius.** Today an XSS in one satellite can already read the root
-session through the shared `.tuturuuu.com` domain cookie. On one origin the
-radius is wider: script running under any `tuturuuu.com/<app>` path also shares
-the origin's `localStorage`, `sessionStorage`, IndexedDB, service-worker scope
-and same-origin `fetch`, so one app's XSS can act as the user in every app and
-in Web without reading a cookie at all. Path separation is not a security
-boundary within an origin.
+1. **Bridge admission**, before `proxy.ts` and endpoint dispatch: a mounted
+   request (non-empty URL-derived `appBase`) to a session-minting endpoint gets a
+   terminal `409 APP_SESSION_MOUNTED`, with no verification, rotation or
+   `Set-Cookie`. A same-origin mount needs no handshake, because the apex
+   cookie is the session.
+2. **The writers themselves**: the app-session setters and
+   `clearAppSessionCookie` refuse to write when the server-side bridge context
+   is mounted (never a header). This also covers `proxy.ts` refresh and MFA
+   redirects.
+3. **Response backstop**: mounted responses drop any `Set-Cookie` for app-session
+   **and Supabase session** names, and drop `Service-Worker-Allowed`.
+4. **Logout** from a mounted app is a POST to Web `/api/auth/logout`.
+5. **Expiry**: a mounted Worker answers `401 SESSION_REFRESH_REQUIRED` for API
+   and server-function calls, and `303` to Web's refresh endpoint for document
+   navigations. It never refreshes itself.
 
-**Accepting this requires, per mounted app:**
+Whole-handler tests run through `createBridgeHandler`:
 
-- an enforced CSP with per-response script nonces (`createBridgeHandler({ csp })`,
-  `requestNonce()`) and Trusted Types, which is already mandatory before an
-  app mounts on the apex;
-- no inline event handlers or `eval`-style sinks, and dependency review for
-  script injection;
-- the `decideOneOriginRequest` gate (#6746) in front of every mount.
+- mounted verify and refresh return `409` with no `Set-Cookie`;
+- mounted pages and APIs emit no session `Set-Cookie`, including on the MFA and
+  refresh-failure paths;
+- root-mode controls behave exactly as today;
+- a client-sent `x-tuturuuu-app-base` never switches modes.
 
-**Alternatives** if the risk is not accepted: keep satellites on their
-subdomains (today's isolation); mount only apps that pass a stricter security
-review; or move the browser to a backend-for-frontend session where an
-`HttpOnly` cookie is exchanged server-side and the browser Supabase client is
-not used on the apex.
+### CSRF
 
-### Proposed model (if accepted)
+Cookie-authenticated unsafe requests (no `Authorization: Bearer`) pass only
+with `Sec-Fetch-Site: same-origin`, or, when Fetch Metadata is absent, an
+`Origin` equal to the request's own origin. `same-site` (sibling subdomains),
+`cross-site`, `none`, a missing or `null` `Origin` and any mismatch are
+rejected. The check is a framework-free helper applied by Web middleware, by
+bridge admission and by each BFF auth endpoint, with an explicit, tested
+exemption registry (provider webhooks, OAuth callbacks, bearer and native auth
+routes). It rolls out `off`, then `report` (at least 24 h clean in production),
+then `enforce`, with the mode injected by each adapter.
 
-1. **The shared apex session is the root Supabase session.** Mounted apps
-   derive their per-app claims per request (in-memory bearer, as today) and
-   never write or clear `tuturuuu_app_session*` or
-   `tuturuuu_web_app_session*` on the apex. The audience check stays per app;
-   the Supabase JWT is validated on every request.
-2. **Mounted mode is decided by the bridge from the request URL only.** The
-   handler deletes any client-sent `x-tuturuuu-app-base` and sets its own from
-   the resolved mount. Auth code must not trust that header on any route a
-   client can reach without the bridge in front (direct Worker hosts, Web, or
-   tests); the invariant below is enforced by the writers themselves.
-3. **The no-app-cookie invariant holds at every writer and clearer on the
-   apex host:** `setAppSessionCookie`, `setAppSessionRefreshCookie`,
-   `setWebAppSessionCookie`, `setWebAppSessionRefreshCookie`,
-   `clearAppSessionCookie` (including the MFA-redirect clear in
-   `packages/auth/src/proxy/index.ts`), `createSupabaseBackedAppSessionResponse`,
-   and the cross-app helpers in `packages/auth/src/cross-app/server.ts`. Each
-   checks the response's target host, not a request header. The satellite
-   `api/auth/refresh-app-session` and `api/auth/verify-app-token` routes reject
-   apex (mounted) calls before any write.
-4. **CSRF.** Every unsafe, cookie-authenticated endpoint on the apex requires a
-   same-origin `Origin` (or a CSRF token) and rejects `Sec-Fetch-Site:
-   cross-site`; server functions keep Start's CSRF middleware. Logout is a
-   protected unsafe operation, not a GET.
-5. **Logout and refresh races.** Logout signs the user out of the Supabase
-   session, so it is global across Web and every mounted app by design.
-   Concurrent tabs and Workers may refresh the same Supabase refresh token:
-   rely on the project's refresh-token reuse interval, never let a refresh
-   response restore cookies after a sign-out (responses compare a session
-   generation before writing `Set-Cookie`), and accept that an already issued
-   access JWT stays valid until its expiry (bound the access-token lifetime
-   accordingly; revocation-sensitive operations re-check the session).
-6. **Verification cost.** Each mounted-app request validates the Supabase JWT
-   (local with asymmetric keys; JWKS cached with rotation-aware refetch),
-   refreshes when near expiry, and may run the MFA lookups the satellites
-   already run. Measure the p95 on staging before cutover.
-7. **Subdomains keep today's behaviour** until each app's cutover.
+### Admission gate
 
-### Code that must change (auth owner, after acceptance)
-
-| Where | Change |
-| --- | --- |
-| `packages/auth/src/proxy/index.ts` `refreshAppSessionForRequest` | Apex host: Supabase-only; skip `resolveSignedAppSessionForRequest`; a missing/invalid session goes to Web login with `appUrl(...)` as the return URL |
-| same file, `createSupabaseBackedAppSessionResponse` and the MFA-redirect branch | Apex host: keep the in-memory bearer and the Supabase `Set-Cookie` pass-through; never call `clearAppSessionCookie` |
-| same file, `appSessionFailureResponse` | Apex host: no app-cookie writes; absolute Web URLs |
-| `packages/auth/src/app-session.ts` setters and `clearAppSessionCookie`; `packages/auth/src/cross-app/server.ts` | Refuse apex-host writes (the invariant above) |
-| Satellite `app/api/auth/{logout,refresh-app-session,verify-app-token}` | Apex: logout is a protected POST to Web sign-out; refresh and verify reject before writes |
-| `packages/supabase/src/next/server.ts`, `packages/supabase/src/request/server.ts` `requestHasAppSessionAuth` | On the apex host, a valid Supabase cookie session wins over a cookie-borne `tuturuuu_app_session` |
-| `@tuturuuu/start-bridge` `function-proxy` and app `proxy.ts` calls | Pass the URL-derived mount through; never a header from the client |
+`@tuturuuu/utils/one-origin-routing` refuses the shared origin in every mode
+until a `bffSessionReady` input is true. That input requires CSRF `enforce`, the
+`HttpOnly` cookie, no browser Supabase client and the no-writer guard, read from
+runtime config. Each app still needs its own one-origin admission review (CSP,
+Trusted Types, content inventory).
 
 ## Page adapter
 
@@ -324,9 +311,20 @@ server components render inline. A hook that suspends makes Flight outline the
 component as a lazy row. React's streaming renderer (19.2.8, and still 19.3.1)
 can leave a Suspense boundary unresolved when a boundary rendered after the
 shell has a fallback that suspends. The browser then reports React error #419.
-Keep Suspense fallbacks synchronous. Assert emitted HTML with
-`findUnresolvedSuspenseBoundaries` from `@tuturuuu/start-bridge/start/suspense-boundaries`,
-which must return no pending `B:`/`P:` placeholders.
+Keep Suspense fallbacks synchronous. A translated server component rendered
+above or beside the provider still suspends once; in development the bridge
+logs a one-time `console.warn` for it.
+
+Assert emitted HTML with `findUnresolvedSuspenseBoundaries` from
+`@tuturuuu/start-bridge/start/suspense-boundaries`; it must return `[]`. It
+reports:
+- pending boundaries, under any `identifierPrefix`;
+- completions whose segment container (`div`, `svg`, `math` or table) is missing;
+- unfilled `P:` segments;
+- boundaries switched to client rendering (`$RX`, or `<!--$!-->` from the shell).
+
+It reads the inline instruction scripts of stable React and the `data-r*i`
+templates of the external runtime.
 
 ## Runtime tag
 

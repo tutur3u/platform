@@ -7,12 +7,13 @@ import {
   parseTutoringPolicy,
   readTutoringPolicyConfigRows,
   renderTutoringParentMessage,
+  STANDARD_TUTORING_POLICY,
   serializeTutoringPolicyConfigRows,
 } from './tutoring-policy';
 
 describe('Easy Center tutoring shifts', () => {
   it('keeps the latest weekend morning shift names and times', () => {
-    expect(EASY_CENTER_TUTORING_POLICY.timeRules).toHaveLength(7);
+    expect(EASY_CENTER_TUTORING_POLICY.timeRules).toHaveLength(8);
     expect(
       EASY_CENTER_TUTORING_POLICY.timeRules.find(
         (rule) => rule.label === 'Shift 4'
@@ -41,12 +42,54 @@ describe('Easy Center tutoring shifts', () => {
     ).toBe('Shift 1');
   });
 
+  it('moves the untouched template to the current defaults', () => {
+    expect(EASY_CENTER_TUTORING_POLICY).toMatchObject({
+      followUpDays: 3,
+      weakSupportSessions: 1,
+    });
+    expect(
+      parseTutoringPolicy({
+        ...EASY_CENTER_TUTORING_POLICY,
+        followUpDays: 7,
+        weakSupportSessions: 2,
+      })
+    ).toMatchObject({ followUpDays: 3, weakSupportSessions: 1 });
+    expect(
+      parseTutoringPolicy({ ...EASY_CENTER_TUTORING_POLICY, followUpDays: 7 })
+    ).toMatchObject({ followUpDays: 3, weakSupportSessions: 1 });
+  });
+
+  it('keeps staff-edited weak-support and follow-up values', () => {
+    // Editing the timing section saves the policy as custom.
+    expect(
+      parseTutoringPolicy({
+        ...EASY_CENTER_TUTORING_POLICY,
+        preset: 'custom',
+        followUpDays: 7,
+        weakSupportSessions: 2,
+      })
+    ).toMatchObject({ followUpDays: 7, weakSupportSessions: 2 });
+    expect(
+      parseTutoringPolicy({
+        ...EASY_CENTER_TUTORING_POLICY,
+        followUpDays: 10,
+        weakSupportSessions: 3,
+      })
+    ).toMatchObject({ followUpDays: 10, weakSupportSessions: 3 });
+    // The standard preset keeps its own 7-day follow-up.
+    expect(
+      parseTutoringPolicy({ ...STANDARD_TUTORING_POLICY })?.followUpDays
+    ).toBe(7);
+  });
+
   it('upgrades untouched legacy shifts without overwriting staff changes', () => {
-    const oldRules = EASY_CENTER_TUTORING_POLICY.timeRules.map((rule) => ({
-      ...rule,
-      ...(rule.label === 'Shift 1' ? { weekdays: [1, 3, 5] } : {}),
-      ...(rule.label === 'Shift 4' ? { durationMinutes: 50 } : {}),
-    }));
+    const oldRules = EASY_CENTER_TUTORING_POLICY.timeRules
+      .filter((rule) => rule.label !== 'Shift 8')
+      .map((rule) => ({
+        ...rule,
+        ...(rule.label === 'Shift 1' ? { weekdays: [1, 3, 5] } : {}),
+        ...(rule.label === 'Shift 4' ? { durationMinutes: 50 } : {}),
+      }));
     expect(
       parseTutoringPolicy({
         ...EASY_CENTER_TUTORING_POLICY,
@@ -69,6 +112,25 @@ describe('Easy Center tutoring shifts', () => {
         timeRules: staffRules,
       })?.timeRules
     ).toEqual(staffRules);
+  });
+
+  it('adds Shift 8 to an untouched seven-shift preset only', () => {
+    const sevenShifts = EASY_CENTER_TUTORING_POLICY.timeRules.filter(
+      (rule) => rule.label !== 'Shift 8'
+    );
+    expect(
+      parseTutoringPolicy({
+        ...EASY_CENTER_TUTORING_POLICY,
+        timeRules: sevenShifts,
+      })?.timeRules
+    ).toEqual(EASY_CENTER_TUTORING_POLICY.timeRules);
+    expect(
+      parseTutoringPolicy({
+        ...EASY_CENTER_TUTORING_POLICY,
+        preset: 'custom',
+        timeRules: sevenShifts,
+      })?.timeRules
+    ).toEqual(sevenShifts);
   });
 
   it('accepts editable labels and the attendance lookback', () => {
@@ -192,6 +254,21 @@ describe('Easy Center tutoring shifts', () => {
       weakContentReviewDays: 14,
       groupExclusions,
     });
+  });
+
+  it('keeps the weak-content editor restriction off unless saved on', () => {
+    const { restrictWeakContentEditors, ...legacy } =
+      EASY_CENTER_TUTORING_POLICY;
+    expect(restrictWeakContentEditors).toBe(false);
+    expect(STANDARD_TUTORING_POLICY.restrictWeakContentEditors).toBe(false);
+    expect(parseTutoringPolicy(legacy)?.restrictWeakContentEditors).toBe(false);
+    expect(
+      parseTutoringPolicy({ ...legacy, restrictWeakContentEditors: true })
+        ?.restrictWeakContentEditors
+    ).toBe(true);
+    expect(
+      parseTutoringPolicy({ ...legacy, restrictWeakContentEditors: 'yes' })
+    ).toBeNull();
   });
 
   it('upgrades only the prior Easy Center exclusion preset', () => {

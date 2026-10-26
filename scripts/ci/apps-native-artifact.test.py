@@ -341,6 +341,30 @@ class ArtifactTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "unreviewed emitted config field"):
             artifact.validate_output(app)
 
+    def test_html_only_as_a_declared_public_file(self):
+        app, _, _ = self.fixture()
+        for name in ("index.html", "assets/route.html", "nested/offline.html"):
+            target = app / "dist/client" / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text("<html></html>")
+            with self.assertRaisesRegex(ValueError, "unreviewed static HTML"):
+                artifact.validate_output(app)
+            target.unlink()
+        (app / "public/offline.html").write_text("<html>offline</html>")
+        (app / "dist/client/offline.html").write_text("<html>offline</html>")
+        with mock.patch.object(artifact, "PUBLIC_FILES", (*artifact.PUBLIC_FILES, "offline.html")):
+            # A public HTML file still needs its explicit HTML admission.
+            with self.assertRaisesRegex(ValueError, "unreviewed static HTML"):
+                artifact.validate_output(app)
+        with mock.patch.object(artifact, "PUBLIC_FILES", (*artifact.PUBLIC_FILES, "offline.html")), \
+                mock.patch.object(artifact, "PUBLIC_HTML", ("offline.html",)):
+            (app / "public/offline.html").write_text("<html>offline</html>")
+            (app / "dist/client/offline.html").write_text("<html>offline</html>")
+            artifact.validate_output(app)
+            (app / "dist/client/offline.html").write_text("<html>prerendered</html>")
+            with self.assertRaisesRegex(ValueError, "public asset drift: offline.html"):
+                artifact.validate_output(app)
+
     def test_config_containment_identity_resources_and_static_controls(self):
         mutations = [
             lambda c: c.update(name="guessed-canonical-worker"),
@@ -356,6 +380,7 @@ class ArtifactTest(unittest.TestCase):
             lambda c: c.update(unknown_binding={"id": "unreviewed"}),
             lambda c: c["assets"].update(run_worker_first=False),
             lambda c: c["assets"].update(not_found_handling="single-page-application"),
+            lambda c: c["assets"].update(html_handling="none"),
             lambda c: c["assets"].update(directory="../../public"),
             lambda c: c.update(main="../../../package.json"),
         ]
