@@ -37,6 +37,14 @@ Legacy nested category paths, such as
 `/{wsId}/finance/transactions/categories`, should redirect inside `apps/web` to
 `/{wsId}/finance/categories` while preserving query strings.
 
+Standalone Finance workspace redirects preserve the configured app mount and
+the complete query string, including repeated names. This applies to root and
+personal workspace aliases, the default workspace, and the personal-workspace
+fallback. Root hosting has no mount prefix. A `/finance` mount stays inside
+`/finance`; this rule does not activate that hosting mode. Authentication cookie
+propagation remains unchanged. Regression coverage lives in
+`apps/finance/src/proxy-base-path.test.ts`.
+
 ## API Ownership
 
 Native Finance checkpoint creation, editing and batch creation serialize the

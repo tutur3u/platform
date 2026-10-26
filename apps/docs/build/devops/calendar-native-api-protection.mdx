@@ -1,0 +1,574 @@
+---
+title: "Native Calendar API protection"
+description: "Trace timezone read/save rejection layers and audit the hosting exception without exposing credentials."
+---
+
+## Request ownership and counts
+
+Native personal `/api/v1/users/calendar-settings` and workspace
+`/api/v1/workspaces/:wsId/calendar-settings` GET/PATCH requests default directly to
+Web at `https://tuturuuu.com` (`ApiOrigin.platform`, the existing Web origin). Web serves these paths locally;
+its former Calendar rewrites must stay removed. `API_BASE_URL` and existing
+origin overrides remain available for development and explicit environments.
+The adapters inject the verified actor into shared calendar settings logic;
+Calendar retains its routes for existing browser/app-session clients. Native
+requests require the original Supabase Bearer token and verified MFA, without
+a satellite browser session.
+
+Infrastructure's `/api/v1/mobile-calendar` settings allowlist remains a deliberate
+compatibility path for already published mobile versions. Those versions still
+reach Calendar and still need the Calendar hosting exception below. The new
+mobile release bypasses both hops only for these two preference endpoints;
+other native Calendar APIs retain their current gateway routing. Shipping Web
+alone cannot change the routing embedded in an installed mobile binary.
+
+The app-level timezone scope makes one personal and one workspace GET at cold
+startup. Opening/reopening Settings displays that scope and adds zero requests.
+Same-workspace rebuilds do not reload. Account/workspace changes and OS resume
+can revalidate; in-flight loads coalesce and 429 cooldown prevents replay.
+Reminder planning separately reads preferences across workspaces; its bounded
+traffic can consume a shared allowance but is not a Settings rebuild loop.
+
+A valid unexpired access token does not refresh on each timezone read. Expiry
+within the refresh buffer or a rejected 401 can cause a bounded refresh. Refresh
+failure is a session error or falls back to an existing token; it is not itself
+the API client's `kind=http; status=429` response. There is no automatic 429 retry.
+
+## Rejection inventory
+
+The Infrastructure/Calendar rows apply to the retained compatibility path. New
+mobile preferences use Web hosting, the shared MFA/native-preferences guard and
+the local Web adapter instead.
+
+| Layer | Read/save protection and identity | Observable result |
+| --- | --- | --- |
+| Mobile repository | Account-scoped cooldown after a genuine 429; no network retry during cooldown | Retains the originating diagnostic; not proof of a fresh request on Settings open |
+| Web hosting | Existing Web native API hosting policy; no WAF/bot exception is declared in `apps/web/vercel.json` | Provider challenges run before route auth; live policy must be checked by the deployment operator |
+| Shared Web guard | Dedicated `proxy:web:calendar-preferences` actor bucket after MFA verification; persistent IP blocks | `native-calendar-preferences` with caller/window/quota headers; `proxy-ip-block` for blocked IPs |
+| Web native integrity bridge GET guard | Exact `/native-integrity/turnstile` GET uses `proxy:web:native-integrity-bridge` with explicit base read limits of 60/minute, 240/hour and 1,200/day | `native-integrity-bridge`; anonymous IP limits, persistent IP blocks and strict staff rejection remain active |
+| Web native integrity POST guard | Exact challenge/enroll POSTs use `proxy:web:native-integrity` with the already MFA-verified Bearer actor and default authenticated mutation quotas; no warm trust-cache dependency or shared-IP actor collision | `native-integrity-challenge`; anonymous quotas and persistent IP blocks remain active, and staff cannot waive quota/IP 429; separate service issuance caps remain 10/minute and 120/hour |
+| Web personal PATCH quota | Additional adaptive authenticated actor quota using `session:user:mutate`, base 60/minute; no pre-auth shared-IP bucket or browser challenge | `calendar-session-user-mutate`, caller `authenticated`, window `minute`; preserves `Retry-After`, `X-Proxy-Block-Reason: rate-limit-exceeded`, `Cache-Control: private, no-store`, numeric `X-RateLimit-*` and adaptive `X-Abuse-*` headers |
+| Infrastructure hosting | Platform bot/WAF/DDoS protections before application code | May return a bare HTML/JSON 429 without application metadata |
+| Shared Infrastructure guard | Dedicated preferences quotas; already verified MFA Bearer actor, independent of warm trust cache | `native-calendar-preferences`, caller and minute/hour/day; IP blocks use `proxy-ip-block` |
+| Offline download guard | Additional quotas only with explicit offline-download header | `offline-capable-read`; ordinary timezone startup does not mark bulk downloads |
+| Infrastructure gateway authentication | Verifies original Bearer before secret access or fetch | Invalid/provider-rejected verification returns 401, unavailable verification 503, not raw 429 |
+| Gateway upstream response | Single bounded fetch; relays JSON 429 and safe headers | Unclassified JSON 429 becomes `upstream-or-edge` / `calendar-upstream`; HTML challenges remain 502 |
+| Calendar hosting | Bot protection and exact private-credential WAF exception | Native HTTP cannot complete a browser challenge; challenge can be HTML 429 |
+| Shared Calendar guard | Dedicated native preferences actor quotas and persistent IP blocks | `calendar-native-preferences` or `proxy-ip-block` |
+| Personal route session wrapper | GET has no session read quota. PATCH uses authenticated actor mutation quota; unrelated routes retain pre-auth IP quotas | `calendar-session-user-mutate`; old gateway-egress IP collision is covered by regression |
+| Personal route IP/auth branches | Persistent IP-block policy; upstream Supabase Auth rejection | `calendar-route-ip-block` or `calendar-auth-provider`; unknown caller/window stay unknown |
+| Workspace route | Explicit membership/settings permission; no additional route quota | Authentication failure 401, membership/permission 403; proxy quotas still apply |
+| Supabase/PostgREST | Data API write hook keys authenticated user plus user/IP; GET/read-only transactions exempt; provider quotas remain | Settings handlers map data-query errors to 500, so these are not a bare settings GET 429 |
+
+Default authenticated proxy read limits are 600/minute, 6,000/hour, 40,000/day;
+mutation limits are 60/minute, 300/hour, 2,000/day. Personal and workspace paths
+share each actor's quota across token rotation. Existing environment overrides,
+trust/risk decisions, downstream authentication, MFA and IP blocks remain active.
+
+## Web hosting acceptance and operator items
+
+Application authentication and hosting bot protection are separate boundaries.
+Existing native Web APIs use the shared Bearer/MFA guard; the documented browser
+step-up policy excludes native clients. That does not establish an active Vercel
+WAF exemption: `apps/web/vercel.json` contains no firewall rule. Do not add a fake
+browser user agent or trust an unverified Authorization header to avoid hosting
+challenges. [Vercel challenges require a browser session](https://vercel.com/docs/vercel-firewall/firewall-concepts#challenge-limitations).
+
+The production operator must perform these steps; repository deployment does not
+publish provider firewall configuration:
+
+1. Confirm the deployed Web source includes local settings handlers and no
+   Calendar settings rewrites. Read the active Web project's Firewall rules and
+   pending draft privately. Identify the treatment already used for working
+   native `/api/v1/**` calls on `tuturuuu.com`; check that both new exact paths
+   receive the same treatment.
+2. If Bot Protection challenges these paths, prepare a custom rule named
+   `Native Web calendar preferences` with **all** these conditions: Host equals
+   `tuturuuu.com`; Method is one of `GET`, `PATCH`; Path matches
+   `^/api/v1/(users/calendar-settings|workspaces/[^/]+/calendar-settings)$`.
+   Use the existing native Web hosting exception mechanism. If that mechanism
+   is a Vercel custom **Bypass**, put it after applicable custom deny/rate rules
+   and before managed bot evaluation. Review its full effect: Vercel custom
+   Bypass skips all subsequent custom/managed rules, not just Bot Protection.
+   Do not create a system bypass or broaden to all API paths. The path exception
+   permits requests to reach application verification; it grants no actor trust.
+   Retain platform DDoS protection, IP blocks and all application MFA, membership,
+   permission and preference quotas. Review and publish only this scoped change
+   through the release operator, then read back the active rule.
+3. Verify both GET and PATCH with a real native client on the exact deployed
+   source. Confirm JSON success, persistence and no `x-vercel-mitigated: challenge`.
+   Confirm missing/forged Bearers fail, insufficient MFA fails, nonmembers and
+   users without settings permission fail, invalid values fail, and controlled
+   quota rejection retains `Retry-After` and `X-RateLimit-*` diagnostics. Keep
+   private request identities out of reports. A curl control alone does not prove
+   acceptance of an affected user's request.
+4. Retain the existing Calendar private-credential rule for older mobile builds.
+   The applied predicate coverage is recorded below; retain it and verify old-client
+   read/save plus forged gateway credential rejection before calling that path
+   recovered. Roll back the mobile origin only with the old route's hosting
+   acceptance confirmed; otherwise it restores the original challenge exposure.
+
+No live Vercel or Cloudflare firewall mutation is part of the source change.
+
+## Compatibility gateway hosting exception coverage
+
+The legacy native gateway WAF regex covered `/api/v1/calendar/**`, workspace
+`/calendar/**` and the two cron routes, but excluded both `/calendar-settings`
+endpoints. A matching private credential could therefore still encounter bot
+protection on these reads/saves. `firewall-policy.test.ts` reproduces this exact
+predicate gap and verifies the narrow correction without broadening other paths.
+
+Save the owning Calendar project's active firewall response in a **private** file
+using the authenticated Vercel CLI's read-only firewall API, then run:
+
+```sh
+bun scripts/audit-calendar-gateway-firewall.ts /private/path/calendar-firewall.json
+```
+
+The audit prints only public path predicates and coverage, never the gateway
+credential. Exit 1 means missing coverage, 0 means both exact settings paths are
+covered, and 2 means an unexpected rule or pending draft requires private review.
+The audit cannot publish a firewall change.
+
+The user-authoritative production review at **2026-10-24 02:02 UTC** confirms
+the Calendar firewall correction is **applied**, configuration version **8**.
+The read-only audit reported `current=true` for both exact calendar-settings
+paths. This is an operator-provided configuration receipt, not a firewall
+mutation performed by this source change or a fresh readback by this agent.
+Do not reapply the correction blindly.
+
+Retain the `Authenticated native Calendar gateway` rule's exact
+`x-tuturuuu-calendar-gateway` credential equality, active bypass action and
+corrected path predicate. Keep unrelated rules and managed bot protection.
+Do not use mere Bearer presence as a hosting bypass. Future operator changes
+must review any pending draft and read back the resulting active coverage.
+Repository deployment alone does not publish provider configuration.
+
+Remaining acceptance for the already published mobile version is real-device
+personal/workspace GET and PATCH through the gateway, persistence, absence of a
+Vercel challenge and forged-credential rejection. An audit's `current=true`
+proves path coverage in that reviewed configuration, not successful device
+behavior or attribution of the original affected request.
+
+## Diagnostic interpretation
+
+Older `diagnostics=v1` output with all four fields `unknown` cannot distinguish
+absent headers from unsupported values. New diagnostics record metadata presence
+and label a response with no limiter fields `upstream-or-edge`; that is a source
+classification, not proof of a specific WAF/provider policy. Vercel/Cloudflare
+header presence is a boolean, never a request ID, credential or arbitrary server
+header. Known application rules retain their policy/caller/window and Retry-After.
+
+Content negotiation matters: a Calendar request with `Accept: application/json`
+and the gateway's Node user agent can receive a **JSON** 429 with
+`x-vercel-mitigated: challenge` and no application quota fields. The gateway
+relays that JSON status; the legacy missing settings-path exception therefore
+provides a concrete mechanism for the device's all-unknown 429 fingerprint.
+HTML challenges instead become 502. The fixed gateway preserves only the exact
+safe `challenge` marker and classifies unlabelled upstream JSON rejections.
+An unauthenticated control does not establish the affected user's individual
+request receipt. Correlate that build's effective host/path and timestamp with
+Infrastructure/Calendar logs to attribute an exact event. Keep the private
+credential condition: direct requests without it should still be challenged.
+Never log tokens, cookies, private bodies, actor/workspace identifiers or IPs here.
+
+
+## Native integrity rollout (default off)
+
+Phase 1 moves the preference endpoints to Web independently of native integrity.
+Ship that routing repair first; integrity is a separate dependent change. It adds
+Apple App Attest, Android Play Integrity STANDARD requests and a bounded
+Turnstile fallback. These proofs supplement Bearer authentication, MFA,
+workspace membership/permissions, dedicated quotas and IP blocks. They never
+replace those controls or grant a hosting firewall bypass.
+
+`NATIVE_INTEGRITY_MODE` is a server-side rollout control. Only `monitor` and
+`enforce` opt in; unset or unrecognized values resolve to `off`:
+
+| Mode | Integrity behavior | Existing API behavior |
+| --- | --- | --- |
+| `off` (default, including an unset value) | No integrity datastore/provider calls or proof requirement | Existing authentication, quotas and permissions remain authoritative |
+| `monitor` | Verify available proofs and record only scalar mode/mechanism/verdict; missing, malformed, unsupported, provider/configuration/store errors do not block the protected request | Always continue through existing protections; a valid proof grants no quota/auth bypass |
+| `enforce` | Require a valid request-bound proof before domain writes | A missing/failed proof returns `NATIVE_INTEGRITY_REQUIRED`; only the release operator may enable this after acceptance |
+
+No production enforcement change is implied by merging the implementation.
+Monitor is not evidence that every platform/device can satisfy enforce. An old
+mobile binary has no proof support, so enforcing globally before its support
+policy is settled would block that client.
+
+**Enforce activation is blocked by existing Web callers too.** The current guard
+applies to every authenticated Web calendar-settings GET/PATCH, including calls
+with no integrity header. Existing browser/server consumers such as
+`apps/web/src/components/settings/appearance-settings.tsx` and
+`apps/web/src/lib/calendar-preferences-settings-bridge.tsx` do not yet supply
+proofs and would receive 403 in enforce. Keep `off` or `monitor` until those
+callers have accepted proof coverage or a separately reviewed trusted-browser
+policy is implemented and accepted. Never exempt a caller merely because its
+header is absent or its User-Agent claims to be a browser. This implementation
+is not a fully activated rollout.
+
+### Configuration names
+
+All provider secrets remain in Web's server secret store. Mobile learns public
+challenge configuration from the authenticated server response; never inject a
+service-account key or Turnstile secret into Flutter. There is no separate mobile
+rollout flag: the authenticated challenge response discovers the server mode.
+An `off` response invokes no device verifier or widget.
+
+| Server variable | Purpose |
+| --- | --- |
+| `NATIVE_INTEGRITY_MODE` | `off`, `monitor`, or operator-approved `enforce` |
+| `NATIVE_INTEGRITY_WEB_ORIGIN` | Exact bridge origin; defaults to `https://tuturuuu.com` |
+| `NATIVE_INTEGRITY_TURNSTILE_ENABLED` | Literal `true` enables consideration of fallback; disabled by default |
+| `NATIVE_INTEGRITY_UNSUPPORTED_PLATFORM_ACTOR_IDS` | Operator-owned UUID allowlist for unsupported actors, maximum 500; native capability still bars fallback |
+| `NATIVE_INTEGRITY_PROVIDER_BUDGET_ACTOR_DAY` | Per-actor daily provider budget, default 100 and capped at one tenth of global budget |
+| `NATIVE_INTEGRITY_TURNSTILE_PARENT_ORIGINS` | Up to 16 comma-separated approved exact HTTPS parent origins, including Web by default; loopback HTTP only in development |
+| `NATIVE_INTEGRITY_APPLE_IOS_ACL_BLOBS` | Explicit comma-separated base64 iOS ACL allowlist from official or controlled signed-device evidence; unknown ACL fails verification |
+| `NATIVE_INTEGRITY_APPLE_TEAM_ID`, `NATIVE_INTEGRITY_APPLE_BUNDLE_ID` | Expected Apple app identity |
+| `NATIVE_INTEGRITY_APPLE_ALLOWED_BUNDLE_VERSIONS` | Required accepted iOS bundle versions when signed launch extensions are present |
+| `NATIVE_INTEGRITY_APPLE_MACOS_BUNDLE_ID`, `NATIVE_INTEGRITY_APPLE_MACOS_SIGNING_IDENTIFIER`, `NATIVE_INTEGRITY_APPLE_MACOS_ALLOWED_BUNDLE_VERSIONS` | Explicit macOS app identity/signing identifier and required accepted bundle versions |
+| `NATIVE_INTEGRITY_PROVIDER_ENABLED`, `NATIVE_INTEGRITY_PROVIDER_BUDGET_DAY` | Provider stop control and total daily dispatch budget (default 1,000, range 2–100,000) |
+| `NATIVE_INTEGRITY_APPLE_ENVIRONMENT` | Development attestation is allowed only when explicitly set to `development`; production is the release default |
+| `NATIVE_INTEGRITY_GOOGLE_PACKAGE_NAME`, `NATIVE_INTEGRITY_GOOGLE_CERTIFICATE_DIGESTS` | Expected Android package and comma-separated signing certificate digests |
+| `NATIVE_INTEGRITY_GOOGLE_CLOUD_PROJECT_NUMBER` | Linked project's public number for STANDARD requests |
+| `NATIVE_INTEGRITY_GOOGLE_SERVICE_ACCOUNT_JSON` | Server-only Google decoder credentials |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | Widget public key and server-only Siteverify secret |
+| `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | Server-only atomic challenge/key store connection |
+
+### Request and fallback contract
+
+Native App Attest and Play Integrity proofs are accepted across an actor's
+devices. A Turnstile token is a bot-abuse speed bump, not native app/device
+attestation and not evidence equivalent to either native mechanism. Fallback is
+disabled by default: only the literal `true` in
+`NATIVE_INTEGRITY_TURNSTILE_ENABLED` enables consideration of it. It additionally
+requires server-owned eligibility in
+`NATIVE_INTEGRITY_UNSUPPORTED_PLATFORM_ACTOR_IDS`, a comma-separated UUID
+allowlist capped at 500 actors. Headers, User-Agent claims and the absence of a
+native proof cannot grant unsupported-platform eligibility.
+
+A live enrolled Apple capability or a successful Play capability marker takes
+precedence over that allowlist and bars Turnstile for the actor. Native App
+Attest and Play proofs still work across that actor's Apple/Android devices;
+the restriction is against downgrading a native-capable actor to Turnstile.
+The Play marker expires 90 days after the most recent verified Play proof.
+Do not clear capability state simply to make a denied fallback succeed.
+
+The authenticated client obtains a short-lived challenge from
+`POST /api/v1/native-integrity/challenge`; Apple key enrollment uses
+`POST /api/v1/native-integrity/enroll`. Proofs accompany the protected request in
+`x-tuturuuu-integrity-proof` (base64url JSON), with the mechanism identified by
+`x-tuturuuu-native-integrity`. Do not log either header.
+
+A single-use nonce expires after 120 seconds and binds the authenticated actor
+and intended request. The server validates the proof against the actual method,
+path and request data; the client cannot nominate another actor. Apple enrollment
+verifies the Apple certificate chain, app identity and attestation environment,
+then stores the verified key and platform for assertions. Modern Apple ACL
+extensions require accepted platform-specific evidence. An iOS ACL blob is
+allowed only by the explicit configured allowlist; never promote an arbitrary
+client capture into that list. macOS requires the published SIP/full-security
+ACL and matching signing identifier/version policy. Unknown macOS ACLs fail
+verification; they cannot downgrade into the iOS assertion path. Assertions must pass signature,
+request binding and a strictly increasing counter. Android STANDARD token
+verification compares the request hash, package and configured signing certificate
+digests, requires `PLAY_RECOGNIZED`, `LICENSED` and `MEETS_DEVICE_INTEGRITY`,
+and rejects a verdict older than 120 seconds.
+
+Only when fallback is enabled and the server-owned eligibility policy allows
+it does `/native-integrity/turnstile` provide the WebView fallback. Its bridge is locked
+to the expected Web origin, page path and request hash. Native WebViews read a
+bounded top-document result; the browser iframe validates both `event.origin`
+and its owned frame's `event.source`. Tokens and access credentials must never
+escape through navigation, logs or arbitrary JavaScript messages. The page receives no Bearer
+token. Server verification checks the configured hostname, action
+`native_integrity` and nonce-bound `cData` in addition to Siteverify success.
+Turnstile tokens are [single use and expire after five minutes](https://developers.cloudflare.com/turnstile/get-started/server-side-validation/);
+the tighter server nonce lifetime still applies. Reads, workspace loads and
+retries require their own proofs, not a reusable CAPTCHA session credential.
+
+Enrollment exposes only `verified` to the client; detailed reason codes remain
+in scalar server diagnostics. A monitor-allowed failure is not verified enrollment.
+
+Monitor continues through existing protections even if fallback is unavailable.
+An eligible enforce client may perform only a bounded fallback attempt after an explicit
+pre-write integrity rejection; a transport timeout is an unknown write outcome,
+not permission to replay a PATCH. Do not run a background verification loop or
+retry provider calls indefinitely. An invisible widget can still fail or need
+user recovery. [Cloudflare requires a WebView for native integration](https://developers.cloudflare.com/turnstile/get-started/mobile-implementation/).
+
+### Apple operator setup
+
+1. Confirm the Apple App ID prefix/team and each shipped bundle identifier;
+   configure the matching server app identity separately for development and
+   distribution. Accepted iOS bundle-version lists are mandatory for signed
+   launch extensions; macOS always requires its accepted bundle-version list. Configure the macOS bundle and
+   signing identifiers explicitly; do not assume the iOS profile validates macOS.
+   Use Apple's App Attest root certificate as the trust anchor.
+   An App ID prefix must be verified rather than assumed equal to the team ID.
+2. Enable App Attest for the App ID/capability and regenerate the appropriate
+   provisioning profiles. Include
+   `com.apple.developer.devicecheck.appattest-environment` with the intended
+   development/production environment in the signed app entitlement. Inspect
+   the built distribution artifact and profile; a source entitlement alone is
+   not delivery evidence. Capture the expected iOS ACL only from official or
+   controlled signed-device evidence and review it before configuring
+   `NATIVE_INTEGRITY_APPLE_IOS_ACL_BLOBS`. Unknown ACLs remain failure verdicts;
+   use an eligible fresh-challenge fallback or monitor outcome rather than
+   weakening validation.
+3. Exercise `DCAppAttestService.isSupported` on real iOS 14+ devices and the
+   shipped macOS target. The macOS channel requires macOS 27+ and its supported
+   SDK/compiler guard (Swift 6.4); older targets require the server-owned
+   unsupported-platform fallback policy or continue without proof in monitor. OS/API availability
+   and runtime support are both required; do not classify simulators or
+   unsupported devices as verified. Keep their fallback/monitor behavior explicit.
+4. The client keeps the opaque key identifier and enrollment marker in secure
+   storage scoped by a hash of Web origin and actor, with 30-day key rotation.
+   Sign-out retains this actor-scoped state; another actor cannot adopt it.
+   Successful enrollment must be server-confirmed before marking it locally.
+   Never persist a private key or attestation token in ordinary preferences.
+   Test re-enrollment after key loss, reinstall and account deletion/switching;
+   the server must not reassign another actor's enrolled key. Keep development
+   and production enrollments separate.
+
+Follow [Apple's integrity setup](https://developer.apple.com/documentation/devicecheck/establishing-your-app-s-integrity)
+and [server validation guide](https://developer.apple.com/documentation/devicecheck/validating-apps-that-connect-to-your-server).
+
+### Android operator setup
+
+1. Enable Play Integrity API in the intended Google Cloud project and link that
+   project to the app in Play Console > Protected with Play > Play Integrity API.
+   Use the linked project's number for STANDARD token preparation.
+2. Create a dedicated server service account in that project. Grant only the
+   decode capability required for this app/project and use the `playintegrity`
+   OAuth scope; do not grant project Owner/Editor or release publishing access
+   to solve a decode error. Verify the service identity can decode for the exact
+   package while unrelated app/project access fails. Store credentials in server-only
+   `NATIVE_INTEGRITY_GOOGLE_SERVICE_ACCOUNT_JSON`, never a mobile build define or
+   repository file.
+3. Configure the expected package name and Play App Signing certificate digest
+   from the distributed artifact. Review required app-recognition, licensing and
+   device-integrity verdicts against the release policy. Test a Play-installed
+   release, debug/sideloaded build, unsupported device, expiry, changed request
+   hash, reused token and provider outage. Do not silently relax verdicts to
+   turn a failed negative control green.
+4. Check actual API quota/usage before monitor traffic. Bound provider requests
+   and retries, measure decoder error/latency, and obtain any quota increase
+   before enforcement depends on it.
+
+See [Play Integrity setup](https://developer.android.com/google/play/integrity/setup)
+and [STANDARD requests and server decoding](https://developer.android.com/google/play/integrity/standard).
+
+### Turnstile and state operator setup
+
+Unsupported Apple targets and Linux/Windows/browser clients may use the bounded
+Turnstile path only under the explicit server-owned fallback policy above. A
+failed native proof or unsupported client claim does not itself grant eligibility. Desktop WebView operation requires the
+platform runtime: Linux WebKitGTK 4.1/libsoup3 and Windows WebView2. Verify those
+prerequisites on the shipped desktop target; their presence on a development
+host is not device acceptance.
+
+Configure the approved Turnstile site key and exact allowed Web hostname for the
+bridge, plus the server-only secret. Configure only the accepted exact parent
+origins in `NATIVE_INTEGRITY_TURNSTILE_PARENT_ORIGINS`; the bridge CSP and the
+narrow Next framing exception must agree. Verify action `native_integrity`, expected
+hostname and nonce-derived `cData` with a real hosted widget. Do not copy a secret
+into Flutter, expose it in page source or use a broad domain/navigation allowlist.
+
+Use `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` from the server
+secret store for atomic nonce issuance/consumption and Apple key/counter updates.
+Verify concurrent replay admits at most one request and counter comparisons
+cannot race across workers. Stored verification records require private access
+controls and deletion handling. Never restore an old counter/nonce snapshot
+into enforcement without reconciling replay state.
+
+Each protected API call needs its own challenge; enrollment and a permitted
+fresh-challenge fallback consume additional issuance capacity. The service caps
+are 10 challenges per actor/minute and 120/hour. Two preference reads, repeated
+saves, multiple devices, enrollment and fallback can consume this allowance.
+Observe monitor-mode traffic and failure coverage before enforcement; tune only
+through an owned reviewed change, preserving bounded operations rather than
+silently broadening caps or adding retry loops.
+
+Apple registration is capped at eight live keys per actor and uses a 90-day
+non-sliding retention period; counter updates preserve the expiry. Mobile key
+rotation is 30 days. Multiple devices and retained rotation history can reach
+the eight-key cap. Accept a deliberate old-key revocation/re-enrollment policy,
+verify lost-device and account-deletion handling, and do not evict keys blindly
+while in-flight assertions may depend on them. The global key-owner fence
+prevents registration of one key to another actor. The bounded actor revocation
+helper removes at most eight Apple key records, their matching owner records,
+and the Play capability marker (at most nine actor records). Its caller must
+first authorize actor deletion. Exporting the helper is not evidence that the
+account-deletion flow invokes it end to end; retain that enforcement gate.
+Outstanding challenges expire within 120 seconds and remain actor/request bound.
+
+Provider dispatch is bounded by the global UTC daily
+`NATIVE_INTEGRITY_PROVIDER_BUDGET_DAY` (default 1,000, minimum two, maximum
+100,000) and per-actor `NATIVE_INTEGRITY_PROVIDER_BUDGET_ACTOR_DAY` (default 100,
+capped at one tenth of the global budget). A cold OAuth exchange plus Play
+decode reserves two units; cached OAuth plus decode reserves one, as does
+Siteverify. Each actual dispatch reserves atomically before network work; failed
+or unknown outcomes retain reservations. A durable daily warning logs once at
+80% before exhaustion. Verify operation-count, per-actor isolation and restart
+behavior in the real store. Provider calls have no automatic retries.
+`NATIVE_INTEGRITY_PROVIDER_ENABLED=false` stops new provider dispatch; the
+Redis `native-integrity:v1:provider-stop` value `1` is the durable stop fence.
+Clearing that fence does not reset consumed daily budgets.
+
+Nonce consumption and counter advancement remain atomic; no consumed challenge
+is restored after an invalid proof. Play OAuth, decode and response reading
+share a maximum five-second deadline; Siteverify fetch/body reading share its
+bounded deadline. Cancellation tests cover compliant providers/streams, not
+arbitrary injected promises that ignore abort/cancel.
+
+The Turnstile bridge retains the shared proxy IP/rate checks. Operator hosting
+acceptance must cover exact challenge/enroll POSTs, bridge GET and protected
+settings paths. The exact issuance POST guard reuses the already MFA-verified
+actor in `proxy:web:native-integrity`; its diagnostic policy is
+`native-integrity-challenge`. Anonymous limits, persistent IP blocks and strict
+staff rejection remain active. Attestation never bypasses an upstream Vercel
+challenge that rejects a request before application execution.
+
+### Third-party mobile supplier provenance
+
+The mobile dependency is third-party `app_attest` 0.2.1, not an official Apple
+or Google SDK wrapper publication. Its official pub.dev archive SHA-256 is
+`4ef28bc63690337abbde35d5eb075030d645a591c932e8db0490ce54f2ce5755`.
+The reviewed archive matches the lockfile/cache digest; all 19 published files
+matched immutable repository commit
+`a2968d2d49d6ad6a888b679720835f6a0ea6aa16` (published 2026-08-03).
+The repository has no release tag for the reviewed publication, its commit is
+unsigned and the pub uploader is unverified; no signed publisher attestation
+was found. These are provenance limits, not proof that a provider rejected it.
+
+The reviewed Android StandardPlayIntegrityClient.kt uses
+`IntegrityManagerFactory.createStandard`, prepares with the Cloud project
+number, and passes the trimmed incoming request hash to
+`StandardIntegrityTokenRequest.setRequestHash` before `provider.request`.
+The canonical 43-character base64url request hash is passed unchanged and is
+not rehashed by this wrapper. Its Gradle dependency pins
+`com.google.android.play:integrity:1.4.0`.
+
+Sources: [pub.dev publication](https://pub.dev/packages/app_attest/versions/0.2.1),
+[immutable source commit](https://github.com/m0t1p4n/app_attest/commit/a2968d2d49d6ad6a888b679720835f6a0ea6aa16),
+[Android STANDARD adapter](https://github.com/m0t1p4n/app_attest/blob/a2968d2d49d6ad6a888b679720835f6a0ea6aa16/android/src/main/kotlin/com/motsipan/StandardPlayIntegrityClient.kt).
+
+### Acceptance and rollback
+
+1. Ship and verify phase 1 Web routing first. Keep integrity `off` while exact
+   commit builds, real-provider configuration and signed device artifacts are
+   checked. Existing Calendar hosting exceptions remain required for old clients.
+   The operator must also confirm native access to challenge/enroll POSTs and
+   the hosted bridge GET; accepting only the protected settings paths is
+   insufficient. Keep hosting exceptions narrow by exact path/method and retain
+   authentication/quota checks on issuance and enrollment.
+2. Enable `monitor` only through the release operator. Measure supported-client
+   coverage, mechanism/verdict counts, fallback frequency, provider/store errors,
+   latency, nonce replay/expiry, counter conflicts and request volume. Keep
+   metrics scalar/aggregated; never log actor, workspace, IP, path, request hash,
+   key ID, token, proof or credential values in integrity diagnostics.
+3. Accept real iOS/Android/macOS or intentional unsupported-platform fallback,
+   valid/invalid proofs, wrong actor/request, replay, expiry, concurrent requests,
+   outage/cancellation and existing auth/MFA/quota/permission failures. Decide
+   the old-client and sideload policy before the operator considers `enforce`.
+4. Enable `enforce` only for the accepted scope with a rollout owner and rollback
+   receipt. Set `NATIVE_INTEGRITY_MODE=off` to stop requiring proofs and stop
+   integrity datastore/provider work; preserve existing API protection. Verify
+   rollback on the deployed configuration, not merely a local flag fixture.
+
+Unit tests with synthetic certificates/provider responses establish the covered
+verification logic only. Real provider, hosted bridge, entitlement/provisioning,
+Play Console and signed-device acceptance require operator configuration and
+have not been established by those fixtures. Attestation or Turnstile in Web
+cannot bypass a Vercel challenge that stops the request before code executes;
+the hosting operator checklist above still applies.
+
+
+## Regression evidence
+
+Native integrity verification and transport regressions:
+
+- Shared request/actor binding, nonce replay/expiry and mode outcomes:
+  [`native-integrity.test.ts`](https://github.com/tutur3u/platform/blob/main/packages/internal-api/src/native-integrity.test.ts).
+- Apple certificate/signature/app identity and Android decoded verdict controls:
+  [`native-integrity-apple.test.ts`](https://github.com/tutur3u/platform/blob/main/packages/internal-api/src/native-integrity-apple.test.ts)
+  and [`native-integrity-play.test.ts`](https://github.com/tutur3u/platform/blob/main/packages/internal-api/src/native-integrity-play.test.ts).
+- Web mode gating, scalar diagnostics, pre-write failure and authenticated
+  challenge/enrollment adapters:
+  [`guard.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/native-integrity/guard.test.ts)
+  and [`endpoints.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/native-integrity/endpoints.test.ts).
+- Apple platform profiles, origin/frame policy and hosted widget response:
+  [`apple-verifiers.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/native-integrity/apple-verifiers.test.ts),
+  [`frame-policy.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/native-integrity/frame-policy.test.ts)
+  and [`route.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/native-integrity/turnstile/route.test.ts).
+- Redis adapter contracts, bounded key registration, counters and quotas (in-memory unit fixture; hosted Redis Lua execution remains an integration check):
+  [`store.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/native-integrity/store.test.ts).
+- Flutter mode discovery, proof/fallback lifecycle and protected transport:
+  [`native_integrity_client_test.dart`](https://github.com/tutur3u/platform/blob/main/apps/mobile/test/data/sources/native_integrity/native_integrity_client_test.dart)
+  and [`native_integrity_transport_test.dart`](https://github.com/tutur3u/platform/blob/main/apps/mobile/test/data/sources/native_integrity/native_integrity_transport_test.dart).
+- Turnstile Siteverify response context:
+  [`server.test.ts`](https://github.com/tutur3u/platform/blob/main/packages/turnstile/src/server.test.ts).
+
+Phase 1 preference routing and authorization regressions:
+
+- Shared validation, persistence, defaults, membership and edit permission:
+  [`calendar-settings-server.test.ts`](https://github.com/tutur3u/platform/blob/main/packages/internal-api/src/calendar-settings-server.test.ts).
+- Web auth/MFA and response contract:
+  [`calendar-settings-handler.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/calendar-settings-handler.test.ts).
+- Web personal PATCH adaptive actor quota and diagnostic parity:
+  [`calendar-personal-mutation-quota.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/calendar-personal-mutation-quota.test.ts).
+- Web guard route boundaries, dedicated quotas and diagnostic parity:
+  [`calendar-preference-guard.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/calendar-preference-guard.test.ts),
+  plus `api-proxy-calendar-preference-reads.test.ts` and
+  `api-proxy-calendar-preference-mutations.test.ts` in the same directory.
+- Web local ownership rather than Calendar forwarding:
+  [`satellite-api-rewrites.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/satellite-api-rewrites.test.ts).
+- Mobile direct Web routing and environment overrides:
+  [`api_origins_test.dart`](https://github.com/tutur3u/platform/blob/main/apps/mobile/test/core/config/api_origins_test.dart).
+- Retained old-client gateway and private-credential WAF coverage:
+  `apps/infrastructure/src/lib/mobile-calendar/gateway.test.ts` and
+  `firewall-policy.test.ts`.
+
+These tests establish source behavior at their tested boundaries. Exact-commit
+CI builds, deployed hosting policy and real native read/save acceptance remain
+separate release evidence.
+
+## Retained Web and Tasks Google sync helpers
+
+The `apps/web` and `apps/tasks` copies of
+`src/lib/calendar/incremental-active-sync.ts` log sync-token presence and page
+counts, never the stored sync token or the raw Google page response containing
+`nextSyncToken`. This scope is separate from the native gateway and Calendar's
+current provider-sync implementation.
+
+For a Google error with numeric `code: 410` during incremental fetching, these
+helpers increment `retryCount`, disable token use and attempt to clear the token
+under the same workspace/connection/calendar key. Clear failures are logged and
+swallowed. Despite the retry counter, a first-page 410 exits the pagination loop
+without a date-range request because no `pageToken` exists. After a successful
+clear, the next invocation fetches the configured date range without a sync token
+and stores a returned replacement token, including for an empty event page.
+This is a bounded date-range fetch, not a complete calendar-history rebuild.
+
+A later-page 410 retains the existing page cursor and accumulated events while
+switching to date-range parameters; it does not restart pagination. A 410 already
+in date-range mode, or another Google error, propagates without token recovery.
+The sibling `incremental-active-sync.test.ts` suites exercise the real helpers
+with mocked Google and storage boundaries: token-free logs, pagination/storage,
+first-page 410 clearing and next-invocation fetching, and non-410 propagation.
+They do not prove live Google acceptance, clear-failure recovery, later-page
+recovery correctness, or database event-write behavior.
+
+## Native port and offline migration checks
+
+The native Calendar build requires realtime logging substitution in the client
+graph and breadcrumb, workspace-action and telemetry substitutions in SSR. A moved supplier or import must update the owning resolver; a missing
+substitution fails the build before an original server action can ship.
+
+Calendar uses its own `calendar` offline cache namespace. Activation on exactly
+`https://calendar.tuturuuu.com` retires the previous `tuturuuu-offline-precache-*`
+and `tuturuuu-offline-runtime-v1` caches. Repeated activation is idempotent.
+Apex and staging apex origins retain Web's legacy caches, including when the
+Calendar worker has a `/calendar` scope. Source tests and the emitted classic
+worker acceptance cover this migration boundary.

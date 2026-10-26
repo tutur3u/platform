@@ -11,6 +11,12 @@ This inventory lists concrete Next page and handler files, including generated w
 
 | URL pattern | Page or HTTP methods | Source |
 | --- | --- | --- |
+| `/api/v1/workspaces/[wsId]/user-groups/[groupId]/posts` | GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/user-groups/%5BgroupId%5D/posts/route.ts) |
+| `/api/v1/workspaces/[wsId]/user-groups/[groupId]` | DELETE, GET, HEAD, PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/user-groups/%5BgroupId%5D/route.ts) |
+| `/api/v1/workspaces/[wsId]/user-groups/[groupId]/storage` | DELETE, GET, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/user-groups/%5BgroupId%5D/storage/route.ts) |
+| `/api/v1/workspaces/[wsId]/user-groups/activity-logs` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/user-groups/activity-logs/route.ts) |
+| `/api/v1/workspaces/[wsId]/user-groups/count` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/user-groups/count/route.ts) |
+| `/api/v1/workspaces/[wsId]/user-groups` | GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/user-groups/route.ts) |
 | `/api/v1/workspaces/[wsId]/user-groups/sessions/[sessionId]/reconcile` | GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/user-groups/sessions/%5BsessionId%5D/reconcile/route.ts) |
 | `/api/v1/workspaces/[wsId]/user-groups/sessions/[sessionId]` | PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/user-groups/sessions/%5BsessionId%5D/route.ts) |
 | `/api/v1/workspaces/[wsId]/user-groups/sessions/group-summaries` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/user-groups/sessions/group-summaries/route.ts) |
@@ -93,6 +99,7 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/workspaces/[wsId]/users` | GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/workspaces/%5BwsId%5D/users/route.ts) |
 | `/api/workspaces/invitations` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/workspaces/invitations/route.ts) |
 | `/api/workspaces` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/workspaces/route.ts) |
+| `/native-integrity/turnstile` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/native-integrity/turnstile/route.ts) |
 | `/serwist/[path]` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/serwist/%5Bpath%5D/route.ts) |
 
 [All apps and services](/reference/repository/catalog). [Versions](/reference/repository/versions).

@@ -1,0 +1,492 @@
+---
+title: 'Mobile design system'
+description: 'Spacing tokens, page primitives, components, sheets and dialogs, the full-bleed allowlist, breakpoints, and the adaptive shell for apps/mobile.'
+---
+
+The Flutter app uses one layout foundation so every screen shares the same
+gutters, section rhythm, dock clearance, and wide-screen behavior. Import it
+from `package:mobile/core/layout/layout.dart`.
+
+## Rule
+
+Build page bodies with the page primitives. Use the full-bleed variant only for
+the screen types in the [allowlist](#full-bleed-allowlist). Do not hand-write
+page gutters (`EdgeInsets.fromLTRB(16, …)`), wrap a scrollable in
+`ResponsiveWrapper`, or add `N + MediaQuery.paddingOf(context).bottom` for the
+scroll end in new or substantially edited screens.
+
+## Breakpoints
+
+`DeviceClass` follows the Material 3 window-size classes
+(`core/responsive/breakpoints.dart`):
+
+| Class | Width | Typical devices |
+| --- | --- | --- |
+| compact | < 600dp | phones (portrait and most landscape) |
+| medium | 600–839dp | portrait tablets, foldables |
+| expanded | >= 840dp | landscape tablets, laptops, desktops |
+
+Page primitives resolve the class from the width the page actually receives,
+so a page beside the shell rail uses the gutters for its own available width.
+
+## Tokens
+
+`layout_tokens.dart` defines the only spacing values a page should need.
+
+| Token | Value |
+| --- | --- |
+| `AppSpacing` | 2, 4, 8, 12, 16, 20, 24, 32, 40 (`xxs` … `huge`) |
+| `AppLayout.gutter` | 16 compact, 24 medium, 32 expanded |
+| `AppLayout.pageTop` | 8 below the shell header |
+| `AppLayout.scrollEndGap` / `boxEndGap` | 24 / 16 after dock clearance |
+| `AppLayout.sectionGap` | 24 between grouped sections |
+| `AppLayout.sectionCaptionGap` / `sectionCaptionInset` | 8 / 16 |
+| `AppLayout.itemGap` | 12 between stacked cards |
+| `AppLayout.rowMinHeight` / `rowCompactMinHeight` | 56 / 48 |
+| `AppLayout.rowHorizontalPadding`, `rowLeadingSize`, `rowLeadingGap` | 16, 32, 12 |
+| `AppLayout.rowDividerInset` | 60 (aligns dividers with row text) |
+| `AppRadius` | 8, 12, 16, card 22, sheet 24, dock 26, pill |
+
+Max content width (gutters included) per `AppPageKind`:
+
+| Kind | Use | medium | expanded |
+| --- | --- | --- | --- |
+| `root` | root destinations and dashboards | 1120 | 1440 |
+| `detail` (default) | mini-app lists and detail screens | 600 | 720 |
+| `form` | auth, create and edit forms | 480 | 480 |
+| `reading` | documents, notes, long text | 640 | 680 |
+
+Compact screens never constrain width. The max width is the content box, so
+the usable field width is the max width minus both gutters: a `form` at 480dp
+gives 432dp fields on medium bodies and 416dp on expanded bodies. Auth screens
+(`AuthScaffold`) intentionally use that 416–432dp field width.
+`ResponsivePadding` is a compatibility layer that derives from these tokens;
+its names and values are unchanged.
+
+## Page primitives
+
+| Widget | Use |
+| --- | --- |
+| `AppPageListView(children:)` / `.builder` | Standard scrolling page. |
+| `AppPageScrollView(slivers:)` | Sliver page; all slivers share one set of insets. |
+| `SliverAppPage(sliver:)` | One padded sliver inside a hand-built `CustomScrollView` (pinned headers, `SliverFillRemaining`). Use `includeTop` / `includeBottom` for middle slivers. |
+| `AppPageBody(child:)` | Non-scrolling body, such as an editor or a pane layout. |
+| `AppPageBody.fullBleed(child:)` | Allowlisted canvases only. |
+| `AppPageInsets.resolve` / `.of` | Pure resolver behind all of the above. |
+
+Every primitive:
+
+- applies the device-class gutter plus horizontal safe areas;
+- centers content at the page kind's max width by **padding**, so the
+  scrollable, scrollbar, and drag area stay full width;
+- adds `AppLayout.pageTop` plus an optional `topInset`. Root pages pass
+  `floatingShellHeaderInset(context)`;
+- reserves the shell's dock clearance (`MediaQuery.padding.bottom`, published
+  by `FloatingShellDock`) plus the end gap. Pass
+  `consumeBottomClearance: false` when an inner scrollable should run beneath
+  the dock and read the clearance itself.
+
+Every primitive also removes the insets it consumes (horizontal safe areas,
+and the bottom clearance when consumed) from its children's `MediaQuery`. A
+legacy `SafeArea` or `MediaQuery.paddingOf(context).bottom` inside a migrated
+page therefore adds nothing instead of counting the dock clearance twice.
+`SliverAppPage(includeBottom: false)` leaves the bottom clearance for the
+sliver that consumes it.
+
+## Grouped sections
+
+`AppGroupedSection(caption:, footer:, children:)` renders a muted caption, a
+heavily rounded translucent `AppGroupedCard`, inset hairline dividers, and an
+optional muted footer. Use `AppGroupedSection.spaced` in a list to add
+`AppLayout.sectionGap` after the section. The card only groups and divides
+rows. Row layout belongs to the owning feature (for example `SettingsTile`).
+Cards use theme `surface` / `outlineVariant` and become solid in high-contrast
+mode.
+
+### Rows, tiles and states
+
+`core/layout/grouped_rows.dart` and `core/layout/state_message.dart` hold the
+shared row vocabulary for grouped cards. Feature screens compose these instead
+of drawing their own tinted tiles, list tiles or empty-state columns.
+
+| Widget | Use |
+| --- | --- |
+| `AppTone` | Semantic tint: `neutral`, `primary`, `info`, `success`, `warning`, `destructive`. `foreground` and `fill` resolve from `AppColorTokens`, so every appearance theme, accent and brightness applies. Never pick a hue in feature code. |
+| `AppIconTile(icon:, tone:, size:, badge:)` | Rounded leading tile. `badge: true` adds the primary unread dot. Default size is `AppLayout.rowLeadingSize` (32). |
+| `AppGroupedRow(title:, subtitle:, leading:, trailing:, onTap:, showChevron:)` | Row inside an `AppGroupedCard`: at least `AppLayout.rowMinHeight` tall, row padding from the tokens, and the whole row is the tap target and a semantic button. |
+| `AppSkeletonRows(count:, leadingSize:)` | First-load placeholder rows inside a card. Use it instead of a centred spinner. |
+| `AppStateMessage` / `.inline` | Empty, error and unavailable states. The default constructor centres a 56dp tile, title, message and optional outline action for a page or pane. `.inline` lays the same content out as a card row. Destructive messages are live regions. |
+
+When a row's leading tile is larger than 32dp, pass the matching
+`dividerInset` to the card (padding + tile + gap) so dividers align with the
+text column.
+
+## Icons
+
+Mobile icons match the web's Lucide icons in glyph and name. `LucideIcons`
+(base) and `LucideLabIcons` (lab) are generated from the exact `lucide-react`
+and `@lucide/lab` versions in `bun.lock`. Import them through
+`package:mobile/core/ui/ui.dart` or `core/ui/icons/app_icons.dart`.
+
+| Web | Mobile |
+| --- | --- |
+| `<ArrowRight />` (`arrow-right`) | `Icon(LucideIcons.arrowRight)` |
+| `<Home />`, an alias of `house` | `LucideIcons.home`, the same glyph as `LucideIcons.house` |
+| `@lucide/lab` `appleCore` | `Icon(LucideLabIcons.appleCore)` |
+
+- **Coverage.** Every icon at the pinned versions: 1,903 base icons with 264
+  web aliases, and 357 lab icons. Names are the web names in
+  lowerCamelCase. Dart reserved words get an `Icon` suffix (`switchIcon`).
+- **Glyphs.** Each glyph is the 2px round-stroked outline the web renders at
+  24px. `scripts/mobile-lucide/generate.mjs` strokes the pinned SVG nodes
+  with Skia (CanvasKit), the engine Flutter draws with, and unions any filled
+  shapes. Contours are re-oriented for the nonzero fill rule fonts use, so
+  holes stay open. The written font is parsed back, and every serialized
+  glyph is rasterised against the stroked original; any glyph whose visible
+  ink differs by more than 1% fails the run. The worst glyphs differ by
+  0.12% (base) and 0.08% (lab). A font is used because the app passes icons as
+  `IconData` (`Icon`, `IconButton`, shell actions). Stroke width is therefore
+  fixed at the web default of 2.
+- **Brand marks.** Lucide no longer ships brand icons. `AppIcons` maps the
+  few the app used to neutral glyphs.
+- **Licences.** Lucide and Lucide Lab are ISC licensed. Their notices ship as
+  `assets/fonts/lucide/LICENSE-*.txt` and appear on the app's licences page.
+  The fonts and Dart classes are marked as generated.
+
+### Regenerating
+
+Generation is deterministic: sorted names and fixed font timestamps. Run it on a
+remote validation lane, not on an agent laptop:
+
+```bash
+cd scripts/mobile-lucide
+npm ci
+node generate.mjs --repo ../..
+```
+
+The generator reads the versions and integrity hashes from `bun.lock`,
+downloads the tarballs, and refuses a tarball whose hash differs. It then
+rewrites the fonts, the generated Dart, the licence copies, the manifest and
+the parity fixture. `scripts/check-mobile-lucide-sync.js` runs in Mobile
+Analysis, in `bun check:changed` and as `bun check:mobile-lucide`. It fails
+when the web's `lucide-react` or `@lucide/lab` version changes without
+regeneration, or when a generated file differs from its manifest hash.
+
+`test/core/ui/lucide_icons_test.dart` checks the manifest counts. It also
+renders sample base and lab icons through the real `Icon` widget and compares
+them with the web SVG drawn by `flutter_svg`. Set `DESIGN_RENDER_DIR` to write
+the light and dark parity grids (`lucide-parity-light.png`,
+`lucide-parity-dark.png`).
+
+## Components and overlays
+
+`package:mobile/core/ui/ui.dart` is the app-owned design system that replaces
+`shadcn_flutter`. New and migrated code imports it. A CI ratchet blocks new
+shadcn imports. See the [migration plan](/build/development-tools/mobile-shadcn-migration).
+
+**Tokens.** `AppTokens.of(context)` (or `context.tokens`) exposes
+`colorScheme` (`AppColorTokens`), `typography` (`AppTypography`), radii and
+brightness. The appearance theme publishes `AppColorTokens` as a Material
+`ThemeExtension` derived from the same scheme as the selected appearance, so
+every theme, accent and light/dark mode applies without extra wiring. Role and
+type names match the legacy shadcn names. `AppElevation` and `AppMotion` hold
+shadows and durations. Spacing and radii stay in `AppSpacing` / `AppRadius`.
+
+**Components.** `AppButton` (`primary`, `secondary`, `outline`, `ghost`,
+`destructive`; densities, sizes, `loading`), `AppIconButton` (required
+`tooltip`), `AppTextField`, `AppSearchField`, `AppCard`, `AppBadge`, `AppAlert`,
+`AppDivider`, `AppSwitch`, `AppCheckbox`, `AppSelect`, `AppOptionTile`,
+`AppTooltip`, `showAppToast`, `AppGap`, `AppScaffold` and `AppTopBar`. Icons are
+the generated web-parity `LucideIcons` and `LucideLabIcons` (see
+[Icons](#icons)), with `AppIcons` for semantic aliases and brand fallbacks.
+
+**Sheets and dialogs.** Open every overlay with `showAppSheet` (compact:
+bottom sheet; wider: centered dialog) or `showAppDialog`. Lay out the body with
+`AppSheetScaffold` or `AppDialog`.
+
+- **Back closes the topmost overlay first.** `AppModalBinding` registers a
+  *modal* entry in `ShellChromeActionsCubit`. While it exists,
+  `backForLocation` returns the overlay's close action, so system Back
+  (`ShellPage.didPopRoute`), the floating-dock Back and the Android back
+  dispatcher close the sheet or dialog and never pop the page beneath. A
+  dialog above a sheet owns Back until it closes. `showAdaptiveSheet` uses the
+  same binding.
+- **The shell chrome stays live.** Sheets open on the nearest (shell)
+  navigator, below the shell's top navbar and floating dock. While an overlay
+  is open, modal registrations replace the page's chrome actions for every
+  location.
+- **Dynamic search.** Pass `search: AppSheetSearch(...)` to
+  `AppSheetScaffold`. Inside the shell, it registers a dock search action;
+  tapping it turns the top navbar into the shell search field bound to the
+  sheet's controller. The action is removed with the sheet. Outside the shell
+  (no `ShellChromeActionsCubit`), an inline `AppSearchField` is rendered.
+- **Sizes.** `AppSheetSize.fit`, `medium` (60% with a drag detent to 94%),
+  `large` (94%) and `full`. The drag handle and drag-to-dismiss are on unless
+  `enableDrag: false`.
+- **Insets.** The body ends above the larger of the dock clearance and the
+  keyboard. When the keyboard or large text leaves less than 280dp (scaled
+  with text), the header, search and actions scroll with the body.
+- **Accessibility.** Overlays scope and name their route for screen readers,
+  keep focus inside the modal route, use live regions for alerts and toasts,
+  and never clamp text scaling.
+- Explicit full-screen forms and system-owned flows still open above the shell
+  with `useRootNavigator: true` and `AppScaffold(headers: [AppTopBar(...)])`.
+
+The Personal and Workspace timezone pickers
+(`features/settings/view/timezone_picker_sheet.dart`) are the reference
+implementation.
+
+## Full-bleed allowlist
+
+Only these screen types may use `AppPageBody.fullBleed` or skip the gutters:
+
+- calendar timelines, month, and year grids;
+- task board kanban, board timeline, and planner/gantt canvases;
+- chat and Assistant conversation threads, composers, and Assistant Live;
+- Meet call stages and other live video surfaces;
+- media, document-page, and map viewers, plus full-canvas editors.
+
+Full-bleed still honors horizontal safe areas. Unless the canvas reads the
+dock clearance itself (`consumeBottomClearance: false`), it also stops above
+the dock. Headers, toolbars, and empty/error states inside a full-bleed screen
+should still use the gutter token.
+
+## Adaptive shell
+
+`shellNavigationModeFor(size)` in
+`features/shell/view/shell_navigation_rail.dart` picks the navigation mode:
+
+- **Dock**: phones, including landscape phones, and portrait tablets. The
+  floating bottom dock owns destinations and in-app Back.
+- **Rail**: width >= 840dp and shortest side >= 600dp (landscape tablets,
+  laptops, desktops). `ShellNavigationRail` shows the same destinations on
+  the leading edge, including the mini-app Back item. The dock keeps only
+  the Assistant/Notes composer and page actions; an idle dock paints no
+  surface. Scroll content reserves dock clearance only while the dock shows a
+  composer slot or dock actions for the current route. Rail destinations show
+  their existing localized label as a hover-only tooltip on pointer devices.
+
+Both modes keep a single top navbar title with no Back button, system Back
+and deep links (handled by `ShellPage` independently of the layout), and
+scroll clearance.
+
+`AdaptiveShellFrame` builds the same tree in both modes: a `Stack` whose
+first, keyed child holds the body. Rotation (for example an iPad going from
+820x1180 to 1180x820), a window resize across either threshold, or an
+immersive/fullscreen toggle only adds or removes the rail, so the dock and
+every root tab keep their state. Routed pages survive through GoRouter's
+navigator key, but offstage root tabs do not, so regressions must assert on a
+visited root tab. The rail paints after the body because routed pages can
+contain `BlockSemantics`, which would otherwise drop the rail from the
+accessibility tree.
+
+## List/detail layouts
+
+`AppMasterDetail` (`core/layout/master_detail.dart`) is the shared list/detail
+primitive. It decides from the width its body receives (after the shell rail),
+never the window:
+
+| Body width | Layout |
+| --- | --- |
+| < 720dp | List only. The feature keeps its pushed detail route. |
+| >= 720dp | List pane beside the detail pane, split by a 1dp divider. |
+
+The list pane is about a third of the body, clamped to 320–400dp. Portrait
+tablets (about 768–834dp) therefore split as well. Each pane resolves its own
+gutters and page-kind width, so a 360dp list uses compact gutters and the
+detail pane centres `reading` content at its own width.
+
+Contract for features:
+
+- **The feature owns the selection.** Keep it in the screen's state, not in
+  the layout, so it survives rotation and resizing. Pass the selected detail
+  as `detail` and its identity as `detailKey`. Without a selection, the pane
+  shows `emptyDetail`; use `AppMasterDetailEmpty` with localized strings.
+- **Crossing the split width moves the selection.** `onSplitChanged` fires after
+  the first layout and on every change. On split → compact, push the usual
+  detail route for the open selection. A covered route is not laid out, so
+  wrap the pushed route's content in `AppMasterDetailRouteBody`; its `onSplit`
+  fires when that route becomes wide enough, and the feature then removes the
+  route (`Navigator.removeRoute`) and shows the selection in the pane.
+- **Deep links** open the selection through the same entry point as a tap, so
+  they land in the pane on split layouts and in the pushed route on phones.
+- **Back.** On phones the detail is a route, so Back pops it. On split layouts
+  the first Back clears the selection: register the list owner's
+  `ShellChromeActions.onBack` while a pane selection is open, and add a
+  `PopScope` for system Back. The next Back leaves the app as usual.
+- **Chrome.** The shell navbar and dock keep the list's title, mini-nav and
+  actions. The detail pane carries the item's title and item actions in a
+  pane header (`AppMasterDetail.inDetailPaneOf(context)`), plus a close
+  button. This is not a second app bar: it belongs to the pane, and phones
+  never show it. Route the pane's child routes (reply, attachment preview)
+  through the owner's push helper, so the list chrome yields while they are
+  open.
+- **Keyboard and focus.** Each pane is a `FocusTraversalGroup`. A new
+  `detailKey` moves focus into the detail pane, and Escape there calls
+  `onCloseDetail`.
+
+Mail is the first adopter; see `mail_master_detail_test.dart` and
+`core/layout/master_detail_test.dart`.
+
+## Layout audit (October 2026)
+
+Before this foundation:
+
+- 179 feature files hard-coded 16/20/24dp page insets. 103 of them set
+  horizontal gutters without `ResponsivePadding`, so tablets and desktops got
+  phone gutters. Phones mixed 16 and 20dp (for example the Documents list
+  versus the document editor).
+- Scroll ends used at least eight different constants (16, 20, 24, 28, 32,
+  40, 96, 108) on top of `MediaQuery.paddingOf(context).bottom`.
+- 38 files wrapped scrollables in `ResponsiveWrapper`, which narrowed the
+  scroll and drag area on wide screens.
+- Device classes came from the window width, which is wrong beside a rail.
+- `ShellPage` documented a rail and sidebar, but it always rendered the
+  floating dock.
+- Root pages added `floatingShellHeaderInset` with ad-hoc +8/+10 offsets.
+
+## Page kinds by screen
+
+Feature screens use the primitives with these page kinds:
+
+| Kind | Screens |
+| --- | --- |
+| `root` | Home dashboard, Profile overview, Apps hub, Assistant transcript and start state, Drive grid, Meet lobby, Chat surface (two panes), Notes (list and editor), CMS overview, Mobile versions, board timeline, calendar year grid |
+| `detail` | Notifications inbox and archive, Profile timeline, Drive list, task lists, boards, planning, portfolio, estimates, habits, time tracker tabs and requests; finance, inventory and storefront lists and overviews; education, CMS library and CRM; mail organization; Meet ended review; workspace select, accounts, security, reminders |
+| `form` | Auth screens (`AuthScaffold`), inventory editors (`InventoryFormScaffold`), mail composer and settings, product feedback, MFA request, required-update gate, Assistant memory and personality editors |
+| `reading` | Documents editor, mail reader |
+
+Full-bleed screens: calendar day/multi-day/month views, the task board kanban
+canvas, chat threads and composers, Assistant Live, the Meet call grid, and
+media/attachment viewers. Their headers, empty states and loading states still
+use the gutter. When a page passes the dock clearance through
+(`consumeBottomClearance: false`), a scrolling canvas pads its own scroll end.
+The calendar day, 3-day and week timelines pad their vertical scroll end with
+`MediaQuery.paddingOf(context).bottom`, so the last hour scrolls clear of the
+dock. A fixed, non-scrolling canvas such as the month grid must stop above the
+dock by reserving the same clearance below itself.
+
+Shell detail routes that are not mini-app nav items, such as a portfolio
+project, register `ShellTitleOverride` and a `ShellMiniNav` with a
+`deepLinkBackRoute`, so the dock or rail Back returns to their parent list.
+
+Documented exceptions:
+
+- Modal sheets and dialogs keep their own internal padding; they are not
+  page bodies.
+- Mail swipe rows stay edge to edge on phones and centre at the detail width
+  on wider windows. The mail reader keeps a larger named end gap so long
+  messages clear the Mail dock.
+- Standalone (non-shell) forms with their own footer reserve the system inset
+  in that footer instead of consuming dock clearance.
+- Settings, Home, Notifications and Profile migrate in their own lanes. The
+  full-screen task detail view keeps its own inset math until it is reworked.
+  The Mail and Assistant settings hubs move to the shared insets with their
+  settings stacks.
+- Onboarding is a full-screen flow above the shell with paged slides. Its
+  slides and footer keep their own horizontal padding and system insets.
+
+Layout widths should come from the constraints a widget receives
+(`LayoutBuilder`), not `MediaQuery.sizeOf(context)` or `context.isCompact`.
+Beside the rail, the window is wider than the body. Use
+`AppPageInsets.gutterOf(context, width: constraints.maxWidth)` for a gutter
+outside the page primitives, as the Meet and Assistant Live canvases do.
+Overlays such as `showAdaptiveDrawer` keep the window class, because they
+open above the shell rather than inside the body.
+
+## Regression coverage
+
+- `test/core/layout/layout_tokens_test.dart`: token derivation,
+  `ResponsivePadding` compatibility, and the inset resolver.
+- `test/core/layout/app_page_test.dart`: gutters per device class, max-width
+  centering, dock clearance, full-bleed opt-out, slivers, and grouped
+  sections. `app_page_media_query_test.dart` covers the consumed-inset
+  removal.
+- `test/features/documents/view/documents_layout_test.dart`: the migrated
+  Documents list and editor.
+- `test/features/shell/view/shell_navigation_rail_test.dart` and
+  `shell_rail_navigation_test.dart`: rail geometry, RTL, Back reachability,
+  system Back, deep links, landscape phones, and body-width gutters.
+  Set `DESIGN_RENDER_DIR` to write phone, tablet, and desktop PNG captures.
+- `shell_rail_layout_test.dart`: no remount across rotation, resize, or
+  immersive toggles, rail-mode clearance, RTL through `ShellPage`, and
+  hover-only tooltips.
+- `shell_viewport_checks.dart`: the dock/rail viewport matrix, including the
+  root page's first content one `pageTop` gap below the floating header.
+- `test/core/ui/app_components_test.dart`: token resolution from the
+  appearance extension, `AppGap` axes, every component in light and dark at 2x
+  text, and toast placement above the dock.
+- `test/core/ui/app_sheet_host_test.dart`: modal chrome registration, Back
+  from the dock or shell closing only the sheet, dialog-over-sheet ordering,
+  and the inline search fallback outside the shell.
+- `settings_timezone_picker_checks.dart` (in
+  `settings_compact_navigation_test.dart`): the timezone pilot inside the real
+  shell. It covers dock search, system and dock Back, the pinned current zone
+  and Automatic, and keyboard insets. `SETTINGS_RENDER_DIR` with
+  `SETTINGS_RENDER_PIXEL_RATIO=3` writes the 390x844@3x renders.
+- `test/core/layout/page_padding_matrix_test.dart`: representative detail and
+  form screens at phone, portrait/landscape tablet and desktop widths. It
+  checks that the page list uses the resolved insets, the scrollable stays
+  full width, and the content width equals the body or max width minus both
+  gutters. A rail-narrowed case checks that an expanded window whose body is
+  medium resolves medium insets.
+- `test/features/calendar/widgets/timeline_dock_clearance_test.dart` and
+  `month_view_dock_clearance_test.dart`: the timelines scroll their last hour
+  clear of the dock, and the month grid stops above it.
+- `test/features/drive/drive_page_test.dart`: the Drive list keeps the detail
+  width on a landscape tablet while the grid uses the root width.
+  `DESIGN_RENDER_DIR` writes PNG captures.
+
+### Custom selection and date controls
+
+AppSwitch and AppCheckbox draw their own token-based surfaces on every platform. They retain 48dp touch targets, keyboard activation, focus indicators, disabled states and screen-reader state. Use AppToggleRow or AppCheckboxRow for labeled settings. AppChip covers selectable filters and short actions. AppSlider previews through onChanged and commits through onChangeEnd.
+
+Use showAppDatePicker and showAppTimePicker for in-app date/time editing. Both use the modal host so Back dismisses the picker before its parent editor. Date bounds, leap days and 12/24-hour input are preserved; year selection supports the shell search action. Existing framework localizations supply English and Vietnamese picker labels. System-owned permission dialogs remain OS-owned.
+
+Regression coverage: test/core/ui/app_selection_controls_test.dart and test/core/ui/app_date_time_picker_test.dart.
+
+Selection rows respond to taps on their labels as well as the control. Toast
+handles become closed when their overlay is disposed, canceling their dismissal
+timer. Text inputs retain the controller, selection, context menu and multiline
+geometry when used by a composer or form. Scoped settings editors forward
+account/workspace providers into nested sheets and retain their original
+cancellation fences; see the mobile skill reference for migration details.
+
+AppListTile provides token-based action and metadata rows. AppDisclosure owns
+expand/collapse semantics and keyboard activation without platform tile chrome.
+Use AppSheetSearch for searchable modal content and a location-scoped shell action
+for route search. Nested record browsers open their own sheet instead of adding
+competing inline search fields to a page.
+
+Custom button frames establish a semantics boundary, so a nested visibility or
+row action cannot merge with its parent launch action. The existing
+`apps_reorder_grid_accessibility_test.dart` checks that those nodes remain
+separate and independently actionable.
+
+Text-field labels stay above the input border and retain the editable's
+accessible name. Chip avatars use an 18dp swatch inside the shared 48dp touch
+target. `app_field_presentation_test.dart` verifies both presentation contracts.
+
+Short dialogs keep their actions outside the content scroll region. Validation
+errors and enlarged text must not push Save or Retry off the visible surface;
+see `app_dialog_layout_test.dart` and the unchanged Assistant rename retry tests.
+
+`AppChip.selected` is null for display/action chips and a bool for selectable
+choices. Disabled choices retain their selected and disabled accessibility states.
+
+Dialog and fit-sheet hosts consume keyboard insets once. Their content receives
+those consumed insets so an AppSheetScaffold cannot add the same clearance twice.
+Phone regression coverage in `app_phone_picker_test.dart` exercises picker results,
+system Back and tappable OK/Save actions at 390×844 with a 300dp keyboard.
+
+Chip activation callbacks are exclusive: onSelected requires a boolean selected;
+onPressed requires selected to be null. Single-choice groups set
+inMutuallyExclusiveGroup. Selected choices show a check on a tonal surface.
+AppTextFormField synchronizes controller edits with validation and restores the
+initial text on Form.reset; `app_form_field_lifecycle_test.dart` covers both.
+
+Scoped settings cancellation removes only the invalidated editor route. A pop
+animation can remain paused when an ancestor covers its nested navigator, so
+privacy and account fences cannot depend on that animation completing. The
+covered account/workspace ABA checks in `settings_assistant_shell_checks.dart`
+retain their no-write and covering-route assertions.

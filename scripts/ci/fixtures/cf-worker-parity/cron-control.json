@@ -1,0 +1,90 @@
+{
+  "source": "apps/cron-control/wrangler.jsonc@948f9fdf2f",
+  "identity": {
+    "name": "tuturuuu-cron-control",
+    "accountId": "e8912e2867beecc673d171907bf09649",
+    "compatibilityDate": "2026-09-28",
+    "compatibilityFlags": [],
+    "workersDev": true,
+    "previewUrls": true,
+    "observability": {
+      "enabled": true,
+      "headSamplingRate": 0.05,
+      "logs": {
+        "enabled": true,
+        "headSamplingRate": 0.05,
+        "invocationLogs": true
+      }
+    },
+    "crons": [
+      "* * * * *",
+      "*/10 * * * *",
+      "*/15 * * * *",
+      "*/30 * * * *",
+      "*/5 * * * *",
+      "0 */12 * * *",
+      "0 */6 * * *",
+      "0 6 * * *",
+      "17 3 * * *"
+    ],
+    "routes": [],
+    "vars": {
+      "CRON_CONTROL_ENABLED_JOBS": "",
+      "CRON_CONTROL_WORKER_PROCESSORS": "",
+      "INFRASTRUCTURE_ORIGIN": "https://infrastructure.tuturuuu.com",
+      "INVENTORY_ORIGIN": "https://inventory.tuturuuu.com",
+      "PAY_ORIGIN": "https://pay.tuturuuu.com",
+      "TASKS_ORIGIN": "https://tasks.tuturuuu.com",
+      "WEB_ORIGIN": "https://tuturuuu.com"
+    },
+    "secrets": [
+      "CRON_CONTROL_DELIVERY_TOKEN",
+      "SUPABASE_SECRET_KEY",
+      "SUPABASE_URL"
+    ],
+    "durableObjects": {
+      "CRON_LEDGER": {
+        "className": "CronLedger"
+      }
+    },
+    "durableObjectClasses": {
+      "CronLedger": "sqlite"
+    },
+    "unmapped": {}
+  },
+  "previousIdentity": {
+    "name": "tuturuuu-cron-control",
+    "accountId": "e8912e2867beecc673d171907bf09649",
+    "compatibilityDate": "2026-09-28",
+    "compatibilityFlags": [],
+    "workersDev": true,
+    "observability": {
+      "enabled": true,
+      "headSamplingRate": 0.05,
+      "logs": {
+        "enabled": true,
+        "headSamplingRate": 0.05,
+        "invocationLogs": true
+      }
+    },
+    "crons": ["*/5 * * * *"],
+    "routes": [],
+    "vars": {
+      "WEB_ORIGIN": "https://tuturuuu.com"
+    },
+    "secrets": [
+      "CRON_CONTROL_DELIVERY_TOKEN",
+      "SUPABASE_SECRET_KEY",
+      "SUPABASE_URL"
+    ],
+    "durableObjects": {},
+    "durableObjectClasses": {},
+    "unmapped": {},
+    "previewUrls": true
+  },
+  "transition": {
+    "decision": "CRON-LEDGER-1: admit the #6472/#6473 schedules, origin and stop-fence vars (jobs and Worker processors default off) and the CronLedger SQLite Durable Object.",
+    "fields": ["crons", "vars", "durableObjects", "durableObjectClasses"]
+  },
+  "settingsDecision": "REV-6485-4: explicit expectations; deployment preflight must verify live settings before publication."
+}

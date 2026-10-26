@@ -1,6 +1,7 @@
 name: Playground real gVisor acceptance
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
     paths:
       - 'packages/sdk/src/cli/devbox-playground*'
       - 'packages/sdk/src/cli/devbox-sandbox*'
@@ -22,6 +23,7 @@ concurrency:
   queue: max
 jobs:
   check-ci:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     permissions:
       contents: read
       deployments: read
@@ -39,13 +41,13 @@ jobs:
       TTR_DOCKER_METADATA_DIAGNOSTIC: '1'
       TTR_HOST_CANARY: synthetic-host-only-canary
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
       - uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
       - name: Install dependencies
         run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
       - name: Verify cleanup failure and ownership contracts

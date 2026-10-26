@@ -1,7 +1,7 @@
 {
   "name": "@tuturuuu/microsoft",
   "license": "MIT",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "publishConfig": {
     "access": "public"
   },
@@ -14,7 +14,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@azure/msal-node": "^6.0.1",
+    "@azure/msal-node": "^7.1.0",
     "@microsoft/microsoft-graph-client": "^3.0.7",
     "cldr-core": "^48.2.0"
   },
@@ -25,5 +25,5 @@
     "typescript": "7.0.2",
     "vitest": "^5.0.5"
   },
-  "packageManager": "bun@1.4.3"
+  "packageManager": "bun@1.4.4"
 }

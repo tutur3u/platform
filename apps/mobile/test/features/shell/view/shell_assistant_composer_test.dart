@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
@@ -24,13 +25,18 @@ import 'package:mobile/features/shell/view/shell_page.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 
 import '../../../helpers/helpers.dart';
 
-class _Auth extends MockCubit<AuthState> implements AuthCubit {}
+class _Auth extends MockCubit<AuthState> implements AuthCubit {
+  _Auth() {
+    when(() => isClosed).thenReturn(false);
+  }
+}
 
 class _Workspace extends MockCubit<WorkspaceState> implements WorkspaceCubit {}
 
@@ -53,12 +59,15 @@ void main() {
   });
   tearDownAll(() => supa.Supabase.instance.dispose());
 
-  // The active shell uses floating navigation at every width. This matrix
-  // checks phone/tablet/desktop geometry, not the disabled compact footer.
+  // Phones and portrait tablets use the floating dock; expanded tablet and
+  // desktop windows move destinations to the leading rail and keep the dock
+  // only for the composer. Neither mode uses the disabled compact footer.
   for (final width in [320.0, 600.0, 1024.0]) {
     testWidgets(
       'Floating Assistant dock collapses and back closes it at width $width',
       (tester) async {
+        final rail = width >= 840;
+        const railKey = ValueKey('shell-navigation-rail');
         tester.view.physicalSize = Size(width, 900);
         tester.view.devicePixelRatio = 1;
         addTearDown(tester.view.resetPhysicalSize);
@@ -158,9 +167,19 @@ void main() {
         await settle();
         final dockBefore = tester.state(find.byType(FloatingShellDock));
         final persistentBefore = tester.state(find.byType(PersistentShellDock));
-        final materialBefore = tester.element(
-          find.byKey(const ValueKey('persistent-shell-dock-material')),
-        );
+        // The rail owns navigation, so an idle rail-mode dock paints nothing.
+        final materialBefore = rail
+            ? null
+            : tester.element(
+                find.byKey(const ValueKey('persistent-shell-dock-material')),
+              );
+        expect(find.byKey(railKey), rail ? findsOneWidget : findsNothing);
+        if (rail) {
+          expect(
+            find.byKey(const ValueKey('persistent-shell-dock-material')),
+            findsNothing,
+          );
+        }
         expect(
           find.byKey(const ValueKey('compact-shell-footer')),
           findsNothing,
@@ -172,7 +191,7 @@ void main() {
         expect(find.byType(PersistentShellDock), findsOneWidget);
         expect(
           find.byKey(const ValueKey('navigation-morph-bounds')),
-          findsOneWidget,
+          rail ? findsNothing : findsOneWidget,
         );
         final navigationDock = tester.widget<FloatingShellDock>(
           find.byType(FloatingShellDock),
@@ -199,6 +218,11 @@ void main() {
           identical(tester.state(find.byType(FloatingShellDock)), dockBefore),
           isTrue,
         );
+        final composerMaterial =
+            materialBefore ??
+            tester.element(
+              find.byKey(const ValueKey('persistent-shell-dock-material')),
+            );
         chrome.enterFullscreen();
         await settle();
         expect(find.byType(TextField), findsOneWidget);
@@ -208,7 +232,7 @@ void main() {
             tester.element(
               find.byKey(const ValueKey('persistent-shell-dock-material')),
             ),
-            materialBefore,
+            composerMaterial,
           ),
           isTrue,
         );
@@ -237,8 +261,9 @@ void main() {
         expect(chrome.state.composerVisible, isFalse);
         expect(
           find.byKey(const ValueKey('navigation-morph-bounds')),
-          findsOneWidget,
+          rail ? findsNothing : findsOneWidget,
         );
+        expect(find.byKey(railKey), rail ? findsOneWidget : findsNothing);
         expect(
           router.routeInformationProvider.value.uri.path,
           Routes.assistant,
@@ -282,15 +307,25 @@ void main() {
               ),
               isTrue,
             );
-            expect(
-              identical(
-                tester.element(
-                  find.byKey(const ValueKey('persistent-shell-dock-material')),
+            if (materialBefore == null) {
+              expect(find.byKey(railKey), findsOneWidget);
+              expect(
+                find.byKey(const ValueKey('persistent-shell-dock-material')),
+                findsNothing,
+              );
+            } else {
+              expect(
+                identical(
+                  tester.element(
+                    find.byKey(
+                      const ValueKey('persistent-shell-dock-material'),
+                    ),
+                  ),
+                  materialBefore,
                 ),
-                materialBefore,
-              ),
-              isTrue,
-            );
+                isTrue,
+              );
+            }
             expect(find.byType(PersistentShellDock), findsOneWidget);
             expect(
               find.byKey(const ValueKey('floating-shell-dock-opacity')),
@@ -436,7 +471,7 @@ void main() {
       expect(
         find.descendant(
           of: primary,
-          matching: find.byIcon(Icons.arrow_upward_rounded),
+          matching: find.byIcon(LucideIcons.arrowUp),
         ),
         findsOneWidget,
       );

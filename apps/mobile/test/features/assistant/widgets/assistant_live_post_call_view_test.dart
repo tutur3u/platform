@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_post_call_view.dart';
 import 'package:mobile/l10n/gen/app_localizations.dart';
 
@@ -52,7 +53,9 @@ void main() {
       await tester.tap(find.text(callLabel));
       await tester.pump();
       expect(calls, 1);
-      final button = tester.widget<FilledButton>(find.byType(FilledButton));
+      final button = tester.widget<AppButton>(
+        find.widgetWithText(AppButton, callLabel),
+      );
       expect(button.onPressed, isNull);
       starting.complete();
       await tester.pumpAndSettle();

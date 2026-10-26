@@ -9,11 +9,13 @@ const DEFAULT_ROOTS = ['scripts'];
 const DEFAULT_SUPPLEMENTAL_PATHS = [
   '.github/actions/setup-turbo-fallback-cache/action.test.js',
   '.github/actions/run-with-turbo-remote-cache/action.test.js',
+  'apps/database/scripts/atomic-file.test.mjs',
   'apps/database/scripts/declarative-schema-readiness.test.js',
   'apps/database/scripts/delete-storage-buckets.test.js',
   'apps/database/scripts/new-migration.test.js',
   'apps/database/scripts/rls-perf-initplan-migration.test.js',
   'apps/database/scripts/seed-sql.test.js',
+  'apps/database/scripts/storage-bucket-inserts.test.js',
   'plugins/tuturuuu/skills/tuturuuu-pr-merge-sync/scripts/watchers.test.mjs',
 ];
 

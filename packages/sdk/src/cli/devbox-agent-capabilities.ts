@@ -12,11 +12,18 @@ import {
   uptime,
 } from 'node:os';
 import packageJson from '../../package.json';
+import { COMMIT_RUN_PROTOCOL_VERSIONS } from './devbox-commit-run';
+import {
+  collectDevboxIsolation,
+  type DevboxIsolationSummary,
+} from './devbox-isolation';
 import { getJudgeReadiness } from './devbox-judge-sandbox';
 import {
   getPlaygroundReadiness,
   playgroundEnvironmentCount,
 } from './devbox-playground-sandbox';
+import { diskCapability, probeVolume } from './storage-headroom';
+import { hysteresisThresholds, recordVolumeState } from './storage-hysteresis';
 
 const VERSION_TIMEOUT_MS = 1500;
 let staticCapabilitiesPromise: Promise<{
@@ -46,6 +53,30 @@ let readinessSnapshot: {
   playground: Awaited<ReturnType<typeof getPlaygroundReadiness>>;
 } | null = null;
 let refreshing: Promise<void> | null = null;
+let isolationSnapshot: DevboxIsolationSummary | null = null;
+let isolationAt = 0;
+
+// Opt-in until both heartbeat handlers accept these advisory fields; strict
+// handlers reject unknown keys and older servers would fail every heartbeat.
+async function reportedTrust() {
+  if (process.env.TUTURUUU_DEVBOX_REPORT_EXECUTION_MODE !== 'true') return {};
+  const mode = process.env.TUTURUUU_DEVBOX_EXECUTION_MODE ?? 'trusted';
+  if (!isolationSnapshot || Date.now() - isolationAt > 600_000) {
+    isolationSnapshot = (await collectDevboxIsolation()).summary;
+    isolationAt = Date.now();
+  }
+  return {
+    ...(['trusted', 'judge-only'].includes(mode)
+      ? { executionMode: mode as 'trusted' | 'judge-only' }
+      : {}),
+    // Only trusted runners execute commit runs; the advertisement ships with
+    // the decoder so a runner never claims a protocol it cannot run.
+    ...(mode === 'trusted'
+      ? { protocols: { commitRun: [...COMMIT_RUN_PROTOCOL_VERSIONS] } }
+      : {}),
+    isolation: isolationSnapshot,
+  };
+}
 
 function firstLine(value: string) {
   return value.trim().split(/\r?\n/u)[0]?.trim() || null;
@@ -154,6 +185,7 @@ export async function createDevboxAgentCapabilities() {
 
   return {
     ...staticCapabilities,
+    ...(await reportedTrust()),
     judge,
     ...(reportPlayground
       ? {
@@ -175,6 +207,32 @@ export async function createDevboxAgentCapabilities() {
         totalBytes: totalmem(),
       },
       uptimeSeconds: uptime(),
+      ...(await reportedDisk()),
     },
   };
+}
+
+// Bucketed disk headroom (~35 bytes; heartbeat bodies are capped at 4 KiB) so
+// offload selection can skip hosts that are about to run out of space.
+async function reportedDisk() {
+  try {
+    return { disk: diskCapability(await probeVolume(storagePath())) };
+  } catch {
+    return {};
+  }
+}
+
+// The heartbeat is one of the two automatic reclaim triggers (the other is
+// heavy ttr resources admission). A low volume starts one detached
+// `ttr storage reclaim --auto` unless this user's cleanup lease is held or the last
+// unsuccessful run is inside its cooldown; nothing runs while space is ok.
+const storagePath = () =>
+  process.env.TUTURUUU_DEVBOX_STORAGE_PATH || process.cwd();
+
+export async function heartbeatStorageTrigger() {
+  const volume = await probeVolume(storagePath());
+  const state = recordVolumeState(volume, hysteresisThresholds());
+  if (state.state !== 'low') return;
+  const reclaim = await import('./storage-auto-reclaim.js');
+  if (reclaim.heartbeatReclaimDue()) reclaim.spawnHeartbeatReclaim(volume);
 }

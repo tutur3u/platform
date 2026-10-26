@@ -6,6 +6,20 @@ shared-package changes.
 
 ## Web And Shared UI
 
+Shared middleware rejections use `@tuturuuu/utils/guard-rejection` to attach a
+fixed scalar reason and a generated correlation ID, expose them alongside
+existing CORS headers, and emit one warning with a fixed route template. Keep
+credentials, request-provided IDs and raw paths out of diagnostics. Preserve
+status/retry/MFA-cookie behavior. See the [guard diagnostics decision](../../../../../apps/docs/platform/features/mobile-workspace-tools.mdx#guard-rejection-diagnostics)
+and its focused regression coverage before adding a reason or changing middleware.
+
+- Native satellites consume shared `@tuturuuu/start-bridge` adapters; app configs
+  own hosts and SEO/security headers. Preserve forwarded WebGL sandbox CSP without
+  handler-level CSP. Limit asset caching to GET/HEAD paths; keep config imports strippable.
+  Suppliers authorize direct calls; preserve disabled service-worker registration.
+  Use the [Nova/Inventory qualification guide](../../../../../apps/docs/build/devops/nova-inventory-start-bridge.mdx)
+  for action/offline parity and separate raw-Host, header and browser acceptance.
+
 - Calendar provider cron failures retain failed dashboard diagnostics while
   isolating accounts and bounding work. Rejected Google credentials stop siblings
   and become inactive only if storage still matches; transient failures retry.
@@ -91,10 +105,24 @@ shared-package changes.
   `useEffect`.
 - Client/shared UI app API calls should go through `packages/internal-api/src/*`
   helpers instead of scattered raw `fetch('/api/...')` calls.
+- Mounted app adapters register `registerDefaultAppBaseResolver` from
+  `@tuturuuu/internal-api/client` once at startup for helpers without options.
+  Read request-local context inside the callback and return an absolute URL on
+  SSR; never capture an incoming request in the registered closure. Select
+  app-owned routes when the adapter also calls central APIs. See the
+  [bridge resolver contract](../../../../../apps/docs/build/devops/start-bridge.mdx#internal-api-resolver-registration)
+  for browser setup, teardown and regression coverage.
 - Every `fetch` inside a query function should include `{ cache: 'no-store' }`.
 - Use `@tuturuuu/icons`, `@tuturuuu/ui/dialog`, and dynamic design tokens.
   Native browser dialogs, emojis in UI code, and hard-coded hue classes are not
   acceptable.
+- Operational status surfaces use `@tuturuuu/ui/custom/ops` (`StatusPill`,
+  `StatTile`, `ResourceMeter`, `StatePanel`, `OpsSection`, `OpsPageHeader`,
+  `LogLines`) and
+  the `OpsTone` vocabulary instead of app-local tone maps. `unknown` is not
+  `neutral`: stale or missing telemetry and unreachable workers render as
+  unknown, never as zero or healthy. `OpsPageHeader` shares FeatureSummary's
+  surface for read-only pages; keep FeatureSummary for create/settings flows.
 - If a client admin surface grows large, keep the main shell focused on query
   state, mutations, and routing; extract heavy render branches nearby.
 - **Tiptap extensions are fixed at editor creation.** `Editor.setOptions({
@@ -141,7 +169,7 @@ shared-package changes.
   `src/app/serwist/[path]/route.ts` (`createOfflineRoute`). Copying a layout
   without that route logs a failed registration on every page load; seven apps had
   drifted that way. Either add the route or pass
-  `<OfflineProvider register={false}>`. `bun check` → `offline-worker-wiring`
+  `<OfflineProvider register={false}>`. `bun validate` → `offline-worker-wiring`
   enforces it.
 - Central-login app identity comes from `packages/utils/src/internal-domains.ts`,
   not the infrastructure project's reserved-host list or shared-cookie domains.
@@ -157,7 +185,7 @@ shared-package changes.
   nothing tested it and nothing broke when it drifted — it was hand-synced once
   during a cross-app change and then missed two production auth fixes while
   still reading as live code. If another app needs the behavior, extract it into
-  a shared package. `bun check` → `multi-account-vault-owner` enforces it.
+  a shared package. `bun validate` → `multi-account-vault-owner` enforces it.
 - If a file exceeds about 400 LOC or a component/widget exceeds about 200 LOC
   after significant edits, split it by concern and keep import paths stable
   with a thin barrel when needed.
@@ -256,17 +284,10 @@ protocol and its explicitly in-memory regression boundary.
   default or placed external cards. Guest source membership is not sufficient
   for personal-board task data.
 - Forward request auth when server-side loaders call internal API helpers.
-- Keep password login, OTP send, OTP verify, MFA verify, and reauth verify on
-  throttles that do not write hard IP blocks for shared-IP classrooms and
-  centers. Do not route human auth or backend-service `429`s into
-  `recordSuspiciousApiRequestEdge`/`blockIPEdge`; preserve `Retry-After`, retry
-  only idempotent `GET`/`HEAD` `429`s in the fetch interceptor, and rely on
-  per-email cooldown/failed-attempt controls for account-specific abuse. Generic
-  anonymous scanner traffic, malformed auth-cookie abuse, `api_auth_failed`, and
-  manual blocks can still hard-block IPs. For a live incident, check the
-  customer public IP in Abuse Intelligence, clear confirmed false-positive
-  blocks, and add a time-bound IP/CIDR trust or rate-limit uplift only when
-  traffic is organic.
+- Keep password login, OTP send, OTP verify, MFA verify, and reauth verify on throttles that do not write hard IP blocks for shared-IP classrooms and centers. Do not route human auth or backend-service `429`s into
+`recordSuspiciousApiRequestEdge`/`blockIPEdge`; preserve `Retry-After`, retry only idempotent `GET`/`HEAD` `429`s in the fetch interceptor, and rely on per-email cooldown/failed-attempt controls for account-specific abuse. Generic anonymous
+scanner traffic, malformed auth-cookie abuse, `api_auth_failed`, and manual blocks can still hard-block IPs. For a live incident, check the customer public IP in Abuse Intelligence, clear confirmed false-positive blocks, and add a
+time-bound IP/CIDR trust or rate-limit uplift only when traffic is organic.
 - Treat workspace/resource IDs embedded in rich-text documents, Yjs payloads,
   mention nodes, or other user-authored content as untrusted hints. Resolve
   stale content through the current route/document workspace or a server-returned
@@ -336,7 +357,7 @@ Rules:
 - Unit tests invoke pages/handlers outside a request scope, where `connection()`
   throws. Stub it in the app's vitest setup, keeping the real module:
   `vi.mock('next/server', async (o) => ({ ...(await o()), connection: vi.fn() }))`.
-- `bun check` cannot see any of this. Require the app's real CI build on the
+- `bun validate` cannot see any of this. Require the app's real CI build on the
   exact PR head; do not run builds on this machine.
 
 ## Satellite Apps (contacts, pay, tasks, …)
@@ -366,7 +387,7 @@ Rules:
   a shared helper needs the actor, give it an injectable `userId` rather than
   letting it resolve one — `@tuturuuu/utils/workspace-user-link` is the pattern
   (`getCurrentWorkspaceUser` delegates to it, so web is unchanged). The
-  `internal-app-auth` guard in `bun check` enforces this.
+  `internal-app-auth` guard in `bun validate` enforces this.
 - **Never** add a catch-all page under `[locale]/[wsId]`. Next checks `fallback`
   rewrites only AFTER dynamic routes, so `[wsId]/[...slug]` matches
   `/api/v1/workspaces/...` as `locale="api"`, `wsId="v1"` and shadows the
@@ -432,12 +453,33 @@ Rules:
   Resolve the actor with the app-session-aware helper and authorize with the
   client it returns, or with an admin client filtered by the authenticated user id
   (then keep explicit `ws_id`/owner predicates on the data queries, since admin
-  bypasses RLS). `bun check` → `satellite-cookie-auth` enforces it.
+  bypasses RLS). `bun validate` → `satellite-cookie-auth` enforces it.
 - **A satellite must not use `@tuturuuu/ui/custom/workspace-wrapper`** — it calls
   bare `getWorkspace(wsId)` internally, so every page rendering it inherits the
   bug above (it broke all 20 contacts users pages). Use an app-local wrapper built
   on the app's `src/lib/workspace.ts`. `check-internal-app-auth` enforces both
   halves; the actorless rule is per-app via `ACTORLESS_CHECK_APPS`.
+- **`@tuturuuu/internal-api` is emitted as CommonJS** (`tsconfig.build.json`
+  uses `NodeNext` without `"type": "module"`), so a Vite+ app that imports it
+  from `dist/` bundles the whole client (~1 MB raw, every zod schema) into its
+  entry chunk; this was the single largest download on every Meet and Mail
+  page. Vite+ satellites alias `@tuturuuu/internal-api` and its subpaths to
+  `packages/internal-api/src/*.ts` in `vite.config.ts`, and the package declares
+  `"sideEffects": false`, so rolldown keeps only the readers a page uses. Keep
+  new internal-api modules free of import-time side effects, and check
+  `dist/client/assets` for a `dist-*.js`/`join-outcome-*.js`-sized chunk after
+  changing the alias list.
+- **Client bundles must not import both message bundles.** Meet's `en.json` and
+  `vi.json` weigh ~940 KB raw; `NextIntlClientProvider` now reads them through
+  `runtime/locale-messages.ts`, which keeps the static import on the server
+  (`createIsomorphicFn`) and fetches only the active locale from the hashed
+  `?url` asset the route head preloads. Route pending copy lives in
+  `loading-labels.ts` with a test that pins it to the JSON. Load heavy views
+  (call shell, collaboration editors, live plan editor, meeting detail) with
+  `lazy()` inside `page-view.tsx`; the server still renders them and hydration
+  waits for the chunk, so no layout shift. Preload the Noto Sans subsets and
+  use `font-display: swap` with the metric-matched `Noto Sans Fallback` face in
+  `typography.css` rather than `block`, which hid text until the font arrived.
 - A satellite that renders broad shared UI must be in the **checked** `APPS` list
   in `scripts/i18n-namespace-check.js`, not `UNCHECKED_APPS`. Scanning only the
   app's own source cannot see namespaces used *inside* `@tuturuuu/ui` /
@@ -678,12 +720,11 @@ the shared runtime’s `BASE_URL` points at Parley when running there. Participa
 invitations must instead remain on the current Parley origin at `/r/<code>`,
 never `/sessions/<id>`. Codes do not confer authorization.
 
-Reset participation acknowledgement when switching the selected scenario. Keep
-the selection visible when search filters hide its option. Load saved private
-rubrics only after both session-owner and meeting-host checks; render the session
-snapshot rather than the current scenario revision. See the Parley product guide
-and studio setup, invitation, review-route and Meet-link regression tests.
-
+Reset participation acknowledgement when switching scenarios. Keep filtered selections
+visible. Load private rubrics only after session-owner and meeting-host checks;
+render the session snapshot. See the Parley product guide and studio setup,
+invitation, review-route and Meet-link regression tests. Keep shared chat mention
+markers lazy and unguessable; see the [native import checks](../../../../../apps/docs/build/development-tools/thanh-local-e2e.mdx#native-worker-imports).
 
 ## Immediate notification selection
 
@@ -1181,3 +1222,35 @@ operation and requires its existing explicit adjudication; password fields and s
 generation stay in memory and clear on close. Preserve independent completion proof,
 actor/workspace fences and the separate retained-mailbox adoption workflow. See the
 Infrastructure application decision and creation/restoration/reset dialog regressions.
+
+### Calendar civil dates and timer teardown
+
+Use `allDayEventCivilDates` for both date lookup and rendered all-day end bounds;
+pass the resolved calendar timezone into classification, including DST spans.
+Check zoned midnight using wall-clock fields, since Day.js `startOf('day')`
+can depend on the host timezone. Preserve UTC-midnight legacy import dates and
+exclusive ends. Test browser/calendar timezone disagreement and both DST changes.
+Tracker completion notifications need effect-owned timeout cleanup in addition
+to the elapsed-time interval cleanup. Fake-timer regressions must unmount before
+restoring real timers; see the Calendar application decision and tracker tests.
+
+### Native timezone preference throttling
+
+Trace mobile preference requests through `ApiOrigins.baseUrlForPath`, not only `ownerForPath`: personal/workspace calendar-settings GET/PATCH now default directly to Web, while older published builds retain Infrastructure-to-Calendar routing. Keep Web settings paths out of satellite rewrites; changing the mobile host alone can still send traffic back to Calendar. Inspect `apps/web/vercel.json` and the active hosting policy separately: application MFA cannot bypass a provider challenge before application execution. Reuse the Bearer actor already verified by the MFA guard for exact preference GET/PATCH quotas; do not add an authentication request or rely on a warm trust cache.
+Keep preferences bounded and separate from unrelated gateway traffic. Retain anonymous quotas, MFA, IP blocks and route permissions. Test cold-cache/shared-IP rejection, token rotation, actor isolation, forged credentials and Settings mount request counts.
+Middleware logs alone cannot attribute a TestFlight incident; obtain safe rejection headers and correlate both hosts. See the Calendar settings decision, native API protection runbook and `api-proxy-calendar-preference-reads.test.ts`. Keep the calendar preference Web routing fix independently deliverable before native integrity. `NATIVE_INTEGRITY_MODE` defaults to `off`; `monitor` may record only scalar verification verdicts and must continue through existing auth/MFA/quota/permission controls on every integrity failure. Enforce only after operator acceptance of real providers, signed devices, nonce/counter replay storage, key deletion and unsupported/older-client policy. The guard also covers existing Web browser/server consumers without proofs, so keep enforce inactive until their proof coverage or a separately reviewed trusted-browser policy is accepted; never bypass by omitted header or User-Agent. Do not infer Vercel hosting clearance from a valid app proof. Follow the [native integrity runbook](../../../../../apps/docs/build/devops/calendar-native-api-protection.mdx#native-integrity-rollout-default-off) for configuration, acceptance and rollback; keep tokens, key IDs and request bindings out of logs. Turnstile fallback is separately default-off and requires server-owned unsupported-actor eligibility; live Apple or verified Play capability bars the downgrade. Request-owned verified-user reuse applies only to the exact unchanged Request in one process; distinct proxy/route objects or runtimes resolve identity normally, never through a trusted client header or assumed cross-runtime WeakMap.
+
+### Storage object key transport
+
+At Supabase URL-interpolating upload boundaries, encode logical object keys once
+with `encodeStoragePath` from `@tuturuuu/utils/storage-path`. Keep metadata,
+duplicate checks and returned application paths logical. Audit components,
+hooks and generic file helpers: even UUID prefixes can carry raw user filename
+extensions. Use the real installed SDK and a synthetic fetch transport to
+assert the once-decoded request pathname and empty URL search/hash, including
+`%41`, `?`, `#`, and Vietnamese NFC/NFD names. See the object key transport
+section in [storage egress protection](../../../../../apps/docs/build/devops/storage-egress-protection.mdx).
+
+## Standalone API foundation
+
+For the explicitly authorized `apps/api` Worker migration, use the [standalone API runbook](../../../../../apps/docs/build/devops/standalone-api.mdx). Domain operations register through one policy/schema pipeline. Protected operations fail closed until the concrete Web guard and principal adapter is verified; retained Next routes keep their existing guards. Do not import Node-only graphs or treat generated inventory as runtime acceptance.

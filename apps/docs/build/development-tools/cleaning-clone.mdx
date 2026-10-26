@@ -10,9 +10,9 @@ updatedAt: '2026-06-21'
   development environment.
 </Info>
 
-The current stable pin is Bun `1.4.3` ([official release](https://github.com/oven-sh/bun/releases/tag/bun-v1.4.3)).
+The current stable pin is Bun `1.4.4` ([official release](https://github.com/oven-sh/bun/releases/tag/bun-v1.4.4)).
 Keep active workspace metadata and CI pins aligned with the root `packageManager`.
-Change manifest metadata with `bun pm pkg set packageManager=bun@1.4.3` in each
+Change manifest metadata with `bun pm pkg set packageManager=bun@1.4.4` in each
 owning workspace. An updated pin does not upgrade an installed host or runner;
 verify `bun --version` separately. Retained paused runtime files and historical
 reproduction notes keep their original versions.
@@ -21,8 +21,10 @@ reproduction notes keep their original versions.
 
 - Ensure you have [bun](https://bun.sh/) installed. The repository pins a specific
   Bun version via the `packageManager` field in the root `package.json` (currently
-  `bun@1.4.3`) — match that version so your local toolchain stays in sync.
-- Node `>=22.13.0` is also required (see the `engines` field in the root `package.json`).
+  `bun@1.4.4`) — match that version so your local toolchain stays in sync.
+- Use the Node.js version pinned in the root `.node-version` (currently
+  `26.12.1`). The root `engines` field keeps a `>=22.13.0` support floor; see
+  [Node.js runtime pin](/build/development-tools/node-runtime).
 
 ## Quick Cleanup (Recommended)
 

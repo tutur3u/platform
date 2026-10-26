@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/lettin",
-  "version": "1.5.1",
+  "version": "1.6.0",
   "private": true,
   "scripts": {
     "dev": "node ../../scripts/portless-safe-dev.js",
@@ -58,5 +58,5 @@
     "vitest": "^5.0.5",
     "wrangler": "4.152.0"
   },
-  "packageManager": "bun@1.4.3"
+  "packageManager": "bun@1.4.4"
 }

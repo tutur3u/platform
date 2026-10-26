@@ -4,10 +4,15 @@ const id = z.string();
 const participant = z.object({
   userType: z.enum(['PLATFORM', 'GUEST']),
   guestId: z.string().optional(),
-  guestPasswordHash: z.string().optional(),
+  guestSession: z.string().max(2048).optional(),
 });
 
 export const legacyActionSchemas = {
+  resetGuestPassword: z.tuple([
+    id,
+    z.string().min(1).max(255),
+    z.string().min(1).max(1024),
+  ]),
   guestLogin: z.tuple([
     id,
     z.object({ name: z.string(), password: z.string() }).strict(),

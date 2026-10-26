@@ -3,9 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart' hide Card;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mobile/core/responsive/responsive_padding.dart';
-import 'package:mobile/core/responsive/responsive_values.dart';
-import 'package:mobile/core/responsive/responsive_wrapper.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/utils/tiptap_description_parser.dart';
 import 'package:mobile/data/models/documents/workspace_document.dart';
@@ -151,6 +149,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
               controller: controller,
               autofocus: true,
               decoration: InputDecoration(
+                hintText: context.l10n.inputPlaceholderDocumentName,
                 labelText: context.l10n.documentsDocumentName,
               ),
               textInputAction: TextInputAction.done,
@@ -258,77 +257,70 @@ class _DocumentsPageState extends State<DocumentsPage> {
                 ),
               ],
             ),
-            ResponsiveWrapper(
-              maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
-              child: NovaRefreshIndicator(
-                onRefresh: _reload,
-                child: ListView(
-                  padding: EdgeInsets.fromLTRB(
-                    16,
-                    8,
-                    16,
-                    40 + MediaQuery.paddingOf(context).bottom,
+            NovaRefreshIndicator(
+              onRefresh: _reload,
+              child: AppPageListView(
+                children: [
+                  FinanceSectionHeader(
+                    title: context.l10n.documentsTitle,
+                    subtitle: context.l10n.documentsSubtitle,
                   ),
-                  children: [
-                    FinanceSectionHeader(
-                      title: context.l10n.documentsTitle,
-                      subtitle: context.l10n.documentsSubtitle,
+                  const SizedBox(height: AppLayout.itemGap),
+                  TextField(
+                    controller: _searchController,
+                    onChanged: _onSearchChanged,
+                    decoration: InputDecoration(
+                      hintText: context.l10n.documentsSearchHint,
+                      prefixIcon: const Icon(Icons.search_rounded),
                     ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: _searchController,
-                      onChanged: _onSearchChanged,
-                      decoration: InputDecoration(
-                        hintText: context.l10n.documentsSearchHint,
-                        prefixIcon: const Icon(Icons.search_rounded),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    if (_isLoading && _documents.isEmpty)
-                      const SizedBox(
-                        height: 240,
-                        child: Center(child: NovaLoadingIndicator()),
-                      )
-                    else if (_error != null)
-                      _DocumentsMessageCard(message: _error!)
-                    else if (_documents.isEmpty)
-                      _DocumentsMessageCard(
-                        message: context.l10n.documentsEmptyDescription,
-                      )
-                    else
-                      ..._documents.map(
-                        (document) => Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: PendingSyncFrame(
-                            workspaceId: _wsId ?? '',
-                            feature: 'documents',
-                            entityId: document.id,
-                            child: _DocumentTile(
-                              document: document,
-                              onTap: () => context.push(
-                                Routes.documentDetailPath(document.id),
-                              ),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  if (_isLoading && _documents.isEmpty)
+                    const SizedBox(
+                      height: 240,
+                      child: Center(child: NovaLoadingIndicator()),
+                    )
+                  else if (_error != null)
+                    _DocumentsMessageCard(message: _error!)
+                  else if (_documents.isEmpty)
+                    _DocumentsMessageCard(
+                      message: context.l10n.documentsEmptyDescription,
+                    )
+                  else
+                    ..._documents.map(
+                      (document) => Padding(
+                        padding: const EdgeInsets.only(
+                          bottom: AppLayout.itemGap,
+                        ),
+                        child: PendingSyncFrame(
+                          workspaceId: _wsId ?? '',
+                          feature: 'documents',
+                          entityId: document.id,
+                          child: _DocumentTile(
+                            document: document,
+                            onTap: () => context.push(
+                              Routes.documentDetailPath(document.id),
                             ),
                           ),
                         ),
                       ),
-                    if (_hasMore) ...[
-                      const SizedBox(height: 8),
-                      Center(
-                        child: FilledButton.tonal(
-                          onPressed: _isLoadingMore ? null : _loadMore,
-                          child: _isLoadingMore
-                              ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: NovaLoadingIndicator(size: 20),
-                                )
-                              : Text(context.l10n.commonLoadMore),
-                        ),
+                    ),
+                  if (_hasMore) ...[
+                    const SizedBox(height: 8),
+                    Center(
+                      child: FilledButton.tonal(
+                        onPressed: _isLoadingMore ? null : _loadMore,
+                        child: _isLoadingMore
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: NovaLoadingIndicator(size: 20),
+                              )
+                            : Text(context.l10n.commonLoadMore),
                       ),
-                    ],
+                    ),
                   ],
-                ),
+                ],
               ),
             ),
           ],

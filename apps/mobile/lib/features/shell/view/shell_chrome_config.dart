@@ -23,6 +23,17 @@ class ShellChromeConfig {
         navMode: ShellNavMode.miniApp,
       );
     }
+    if (matchedLocation.startsWith('${Routes.settingsApps}/')) {
+      final title = switch (matchedLocation.split('/').last) {
+        'tasks' => l10n.navTasks,
+        'calendar' => l10n.navCalendar,
+        'finance' => l10n.navFinance,
+        'timer' => l10n.timerTitle,
+        'assistant' => l10n.assistantSettingsTitle,
+        _ => l10n.settingsAppsGroup,
+      };
+      return ShellChromeConfig(title: title, navMode: ShellNavMode.miniApp);
+    }
     if (matchedLocation.startsWith('${Routes.settingsOffline}/')) {
       final module = matchedLocation.split('/').last;
       final title = switch (module) {
@@ -65,7 +76,7 @@ class ShellChromeConfig {
       Routes.taskEstimates => l10n.taskPlanningTitle,
       Routes.taskPortfolio => l10n.taskPlanningTitle,
       Routes.profileRoot => l10n.profileTitle,
-      Routes.profileEdit || Routes.settingsProfile => l10n.settingsNavYou,
+      Routes.profileEdit || Routes.settingsProfile => l10n.settingsProfileEdit,
       Routes.profileAccounts ||
       Routes.settingsAccounts => l10n.authManageAccounts,
       Routes.settingsOffline => l10n.offlineSectionTitle,
@@ -77,6 +88,7 @@ class ShellChromeConfig {
       Routes.settingsQrLoginScan => l10n.qrLoginSettingsTitle,
       Routes.settings => l10n.settingsTitle,
       Routes.settingsPreferences => l10n.settingsPreferencesSectionTitle,
+      Routes.settingsAppearance => l10n.settingsAppearance,
       Routes.settingsExperiments => l10n.settingsExperimentalAppsSectionTitle,
       Routes.settingsInfrastructure => l10n.settingsInfrastructureSectionTitle,
       Routes.settingsFeedback => l10n.feedbackTitle,

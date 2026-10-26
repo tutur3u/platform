@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/hive",
-  "version": "0.26.1",
+  "version": "0.26.2",
   "private": true,
   "scripts": {
     "type-check": "node ../../scripts/run-tsc-build.js --build",
@@ -79,7 +79,7 @@
     "typescript": "7.0.2",
     "vitest": "^5.0.5"
   },
-  "packageManager": "bun@1.4.3",
+  "packageManager": "bun@1.4.4",
   "portless": {
     "name": "hive.tuturuuu",
     "script": "dev:app"

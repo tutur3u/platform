@@ -1,7 +1,7 @@
 ---
 title: "Mobile"
 description: "Native workspace products, defaults, account controls, and offline behavior."
-updatedAt: '2026-10-08'
+updatedAt: '2026-10-23'
 ---
 
 The Flutter app (`apps/mobile`) brings eligible Tuturuuu workspace tools into a
@@ -29,9 +29,16 @@ workspace or account privileges. Mail keeps its exact-domain eligibility rule.
 ## Shell and offline expectations
 
 Screens inherit the app shell's background and single top title/actions bar.
-The floating bottom navbar owns in-app Back navigation and scroll clearance.
+On phones and portrait tablets the floating bottom navbar owns in-app Back
+navigation and scroll clearance. On landscape tablets, laptops, and desktops
+(width >= 840dp, shortest side >= 600dp) the same destinations, including Back,
+move to a leading rail and the dock keeps only composers and page actions.
 Full-screen/system forms have their own shell rules. These conventions keep
 controls reachable and avoid duplicate headers.
+
+Every screen uses the same page gutters, section spacing, and wide-screen max
+widths. Only calendar, board, conversation, call, and media/map canvases run
+full-bleed. See the [mobile design system](/build/development-tools/mobile-design-system).
 
 Offline availability is product-specific. Cached data is not proof that an
 edit reached the server. Review queued/sync states and recover through the
@@ -44,6 +51,16 @@ The [toolchain reference](/reference/repository/versions) reads the Flutter and
 Dart constraints and mobile package version from `pubspec.yaml`. Distribution
 artifacts and build metadata establish what a device is running. The browser
 bootstrap for Flutter is noindex; it is not a duplicate public marketing site.
+
+The standalone API migration uses a build-number gate at
+`/api/v1/mobile/version` for iOS and Android. The configured minimum supported
+build is inclusive; older builds require an update. Missing policy fails closed
+with 503. Mobile switches to consolidated contracts during this migration; the
+program accepts a temporary compatibility break followed by a forced update.
+External non-mobile consumers retain compatibility. The old semantic-version
+endpoint remains on the retained Next origin until separately reviewed. See the
+[API contract and regression coverage](/build/devops/standalone-api#mobile-version-contract).
+The API foundation does not itself activate the client screen or production gate.
 
 Developers changing translations regenerate localization before analysis/tests.
 Native app work does not require the paused Rust/TanStack Start runtime or the
@@ -131,3 +148,10 @@ Windows in-app updates retain their publisher-signature checks, so unsigned
 betas use manual verified-installer updates. Packaging and receipt regressions
 are covered by `scripts/desktop-deployment/windows-signing.test.mjs` and
 `verify-publication.test.mjs`; native Windows acceptance remains a release gate.
+
+Windows x64 uses a per-user `.exe` installer from the official download page or
+GitHub desktop release. Unsigned builds may show SmartScreen **Windows protected
+your PC** or **Unknown publisher**. Verify the release SHA-256 checksum before
+using **More info → Run anyway**, if Windows offers it. Use the web app when
+organization policy blocks unsigned installers. See the
+[desktop installation and signing plan](/build/devops/desktop-beta-distribution).

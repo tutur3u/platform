@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/contacts",
-  "version": "0.28.2",
+  "version": "0.29.0",
   "private": true,
   "scripts": {
     "type-check": "node ../../scripts/run-tsc-build.js --build",
@@ -14,7 +14,7 @@
     "start": "next start",
     "preview": "next build --turbopack && next start -p 7827 --turbopack"
   },
-  "packageManager": "bun@1.4.3",
+  "packageManager": "bun@1.4.4",
   "dependencies": {
     "@formatjs/intl-localematcher": "^0.9.0",
     "@hookform/resolvers": "^5.9.2",

@@ -21,6 +21,7 @@ const portableFiles = new Set([
   'internal-api/external-projects.ts',
   'internal-api/hidden-workspaces.ts',
   'internal-api/internal-api-error.ts',
+  'internal-api/internal-api-url.ts',
   'internal-api/product-feedback.ts',
   'internal-api/profile-banner.ts',
   'internal-api/profile-media-optimize.ts',
@@ -130,7 +131,9 @@ function stagePortableSources({ repoRoot, destination }) {
       const file = path.join(directory, entry.name);
       if (entry.isSymbolicLink()) throw new Error('Symlink in portable source');
       if (entry.isDirectory()) walk(file);
-      else if (!/\.(test|spec|acceptance)\./.test(file)) pending.push(file);
+      // Test-only modules (specs and shared *-test-fixtures) never ship.
+      else if (!/\.(test|spec|acceptance)\.|-test-fixtures\./.test(file))
+        pending.push(file);
     }
   }
   walk(sdkSource);
@@ -160,9 +163,10 @@ function stagePortableSources({ repoRoot, destination }) {
     const target = outputPath(file);
     const source = fs.readFileSync(file, 'utf8');
     const replacements = [];
-    for (const node of /\.[cm]?tsx?$/.test(file)
-      ? moduleSpecifiers(source, file)
-      : []) {
+    // Hoisted: CodeQL's JavaScript extractor misparses a regex literal
+    // directly after `of` and skips the whole file.
+    const isTypeScript = /\.[cm]?tsx?$/.test(file);
+    for (const node of isTypeScript ? moduleSpecifiers(source, file) : []) {
       const specifier = node.value;
       const name = packageName(specifier);
       let dependency;

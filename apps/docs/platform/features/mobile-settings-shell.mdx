@@ -3,6 +3,57 @@ title: Mobile settings shell
 description: Shared shell chrome, profile settings routes and accessible edit entry
 ---
 
+## Settings row grid
+
+Settings sections and detail rows share `SettingsRowLayout`. Muted captions sit
+4px inside a rounded (24px) grouped card. Rows use a 16px inset, a 24px slot for
+a thin Lucide line icon, a 14px gap before a medium-weight (w500) title and a
+44px trailing action column with a 17px Lucide chevron. Settings and Appearance
+use Lucide icons only. Inset dividers start at the title column (54px), not under
+the icon. Rows have a 56px minimum height and expand for translated or enlarged
+text. A row shows its current value as a muted summary under the title, or as a
+short trailing value before the chevron (for example, the Appearance theme name).
+It does not show both, except the Time zone rows below. A trailing value keeps its natural width, flush right,
+while the title still fits on one line; otherwise it moves under the title, so
+titles never break mid-word at enlarged text. Full-size controls such as
+switches widen the trailing column and centre vertically instead of scaling
+down. Multiple timezone actions
+stack in the trailing column, keeping the text width and action centers
+consistent with chevrons. Existing English and Vietnamese labels and tooltips
+remain unchanged.
+
+Settings scroll lists use the design foundation's tokens (`AppLayout`): content
+starts 8px below the shell header (`pageTop`) and ends with the shell-provided
+dock clearance plus a 24px end gap (`scrollEndGap`). Row height (56px), row inset
+(16px) and the gap between groups (24px) are the foundation's row and section
+tokens. They inherit the shell surface and keep Back in its floating dock. These presentation defaults do not change timezone reads, writes, retries
+or permissions. `settings_design_checks.dart` covers row geometry, action touch
+targets and the final control clearing the dock; the compact navigation suite
+also exercises enlarged text in both languages and themes.
+
+### Time zone rows
+
+Each Time zone row shows one value line: the zone as a city with its current
+GMT offset, for example "Ho Chi Minh City (GMT+7)". Offsets follow daylight saving
+time, and the offset stays attached to its city. Raw identifiers such as
+`Asia/Saigon` are never shown, so they can't break mid-word. Legacy device ids
+map to their current city, and Vietnamese shows "TP. Hồ Chí Minh". When the
+personal choice is Automatic, the row shows "Auto" on its title line and names
+the zone that applies. An explicit choice shows only that zone. The workspace row
+shows only the workspace choice, so the effective zone is never repeated.
+Loading and account states replace the value rather than adding lines. Errors and
+rate limits keep their wrapped explanation and Retry action.
+
+These rows are the one place a row shows both a value line and a short trailing
+value. When a row has a value line, its trailing value sits on the title line, so
+the value keeps the full text width; at enlarged text it moves under the title.
+The explanation of Automatic and the zone list stay in the picker opened from the
+row. Offsets resolve through `core/utils/timezone_location.dart`, which loads the
+full tz data when a native alias such as `Asia/Saigon` is missing.
+`timezone_label_test.dart` checks every supported zone,
+`settings_timezone_rows_checks.dart` checks the one-line rows in both languages,
+and `timezone_resolution_scope_test.dart` checks the scoped states.
+
 ## Settings detail shell and profile settings
 
 All mobile Settings children use the same shell background and one shell top
@@ -15,15 +66,22 @@ Their scroll content reserves the shell-provided bottom padding, so the floating
 dock clears the last actionable row. Pushed destinations return to the screen
 that opened them; direct links fall back to their Settings parent.
 
-Settings → You now opens identity, avatar and account-status settings at
-`/settings/profile`, with account management at `/settings/accounts`. Legacy
+Settings → Edit profile, opened from the Account group's profile row, is the one
+place for account and profile settings at `/settings/profile`: Identity (display
+name, full name, email with any pending change), Avatar (Photo, Remove avatar
+and a Cover banner row that adds, changes or removes the banner), Account (Manage
+accounts at `/settings/accounts`, Sessions and devices) and Account status, as
+captioned grouped cards with the shell title "Edit profile". Its identity card is
+borderless with a circular avatar, matching the Settings profile row, and an unknown
+join date is omitted. Manage accounts appears only here; the root has neither a
+You row nor a Manage accounts row, and its group caption is General. Legacy
 `/profile/edit` and `/profile/accounts` links redirect to those destinations.
 `/profile` retains the Overview/Timeline activity surface. Its edit entry is a
 compact icon with an accessible Identity label and tooltip. Account-switching
 shortcuts remain available there. These defaults apply in both mobile languages;
 workspace permissions and queued profile writes retain their existing rules.
 
-Profile identity fields use the shared Settings tiles and panel material, with
+Profile identity fields use the shared Settings tiles in grouped cards, with
 read-only values until a field is opened for editing. Manage accounts uses the
 same grouped Add account row and account panels; its shell title is not repeated
 in a hero card. The Profile account-management entry has one label, and What's
@@ -31,7 +89,7 @@ new keeps its description and installed version without repeating the shell
 heading. Account removal confirmations and queued profile writes are unchanged.
 These defaults apply to both languages, light/dark themes and enlarged text.
 
-Avatar removal in Settings → You captures the authenticated account when its
+Avatar removal in Settings → Edit profile captures the authenticated account when its
 confirmation opens. An account switch or logout invalidates that confirmation,
 even if the original account returns before confirmation. Removal uses the
 existing avatar DELETE and offline queue contracts, with the original actor
@@ -137,36 +195,194 @@ the new count or end its loading state. This applies to the native shell action
 button and shared notifications cubit; delayed-actor and same-workspace ABA
 regressions are in `notifications_cubit_test.dart`.
 
-## Product settings entry points
+## Settings > Apps: one home for app settings
 
-The central Settings overview lists native products with maintained settings
-entries in `product_settings_registry.dart`. Calendar and Finance open the
-existing shared Preferences controls; Mail resolves the selected workspace's
-mailboxes and opens its existing quick-settings editor. Entries are shown only
-when the product's corresponding state/access is available; this registry does
-not grant permissions or fabricate settings for unimplemented products. App
-quick settings and central entries share implementations and persisted state.
-Mail's nested editor uses the shell title, bottom navigation/actions and inherited
-background. A scoped route is cancelled on any account/workspace transition;
-request completion cannot replace an editor opened for another scope.
+Every native app's settings live in Settings under a captioned **Apps** group.
+Each row shows a summary of current values and opens that app's settings. This
+applies to both mobile languages, all themes and enlarged text. Each setting
+has exactly one editor and keeps its existing storage, scope cancellation and
+permission gate. Rows appear only when the app is available. Timer appears when
+its opt-in experiment is enabled. Mail requires mail discovery and a workspace.
+Assistant requires a signed-in account and a workspace. The registry does not
+grant permissions or invent settings.
+
+| Setting | Previous surface | Central location |
+| --- | --- | --- |
+| Open Tasks board by default | Settings root, offline Tasks page | Apps → Tasks (`/settings/apps/tasks`) |
+| First day of week | Settings root, Calendar product dialog | Apps → Calendar (`/settings/apps/calendar`) |
+| Calendar accounts and visibility | Calendar top-bar action only | Apps → Calendar; the action remains |
+| Finance amounts | Settings root, offline Finance page, product dialog | Apps → Finance (`/settings/apps/finance`); the eye quick toggle remains |
+| Pomodoro lengths and auto-start | Timer gear sheet | Apps → Timer → Pomodoro (`/settings/apps/timer`) |
+| Missed-entry approval threshold and grace period | Timer Requests gear sheet | Apps → Timer → Approval threshold, shown only for a shared workspace whose member has `manage_time_tracking_requests` and `manage_workspace_settings`; the Requests gear opens it directly (`?focus=threshold`) |
+| Mailbox settings, device reading and swipe actions | Mail gear (swipe actions only there) | Apps → Mail hub, now including swipe actions |
+| Assistant personality, memory and on-device models | Mira menu | Apps → Assistant hub |
+| Profile and account | Settings → You row and Edit profile | Settings → Edit profile (`/settings/profile`) |
+
+Device-wide preferences stay at the root: Appearance and language, Time zone
+(personal and workspace), and Notifications and interaction (reminders, haptics,
+link browser). Tasks, Calendar, Finance and Timer render as routed sub-screens in
+the shell with one top title, dock Back and dock-clearing scroll. Offline module
+pages link to the app sub-screen instead of repeating its editors. The app
+sub-screens link back to their offline data. Mail and Assistant keep their
+account-scoped hubs, which an account or workspace switch cancels.
+
+Summaries state the current value rather than repeating a title: Tasks reads
+"Board view" or "Board list", Finance "Amounts shown" or "Amounts hidden", and
+Calendar the effective first day. Each sub-screen group has a footer naming the
+scope it changes: this device (Tasks board, Finance amounts, Pomodoro, offline
+data), your account (first day of week) or the whole workspace (approval
+threshold, calendar accounts). Calendar also links to the shared Time zone group
+on the Settings root. The approval threshold editor uses grouped rows: a Require
+approval switch, inline day and minute fields and a footer explaining both.
+
+A threshold write is queued when offline and still reports success. The saved
+threshold and grace period are therefore published into the cached workspace
+settings that Timer and Requests read. A reload shows the saved value, not the
+previous one, and live revalidation later replaces it with the server copy.
+Overlapping saves apply in the order they were made.
+
+In-app entry points use the same editor. The Timer gear and the Requests gear
+deep-link to Apps → Timer. On return, Timer reloads Pomodoro lengths and Requests
+reloads its threshold and permissions for the same workspace. The Mail gear
+opens the current mailbox in the shared Mail editor. The Mira menu opens the
+shared Assistant settings route at `/settings/apps/assistant`.
+
+These stay contextual on purpose:
+
+- quick toggles that edit the same stored value, such as the Finance eye
+  action;
+- the layout editors of their own surfaces, Home customize and Apps arrange;
+- per-entity settings, such as a Meet room, a chat conversation's model and a
+  habit tracker.
+
+Routes and redirects:
+
+- `/settings/apps` and unknown or hub-only app ids, such as
+  `/settings/apps/mail`, redirect to `/settings`.
+- `/tasks/settings`, `/calendar/settings`, `/finance/settings` and
+  `/timer/settings` redirect to the matching sub-screen. They are registered
+  ahead of the app registry's parameterised routes, so `/calendar/settings` is
+  not read as the `/calendar/:eventId` detail. The app does not register a
+  `/tasks/:taskId` route.
+- Web and app links of the form `<workspace>/settings/apps/<app>` and
+  `<workspace>/<app>/settings`, plus the Tasks host's `<workspace>/settings`,
+  resolve to the same locations.
+- `/settings/preferences` still redirects to `/settings`, and existing Settings
+  routes are unchanged.
+
+Settings search is the Settings root's primary floating dock action, not an
+inline field. Opening it turns the shell's top navbar into the query field, and
+results replace the root list, Account group included. Search matches titles,
+sections and the settings on app sub-screens, ignoring case and Vietnamese
+diacritics, including decomposed input with combining marks. A result for a
+routed destination opens it. A result for an inline root row clears and closes
+the search and scrolls that row's group into view. Isolated previews without the
+shell chrome registry keep an inline field as a fallback. Settings and Offline
+search retain the floating dock above the keyboard; dock and system Back clear
+and close search before leaving the destination.
+
+Coverage:
+
+- `settings_apps_checks.dart` covers the Apps rows, sub-screens, renders and
+  search, including the dock search action and its light/dark renders.
+- `timer_app_settings_test.dart` covers the threshold permission gate, workspace
+  switch, Pomodoro persistence, the cache write-through and `focus=threshold`.
+- `time_tracker_threshold_cache_test.dart` covers offline reads of a queued
+  threshold through the same cache keys the repository uses.
+- `time_tracker_settings_entrypoint_test.dart` covers the Requests gear deep
+  link and reload.
+- `app_settings_routes_test.dart` covers redirects, deep links and precedence in
+  the real app router.
+- `settings_search_test.dart` covers folding and matching.
+- `profile_page_test.dart` and `profile_page_render_test.dart` cover the Edit
+  profile groups and renders.
+
+### Calendar settings offline behavior
+
+Week-start and time-zone preferences restore encrypted account/workspace
+snapshots, then revalidate in the background even when the snapshot is fresh.
+Leaving an account or workspace clears its visible preference; reconnect and app
+resume refresh the active scope. A failed save preserves the last confirmed
+selection and shows a localized recovery action. These settings do not queue
+writes: their PATCH contract currently has no operation receipt or revision
+precondition. Offline editing and cross-device conflict resolution remain pending
+API work, rather than silently reporting success. Coverage is in
+`calendar_settings_cache_test.dart`, `calendar_settings_offline_test.dart` and
+`timezone_settings_offline_test.dart`.
+
+Calendar and Timezone refresh on entry, scope changes and app resume rather than
+every unrelated outbox cycle. Known preferences remain editable during refresh;
+a save fences the obsolete read. Stored week-start values are validated before
+restoration. Offline Calendar and Timezone writes remain a follow-up requirement;
+this cache layer does not claim queued edits.
+
+### Mail settings offline behavior
+
+Mail account rows and mailbox settings restore an encrypted account/workspace
+snapshot before background revalidation. Long addresses wrap within their row.
+Save belongs to the floating navbar, and unsynchronized changes remain visibly
+queued or require review until acknowledged by the server.
+
+Cached mailbox roles never grant editing. Restored settings open immediately in
+read-only mode until current-session membership can be verified. A previously
+verified editor can queue an offline edit; an uncertain send retains its original
+operation identity for manual review. Before a queued settings PATCH leaves the
+device, its manual-review state is persisted. An interruption therefore cannot
+automatically resend it after restart; an interruption before actual transmission
+also conservatively requires review because the API has no operation receipt.
+Settings use a separate outbox scope,
+including legacy retained records, so a held settings write does not hold inbox
+actions. Saves send changed top-level fields only; nested automation and group
+policies remain complete objects. A sender-name edit preserves an unrelated web
+signature change, but concurrent edits to the same field or policy still use the
+server's existing last-write-wins contract. No revision precondition is claimed.
+Server-setting controls stay read-only while that mailbox has an unresolved
+edit, including when reopened, and until a fresh response installs the next
+confirmed baseline. Retry after a mailbox denial requires a fresh owner/admin
+management grant; cached roles never restore editing. Failed
+edits do not overlay confirmed settings. A mailbox settings 403/404 removes only
+that mailbox's snapshot; workspace bootstrap denial still revokes workspace Mail.
+Authorization denial removes the affected snapshot;
+a verification challenge retains it without granting new management access.
+Refreshes preserve dirty form values. This behavior is covered by
+`mail_settings_cache_ui_regression_test.dart` and
+`mail_settings_offline_regression_test.dart`. Restart and in-flight Retry fencing
+are covered by `mail_settings_dispatch_restart_test.dart`.
 
 ### Assistant settings layout
 
-Mira quick settings and the central Assistant settings editor retain one branded
-header with the localized Assistant settings title and floating bottom Back
-control. Embedded live preferences, personal settings and local-model settings
-use consistent 16px horizontal gutters; the standalone quick-settings sheet
-keeps its modal padding. The route frame consumes the physical safe area and
-reserves the navigation boundary, while the settings list remains scrollable.
-This applies to English and Vietnamese, including enlarged text. Preference
-writes, memory consent, model selection, downloads and Live calls retain their
-existing semantics.
+Mira's settings action and Settings → Apps → Assistant open the same routed
+screen at `/settings/apps/assistant`. The shell keeps its destination title,
+background and floating bottom navbar; the screen adds no inner navbar. Nested
+personality and memory editors also stay routed, with Save in the shell dock.
+Editors explicitly retain the dock above the keyboard, including disabled or
+pending Save actions, so Back and Save remain reachable while typing. Other
+destinations retain their keyboard visibility policy.
+Back closes a custom explanation dialog before returning through the editor
+history. Standalone previews without shell providers retain fallback chrome.
 
-`assistant_settings_layout_test.dart` covers 320px, 390px and 430px widths at
-normal and 200% text scale, header/safe-area geometry and scrolling the final
-model control above the floating navigation. `assistant_settings_hub_test.dart`
-retains save confirmation and retry coverage. Native acceptance requires an
-authenticated device running the exact CI-built artifact.
+Personality restores only a verified actor-owned snapshot from the existing
+Assistant cache while revalidation runs. Personality editors remain read-only
+until fresh settings succeed, including after a failed refresh. An offline snapshot never enables an
+unknown memory-consent setting; unresolved consent shows progress during loading. Memory items, consent changes and revisioned
+memory edits remain authoritative network operations; full personality saves
+are not queued without a matching receipt contract. Cache and generation fences
+are covered by `assistant_personal_settings_cache_test.dart` and
+`assistant_personal_settings_cache_first_test.dart`.
+
+On-device models use compact rows with size and download/selection status.
+Installed rows expose Remove directly and distinguish Use from selected status.
+License and source actions live in custom explanation dialogs. Existing
+preference, memory consent, selection and download semantics remain unchanged.
+This scope applies to English and Vietnamese, including enlarged text.
+
+`assistant_settings_dock_route_test.dart` covers action lifecycle, blocking
+repeated or covered saves, and dialog Back.
+`assistant_routed_editors_test.dart` verifies Back and Save at 320px, doubled
+text size and an open keyboard. Compact rows are covered by
+`assistant_compact_settings_models_test.dart`; real caller-to-editor paths and
+EN/VI coverage remain in `settings_compact_navigation_test.dart`. Native
+acceptance requires an authenticated device running the exact CI-built artifact.
 
 ## Native text editing and keyboard dismissal
 
@@ -247,9 +463,13 @@ picker and Material/app strings in both locales without missing delegates.
 
 ## Compact settings sections
 
-General and product settings share page-background row groups with quiet separators
-and unboxed icons, rather than a separate outlined card for every action. Existing
-profile panels and explicit destructive confirmations retain their grouping.
+General and product settings share one rounded card per group, with inset
+separators and unboxed line icons, rather than a separate outlined card for every
+action. On solid pages, the card is a quiet tonal step from the page background
+that keeps muted text at WCAG AA. Over a gradient or blob appearance, the card is
+translucent at the chosen card opacity. Edit profile uses the same captioned
+groups; its cover banner keeps its preview panel, and explicit destructive
+confirmations retain their grouping.
 Preference categories use one consistent gap between groups and no trailing group
 gap; the parent owns spacing to the next section. Row touch targets remain at least
 48 logical pixels, while translated labels and enlarged text may increase height.
@@ -275,6 +495,42 @@ workspace state emissions, with rename and workspace-switch controls. This
 isolates unnecessary subscription work; it does not measure frame latency or
 establish a TestFlight performance improvement.
 
+## Settings sub-page forms
+
+Settings sub-pages (Mail, Offline modules, Feedback and per-app screens) share
+one template: the shell navbar carries the title, the dock carries Back, and the
+body is captioned `SettingsCompactSection` cards separated by the group gap.
+Inside a card, on/off settings are `SettingsSwitchRow` (the whole row toggles),
+single choices are `SettingsChoiceRow` (current value at the end; opens the
+shared option sheet from `showAppSelectSheet`), and free text is an
+`AppTextField` or `AppTextFormField` padded by `SettingsFieldRow`. Fields keep
+their visible label above the outline, a placeholder that gives an example
+rather than repeating the label, helper text for format or privacy notes, and
+the counter when a length limit applies. Primary actions use
+`AppButton.primary`; there are no underline-style Material fields.
+
+- **Mail** groups Reading (remote images, default action, swipe actions),
+  Sender and signature, AI drafts (auto-draft and draft instructions), Delivery
+  and routing, Group permissions and Organize. Field order and saved keys are
+  unchanged.
+- **Offline modules** show a Stored on this device card: storage used with
+  queued changes, then one row per collection with its item count, a readable
+  size ("870 KB") and a localized update time. Each row opens the stored item
+  browser. Snapshot counts, payload bytes, server totals and the coverage and
+  measurement caveats stay under a collapsed Technical details section.
+  Collection names are derived from the cache namespace and are not translated.
+- **Feedback** has Subject and Details fields, a Screenshot (optional) row with
+  the accepted formats and size, and a primary Send button.
+
+Every text input in the mobile app shows a localized placeholder while empty.
+`test/core/ui/input_placeholder_audit_test.dart` scans `lib/` and fails on an
+input constructor without `placeholder:`, `hintText:` or `hint:`. A deliberate
+exception, such as a single OTP digit cell, carries an
+`// input-placeholder: exempt <reason>` comment inside the call. Coverage also
+includes `settings_forms_render_test.dart` (Feedback and Offline in English and
+Vietnamese, light and dark), `offline_module_page_test.dart` and the Mail
+settings regressions.
+
 ## Handled timezone operational failures
 
 Mobile timezone diagnostics distinguish preference load (`timezoneRead`), API
@@ -294,3 +550,191 @@ HTTP 429 responses through the authenticated API client and repository with
 synthetic credentials, separate read/write phases, cooldown/recovery, stale
 requests and sink failure. Native authenticated provider/device evidence remains
 pending; this does not identify the cause of any customer's 429.
+
+## Timezone pickers and sheet Back
+
+The Personal timezone and Workspace timezone rows open a large sheet built on
+the shared sheet host (`showAppSheet`). It shows every supported zone by city,
+with its region and current GMT offset (for example, "Ho Chi Minh · Asia ·
+GMT+7"). Zones are sorted west to east. The saved choice is pinned under
+**Current** with a check mark. **Automatic** explains what it means:
+
+- Personal: it follows the workspace timezone, or this device's when the
+  workspace has none, and names the zone it resolves to now.
+- Workspace: members without a personal timezone use their own device's.
+
+Search is the floating dock's dynamic search action. It turns the shell's top
+navbar into the query field, and the sheet has no inline search field. The query
+matches city, region, IANA id or offset (`gmt+7`, `utc-5`, `+05:30`).
+
+System Back, the dock Back and dragging the sheet down all close the picker
+without saving, and the user stays on Settings. The same rule applies to every
+sheet or dialog opened through `showAppSheet`, `showAppDialog` or
+`showAdaptiveSheet`: Back closes the topmost overlay first and never pops the
+page beneath. Saves, rate-limit cooldowns, permissions and the
+account/workspace cancellation of an open editor are unchanged. These defaults
+apply in English and Vietnamese, light and dark, and enlarged text. Coverage:
+`settings_timezone_picker_checks.dart`, `app_sheet_host_test.dart` and
+`timezone_choices_test.dart`.
+
+## Settings overview and Appearance
+
+The Settings overview opens with an Account group instead of a header. Its
+rows are the profile (avatar, display name and email; opens `/settings/profile`),
+the current Workspace (its name; opens `/settings/workspace`), Switch workspace
+(the workspace count as its value; opens the workspace picker) and Hidden
+workspaces. There are no standalone Edit profile or Workspace buttons and no
+separate workspace counter: every account destination is an ordinary grouped
+row. The root shows no social counts or invented destinations. The shell keeps the single top-navbar title and the
+floating dock Back control; the page adds no large in-body title or back chevron.
+
+Root preference rows still open nested editors and save only an explicit choice.
+The no-root-switch decision recorded in
+[`apps/mobile/docs/settings-calendar-timezone.md`](https://github.com/tutur3u/platform/blob/main/apps/mobile/docs/settings-calendar-timezone.md)
+remains, so Settings shows no inline toggles at the root even though the visual
+reference does. The Appearance row opens `/settings/appearance`. That is a child
+page, and its controls apply and persist instantly because choosing there is the
+explicit action. Visiting the page and returning writes no appearance preference.
+
+Until a user first opens Appearance, its root row shows a "New" chip. Opening it
+from that row features Aurora with a "New" chip in the gallery
+(`/settings/appearance?highlight=aurora`). Any visit, including a deep link,
+retires the chip through the `appearance-intro-seen` preference. Aurora is listed
+first in the gallery; whether fresh installs should default to Aurora is an open
+product decision.
+
+### Appearance options and defaults
+
+| Option | Choices | Default |
+| --- | --- | --- |
+| Mode | System, Light, Dark | System (an existing `theme-mode` preference is kept) |
+| Theme | Aurora, Classic, Sunset, Ocean, Forest, Ember, Blossom, Mono | Classic |
+| Accent | Match theme, Neutral, Indigo, Blue, Teal, Green, Amber, Orange, Rose, Violet | Match theme (Classic: Neutral) |
+| Background | Solid, Gradient, Blobs (Vietnamese: Trơn, Dải màu, Đốm màu) | Solid |
+| Intensity / Softness / Card opacity | Sliders; softness only for Blobs | 60% / 60% / 78% (min 40%) |
+| Animate background | Blobs only, opt-in | Off |
+
+Classic dark (Neutral accent, Solid background) returns the original shad and
+Material themes. Classic light uses an iOS-style grouped page: a `#F2F2F7` page
+with white cards and darker muted text (`#5E5E66`) that stays AA on the tinted
+page. Gallery swatches always show each theme's gradient or blobs at full
+intensity, so dark Classic, Mono and Ember remain distinguishable.
+Picking a theme in the gallery also applies its recommended background style:
+Aurora, Forest and Blossom use Blobs; Sunset, Ocean, Ember and Mono use Gradient;
+Classic uses Solid. Reset to default restores every option, including System mode.
+
+Curated colour values live only in `lib/core/theme/appearance/appearance_palettes.dart`.
+`AppearanceTheme` derives the shad colour scheme and the Material bridge theme
+from them; widgets use theme tokens. Foreground, muted, card and popover text keep
+WCAG AA (4.5:1) against any blend of each theme's base, gradient, blob, card and
+subtle-surface colours, in light and dark. Primary (accent) and destructive
+colours are derived per theme: each is stepped toward black or white until it
+reaches 4.5:1 against that worst-case blend. Labels on primary, secondary, accent
+and muted fills, and Material `onError`/`onPrimary`, also reach 4.5:1. Non-neutral
+accents also drive Material primary/secondary/tertiary containers and surface
+tint, so chips, FABs and indicators follow the accent.
+
+`AppearanceBackdrop` also installs `accessibleDestructiveButtonTheme` for every
+appearance. shad's built-in destructive button paints a fixed white label on a
+50% destructive fill (about 2.5:1 on light pages). The override uses the
+theme's solid `destructive` fill with the `labelOn` label instead, so it reaches
+4.5:1. Hover and press shift the fill slightly toward the label without losing
+AA, and disabled buttons keep shad's styling. Default Classic dark uses the base
+scheme, so its destructive buttons also change from a translucent to a solid
+fill. Segmented-control labels (Mode, Background) scale down to fit rather than
+truncate.
+
+### App-wide application and cost
+
+`AppearanceBackdrop` sits in the app builder around the router. For Gradient and
+Blobs, it paints one ambient layer behind every route and makes shad scaffolds
+transparent, so the theme shows across Settings, root tabs and detail pages. Its
+child keeps a stable position, so changing styles never remounts navigation.
+Imperatively pushed Material/Cupertino pages carry their own copy of the layer
+beneath their content, so transitions never reveal the page below. The shell
+header is clear on detail routes, so the gradient reaches the title and status
+bar. On root tabs, where content scrolls under it, the header is frosted
+(translucent background with an 18px backdrop blur). Solid themes keep the opaque
+header. Adaptive
+sheets, drawers and dialogs restore opaque scaffolds. Solid styles add no layer.
+
+The layer uses radial and linear gradients, not image blur, inside a
+`RepaintBoundary`, so its picture is recorded once. Impeller has no raster cache:
+the GPU still redraws it every frame, which is cheap for gradients. Animated blobs are opt-in
+and drift on a 48-second loop driven by a 15 fps timer. Only the painter repaints;
+no widget above it rebuilds per tick. Motion stops when the system Reduce Motion
+setting is on or tickers are disabled. The clock stops immediately when the app
+leaves the foreground and resumes from the same phase.
+
+#### Frosted glass on Android
+
+Glass chrome (the dock material, the frosted root-tab header, adaptive sheets
+and dialog scaffolds) goes through `GlassEffects` in
+`lib/core/theme/appearance/glass_effects.dart`. A live `BackdropFilter`
+re-reads and re-blurs the content behind it on every frame that content changes.
+That is every scroll, sheet and transition frame. Each filter also splits the
+GPU render pass. Android GPUs are tile-based and pay heavily for that, so on
+Android (`defaultTargetPlatform`) the same surfaces draw without the blur. Their
+fill closes 75% of the remaining gap to opaque: dock 0.72 becomes 0.93, header
+0.55 becomes 0.89, and sheets and dialogs 0.88 become 0.97. iOS and desktop keep
+the live blur. High contrast is always opaque with no blur. Shapes, borders,
+shadows, colours and the ambient layer are unchanged on every platform.
+
+Coverage: `glass_effects_test.dart` asserts the composited `BackdropFilterLayer`
+count and fill per platform, and `adaptive_sheet_test.dart` checks both
+platforms. The on-device frame benchmark
+`integration_test/perf/glass_effects_benchmark_test.dart` compares blurred and
+flat glass over Solid, Blobs and animated Blobs (`flutter drive --profile`; see
+its header).
+
+Persistence uses `SharedPreferences`: mode keeps the original `theme-mode` key and
+customization is stored as versioned JSON under `appearance-v1`. Installs without
+that key migrate to the default appearance with their saved mode. Unknown or
+malformed values fall back field by field. Bootstrap preloads both values, so
+cold start does not flash the default theme. A newer change or closing the cubit
+fences older pending writes. Slider drags preview live and persist when released.
+
+Coverage: `appearance_contrast_test.dart` checks every rendered text and role
+pair (including destructive and Material `onError`) for every theme, background
+style, brightness and accent, plus the defaults. `appearance_application_test.dart`
+checks app-wide application without remounting, pushed-page layers, pixel output
+for solid, gradient and blob styles, that reduced motion schedules no frames, and
+that the blob clock stops in the background and resumes. `theme_appearance_test.dart`
+covers migration, restart persistence, preview, write fencing, reset and decoding.
+`settings_appearance_shell_checks.dart` runs the real shell for Classic
+light/dark, Aurora blobs and Sunset gradient. It also covers instant
+apply/persist/reset, reduced and full motion, the New chip and Aurora highlight,
+the one-line workspace stat, 320px pages at 2x text in English and
+Vietnamese, and screen-reader activation of theme tiles and accent swatches.
+`appearance_root_tabs_render_test.dart` renders the Home and Apps root tabs in
+Classic light and dark Aurora blobs. `settings_design_checks.dart` covers the row
+grid. These are widget-level checks. Device visual, battery and frame-time
+acceptance on the exact CI-built artifact remain separate gates.
+
+
+### Custom controls and modal editors
+
+Appearance, Storage and Offline use the shared design-system controls. Appearance
+sliders preview immediately and persist on release. Storage opens as a large
+hosted sheet; its clear confirmation remains disabled during an active download
+and clears data only after explicit confirmation. Back dismisses the current
+picker or cancels the confirmation before leaving Settings; outside dismissal
+also cancels the confirmation.
+
+Offline module search lives in the floating navbar. Browsing a stored namespace
+opens a hosted sheet with its own navbar search and lazily rendered record details.
+Search scans all locally retained records in that namespace, without fetching the
+network. An open browser refreshes on a content revision; losing its owning actor,
+workspace or permission dismisses it. Reopening starts a fresh search. The
+standalone preview uses an inline search field when no shell is present.
+
+Assistant quick settings and the central Assistant entry both open the routed
+Assistant settings screen.
+Nested personality and memory editors retain account/workspace cancellation and
+write fences. System-owned license and permission screens keep their framework
+or operating-system presentation.
+
+Regression coverage: `settings_appearance_shell_checks.dart`,
+`cache_storage_review_test.dart`, `offline_stored_items_test.dart`,
+`offline_module_page_test.dart`, `offline_search_chrome_test.dart` and
+`settings_assistant_entrypoint_checks.dart`.

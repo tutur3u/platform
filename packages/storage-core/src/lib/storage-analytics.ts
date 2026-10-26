@@ -1,5 +1,6 @@
 import { posix } from 'node:path';
 import { EMPTY_FOLDER_PLACEHOLDER_NAME } from '@tuturuuu/types/primitives/StorageObject';
+import { sanitizePath } from '@tuturuuu/utils/storage-path';
 import { isReservedMobileDeploymentDrivePath } from './mobile-deployment/storage-policy';
 import { readStorageUsageBytes } from './storage-quota';
 
@@ -30,7 +31,9 @@ export interface WorkspaceStorageMetrics {
 }
 
 function normalizeRelativePath(path?: string) {
-  return (path ?? '').replace(/^\/+|\/+$/g, '');
+  const normalizedPath = sanitizePath(path ?? '');
+  if (normalizedPath === null) throw new Error('Invalid storage path');
+  return normalizedPath;
 }
 
 function buildWorkspaceStoragePath(wsId: string, path?: string) {

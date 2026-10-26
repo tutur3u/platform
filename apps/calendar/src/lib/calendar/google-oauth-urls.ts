@@ -1,3 +1,5 @@
+import { BASE_URL } from '@/constants/common';
+
 const GOOGLE_CALENDAR_CALLBACK_PATH = '/api/v1/calendar/auth/callback';
 const DEFAULT_WEB_ORIGIN = 'https://tuturuuu.com';
 
@@ -118,27 +120,24 @@ export function resolveGoogleCalendarWebOrigin(request?: HeaderCarrier) {
   );
 }
 
-export function resolveGoogleCalendarOAuthRedirectUri(request?: HeaderCarrier) {
-  return (
-    normalizeHttpUrl(process.env.GOOGLE_REDIRECT_URI) ||
-    new URL(
-      GOOGLE_CALENDAR_CALLBACK_PATH,
-      resolveGoogleCalendarWebOrigin(request)
-    ).toString()
-  );
-}
-
-export function buildGoogleCalendarPostAuthRedirectUrl(
-  request: HeaderCarrier | undefined,
-  wsId: string
+/**
+ * Google `redirect_uri` for the Calendar callback. A configured
+ * `GOOGLE_REDIRECT_URI` wins. In production the fallback is the Calendar
+ * app's trusted `BASE_URL` (the app that serves this callback); the
+ * Web-origin and forwarded-header fallbacks apply only outside production,
+ * for local proxies.
+ */
+export function resolveGoogleCalendarOAuthRedirectUri(
+  request?: HeaderCarrier,
+  baseUrl: string = BASE_URL
 ) {
-  const redirectUrl = new URL(
-    `/${encodeURIComponent(wsId)}/calendar`,
-    resolveGoogleCalendarWebOrigin(request)
-  );
+  const configured = normalizeHttpUrl(process.env.GOOGLE_REDIRECT_URI);
+  if (configured) return configured;
 
-  redirectUrl.searchParams.set('provider', 'google');
-  redirectUrl.searchParams.set('connected', 'true');
+  const origin =
+    process.env.NODE_ENV === 'production'
+      ? baseUrl
+      : resolveGoogleCalendarWebOrigin(request);
 
-  return redirectUrl;
+  return new URL(GOOGLE_CALENDAR_CALLBACK_PATH, origin).toString();
 }

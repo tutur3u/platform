@@ -110,7 +110,7 @@ app-local duplicates.
 
 | Layer | Choices |
 | --- | --- |
-| Runtime and package manager | Bun 1.3.x, Node.js 22+ |
+| Runtime and package manager | Bun (`packageManager` pin), Node.js 26.12.1 (`.node-version`) |
 | Monorepo orchestration | Turborepo |
 | Web apps | Next.js 16 App Router, React 19, TypeScript |
 | Local app routing | Portless, stable `https://*.tuturuuu.localhost` origins |
@@ -128,7 +128,9 @@ app-local duplicates.
 Install the required tools:
 
 - [Bun](https://bun.sh/) 1.3.x
-- [Node.js](https://nodejs.org/) 22 or newer
+- [Node.js](https://nodejs.org/) 26.12.1, pinned in `.node-version` (the
+  `engines` floor is 22.13; see
+  [Node.js runtime pin](apps/docs/build/development-tools/node-runtime.mdx))
 - [Docker](https://www.docker.com/) for Supabase, Redis, and Dockerized web
   workflows
 - Flutter SDK for `apps/mobile`
@@ -310,7 +312,7 @@ change touches TypeScript, JavaScript, root scripts, or shared config.
 | `bun test` | Run package test tasks through Turbo |
 | `bun test:scripts` | Run root script tests |
 | `bun type-check` | Run type-check tasks through Turbo |
-| `bun check` | Run the repository validation suite |
+| `bun validate` | Run the repository validation suite |
 | `bun check:docker` | Validate Docker web configuration |
 | `bun check:mobile` | Run Flutter mobile validation |
 | `git diff --check` | Catch whitespace issues before commit |

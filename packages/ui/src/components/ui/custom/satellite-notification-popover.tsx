@@ -17,6 +17,7 @@ import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { useState } from 'react';
+import type { NotificationCodeText } from './notification-code-text';
 import { NotificationList } from './notification-list';
 import { NotificationPopoverTriggerButton } from './notification-popover-trigger';
 import { useNotificationRuntime } from './notification-runtime';
@@ -34,6 +35,7 @@ export interface NotificationPopoverClientProps {
   viewAllText: string;
   markAsReadText: string;
   markAsUnreadText: string;
+  updateErrorText?: string;
   inboxText?: string;
   archiveText?: string;
   archiveAllText?: string;
@@ -44,6 +46,8 @@ export interface NotificationPopoverClientProps {
   declineText?: string;
   acceptedText?: string;
   declinedText?: string;
+  /** Localized text for notifications rendered by code. */
+  codeText?: NotificationCodeText;
   /** Base URL for external redirect (e.g. 'https://tuturuuu.com'). When set, "View All" links to {webAppUrl}/{wsId}/notifications. */
   webAppUrl?: string;
 }
@@ -72,6 +76,7 @@ export default function SatelliteNotificationPopover({
   viewAllText,
   markAsReadText,
   markAsUnreadText,
+  updateErrorText = 'Failed to update notification',
   inboxText = 'Inbox',
   archiveText = 'Archive',
   archiveAllText = 'Archive all',
@@ -82,6 +87,7 @@ export default function SatelliteNotificationPopover({
   declineText = 'Decline',
   acceptedText = 'Joined',
   declinedText = 'Declined',
+  codeText,
   webAppUrl,
 }: NotificationPopoverClientProps) {
   const [open, setOpen] = useState(false);
@@ -150,7 +156,7 @@ export default function SatelliteNotificationPopover({
       await updateNotification.mutateAsync({ id, read: isUnread });
     } catch (error) {
       console.error('Failed to update notification:', error);
-      toast.error('Failed to update notification');
+      toast.error(updateErrorText);
     }
   };
 
@@ -252,6 +258,7 @@ export default function SatelliteNotificationPopover({
           declineText={declineText}
           acceptedText={acceptedText}
           declinedText={declinedText}
+          codeText={codeText}
           markAsReadText={markAsReadText}
           markAsUnreadText={markAsUnreadText}
           onMarkAsRead={handleMarkAsRead}

@@ -1,10 +1,4 @@
-import {
-  existsSync,
-  mkdirSync,
-  readdirSync,
-  readFileSync,
-  writeFileSync,
-} from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync } from 'node:fs';
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path';
 import { createTaskDescriptionPayload } from '@tuturuuu/utils/task-description-codec';
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
@@ -12,6 +6,7 @@ import type {
   WorkspaceTaskTemplate,
   WorkspaceTaskTemplatePayload,
 } from '../task-templates';
+import { writeFileAtomicallySync } from './atomic-file';
 
 const LOCAL_TEMPLATE_DIR = join('.tuturuuu', 'task-templates');
 
@@ -240,6 +235,6 @@ export function writeLocalTaskTemplate(
 ) {
   const absolutePath = resolve(path);
   mkdirSync(dirname(absolutePath), { recursive: true });
-  writeFileSync(absolutePath, taskTemplateToMarkdown(template), 'utf8');
+  writeFileAtomicallySync(absolutePath, taskTemplateToMarkdown(template));
   return absolutePath;
 }

@@ -1996,6 +1996,14 @@
     "everyone_availability": "Everyone's availability",
     "guest": "Guest",
     "guest_account": "Guest account",
+    "guest_password_reset_description": "Enter the guest name exactly as used to sign in. Only passwords marked for reset can be replaced. Existing availability and votes are kept; share the new password privately.",
+    "guest_password_reset_failed": "Could not reset the guest password. Only the plan creator can reset it. Refresh the plan and try again.",
+    "guest_password_reset_guest": "Guest name",
+    "guest_password_reset_new_password": "New guest password",
+    "guest_password_reset_not_required": "This guest password does not require a reset.",
+    "guest_password_reset_required": "This guest password must be reset. Ask the plan creator to set a new password, then sign in again. You can also use your Tuturuuu account or a new guest name.",
+    "guest_password_reset_success": "Password reset. The guest can now sign in with the new password.",
+    "guest_password_reset_title": "Reset a guest password",
     "identity_protection": "Identity protection",
     "identity_protection_desc": "Use a guest account and optionally set a password for this plan to protect your identity.",
     "interacting_as": "Interacting as",
@@ -2016,6 +2024,7 @@
     "something_went_wrong": "Something went wrong",
     "switch_account": "Switch account",
     "timeblocks": "Timeblocks",
+    "too_many_join_attempts": "Too many attempts to join. Try again in {minutes} minutes.",
     "tuturuuu_account": "Tuturuuu account",
     "unavailable": "Unavailable",
     "update_plan": "Update plan",
@@ -2040,6 +2049,12 @@
     "accept": "Accept",
     "archive": "Archive",
     "archive-all": "Archive all",
+    "codes": {
+      "calendar_reconnect_required": {
+        "description": "Calendar sync paused because the provider stopped accepting access. Reconnect the account to resume.",
+        "title": "Reconnect your calendar"
+      }
+    },
     "decline": "Decline",
     "empty-archive": "No archived notifications yet.",
     "inbox": "Inbox",
@@ -2049,6 +2064,7 @@
     "mark-as-unread": "Mark as unread",
     "no-notifications": "You have no notifications yet.",
     "notifications": "Notifications",
+    "update-error": "Could not update notification",
     "view-all": "View All Notifications",
     "workspace-invite": "Workspace invite"
   },
@@ -2489,6 +2505,9 @@
         "whitelist-only-description": "Restrict access to only whitelisted users."
       }
     },
+    "challenge_password_invalid": "Invalid password",
+    "challenge_password_reset_required": "This challenge password must be reset. Ask a challenge manager to enter a new password in Edit challenge, then try again.",
+    "challenge_password_too_many_attempts": "Too many failed attempts. Try again in {minutes} minutes.",
     "challenges": "Challenges",
     "challenges-page": {
       "clear-filters": "Clear filters",

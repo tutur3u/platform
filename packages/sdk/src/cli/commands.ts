@@ -21,6 +21,7 @@ import {
   receiveTokenFromBrowser,
 } from './auth';
 import { runCalendarFeedbackDispatch } from './calendar-feedback-dispatch';
+import { runUpgrade } from './cli-versions-command';
 import { readCommandConfig } from './command-config';
 import {
   type CliConfig,
@@ -32,6 +33,7 @@ import {
   resolveCliTasksBaseUrl,
   writeCliConfig,
 } from './config';
+import { isDelegatedCommand, runDelegatedCommand } from './delegated-commands';
 import { runDevboxCommandWithSession } from './devbox-session';
 import { runExternalCommand } from './external-admin';
 import { runFeedbackCli } from './feedback';
@@ -71,7 +73,6 @@ import {
   resolveLocalTaskTemplatePath,
 } from './task-templates';
 import { runTiptapCommand } from './tiptap';
-import { upgradeCli } from './upgrade';
 
 const doneActions = new Set(['complete', 'completed', 'done', 'mark-done']);
 const closeActions = new Set(['archive', 'close', 'closed', 'mark-closed']);
@@ -1991,8 +1992,7 @@ async function runRelationshipsCliCommand(context: WorkspaceCommandContext) {
 }
 
 export async function runCli(argv = process.argv.slice(2)) {
-  if (argv[0] === 'resources')
-    return (await import('./resources.js')).runResourcesCommand(argv.slice(1));
+  if (isDelegatedCommand(argv[0])) return runDelegatedCommand(argv);
   const commandSeparatorIndex = argv.indexOf('--');
   const globalArgs =
     commandSeparatorIndex >= 0 ? argv.slice(0, commandSeparatorIndex) : argv;
@@ -2038,10 +2038,8 @@ export async function runCli(argv = process.argv.slice(2)) {
     return;
   }
 
-  if (group === 'upgrade') {
-    await upgradeCli();
-    return;
-  }
+  if (group === 'upgrade')
+    return runUpgrade(rawAction, positionals.slice(2), json, flags.keep);
 
   if (group === 'tiptap') {
     await runTiptapCommand({ action: rawAction, flags, json });

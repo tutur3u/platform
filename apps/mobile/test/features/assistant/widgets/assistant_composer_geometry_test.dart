@@ -139,10 +139,10 @@ void main() {
                   find.byType(AssistantScrollToBottomFab),
                 );
                 expect(fab.bottom, lessThanOrEqualTo(composer.top - 16));
-                final expand = tester.getRect(
+                expect(
                   find.byKey(const ValueKey('assistant-expand-prompt')),
+                  findsNothing,
                 );
-                expect(fab.bottom, lessThanOrEqualTo(expand.top - 16));
                 expect(
                   (keyboard ? 600 : 900) - composer.bottom,
                   (keyboard ? 0 : safeArea) + 8,

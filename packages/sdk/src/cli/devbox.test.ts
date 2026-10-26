@@ -4,13 +4,10 @@ import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { TuturuuuUserClient } from '../platform';
 import {
-  collectRepeatedFlagValues,
   createDevboxBuildPayload,
   createDevboxRunPayload,
   createDevboxServePayload,
   createDevboxTunnelPayload,
-  extractDevboxForwardedCommand,
-  parseDurationSeconds,
   runDevboxCommand,
 } from './devbox';
 import { executeDevboxAgentJob } from './devbox-runner';
@@ -33,6 +30,7 @@ vi.mock('./devbox-agent-capabilities', () => ({
     runtimes: { bun: '1.4.0', node: 'v26.0.0' },
     tools: { docker: 'Docker version 29.0.0', git: 'git version 2.54.0' },
   })),
+  heartbeatStorageTrigger: vi.fn(async () => undefined),
 }));
 
 const doctorOk = {
@@ -55,44 +53,6 @@ describe('devbox CLI helpers', () => {
     vi.unstubAllEnvs();
     vi.restoreAllMocks();
     process.exitCode = undefined;
-  });
-
-  it('extracts commands after -- without treating command flags as CLI flags', () => {
-    expect(
-      extractDevboxForwardedCommand([
-        'box',
-        'run',
-        '--keep',
-        '--',
-        'bun',
-        '--cwd',
-        'packages/sdk',
-        'test',
-      ])
-    ).toEqual(['bun', '--cwd', 'packages/sdk', 'test']);
-  });
-
-  it('falls back to positional command syntax for compact use', () => {
-    expect(
-      extractDevboxForwardedCommand(['box', 'run', 'bun', 'check'])
-    ).toEqual(['bun', 'check']);
-  });
-
-  it('collects repeated --env values from raw argv', () => {
-    expect(
-      collectRepeatedFlagValues(
-        ['box', 'run', '--env', 'A=1', '--env=B=2', '--', 'bun', 'check'],
-        'env'
-      )
-    ).toEqual(['A=1', 'B=2']);
-  });
-
-  it.each([
-    ['90', 90],
-    ['2m', 120],
-    ['1h', 3600],
-  ])('parses duration %s', (input, expected) => {
-    expect(parseDurationSeconds(input)).toBe(expected);
   });
 
   it('creates an auto-lease run payload for remote Bun commands', () => {
@@ -149,14 +109,14 @@ describe('devbox CLI helpers', () => {
           'REMOTE_DEVBOX_DATABASE_URL',
           '--',
           'bun',
-          'check',
+          'validate',
         ],
         flags: {
           'database-url-env': 'REMOTE_DEVBOX_DATABASE_URL',
         },
       })
     ).toMatchObject({
-      command: ['bun', 'check'],
+      command: ['bun', 'validate'],
       env: {
         DATABASE_URL: 'postgres://remote-db',
       },

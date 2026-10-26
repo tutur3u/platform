@@ -38,6 +38,8 @@ import {
   toNativeAiUiMessages,
 } from './ai-message-shared';
 
+import { AiStreamError } from './ai-stream-error';
+
 type AiAssistantMessageRow = {
   completion_tokens: number | null;
   content: string | null;
@@ -58,6 +60,8 @@ export function streamNativeAiConversationResponse({
   conversation,
   miraMode,
   request,
+  timezone,
+  clientCapabilities,
   userMessage,
 }: {
   auth: SessionAuthContext;
@@ -65,14 +69,19 @@ export function streamNativeAiConversationResponse({
   conversation: ChatConversation;
   miraMode: boolean;
   request: NextRequest;
+  timezone?: string;
+  clientCapabilities?: string[];
   userMessage: ChatMessage;
 }) {
   const encoder = new TextEncoder();
 
+  let connected = true;
   const stream = new ReadableStream({
     async start(controller) {
       const write = (event: unknown) => {
-        controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
+        if (connected) {
+          controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
+        }
       };
 
       write({ message: userMessage, type: 'message' });
@@ -85,6 +94,8 @@ export function streamNativeAiConversationResponse({
           onDelta: (delta) => write({ delta, type: 'assistant_delta' }),
           onPart: (part) => write({ part, type: 'assistant_part' }),
           request,
+          timezone,
+          clientCapabilities,
           userMessage,
         });
 
@@ -117,8 +128,11 @@ export function streamNativeAiConversationResponse({
         });
         write({ type: 'done' });
       } finally {
-        controller.close();
+        if (connected) controller.close();
       }
+    },
+    cancel() {
+      connected = false;
     },
   });
 
@@ -139,6 +153,8 @@ export async function sendNativeAiConversationMessages({
   onDelta,
   onPart,
   request,
+  timezone,
+  clientCapabilities,
   userMessage,
 }: {
   auth: SessionAuthContext;
@@ -148,6 +164,8 @@ export async function sendNativeAiConversationMessages({
   onDelta?: (delta: string) => void;
   onPart?: (part: Record<string, unknown>) => void;
   request: NextRequest;
+  timezone?: string;
+  clientCapabilities?: string[];
   userMessage: ChatMessage;
 }): Promise<NativeAiMessagePersistence> {
   const settings = await getNativeAiSettings(conversation.id);
@@ -238,6 +256,8 @@ export async function sendNativeAiConversationMessages({
       request,
       supabase: auth.supabase,
       thinkingMode: settings.thinking_mode,
+      timezone,
+      clientCapabilities,
       user: auth.user,
       wsId: context.normalizedWsId,
     });
@@ -252,7 +272,13 @@ export async function sendNativeAiConversationMessages({
       throw new Error(errorText || 'Failed to send AI chat message');
     }
 
-    await consumeAiResponseTextDeltas(aiResponse, onDelta, onPart);
+    // A provider error may follow a durably saved partial reply. Reconcile
+    // that receipt before deciding whether this turn failed.
+    try {
+      await consumeAiResponseTextDeltas(aiResponse, onDelta, onPart);
+    } catch (error) {
+      if (!(error instanceof AiStreamError)) throw error;
+    }
 
     // The AI stream can close just before its onFinish persistence callback
     // becomes visible to this request. A short bounded retry avoids reporting

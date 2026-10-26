@@ -1,15 +1,13 @@
-import { execFile } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { availableParallelism, loadavg, totalmem } from 'node:os';
-import { promisify } from 'node:util';
 import {
   effectiveResourceLanes,
   laneResourceConfig,
   type ResourceConfig,
 } from './resources-config';
 import type { ResourceOwner } from './resources-slots';
+import { systemProbe } from './resources-system-probes';
 
-const exec = promisify(execFile);
 const gib = 1024 ** 3;
 export interface BurstTelemetry {
   platform: string;
@@ -22,6 +20,7 @@ export interface BurstTelemetry {
 export interface BurstEligibility {
   eligible: boolean;
   reason: string;
+  telemetryUnavailable?: true;
 }
 
 // Host reads stay outside this decision so missing and stressed telemetry can
@@ -44,6 +43,7 @@ export function evaluateBurst(
     return {
       eligible: false,
       reason: 'Burst CPU or memory telemetry is unavailable',
+      telemetryUnavailable: true,
     };
   if (load / cpus >= 0.7)
     return {
@@ -54,6 +54,9 @@ export function evaluateBurst(
     if (pressureLevel !== 1)
       return {
         eligible: false,
+        ...(pressureLevel === undefined || !Number.isFinite(pressureLevel)
+          ? { telemetryUnavailable: true as const }
+          : {}),
         reason:
           pressureLevel === undefined || !Number.isFinite(pressureLevel)
             ? 'macOS pressure telemetry is unavailable'
@@ -68,6 +71,7 @@ export function evaluateBurst(
       return {
         eligible: false,
         reason: 'Linux available-memory telemetry is unavailable',
+        telemetryUnavailable: true,
       };
     if (availableMemory < Math.max(totalMemory * 0.25, estimatedLaneMemory))
       return {
@@ -78,6 +82,7 @@ export function evaluateBurst(
     return {
       eligible: false,
       reason: 'Burst telemetry is unsupported on this platform',
+      telemetryUnavailable: true,
     };
   return {
     eligible: true,
@@ -96,7 +101,7 @@ export async function burstEligibility(
       totalMemory: totalmem(),
     };
     if (process.platform === 'darwin') {
-      const { stdout } = await exec(
+      const { stdout } = await systemProbe(
         'sysctl',
         ['-n', 'kern.memorystatus_vm_pressure_level'],
         { timeout: 2000 }
@@ -116,10 +121,17 @@ export async function burstEligibility(
       Math.max(caps.vitestWorkers, caps.buildJobs) * 8 * gib
     );
   } catch {
-    return { eligible: false, reason: 'Burst host telemetry is unavailable' };
+    return {
+      eligible: false,
+      reason: 'Burst host telemetry is unavailable',
+      telemetryUnavailable: true,
+    };
   }
 }
 
+// Lane count is bounded by the effective lane ceiling, not by worker totals.
+// Once the aggregate budget is spent, each further (pressure-gated) lane gets
+// exactly one worker, so the overcommit is at most one worker per burst lane.
 export function admissionResourceConfig(
   config: ResourceConfig,
   owners: ResourceOwner[]
@@ -136,15 +148,13 @@ export function admissionResourceConfig(
     }),
     { vitestWorkers: 0, buildJobs: 0 }
   );
-  const vitestWorkers = Math.min(
-    caps.vitestWorkers,
-    config.vitestWorkers - allocated.vitestWorkers
+  const vitestWorkers = Math.max(
+    1,
+    Math.min(caps.vitestWorkers, config.vitestWorkers - allocated.vitestWorkers)
   );
-  const buildJobs = Math.min(
-    caps.buildJobs,
-    config.buildJobs - allocated.buildJobs
+  const buildJobs = Math.max(
+    1,
+    Math.min(caps.buildJobs, config.buildJobs - allocated.buildJobs)
   );
-  return vitestWorkers >= 1 && buildJobs >= 1
-    ? { ...caps, vitestWorkers, buildJobs }
-    : undefined;
+  return { ...caps, vitestWorkers, buildJobs };
 }

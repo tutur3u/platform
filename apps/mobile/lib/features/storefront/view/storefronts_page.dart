@@ -3,9 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart' hide Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mobile/core/responsive/responsive_padding.dart';
-import 'package:mobile/core/responsive/responsive_values.dart';
-import 'package:mobile/core/responsive/responsive_wrapper.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/storefront/storefront_models.dart';
 import 'package:mobile/data/repositories/storefront_repository.dart';
@@ -124,121 +122,113 @@ class _StorefrontsPageState extends State<StorefrontsPage> {
         listenWhen: (previous, current) =>
             previous.currentWorkspace?.id != current.currentWorkspace?.id,
         listener: (context, state) => unawaited(_reload()),
-        child: ResponsiveWrapper(
-          maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
-          child: NovaRefreshIndicator(
-            onRefresh: _reload,
-            child: ListView(
-              padding: EdgeInsets.fromLTRB(
-                16,
-                8,
-                16,
-                40 + MediaQuery.paddingOf(context).bottom,
-              ),
-              children: [
-                InventoryHeroCard(
-                  title: l10n.storefrontTitle,
-                  subtitle: l10n.storefrontSubtitle,
-                  icon: Icons.storefront_outlined,
-                  showHeader: false,
-                  metrics: [
-                    InventoryMetricTile(
-                      label: l10n.storefrontStores,
-                      value: '${_storefronts.length}',
-                      icon: Icons.store_mall_directory_outlined,
-                    ),
-                    InventoryMetricTile(
-                      label: l10n.storefrontPublished,
-                      value: '$published',
-                      icon: Icons.public_outlined,
-                      tint: FinancePalette.of(context).positive,
-                    ),
-                    InventoryMetricTile(
-                      label: l10n.storefrontListings,
-                      value: '$listings',
-                      icon: Icons.sell_outlined,
-                    ),
-                  ],
-                  actions: [
-                    shad.PrimaryButton(
-                      onPressed: _createStorefront,
-                      child: Text(l10n.storefrontCreate),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                TextField(
-                  controller: _searchController,
-                  onChanged: _onSearchChanged,
-                  decoration: InputDecoration(
-                    labelText: l10n.storefrontSearch,
-                    prefixIcon: const Icon(Icons.search_rounded),
-                    suffixIcon: _searchController.text.isEmpty
-                        ? null
-                        : IconButton(
-                            tooltip: l10n.commonClear,
-                            onPressed: () {
-                              _searchController.clear();
-                              unawaited(_reload());
-                            },
-                            icon: const Icon(Icons.close_rounded),
-                          ),
+        child: NovaRefreshIndicator(
+          onRefresh: _reload,
+          child: AppPageListView(
+            children: [
+              InventoryHeroCard(
+                title: l10n.storefrontTitle,
+                subtitle: l10n.storefrontSubtitle,
+                icon: Icons.storefront_outlined,
+                showHeader: false,
+                metrics: [
+                  InventoryMetricTile(
+                    label: l10n.storefrontStores,
+                    value: '${_storefronts.length}',
+                    icon: Icons.store_mall_directory_outlined,
                   ),
-                ),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: ['all', 'published', 'draft', 'paused', 'archived']
-                      .map(
-                        (status) => ChoiceChip(
-                          label: Text(storefrontStatusLabel(l10n, status)),
-                          selected: _status == status,
-                          onSelected: (_) {
-                            setState(() => _status = status);
+                  InventoryMetricTile(
+                    label: l10n.storefrontPublished,
+                    value: '$published',
+                    icon: Icons.public_outlined,
+                    tint: FinancePalette.of(context).positive,
+                  ),
+                  InventoryMetricTile(
+                    label: l10n.storefrontListings,
+                    value: '$listings',
+                    icon: Icons.sell_outlined,
+                  ),
+                ],
+                actions: [
+                  shad.PrimaryButton(
+                    onPressed: _createStorefront,
+                    child: Text(l10n.storefrontCreate),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              TextField(
+                controller: _searchController,
+                onChanged: _onSearchChanged,
+                decoration: InputDecoration(
+                  hintText: context.l10n.inputPlaceholderStorefrontSearch,
+                  labelText: l10n.storefrontSearch,
+                  prefixIcon: const Icon(Icons.search_rounded),
+                  suffixIcon: _searchController.text.isEmpty
+                      ? null
+                      : IconButton(
+                          tooltip: l10n.commonClear,
+                          onPressed: () {
+                            _searchController.clear();
                             unawaited(_reload());
                           },
+                          icon: const Icon(Icons.close_rounded),
                         ),
-                      )
-                      .toList(growable: false),
                 ),
-                const SizedBox(height: 18),
-                if (_loading && _storefronts.isEmpty)
-                  const _StorefrontSkeleton()
-                else if (_error != null)
-                  FinanceEmptyState(
-                    icon: Icons.cloud_off_outlined,
-                    title: l10n.commonSomethingWentWrong,
-                    body: _error!,
-                    action: shad.SecondaryButton(
-                      onPressed: _reload,
-                      child: Text(l10n.commonRetry),
-                    ),
-                  )
-                else if (_storefronts.isEmpty)
-                  FinanceEmptyState(
-                    icon: Icons.storefront_outlined,
-                    title: l10n.storefrontEmptyTitle,
-                    body: l10n.storefrontEmptyBody,
-                    action: shad.PrimaryButton(
-                      onPressed: _createStorefront,
-                      child: Text(l10n.storefrontCreate),
-                    ),
-                  )
-                else
-                  ..._storefronts.map(
-                    (storefront) => Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: PendingSyncFrame(
-                        workspaceId: _wsId ?? '',
-                        entityId: storefront.id,
-                        feature: 'storefront',
-                        child: _StorefrontCard(storefront: storefront),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: ['all', 'published', 'draft', 'paused', 'archived']
+                    .map(
+                      (status) => ChoiceChip(
+                        label: Text(storefrontStatusLabel(l10n, status)),
+                        selected: _status == status,
+                        onSelected: (_) {
+                          setState(() => _status = status);
+                          unawaited(_reload());
+                        },
                       ),
+                    )
+                    .toList(growable: false),
+              ),
+              const SizedBox(height: 18),
+              if (_loading && _storefronts.isEmpty)
+                const _StorefrontSkeleton()
+              else if (_error != null)
+                FinanceEmptyState(
+                  icon: Icons.cloud_off_outlined,
+                  title: l10n.commonSomethingWentWrong,
+                  body: _error!,
+                  action: shad.SecondaryButton(
+                    onPressed: _reload,
+                    child: Text(l10n.commonRetry),
+                  ),
+                )
+              else if (_storefronts.isEmpty)
+                FinanceEmptyState(
+                  icon: Icons.storefront_outlined,
+                  title: l10n.storefrontEmptyTitle,
+                  body: l10n.storefrontEmptyBody,
+                  action: shad.PrimaryButton(
+                    onPressed: _createStorefront,
+                    child: Text(l10n.storefrontCreate),
+                  ),
+                )
+              else
+                ..._storefronts.map(
+                  (storefront) => Padding(
+                    padding: const EdgeInsets.only(bottom: AppLayout.itemGap),
+                    child: PendingSyncFrame(
+                      workspaceId: _wsId ?? '',
+                      entityId: storefront.id,
+                      feature: 'storefront',
+                      child: _StorefrontCard(storefront: storefront),
                     ),
                   ),
-              ],
-            ),
+                ),
+            ],
           ),
         ),
       ),

@@ -1,7 +1,7 @@
 {
   "name": "@tuturuuu/types",
   "license": "MIT",
-  "version": "0.36.0",
+  "version": "0.37.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/tutur3u/platform",
@@ -69,5 +69,5 @@
       "require": "./dist/tiptap.js"
     }
   },
-  "packageManager": "bun@1.4.3"
+  "packageManager": "bun@1.4.4"
 }

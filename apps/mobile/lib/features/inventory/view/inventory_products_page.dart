@@ -4,10 +4,8 @@ import 'package:flutter/material.dart' hide Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_sync_refresh.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
-import 'package:mobile/core/responsive/responsive_padding.dart';
-import 'package:mobile/core/responsive/responsive_values.dart';
-import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
@@ -355,113 +353,101 @@ class _InventoryProductsPageState extends State<InventoryProductsPage>
                   .where(inventoryProductHasLowStock)
                   .length;
 
-              return ResponsiveWrapper(
-                maxWidth: ResponsivePadding.maxContentWidth(
-                  context.deviceClass,
-                ),
-                child: Stack(
-                  children: [
-                    InventorySearchChrome(
-                      location: Routes.inventoryProducts,
-                      controller: _searchController,
-                      onChanged: _onSearchChanged,
-                      hint: l10n.inventorySearchProducts,
-                    ),
-                    NovaRefreshIndicator(
-                      onRefresh: () => _loadInitial(forceRefresh: true),
-                      child: ListView(
-                        controller: _scrollController,
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        padding: EdgeInsets.fromLTRB(
-                          16,
-                          8,
-                          16,
-                          108 + MediaQuery.paddingOf(context).bottom,
-                        ),
-                        children: [
-                          if (_error != null)
-                            InventoryReadWarning(
-                              onRetry: () =>
-                                  unawaited(_loadInitial(forceRefresh: true)),
-                            ),
-                          FinancePanel(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Wrap(
-                                  spacing: 12,
-                                  runSpacing: 8,
-                                  children: [
-                                    FinanceStatChip(
-                                      label: l10n.inventoryProductsLabel,
-                                      value: '$_count',
-                                      icon: Icons.inventory_2_outlined,
-                                    ),
-                                    FinanceStatChip(
-                                      label: l10n.inventoryLoadedLowStock,
-                                      value: '$lowStockCount',
-                                      icon: Icons.warning_amber_outlined,
-                                    ),
-                                  ],
-                                ),
-                                const shad.Gap(14),
-                              ],
-                            ),
+              return Stack(
+                children: [
+                  InventorySearchChrome(
+                    location: Routes.inventoryProducts,
+                    controller: _searchController,
+                    onChanged: _onSearchChanged,
+                    hint: l10n.inventorySearchProducts,
+                  ),
+                  NovaRefreshIndicator(
+                    onRefresh: () => _loadInitial(forceRefresh: true),
+                    child: AppPageListView(
+                      controller: _scrollController,
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [
+                        if (_error != null)
+                          InventoryReadWarning(
+                            onRetry: () =>
+                                unawaited(_loadInitial(forceRefresh: true)),
                           ),
-                          const shad.Gap(18),
-                          InventoryPendingDeletions(
-                            userId: _scope.$1,
-                            workspaceId: _wsId,
-                            names: _deletedNames,
-                          ),
-                          if (_isLoadingInitial && _products.isEmpty)
-                            const FinanceSkeletonBlock(height: 160, radius: 20)
-                          else if (_products.isEmpty)
-                            InventoryEmptyPanel(
-                              body: l10n.inventoryProductsEmpty,
-                            )
-                          else ...[
-                            ..._products.map(
-                              (product) => Padding(
-                                padding: const EdgeInsets.only(bottom: 12),
-                                child: PendingSyncFrame(
-                                  workspaceId: _wsId ?? product.wsId,
-                                  entityId: product.id,
-                                  feature: 'inventory',
-                                  child: InventoryProductCard(
-                                    product: product,
-                                    currency: _currency,
-                                    onDelete: _canManageCatalog
-                                        ? () => _deleteProduct(product)
-                                        : null,
-                                    onTap: _canManageCatalog
-                                        ? () =>
-                                              _openEditor(productId: product.id)
-                                        : null,
+                        FinancePanel(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Wrap(
+                                spacing: 12,
+                                runSpacing: 8,
+                                children: [
+                                  FinanceStatChip(
+                                    label: l10n.inventoryProductsLabel,
+                                    value: '$_count',
+                                    icon: Icons.inventory_2_outlined,
                                   ),
+                                  FinanceStatChip(
+                                    label: l10n.inventoryLoadedLowStock,
+                                    value: '$lowStockCount',
+                                    icon: Icons.warning_amber_outlined,
+                                  ),
+                                ],
+                              ),
+                              const shad.Gap(14),
+                            ],
+                          ),
+                        ),
+                        const shad.Gap(18),
+                        InventoryPendingDeletions(
+                          userId: _scope.$1,
+                          workspaceId: _wsId,
+                          names: _deletedNames,
+                        ),
+                        if (_isLoadingInitial && _products.isEmpty)
+                          const FinanceSkeletonBlock(height: 160, radius: 20)
+                        else if (_products.isEmpty)
+                          InventoryEmptyPanel(body: l10n.inventoryProductsEmpty)
+                        else ...[
+                          ..._products.map(
+                            (product) => Padding(
+                              padding: const EdgeInsets.only(
+                                bottom: AppLayout.itemGap,
+                              ),
+                              child: PendingSyncFrame(
+                                workspaceId: _wsId ?? product.wsId,
+                                entityId: product.id,
+                                feature: 'inventory',
+                                child: InventoryProductCard(
+                                  product: product,
+                                  currency: _currency,
+                                  onDelete: _canManageCatalog
+                                      ? () => _deleteProduct(product)
+                                      : null,
+                                  onTap: _canManageCatalog
+                                      ? () => _openEditor(productId: product.id)
+                                      : null,
                                 ),
                               ),
                             ),
-                            if (_isLoadingMore)
-                              const Padding(
-                                padding: EdgeInsets.symmetric(vertical: 16),
-                                child: Center(
-                                  child: NovaLoadingIndicator(size: 20),
-                                ),
+                          ),
+                          if (_isLoadingMore)
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 16),
+                              child: Center(
+                                child: NovaLoadingIndicator(size: 20),
                               ),
-                          ],
+                            ),
                         ],
-                      ),
+                      ],
                     ),
-                    if (_canManageCatalog)
-                      ExtendedFab(
-                        icon: Icons.add_rounded,
-                        label: l10n.inventoryCreateProduct,
-                        includeBottomSafeArea: false,
-                        onPressed: _openEditor,
-                      ),
-                  ],
-                ),
+                  ),
+                  if (_canManageCatalog)
+                    ExtendedFab(
+                      icon: Icons.add_rounded,
+                      label: l10n.inventoryCreateProduct,
+                      includeBottomSafeArea: false,
+                      onPressed: _openEditor,
+                    ),
+                ],
               );
             },
           ),

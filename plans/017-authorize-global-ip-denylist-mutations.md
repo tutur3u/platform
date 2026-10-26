@@ -20,7 +20,7 @@
 
 Implementation is preserved uncommitted in
 `.worktrees/fix-infrastructure-blocked-ip-auth`. The focused 17-test suite,
-Infrastructure typecheck, `bun check`, and whitespace gate pass. The mandatory
+Infrastructure typecheck, `bun validate`, and whitespace gate pass. The mandatory
 production build remains blocked by the execution environment: after an
 approved network retry fetched the required Google font, Turbopack panicked
 while processing `packages/ui/src/globals.css` because creating a subprocess
@@ -62,7 +62,7 @@ exact blocked-IP route or authorization helper.
 | --- | --- | --- |
 | Focused tests | `bun --cwd apps/infrastructure vitest run 'src/app/api/v1/infrastructure/blocked-ips/route.test.ts'` | exit 0; app-session/permission matrix passes |
 | Infrastructure typecheck | `bun run --cwd apps/infrastructure type-check` | exit 0 |
-| Repository gate | `bun check` | exit 0 |
+| Repository gate | `bun validate` | exit 0 |
 | Infrastructure build | `bun run --cwd apps/infrastructure build` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
@@ -123,7 +123,7 @@ plan changes an Infrastructure route handler.
 - [ ] Email domain and root membership alone grant no access.
 - [ ] Privileged clients and destructive helpers are not reached on denial.
 - [ ] Block durations, responses, and Redis behavior remain intact.
-- [ ] Focused tests, typecheck, `bun check`, build, and whitespace pass.
+- [ ] Focused tests, typecheck, `bun validate`, build, and whitespace pass.
 
 ## STOP conditions
 

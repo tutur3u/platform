@@ -1,10 +1,17 @@
+import 'package:mobile/data/repositories/theme_preference_ledger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+export 'package:mobile/data/repositories/theme_preference_ledger.dart'
+    show PreferenceWriteOutcome;
 
 /// Repository for user preferences (theme, calendar view, etc.).
 ///
 /// Ported from apps/native/lib/stores/ui-store.ts.
+
 class SettingsRepository {
   static const _themeModeKey = 'theme-mode';
+  static const _appearanceKey = 'appearance-v1';
+  static const _appearanceIntroSeenKey = 'appearance-intro-seen';
   static const _calendarViewKey = 'calendar-view';
   static const _taskViewModeKey = 'task-view-mode';
   static const _disableDefaultTaskBoardNavigationKey =
@@ -91,10 +98,49 @@ class SettingsRepository {
     return prefs.getString(_themeModeKey) ?? 'system';
   }
 
-  Future<void> setThemeMode(String mode, {bool Function()? shouldWrite}) async {
+  /// Persists the theme mode. The linearization point is the synchronous
+  /// [shouldWrite] check together with the `setString` dispatch, which
+  /// updates the in-process preference cache in the same event: a scope
+  /// change either lands before it (the write is skipped) or after it (the
+  /// write stands and cannot be cancelled). Overlapping writes are ordered by
+  /// [PreferenceWriteLedger]; see it for the outcomes.
+  Future<PreferenceWriteOutcome> setThemeMode(
+    String mode, {
+    bool Function()? shouldWrite,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (shouldWrite?.call() == false) return PreferenceWriteOutcome.skipped;
+    return await PreferenceWriteLedger.of(prefs, _themeModeKey).write(mode);
+  }
+
+  /// Encoded appearance customisation, or `null` before the first change.
+  /// Light/dark/system mode stays under the original `theme-mode` key.
+  Future<String?> getAppearance() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_appearanceKey);
+  }
+
+  Future<void> setAppearance(
+    String encoded, {
+    bool Function()? shouldWrite,
+  }) async {
     final prefs = await SharedPreferences.getInstance();
     if (shouldWrite?.call() == false) return;
-    await prefs.setString(_themeModeKey, mode);
+    await prefs.setString(_appearanceKey, encoded);
+  }
+
+  /// Whether the user has opened Appearance since the themes were introduced.
+  Future<bool> getAppearanceIntroSeen() async =>
+      (await SharedPreferences.getInstance()).getBool(
+        _appearanceIntroSeenKey,
+      ) ??
+      false;
+
+  Future<void> setAppearanceIntroSeen() async {
+    await (await SharedPreferences.getInstance()).setBool(
+      _appearanceIntroSeenKey,
+      true,
+    );
   }
 
   Future<String> getCalendarView() async {

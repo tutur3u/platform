@@ -208,37 +208,11 @@ auth/session and build-info routes are local as well.
 
 ### Calendar settings authorization
 
-Personal calendar preferences are scoped to the authenticated user. Settings
-updates accept supported IANA timezone names or `auto` inheritance; invalid
-names and fixed-offset strings are rejected before storage. Workspace
-calendar settings are readable by members, but updates require
-`manage_workspace_settings`. Check that permission explicitly on the owning
-PATCH route: a verified signed app session can use an admin-backed database
-client, so membership and table RLS alone do not enforce editing rights.
-
-Native clients reach the Calendar owner through the authenticated mobile gateway.
-The settings allowlist permits only GET and PATCH on
-`/api/v1/users/calendar-settings` and
-`/api/v1/workspaces/:wsId/calendar-settings`; upstream ownership, workspace
-permission checks, credential isolation and response limits remain enforced.
-
-Native preference GETs use a dedicated Infrastructure guard bucket so calendar
-event/account fan-out cannot consume their read allowance. The shared guard
-still enforces the same default anonymous/authenticated limits, verified-session
-keying, MFA, and IP blocks; PATCH and other gateway requests retain the existing
-bucket. A preferences 429 emits only policy/caller/window/reason diagnostics,
-without actor, workspace, IP, credentials or response bodies. This does not
-bypass an IP block or make an exhausted preferences bucket unlimited.
-Regression coverage: `preference-guard.test.ts` exact route/method boundaries
-and `gateway.test.ts` upstream diagnostic isolation. Actual authenticated
-mobile recovery must be verified after deployment. Mobile's API error retains
-only fixed known reason, policy, caller and window values from a 429 response,
-and includes those safe fields in its diagnostic log. Unknown values become
-`unknown`; URLs, actor/workspace identifiers, IPs, cookies, credentials and
-response bodies are never included in that diagnostic. This preserves the
-server rejection and cooldown rather than treating an unavailable preference as
-success. Regression: `api_client_error_contract_test.dart` exercises the HTTP
-boundary and rejects private or arbitrary header values.
+Personal/workspace settings use shared validation and explicit workspace edit
+permissions. Native preferences default directly to Web; Calendar browser clients
+and older mobile gateway clients retain their existing adapters. See
+[Native Calendar preferences](/platform/features/native-calendar-preferences)
+for the product decision, quotas, exceptions and regression evidence.
 
 ## OAuth Token Safety
 
@@ -256,6 +230,10 @@ Calendar server pages must therefore:
   metadata (`id`, account email/name, provider, active state, expiry).
 - Keep token refresh and provider API calls on Calendar-local server routes;
   never expose provider credentials to client components.
+- Never filter a query by `access_token` or `refresh_token` value: PostgREST
+  sends filters in the URL. Fence by id and `created_at`, or compare a
+  fingerprint in SQL. `oauth-credential-url-filter.test.ts` in `packages/utils`
+  enforces this across apps and packages.
 
 When adding a new Calendar host route, reuse the helper instead of
 `select('*')` on `calendar_auth_tokens`.
@@ -272,16 +250,52 @@ Google Calendar OAuth initiation and callback handlers are owned by
 `apps/calendar`. The local `/api/v1/calendar/auth` route builds its callback URL
 from a browser-safe configured origin and ignores wildcard listener addresses
 such as `0.0.0.0` or `::`. Existing provider registrations may still configure
-the central Web origin; if no safe configured origin is available, the fallback
-origin is `https://tuturuuu.com`.
+`GOOGLE_REDIRECT_URI`; otherwise production uses the Calendar `BASE_URL` (see
+below), and local development falls back to the configured Web origin.
 
-After Google returns to the callback, the flow always sends the user to the
-central Web Calendar page at
-`https://tuturuuu.com/{wsId}/calendar?provider=google&connected=true`. Valid
-local development callback URLs such as
+Valid local development callback URLs such as
 `http://localhost:7803/api/v1/calendar/auth/callback` may still be configured
 through `GOOGLE_REDIRECT_URI`, but wildcard listener URLs must never be emitted
 as Google `redirect_uri` values or browser redirects.
+
+Google and Microsoft connections share these security rules (regression
+coverage lives beside the routes under `apps/calendar/src/app/api/v1/calendar/auth/`
+and in `apps/calendar/src/lib/calendar/calendar-oauth-*.test.ts`):
+
+- The OAuth `state` is signed, expires after 10 minutes, and binds the flow to
+  the initiating user and workspace. Callbacks reject forged, swapped, expired,
+  other-user and non-member states before exchanging the authorization code.
+- Each state is single-use. The callback consumes its nonce through the
+  service-role-only RPC `private.consume_calendar_oauth_state_nonce`, which
+  inserts into `private.calendar_oauth_state_nonces` (RLS forced, no client
+  policies or grants) and treats an existing row as a replay. The same call
+  purges at most 100 rows that expired over an hour ago. If the ledger is
+  unavailable (for example the migration has not been applied), the callback
+  fails closed with `503` before exchanging the code.
+- Google uses S256 PKCE derived from the signed state. Microsoft uses S256 PKCE
+  with an HttpOnly verifier cookie.
+- After connecting (or on a provider error), the browser is redirected to the
+  Calendar app's workspace page, `{BASE_URL}/{wsId}`, which is where the
+  Calendar satellite serves each workspace calendar. `BASE_URL`
+  (`apps/calendar/src/constants/common.ts`) resolves `CALENDAR_APP_URL` or
+  `NEXT_PUBLIC_CALENDAR_APP_URL` against the registered Calendar domain and
+  otherwise defaults to `https://calendar.tuturuuu.com` in production. The
+  origin is never taken from the request URL, Host or forwarded headers.
+  Without a verified workspace the redirect goes to the origin root.
+- In production the Google `redirect_uri` is `GOOGLE_REDIRECT_URI` when set,
+  otherwise `{BASE_URL}/api/v1/calendar/auth/callback`. The Web-origin and
+  forwarded-header fallbacks apply only outside production, for local proxies.
+- No environment variables beyond the existing provider credentials are
+  required. The nonce ledger ships as a migration through the gated production
+  migration workflow.
+
+To exercise the ledger against a disposable local Supabase with migrations
+applied, run the env-gated integration test from `apps/calendar` with
+`CALENDAR_OAUTH_NONCE_IT_SUPABASE_URL`, `CALENDAR_OAUTH_NONCE_IT_SERVICE_ROLE_KEY`
+and `CALENDAR_OAUTH_NONCE_IT_USER_ID` (a synthetic local auth user):
+`bunx vitest run src/lib/calendar/calendar-oauth-nonce-store.integration.test.ts`.
+It is skipped when those variables are absent. Never point it at a shared or
+remote project.
 
 Normal Google Calendar connect and reconnect URLs request
 `access_type=offline` and `include_granted_scopes=true`, but they must not force
@@ -353,16 +367,13 @@ workspace-enumeration failures retain their 401/500 responses. Dashboard rows
 use `failed` only for actual provider failures; successful admitted work is
 `completed` even when summaries report deferred accounts or connections.
 
-Google `invalid_grant` disables only the rejected account, conditional on its
-saved refresh credential still matching the attempted credential. Sibling
-calendars skip further calls in that run; healthy accounts continue. Reconnecting
-reactivates consent through the normal OAuth flow. Transient errors do not disable
-accounts. Microsoft refresh failures are isolated by account and retain the
-existing revoked-consent disable behavior, including reconnect-required refresh
-classification. Calendar-scoped Microsoft errors retain failure diagnostics while
-sibling calendars continue; auth and rate-limit errors stop that account. Deletion
-runs only after successful fetching, reconciliation and upsert. These rules apply
-to manual and background inbound sync; stored events remain visible.
+A permanently rejected credential is quarantined, not deleted; see
+[Self-healing OAuth credentials](#self-healing-oauth-credentials). Sibling
+calendars skip further calls in that run; healthy accounts continue.
+Calendar-scoped Microsoft errors retain failure diagnostics while sibling
+calendars continue; auth and rate-limit errors stop that account. Deletion runs
+only after successful fetching, reconciliation and upsert. These rules apply to
+manual and background inbound sync; stored events remain visible.
 
 Background runs admit at most 10 workspaces, 20 Google connections and 20
 Microsoft connections per workspace, with a rotating selection across ticks.
@@ -381,7 +392,9 @@ failed run. Queued workspaces and unattempted Google connections are deferred on
 cancellation; an in-flight Google failure remains failed. Microsoft stops without
 creating provider-failure entries for aborted calendars and defers the unfinished
 account plus later accounts. Earlier observed calendar failures remain failed.
-Google, Graph and Microsoft refresh transport do not retry within a cron invocation; the existing 15-minute schedule owns subsequent attempts. Never
+Google, Graph and Microsoft refresh transport do not retry internally; the
+credential check retries a transient refresh failure twice with jittered backoff
+inside the same budget, and the 15-minute schedule owns later attempts. Never
 substitute a detached promise timeout that leaves provider work running, and do
 not log provider error objects, headers, tokens, or event payloads.
 
@@ -393,6 +406,83 @@ local verification does not require building workspace dependencies. Require the
 Calendar build, tests, lint and type checks in CI for the submitted commit before
 release. This policy does not change the cron cadence or authorize a native
 Worker cutover.
+
+### Self-healing OAuth credentials
+
+Product decision (26 Oct 2026). Applies to Google and Microsoft accounts in
+every workspace, for manual sync, the provider cron and interactive provider
+requests. Nobody repairs a rejected credential by hand.
+
+- **Classification.** Each refresh failure is permanent, transient or
+  systemic. Permanent: Google `invalid_grant`, `access_denied` or
+  `unauthorized_client` (a credential from an earlier client); Microsoft
+  `invalid_grant`, `interaction_required`, consent revoked (AADSTS65001) or a
+  tenant that removed or disabled our app (AADSTS700016, 7000112); and
+  `unknown_permanent` for a token-endpoint 400/401 code not seen before.
+  Transient (5xx, 429, throttling, timeouts, network) retries and never
+  deactivates. Systemic means our OAuth client is wrong for everyone
+  (`invalid_client`, `deleted_client`, `disabled_client`, bad or expired client
+  secrets); it never deactivates.
+- **Quarantine.** A permanent failure sets `is_active = false` with
+  `deactivated_reason` and `deactivated_at` through
+  `quarantine_calendar_auth_token`. The update matches only the active row whose
+  credential fingerprint (sha256, compared in SQL) and `created_at` are
+  unchanged, so a concurrent reconnect wins. It is idempotent and deletes
+  nothing. Credentials never appear in URLs, logs or responses.
+- **Breaker.** From the third distinct account with the same reason, counting
+  rows still quarantined within the last 24 hours, quarantine holds
+  (`consensus_hold`): nothing is written, the account stays active and is still
+  shown as needing reconnect, and the spike alert fires. A misconfigured client
+  therefore cannot drain accounts.
+- **Isolation.** The scheduler reads only `ok` from a body of at most 64 KiB,
+  and five failed or unreadable runs stop the job for everyone. So `ok` reports
+  whether the run worked, not whether every account synced: a run that
+  completed returns `ok: true` with `partialFailure`, per-workspace `failures`
+  codes, `tokens.counts` and at most 50 non-ok `tokens.attention` entries
+  (hashed account, provider, outcome, reason); complete detail is in the
+  per-outcome logs. The run fails (`ok: false`) only when, for one provider,
+  at least three accounts failed with an explicit client-wide diagnosis
+  (`systemic`), or every evaluated account for that provider did, and none
+  obtained a fresh credential (HTTP 500), when no workspace sync completed,
+  or on the existing enumeration/dispatch failures.
+  Breaker holds of any reason, revocations and one tenant removing our app
+  never fail the job. `cron-control`'s
+  `calendar-provider-sync-contract.test.ts` drives these responses through the
+  scheduler's real reader and ledger.
+- **Recovery.** The calendar sync warning is the durable signal: it lists
+  quarantined accounts (by email, or name when there is none) with the
+  provider's Reconnect action. The owner also gets at most one
+  `account_update` notification per quarantine (code
+  `calendar_reconnect_required`), delivered through their notification
+  preferences (web, email and push); breaker holds send none. Web and every
+  app that ships the shared notification popover render it in English or
+  Vietnamese by code; email, push and mobile show the stored English text.
+- **Reconnect.** A successful reconnect updates the same row, reactivates it and
+  clears both quarantine fields in one statement. While any of the user's
+  Google rows in the workspace is quarantined, every Google connect there shows
+  the consent screen so Google issues a fresh refresh token; the Reconnect
+  actions in the warning and in calendar settings ask for consent too, which
+  covers held accounts. When Google returns no new refresh token, the stored one
+  is reused only through a guarded update that matches a row still active,
+  unquarantined and unchanged since the callback read it; otherwise (including
+  a quarantined row) the callback keeps the quarantine and sends the user
+  through consent again instead of reviving the rejected credential. Ordinary
+  reconnects stay consent-free.
+- **Observability.** One `calendar.oauth.token_outcome` log line per outcome
+  carries the route template, provider, outcome, reason, provider code and a
+  hashed account id. `calendar.oauth.deactivation_spike` fires on five or more
+  quarantines, any deferred quarantine, any breaker hold or any systemic
+  outcome. Both reach the
+  cron log drain; routing that event to an alert sink is a pending follow-up.
+- **Exception.** Before the quarantine columns reach a database, quarantine is
+  deferred and accounts keep failing as before.
+
+Regression coverage: `oauth-failure`, `oauth-token-quarantine`,
+`credential-health`, `token-refresh`, `google-inbound-sync` and
+`microsoft-inbound-sync` tests; the provider cron route tests (mixed batch,
+spike, systemic); the Google and Microsoft auth callback, auth URL and accounts
+route tests; the `calendar-sync-recovery` component test; and the
+`calendar-auth-token-deactivation.sql` pgTAP fixture.
 
 ### Recovering individual calendar failures
 
@@ -693,9 +783,10 @@ and the selected calendar-day fields, so a timezone change cannot reuse a range
 from another timezone.
 
 These changes preserve existing event storage, recurrence, and all-day identity
-contracts. All-day lookup retains its legacy browser-local day identity, so its
-month/year grouping may still differ from the configured-zone bar for legacy
-midnight payloads. All-day bar drag and location create/resize/split callbacks retain
+contracts. All-day lookup uses the same canonical civil dates as the all-day strip,
+so month/year and agenda grouping agree with the configured-zone bar for legacy
+midnight payloads and zoned DST spans. All-day bar drag and location
+create/resize/split callbacks retain
 their existing timestamp conversion: their inferred all-day classification cannot
 safely represent zoned 23-hour or 25-hour midnight spans without a persistent
 intent contract. They do not establish a persistent all-day intent flag or verify
@@ -779,6 +870,17 @@ lookup. Workspace saving still requires permission and a loaded workspace scope.
 Failed reads retain Unknown with an explicit retry; they never imply an automatic
 preference or cause an implicit save. Failed saves retain the prior preference and
 allow retry. Account/workspace changes invalidate in-flight replies and editors.
+Mobile only marks a timezone resolved after the bundled timezone database accepts
+the effective personal, workspace or native identifier. The full IANA database
+accepts native aliases such as `Asia/Saigon`. Calendar, reminder scheduling,
+Settings offsets and Inventory period eligibility share one lazy, idempotent
+resolver; opening Inventory never resets the configured device-local zone.
+Compact timezone data is excluded from application imports. Unsupported identifiers
+remain a recoverable settings failure rather than throwing from Calendar or the
+personal Agenda clock. An acknowledged save retains its saved value even if its
+new inherited timezone cannot resolve. Existing initialized device-local timezone
+configuration is preserved. `calendar_timezone_failure_test.dart` covers invalid
+saved/native identifiers, rejected writes and acknowledged-save recovery.
 `timezone_settings_http_contract_test.dart` and
 `timezone_settings_http_widget_test.dart` exercise production gateway paths,
 Bearer serialization, failure/retry and explicit saving with synthetic data.
@@ -788,8 +890,8 @@ failed authenticated request without runtime evidence.
 Calendar's local authentication rejections classify existing IP blocks as
 `ip-already-blocked` and upstream authentication backpressure as
 `backend-auth-rate-limit`. The native gateway preserves these fixed categories
-for safe timezone diagnostics. Neither branch invents a limiter policy, caller
-class or exhausted window; unavailable fields remain Unknown. Status 429,
+for safe timezone diagnostics. Each branch names its policy; unknown caller/window fields stay Unknown.
+Unclassified responses distinguish absent metadata from unsupported values. Status 429,
 Retry-After, authentication, bans and quotas retain their existing behavior.
 `api-auth-rate-diagnostics.test.ts` exercises the real personal preference GET
 and gateway; `api_rate_limit_local_auth_test.dart` checks the safe mobile copy.
@@ -1170,16 +1272,21 @@ Web and mobile preserve the stored UTC calendar dates of untagged legacy
 UTC-midnight all-day imports. Their original provider dates/timezone are absent
 from the current API. Other all-day boundaries project into the resolved display
 timezone; the end remains exclusive, including 23/25-hour DST days and long spans.
+Month, year, agenda and day/week lookup share those civil bounds with the all-day
+strip: the browser timezone never shifts a UTC-midnight import to the previous
+day, and an event is excluded from its exclusive end date.
 This rendering policy does not rewrite provider data or claim date-only provider
 write support.
 
 Past events fade consistently across native, Google and Microsoft providers on
-Web using an overlay over the opaque fill. All-day spans fade only after their
-displayed exclusive end, including merged spans, using the shared calendar clock. Explicit adapter preservation,
+Web using an overlay over the opaque fill when their end is at or before the
+current instant. All-day spans fade at their displayed exclusive end midnight in
+the selected calendar timezone, including merged spans, using the shared calendar clock. Explicit adapter preservation,
 interaction, previews and pending optimistic writes remain exceptions. Mobile
 keeps its existing past-event presentation. Regression coverage is
 `calendar_day_identity_test.dart`, `calendar_viewport_test.dart`,
-`all-day-event-layout.test.ts` and `past-event-treatment.test.ts`.
+`all-day-event-layout.test.ts`, `calendar-event-lookup.test.ts` (cross-browser zones
+and both DST transitions) and `past-event-treatment.test.ts`.
 
 ## Mobile selected-view reset
 
@@ -1243,3 +1350,28 @@ No description conversion is saved. Regression coverage:
 `apps/mobile/test/features/calendar/widgets/calendar_description_test.dart`
 checks the actual detail and agenda widgets, formatted Markdown spans, mixed and
 malformed content, links, image exclusion, light/dark themes and enlarged text.
+
+## Native Start runtime
+
+Calendar consumes `@tuturuuu/start-bridge` for its request context, Next
+protocol adapters, function guard and generated App Router route registry.
+Run `bun packages/start-bridge/src/codegen/cli.ts generate apps/calendar`
+after changing a route, then run the same command with `check` for validation.
+
+One artifact supports the Calendar subdomain root and `/calendar` on the
+apex. Its assets, public offline fallback, service worker scope and `/_fn`
+transport remain inside the serving mount. The retained
+`/_calendar/functions` transport is internally retargeted without replaying
+request bodies. Web and Tasks retain their API ownership and Calendar keeps
+its request telemetry and locale preference fallback.
+
+The offline worker caches bounded public hashed assets and public fallback
+files. It never persists private navigation HTML or API responses, and a
+mounted worker cannot cache assets belonging to the root or another app.
+The regression coverage is in `offline-assets.test.ts` and
+`handler-start-handoff.test.ts`.
+
+Existing Calendar crons remain on Infrastructure's Vercel gateway, pointing
+at Calendar's canonical URL. Moving a browser mount does not migrate those
+schedules. Production traffic remains held pending exact-source build,
+artifact, browser, shared-session security and provider acceptance.

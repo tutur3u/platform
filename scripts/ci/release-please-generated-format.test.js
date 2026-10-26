@@ -127,7 +127,7 @@ test('generated formatting is path-scoped and race-safe', () => {
 });
 
 test('generated lock refresh is bounded, version-only, and preserves authors', () => {
-  assert.match(releaseJob, /bun-version: 1\.4\.3/);
+  assert.match(releaseJob, /bun-version: 1\.4\.4/);
   assert.match(releaseJob, /bun install --lockfile-only --ignore-scripts/);
   assert.match(
     releaseJob,

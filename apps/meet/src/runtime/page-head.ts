@@ -1,3 +1,6 @@
+import { fontPreloads } from './font-preloads';
+import { localeMessagesPreload } from './locale-messages';
+
 export interface MeetPageMeta {
   title: string;
   description: string;
@@ -35,6 +38,10 @@ export function pageHead({
           ]
         : []),
     ],
-    links: [{ rel: 'canonical', href: meta.canonical }],
+    links: [
+      { rel: 'canonical', href: meta.canonical },
+      localeMessagesPreload(locale),
+      ...fontPreloads(locale),
+    ],
   };
 }

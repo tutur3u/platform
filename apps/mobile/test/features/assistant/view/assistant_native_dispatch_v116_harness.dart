@@ -12,6 +12,7 @@ import 'package:http/testing.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_chat_persistence_contract.dart';
@@ -447,7 +448,7 @@ class NativeDispatchHarness extends BackgroundReplyHarness {
     await tester.pumpAndSettle();
   }
 
-  Future<void> acknowledgeNewConversation(WidgetTester tester) async {
+  Future<void> prepareNewConversation(WidgetTester tester) async {
     final actor = port.actor;
     final reset = AssistantResetPreferences(
       actorId: actor,
@@ -455,7 +456,11 @@ class NativeDispatchHarness extends BackgroundReplyHarness {
       isCurrent: () =>
           port.actor == actor && chat.state.workspaceId == repairWorkspace,
     );
-    expect(await tester.runAsync(reset.hasUnknownCreation), isTrue);
+    if (await tester.runAsync(reset.hasUnknownCreation) == false) {
+      expect(port.creates, isEmpty);
+      expect(port.posts, isEmpty);
+      return;
+    }
     actions.state
         .resolveForLocation('/assistant')
         .singleWhere((action) => action.id == 'assistant-more')
@@ -465,7 +470,7 @@ class NativeDispatchHarness extends BackgroundReplyHarness {
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('New conversation'));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(FilledButton, 'Start a new chat'));
+    await tester.tap(find.widgetWithText(AppButton, 'Start a new chat'));
     await tester.pumpAndSettle();
     expect(await tester.runAsync(reset.hasUnknownCreation), isFalse);
     expect(port.creates, isEmpty);

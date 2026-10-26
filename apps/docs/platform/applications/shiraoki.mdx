@@ -165,5 +165,5 @@ cd ../cms
 bun run type-check
 ```
 
-Run `bun check` from the platform root before landing the change when the
-worktree is not blocked by unrelated dirty files.
+Run `bun check:changed` from the platform root before pushing, and require the
+`bun validate` and build workflows to pass in CI for the exact commit.

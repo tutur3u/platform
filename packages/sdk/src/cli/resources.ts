@@ -1,16 +1,22 @@
 import { availableParallelism, totalmem } from 'node:os';
 import { basename, join } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
+import { evaluateTrustedRunner, fleetSnapshotNow } from '../devbox-fleet-types';
+import { installedBuildIdentity } from './build-identity';
+import { parseDurationSeconds } from './devbox-duration';
 import {
   commandCwd,
   isHeavyCommand,
   limitCommand,
   realExecutable,
+  trivialExecutable,
 } from './resources-command';
 import {
   atomicJson,
   defaultResourceConfig,
+  hostLaneCeiling,
   laneResourceConfig,
+  maxResourceLanes,
   readResourceConfig,
   resourceEnvironment,
   resourceHome,
@@ -20,6 +26,8 @@ import {
   type ValidationLanes,
 } from './resources-config';
 import { resourceSnapshot } from './resources-diagnostics';
+import { diskAdmission } from './resources-disk-admission';
+import { resourceDiskStatus } from './resources-disk-gate';
 import {
   hasResourceOwner,
   queuedResourceCommand,
@@ -32,30 +40,70 @@ import {
   uninstallResources,
 } from './resources-setup';
 import { nestedOwner, withAdmission } from './resources-slots';
+import {
+  renderResourceStatus,
+  resourceStatusDetails,
+} from './resources-status';
+import {
+  planTurboSummary,
+  reportTurboSummary,
+  snapshotTurboSummaries,
+} from './resources-turbo-summary';
 
 export function resourcesHelp() {
   return `ttr resources — keep concurrent local work responsive\n
-Usage: ttr resources <setup|status|monitor|run|enable|disable|uninstall> [options]
+Usage: ttr resources <setup|status|monitor|run|hosts|enable|disable|uninstall> [options]
 
   setup --root <path>     opt in a project and its Git worktrees (repeat --root)
-  status [--json]         show machine capacity, limits, owner and waiting jobs
+  status [--json]         show capacity, owners (command, age, CPU), waiters, idle warnings
   monitor --seconds 60   capture memory/process samples every 5 seconds (JSONL)
   run -- COMMAND ARGS    queue any finite command; explicit setup required
+  offload [--json]       local saturation plus trusted devbox runner eligibility
+  hosts [--json|--simulate] multi-host budgets, reservations, offline dry run
   enable | disable       toggle automatic admission for future commands
   uninstall              remove owned shell hooks/shims; preserve backups
 
 Setup options:
   --shell zsh|bash|none   shell hooks; defaults to the current shell
-  --lanes <1|2>           base lanes; default 1, change only when idle
-  --max-lanes <1..8>      adaptive ceiling; default base, change only when idle
+  --lanes <1..${maxResourceLanes}>         base lanes; default 1, change only when idle
+  --max-lanes <1..${maxResourceLanes}>     burst ceiling; default base, change only when idle
   --workers <1..64>       Vitest/Cargo workers; default adapts to RAM and CPUs
+  --force                permit cross-install replacement only after draining
   --dry-run              inspect the setup plan without writing files
   --json                 machine-readable setup/status output
 Run option: --ignore-pressure skips only pressure admission for a deliberate small job.
+The admission floor defaults to 50 GiB (TTR_RESOURCES_MIN_FREE_GIB).
+Heavy commands exit 75 when the disk holding their cwd is critical (below
+the admission byte floor or 5% free inodes; explicit storage percentage floors apply) and print the top
+\`ttr storage suggest\` actions; --ignore-disk or TTR_RESOURCES_IGNORE_DISK=1
+overrides once, and --offload auto then prefers a devbox runner.
+Run options: --tokens N and --memory-gib N declare this job's worker tokens and
+memory under a cross-project budget (default: inferred from the tool).
+Run option: --offload auto|<runner-id> runs the exact pushed commit on a fresh,
+attested trusted-development devbox runner (ttr box) when local lanes are
+saturated (auto) or always (runner id). Dirty or unpushed trees are refused and
+no local environment is sent. --timeout <30s|10m|2h> bounds it (default 30m).
+ttr resources offload [--runner <id>] [--json] explains eligibility (blockedBy).
+Run option: --host auto [--dry-run] chooses once (Studios, Linux, local), then
+queues only when all eligible hosts are full (shortest estimated wait). No daemon or registry activation. Ineligible hosts fail closed.
+--hosts admits across hosts.json hosts (weighted light/heavy slots,
+per-host budgets); off unless an operator installs hosts.json. Jobs are heavy
+unless --class light is given.
+Run option: --requires ios|macos|flutter|web|rust|docker|supabase (repeatable) restricts
+placement to declared host capabilities. Direct Apple/Flutter/Rust/Docker tools
+and known repository script names infer requirements automatically. Ambiguous
+heavy scripts need explicit --requires for auto placement. Runner dispatch
+requires hosts.json hubHostname to match this machine (the M4 hub).
 
 One base lane is the default; opt in to burst lanes only after an idle migration.
-Burst admission requires normal memory pressure, low CPU load and worker headroom.
-All lanes share one per-user FIFO queue and a bounded total worker budget.
+Burst admission requires normal memory pressure and low CPU load, and stays
+under a host lane ceiling (RAM/4 GiB, CPUs-2, at most ${maxResourceLanes}). Each lane gets at
+least one worker and at most its share of the configured worker totals.
+All lanes share one per-user FIFO queue. Out-of-range config values are clamped
+with a warning; an unreadable config makes shims run commands unmanaged.
+Commands inside an admitted job (TTR_RESOURCES_ADMITTED, or a process-tree
+ancestor holding a lane) run immediately instead of queueing again.
+Only read-only system tools (cat, echo...) skip the queue; ls, git and runtimes queue.
 Turbo runs one task; Vitest and Cargo get bounded worker counts. Commands
 outside those projects are unchanged. Running processes are never interrupted.
 macOS/Linux supported. Shell hooks cover new shells, not existing processes.
@@ -86,7 +134,21 @@ export async function runResourcesCommand(argv: string[]) {
     return;
   }
   const allowed: Record<string, string[]> = {
-    run: ['--ignore-pressure'],
+    run: [
+      '--ignore-pressure',
+      '--ignore-disk',
+      '--offload',
+      '--timeout',
+      '--hosts',
+      '--host',
+      '--dry-run',
+      '--class',
+      '--requires',
+      '--tokens',
+      '--memory-gib',
+    ],
+    hosts: ['--json', '--simulate'],
+    offload: ['--json', '--runner'],
     shim: [],
     status: ['--json'],
     monitor: ['--seconds'],
@@ -101,17 +163,55 @@ export async function runResourcesCommand(argv: string[]) {
       if (option === '--no-update-check') continue;
       if (!allowed[action]!.includes(option))
         throw new Error(`Unknown ${action} option: ${option}`);
-      if (option === '--seconds') i++;
+      if (
+        [
+          '--seconds',
+          '--offload',
+          '--host',
+          '--timeout',
+          '--runner',
+          '--class',
+          '--requires',
+          '--tokens',
+          '--memory-gib',
+        ].includes(option)
+      ) {
+        const value = options[++i];
+        if (!value || value.startsWith('--'))
+          throw new Error(`Missing value for ${option}.`);
+      }
     }
   }
   const home = resourceHome();
   if (action === 'run' || action === 'shim') {
+    const automatic = optionValue(options, '--host');
+    if (automatic !== undefined && automatic !== 'auto')
+      throw new Error(
+        '--host must be auto; configure eligible hosts in hosts.json.'
+      );
+    const multiHost = options.includes('--hosts') || automatic === 'auto';
+    const dryRun = options.includes('--dry-run');
+    if (dryRun && !multiHost)
+      throw new Error('--dry-run requires --host auto or --hosts.');
     const command = divider < 0 ? [] : argv.slice(divider + 1);
     const shim = action === 'shim';
     const name = shim ? options[1] : command.shift();
     if (!name) throw new Error('Use ttr resources run -- COMMAND [ARGS...].');
-    const config = await readResourceConfig(home);
     const real = realExecutable(name, join(home, 'bin'));
+    let config: Awaited<ReturnType<typeof readResourceConfig>>;
+    try {
+      config = await readResourceConfig(home);
+    } catch (error) {
+      // One bad config must not brick every tool behind the shared shims.
+      if (!shim) throw error;
+      process.stderr.write(
+        `[ttr resources] ${error instanceof Error ? error.message : String(error)} Running ${basename(name)} without resource admission.\n`
+      );
+      process.exitCode = await spawnResourceCommand(real, command, {
+        ...process.env,
+      });
+      return;
+    }
     const enabled =
       process.env.TTR_RESOURCES_BYPASS !== '1' &&
       (!shim ||
@@ -120,26 +220,188 @@ export async function runResourcesCommand(argv: string[]) {
     const total = config || defaultResourceConfig();
     const caps = enabled ? laneResourceConfig(total) : total;
     const parent = enabled ? await nestedOwner(home) : undefined;
+    if (automatic === 'auto' && !enabled)
+      throw new Error(
+        'Multi-host placement requires resource admission; remove TTR_RESOURCES_BYPASS.'
+      );
+    if (dryRun && parent)
+      throw new Error('Run placement dry-run outside an admitted job.');
     const settings = parent?.limits ? { ...caps, ...parent.limits } : caps;
     const args = enabled
       ? limitCommand(basename(name), command, settings)
       : command;
     const env = enabled ? resourceEnvironment(settings) : { ...process.env };
+    // Classify on the child's environment and spawn exactly the canonical
+    // executable that was validated, never the swappable original name.
+    const trivial = enabled && !shim ? trivialExecutable(name, env) : undefined;
+    const queued =
+      enabled &&
+      (multiHost ||
+        (shim ? isHeavyCommand(name, command) : trivial === undefined));
+    if (enabled && !shim && multiHost) {
+      const { assertNestedHostRequirements, hostsRequirements } = await import(
+        './resources-hosts-requirements.js'
+      );
+      const requires = hostsRequirements(name, command, options);
+      if (parent || !queued) {
+        const { readHostRegistry } = await import(
+          './resources-hosts-config.js'
+        );
+        assertNestedHostRequirements(await readHostRegistry(home), requires);
+      }
+    }
+    const offload = optionValue(options, '--offload');
+    // Disk headroom gate for heavy work; nested jobs were admitted already,
+    // and --hosts dispatch applies its own local disk gate per placement.
+    let diskCritical = false;
+    const diskGated =
+      queued &&
+      !parent &&
+      !(!shim && (options.includes('--ignore-disk') || multiHost));
+    // The queue re-checks disk at dequeue; one override covers both gates.
+    if (!shim && options.includes('--ignore-disk'))
+      env.TTR_RESOURCES_IGNORE_DISK = '1';
+    if (diskGated) {
+      const disk = await diskAdmission({ cwd: commandCwd(command) });
+      if (disk.message)
+        process.stderr.write(`[ttr resources] ${disk.message}\n`);
+      diskCritical = disk.refuse;
+    }
+    if (!shim && queued && offload && !parent) {
+      const code = await offloadRun({
+        home,
+        lanes: resourceLanes(total),
+        target: offload,
+        argv: [name, ...command],
+        timeout: optionValue(options, '--timeout'),
+        saturated: diskCritical,
+      });
+      if (code !== undefined) {
+        process.exitCode = code;
+        return;
+      }
+    }
+    if (diskCritical) {
+      process.exitCode = 75;
+      return;
+    }
     if (enabled && !shim) {
       const bin = await installedResourceShims(home);
       env.PATH = `${bin}:${env.PATH || ''}`;
     }
-    process.exitCode =
-      enabled && (!shim || isHeavyCommand(name, command))
-        ? await queuedResourceCommand(
-            home,
-            real,
-            command,
-            env,
-            !shim && options.includes('--ignore-pressure'),
-            resourceLanes(total)
-          )
-        : await spawnResourceCommand(real, args, env);
+    if (!shim && queued && !parent && multiHost) {
+      if (offload) throw new Error('Use --hosts or --offload, not both.');
+      const { hostsRun } = await import('./resources-hosts-dispatch.js');
+      const { hostsDependencies, hostsJobClass } = await import(
+        './resources-hosts-cli.js'
+      );
+      const jobClass = hostsJobClass(optionValue(options, '--class'));
+      const { hostsRequirements } = await import(
+        './resources-hosts-requirements.js'
+      );
+      const timeout = optionValue(options, '--timeout');
+      process.exitCode = await hostsRun({
+        home,
+        command: name,
+        args: command,
+        jobClass,
+        auto: automatic === 'auto',
+        dryRun,
+        requires: hostsRequirements(name, command, options),
+        deps: hostsDependencies({
+          home,
+          name,
+          real,
+          command,
+          env,
+          timeoutSeconds: timeout ? parseDurationSeconds(timeout) : undefined,
+          ignorePressure: options.includes('--ignore-pressure'),
+        }),
+      });
+      return;
+    }
+    // Explicit budget demand for this ticket (otherwise inferred from the
+    // classified tool); exported so shims and CI can declare it too.
+    for (const [flag, variable] of [
+      ['--tokens', 'TTR_RESOURCES_TOKENS'],
+      ['--memory-gib', 'TTR_RESOURCES_MEMORY_GIB'],
+    ] as const) {
+      const value = optionValue(options, flag);
+      if (value === undefined) continue;
+      const number = Number(value);
+      if (!(number > 0) || (flag === '--tokens' && !Number.isInteger(number)))
+        throw new Error(
+          `${flag} must be a positive ${flag === '--tokens' ? 'integer' : 'number'}.`
+        );
+      env[variable] = String(number);
+    }
+    // Local turbo runs request a run summary so the cache reuse is reported.
+    const summary = planTurboSummary(
+      name,
+      queued ? command : args,
+      commandCwd(command)
+    );
+    const onSpawn = summary.root
+      ? async () => snapshotTurboSummaries(summary)
+      : undefined;
+    process.exitCode = queued
+      ? await queuedResourceCommand(
+          home,
+          real,
+          summary.args,
+          env,
+          !shim && options.includes('--ignore-pressure'),
+          resourceLanes(total),
+          undefined,
+          undefined,
+          undefined,
+          onSpawn
+        )
+      : await spawnResourceCommand(
+          trivial ?? real,
+          summary.args,
+          env,
+          false,
+          onSpawn
+        );
+    await reportTurboSummary(summary);
+    return;
+  }
+  if (action === 'offload') {
+    const box = await import('./resources-box-offload.js');
+    const config = await readResourceConfig(home);
+    const state = await resourceQueueStatus(
+      home,
+      resourceLanes(config || defaultResourceConfig())
+    );
+    const snapshot = await (
+      await box.createSessionClient()
+    ).devboxes.fleet.snapshot();
+    const result = {
+      local: {
+        saturated:
+          state.occupied >= state.effectiveLanes || state.waiting.length > 0,
+        occupied: state.occupied,
+        effectiveLanes: state.effectiveLanes,
+        waiting: state.waiting.length,
+      },
+      selection: box.selectOffloadRunner(
+        snapshot,
+        optionValue(options, '--runner') ?? 'auto'
+      ),
+      runners: snapshot.runners
+        .filter((runner) => runner.status !== 'revoked')
+        .map((runner) => ({
+          id: runner.id,
+          name: runner.name,
+          ...evaluateTrustedRunner(runner, fleetSnapshotNow(snapshot)),
+        })),
+    };
+    process.stdout.write(
+      options.includes('--json')
+        ? `${JSON.stringify(result, null, 2)}\n`
+        : `Local: ${result.local.saturated ? 'saturated' : 'lanes available'} (${result.local.occupied}/${result.local.effectiveLanes}, ${result.local.waiting} waiting)\n${result.runners.map((runner) => `${runner.eligible ? 'eligible' : `blockedBy=${runner.blockedBy}`} ${runner.name} (${runner.id}): ${runner.reason}`).join('\n')}\n${'runner' in result.selection ? `Offload target: ${result.selection.runner.name}` : `Offload blockedBy=${result.selection.blockedBy}: ${result.selection.reason}`}\n`
+    );
     return;
   }
   if (action === 'setup') {
@@ -163,11 +425,16 @@ export async function runResourcesCommand(argv: string[]) {
         if (arg === '--workers') workers = Number(value);
         if (arg === '--max-lanes') maxLanes = Number(value);
         if (arg === '--lanes') {
-          if (value !== '1' && value !== '2')
-            throw new Error('--lanes must be 1 or 2.');
-          lanes = value === '1' ? 1 : 2;
+          // The same bound setup enforces: maxResourceLanes, not a literal.
+          if (!/^[1-9]\d*$/u.test(value) || Number(value) > maxResourceLanes)
+            throw new Error(
+              `--lanes must be an integer from 1 to ${maxResourceLanes}.`
+            );
+          lanes = Number(value);
         }
-      } else if (!['--dry-run', '--json', '--no-update-check'].includes(arg))
+      } else if (
+        !['--dry-run', '--force', '--json', '--no-update-check'].includes(arg)
+      )
         throw new Error(`Unknown setup option: ${arg}`);
     }
     const plan = await setupResources({
@@ -178,8 +445,14 @@ export async function runResourcesCommand(argv: string[]) {
       lanes,
       maxLanes,
       dryRun: options.includes('--dry-run'),
+      force: options.includes('--force'),
     });
     if (!plan) throw new Error('Resource setup was cancelled.');
+    for (const replacement of plan.replacements) {
+      process.stderr.write(
+        `[ttr resources] ${options.includes('--dry-run') ? 'Would replace' : 'Replaced'} ${replacement.path}\nFrom: ${replacement.previous.trim()}\nTo: ${replacement.next.trim()}\n`
+      );
+    }
     process.stdout.write(
       options.includes('--json')
         ? `${JSON.stringify(plan, null, 2)}\n`
@@ -200,29 +473,87 @@ export async function runResourcesCommand(argv: string[]) {
     } while (Date.now() < deadline);
     return;
   }
+  if (action === 'hosts') {
+    const { runHostsAction } = await import('./resources-hosts-cli.js');
+    await runHostsAction(home, options);
+    return;
+  }
   if (action === 'status') {
-    const config = await readResourceConfig(home);
+    // Status must explain an unusable config instead of failing with it.
+    let config: Awaited<ReturnType<typeof readResourceConfig>>;
+    let configError: string | undefined;
+    try {
+      config = await readResourceConfig(home);
+    } catch (error) {
+      configError = error instanceof Error ? error.message : String(error);
+    }
+    const limits = config || defaultResourceConfig();
+    // An invalid config's lane count is unknown: read every possible slot so
+    // running owners are still reported instead of closing status.
     const state = await resourceQueueStatus(
       home,
-      resourceLanes(config || defaultResourceConfig())
+      resourceLanes(limits),
+      configError ? { ...limits, maxValidationLanes: maxResourceLanes } : limits
     );
+    const ceiling = hostLaneCeiling();
+    const configWarnings = [
+      ...(configError
+        ? [
+            `${configError} Explicit runs fail and shims run without admission until it is fixed.`,
+          ]
+        : []),
+      ...(config && !config.enabled
+        ? [
+            'Resource admission is disabled: shims run tools without queueing. Run `ttr resources enable` to restore it.',
+          ]
+        : []),
+      ...(resourceLanes(limits) > ceiling
+        ? [
+            `validationLanes ${resourceLanes(limits)} exceeds this host's lane ceiling ${ceiling}; at most ${state.effectiveLanes} lane(s) are admitted.`,
+          ]
+        : resourceMaxLanes(limits) > ceiling
+          ? [
+              `maxValidationLanes ${resourceMaxLanes(limits)} exceeds this host's lane ceiling ${ceiling}; burst admission stops at ${state.effectiveLanes} lane(s).`,
+            ]
+          : []),
+    ];
+    const details = await resourceStatusDetails(state);
     const result = {
-      installed: Boolean(config),
+      disk: await resourceDiskStatus(process.cwd()),
+      ...installedBuildIdentity(),
+      installed: Boolean(config) || Boolean(configError),
       enabled: config?.enabled ?? false,
+      config: configError
+        ? { state: 'invalid', error: configError }
+        : {
+            state: !config
+              ? 'missing'
+              : config.enabled
+                ? 'enabled'
+                : 'disabled',
+          },
+      hostLaneCeiling: ceiling,
       home,
       machine: {
         platform: process.platform,
         memoryGiB: Math.round(totalmem() / 1024 ** 3),
         cpus: availableParallelism(),
       },
-      limits: config || defaultResourceConfig(),
+      limits,
       ...state,
+      ...details,
+      warnings: [...configWarnings, ...details.warnings],
     };
     process.stdout.write(
       options.includes('--json')
         ? `${JSON.stringify(result, null, 2)}\n`
-        : `${result.enabled ? 'Enabled' : 'Not enabled'}: ${result.machine.memoryGiB} GiB RAM, ${result.machine.cpus} CPUs\nLimits: ${state.laneCount} base lane(s), max ${state.maxLanes}, burst ${state.burst.eligible ? 'eligible' : state.burst.reason}, Turbo ${result.limits.turboConcurrency}, Vitest ${result.limits.vitestWorkers}\nRunning: ${state.owners.length ? state.owners.map((owner) => `${owner.tool} (PID ${owner.pid}) in ${owner.cwd}`).join('; ') : state.occupied ? 'initializing or awaiting stale-owner inspection' : 'none'}\nWaiting: ${state.waiting.length}\n`
+        : renderResourceStatus(result)
     );
+    // Still a failure for scripts: admission cannot work with this config.
+    if (configError) {
+      process.stderr.write(`[ttr resources] ${configError}\n`);
+      process.exitCode = 1;
+    }
     return;
   }
   if (action === 'enable' || action === 'disable') {
@@ -249,4 +580,94 @@ export async function runResourcesCommand(argv: string[]) {
   throw new Error(
     `Unknown resources action: ${action}. Use ttr resources --help.`
   );
+}
+
+function optionValue(options: string[], name: string) {
+  const index = options.indexOf(name);
+  return index < 0 ? undefined : options[index + 1];
+}
+
+// `--offload auto` offloads only when local lanes are saturated and falls back
+// to the local queue when no eligible runner exists or the server rejected the
+// run; `--offload <runner-id>` always targets that runner and fails instead of
+// falling back. Once a remote run exists (or might exist) neither mode falls
+// back: runBoxOffload stops it and returns a non-zero code instead.
+export async function offloadRun({
+  home,
+  lanes,
+  target,
+  argv,
+  timeout,
+  cwd = process.cwd(),
+  saturated = false,
+  loadBox = () => import('./resources-box-offload.js'),
+  queueStatus = resourceQueueStatus,
+}: {
+  home: string;
+  lanes: number;
+  target: string;
+  argv: string[];
+  timeout?: string;
+  cwd?: string;
+  /** Treat local capacity as exhausted (critical disk) for `auto`. */
+  saturated?: boolean;
+  loadBox?: () => Promise<typeof import('./resources-box-offload.js')>;
+  queueStatus?: typeof resourceQueueStatus;
+}) {
+  const log = (text: string) =>
+    process.stderr.write(`[ttr resources] ${text}\n`);
+  const explicit = target !== 'auto';
+  if (!explicit && !saturated) {
+    const state = await queueStatus(home, lanes);
+    if (state.occupied < state.effectiveLanes && !state.waiting.length)
+      return undefined;
+  }
+  const box = await loadBox();
+  let creationStarted = false;
+  try {
+    const plan = box.offloadCommitPlan(cwd);
+    const client = await box.createSessionClient();
+    const selection = box.selectOffloadRunner(
+      await box.offloadRequest((signal) =>
+        client.devboxes.fleet.snapshot({ signal })
+      ),
+      target
+    );
+    if (!('runner' in selection)) {
+      if (explicit)
+        throw new Error(
+          `Offload to ${target} is blocked (blockedBy=${selection.blockedBy}): ${selection.reason}`
+        );
+      log(
+        `local lanes saturated; offload blockedBy=${selection.blockedBy}: ${selection.reason}. Queueing locally.`
+      );
+      return undefined;
+    }
+    creationStarted = true;
+    return await box.runBoxOffload({
+      client,
+      runnerId: selection.runner.id,
+      sha: plan.sha,
+      prefix: plan.prefix,
+      argv,
+      timeoutSeconds:
+        (timeout ? parseDurationSeconds(timeout) : undefined) ||
+        box.defaultOffloadTimeoutSeconds,
+    });
+  } catch (error) {
+    if (explicit) throw error;
+    if (
+      creationStarted &&
+      !(error instanceof box.OffloadNotCreatedError && error.rejected)
+    ) {
+      log(
+        `${error instanceof Error ? error.message : String(error)}. The run may exist remotely, so it is not repeated locally; check \`ttr box list\` and stop it with \`ttr box stop <run-id>\`.`
+      );
+      return 1;
+    }
+    log(
+      `offload unavailable: ${error instanceof Error ? error.message : String(error)} Queueing locally.`
+    );
+    return undefined;
+  }
 }

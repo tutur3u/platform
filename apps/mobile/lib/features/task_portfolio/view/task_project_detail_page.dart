@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/input/platform_text_context_menu.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/widgets/network_avatar.dart';
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
@@ -13,7 +14,8 @@ import 'package:mobile/data/repositories/task_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
-import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
+import 'package:mobile/features/shell/view/shell_mini_nav.dart';
+import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/features/task_portfolio/cubit/task_portfolio_cubit.dart';
 import 'package:mobile/features/task_portfolio/view/task_portfolio_actions.dart';
 import 'package:mobile/features/task_portfolio/widgets/task_project_updates_section.dart';
@@ -34,10 +36,14 @@ class TaskProjectDetailPage extends StatelessWidget {
     required this.projectId,
     super.key,
     this.repository,
+    @visibleForTesting this.createCubit,
   });
 
   final String projectId;
   final TaskRepository? repository;
+
+  /// Builds the page cubit; tests inject one seeded with project state.
+  final TaskPortfolioCubit Function(TaskRepository repository)? createCubit;
 
   @override
   Widget build(BuildContext context) {
@@ -45,9 +51,10 @@ class TaskProjectDetailPage extends StatelessWidget {
       create: (_) => repository ?? TaskRepository(),
       child: BlocProvider(
         create: (context) {
-          final cubit = TaskPortfolioCubit(
-            taskRepository: context.read<TaskRepository>(),
-          );
+          final taskRepository = context.read<TaskRepository>();
+          final cubit =
+              createCubit?.call(taskRepository) ??
+              TaskPortfolioCubit(taskRepository: taskRepository);
           final wsId = context
               .read<WorkspaceCubit>()
               .state

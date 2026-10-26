@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/product_feedback/product_feedback_page.dart';
 import 'package:mobile/features/product_feedback/product_feedback_repository.dart';
@@ -24,6 +25,12 @@ void main() {
     repository = _Repository();
   });
   Future<void> pump(WidgetTester tester) async {
+    // The form uses the 480px form width, so give the whole flow room to
+    // build without depending on lazy off-screen list children.
+    tester.view
+      ..devicePixelRatio = 1
+      ..physicalSize = const Size(800, 1400);
+    addTearDown(tester.view.reset);
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -41,13 +48,33 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  Future<void> fill(WidgetTester tester) async {
-    await tester.enterText(find.byType(TextFormField).at(0), 'Subject');
-    await tester.enterText(find.byType(TextFormField).at(1), 'Private details');
-    await tester.ensureVisible(
-      find.widgetWithText(FilledButton, 'Send feedback'),
+  // The form is a lazy list, so off-screen rows are not built until scrolled.
+  Future<void> reveal(WidgetTester tester, Finder finder) async {
+    await tester.scrollUntilVisible(
+      finder,
+      200,
+      scrollable: find
+          .descendant(
+            of: find.byType(ListView),
+            matching: find.byType(Scrollable),
+          )
+          .first,
     );
-    await tester.tap(find.widgetWithText(FilledButton, 'Send feedback'));
+    // A row built in the cache extent above the viewport still needs scrolling.
+    await tester.ensureVisible(finder);
+    await tester.pumpAndSettle();
+  }
+
+  Future<void> top(WidgetTester tester) async {
+    await tester.drag(find.byType(ListView), const Offset(0, 4000));
+    await tester.pumpAndSettle();
+  }
+
+  Future<void> fill(WidgetTester tester) async {
+    await tester.enterText(find.byType(TextField).at(0), 'Subject');
+    await tester.enterText(find.byType(TextField).at(1), 'Private details');
+    await reveal(tester, find.widgetWithText(AppButton, 'Send feedback'));
+    await tester.tap(find.widgetWithText(AppButton, 'Send feedback'));
     await tester.pumpAndSettle();
   }
 
@@ -71,17 +98,17 @@ void main() {
     expect(keys, hasLength(1));
     final preferences = await SharedPreferences.getInstance();
     expect(preferences.getString(pending), keys.single);
+    await top(tester);
     expect(
-      tester.widget<TextFormField>(find.byType(TextFormField).first).enabled,
+      tester.widget<TextField>(find.byType(TextField).first).enabled,
       isFalse,
     );
-    await tester.ensureVisible(
-      find.widgetWithText(FilledButton, 'Retry same submission'),
+    await reveal(
+      tester,
+      find.widgetWithText(AppButton, 'Retry same submission'),
     );
     await tester.pumpAndSettle();
-    await tester.tap(
-      find.widgetWithText(FilledButton, 'Retry same submission'),
-    );
+    await tester.tap(find.widgetWithText(AppButton, 'Retry same submission'));
     await tester.pumpAndSettle();
     expect(keys, hasLength(2));
     expect(keys.first, keys.last);
@@ -116,10 +143,10 @@ void main() {
         when(() => repository.receipt(original)).thenAnswer((_) async => null);
         Future<void> retry() async {
           final button = find.widgetWithText(
-            FilledButton,
+            AppButton,
             'Retry same submission',
           );
-          await tester.ensureVisible(button);
+          await reveal(tester, button);
           await tester.pumpAndSettle();
           await tester.tap(button);
           await tester.pumpAndSettle();
@@ -130,13 +157,12 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.text('Edit rejected submission'), findsNothing);
         expect(preferences.getString(pending), original);
+        await top(tester);
         expect(
-          tester
-              .widget<TextFormField>(find.byType(TextFormField).first)
-              .enabled,
+          tester.widget<TextField>(find.byType(TextField).first).enabled,
           isFalse,
         );
-        await tester.ensureVisible(find.text('Check original receipt'));
+        await reveal(tester, find.text('Check original receipt'));
         await tester.tap(find.text('Check original receipt'));
         await tester.pumpAndSettle();
         verify(() => repository.receipt(original)).called(1);
@@ -182,14 +208,12 @@ void main() {
         (await SharedPreferences.getInstance()).getString(pending),
         isNull,
       );
+      await top(tester);
       expect(
-        tester.widget<TextFormField>(find.byType(TextFormField).first).enabled,
+        tester.widget<TextField>(find.byType(TextField).first).enabled,
         isTrue,
       );
-      expect(
-        find.widgetWithText(FilledButton, 'Send feedback'),
-        findsOneWidget,
-      );
+      expect(find.widgetWithText(AppButton, 'Send feedback'), findsOneWidget);
     });
   }
   testWidgets('restored pending reference only observes on explicit '
@@ -198,11 +222,14 @@ void main() {
     when(() => repository.receipt(key)).thenAnswer((_) async => null);
     await pump(tester);
     verifyNever(() => repository.receipt(any()));
+    await reveal(tester, find.byKey(const ValueKey('feedback-submit')));
     expect(
-      tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
+      tester
+          .widget<AppButton>(find.byKey(const ValueKey('feedback-submit')))
+          .onPressed,
       isNull,
     );
-    await tester.ensureVisible(find.text('Check original receipt'));
+    await reveal(tester, find.text('Check original receipt'));
     await tester.tap(find.text('Check original receipt'));
     await tester.pumpAndSettle();
     verify(() => repository.receipt(key)).called(1);
@@ -230,7 +257,7 @@ void main() {
     await pump(tester);
     await fill(tester);
     expect(find.text('Feedback received. Your receipt:'), findsOneWidget);
-    expect(find.byType(TextFormField), findsNothing);
+    expect(find.byType(TextField), findsNothing);
     expect((await SharedPreferences.getInstance()).getString(pending), isNull);
     expect(find.byType(AppBar), findsNothing);
   });

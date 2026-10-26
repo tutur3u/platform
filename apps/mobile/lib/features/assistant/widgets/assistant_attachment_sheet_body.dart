@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/widgets/assistant_dock_surface.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -36,29 +37,29 @@ class AssistantAttachmentSheetBody extends StatelessWidget {
                 ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 12),
-              ListTile(
+              AppListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.attach_file_rounded),
+                leading: const Icon(LucideIcons.paperclip),
                 title: Text(context.l10n.assistantAttachFilesSource),
                 onTap: onPickFiles,
               ),
-              ListTile(
+              AppListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.photo_library_outlined),
+                leading: const Icon(LucideIcons.images),
                 title: Text(context.l10n.assistantAttachGalleryMediaAction),
                 onTap: onPickGalleryMedia,
               ),
               if (onCapture != null)
-                ListTile(
+                AppListTile(
                   contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.camera_alt_outlined),
+                  leading: const Icon(LucideIcons.camera),
                   title: Text(context.l10n.assistantAttachCaptureAction),
                   onTap: onCapture,
                 ),
               if (hasAttachments)
-                ListTile(
+                AppListTile(
                   contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.clear_all_rounded),
+                  leading: const Icon(LucideIcons.listX),
                   title: Text(context.l10n.assistantAttachmentClearAction),
                   onTap: onClearAttachments,
                 ),

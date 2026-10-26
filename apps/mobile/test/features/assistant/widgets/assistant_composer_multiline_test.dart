@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_dock.dart';
 
 import 'assistant_composer_dock_test.dart' as fixture;
@@ -40,7 +41,7 @@ void main() {
     expect(sends, 0);
     await tester.testTextInput.receiveAction(TextInputAction.send);
     expect(sends, 0);
-    await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
+    await tester.tap(find.byIcon(LucideIcons.arrowUp));
     expect(sends, 1);
   });
 
@@ -60,6 +61,12 @@ void main() {
       tester.getSize(find.byType(AssistantComposerDock)).height,
       lessThan(100),
     );
+    focus.requestFocus();
+    await tester.pumpAndSettle();
+    expect(tester.getSize(field).height, empty);
+    focus.unfocus();
+    await tester.pumpAndSettle();
+    expect(tester.getSize(field).height, empty);
     controller.text = 'First line';
     await tester.pumpAndSettle();
     expect(tester.getSize(field).height, empty);

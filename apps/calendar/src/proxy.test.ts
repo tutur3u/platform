@@ -196,6 +196,23 @@ describe('Calendar proxy verify-token handoff', () => {
     });
   });
 
+  it.each(['users/calendar-settings', 'workspaces/personal/calendar-settings'])(
+    'isolates verified preference actors on %s without refreshing bearer auth',
+    async (path) => {
+      mocks.hasAuthenticatedBearerToken.mockReturnValue(true);
+      const request = new NextRequest(`https://calendar.test/api/v1/${path}`, {
+        headers: { authorization: 'Bearer synthetic-token' },
+      });
+      await proxy(request);
+      expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
+      expect(mocks.guardApiProxyRequest).toHaveBeenCalledWith(request, {
+        prefixBase: 'proxy:calendar:preferences',
+        useVerifiedBearerActor: true,
+        diagnosticPolicyName: 'calendar-native-preferences',
+      });
+    }
+  );
+
   it('refreshes product APIs in Supabase-first mode', async () => {
     mocks.guardApiProxyRequest.mockResolvedValue(null);
     mocks.hasAuthenticatedBearerToken.mockReturnValue(false);
@@ -387,5 +404,43 @@ describe('PWA public-route boundary', () => {
     expect(response.headers.get('set-cookie')).toBeNull();
     expect(mocks.getRequestHeadersWithResponseCookies).not.toHaveBeenCalled();
     expect(mocks.getCurrentUserDefaultWorkspace).not.toHaveBeenCalled();
+  });
+});
+
+describe('mounted Calendar shared-session boundary', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.guardApiProxyRequest.mockResolvedValue(null);
+    mocks.hasAuthenticatedBearerToken.mockReturnValue(false);
+    mocks.isTrustedProxyBypassRequest.mockReturnValue(false);
+    mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(true);
+    mocks.hasWebAppSessionTokenFromRequest.mockReturnValue(false);
+    mocks.getAppSessionClaimsFromRequest.mockReturnValue(null);
+    mocks.getRequestHeadersWithResponseCookies.mockImplementation(
+      (request: NextRequest) => request.headers
+    );
+  });
+  it.each([
+    '/calendar/personal',
+    '/calendar/api/v1/calendar/connections',
+    '/calendar/verify-token?token=untrusted',
+  ])('does not mint or clear a satellite session for %s', async (path) => {
+    const response = await proxy(
+      new NextRequest(`https://tuturuuu.com${path}`, {
+        headers: { cookie: 'sb-fixture-auth-token=shared' },
+        nextConfig: { basePath: '/calendar' },
+      })
+    );
+    expect(mocks.consumeVerifyTokenRequest).not.toHaveBeenCalled();
+    expect(mocks.authProxy).not.toHaveBeenCalled();
+    expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
+    expect(mocks.clearSupabaseAuthCookies).not.toHaveBeenCalled();
+    expect(
+      response.headers
+        .getSetCookie()
+        .filter((cookie) =>
+          /^(?:tuturuuu_app_session|sb-[^=]+-auth-token)/u.test(cookie)
+        )
+    ).toEqual([]);
   });
 });

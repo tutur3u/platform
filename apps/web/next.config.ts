@@ -9,6 +9,7 @@ import {
 } from '@tuturuuu/utils/next-config';
 import createNextIntlPlugin from 'next-intl/plugin';
 import { generate as generatePublicSeoRoutes } from '../../scripts/generate-public-seo-routes';
+import { nativeIntegrityFramablePaths } from './src/lib/native-integrity/frame-policy';
 import { createSatelliteApiRewrites } from './src/lib/satellite-api-rewrites';
 
 // Discover current indexable pages before configuring HTTP indexing boundaries.
@@ -82,6 +83,7 @@ const dockerNextBuildCpus = parsePositiveIntegerEnv(
 );
 const nextConfig = createTuturuuuNextConfig({
   seoApp: 'web',
+  framablePathPatterns: nativeIntegrityFramablePaths,
   seoPublicPathPatterns: [
     ...publicSeoPaths.map((pathname) =>
       pathname.slice(1).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -101,6 +103,7 @@ const nextConfig = createTuturuuuNextConfig({
     'chat-state-cloudflare-do',
   ],
   experimental: {
+    authInterrupts: true,
     ...(offlineConfig.experimental ?? {}),
     // Reuse static route stages and shared shells across similar navigations.
     // Personalized runtime stages remain request-bound unless a segment opts in.

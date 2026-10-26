@@ -3,27 +3,7 @@ part of 'cms_page.dart';
 extension _CmsPageLayout on _CmsPageState {
   Widget _buildWorkspace(BuildContext context) {
     final l10n = context.l10n;
-    final query = _searchController.text.trim().toLowerCase();
-    bool matches(Iterable<String?> fields) =>
-        fields.any((value) => (value ?? '').toLowerCase().contains(query));
-    final collections = _collections
-        .where((row) => matches([row.title, row.slug, row.description]))
-        .toList();
-    final titles = {for (final row in _collections) row.id: row.title};
-    final entries = _entries
-        .where(
-          (row) =>
-              (_status == null || row.status == _status) &&
-              matches([
-                row.title,
-                row.slug,
-                row.summary,
-                titles[row.collectionId],
-              ]),
-        )
-        .toList();
-    final libraryCount = collections.length + entries.length + 3;
-    return shad.Scaffold(
+    return AppScaffold(
       child: Stack(
         children: [
           ShellTitleOverride(
@@ -45,7 +25,7 @@ extension _CmsPageLayout on _CmsPageState {
               ),
               ShellMiniNavItemSpec(
                 id: 'cms-overview',
-                icon: Icons.dashboard_customize_outlined,
+                icon: LucideIcons.layoutDashboard,
                 label: l10n.cmsOverview,
                 callbackToken: _section,
                 selected: _section == 0,
@@ -53,7 +33,7 @@ extension _CmsPageLayout on _CmsPageState {
               ),
               ShellMiniNavItemSpec(
                 id: 'cms-library',
-                icon: Icons.collections_bookmark_outlined,
+                icon: LucideIcons.libraryBig,
                 label: l10n.cmsLibrary,
                 callbackToken: _section,
                 selected: _section == 1,
@@ -70,7 +50,7 @@ extension _CmsPageLayout on _CmsPageState {
               if (_section == 1 && !_denied)
                 ShellActionSpec(
                   id: 'cms-search',
-                  icon: Icons.search_rounded,
+                  icon: LucideIcons.search,
                   tooltip: l10n.cmsSearchHint,
                   inDock: true,
                   callbackToken: _searching,
@@ -82,7 +62,7 @@ extension _CmsPageLayout on _CmsPageState {
                 ),
               ShellActionSpec(
                 id: 'cms-refresh',
-                icon: Icons.refresh_rounded,
+                icon: LucideIcons.refreshCw,
                 tooltip: l10n.commonRefresh,
                 callbackToken: _isLoading,
                 enabled: !_isLoading,
@@ -91,7 +71,7 @@ extension _CmsPageLayout on _CmsPageState {
               if (!_denied)
                 ShellActionSpec(
                   id: 'cms-new-collection',
-                  icon: Icons.create_new_folder_outlined,
+                  icon: LucideIcons.folderPlus,
                   tooltip: l10n.cmsNewCollection,
                   callbackToken: widget.workspaceId,
                   onPressed: _showCollectionEditor,
@@ -99,7 +79,7 @@ extension _CmsPageLayout on _CmsPageState {
               if (!_denied && _collections.isNotEmpty)
                 ShellActionSpec(
                   id: 'cms-new-entry',
-                  icon: Icons.add_rounded,
+                  icon: LucideIcons.plus,
                   tooltip: l10n.cmsNewEntry,
                   highlighted: true,
                   callbackToken: _collections.length,
@@ -107,152 +87,71 @@ extension _CmsPageLayout on _CmsPageState {
                 ),
             ],
           ),
-          ResponsiveWrapper(
-            maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
-            child: NovaRefreshIndicator(
-              onRefresh: () => _reload(force: true),
-              child: ListView.builder(
-                key: ValueKey((_section, widget.actorId, widget.workspaceId)),
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: EdgeInsets.fromLTRB(
-                  16,
-                  8,
-                  16,
-                  40 + MediaQuery.paddingOf(context).bottom,
-                ),
-                itemCount: _section == 0 ? 2 : libraryCount + 1,
-                itemBuilder: (context, index) {
-                  if (index == 0) {
-                    if (_isLoading && _summary == null) {
-                      return const CmsLoadingSkeleton();
-                    }
-                    if (_error != null) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.info_outline_rounded),
-                            const SizedBox(width: 8),
-                            Expanded(child: Text(_error!)),
-                            TextButton(
-                              onPressed: _isLoading
-                                  ? null
-                                  : () => _reload(force: true),
-                              child: Text(l10n.commonRetry),
-                            ),
-                          ],
-                        ),
-                      );
-                    }
-                    return const SizedBox.shrink();
-                  }
-                  if (_section == 0) return _buildCmsOverview(this, context);
-                  if (index == 1) return _libraryFilters(context);
-                  if (index == 2) {
-                    return _libraryHeading(
-                      l10n.cmsCollections,
-                      collections.length,
-                    );
-                  }
-                  final offset = index - 3;
-                  if (offset < collections.length) {
-                    final row = collections[offset];
-                    return Padding(
-                      key: ValueKey('collection:${row.id}'),
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: PendingSyncFrame(
-                        workspaceId: _wsId,
-                        feature: 'cms',
-                        entityId: row.id,
-                        child: _CollectionTile(
-                          collection: row,
-                          onEdit: () => _showCollectionEditor(row),
-                          onDelete: () => _deleteCollection(row),
-                        ),
-                      ),
-                    );
-                  }
-                  if (offset == collections.length) {
-                    return _libraryHeading(l10n.cmsEntries, entries.length);
-                  }
-                  final row = entries[offset - collections.length - 1];
-                  return Padding(
-                    key: ValueKey('entry:${row.id}'),
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: PendingSyncFrame(
-                      workspaceId: _wsId,
-                      feature: 'cms',
-                      entityId: row.id,
-                      child: _EntryTile(
-                        entry: row,
-                        collectionTitle: titles[row.collectionId],
-                        statusLabel: _statusLabel(context, row.status),
-                        onEdit: () => _showEntryEditor(row),
-                        onDelete: () => _deleteEntry(row),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
+          NovaRefreshIndicator(
+            onRefresh: () => _reload(force: true),
+            child: _section == 0
+                ? AppPageListView(
+                    key: ValueKey(('overview', widget.actorId, _wsId)),
+                    kind: AppPageKind.root,
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: _overviewChildren(context),
+                  )
+                : _buildLibrary(context),
           ),
         ],
       ),
     );
   }
 
-  Widget _libraryHeading(String title, int count) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 12),
-    child: Text(
-      '$title · $count',
-      style: Theme.of(context).textTheme.titleMedium,
-    ),
-  );
+  bool get _hasData =>
+      _summary != null || _collections.isNotEmpty || _entries.isNotEmpty;
 
-  Widget _libraryFilters(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: 8),
-    child: Column(
-      children: [
-        DropdownButtonFormField<String>(
-          key: ValueKey(_selectedCollectionId),
-          initialValue: _selectedCollectionId,
-          isExpanded: true,
-          decoration: InputDecoration(labelText: context.l10n.cmsCollection),
-          items: [
-            DropdownMenuItem<String>(
-              child: Text(context.l10n.cmsAllCollections),
-            ),
-            ..._collections.map(
-              (row) => DropdownMenuItem(
-                value: row.id,
-                child: Text(row.title, overflow: TextOverflow.ellipsis),
-              ),
-            ),
-          ],
-          onChanged: _denied
-              ? null
-              : (value) {
-                  _updateState(() => _selectedCollectionId = value);
-                  unawaited(_reloadEntries());
-                },
-        ),
-        const SizedBox(height: 12),
-        DropdownButtonFormField<String>(
-          initialValue: _status,
-          isExpanded: true,
-          decoration: InputDecoration(labelText: context.l10n.cmsStatus),
-          items: [
-            DropdownMenuItem<String>(child: Text(context.l10n.commonAll)),
-            ..._CmsPageState._statuses.map(
-              (status) => DropdownMenuItem(
-                value: status,
-                child: Text(_statusLabel(context, status)),
-              ),
-            ),
-          ],
-          onChanged: (value) => _updateState(() => _status = value),
-        ),
-      ],
-    ),
-  );
+  /// First-load skeleton, access and failure states shared by both sections.
+  /// Returns null when the section should render its content.
+  Widget? _statusBlock(BuildContext context) {
+    final l10n = context.l10n;
+    if (_isLoading && !_hasData && _error == null) {
+      return const CmsLoadingSkeleton();
+    }
+    if (_denied) {
+      return AppStateMessage(
+        icon: LucideIcons.lock,
+        title: l10n.cmsNoAccess,
+        message: _error,
+      );
+    }
+    if (_error != null && !_hasData) {
+      return AppStateMessage(
+        icon: LucideIcons.cloudAlert,
+        tone: AppTone.destructive,
+        title: l10n.cmsLoadFailed,
+        message: _error,
+        actionLabel: l10n.commonRetry,
+        onAction: _isLoading ? null : () => _reload(force: true),
+      );
+    }
+    return null;
+  }
+
+  /// Inline notice above content that is still usable after a failed
+  /// refresh.
+  Widget? _refreshNotice(BuildContext context) {
+    final error = _error;
+    if (error == null || _denied || !_hasData) return null;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppLayout.sectionGap),
+      child: AppGroupedCard(
+        children: [
+          AppStateMessage.inline(
+            icon: LucideIcons.cloudAlert,
+            tone: AppTone.destructive,
+            title: context.l10n.cmsRefreshFailed,
+            message: error,
+            actionLabel: context.l10n.commonRetry,
+            onAction: _isLoading ? null : () => _reload(force: true),
+          ),
+        ],
+      ),
+    );
+  }
 }

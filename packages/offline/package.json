@@ -1,7 +1,7 @@
 {
   "name": "@tuturuuu/offline",
   "license": "MIT",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "publishConfig": {
     "access": "public"
   },
@@ -36,5 +36,5 @@
     "./route": "./src/route/index.ts",
     "./provider": "./src/provider/index.tsx"
   },
-  "packageManager": "bun@1.4.3"
+  "packageManager": "bun@1.4.4"
 }

@@ -4,11 +4,11 @@ import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/icons/platform_icon.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
-import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
-import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/data/models/task_board_summary.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
@@ -42,8 +42,6 @@ class TaskBoardsView extends StatefulWidget {
 }
 
 class _TaskBoardsViewState extends State<TaskBoardsView> {
-  static const double _fabContentBottomPadding = 96;
-
   late final WorkspacePermissionsRepository _permissionsRepository;
   late final SettingsRepository _settingsRepository;
   final ScrollController _scrollController = ScrollController();
@@ -135,7 +133,7 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
     final shellActions = [
       ShellActionSpec(
         id: 'task-boards-filter',
-        icon: shad.LucideIcons.slidersHorizontal,
+        icon: LucideIcons.slidersHorizontal,
         tooltip: _filterLabel(context, taskBoardsState.filter),
         highlighted: taskBoardsState.filter != TaskBoardsFilter.active,
         onPressed: () => _showFilterMenu(context, taskBoardsState.filter),
@@ -200,46 +198,40 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
           );
         }
 
-        final bottomPadding =
-            _fabContentBottomPadding + MediaQuery.paddingOf(context).bottom;
-        return ResponsiveWrapper(
-          maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
-          child: NovaRefreshIndicator(
-            onRefresh: _reload,
-            child: ListView(
-              controller: _scrollController,
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.fromLTRB(16, 12, 16, bottomPadding),
-              children: [
-                shellActionRegistration,
-                if (state.filteredBoards.isEmpty)
-                  _EmptyView(filter: state.filter)
-                else
-                  ...state.filteredBoards.map(
-                    (board) => Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: _TaskBoardCard(
-                        canManage: _canManageProjects,
-                        board: board,
-                        onTap: () =>
-                            context.push(Routes.taskBoardDetailPath(board.id)),
-                        onEdit: () => _openEditBoard(board),
-                        onDuplicate: () => _duplicateBoard(board),
-                        onArchive: () => _archiveBoard(board),
-                        onUnarchive: () => _unarchiveBoard(board),
-                        onDelete: () => _deleteBoard(board),
-                        onRestore: () => _restoreBoard(board),
-                        onDeleteForever: () => _deleteBoardForever(board),
-                      ),
+        return NovaRefreshIndicator(
+          onRefresh: _reload,
+          child: AppPageListView(
+            controller: _scrollController,
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: [
+              shellActionRegistration,
+              if (state.filteredBoards.isEmpty)
+                _EmptyView(filter: state.filter)
+              else
+                ...state.filteredBoards.map(
+                  (board) => Padding(
+                    padding: const EdgeInsets.only(bottom: AppLayout.itemGap),
+                    child: _TaskBoardCard(
+                      canManage: _canManageProjects,
+                      board: board,
+                      onTap: () =>
+                          context.push(Routes.taskBoardDetailPath(board.id)),
+                      onEdit: () => _openEditBoard(board),
+                      onDuplicate: () => _duplicateBoard(board),
+                      onArchive: () => _archiveBoard(board),
+                      onUnarchive: () => _unarchiveBoard(board),
+                      onDelete: () => _deleteBoard(board),
+                      onRestore: () => _restoreBoard(board),
+                      onDeleteForever: () => _deleteBoardForever(board),
                     ),
                   ),
-                if (state.isLoadingMore)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                    child: Center(child: NovaLoadingIndicator()),
-                  ),
-              ],
-            ),
+                ),
+              if (state.isLoadingMore)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  child: Center(child: NovaLoadingIndicator()),
+                ),
+            ],
           ),
         );
       },

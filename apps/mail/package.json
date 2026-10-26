@@ -1,9 +1,9 @@
 {
   "name": "@tuturuuu/mail",
-  "version": "0.30.0",
+  "version": "0.31.0",
   "private": true,
   "scripts": {
-    "type-check": "bun run type-check:app && bun run type-check:boundary && bun run type-check:worker",
+    "type-check": "bun run type-check:app && bun run type-check:boundary && bun run type-check:worker && bun run type-check:config",
     "dev": "node ../../scripts/portless-safe-dev.js",
     "dev:app": "node ../../scripts/portless-dev-banner.js -- vp dev --host 127.0.0.1 --port 7820",
     "build": "vp build",
@@ -20,9 +20,10 @@
     "start:legacy": "next start -p 7820",
     "type-check:app": "tsc --noEmit --project tsconfig.json",
     "type-check:worker": "tsc --noEmit --project tsconfig.worker.json",
-    "type-check:boundary": "tsc --project tsconfig.boundary.json"
+    "type-check:boundary": "tsc --project tsconfig.boundary.json",
+    "type-check:config": "tsc --noEmit --project tsconfig.config.json"
   },
-  "packageManager": "bun@1.4.3",
+  "packageManager": "bun@1.4.4",
   "portless": {
     "name": "mail.tuturuuu",
     "script": "dev:app"
@@ -32,6 +33,8 @@
     "@aws-sdk/client-s3": "3.1154.0",
     "@formatjs/intl-localematcher": "^0.9.0",
     "@tanstack/react-query": "5.104.5",
+    "@tanstack/react-router": "1.170.45",
+    "@tanstack/react-start": "1.169.3",
     "@tiptap/extension-image": "3.32.0",
     "@tiptap/extension-link": "3.32.0",
     "@tiptap/extension-placeholder": "3.32.0",
@@ -59,14 +62,12 @@
     "next-intl": "^4.14.9",
     "next-themes": "^0.4.6",
     "nuqs": "^2.10.2",
-    "postal-mime": "3.0.0",
+    "postal-mime": "4.0.8",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "sanitize-html": "^2.18.1",
-    "zod": "^4.6.7",
-    "@tanstack/react-start": "1.169.3",
-    "@tanstack/react-router": "1.170.45",
-    "use-intl": "4.14.9"
+    "use-intl": "4.14.9",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@supabase/supabase-js": "2.117.1",

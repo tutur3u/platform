@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/chat",
-  "version": "0.27.1",
+  "version": "0.28.0",
   "private": true,
   "scripts": {
     "type-check": "node ../../scripts/run-tsc-build.js --build",
@@ -24,7 +24,7 @@
     "sb:up": "cd ../database && bun sb:up",
     "sb:typegen": "cd ../database && bun sb:typegen"
   },
-  "packageManager": "bun@1.4.3",
+  "packageManager": "bun@1.4.4",
   "portless": {
     "name": "chat.tuturuuu",
     "script": "dev:app"

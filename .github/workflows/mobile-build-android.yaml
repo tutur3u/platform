@@ -11,13 +11,25 @@ on:
     paths:
       - "apps/mobile/**"
       - ".github/workflows/mobile-build-android.yaml"
+      - ".github/actions/setup-flutter-with-cache/**"
+      - "scripts/ci/gradle-cache-budget.js"
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
     paths:
       - "apps/mobile/**"
       - ".github/workflows/mobile-build-android.yaml"
+      - ".github/actions/setup-flutter-with-cache/**"
+      - "scripts/ci/gradle-cache-budget.js"
+
+permissions:
+  contents: read
 
 jobs:
   check-ci:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    permissions:
+      contents: read
+      deployments: read
     uses: ./.github/workflows/ci-check.yml
     with:
       workflow_name: mobile-build-android.yaml
@@ -32,25 +44,27 @@ jobs:
         working-directory: apps/mobile
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
-
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup Java
-        uses: actions/setup-java@v6.1.0
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           distribution: temurin
           java-version: 17
-          cache: gradle
-          cache-dependency-path: |
-            apps/mobile/android/**/*.gradle*
-            apps/mobile/android/gradle/wrapper/gradle-wrapper.properties
+
+      - name: Restore Gradle dependencies without saving
+        id: gradle-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.gradle/wrapper/dists
+            ~/.gradle/caches/modules-2/files-2.1
+          key: gradle-downloads-v2-${{ runner.os }}-${{ runner.arch }}-java17
 
       - name: Setup Flutter
-        uses: subosito/flutter-action@v2
+        uses: ./.github/actions/setup-flutter-with-cache
         with:
           flutter-version: "3.47.x"
           channel: stable
-          cache: true
-          pub-cache: true
 
       - name: Verify pinned Meet WebRTC overlay
         run: node --test android/overlays/flutter_webrtc/verify-overlay.test.mjs
@@ -85,3 +99,18 @@ jobs:
           if-no-files-found: error
           retention-days: 7
           compression-level: 0
+
+      - name: Check Gradle download cache budget
+        id: gradle-budget
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && steps.gradle-cache.outputs.cache-hit != 'true'
+        working-directory: .
+        run: node scripts/ci/gradle-cache-budget.js
+
+      - name: Save trusted Gradle dependencies
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && steps.gradle-cache.outputs.cache-hit != 'true' && steps.gradle-budget.outputs.save == 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.gradle/wrapper/dists
+            ~/.gradle/caches/modules-2/files-2.1
+          key: gradle-downloads-v2-${{ runner.os }}-${{ runner.arch }}-java17

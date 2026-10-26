@@ -1,0 +1,194 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:intl/intl.dart' show NumberFormat;
+import 'package:mobile/core/ui/tokens/app_tokens.dart';
+
+class AppSlider extends StatefulWidget {
+  const AppSlider({
+    required this.value,
+    required this.onChanged,
+    this.min = 0,
+    this.max = 1,
+    this.divisions,
+    this.label,
+    this.semanticFormatter,
+    this.onChangeEnd,
+    super.key,
+  }) : assert(max > min, 'max must exceed min'),
+       assert(divisions == null || divisions > 0, 'divisions must be positive');
+
+  final double value;
+  final double min;
+  final double max;
+  final int? divisions;
+  final String? label;
+  final String Function(double)? semanticFormatter;
+  final ValueChanged<double>? onChanged;
+  final ValueChanged<double>? onChangeEnd;
+
+  @override
+  State<AppSlider> createState() => _AppSliderState();
+}
+
+class _AppSliderState extends State<AppSlider> {
+  bool _focused = false;
+  double get min => widget.min;
+  double get max => widget.max;
+  double get value => widget.value;
+  int? get divisions => widget.divisions;
+  ValueChanged<double>? get onChanged => widget.onChanged;
+  ValueChanged<double>? get onChangeEnd => widget.onChangeEnd;
+  double _snap(double next) {
+    final clamped = next.clamp(min, max);
+    final steps = divisions;
+    return steps == null
+        ? clamped
+        : min +
+              ((clamped - min) / (max - min) * steps).round() /
+                  steps *
+                  (max - min);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = AppTokens.of(context).colorScheme;
+    final fraction = ((value - min) / (max - min)).clamp(0.0, 1.0);
+    final rtl = Directionality.of(context) == TextDirection.rtl;
+    final step = (max - min) / (divisions ?? 20);
+    void adjust(double delta) {
+      final next = _snap(value + delta);
+      onChanged?.call(next);
+      onChangeEnd?.call(next);
+    }
+
+    var lastValue = value;
+    void update(Offset position, double width) {
+      final fraction = ((position.dx - 10) / (width - 20)).clamp(0.0, 1.0);
+      lastValue = _snap(min + (rtl ? 1 - fraction : fraction) * (max - min));
+      onChanged?.call(lastValue);
+    }
+
+    String format(double next) =>
+        widget.semanticFormatter?.call(next) ??
+        NumberFormat.percentPattern(
+          Localizations.localeOf(context).toString(),
+        ).format((next - min) / (max - min));
+    return Semantics(
+      container: true,
+      slider: true,
+      label: widget.label,
+      enabled: onChanged != null,
+      value: format(value),
+      increasedValue: format(_snap(value + step)),
+      decreasedValue: format(_snap(value - step)),
+      onIncrease: onChanged == null ? null : () => adjust(step),
+      onDecrease: onChanged == null ? null : () => adjust(-step),
+      child: FocusableActionDetector(
+        enabled: onChanged != null,
+        onShowFocusHighlight: (focused) => setState(() => _focused = focused),
+        shortcuts: const {
+          SingleActivator(LogicalKeyboardKey.arrowRight):
+              DirectionalFocusIntent(TraversalDirection.right),
+          SingleActivator(LogicalKeyboardKey.arrowLeft): DirectionalFocusIntent(
+            TraversalDirection.left,
+          ),
+        },
+        actions: {
+          DirectionalFocusIntent: CallbackAction<DirectionalFocusIntent>(
+            onInvoke: (intent) {
+              adjust(
+                (intent.direction == TraversalDirection.right) != rtl
+                    ? step
+                    : -step,
+              );
+              return null;
+            },
+          ),
+        },
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final width = constraints.maxWidth;
+
+            return GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTapDown: onChanged == null
+                  ? null
+                  : (event) => update(event.localPosition, width),
+              onTapUp: onChanged == null
+                  ? null
+                  : (event) => onChangeEnd?.call(lastValue),
+              onHorizontalDragUpdate: onChanged == null
+                  ? null
+                  : (event) => update(event.localPosition, width),
+              onHorizontalDragEnd: onChanged == null
+                  ? null
+                  : (_) => onChangeEnd?.call(lastValue),
+              child: SizedBox(
+                height: 48,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Positioned(
+                      left: 10,
+                      right: 10,
+                      child: Container(
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: c.input,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      left: 10,
+                      right: 10,
+                      child: Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: FractionallySizedBox(
+                          widthFactor: fraction,
+                          child: Container(
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: onChanged == null
+                                  ? c.mutedForeground
+                                  : c.primary,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      left: (width - 20) * (rtl ? 1 - fraction : fraction),
+                      child: Container(
+                        width: 20,
+                        height: 20,
+                        decoration: BoxDecoration(
+                          color: c.card,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            if (_focused)
+                              BoxShadow(
+                                color: c.ring.withValues(alpha: .4),
+                                spreadRadius: 4,
+                              ),
+                          ],
+                          border: Border.all(
+                            color: onChanged == null
+                                ? c.mutedForeground
+                                : c.primary,
+                            width: 3,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}

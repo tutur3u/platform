@@ -1,7 +1,7 @@
 ---
 title: "Oxc and Cloudflare adoption"
 description: "Incremental Oxlint/Oxfmt tooling, portable first-party libraries, and Vite-native Worker migration boundaries."
-updatedAt: '2026-10-10'
+updatedAt: '2026-10-24'
 ---
 
 ## Decision and current state
@@ -17,9 +17,11 @@ release/generated-file formatting remain authoritative. No workspace has complet
 the switch merely because these tools are installed.
 
 Lettin and Parley already have Next.js/OpenNext Worker deployments. Their next
-architecture milestone is a Vite-native runtime preserving existing contracts.
-React Router Framework Mode with the Cloudflare Vite plugin is a candidate requiring
-a scoped compatibility proof. The retained `apps/tanstack-web` remains paused.
+architecture milestone is the same per-app TanStack Start + Void + Vite+ Worker
+runtime as the other web apps, reaching `next/*` only through
+`@tuturuuu/start-bridge` and preserving existing contracts. See the
+[native Start migration runbook](/build/devops/native-start-migration). The
+retired `apps/tanstack-web` is not revived.
 
 ## Platform-wide target and daily checkpoints
 
@@ -70,6 +72,8 @@ receipts; one green app cannot establish another app's readiness.
 ## cf CLI adoption alongside Vite+
 
 Prefer Cloudflare's **cf CLI** over Wrangler as each operation proves compatible.
+The per-operation verdicts, native Worker template, guard and cutover checklist
+live in [cf CLI and Void over Wrangler](/build/development-tools/cf-cli-wrangler-parity).
 This is a phased tooling decision, separate from framework migration and production
 promotion. Existing Wrangler commands/configurations remain authoritative until
 that scope passes its replacement gates.
@@ -131,7 +135,27 @@ explicit target identity and isolate discovery before touching app worktrees;
 review any resulting local files. Neither command discovery nor `--dry-run`
 authorizes migration, configuration mutation, resource creation or deployment.
 
-The current foundation does not install cf or convert Worker configurations.
+Cron Control, Devbox Control and Coordination pin `cf@1.0.0-beta.20` and use
+`cloudflare.config.ts`, `vp dev` and `cf workers types`. Their existing per-service
+CI checks qualify configuration and emitted output; this does not qualify legacy
+Void or OpenNext configuration consumers. See the operation matrix for retained
+publication gaps. The package pin requires Node `^22.23 || ^24.22 || ^26.12`;
+the older Node 22.18 discovery minimum does not satisfy that package's engines.
+
+Do not replace `wrangler types --config <emitted-config>` with a bare cf command:
+type generation must read the same Worker identity and preserve the declarations
+consumed by the app. Retain legacy local dev, D1 migration and tail commands until
+their exact configuration, persistence and output contracts pass independently.
+Calendar is the first emitted-config type-generation profile: its existing
+validator admits only ASSETS, and the adapter runs the pinned cf CLI on a
+supported Node executor. CI compares exact binding keys/requiredness/types against
+the existing producer, verifies unchanged artifact bytes and retains a receipt.
+Its self-contained declaration does not require shipping a generated config.
+Other resource and framework profiles still require separate qualification.
+Calendar's build-output comparison copies sealed ESM/assets into the cf format
+and verifies the same bytes after restore. It retains the publisher because
+secondary upload-module names and asset/runtime semantics need separate proof.
+
 Track CLI capability gaps independently from app migration so an unsupported
 operation does not block portable libraries or Oxc adoption.
 
@@ -238,7 +262,7 @@ MFA, consent, membership and revocation checks in reusable policy services.
 Current seams include Lettin's Actor/Store context and SQL permission fences,
 with bindings/identity/HTTP as framework adapters. Parley/Meet domain contracts can
 remain shared while routes, session lookup and meeting UI adapters are extracted.
-A package can support Next.js, React Router or other React hosts by implementing
+A package can support Next.js, TanStack Start or other React hosts by implementing
 these small adapters; support for every framework is a goal requiring consumer
 verification, not an automatic guarantee.
 
@@ -296,6 +320,24 @@ prove bounds under repeated wakes in isolated fixtures and the real local Worker
 Exact-commit CI must exercise the emitted artifact. Keep live account settings,
 alert delivery and hosted shutdown verification as separate production evidence.
 
+Cron Control's default-off checkout Worker uses a 5,000-item combined active and
+quarantine bound, pre-expiry capacity checks, three durable attempts per item,
+per-workspace invalidation receipts and a 240-second whole-run deadline. Stop is
+checked before each expiry batch and invalidation chunk. See the
+[processor runbook](/build/devops/cloudflare-processor-migration) for counted
+operation bounds, restart/deadline/poison regressions and remaining hosted stop
+and cache-freshness evidence. Source and mocked requests do not establish billed
+usage or crash-atomic database-to-ledger persistence.
+
+Cron Control's default-off database history job adds one RPC per enabled ten-minute
+slot, deleting at most 1,000 completed rows per table. It has no in-slot retry or
+drain loop; the existing durable slot claim, pre-delete stop fence and five-failure
+budget survive ledger restarts. Counted dispatch/stop regressions and full-chain
+pgTAP cover the bounds and seven-day cutoff. The
+[history retention runbook](/build/devops/cloudflare-cron-control#seven-day-database-cron-history)
+records the daily operation envelope and stop procedure. Hosted scheduled execution,
+independent operator-stop acceptance and billed usage remain rollout evidence.
+
 CPU limits constrain an invocation, not the number of invocations or all billable
 services. Usage notifications are detection, not an automatic spending cutoff.
 Choose service-specific limits with measured workloads; do not silently apply an
@@ -347,4 +389,4 @@ CI; a migration direction does not authorize production cutover.
 - [Oxlint configuration](https://oxc.rs/docs/guide/usage/linter/config.html)
 - [Oxfmt configuration](https://oxc.rs/docs/guide/usage/formatter/config.html)
 - [Vite+ migration](https://viteplus.dev/guide/migrate)
-- [React Router on Cloudflare](https://developers.cloudflare.com/workers/framework-guides/web-apps/react-router/)
+- [TanStack Start on Cloudflare](https://developers.cloudflare.com/workers/framework-guides/web-apps/tanstack-start/)

@@ -16,7 +16,9 @@ import 'package:mobile/core/router/app_router.dart';
 import 'package:mobile/core/router/deep_link_launcher.dart';
 import 'package:mobile/core/router/deep_links.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/core/theme/mobile_shad_theme.dart';
+import 'package:mobile/core/theme/appearance/appearance_scope.dart';
+import 'package:mobile/core/theme/appearance/appearance_settings.dart';
+import 'package:mobile/core/theme/appearance/appearance_theme.dart';
 import 'package:mobile/core/widgets/dismiss_keyboard_on_pointer_down.dart';
 import 'package:mobile/core/widgets/shadcn_localizations_fallback.dart';
 import 'package:mobile/core/widgets/shadcn_material_bridge.dart';
@@ -39,6 +41,8 @@ import 'package:mobile/data/repositories/workspace_repository.dart';
 import 'package:mobile/features/app_version/cubit/app_version_cubit.dart';
 import 'package:mobile/features/app_version/view/app_version_gate.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
+import 'package:mobile/features/assistant/bridge/app_assistant_client_action_bridge.dart';
+import 'package:mobile/features/assistant/bridge/assistant_client_actions.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
@@ -92,6 +96,7 @@ class App extends StatefulWidget {
     required this.appFlavor,
     this.initialRoute,
     this.initialThemeMode = shad.ThemeMode.system,
+    this.initialAppearance = const AppearanceSettings(),
     super.key,
   });
 
@@ -100,6 +105,9 @@ class App extends StatefulWidget {
   /// Shell route to start on (loaded from SharedPreferences in bootstrap).
   final String? initialRoute;
   final shad.ThemeMode initialThemeMode;
+
+  /// Appearance customisation loaded in bootstrap to avoid a theme flash.
+  final AppearanceSettings initialAppearance;
 
   @override
   State<App> createState() => _AppState();
@@ -125,6 +133,7 @@ class _AppState extends State<App> {
   late final WorkspaceCubit _workspaceCubit;
   late final LocaleCubit _localeCubit;
   late final ThemeCubit _themeCubit;
+  late final void Function() _unregisterAssistantActions;
   late final CalendarSettingsCubit _calendarSettingsCubit;
   late final ExperimentalAppsCubit _experimentalAppsCubit;
   late final FinancePreferencesCubit _financePreferencesCubit;
@@ -186,6 +195,7 @@ class _AppState extends State<App> {
     _themeCubit = ThemeCubit(
       settingsRepository: _settingsRepo,
       initialThemeMode: widget.initialThemeMode,
+      initialAppearance: widget.initialAppearance,
     );
     _calendarSettingsCubit = CalendarSettingsCubit();
     _experimentalAppsCubit = ExperimentalAppsCubit(
@@ -226,6 +236,17 @@ class _AppState extends State<App> {
       _inventoryAccessCubit,
       _appTabCubit,
       initialLocation: widget.initialRoute,
+    );
+    _unregisterAssistantActions = AssistantClientActions.register(
+      AppAssistantClientActionBridge(
+        go: _router.go,
+        setTheme: (theme, isCurrent) => _themeCubit.setThemeMode(
+          ThemeCubit.parseThemeMode(theme),
+          isCurrent: isCurrent,
+        ),
+        currentWorkspaceId: () => _workspaceCubit.state.currentWorkspace?.id,
+        currentActorId: () => _authCubit.state.user?.id,
+      ),
     );
     _initializeDeepLinks();
     unawaited(_localeCubit.loadLocale());
@@ -352,6 +373,7 @@ class _AppState extends State<App> {
 
   @override
   void dispose() {
+    _unregisterAssistantActions();
     _unregisterOfflinePreparation();
     WidgetsBinding.instance.removeObserver(_lifecycleObserver);
     unawaited(_appLinkSubscription?.cancel());
@@ -482,10 +504,17 @@ class _AppState extends State<App> {
             builder: (context, localeState) {
               return BlocBuilder<ThemeCubit, ThemeState>(
                 builder: (context, themeState) {
+                  final appearance = themeState.appearance;
                   return shad.ShadcnApp.router(
                     debugShowCheckedModeBanner: false,
-                    theme: MobileShadTheme.light,
-                    darkTheme: MobileShadTheme.dark,
+                    theme: AppearanceTheme.shadTheme(
+                      appearance,
+                      Brightness.light,
+                    ),
+                    darkTheme: AppearanceTheme.shadTheme(
+                      appearance,
+                      Brightness.dark,
+                    ),
                     themeMode: themeState.themeMode,
                     locale: localeState.locale,
                     localizationsDelegates: const [
@@ -498,16 +527,19 @@ class _AppState extends State<App> {
                       final authIdentity = context.select<AuthCubit, String?>(
                         (cubit) => cubit.state.user?.id,
                       );
-                      return ShadcnMaterialBridge(
-                        child: AuthSessionBoundary(
-                          identity: authIdentity,
-                          child: DismissKeyboardOnPointerDown(
-                            child: AppLockBoundary(
-                              excluded: isAppLockExcludedRoute(
-                                _currentMatchedLocation(),
-                              ),
-                              child: MobileMfaApprovalListener(
-                                child: AppVersionGate(child: child!),
+                      return AppearanceBackdrop(
+                        settings: appearance,
+                        child: ShadcnMaterialBridge(
+                          child: AuthSessionBoundary(
+                            identity: authIdentity,
+                            child: DismissKeyboardOnPointerDown(
+                              child: AppLockBoundary(
+                                excluded: isAppLockExcludedRoute(
+                                  _currentMatchedLocation(),
+                                ),
+                                child: MobileMfaApprovalListener(
+                                  child: AppVersionGate(child: child!),
+                                ),
                               ),
                             ),
                           ),

@@ -10,7 +10,11 @@ extension _AssistantChatRestore on AssistantChatCubit {
         !isClosed &&
         workspaceVersion == _workspaceVersion &&
         _repository.currentActorId == actor;
-    final preserveState = state.workspaceId == wsId && state.hasLoadedOnce;
+    final preserveState =
+        state.workspaceId == wsId &&
+        state.hasLoadedOnce &&
+        _messageActorId == actor;
+    _messageActorId = null;
     await _cancelReplyStream();
     if (!current()) return;
     _queueDebounce?.cancel();
@@ -26,6 +30,8 @@ extension _AssistantChatRestore on AssistantChatCubit {
           fallbackChatId: _repository.generateUuid(),
           composerAttachments: const [],
           queuedMessages: const [],
+          replyTarget: null,
+          reactionResult: null,
           status: AssistantChatStatus.restoring,
           clearError: true,
         ),
@@ -55,6 +61,7 @@ extension _AssistantChatRestore on AssistantChatCubit {
 
       if (storedChatId == null) {
         if (!current()) return;
+        _messageActorId = actor;
         _emitIfOpen(
           state.copyWith(
             status: AssistantChatStatus.idle,
@@ -69,11 +76,49 @@ extension _AssistantChatRestore on AssistantChatCubit {
 
       // A restore failure retains the selected identity. It is not a new chat.
       _emitIfOpen(state.copyWith(storedChatId: storedChatId));
-      final restored = await _repository.restoreChat(
-        wsId: wsId,
-        chatId: storedChatId,
-        cacheOrigin: _captureChatCacheOrigin(wsId, storedChatId),
-      );
+      final initialRestore = Completer<void>();
+      List<AssistantMessage>? initialMessages;
+      final origin = _captureChatCacheOrigin(wsId, storedChatId);
+      final revalidatingOrigin = origin == null
+          ? null
+          : AssistantChatCacheOrigin(
+              key: origin.key,
+              epoch: origin.epoch,
+              revision: origin.revision,
+              isCurrent: origin.isCurrent,
+              onRevalidated: (fresh) async {
+                await initialRestore.future;
+                if (!current() ||
+                    !origin.isCurrent() ||
+                    fresh == null ||
+                    state.storedChatId != storedChatId ||
+                    state.isBusy ||
+                    !identical(state.messages, initialMessages)) {
+                  return;
+                }
+                _publishRestoredSettings(fresh.settings);
+                _emitIfOpen(
+                  state.copyWith(
+                    chat: fresh.chat,
+                    messages: fresh.messages,
+                    attachmentsByMessageId: fresh.attachmentsByMessageId,
+                  ),
+                );
+                await _onChatRestored(fresh.chat?.model);
+              },
+            );
+      late final AssistantRestoredChat? restored;
+      try {
+        restored = await _repository.restoreChat(
+          wsId: wsId,
+          chatId: storedChatId,
+          cacheOrigin: revalidatingOrigin,
+        );
+        initialMessages = restored?.messages;
+      } finally {
+        // Revalidation publishes after the initial cached snapshot below.
+        scheduleMicrotask(initialRestore.complete);
+      }
       if (!current()) return;
 
       if (restored == null) {
@@ -96,6 +141,7 @@ extension _AssistantChatRestore on AssistantChatCubit {
 
       _publishRestoredSettings(restored.settings);
       if (!current()) return;
+      _messageActorId = actor;
       _emitIfOpen(
         state.copyWith(
           status: AssistantChatStatus.idle,
@@ -137,6 +183,7 @@ extension _AssistantChatRestore on AssistantChatCubit {
     _restoredSettings = null;
     final actor = _repository.currentActorId;
     final version = ++_workspaceVersion;
+    _chatSelection = (workspaceId: wsId, chatId: chatId, version: version);
     bool current() =>
         !isClosed &&
         version == _workspaceVersion &&
@@ -145,6 +192,8 @@ extension _AssistantChatRestore on AssistantChatCubit {
     _emitIfOpen(
       state.copyWith(
         workspaceId: wsId,
+        replyTarget: null,
+        reactionResult: null,
         status:
             forceRefresh &&
                 state.chat?.id == chatId &&
@@ -174,6 +223,7 @@ extension _AssistantChatRestore on AssistantChatCubit {
       }
       _publishRestoredSettings(restored.settings);
       if (!current()) return;
+      _messageActorId = actor;
       _emitIfOpen(
         state.copyWith(
           status: AssistantChatStatus.idle,

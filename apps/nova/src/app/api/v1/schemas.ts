@@ -13,7 +13,7 @@ export const createChallengeSchema = z.object({
   maxDailyAttempts: z.number().min(1, {
     message: 'Max daily attempts must be at least 1.',
   }),
-  password: z.string().nullable().optional(),
+  password: z.string().max(1024).nullable().optional(),
   previewableAt: z.string().nullable(),
   openAt: z.string().nullable(),
   closeAt: z.string().nullable(),
@@ -40,9 +40,6 @@ export const createProblemSchema = z.object({
 
 // Sessions
 export const createSessionSchema = z.object({
-  startTime: z.string().min(1, 'Start time is required'),
-  endTime: z.string().nullable(),
-  status: z.string().min(1, 'Status is required'),
   challengeId: z.string().min(1, 'Challenge ID is required'),
 });
 

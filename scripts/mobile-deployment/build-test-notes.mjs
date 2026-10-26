@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import policy from '../ci/release-note-policy.js';
+import normalizer from '../ci/normalize-release-notes.js';
 
 export class BetaHistoryUnavailableError extends Error {}
 
@@ -40,9 +40,11 @@ export function renderBuildTestNotes(history, identity) {
       'Exact beta version has no test notes'
     );
   }
-  const changes = sourceChanges.filter(
-    (change) => !policy.isReleaseBookkeeping(change)
-  );
+  const changes = normalizer
+    .normalizeMobileReleaseNotes(sourceChanges.join('\n'))
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => line.slice(2));
   if (!changes.length)
     throw new BetaHistoryUnavailableError(
       'Exact beta version has no product test notes'
@@ -63,6 +65,27 @@ export function renderBuildTestNotes(history, identity) {
   return notes;
 }
 
+function cleanRetainedMobileNotes(current) {
+  const lines = current.split('\n');
+  if (
+    /^Please test \d+\.\d+\.\d+:$/u.test(lines[0]) &&
+    lines.length > 1 &&
+    lines.slice(1).every((line) => /^[-*]\s+\S/u.test(line))
+  ) {
+    const bullets = normalizer.normalizeMobileReleaseNotes(
+      lines.slice(1).join('\n')
+    );
+    return bullets ? `${lines[0]}\n${bullets}` : lines[0];
+  }
+  return lines
+    .filter(
+      (line) =>
+        !/^\s*[-*]\s+/u.test(line) ||
+        normalizer.normalizeMobileReleaseNotes(line)
+    )
+    .join('\n');
+}
+
 export async function ensureBuildWhatsNew(apple, buildId, notes) {
   const path = `/v1/builds/${buildId}/betaBuildLocalizations?limit=200`;
   const readEnglish = async () => {
@@ -79,7 +102,7 @@ export async function ensureBuildWhatsNew(apple, buildId, notes) {
       english[0].attributes.whatsNew.trim()
     ) {
       const current = english[0].attributes.whatsNew;
-      if (policy.filterReleaseBookkeeping(current) === current) return null;
+      if (cleanRetainedMobileNotes(current) === current) return null;
     }
     return english;
   };
@@ -88,7 +111,7 @@ export async function ensureBuildWhatsNew(apple, buildId, notes) {
   const retainedNotes = (resources) => {
     const current = resources[0]?.attributes?.whatsNew;
     if (typeof current !== 'string') return null;
-    const filtered = policy.filterReleaseBookkeeping(current);
+    const filtered = cleanRetainedMobileNotes(current);
     const content = filtered.trim();
     // A generated heading alone has no product notes; manual prose does.
     return content && !/^Please test \d+\.\d+\.\d+:$/u.test(content)

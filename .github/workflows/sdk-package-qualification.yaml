@@ -2,14 +2,19 @@ name: SDK package qualification
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
     paths:
       - "packages/**"
       - "bun.lock"
       - "package.json"
       - "turbo.json"
       - "tuturuuu.ci.ts"
+      - "scripts/safe-fs.js"
+      - "scripts/ci/qualify-sdk-file*"
       - "scripts/ci/qualify-sdk-package*"
-      - "scripts/ci/sdk-package-process.js"
+      - "scripts/ci/sdk-package-process*"
+      - "scripts/ci/sdk-dev*"
+      - ".github/workflows/release-sdk-dev.yaml"
       - "scripts/ci/sdk-qualification-*"
       - "scripts/ci/prepare-npm-package-manifest.js"
       - ".github/workflows/sdk-package-qualification.yaml"
@@ -25,6 +30,10 @@ concurrency:
 
 jobs:
   check-ci:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    permissions:
+      contents: read
+      deployments: read
     uses: ./.github/workflows/ci-check.yml
     with:
       workflow_name: sdk-package-qualification.yaml
@@ -37,21 +46,21 @@ jobs:
       SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       NODE_OPTIONS: --max-old-space-size=4096
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24.21.0
           package-manager-cache: false
       - uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
       - name: Install build dependencies
         run: timeout --kill-after=10s 300s bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
       - name: Test qualification controls
-        run: timeout --kill-after=10s 30s node --test scripts/ci/qualify-sdk-package.test.js scripts/ci/sdk-qualification-phase.test.js packages/sdk/scripts/portable-build.test.cjs
+        run: timeout --kill-after=10s 30s node --test scripts/ci/sdk-package-process.test.js scripts/ci/qualify-sdk-package.test.js scripts/ci/sdk-qualification-phase.test.js scripts/ci/sdk-dev*.test.js packages/sdk/scripts/portable-build.test.cjs
       - name: Build SDK and dependencies serially
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
@@ -62,7 +71,7 @@ jobs:
         run: timeout --kill-after=10s 600s node scripts/ci/qualify-sdk-package.js
       - name: Upload qualification receipt and package
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: sdk-package-qualification-${{ github.event.pull_request.head.sha || github.sha }}
           path: ${{ runner.temp }}/sdk-package-qualification/

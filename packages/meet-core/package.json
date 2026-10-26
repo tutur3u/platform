@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/meet-core",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "private": true,
   "exports": {
     "./styles.css": "./src/styles.css",
@@ -198,6 +198,8 @@
     "./features/call/components/room-host-controls.tsx": "./src/features/call/components/room-host-controls.tsx",
     "./features/call/components/participant-name-form": "./src/features/call/components/participant-name-form.tsx",
     "./features/call/components/participant-name-form.tsx": "./src/features/call/components/participant-name-form.tsx",
+    "./features/call/components/join-outcome": "./src/features/call/components/join-outcome.tsx",
+    "./features/call/components/join-outcome.tsx": "./src/features/call/components/join-outcome.tsx",
     "./features/call/components/lobby": "./src/features/call/components/lobby.tsx",
     "./features/call/components/lobby.tsx": "./src/features/call/components/lobby.tsx",
     "./features/call/components/leave-dialog": "./src/features/call/components/leave-dialog.tsx",

@@ -1,0 +1,55 @@
+name: Setup Flutter with trusted caches
+description: Restore Flutter SDK/pub caches everywhere and save only from main.
+inputs:
+  flutter-version:
+    description: Flutter release selector
+    default: "3.47.x"
+  channel:
+    description: Flutter release channel
+    default: stable
+runs:
+  using: composite
+  steps:
+    - name: Resolve Flutter cache identity
+      id: identity
+      uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+      with:
+        flutter-version: ${{ inputs.flutter-version }}
+        channel: ${{ inputs.channel }}
+        dry-run: true
+        cache: false
+        pub-cache: false
+    - name: Restore and save trusted Flutter SDK
+      if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+      with:
+        path: ${{ steps.identity.outputs.CACHE-PATH }}
+        key: ${{ steps.identity.outputs.CACHE-KEY }}
+    - name: Restore Flutter SDK without saving
+      if: "!(github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch'))"
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+      with:
+        path: ${{ steps.identity.outputs.CACHE-PATH }}
+        key: ${{ steps.identity.outputs.CACHE-KEY }}
+    - name: Restore and save trusted pub downloads
+      if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+      with:
+        path: ${{ steps.identity.outputs.PUB-CACHE-PATH }}
+        key: flutter-pub-v2-${{ runner.os }}-${{ runner.arch }}-${{ steps.identity.outputs.CHANNEL }}-${{ steps.identity.outputs.VERSION }}
+    - name: Restore pub downloads without saving
+      if: "!(github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch'))"
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+      with:
+        path: ${{ steps.identity.outputs.PUB-CACHE-PATH }}
+        key: flutter-pub-v2-${{ runner.os }}-${{ runner.arch }}-${{ steps.identity.outputs.CHANNEL }}-${{ steps.identity.outputs.VERSION }}
+    - name: Install resolved Flutter release
+      uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+      with:
+        flutter-version: ${{ steps.identity.outputs.VERSION }}
+        channel: ${{ steps.identity.outputs.CHANNEL }}
+        architecture: ${{ steps.identity.outputs.ARCHITECTURE }}
+        cache-path: ${{ steps.identity.outputs.CACHE-PATH }}
+        pub-cache-path: ${{ steps.identity.outputs.PUB-CACHE-PATH }}
+        cache: false
+        pub-cache: false

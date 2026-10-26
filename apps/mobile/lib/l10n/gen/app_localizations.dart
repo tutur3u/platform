@@ -1021,6 +1021,114 @@ abstract class AppLocalizations {
   /// **'Live camera'**
   String get assistantLiveCameraPreview;
 
+  /// No description provided for @assistantLiveCallCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera'**
+  String get assistantLiveCallCamera;
+
+  /// No description provided for @assistantLiveCallCaptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Captions'**
+  String get assistantLiveCallCaptions;
+
+  /// No description provided for @assistantLiveCallCaptionsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Captions appear here as you talk.'**
+  String get assistantLiveCallCaptionsEmpty;
+
+  /// No description provided for @assistantLiveCallClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get assistantLiveCallClose;
+
+  /// No description provided for @assistantLiveCallConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected'**
+  String get assistantLiveCallConnected;
+
+  /// No description provided for @assistantLiveCallConnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting…'**
+  String get assistantLiveCallConnecting;
+
+  /// No description provided for @assistantLiveCallDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Call duration'**
+  String get assistantLiveCallDuration;
+
+  /// No description provided for @assistantLiveCallEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'End'**
+  String get assistantLiveCallEnd;
+
+  /// No description provided for @assistantLiveCallEndedWithDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Call ended · {duration}'**
+  String assistantLiveCallEndedWithDuration(String duration);
+
+  /// No description provided for @assistantLiveCallFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t connect'**
+  String get assistantLiveCallFailed;
+
+  /// No description provided for @assistantLiveCallKeyboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Keyboard'**
+  String get assistantLiveCallKeyboard;
+
+  /// No description provided for @assistantLiveCallMinimize.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimize'**
+  String get assistantLiveCallMinimize;
+
+  /// No description provided for @assistantLiveCallMute.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute'**
+  String get assistantLiveCallMute;
+
+  /// No description provided for @assistantLiveCallMuted.
+  ///
+  /// In en, this message translates to:
+  /// **'Muted'**
+  String get assistantLiveCallMuted;
+
+  /// No description provided for @assistantLiveCallReconnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnecting…'**
+  String get assistantLiveCallReconnecting;
+
+  /// No description provided for @assistantLiveCallRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get assistantLiveCallRetry;
+
+  /// No description provided for @assistantLiveCallReturn.
+  ///
+  /// In en, this message translates to:
+  /// **'Return to call'**
+  String get assistantLiveCallReturn;
+
+  /// No description provided for @assistantLiveCallYou.
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get assistantLiveCallYou;
+
   /// No description provided for @assistantLiveCancelCall.
   ///
   /// In en, this message translates to:
@@ -1036,7 +1144,7 @@ abstract class AppLocalizations {
   /// No description provided for @assistantLiveDescriptionConnecting.
   ///
   /// In en, this message translates to:
-  /// **'Creating a direct Gemini Live session for text, audio, and camera input.'**
+  /// **'Connecting your live conversation.'**
   String get assistantLiveDescriptionConnecting;
 
   /// No description provided for @assistantLiveDescriptionError.
@@ -1048,7 +1156,7 @@ abstract class AppLocalizations {
   /// No description provided for @assistantLiveDescriptionIdle.
   ///
   /// In en, this message translates to:
-  /// **'Start a live session to talk, type, or stream camera context into the same assistant chat.'**
+  /// **'Tap the microphone to start talking. Your conversation stays here.'**
   String get assistantLiveDescriptionIdle;
 
   /// No description provided for @assistantLiveDescriptionListening.
@@ -1060,7 +1168,7 @@ abstract class AppLocalizations {
   /// No description provided for @assistantLiveDescriptionPreparing.
   ///
   /// In en, this message translates to:
-  /// **'Minting an ephemeral token and restoring the last resumable live session.'**
+  /// **'Getting your live conversation ready.'**
   String get assistantLiveDescriptionPreparing;
 
   /// No description provided for @assistantLiveDescriptionReady.
@@ -1072,7 +1180,7 @@ abstract class AppLocalizations {
   /// No description provided for @assistantLiveDescriptionReconnecting.
   ///
   /// In en, this message translates to:
-  /// **'The session is reconnecting with the latest resumable handle and restored history.'**
+  /// **'Reconnecting your conversation. Your transcript is still here.'**
   String get assistantLiveDescriptionReconnecting;
 
   /// No description provided for @assistantLiveDisconnect.
@@ -1102,7 +1210,7 @@ abstract class AppLocalizations {
   /// No description provided for @assistantLiveIdleHeading.
   ///
   /// In en, this message translates to:
-  /// **'Talk with Mira'**
+  /// **'Ready to talk'**
   String get assistantLiveIdleHeading;
 
   /// No description provided for @assistantLiveInfoAccessHeading.
@@ -1176,6 +1284,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Session rotation detected. Reconnecting with about {timeLeft} remaining.'**
   String assistantLiveReconnectBanner(String timeLeft);
+
+  /// No description provided for @assistantLiveReconnectExhausted.
+  ///
+  /// In en, this message translates to:
+  /// **'The connection kept dropping. Check your network, then retry the live session.'**
+  String get assistantLiveReconnectExhausted;
 
   /// No description provided for @assistantLiveRetryAction.
   ///
@@ -1711,6 +1825,18 @@ abstract class AppLocalizations {
   /// **'Reset zoom'**
   String get assistantMermaidZoomReset;
 
+  /// No description provided for @assistantMessageDelivered.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivered'**
+  String get assistantMessageDelivered;
+
+  /// No description provided for @assistantMessageRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Read'**
+  String get assistantMessageRead;
+
   /// No description provided for @assistantMessageActionsTitle.
   ///
   /// In en, this message translates to:
@@ -1930,7 +2056,7 @@ abstract class AppLocalizations {
   /// No description provided for @assistantSettingsTitle.
   ///
   /// In en, this message translates to:
-  /// **'Assistant settings'**
+  /// **'Assistant Settings'**
   String get assistantSettingsTitle;
 
   /// No description provided for @assistantShowBottomNavLabel.
@@ -2076,6 +2202,426 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tools'**
   String get assistantToolsLabel;
+
+  /// No description provided for @assistantToolLabelTasksRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked your tasks'**
+  String get assistantToolLabelTasksRead;
+
+  /// No description provided for @assistantToolLabelTasksReadRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking your tasks'**
+  String get assistantToolLabelTasksReadRunning;
+
+  /// No description provided for @assistantToolLabelTaskCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Created a task'**
+  String get assistantToolLabelTaskCreate;
+
+  /// No description provided for @assistantToolLabelTaskCreateRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Creating a task'**
+  String get assistantToolLabelTaskCreateRunning;
+
+  /// No description provided for @assistantToolLabelTaskUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated a task'**
+  String get assistantToolLabelTaskUpdate;
+
+  /// No description provided for @assistantToolLabelTaskUpdateRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Updating a task'**
+  String get assistantToolLabelTaskUpdateRunning;
+
+  /// No description provided for @assistantToolLabelTaskComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed a task'**
+  String get assistantToolLabelTaskComplete;
+
+  /// No description provided for @assistantToolLabelTaskCompleteRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Completing a task'**
+  String get assistantToolLabelTaskCompleteRunning;
+
+  /// No description provided for @assistantToolLabelTaskDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted a task'**
+  String get assistantToolLabelTaskDelete;
+
+  /// No description provided for @assistantToolLabelTaskDeleteRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleting a task'**
+  String get assistantToolLabelTaskDeleteRunning;
+
+  /// No description provided for @assistantToolLabelBoardsRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked your boards'**
+  String get assistantToolLabelBoardsRead;
+
+  /// No description provided for @assistantToolLabelBoardsReadRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking your boards'**
+  String get assistantToolLabelBoardsReadRunning;
+
+  /// No description provided for @assistantToolLabelBoardsWrite.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated your boards'**
+  String get assistantToolLabelBoardsWrite;
+
+  /// No description provided for @assistantToolLabelBoardsWriteRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Updating your boards'**
+  String get assistantToolLabelBoardsWriteRunning;
+
+  /// No description provided for @assistantToolLabelCalendarRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked your calendar'**
+  String get assistantToolLabelCalendarRead;
+
+  /// No description provided for @assistantToolLabelCalendarReadRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking your calendar'**
+  String get assistantToolLabelCalendarReadRunning;
+
+  /// No description provided for @assistantToolLabelCalendarWrite.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated your calendar'**
+  String get assistantToolLabelCalendarWrite;
+
+  /// No description provided for @assistantToolLabelCalendarWriteRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Updating your calendar'**
+  String get assistantToolLabelCalendarWriteRunning;
+
+  /// No description provided for @assistantToolLabelEmailRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked your email'**
+  String get assistantToolLabelEmailRead;
+
+  /// No description provided for @assistantToolLabelEmailReadRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking your email'**
+  String get assistantToolLabelEmailReadRunning;
+
+  /// No description provided for @assistantToolLabelEmailDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Drafted a reply'**
+  String get assistantToolLabelEmailDraft;
+
+  /// No description provided for @assistantToolLabelEmailDraftRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Drafting a reply'**
+  String get assistantToolLabelEmailDraftRunning;
+
+  /// No description provided for @assistantToolLabelFinanceRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked your finances'**
+  String get assistantToolLabelFinanceRead;
+
+  /// No description provided for @assistantToolLabelFinanceReadRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking your finances'**
+  String get assistantToolLabelFinanceReadRunning;
+
+  /// No description provided for @assistantToolLabelFinanceWrite.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated your finances'**
+  String get assistantToolLabelFinanceWrite;
+
+  /// No description provided for @assistantToolLabelFinanceWriteRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Updating your finances'**
+  String get assistantToolLabelFinanceWriteRunning;
+
+  /// No description provided for @assistantToolLabelTimeRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked your time tracking'**
+  String get assistantToolLabelTimeRead;
+
+  /// No description provided for @assistantToolLabelTimeReadRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking your time tracking'**
+  String get assistantToolLabelTimeReadRunning;
+
+  /// No description provided for @assistantToolLabelTimeWrite.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated your time tracking'**
+  String get assistantToolLabelTimeWrite;
+
+  /// No description provided for @assistantToolLabelTimeWriteRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Updating your time tracking'**
+  String get assistantToolLabelTimeWriteRunning;
+
+  /// No description provided for @assistantToolLabelHealthRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked your health and habits'**
+  String get assistantToolLabelHealthRead;
+
+  /// No description provided for @assistantToolLabelHealthReadRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking your health and habits'**
+  String get assistantToolLabelHealthReadRunning;
+
+  /// No description provided for @assistantToolLabelHealthWrite.
+  ///
+  /// In en, this message translates to:
+  /// **'Logged your progress'**
+  String get assistantToolLabelHealthWrite;
+
+  /// No description provided for @assistantToolLabelHealthWriteRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Logging your progress'**
+  String get assistantToolLabelHealthWriteRunning;
+
+  /// No description provided for @assistantToolLabelDayOverview.
+  ///
+  /// In en, this message translates to:
+  /// **'Reviewed your day'**
+  String get assistantToolLabelDayOverview;
+
+  /// No description provided for @assistantToolLabelDayOverviewRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Reviewing your day'**
+  String get assistantToolLabelDayOverviewRunning;
+
+  /// No description provided for @assistantToolLabelMemorySave.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to memory'**
+  String get assistantToolLabelMemorySave;
+
+  /// No description provided for @assistantToolLabelMemorySaveRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving to memory'**
+  String get assistantToolLabelMemorySaveRunning;
+
+  /// No description provided for @assistantToolLabelMemoryRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked memory'**
+  String get assistantToolLabelMemoryRead;
+
+  /// No description provided for @assistantToolLabelMemoryReadRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking memory'**
+  String get assistantToolLabelMemoryReadRunning;
+
+  /// No description provided for @assistantToolLabelMemoryWrite.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated memory'**
+  String get assistantToolLabelMemoryWrite;
+
+  /// No description provided for @assistantToolLabelMemoryWriteRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Updating memory'**
+  String get assistantToolLabelMemoryWriteRunning;
+
+  /// No description provided for @assistantToolLabelImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Created an image'**
+  String get assistantToolLabelImage;
+
+  /// No description provided for @assistantToolLabelImageRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Creating an image'**
+  String get assistantToolLabelImageRunning;
+
+  /// No description provided for @assistantToolLabelQrCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Created a QR code'**
+  String get assistantToolLabelQrCode;
+
+  /// No description provided for @assistantToolLabelQrCodeRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Creating a QR code'**
+  String get assistantToolLabelQrCodeRunning;
+
+  /// No description provided for @assistantToolLabelWebSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Searched the web'**
+  String get assistantToolLabelWebSearch;
+
+  /// No description provided for @assistantToolLabelWebSearchRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Searching the web'**
+  String get assistantToolLabelWebSearchRunning;
+
+  /// No description provided for @assistantToolLabelChecks.
+  ///
+  /// In en, this message translates to:
+  /// **'Ran checks'**
+  String get assistantToolLabelChecks;
+
+  /// No description provided for @assistantToolLabelChecksRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Running checks'**
+  String get assistantToolLabelChecksRunning;
+
+  /// No description provided for @assistantToolLabelFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Read a file'**
+  String get assistantToolLabelFile;
+
+  /// No description provided for @assistantToolLabelFileRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading a file'**
+  String get assistantToolLabelFileRunning;
+
+  /// No description provided for @assistantToolLabelWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked your workspace'**
+  String get assistantToolLabelWorkspace;
+
+  /// No description provided for @assistantToolLabelWorkspaceRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking your workspace'**
+  String get assistantToolLabelWorkspaceRunning;
+
+  /// No description provided for @assistantToolLabelSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated your settings'**
+  String get assistantToolLabelSettings;
+
+  /// No description provided for @assistantToolLabelSettingsRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Updating your settings'**
+  String get assistantToolLabelSettingsRunning;
+
+  /// No description provided for @assistantToolLabelOpenApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Opened an app'**
+  String get assistantToolLabelOpenApp;
+
+  /// No description provided for @assistantToolLabelOpenAppRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening an app'**
+  String get assistantToolLabelOpenAppRunning;
+
+  /// No description provided for @assistantToolLabelView.
+  ///
+  /// In en, this message translates to:
+  /// **'Prepared a view'**
+  String get assistantToolLabelView;
+
+  /// No description provided for @assistantToolLabelViewRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing a view'**
+  String get assistantToolLabelViewRunning;
+
+  /// No description provided for @assistantToolStepCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 step} other{{count} steps}}'**
+  String assistantToolStepCount(int count);
+
+  /// No description provided for @assistantToolStepResultCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No results} =1{1 result} other{{count} results}}'**
+  String assistantToolStepResultCount(int count);
+
+  /// No description provided for @assistantToolStepWorking.
+  ///
+  /// In en, this message translates to:
+  /// **'Working…'**
+  String get assistantToolStepWorking;
+
+  /// No description provided for @assistantToolStepDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get assistantToolStepDetails;
+
+  /// No description provided for @assistantToolStepHideDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide details'**
+  String get assistantToolStepHideDetails;
+
+  /// No description provided for @assistantToolStepRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'In progress'**
+  String get assistantToolStepRunning;
+
+  /// No description provided for @assistantToolStepDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get assistantToolStepDone;
+
+  /// No description provided for @assistantToolStepFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t finish this step'**
+  String get assistantToolStepFailed;
+
+  /// No description provided for @assistantToolStepsInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Steps in progress'**
+  String get assistantToolStepsInProgress;
+
+  /// No description provided for @assistantToolStepsDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Steps done'**
+  String get assistantToolStepsDone;
 
   /// No description provided for @assistantUntitledChat.
   ///
@@ -2520,12 +3066,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No accounts connected'**
   String get calendarConnectionsEmpty;
-
-  /// No description provided for @calendarConnectionsSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Connect Google and Microsoft accounts to sync calendars.'**
-  String get calendarConnectionsSubtitle;
 
   /// No description provided for @calendarConnectionsTitle.
   ///
@@ -3379,6 +3919,90 @@ abstract class AppLocalizations {
   /// **'CMS'**
   String get cmsTitleApp;
 
+  /// No description provided for @cmsPipelineEyebrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Publishing pipeline'**
+  String get cmsPipelineEyebrow;
+
+  /// No description provided for @cmsPublishedOfTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'{published} of {total} published'**
+  String cmsPublishedOfTotal(int published, int total);
+
+  /// No description provided for @cmsPipelineSupporting.
+  ///
+  /// In en, this message translates to:
+  /// **'{drafts} in draft · {scheduled} scheduled'**
+  String cmsPipelineSupporting(int drafts, int scheduled);
+
+  /// No description provided for @cmsEntryCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 entry} other{{count} entries}}'**
+  String cmsEntryCount(int count);
+
+  /// No description provided for @cmsCollectionDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Disabled'**
+  String get cmsCollectionDisabled;
+
+  /// No description provided for @cmsCollectionsProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Publishing by collection'**
+  String get cmsCollectionsProgress;
+
+  /// No description provided for @cmsNoCollectionsMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Collections group one kind of content, such as articles or events. Create one to start writing entries.'**
+  String get cmsNoCollectionsMessage;
+
+  /// No description provided for @cmsNoEntriesMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'No entries match these filters.'**
+  String get cmsNoEntriesMatch;
+
+  /// No description provided for @cmsNoEntriesMatchMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Try another status or collection, or clear the search.'**
+  String get cmsNoEntriesMatchMessage;
+
+  /// No description provided for @cmsFilterByCollection.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter by collection'**
+  String get cmsFilterByCollection;
+
+  /// No description provided for @cmsDetailsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get cmsDetailsSection;
+
+  /// No description provided for @cmsPublishingSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Publishing'**
+  String get cmsPublishingSection;
+
+  /// No description provided for @cmsLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load content'**
+  String get cmsLoadFailed;
+
+  /// No description provided for @cmsRefreshFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not refresh. Showing the last loaded content.'**
+  String get cmsRefreshFailed;
+
   /// No description provided for @commonActive.
   ///
   /// In en, this message translates to:
@@ -4230,6 +4854,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Today at a glance'**
   String get dashboardTodayTitle;
+
+  /// No description provided for @dashboardUntitledEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled event'**
+  String get dashboardUntitledEvent;
 
   /// No description provided for @dashboardUpcomingEvents.
   ///
@@ -7579,6 +8209,42 @@ abstract class AppLocalizations {
   /// **'Customize Home'**
   String get homeCustomize;
 
+  /// No description provided for @homeGreetingAfternoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Good afternoon'**
+  String get homeGreetingAfternoon;
+
+  /// No description provided for @homeGreetingAfternoonNamed.
+  ///
+  /// In en, this message translates to:
+  /// **'Good afternoon, {name}'**
+  String homeGreetingAfternoonNamed(String name);
+
+  /// No description provided for @homeGreetingEvening.
+  ///
+  /// In en, this message translates to:
+  /// **'Good evening'**
+  String get homeGreetingEvening;
+
+  /// No description provided for @homeGreetingEveningNamed.
+  ///
+  /// In en, this message translates to:
+  /// **'Good evening, {name}'**
+  String homeGreetingEveningNamed(String name);
+
+  /// No description provided for @homeGreetingMorning.
+  ///
+  /// In en, this message translates to:
+  /// **'Good morning'**
+  String get homeGreetingMorning;
+
+  /// No description provided for @homeGreetingMorningNamed.
+  ///
+  /// In en, this message translates to:
+  /// **'Good morning, {name}'**
+  String homeGreetingMorningNamed(String name);
+
   /// No description provided for @homeHiddenWidgets.
   ///
   /// In en, this message translates to:
@@ -7602,6 +8268,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Personal calendar is unavailable.'**
   String get homePersonalAgendaUnavailable;
+
+  /// No description provided for @homeSectionLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Pull down to try again.'**
+  String get homeSectionLoadFailed;
 
   /// No description provided for @homeShowWidget.
   ///
@@ -9594,6 +10266,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Owner'**
   String get mailOwner;
+
+  /// No description provided for @mailPreviewEmptyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a conversation from the list to read it here.'**
+  String get mailPreviewEmptyMessage;
+
+  /// No description provided for @mailPreviewEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a conversation'**
+  String get mailPreviewEmptyTitle;
 
   /// No description provided for @mailRemoveAttachment.
   ///
@@ -11605,6 +12289,30 @@ abstract class AppLocalizations {
   /// **'Decline'**
   String get notificationsDeclineInvite;
 
+  /// No description provided for @notificationsGroupEarlier.
+  ///
+  /// In en, this message translates to:
+  /// **'Earlier'**
+  String get notificationsGroupEarlier;
+
+  /// No description provided for @notificationsGroupLastWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Last 7 days'**
+  String get notificationsGroupLastWeek;
+
+  /// No description provided for @notificationsGroupToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get notificationsGroupToday;
+
+  /// No description provided for @notificationsGroupYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get notificationsGroupYesterday;
+
   /// No description provided for @notificationsHoursAgo.
   ///
   /// In en, this message translates to:
@@ -12259,6 +12967,24 @@ abstract class AppLocalizations {
   /// **'Display name cannot be empty'**
   String get profileDisplayNameRequired;
 
+  /// No description provided for @profileDurationHours.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours}h'**
+  String profileDurationHours(int hours);
+
+  /// No description provided for @profileDurationHoursMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours}h {minutes}m'**
+  String profileDurationHoursMinutes(int hours, int minutes);
+
+  /// No description provided for @profileDurationMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes}m'**
+  String profileDurationMinutes(int minutes);
+
   /// No description provided for @profileEmail.
   ///
   /// In en, this message translates to:
@@ -12817,12 +13543,6 @@ abstract class AppLocalizations {
   /// **'Calendar: {when}'**
   String remindersCalendarTiming(String when);
 
-  /// No description provided for @remindersDescription.
-  ///
-  /// In en, this message translates to:
-  /// **'Task deadlines and calendar events, kept ready on this device.'**
-  String get remindersDescription;
-
   /// No description provided for @remindersEnableNotifications.
   ///
   /// In en, this message translates to:
@@ -12886,8 +13606,8 @@ abstract class AppLocalizations {
   /// No description provided for @remindersOccurrenceDetails.
   ///
   /// In en, this message translates to:
-  /// **'{leadTime} · {occurrence} ({timezone})'**
-  String remindersOccurrenceDetails(String leadTime, String occurrence, String timezone);
+  /// **'{leadTime} · {occurrence}'**
+  String remindersOccurrenceDetails(String leadTime, String occurrence);
 
   /// No description provided for @remindersPermissionOff.
   ///
@@ -13153,6 +13873,246 @@ abstract class AppLocalizations {
   /// **'App version'**
   String get settingsAppVersion;
 
+  /// No description provided for @appearanceAccentAmber.
+  ///
+  /// In en, this message translates to:
+  /// **'Amber'**
+  String get appearanceAccentAmber;
+
+  /// No description provided for @appearanceAccentBlue.
+  ///
+  /// In en, this message translates to:
+  /// **'Blue'**
+  String get appearanceAccentBlue;
+
+  /// No description provided for @appearanceAccentGreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Green'**
+  String get appearanceAccentGreen;
+
+  /// No description provided for @appearanceAccentIndigo.
+  ///
+  /// In en, this message translates to:
+  /// **'Indigo'**
+  String get appearanceAccentIndigo;
+
+  /// No description provided for @appearanceAccentNeutral.
+  ///
+  /// In en, this message translates to:
+  /// **'Neutral'**
+  String get appearanceAccentNeutral;
+
+  /// No description provided for @appearanceAccentOrange.
+  ///
+  /// In en, this message translates to:
+  /// **'Orange'**
+  String get appearanceAccentOrange;
+
+  /// No description provided for @appearanceAccentRose.
+  ///
+  /// In en, this message translates to:
+  /// **'Rose'**
+  String get appearanceAccentRose;
+
+  /// No description provided for @appearanceAccentTeal.
+  ///
+  /// In en, this message translates to:
+  /// **'Teal'**
+  String get appearanceAccentTeal;
+
+  /// No description provided for @appearanceAccentTheme.
+  ///
+  /// In en, this message translates to:
+  /// **'Match theme'**
+  String get appearanceAccentTheme;
+
+  /// No description provided for @appearanceAccentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Accent color'**
+  String get appearanceAccentTitle;
+
+  /// No description provided for @appearanceAccentViolet.
+  ///
+  /// In en, this message translates to:
+  /// **'Violet'**
+  String get appearanceAccentViolet;
+
+  /// No description provided for @appearanceAnimate.
+  ///
+  /// In en, this message translates to:
+  /// **'Animate background'**
+  String get appearanceAnimate;
+
+  /// No description provided for @appearanceAnimateDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Blobs drift slowly. Uses a little more battery.'**
+  String get appearanceAnimateDescription;
+
+  /// No description provided for @appearanceAnimateReducedMotion.
+  ///
+  /// In en, this message translates to:
+  /// **'Reduce Motion is on, so the background stays still.'**
+  String get appearanceAnimateReducedMotion;
+
+  /// No description provided for @appearanceBackgroundBlobs.
+  ///
+  /// In en, this message translates to:
+  /// **'Blobs'**
+  String get appearanceBackgroundBlobs;
+
+  /// No description provided for @appearanceBackgroundGradient.
+  ///
+  /// In en, this message translates to:
+  /// **'Gradient'**
+  String get appearanceBackgroundGradient;
+
+  /// No description provided for @appearanceBackgroundSolid.
+  ///
+  /// In en, this message translates to:
+  /// **'Solid'**
+  String get appearanceBackgroundSolid;
+
+  /// No description provided for @appearanceBackgroundTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Background'**
+  String get appearanceBackgroundTitle;
+
+  /// No description provided for @appearanceIntensity.
+  ///
+  /// In en, this message translates to:
+  /// **'Intensity'**
+  String get appearanceIntensity;
+
+  /// No description provided for @appearanceModeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Mode'**
+  String get appearanceModeTitle;
+
+  /// No description provided for @appearanceNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New'**
+  String get appearanceNew;
+
+  /// No description provided for @appearancePreviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview'**
+  String get appearancePreviewTitle;
+
+  /// No description provided for @appearanceReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset to default'**
+  String get appearanceReset;
+
+  /// No description provided for @appearanceResetDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance reset to default'**
+  String get appearanceResetDone;
+
+  /// No description provided for @appearanceSoftness.
+  ///
+  /// In en, this message translates to:
+  /// **'Softness'**
+  String get appearanceSoftness;
+
+  /// No description provided for @appearanceSurfaceOpacity.
+  ///
+  /// In en, this message translates to:
+  /// **'Card opacity'**
+  String get appearanceSurfaceOpacity;
+
+  /// No description provided for @appearanceSurfacesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Surfaces'**
+  String get appearanceSurfacesTitle;
+
+  /// No description provided for @appearanceThemeAurora.
+  ///
+  /// In en, this message translates to:
+  /// **'Aurora'**
+  String get appearanceThemeAurora;
+
+  /// No description provided for @appearanceThemeBlossom.
+  ///
+  /// In en, this message translates to:
+  /// **'Blossom'**
+  String get appearanceThemeBlossom;
+
+  /// No description provided for @appearanceThemeClassic.
+  ///
+  /// In en, this message translates to:
+  /// **'Classic'**
+  String get appearanceThemeClassic;
+
+  /// No description provided for @appearanceThemeEmber.
+  ///
+  /// In en, this message translates to:
+  /// **'Ember'**
+  String get appearanceThemeEmber;
+
+  /// No description provided for @appearanceThemeForest.
+  ///
+  /// In en, this message translates to:
+  /// **'Forest'**
+  String get appearanceThemeForest;
+
+  /// No description provided for @appearanceThemeMono.
+  ///
+  /// In en, this message translates to:
+  /// **'Mono'**
+  String get appearanceThemeMono;
+
+  /// No description provided for @appearanceThemeOcean.
+  ///
+  /// In en, this message translates to:
+  /// **'Ocean'**
+  String get appearanceThemeOcean;
+
+  /// No description provided for @appearanceThemeSunset.
+  ///
+  /// In en, this message translates to:
+  /// **'Sunset'**
+  String get appearanceThemeSunset;
+
+  /// No description provided for @appearanceThemesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Themes'**
+  String get appearanceThemesTitle;
+
+  /// No description provided for @settingsAppearance.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get settingsAppearance;
+
+  /// No description provided for @settingsProfileEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit profile'**
+  String get settingsProfileEdit;
+
+  /// No description provided for @settingsProfileManageWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace'**
+  String get settingsProfileManageWorkspace;
+
+  /// No description provided for @settingsProfileWorkspaceCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{workspace} other{workspaces}}'**
+  String settingsProfileWorkspaceCount(int count);
+
   /// No description provided for @settingsAppearanceLanguage.
   ///
   /// In en, this message translates to:
@@ -13348,7 +14308,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsGeneralGroup.
   ///
   /// In en, this message translates to:
-  /// **'Personalize'**
+  /// **'General'**
   String get settingsGeneralGroup;
 
   /// No description provided for @settingsHaptics.
@@ -13873,11 +14833,17 @@ abstract class AppLocalizations {
   /// **'Personal timezone overrides the workspace timezone. Automatic uses the workspace default, then your device.'**
   String get settingsTimezoneDescription;
 
-  /// No description provided for @settingsTimezoneEffective.
+  /// No description provided for @settingsTimezoneAutoShort.
   ///
   /// In en, this message translates to:
-  /// **'Effective timezone: {timezone}'**
-  String settingsTimezoneEffective(String timezone);
+  /// **'Auto'**
+  String get settingsTimezoneAutoShort;
+
+  /// No description provided for @settingsTimezoneCityHoChiMinh.
+  ///
+  /// In en, this message translates to:
+  /// **'Ho Chi Minh City'**
+  String get settingsTimezoneCityHoChiMinh;
 
   /// No description provided for @settingsTimezoneError.
   ///
@@ -13896,6 +14862,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Too many requests. Please wait before retrying.'**
   String get settingsTimezoneRateLimited;
+
+  /// No description provided for @settingsTimezoneRateLimitedDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Limit details: {details}'**
+  String settingsTimezoneRateLimitedDetails(Object details);
+
+  /// No description provided for @settingsTimezoneRateLimitedChallenge.
+  ///
+  /// In en, this message translates to:
+  /// **'The response indicates a Vercel security challenge. Please contact support if this continues.'**
+  String get settingsTimezoneRateLimitedChallenge;
+
+  /// No description provided for @settingsTimezoneRateLimitedUpstream.
+  ///
+  /// In en, this message translates to:
+  /// **'This response did not identify an application limit. It may come from an upstream service or network edge; its exact source is unknown.'**
+  String get settingsTimezoneRateLimitedUpstream;
+
+  /// No description provided for @settingsTimezoneRateLimitedRetryAfter.
+  ///
+  /// In en, this message translates to:
+  /// **'The server asks you to wait {seconds} seconds before retrying.'**
+  String settingsTimezoneRateLimitedRetryAfter(int seconds);
 
   /// No description provided for @settingsTimezoneRetry.
   ///
@@ -20287,18 +21277,6 @@ abstract class AppLocalizations {
   /// **'The chat settings could not be confirmed. Your draft is retained. Check the conversation settings before choosing again.'**
   String get assistantSettingsSelectionUnconfirmed;
 
-  /// No description provided for @assistantExpandPrompt.
-  ///
-  /// In en, this message translates to:
-  /// **'Expand prompt'**
-  String get assistantExpandPrompt;
-
-  /// No description provided for @assistantMinimizePrompt.
-  ///
-  /// In en, this message translates to:
-  /// **'Minimize prompt'**
-  String get assistantMinimizePrompt;
-
   /// No description provided for @assistantSettingInfo.
   ///
   /// In en, this message translates to:
@@ -20322,12 +21300,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Send feedback'**
   String get feedbackTitle;
-
-  /// No description provided for @feedbackPrivate.
-  ///
-  /// In en, this message translates to:
-  /// **'Share product feedback privately with Tuturuuu staff. Do not include passwords or secrets. One optional PNG, JPEG or WebP screenshot, up to 2 MB.'**
-  String get feedbackPrivate;
 
   /// No description provided for @feedbackSubject.
   ///
@@ -20436,6 +21408,1200 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enter details of 1–8000 characters.'**
   String get feedbackDetailsRequired;
+
+  /// No description provided for @profileMediaNetworkError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not connect. Check your connection and try again.'**
+  String get profileMediaNetworkError;
+
+  /// No description provided for @profileMediaUploadExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'The upload link expired or is invalid. Select the image again.'**
+  String get profileMediaUploadExpired;
+
+  /// No description provided for @settingsNativeVerificationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not verify this device. Check your connection and try again.'**
+  String get settingsNativeVerificationFailed;
+
+  /// No description provided for @settingsTimezonePickerAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All timezones'**
+  String get settingsTimezonePickerAll;
+
+  /// No description provided for @settingsTimezonePickerAutoPersonal.
+  ///
+  /// In en, this message translates to:
+  /// **'Uses the workspace timezone, or this device\'s when the workspace has none.'**
+  String get settingsTimezonePickerAutoPersonal;
+
+  /// No description provided for @settingsTimezonePickerAutoWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Members without a personal timezone use their own device\'s.'**
+  String get settingsTimezonePickerAutoWorkspace;
+
+  /// No description provided for @settingsTimezonePickerAutoResolved.
+  ///
+  /// In en, this message translates to:
+  /// **'Currently {timezone}.'**
+  String settingsTimezonePickerAutoResolved(String timezone);
+
+  /// No description provided for @settingsTimezonePickerCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Current'**
+  String get settingsTimezonePickerCurrent;
+
+  /// No description provided for @settingsTimezonePickerEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No timezones match “{query}”.'**
+  String settingsTimezonePickerEmpty(String query);
+
+  /// No description provided for @settingsTimezonePickerSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search city, region or GMT offset'**
+  String get settingsTimezonePickerSearchHint;
+
+  /// No description provided for @settingsAppsGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Apps'**
+  String get settingsAppsGroup;
+
+  /// No description provided for @settingsSearchPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Search settings'**
+  String get settingsSearchPlaceholder;
+
+  /// No description provided for @settingsSearchNoResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No settings match “{query}”.'**
+  String settingsSearchNoResults(String query);
+
+  /// No description provided for @settingsSearchResults.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 result} other{{count} results}}'**
+  String settingsSearchResults(int count);
+
+  /// No description provided for @settingsAppOfflineData.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline data'**
+  String get settingsAppOfflineData;
+
+  /// No description provided for @settingsAppOfflineDataDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Prepare and review what this device keeps offline'**
+  String get settingsAppOfflineDataDescription;
+
+  /// No description provided for @settingsAppBoardsGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Boards'**
+  String get settingsAppBoardsGroup;
+
+  /// No description provided for @settingsAppWeekGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Week'**
+  String get settingsAppWeekGroup;
+
+  /// No description provided for @settingsAppConnectionsGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected calendars'**
+  String get settingsAppConnectionsGroup;
+
+  /// No description provided for @settingsAppPrivacyGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy'**
+  String get settingsAppPrivacyGroup;
+
+  /// No description provided for @settingsAppFocusGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus'**
+  String get settingsAppFocusGroup;
+
+  /// No description provided for @settingsAppRequestsGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests'**
+  String get settingsAppRequestsGroup;
+
+  /// No description provided for @settingsPomodoroSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{focus} min focus · {shortBreak} min break'**
+  String settingsPomodoroSummary(int focus, int shortBreak);
+
+  /// No description provided for @settingsRequestThresholdSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{days, plural, =0{Every missed entry needs approval} =1{Entries older than 1 day need approval} other{Entries older than {days} days need approval}}'**
+  String settingsRequestThresholdSummary(int days);
+
+  /// No description provided for @settingsFirstDaySummary.
+  ///
+  /// In en, this message translates to:
+  /// **'First day: {day}'**
+  String settingsFirstDaySummary(String day);
+
+  /// No description provided for @settingsMailSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Mailboxes, reading and swipe actions'**
+  String get settingsMailSummary;
+
+  /// No description provided for @settingsAssistantSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Personality, memory and on-device models'**
+  String get settingsAssistantSummary;
+
+  /// No description provided for @settingsTimeZoneGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Time zone'**
+  String get settingsTimeZoneGroup;
+
+  /// No description provided for @settingsAppSettingsFor.
+  ///
+  /// In en, this message translates to:
+  /// **'{app} settings'**
+  String settingsAppSettingsFor(String app);
+
+  /// No description provided for @settingsApprovalThreshold.
+  ///
+  /// In en, this message translates to:
+  /// **'Approval threshold'**
+  String get settingsApprovalThreshold;
+
+  /// No description provided for @settingsPomodoroTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pomodoro'**
+  String get settingsPomodoroTitle;
+
+  /// No description provided for @settingsRequireApproval.
+  ///
+  /// In en, this message translates to:
+  /// **'Require approval'**
+  String get settingsRequireApproval;
+
+  /// No description provided for @settingsApprovalOlderThan.
+  ///
+  /// In en, this message translates to:
+  /// **'For entries older than'**
+  String get settingsApprovalOlderThan;
+
+  /// No description provided for @settingsDaysUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'days'**
+  String get settingsDaysUnit;
+
+  /// No description provided for @settingsStatusChangeWindow.
+  ///
+  /// In en, this message translates to:
+  /// **'Status change window'**
+  String get settingsStatusChangeWindow;
+
+  /// No description provided for @settingsFooterDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved on this device.'**
+  String get settingsFooterDevice;
+
+  /// No description provided for @settingsFooterFirstDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to your account on every device. Auto uses the workspace default.'**
+  String get settingsFooterFirstDay;
+
+  /// No description provided for @settingsFooterWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Applies to everyone in this workspace.'**
+  String get settingsFooterWorkspace;
+
+  /// No description provided for @settingsFooterCalendarAccounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar accounts connected to this workspace.'**
+  String get settingsFooterCalendarAccounts;
+
+  /// No description provided for @settingsFooterOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Data kept on this device for offline use.'**
+  String get settingsFooterOffline;
+
+  /// No description provided for @settingsTasksSummaryBoardView.
+  ///
+  /// In en, this message translates to:
+  /// **'Board view'**
+  String get settingsTasksSummaryBoardView;
+
+  /// No description provided for @settingsTasksSummaryBoardList.
+  ///
+  /// In en, this message translates to:
+  /// **'Board list'**
+  String get settingsTasksSummaryBoardList;
+
+  /// No description provided for @settingsFinanceAmountsShown.
+  ///
+  /// In en, this message translates to:
+  /// **'Amounts shown'**
+  String get settingsFinanceAmountsShown;
+
+  /// No description provided for @settingsFinanceAmountsHidden.
+  ///
+  /// In en, this message translates to:
+  /// **'Amounts hidden'**
+  String get settingsFinanceAmountsHidden;
+
+  /// No description provided for @settingsSearchBrowserTerm.
+  ///
+  /// In en, this message translates to:
+  /// **'browser'**
+  String get settingsSearchBrowserTerm;
+
+  /// No description provided for @profilePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo'**
+  String get profilePhoto;
+
+  /// No description provided for @profileCoverBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'Cover banner'**
+  String get profileCoverBanner;
+
+  /// No description provided for @profileMediaSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Set'**
+  String get profileMediaSet;
+
+  /// No description provided for @assistantSubmitSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitted successfully'**
+  String get assistantSubmitSuccess;
+
+  /// No description provided for @offlineDownloadsPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloads paused. Saved data is still available. We will retry in the background.'**
+  String get offlineDownloadsPaused;
+
+  /// No description provided for @offlineDownloadsRetryLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloads are still unavailable. Try again later; saved data is still available.'**
+  String get offlineDownloadsRetryLimit;
+
+  /// No description provided for @mailSettingsReadOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved settings are read-only until access can be verified.'**
+  String get mailSettingsReadOnly;
+
+  /// No description provided for @calendarSettingsError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load or save calendar preferences. Retry when online.'**
+  String get calendarSettingsError;
+
+  /// No description provided for @assistantReactionCelebrate.
+  ///
+  /// In en, this message translates to:
+  /// **'Celebrate'**
+  String get assistantReactionCelebrate;
+
+  /// No description provided for @assistantReactionInsightful.
+  ///
+  /// In en, this message translates to:
+  /// **'Insightful'**
+  String get assistantReactionInsightful;
+
+  /// No description provided for @assistantReactionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Reaction'**
+  String get assistantReactionLabel;
+
+  /// No description provided for @assistantReactionLike.
+  ///
+  /// In en, this message translates to:
+  /// **'Like'**
+  String get assistantReactionLike;
+
+  /// No description provided for @assistantReactionLove.
+  ///
+  /// In en, this message translates to:
+  /// **'Love'**
+  String get assistantReactionLove;
+
+  /// No description provided for @assistantReactionUnconfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'The reaction could not be confirmed. Refresh reactions to reconcile it safely.'**
+  String get assistantReactionUnconfirmed;
+
+  /// No description provided for @assistantReactionUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Reactions are unavailable right now. Try again.'**
+  String get assistantReactionUnavailable;
+
+  /// No description provided for @assistantRefreshReactions.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh reactions'**
+  String get assistantRefreshReactions;
+
+  /// No description provided for @assistantReplyMessageAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Reply'**
+  String get assistantReplyMessageAction;
+
+  /// No description provided for @assistantReplyUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Original message unavailable'**
+  String get assistantReplyUnavailable;
+
+  /// No description provided for @assistantThemeAdvanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced'**
+  String get assistantThemeAdvanced;
+
+  /// No description provided for @assistantThemeBackground.
+  ///
+  /// In en, this message translates to:
+  /// **'Background colors'**
+  String get assistantThemeBackground;
+
+  /// No description provided for @assistantThemeBackgroundStyle.
+  ///
+  /// In en, this message translates to:
+  /// **'Background style'**
+  String get assistantThemeBackgroundStyle;
+
+  /// No description provided for @assistantThemeCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get assistantThemeCustom;
+
+  /// No description provided for @assistantThemeDeviceScope.
+  ///
+  /// In en, this message translates to:
+  /// **'For your Assistant chats on this device, across workspaces.'**
+  String get assistantThemeDeviceScope;
+
+  /// No description provided for @assistantThemeIntensity.
+  ///
+  /// In en, this message translates to:
+  /// **'Background intensity'**
+  String get assistantThemeIntensity;
+
+  /// No description provided for @assistantThemeLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading appearance…'**
+  String get assistantThemeLoading;
+
+  /// No description provided for @assistantThemeMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Message colors'**
+  String get assistantThemeMessages;
+
+  /// No description provided for @assistantThemeOmbre.
+  ///
+  /// In en, this message translates to:
+  /// **'Ombre'**
+  String get assistantThemeOmbre;
+
+  /// No description provided for @assistantThemePreset.
+  ///
+  /// In en, this message translates to:
+  /// **'Preset'**
+  String get assistantThemePreset;
+
+  /// No description provided for @assistantThemePreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat appearance preview'**
+  String get assistantThemePreview;
+
+  /// No description provided for @assistantThemePreviewAssistant.
+  ///
+  /// In en, this message translates to:
+  /// **'Let’s make room for what matters.'**
+  String get assistantThemePreviewAssistant;
+
+  /// No description provided for @assistantThemePreviewUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Help me plan a focused day.'**
+  String get assistantThemePreviewUser;
+
+  /// No description provided for @assistantThemeReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset appearance'**
+  String get assistantThemeReset;
+
+  /// No description provided for @assistantThemeRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get assistantThemeRetry;
+
+  /// No description provided for @assistantThemeSaving.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving appearance…'**
+  String get assistantThemeSaving;
+
+  /// No description provided for @assistantThemeStorageError.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance could not be saved or loaded on this device.'**
+  String get assistantThemeStorageError;
+
+  /// No description provided for @assistantThemeText.
+  ///
+  /// In en, this message translates to:
+  /// **'Text colors'**
+  String get assistantThemeText;
+
+  /// No description provided for @assistantThemeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat appearance'**
+  String get assistantThemeTitle;
+
+  /// No description provided for @assistantReplyPending.
+  ///
+  /// In en, this message translates to:
+  /// **'The earlier message is still unconfirmed. Clear this reply and retry the earlier message first.'**
+  String get assistantReplyPending;
+
+  /// No description provided for @assistantReplyLiveUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Replies are unavailable while Live is connected. End the call or cancel the reply before sending.'**
+  String get assistantReplyLiveUnavailable;
+
+  /// No description provided for @assistantReplyChangedBeforeSend.
+  ///
+  /// In en, this message translates to:
+  /// **'The reply changed before sending. Your draft was kept. Review it and send again.'**
+  String get assistantReplyChangedBeforeSend;
+
+  /// No description provided for @assistantLiveSendRefused.
+  ///
+  /// In en, this message translates to:
+  /// **'Live did not accept this message. Your draft was kept. Check the connection before trying again.'**
+  String get assistantLiveSendRefused;
+
+  /// No description provided for @assistantLiveSendUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Live delivery is uncertain. Your draft was kept. Check the conversation before resending to avoid duplicates.'**
+  String get assistantLiveSendUnknown;
+
+  /// No description provided for @inputPlaceholderAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. 12 Nguyen Hue, District 1'**
+  String get inputPlaceholderAddress;
+
+  /// No description provided for @inputPlaceholderAssistantBoundaries.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Ask before changing or deleting my data'**
+  String get inputPlaceholderAssistantBoundaries;
+
+  /// No description provided for @inputPlaceholderAssistantMemory.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Brief answers'**
+  String get inputPlaceholderAssistantMemory;
+
+  /// No description provided for @inputPlaceholderAssistantName.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Mira'**
+  String get inputPlaceholderAssistantName;
+
+  /// No description provided for @inputPlaceholderAssistantPersonality.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Patient, curious, and practical'**
+  String get inputPlaceholderAssistantPersonality;
+
+  /// No description provided for @inputPlaceholderAssistantTone.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Warm and professional'**
+  String get inputPlaceholderAssistantTone;
+
+  /// No description provided for @inputPlaceholderAssistantVerbosity.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Brief answers with key details'**
+  String get inputPlaceholderAssistantVerbosity;
+
+  /// No description provided for @inputPlaceholderCmsCollectionDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe what this collection contains'**
+  String get inputPlaceholderCmsCollectionDescription;
+
+  /// No description provided for @inputPlaceholderCmsCollectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Product guides'**
+  String get inputPlaceholderCmsCollectionTitle;
+
+  /// No description provided for @inputPlaceholderCmsCollectionType.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. article'**
+  String get inputPlaceholderCmsCollectionType;
+
+  /// No description provided for @inputPlaceholderCmsEntryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Getting started with your workspace'**
+  String get inputPlaceholderCmsEntryTitle;
+
+  /// No description provided for @inputPlaceholderCmsSlug.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. getting-started'**
+  String get inputPlaceholderCmsSlug;
+
+  /// No description provided for @inputPlaceholderCmsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a short line introducing this entry'**
+  String get inputPlaceholderCmsSubtitle;
+
+  /// No description provided for @inputPlaceholderCmsSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Summarize the main points for readers'**
+  String get inputPlaceholderCmsSummary;
+
+  /// No description provided for @inputPlaceholderComment.
+  ///
+  /// In en, this message translates to:
+  /// **'Write your comment here'**
+  String get inputPlaceholderComment;
+
+  /// No description provided for @inputPlaceholderCourseDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe what learners will achieve'**
+  String get inputPlaceholderCourseDescription;
+
+  /// No description provided for @inputPlaceholderCourseName.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Everyday English'**
+  String get inputPlaceholderCourseName;
+
+  /// No description provided for @inputPlaceholderDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to choose a date'**
+  String get inputPlaceholderDate;
+
+  /// No description provided for @inputPlaceholderDays.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. 2'**
+  String get inputPlaceholderDays;
+
+  /// No description provided for @inputPlaceholderDisplayName.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Linh'**
+  String get inputPlaceholderDisplayName;
+
+  /// No description provided for @inputPlaceholderDocumentName.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Weekly planning'**
+  String get inputPlaceholderDocumentName;
+
+  /// No description provided for @inputPlaceholderEmailConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the account email to confirm'**
+  String get inputPlaceholderEmailConfirmation;
+
+  /// No description provided for @inputPlaceholderFeedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe what happened and what could improve'**
+  String get inputPlaceholderFeedback;
+
+  /// No description provided for @inputPlaceholderFieldKey.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. water_intake'**
+  String get inputPlaceholderFieldKey;
+
+  /// No description provided for @inputPlaceholderFieldLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Water intake'**
+  String get inputPlaceholderFieldLabel;
+
+  /// No description provided for @inputPlaceholderFieldUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. ml, km, or minutes'**
+  String get inputPlaceholderFieldUnit;
+
+  /// No description provided for @inputPlaceholderFlashcardBack.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Paris'**
+  String get inputPlaceholderFlashcardBack;
+
+  /// No description provided for @inputPlaceholderFlashcardFront.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. What is the capital of France?'**
+  String get inputPlaceholderFlashcardFront;
+
+  /// No description provided for @inputPlaceholderFullName.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Nguyen Minh Linh'**
+  String get inputPlaceholderFullName;
+
+  /// No description provided for @inputPlaceholderHabitDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe how you will practice this habit'**
+  String get inputPlaceholderHabitDescription;
+
+  /// No description provided for @inputPlaceholderHabitName.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Drink water'**
+  String get inputPlaceholderHabitName;
+
+  /// No description provided for @inputPlaceholderInventoryManufacturer.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Acme'**
+  String get inputPlaceholderInventoryManufacturer;
+
+  /// No description provided for @inputPlaceholderInventoryName.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Office supplies'**
+  String get inputPlaceholderInventoryName;
+
+  /// No description provided for @inputPlaceholderLinkText.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Project handbook'**
+  String get inputPlaceholderLinkText;
+
+  /// No description provided for @inputPlaceholderLinkUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'https://example.com'**
+  String get inputPlaceholderLinkUrl;
+
+  /// No description provided for @inputPlaceholderListingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Handmade notebook'**
+  String get inputPlaceholderListingTitle;
+
+  /// No description provided for @inputPlaceholderMailCalendarUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste a Google Calendar event link'**
+  String get inputPlaceholderMailCalendarUrl;
+
+  /// No description provided for @inputPlaceholderMailDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe which messages belong here'**
+  String get inputPlaceholderMailDescription;
+
+  /// No description provided for @inputPlaceholderMailDraftInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Write a friendly follow-up about our meeting'**
+  String get inputPlaceholderMailDraftInstructions;
+
+  /// No description provided for @inputPlaceholderMailLabelInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Apply to invoices and payment receipts'**
+  String get inputPlaceholderMailLabelInstructions;
+
+  /// No description provided for @inputPlaceholderMailName.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Customer support'**
+  String get inputPlaceholderMailName;
+
+  /// No description provided for @inputPlaceholderMailSubject.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Follow-up on our meeting'**
+  String get inputPlaceholderMailSubject;
+
+  /// No description provided for @inputPlaceholderMeetingName.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Weekly team check-in'**
+  String get inputPlaceholderMeetingName;
+
+  /// No description provided for @inputPlaceholderNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Add details you want to remember'**
+  String get inputPlaceholderNote;
+
+  /// No description provided for @inputPlaceholderPassphrase.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter at least 8 characters'**
+  String get inputPlaceholderPassphrase;
+
+  /// No description provided for @inputPlaceholderPassphraseConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the same passphrase again'**
+  String get inputPlaceholderPassphraseConfirmation;
+
+  /// No description provided for @inputPlaceholderPassphraseUnlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the passphrase for this note'**
+  String get inputPlaceholderPassphraseUnlock;
+
+  /// No description provided for @inputPlaceholderPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Use 12–72 characters'**
+  String get inputPlaceholderPassword;
+
+  /// No description provided for @inputPlaceholderPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. +84 912 345 678'**
+  String get inputPlaceholderPhone;
+
+  /// No description provided for @inputPlaceholderPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a 6-digit PIN'**
+  String get inputPlaceholderPin;
+
+  /// No description provided for @inputPlaceholderPinConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the same 6-digit PIN again'**
+  String get inputPlaceholderPinConfirmation;
+
+  /// No description provided for @inputPlaceholderPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. 150000'**
+  String get inputPlaceholderPrice;
+
+  /// No description provided for @inputPlaceholderQuantity.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. 10'**
+  String get inputPlaceholderQuantity;
+
+  /// No description provided for @inputPlaceholderQuizExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'Explain why this answer is correct or incorrect'**
+  String get inputPlaceholderQuizExplanation;
+
+  /// No description provided for @inputPlaceholderQuizOption.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Paris'**
+  String get inputPlaceholderQuizOption;
+
+  /// No description provided for @inputPlaceholderQuizQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. What is the capital of France?'**
+  String get inputPlaceholderQuizQuestion;
+
+  /// No description provided for @inputPlaceholderQuizSetName.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. World capitals'**
+  String get inputPlaceholderQuizSetName;
+
+  /// No description provided for @inputPlaceholderSaleTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Office supplies order'**
+  String get inputPlaceholderSaleTitle;
+
+  /// No description provided for @inputPlaceholderSharedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit the message you want to share'**
+  String get inputPlaceholderSharedMessage;
+
+  /// No description provided for @inputPlaceholderStorefrontCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. VND'**
+  String get inputPlaceholderStorefrontCurrency;
+
+  /// No description provided for @inputPlaceholderStorefrontDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe what customers can find here'**
+  String get inputPlaceholderStorefrontDescription;
+
+  /// No description provided for @inputPlaceholderStorefrontName.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Linh’s stationery'**
+  String get inputPlaceholderStorefrontName;
+
+  /// No description provided for @inputPlaceholderStorefrontSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by storefront name'**
+  String get inputPlaceholderStorefrontSearch;
+
+  /// No description provided for @inputPlaceholderStorefrontSlug.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. linh-stationery'**
+  String get inputPlaceholderStorefrontSlug;
+
+  /// No description provided for @inputPlaceholderTableCell.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter cell content'**
+  String get inputPlaceholderTableCell;
+
+  /// No description provided for @inputPlaceholderTargetValue.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. 2000'**
+  String get inputPlaceholderTargetValue;
+
+  /// No description provided for @inputPlaceholderTimeDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe what you worked on'**
+  String get inputPlaceholderTimeDescription;
+
+  /// No description provided for @inputPlaceholderTimeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Prepare project proposal'**
+  String get inputPlaceholderTimeTitle;
+
+  /// No description provided for @inputPlaceholderUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Share progress, decisions, or next steps'**
+  String get inputPlaceholderUpdate;
+
+  /// No description provided for @inputPlaceholderUserId.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste the user ID'**
+  String get inputPlaceholderUserId;
+
+  /// No description provided for @inputPlaceholderUsername.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. minh_linh'**
+  String get inputPlaceholderUsername;
+
+  /// No description provided for @inputPlaceholderWorkoutExercise.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Squats'**
+  String get inputPlaceholderWorkoutExercise;
+
+  /// No description provided for @inputPlaceholderWorkoutReps.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. 12'**
+  String get inputPlaceholderWorkoutReps;
+
+  /// No description provided for @inputPlaceholderWorkoutSets.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. 3'**
+  String get inputPlaceholderWorkoutSets;
+
+  /// No description provided for @inputPlaceholderWorkoutWeight.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. 20'**
+  String get inputPlaceholderWorkoutWeight;
+
+  /// No description provided for @mailSenderNamePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Alex Nguyen'**
+  String get mailSenderNamePlaceholder;
+
+  /// No description provided for @mailSignaturePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Best regards,\nAlex Nguyen\nProduct team'**
+  String get mailSignaturePlaceholder;
+
+  /// No description provided for @mailDraftInstructionsPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Keep replies short and friendly. Sign off with my first name.'**
+  String get mailDraftInstructionsPlaceholder;
+
+  /// No description provided for @mailForwardToPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'name@example.com'**
+  String get mailForwardToPlaceholder;
+
+  /// No description provided for @feedbackSubjectPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Calendar doesn\'t sync on Wi-Fi'**
+  String get feedbackSubjectPlaceholder;
+
+  /// No description provided for @feedbackDetailsPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'What happened, what you expected, and the steps to get there.'**
+  String get feedbackDetailsPlaceholder;
+
+  /// No description provided for @settingsWorkspaceCountValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 workspace} other{{count} workspaces}}'**
+  String settingsWorkspaceCountValue(int count);
+
+  /// No description provided for @offlineStoredOnDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Stored on this device'**
+  String get offlineStoredOnDevice;
+
+  /// No description provided for @offlineStorageUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage used'**
+  String get offlineStorageUsed;
+
+  /// No description provided for @offlineQueuedChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No changes waiting to sync} =1{1 change waiting to sync} other{{count} changes waiting to sync}}'**
+  String offlineQueuedChanges(int count);
+
+  /// No description provided for @offlineCollectionSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{items, plural, =1{1 item} other{{items} items}} · {size} · Updated {time}'**
+  String offlineCollectionSummary(int items, String size, String time);
+
+  /// No description provided for @offlineManageData.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage data'**
+  String get offlineManageData;
+
+  /// No description provided for @offlineEvictRowDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Frees space. Data downloads again when you are online.'**
+  String get offlineEvictRowDescription;
+
+  /// No description provided for @offlineTechnicalDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Technical details'**
+  String get offlineTechnicalDetails;
+
+  /// No description provided for @mailSettingsReadingGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading'**
+  String get mailSettingsReadingGroup;
+
+  /// No description provided for @mailSettingsComposeGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Sender and signature'**
+  String get mailSettingsComposeGroup;
+
+  /// No description provided for @mailSettingsAiGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'AI drafts'**
+  String get mailSettingsAiGroup;
+
+  /// No description provided for @mailSettingsDeliveryGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivery and routing'**
+  String get mailSettingsDeliveryGroup;
+
+  /// No description provided for @mailSettingsGroupPermissions.
+  ///
+  /// In en, this message translates to:
+  /// **'Group permissions'**
+  String get mailSettingsGroupPermissions;
+
+  /// No description provided for @mailSettingsOrganizeGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Organize'**
+  String get mailSettingsOrganizeGroup;
+
+  /// No description provided for @mailSenderNameHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Recipients see this name next to your address.'**
+  String get mailSenderNameHelper;
+
+  /// No description provided for @mailSignatureHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Added to the end of new messages and replies.'**
+  String get mailSignatureHelper;
+
+  /// No description provided for @mailAutoDraftDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Prepare reply drafts for you to review before sending.'**
+  String get mailAutoDraftDescription;
+
+  /// No description provided for @mailDraftInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft instructions'**
+  String get mailDraftInstructions;
+
+  /// No description provided for @mailDraftInstructionsHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Tells the assistant how to write your reply drafts.'**
+  String get mailDraftInstructionsHelper;
+
+  /// No description provided for @feedbackIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell us what works and what doesn\'t. Only the Tuturuuu team reads your feedback.'**
+  String get feedbackIntro;
+
+  /// No description provided for @feedbackYourFeedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Your feedback'**
+  String get feedbackYourFeedback;
+
+  /// No description provided for @feedbackDetailsHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Do not include passwords or other secrets.'**
+  String get feedbackDetailsHelper;
+
+  /// No description provided for @feedbackScreenshotGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Screenshot (optional)'**
+  String get feedbackScreenshotGroup;
+
+  /// No description provided for @feedbackAttachDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'PNG, JPEG or WebP, up to 2 MB'**
+  String get feedbackAttachDescription;
+
+  /// No description provided for @workspacePickerCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 workspace} other{{count} workspaces}}'**
+  String workspacePickerCount(int count);
+
+  /// No description provided for @workspacePickerCreateDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Start a new space for a team or project'**
+  String get workspacePickerCreateDescription;
+
+  /// No description provided for @workspacePickerCurrentLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Current workspace'**
+  String get workspacePickerCurrentLabel;
+
+  /// No description provided for @workspacePickerDefaultDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Opens first when you launch the app'**
+  String get workspacePickerDefaultDescription;
+
+  /// No description provided for @workspacePickerEmptyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspaces you create or are invited to appear here.'**
+  String get workspacePickerEmptyMessage;
+
+  /// No description provided for @workspacePickerNoResultsMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Try another name or plan, or clear the search.'**
+  String get workspacePickerNoResultsMessage;
+
+  /// No description provided for @workspacePickerTeamBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Team'**
+  String get workspacePickerTeamBadge;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -1,6 +1,7 @@
 'use client';
 
 import { Clock, Eye, EyeOff } from '@tuturuuu/icons';
+import { verifyNovaChallengePassword } from '@tuturuuu/internal-api/nova';
 import type { NovaChallenge } from '@tuturuuu/types';
 import {
   AlertDialog,
@@ -27,8 +28,10 @@ import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { formatDuration } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { z } from 'zod';
+import { challengePasswordErrorKey } from '@/lib/challenge-password-error';
 
 const formSchema = z.object({
   password: z.string().min(1, { message: 'Password is required' }).optional(),
@@ -48,6 +51,7 @@ export function ConfirmDialog({
   trigger,
 }: ConfirmDialogProps) {
   const router = useRouter();
+  const t = useTranslations('nova');
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
@@ -66,17 +70,26 @@ export function ConfirmDialog({
     try {
       // Check password if challenge is password protected
       if (challenge.password_hash !== null) {
-        const response = await fetch(`/api/auth/challenges/verify-password`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            challengeId: challenge.id,
-            password: formData.password,
-          }),
+        const response = await verifyNovaChallengePassword({
+          challengeId: challenge.id,
+          password: formData.password,
         });
 
+        if (response.status === 429) {
+          const retryAfter = Number(response.headers.get('Retry-After')) || 60;
+          form.setError('password', {
+            message: t('challenge_password_too_many_attempts', {
+              minutes: Math.max(1, Math.ceil(retryAfter / 60)),
+            }),
+          });
+          setIsConfirming(false);
+          return;
+        }
+
         if (!response.ok) {
-          form.setError('password', { message: 'Invalid password' });
+          form.setError('password', {
+            message: t(await challengePasswordErrorKey(response)),
+          });
           setIsConfirming(false);
           return;
         }

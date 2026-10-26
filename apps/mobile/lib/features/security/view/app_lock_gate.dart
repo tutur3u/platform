@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart' hide ButtonStyle;
 import 'package:flutter/services.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/app_splash_surface.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -65,7 +66,7 @@ class _AppLockGateState extends State<AppLockGate> {
                   child: Align(
                     alignment: Alignment.bottomCenter,
                     child: SingleChildScrollView(
-                      padding: const EdgeInsets.all(24),
+                      padding: const EdgeInsets.all(AppSpacing.xxl),
                       child: ConstrainedBox(
                         constraints: const BoxConstraints(maxWidth: 360),
                         child: Column(
@@ -75,7 +76,7 @@ class _AppLockGateState extends State<AppLockGate> {
                               l10n.appLockLockedDescription,
                               textAlign: TextAlign.center,
                             ),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: AppSpacing.md),
                             SizedBox(
                               key: const ValueKey('app-lock-unlock-button'),
                               width: double.infinity,

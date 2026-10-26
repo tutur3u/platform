@@ -92,7 +92,7 @@ There is no `rust-toolchain` file. Both setup steps in
 5. **Document and run gates.** State that entering `apps/backend` selects the
    pinned compiler and how to install it with rustup. Run the focused script
    test, `bun check:backend --skip-worker` if the compiler is available,
-   `bun check`, and `git diff --check`. Expected: exit 0/no whitespace output.
+   `bun validate`, and `git diff --check`. Expected: exit 0/no whitespace output.
    Do not run a build unless explicitly authorized.
 
 ## Done criteria
@@ -100,7 +100,7 @@ There is no `rust-toolchain` file. Both setup steps in
 - [ ] Local rustup and both CI jobs select Rust 1.95.0.
 - [ ] A repository check rejects missing, floating, or inconsistent selectors.
 - [ ] The declared Cargo MSRV remains compatible and is not upgraded.
-- [ ] Focused tests, available backend checks, `bun check`, and
+- [ ] Focused tests, available backend checks, `bun validate`, and
   `git diff --check` pass; unavailable toolchain checks are explicit.
 
 ## STOP conditions

@@ -27,7 +27,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { parseAsString, useQueryState } from 'nuqs';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { FloatingComposer } from './floating-composer';
+import { LazyFloatingComposer } from './lazy-floating-composer';
 import { MailBulkToolbar } from './mail-bulk-toolbar';
 import type {
   ComposeInitialDraft,
@@ -86,6 +86,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
   const composerRef = useRef<MailComposerHandle>(null);
   const [composeSession, setComposeSession] = useState(0);
   const [composerVisible, setComposerVisible] = useState(composeParam === '1');
+  const [composerMounted, setComposerMounted] = useState(composeParam === '1');
   const [selectedThreads, setSelectedThreads] = useState<Set<string>>(
     new Set()
   );
@@ -97,6 +98,9 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
   useEffect(() => {
     setComposerVisible(composeParam === '1');
   }, [composeParam]);
+
+  // Once opened, the composer stays mounted so a closed draft keeps its editor.
+  if (composerVisible && !composerMounted) setComposerMounted(true);
 
   useEffect(() => {
     const stored = window.localStorage.getItem('tuturuuu-mail-pane-layout');
@@ -658,31 +662,33 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
         open={keyboard.helpOpen}
         onOpenChange={keyboard.setHelpOpen}
       />
-      <FloatingComposer
-        key={composeSession}
-        ref={composerRef}
-        initialDraft={composeDraft}
-        mailboxes={mailboxes}
-        onOpenChange={(nextOpen) => {
-          setComposerVisible(nextOpen);
-          if (!nextOpen) {
-            setComposeDraft(null);
-            void queryClient.invalidateQueries({
-              queryKey: ['mail', workspaceId],
-            });
+      {composerMounted && (
+        <LazyFloatingComposer
+          key={composeSession}
+          ref={composerRef}
+          initialDraft={composeDraft}
+          mailboxes={mailboxes}
+          onOpenChange={(nextOpen) => {
+            setComposerVisible(nextOpen);
+            if (!nextOpen) {
+              setComposeDraft(null);
+              void queryClient.invalidateQueries({
+                queryKey: ['mail', workspaceId],
+              });
+            }
+            void setComposeParam(nextOpen ? '1' : null);
+          }}
+          onSend={(nextMailboxId, payload) =>
+            sendMutation
+              .mutateAsync({ nextMailboxId, payload })
+              .then(() => undefined)
           }
-          void setComposeParam(nextOpen ? '1' : null);
-        }}
-        onSend={(nextMailboxId, payload) =>
-          sendMutation
-            .mutateAsync({ nextMailboxId, payload })
-            .then(() => undefined)
-        }
-        open={composerVisible}
-        selectedMailboxId={activeMailboxId}
-        sending={sendMutation.isPending}
-        workspaceId={workspaceId}
-      />
+          open={composerVisible}
+          selectedMailboxId={activeMailboxId}
+          sending={sendMutation.isPending}
+          workspaceId={workspaceId}
+        />
+      )}
     </div>
   );
 }

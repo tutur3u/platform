@@ -2,9 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/mail/data/mail_preview_store.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/mail/view/mail_appearance_control.dart';
 import 'package:mobile/features/mail/view/mail_attachment_preview.dart';
@@ -15,6 +17,7 @@ import 'package:mobile/features/mail/view/mail_message_content.dart';
 import 'package:mobile/features/mail/view/mail_message_date.dart';
 import 'package:mobile/features/mail/view/mail_message_details.dart';
 import 'package:mobile/features/mail/view/mail_primary_action_preference.dart';
+import 'package:mobile/features/mail/view/mail_rendered_documents.dart';
 import 'package:mobile/features/mail/view/mail_swipe_preferences.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
@@ -25,17 +28,28 @@ import 'package:mobile/widgets/app_dialog_scaffold.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:share_plus/share_plus.dart';
 
+part 'mail_reader_body.dart';
 part 'mail_reader_chrome.dart';
+part 'mail_reader_pane_header.dart';
+
+/// Keeps the end of long messages clear of the floating Mail dock and its
+/// reader actions, on top of the shell dock clearance.
+const double _mailReaderEndGap = 128;
 
 class MailReader extends StatefulWidget {
   const MailReader({
     required this.repository,
     required this.workspaceId,
     required this.mailboxId,
-    required this.detail,
     required this.thread,
     required this.canSend,
     required this.fromAddress,
+    this.detail,
+    this.summary,
+    this.loadDetail,
+    this.onClose,
+    this.pushRoute,
+    this.renderedDocuments,
     this.refreshOnOpen = false,
     this.notificationEntry = false,
     this.onReadFailed,
@@ -51,7 +65,25 @@ class MailReader extends StatefulWidget {
   final String fromAddress;
   final String? signatureText;
   final String? signatureHtml;
-  final Map<String, dynamic> detail;
+
+  /// The full detail when it is already cached; otherwise [summary] (the
+  /// inbox row) renders immediately while [loadDetail] hydrates the body.
+  final Map<String, dynamic>? detail;
+  final Map<String, dynamic>? summary;
+
+  /// Loads the body and reports whether it came from the network. A body
+  /// hydrated from the encrypted snapshot is revalidated once.
+  final Future<MailPreview> Function()? loadDetail;
+
+  /// The owning Mail view's memo of rendered HTML documents.
+  final MailRenderedDocuments? renderedDocuments;
+
+  /// Closes a reader shown in a split layout's detail pane. Pushed readers
+  /// pop their route instead.
+  final VoidCallback? onClose;
+
+  /// Pushes reader child routes through the owner, so its chrome yields.
+  final Future<void> Function(Route<void> route)? pushRoute;
   final bool refreshOnOpen;
   final bool notificationEntry;
   final VoidCallback? onReadFailed;
@@ -75,13 +107,20 @@ class _MailReaderState extends State<MailReader> {
   bool _showImages = false;
   bool _childRouteOpen = false;
   final Map<String, bool> _expandedMessages = {};
-  late Map<String, dynamic> _detail = widget.detail;
-  late bool _starred;
-  List<Map<String, dynamic>> get _messages =>
-      widget.thread ? mailRows(_detail['messages']) : [_detail];
-  String get _id => widget.thread
-      ? (_detail['thread'] as Map<String, dynamic>)['id'] as String
-      : _detail['id'] as String;
+  late Map<String, dynamic>? _detail = widget.detail;
+  Object? _loadError;
+  bool _starred = false;
+  List<Map<String, dynamic>> get _messages => switch (_detail) {
+    null => const [],
+    final detail when widget.thread => mailRows(detail['messages']),
+    final detail => [detail],
+  };
+  String get _id => switch (_detail) {
+    null => widget.summary!['id'] as String,
+    final detail when widget.thread =>
+      (detail['thread'] as Map<String, dynamic>)['id'] as String,
+    final detail => detail['id'] as String,
+  };
 
   ValueKey<String> _threadExpansionKey(Map<String, dynamic> message) {
     final position = message['id'] == _messages.last['id'] ? 'latest' : 'older';
@@ -98,10 +137,47 @@ class _MailReaderState extends State<MailReader> {
     MailPrimaryActionPreference.instance.addListener(_primaryActionChanged);
     unawaited(MailImagePreference.instance.load());
     unawaited(MailPrimaryActionPreference.instance.load());
+    if (_detail != null) {
+      _detailReady(refresh: widget.refreshOnOpen);
+    } else {
+      unawaited(_hydrate());
+    }
+  }
+
+  void _detailReady({required bool refresh}) {
     _starred = _messages.any((m) => m['starred'] == true);
-    if (widget.refreshOnOpen) unawaited(_refresh());
+    if (refresh) unawaited(_refresh());
     if (_messages.any((message) => message['unread'] == true)) {
       unawaited(_action('mark_read'));
+    }
+  }
+
+  Future<void> _hydrate() async {
+    final load = widget.loadDetail;
+    if (load == null) return;
+    if (_loadError != null) setState(() => _loadError = null);
+    try {
+      final preview = await load();
+      if (!mounted) return;
+      setState(() => _detail = preview.detail);
+      _detailReady(refresh: widget.thread && !preview.fromNetwork);
+    } on ApiException catch (error) {
+      if (error.statusCode == 401 || error.statusCode == 403) {
+        await widget.repository.denyAccess(widget.workspaceId);
+        if (mounted) _close();
+      } else if (mounted) {
+        setState(() => _loadError = error);
+      }
+    } on Object catch (error) {
+      if (mounted) setState(() => _loadError = error);
+    }
+  }
+
+  void _close() {
+    if (widget.onClose case final close?) {
+      close();
+    } else {
+      Navigator.of(context).pop();
     }
   }
 
@@ -137,7 +213,11 @@ class _MailReaderState extends State<MailReader> {
       return;
     }
     setState(() => _accessRevoked = true);
-    Navigator.of(context).maybePop();
+    if (widget.onClose case final close?) {
+      close();
+    } else {
+      unawaited(Navigator.of(context).maybePop());
+    }
   }
 
   Future<void> _refresh() async {
@@ -164,9 +244,9 @@ class _MailReaderState extends State<MailReader> {
     } on ApiException catch (error) {
       if (error.statusCode == 401 || error.statusCode == 403) {
         await widget.repository.denyAccess(widget.workspaceId);
-        if (mounted) Navigator.of(context).pop();
+        if (mounted) _close();
       } else if (error.statusCode == 404 && mounted) {
-        Navigator.of(context).pop();
+        _close();
       }
     } on Object {
       // Keep the encrypted cached message readable during a network outage.
@@ -174,7 +254,7 @@ class _MailReaderState extends State<MailReader> {
   }
 
   Future<void> _action(String action, {bool close = false}) async {
-    if (_busy && action != 'mark_read') return;
+    if (_detail == null || (_busy && action != 'mark_read')) return;
     DateTime? snoozedUntil;
     if (action == 'snooze') {
       snoozedUntil = await chooseMailSnoozeTime(context);
@@ -202,7 +282,7 @@ class _MailReaderState extends State<MailReader> {
       } on ProviderNotFoundException {
         // Standalone reader tests and screens need no shared dock handoff.
       }
-      Navigator.of(context).pop();
+      _close();
     }
     try {
       await widget.repository.changeState(
@@ -218,7 +298,7 @@ class _MailReaderState extends State<MailReader> {
       }
       if (!mounted) return;
       if (close && !optimisticClose) {
-        Navigator.of(context).pop();
+        _close();
         return;
       }
     } on Object catch (error) {
@@ -230,7 +310,7 @@ class _MailReaderState extends State<MailReader> {
       if (error is ApiException &&
           (error.statusCode == 401 || error.statusCode == 403)) {
         await widget.repository.denyAccess(widget.workspaceId);
-        if (mounted) Navigator.of(context).pop();
+        if (mounted) _close();
         return;
       }
       if (action == 'mark_read') return;
@@ -272,10 +352,13 @@ class _MailReaderState extends State<MailReader> {
   Future<void> _openChild(Widget child) async {
     if (_childRouteOpen) return;
     setState(() => _childRouteOpen = true);
+    final route = MaterialPageRoute<void>(builder: (_) => child);
     try {
-      await Navigator.of(
-        context,
-      ).push<void>(MaterialPageRoute(builder: (_) => child));
+      if (widget.pushRoute case final push?) {
+        await push(route);
+      } else {
+        await Navigator.of(context).push<void>(route);
+      }
     } finally {
       if (mounted) setState(() => _childRouteOpen = false);
     }
@@ -295,194 +378,53 @@ class _MailReaderState extends State<MailReader> {
       'restore': l10n.mailRestore,
       'trash': l10n.mailTrash,
     };
-    final subject = widget.thread
-        ? (_detail['thread'] as Map<String, dynamic>)['subject'] as String?
-        : _detail['subject'] as String?;
+    final subject = switch (_detail) {
+      null => widget.summary?['subject'] as String?,
+      final detail when widget.thread =>
+        (detail['thread'] as Map<String, dynamic>)['subject'] as String?,
+      final detail => detail['subject'] as String?,
+    };
+    // A deep link opens before its subject is known; do not flash "(No
+    // subject)" while the body hydrates.
+    final title = subject?.isNotEmpty == true
+        ? subject!
+        : _detail == null
+        ? ''
+        : l10n.mailNoSubject;
+    final pane = AppMasterDetail.inDetailPaneOf(context);
     final sharedShell = lookupShellTitleOverrideCubit(context) != null;
-    final preferred = MailPrimaryActionPreference.instance.value;
-    final primary = preferred == MailPrimaryAction.reply && !widget.canSend
-        ? MailPrimaryAction.archive
-        : preferred;
+    // A pane header (split layouts) or the shell owns the message controls.
+    final headerControls = sharedShell || pane;
     return Stack(
       fit: StackFit.expand,
       children: [
-        if (sharedShell && !_childRouteOpen)
-          _readerChrome(subject ?? l10n.mailNoSubject, actions),
+        if (sharedShell && !pane && !_childRouteOpen)
+          _readerChrome(title, actions),
         Scaffold(
           backgroundColor: shad.Theme.of(context).colorScheme.background,
-          appBar: sharedShell
-              ? null
-              : AppBar(
-                  backgroundColor: shad.Theme.of(
-                    context,
-                  ).colorScheme.background,
-                  surfaceTintColor: Colors.transparent,
-                  title: Text(subject ?? l10n.mailNoSubject),
-                  actions: [
-                    IconButton(
-                      tooltip: primary.label(context),
-                      onPressed: _busy
-                          ? null
-                          : () {
-                              if (primary == MailPrimaryAction.reply) {
-                                if (_messages.isNotEmpty) {
-                                  unawaited(_reply(_messages.last));
-                                }
-                              } else {
-                                unawaited(
-                                  _action(primary.stateAction!, close: true),
-                                );
-                              }
-                            },
-                      icon: Icon(primary.icon),
-                    ),
-                    IconButton(
-                      tooltip: _starred ? l10n.mailUnstar : l10n.mailStar,
-                      onPressed: _busy
-                          ? null
-                          : () => _action(_starred ? 'unstar' : 'star'),
-                      icon: Icon(_starred ? Icons.star : Icons.star_border),
-                    ),
-                    PopupMenuButton<String>(
-                      enabled: !_busy,
-                      onSelected: (action) => _action(action, close: true),
-                      itemBuilder: (_) => actions.entries
-                          .map(
-                            (a) => PopupMenuItem(
-                              value: a.key,
-                              child: Row(
-                                children: [
-                                  Icon(_mailMessageActionIcon(a.key)),
-                                  const SizedBox(width: 12),
-                                  Text(a.value),
-                                ],
-                              ),
-                            ),
-                          )
-                          .toList(),
-                    ),
-                  ],
-                ),
-          body: ListView(
-            padding: EdgeInsets.only(
-              // Keep the end of long messages clear of the floating Mail dock.
-              bottom: 128 + MediaQuery.paddingOf(context).bottom,
-            ),
+          appBar: sharedShell || pane ? null : _fallbackAppBar(title, actions),
+          body: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              for (final message in _messages)
-                Card(
-                  color: Colors.transparent,
-                  surfaceTintColor: Colors.transparent,
-                  margin: const EdgeInsets.only(bottom: 6),
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ExpansionTile(
-                          key: _threadExpansionKey(message),
-                          initiallyExpanded:
-                              _expandedMessages[message['id']] ??
-                              (!widget.thread ||
-                                  message['id'] == _messages.last['id']),
-                          onExpansionChanged: (expanded) =>
-                              _expandedMessages[message['id'] as String] =
-                                  expanded,
-                          tilePadding: EdgeInsets.zero,
-                          dense: true,
-                          title: Text(
-                            message['fromName'] as String? ??
-                                message['fromAddress'] as String,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          subtitle: Text(
-                            [
-                              if (message['fromName'] != null)
-                                message['fromAddress'] as String,
-                              ...mailRows(message['recipients'])
-                                  .where((r) => r['kind'] == 'to')
-                                  .take(1)
-                                  .map((r) => r['address'] as String),
-                              if (mailMessageDate(message) != null)
-                                formatMailMessageDate(
-                                  context,
-                                  mailMessageDate(message)!,
-                                ),
-                            ].join(' · '),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          children: [
-                            MailMessageDetails(message: message),
-                            MailMessageContent(
-                              key: ValueKey(message['id']),
-                              repository: widget.repository,
-                              workspaceId: widget.workspaceId,
-                              mailboxId: widget.mailboxId,
-                              message: message,
-                              threadId: _id,
-                              showControls: !sharedShell,
-                              imagesVisible:
-                                  sharedShell || widget.notificationEntry
-                                  ? _showImages
-                                  : null,
-                              onImagesChanged: widget.notificationEntry
-                                  ? (_) => _toggleReaderImages()
-                                  : null,
-                            ),
-                            for (final file in mailRows(message['attachments']))
-                              ListTile(
-                                leading: const Icon(Icons.attach_file),
-                                title: Text(file['filename'] as String),
-                                onTap: _busy || !canPreviewMailAttachment(file)
-                                    ? null
-                                    : () => _openChild(
-                                        MailAttachmentPreview(
-                                          repository: widget.repository,
-                                          workspaceId: widget.workspaceId,
-                                          mailboxId: widget.mailboxId,
-                                          messageId: message['id'] as String,
-                                          file: file,
-                                        ),
-                                      ),
-                                trailing: IconButton(
-                                  tooltip: l10n.mailDownload,
-                                  onPressed: _busy
-                                      ? null
-                                      : () => _download(message, file),
-                                  icon: const Icon(Icons.download_outlined),
-                                ),
-                              ),
-                            if (widget.canSend && !sharedShell)
-                              Wrap(
-                                spacing: 8,
-                                children: [
-                                  TextButton(
-                                    onPressed: () => _reply(message),
-                                    child: Text(l10n.mailReply),
-                                  ),
-                                  TextButton(
-                                    onPressed: () => _reply(message, all: true),
-                                    child: Text(l10n.mailReplyAll),
-                                  ),
-                                  TextButton(
-                                    onPressed: () =>
-                                        _reply(message, forward: true),
-                                    child: Text(l10n.mailForward),
-                                  ),
-                                ],
-                              ),
-                          ],
-                        ),
-                      ],
+              if (pane) _paneHeader(title, actions),
+              Expanded(
+                child: LayoutBuilder(
+                  builder: (context, constraints) => ListView(
+                    padding: AppPageInsets.of(
+                      context,
+                      width: constraints.maxWidth,
+                      kind: AppPageKind.reading,
+                      endGap: _mailReaderEndGap,
                     ),
+                    children: _detail == null
+                        ? [_summaryPreview()]
+                        : [
+                            for (final message in _messages)
+                              _messageCard(message, headerControls),
+                          ],
                   ),
                 ),
+              ),
             ],
           ),
         ),

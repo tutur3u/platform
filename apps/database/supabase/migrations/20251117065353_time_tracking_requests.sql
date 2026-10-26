@@ -68,7 +68,8 @@ VALUES (
   false,
   1048576,
   ARRAY['image/*']
-);
+)
+ON CONFLICT (id) DO NOTHING;
 
 
 CREATE POLICY "Allow creators to upload to their time tracking request folder"

@@ -1,3 +1,4 @@
+import { LOCALIZED_NOTIFICATION_CODES } from '@tuturuuu/ui/custom/notification-code-text';
 import NotificationPopoverClient from '@tuturuuu/ui/custom/notification-popover-client';
 import { getTranslations } from 'next-intl/server';
 import { getSatelliteAppSession } from '../auth';
@@ -20,6 +21,18 @@ export default async function NotificationPopover({
 } = {}) {
   const t = await getTranslations();
   const resolvedUserId = userId ?? (await getSatelliteAppSession())?.sub;
+  // Only codes this app's bundle translates; others keep the stored text.
+  const codeText = Object.fromEntries(
+    LOCALIZED_NOTIFICATION_CODES.filter((code) =>
+      t.has(`notifications.codes.${code}.title`)
+    ).map((code) => [
+      code,
+      {
+        title: t(`notifications.codes.${code}.title`),
+        description: t(`notifications.codes.${code}.description`),
+      },
+    ])
+  );
 
   return (
     <NotificationPopoverClient
@@ -29,6 +42,7 @@ export default async function NotificationPopover({
       viewAllText={t('notifications.view-all')}
       markAsReadText={t('notifications.mark-as-read')}
       markAsUnreadText={t('notifications.mark-as-unread')}
+      updateErrorText={t('notifications.update-error')}
       inboxText={t('notifications.inbox')}
       archiveText={t('notifications.archive')}
       archiveAllText={t('notifications.archive-all')}
@@ -39,6 +53,7 @@ export default async function NotificationPopover({
       declineText={t('notifications.decline')}
       acceptedText={t('workspace-invitation.accept-success')}
       declinedText={t('workspace-invitation.decline-success')}
+      codeText={codeText}
       webAppUrl={getTtrUrl()}
     />
   );

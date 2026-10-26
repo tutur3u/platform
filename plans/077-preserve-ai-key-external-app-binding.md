@@ -53,7 +53,7 @@ Then run `git status --short` and preserve unrelated AI Studio work.
 | AI Studio suite | `bun run --cwd apps/ai test` | all tests pass |
 | Typecheck | `bun run --cwd apps/ai type-check` | exit 0 |
 | App build | `bun run --cwd apps/ai build` | exit 0 |
-| Repository gate | `bun check` | exit 0, or only a documented unrelated blocker |
+| Repository gate | `bun validate` | exit 0, or only a documented unrelated blocker |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -109,7 +109,7 @@ secret as success. Preserve approval denial and normal revocation behavior.
 
 - [ ] Rotation cannot change external-app attribution or validation policy.
 - [ ] The response exposes the same safe binding metadata as creation/list.
-- [ ] Lifecycle tests, full AI suite, typecheck, build, `bun check`, and
+- [ ] Lifecycle tests, full AI suite, typecheck, build, `bun validate`, and
   whitespace pass.
 - [ ] No schema, secret-format, or unrelated AI file changed.
 

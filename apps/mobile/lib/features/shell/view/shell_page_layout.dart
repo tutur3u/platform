@@ -73,9 +73,10 @@ extension _ShellPageLayout on _ShellPageState {
           removeTop: true,
           child: Theme(
             data: Theme.of(bodyContext).copyWith(
-              scaffoldBackgroundColor: shad.Theme.of(
-                bodyContext,
-              ).colorScheme.background,
+              scaffoldBackgroundColor:
+                  AppearanceScope.hasAmbientBackground(bodyContext)
+                  ? Colors.transparent
+                  : shad.Theme.of(bodyContext).colorScheme.background,
             ),
             child: SizedBox.expand(child: widget.child),
           ),
@@ -115,10 +116,14 @@ extension _ShellPageLayout on _ShellPageState {
                               _lastRootLocation,
                             ),
                             builders: [
-                              (_) => HomePage(
-                                replayToken:
+                              (_) =>
+                                  widget.homePageBuilder?.call(
                                     _rootTabReplayTokens[Routes.home] ?? 0,
-                              ),
+                                  ) ??
+                                  HomePage(
+                                    replayToken:
+                                        _rootTabReplayTokens[Routes.home] ?? 0,
+                                  ),
                               (_) =>
                                   widget.assistantPageBuilder?.call(
                                     _rootTabReplayTokens[Routes.assistant] ?? 0,
@@ -134,12 +139,18 @@ extension _ShellPageLayout on _ShellPageState {
                                 replayToken:
                                     _rootTabReplayTokens[Routes.apps] ?? 0,
                               ),
-                              (_) => const NotificationsPage(),
-                              (_) => ProfileOverviewPage(
-                                replayToken:
+                              (context) =>
+                                  widget.notificationsPageBuilder?.call(
+                                    context,
+                                  ) ??
+                                  const NotificationsPage(),
+                              (_) {
+                                final token =
                                     _rootTabReplayTokens[Routes.profileRoot] ??
-                                    0,
-                              ),
+                                    0;
+                                return widget.profilePageBuilder?.call(token) ??
+                                    ProfileOverviewPage(replayToken: token);
+                              },
                             ],
                           ),
                         ),
@@ -216,7 +227,9 @@ extension _ShellPageLayout on _ShellPageState {
 
     return Container(
       key: const ValueKey('compact-shell-footer'),
-      color: shad.Theme.of(context).colorScheme.background,
+      color: AppearanceScope.hasAmbientBackground(context)
+          ? Colors.transparent
+          : shad.Theme.of(context).colorScheme.background,
       padding: EdgeInsets.only(bottom: bottomPadding),
       child: ShellKeyboardChrome(
         keyboardVisible: MediaQuery.viewInsetsOf(context).bottom > 0,
@@ -234,6 +247,7 @@ extension _ShellPageLayout on _ShellPageState {
     bool composerVisible = false,
     double navigationWidth = 264,
     bool allowDockSlot = true,
+    bool hideIdleNavigation = false,
   }) {
     return ShellDockScope(
       controller: _dockSlotController,
@@ -241,6 +255,7 @@ extension _ShellPageLayout on _ShellPageState {
         location: widget.matchedLocation,
         navigationWidth: navigationWidth,
         allowDockSlot: allowDockSlot,
+        hideIdleNavigation: hideIdleNavigation,
         keyboardVisible: MediaQuery.viewInsetsOf(context).bottom > 0,
         bottomInset: bodyBottomInset,
         navigationBottomOffset: navigationBottomOffset,
@@ -354,6 +369,12 @@ extension _ShellPageLayout on _ShellPageState {
     );
     final globalBody = _buildGlobalBody();
     final floatingNavInset = showBottomNav ? _floatingNavBodyInset() : 0.0;
+    // Wide windows move destinations (including mini-app Back) to a leading
+    // rail. The dock keeps only the composer and page actions there.
+    final railMode =
+        shellNavigationModeFor(MediaQuery.sizeOf(context)) ==
+        ShellNavigationMode.rail;
+    final dockItems = isMiniAppRoute ? miniItems : globalItems;
 
     return shad.Scaffold(
       footers: showBottomNav && isCompact && !composerVisible
@@ -365,22 +386,32 @@ extension _ShellPageLayout on _ShellPageState {
             ]
           : const [],
       // Preserve Assistant state when keyboard/fullscreen hides navigation.
-      child: _buildBodyWithFloatingNav(
-        body: globalBody,
-        header: immersive
-            ? null
-            : _buildFloatingHeader(
-                context,
-                activeModule: activeModule,
-                injectedMiniNavRegistration: injectedMiniNavRegistration,
-              ),
-        navigationBar: showBottomNav && (!isCompact || composerVisible)
-            ? navigationBar
-            : const SizedBox.shrink(),
-        bodyBottomInset: floatingNavInset,
-        composerVisible: composerVisible,
-        navigationWidth:
-            (isMiniAppRoute ? miniItems.length : globalItems.length) * 52.0 + 4,
+      child: AdaptiveShellFrame(
+        rail: railMode && showBottomNav
+            ? ShellNavigationRail(
+                items: dockItems,
+                selectedKey: selectedKey,
+                onSelected: navContent.onSelected,
+              )
+            : null,
+        body: _buildBodyWithFloatingNav(
+          body: globalBody,
+          header: immersive
+              ? null
+              : _buildFloatingHeader(
+                  context,
+                  activeModule: activeModule,
+                  injectedMiniNavRegistration: injectedMiniNavRegistration,
+                ),
+          navigationBar:
+              showBottomNav && !railMode && (!isCompact || composerVisible)
+              ? navigationBar
+              : const SizedBox.shrink(),
+          bodyBottomInset: floatingNavInset,
+          composerVisible: composerVisible,
+          navigationWidth: dockItems.length * 52.0 + 4,
+          hideIdleNavigation: railMode,
+        ),
       ),
     );
   }

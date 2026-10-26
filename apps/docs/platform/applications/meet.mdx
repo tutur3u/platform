@@ -82,6 +82,82 @@ login-page rendering and emitted original/restored Worker acceptance require
 separate runtime evidence. These controls do not establish the cause of a past
 hosted redirect.
 
+## Plan guest passwords and sessions
+
+Scope: guests who join a Meet plan by name, with or without a password, on
+both the Meet satellite and the web-hosted plan page. Signed-in platform users
+are unaffected.
+
+- **Storage.** Guest passwords are stored with the shared server-only KDF in
+  `@tuturuuu/utils/crypto` (scrypt, encoded as `scrypt$N$r$p$salt$key` with
+  N=2^15, r=8, p=1, a 16-byte random salt and a 32-byte key). The salt lives
+  inside the encoding, so `password_salt` is written as an empty string for new
+  rows. Verification uses a constant-time comparison.
+- **Credential flow.** The guest submits the plaintext password over HTTPS to
+  the guest login server action. The server verifies it and returns a signed
+  guest session (`@tuturuuu/utils/meet-guest-session`) bound to that guest and
+  plan, valid for 12 hours. Availability updates and guest poll actions present
+  that session (`guestSession`); the server re-verifies the signature, plan,
+  guest and expiry, and checks that the guest still belongs to the plan. Stored
+  password hashes are never returned to the browser and are not accepted as a
+  credential.
+- **Default.** Passwordless guests keep working: the empty password is hashed
+  like any other value. The saved-name auto login on reload still applies only
+  to passwordless guests; the password and the session are not persisted.
+- **Expiry.** When a session expires the guest action is rejected and the guest
+  signs in again from the plan page.
+- **Attempt limits.** Guest password attempts are limited per plan and guest
+  name and per client IP (see
+  [shared-secret password budgets](/build/devops/adaptive-abuse-rate-limits#shared-secret-password-budgets)).
+  While a budget is spent the form shows a localized retry message, even for
+  the correct password. Verified logins refund one target attempt; source counters
+  retain the charge. The source budget is 300 attempts per 15 minutes to tolerate
+  shared office addresses. Creation reserves 10 attempts per plan and source
+  network per 15 minutes, independent of the chosen name. Different networks do
+  not share a plan-wide creation cap. IPv6 addresses share their /64; unknown IPs
+  share a bucket. Missing plans do no hashing. Creation denials use distinct
+  English/Vietnamese copy about attempts to join.
+  The participant view and guest table are available only to server/admin clients;
+  client roles cannot query either directly. Regression coverage lives in
+  `packages/apis/src/meet/actions/auth.test.ts`,
+  `packages/utils/src/abuse-protection/__tests__/password-attempt-limits.test.ts`,
+  and `apps/database/supabase/tests/security-meet-guest-grants.sql`.
+- **Table access.** `meet_together_guests` keeps row level security with no
+  client-role policies, and client-role table grants are revoked; only server
+  code using the service role reads it.
+- **Signing secret.** Sessions are signed with the shared server token secret
+  (`TUTURUUU_APP_COORDINATION_SECRET`, falling back to `SUPABASE_SECRET_KEY`)
+  through a purpose-derived key, so they cannot be replayed as any other token
+  type. Rotating that secret ends all active guest sessions.
+
+### Password hash migration
+
+1. **Reset markers.** `verifyPassword` accepts only the `scrypt$` encoding.
+   Any other non-empty stored hash, including the legacy unprefixed salted
+   SHA-256 hex digest, returns `resetRequired: true` and never verifies or
+   upgrades from a submitted password. Guest sign-in returns
+   `PASSWORD_RESET_REQUIRED`, and the plan creator recovers the guest with
+   **Reset a guest password**. The full policy is in
+   [shared-secret password reset](/platform/features/shared-secret-password-reset).
+2. **No backfill.** Legacy rows cannot be converted without the plaintext, so
+   the existing hash format is the durable reset marker; there is no schema
+   change, migration step or bulk update.
+3. **Parameter rehash.** When a scrypt hash with older parameters verifies,
+   the login request replaces it with a fresh scrypt hash using an update
+   filtered on the previous `password_hash` value, so a concurrent upgrade is
+   never overwritten. A failed upgrade is logged and the login still succeeds.
+4. **In-flight clients.** Browsers holding a page from before this change send
+   the retired hash field, which the server now rejects. Those guests see a
+   failed save or vote and sign in again after reloading.
+
+Regression coverage: `packages/utils/src/__tests__/crypto.test.ts`,
+`packages/utils/src/__tests__/meet-guest-session.test.ts`,
+`packages/apis/src/meet/actions/auth.test.ts`,
+`packages/apis/src/meet/actions/polls.test.ts`,
+`apps/web/src/app/api/v1/meet/plans/[planId]/availability/route.test.ts`,
+`apps/meet/src/runtime/legacy-action-ports.test.ts` and
+`apps/database/supabase/tests/security-meet-guest-grants.sql`.
+
 ## Runtime boundaries
 
 Meet shares behavior through `packages/meet-core` and `packages/meet-ui`.

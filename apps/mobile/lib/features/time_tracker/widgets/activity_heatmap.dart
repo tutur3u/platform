@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/data/models/time_tracking/stats.dart';
 import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
@@ -151,7 +152,7 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          padding: const EdgeInsets.only(top: 16, bottom: 8),
           child: Row(
             children: [
               Container(
@@ -162,7 +163,7 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Icon(
-                  shad.LucideIcons.calendar,
+                  LucideIcons.calendar,
                   size: 18,
                   color: theme.colorScheme.primary,
                 ),
@@ -201,7 +202,7 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
         ),
         if (_viewMode == _HeatmapViewMode.original)
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            padding: const EdgeInsets.only(bottom: 8),
             child: _LegendRow(maxDuration: maxDuration),
           ),
         _buildModeContent(context, activityByDate, maxDuration, localeTag),

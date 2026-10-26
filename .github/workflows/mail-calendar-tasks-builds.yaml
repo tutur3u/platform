@@ -1,7 +1,9 @@
 name: Mail Calendar Tasks builds
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
     paths:
+      - 'scripts/safe-fs.js'
       - 'apps/mail/**'
       - 'apps/calendar/**'
       - 'apps/web/**'
@@ -11,7 +13,13 @@ on:
       - 'turbo.json'
       - 'package.json'
       - 'patches/**'
+      - 'scripts/ci/mail-calendar-tasks-affected*'
       - 'scripts/ci/calendar-native-*'
+      - 'scripts/ci/calendar-cf-types*'
+      - 'scripts/ci/calendar-cf-fixture*'
+      - 'scripts/ci/calendar-cf-files*'
+      - 'scripts/ci/calendar-cf-output*'
+      - 'scripts/ci/calendar-cf-archive.py'
       - 'scripts/ci/native-source-identity-test-helper.js'
       - 'scripts/ci/calendar-emitted-defaults*'
       - '.github/actions/**'
@@ -21,6 +29,7 @@ on:
   push:
     branches: [main]
     paths:
+      - 'scripts/safe-fs.js'
       - 'apps/mail/**'
       - 'apps/calendar/**'
       - 'apps/web/**'
@@ -30,7 +39,13 @@ on:
       - 'turbo.json'
       - 'package.json'
       - 'patches/**'
+      - 'scripts/ci/mail-calendar-tasks-affected*'
       - 'scripts/ci/calendar-native-*'
+      - 'scripts/ci/calendar-cf-types*'
+      - 'scripts/ci/calendar-cf-fixture*'
+      - 'scripts/ci/calendar-cf-files*'
+      - 'scripts/ci/calendar-cf-output*'
+      - 'scripts/ci/calendar-cf-archive.py'
       - 'scripts/ci/native-source-identity-test-helper.js'
       - 'scripts/ci/calendar-emitted-defaults*'
       - '.github/actions/**'
@@ -45,21 +60,19 @@ concurrency:
   cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 jobs:
   check-ci:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     permissions:
       contents: read
       deployments: read
     uses: ./.github/workflows/ci-check.yml
     with:
       workflow_name: mail-calendar-tasks-builds.yaml
-  build:
+  build-mail:
+    name: build (mail)
     needs: check-ci
-    if: needs.check-ci.outputs.should_run == 'true'
+    if: needs.check-ci.outputs.should_run == 'true' && toJSON(fromJSON(needs.check-ci.outputs.affected_jobs || '{}').mail) != 'false'
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    strategy:
-      fail-fast: false
-      matrix:
-        app: [mail, tasks, web]
     env:
       NEXT_PUBLIC_SUPABASE_URL: https://mail-calendar-tasks-ci.supabase.invalid
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_programming_ci_placeholder
@@ -74,13 +87,12 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 24.22.0
       - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
       - name: Record Mail route tree presence before frontend build
-        if: ${{ matrix.app == 'mail' }}
         id: mail-route-tree-before
         run: |
           route_tree=apps/mail/src/routeTree.gen.ts
@@ -93,12 +105,12 @@ jobs:
         id: mail-frontend-build
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
-          command: bun turbo:local run build --concurrency=2 --filter=@tuturuuu/${{ matrix.app }}
+          command: bun turbo:local run build --concurrency=2 --filter=@tuturuuu/mail
           token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && secrets.TURBO_TOKEN || '' }}
           team: ${{ github.ref != 'refs/heads/production' && (vars.TURBO_TEAM || secrets.TURBO_TEAM) || '' }}
 
       - name: Capture generated Mail route tree evidence
-        if: ${{ always() && matrix.app == 'mail' }}
+        if: always()
         env:
           MAIL_ROUTE_TREE_BEFORE: ${{ steps.mail-route-tree-before.outputs.state || 'unknown' }}
           MAIL_FRONTEND_BUILD_OUTCOME: ${{ steps.mail-frontend-build.outcome || 'unknown' }}
@@ -132,7 +144,7 @@ jobs:
             printf 'route_tree_sha256=%s\n' "$(sha256sum "$evidence/routeTree.gen.ts" | cut -d ' ' -f 1)"
           } > "$evidence/source-receipt.txt"
       - name: Retain generated Mail route tree evidence
-        if: ${{ always() && matrix.app == 'mail' }}
+        if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: mail-route-tree-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
@@ -140,15 +152,81 @@ jobs:
           retention-days: 7
           if-no-files-found: warn
       - name: Reject tracked Mail route tree drift
-        if: ${{ always() && matrix.app == 'mail' }}
+        if: always()
         run: |
           route_tree=apps/mail/src/routeTree.gen.ts
           if git cat-file -e "HEAD:$route_tree" 2>/dev/null; then
             git diff --exit-code HEAD -- "$route_tree"
           fi
+  build-tasks:
+    name: build (tasks)
+    needs: check-ci
+    if: needs.check-ci.outputs.should_run == 'true' && toJSON(fromJSON(needs.check-ci.outputs.affected_jobs || '{}').tasks) != 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://mail-calendar-tasks-ci.supabase.invalid
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_programming_ci_placeholder
+      NEXT_PUBLIC_APP_URL: https://mail-calendar-tasks-ci.invalid
+      NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
+      NODE_OPTIONS: --max-old-space-size=8192
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.22.0
+      - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+      - name: Build application and shared dependencies without deployment
+        id: mail-frontend-build
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --concurrency=2 --filter=@tuturuuu/tasks
+          token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && secrets.TURBO_TOKEN || '' }}
+          team: ${{ github.ref != 'refs/heads/production' && (vars.TURBO_TEAM || secrets.TURBO_TEAM) || '' }}
+
+  build-web:
+    name: build (web)
+    needs: check-ci
+    if: needs.check-ci.outputs.should_run == 'true' && toJSON(fromJSON(needs.check-ci.outputs.affected_jobs || '{}').web) != 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://mail-calendar-tasks-ci.supabase.invalid
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_programming_ci_placeholder
+      NEXT_PUBLIC_APP_URL: https://mail-calendar-tasks-ci.invalid
+      NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
+      NODE_OPTIONS: --max-old-space-size=8192
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.22.0
+      - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+      - name: Build application and shared dependencies without deployment
+        id: mail-frontend-build
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --concurrency=2 --filter=@tuturuuu/web
+          token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && secrets.TURBO_TOKEN || '' }}
+          team: ${{ github.ref != 'refs/heads/production' && (vars.TURBO_TEAM || secrets.TURBO_TEAM) || '' }}
+
   calendar-native:
     needs: check-ci
-    if: needs.check-ci.outputs.should_run == 'true'
+    if: needs.check-ci.outputs.should_run == 'true' && toJSON(fromJSON(needs.check-ci.outputs.affected_jobs || '{}').calendar) != 'false'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
@@ -167,18 +245,18 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 24.22.0
       - name: Assert source and toolchain identity
         run: |
           test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
-          test "$(bun --version)" = 1.4.3
+          test "$(bun --version)" = 1.4.4
           test "$(node --version)" = v24.22.0
       - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
       - name: Test artifact boundary regressions
-        run: node --test scripts/ci/calendar-native-source-identity.test.js scripts/ci/calendar-native-artifact.test.mjs scripts/ci/calendar-emitted-defaults.test.mjs scripts/ci/calendar-native-typegen.test.mjs
+        run: node --test scripts/ci/calendar-native-source-identity.test.js scripts/ci/calendar-native-artifact.test.mjs scripts/ci/calendar-emitted-defaults.test.mjs scripts/ci/calendar-native-typegen.test.mjs scripts/ci/calendar-cf-types.test.mjs scripts/ci/calendar-cf-fixture.test.mjs scripts/ci/calendar-cf-files.test.mjs scripts/ci/calendar-cf-output.test.mjs
       - name: Build shared dependencies without a legacy Calendar build
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
@@ -276,10 +354,18 @@ jobs:
           typegen_file="$typegen_dir/cloudflare-env.d.ts"
           bun x --no-install wrangler types --config "$CALENDAR_EMITTED_CONFIG" --env-interface CloudflareEnv --include-runtime=false "$typegen_file"
           if [[ ! -f "$typegen_file" || ! -s "$typegen_file" || -L "$typegen_file" ]]; then
-            printf '%s\n' 'Wrangler did not generate a regular, nonempty bindings file' >&2
+            printf '%s\n' 'Reference generator did not produce a regular, nonempty bindings file' >&2
             exit 1
           fi
-          cp -- "$typegen_file" cloudflare-env.d.ts
+          node ../../scripts/ci/calendar-cf-types.mjs --config "$CALENDAR_EMITTED_CONFIG" --reference "$typegen_file" --sha "$SOURCE_SHA" > "$typegen_dir/cf-types.json"
+          cp -- "$typegen_dir/cf-types.json" "$RUNNER_TEMP/calendar-cf-types.json"
+      - name: Retain Calendar binding type parity receipt
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: calendar-cf-types-${{ env.SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/calendar-cf-types.json
+          retention-days: 7
+          if-no-files-found: error
       - name: Check Calendar native Worker and affected Web Tasks consumers
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
@@ -292,6 +378,8 @@ jobs:
       - name: Seal source and emitted artifact identity
         id: calendar-canonical-seal
         run: node scripts/ci/calendar-native-artifact.mjs seal apps/calendar "$SOURCE_SHA" apps/calendar/calendar-artifact.json
+      - name: Qualify Calendar cf Build Output without publication
+        run: node scripts/ci/calendar-cf-output.mjs emit apps/calendar "$SOURCE_SHA" "$RUNNER_TEMP/calendar-cf-output"
       - name: Exercise exact emitted Worker public routes
         id: calendar-runtime
         timeout-minutes: 3
@@ -307,6 +395,8 @@ jobs:
       - name: Exercise exact emitted offline asset
         working-directory: apps/calendar
         run: node --test src/runtime/offline-artifact.runtime.mjs
+      - name: Verify cf comparison after runtime checks
+        run: node scripts/ci/calendar-cf-output.mjs verify apps/calendar "$SOURCE_SHA" "$RUNNER_TEMP/calendar-cf-output"
       - name: Verify runtime checks left the sealed artifact unchanged
         run: |
           node scripts/ci/calendar-native-artifact.mjs verify apps/calendar "$SOURCE_SHA" apps/calendar/calendar-artifact.json
@@ -319,6 +409,16 @@ jobs:
         with:
           name: calendar-worker-${{ env.SOURCE_SHA }}
           path: ${{ runner.temp }}/calendar-worker.tar.gz
+          include-hidden-files: true
+          retention-days: 7
+          if-no-files-found: error
+      - name: Pack verified Calendar cf comparison output
+        run: tar -czf "$RUNNER_TEMP/calendar-cf-output.tar.gz" -C "$RUNNER_TEMP/calendar-cf-output" .
+      - name: Retain Calendar cf comparison output
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: calendar-cf-output-${{ env.SOURCE_SHA }}
+          path: ${{ runner.temp }}/calendar-cf-output.tar.gz
           include-hidden-files: true
           retention-days: 7
           if-no-files-found: error
@@ -368,24 +468,38 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 24.22.0
       - name: Assert restored-job source and toolchain identity
         run: |
           test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
-          test "$(bun --version)" = 1.4.3
+          test "$(bun --version)" = 1.4.4
           test "$(node --version)" = v24.22.0
       - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: calendar-worker-${{ env.SOURCE_SHA }}
           path: ${{ runner.temp }}/calendar-restore
+      - name: Download same-run cf comparison archive
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: calendar-cf-output-${{ env.SOURCE_SHA }}
+          path: ${{ runner.temp }}/calendar-cf-output-download
+      - name: Restore same-run cf comparison output
+        run: |
+          archive="$RUNNER_TEMP/calendar-cf-output-download/calendar-cf-output.tar.gz"
+          tar -tzf "$archive" > "$RUNNER_TEMP/calendar-cf-output.entries.txt"
+          python3 scripts/ci/calendar-cf-archive.py "$archive"
+          mkdir "$RUNNER_TEMP/calendar-cf-output-restored"
+          tar --no-same-owner -xzf "$archive" -C "$RUNNER_TEMP/calendar-cf-output-restored"
       - name: Restore same-run immutable artifact without rebuilding
         run: tar -xzf "$RUNNER_TEMP/calendar-restore/calendar-worker.tar.gz" -C apps/calendar
       - name: Verify exact source seal after relocation
         run: node scripts/ci/calendar-native-artifact.mjs verify apps/calendar "$SOURCE_SHA" apps/calendar/calendar-artifact.json
+      - name: Verify relocated cf comparison against the exact sealed source
+        run: node scripts/ci/calendar-cf-output.mjs verify apps/calendar "$SOURCE_SHA" "$RUNNER_TEMP/calendar-cf-output-restored"
       - name: Discover restored config
         id: output
         run: node scripts/ci/calendar-native-artifact.mjs config apps/calendar "$SOURCE_SHA"

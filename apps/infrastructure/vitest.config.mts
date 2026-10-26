@@ -1,7 +1,12 @@
+import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import react from '@vitejs/plugin-react';
 import { loadEnv } from 'vite';
 import { defineConfig } from 'vitest/config';
+
+const utilsRequire = createRequire(
+  resolve(__dirname, '../../packages/utils/package.json')
+);
 
 export default defineConfig({
   plugins: [react()],
@@ -24,11 +29,34 @@ export default defineConfig({
   },
   resolve: {
     alias: [
+      // Match guard imports and test mocks under Bun's isolated linker.
+      {
+        find: '@upstash/ratelimit',
+        replacement: utilsRequire.resolve('@upstash/ratelimit'),
+      },
+      {
+        find: '@upstash/redis',
+        replacement: utilsRequire.resolve('@upstash/redis'),
+      },
+      {
+        find: '@tuturuuu/supabase/next/common',
+        replacement: resolve(
+          __dirname,
+          '../../packages/supabase/src/next/common.ts'
+        ),
+      },
       {
         find: '@tuturuuu/supabase/auth-errors',
         replacement: resolve(
           __dirname,
           '../../packages/supabase/src/auth-errors.ts'
+        ),
+      },
+      {
+        find: '@tuturuuu/devbox/balancer',
+        replacement: resolve(
+          __dirname,
+          '../../packages/devbox/src/balancer/index.ts'
         ),
       },
       { find: '@', replacement: resolve(__dirname, './src') },

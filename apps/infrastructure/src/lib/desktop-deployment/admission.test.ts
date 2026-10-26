@@ -174,6 +174,17 @@ describe('fresh material admission', () => {
     for (const value of mock.decryptResource.mock.results)
       expect(value.value.every((byte: number) => byte === 0)).toBe(true);
   });
+  it('reports parser unavailability distinctly when enabling delivery', async () => {
+    const { db, rpc } = fixture();
+    mock.certificate.mockReturnValue({
+      ok: false,
+      code: 'certificate_inspection_unavailable',
+    });
+    await expect(setDesktopDelivery(db, 'actor', enable)).rejects.toMatchObject(
+      { status: 503, code: 'certificate_inspection_unavailable' }
+    );
+    expect(rpc).not.toHaveBeenCalled();
+  });
   it('requires a valid P8 as well as certificate for macOS', async () => {
     const { db, rpc } = fixture('macos');
     mock.notarization.mockReturnValue({

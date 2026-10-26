@@ -2308,6 +2308,96 @@ export type Database = {
           },
         ];
       };
+      balancer_runs: {
+        Row: {
+          blocked_by: string | null;
+          command: string[];
+          consumed_by: NonNullable<Json>;
+          cwd: string;
+          devbox_run_id: string | null;
+          device_id: string | null;
+          fence: number | null;
+          history: NonNullable<Json>;
+          lease_id: string | null;
+          priority: number;
+          published_at: string;
+          published_by: string;
+          purpose: string;
+          queued_at: string;
+          replica: number;
+          request_id: string;
+          requester: NonNullable<Json>;
+          result: Json | null;
+          revision: number;
+          run_id: string;
+          source_id: string;
+          source_repo: string;
+          source_sha: string;
+          state: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          blocked_by?: string | null;
+          command: string[];
+          consumed_by?: NonNullable<Json>;
+          cwd?: string;
+          devbox_run_id?: string | null;
+          device_id?: string | null;
+          fence?: number | null;
+          history?: NonNullable<Json>;
+          lease_id?: string | null;
+          priority: number;
+          published_at?: string;
+          published_by: string;
+          purpose: string;
+          queued_at: string;
+          replica: number;
+          request_id: string;
+          requester?: NonNullable<Json>;
+          result?: Json | null;
+          revision: number;
+          run_id: string;
+          source_id: string;
+          source_repo: string;
+          source_sha: string;
+          state: string;
+        };
+        Update: {
+          blocked_by?: string | null;
+          command?: string[];
+          consumed_by?: NonNullable<Json>;
+          cwd?: string;
+          devbox_run_id?: string | null;
+          device_id?: string | null;
+          fence?: number | null;
+          history?: NonNullable<Json>;
+          lease_id?: string | null;
+          priority?: number;
+          published_at?: string;
+          published_by?: string;
+          purpose?: string;
+          queued_at?: string;
+          replica?: number;
+          request_id?: string;
+          requester?: NonNullable<Json>;
+          result?: Json | null;
+          revision?: number;
+          run_id?: string;
+          source_id?: string;
+          source_repo?: string;
+          source_sha?: string;
+          state?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'balancer_runs_devbox_run_id_fkey';
+            columns: ['devbox_run_id'];
+            isOneToOne: false;
+            referencedRelation: 'devbox_runs';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       calendar_event_participant_groups: {
         Row: {
           created_at: string | null;
@@ -2659,6 +2749,31 @@ export type Database = {
           generations?: NonNullable<Json>;
           id?: string;
           ws_id?: string;
+        };
+        Relationships: [];
+      };
+      calendar_oauth_state_nonces: {
+        Row: {
+          consumed_at: string;
+          expires_at: string;
+          nonce: string;
+          provider: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          consumed_at?: string;
+          expires_at: string;
+          nonce: string;
+          provider: string;
+          user_id: string;
+        };
+        Update: {
+          consumed_at?: string;
+          expires_at?: string;
+          nonce?: string;
+          provider?: string;
+          user_id?: string;
         };
         Relationships: [];
       };
@@ -3452,6 +3567,100 @@ export type Database = {
           },
         ];
       };
+      chat_reaction_operations: {
+        Row: {
+          actor_user_id: string;
+          conversation_id: string;
+          created_at: string;
+          emoji: string;
+          message_id: string;
+          op_id: string;
+          present: boolean;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          actor_user_id: string;
+          conversation_id: string;
+          created_at?: string;
+          emoji: string;
+          message_id: string;
+          op_id: string;
+          present: boolean;
+          ws_id: string;
+        };
+        Update: {
+          actor_user_id?: string;
+          conversation_id?: string;
+          created_at?: string;
+          emoji?: string;
+          message_id?: string;
+          op_id?: string;
+          present?: boolean;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'chat_reaction_operations_actor_user_id_fkey';
+            columns: ['actor_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'chat_reaction_operations_actor_user_id_fkey';
+            columns: ['actor_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'chat_reaction_operations_conversation_id_fkey';
+            columns: ['conversation_id'];
+            isOneToOne: false;
+            referencedRelation: 'chat_conversations';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'chat_reaction_operations_message_id_fkey';
+            columns: ['message_id'];
+            isOneToOne: false;
+            referencedRelation: 'chat_messages';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      chat_retired_reaction_operations: {
+        Row: {
+          actor_user_id: string;
+          op_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          actor_user_id: string;
+          op_id: string;
+        };
+        Update: {
+          actor_user_id?: string;
+          op_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'chat_retired_reaction_operations_actor_user_id_fkey';
+            columns: ['actor_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'chat_retired_reaction_operations_actor_user_id_fkey';
+            columns: ['actor_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
       cross_app_tokens: {
         Row: {
           created_at: string;
@@ -4116,6 +4325,36 @@ export type Database = {
           },
         ];
       };
+      devbox_run_event_cursors: {
+        Row: {
+          last_seq: number;
+          legacy_numbered: number;
+          legacy_rows: number;
+          run_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          last_seq?: number;
+          legacy_numbered?: number;
+          legacy_rows?: number;
+          run_id: string;
+        };
+        Update: {
+          last_seq?: number;
+          legacy_numbered?: number;
+          legacy_rows?: number;
+          run_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'devbox_run_event_cursors_run_id_fkey';
+            columns: ['run_id'];
+            isOneToOne: true;
+            referencedRelation: 'devbox_runs';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       devbox_run_events: {
         Row: {
           created_at: string;
@@ -4124,6 +4363,7 @@ export type Database = {
           message: string | null;
           metadata: NonNullable<Json>;
           run_id: string;
+          seq: number | null;
         };
         ComputedFields: never;
         Insert: {
@@ -4133,6 +4373,7 @@ export type Database = {
           message?: string | null;
           metadata?: NonNullable<Json>;
           run_id: string;
+          seq?: number | null;
         };
         Update: {
           created_at?: string;
@@ -4141,6 +4382,7 @@ export type Database = {
           message?: string | null;
           metadata?: NonNullable<Json>;
           run_id?: string;
+          seq?: number | null;
         };
         Relationships: [
           {
@@ -4190,6 +4432,7 @@ export type Database = {
           actor_id: string;
           capabilities: NonNullable<Json>;
           created_at: string;
+          drain_requested_at: string | null;
           enabled_features: NonNullable<Json>;
           heartbeat_enabled: boolean;
           id: string;
@@ -4204,6 +4447,7 @@ export type Database = {
           actor_id: string;
           capabilities?: NonNullable<Json>;
           created_at?: string;
+          drain_requested_at?: string | null;
           enabled_features?: NonNullable<Json>;
           heartbeat_enabled?: boolean;
           id?: string;
@@ -4217,6 +4461,7 @@ export type Database = {
           actor_id?: string;
           capabilities?: NonNullable<Json>;
           created_at?: string;
+          drain_requested_at?: string | null;
           enabled_features?: NonNullable<Json>;
           heartbeat_enabled?: boolean;
           id?: string;
@@ -4253,6 +4498,7 @@ export type Database = {
           env_files: string[];
           exit_code: number | null;
           id: string;
+          idempotency_key: string | null;
           lease_id: string;
           preview_ports: number[];
           runner_id: string | null;
@@ -4272,6 +4518,7 @@ export type Database = {
           env_files?: string[];
           exit_code?: number | null;
           id?: string;
+          idempotency_key?: string | null;
           lease_id: string;
           preview_ports?: number[];
           runner_id?: string | null;
@@ -4290,6 +4537,7 @@ export type Database = {
           env_files?: string[];
           exit_code?: number | null;
           id?: string;
+          idempotency_key?: string | null;
           lease_id?: string;
           preview_ports?: number[];
           runner_id?: string | null;
@@ -12671,6 +12919,28 @@ export type Database = {
         };
         Relationships: [];
       };
+      mfa_verification_failures: {
+        Row: {
+          failed_count: number;
+          scope_key: string;
+          user_id: string;
+          window_started_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          failed_count?: number;
+          scope_key: string;
+          user_id: string;
+          window_started_at?: string;
+        };
+        Update: {
+          failed_count?: number;
+          scope_key?: string;
+          user_id?: string;
+          window_started_at?: string;
+        };
+        Relationships: [];
+      };
       mind_ai_messages: {
         Row: {
           board_id: string | null;
@@ -20377,6 +20647,10 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: Json;
       };
+      backfill_devbox_run_event_seq: {
+        Args: { p_max_rows?: number };
+        Returns: number;
+      };
       backfill_inventory_finance_sales: {
         Args: { p_ws_id?: string };
         Returns: number;
@@ -20747,6 +21021,15 @@ export type Database = {
         };
         Returns: Json;
       };
+      chat_get_reaction_message: {
+        Args: {
+          p_actor_user_id: string;
+          p_conversation_id: string;
+          p_message_id: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       chat_is_actor_personal_workspace: {
         Args: { p_actor_user_id: string; p_ws_id: string };
         Returns: boolean;
@@ -20853,6 +21136,10 @@ export type Database = {
         };
         Returns: Json;
       };
+      chat_retire_reaction_operations: {
+        Args: { p_actor_user_id: string; p_op_ids: string[] };
+        Returns: Json;
+      };
       chat_revoke_friend_request: {
         Args: {
           p_actor_user_id: string;
@@ -20899,6 +21186,18 @@ export type Database = {
           p_conversation_id: string;
           p_reply_to_message_id?: string;
           p_request_id: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      chat_set_reaction: {
+        Args: {
+          p_actor_user_id: string;
+          p_conversation_id: string;
+          p_emoji: string;
+          p_message_id: string;
+          p_op_id: string;
+          p_present: boolean;
           p_ws_id: string;
         };
         Returns: Json;
@@ -20958,6 +21257,14 @@ export type Database = {
           p_retention_seconds?: number;
         };
         Returns: Json;
+      };
+      claim_email_invite_notifications_for: {
+        Args: {
+          p_email: string;
+          p_email_confirmed_at: string;
+          p_user_id: string;
+        };
+        Returns: undefined;
       };
       claim_next_devbox_run: {
         Args: { p_runner_id: string };
@@ -21040,6 +21347,10 @@ export type Database = {
         }[];
       };
       cleanup_rate_limits: { Args: { p_retention?: string }; Returns: number };
+      clear_notification_email_copy_batch: {
+        Args: { p_batch_size?: number };
+        Returns: number;
+      };
       cloudflare_channel_role: {
         Args: { p_actor: string; p_topic: string };
         Returns: string;
@@ -21191,6 +21502,15 @@ export type Database = {
           override_id: string;
           token_id: string;
         }[];
+      };
+      consume_calendar_oauth_state_nonce: {
+        Args: {
+          p_expires_at: string;
+          p_nonce: string;
+          p_provider: string;
+          p_user_id: string;
+        };
+        Returns: boolean;
       };
       consume_inventory_checkout_stock: {
         Args: { p_checkout_id: string; p_now?: string; p_ws_id: string };
@@ -21506,6 +21826,24 @@ export type Database = {
       detect_wallet_interest_transactions: {
         Args: { _actor_id: string; _wallet_id: string; _ws_id: string };
         Returns: Json;
+      };
+      devbox_run_idempotency_ready: {
+        Args: Record<PropertyKey, never>;
+        Returns: boolean;
+      };
+      devbox_runner_activity: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          active_leases: number;
+          kept_leases: number;
+          queued_runs: number;
+          runner_id: string;
+          running_runs: number;
+        }[];
+      };
+      devbox_runner_supports_commit_run: {
+        Args: { p_capabilities: Json; p_features: Json };
+        Returns: boolean;
       };
       discard_uninitialized_playground: {
         Args: { p_actor_id: string; p_id: string };
@@ -23756,9 +24094,14 @@ export type Database = {
         };
         Returns: Json;
       };
+      prune_cron_history: { Args: { p_limit?: number }; Returns: Json };
       prune_discord_interaction_claims: {
         Args: { p_limit?: number };
         Returns: number;
+      };
+      publish_balancer_run: {
+        Args: { p_publisher: string; p_run: Json };
+        Returns: boolean;
       };
       publish_learn_playground: {
         Args: {
@@ -24169,6 +24512,10 @@ export type Database = {
           pending_count: number;
           rejected_count: number;
         }[];
+      };
+      set_devbox_runner_drain: {
+        Args: { p_draining: boolean; p_runner_id: string };
+        Returns: string;
       };
       set_devbox_runner_feature: {
         Args: { p_enabled: boolean; p_feature: string; p_runner_id: string };
@@ -26205,6 +26552,8 @@ export type Database = {
           account_email: string | null;
           account_name: string | null;
           created_at: string;
+          deactivated_at: string | null;
+          deactivated_reason: string | null;
           expires_at: string | null;
           id: string;
           is_active: boolean;
@@ -26219,6 +26568,8 @@ export type Database = {
           account_email?: string | null;
           account_name?: string | null;
           created_at?: string;
+          deactivated_at?: string | null;
+          deactivated_reason?: string | null;
           expires_at?: string | null;
           id?: string;
           is_active?: boolean;
@@ -26232,6 +26583,8 @@ export type Database = {
           account_email?: string | null;
           account_name?: string | null;
           created_at?: string;
+          deactivated_at?: string | null;
+          deactivated_reason?: string | null;
           expires_at?: string | null;
           id?: string;
           is_active?: boolean;
@@ -42855,6 +43208,94 @@ export type Database = {
           },
         ];
       };
+      workspace_habit_tracker_entry_receipts: {
+        Row: {
+          created_at: string;
+          entry_id: string | null;
+          idempotency_key: string;
+          request_hash: string;
+          tracker_id: string;
+          user_id: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          entry_id?: string | null;
+          idempotency_key: string;
+          request_hash: string;
+          tracker_id: string;
+          user_id: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          entry_id?: string | null;
+          idempotency_key?: string;
+          request_hash?: string;
+          tracker_id?: string;
+          user_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_habit_tracker_entry_receipts_entry_id_fkey';
+            columns: ['entry_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_habit_tracker_entries';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_habit_tracker_entry_receipts_tracker_id_fkey';
+            columns: ['tracker_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_habit_trackers';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_habit_tracker_entry_receipts_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_habit_tracker_entry_receipts_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_habit_tracker_entry_receipts_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_habit_tracker_entry_receipts_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'workspace_habit_tracker_entry_receipts_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_habit_tracker_entry_receipts_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_habit_tracker_streak_actions: {
         Row: {
           action_type: string;
@@ -42971,6 +43412,7 @@ export type Database = {
           composer_mode: string;
           created_at: string;
           created_by: string | null;
+          creation_key: string | null;
           description: string | null;
           freeze_allowance: number;
           icon: string;
@@ -43000,6 +43442,7 @@ export type Database = {
           composer_mode?: string;
           created_at?: string;
           created_by?: string | null;
+          creation_key?: string | null;
           description?: string | null;
           freeze_allowance?: number;
           icon?: string;
@@ -43028,6 +43471,7 @@ export type Database = {
           composer_mode?: string;
           created_at?: string;
           created_by?: string | null;
+          creation_key?: string | null;
           description?: string | null;
           freeze_allowance?: number;
           icon?: string;
@@ -48748,6 +49192,10 @@ export type Database = {
         Args: { user_id: string };
         Returns: number;
       };
+      get_current_user_email: {
+        Args: Record<PropertyKey, never>;
+        Returns: string;
+      };
       get_daily_activity_heatmap: {
         Args: { p_days_back?: number; p_user_id?: string; p_ws_id: string };
         Returns: Json;
@@ -49977,7 +50425,6 @@ export type Database = {
           user_count: number;
         }[];
       };
-      get_user_email: { Args: { p_user_id: string }; Returns: string };
       get_user_group_metrics_count: {
         Args: { ws_id: string };
         Returns: number;
@@ -50580,6 +51027,7 @@ export type Database = {
         Args: { secret_name: string; ws_id: string };
         Returns: boolean;
       };
+      hook_mfa_verification_attempt: { Args: { event: Json }; Returns: Json };
       insert_ai_chat_message: {
         Args: { chat_id: string; message: string; source: string };
         Returns: undefined;
@@ -51090,6 +51538,16 @@ export type Database = {
         Args: { p_operation_id: string; p_user_id: string };
         Returns: Json;
       };
+      quarantine_calendar_auth_token: {
+        Args: {
+          p_credential_fingerprint: string;
+          p_observed_created_at: string;
+          p_reason: string;
+          p_token_id: string;
+          p_ws_id: string;
+        };
+        Returns: string;
+      };
       reattach_platform_entity_creation_limit_trigger: {
         Args: { p_target_table: string };
         Returns: undefined;
@@ -51131,6 +51589,26 @@ export type Database = {
           p_raw_notification?: Json;
         };
         Returns: string;
+      };
+      record_habit_tracker_entry_with_receipt: {
+        Args: {
+          p_entry_date: string;
+          p_entry_kind: string;
+          p_idempotency_key: string;
+          p_note: string;
+          p_occurred_at: string;
+          p_primary_value: number;
+          p_request_hash: string;
+          p_tags: string[];
+          p_tracker_id: string;
+          p_user_id: string;
+          p_values: Json;
+          p_ws_id: string;
+        };
+        Returns: {
+          entry_id: string;
+          replayed: boolean;
+        }[];
       };
       record_mira_interaction: {
         Args: { p_user_id: string };

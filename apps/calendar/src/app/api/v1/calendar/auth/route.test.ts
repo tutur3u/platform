@@ -54,7 +54,19 @@ vi.mock('@/lib/workspace-helper', () => ({
   normalizeWorkspaceId: normalizeWorkspaceIdMock,
 }));
 
+import {
+  deriveCalendarOAuthPkce,
+  verifyCalendarOAuthState,
+} from '@/lib/calendar/calendar-oauth-state';
 import { GET } from './route';
+
+// Quarantined Google accounts for the caller, as the route reads them.
+function sessionClient(quarantined: unknown[] = []) {
+  const query: Record<string, unknown> = {};
+  for (const method of ['select', 'eq', 'not']) query[method] = () => query;
+  query.limit = async () => ({ data: quarantined, error: null });
+  return { from: () => query };
+}
 
 describe('Google Calendar auth route', () => {
   beforeEach(() => {
@@ -67,10 +79,37 @@ describe('Google Calendar auth route', () => {
     normalizeWorkspaceIdMock.mockResolvedValue('workspace-1');
     resolveSessionAuthContextMock.mockResolvedValue({
       ok: true,
-      supabase: {},
+      supabase: sessionClient(),
       user: { id: 'user-1' },
     });
     verifyWorkspaceMembershipTypeMock.mockResolvedValue({ ok: true });
+  });
+
+  it('forces consent when the reconnect prompt asks for it', async () => {
+    const response = await GET(
+      new NextRequest(
+        'https://tuturuuu.com/api/v1/calendar/auth?wsId=personal&reconnect=1'
+      )
+    );
+    const { authUrl } = (await response.json()) as { authUrl: string };
+    expect(new URL(authUrl).searchParams.get('prompt')).toBe('consent');
+  });
+
+  it('forces consent only when reconnecting a quarantined account', async () => {
+    resolveSessionAuthContextMock.mockResolvedValue({
+      ok: true,
+      supabase: sessionClient([{ id: 'quarantined' }]),
+      user: { id: 'user-1' },
+    });
+    const response = await GET(
+      new NextRequest('https://tuturuuu.com/api/v1/calendar/auth?wsId=personal')
+    );
+    const { authUrl } = (await response.json()) as { authUrl: string };
+    expect(new URL(authUrl).searchParams.get('prompt')).toBe('consent');
+    expect(generatedAuthUrlInputs[0]).toMatchObject({
+      access_type: 'offline',
+      prompt: 'consent',
+    });
   });
 
   it.each(['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'] as const)(
@@ -92,6 +131,44 @@ describe('Google Calendar auth route', () => {
       expect(oauthConstructors).toHaveLength(0);
     }
   );
+
+  it('starts in production with no Calendar, Web, redirect or Upstash env vars', async () => {
+    vi.resetModules();
+    vi.stubEnv('NODE_ENV', 'production');
+    for (const key of [
+      'CALENDAR_APP_URL',
+      'NEXT_PUBLIC_CALENDAR_APP_URL',
+      'BASE_URL',
+      'GOOGLE_REDIRECT_URI',
+      'WEB_APP_URL',
+      'NEXT_PUBLIC_WEB_APP_URL',
+      'NEXT_PUBLIC_APP_URL',
+      'UPSTASH_REDIS_REST_URL',
+      'UPSTASH_REDIS_REST_TOKEN',
+    ]) {
+      vi.stubEnv(key, '');
+    }
+    const { GET: productionGET } = await import('./route');
+
+    const response = await productionGET(
+      new NextRequest(
+        'https://attacker.example/api/v1/calendar/auth?wsId=personal',
+        {
+          headers: {
+            host: 'attacker.example',
+            'x-forwarded-host': 'attacker.example',
+            'x-forwarded-proto': 'https',
+          },
+        }
+      )
+    );
+    const body = (await response.json()) as { authUrl: string };
+
+    expect(response.status).toBe(200);
+    expect(new URL(body.authUrl).searchParams.get('redirect_uri')).toBe(
+      'https://calendar.tuturuuu.com/api/v1/calendar/auth/callback'
+    );
+  });
 
   it('does not emit 0.0.0.0 in the Google redirect URI', async () => {
     vi.stubEnv(
@@ -146,8 +223,41 @@ describe('Google Calendar auth route', () => {
     expect(generatedAuthUrlInputs[0]).toMatchObject({
       access_type: 'offline',
       include_granted_scopes: true,
-      state: 'workspace-1',
     });
     expect(generatedAuthUrlInputs[0]).not.toHaveProperty('prompt');
+  });
+
+  it('issues a signed state bound to the initiating user and workspace', async () => {
+    const response = await GET(
+      new NextRequest('https://tuturuuu.com/api/v1/calendar/auth?wsId=personal')
+    );
+    const body = (await response.json()) as { authUrl: string };
+    const state = new URL(body.authUrl).searchParams.get('state');
+
+    expect(response.status).toBe(200);
+    expect(state).not.toBe('workspace-1');
+    const verified = verifyCalendarOAuthState(
+      'google',
+      state,
+      'google-client-secret'
+    );
+    expect(verified).toMatchObject({
+      ok: true,
+      userId: 'user-1',
+      wsId: 'workspace-1',
+    });
+    if (!verified.ok) throw new Error('expected a verified state');
+    expect(generatedAuthUrlInputs[0]).toMatchObject({
+      code_challenge: deriveCalendarOAuthPkce(
+        'google',
+        verified.nonce,
+        'google-client-secret'
+      ).codeChallenge,
+      code_challenge_method: 'S256',
+    });
+    expect(verifyCalendarOAuthState('google', state, 'other-secret')).toEqual({
+      ok: false,
+      reason: 'signature',
+    });
   });
 });

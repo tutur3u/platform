@@ -1,11 +1,13 @@
 import 'dart:async';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/repositories/notification_push_repository.dart';
 import 'package:mobile/features/notifications/push/push_notification_service.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:timezone/timezone.dart' as tz;
 
 class _Messaging extends Mock implements FirebaseMessaging {}
 
@@ -68,6 +70,8 @@ void main() {
     subscription = service.events.listen(events.add);
   });
   setUpAll(() {
+    registerFallbackValue(tz.TZDateTime.utc(2030));
+    registerFallbackValue(AndroidScheduleMode.inexactAllowWhileIdle);
     registerFallbackValue(const InitializationSettings());
     registerFallbackValue(const NotificationDetails());
   });
@@ -75,6 +79,53 @@ void main() {
     await service.dispose();
     await subscription.cancel();
     unawaited(messages.close());
+  });
+
+  test('reminders schedule in the native Asia/Saigon location', () async {
+    const channel = MethodChannel('flutter_timezone');
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          ..setMockMethodCallHandler(channel, (_) async => 'Asia/Saigon');
+    addTearDown(() {
+      messenger.setMockMethodCallHandler(channel, null);
+      tz.setLocalLocation(tz.UTC);
+    });
+    final scheduled = <tz.TZDateTime>[];
+    when(
+      () => local.zonedSchedule(
+        id: any(named: 'id'),
+        scheduledDate: any(named: 'scheduledDate'),
+        title: any(named: 'title'),
+        body: any(named: 'body'),
+        payload: any(named: 'payload'),
+        notificationDetails: any(named: 'notificationDetails'),
+        androidScheduleMode: any(named: 'androidScheduleMode'),
+      ),
+    ).thenAnswer((call) async {
+      scheduled.add(call.namedArguments[#scheduledDate] as tz.TZDateTime);
+    });
+    gate.complete();
+    final instant = DateTime.utc(2030, 1, 1, 20);
+    for (var id = 1; id <= 2; id++) {
+      await service.scheduleLocalReminder(
+        id: id,
+        scheduledAt: instant,
+        title: 'Reminder',
+        body: 'Body',
+        request: const PushNavigationRequest(
+          notificationId: 'test',
+          openTarget: 'calendar',
+        ),
+      );
+    }
+    expect(scheduled, hasLength(2));
+    for (final date in scheduled) {
+      expect(date.location.name, 'Asia/Saigon');
+      expect(date.timeZoneOffset, const Duration(hours: 7));
+      expect(date.toUtc(), instant);
+      expect(date.day, 2);
+      expect(date.hour, 3);
+    }
   });
 
   test('overlapping startup installs one foreground receiver '

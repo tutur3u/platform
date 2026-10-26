@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/internal-api",
-  "version": "0.54.0",
+  "version": "0.55.0",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -8,6 +8,7 @@
     "directory": "packages/internal-api"
   },
   "main": "./dist/index.js",
+  "sideEffects": false,
   "types": "./dist/index.d.ts",
   "files": ["dist", "README.md"],
   "publishConfig": {
@@ -142,6 +143,11 @@
       "import": "./dist/finance-reconciliation.js",
       "require": "./dist/finance-reconciliation.js"
     },
+    "./habit-trackers": {
+      "types": "./dist/habit-trackers.d.ts",
+      "import": "./dist/habit-trackers.js",
+      "require": "./dist/habit-trackers.js"
+    },
     "./hive": {
       "types": "./dist/hive.d.ts",
       "import": "./dist/hive.js",
@@ -221,6 +227,11 @@
       "types": "./dist/personal-journal.d.ts",
       "import": "./dist/personal-journal.js",
       "require": "./dist/personal-journal.js"
+    },
+    "./nova": {
+      "types": "./dist/nova.d.ts",
+      "import": "./dist/nova.js",
+      "require": "./dist/nova.js"
     },
     "./onboarding": {
       "types": "./dist/onboarding.d.ts",
@@ -401,6 +412,16 @@
       "types": "./dist/sso.d.ts",
       "import": "./dist/sso.js",
       "require": "./dist/sso.js"
+    },
+    "./native-integrity": {
+      "types": "./dist/native-integrity.d.ts",
+      "import": "./dist/native-integrity.js",
+      "require": "./dist/native-integrity.js"
+    },
+    "./calendar-settings-server": {
+      "types": "./dist/calendar-settings-server.d.ts",
+      "import": "./dist/calendar-settings-server.js",
+      "require": "./dist/calendar-settings-server.js"
     }
   },
   "devDependencies": {
@@ -409,11 +430,12 @@
     "typescript": "7.0.2",
     "vitest": "^5.0.5"
   },
-  "packageManager": "bun@1.4.3",
+  "packageManager": "bun@1.4.4",
   "dependencies": {
     "@tuturuuu/realtime": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*",
+    "cbor-x": "1.6.0",
     "zod": "4.6.7"
   }
 }

@@ -207,7 +207,26 @@ isolated disposable Supabase database, requires every assertion in
 `security-egress-budgets.sql` and `security-budget-entitlements.sql` to pass, and checks five concurrent database clients
 accept exactly 50 of 100 reservations against a shared allowance of 50. The job
 also generates Supabase types and uploads them as an artifact for the exact PR
-commit. CI must pass before merging; production migration application and
+commit. Run the verifier against the complete migration chain rather than a reduced
+schema. Role fixtures must preserve existing table grants: notification access
+is server-owned, so authenticated direct reads and writes must assert SQLSTATE
+`42501`, while helper and sync RPC checks run as their supported caller roles.
+Clear JWT claims before privileged signup setup: `RESET ROLE` alone preserves
+`request.jwt.claims`, so signup triggers can inherit an earlier test caller.
+CI must pass before merging; production migration application and
 activation remain separate from merging this change. Public asset metadata also
 rewrites nested Supabase provenance URLs to the asset API path to avoid exposing
 a second direct download route.
+
+## Object key transport
+
+Storage object names remain logical strings in metadata and duplicate-name
+queries. At Supabase URL-based upload boundaries, pass object keys through
+`encodeStoragePath` from `@tuturuuu/utils/storage-path` exactly once. Preserve
+path separators while encoding each segment; literal `%41`, `?`, `#`, and
+Vietnamese NFC/NFD filenames must address the same object on write and read.
+Return logical paths to callers rather than the SDK's encoded transport path.
+This applies to web and Rewise chat uploads and the Nova, Rewise, and shared
+`uploadObject` helpers. Regression coverage uses the installed Supabase SDK
+against a synthetic fetch transport in `chat-panel-upload.test.ts` and
+`storage-client-uploads.test.ts` under `apps/web/src/components`.

@@ -3005,6 +3005,14 @@
     "finalized": "Đã chốt",
     "guest": "Khách",
     "guest_account": "Tài khoản khách",
+    "guest_password_reset_description": "Nhập đúng tên khách dùng để đăng nhập. Chỉ có thể thay mật khẩu được đánh dấu cần đặt lại. Lịch rảnh và phiếu bầu được giữ nguyên; hãy gửi riêng mật khẩu mới cho khách.",
+    "guest_password_reset_failed": "Không thể đặt lại mật khẩu khách. Chỉ người tạo kế hoạch mới có thể đặt lại. Hãy tải lại kế hoạch và thử lại.",
+    "guest_password_reset_guest": "Tên khách",
+    "guest_password_reset_new_password": "Mật khẩu khách mới",
+    "guest_password_reset_not_required": "Mật khẩu của khách này không cần đặt lại.",
+    "guest_password_reset_required": "Mật khẩu khách này phải được đặt lại. Hãy nhờ người tạo kế hoạch đặt mật khẩu mới, rồi đăng nhập lại. Bạn cũng có thể dùng tài khoản Tuturuuu hoặc tên khách mới.",
+    "guest_password_reset_success": "Đã đặt lại mật khẩu. Khách có thể đăng nhập bằng mật khẩu mới.",
+    "guest_password_reset_title": "Đặt lại mật khẩu khách",
     "hourly_availability": "Mức độ rảnh theo giờ",
     "hourly_availability_description": "Mức độ chắc chắn và dự kiến trên các ngày đề xuất.",
     "identity_protection": "Bảo vệ danh tính",
@@ -3065,6 +3073,8 @@
     "tentative": "Có thể",
     "timeblocks": "Khung giờ",
     "times": "Thời gian",
+    "too_many_attempts": "Quá nhiều lần thử không thành công. Vui lòng thử lại sau {minutes} phút.",
+    "too_many_join_attempts": "Quá nhiều lần thử tham gia. Vui lòng thử lại sau {minutes} phút.",
     "tuturuuu_account": "Tài khoản Tuturuuu",
     "tuturuuu_meet": "Tuturuuu Meet",
     "unavailable": "Không rảnh",
@@ -3139,6 +3149,12 @@
       "enable": "Bật thông báo",
       "permission-denied": "Thông báo trình duyệt đã bị chặn. Vui lòng bật trong cài đặt trình duyệt.",
       "permission-request": "Bật thông báo trình duyệt để cập nhật"
+    },
+    "codes": {
+      "calendar_reconnect_required": {
+        "description": "Đồng bộ lịch đã tạm dừng vì nhà cung cấp không còn chấp nhận quyền truy cập. Hãy kết nối lại tài khoản để tiếp tục.",
+        "title": "Kết nối lại lịch của bạn"
+      }
     },
     "date_earlier": "Trước đó",
     "date_this_week": "Tuần này",
@@ -3344,6 +3360,7 @@
     "unread-count": "{{count}} chưa đọc",
     "unread-only": "Chỉ hiện chưa đọc",
     "unresolved-inquiries": "Yêu cầu chưa xử lý",
+    "update-error": "Không thể cập nhật thông báo",
     "updates": "cập nhật",
     "updating": "Đang cập nhật...",
     "view_changes": "Xem thay đổi",
@@ -10259,5 +10276,33 @@
     "try_different_search_term": "Thử từ khóa tìm kiếm khác",
     "wallet": "Phương thức thanh toán",
     "wallet_deleted": "Đã xóa ví thành công"
+  },
+  "satellite-account-settings": {
+    "email_managed_centrally": "Việc đổi email cần được xác nhận, nên bạn thực hiện trong phần cài đặt tài khoản Tuturuuu.",
+    "title": "Tài khoản",
+    "preferences": "Tùy chọn",
+    "profile": "Hồ sơ",
+    "profile_description": "Quản lý tên, ảnh đại diện và email của bạn",
+    "accounts": "Các tài khoản",
+    "accounts_description": "Quản lý nhiều tài khoản và chuyển đổi giữa chúng",
+    "security": "Bảo mật",
+    "security_description": "Mật khẩu, xác thực hai lớp, passkey và phương thức đăng nhập",
+    "sessions": "Phiên & Thiết bị",
+    "sessions_description": "Quản lý các phiên đăng nhập và thiết bị đang hoạt động",
+    "appearance": "Giao diện",
+    "appearance_description": "Chủ đề và ngôn ngữ",
+    "managed_centrally_title": "Được quản lý trong tài khoản Tuturuuu của bạn",
+    "managed_centrally_description": "Để bảo vệ bạn, các thay đổi về {section} được thực hiện trong Tuturuuu, nơi có thể yêu cầu bạn xác minh danh tính. Thay đổi sẽ áp dụng cho mọi ứng dụng Tuturuuu.",
+    "signed_in_as": "Đang đăng nhập với {email}",
+    "open_in_tuturuuu": "Mở trong Tuturuuu",
+    "accounts_switch": "Chuyển đổi giữa các tài khoản đã đăng nhập",
+    "accounts_add": "Thêm tài khoản khác",
+    "accounts_remove": "Xóa một tài khoản khỏi trình duyệt này",
+    "security_password": "Đổi hoặc đặt lại mật khẩu",
+    "security_two_factor": "Xác thực hai lớp bằng ứng dụng xác thực",
+    "security_passkeys": "Passkey",
+    "security_linked_identities": "Phương thức đăng nhập đã liên kết",
+    "sessions_devices": "Xem mọi thiết bị đang đăng nhập vào tài khoản của bạn",
+    "sessions_revoke": "Đăng xuất khỏi các thiết bị khác"
   }
 }

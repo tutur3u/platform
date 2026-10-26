@@ -55,6 +55,37 @@ final class ApiMutationNotDispatched extends ApiException {
 }
 
 extension _ApiClientMutations on ApiClient {
+  Future<Map<String, dynamic>> _putJsonOperation(
+    String path,
+    Map<String, dynamic> body,
+    ApiMutationAdmission admission,
+    Future<void> Function(Map<String, dynamic>) onAcknowledged,
+  ) async {
+    Future<Map<String, dynamic>> operation() async {
+      admission.check();
+      final headers = await _getHeaders(contentType: 'application/json');
+      _checkRequestUser(admission.actorId);
+      admission.check();
+      final request = http.Request('PUT', _url(path))
+        ..headers.addAll(headers)
+        ..body = jsonEncode(body);
+      admission.recordDispatchPossible();
+      final response = await http.Response.fromStream(
+        await _client.send(request),
+      );
+      final receipt = _handleResponse(response);
+      // The original operation owns cleanup even after UI departure or timeout.
+      await onAcknowledged(receipt);
+      return receipt;
+    }
+
+    try {
+      return await operation().timeout(_requestTimeout);
+    } on Object catch (error, stack) {
+      Error.throwWithStackTrace(admission.preparationFailure(error), stack);
+    }
+  }
+
   /// Native mutations dispatch once without auth or challenge response replay.
   Future<http.StreamedResponse> _sendJsonStreamAcknowledged(
     String method,
@@ -102,6 +133,11 @@ extension _ApiClientMutations on ApiClient {
     Map<String, dynamic> body, {
     bool requiresAuth = true,
   }) async {
+    if (requiresAuth && NativeIntegrityClient.protects(path)) {
+      return _handleResponse(
+        await _requestWithIntegrity('PATCH', path, body: jsonEncode(body)),
+      );
+    }
     final url = _url(path);
 
     final response = await _performRequest(

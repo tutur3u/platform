@@ -208,7 +208,8 @@ When including code examples:
 ### Mintlify runtime compatibility
 
 The docs wrapper pins Node 24.19.0 alongside Mintlify in
-`apps/docs/mintlify-version.json`. Other host versions use an isolated `npx`
+`apps/docs/mintlify-version.json`, independent of the repository `.node-version`
+pin (see [Node.js runtime pin](/build/development-tools/node-runtime)). Other host versions use an isolated `npx`
 Node executable; the host installation is unchanged. Got 12.6.1, used by the
 pinned CLI's connectivity probe, can schedule a retry after rejection on Node
 24.20+ and crash before validation reports an MDX result. The compatibility pin

@@ -3,6 +3,7 @@ on:
   workflow_call:
   workflow_dispatch:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
     paths:
       [
         'apps/apps/**',
@@ -15,6 +16,7 @@ on:
         'packages/realtime/**',
         'packages/storage-core/**',
         'packages/turnstile/**',
+        'packages/start-bridge/**',
         'packages/auth/**',
         'packages/satellite/**',
         'packages/internal-api/**',
@@ -62,6 +64,7 @@ on:
         'packages/realtime/**',
         'packages/storage-core/**',
         'packages/turnstile/**',
+        'packages/start-bridge/**',
         'packages/auth/**',
         'packages/satellite/**',
         'packages/internal-api/**',
@@ -102,6 +105,7 @@ concurrency:
   cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 jobs:
   check-ci:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     uses: ./.github/workflows/ci-check.yml
     permissions:
       contents: read
@@ -117,14 +121,14 @@ jobs:
       APPS_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       WRANGLER_SEND_METRICS: 'false'
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ env.APPS_SOURCE_SHA }}
           persist-credentials: false
       - uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+          bun-version: 1.4.4
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24.22.0
       - name: Verify immutable checkout identity
@@ -150,11 +154,13 @@ jobs:
       - name: Test exact emitter resource guard and fixture egress policy
         working-directory: apps/apps
         run: node --test cloudflare/native-runtime-fence.test.mjs
+      - name: Reject unregistered App Router routes and pages
+        run: bun packages/start-bridge/src/codegen/cli.ts check apps/apps
       - name: Test actual native app boundaries
         working-directory: apps/apps
         run: bun run test:cloudflare
       - name: Check native owning source and fixture formatting
-        run: bun x --no-install biome check apps/apps/src/native apps/apps/src/router.tsx apps/apps/src/routes apps/apps/src/components/apps-catalog-card.tsx apps/apps/cloudflare/worker.ts apps/apps/cloudflare/native-artifact-functions.mjs apps/apps/cloudflare/native-artifact-functions.test.mjs apps/apps/cloudflare/native-built-worker.test.mjs apps/apps/cloudflare/native-runtime-fence.mjs apps/apps/cloudflare/native-runtime-fence.test.mjs apps/apps/cloudflare/native-browser-navigation.mjs apps/apps/cloudflare/native-browser-fence.mjs apps/apps/cloudflare/native-browser-fence.test.mjs scripts/ci/apps-native-browser-fence.runtime.mjs apps/apps/cloudflare/native-route-fixtures.json apps/apps/vite.config.mts apps/apps/void.config.ts apps/apps/vitest.config.ts apps/apps/tsconfig.json apps/apps/package.json scripts/ci/apps-native-browser.runtime.mjs scripts/ci/apps-native-runtime-pointer.mjs scripts/ci/apps-native-runtime-pointer.test.mjs scripts/ci/apps-native-runtime-plan.mjs scripts/ci/apps-native-runtime.mjs scripts/ci/apps-native-runtime-launcher.mjs scripts/ci/apps-native-runtime.test.mjs scripts/ci/apps-native-runtime-receipt.test.mjs scripts/ci/apps-native-runtime-hidden.test.mjs
+        run: bun x --no-install biome check apps/apps/src/native apps/apps/src/router.tsx apps/apps/src/routes apps/apps/src/components/apps-catalog-card.tsx apps/apps/cloudflare/worker.ts apps/apps/cloudflare/native-artifact-functions.mjs apps/apps/cloudflare/native-artifact-functions.test.mjs apps/apps/cloudflare/native-built-worker.test.mjs apps/apps/cloudflare/native-runtime-fence.mjs apps/apps/cloudflare/native-runtime-fence.test.mjs apps/apps/cloudflare/native-browser-navigation.mjs apps/apps/cloudflare/native-browser-fence.mjs apps/apps/cloudflare/native-browser-fence.test.mjs scripts/ci/apps-native-browser-fence.runtime.mjs apps/apps/cloudflare/native-route-fixtures.json apps/apps/vite.config.mts apps/apps/void.config.ts apps/apps/vitest.config.ts apps/apps/tsconfig.json apps/apps/package.json apps/apps/start-bridge.routes.json scripts/ci/apps-native-browser.runtime.mjs scripts/ci/apps-native-runtime-pointer.mjs scripts/ci/apps-native-runtime-pointer.test.mjs scripts/ci/apps-native-runtime-plan.mjs scripts/ci/apps-native-runtime.mjs scripts/ci/apps-native-runtime-launcher.mjs scripts/ci/apps-native-runtime.test.mjs scripts/ci/apps-native-runtime-receipt.test.mjs scripts/ci/apps-native-runtime-hidden.test.mjs
       - name: Record Apps route tree presence before frontend build
         id: apps-route-tree-before
         shell: bash
@@ -216,7 +222,7 @@ jobs:
           } > "$evidence/source-receipt.txt"
       - name: Retain generated Apps route tree evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: apps-route-tree-${{ env.APPS_SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/apps-route-tree-${{ env.APPS_SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}/
@@ -300,7 +306,7 @@ jobs:
         run: |
           python3 scripts/ci/apps-native-artifact.py verify apps/apps --receipt "$RUNNER_TEMP/apps-native-artifact.json"
           python3 scripts/ci/apps-native-artifact.py pack apps/apps --receipt "$RUNNER_TEMP/apps-native-artifact.json" --archive "$RUNNER_TEMP/apps-native.tar.gz"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: apps-native-${{ env.APPS_SOURCE_SHA }}
           path: ${{ runner.temp }}/apps-native.tar.gz
@@ -351,20 +357,20 @@ jobs:
       APPS_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       WRANGLER_SEND_METRICS: 'false'
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ env.APPS_SOURCE_SHA }}
           persist-credentials: false
       - uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+          bun-version: 1.4.4
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24.22.0
       - name: Verify immutable checkout identity
         run: test "$(git rev-parse HEAD)" = "$APPS_SOURCE_SHA"
       - run: bun install --frozen-lockfile --ignore-scripts
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: apps-native-${{ env.APPS_SOURCE_SHA }}
           path: ${{ runner.temp }}/apps-native-download

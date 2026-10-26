@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.19.0](https://github.com/tutur3u/platform/compare/ai-studio-v0.18.1...ai-studio-v0.19.0) (2026-10-24)
+
+
+### Features
+
+* **satellite:** shared account, profile and security settings in every app ([#6477](https://github.com/tutur3u/platform/issues/6477)) ([2cd0879](https://github.com/tutur3u/platform/commit/2cd087939043a1dd91d1bfecee3337e4122badae))
+
+
+### Bug Fixes
+
+* **auth:** repair account switching and notification access ([#6545](https://github.com/tutur3u/platform/issues/6545)) ([9afff45](https://github.com/tutur3u/platform/commit/9afff45a6c9113999ea750f6b452f94f184e0a11))
+* **security:** harden request-keyed records, push previews and key handoff ([#6521](https://github.com/tutur3u/platform/issues/6521)) ([1c7dfb1](https://github.com/tutur3u/platform/commit/1c7dfb13762c6da6b1935e8ea409aa29dce4c747))
+* **web:** secure notifications and account redirects ([8c597f4](https://github.com/tutur3u/platform/commit/8c597f4f5440b9c66aef93b463811696bceb17e5))
+
 ## [0.18.1](https://github.com/tutur3u/platform/compare/ai-studio-v0.18.0...ai-studio-v0.18.1) (2026-10-17)
 
 

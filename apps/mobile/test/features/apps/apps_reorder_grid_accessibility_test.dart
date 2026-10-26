@@ -5,6 +5,7 @@ import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/apps/models/app_module.dart';
+import 'package:mobile/features/apps/widgets/app_visibility_button.dart';
 import 'package:mobile/features/apps/widgets/apps_reorder_grid.dart';
 
 import '../../helpers/helpers.dart';
@@ -94,6 +95,16 @@ void main() {
         final hide = tester.getSemantics(find.byTooltip('Hide app'));
         expect(hide.id, isNot(icon.id));
         expect(hide.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
+        final tile = tester.getRect(
+          find.byKey(const ValueKey('apps-grid-focus-tasks')),
+        );
+        final visibility = tester.getRect(find.byType(AppVisibilityButton));
+        expect(visibility.width, greaterThanOrEqualTo(48));
+        expect(visibility.height, greaterThanOrEqualTo(48));
+        expect(visibility.left, greaterThanOrEqualTo(tile.left));
+        expect(visibility.right, lessThanOrEqualTo(tile.right));
+        expect(visibility.top, greaterThanOrEqualTo(tile.top));
+        expect(visibility.bottom, lessThanOrEqualTo(tile.bottom));
       }
       handle.dispose();
     });

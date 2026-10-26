@@ -1,13 +1,67 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/data/assistant_personal_settings_repository.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_personal_settings_section.dart';
+import 'package:mobile/features/assistant/widgets/assistant_personality_editor.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
+
 import '../../../helpers/pump_app.dart';
 import '../assistant_personal_settings_harness.dart';
 
+class _RestoringRepository extends SettingsRepository {
+  @override
+  Future<AssistantSoul?> readCachedSoul() async =>
+      const AssistantSoul(name: 'Cached');
+}
+
 void main() {
+  testWidgets(
+    'restored personality stays read-only and unknown memory shows progress',
+    (tester) async {
+      final held = Completer<AssistantPersonalSettingsSnapshot>();
+      final repository = _RestoringRepository()..read = () => held.future;
+      await tester.pumpApp(
+        SingleChildScrollView(
+          child: AssistantPersonalSettingsSection(
+            workspaceId: 'workspace-a',
+            isScopeCurrent: () => true,
+            currentUserId: () => 'actor-a',
+            repository: repository,
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+      final personality = find.byType(AppListTile).first;
+      expect(tester.widget<AppListTile>(personality).enabled, isFalse);
+      await tester.tap(personality);
+      await tester.pump();
+      expect(find.byType(AssistantPersonalityEditor), findsNothing);
+      expect(repository.writes, 0);
+      await tester.tap(find.text('Memory'));
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.byType(NovaLoadingIndicator), findsOneWidget);
+      expect(
+        find.text('Could not complete this change. Try again.'),
+        findsNothing,
+      );
+      expect(find.text('Retry'), findsNothing);
+      held.complete(snapshot);
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<AppListTile>(find.byType(AppListTile).first).enabled,
+        isTrue,
+      );
+      expect(find.byType(NovaLoadingIndicator), findsNothing);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
+
   for (final locale in ['en', 'vi']) {
     testWidgets('$locale edits actual name and personality controls', (
       tester,
@@ -32,20 +86,20 @@ void main() {
         find.byKey(const ValueKey('assistant-personality-name')),
       );
       await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextFormField), 'Nova');
+      await tester.enterText(find.byType(AppTextFormField), 'Nova');
 
       final save = find.text(locale == 'en' ? 'Save' : 'Lưu');
       await tester.ensureVisible(save);
       await tester.tap(save);
       await tester.pumpAndSettle();
-      expect(find.text('Nova'), findsOneWidget);
+      expect(find.text('Nova').hitTestable(), findsOneWidget);
       expect(repository.writes, 1);
       await tester.tap(
         find.byKey(const ValueKey('assistant-personality-personality')),
       );
       await tester.pumpAndSettle();
       await tester.enterText(
-        find.byType(TextFormField),
+        find.byType(AppTextFormField),
         'Synthetic kind style',
       );
       await tester.ensureVisible(save);
@@ -144,7 +198,7 @@ void main() {
     await tester.pumpAndSettle();
     tester.view.viewInsets = const FakeViewPadding(bottom: 250);
     addTearDown(tester.view.resetViewInsets);
-    await tester.tap(find.byType(TextFormField).first);
+    await tester.tap(find.byType(AppTextFormField).first);
     await tester.pumpAndSettle();
     final save = find.text('Save');
     await tester.ensureVisible(save);

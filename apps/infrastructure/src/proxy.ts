@@ -15,6 +15,7 @@ import {
   hasAuthenticatedBearerToken,
   isTrustedProxyBypassRequest,
 } from '@tuturuuu/utils/api-proxy-guard';
+import { GUARD_REASON_HEADER } from '@tuturuuu/utils/guard-rejection';
 import { getTuturuuuSharedCookieOptions } from '@tuturuuu/utils/shared-cookie';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -24,7 +25,7 @@ import { type Locale, routing, supportedLocales } from './i18n/routing';
 import {
   calendarPreferenceBlockDiagnostic,
   calendarPreferenceGuardPrefix,
-  isCalendarPreferenceRead,
+  isCalendarPreferenceRequest,
 } from './lib/mobile-calendar/preference-guard';
 
 const intlMiddleware = createIntlMiddleware(routing);
@@ -121,10 +122,20 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
     const guardResponse = await guardApiProxyRequest(request, {
       prefixBase: calendarPreferenceGuardPrefix(request),
+      ...(isCalendarPreferenceRequest(request)
+        ? {
+            useVerifiedBearerActor: true,
+            diagnosticPolicyName: 'native-calendar-preferences',
+          }
+        : {}),
     });
 
     if (guardResponse) {
-      if (guardResponse.status === 429 && isCalendarPreferenceRead(request)) {
+      if (
+        guardResponse.status === 429 &&
+        !guardResponse.headers.has(GUARD_REASON_HEADER) &&
+        isCalendarPreferenceRequest(request)
+      ) {
         console.warn(
           'Calendar preference gateway blocked',
           calendarPreferenceBlockDiagnostic(guardResponse.headers)

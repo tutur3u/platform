@@ -4,16 +4,23 @@ import { constants, setPriority } from 'node:os';
 import { join } from 'node:path';
 import { Writable } from 'node:stream';
 import { setTimeout as sleep } from 'node:timers/promises';
+import { startActivitySampler } from './resources-activity';
 import {
   admissionResourceConfig,
   burstEligibility,
 } from './resources-adaptive';
-import { limitCommand } from './resources-command';
+import {
+  budgetStatus,
+  selectBudgetTicket,
+  ticketDemand,
+} from './resources-budget';
+import { commandCwd, limitCommand } from './resources-command';
 import {
   atomicJson,
   defaultResourceConfig,
   effectiveResourceLanes,
   laneResourceConfig,
+  type ResourceConfig,
   readResourceConfig,
   resourceLanes,
   resourceMaxLanes,
@@ -21,11 +28,15 @@ import {
   type ValidationLanes,
 } from './resources-config';
 import { memoryPressure } from './resources-diagnostics';
+import { diskGate } from './resources-disk-gate';
 import {
+  admittedMarker,
   nestedOwner,
   newOwner,
   occupancy,
   processGroupAlive,
+  processLineage,
+  type ResourceOwner,
   readOwner,
   releaseSlot,
   tickets,
@@ -41,27 +52,36 @@ export {
 
 export async function resourceQueueStatus(
   home: string,
-  laneCount: ValidationLanes = 1
+  laneCount: ValidationLanes = 1,
+  configured?: ResourceConfig
 ) {
-  const config = (await readResourceConfig(home)) || defaultResourceConfig();
+  const config =
+    configured ?? ((await readResourceConfig(home)) || defaultResourceConfig());
   const baseLanes = resourceLanes(config);
   const maxLanes = resourceMaxLanes(config);
-  const state = await occupancy(home);
+  const state = await occupancy(home, false, configured);
   const burst =
     maxLanes === baseLanes
       ? { eligible: false, reason: 'Burst lanes are not configured' }
       : state.occupied.length >= effectiveResourceLanes(config)
         ? {
             eligible: false,
-            reason: 'Burst lanes or aggregate worker budgets are full',
+            reason: 'Burst lanes are full or above the host lane ceiling',
           }
         : await burstEligibility(config);
   const waiting = (await tickets(home)).map((ticket) => ticket.owner);
   return {
+    // Budget ceiling, total use, and per-project share, use, borrowing and
+    // waiters, when a cross-project budget is configured.
+    ...(config.budget
+      ? { budget: budgetStatus(config.budget, state.owners, waiting) }
+      : {}),
     owners: state.owners,
+    ownerSlots: state.ownerSlots,
     laneCount,
     baseLanes,
     maxLanes,
+    effectiveLanes: effectiveResourceLanes(config),
     burst,
     // Preserve the old field without representing multiple owners as idle.
     owner: state.owners[0] ?? null,
@@ -164,6 +184,73 @@ export async function spawnResourceCommand(
     });
   });
 }
+export function commandSummary(command: string, args: string[]) {
+  const text = [command.split('/').pop() || command, ...args].join(' ');
+  return text.length > 200 ? `${text.slice(0, 199)}…` : text;
+}
+// The ancestor was admitted under its recorded limits; re-validating the host
+// budget here would reject nested work on a smaller or busier host.
+async function runNested(
+  home: string,
+  command: string,
+  args: string[],
+  env: NodeJS.ProcessEnv,
+  parent: ResourceOwner,
+  onSpawn?: (pid: number) => Promise<void>
+) {
+  const inherited = parent.limits
+    ? {
+        VITEST_MAX_WORKERS: String(parent.limits.vitestWorkers),
+        CARGO_BUILD_JOBS: String(parent.limits.buildJobs),
+        TURBO_CONCURRENCY: '1',
+      }
+    : {};
+  const config = (await readResourceConfig(home)) || defaultResourceConfig();
+  const caps = parent.limits
+    ? { ...config, turboConcurrency: 1 }
+    : laneResourceConfig(config);
+  return spawnResourceCommand(
+    command,
+    limitCommand(command, args, { ...caps, ...parent.limits }),
+    { ...env, ...inherited, [admittedMarker]: parent.token },
+    false,
+    onSpawn
+  );
+}
+// The ticket that may claim the next lane: the FIFO head, or under a budget
+// the per-project head chosen by share, borrowing and fit.
+function chooseTicket(
+  config: ResourceConfig,
+  live: { path: string; owner: ResourceOwner }[],
+  owners: ResourceOwner[]
+) {
+  // A waiter unable to read telemetry stays first for base capacity, but
+  // cannot reserve a burst lane it has no evidence to use.
+  if (owners.length >= resourceLanes(config))
+    live = live.filter((entry) => !entry.owner.burstUnavailable);
+  if (!config.budget) return live[0]?.path;
+  return selectBudgetTicket(
+    config.budget,
+    live.map((entry) => ({
+      path: entry.path,
+      queuedAt: entry.owner.queuedAt,
+      demand: entry.owner.demand,
+      limits: entry.owner.limits,
+    })),
+    owners
+  ).selected?.path;
+}
+// Read-only preview outside the mutex, so only the next ticket probes disk.
+async function nextTicket(home: string) {
+  const config = (await readResourceConfig(home)) || defaultResourceConfig();
+  return chooseTicket(
+    config,
+    await tickets(home),
+    (await occupancy(home)).owners
+  );
+}
+// How long a waiter with an unverifiable ancestor marker waits before failing.
+export const ancestryWait = { ms: 60_000 };
 export async function queuedResourceCommand(
   home: string,
   command: string,
@@ -172,35 +259,23 @@ export async function queuedResourceCommand(
   ignorePressure = false,
   lanes: ValidationLanes = 1,
   pressureProbe: typeof memoryPressure = memoryPressure,
-  burstProbe: typeof burstEligibility = burstEligibility
+  burstProbe: typeof burstEligibility = burstEligibility,
+  diskCheck: typeof diskGate = diskGate,
+  onSpawn?: (pid: number) => Promise<void>
 ) {
   if (process.platform === 'win32')
     throw new Error('Resource admission currently supports macOS and Linux.');
   const originalArgs = [...args];
   const parent = await nestedOwner(home);
-  if (parent) {
-    const inherited = parent.limits
-      ? {
-          VITEST_MAX_WORKERS: String(parent.limits.vitestWorkers),
-          CARGO_BUILD_JOBS: String(parent.limits.buildJobs),
-          TURBO_CONCURRENCY: '1',
-        }
-      : {};
-    // The ancestor was admitted under its recorded limits; re-validating the
-    // host budget here would reject nested work on a smaller or busier host.
-    const config = (await readResourceConfig(home)) || defaultResourceConfig();
-    const caps = parent.limits
-      ? { ...config, turboConcurrency: 1 }
-      : laneResourceConfig(config);
-    return spawnResourceCommand(
-      command,
-      limitCommand(command, originalArgs, { ...caps, ...parent.limits }),
-      { ...env, ...inherited }
-    );
-  }
-  const owner = newOwner(command.split('/').pop() || command);
+  if (parent)
+    return runNested(home, command, originalArgs, env, parent, onSpawn);
+  const owner = newOwner(
+    command.split('/').pop() || command,
+    commandSummary(command, originalArgs)
+  );
   const ticket = join(home, 'queue', `${Date.now()}-${owner.token}.json`);
   let slot: string | undefined;
+  let stopSampler: (() => Promise<void>) | undefined;
   let launchArgs = originalArgs;
   const signalCodes = { SIGINT: 130, SIGTERM: 143, SIGHUP: 129 };
   const waiting = new AbortController();
@@ -224,16 +299,74 @@ export async function queuedResourceCommand(
     await withAdmission(
       home,
       async () => {
+        // Declare budget demand once, at enqueue, from the classified tool
+        // or an explicit TTR_RESOURCES_TOKENS / TTR_RESOURCES_MEMORY_GIB.
+        const config = await readResourceConfig(home);
+        if (config?.budget)
+          owner.demand = ticketDemand(config.budget, {
+            cwd: process.cwd(),
+            command,
+            args: originalArgs,
+            defaults: config,
+            env,
+          });
         await atomicJson(ticket, owner);
       },
       () => Boolean(cancelled)
     );
     let announced = 0;
     let pressureReason: string | null = null;
+    let ancestryCheckedAt = Date.now();
+    let unverifiedSince: number | undefined;
     while (!slot) {
       if (cancelled) return signalCodes[cancelled];
+      // Safety net: a waiter must never queue behind its own ancestor, even if
+      // the first ancestry probe failed. Confirm with a fresh process snapshot.
+      if (Date.now() - ancestryCheckedAt >= 1_000) {
+        ancestryCheckedAt = Date.now();
+        const ancestor = await nestedOwner(home)
+          .then((found) => found && nestedOwner(home, process.env, true))
+          .catch(() => undefined);
+        if (ancestor) {
+          process.stderr.write(
+            `[ttr resources] PID ${process.pid} descends from admitted PID ${ancestor.pid}; running without re-queueing\n`
+          );
+          // Leave the FIFO first so siblings are not held behind this ticket.
+          if ((await readOwner(ticket))?.token === owner.token)
+            await rm(ticket, { force: true });
+          return await runNested(home, command, originalArgs, env, ancestor);
+        }
+        // Without any ancestry evidence, a waiter carrying a live owner's
+        // marker may be queued behind its own ancestor forever: fail with an
+        // actionable error after a bounded wait instead of deadlocking.
+        const marker =
+          process.env[admittedMarker] || process.env.TTR_RESOURCE_OWNER;
+        const unverified =
+          marker !== undefined &&
+          !processLineage(true) &&
+          (await occupancy(home)).owners.some(
+            (entry) => entry.token === marker
+          );
+        if (!unverified) unverifiedSince = undefined;
+        else unverifiedSince ??= Date.now();
+        if (
+          unverifiedSince !== undefined &&
+          Date.now() - unverifiedSince >= ancestryWait.ms
+        )
+          throw new Error(
+            `Cannot verify process ancestry: neither /bin/ps nor /usr/bin/ps exists${process.platform === 'linux' ? ' and /proc is unreadable' : ''}. This command carries ${admittedMarker} for a live admitted job and may be waiting behind its own ancestor. Install ps (procps), or rerun the nested command with TTR_RESOURCES_BYPASS=1.`
+          );
+      }
       let pressureBlocked = false;
       pressureReason = null;
+      let diskReason: string | null = null;
+      // Dequeue-time disk check, bounded and taken outside the admission
+      // mutex so a hung volume cannot stall other admissions. Only the FIFO
+      // head probes; a round without a fresh result never claims.
+      const disk =
+        (await nextTicket(home)) === ticket
+          ? await diskCheck(commandCwd(originalArgs), env)
+          : undefined;
       slot = await withAdmission(
         home,
         async () => {
@@ -245,14 +378,14 @@ export async function queuedResourceCommand(
             );
           const policy = resourcePolicyKey(config);
           laneResourceConfig(config);
-          const maxLanes = resourceMaxLanes(config);
+          const maxLanes = effectiveResourceLanes(config);
           const live = await tickets(home, true);
           const state = await occupancy(home, true);
           if (
             state.legacy ||
             state.initializing ||
             live.some((ticket) => ticket.owner.scheduler !== 2) ||
-            live[0]?.path !== ticket ||
+            chooseTicket(config, live, state.owners) !== ticket ||
             state.occupied.length >= maxLanes
           )
             return undefined;
@@ -267,6 +400,10 @@ export async function queuedResourceCommand(
               ? await burstProbe(config)
               : undefined;
           if (burst && !burst.eligible) {
+            if (burst.telemetryUnavailable) {
+              owner.burstUnavailable = true;
+              await atomicJson(ticket, owner);
+            }
             pressureBlocked = true;
             pressureReason = burst.reason;
             return undefined;
@@ -285,15 +422,32 @@ export async function queuedResourceCommand(
             current.legacy ||
             current.initializing ||
             current.occupied.length >= maxLanes ||
-            currentTickets[0]?.path !== ticket ||
+            chooseTicket(latest, currentTickets, current.owners) !== ticket ||
             currentTickets.some((ticket) => ticket.owner.scheduler !== 2) ||
             (current.occupied.length >= lanes && !burst?.eligible)
           )
             return undefined;
+          // Headroom seen at enqueue may be gone after a long wait, and an
+          // unreadable volume fails closed.
+          if (!disk) return undefined;
+          if (!disk.admit) {
+            pressureBlocked = true;
+            diskReason = disk.reason;
+            return undefined;
+          }
+          if (cancelled) return undefined;
+          // Under a budget the declared tokens are the job's worker caps (its
+          // whole fan-out); otherwise lanes split the configured totals.
           const caps =
-            maxLanes > lanes
-              ? admissionResourceConfig(config, current.owners)
-              : laneResourceConfig(config);
+            config.budget && owner.demand
+              ? {
+                  ...laneResourceConfig(config),
+                  vitestWorkers: owner.demand.tokens,
+                  buildJobs: owner.demand.tokens,
+                }
+              : maxLanes > lanes
+                ? admissionResourceConfig(config, current.owners)
+                : laneResourceConfig(config);
           if (!caps) return undefined;
           launchArgs = limitCommand(command, originalArgs, caps);
           owner.limits = {
@@ -318,7 +472,11 @@ export async function queuedResourceCommand(
       if (!slot) {
         if (Date.now() - announced > 30_000) {
           process.stderr.write(
-            `[ttr resources] queued PID ${process.pid}; ${pressureReason || 'waiting for the shared validation slots'}\n`
+            diskReason
+              ? `[ttr resources] queued PID ${process.pid}; blockedBy=disk: ${diskReason}\n`
+              : pressureReason
+                ? `[ttr resources] queued PID ${process.pid}; blockedBy=pressure: ${pressureReason}\n`
+                : `[ttr resources] queued PID ${process.pid}; blockedBy=local_saturated: waiting for the shared validation slots. Tip: --offload auto runs the pushed commit on a trusted devbox runner.\n`
           );
           announced = Date.now();
         }
@@ -340,6 +498,7 @@ export async function queuedResourceCommand(
       {
         ...env,
         TTR_RESOURCE_OWNER: owner.token,
+        [admittedMarker]: owner.token,
         TURBO_CONCURRENCY: '1',
         VITEST_MAX_WORKERS: String(owner.limits?.vitestWorkers),
         CARGO_BUILD_JOBS: String(owner.limits?.buildJobs),
@@ -357,7 +516,9 @@ export async function queuedResourceCommand(
             );
           await atomicJson(join(ownedSlot, 'owner.json'), owner);
         });
+        stopSampler = startActivitySampler(ownedSlot, owner);
         if (cancelled) signalChild(pid, cancelled);
+        else await onSpawn?.(pid);
       }
     );
     process.stderr.write(`[ttr resources] finished; exit ${code}\n`);
@@ -366,6 +527,7 @@ export async function queuedResourceCommand(
     process.removeListener('SIGINT', cancelInt);
     process.removeListener('SIGTERM', cancelTerm);
     process.removeListener('SIGHUP', cancelHup);
+    await stopSampler?.();
     // Ticket names are private UUIDs. A cancelled broker must also be able to
     // remove its own ticket while an unrelated initializing mutex blocks admission.
     if ((await readOwner(ticket))?.token === owner.token)

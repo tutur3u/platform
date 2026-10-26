@@ -50,6 +50,72 @@ key scoped to the same browser session and `ip:<address>`. The relief only lets
 that session continue while admins review the appeal; it does not clear the
 global `blocked_ips` row or help unrelated users behind the same IP.
 
+## Client IP Trust
+
+Rate limits, IP blocks, abuse counters, and audit records key on the client IP
+from the shared `@tuturuuu/utils/abuse-protection/client-ip` helper, which
+`extractIPFromHeaders` and `extractIPFromRequest` delegate to. It reads only
+headers set by the proxy the deployment is configured to sit behind:
+
+| `TRUSTED_PROXY` | Trusted source                                                                                   |
+| --------------- | ------------------------------------------------------------------------------------------------ |
+| `vercel`        | `x-vercel-forwarded-for`, then `x-real-ip`, then `x-forwarded-for` (Vercel overwrites all three) |
+| `cloudflare`    | `cf-connecting-ip` only; use only when every request reaches the app through Cloudflare          |
+| `cloudflare-origin` | Cloudflare in front of Vercel: `cf-connecting-ip` only when the request carries `x-tuturuuu-origin-auth` equal to `TRUSTED_PROXY_ORIGIN_SECRET`; otherwise the `vercel` headers |
+| `forwarded`     | `x-forwarded-for` entry `TRUSTED_PROXY_HOPS` positions from the right (default `1`)              |
+| `none`          | No header; every request uses the shared `unknown` bucket                                        |
+
+When `TRUSTED_PROXY` is unset, the helper selects `vercel` when the `VERCEL` or
+`VERCEL_ENV` platform variable is present, `cloudflare` inside a Cloudflare
+Worker runtime, and `none` everywhere else. An unsupported value fails closed to
+`none` and logs a warning. In `forwarded` mode, set `TRUSTED_PROXY_HOPS` to the
+number of trusted reverse proxies that append to `x-forwarded-for`; entries
+further left are caller-controlled and never used. With one hop and no
+`x-forwarded-for`, the proxy-set `x-real-ip` is used.
+
+Requests without a trusted address resolve to `unknown`. Route auth guards
+(`withSessionAuth` in every `src/lib/api-auth.ts`) still block-check and
+rate-limit that shared bucket instead of skipping the checks, while auth-failure
+recording continues to skip it so one caller cannot block every unidentified
+client. Self-hosted and Docker deployments must set `TRUSTED_PROXY` (for
+example `cloudflare` behind Cloudflare Tunnel, or `forwarded` behind the bundled
+nginx proxy); otherwise all traffic shares the `unknown` bucket. Local E2E
+specs that isolate budgets with per-test client IP headers need
+`TRUSTED_PROXY=cloudflare` in the web runtime env.
+
+### Cloudflare in front of Web
+
+When the `tuturuuu.com` apex is proxied through Cloudflare to Vercel for the
+one-origin super-app, Vercel sees
+Cloudflare egress addresses, so plain `vercel` mode collapses users into a few
+buckets. Plain `cloudflare` mode is spoofable, because the Vercel origin stays
+reachable directly. Use `cloudflare-origin`:
+
+1. Generate a random secret of at least 32 characters. Store it as the Web
+   runtime secret `TRUSTED_PROXY_ORIGIN_SECRET` and in a Cloudflare request
+   Transform Rule that sets `x-tuturuuu-origin-auth` on proxied requests.
+2. Set `TRUSTED_PROXY=cloudflare-origin` on Web in the same change that proxies
+   the apex. Before the proxy is on, every request falls back to `vercel`
+   headers, so setting it early is harmless.
+3. A missing, short or mismatched secret never trusts `cf-connecting-ip`; the
+   request resolves through the `vercel` headers instead. To rotate, update
+   the Transform Rule and the Web secret together. Between the two writes,
+   requests fall back to `vercel` headers: bucketing degrades, but the client
+   IP is never spoofable.
+
+The secret is the only thing separating a forged `cf-connecting-ip` from a real
+one, so it must exist only in the Transform Rule and the Web secret store. Never
+forward the `x-tuturuuu-origin-auth` header to another service, log it, or echo it
+in a response.
+
+The secret check is not an origin access restriction. Vercel's Verified Proxy is
+not one either: neither stops direct requests to the custom domain's origin or to
+`*.vercel.app` deployment URLs. Before setting `cloudflare-origin` in production,
+restrict and verify origin access separately for custom domains **and** every
+deployment URL (for example, Vercel Deployment Protection on deployment URLs).
+Record a direct request to each URL class with a forged `cf-connecting-ip` and
+`x-tuturuuu-origin-auth`; it must resolve to the caller's real IP or be refused.
+
 ## API Abuse IP Blocks
 
 Session-authenticated routes may defer proxy-side `api_abuse` IP blocks only
@@ -137,6 +203,51 @@ hard-block threshold would have been crossed. Generic anonymous API route-limit
 hits, malformed auth-cookie abuse, scanner-like requests, `api_auth_failed`, and
 manual operator blocks can still escalate to hard IP blocks.
 
+## MFA Verification Budgets
+
+MFA code verification has three independent budgets:
+
+| Scope | Limit | Where |
+| --- | --- | --- |
+| Source IP | 5 failures / 5 minutes | `checkMFAVerifyLimit` (Redis) in the web MFA verify routes |
+| One factor of one account | 5 failures / 15 minutes | `@tuturuuu/utils/abuse-protection/mfa-subject-limits` (Redis) in the same routes, and the Auth hook below |
+| One account, all factors | 10 failures / 1 hour | Same as above |
+
+The account budgets follow the user and factor, not the source address, so
+rotating IPs does not extend them. The routes reserve an attempt atomically
+before contacting Auth, so parallel requests cannot outrun the counter. While a
+budget is spent, even a correct code is refused until the window passes. A
+correct code within budget resets the account counters. Only Supabase Auth's
+role can run the hook; the service role cannot. The Redis counters fail open when Redis is unavailable, like
+the rest of abuse protection.
+
+Clients holding a session can also call Supabase Auth's MFA endpoints directly
+(the web login form does), which bypasses the API routes. The
+`public.hook_mfa_verification_attempt` Postgres hook applies the per-factor and
+per-account budgets inside Auth for every caller. It stores windowed counters
+in `private.mfa_verification_failures` and answers spent budgets with an HTTP
+429 error rather than the `reject` decision, which would sign the user out
+everywhere.
+
+The migration grants `supabase_auth_admin` `USAGE` on `public` and `EXECUTE`
+on this hook only. Function execution permission alone does not allow Auth to
+resolve the schema. The SQL fixture checks schema access without `CREATE`
+permission and calls the hook after switching to Auth's actual role. It captures
+the result with psql's `\gset` and resets the role before invoking pgTAP; Auth
+does not need access to the test extension.
+
+- Local: enabled in `apps/database/supabase/config.toml` as
+  `[auth.hook.mfa_verification_attempt]`.
+- Hosted: an operator enables it under **Authentication > Hooks** as the MFA
+  verification attempt hook (Postgres function
+  `public.hook_mfa_verification_attempt`). Supabase offers this hook on Team
+  and Enterprise plans only. Until it is enabled, direct Auth calls are
+  limited only by Auth's built-in rate limits.
+
+Regression coverage: `apps/database/supabase/tests/security-mfa-verification-hook.sql`,
+`packages/utils/src/abuse-protection/__tests__/mfa-subject-limits.test.ts` and
+`apps/web/src/legacy-api-routes/auth/mfa/totp/mfa-verify-subject-limit.test.ts`.
+
 ## Trusted-Location Read Uplift
 
 High-density centers (many staff behind one office NAT IP) can hit the read-limit
@@ -188,6 +299,55 @@ Workspace rules are enforced at the edge for workspace-scoped API reads and are
 visible in the Rate Limits admin center. They are safer than globally unblocking
 or uplifting a noisy IP when many unrelated organizations may share that public
 address. Keep them time-bound and review live usage before renewing.
+
+## Shared-Secret Password Budgets
+
+Meet plan guest login and Nova challenge passwords use
+`@tuturuuu/utils/abuse-protection/password-attempt-limits`. Each check has two
+attempt budgets in Upstash Redis:
+
+| Scope | Limit | Key |
+| --- | --- | --- |
+| Target | 10 outstanding or failed attempts / 15 minutes | Meet login: plan + normalized name. Nova: challenge + user. Hashed before use. |
+| Meet creation | 10 creations / 15 minutes | Plan + source IP bucket. New names on that pair share capacity. |
+| Meet source | 300 admitted attempts / 15 minutes | IPv4 address or canonical IPv6 /64; unknown addresses share a bucket. Separate creation/login scopes. |
+| Nova user | 60 admitted attempts / 15 minutes | Authenticated user id, shared across challenges, independent of source IP. |
+
+A single Redis Lua script checks and increments both counters atomically before
+password verification, creation hashing, or legacy rehashing. Denied attempts do
+not allocate target or reservation keys or extend windows. The server checks that
+the plan exists before guest creation can reserve capacity or hash a password.
+Creation is bounded per plan and source network, so a busy shared plan can accept
+more than ten joiners from different networks. There is no plan-wide creation cap.
+
+Successful verification refunds exactly one target reservation with an atomic,
+floored decrement. Expiring single-use receipts prevent duplicate or late refunds
+from erasing concurrent failures or a replacement window. Guest creation keeps its
+charge, and aggregate source/user counters keep all admitted attempts. A correct
+password never resets the whole target counter.
+
+The Meet aggregate cap allows a shared address to serve 100 participants making
+three logins each per window, while keeping a finite cross-target work budget.
+The per-target cap remains 10. Nova's separate per-user cap allows 60 checks per
+window without making one office share an IP budget. These are policy allowances,
+not production load measurements; monitor rejection rates before changing them.
+
+A spent budget returns `retryAfter` seconds: Nova answers HTTP 429 with `Retry-After`, and the Meet
+guest-login server action returns `{ error, retryAfter }` for the localized
+form message. Like other abuse protection, the counters fail open when
+`UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN` are absent or Redis errors;
+the scrypt cost then remains the only bound. Warnings are limited to once per
+minute per process across reservation/refund failures and missing configuration.
+The Meet Worker reaches Upstash
+through the same fetch-based REST client as its API proxy guard, so the limit
+applies there only when those two secrets are set on the `tuturuuu-meet`
+Worker. Coverage: `packages/utils/src/abuse-protection/__tests__/password-attempt-limits.test.ts`.
+The adjacent `password-attempt-redis.test.ts` executes the Lua against a disposable
+Redis Unix socket selected by `PASSWORD_ATTEMPT_REDIS_SOCKET`; it never reads
+hosted Redis configuration. Start Redis with TCP disabled (`--port 0`), persistence
+disabled (`--save '' --appendonly no`), and a private socket directory. Run the
+focused suite through `ttr resources run -- bunx vitest run` with `--maxWorkers=2`,
+then stop that Redis process and remove its private directory.
 
 ## Rate-Limit Appeals
 
@@ -271,3 +431,22 @@ needs a trusted workspace, IP/CIDR uplift, or app-level batching fix.
 Manual overrides require a reason and are written to the audit signal stream.
 Prefer expiry-bound overrides for trust and watch decisions so stale operational
 judgment does not become permanent policy.
+
+
+### Signed client IPs from the standalone API Worker
+
+`apps/api` uses the same `x-tuturuuu-origin-auth` header and
+`TRUSTED_PROXY_ORIGIN_SECRET` as the apex origin gate. Its `hmac-v1` proof
+contains a canonical IPv4/IPv6 address, a timestamp and an HMAC-SHA256 signature.
+The shared `cloudflare-origin` resolver accepts it for 60 seconds, with at most
+five seconds of future clock skew, and derives the client address from the
+verified proof instead of the Worker egress headers. Forged, expired, malformed,
+missing-key and weak-key assertions retain the Vercel-header fallback. Existing
+raw-secret Transform Rules continue to authenticate `cf-connecting-ip`.
+
+Configure the same existing secret on the API Worker and retained Next origin;
+keep `TRUSTED_PROXY=cloudflare-origin` on Next. This is one origin trust mechanism
+and rotation boundary. Verify distinct synthetic client IPs, spoof/expiry negative
+controls and direct-origin fallback before API activation. Regression coverage is
+in `origin-ip-proof.test.ts`, `origin-client-ip.test.ts`, the existing
+`client-ip-cloudflare-origin.test.ts`, and `apps/api/src/forward.test.ts`.

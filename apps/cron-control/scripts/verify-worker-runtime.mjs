@@ -1,66 +1,88 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { readFileSync } from 'node:fs';
 import { after, before, test } from 'node:test';
-import { fileURLToPath } from 'node:url';
-import { createTestHarness } from 'wrangler';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { startCfViteWorker } from '../../../scripts/ci/cf-vite-worker.mjs';
 
 // No scheduled event is dispatched: HTTP checks cannot run the DB recovery RPC.
-// CI repeats these checks on the actual Vite-emitted Worker configuration.
-if (process.env.CRON_TEST_CONFIG) {
-  const config = JSON.parse(readFileSync(process.env.CRON_TEST_CONFIG, 'utf8'));
-  const source = JSON.parse(
-    readFileSync(new URL('../wrangler.jsonc', import.meta.url), 'utf8')
-  );
-  for (const key of [
-    'name',
-    'account_id',
-    'compatibility_date',
-    'triggers',
-    'vars',
-    'secrets',
-  ]) {
-    assert.deepEqual(config[key], source[key], `preserve ${key}`);
-  }
-  assert.deepEqual(config.triggers.crons, ['*/5 * * * *']);
-}
-const harness = createTestHarness({
-  workers: [
-    {
-      configPath:
-        process.env.CRON_TEST_CONFIG ??
-        fileURLToPath(new URL('../wrangler.jsonc', import.meta.url)),
-      secrets: {
-        CRON_CONTROL_DELIVERY_TOKEN: randomUUID() + randomUUID(),
-        SUPABASE_SECRET_KEY: 'isolated-cron-runtime-fixture',
-        SUPABASE_URL: 'https://unreachable.example.invalid',
-      },
-    },
-  ],
-});
+// Source mode serves cloudflare.config.ts through the Vite dev runtime; CI sets
+// CRON_TEST_BUILD_OUTPUT=1 to repeat the checks on the emitted cf Build Output
+// that `cf deploy --prebuilt` publishes. Enabled-job slot claims, restarts,
+// stop/resume and the failure budget are covered by the ledger, dispatch and
+// control unit tests: this harness takes only declared secrets and the
+// configured (default-off) job list.
+const root = fileURLToPath(new URL('..', import.meta.url));
+const TRIGGERS = [
+  '*/5 * * * *',
+  '17 3 * * *',
+  '0 */12 * * *',
+  '0 6 * * *',
+  '0 */6 * * *',
+  '*/10 * * * *',
+  '*/15 * * * *',
+  '*/30 * * * *',
+  '* * * * *',
+];
+let worker;
+
 before(async () => {
-  await harness.listen();
+  worker = await startCfViteWorker({
+    root,
+    mode:
+      process.env.CRON_TEST_BUILD_OUTPUT === '1' ? 'build-output' : 'source',
+    secrets: {
+      CRON_CONTROL_DELIVERY_TOKEN: randomUUID() + randomUUID(),
+      SUPABASE_SECRET_KEY: 'isolated-cron-runtime-fixture',
+      SUPABASE_URL: 'https://unreachable.example.invalid',
+    },
+  });
 });
 after(async () => {
-  await harness.close();
+  await worker?.close();
 });
 
+test('source config keeps every legacy schedule; jobs and processors default off', async () => {
+  const { default: config } = await import(
+    pathToFileURL(`${root}/cloudflare.config.ts`).href
+  );
+  assert.deepEqual(
+    config.worker.triggers.map((trigger) => trigger.schedule),
+    TRIGGERS
+  );
+  assert.deepEqual(config.worker.env.CRON_CONTROL_ENABLED_JOBS, {
+    type: 'text',
+    value: '',
+  });
+  assert.deepEqual(config.worker.env.CRON_CONTROL_WORKER_PROCESSORS, {
+    type: 'text',
+    value: '',
+  });
+  assert.equal(config.worker.env.CRON_LEDGER.type, 'durable-object');
+  assert.ok(config.worker.exports.CronLedger, 'CronLedger is exported');
+});
 test('complete private health response from the real Worker', async () => {
-  const response = await harness.fetch('/health', {
+  const response = await worker.fetch('/health', {
     signal: AbortSignal.timeout(10_000),
   });
   assert.equal(response.status, 200);
   assert.equal(response.headers.get('cache-control'), 'no-store');
   assert.deepEqual(await response.json(), { ok: true });
 });
-test('HTTP callers cannot invoke the scheduled processor', async () => {
-  for (const [path, method] of [
+test('HTTP callers cannot invoke processors or unauthenticated control', async () => {
+  for (const [path, method, authorization] of [
     ['/health', 'POST'],
     ['/', 'GET'],
     ['/api/notifications/send-immediate', 'POST'],
+    ['/control/jobs', 'GET'],
+    [
+      '/control/jobs/tasks-cleanup-media/resume',
+      'POST',
+      `Bearer ${randomUUID()}`,
+    ],
   ]) {
-    const response = await harness.fetch(path, {
+    const response = await worker.fetch(path, {
       method,
+      headers: authorization ? { Authorization: authorization } : {},
       signal: AbortSignal.timeout(10_000),
     });
     assert.equal(response.status, 404);

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_shell_cubit.dart';
@@ -13,7 +14,6 @@ import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_attachment_preview.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_dock.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_primary_action.dart';
-import 'package:mobile/features/assistant/widgets/assistant_prompt_editor.dart';
 import 'package:mobile/features/shell/view/dock_action_transition.dart';
 import 'package:mobile/features/shell/view/persistent_shell_dock.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -54,52 +54,53 @@ Future<void> _pump(
       home: Scaffold(
         body: RepaintBoundary(
           key: _rasterKey,
-          child: Stack(
-            children: [
-              Positioned(
-                left: 12,
-                right: 12,
-                bottom: 42,
-                child: Builder(
-                  builder: (_) {
-                    Widget dock(AssistantChatState state) {
-                      Future<void> remove(String id) async {
-                        chat?.value = state.copyWith(
-                          composerAttachments: state.composerAttachments
-                              .where((a) => a.id != id)
-                              .toList(),
+          child: Material(
+            child: Stack(
+              children: [
+                Positioned(
+                  left: 12,
+                  right: 12,
+                  bottom: 42,
+                  child: Builder(
+                    builder: (_) {
+                      Widget dock(AssistantChatState state) {
+                        Future<void> remove(String id) async {
+                          chat?.value = state.copyWith(
+                            composerAttachments: state.composerAttachments
+                                .where((a) => a.id != id)
+                                .toList(),
+                          );
+                        }
+
+                        return PersistentShellDock(
+                          composing: true,
+                          primary: AssistantComposerPrimaryAction(
+                            controller: controller,
+                            focusNode: focus,
+                            onToggleNavigation: () {},
+                            onSend: onSend ?? () async {},
+                            hasAttachments:
+                                state.composerAttachments.isNotEmpty,
+                            blocked:
+                                state.status == AssistantChatStatus.restoring,
+                          ),
+                          content: _composer(controller, focus, state, remove),
                         );
                       }
 
-                      return PersistentShellDock(
-                        composing: true,
-                        primary: AssistantComposerPrimaryAction(
-                          controller: controller,
-                          focusNode: focus,
-                          onToggleNavigation: () {},
-                          onSend: onSend ?? () async {},
-                          hasAttachments: state.composerAttachments.isNotEmpty,
-                          attachments: state.composerAttachments,
-                          onRemoveAttachment: remove,
-                          blocked:
-                              state.status == AssistantChatStatus.restoring,
-                        ),
-                        content: _composer(controller, focus, state, remove),
-                      );
-                    }
-
-                    return chat == null
-                        ? dock(
-                            const AssistantChatState(fallbackChatId: 'draft'),
-                          )
-                        : ValueListenableBuilder<AssistantChatState>(
-                            valueListenable: chat,
-                            builder: (_, state, _) => dock(state),
-                          );
-                  },
+                      return chat == null
+                          ? dock(
+                              const AssistantChatState(fallbackChatId: 'draft'),
+                            )
+                          : ValueListenableBuilder<AssistantChatState>(
+                              valueListenable: chat,
+                              builder: (_, state, _) => dock(state),
+                            );
+                    },
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -152,9 +153,12 @@ void main() {
     final icons = FontLoader('MaterialIcons')
       ..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'));
     await icons.load();
+    await (FontLoader(
+      'LucideIcons',
+    )..addFont(rootBundle.load('assets/fonts/lucide/LucideIcons.otf'))).load();
   });
   testWidgets(
-    'focused prompt reserves three lines and exposes draft expansion',
+    'focused prompt keeps multiline growth without fullscreen control',
     (tester) async {
       tester.view.physicalSize = const Size(390, 800);
       tester.view.devicePixelRatio = 1;
@@ -165,6 +169,7 @@ void main() {
       addTearDown(controller.dispose);
       addTearDown(focus.dispose);
       await _pump(tester, controller, focus);
+      final initialHeight = tester.getRect(find.byType(TextField)).height;
       focus.requestFocus();
       await tester.pumpAndSettle();
       final path = Platform.environment['ASSISTANT_RASTER_PATH'];
@@ -179,22 +184,22 @@ void main() {
           image.dispose();
         });
       }
+      expect(tester.getRect(find.byType(TextField)).height, initialHeight);
       expect(
-        tester.getRect(find.byType(TextField)).height,
-        greaterThanOrEqualTo(84),
-      );
-      final expand = tester.getRect(
         find.byKey(const ValueKey('assistant-expand-prompt')),
+        findsNothing,
       );
-      final send = tester.getRect(
-        find.byKey(const ValueKey('assistant-navigation-toggle')),
+      expect(
+        tester
+            .getSize(find.byKey(const ValueKey('assistant-navigation-toggle')))
+            .height,
+        52,
       );
-      expect(expand.bottom, lessThanOrEqualTo(send.top));
       expect(tester.takeException(), isNull);
     },
   );
   for (final scale in [1.0, 2.0]) {
-    testWidgets('fullscreen draft retains selection, previews and send guard '
+    testWidgets('inline draft retains selection, previews and send guard '
         'scale$scale', (tester) async {
       tester.view.physicalSize = const Size(320, 800);
       tester.view.devicePixelRatio = 1;
@@ -244,13 +249,10 @@ void main() {
         tester.getRect(preview).bottom,
         lessThanOrEqualTo(tester.getRect(find.byType(TextField)).top),
       );
-      await tester.tap(find.byKey(const ValueKey('assistant-expand-prompt')));
-      await tester.pumpAndSettle();
-      expect(find.byType(AssistantPromptEditor), findsOneWidget);
-      final field = tester.widget<TextField>(
-        find.byKey(const ValueKey('assistant-fullscreen-prompt')),
+      expect(
+        find.byKey(const ValueKey('assistant-expand-prompt')),
+        findsNothing,
       );
-      expect(field.controller, same(controller));
       expect(
         controller.selection,
         const TextSelection(baseOffset: 2, extentOffset: 8),
@@ -278,10 +280,6 @@ void main() {
             .uploadState,
         AssistantAttachmentUploadState.uploading,
       );
-      await tester.tap(find.byKey(const ValueKey('settings-route-back')));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 400));
-      await tester.pump();
       expect(controller.text, 'Updated\nSynthetic draft');
       expect(controller.selection, const TextSelection.collapsed(offset: 7));
       expect(focus.hasFocus, isTrue);
@@ -305,17 +303,13 @@ void main() {
       );
       await tester.pump();
       expect(sends, 1);
-      await tester.tap(find.byKey(const ValueKey('assistant-expand-prompt')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('Delete: Synthetic recording'));
+      await tester.tap(find.byTooltip('Delete: Synthetic recording').last);
       await tester.pump();
       await tester.pump();
       expect(chat.value.composerAttachments, isEmpty);
       expect(find.byType(AssistantAttachmentPreview), findsNothing);
       expect(controller.selection, const TextSelection.collapsed(offset: 7));
       expect(sends, 1);
-      await tester.tap(find.byKey(const ValueKey('settings-route-back')));
-      await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox.shrink());
     });
@@ -343,9 +337,9 @@ void main() {
                         identity: visible ? 'generic' : null,
                         slotKey: const ValueKey('generic-slot'),
                         child: visible
-                            ? IconButton(
+                            ? AppIconButton(
                                 onPressed: () => taps++,
-                                icon: const Icon(Icons.add),
+                                icon: const Icon(LucideIcons.plus),
                                 tooltip: 'Synthetic generic',
                               )
                             : null,

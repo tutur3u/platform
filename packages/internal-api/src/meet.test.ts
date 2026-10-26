@@ -48,7 +48,7 @@ describe('Tuturuuu Meet internal API', () => {
       'plan-id',
       {
         guestId: 'guest-id',
-        passwordHash: 'hash',
+        guestSession: 'session',
         timeblocks: [
           {
             date: '2026-08-04',

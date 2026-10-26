@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/ui",
-  "version": "0.39.2",
+  "version": "0.40.0",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -323,6 +323,10 @@
       "types": "./src/components/ui/custom/language-dropdown-wrapper.tsx",
       "import": "./src/components/ui/custom/language-dropdown-wrapper.tsx"
     },
+    "./custom/ops": {
+      "types": "./src/components/ui/custom/ops/index.ts",
+      "import": "./src/components/ui/custom/ops/index.ts"
+    },
     "./custom/locale-preference": {
       "types": "./src/components/ui/custom/locale-preference.ts",
       "import": "./src/components/ui/custom/locale-preference.ts"
@@ -520,5 +524,5 @@
     "./finance/shared/charts/use-finance-confidential-visibility": "./src/components/ui/finance/shared/charts/use-finance-confidential-visibility.ts",
     "./text-editor/collaboration-carets": "./src/components/ui/text-editor/collaboration-carets.ts"
   },
-  "packageManager": "bun@1.4.3"
+  "packageManager": "bun@1.4.4"
 }

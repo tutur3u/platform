@@ -5,10 +5,16 @@ import 'package:mobile/core/config/app_flavor.dart';
 Future<void> main() async {
   await bootstrap(
     AppFlavor.production,
-    ({required appFlavor, required initialThemeMode, initialRoute}) => App(
+    ({
+      required appFlavor,
+      required initialThemeMode,
+      required initialAppearance,
+      initialRoute,
+    }) => App(
       appFlavor: appFlavor,
       initialRoute: initialRoute,
       initialThemeMode: initialThemeMode,
+      initialAppearance: initialAppearance,
     ),
   );
 }

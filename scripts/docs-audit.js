@@ -108,6 +108,10 @@ function audit(root = ROOT) {
 module.exports = { audit, navigationPages };
 if (require.main === module) {
   const result = audit();
+  // The agent operating model page must agree with AGENTS.md and the plugin
+  // reference on the shared subagent allocation.
+  const { checkRepository } = require('./ci/check-agent-budget.js');
+  result.errors.push(...checkRepository().errors);
   console.log(
     `Docs audit: ${result.pageCount} pages, ${result.navigationCount} navigation entries, ${result.errors.length} errors`
   );

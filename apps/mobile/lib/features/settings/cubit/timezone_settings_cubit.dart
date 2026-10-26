@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:mobile/core/observability/mobile_observability.dart';
 import 'package:mobile/core/observability/operational_error_reporter.dart';
+import 'package:mobile/core/utils/timezone_location.dart';
+import 'package:mobile/data/repositories/calendar_settings_cache.dart';
 import 'package:mobile/data/repositories/timezone_settings_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/safe_error_diagnostics.dart';
@@ -23,6 +25,7 @@ class TimezoneSettingsState {
     this.failedSaveWorkspace = false,
     this.errorMessage,
     this.diagnostics,
+    this.isFromCache = false,
   });
   final String personal;
   final String workspace;
@@ -38,6 +41,7 @@ class TimezoneSettingsState {
   final bool failedSaveWorkspace;
   final String? errorMessage;
   final SafeErrorDiagnostics? diagnostics;
+  final bool isFromCache;
   String get effective => personal != 'auto'
       ? personal
       : workspace != 'auto'
@@ -74,6 +78,12 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
     if (sameScope && _pendingLoad != null) return _pendingLoad!;
     // A resume refresh must not invalidate a write for the current scope.
     if (sameScope && state.saving) return Future.value();
+    if (!sameScope && _userId != null) {
+      if (_userId != userId) repository.fenceScope(_userId!, null);
+      if (_workspaceId != null) {
+        repository.fenceScope(_userId!, _workspaceId);
+      }
+    }
     late final Future<void> pending;
     pending = _load(userId: userId, workspaceId: workspaceId).whenComplete(() {
       if (identical(_pendingLoad, pending)) _pendingLoad = null;
@@ -102,6 +112,7 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
           workspace: sameScope ? previous.workspace : 'auto',
           device: sameScope ? previous.device : '',
           resolved: sameScope && previous.resolved,
+          isFromCache: sameScope && previous.isFromCache,
           personalLoaded:
               sameUser && (previous.resolved || previous.personalLoaded),
           workspaceLoaded: sameScope && previous.workspaceLoaded,
@@ -123,6 +134,7 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
         workspace: sameScope ? previous.workspace : 'auto',
         device: sameScope ? previous.device : '',
         resolved: sameScope && previous.resolved,
+        isFromCache: sameScope && previous.isFromCache,
         personalLoaded:
             sameUser && (previous.resolved || previous.personalLoaded),
         workspaceLoaded: sameScope && previous.workspaceLoaded,
@@ -140,6 +152,9 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
     String? personalRead;
     String? workspaceRead;
     ApiException? rateLimit;
+    var personalDenied = false;
+    var workspaceDenied = false;
+    var publishing = true;
     Future<String> readPreference(
       Future<String> read, {
       bool personal = false,
@@ -153,6 +168,13 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
         }
         return zone;
       } on ApiException catch (error) {
+        if (CalendarSettingsCache.deniesSnapshot(error)) {
+          if (personal) {
+            personalDenied = true;
+          } else {
+            workspaceDenied = true;
+          }
+        }
         if (error.statusCode == 429 &&
             (rateLimit == null ||
                 TimezoneSettingsRepository.rateLimitDelay(error) >
@@ -168,14 +190,15 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
         // A named preference does not depend on a working native plugin.
         // Attach error handling immediately, even if we never need the device.
         Object? deviceFailure;
+        String? loadedDevice;
         final device = Future<String>.sync(deviceLoader).then<String?>(
-          (zone) => zone,
+          (zone) => loadedDevice = zone,
           onError: (Object error) {
             deviceFailure = error;
             return null;
           },
         );
-        final preferences = await Future.wait<String>([
+        final preferences = Future.wait<String>([
           readPreference(
             repository.readPersonal(userId, timeout: loadTimeout),
             personal: true,
@@ -191,8 +214,71 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
           else
             Future.value(workspaceRead = 'auto'),
         ]);
-        if (preferences.any((zone) => zone != 'auto')) {
-          return [...preferences, ''];
+        unawaited(preferences.then<void>((_) {}, onError: (Object _) {}));
+        Future<String?> cachedValue(Future<String?> Function() read) async {
+          try {
+            return await read();
+          } on Object {
+            return null;
+          }
+        }
+
+        final cached = await Future.wait<String?>([
+          cachedValue(() => repository.cachedPersonal(userId)),
+          if (workspaceId != null)
+            cachedValue(() => repository.cachedWorkspace(userId, workspaceId))
+          else
+            Future.value('auto'),
+        ]);
+        if (publishing && !isClosed && generation == _generation) {
+          final personal = cached[0] ?? state.personal;
+          final workspace = cached[1] ?? state.workspace;
+          final personalKnown = cached[0] != null || state.personalLoaded;
+          final workspaceKnown =
+              workspaceId == null || cached[1] != null || state.workspaceLoaded;
+          final cachedDevice = loadedDevice ?? state.device;
+          var resolved =
+              personalKnown &&
+              (personal != 'auto' ||
+                  (workspaceKnown &&
+                      (workspace != 'auto' || cachedDevice.isNotEmpty)));
+          if (resolved) {
+            try {
+              timezoneLocation(
+                personal != 'auto'
+                    ? personal
+                    : workspace != 'auto'
+                    ? workspace
+                    : cachedDevice,
+              );
+            } on Exception {
+              resolved = false;
+            }
+          }
+          if (publishing &&
+              !isClosed &&
+              generation == _generation &&
+              (cached[0] != null ||
+                  (workspaceId != null && cached[1] != null))) {
+            emit(
+              TimezoneSettingsState(
+                personal: personal,
+                workspace: workspace,
+                device: cachedDevice,
+                resolved: resolved,
+                personalLoaded: personalKnown,
+                workspaceLoaded: workspaceId != null && workspaceKnown,
+                isFromCache: true,
+                failed: failedSaveZone != null,
+                failedSaveZone: failedSaveZone,
+                failedSaveWorkspace: failedSaveWorkspace,
+              ),
+            );
+          }
+        }
+        final fresh = await preferences;
+        if (fresh.any((zone) => zone != 'auto')) {
+          return [...fresh, ''];
         }
         final zone = await device;
         if (zone == null || zone.trim().isEmpty) {
@@ -200,14 +286,22 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
             deviceFailure?.toString() ?? 'Device timezone is unavailable.',
           );
         }
-        return [...preferences, zone];
+        return [...fresh, zone];
       }
 
       final values = await ApiClient.runForUser(
         userId,
         () => resolve().timeout(loadTimeout),
       );
+      publishing = false;
       if (isClosed || generation != _generation) return;
+      timezoneLocation(
+        values[0] != 'auto'
+            ? values[0]
+            : values[1] != 'auto'
+            ? values[1]
+            : values[2],
+      );
       emit(
         TimezoneSettingsState(
           personal: values[0],
@@ -225,7 +319,10 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
         ),
       );
     } on Object catch (error) {
+      publishing = false;
       if (!isClosed && generation == _generation) {
+        final retained = state;
+        final mayRetain = !personalDenied && !workspaceDenied;
         final failure = rateLimit ?? error;
         _operationalReporter.report(OperationalPhase.timezoneRead, failure);
         if (failure is ApiException && failure.statusCode == 429) {
@@ -234,15 +331,16 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
           );
         }
         emit(
-          sameScope && previous.resolved
+          mayRetain && retained.resolved
               ? TimezoneSettingsState(
-                  personal: previous.personal,
-                  workspace: previous.workspace,
-                  device: previous.device,
+                  personal: retained.personal,
+                  workspace: retained.workspace,
+                  device: retained.device,
                   loading: false,
                   resolved: true,
-                  personalLoaded: previous.personalLoaded,
-                  workspaceLoaded: previous.workspaceLoaded,
+                  personalLoaded: retained.personalLoaded,
+                  workspaceLoaded: retained.workspaceLoaded,
+                  isFromCache: retained.isFromCache,
                   failed: true,
                   errorMessage: _failureMessage(failure),
                   diagnostics: SafeErrorDiagnostics.capture(
@@ -254,24 +352,25 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
                   failedSaveWorkspace: failedSaveWorkspace,
                 )
               : TimezoneSettingsState(
-                  personal:
-                      personalRead ??
-                      (sameUser &&
-                              (previous.resolved || previous.personalLoaded)
-                          ? previous.personal
-                          : 'auto'),
-                  workspace:
-                      workspaceRead ??
-                      (sameScope && previous.workspaceLoaded
-                          ? previous.workspace
-                          : 'auto'),
+                  personal: personalDenied
+                      ? 'auto'
+                      : personalRead ??
+                            (retained.personalLoaded
+                                ? retained.personal
+                                : 'auto'),
+                  workspace: workspaceDenied
+                      ? 'auto'
+                      : workspaceRead ??
+                            (retained.workspaceLoaded
+                                ? retained.workspace
+                                : 'auto'),
                   personalLoaded:
-                      personalRead != null ||
-                      (sameUser &&
-                          (previous.resolved || previous.personalLoaded)),
+                      !personalDenied &&
+                      (personalRead != null || retained.personalLoaded),
                   workspaceLoaded:
-                      workspaceRead != null ||
-                      (sameScope && previous.workspaceLoaded),
+                      !workspaceDenied &&
+                      (workspaceRead != null || retained.workspaceLoaded),
+                  isFromCache: mayRetain && retained.isFromCache,
                   loading: false,
                   failed: true,
                   errorMessage: _failureMessage(failure),
@@ -298,13 +397,13 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
   }) async {
     if ((_retryAt?.isAfter(_clock()) ?? false) ||
         _userId == null ||
-        state.loading ||
         state.saving ||
         !(workspace ? state.workspaceLoaded : state.personalLoaded) ||
         (workspace && (!canManageWorkspace || _workspaceId == null))) {
       return;
     }
-    final generation = _generation;
+    final generation = ++_generation;
+    _pendingLoad = null;
     final previous = state;
     emit(
       TimezoneSettingsState(
@@ -316,11 +415,13 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
         personalLoaded: previous.personalLoaded,
         workspaceLoaded: previous.workspaceLoaded,
         saving: true,
+        isFromCache: previous.isFromCache,
       ),
     );
     try {
+      if (zone != 'auto') timezoneLocation(zone);
       var device = previous.device;
-      Object? deviceError;
+      Object? resolutionError;
       final needsDevice =
           zone == 'auto' &&
           (workspace ? previous.personal : previous.workspace) == 'auto';
@@ -330,8 +431,9 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
           if (device.isEmpty) {
             throw Exception('Device timezone is unavailable.');
           }
+          timezoneLocation(device);
         } on Object catch (error) {
-          deviceError = error;
+          resolutionError = error;
           device = '';
         }
         if (isClosed || generation != _generation) return;
@@ -348,15 +450,29 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
       final personalKnown = !workspace || previous.personalLoaded;
       final workspaceKnown =
           _workspaceId == null || workspace || previous.workspaceLoaded;
-      final resolved =
+      var resolved =
           personalKnown &&
           (personal != 'auto' ||
               (workspaceKnown &&
                   (workspaceZone != 'auto' || device.isNotEmpty)));
+      if (resolved) {
+        try {
+          timezoneLocation(
+            personal != 'auto'
+                ? personal
+                : workspaceZone != 'auto'
+                ? workspaceZone
+                : device,
+          );
+        } on Exception catch (error) {
+          resolutionError = error;
+          resolved = false;
+        }
+      }
       if (!resolved && personalKnown && workspaceKnown) {
         _operationalReporter.report(
           OperationalPhase.timezoneResolve,
-          deviceError ?? StateError('device_timezone_unavailable'),
+          resolutionError ?? StateError('device_timezone_unavailable'),
         );
       }
       emit(
@@ -371,9 +487,9 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
               ? !personalKnown || !workspaceKnown
                     ? previous.errorMessage ??
                           'Timezone preferences are unavailable.'
-                    : deviceError == null
+                    : resolutionError == null
                     ? 'Device timezone is unavailable.'
-                    : _failureMessage(deviceError)
+                    : _failureMessage(resolutionError)
               : null,
           personalLoaded: !workspace || previous.personalLoaded,
           workspaceLoaded: workspace || previous.workspaceLoaded,
@@ -403,6 +519,7 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
               DiagnosticStage.timezoneWrite,
             ),
             failedSaveZone: zone,
+            isFromCache: previous.isFromCache,
             failedSaveWorkspace: workspace,
             retryAt: _retryAt,
           ),
@@ -413,5 +530,7 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
 }
 
 String _failureMessage(Object error) => error is ApiException
-    ? '${error.statusCode}: ${error.message}'
+    ? error.code == 'NATIVE_INTEGRITY_REQUIRED'
+          ? 'NATIVE_INTEGRITY_REQUIRED'
+          : '${error.statusCode}: ${error.message}'
     : error.toString();

@@ -51,16 +51,18 @@ mixin _AssistantChatRepository {
               cached.data!.settings != null)) {
         _trackChatCache(
           restoreChat(
-            wsId: wsId,
-            chatId: chatId,
-            forceRefresh: true,
-            cacheOrigin: origin,
-          ).then<void>(
-            (_) {},
-            onError: (Object error, StackTrace stack) {
-              _cacheFailure(origin, error);
-            },
-          ),
+                wsId: wsId,
+                chatId: chatId,
+                forceRefresh: true,
+                cacheOrigin: origin,
+              )
+              .then<void>((restored) async {
+                origin.checkScope();
+                await origin.onRevalidated?.call(restored);
+              })
+              .catchError((Object error, StackTrace stack) {
+                _cacheFailure(origin, error);
+              }),
         );
         return cached.data;
       }
@@ -305,6 +307,10 @@ mixin _AssistantChatRepository {
                 .where((message) => message.role == 'user')
                 .firstOrNull
                 ?.id;
+        final replyToMessageId = messages.reversed
+            .where((message) => message.role == 'user')
+            .firstOrNull
+            ?.replyToMessageId;
         AssistantJsonStreamEvent userReceipt(ChatMessage saved) =>
             _nativeUserReceiptEvent(
               saved,
@@ -313,6 +319,7 @@ mixin _AssistantChatRepository {
               requestId: requestId,
               text: _latestUserText(messages),
               attachments: attachments,
+              replyToMessageId: replyToMessageId,
               admission: admission,
             );
 
@@ -326,6 +333,7 @@ mixin _AssistantChatRepository {
           content: _latestUserText(messages),
           attachments: nativeAttachments,
           clientRequestId: requestId,
+          replyToMessageId: replyToMessageId,
           miraMode: true,
           admission: admission,
         )) {
@@ -370,23 +378,21 @@ mixin _AssistantChatRepository {
             )) {
               yield userReceipt(user);
             }
-            final assistantMessages = event.messages.where(
-              (message) => message.kind == ChatMessageKind.assistant,
-            );
-            for (final message in assistantMessages) {
-              if (!assistantStarted) {
-                yield AssistantJsonStreamEvent({
-                  'type': 'start',
-                  'messageId': message.id,
-                });
-                assistantStarted = true;
-              }
+            final assistantMessages = event.messages
+                .where((message) => message.kind == ChatMessageKind.assistant)
+                .map(_assistantMessageFromChatMessage)
+                .toList(growable: false);
+            if (!assistantStarted && assistantMessages.isNotEmpty) {
+              assistantStarted = true;
               yield AssistantJsonStreamEvent({
-                'type': 'saved-message',
-                'messageId': message.id,
-                'text': message.content,
+                'type': 'start',
+                'messageId': assistantMessages.first.id,
               });
             }
+            yield AssistantJsonStreamEvent({
+              'type': 'saved-messages',
+              'messages': assistantMessages.map((m) => m.toJson()).toList(),
+            });
             continue;
           }
 

@@ -5,12 +5,26 @@ import { VersionBadge } from '@tuturuuu/ui/custom/version-badge';
 import { Toaster } from '@tuturuuu/ui/sonner';
 import { getPlatformReleaseInfo } from '@tuturuuu/utils/platform-release';
 import { NextIntlClientProvider } from 'next-intl';
-import { ThemeProvider } from 'next-themes';
 import { NuqsAdapter } from 'nuqs/adapters/tanstack-router';
-import type { ReactNode } from 'react';
-import en from '../../messages/en.json';
-import vi from '../../messages/vi.json';
+import { type ReactNode, Suspense } from 'react';
+import { useLocaleMessages } from './locale-messages';
 import { MeetParamsContext } from './next-navigation';
+import { MeetThemeProvider as ThemeProvider } from './theme-provider';
+
+function LocaleMessages({
+  locale,
+  children,
+}: {
+  locale: string;
+  children: ReactNode;
+}) {
+  const messages = useLocaleMessages(locale);
+  return (
+    <NextIntlClientProvider locale={locale} messages={messages}>
+      {children}
+    </NextIntlClientProvider>
+  );
+}
 
 export function AppProviders({
   locale,
@@ -32,30 +46,29 @@ export function AppProviders({
       enableSystem
       scriptProps={{ 'data-cfasync': 'false' }}
     >
-      <NextIntlClientProvider
-        locale={locale}
-        messages={locale === 'vi' ? vi : en}
-      >
-        <MeetParamsContext value={params}>
-          <NuqsAdapter>
-            <ClientProviders
-              key={actorId ?? 'anonymous'}
-              actorId={actorId}
-              currentApp="meet"
-            >
-              {children}
-              {showVersionBadge && (
-                <VersionBadge
-                  release={getPlatformReleaseInfo('Tuturuuu Meet')}
-                />
-              )}
-              <TailwindIndicator />
-              <ProductionIndicator />
-              <Toaster />
-            </ClientProviders>
-          </NuqsAdapter>
-        </MeetParamsContext>
-      </NextIntlClientProvider>
+      <Suspense fallback={null}>
+        <LocaleMessages locale={locale}>
+          <MeetParamsContext value={params}>
+            <NuqsAdapter>
+              <ClientProviders
+                key={actorId ?? 'anonymous'}
+                actorId={actorId}
+                currentApp="meet"
+              >
+                {children}
+                {showVersionBadge && (
+                  <VersionBadge
+                    release={getPlatformReleaseInfo('Tuturuuu Meet')}
+                  />
+                )}
+                <TailwindIndicator />
+                <ProductionIndicator />
+                <Toaster />
+              </ClientProviders>
+            </NuqsAdapter>
+          </MeetParamsContext>
+        </LocaleMessages>
+      </Suspense>
     </ThemeProvider>
   );
 }

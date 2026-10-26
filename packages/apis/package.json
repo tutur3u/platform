@@ -1,7 +1,7 @@
 {
   "name": "@tuturuuu/apis",
   "license": "MIT",
-  "version": "0.13.0",
+  "version": "0.13.1",
   "repository": {
     "type": "git",
     "url": "https://github.com/tutur3u/platform",
@@ -42,5 +42,5 @@
     "./*": "./src/*.ts",
     "./meet/actions": "./src/meet/actions/index.ts"
   },
-  "packageManager": "bun@1.4.3"
+  "packageManager": "bun@1.4.4"
 }

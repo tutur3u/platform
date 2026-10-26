@@ -1,0 +1,93 @@
+# Code owners for security-sensitive paths.
+# The main-branch ruleset requires code-owner review, so a change under these
+# paths needs approval from the security reviewer. Everything else is unowned
+# and follows the normal review rules. See
+# apps/docs/build/devops/code-owners.mdx for the review policy.
+
+# CI, workflow and repository automation
+/.github/                          @vhpx
+/scripts/ci/                       @vhpx
+
+# Authentication, sessions, SSO and request guards
+/packages/auth/                    @vhpx
+/packages/sso/                     @vhpx
+/packages/turnstile/               @vhpx
+/packages/start-bridge/            @vhpx
+/packages/utils/src/api-proxy-guard.ts     @vhpx
+/packages/utils/src/required-mfa*.ts @vhpx
+/packages/satellite/src/auth.ts    @vhpx
+/packages/supabase/                @vhpx
+/apps/web/src/app/api/auth/        @vhpx
+/apps/web/src/legacy-api-routes/auth/ @vhpx
+/apps/web/src/app/api/v1/sso/      @vhpx
+/apps/web/src/app/api/v1/auth/     @vhpx
+/apps/web/src/legacy-api-routes/v1/auth/ @vhpx
+/apps/web/src/lib/auth/            @vhpx
+/apps/web/src/lib/sso/             @vhpx
+
+# Sensitive decision modules by name, wherever they live: OIDC, OAuth, session
+# auth, crypto helpers, webhook verifiers, unsubscribe signatures and external-app
+# credentials. Matching by name keeps new modules of the same kind covered.
+**/oidc*.ts                        @vhpx
+**/oauth.ts                        @vhpx
+**/auth.ts                         @vhpx
+**/*-auth.ts                       @vhpx
+/apps/web/src/lib/devboxes/        @vhpx
+/apps/infrastructure/src/lib/devboxes/ @vhpx
+**/*crypto*.ts                     @vhpx
+**/webhooks.ts                     @vhpx
+**/email-unsubscribe.ts            @vhpx
+**/external-apps*.ts               @vhpx
+/apps/coordination/src/worker.ts   @vhpx
+/packages/storage-core/src/lib/workspace-storage-export-links.ts @vhpx
+/packages/utils/src/workspace-helper.ts @vhpx
+/apps/calendar/src/app/api/v1/workspaces/*/calendar/sync/ @vhpx
+/apps/calendar/src/app/api/v1/workspaces/*/calendar/schedule/ @vhpx
+
+# Credential, API-key and token verifiers called by many routes
+/apps/web/src/lib/api-middleware.ts @vhpx
+/apps/tasks/src/lib/api-middleware.ts @vhpx
+/packages/realtime/src/core/token.ts @vhpx
+/packages/realtime/src/chat/token.ts @vhpx
+/apps/chat-realtime/src/token.ts   @vhpx
+/apps/hive-realtime/src/token.ts   @vhpx
+/apps/hive/src/app/api/v1/hive/_realtime-token.ts @vhpx
+/packages/meet-core/src/features/live-assistant/token.ts @vhpx
+/apps/web/src/lib/mcp/authorization.ts @vhpx
+/apps/web/src/lib/chatgpt/oauth.ts @vhpx
+/apps/web/src/app/api/notifications/send-immediate/route.ts @vhpx
+/packages/utils/src/app-coordination-token.ts @vhpx
+/apps/discord/auth.py              @vhpx
+/apps/*/src/proxy.ts               @vhpx
+
+# Scheduled jobs authenticated by the cron secret
+/apps/*/src/app/api/cron/          @vhpx
+/apps/web/src/legacy-api-routes/cron/ @vhpx
+/apps/infrastructure/src/lib/mobile-calendar/cron-gateway.ts @vhpx
+/apps/infrastructure/src/lib/post-email-queue-cron.ts @vhpx
+/apps/infrastructure/src/app/api/v1/infrastructure/post-email-queue/run-now/ @vhpx
+/apps/cron-control/                @vhpx
+
+# Inbound webhooks and their verifiers
+/apps/*/src/app/api/v1/webhooks/   @vhpx
+/apps/web/src/legacy-api-routes/v1/webhooks/ @vhpx
+/apps/inventory/src/app/api/v1/inventory/polar/webhook/ @vhpx
+/apps/inventory/src/app/api/v1/inventory/square/webhook/ @vhpx
+/packages/inventory-core/src/lib/inventory/commerce/square/webhooks.ts @vhpx
+/apps/mail/src/lib/mail/inbound/   @vhpx
+
+# Database schema, migrations and RLS
+/apps/database/supabase/migrations/ @vhpx
+
+# Code-execution infrastructure (devbox and Judge runners)
+/apps/devbox-control/              @vhpx
+/packages/devbox/                  @vhpx
+
+# Payments
+/packages/payment/                 @vhpx
+/packages/payment-core/            @vhpx
+/apps/pay/src/app/api/payment/     @vhpx
+/apps/*/src/lib/sepay*.ts          @vhpx
+
+# Code ownership itself
+/.github/CODEOWNERS                @vhpx

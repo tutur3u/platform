@@ -4,6 +4,7 @@ import 'package:flutter/material.dart'
     hide AlertDialog, FilledButton, TextButton, TextField;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/input/platform_text_context_menu.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_cubit.dart';
@@ -53,12 +54,9 @@ class _TimerTabState extends State<TimerTab> {
             context.read<WorkspaceCubit>().state.currentWorkspace?.id ?? '';
         final userId = context.watch<AuthCubit>().state.user?.id ?? '';
 
-        return ListView(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.paddingOf(context).bottom + 24,
-          ),
+        return AppPageListView(
           children: [
-            const shad.Gap(32),
+            const shad.Gap(AppSpacing.xxl),
             // Timer display
             Center(
               child: TimerDisplay(
@@ -99,16 +97,14 @@ class _TimerTabState extends State<TimerTab> {
             ],
             // Session title input
             if (!state.isRunning && !state.isPaused)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: shad.FormField(
-                  key: const shad.FormKey<String>(#sessionTitle),
-                  label: Text(l10n.timerSessionTitle),
-                  child: shad.TextField(
-                    selectionControls: platformTextSelectionControls(),
-                    contextMenuBuilder: platformTextContextMenuBuilder(),
-                    onChanged: cubit.setTitle,
-                  ),
+              shad.FormField(
+                key: const shad.FormKey<String>(#sessionTitle),
+                label: Text(l10n.timerSessionTitle),
+                child: shad.TextField(
+                  placeholder: Text(context.l10n.inputPlaceholderTimeTitle),
+                  selectionControls: platformTextSelectionControls(),
+                  contextMenuBuilder: platformTextContextMenuBuilder(),
+                  onChanged: cubit.setTitle,
                 ),
               ),
             // Advanced section (category, description, task link)

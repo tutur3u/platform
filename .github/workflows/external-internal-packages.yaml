@@ -15,6 +15,7 @@ on:
       - "scripts/ci/run-with-backoff.sh"
       - "turbo.json"
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
     paths:
       - ".github/actions/run-with-turbo-remote-cache/**"
       - ".github/actions/setup-bun-with-retry/**"
@@ -39,17 +40,18 @@ env:
 
 jobs:
   Build:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 2
 
       - name: Setup bun
         uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
 
       - name: Restore Turbo fallback cache
         uses: ./.github/actions/setup-turbo-fallback-cache
@@ -57,7 +59,7 @@ jobs:
           family: external-build
 
       - name: Use Node.js 24
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
 

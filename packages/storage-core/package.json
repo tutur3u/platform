@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/storage-core",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "private": true,
   "exports": {
     "./*": "./src/lib/*.ts"
@@ -11,7 +11,7 @@
     "test:watch": "vitest",
     "type-check": "tsc --project tsconfig.typecheck.json"
   },
-  "packageManager": "bun@1.4.3",
+  "packageManager": "bun@1.4.4",
   "dependencies": {
     "@aws-sdk/client-s3": "3.1154.0",
     "@aws-sdk/s3-request-presigner": "^3.1154.0",

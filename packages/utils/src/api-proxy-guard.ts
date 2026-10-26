@@ -1,6 +1,5 @@
 import { Ratelimit } from '@upstash/ratelimit';
-import type { NextRequest } from 'next/server';
-import { NextResponse } from 'next/server';
+import type { NextRequest, NextResponse } from 'next/server';
 import {
   extractIPFromRequest,
   isIPBlockedEdge,
@@ -13,11 +12,16 @@ import {
 } from './abuse-protection/edge-trust';
 import { guardApiProxyBody } from './api-proxy-body';
 import {
+  DEFAULT_TRUSTED_BYPASS_RULES,
+  type TrustedProxyBypassRule,
+} from './api-proxy-bypass-rules';
+import {
   isFinanceInvoiceCreateSupportRead,
   isFinanceRead,
 } from './api-proxy-read-policy';
-import { DEV_MODE } from './constants';
+import { guardRejection } from './guard-rejection';
 import { guardOfflineDownloadRequest } from './offline-download-guard';
+import { buildProxyRateLimitRejection } from './proxy-rate-limit-rejection';
 import { validateRequestEmojiLimit } from './request-emoji-limit';
 import { enforceRequiredMfaRequest } from './required-mfa-runtime';
 import {
@@ -42,7 +46,7 @@ function isEnvFlagEnabled(name: string, defaultOn = true): boolean {
  * Whether trusted accounts/locations get scaled read limits (and verified
  * sessions get their own per-session bucket) at the edge. Default on; set
  * `API_PROXY_EDGE_TRUST_ENABLED=0` to disable trust uplift and fall back to
- * legacy per-IP keying without a deploy.
+ * per-IP keying for cache-based identities without a deploy.
  */
 function edgeTrustEnabled(): boolean {
   return isEnvFlagEnabled('API_PROXY_EDGE_TRUST_ENABLED');
@@ -82,11 +86,12 @@ export type ProxyRoutePolicy = {
   rateLimits: RateLimitProfile;
 };
 
-export type TrustedProxyBypassRule = {
-  matches: (pathname: string, headers: Headers) => boolean;
-};
+export type { TrustedProxyBypassRule } from './api-proxy-bypass-rules';
 
 export type GuardOptions = {
+  /** Reuse the actor already verified by the MFA guard for opted-in routes. */
+  useVerifiedBearerActor?: boolean;
+  diagnosticPolicyName?: string;
   additionalRoutePolicies?: ProxyRoutePolicy[];
   prefixBase: string;
   routePolicies?: ProxyRoutePolicy[];
@@ -565,62 +570,6 @@ const DEFAULT_ROUTE_POLICIES: ProxyRoutePolicy[] = [
   },
 ];
 
-function hasBearerToken(headers: Headers, secrets: Array<string | undefined>) {
-  const authHeader = headers.get('authorization');
-  if (!authHeader) {
-    return false;
-  }
-
-  return secrets.some(
-    (secret) => !!secret && authHeader === `Bearer ${secret}`
-  );
-}
-
-function hasHeaderToken(
-  headers: Headers,
-  headerName: string,
-  secrets: Array<string | undefined>
-) {
-  const headerValue = headers.get(headerName);
-  if (!headerValue) {
-    return false;
-  }
-
-  return secrets.some((secret) => !!secret && headerValue === secret);
-}
-
-const DEFAULT_TRUSTED_BYPASS_RULES: TrustedProxyBypassRule[] = [
-  {
-    matches: (pathname, headers) =>
-      (pathname === '/api/cron' || pathname.startsWith('/api/cron/')) &&
-      (hasBearerToken(headers, [
-        process.env.CRON_SECRET,
-        process.env.VERCEL_CRON_SECRET,
-        process.env.SUPABASE_SERVICE_ROLE_KEY,
-      ]) ||
-        hasHeaderToken(headers, 'x-cron-secret', [
-          process.env.CRON_SECRET,
-          process.env.VERCEL_CRON_SECRET,
-        ]) ||
-        hasHeaderToken(headers, 'x-vercel-cron-secret', [
-          process.env.CRON_SECRET,
-          process.env.VERCEL_CRON_SECRET,
-        ])),
-  },
-  {
-    matches: (pathname, headers) =>
-      (pathname === '/api/v1/webhooks' ||
-        pathname.startsWith('/api/v1/webhooks/')) &&
-      !!process.env.SUPABASE_WEBHOOK_SECRET &&
-      headers.get('x-webhook-secret') === process.env.SUPABASE_WEBHOOK_SECRET,
-  },
-  // Migration APIs: bypass rate limit in DEV_MODE (routes already return 403 in production)
-  {
-    matches: (pathname, _headers) =>
-      pathname.startsWith('/api/v1/infrastructure/migrate/') && DEV_MODE,
-  },
-];
-
 function createRedisRateLimitBuckets(
   redis: UpstashRatelimitRedisClient,
   prefixBase: string,
@@ -674,24 +623,6 @@ function getRoutePolicy(
   return (
     routePolicies.find((routePolicy) => routePolicy.matches(req)) ??
     DEFAULT_ROUTE_POLICIES[DEFAULT_ROUTE_POLICIES.length - 1]!
-  );
-}
-
-function buildRateLimitResponse(
-  status: 429,
-  retryAfter: number,
-  headers?: Record<string, string>
-) {
-  return NextResponse.json(
-    { error: 'Too Many Requests', message: 'Rate limit exceeded' },
-    {
-      status,
-      headers: {
-        'Cache-Control': 'no-store',
-        'Retry-After': `${retryAfter}`,
-        ...headers,
-      },
-    }
   );
 }
 
@@ -787,18 +718,6 @@ export function hasAuthenticatedApiSession(req: NextRequest): boolean {
   }
 
   return false;
-}
-
-function getCallerClass(req: NextRequest): CallerClass {
-  // Intentionally always 'anonymous'. Auth headers/cookies are forgeable at the
-  // edge (we can't verify signatures cheaply here), so presence alone must never
-  // grant an elevated proxy budget — real per-user enforcement happens
-  // downstream. Per-session proxy buckets and higher read throughput for
-  // genuinely trusted accounts/locations are granted instead via the
-  // server-written trust cache (see resolveProxyIdentity +
-  // getCachedTrustEntries), which cannot be forged.
-  void req;
-  return 'anonymous';
 }
 
 /**
@@ -1079,9 +998,25 @@ function getRateLimitPrefix(
 export function isTrustedProxyBypassRequest(
   pathname: string,
   headers: Headers,
-  trustedBypassRules: TrustedProxyBypassRule[] = DEFAULT_TRUSTED_BYPASS_RULES
+  trustedBypassRules: TrustedProxyBypassRule[] = DEFAULT_TRUSTED_BYPASS_RULES,
+  method?: string
 ): boolean {
-  return trustedBypassRules.some((rule) => rule.matches(pathname, headers));
+  return trustedBypassRules.some((rule) =>
+    rule.matches(pathname, headers, method)
+  );
+}
+
+/** Same check for a whole request, so method-bound rules see the method. */
+export function isTrustedProxyBypassForRequest(
+  req: Pick<NextRequest, 'nextUrl' | 'headers' | 'method'>,
+  trustedBypassRules?: TrustedProxyBypassRule[]
+): boolean {
+  return isTrustedProxyBypassRequest(
+    req.nextUrl.pathname,
+    req.headers,
+    trustedBypassRules,
+    req.method
+  );
 }
 
 export function clearApiProxyGuardLimiterCache() {
@@ -1092,12 +1027,28 @@ export async function guardApiProxyRequest(
   req: NextRequest,
   options: GuardOptions
 ): Promise<NextResponse | null> {
-  if (!isTrustedProxyBypassRequest(req.nextUrl.pathname, req.headers)) {
-    const assurance = await enforceRequiredMfaRequest(req);
+  let authenticatedActor: string | null = null;
+  if (
+    !isTrustedProxyBypassRequest(
+      req.nextUrl.pathname,
+      req.headers,
+      undefined,
+      req.method
+    )
+  ) {
+    const assurance = await enforceRequiredMfaRequest(
+      req,
+      options.useVerifiedBearerActor
+        ? (userId) => {
+            authenticatedActor = userId;
+          }
+        : undefined
+    );
     if (assurance) return assurance;
   }
   const payloadResponse = await guardApiProxyBody(req, options.maxPayloadBytes);
-  if (payloadResponse) return payloadResponse;
+  if (payloadResponse)
+    return guardRejection(req, payloadResponse, 'proxy-payload-too-large');
 
   const routePolicies = [
     ...(options.additionalRoutePolicies ?? []),
@@ -1113,10 +1064,12 @@ export async function guardApiProxyRequest(
     !isTrustedProxyBypassRequest(
       req.nextUrl.pathname,
       req.headers,
-      trustedBypassRules
+      trustedBypassRules,
+      req.method
     )
   ) {
-    const callerClass = getCallerClass(req);
+    // Credential presence alone never grants an authenticated budget.
+    const callerClass: CallerClass = 'anonymous';
     const ip = extractIPFromRequest(req.headers);
     const identity = await resolveProxyIdentity(req, ip);
     const routePolicy = getRoutePolicy(req, routePolicies);
@@ -1143,26 +1096,27 @@ export async function guardApiProxyRequest(
             Math.ceil((blockInfo.expiresAt.getTime() - Date.now()) / 1000)
           );
 
-          return buildRateLimitResponse(429, retryAfter, {
-            'X-Proxy-Block-Reason': 'ip-already-blocked',
-          });
+          return buildProxyRateLimitRejection(
+            req,
+            retryAfter,
+            {
+              'X-Proxy-Block-Reason': 'ip-already-blocked',
+              'X-RateLimit-Policy': 'proxy-ip-block',
+              'X-RateLimit-Caller-Class': authenticatedActor
+                ? 'authenticated'
+                : 'unknown',
+              'X-RateLimit-Window': 'unknown',
+            },
+            'proxy-ip-blocked'
+          );
         }
       }
     }
 
     const isRead = req.method === 'GET' || req.method === 'HEAD';
 
-    // Resolve server-verified session keying for reads and mutations, but apply
-    // trust uplift to read limits only. Account trust (session key) and location
-    // trust (cidr/ip keys) are distinguished so that:
-    //   * a server-verified SESSION (cache entry keyed on the real cookie's
-    //     hash — unforgeable) gets its OWN per-session bucket, so signed-in
-    //     teammates behind one NAT no longer collide; and
-    //   * a trusted LOCATION (office cidr/ip) uplifts the shared per-IP bucket
-    //     for the whole team without any per-request credential.
-    // Untrusted traffic keeps legacy per-IP keying, preserving single-IP abuse
-    // caps. A forged cookie hashes to a key with no cache entry, so it cannot
-    // escape the shared IP bucket.
+    // Verified actors can be keyed before a downstream route warms session trust.
+    // Cached sessions retain their own buckets; location uplift applies to reads.
     let trustEntry: CachedTrustEntry | null = null;
     let sessionScoped = false;
     if (abuseProtectionControls.rateLimitsEnabled && edgeTrustEnabled()) {
@@ -1180,8 +1134,6 @@ export async function guardApiProxyRequest(
       sessionScoped = !!identity.sessionKey && !!sessionEntry;
 
       if (isRead) {
-        // Location/workspace trust applies to the shared per-IP bucket for the
-        // whole team; session trust applies to the per-session bucket.
         const locationEntry = combineTrustEntries([
           identity.cidrKey ? entries.get(identity.cidrKey) : undefined,
           identity.ipKey ? entries.get(identity.ipKey) : undefined,
@@ -1194,16 +1146,15 @@ export async function guardApiProxyRequest(
       }
     }
 
-    // Server-verified sessions key per-session; everyone else keys per-IP.
-    const limiterId =
-      sessionScoped && identity.sessionKey
+    const limiterId = authenticatedActor
+      ? `user:${authenticatedActor}`
+      : sessionScoped && identity.sessionKey
         ? identity.sessionKey
         : identity.ipKey;
 
     if (abuseProtectionControls.rateLimitsEnabled && limiterId) {
-      const effectiveCallerClass: CallerClass = sessionScoped
-        ? 'authenticated'
-        : callerClass;
+      const effectiveCallerClass: CallerClass =
+        authenticatedActor || sessionScoped ? 'authenticated' : callerClass;
       const baseRateLimits = getEffectiveRateLimits(
         routePolicy,
         effectiveCallerClass
@@ -1258,15 +1209,21 @@ export async function guardApiProxyRequest(
             Math.ceil((reset - Date.now()) / 1000)
           );
 
-          return buildRateLimitResponse(429, retryAfter, {
-            'X-Proxy-Block-Reason': 'route-rate-limit',
-            'X-RateLimit-Limit': `${limit}`,
-            'X-RateLimit-Remaining': `${remaining}`,
-            'X-RateLimit-Reset': `${Math.ceil(reset / 1000)}`,
-            'X-RateLimit-Caller-Class': effectiveCallerClass,
-            'X-RateLimit-Window': window,
-            'X-RateLimit-Policy': routePolicy.key,
-          });
+          return buildProxyRateLimitRejection(
+            req,
+            retryAfter,
+            {
+              'X-Proxy-Block-Reason': 'route-rate-limit',
+              'X-RateLimit-Limit': `${limit}`,
+              'X-RateLimit-Remaining': `${remaining}`,
+              'X-RateLimit-Reset': `${Math.ceil(reset / 1000)}`,
+              'X-RateLimit-Caller-Class': effectiveCallerClass,
+              'X-RateLimit-Window': window,
+              'X-RateLimit-Policy':
+                options.diagnosticPolicyName ?? routePolicy.key,
+            },
+            'proxy-rate-limited'
+          );
         }
       }
     }
@@ -1290,10 +1247,12 @@ export async function guardApiProxyRequest(
     return null;
   }
 
-  return (
+  return guardRejection(
+    req,
     (await validateRequestEmojiLimit(req, {
       allowDescriptionYjsState,
       skipValidationForFields,
-    })) ?? null
+    })) ?? null,
+    'proxy-content-rejected'
   );
 }

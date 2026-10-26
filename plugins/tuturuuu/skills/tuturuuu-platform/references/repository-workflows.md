@@ -29,6 +29,14 @@ Consult only the section relevant to the current task. Paths are repository-rela
 - `apps/database`: Supabase migrations, configuration, reset scripts, and tests.
 - `apps/docs`: Mintlify docs and operational runbooks.
 - `apps/discord`: Python Discord utilities.
+  For MarkItDown changes, read both `/markitdown` adapters (`app.py` and
+  `local_server.py`) and the download/conversion boundaries in
+  `markitdown_service.py`. Follow the focused no-install Python commands in
+  `apps/discord/TESTING.md`; use fixtures instead of real signed URLs or remote
+  services. Preserve configured-origin validation before requests, disabled
+  redirects, constant temporary suffixes, and download limits. The URL policy
+  and DNS trust boundary are documented in
+  `apps/docs/platform/ai/structured-data.mdx#attachment-conversion-url-policy`.
 - `packages/*`: shared UI, AI, types, internal API clients, auth, payment,
   Supabase helpers, and utilities.
 - `plugins/tuturuuu`: repo-local Codex plugin and skill references that carry
@@ -73,6 +81,13 @@ generated type files.
   unless the product already owns that route pattern.
 - Extract portable settings to `packages/ui` only when they have no `@/`
   imports.
+- Read and write dialog URL state only through `useSettingsDialogUrlState` and
+  `@tuturuuu/ui/hooks/settings-dialog-url`. A bare `?settingsTab=` opens the
+  dialog. Build links with `buildSettingsDialogHref`.
+- Satellite dialogs include `createAccountSettingsNavGroup` and
+  `SatelliteAccountSettingsPanel` from `@tuturuuu/satellite/account-settings`.
+  Never proxy password, 2FA, passkey or session mutations from a satellite; link
+  to the web tab instead. See `apps/docs/platform/features/settings-dialog.mdx`.
 
 ### Dependencies
 
@@ -97,7 +112,7 @@ generated type files.
 ### Tuturuuu CLI
 
 - Use the global `ttr` command for the installed CLI. Inside this monorepo,
-  `bun ttr ...` runs the repo-local SDK script.
+  `bun ttr ...` delegates to the trusted global `~/.bun/bin/ttr`. For source development run `TUTURUUU_CONFIG=<private-config> TTR_RESOURCES_HOME=<disposable-resource-home> bun packages/sdk/src/cli/index.ts ...` explicitly from the repo root.
 - Discover live IDs with `ttr whoami`, `ttr workspaces`, `ttr boards`,
   `ttr lists`, `ttr labels`, and `ttr tasks --json --no-update-check`.
 - For task capture, use `ttr tasks create/update/done/close` as the default

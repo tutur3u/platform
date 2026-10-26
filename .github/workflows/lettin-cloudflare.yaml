@@ -2,6 +2,7 @@ name: Lettin Cloudflare
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
     paths:
       - "apps/lettin/**"
       - "packages/**"
@@ -35,13 +36,16 @@ permissions:
   contents: read
   deployments: read
 
+# Validation runs supersede per PR or branch; production and manual runs stay
+# unique. The literal prefix keeps workflow_call runs from one planner apart.
+# Only the deploy job serializes production with a non-cancelling queue.
 concurrency:
-  group: lettin-cloudflare-${{ github.ref }}
-  cancel-in-progress: false
-  queue: max
+  group: lettin-cloudflare-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}
+  cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 
 jobs:
   check-ci:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     uses: ./.github/workflows/ci-check.yml
     permissions:
       contents: read
@@ -59,7 +63,7 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 24
@@ -100,6 +104,10 @@ jobs:
     environment: lettin-production
     env:
       CLOUDFLARE_ACCOUNT_ID: e8912e2867beecc673d171907bf09649
+    concurrency:
+      group: lettin-cloudflare-production-deploy
+      cancel-in-progress: false
+      queue: max
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -107,7 +115,7 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 24
@@ -119,10 +127,12 @@ jobs:
       - name: Detect Lettin schema changes
         id: schema
         shell: bash
+        env:
+          EVENT_BEFORE: ${{ github.event.before }}
         run: |
-          if [[ "${{ github.event_name }}" != "push" || "${{ github.event.before }}" == "0000000000000000000000000000000000000000" ]]; then
+          if [[ "${{ github.event_name }}" != "push" || "$EVENT_BEFORE" == "0000000000000000000000000000000000000000" ]]; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
-          elif git diff --quiet "${{ github.event.before }}" "${{ github.sha }}" -- apps/lettin/migrations; then
+          elif git diff --quiet "$EVENT_BEFORE" "${{ github.sha }}" -- apps/lettin/migrations; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"

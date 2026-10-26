@@ -13,6 +13,24 @@ does not authorize promotion.
 ## CI
 
 - Inspect nearby workflows before adding a new one.
+- Treat the repository Actions cache budget as shared with the Supabase image
+  archives. Heavyweight Gradle, Flutter SDK/pub, Bun dependency and CocoaPods
+  writers must have explicit trusted-ref/event guards; PRs restore only.
+  `actions/setup-java` with `cache: gradle` registers an implicit post-job save,
+  so use SHA-pinned `actions/cache/restore` plus a main-push-only save instead.
+  Inventory every combined cache/save action and setup cache input, including
+  combined `lookup-only` post saves, Rust save-if, Buildx binary defaults and
+  declared BuildKit GHA exports. Keep paused-source classifications fence-checked.
+  Allow exceptions only by exact workflow/job
+  and full input set with a reason; do not infer safety from key names. Bun
+  dependencies use a coarse v2 key per OS/architecture/pinned version without
+  lockfile hashes or v1 fallback, preventing new archives on every lock update.
+  Production mobile jobs restore main caches without unreachable save steps;
+  desktop/release/employee Flutter callers use the restore-everywhere wrapper.
+  Run `node --test scripts/ci/heavyweight-cache-budget.test.js` when changing
+  cache behavior; see the CI runbook's repository cache budget section for
+  bounded, operator-owned retired-version cleanup. A passing source guard does
+  not prove hosted cache retention.
 - Use `.github/workflows/ci-check.yml` when the workflow should respect the repo-level `tuturuuu.ts` switchboard.
 - Add the workflow filename to `tuturuuu.ts`.
 - Prefer `permissions: contents: read` for validation-only jobs.
@@ -116,7 +134,7 @@ artifact procedure; this wrapper does not qualify hosted behavior or deployment.
 
 - Keep Calendar validation in the registered `mail-calendar-tasks-builds.yaml`;
   root selector/registry changes require parent ownership. Use exact PR-head or
-  push-SHA checkout, Bun 1.4.3 and Node 24.22.0.
+  push-SHA checkout, Bun 1.4.4 and Node 24.22.0.
 - Discover the official emitted Void deploy pointer (`configPath`, required empty
   `auxiliaryWorkers`), then validate contained main/assets/config before Wrangler
   type generation or dry-run. Generate `CloudflareEnv` with runtime types excluded;
@@ -146,4 +164,21 @@ artifact procedure; this wrapper does not qualify hosted behavior or deployment.
 - Parse touched JSON with `python3 -m json.tool`.
 - Run `bun ff` on touched docs, scripts, config, and workflow files.
 - Run `git diff --check`.
-- Run `bun check` when root TypeScript config or repo-wide script/config behavior changed.
+- Run `bun check:changed` before pushing; when root TypeScript config or repo-wide
+  script/config behavior changed, require `bun validate` to pass in CI for the exact
+  commit (never run it on agent machines).
+
+## Windows Flutter installer verification
+
+Reuse `desktop-beta.yaml` and `scripts/desktop-deployment/package-windows.mjs`
+for unsigned Windows release work. A branch dispatch with `dry_run=true` builds
+only on GitHub-hosted Windows, uploads the installer and checksum receipt, and
+never publishes. `smoke-windows.ps1` silently installs that installer, checks
+required Flutter files, requires a visible window after Flutter's first frame (never show the runner
+before that callback), records installed file sizes/hashes and installer identity,
+and uninstalls. Strip OIDC request/runtime credentials before launching the app,
+and preserve the startup error if cleanup also fails. Run the Windows parse and
+smoke fixtures on a Windows runner. Keep placeholder-config smoke results
+separate from production authentication and update acceptance. Public distribution
+uses the existing protected production flow and provenance gates; see
+[the desktop runbook](../../../../../apps/docs/build/devops/desktop-beta-distribution.mdx).

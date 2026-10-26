@@ -1,5 +1,11 @@
 part of 'task_board_detail_page.dart';
 
+/// Whether the kanban canvas pages one column at a time. Decided from the
+/// width the board body receives, not the window, so a board beside the shell
+/// rail picks the layout for its own width.
+bool _usesPagedKanban(double bodyWidth) =>
+    Breakpoints.fromWidth(bodyWidth) == DeviceClass.compact;
+
 class _TaskBoardKanbanView extends StatelessWidget {
   const _TaskBoardKanbanView({
     required this.boardId,
@@ -7,7 +13,6 @@ class _TaskBoardKanbanView extends StatelessWidget {
     required this.tasksByList,
     required this.state,
     required this.board,
-    required this.bottomPadding,
     required this.viewportHeight,
     required this.kanbanVerticalScrollController,
     required this.kanbanHorizontalPageController,
@@ -30,7 +35,6 @@ class _TaskBoardKanbanView extends StatelessWidget {
   final Map<String, List<TaskBoardTask>> tasksByList;
   final TaskBoardDetailState state;
   final TaskBoardDetail board;
-  final double bottomPadding;
   final double viewportHeight;
   final ScrollController kanbanVerticalScrollController;
   final PageController kanbanHorizontalPageController;
@@ -60,17 +64,20 @@ class _TaskBoardKanbanView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pageSizeHint = _tasksPageSizeHintForViewport(viewportHeight);
+    // Full-bleed canvas: columns run beneath the dock and pad their own
+    // content with the shell clearance.
+    final dockClearance = MediaQuery.paddingOf(context).bottom;
+    final contentBottomPadding = AppLayout.scrollEndGap + dockClearance;
 
     if (state.filteredTasks.isEmpty &&
         (state.searchQuery.trim().isNotEmpty ||
             state.filters.hasAdvancedFilters)) {
       if (state.isLoadingListTasks) {
-        return ListView(
+        return AppPageListView(
           key: PageStorageKey<String>('task-board-kanban-empty-$boardId'),
           controller: kanbanVerticalScrollController,
           primary: false,
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: EdgeInsets.fromLTRB(16, 0, 16, bottomPadding),
           children: [
             shad.Card(
               child: Row(
@@ -89,12 +96,11 @@ class _TaskBoardKanbanView extends StatelessWidget {
         );
       }
 
-      return ListView(
+      return AppPageListView(
         key: PageStorageKey<String>('task-board-kanban-empty-$boardId'),
         controller: kanbanVerticalScrollController,
         primary: false,
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.fromLTRB(16, 0, 16, bottomPadding),
         children: [
           if (state.listLoadErrorById.isNotEmpty)
             shad.Card(
@@ -120,16 +126,16 @@ class _TaskBoardKanbanView extends StatelessWidget {
       );
     }
 
-    final columnHeight = context.isCompact
-        ? viewportHeight.clamp(280.0, 2000.0)
-        : math.max<double>(280, viewportHeight);
-
     return LayoutBuilder(
       builder: (context, constraints) {
         final viewportWidth = constraints.maxWidth.isFinite
             ? constraints.maxWidth
             : MediaQuery.sizeOf(context).width;
-        if (!context.isCompact) {
+        final paged = _usesPagedKanban(viewportWidth);
+        final columnHeight = paged
+            ? viewportHeight.clamp(280.0, 2000.0)
+            : math.max<double>(280, viewportHeight);
+        if (!paged) {
           final columns = math.max(2, (viewportWidth / 340).floor());
           final columnWidth = (viewportWidth - 24) / columns;
           return ListView(
@@ -165,12 +171,7 @@ class _TaskBoardKanbanView extends StatelessWidget {
                         index,
                         pageSizeHint,
                         columnHeight,
-                        contentBottomPadding:
-                            math.max<double>(
-                              96,
-                              MediaQuery.paddingOf(context).bottom,
-                            ) +
-                            8,
+                        contentBottomPadding: contentBottomPadding,
                       ),
                     ),
                   ),
@@ -185,7 +186,7 @@ class _TaskBoardKanbanView extends StatelessWidget {
           key: PageStorageKey<String>('task-board-kanban-$boardId'),
           controller: kanbanVerticalScrollController,
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: EdgeInsets.only(bottom: bottomPadding),
+          padding: EdgeInsets.only(bottom: contentBottomPadding),
           children: [
             SizedBox(
               height: columnHeight,
@@ -210,12 +211,7 @@ class _TaskBoardKanbanView extends StatelessWidget {
                           index,
                           pageSizeHint,
                           columnHeight,
-                          contentBottomPadding:
-                              math.max<double>(
-                                96,
-                                MediaQuery.paddingOf(context).bottom,
-                              ) +
-                              8,
+                          contentBottomPadding: contentBottomPadding,
                         ),
                       ),
                     ),

@@ -1,4 +1,5 @@
 import { siteConfig } from '../constants/configs';
+import { fontPreloads } from './font-preloads';
 import type { MailPageModel } from './page-model.server';
 export function mailPageHead(model: MailPageModel) {
   const description =
@@ -16,5 +17,6 @@ export function mailPageHead(model: MailPageModel) {
       { name: 'twitter:card', content: 'summary_large_image' },
       { name: 'twitter:image', content: siteConfig.ogImage },
     ],
+    links: fontPreloads(model.locale),
   };
 }

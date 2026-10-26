@@ -39,6 +39,7 @@ import {
   AUTH_OAUTH_PROVIDER_OPTIONS,
   type AuthOAuthProvider,
 } from '@/lib/auth/oauth-providers';
+import { useLinkedProviderConfirmation } from './use-linked-provider-confirmation';
 
 interface LinkedIdentitiesCardProps {
   className?: string;
@@ -91,6 +92,12 @@ const AVAILABLE_PROVIDERS = Object.entries(AUTH_OAUTH_PROVIDER_OPTIONS).map(
   })
 );
 
+function fetchLinkedIdentities() {
+  return apiFetch<LinkedIdentitiesResponse>('/api/v1/users/me/identities', {
+    cache: 'no-store',
+  });
+}
+
 function getLinkedIdentityProviderDisplayName(provider: string) {
   return (
     AUTH_OAUTH_PROVIDER_OPTIONS[provider as AuthOAuthProvider]?.name ??
@@ -111,10 +118,7 @@ export default function LinkedIdentitiesCard({
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['linked-identities'],
-    queryFn: () =>
-      apiFetch<LinkedIdentitiesResponse>('/api/v1/users/me/identities', {
-        cache: 'no-store',
-      }),
+    queryFn: fetchLinkedIdentities,
   });
 
   const unlinkMutation = useMutation({
@@ -144,15 +148,15 @@ export default function LinkedIdentitiesCard({
     },
   });
 
+  useLinkedProviderConfirmation({
+    fetchIdentities: fetchLinkedIdentities,
+    getProviderName: getLinkedIdentityProviderDisplayName,
+    linkedProvider,
+    t,
+  });
+
   useEffect(() => {
     if (!linkedProvider) return;
-
-    toast({
-      title: t('success'),
-      description: t('account-linked-success', {
-        provider: getLinkedIdentityProviderDisplayName(linkedProvider),
-      }),
-    });
 
     const nextParams = new URLSearchParams(searchParams.toString());
     nextParams.delete('settingsLinkedProvider');
@@ -161,7 +165,7 @@ export default function LinkedIdentitiesCard({
       { scroll: false }
     );
     void queryClient.invalidateQueries({ queryKey: ['linked-identities'] });
-  }, [linkedProvider, pathname, queryClient, router, searchParams, t]);
+  }, [linkedProvider, pathname, queryClient, router, searchParams]);
 
   const identities = data?.identities ?? [];
   const canUnlink = data?.canUnlink ?? false;

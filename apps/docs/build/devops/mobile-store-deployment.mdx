@@ -13,6 +13,46 @@ the Flutter mobile app to the Google Play and Apple App stores.
 Each field on the settings page has an inline help tooltip with a short summary
 and the console URL; this page is the full reference with clickable links.
 
+## Windows desktop release
+
+The Flutter package also produces the Windows desktop app. Use
+[Desktop beta distribution](/build/devops/desktop-beta-distribution) for its
+release and signing configuration; desktop signing does not use this mobile vault.
+`desktop-beta.yaml` builds `lib/main_production.dart` with
+`flutter build windows --release` on GitHub-hosted `windows-latest`, then packages
+the runner, DLLs and `data` directory with Inno Setup. The installer is per-user
+and does not require administrator privileges.
+
+Release Please owns `apps/mobile/pubspec.yaml` (currently the common version
+source). Desktop tags use `desktop-v<pubspec-version>-<run-id>` to identify
+immutable GitHub Releases. Production pushes affecting the mobile app trigger
+both store delivery and the existing desktop release flow; desktop publication
+retains `DESKTOP_BETA_ENABLED`, platform selection, protected environment, bundle
+audit and provenance gates. Manual `desktop-beta.yaml` dispatch with
+`dry_run=true` produces an unsigned workflow artifact on a feature branch without
+publishing. Do not create a release to test an installer.
+
+Windows identity comes from `windows/runner/Runner.rc` and
+`windows/runner/resources/app_icon.ico`: product/publisher **Tuturuuu**, runner
+`tuturuuu.exe`. The installer displays **Tuturuuu Beta**, preserves its stable
+AppId and registers `com.tuturuuu.app.mobile` for browser login. Inno Setup takes
+its version from pubspec; no manual version bump is needed.
+
+Android store delivery builds a production AAB signed with the upload keystore
+and sends it to Google Play internal testing. iOS archives/exports the production
+IPA, verifies and uploads Crashlytics symbols, and sends it to TestFlight. The
+store workflow calculates build names from store metadata and uses a monotonic
+CI build number. macOS desktop delivery produces a universal DMG with Developer ID
+signing, notarization and stapling. Desktop packages are GitHub Release assets
+consumed by `tuturuuu.com/download`; no R2 download host is required.
+
+Unsigned Windows downloads can show SmartScreen **Windows protected your PC** or
+**Unknown publisher**. Verify the official release checksum, then choose **More
+info → Run anyway** only if offered and you trust the release. If organization
+policy blocks it, use the web app. Do not disable Windows protections. The desktop
+runbook covers Authenticode, EV certificates, Azure Trusted Signing and the later
+MSIX channel.
+
 ## How The Vault Is Organized
 
 The Infrastructure deployment must have the existing `ENCRYPTION_MASTER_KEY`
@@ -111,6 +151,21 @@ Meet media failures. Analytics records automatic app usage plus `mobile_error`,
 identify capture, publish, send, receive, or connection stages without recording
 room IDs, user IDs, SDP, ICE credentials, message contents, or media.
 
+For a gray release-build body, inspect Crashlytics `flutter_framework` events
+for the exact version and build before attributing the failure. Compare the
+uploaded source SHA from `mobile-beta-release-history` with the investigated tree;
+the pubspec version alone is not the store build identity. Framework errors already
+retain their original stacks through `FlutterError.onError`. Keep raw event
+payloads private and avoid adding a second reporting integration.
+
+The authenticated Firebase CLI exposes official Crashlytics tools through
+`firebase mcp --only core,crashlytics`. Read its Crashlytics reports guide, obtain
+the exact `topVersions` display name, filter `topIssues` with that value, then
+fetch events for the issue. `firebase login:list` shows stored accounts but does
+not prove credentials are current; an authentication error requires
+`firebase login --reauth --interactive`. Complete OAuth in the browser rather
+than copying credentials or authorization codes into a transcript.
+
 For a failed call, filter Crashlytics nonfatal issues by `meet_media_*`,
 `meet_camera_toggle`, or `meet_microphone_toggle`, then compare the same build's
 Analytics events. A successful publisher event means its WebRTC sender reported
@@ -206,7 +261,15 @@ bookkeeping bullets from existing English notes while preserving genuine text
 and other locales. A history containing only bookkeeping is unavailable test
 evidence, rather than a fabricated product summary. Existing installed binaries
 and Apple metadata change only after an authorized app update or metadata retry.
-Regression coverage: `release-note-policy.test.js`, `release-history.test.mjs`,
+New TestFlight and Play summaries exclude every multi-parent merge commit and
+typed chore, ci, test, docs, and refactor entries. Mobile feat/fix summaries come
+first, with sentence case, duplicate removal, and no PR numbers or task branch
+names. Product merge actions remain valid. Play English notes use the exact
+prepared build history and fail closed above 500 characters; TestFlight retains
+its 4,000-character limit and original-build provenance checks. Existing manual
+TestFlight prose and other locales retain the metadata-retry policy above.
+Regression coverage: `normalize-release-notes.test.js`,
+`mobile-store-workflow.test.js`, `release-note-policy.test.js`, `release-history.test.mjs`,
 `build-test-notes.test.mjs`, `release_notes_test.dart`, and `release-query.test.ts`.
 
 The workflow runs after relevant pushes to `production`. A manual dispatch on
@@ -422,7 +485,7 @@ and failed write readback fail verification rather than masquerading as missing
 history; they require a retry or investigation.
 
 Run focused release checks with `node --experimental-strip-types --test scripts/mobile-deployment/*.test.mjs
-scripts/ci/mobile-store-workflow.test.js`. Use `ttr resources run -- bun check`
+scripts/ci/mobile-store-workflow.test.js`. Use `ttr resources run -- bun validate`
 for repository validation and `ttr resources run -- bun check:mobile` for the
 Flutter checks. Normally run the applicable mobile tests and native builds in
 CI on the exact branch commit, even when local checks pass. If the CI queue is

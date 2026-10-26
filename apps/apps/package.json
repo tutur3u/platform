@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/apps",
-  "version": "0.25.0",
+  "version": "0.25.1",
   "private": true,
   "scripts": {
     "type-check": "tsc --noEmit -p tsconfig.json",
@@ -22,6 +22,7 @@
     "@tuturuuu/auth": "workspace:*",
     "@tuturuuu/icons": "workspace:*",
     "@tuturuuu/satellite": "workspace:*",
+    "@tuturuuu/start-bridge": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "next": "^16.4.0",
@@ -50,7 +51,7 @@
     "void": "1.1.12",
     "wrangler": "4.151.2"
   },
-  "packageManager": "bun@1.4.3",
+  "packageManager": "bun@1.4.4",
   "portless": {
     "name": "apps.tuturuuu",
     "script": "dev:app"

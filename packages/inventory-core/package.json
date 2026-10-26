@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/inventory-core",
-  "version": "0.11.0",
+  "version": "0.11.1",
   "private": true,
   "exports": {
     "./infrastructure/employee-sql/process": "./src/lib/infrastructure/employee-sql/employee-fixed-sql-process.ts",
@@ -16,7 +16,7 @@
     "test:watch": "vitest",
     "type-check": "tsc --project tsconfig.typecheck.json"
   },
-  "packageManager": "bun@1.4.3",
+  "packageManager": "bun@1.4.4",
   "dependencies": {
     "@tuturuuu/auth": "workspace:*",
     "@tuturuuu/internal-api": "workspace:*",

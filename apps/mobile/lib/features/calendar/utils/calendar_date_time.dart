@@ -1,8 +1,8 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/utils/timezone_location.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/features/settings/cubit/timezone_settings_cubit.dart';
-import 'package:timezone/data/latest.dart' as data;
 import 'package:timezone/timezone.dart' as tz;
 
 /// An immutable date/wall-clock carrier; UTC avoids device DST arithmetic.
@@ -26,21 +26,11 @@ DateTime calendarDate(
   microsecond,
 );
 
-bool _initialized = false;
-tz.Location _location(String zone) {
-  if (zone == 'UTC') return tz.UTC;
-  if (!_initialized) {
-    data.initializeTimeZones();
-    _initialized = true;
-  }
-  return tz.getLocation(zone);
-}
-
 /// Native DateTime values here carry wall-clock fields, never stored instants.
 DateTime calendarWallDate(DateTime instant, String? zone) {
   final local = zone == null
       ? instant.toLocal()
-      : tz.TZDateTime.from(instant, _location(zone));
+      : tz.TZDateTime.from(instant, timezoneLocation(zone));
   return DateTime.utc(
     local.year,
     local.month,
@@ -86,7 +76,7 @@ DateTime calendarWallToUtc(DateTime wall, String? zone) {
           wall.microsecond,
         )
       : tz.TZDateTime(
-          _location(zone),
+          timezoneLocation(zone),
           wall.year,
           wall.month,
           wall.day,
@@ -107,6 +97,31 @@ DateTime calendarWallToUtc(DateTime wall, String? zone) {
     throw const FormatException('Nonexistent calendar local time');
   }
   return instant.toUtc();
+}
+
+/// [wall] as ISO 8601 with the UTC offset [zone] has at that wall time, for
+/// example `2026-10-26T09:00:00+07:00`, so a reader never takes the visible
+/// wall time for UTC. A wall time skipped by a DST change has no instant and
+/// is written without an offset.
+String calendarWallIso8601(DateTime wall, String? zone) {
+  final local = wall.toIso8601String().substring(0, 19);
+  final DateTime instant;
+  try {
+    instant = calendarWallToUtc(wall, zone);
+  } on FormatException {
+    return local;
+  }
+  final offset = DateTime.utc(
+    wall.year,
+    wall.month,
+    wall.day,
+    wall.hour,
+    wall.minute,
+    wall.second,
+  ).difference(instant).inMinutes;
+  final sign = offset < 0 ? '-' : '+';
+  String two(int value) => value.toString().padLeft(2, '0');
+  return '$local$sign${two(offset.abs() ~/ 60)}:${two(offset.abs() % 60)}';
 }
 
 CalendarEvent calendarProjectEvent(CalendarEvent event, String? zone) {

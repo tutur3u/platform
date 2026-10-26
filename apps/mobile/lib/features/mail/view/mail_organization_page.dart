@@ -1,9 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
+
+/// Keeps the last row clear of the create button.
+const double _mailOrganizationFabGap = 100;
 
 class MailOrganizationPage extends StatefulWidget {
   const MailOrganizationPage({
@@ -93,6 +97,9 @@ class _MailOrganizationPageState extends State<MailOrganizationPage> {
                     controller: name,
                     enabled: !saving && (!_members || item == null),
                     decoration: InputDecoration(
+                      hintText: _members
+                          ? l10n.profileEmailHint
+                          : l10n.inputPlaceholderMailName,
                       labelText: _members ? l10n.mailEmail : l10n.mailName,
                     ),
                   ),
@@ -119,6 +126,7 @@ class _MailOrganizationPageState extends State<MailOrganizationPage> {
                       controller: description,
                       enabled: !saving,
                       decoration: InputDecoration(
+                        hintText: context.l10n.inputPlaceholderMailDescription,
                         labelText: l10n.mailDescription,
                       ),
                     ),
@@ -128,6 +136,8 @@ class _MailOrganizationPageState extends State<MailOrganizationPage> {
                       minLines: 2,
                       maxLines: 5,
                       decoration: InputDecoration(
+                        hintText:
+                            context.l10n.inputPlaceholderMailLabelInstructions,
                         labelText: l10n.mailAiInstructions,
                       ),
                     ),
@@ -293,28 +303,34 @@ class _MailOrganizationPageState extends State<MailOrganizationPage> {
                 child: Text(l10n.commonRetry),
               ),
             )
-          : ListView(
-              padding: const EdgeInsets.only(bottom: 100),
-              children: [
-                for (final item in _items)
-                  ListTile(
-                    title: Text(
-                      item[_members ? 'email' : 'name'] as String? ?? '',
+          : LayoutBuilder(
+              builder: (context, constraints) => ListView(
+                padding: AppPageInsets.of(
+                  context,
+                  width: constraints.maxWidth,
+                  endGap: _mailOrganizationFabGap,
+                ),
+                children: [
+                  for (final item in _items)
+                    ListTile(
+                      title: Text(
+                        item[_members ? 'email' : 'name'] as String? ?? '',
+                      ),
+                      subtitle: _members ? Text(item['role'] as String) : null,
+                      onTap: item['kind'] == 'system' || item['role'] == 'owner'
+                          ? null
+                          : () => _edit(item),
+                      trailing:
+                          item['kind'] == 'system' || item['role'] == 'owner'
+                          ? null
+                          : IconButton(
+                              tooltip: l10n.commonDelete,
+                              onPressed: () => _remove(item),
+                              icon: const Icon(Icons.delete_outline),
+                            ),
                     ),
-                    subtitle: _members ? Text(item['role'] as String) : null,
-                    onTap: item['kind'] == 'system' || item['role'] == 'owner'
-                        ? null
-                        : () => _edit(item),
-                    trailing:
-                        item['kind'] == 'system' || item['role'] == 'owner'
-                        ? null
-                        : IconButton(
-                            tooltip: l10n.commonDelete,
-                            onPressed: () => _remove(item),
-                            icon: const Icon(Icons.delete_outline),
-                          ),
-                  ),
-              ],
+                ],
+              ),
             ),
     );
   }

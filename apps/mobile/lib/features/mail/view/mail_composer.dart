@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/mail/view/mail_body_editor.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -305,6 +306,7 @@ class _MailComposerState extends State<MailComposer> {
           minLines: 2,
           maxLines: 5,
           decoration: InputDecoration(
+            hintText: context.l10n.inputPlaceholderMailDraftInstructions,
             labelText: context.l10n.mailAiInstructions,
           ),
         ),
@@ -451,8 +453,8 @@ class _MailComposerState extends State<MailComposer> {
         ),
         body: AbsorbPointer(
           absorbing: _busy,
-          child: ListView(
-            padding: const EdgeInsets.all(16),
+          child: AppPageListView(
+            kind: AppPageKind.form,
             children: [
               if (_busy) const NovaLoadingIndicator(size: 20),
               Text(widget.fromAddress),
@@ -465,12 +467,18 @@ class _MailComposerState extends State<MailComposer> {
                   controller: field.$1,
                   enabled: !_busy,
                   keyboardType: TextInputType.emailAddress,
-                  decoration: InputDecoration(labelText: field.$2),
+                  decoration: InputDecoration(
+                    hintText: context.l10n.profileEmailHint,
+                    labelText: field.$2,
+                  ),
                 ),
               TextField(
                 controller: _subject,
                 enabled: !_busy,
-                decoration: InputDecoration(labelText: l10n.mailSubject),
+                decoration: InputDecoration(
+                  hintText: context.l10n.inputPlaceholderMailSubject,
+                  labelText: l10n.mailSubject,
+                ),
               ),
               MailBodyEditor(controller: _body),
               TextButton.icon(

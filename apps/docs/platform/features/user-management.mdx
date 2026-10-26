@@ -235,17 +235,68 @@ Topic Announcements live under Users and are gated by the workspace secret `ENAB
 
 ### Mobile profile image optimization
 
-Avatar and banner inputs may be up to 20 MiB before optimization. That input
-allowance is separate from the upload limits: the mobile optimizer keeps avatars
-within 1,000,000 bytes and 1024 pixels per side, and banners within 2,000,000
-bytes and 2560 by 1440 pixels. The decoder retains its 20-megapixel ceiling,
-first-frame handling, supported codec checks, orientation correction and
-metadata removal. Signed uploads and server storage quotas remain authoritative.
+Mobile avatars use a square crop; choose 512–1024 pixels per side. Banners use
+web's 3:1 display aspect, for example 2400 by 800 pixels. The mobile optimizer
+preserves aspect and never enlarges small images, fitting avatars within 1024 by
+1024 and banners within the server's 2560 by 1440 canvas.
 
-`apps/mobile/test/core/media/profile_media_optimizer_test.dart` covers source
-files above the old pre-compression limits for both targets, file/byte output
-parity, bounded results and oversized-input rejection. Actor-race and failure
-contract tests cover the surrounding repository path.
+Camera/gallery selection uses the native picker with bounded dimensions and
+quality conversion, including HEIC/HEIF to JPEG on iOS, followed by a native
+JPEG crop. The shared optimizer runs decoding and encoding off the UI isolate,
+bakes EXIF orientation, takes the first animation frame, and strips metadata.
+Opaque photos and screenshots use JPEG quality steps (90, 82, 72, 60), then
+progressively smaller dimensions until they fit. Transparent input retains PNG
+when it fits at the current size; otherwise it is flattened onto white for JPEG.
+The same optimizer handles offline replay and workspace avatars; there is no
+second codec policy. Workspace avatar authorization and its separate storage
+upload protocol retain their existing limits.
+
+The source allowance is 20 MiB with a separate 20-megapixel decode ceiling,
+bounding memory use on mobile devices. Input beyond these safety limits is
+rejected before full pixel decoding, and oversized files before reading their
+bytes. Upload targets remain 1,000,000 bytes for avatars and 2,000,000 for banners,
+below the server's authoritative 2 MiB and 5 MiB caps. Only the exact profile PUT
+paths with a nonempty `token` query parameter receive those proxy limits;
+requests without one retain the generic 512 KiB cap. The handler still validates
+the ticket. Unrelated API payloads retain their normal limit.
+Actual streamed bytes, one-use tickets, upload budgets and server-side
+WebP re-encoding remain authoritative; client sizes do not grant permission.
+Proxy consumers import the dependency-free
+`@tuturuuu/storage-core/profile-upload-limits` module. The server-only budget
+module re-exports the same limits for existing handler callers.
+Empty/corrupt images and native decode failures use invalid-image guidance,
+rather than size guidance. Recovery uses a compact design-system alert and
+retains fresh selection, dismissal and authorized sanitized diagnostics.
+
+![Profile image recovery with a fresh selection and dismissal](/images/mobile-profile-media-recovery-synthetic.png)
+
+Regression coverage: `profile_media_optimizer_test.dart` exercises phone JPEG,
+PNG, tiny and panoramic images, orientation/metadata, transparency, the exact
+20 MiB source boundary and rejection above it. `profile_native_media_options_test.dart`
+covers picker/crop conversion options (real HEIC selection still needs device
+acceptance). `profile_media_failure_mapping_test.dart` and the existing actor,
+delivery and recovery suites cover errors and ownership.
+`apps/web/src/lib/profile-media-proxy.test.ts` exercises the real proxy guard
+and route exports, including valid ticketed images above the old 512 KiB proxy
+ceiling and the generic cap for missing or empty tickets.
+
+
+### Mobile profile banners
+
+Mobile profile headers reserve a 3:1 banner area, including an empty placeholder,
+image loading indicator and image-error fallback. Banner selection uses the native
+camera/gallery chooser and a locked 3:1 crop, then the shared optimizer. Upload
+and replacement reuse `POST /api/v1/users/me/banner/upload-url`, the signed PUT,
+and `POST /api/v1/users/me/banner` with `action: finalize`; removal uses the latter
+with `action: remove`. Each mutation retains its operation UUID and reloads the
+actor's profile. These controls do not change shell navigation or account access.
+
+Permission denial, size rejection, connection failure and invalid/expired upload
+tickets have scoped English and Vietnamese guidance. Ticket failure asks for a
+new selection; it does not bypass signature checks. Avatar upload authorization
+continues to use its existing error mapping. Regression coverage lives in
+`profile_banner_lifecycle_test.dart`, `profile_banner_states_test.dart`,
+`profile_banner_picker_test.dart` and `profile_media_failure_contract_test.dart`.
 
 
 ### Browser profile capability uploads
@@ -329,3 +380,27 @@ App-provided English/Vietnamese labels keep the shared component free of implici
 translation namespace requirements. Regression coverage: `public-content-link.test.ts`,
 `public-link-button.test.tsx` and profile page/projection tests. Hosted clipboard
 permissions and exact-head app/shared-package CI remain separate evidence gates.
+
+## Workspace User Avatar Paths
+
+Web and Contacts user-avatar reads authorize the workspace through the existing
+permission helper, then use its resolved lowercase UUID. Aliases such as
+`personal` remain supported only when authorization resolves them to that UUID.
+The shared read handler signs only `<workspace UUID>/users/<filename>` in the
+`workspaces` bucket. It accepts exactly three original segments; it never repairs
+or decodes a submitted object path. Full URLs, other workspaces, nested paths,
+percent encodings, backslashes and control characters are rejected.
+
+The shared upload handler requires `manage_users`, a PNG, JPEG, WebP or GIF
+content type, and one filename of at most 255 ASCII letters, digits, dots,
+underscores or hyphens starting with a letter or digit. It preserves the filename
+and issues its `avatars` ticket only after charging the verified actor's upload
+budget. These rules apply to shared handler callers; canonical Web and Contacts
+POST routes retain their existing optimized media-ticket flow. There is no
+DELETE handler in the shared user-avatar module.
+
+Regression coverage lives in
+`packages/users-core/src/routes/users/avatar.test.ts`. It exercises read and upload
+traversal, foreign workspaces, invalid resolved IDs, alias resolution, authorization
+and budget ordering with synthetic storage fixtures. Hosted Storage behavior is
+a separate acceptance boundary.

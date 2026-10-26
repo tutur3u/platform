@@ -56,7 +56,7 @@ validators. Obtain an explicit handoff or wait for canonical completion.
 | Service tests | `bun test apps/supermemory/src/server.test.js` | missing/blank-key and route-auth cases pass |
 | Docker validator tests | `node --test --test-name-pattern='supermemory' scripts/check-docker-web.test.js scripts/docker-web.test.js` | focused Supermemory contracts pass |
 | Docker source validation | `node scripts/check-docker-web.js` | exit 0 |
-| Repository gate | `bun check` | exit 0 |
+| Repository gate | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -118,7 +118,7 @@ the required interpolation and the existing generated/persisted key path.
       key is never echoed in logs, errors, or responses; clearly inert fixture
       strings are allowed only inside the authentication tests.
 - [ ] Direct Compose configuration requires the key and wrapper generation remains intact.
-- [ ] Focused service/Docker tests, Docker validation, `bun check`, and whitespace pass.
+- [ ] Focused service/Docker tests, Docker validation, `bun validate`, and whitespace pass.
 
 ## STOP conditions
 
