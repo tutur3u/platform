@@ -72,7 +72,8 @@ class ProfileTimelineDays extends StatelessWidget {
   static double headerExtent(BuildContext context, {required bool first}) {
     final type = AppTokens.of(context).typography;
     final title = _line(context, type.large.copyWith(height: 1.25));
-    return ((first ? 0 : AppLayout.sectionGap) + title + AppSpacing.md)
+    // A pixel of slack absorbs rounding at large text scales.
+    return ((first ? 0 : AppLayout.sectionGap) + title + AppSpacing.md + 1)
         .ceilToDouble();
   }
 
@@ -85,7 +86,8 @@ class ProfileTimelineDays extends StatelessWidget {
         ? AppSpacing.xxs + _line(context, type.small.copyWith(height: 1.35))
         : 0;
     return math
-        .max(AppLayout.rowMinHeight, AppSpacing.md * 2 + title + subtitle + 1)
+        // One pixel for the card divider and one of rounding slack.
+        .max(AppLayout.rowMinHeight, AppSpacing.md * 2 + title + subtitle + 2)
         .ceilToDouble();
   }
 
