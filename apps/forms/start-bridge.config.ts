@@ -3,7 +3,7 @@ import { defineBridgeAppConfig } from '@tuturuuu/start-bridge/start/app-config';
 import type { FormsEnvironment } from './cloudflare/worker';
 
 const PUBLIC_FILES = new Set(['/embed.js', '/robots.txt', '/sitemap.xml']);
-const EMBED_PAGE = /^\/(?:en\/|vi\/)?embed\/[^/]+(?:\/|$)/u;
+const EMBED_PAGE = /^\/embed\/[^/]+(?:\/|$)/u;
 
 export default defineBridgeAppConfig<FormsEnvironment>({
   mounts: {

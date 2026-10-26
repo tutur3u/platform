@@ -142,7 +142,7 @@ describe('Forms response security', () => {
     expect(response.headers.get('Cache-Control')).toBe('private, no-store');
   });
 
-  it.each(['/embed/public', '/vi/embed/public', '/en/embed/public/preview'])(
+  it.each(['/embed/public', '/embed/public/preview'])(
     'keeps %s framable without weakening script nonces',
     async (path) => {
       const response = await decorate({
@@ -160,20 +160,24 @@ describe('Forms response security', () => {
     }
   );
 
-  it.each(['/f/public', '/personal/forms', '/embedded/public', '/embed'])(
-    'denies framing of the ordinary page %s',
-    async (path) => {
-      const csp = defaultContentSecurityPolicy('fixture');
-      const response = await decorate({
-        path,
-        headers: { 'Content-Security-Policy': csp },
-        noindex: '0',
-      });
-      expect(response.headers.get('X-Frame-Options')).toBe('DENY');
-      expect(response.headers.get('Content-Security-Policy')).toBe(csp);
-      expect(response.headers.has('X-Robots-Tag')).toBe(false);
-    }
-  );
+  it.each([
+    '/f/public',
+    '/personal/forms',
+    '/embedded/public',
+    '/embed',
+    '/vi/embed/public',
+    '/en/embed/public',
+  ])('denies framing of the ordinary page %s', async (path) => {
+    const csp = defaultContentSecurityPolicy('fixture');
+    const response = await decorate({
+      path,
+      headers: { 'Content-Security-Policy': csp },
+      noindex: '0',
+    });
+    expect(response.headers.get('X-Frame-Options')).toBe('DENY');
+    expect(response.headers.get('Content-Security-Policy')).toBe(csp);
+    expect(response.headers.has('X-Robots-Tag')).toBe(false);
+  });
 
   it('preserves the response body, status and cookies and adds baseline headers', async () => {
     const response = await decorate({

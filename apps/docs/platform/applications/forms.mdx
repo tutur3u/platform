@@ -79,10 +79,11 @@ headers. Non-assets force private, no-store caching, including removal of CDN
 cache overrides. Static files retain their cache policy only for successful
 GET/HEAD responses without HTML or cookies.
 
-Normal pages deny framing. The existing `/embed/{shareCode}` exception, including
-localized paths, stays framable by third-party sites and noindex; its CSP keeps
+Normal pages deny framing. The existing `/embed/{shareCode}` exception, stays framable by third-party sites and noindex; its CSP keeps
 the same script nonce and changes only frame ancestors. This preserves the
-retained Next publisher's `framablePathPatterns` behavior. The host, caching and
+retained Next publisher's `framablePathPatterns: ['embed/[^/]+']` policy in
+`apps/forms/next.config.ts`. Locale-prefixed embed URLs retain the default
+framing denial; the SDK uses the bare `/embed/{shareCode}` URL. The host, caching and
 framing contracts are covered by
 `apps/forms/src/runtime/response-security.test.ts`. Final acceptance requires
 the exact sealed artifact, public and authenticated browser checks, and an
