@@ -8,6 +8,7 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
+import { bridgeTimerAction } from '@/lib/time-tracking/pomodoro-deps';
 import {
   handleEditAction,
   handlePauseAction,
@@ -146,6 +147,23 @@ export async function PATCH(
       ...session,
       is_running: session.is_running,
     };
+    if (body.action !== 'edit') {
+      const bridged = await bridgeTimerAction(
+        normalizedWsId,
+        user.id,
+        body.action,
+        {
+          id: sessionId,
+          parentSessionId: session.parent_session_id,
+        }
+      );
+      if (bridged && 'conflict' in bridged)
+        return NextResponse.json(
+          { error: 'The Pomodoro changed on another device. Try again.' },
+          { status: 409 }
+        );
+      if (bridged) return respondWithSession(sbAdmin, bridged.sessionId);
+    }
     switch (body.action) {
       case 'stop':
         return await handleStopAction({
@@ -356,4 +374,18 @@ async function authenticateAndResolveWorkspace(
   }
 
   return { supabase, user, normalizedWsId };
+}
+
+/** Answers a Timer action the Pomodoro handled, in the Timer's shape. */
+async function respondWithSession(
+  sbAdmin: TypedSupabaseClient,
+  sessionId: string
+): Promise<NextResponse> {
+  const { data, error } = await sbAdmin
+    .from('time_tracking_sessions')
+    .select('*, category:time_tracking_categories(*), task:tasks(*)')
+    .eq('id', sessionId)
+    .single();
+  if (error) throw error;
+  return NextResponse.json({ session: data });
 }
