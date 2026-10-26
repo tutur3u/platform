@@ -379,6 +379,7 @@
                   "build/devops/caching",
                   "build/devops/code-owners",
                   "build/devops/security-cadence",
+                  "build/devops/workspace-storage-server-access",
                   "build/devops/e2e-proof-reuse",
                   "build/devops/vercel-cost-controls",
                   "build/devops/cloudflare-cron-control",
