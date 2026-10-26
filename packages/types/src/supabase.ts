@@ -17440,6 +17440,7 @@ export type Database = {
           batch_id: string | null;
           body: string;
           class_label: string | null;
+          course_book: string | null;
           created_at: string;
           created_by: string | null;
           day_label: string | null;
@@ -17451,6 +17452,7 @@ export type Database = {
           place: string | null;
           room: string | null;
           scheduled_send_at: string | null;
+          send_due_at: string | null;
           sent_at: string | null;
           sent_email_audit_id: string | null;
           session_date: string | null;
@@ -17458,10 +17460,12 @@ export type Database = {
           source_type: string;
           start_time: string | null;
           status: string;
+          teacher_workspace_user_id: string | null;
           title: string;
-          topic: string;
+          topic: string | null;
           updated_at: string;
           updated_by: string | null;
+          video_url: string | null;
           ws_id: string;
         };
         ComputedFields: never;
@@ -17469,6 +17473,7 @@ export type Database = {
           batch_id?: string | null;
           body?: string;
           class_label?: string | null;
+          course_book?: string | null;
           created_at?: string;
           created_by?: string | null;
           day_label?: string | null;
@@ -17480,6 +17485,7 @@ export type Database = {
           place?: string | null;
           room?: string | null;
           scheduled_send_at?: string | null;
+          send_due_at?: string | null;
           sent_at?: string | null;
           sent_email_audit_id?: string | null;
           session_date?: string | null;
@@ -17487,16 +17493,19 @@ export type Database = {
           source_type?: string;
           start_time?: string | null;
           status?: string;
+          teacher_workspace_user_id?: string | null;
           title: string;
-          topic: string;
+          topic?: string | null;
           updated_at?: string;
           updated_by?: string | null;
+          video_url?: string | null;
           ws_id: string;
         };
         Update: {
           batch_id?: string | null;
           body?: string;
           class_label?: string | null;
+          course_book?: string | null;
           created_at?: string;
           created_by?: string | null;
           day_label?: string | null;
@@ -17508,6 +17517,7 @@ export type Database = {
           place?: string | null;
           room?: string | null;
           scheduled_send_at?: string | null;
+          send_due_at?: string | null;
           sent_at?: string | null;
           sent_email_audit_id?: string | null;
           session_date?: string | null;
@@ -17515,10 +17525,12 @@ export type Database = {
           source_type?: string;
           start_time?: string | null;
           status?: string;
+          teacher_workspace_user_id?: string | null;
           title?: string;
-          topic?: string;
+          topic?: string | null;
           updated_at?: string;
           updated_by?: string | null;
+          video_url?: string | null;
           ws_id?: string;
         };
         Relationships: [
