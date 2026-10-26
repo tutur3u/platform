@@ -42,20 +42,33 @@ the native offline port; the native shell does not register a service worker.
   (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`); build
   environment only reaches the client bundle.
 
-## Mounts
+## Hosts and response headers
 
-One artifact serves `tasks.tuturuuu.com` at its root and `tuturuuu.com/tasks`
-as a mount (`TASKS_MOUNTS` in `worker-handler.ts`); the bridge resolves the
-base per request, so assets, server functions and redirects follow the host.
-Outside the mount the apex answers 404. Cookies are not renamed or
-path-scoped: Tasks uses the one shared Tuturuuu session. Every native
-response carries `x-tuturuuu-runtime: native` for post-cutover attribution, plus the Next build's anti-framing headers
-(`Content-Security-Policy: frame-ancestors 'none'`, `X-Frame-Options: DENY`).
-Before Tasks mounts on the apex, adopt the bridge's nonce CSP
-(`createBridgeHandler({ csp })`, router `ssr.nonce`); inline scripts such as the
-theme script then need the request nonce.
-The staging profile (`void.config.ts`, `tuturuuu-tasks-vite-staging`) sets
-`TUTURUUU_NOINDEX=1`.
+Tasks goes live on its own subdomain first (root mode). `tasksMounts()` in
+`src/runtime/worker-request.ts` admits `tasks.tuturuuu.com` plus any staging
+hostnames an operator lists in the `TUTURUUU_STAGING_HOSTS` Worker var
+(`*.workers.dev` or `*.tuturuuu.com` only). It uses `mountHosts: []` and
+`unknownHost: 'reject'`, so every other host, including the `tuturuuu.com`
+apex, gets a 404 before any app code runs. Request headers never admit a host.
+Mounting at `tuturuuu.com/tasks` waits for the shared-session decision and the
+shared auth-boundary guard.
+
+Every response carries `x-tuturuuu-runtime: native` and the Next build's
+production headers: `X-Robots-Tag` from the Tasks SEO policy
+(`PRIVATE_ROBOTS_HEADER`), `Content-Security-Policy: frame-ancestors 'none'`,
+`X-Frame-Options: DENY` (except on the Next build's framable WebGL asset path,
+`/api/v1/workspaces/*/external-projects/assets/*/webgl`) and HSTS. A
+response's own CSP is kept, but
+`frame-ancestors 'none'` replaces any ancestor directive in each of its
+policies. It also sends `X-Content-Type-Options:
+nosniff` and `Referrer-Policy: strict-origin-when-cross-origin`. Every
+dynamic response is `Cache-Control: private, no-store, max-age=0`, replacing
+any policy the handler set (a `private, max-age` would keep personalized data
+in the browser cache); only `GET`/`HEAD` of hashed assets and public files keep
+their own caching. `GET`/`HEAD /api/build-info` is public on both
+builds: the Worker answers it first, and the Next proxy admits it without
+session work or ambient credentials. The Worker uses
+`global_fetch_strictly_public`.
 
 Cutover is direct (no staged canary): exact-head gates, cross-family review
 and a staging smoke where staging exists, then the flip with the prior Vercel
@@ -69,7 +82,7 @@ local workerd with loopback-only fixtures:
 
 ```bash
 bunx wrangler dev --config dist/server/wrangler.json --ip 127.0.0.1 \
-  --port 18797 --local \
+  --port 18797 --local --local-upstream tasks.tuturuuu.com \
   --var NEXT_PUBLIC_SUPABASE_URL:http://127.0.0.1:54321 \
   --var NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:sb_publishable_fixture_only
 ```
@@ -77,8 +90,9 @@ bunx wrangler dev --config dist/server/wrangler.json --ip 127.0.0.1 \
 Check `/api/build-info`, a static file, an unauthenticated page (redirect to
 the central login with a `verify-token` return URL), an API route without a
 session (401), the server-function base (415 for a non-JSON POST) and the
-runtime header. Probe the mount with `Host: tuturuuu.com` and `/tasks/...` paths
-against the same artifact. This smoke does not replace exact-commit CI, sealed-artifact
+runtime header. `--local-upstream` makes the Worker see the admitted host; with
+`--local-upstream tuturuuu.com` every path must answer 404. Or run
+`scripts/native-cutover/smoke.mjs` against the same origin. This smoke does not replace exact-commit CI, sealed-artifact
 checks or signed-in acceptance on staging.
 
 ## Shared Calendar task ports

@@ -351,6 +351,16 @@ export default defineConfig(({ command }) => ({
 explicitly when converting an app whose current config aliases only some
 `next/*` modules, so the bundle does not change.
 
+Worker SSR/RSC environments resolve `workerd`, `worker`, `module` and `browser`
+export conditions, matching Cloudflare's runtime. A package whose `browser`
+entry needs a DOM therefore fails during server rendering, and its `node` entry
+is no substitute when it depends on jsdom. Do not reorder conditions per package;
+use a DOM-free implementation for code that renders on the server. For example,
+`isomorphic-dompurify` throws at import and `dompurify` has no `sanitize`
+without a `window`, so server-rendered rich text uses `sanitize-html` (Forms,
+Mail). Cover the swap with a `@vitest-environment node` test that mocks the
+DOM-only module to throw.
+
 ## CI template
 
 `.github/workflows/native-start-app.yaml` is the reusable validation for a

@@ -1,3 +1,4 @@
+import { guardRejection } from '@tuturuuu/utils/guard-rejection';
 import { type NextRequest, NextResponse } from 'next/server';
 import { clearSupabaseAuthCookies } from '../app-session';
 
@@ -9,38 +10,50 @@ export function appSessionFailureResponse(
   refreshed?: Response
 ) {
   if (error === 'App session refresh unavailable') {
-    return NextResponse.json(
-      {
-        code: 'APP_SESSION_REFRESH_UNAVAILABLE',
-        error: 'App session refresh temporarily unavailable',
-      },
-      { status: 503, headers: { 'Cache-Control': 'no-store' } }
+    return guardRejection(
+      request,
+      NextResponse.json(
+        {
+          code: 'APP_SESSION_REFRESH_UNAVAILABLE',
+          error: 'App session refresh temporarily unavailable',
+        },
+        { status: 503, headers: { 'Cache-Control': 'no-store' } }
+      ),
+      'app-session-refresh-unavailable'
     );
   }
   if (error === 'MFA required' || error === 'Account assurance unavailable') {
     const required = error === 'MFA required';
-    const response = NextResponse.json(
-      {
-        code: required ? 'MFA_REQUIRED' : 'AUTH_UNAVAILABLE',
-        error: required
-          ? 'MFA verification required'
-          : 'Unable to verify account security',
-      },
-      {
-        status: required ? 403 : 503,
-        headers: {
-          'Cache-Control': 'no-store',
-          'X-Tuturuuu-Auth-Assurance': required ? 'required' : 'unavailable',
+    const response = guardRejection(
+      request,
+      NextResponse.json(
+        {
+          code: required ? 'MFA_REQUIRED' : 'AUTH_UNAVAILABLE',
+          error: required
+            ? 'MFA verification required'
+            : 'Unable to verify account security',
         },
-      }
+        {
+          status: required ? 403 : 503,
+          headers: {
+            'Cache-Control': 'no-store',
+            'X-Tuturuuu-Auth-Assurance': required ? 'required' : 'unavailable',
+          },
+        }
+      ),
+      required ? 'auth-assurance-required' : 'auth-assurance-unavailable'
     );
     for (const cookie of refreshed?.headers.getSetCookie() ?? [])
       response.headers.append('set-cookie', cookie);
     return response;
   }
-  return clearSupabaseAuthCookies(
+  return guardRejection(
     request,
-    NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    clearSupabaseAuthCookies(
+      request,
+      NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    ),
+    'app-session-unauthenticated'
   );
 }
 

@@ -356,6 +356,7 @@
                   "build/devops/start-bridge",
                   "build/devops/tasks-viteplus-cloudflare",
                   "build/devops/start-bridge-codemod",
+                  "build/devops/finance-pay-start",
                   "build/devops/shortener-start-void",
                   "build/devops/wave1-native-publishers",
                   "build/devops/environments-release-flow",
