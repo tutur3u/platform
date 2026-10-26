@@ -4,12 +4,14 @@ import {
   JPEG_BYTES,
   OTHER_CHAT,
   OTHER_THREAD,
+  OTHER_WS,
   OWN_CHAT,
   OWN_THREAD,
   type ResourceAdminState,
   seedResourceAdminState,
   stubStorageFetch,
   UNKNOWN_ID,
+  WS,
 } from './resource-admin.test-fixture';
 
 const mocks = vi.hoisted(() => ({
@@ -28,8 +30,12 @@ vi.mock('@/lib/workspace-helper', () => ({
   normalizeWorkspaceId: async (wsId: string) => wsId,
 }));
 
+// The actor is a MEMBER of WS only.
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
-  verifyWorkspaceMembershipType: async () => ({ ok: true }),
+  verifyWorkspaceMembershipType: async ({ wsId }: { wsId: string }) =>
+    wsId === '66666666-6666-4666-8666-666666666666'
+      ? { membershipType: 'MEMBER', ok: true }
+      : { error: 'membership_missing', ok: false },
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
@@ -55,10 +61,10 @@ function post(
   );
 }
 
-const resource = (owner: string, name = '1_photo.jpg') =>
-  `ws-1/chats/ai/resources/${owner}/${name}`;
+const resource = (owner: string, name = '1_photo.jpg', wsId = WS) =>
+  `${wsId}/chats/ai/resources/${owner}/${name}`;
 
-describe('legacy AI chat resource routes', () => {
+describe('AI chat resource routes', () => {
   beforeEach(() => {
     seedResourceAdminState(mocks.state);
     mocks.admin = createResourceAdmin(mocks.state);
@@ -78,16 +84,19 @@ describe('legacy AI chat resource routes', () => {
 
   afterEach(() => vi.unstubAllGlobals());
 
+  // Storage RLS (20261026170000) grants chat folders to the ai_chats creator
+  // only, so Mind-thread folders are denied like any other non-owned folder.
   describe.each([
     ["another member's chat", OTHER_CHAT],
+    ["the actor's own Mind thread", OWN_THREAD],
     ["another member's Mind thread", OTHER_THREAD],
     ['a folder with no owning record', UNKNOWN_ID],
     ["another member's temp folder", 'temp/other-member'],
-  ])('denies %s', (_, owner) => {
+  ])('denies %s with 403', (_, owner) => {
     it('on file-urls', async () => {
       if (owner.startsWith('temp/')) return; // file-urls takes chat ids only
-      const response = await post(fileUrls, { chatId: owner, wsId: 'ws-1' });
-      expect(response.status).toBe(404);
+      const response = await post(fileUrls, { chatId: owner, wsId: WS });
+      expect(response.status).toBe(403);
       expect(mocks.admin.bucket.list).not.toHaveBeenCalled();
     });
 
@@ -95,40 +104,111 @@ describe('legacy AI chat resource routes', () => {
       const response = await post(signedReadUrl, {
         paths: [resource(OWN_CHAT), resource(owner)],
       });
-      expect(response.status).toBe(404);
+      expect(response.status).toBe(403);
       expect(mocks.admin.bucket.createSignedUrls).not.toHaveBeenCalled();
     });
 
     it('on delete-file', async () => {
       const response = await post(deleteFile, {
         path: resource(owner),
-        wsId: 'ws-1',
+        wsId: WS,
       });
-      expect(response.status).toBe(404);
+      expect(response.status).toBe(403);
       expect(mocks.state.objects.has(resource(owner))).toBe(true);
     });
   });
 
-  it.each([OWN_CHAT, OWN_THREAD])(
-    'lists and signs the actor’s own folder %s',
-    async (owner) => {
-      const listed = await post(fileUrls, { chatId: owner, wsId: 'ws-1' });
-      expect(listed.status).toBe(200);
-      expect((await listed.json()).files).toEqual([
-        expect.objectContaining({ path: resource(owner) }),
-      ]);
+  describe('cross-workspace access', () => {
+    it('denies file-urls in a workspace the actor is not a member of', async () => {
+      mocks.state.objects.set(resource(OWN_CHAT, '1_a.jpg', OTHER_WS), JPEG_BYTES);
+      const response = await post(fileUrls, { chatId: OWN_CHAT, wsId: OTHER_WS });
+      expect(response.status).toBe(403);
+      expect(mocks.admin.bucket.list).not.toHaveBeenCalled();
+    });
 
-      const signed = await post(signedReadUrl, { paths: [resource(owner)] });
-      expect(signed.status).toBe(200);
+    it("denies signed-read-url for the actor's own chat id in another workspace", async () => {
+      const path = resource(OWN_CHAT, '1_a.jpg', OTHER_WS);
+      mocks.state.objects.set(path, JPEG_BYTES);
+      const response = await post(signedReadUrl, { paths: [path] });
+      expect(response.status).toBe(403);
+      expect(mocks.admin.bucket.createSignedUrls).not.toHaveBeenCalled();
+    });
 
-      const deleted = await post(deleteFile, {
-        path: resource(owner),
-        wsId: 'ws-1',
+    it('rejects delete-file for a path outside the requested workspace', async () => {
+      const path = resource(OWN_CHAT, '1_a.jpg', OTHER_WS);
+      mocks.state.objects.set(path, JPEG_BYTES);
+      const response = await post(deleteFile, { path, wsId: WS });
+      expect(response.status).toBe(400);
+      expect(mocks.state.objects.has(path)).toBe(true);
+    });
+
+    it('denies delete-file in a workspace the actor is not a member of', async () => {
+      const path = resource(OWN_CHAT, '1_a.jpg', OTHER_WS);
+      mocks.state.objects.set(path, JPEG_BYTES);
+      const response = await post(deleteFile, { path, wsId: OTHER_WS });
+      expect(response.status).toBe(403);
+      expect(mocks.state.objects.has(path)).toBe(true);
+    });
+
+    it('denies upload-url in a workspace the actor is not a member of', async () => {
+      const response = await post(uploadUrl, {
+        chatId: OWN_CHAT,
+        filename: 'photo.jpg',
+        wsId: OTHER_WS,
       });
-      expect(deleted.status).toBe(200);
-      expect(mocks.state.objects.has(resource(owner))).toBe(false);
-    }
-  );
+      expect(response.status).toBe(403);
+      expect(mocks.admin.bucket.createSignedUploadUrl).not.toHaveBeenCalled();
+    });
+
+    it("denies upload-url into another member's chat", async () => {
+      const response = await post(uploadUrl, {
+        chatId: OTHER_CHAT,
+        filename: 'photo.jpg',
+        wsId: WS,
+      });
+      expect(response.status).toBe(403);
+      expect(mocks.admin.bucket.createSignedUploadUrl).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('private roots', () => {
+    it.each([
+      ['native Chat', `${WS}/chats/conversations/x.png`],
+      ['recordings', `${WS}/recordings/a.webm`],
+      ['Drive', `${WS}/docs/report.pdf`],
+    ])('rejects signed-read-url for %s paths', async (_, path) => {
+      const response = await post(signedReadUrl, { paths: [path] });
+      expect(response.status).toBe(400);
+      expect(mocks.admin.bucket.createSignedUrls).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['native Chat', `${WS}/chats/conversations/x.png`],
+      ['recordings', `${WS}/recordings/a.webm`],
+    ])('rejects delete-file for %s paths', async (_, path) => {
+      const response = await post(deleteFile, { path, wsId: WS });
+      expect(response.status).toBe(400);
+      expect(mocks.admin.bucket.remove).not.toHaveBeenCalled();
+    });
+  });
+
+  it("lists, signs and deletes the actor's own chat folder", async () => {
+    const listed = await post(fileUrls, { chatId: OWN_CHAT, wsId: WS });
+    expect(listed.status).toBe(200);
+    expect((await listed.json()).files).toEqual([
+      expect.objectContaining({ path: resource(OWN_CHAT) }),
+    ]);
+
+    const signed = await post(signedReadUrl, { paths: [resource(OWN_CHAT)] });
+    expect(signed.status).toBe(200);
+
+    const deleted = await post(deleteFile, {
+      path: resource(OWN_CHAT),
+      wsId: WS,
+    });
+    expect(deleted.status).toBe(200);
+    expect(mocks.state.objects.has(resource(OWN_CHAT))).toBe(false);
+  });
 
   it("signs the actor's own temp upload", async () => {
     const response = await post(signedReadUrl, {
@@ -140,7 +220,7 @@ describe('legacy AI chat resource routes', () => {
   describe('stored object verification', () => {
     it('refuses to serve a bad new upload after issuing its upload URL', async () => {
       const prepared = await post(uploadUrl, {
-        wsId: 'ws-1',
+        wsId: WS,
         filename: 'fake.jpg',
         sizeBytes: 6,
       });
@@ -162,7 +242,7 @@ describe('legacy AI chat resource routes', () => {
       async (name, bytes) => {
         const path = resource(OWN_CHAT, name);
         mocks.state.objects.set(path, bytes);
-        const listed = await post(fileUrls, { chatId: OWN_CHAT, wsId: 'ws-1' });
+        const listed = await post(fileUrls, { chatId: OWN_CHAT, wsId: WS });
         expect(listed.status).toBe(200);
         expect((await listed.json()).files).toContainEqual(
           expect.objectContaining({ path })
@@ -181,7 +261,7 @@ describe('legacy AI chat resource routes', () => {
         const bytes = new Uint8Array(size * 1024 * 1024);
         bytes.set(JPEG_BYTES);
         mocks.state.objects.set(path, bytes);
-        const listed = await post(fileUrls, { chatId: OWN_CHAT, wsId: 'ws-1' });
+        const listed = await post(fileUrls, { chatId: OWN_CHAT, wsId: WS });
         expect(listed.status).toBe(200);
         expect((await listed.json()).files).not.toContainEqual(
           expect.objectContaining({ path })
@@ -269,7 +349,7 @@ describe('legacy AI chat resource routes', () => {
 
       const response = await post(fileUrls, {
         chatId: OWN_CHAT,
-        wsId: 'ws-1',
+        wsId: WS,
       });
 
       expect(response.status).toBe(200);

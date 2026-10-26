@@ -1,7 +1,7 @@
 import { posix } from 'node:path';
 import { canAccessFinanceTransactionStoragePath } from '@tuturuuu/finance-core/storage-access';
 import { validateFinanceTransactionAttachmentUploadRequest } from '@tuturuuu/finance-core/storage-limits';
-import { isReservedMobileDeploymentDrivePath } from '@tuturuuu/storage-core/mobile-deployment/storage-policy';
+import { isExcludedDrivePath } from '@tuturuuu/storage-core/drive-path-policy';
 import {
   createWorkspaceStorageUploadPayload,
   WorkspaceStorageError,
@@ -227,9 +227,7 @@ export async function POST(
     const requestedStoragePath = sanitizedPath
       ? posix.join(sanitizedPath, sanitizedFilename)
       : sanitizedFilename;
-    if (
-      isReservedMobileDeploymentDrivePath(normalizedWsId, requestedStoragePath)
-    ) {
+    if (isExcludedDrivePath(normalizedWsId, requestedStoragePath)) {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 

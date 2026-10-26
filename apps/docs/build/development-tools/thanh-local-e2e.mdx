@@ -132,6 +132,40 @@ unbundled; `@tuturuuu/internal-api` builds as CommonJS (`NodeNext` without
 defined`, or `Failed to resolve entry for package "@tuturuuu/internal-api"`
 before it is built. The Next runtime serves the same route handlers.
 
+## Meet and the realtime Worker
+
+The script does not start Meet. For Meet verification (coding room, shared
+document, backup checkpoints) run, from the same checkout and with the
+`web.env` values exported:
+
+- the realtime Worker: `node_modules/.bin/wrangler dev --local --config apps/meet-realtime/wrangler.jsonc --ip 127.0.0.1 --port 8786 --persist-to <state dir> --var MEET_REALTIME_TOKEN_SECRET:<secret> --var PLATFORM_API_BASE_URL:http://localhost:7803`;
+- web with the same `MEET_REALTIME_TOKEN_SECRET` (the document checkpoint route
+  verifies the Worker's ticket with it; `node $E2E web` inherits it from the
+  shell), plus `PROGRAMMING_REALTIME_URL=ws://127.0.0.1:8786/collaboration` and
+  `CLOUDFLARE_CHANNELS_URL=ws://127.0.0.1:8786/channels`;
+- Meet with `apps/meet/node_modules/.bin/next dev -p 7807 --turbopack` and
+  `WEB_APP_URL`/`INTERNAL_WEB_API_ORIGIN=http://localhost:7803`,
+  `NEXT_PUBLIC_APP_URL=http://localhost:7807` and the same secret and realtime URLs.
+
+Meet must run on `7807`: web validates satellite return URLs against the
+registered local origins in `packages/utils/src/internal-domains.ts`, and the
+login page refuses an unregistered port. Start these servers as plain background
+processes you own, never inside `ttr resources run` (a dev server would hold a
+shared validation slot indefinitely); use admission only for finite captures.
+Sign in once on web through `dev-session` with a fresh `@tuturuuu.com` address
+(it creates a confirmed account): the seeded accounts carry version-0 UUIDs that
+Meet's realtime token schema rejects, so they cannot join a call. The Supabase
+cookie is shared across `localhost` ports, and a confirmed `@tuturuuu.com`
+identity can open a meeting coding room without a playground benefit. The
+`[wsId]/meetings` page panics under `next dev --turbopack` (`node:async_hooks`
+external), so create the meeting through `POST /api/v1/workspaces/<id>/meetings`
+and open `/r/<meeting id>` directly. A local Worker `fetch` sends no
+`User-Agent`, and the API proxy treats other bearer tokens as Supabase sessions;
+the Worker therefore sends explicit service headers and the proxy exempts
+verified realtime service tickets on the checkpoint routes. Code execution still
+needs a runner, so Run reports a failure locally; the layout, collaboration and
+Drive checkpoints are exercised end to end.
+
 ### Native Worker imports
 
 Workerd rejects random generation during module initialization. Meet and Parley's

@@ -70,8 +70,8 @@ function setup(env: Partial<ShortenerEnvironment> = {}) {
   };
   const environment: ShortenerEnvironment = {
     ASSETS: {
-      fetch: async (request) => {
-        assets.push(new URL(request.url).pathname);
+      fetch: async (input) => {
+        assets.push(new URL(input).pathname);
         return new Response('asset');
       },
     },

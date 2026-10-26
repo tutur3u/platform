@@ -63,37 +63,33 @@ describe('AI chat upload URL route', () => {
     mocks.verifyMembership.mockResolvedValue({ ok: true });
   });
 
-  it.each([
-    ['chat', OTHER_CHAT],
-    ['Mind thread', OTHER_THREAD],
-  ])("refuses another member's %s in the same workspace", async (_, id) => {
+  it("refuses another member's chat in the same workspace with 403", async () => {
     const response = await POST(
-      request({ chatId: id, filename: 'photo.jpg' }) as never
+      request({ chatId: OTHER_CHAT, filename: 'photo.jpg' }) as never
     );
 
-    expect(response.status).toBe(404);
+    expect(response.status).toBe(403);
     expect(mocks.admin.bucket.createSignedUploadUrl).not.toHaveBeenCalled();
   });
 
-  it("refuses the actor's Mind thread from another workspace", async () => {
-    mocks.state.threads[0]!.ws_id = 'ws-2';
-    const response = await POST(
-      request({ chatId: OWN_THREAD, filename: 'photo.jpg' }) as never
+  it("issues a never-overwriting URL inside the actor's own chat folder", async () => {
+    expect(await uploadPath(OWN_CHAT)).toMatch(
+      new RegExp(`^ws-1/chats/ai/resources/${OWN_CHAT}/\\d+_photo\\.jpg$`)
     );
-    expect(response.status).toBe(404);
+    expect(mocks.admin.bucket.createSignedUploadUrl).toHaveBeenCalledWith(
+      expect.any(String),
+      { upsert: false }
+    );
   });
 
+  // Storage RLS (20261026170000) grants chat folders to the ai_chats creator
+  // only, so Mind threads and not-yet-created chats upload to temp.
   it.each([
-    ['chat', OWN_CHAT],
-    ['Mind thread', OWN_THREAD],
-  ])("issues a URL inside the actor's own %s folder", async (_, id) => {
+    ["the actor's own Mind thread", OWN_THREAD],
+    ["another member's Mind thread", OTHER_THREAD],
+    ['a not-yet-created chat', UNKNOWN_ID],
+  ])("sends uploads for %s to the actor's temp folder", async (_, id) => {
     expect(await uploadPath(id)).toMatch(
-      new RegExp(`^ws-1/chats/ai/resources/${id}/\\d+_photo\\.jpg$`)
-    );
-  });
-
-  it("sends uploads for a not-yet-created chat to the actor's temp folder", async () => {
-    expect(await uploadPath(UNKNOWN_ID)).toMatch(
       /^ws-1\/chats\/ai\/resources\/temp\/actor\/\d+_photo\.jpg$/
     );
   });

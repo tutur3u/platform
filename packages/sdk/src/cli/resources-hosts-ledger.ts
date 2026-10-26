@@ -1,5 +1,5 @@
 import { mkdir, readdir, readFile, rm } from 'node:fs/promises';
-import { platform } from 'node:os';
+import { availableParallelism, loadavg, platform } from 'node:os';
 import { join } from 'node:path';
 import { z } from 'zod';
 import {
@@ -7,13 +7,21 @@ import {
   evaluateTrustedRunner,
 } from '../devbox-fleet-types';
 import { atomicJson } from './resources-config';
-import type { HostRegistry, JobClass } from './resources-hosts-config';
+import { autoQueueTarget } from './resources-hosts-auto';
+import {
+  type HostRegistry,
+  hostDiskFloor,
+  type JobClass,
+} from './resources-hosts-config';
 import {
   type HostState,
+  hostBlocker,
   planAdmissions,
   type Reservation,
+  usageFor,
   type Waiter,
 } from './resources-hosts-plan';
+import type { HostProbe } from './resources-hosts-probe';
 import {
   capabilityBlocker,
   type HostCapability,
@@ -42,7 +50,8 @@ const ticketSchema = z.object({
   queuedAt: z.number().int().nonnegative(),
   bypassed: z.number().int().nonnegative(),
   remoteOk: z.boolean(),
-  requires: z.array(hostCapabilitySchema).max(6).optional(),
+  requires: z.array(hostCapabilitySchema).max(7).optional(),
+  placement: z.literal('auto').optional(),
   command: z.string().optional(),
 });
 const reservationSchema = z.object({
@@ -138,6 +147,7 @@ export async function hostLedger(home: string, prune = false) {
 }
 
 export interface HostTelemetry {
+  probes?: Record<string, HostProbe>;
   // Free GiB on the local job volume, undefined when it could not be read.
   localDiskFreeGiB?: number;
   // Undefined when the fleet could not be read: every runner is unreachable.
@@ -200,6 +210,7 @@ export function hostStates(
       // hosts job until its lane owner appears, so never count both.
       states[host.id] = {
         platform: platform(),
+        loadPerCpu: loadavg()[0]! / availableParallelism(),
         healthy: true,
         diskFreeGiB: telemetry.localDiskFreeGiB,
         external: {
@@ -258,9 +269,10 @@ export function hostStates(
       age >= 0 &&
       age < registry.telemetryTtlSeconds * 1000;
     const busy = runner.activity.running_runs + runner.activity.queued_runs;
-    const ours = owned(host.id, 'light') + owned(host.id, 'heavy');
     states[host.id] = {
       platform: runner.capabilities?.os?.platform,
+      loadPerCpu: load,
+      queuedJobs: runner.activity.queued_runs,
       healthy: verdict.eligible && fresh,
       reason: verdict.eligible
         ? fresh
@@ -269,8 +281,52 @@ export function hostStates(
         : verdict.reason,
       diskFreeGiB: runnerDisk(runner.capabilities),
       // Runs this ledger did not create (other machines) occupy heavy slots.
-      external: { heavy: Math.max(0, busy - ours) },
+      external: {
+        heavy: Math.max(
+          0,
+          busy - owned(host.id, 'heavy') - owned(host.id, 'light')
+        ),
+      },
     };
+    if (telemetry.probes) {
+      const probe = telemetry.probes[host.id];
+      const state = states[host.id]!;
+      if (!probe?.healthy) {
+        state.healthy = false;
+        state.reason = probe?.reason ?? 'no live admission probe';
+      } else if (probe.sample.platform !== state.platform) {
+        state.healthy = false;
+        state.reason = 'SSH probe OS differs from runner telemetry';
+      } else {
+        const sample = probe.sample;
+        state.loadPerCpu = sample.loadPerCpu;
+        if (sample.loadPerCpu >= (host.maxLoadPerCpu ?? 1)) {
+          state.healthy = false;
+          state.reason = 'SSH admission probe reports excessive load';
+        }
+        state.diskFreeGiB = Math.min(
+          sample.diskFreeGiB,
+          state.diskFreeGiB ?? -1
+        );
+        // Probes carry no reservation identity proving lane ownership. Keep
+        // all remote reservations charged until completion; an aggregate
+        // count cannot confirm that an admitted run has actually started.
+        state.remoteLanes = {
+          capacity: sample.effectiveLanes,
+          occupied: sample.occupied + sample.waiting,
+        };
+        state.external = {
+          heavy: Math.max(
+            busy,
+            host.slots.heavy -
+              sample.effectiveLanes +
+              sample.occupied +
+              sample.waiting,
+            0
+          ),
+        };
+      }
+    }
   }
   return states;
 }
@@ -283,7 +339,9 @@ export function remoteDispatchBlocker(
   registry: HostRegistry,
   hostId: string,
   snapshot: DevboxFleetSnapshot | undefined,
-  requires: HostCapability[] = []
+  requires: HostCapability[] = [],
+  probes?: Record<string, HostProbe>,
+  admission?: { jobClass: JobClass; reservations: Reservation[]; token: string }
 ) {
   const host = registry.hosts.find((entry) => entry.id === hostId);
   if (host?.kind !== 'runner') return 'host is not a runner';
@@ -293,19 +351,29 @@ export function remoteDispatchBlocker(
   );
   if (!Number.isFinite(serverNow))
     return 'fleet snapshot has no server timestamp';
+  const reservations =
+    admission?.reservations.filter(
+      (entry) => entry.token !== admission.token
+    ) ?? [];
   const state = hostStates(
     registry,
-    { snapshot, now: serverNow },
+    { snapshot, now: serverNow, probes },
     { owners: 0, waiters: 0 },
-    []
+    reservations
   )[hostId]!;
   if (!state.healthy) return state.reason ?? 'runner is not eligible';
+  if (admission)
+    return hostBlocker(host, state, usageFor(host, state, reservations), {
+      jobClass: admission.jobClass,
+      requires,
+      remoteOk: true,
+    });
   const capability = capabilityBlocker(host, requires);
   if (capability) return capability;
   if (host.platform && state.platform !== host.platform)
     return 'runner platform telemetry is unknown or differs from its registration';
   if (state.diskFreeGiB === undefined) return 'runner free disk is unknown';
-  if (state.diskFreeGiB < host.reserved.diskGiB)
+  if (state.diskFreeGiB < hostDiskFloor(host))
     return 'runner free disk is below its floor';
   return undefined;
 }
@@ -365,6 +433,7 @@ function ticketIdentity(entry: HostTicket) {
     entry.jobClass,
     entry.queuedAt,
     entry.remoteOk,
+    entry.placement,
     entry.command,
     [...(entry.requires ?? [])].sort(),
   ]);
@@ -409,6 +478,7 @@ export async function admitHostTicket(
       bypassed: entry.bypassed,
       remoteOk: entry.remoteOk,
       requires: entry.requires,
+      placement: entry.placement,
     }));
     const plan = planAdmissions(registry, states, ledger.reservations, waiters);
     const mine = plan.assignments.find((entry) => entry.token === ticket.token);
@@ -450,6 +520,48 @@ export async function admitHostTicket(
   });
   return result ?? { admitted: false, reason: 'admission was cancelled' };
 }
+// Read-only planning includes older queued tickets, so an explanation does
+// not promise capacity already owed to someone else. Execution rechecks under
+// the canonical admission mutex before creating any reservation.
+export async function previewHostTicket(
+  home: string,
+  ticket: HostTicket,
+  registry: HostRegistry,
+  telemetry: HostTelemetry
+) {
+  const ledger = await hostLedger(home);
+  const lanes = await occupancy(home, false);
+  const states = hostStates(
+    registry,
+    telemetry,
+    {
+      owners: lanes.occupied.length,
+      waiters: (await tickets(home)).length,
+    },
+    ledger.reservations
+  );
+  const plan = planAdmissions(registry, states, ledger.reservations, [
+    ...ledger.tickets.filter((entry) => entry.token !== ticket.token),
+    ticket,
+  ]);
+  const availability = autoQueueTarget(
+    registry,
+    states,
+    ledger.reservations,
+    ticket
+  );
+  return {
+    hostId: plan.assignments.find((entry) => entry.token === ticket.token)
+      ?.hostId,
+    reason: plan.blocked[ticket.token],
+    free: availability.free,
+    queue: availability.target,
+    states,
+    policy:
+      'Free lanes first: Thanh, Sonha, Linux (pktm reservation), local. Queue only when all eligible hosts are full; shortest estimated wait.',
+  };
+}
+
 export async function updateHostReservation(
   home: string,
   reservation: HostReservation

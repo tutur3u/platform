@@ -3,8 +3,7 @@ import {
   getAppSessionTokenFromRequest,
 } from '@tuturuuu/auth/app-session';
 import { verifyCliAccessToken } from '@tuturuuu/auth/cli-session';
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { resolveSatelliteRequestActor } from '@tuturuuu/satellite/workspace-access';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
@@ -14,6 +13,7 @@ type DevboxUserResolution =
   | {
       ok: true;
       user: SupabaseUser;
+      authentication: 'cli' | 'session';
     }
   | {
       ok: false;
@@ -28,26 +28,23 @@ async function resolveDevboxRequestUser(
   if (appSessionToken) {
     const appSessionVerification = verifyCliAccessToken(appSessionToken);
 
-    if (!appSessionVerification.ok) {
+    if (appSessionVerification.ok) {
       return {
-        ok: false as const,
-        response: NextResponse.json(
-          { message: 'Unauthorized' },
-          { status: 401 }
-        ),
+        ok: true,
+        user: createAppSessionUser(appSessionVerification.claims),
+        authentication:
+          request.headers
+            .get('authorization')
+            ?.match(/^Bearer (\S+)$/i)?.[1] === appSessionToken
+            ? 'cli'
+            : 'session',
       };
     }
-
-    return {
-      ok: true as const,
-      user: createAppSessionUser(appSessionVerification.claims),
-    };
   }
 
-  const supabase = await createClient(request);
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
+  const actor = await resolveSatelliteRequestActor(request, 'infra');
 
-  if (!user) {
+  if (!actor) {
     return {
       ok: false as const,
       response: NextResponse.json({ message: 'Unauthorized' }, { status: 401 }),
@@ -56,7 +53,8 @@ async function resolveDevboxRequestUser(
 
   return {
     ok: true as const,
-    user,
+    user: actor.user,
+    authentication: 'session',
   };
 }
 
@@ -73,6 +71,36 @@ export async function authorizeDevboxRootMember(request: Request) {
   });
 
   if (permissions?.membershipType !== 'MEMBER') {
+    return {
+      ok: false as const,
+      response: NextResponse.json({ message: 'Forbidden' }, { status: 403 }),
+    };
+  }
+
+  return {
+    ok: true as const,
+    user: resolvedUser.user,
+  };
+}
+
+// Read access to fleet records matches the Infrastructure layout gate: root
+// membership plus view_infrastructure.
+export async function authorizeDevboxRootViewer(request: Request) {
+  const resolvedUser = await resolveDevboxRequestUser(request);
+  if (!resolvedUser.ok) {
+    return resolvedUser;
+  }
+
+  const permissions = await getPermissions({
+    request,
+    user: resolvedUser.user,
+    wsId: ROOT_WORKSPACE_ID,
+  });
+
+  if (
+    permissions?.membershipType !== 'MEMBER' ||
+    permissions.withoutPermission('view_infrastructure')
+  ) {
     return {
       ok: false as const,
       response: NextResponse.json({ message: 'Forbidden' }, { status: 403 }),
@@ -113,5 +141,6 @@ export async function authorizeDevboxRootAdmin(request: Request) {
   return {
     ok: true as const,
     user: resolvedUser.user,
+    authentication: resolvedUser.authentication,
   };
 }

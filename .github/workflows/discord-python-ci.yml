@@ -2,10 +2,12 @@ name: Discord Python CI
 
 on:
   push:
+    branches: [main, production, 'release-please--branches--**']
     paths:
       - "apps/discord/**"
       - ".github/workflows/discord-python-ci.yml"
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled, converted_to_draft]
     paths:
       - "apps/discord/**"
       - ".github/workflows/discord-python-ci.yml"
@@ -14,7 +16,7 @@ env:
   PYTHON_VERSION: "3.13"
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
   cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 
 permissions:
@@ -22,6 +24,7 @@ permissions:
 
 jobs:
   check-ci:
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
     permissions:
       contents: read
       deployments: read
@@ -32,7 +35,7 @@ jobs:
   lint:
     name: Lint (Ruff)
     needs: [check-ci]
-    if: needs.check-ci.outputs.should_run == 'true'
+    if: (needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -64,7 +67,7 @@ jobs:
   type-check:
     name: Type Check (mypy)
     needs: [check-ci]
-    if: needs.check-ci.outputs.should_run == 'true'
+    if: (needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -93,7 +96,7 @@ jobs:
   test:
     name: Test Suite
     needs: [check-ci]
-    if: needs.check-ci.outputs.should_run == 'true'
+    if: (needs.check-ci.outputs.should_run == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -131,7 +134,7 @@ jobs:
   test-coverage:
     name: Test Coverage
     needs: [check-ci]
-    if: needs.check-ci.outputs.should_run == 'true'
+    if: (needs.check-ci.outputs.should_run == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -170,7 +173,7 @@ jobs:
   build-check:
     name: Build Check
     needs: [check-ci]
-    if: needs.check-ci.outputs.should_run == 'true'
+    if: (needs.check-ci.outputs.should_run == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -204,7 +207,7 @@ jobs:
   security:
     name: Security Audit
     needs: [check-ci]
-    if: needs.check-ci.outputs.should_run == 'true'
+    if: (needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -234,7 +237,7 @@ jobs:
   matrix-test:
     name: Multi-Version Test
     needs: [check-ci]
-    if: needs.check-ci.outputs.should_run == 'true'
+    if: (needs.check-ci.outputs.should_run == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false

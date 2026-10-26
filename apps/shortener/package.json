@@ -33,6 +33,7 @@
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/icons": "workspace:*",
     "@tuturuuu/satellite": "workspace:*",
+    "@tuturuuu/start-bridge": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",

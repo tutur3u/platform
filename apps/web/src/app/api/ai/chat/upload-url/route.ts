@@ -8,7 +8,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
-import { resolveAiChatResourceOwner } from '../_lib/chat-resource-access';
+import { resolveAiChatUploadFolder } from '../_lib/chat-resource-ownership';
 import { AI_CHAT_FILE_APP_SESSION_TARGETS } from '../_lib/session-targets';
 
 const MAX_FILENAME_LENGTH = 255;
@@ -25,8 +25,11 @@ const UploadUrlRequestSchema = z.object({
  *
  * Generates a signed upload URL for direct file upload to Supabase Storage.
  * - Authenticated users only (session auth)
- * - Files go to the chat path only when the actor owns that chat or Mind
- *   thread; otherwise (no chatId, or no record yet) to `temp/{actorId}`
+ * - Files go to the chat path only for an `ai_chats` row the caller created;
+ *   another user's chat is forbidden; anything else (no chatId, a chat not
+ *   created yet, or a non-chat id) goes to `temp/{actorId}`. Chat storage is
+ *   private and clients cannot write it directly (storage RLS denies client
+ *   writes)
  * - The AI route automatically moves temp files on first message
  * - The signed URL cannot bound size or content, so readers and the model
  *   path verify the stored object (see `chat-resource-object-guard`)
@@ -97,26 +100,30 @@ export const POST = withSessionAuth(
         );
       }
 
+      // Membership checks stay request-scoped; ownership and storage signed-upload
+      // creation use admin.
+      const storageAdmin = await createDynamicAdminClient();
+
       let ownsChatFolder = false;
       if (chatId) {
-        const resolved = await resolveAiChatResourceOwner({
+        const folder = await resolveAiChatUploadFolder(
+          storageAdmin,
           chatId,
-          userId: user.id,
-          wsId,
-        });
-        if (resolved.access === 'lookup_failed') {
+          user.id
+        );
+        if (folder === 'lookup_failed') {
           return NextResponse.json(
             { message: 'Failed to verify chat access' },
             { status: 500 }
           );
         }
-        if (resolved.access !== 'allowed') {
+        if (folder === 'forbidden') {
           return NextResponse.json(
-            { message: 'Chat not found' },
-            { status: 404 }
+            { message: "You don't have access to this chat" },
+            { status: 403 }
           );
         }
-        ownsChatFolder = resolved.owner.kind !== 'unknown';
+        ownsChatFolder = folder === 'chat';
       }
 
       // Sanitize filename: keep alphanumeric, dots, hyphens, underscores
@@ -129,20 +136,19 @@ export const POST = withSessionAuth(
       }
 
       // Construct storage path:
-      //   Owned chat/thread → {wsId}/chats/ai/resources/{chatId}/{timestamp}_{filename}
-      //   Otherwise         → {wsId}/chats/ai/resources/temp/{userId}/{timestamp}_{filename}
+      //   Owned chat → {wsId}/chats/ai/resources/{chatId}/{timestamp}_{filename}
+      //   Otherwise  → {wsId}/chats/ai/resources/temp/{userId}/{timestamp}_{filename}
       const timestampedName = `${Date.now()}_${sanitized}`;
       const storagePath = ownsChatFolder
         ? `${wsId}/chats/ai/resources/${chatId}/${timestampedName}`
         : `${wsId}/chats/ai/resources/temp/${user.id}/${timestampedName}`;
 
-      // Membership checks stay request-scoped; storage signed-upload creation uses admin.
-      const storageAdmin = await createDynamicAdminClient();
-
-      // Supabase signs upload URLs for its fixed default (2 hours).
+      // Generate a signed upload URL. Supabase signed upload tokens have a fixed
+      // 2-hour lifetime. Never overwrite: a chat id must not let a caller
+      // pre-seed or replace objects in a chat folder.
       const { data, error } = await storageAdmin.storage
         .from('workspaces')
-        .createSignedUploadUrl(storagePath, { upsert: true });
+        .createSignedUploadUrl(storagePath, { upsert: false });
 
       if (error || !data) {
         console.error('Error creating signed upload URL', {

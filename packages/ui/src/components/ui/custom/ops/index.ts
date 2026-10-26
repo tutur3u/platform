@@ -1,3 +1,4 @@
+export { type LogLine, LogLines, type LogLinesProps } from './log-lines';
 export { OpsPageHeader, type OpsPageHeaderProps } from './ops-page-header';
 export { OpsSection, type OpsSectionProps } from './ops-section';
 export { ResourceMeter, type ResourceMeterProps } from './resource-meter';

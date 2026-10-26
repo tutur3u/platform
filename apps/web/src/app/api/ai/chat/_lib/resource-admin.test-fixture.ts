@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 
-/** Shared in-memory admin client for the legacy AI chat resource routes. */
+/** Shared in-memory admin client for the AI chat resource routes. */
 export type ResourceAdminState = {
   chats: { id: string; creator_id: string | null }[];
   threads: { id: string; creator_id: string | null; ws_id: string }[];
@@ -9,8 +9,12 @@ export type ResourceAdminState = {
   objects: Map<string, Uint8Array>;
 };
 
+/** Workspace ids are UUIDs, as the bucket-RLS path classifier requires. */
+export const WS = '66666666-6666-4666-8666-666666666666';
+export const OTHER_WS = '77777777-7777-4777-8777-777777777777';
 export const OWN_CHAT = '11111111-1111-4111-8111-111111111111';
 export const OTHER_CHAT = '22222222-2222-4222-8222-222222222222';
+/** Mind threads own no chat-resource folder (storage RLS: ai_chats only). */
 export const OWN_THREAD = '33333333-3333-4333-8333-333333333333';
 export const OTHER_THREAD = '44444444-4444-4444-8444-444444444444';
 export const UNKNOWN_ID = '55555555-5555-4555-8555-555555555555';
@@ -23,8 +27,8 @@ export function seedResourceAdminState(state: ResourceAdminState) {
     { id: OTHER_CHAT, creator_id: 'other-member' },
   ];
   state.threads = [
-    { id: OWN_THREAD, creator_id: 'actor', ws_id: 'ws-1' },
-    { id: OTHER_THREAD, creator_id: 'other-member', ws_id: 'ws-1' },
+    { id: OWN_THREAD, creator_id: 'actor', ws_id: WS },
+    { id: OTHER_THREAD, creator_id: 'other-member', ws_id: WS },
   ];
   state.lookupError = null;
   state.objects = new Map();
@@ -101,6 +105,8 @@ export function createResourceAdmin(state: ResourceAdminState) {
     client: {
       from: (name: string) =>
         table(() => (name === 'ai_chats' ? state.chats : []), state),
+      // Nobody has Drive permissions: chat resource routes must not need them.
+      rpc: vi.fn(async () => ({ data: false, error: null })),
       schema: () => ({
         from: (name: string) =>
           table(() => (name === 'mind_ai_threads' ? state.threads : []), state),

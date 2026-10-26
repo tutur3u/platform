@@ -22,8 +22,12 @@ const hostSchema = z
     // through the trusted devbox transport (`ttr box`) to `runnerId`.
     kind: z.enum(['local', 'runner']),
     platform: z.enum(['darwin', 'linux']).optional(),
-    capabilities: z.array(hostCapabilitySchema).max(6).optional(),
+    capabilities: z.array(hostCapabilitySchema).max(7).optional(),
     runnerId: z.string().min(1).optional(),
+    sshHost: z
+      .string()
+      .regex(/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,252}$/u)
+      .optional(),
     // Measured capacity, and headroom reserved for co-tenants (production
     // containers, CI runners, Judge workers, the interactive desktop).
     capacity: z.object({
@@ -49,6 +53,8 @@ const hostSchema = z
     // already eligible and have capacity. An ordering hint only: it never
     // admits a stale, degraded, low-disk or full host. Unranked hosts follow
     // ranked ones.
+    expectedJobSeconds: z.number().positive().max(86400).optional(),
+    minDiskFreeGiB: z.number().nonnegative().optional(),
     preference: z.number().int().min(1).max(99).optional(),
     // A runner whose 1-minute load per CPU reaches this is degraded and not
     // admitted (runner telemetry `resources.loadAverage` / `cpu.cores`).
@@ -115,6 +121,9 @@ export async function readHostRegistry(
   }
   return parsed.data;
 }
+
+export const hostDiskFloor = (host: HostSpec) =>
+  Math.max(host.reserved.diskGiB, host.minDiskFreeGiB ?? 50);
 
 // Usable budget after reserved headroom.
 export function hostBudget(host: HostSpec) {

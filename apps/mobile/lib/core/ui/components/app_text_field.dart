@@ -21,6 +21,7 @@ class AppTextField extends StatelessWidget {
     this.hintMaxLines,
     this.label,
     this.errorText,
+    this.helperText,
     this.leading,
     this.trailing,
     this.onChanged,
@@ -58,6 +59,9 @@ class AppTextField extends StatelessWidget {
   /// Visible label above the field; also its accessible name.
   final String? label;
   final String? errorText;
+
+  /// Muted guidance below the field, such as format or privacy notes.
+  final String? helperText;
   final Widget? leading;
   final Widget? trailing;
   final ValueChanged<String>? onChanged;
@@ -127,6 +131,12 @@ class AppTextField extends StatelessWidget {
         hintText: placeholder == label ? null : placeholder,
         hintMaxLines: hintMaxLines,
         errorText: errorText,
+        helperText: helperText,
+        helperMaxLines: 3,
+        helperStyle: tokens.typography.small.copyWith(color: c.mutedForeground),
+        counterStyle: tokens.typography.small.copyWith(
+          color: c.mutedForeground,
+        ),
         hintStyle: resolvedStyle.copyWith(color: c.mutedForeground),
         prefixIcon: leading,
         suffixIcon: trailing,

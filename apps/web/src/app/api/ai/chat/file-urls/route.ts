@@ -1,10 +1,13 @@
+import { resolveWorkspaceStorageFolderAccess } from '@tuturuuu/storage-core/workspace-storage-access';
 import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
-import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import {
+  createWorkspaceStorageAccessContext,
+  WorkspaceStorageAccessLookupError,
+} from '@/lib/storage/workspace-storage-access-context';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
-import { verifyAiChatOwner } from '../_lib/chat-resource-access';
 import { verifyAiChatStoredObjects } from '../_lib/chat-resource-object-guard';
 import { AI_CHAT_FILE_APP_SESSION_TARGETS } from '../_lib/session-targets';
 
@@ -24,6 +27,11 @@ const SIGNED_URL_EXPIRY_SECONDS = 3600;
  * (e.g. when loading an existing chat from history).
  *
  * Storage path: `{wsId}/chats/ai/resources/{chatId}/`
+ *
+ * Authorization mirrors the `workspaces` bucket RLS
+ * (`@tuturuuu/storage-core/workspace-storage-access`): only a workspace
+ * MEMBER who created the chat may list it. Public chat pages do not use this
+ * route; they render shared messages without attachment URLs.
  */
 export const POST = withSessionAuth(
   async (req, { user, supabase }) => {
@@ -39,52 +47,33 @@ export const POST = withSessionAuth(
         );
       }
 
-      const membership = await verifyWorkspaceMembershipType({
-        wsId: wsId,
-        userId: user.id,
-        supabase: supabase,
-      });
+      const sbAdmin = await createDynamicAdminClient();
+      const storagePath = `${wsId}/chats/ai/resources/${chatId}`;
+      const access = await resolveWorkspaceStorageFolderAccess(
+        storagePath,
+        'select',
+        createWorkspaceStorageAccessContext({
+          sbAdmin,
+          supabase,
+          userId: user.id,
+        })
+      );
 
-      if (membership.error === 'membership_lookup_failed') {
-        console.error('Error validating workspace membership for file-urls', {
-          error: membership.error,
-          wsId,
-        });
+      if (access === 'invalid') {
         return NextResponse.json(
-          { message: 'Failed to verify workspace access' },
-          { status: 500 }
+          { message: 'Invalid storage path' },
+          { status: 400 }
         );
       }
 
-      if (!membership.ok) {
+      if (access === 'forbidden') {
         return NextResponse.json(
-          { message: "You don't have access to this workspace" },
+          { message: "You don't have access to this chat" },
           { status: 403 }
         );
       }
 
-      const access = await verifyAiChatOwner({
-        chatId,
-        userId: user.id,
-        wsId,
-      });
-      if (access === 'lookup_failed') {
-        return NextResponse.json(
-          { message: 'Failed to verify chat access' },
-          { status: 500 }
-        );
-      }
-      if (access !== 'allowed') {
-        return NextResponse.json(
-          { message: 'Chat not found' },
-          { status: 404 }
-        );
-      }
-
-      const sbAdmin = await createDynamicAdminClient();
-
       // List all files in the chat's storage folder
-      const storagePath = `${wsId}/chats/ai/resources/${chatId}`;
       const { data: fileList, error: listError } = await sbAdmin.storage
         .from('workspaces')
         .list(storagePath, {
@@ -111,6 +100,8 @@ export const POST = withSessionAuth(
       const listedFiles = fileList.filter(
         (f) => f.id != null && f.name !== '.emptyFolderPlaceholder'
       );
+      // Only objects whose stored size and leading bytes match their extension
+      // are served; others stay stored but unlisted.
       const verdicts = await verifyAiChatStoredObjects({
         admin: sbAdmin,
         objects: listedFiles.map((file) => ({
@@ -179,6 +170,14 @@ export const POST = withSessionAuth(
         );
       }
 
+      if (err instanceof WorkspaceStorageAccessLookupError) {
+        console.error('Error verifying chat file access', err);
+        return NextResponse.json(
+          { message: 'Failed to verify chat access' },
+          { status: 500 }
+        );
+      }
+
       console.error('Unexpected error in chat file-urls', err);
       return NextResponse.json(
         { message: 'Internal server error' },
@@ -193,11 +192,16 @@ export const POST = withSessionAuth(
   }
 );
 
-/** Strip the leading `{timestamp}_` prefix from a storage filename. */
+// Signed-URL remediation re-keys objects to `{uuidv4}-{original name}`.
+const REKEY_PREFIX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}-/i;
+
+/** Strip the re-key and leading `{timestamp}_` prefixes from a storage filename. */
 function stripTimestampPrefix(name: string): string {
+  const original = name.replace(REKEY_PREFIX, '');
   // Pattern: digits followed by underscore at the start
-  const match = name.match(/^\d+_(.+)$/);
-  return match?.[1] ?? name;
+  const match = original.match(/^\d+_(.+)$/);
+  return match?.[1] ?? original;
 }
 
 /** Map common file extensions to MIME types. */
