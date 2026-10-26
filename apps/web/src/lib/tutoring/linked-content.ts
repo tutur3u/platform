@@ -206,14 +206,13 @@ export async function loadLinkedLessonContent({
   return result;
 }
 
-/**
- * Stores the linked lesson notes when a make-up session is completed. The
- * write only lands while the content is still blank (empty or whitespace, as
- * the listing treats it), so a staff edit made in
- * the meantime is never overwritten. Failures are logged, never thrown:
- * completion must not depend on the notes lookup.
- */
-export async function freezeLinkedLessonContent({
+/** How long a completion waits for the notes to be stored. */
+export const FREEZE_TIMEOUT_MS = 3000;
+
+/** Response warning when completion could not confirm the stored notes. */
+export const LINKED_CONTENT_NOT_STORED = 'LINKED_CONTENT_NOT_STORED';
+
+async function storeLinkedLessonContent({
   sbAdmin,
   sessionId,
   wsId,
@@ -222,45 +221,77 @@ export async function freezeLinkedLessonContent({
   sessionId: string;
   wsId: string;
 }) {
-  try {
-    const privateDb = sbAdmin.schema('private');
-    const { data: session, error } = await privateDb
-      .from('workspace_tutoring_sessions')
-      .select(
-        'id,group_id,student_user_id,reason_type,attendance_status,content,session_date,start_time'
-      )
-      .eq('id', sessionId)
-      .eq('ws_id', wsId)
-      .maybeSingle();
-    if (error) throw error;
-    // Same rule as the listing: blank content is linked, real text is a
-    // manual edit that must never be overwritten.
-    if (session?.content.trim() !== '') return;
+  const privateDb = sbAdmin.schema('private');
+  const { data: session, error } = await privateDb
+    .from('workspace_tutoring_sessions')
+    .select(
+      'id,group_id,student_user_id,reason_type,attendance_status,content,session_date,start_time'
+    )
+    .eq('id', sessionId)
+    .eq('ws_id', wsId)
+    .maybeSingle();
+  if (error) throw error;
+  // Same rule as the listing: blank content is linked, real text is a manual
+  // edit that must never be overwritten.
+  if (session?.content.trim() !== '') return 'skipped' as const;
 
-    // Derive as if still pending: the notes as they stood at completion.
-    const linked = await loadLinkedLessonContent({
-      sbAdmin,
-      sessions: [{ ...session, attendance_status: 'PENDING' }],
-      wsId,
-    });
-    const content = linked.get(session.id);
-    if (!content) return;
+  // Derive as if still pending: the notes as they stood at completion.
+  const linked = await loadLinkedLessonContent({
+    sbAdmin,
+    sessions: [{ ...session, attendance_status: 'PENDING' }],
+    wsId,
+  });
+  const content = linked.get(session.id);
+  if (!content) return 'skipped' as const;
 
-    const { error: updateError } = await privateDb
-      .from('workspace_tutoring_sessions')
-      .update({ content })
-      .eq('id', sessionId)
-      .eq('ws_id', wsId)
-      .eq('attendance_status', 'DONE')
-      // Compare-and-set on the blank value read above, whitespace included,
-      // so a staff edit made in the meantime is left alone.
-      .eq('content', session.content);
-    if (updateError) throw updateError;
-  } catch (error) {
+  const { error: updateError } = await privateDb
+    .from('workspace_tutoring_sessions')
+    .update({ content })
+    .eq('id', sessionId)
+    .eq('ws_id', wsId)
+    .eq('attendance_status', 'DONE')
+    // Compare-and-set on the blank value read above, whitespace included,
+    // so a staff edit made in the meantime is left alone.
+    .eq('content', session.content);
+  if (updateError) throw updateError;
+  return 'stored' as const;
+}
+
+/**
+ * Stores the linked lesson notes when a make-up session is completed. The
+ * write only lands while the content is still blank (empty or whitespace, as
+ * the listing treats it), so a staff edit made in the meantime is never
+ * overwritten.
+ *
+ * Completion never fails because of it: errors are logged, and the wait is
+ * bounded so it cannot stack onto completion latency. A `failed` result means
+ * the notes may not have been stored; routes surface it as a warning. A write
+ * still in flight at the timeout may land afterwards.
+ */
+export async function freezeLinkedLessonContent(input: {
+  sbAdmin: TypedSupabaseClient;
+  sessionId: string;
+  wsId: string;
+}): Promise<'stored' | 'skipped' | 'failed'> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const work = storeLinkedLessonContent(input).catch((error: unknown) => {
     console.error('Failed to store linked tutoring lesson content', {
       error,
-      sessionId,
-      wsId,
+      sessionId: input.sessionId,
+      wsId: input.wsId,
     });
-  }
+    return 'failed' as const;
+  });
+  const timeout = new Promise<'failed'>((resolve) => {
+    timer = setTimeout(() => {
+      console.warn('Timed out storing linked tutoring lesson content', {
+        sessionId: input.sessionId,
+        wsId: input.wsId,
+      });
+      resolve('failed');
+    }, FREEZE_TIMEOUT_MS);
+  });
+  const result = await Promise.race([work, timeout]);
+  if (timer) clearTimeout(timer);
+  return result;
 }

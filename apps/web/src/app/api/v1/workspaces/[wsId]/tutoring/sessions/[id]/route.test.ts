@@ -43,6 +43,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 }));
 vi.mock('@/lib/tutoring/linked-content', () => ({
   freezeLinkedLessonContent: mocks.freeze,
+  LINKED_CONTENT_NOT_STORED: 'LINKED_CONTENT_NOT_STORED',
 }));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   normalizeWorkspaceId: async () => wsId,
@@ -132,7 +133,7 @@ describe('DELETE tutoring session', () => {
 });
 
 describe('PUT tutoring session completion', () => {
-  async function complete(body: Record<string, unknown>) {
+  async function complete(body: Record<string, unknown> = {}) {
     const { PUT } = await import('./route');
     return PUT(
       new Request(
@@ -145,6 +146,27 @@ describe('PUT tutoring session completion', () => {
       { params: Promise.resolve({ id: sessionId, wsId }) }
     );
   }
+
+  it('completes and warns when the lesson notes could not be stored', async () => {
+    mocks.freeze.mockResolvedValue('failed');
+
+    const response = await complete();
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      message: 'success',
+      warning: 'LINKED_CONTENT_NOT_STORED',
+    });
+  });
+
+  it('completes without a warning once the notes are stored', async () => {
+    mocks.freeze.mockResolvedValue('stored');
+
+    const response = await complete();
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ message: 'success' });
+  });
 
   it.each([
     ['without content', {}],

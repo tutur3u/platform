@@ -8,7 +8,10 @@ import {
   type TutoringSessionSlotInput,
   TutoringSessionUpdateSchema,
 } from '@/legacy-api-routes/v1/workspaces/[wsId]/tutoring/shared';
-import { freezeLinkedLessonContent } from '@/lib/tutoring/linked-content';
+import {
+  freezeLinkedLessonContent,
+  LINKED_CONTENT_NOT_STORED,
+} from '@/lib/tutoring/linked-content';
 import { resolveTutoringRouteAccess } from '@/lib/tutoring/route-access';
 import { listWorkspaceTeacherIds } from '@/lib/tutoring/teachers';
 
@@ -249,11 +252,17 @@ export async function PUT(request: Request, { params }: Params) {
   // Completing with no (or blank) content keeps the linked notes; only real
   // text sent alongside the completion counts as a manual edit.
   if (parsed.data.attendanceStatus === 'DONE' && !parsed.data.content?.trim()) {
-    await freezeLinkedLessonContent({
+    const frozen = await freezeLinkedLessonContent({
       sbAdmin,
       sessionId: id,
       wsId: normalizedWsId,
     });
+    // Completion stands; the client warns that the notes may need a check.
+    if (frozen === 'failed')
+      return NextResponse.json({
+        message: 'success',
+        warning: LINKED_CONTENT_NOT_STORED,
+      });
   }
 
   return NextResponse.json({ message: 'success' });
