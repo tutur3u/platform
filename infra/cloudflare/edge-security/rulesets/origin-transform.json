@@ -1,0 +1,22 @@
+{
+  "name": "Set separate origin-lock credential for verified proxied Vercel origins",
+  "kind": "zone",
+  "phase": "http_request_late_transform",
+  "rules": [
+    {
+      "ref": "edge_set_origin_secret",
+      "description": "High-value credential; reader/rotation acceptance required",
+      "expression": "false",
+      "action": "rewrite",
+      "enabled": false,
+      "action_parameters": {
+        "headers": {
+          "x-tuturuuu-edge-origin": {
+            "operation": "set",
+            "value": "__EDGE_ORIGIN_SECRET_CURRENT_REQUIRED__"
+          }
+        }
+      }
+    }
+  ]
+}

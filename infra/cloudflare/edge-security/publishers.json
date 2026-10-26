@@ -1,0 +1,98 @@
+{
+  "version": 1,
+  "sourceAuthorities": [
+    "tuturuuu.ts",
+    "tuturuuu.ci.ts",
+    "scripts/ci/production-publication-policy.ts"
+  ],
+  "workers": [
+    {
+      "host": "meet.tuturuuu.com",
+      "worker": "tuturuuu-meet",
+      "configPath": "apps/meet/void.config.ts",
+      "workflow": "meet-cloudflare.yaml",
+      "publication": "held in source; existing live Worker must still be checked"
+    },
+    {
+      "host": "meet-realtime.tuturuuu.com",
+      "worker": "tuturuuu-meet-realtime",
+      "configPath": "apps/meet-realtime/wrangler.jsonc",
+      "workflow": "meet-cloudflare.yaml",
+      "publication": "held in source; existing live Worker must still be checked"
+    },
+    {
+      "host": "colab.tuturuuu.com",
+      "worker": "tuturuuu-colab",
+      "configPath": "apps/colab/wrangler.jsonc",
+      "workflow": "colab-cloudflare.yaml",
+      "publication": "publisher present; live status independently required"
+    },
+    {
+      "host": "lettin.tuturuuu.com",
+      "worker": "tuturuuu-lettin",
+      "configPath": "apps/lettin/wrangler.jsonc",
+      "workflow": "lettin-cloudflare.yaml",
+      "publication": "publisher present; live status independently required"
+    },
+    {
+      "host": "parley.tuturuuu.com",
+      "worker": "tuturuuu-parley",
+      "configPath": "apps/parley/wrangler.jsonc",
+      "workflow": "parley-cloudflare.yaml",
+      "publication": "publisher present; live status independently required"
+    }
+  ],
+  "unresolvedCandidates": [
+    {
+      "host": "calendar.tuturuuu.com",
+      "worker": "tuturuuu-calendar",
+      "configPath": "apps/calendar/void.config.ts",
+      "status": "held; live 404 is not disabled proof"
+    },
+    {
+      "host": "mail.tuturuuu.com",
+      "worker": "tuturuuu-mail",
+      "configPath": "apps/mail/void.config.ts",
+      "status": "held; live 404 is not disabled proof"
+    },
+    {
+      "host": "apps.tuturuuu.com",
+      "worker": "tuturuuu-apps",
+      "configPath": "apps/apps/void.config.ts",
+      "status": "current input is staging; production identity comes from wave1-native-profiles.json; live 404 unresolved"
+    },
+    {
+      "host": "shortener.tuturuuu.com",
+      "configPath": "apps/shortener/void.config.ts",
+      "status": "staging-only source; production publisher/Worker identity unresolved"
+    }
+  ],
+  "legacyAliases": [
+    {
+      "host": "meet-vercel-rollback.tuturuuu.com",
+      "source": "DNS CNAME, DNS-only",
+      "publisher": "Vercel rollback origin candidate; account/project binding must be verified",
+      "originLockRequired": true
+    },
+    {
+      "host": "vercel.tuturuuu.com",
+      "source": "DNS CNAME, DNS-only",
+      "publisher": "legacy central-origin alias; account/project binding must be verified",
+      "originLockRequired": true
+    }
+  ],
+  "vercelOrigins": [],
+  "vercelOriginLimit": "No non-Finance proxied host has been proven to target Vercel in this snapshot. Populate host/project bindings only after provider verification; the origin-secret set fragment therefore starts with expression false.",
+  "coverage": "Joined canonical app/workflow inventory, publication fences and actual input/emitted config authorities. This map is not live deployment acceptance or permission to deploy. Reconcile every unresolved candidate before claiming platform-wide origin closure.",
+  "maintenanceWorkers": [
+    {
+      "host": "hive.tuturuuu.com",
+      "worker": "tuturuuu-hive-maintenance",
+      "publisher": "operator-owned maintenance deployment; not the retained Next/Docker publisher",
+      "workersDev": false,
+      "previewUrls": false,
+      "liveEvidence": "inventory/preparation-readiness.json",
+      "publication": "Live route verified 2026-10-26 16:37 GMT+7; tunnel ingress removed per release owner. Re-read subdomain status with every other Worker before step 4; full Hive migration and runtime acceptance remain separate."
+    }
+  ]
+}

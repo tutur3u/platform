@@ -1,0 +1,453 @@
+{
+  "capturedAt": "2026-10-26 14:53:49 +0700",
+  "providerGetCount": 4,
+  "writes": 0,
+  "normalization": {
+    "status": 200,
+    "type": "cloudflare",
+    "scope": "both"
+  },
+  "customEntrypoint": {
+    "status": 200,
+    "id": "86f0643e4dbc4e07acfb15d1def2f81e",
+    "exists": true,
+    "rules": [
+      {
+        "id": "3543f90df80b4019a381dd34294dc3f5",
+        "ref": "3543f90df80b4019a381dd34294dc3f5",
+        "position": 1,
+        "action": "skip",
+        "custody": "Finance-owned temporary rule",
+        "exists": true
+      }
+    ]
+  },
+  "dns": {
+    "capturedAt": "2026-10-26 14:55:48 +0700",
+    "status": 200,
+    "providerGetCount": 1,
+    "scope": "shared zone DNS listing only; no origins retained",
+    "records": [
+      {
+        "host": "ai.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "api.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "apps.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "b43fkiqxhidzurpe63xtllkjonlrkr6z._domainkey.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "beta.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "calendar.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "canary.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "chat.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "cms.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "contacts.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "dev.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "docs.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "drive.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "finance-staging.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": true
+      },
+      {
+        "host": "finance.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "forms.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "git.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "groups.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "hive.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": true
+      },
+      {
+        "host": "hls5fwg4iunwpqyw6dlvj562fi63cctg._domainkey.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "infrastructure.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "inventory.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "learn.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "mail.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "meet-vercel-rollback.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "mind.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "next.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "noah.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "nova.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "p72ua6yabh7t3ljcwc7o2qecyfgwq66i._domainkey.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "pay.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "qr.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "s1._domainkey.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "s2._domainkey.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "shortener.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "sites.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "staging.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "storefronts.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "storefront.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "stores.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "store.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "tasks.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "teach.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "tools.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "track.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "vc.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "vercel.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "workspaces.r2.storage.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": true
+      },
+      {
+        "host": "www.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "colab.tuturuuu.com",
+        "type": "AAAA",
+        "proxied": true
+      },
+      {
+        "host": "lettin.tuturuuu.com",
+        "type": "AAAA",
+        "proxied": true
+      },
+      {
+        "host": "meet-realtime.tuturuuu.com",
+        "type": "AAAA",
+        "proxied": true
+      },
+      {
+        "host": "meet.tuturuuu.com",
+        "type": "AAAA",
+        "proxied": true
+      },
+      {
+        "host": "parley.tuturuuu.com",
+        "type": "AAAA",
+        "proxied": true
+      }
+    ],
+    "original36": {
+      "hostCount": 36,
+      "proxied": [
+        "colab.tuturuuu.com",
+        "hive.tuturuuu.com",
+        "lettin.tuturuuu.com",
+        "meet.tuturuuu.com",
+        "parley.tuturuuu.com"
+      ],
+      "dnsOnly": [
+        "tuturuuu.com",
+        "www.tuturuuu.com",
+        "beta.tuturuuu.com",
+        "staging.tuturuuu.com",
+        "canary.tuturuuu.com",
+        "vercel.tuturuuu.com",
+        "next.tuturuuu.com",
+        "ai.tuturuuu.com",
+        "apps.tuturuuu.com",
+        "calendar.tuturuuu.com",
+        "chat.tuturuuu.com",
+        "cms.tuturuuu.com",
+        "contacts.tuturuuu.com",
+        "drive.tuturuuu.com",
+        "forms.tuturuuu.com",
+        "git.tuturuuu.com",
+        "infrastructure.tuturuuu.com",
+        "inventory.tuturuuu.com",
+        "learn.tuturuuu.com",
+        "mail.tuturuuu.com",
+        "mind.tuturuuu.com",
+        "noah.tuturuuu.com",
+        "nova.tuturuuu.com",
+        "pay.tuturuuu.com",
+        "shortener.tuturuuu.com",
+        "storefront.tuturuuu.com",
+        "storefronts.tuturuuu.com",
+        "tasks.tuturuuu.com",
+        "teach.tuturuuu.com",
+        "tools.tuturuuu.com",
+        "track.tuturuuu.com"
+      ],
+      "missing": []
+    },
+    "amended39": {
+      "hostCount": 39,
+      "proxied": [
+        "colab.tuturuuu.com",
+        "hive.tuturuuu.com",
+        "lettin.tuturuuu.com",
+        "meet.tuturuuu.com",
+        "parley.tuturuuu.com"
+      ],
+      "dnsOnly": [
+        "tuturuuu.com",
+        "www.tuturuuu.com",
+        "beta.tuturuuu.com",
+        "staging.tuturuuu.com",
+        "canary.tuturuuu.com",
+        "vercel.tuturuuu.com",
+        "next.tuturuuu.com",
+        "ai.tuturuuu.com",
+        "apps.tuturuuu.com",
+        "calendar.tuturuuu.com",
+        "chat.tuturuuu.com",
+        "cms.tuturuuu.com",
+        "contacts.tuturuuu.com",
+        "drive.tuturuuu.com",
+        "forms.tuturuuu.com",
+        "git.tuturuuu.com",
+        "infrastructure.tuturuuu.com",
+        "inventory.tuturuuu.com",
+        "learn.tuturuuu.com",
+        "mail.tuturuuu.com",
+        "mind.tuturuuu.com",
+        "noah.tuturuuu.com",
+        "nova.tuturuuu.com",
+        "pay.tuturuuu.com",
+        "shortener.tuturuuu.com",
+        "storefront.tuturuuu.com",
+        "storefronts.tuturuuu.com",
+        "tasks.tuturuuu.com",
+        "teach.tuturuuu.com",
+        "tools.tuturuuu.com",
+        "track.tuturuuu.com",
+        "store.tuturuuu.com",
+        "stores.tuturuuu.com",
+        "api.tuturuuu.com"
+      ],
+      "missing": []
+    },
+    "previousSnapshotAt": "2026-10-26 13:57:37 +0700",
+    "previousOriginal36": {
+      "hostCount": 36,
+      "proxied": [
+        "colab.tuturuuu.com",
+        "hive.tuturuuu.com",
+        "lettin.tuturuuu.com",
+        "meet.tuturuuu.com",
+        "parley.tuturuuu.com"
+      ],
+      "dnsOnly": [
+        "tuturuuu.com",
+        "www.tuturuuu.com",
+        "beta.tuturuuu.com",
+        "staging.tuturuuu.com",
+        "canary.tuturuuu.com",
+        "vercel.tuturuuu.com",
+        "next.tuturuuu.com",
+        "ai.tuturuuu.com",
+        "apps.tuturuuu.com",
+        "calendar.tuturuuu.com",
+        "chat.tuturuuu.com",
+        "cms.tuturuuu.com",
+        "contacts.tuturuuu.com",
+        "drive.tuturuuu.com",
+        "forms.tuturuuu.com",
+        "git.tuturuuu.com",
+        "infrastructure.tuturuuu.com",
+        "inventory.tuturuuu.com",
+        "learn.tuturuuu.com",
+        "mail.tuturuuu.com",
+        "mind.tuturuuu.com",
+        "noah.tuturuuu.com",
+        "nova.tuturuuu.com",
+        "pay.tuturuuu.com",
+        "shortener.tuturuuu.com",
+        "storefront.tuturuuu.com",
+        "storefronts.tuturuuu.com",
+        "tasks.tuturuuu.com",
+        "teach.tuturuuu.com",
+        "tools.tuturuuu.com",
+        "track.tuturuuu.com"
+      ],
+      "missing": []
+    },
+    "changesSincePrevious": []
+  },
+  "sbfmReadLimitation": {
+    "capturedAt": "2026-10-26 14:59:03 +0700",
+    "status": 400,
+    "phase": null,
+    "ruleCount": 0,
+    "rules": [],
+    "limit": "No expressions, headers or raw descriptions retained; no live skip/AI behavior probe."
+  }
+}

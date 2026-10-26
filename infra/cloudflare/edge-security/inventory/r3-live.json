@@ -1,0 +1,576 @@
+{
+  "startedAt": "2026-10-26 15:55:31 +0700",
+  "authenticatedGetCount": 10,
+  "publicHeadCount": 8,
+  "writes": 0,
+  "reads": [
+    {
+      "method": "GET",
+      "path": "/zones/618b9966111b23a37113d30865f1fbb0/dns_records?per_page=5000",
+      "status": 200,
+      "capturedAt": "2026-10-26 15:55:31 +0700",
+      "error": null
+    },
+    {
+      "method": "GET",
+      "path": "/zones/618b9966111b23a37113d30865f1fbb0/managed_headers",
+      "status": 200,
+      "capturedAt": "2026-10-26 15:55:32 +0700",
+      "error": null
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/e8912e2867beecc673d171907bf09649/workers/scripts/tuturuuu-meet/subdomain",
+      "status": 200,
+      "capturedAt": "2026-10-26 15:55:33 +0700",
+      "error": null
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/e8912e2867beecc673d171907bf09649/workers/scripts/tuturuuu-meet-realtime/subdomain",
+      "status": 200,
+      "capturedAt": "2026-10-26 15:55:33 +0700",
+      "error": null
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/e8912e2867beecc673d171907bf09649/workers/scripts/tuturuuu-colab/subdomain",
+      "status": 200,
+      "capturedAt": "2026-10-26 15:55:34 +0700",
+      "error": null
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/e8912e2867beecc673d171907bf09649/workers/scripts/tuturuuu-lettin/subdomain",
+      "status": 200,
+      "capturedAt": "2026-10-26 15:55:34 +0700",
+      "error": null
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/e8912e2867beecc673d171907bf09649/workers/scripts/tuturuuu-parley/subdomain",
+      "status": 200,
+      "capturedAt": "2026-10-26 15:55:35 +0700",
+      "error": null
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/e8912e2867beecc673d171907bf09649/workers/scripts/tuturuuu-calendar/subdomain",
+      "status": 404,
+      "capturedAt": "2026-10-26 15:55:35 +0700",
+      "error": "HTTPError"
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/e8912e2867beecc673d171907bf09649/workers/scripts/tuturuuu-mail/subdomain",
+      "status": 404,
+      "capturedAt": "2026-10-26 15:55:36 +0700",
+      "error": "HTTPError"
+    },
+    {
+      "method": "GET",
+      "path": "/accounts/e8912e2867beecc673d171907bf09649/workers/scripts/tuturuuu-apps/subdomain",
+      "status": 404,
+      "capturedAt": "2026-10-26 15:55:36 +0700",
+      "error": "HTTPError"
+    }
+  ],
+  "dns": {
+    "capturedAt": "2026-10-26 15:55:31 +0700",
+    "status": 200,
+    "records": [
+      {
+        "host": "hive.tuturuuu.com",
+        "type": "AAAA",
+        "proxied": true
+      },
+      {
+        "host": "ai.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "api.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "apps.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "b43fkiqxhidzurpe63xtllkjonlrkr6z._domainkey.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "beta.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "calendar.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "canary.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "chat.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "cms.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "contacts.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "dev.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "docs.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "drive.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "finance-staging.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": true
+      },
+      {
+        "host": "finance.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "forms.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "git.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "groups.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "hls5fwg4iunwpqyw6dlvj562fi63cctg._domainkey.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "infrastructure.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "inventory.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "learn.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "mail.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "meet-vercel-rollback.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "mind.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "next.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "noah.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "nova.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "p72ua6yabh7t3ljcwc7o2qecyfgwq66i._domainkey.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "pay.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "qr.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "s1._domainkey.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "s2._domainkey.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "shortener.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "sites.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "staging.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "storefronts.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "storefront.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "stores.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "store.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "tasks.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "teach.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "tools.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "track.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "vc.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "vercel.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "workspaces.r2.storage.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": true
+      },
+      {
+        "host": "www.tuturuuu.com",
+        "type": "CNAME",
+        "proxied": false
+      },
+      {
+        "host": "colab.tuturuuu.com",
+        "type": "AAAA",
+        "proxied": true
+      },
+      {
+        "host": "lettin.tuturuuu.com",
+        "type": "AAAA",
+        "proxied": true
+      },
+      {
+        "host": "meet-realtime.tuturuuu.com",
+        "type": "AAAA",
+        "proxied": true
+      },
+      {
+        "host": "meet.tuturuuu.com",
+        "type": "AAAA",
+        "proxied": true
+      },
+      {
+        "host": "parley.tuturuuu.com",
+        "type": "AAAA",
+        "proxied": true
+      }
+    ]
+  },
+  "managedSecurityHeaders": {
+    "capturedAt": "2026-10-26 15:55:32 +0700",
+    "status": 200,
+    "present": true,
+    "entries": [
+      {
+        "id": "add_security_headers",
+        "enabled": true,
+        "has_conflict": false
+      }
+    ]
+  },
+  "workers": [
+    {
+      "app": "meet",
+      "worker": "tuturuuu-meet",
+      "capturedAt": "2026-10-26 15:55:33 +0700",
+      "status": 200,
+      "enabled": true,
+      "previews_enabled": true,
+      "error": null
+    },
+    {
+      "app": "meet-realtime",
+      "worker": "tuturuuu-meet-realtime",
+      "capturedAt": "2026-10-26 15:55:33 +0700",
+      "status": 200,
+      "enabled": true,
+      "previews_enabled": true,
+      "error": null
+    },
+    {
+      "app": "colab",
+      "worker": "tuturuuu-colab",
+      "capturedAt": "2026-10-26 15:55:34 +0700",
+      "status": 200,
+      "enabled": false,
+      "previews_enabled": false,
+      "error": null
+    },
+    {
+      "app": "lettin",
+      "worker": "tuturuuu-lettin",
+      "capturedAt": "2026-10-26 15:55:34 +0700",
+      "status": 200,
+      "enabled": true,
+      "previews_enabled": true,
+      "error": null
+    },
+    {
+      "app": "parley",
+      "worker": "tuturuuu-parley",
+      "capturedAt": "2026-10-26 15:55:35 +0700",
+      "status": 200,
+      "enabled": true,
+      "previews_enabled": true,
+      "error": null
+    },
+    {
+      "app": "calendar",
+      "worker": "tuturuuu-calendar",
+      "capturedAt": "2026-10-26 15:55:35 +0700",
+      "status": 404,
+      "enabled": null,
+      "previews_enabled": null,
+      "error": "HTTPError"
+    },
+    {
+      "app": "mail",
+      "worker": "tuturuuu-mail",
+      "capturedAt": "2026-10-26 15:55:36 +0700",
+      "status": 404,
+      "enabled": null,
+      "previews_enabled": null,
+      "error": "HTTPError"
+    },
+    {
+      "app": "apps",
+      "worker": "tuturuuu-apps",
+      "capturedAt": "2026-10-26 15:55:36 +0700",
+      "status": 404,
+      "enabled": null,
+      "previews_enabled": null,
+      "error": "HTTPError"
+    }
+  ],
+  "publicHeads": [
+    {
+      "host": "colab.tuturuuu.com",
+      "path": "/",
+      "capturedAt": "2026-10-26 15:55:36 +0700",
+      "method": "HEAD",
+      "redirectsFollowed": 0,
+      "status": 302,
+      "xFrameOptions": "SAMEORIGIN",
+      "cspFrameAncestors": ["frame-ancestors 'none'"],
+      "location": {
+        "host": "colab.tuturuuu.com",
+        "path": "/auth/login"
+      },
+      "coverage": "root redirect response only; destination not followed"
+    },
+    {
+      "host": "finance-staging.tuturuuu.com",
+      "path": "/",
+      "capturedAt": "2026-10-26 15:55:37 +0700",
+      "method": "HEAD",
+      "redirectsFollowed": 0,
+      "status": 307,
+      "xFrameOptions": "SAMEORIGIN",
+      "cspFrameAncestors": ["frame-ancestors 'none'"],
+      "location": {
+        "host": "staging.tuturuuu.com",
+        "path": "/login"
+      },
+      "coverage": "root redirect response only; destination not followed"
+    },
+    {
+      "host": "hive.tuturuuu.com",
+      "path": "/",
+      "capturedAt": "2026-10-26 15:55:38 +0700",
+      "method": "HEAD",
+      "redirectsFollowed": 0,
+      "status": 503,
+      "xFrameOptions": "SAMEORIGIN",
+      "cspFrameAncestors": ["frame-ancestors 'none'"],
+      "coverage": "single public root HEAD response only; no browser/authenticated/embedded flow"
+    },
+    {
+      "host": "lettin.tuturuuu.com",
+      "path": "/",
+      "capturedAt": "2026-10-26 15:55:38 +0700",
+      "method": "HEAD",
+      "redirectsFollowed": 0,
+      "status": 200,
+      "xFrameOptions": "SAMEORIGIN",
+      "cspFrameAncestors": ["frame-ancestors 'none'"],
+      "coverage": "single public root HEAD response only; no browser/authenticated/embedded flow"
+    },
+    {
+      "host": "meet-realtime.tuturuuu.com",
+      "path": "/",
+      "capturedAt": "2026-10-26 15:55:39 +0700",
+      "method": "HEAD",
+      "redirectsFollowed": 0,
+      "status": 404,
+      "xFrameOptions": "SAMEORIGIN",
+      "cspFrameAncestors": [],
+      "coverage": "single public root HEAD response only; no browser/authenticated/embedded flow"
+    },
+    {
+      "host": "meet.tuturuuu.com",
+      "path": "/",
+      "capturedAt": "2026-10-26 15:55:40 +0700",
+      "method": "HEAD",
+      "redirectsFollowed": 0,
+      "status": 307,
+      "xFrameOptions": "SAMEORIGIN",
+      "cspFrameAncestors": [],
+      "location": {
+        "host": "tuturuuu.com",
+        "path": "/login"
+      },
+      "coverage": "root redirect response only; destination not followed"
+    },
+    {
+      "host": "parley.tuturuuu.com",
+      "path": "/",
+      "capturedAt": "2026-10-26 15:55:43 +0700",
+      "method": "HEAD",
+      "redirectsFollowed": 0,
+      "status": 307,
+      "xFrameOptions": "SAMEORIGIN",
+      "cspFrameAncestors": [],
+      "location": {
+        "host": "parley.tuturuuu.com",
+        "path": "/login"
+      },
+      "coverage": "root redirect response only; destination not followed"
+    },
+    {
+      "host": "workspaces.r2.storage.tuturuuu.com",
+      "path": "/",
+      "capturedAt": "2026-10-26 15:55:46 +0700",
+      "method": "HEAD",
+      "redirectsFollowed": 0,
+      "status": 404,
+      "xFrameOptions": "SAMEORIGIN",
+      "cspFrameAncestors": [],
+      "coverage": "single public root HEAD response only; no browser/authenticated/embedded flow"
+    }
+  ],
+  "publicHeadEligibleHosts": [
+    "colab.tuturuuu.com",
+    "finance-staging.tuturuuu.com",
+    "hive.tuturuuu.com",
+    "lettin.tuturuuu.com",
+    "meet-realtime.tuturuuu.com",
+    "meet.tuturuuu.com",
+    "parley.tuturuuu.com",
+    "workspaces.r2.storage.tuturuuu.com"
+  ],
+  "skippedPublicHeadsForBound": [],
+  "completedAt": "2026-10-26 15:55:47 +0700",
+  "limits": {
+    "authenticatedGetMaximum": 15,
+    "publicHeadMaximum": 12,
+    "redirectsFollowed": 0,
+    "financeWorkerRead": false,
+    "originAlternateUrlProbe": false
+  },
+  "financeEvidence": {
+    "type": "inherited artifact review; not current live configuration",
+    "path": "/private/tmp/tuturuuu-ops-20261023/lanes/finance-2200/review/REPORT-prod-19f251cf11.md",
+    "workersDevArtifactValue": false,
+    "liveSubdomainStatus": "not read: held custody"
+  }
+}

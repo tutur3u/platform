@@ -1,0 +1,21 @@
+{
+  "name": "Remove probe credential before origin",
+  "kind": "zone",
+  "phase": "http_request_late_transform",
+  "rules": [
+    {
+      "ref": "edge_strip_probe_header",
+      "description": "Remove every probe header value, including unmatched values",
+      "expression": "(not (http.host in {\"finance.tuturuuu.com\" \"finance-staging.tuturuuu.com\"}) and http.host in {\"colab.tuturuuu.com\" \"hive.tuturuuu.com\" \"lettin.tuturuuu.com\" \"meet.tuturuuu.com\" \"parley.tuturuuu.com\" \"meet-realtime.tuturuuu.com\"})",
+      "action": "rewrite",
+      "enabled": false,
+      "action_parameters": {
+        "headers": {
+          "x-tuturuuu-edge-probe": {
+            "operation": "remove"
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,124 @@
+---
+title: "App-owned security headers and edge overrides"
+description: "Per-host framing intent versus observed headers, and the gated end state for Managed Transform security headers."
+---
+
+The end state is **application-owned response security headers**, with Cloudflare
+Managed Transform **Add security headers OFF only after every affected app is
+proven**. This is future work, not today's change. Finance's temporary scoped
+Transform Rule and its rollback remain exclusively with the Finance cutover owner.
+This amendment changes no Cloudflare setting or response rule.
+
+## Current read-only evidence
+
+At **26 October 2026, 15:55:32 GMT+7**, the Managed Transforms GET returned
+`add_security_headers.enabled=true`. One public `HEAD /` on each of the eight
+currently proxied hosts returned `X-Frame-Options: SAMEORIGIN`. The transform's
+[documented security-header behavior](https://developers.cloudflare.com/rules/transform/managed-transforms/reference/#add-security-headers)
+includes this value. Finance's owner separately reports that this overrides its
+Worker's DENY/default and exact WebGL pass-through policy.
+
+`inventory/r3-live.json` retains only sanitized status, XFO, CSP frame-ancestors,
+redirect host/path and timestamps. No redirects were followed. No response body,
+cookie, full CSP, nonce, query secret, authenticated page or iframe was collected.
+A root redirect/error does not prove the final page's policy or an embed failure.
+No transform was toggled to establish causality in this lane.
+
+## Per-host application intent versus observed response
+
+Source references use the proposal's source unless a separate Finance SHA is
+stated. Retained Next configuration does not prove a native Worker applies it.
+
+| Proxied host | Intended app XFO / CSP framing | Live root HEAD at 15:55 GMT+7 | Ownership or acceptance gap |
+| --- | --- | --- | --- |
+| finance-staging.tuturuuu.com | Native wrapper: DENY outside exact WebGL; delete XFO on exact WebGL and preserve upstream CSP/sandbox. Normal default CSP has frame-ancestors 'none'. | 307, SAMEORIGIN, frame-ancestors 'none'; redirect to staging.tuturuuu.com/login. | Root is not WebGL acceptance. Native source is separately pinned at `9367e9b4baa420db0c461a2e0aeceffcf64ed94f`, not on this proposal branch. Finance owner supplies deployed identity and scoped-rule evidence. |
+| meet.tuturuuu.com | Retained Next intent is DENY +frame-ancestors 'none' outside shared WebGL. Current native Worker path has no app-wide framing setter traced. | 307, SAMEORIGIN, no frame-ancestors observed; redirect to tuturuuu.com/login. | Native Meet must own/prove its policy before global removal; importing retained Next config is not enough. |
+| meet-realtime.tuturuuu.com | No framing policy declared in inspected receiver; JSON/text/socket transport. Downstream DO headers not exhaustively traced. | 404, SAMEORIGIN, no frame-ancestors observed. | Service owner must state HTTP/document policy deliberately; root 404 is not socket101 or room-response evidence. |
+| lettin.tuturuuu.com | Next shared DENY +frame-ancestors 'none' outside exact WebGL exception; inside, upstream CSP owns policy. | 200, SAMEORIGIN, frame-ancestors 'none'. | Verify emitted OpenNext and all route classes; source intended DENY differs from observed XFO. |
+| parley.tuturuuu.com | Next shared DENY +frame-ancestors 'none' outside exact WebGL; direct upgrade/auth branches can bypass Next header handling. | 307, SAMEORIGIN, no frame-ancestors observed; redirect to same-host /login. | Final pages, upgrade failures and socket responses remain unverified. |
+| colab.tuturuuu.com | Worker sets frame-ancestors 'none' in its full CSP on non101 responses; no XFO setter found. Direct assets may bypass the Worker. | 302, SAMEORIGIN, frame-ancestors 'none'; redirect to same-host /auth/login. | Decide XFO policy and verify direct assets independently; preserve the full existing CSP, not just one directive. |
+| hive.tuturuuu.com | Retained Next intent: DENY +frame-ancestors 'none' outside WebGL. Current origin is tuturuuu-hive-maintenance; its exact source/header policy needs owner proof. | 503, SAMEORIGIN, frame-ancestors 'none'. | Maintenance response only; no current room/socket service is established. Prove maintenance and replacement app policies separately. |
+| workspaces.r2.storage.tuturuuu.com | Exact hostname's application/header owner and framing policy are unknown; object content type/disposition must be established. | 404, SAMEORIGIN, no frame-ancestors observed. | Storage owner must prove bucket/domain binding, inline HTML versus attachments and header policy. Do not assume WebGL policy applies to raw R2 objects. |
+
+Canonical `finance.tuturuuu.com` was DNS-only in this read and was not probed.
+Its owner-reported native intent is DENY outside exact WebGL and XFO absence with
+CSP pass-through inside. This is attributed source/artifact intent, not a newly
+verified canonical response. Preserve Finance custody and any newer scoped rule.
+
+Source evidence:
+
+- Shared Next policy: `packages/utils/src/next-config.ts:51`, `:71`, `:206`;
+  owning configs: Finance `:11`, Lettin `:10`, Parley `:8`, Hive `:16`.
+- Native Meet: `apps/meet/void.config.ts:14` →
+  `apps/meet/cloudflare/worker.ts:39` → `apps/meet/src/runtime/handler.ts:36`.
+  No app-wide XFO/CSP setter was established in that native chain.
+- Colab: `apps/colab/src/server/worker.ts:336`, `:343`; Worker-first asset scope
+  in `apps/colab/wrangler.jsonc`. Status101 bypasses its response wrapper.
+- Realtime: `apps/meet-realtime/src/worker.ts:46`, `:84`; Hive socket receiver
+  `apps/hive-realtime/src/server.ts:233` and same-host proxy source
+  `scripts/docker-web/blue-green.js:1510`.
+- Finance at the separately pinned SHA: `apps/finance/start-bridge.config.ts:18`,
+  `:25`, `:30`; `apps/finance/cloudflare/worker.ts:58`;
+  `packages/start-bridge/src/core/csp.ts:28` and
+  `packages/start-bridge/src/start/handler.ts:119`, `:196`.
+
+## Preserve exact embedding and CSP boundaries
+
+Finance's allowed WebGL subtree is
+`^/api/v1/workspaces/[^/]+/external-projects/assets/[^/]+/webgl(?:/|$)` at its
+pinned `packages/utils/src/framable-paths.ts:20`. A complete WebGL segment is
+required. Near misses such as `webgl-extra`, `webglx` and `webgl;params` must not
+inherit the exception. Encoded-path behavior remains a normalization acceptance
+case. Do not replace exact matching with a substring.
+
+The uploaded-WebGL handler's CSP is
+`sandbox allow-scripts allow-downloads allow-pointer-lock allow-modals`
+(`apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/assets/[assetId]/webgl/[...assetPath]/route.ts:22`,
+`:468`). Preserve that sandbox and all other upstream CSP directives. Allowing
+framing while dropping sandbox changes the trust boundary. XFO has no permissive
+wildcard: this exception needs XFO absence, not SAMEORIGIN. Auth/error responses
+may deliberately carry stricter CSP and must not be weakened by the exception.
+
+Do not infer that SAMEORIGIN overrides CSP frame-ancestors in browsers. Record
+both independent headers and execute the intended browser embedding case; the
+observed XFO difference alone does not prove every route is exploitable or broken.
+
+## Gated end-state sequence and rollback
+
+1. **Keep today's zone state unchanged in this lane.** Finance's owner can apply
+   its separately authorized narrow correction and record exact host/path,
+   rule ID/position, before/after headers and rollback. Do not broaden it into a
+   satellite-wide header policy or copy its secret-bearing configuration.
+2. Assign an app/service/storage owner to every affected host. Install or prove
+   app-owned policy in the **actual publisher/runtime**, including native Meet,
+   Colab direct assets, service errors and R2 inline/download behavior. Inventory
+   every header supplied by Add security headers, not only XFO, and preserve
+   required nosniff/referrer policies. Unknown ownership holds global removal.
+3. Run exact-source header regression coverage, then an owner-admitted hosted
+   matrix: ordinary pages, redirects, errors, static assets, auth/API responses,
+   exact allowed embed paths, near misses and socket101. Compare intended policy,
+   controlled pre-transform origin evidence and final proxied headers separately.
+   Prove sandbox/CSP preservation and actual framing in a browser where applicable.
+4. Once **every affected proxied host** has accepted app-owned coverage, re-read
+   the current host list, Managed Transform and all scoped overrides. Capture the
+   zone owner's approval, IDs/order, source/deployment identities and rollback.
+   Only then separately authorize Add security headers OFF. New hosts require
+   their own acceptance before joining the completed set.
+5. Recheck the complete final-edge matrix and browser outcomes after that future
+   change. Remove redundant scoped exceptions only through their owners after
+   proving they no longer supply required policy. If any unexplained policy is
+   lost, restore the captured transform/override state under the zone owner and
+   stop expansion; do not accept global weakening because one embed works.
+
+`policy.framingHeaders` and the validator require per-app/per-host evidence and
+rollback before this end state. The readiness remains incomplete today: no global
+transform was changed, no app header fix was shipped by this amendment, and no
+iframe/browser acceptance was executed. The source/config and live-header matrix
+are evidence for the next admitted per-app work, not approval to turn it off.
+
+
+The Meet, Colab, Lettin and Parley rows each record the Managed Transform's
+`SAMEORIGIN` override against that satellite's source intent. These observations
+remain root-response evidence only. Hive's current maintenance Worker identity
+and URL flags were separately verified at 16:37 GMT+7; its historical socket
+source is not a live path claim. No Managed Transform setting changed.

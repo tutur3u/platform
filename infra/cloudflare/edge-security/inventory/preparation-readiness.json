@@ -1,0 +1,141 @@
+{
+  "capturedAt": "2026-10-26 16:37:39 +0700",
+  "writes": 0,
+  "createdRuleIds": [],
+  "reads": [
+    {
+      "method": "GET",
+      "path": "/accounts/e8912e2867beecc673d171907bf09649/workers/scripts/tuturuuu-hive-maintenance/subdomain",
+      "status": 200,
+      "success": true,
+      "capturedAt": "2026-10-26 16:37:39 +0700"
+    },
+    {
+      "method": "GET",
+      "path": "/zones/618b9966111b23a37113d30865f1fbb0/workers/routes",
+      "status": 200,
+      "success": true,
+      "capturedAt": "2026-10-26 16:37:40 +0700"
+    },
+    {
+      "method": "GET",
+      "path": "/filters/validate-expr?expression=false",
+      "status": 400,
+      "success": false,
+      "capturedAt": "2026-10-26 16:37:40 +0700"
+    },
+    {
+      "method": "GET",
+      "path": "/filters/validate-expr?expression=ip.src%3D%3D34",
+      "status": 400,
+      "success": false,
+      "capturedAt": "2026-10-26 16:37:41 +0700"
+    },
+    {
+      "method": "GET",
+      "path": "/zones/618b9966111b23a37113d30865f1fbb0/url_normalization",
+      "status": 200,
+      "success": true,
+      "capturedAt": "2026-10-26 16:37:42 +0700"
+    },
+    {
+      "method": "GET",
+      "path": "/zones/618b9966111b23a37113d30865f1fbb0/rulesets/phases/http_request_firewall_custom/entrypoint",
+      "status": 200,
+      "success": true,
+      "capturedAt": "2026-10-26 16:37:42 +0700"
+    },
+    {
+      "method": "GET",
+      "path": "/zones/618b9966111b23a37113d30865f1fbb0/rulesets/phases/http_request_sbfm/entrypoint",
+      "status": 400,
+      "success": false,
+      "capturedAt": "2026-10-26 16:37:43 +0700"
+    }
+  ],
+  "hive": {
+    "worker": "tuturuuu-hive-maintenance",
+    "status": 200,
+    "workersDev": false,
+    "previewUrls": false,
+    "routesStatus": 200,
+    "routes": [
+      {
+        "id": "ef89e2c49f754b9ea5fd503ced0c5cf5",
+        "pattern": "hive.tuturuuu.com/*",
+        "script": "tuturuuu-hive-maintenance"
+      }
+    ]
+  },
+  "expressionValidation": [
+    {
+      "expression": "false",
+      "status": 400,
+      "success": false,
+      "errors": [
+        {
+          "message": "Filter parsing error (1:1):\nfalse\n^^^^^ unknown identifier\n"
+        }
+      ],
+      "limit": "Legacy Filters parser only; not Rulesets phase/plan/action acceptance"
+    },
+    {
+      "expression": "ip.src==34",
+      "status": 400,
+      "success": false,
+      "errors": [
+        {
+          "message": "Filter parsing error (1:9):\nip.src==34\n        ^^ couldn't parse address in network: invalid IP address syntax\n"
+        }
+      ],
+      "limit": "Legacy Filters parser only; not Rulesets phase/plan/action acceptance"
+    }
+  ],
+  "normalization": {
+    "status": 200,
+    "type": "cloudflare",
+    "scope": "both"
+  },
+  "customEntrypoint": {
+    "status": 200,
+    "id": "86f0643e4dbc4e07acfb15d1def2f81e",
+    "version": "7",
+    "rules": [
+      {
+        "id": "a414878b9a91447787f404b1265ec8c7",
+        "ref": "a414878b9a91447787f404b1265ec8c7",
+        "position": 1,
+        "action": "skip",
+        "enabled": true
+      }
+    ]
+  },
+  "aiPolicyRead": {
+    "status": 400,
+    "success": false,
+    "errors": [
+      {
+        "message": "unknown phase \"http_request_sbfm\""
+      }
+    ]
+  },
+  "step2": {
+    "state": "HALTED",
+    "unknown": "SBFM/Block AI bots coverage and phase entitlement not proven; controlled client 429 acceptance also remains unexecuted",
+    "next": "Owner resolves readiness unknowns; then re-read complete preflight. No step-3 writes."
+  },
+  "expressionValidationState": "HALT: literal false rejected by legacy read-only parser; Rulesets-specific phase validation remains UNKNOWN. Retain false and all seven disabled fragments. No predicate substitution without user approval.",
+  "step1": {
+    "state": "REVIEWED_WITH_OPEN_GAPS",
+    "limit": "Separate source-fix owners retain External, Playground and Supermemory dispositions. This receipt does not claim fixes or runtime acceptance."
+  },
+  "approval": {
+    "approvedSteps": [1, 2, 3],
+    "approvedHead": "061f6214ecdb968ebf8006c18649aae1b12f7d11",
+    "allSevenRulesMustRemainDisabled": true,
+    "unknownHaltsStep2": true,
+    "enablingNeedsSeparateUserApproval": true,
+    "steps4And5NeedSeparateUserApproval": true,
+    "recordEveryCreatedRuleIdAndPosition": true
+  }
+}

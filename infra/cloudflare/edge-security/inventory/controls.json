@@ -1,0 +1,248 @@
+{
+  "zone": {
+    "httpStatus": 200,
+    "capturedAt": "2026-10-26 13:57:37 +0700",
+    "name": "tuturuuu.com",
+    "plan": "Pro Website"
+  },
+  "settings": {
+    "name": "settings",
+    "status": 200,
+    "data": {
+      "result": [
+        {
+          "id": "browser_check",
+          "value": "on",
+          "modified_on": "2026-06-08T17:05:01.668523Z",
+          "editable": true
+        },
+        {
+          "id": "security_level",
+          "value": "essentially_off",
+          "modified_on": "2026-04-15T04:15:38.351688Z",
+          "editable": true
+        },
+        {
+          "id": "waf",
+          "value": "off",
+          "modified_on": null,
+          "editable": true
+        }
+      ],
+      "success": true,
+      "errors": [],
+      "messages": []
+    },
+    "capturedAt": "2026-10-26 13:57:38 +0700"
+  },
+  "bot-management": {
+    "name": "bot-management",
+    "status": 200,
+    "data": {
+      "result": {
+        "enable_js": true,
+        "optimize_wordpress": false,
+        "suppress_session_score": false,
+        "sbfm_definitely_automated": "allow",
+        "sbfm_verified_bots": "allow",
+        "sbfm_static_resource_protection": false,
+        "ai_bots_protection": "block",
+        "content_bots_protection": "disabled",
+        "crawler_protection": "enabled",
+        "ai_training": "disallow",
+        "ai_search": "disabled",
+        "ai_user": "disabled",
+        "is_robots_txt_managed": true,
+        "bot_preference_sync_enabled": true,
+        "cf_robots_variant": "off",
+        "ai_bots_migration_opt_out": false,
+        "using_latest_model": true
+      },
+      "success": true,
+      "errors": [],
+      "messages": []
+    },
+    "capturedAt": "2026-10-26 13:58:22 +0700"
+  },
+  "custom-entry": {
+    "name": "custom-entry",
+    "status": 200,
+    "data": {
+      "result": {
+        "description": "",
+        "id": "86f0643e4dbc4e07acfb15d1def2f81e",
+        "kind": "zone",
+        "last_updated": "2026-06-08T17:15:32.047552Z",
+        "name": "default",
+        "phase": "http_request_firewall_custom",
+        "source": "firewall_custom",
+        "version": "2"
+      },
+      "success": true,
+      "errors": [],
+      "messages": []
+    },
+    "capturedAt": "2026-10-26 13:58:24 +0700"
+  },
+  "managed-entry": {
+    "name": "managed-entry",
+    "status": 200,
+    "data": {
+      "result": {
+        "description": "",
+        "id": "8609e055d5dd485eabf79c6b4ce8f0de",
+        "kind": "zone",
+        "last_updated": "2026-09-10T16:39:05.731087Z",
+        "name": "default",
+        "phase": "http_request_firewall_managed",
+        "rules": [
+          {
+            "action": "skip",
+            "action_parameters": {
+              "rules": {
+                "4814384a9e5d4991b9815dcfc25d2f1f": [
+                  "02a11d6fc5c74dbc911455294b629ea8",
+                  "04c20a9fe50742bbac9e480fb00a383d"
+                ]
+              }
+            },
+            "description": "Meet requests: cookie character false positives",
+            "enabled": true,
+            "expression": "(http.host eq \"meet.tuturuuu.com\" and http.request.method in {\"GET\" \"POST\"})",
+            "id": "68a852dcb049486d95c079d17ac3ee52",
+            "last_updated": "2026-09-10T16:39:05.731087Z",
+            "logging": {
+              "enabled": true
+            },
+            "ref": "68a852dcb049486d95c079d17ac3ee52",
+            "version": "2"
+          },
+          {
+            "action": "skip",
+            "action_parameters": {
+              "rules": {
+                "4814384a9e5d4991b9815dcfc25d2f1f": [
+                  "6179ae15870a4bb7b2d480d4843b323c"
+                ]
+              }
+            },
+            "description": "Meet audio uploads: OWASP anomaly false positive",
+            "enabled": true,
+            "expression": "[REDACTED: header-bearing expression, inspect privately before re-use]",
+            "id": "6bcb3c2398ca4f2896222b76bc1ae9b2",
+            "last_updated": "2026-09-07T07:19:38.870434Z",
+            "logging": {
+              "enabled": true
+            },
+            "ref": "6bcb3c2398ca4f2896222b76bc1ae9b2",
+            "version": "1"
+          },
+          {
+            "action": "execute",
+            "action_parameters": {
+              "id": "efb7b8c949ac4650a09736fc376e9aee",
+              "version": "latest"
+            },
+            "description": "Cloudflare Managed Ruleset",
+            "enabled": true,
+            "expression": "true",
+            "id": "966d5ce2241046bb9389fa01980495ac",
+            "last_updated": "2026-06-24T16:14:12.033115Z",
+            "ref": "966d5ce2241046bb9389fa01980495ac",
+            "version": "9"
+          },
+          {
+            "action": "execute",
+            "action_parameters": {
+              "id": "4814384a9e5d4991b9815dcfc25d2f1f",
+              "version": "latest"
+            },
+            "description": "Cloudflare OWASP Core Ruleset",
+            "enabled": true,
+            "expression": "true",
+            "id": "0e5178b65a6a4681b23dc1c4613ae5fd",
+            "last_updated": "2026-06-24T16:14:15.29208Z",
+            "ref": "0e5178b65a6a4681b23dc1c4613ae5fd",
+            "version": "7"
+          }
+        ],
+        "source": "firewall_managed",
+        "version": "19"
+      },
+      "success": true,
+      "errors": [],
+      "messages": []
+    },
+    "capturedAt": "2026-10-26 13:58:23 +0700"
+  },
+  "ratelimit-entry": {
+    "name": "ratelimit-entry",
+    "status": 200,
+    "data": {
+      "result": {
+        "description": "",
+        "id": "0b159880644642b5b7292ab42db3246f",
+        "kind": "zone",
+        "last_updated": "2026-06-08T16:58:05.803653Z",
+        "name": "default",
+        "phase": "http_ratelimit",
+        "rules": [
+          {
+            "action": "block",
+            "description": "Leaked credential check",
+            "enabled": true,
+            "expression": "(cf.waf.credential_check.password_leaked)",
+            "id": "a79b4d5ea84341fab42bc3b934da3fde",
+            "last_updated": "2026-06-08T16:58:05.803653Z",
+            "ratelimit": {
+              "characteristics": ["ip.src", "cf.colo.id"],
+              "mitigation_timeout": 3600,
+              "period": 10,
+              "requests_per_period": 5
+            },
+            "ref": "a79b4d5ea84341fab42bc3b934da3fde",
+            "version": "1"
+          }
+        ],
+        "source": "rate_limit",
+        "version": "3"
+      },
+      "success": true,
+      "errors": [],
+      "messages": []
+    },
+    "capturedAt": "2026-10-26 13:58:24 +0700"
+  },
+  "config-entry": {
+    "name": "config-entry",
+    "status": 404,
+    "data": {
+      "result": null,
+      "success": false,
+      "errors": [
+        {
+          "code": 10003,
+          "message": "could not find entrypoint ruleset in the http_config_settings phase"
+        }
+      ],
+      "messages": []
+    },
+    "capturedAt": "2026-10-26 13:58:25 +0700"
+  },
+  "ai-labyrinth": {
+    "name": "ai-labyrinth",
+    "status": 400,
+    "data": {
+      "success": false,
+      "errors": [
+        {
+          "code": 1003,
+          "message": "Undefined zone setting: ai_labyrinth"
+        }
+      ],
+      "messages": [],
+      "result": null
+    },
+    "capturedAt": "2026-10-26 13:58:23 +0700"
+  }
+}

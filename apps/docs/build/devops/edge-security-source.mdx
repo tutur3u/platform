@@ -1,0 +1,246 @@
+---
+title: "Edge security source inventory"
+description: "Source route census, machine callers, authentication traces and unresolved gaps."
+---
+
+Source: `691e9f70ad7a8c071c57b85752a4b8b56b8e4bc6`, observed 2026-10-26 14:06 GMT+7.
+Source reads only: no provider queries, endpoint probes, builds, installs, tests,
+Git mutations, or Finance control-plane activity were performed by this helper.
+
+## Scope and counts
+
+`infra/cloudflare/edge-security/inventory/source-census.jsonl` contains **1,824 app route entry files across 30 apps**, **461 Web
+legacy implementation files**, and **1,375 client path literal records** from
+`packages/sdk`, `packages/internal-api`, and `apps/mobile/lib`.
+The total 2,285 route source files is not a unique deployed endpoint count.
+Web wrappers point to legacy implementations; generated HEAD wrappers share a
+GET implementation. Multiple hosts can expose the same shared implementation.
+All app entries have path, methods, source, implementation, host candidate,
+caller class, auth signals or an explicit unknown, and evidence references.
+
+The generator is `scripts/edge-security-inventory.py`, invoked from the repository root:
+
+```sh
+python3 scripts/edge-security-inventory.py --root . \
+  --dns-snapshot infra/cloudflare/edge-security/inventory/hosts.json \
+  --output infra/cloudflare/edge-security/inventory/source-census.jsonl
+```
+
+This is a census, not an exhaustive authorization audit. **563 app entries are explicitly tagged as generic auth unknowns** after resolving shallow route forwarding. Bootstrap, public, and metadata route conventions also need handler-specific validation when no direct signal is present.
+They are explicitly unknown, not proven unauthenticated. Direct helper signals
+likewise do not prove every method checks actor/workspace permissions. Imports
+through framework aliases, computed router handlers, runtime configuration, and
+dynamic path construction require manual interpretation. The source is large;
+the manually traced machine contracts below are the basis for proposed traffic
+classes. The paused Rust backend and TanStack Web are excluded from execution
+and from this Next route census; their retained source was not refreshed.
+
+| App | App entry files | Source production host / aliases |
+| --- | ---: | --- |
+| web | 644 | tuturuuu.com |
+| infrastructure | 249 | infrastructure.tuturuuu.com; infra.tuturuuu.com |
+| tasks | 152 | tasks.tuturuuu.com |
+| inventory | 116 | inventory.tuturuuu.com |
+| contacts | 85 | contacts.tuturuuu.com |
+| finance | 82 | finance.tuturuuu.com; observational source only, cutover owner holds all mutations |
+| teach | 61 | teach.tuturuuu.com |
+| calendar | 57 | calendar.tuturuuu.com |
+| mail | 41 | mail.tuturuuu.com |
+| hive | 40 | hive.tuturuuu.com |
+| nova | 38 | nova.tuturuuu.com; nova.ai.vn |
+| track | 37 | track.tuturuuu.com |
+| pay | 26 | pay.tuturuuu.com |
+| learn | 24 | learn.tuturuuu.com |
+| meet | 23 | meet.tuturuuu.com |
+| forms | 20 | forms.tuturuuu.com |
+| parley | 20 | parley.tuturuuu.com |
+| ai | 19 | ai.tuturuuu.com |
+| cms | 17 | cms.tuturuuu.com |
+| lettin | 15 | lettin.tuturuuu.com |
+| rewise | 14 | rewise.tuturuuu.com; rewise.me |
+| mind | 11 | mind.tuturuuu.com |
+| drive | 8 | drive.tuturuuu.com |
+| external | 8 | external.tuturuuu.com inferred; not in production app registry |
+| chat | 4 | chat.tuturuuu.com |
+| git | 4 | git.tuturuuu.com |
+| storefront | 4 | storefront.tuturuuu.com |
+| playground | 3 | playground.tuturuuu.com inferred; not in production app registry |
+| apps | 1 | apps.tuturuuu.com |
+| tools | 1 | tools.tuturuuu.com |
+
+Host authority: `packages/utils/src/internal-domains.ts:6` registers production
+origins, including aliases and custom domains; `packages/utils/src/launchable-apps.ts:50`
+registers launchable apps. These are source host candidates. Live DNS proxy status,
+Cloudflare zone ownership, security settings, and deployment identity must be joined
+from the parent's read-only provider inventory. A custom domain is not covered by
+the tuturuuu.com zone. Registry-only hosts docs, qr, mira, colab, and the separately
+configured realtime/control services must not disappear because they lack Next
+API route entry files. Native services are listed below.
+
+## Machine caller and authentication contracts
+
+| Caller / destination | Source contract and authentication | Source evidence | Required edge behavior |
+| --- | --- | --- | --- |
+| SDK storage/documents to tuturuuu.com `/api/v1/storage/*`, `/api/v1/documents/*` | `TuturuuuClient` loads API key configuration and sends `Authorization: Bearer`; origin validates key then permissions | `packages/sdk/src/storage.ts:824`, `:887`; `apps/web/src/lib/api-middleware.ts:69`, `:98`, `:113`, `:134` | JSON 401/403/429; no HTML challenge; never trust Bearer presence alone |
+| SDK EPM/external-project operations | API key when configured, SDK identifying header; some published delivery operations intentionally public | `packages/sdk/src/epm.ts:514`, `:533`, `:539`; `packages/sdk/src/external-projects.ts:40` | Challenge-free published delivery and authenticated API transport; origin keeps authorization |
+| CLI browser login bootstrap | `/api/cli/auth/start` launches browser; `/api/cli/auth/verify` accepts one-use token in JSON body; `/api/cli/auth/refresh` accepts refresh token in JSON body | `packages/sdk/src/cli/auth.ts:44`, `:54`, `:77`, `:87`, `:127` | Do not require preexisting bearer token or browser cookies for verify/refresh; preserve app-side verification/rate limits |
+| CLI authenticated calls to apex, Calendar, Finance, Tasks and Infrastructure | User CLI access token, scoped app session, refresh lifecycle; only same-origin SDK requests receive credentials | `packages/sdk/src/platform.ts:137`, `:143`, `:936`, `:948`; `packages/sdk/src/platform-sdk-auth.ts:22`; `packages/finance-core/src/route-auth.ts:36` | No challenges, including expired-token/refresh outcomes; retain scope checks |
+| Internal server-to-server APIs | Base URL selected per owning app; caller cookie/Bearer forwarded only to allowed origins; server UA `Tuturuuu-Internal-API/1.0` | `packages/internal-api/src/client.ts:204`, `:659`, `:743`, `:777`, `:796`; `packages/internal-api/src/request-headers.ts:18` | Never exempt by UA; many valid requests use app-session cookie without Authorization |
+| Mobile APIs | Supabase access-token Bearer; optional app Turnstile proof; requests use path owner registry | `apps/mobile/lib/data/sources/api_client.dart:182`, `:194`; `apps/mobile/lib/core/config/api_origins.dart:108`, `:118` | Dart/HTTP transport must receive API envelopes, not challenges |
+| Mobile direct satellite destinations | Finance wallets/transactions, Inventory products, Tasks, Teach, Mail, Infrastructure; shared user/contact and time-tracking operations remain on apex | `apps/mobile/lib/core/config/api_origins.dart:120`, `:126`, `:130`, `:136`, `:143`, `:162`, `:168`, `:174` | Preserve exact native Bearer contracts, especially apex fallbacks |
+| Mobile Calendar gateway | Outside development, Calendar paths first go to Infrastructure `/api/v1/mobile-calendar` plus original Calendar API path; gateway verifies session before attaching private host credential | `apps/mobile/lib/core/config/api_origins.dart:108` | Challenge-free Infrastructure gateway and Calendar upstream; never ship hosting bypass credential to clients |
+| OTP/password/mobile auth bootstrap | No prior user session; payload credentials/device context and server-side Turnstile/abuse controls; legacy mobile aliases set client=mobile | `apps/web/src/legacy-api-routes/v1/auth/mobile/send-otp/route.ts:28`; `apps/web/src/lib/auth/otp.ts:163`, `:329` | Auth forms can use Turnstile, but API calls must not get interstitial HTML; preserve native proof flow |
+| Build/health release probes | `/api/build-info`, `/api/health`, service `/health`; staged CI intentionally uses invalid API key to assert origin returns 401 | `scripts/ci/verify-staged-critical-app.js:43`, `:58`, `:72`, `:83`; `apps/web/src/legacy-api-routes/health/route.ts:3` | Secret-header edge skip must not bypass origin auth; canary must still return 401 |
+
+## Webhooks and internal callback traces
+
+| Host/path | Who calls | Authentication observed in source | Evidence / limit |
+| --- | --- | --- | --- |
+| inventory and apex `/api/v1/webhooks/sepay/[token]` | SePay | Configured shared Authorization secret plus hashed endpoint token; endpoint/IP app rate limit; event dedupe | `apps/inventory/src/app/api/v1/webhooks/sepay/[token]/route.ts:247`, `:255`, `:261`, `:283`; `.../endpoint.ts:1`; apex legacy equivalent `apps/web/src/legacy-api-routes/v1/webhooks/sepay/[token]/route.ts:247`. This is shared-secret auth, not payload HMAC. |
+| inventory `/api/v1/inventory/square/webhook/[wsId]` | Square | `x-square-hmacsha256-signature` verified against raw body plus configured notification URL | `apps/inventory/src/app/api/v1/inventory/square/webhook/[wsId]/route.ts:15`; `packages/inventory-core/src/lib/inventory/commerce/square/webhooks.ts:43`, `:55`, `:191`. Root webhook path returns guidance only. |
+| inventory `/api/v1/inventory/polar/webhook/[wsId]` | Polar | Raw body plus headers passed to `validateEvent` with per-workspace environment signing secrets; no match rejects | `apps/inventory/src/app/api/v1/inventory/polar/webhook/[wsId]/route.ts:46`, `:54`, `:60`, `:93` |
+| pay `/api/payment/webhooks` | Polar | Polar Next `Webhooks` wrapper configured with `POLAR_WEBHOOK_SECRET`; supplier verifier not executed here | `apps/pay/src/app/api/payment/webhooks/route.ts:55` |
+| mail `/api/v1/webhooks/mail/ses` | AWS SNS/SES | SNS envelope signature verification before ingestion; subscription confirmation requires manual AWS confirmation | `apps/mail/src/app/api/v1/webhooks/mail/ses/route.ts:9`, `:14`, `:20` |
+| mail `/api/v1/webhooks/mail/cloudflare` | Own Cloudflare email router | HMAC-like verifier over body, signature header, timestamp and required configured ingest secret | `apps/mail/src/app/api/v1/webhooks/mail/cloudflare/route.ts:9`, `:17` |
+| tasks `/api/v1/webhooks/tasks/embedding` | Existing DB webhook/internal caller | Required `x-webhook-secret` exact shared-secret check; missing configuration rejects | `apps/tasks/src/app/api/v1/webhooks/tasks/embedding/route.ts:14`, `:25`. No per-payload signature/timestamp here; preserve existing secret gate. |
+| apex `/api/v1/webhooks/ai-agents/[adapter]/[channelId]` | Discord / Zalo | Enabled/deployed registry binding; Discord gateway workspace/guild/channel checks; adapter handler receives raw request; runtime injects publicKey or webhookSecret | `apps/web/src/legacy-api-routes/v1/webhooks/ai-agents/[adapter]/[channelId]/route.ts:95`, `:125`, `:147`, `:157`; `apps/web/src/lib/ai-agents/runtime.ts:119`; `packages/ai/src/chat-sdk/registry.ts:60`. Supplier signature/gateway auth semantics remain unverified in this pass. Do not declare missing signatures solely from the route wrapper. |
+| apex `/api/v1/integrations/external-chat/events` and `/batch` | External project connector | Per-binding Bearer secret hash, binding enabled/live authority, verified credentials required | `apps/web/src/app/api/v1/integrations/external-chat/events/route.ts:18`; `apps/web/src/lib/external-chat/ingest-auth.ts:6` |
+| apex `/api/v1/integrations/external-chat/pairing/verify` | External connector pairing | One-use ticket and binding ID in JSON body, hashed ticket consumed by store | `apps/web/src/app/api/v1/integrations/external-chat/pairing/verify/route.ts:12`, `:20` |
+| apex workspace external-projects `/webgl-packages/extract-callback` | Own extraction proxy | Per-workspace configured Bearer proxy token before storage writes; bounded body | `apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/webgl-packages/extract-callback/route.ts:42`, `:52`, `:61` |
+| discord `/api` | Discord interactions | Ed25519 signature over timestamp+body with 300-second freshness; replay wrapper | `apps/discord/auth.py:24`, `:43`, `:58`, `:64`; `apps/discord/app.py:886` |
+
+No missing provider signature check is proven for the manually checked
+Square/Polar/SNS/Cloudflare handlers. The AI adapter supplier verification is a
+specific remaining coverage gap. Shared-secret webhooks should remain labeled
+shared-secret, not inaccurately advertised as HMAC-signed. Published provider IP
+lists, where any exist, must be verified from the provider and layered with these
+checks; absence of a provider list must not become a made-up allowlist.
+
+## Machine paths outside Next API route census
+
+These are required exceptions to any rule whose browser predicate is merely
+`not starts_with(path, "/api/")`. DNS/hosting status is not established by source.
+
+| Service/host source | Paths | Authentication and caller | Evidence |
+| --- | --- | --- | --- |
+| Meet realtime; custom domain configured as meet-realtime.tuturuuu.com | `/health`; `/realtime`; `/room-state`; `/room-device`; `/room-service` | Public health; signed room token in WebSocket query or HTTP Bearer; browsers/native services | `apps/meet-realtime/src/worker.ts:46`, `:50`, `:63`; `apps/meet-realtime/wrangler.jsonc:52` |
+| Same Worker | `/channels`; `/channels/publish`; `/channels/document` | Signed expiring typed join/publish/document ticket; join query token or HTTP Bearer | `apps/meet-realtime/src/worker.ts:29`; `apps/meet-realtime/src/channel-worker.ts:5` |
+| Same Worker | `/collaboration`; `/collaboration/seed`; `/collaboration/checkpoint`; `/collaboration/runner-files` | Signed expiring typed ticket; join query token or HTTP Bearer | `apps/meet-realtime/src/worker.ts:36`; `apps/meet-realtime/src/collaboration-worker.ts:5` |
+| Chat realtime, live host unresolved | `/health`; `/publish`; `/realtime` | Public health; signed publish/subscribe tokens; SSE stream | `apps/chat-realtime/src/server.ts:91`, `:119`, `:134` |
+| Hive retained realtime source; historical hive.tuturuuu.com/realtime mapping | Current host is the maintenance Worker, not this receiver. Tunnel ingress removed; no live socket path is established. | Retained implementation verifies join token before WebSocket upgrade; not current serving acceptance | `apps/hive-realtime/src/server.ts:233`, `:245`; `apps/hive/src/app/api/v1/hive/servers/[serverId]/realtime-token/route.ts:59`; `scripts/docker-web/blue-green.js:1510` |
+| Devbox control, publisher config has no canonical route | `/health`; `/v1/notify`; `/v1/heartbeat`; `/v1/poll`; `/v1/connect` | Public health; internal notify token; authorized registered runner identity for heartbeat/poll/socket | `apps/devbox-control/src/worker.ts:380`, `:391`, `:428`; `apps/devbox-control/wrangler.publish.jsonc:3` |
+| Coordination, publisher config has no canonical route | `/health`; `/v1/coordinate` | Public health; required >=32-character configured Bearer with hashed timing-safe comparison | `apps/coordination/src/worker.ts:21`, `:27` |
+| Cron control, live host unresolved | `/health`; `/control/jobs`; `/control/jobs/[id]/stop`; `/control/jobs/[id]/resume` | Public health; >=32-character operator Bearer; no config gives 404; durable stop/resume path | `apps/cron-control/src/worker.ts:32`; `apps/cron-control/src/control.ts:14`, `:29`, `:43` |
+| Discord Modal app, configured deployment URL | `/api`; `/wol-reminder`; `/daily-report`; `/markitdown` | Signed interaction or cron secret. Cron supports Bearer/raw Authorization, X-Cron-Secret/X-Vercel-Cron-Secret, and legacy query secret | `apps/discord/app.py:864`, `:886`, `:1125`, `:1156`, `:1210` |
+| Storage extraction proxy, live host unresolved | `/health`; `/extract` | Public health; required shared Bearer; outbound callbacks use Bearer to apex callback path above | `apps/storage-unzip-proxy/src/handler.js:388`, `:394`, `:142` |
+| Supermemory service, live host unresolved | `/health`; `/v1/memories`; `/v1/search`; `/v1/documents/list`; `/v1/memories/forget`; `/v1/memories/read`; `/v1/memories/update` | Health public; service Bearer or x-api-key; legacy APIs permit unconfigured key, edit APIs require configured key | `apps/supermemory/src/server.js:42`, `:51`, `:332`, `:339`, `:374` |
+| Colab custom domain colab.tuturuuu.com | `/api/health`; `/api/session`; `/api/workshops`; `/api/rooms` and room `/join`, `/action`, `/password`, `/ai`, `/live`, `/images/[id]`; `/api/sponsorship/verify`; `/auth/*`; `/verify-token` | Public health; central/signed session, staff and room rules; bounded guest join; sponsorship one-use capability in JSON; socket transport | `apps/colab/src/server/worker.ts:60`, `:84`, `:119`, `:142`, `:172`, `:196`; `apps/colab/wrangler.jsonc:23` |
+
+The 24 app `/api/cron/*` entry files are included in the source census. Manually
+checked cron families require configured `CRON_SECRET`/`VERCEL_CRON_SECRET`
+Bearer before work. Examples: Hive `apps/hive/src/app/api/cron/hive/simulate/route.ts:14`,
+Calendar provider sync `apps/calendar/src/app/api/cron/calendar/provider-sync/route.ts:45`,
+Tasks cleanup `apps/tasks/src/app/api/cron/tasks/cleanup-media/route.ts:14`, Web
+deadline reminders `apps/web/src/app/api/cron/tasks/deadline-reminders/route.ts:107`.
+Some Pay/Inventory handlers bypass secret checks only under DEV_MODE; source
+production defaults must remain intact. Existing orchestration ownership belongs
+to Cloudflare and should not be expanded onto new Vercel/Supabase schedulers.
+
+## Source-grounded gaps and breakage risks
+
+These are review candidates, not deployment exploit claims. No live exposure or
+credential configuration was tested. Do not assign severity from source alone.
+
+1. **External storage demo acts with server SDK identity without caller auth.**
+   `DELETE /api/storage/delete` forwards request-provided paths to
+   `tuturuuu.storage.delete` without a user/session check
+   (`apps/external/src/app/api/storage/delete/route.ts:4`, `:15`). Upload/share/list
+   follow the same shape (`.../upload/route.ts:4`, `.../share/route.ts:4`,
+   `.../list/route.ts:4`). The app proxy only invokes generic abuse/MFA guard
+   (`apps/external/src/proxy.ts:5`); MFA guard allows requests with no credentials
+   (`packages/utils/src/required-mfa-runtime.ts:100`). SDK default loads the
+   server's API key (`packages/sdk/src/storage.ts:830`). If publicly deployed with
+   a privileged API key, anonymous callers can act within that key's permissions.
+   Owner: External/demo app. Minimum next step: establish whether deployed, then
+   require actor/workspace authorization or remove demo endpoints from production.
+
+2. **Playground public GET can initiate billable AI work.**
+   `apps/playground/src/app/api/ai/object-generation/route.ts:27` calls
+   `generateObject` with a Google model and ROOT_WORKSPACE_ID user/workspace
+   (`:30`, `:33`, `:37`) without actor auth. The app proxy applies only the generic
+   guard (`apps/playground/src/proxy.ts:5`), whose no-credential behavior is above.
+   Owner: Playground. Deployment/model-key configuration unknown. Minimum fix:
+   remove live demo or require explicit authorized actor with bounded quota; edge
+   rate limiting is not a total-spend stop fence.
+
+3. **Supermemory legacy routes fail open if key absent.**
+   `apps/supermemory/src/server.js:51` returns true when API_KEY is empty. Routing
+   at `:344` adds configured-key enforcement only for edit APIs. If the legacy
+   service is exposed without SUPERMEMORY_API_KEY, read/add/search/forget routes
+   can proceed unauthenticated. Owner: Memory service. Deployment admission and
+   network isolation unknown; minimum next observation is configuration and
+   ingress ownership, then fail closed for every non-health operation.
+
+4. **AI agent adapter signature coverage remains unresolved.**
+   Source config injects Discord publicKey / Zalo webhookSecret and delegates to
+   dynamically loaded packages. No proof of missing validation; supplier behavior,
+   gateway token verification, configuration and replay semantics need an
+   independent source/fixture review before a narrow webhook edge skip is enabled.
+
+5. **Token-presence exceptions break valid callers and admit spoofed markers.**
+   CLI verify/refresh and pairing carry secrets in JSON; WebSockets use query
+   tickets; internal browser app sessions can use cookies. Conversely, staged CI
+   intentionally sends an invalid Bearer. A skip based only on Authorization
+   presence is neither auth proof nor a complete machine classifier.
+
+6. **Broad browser protection breaks machine paths outside `/api/`.**
+   Meet/control/realtime/extraction/memory paths above must be explicit machine
+   predicates. Returning HTML challenges to SSE/WebSocket/API traffic breaks the
+   transport before origin can validate its token. Browser-path policy should
+   also preserve public discovery/static metadata needed by legitimate crawlers.
+
+7. **Existing probes cannot qualify for a secret-header exception yet.**
+   CI probe supplies an intentionally invalid origin Bearer and no dedicated edge
+   probe secret (`scripts/ci/verify-staged-critical-app.js:72`). The observed curl
+   UA is transport identity, not authority. Introduce a narrowly scoped rotated
+   secret header separately; never grant UA/IP-only skip or rewrite origin auth.
+
+8. **Legacy query cron secret broadens accidental disclosure.**
+   Discord supports `?secret=` (`apps/discord/app.py:883`), which can land in URL
+   logs. No secret value was read. Prefer header-only new callers, migrate old
+   callers, then remove query compatibility with explicit owner acceptance.
+
+9. **563 route auth classifications and live host bindings remain unknown.**
+   This is a coverage limitation, not 563 vulnerabilities. Keep all proposal rules
+   disabled/review-only until the relevant endpoint's owner resolves origin auth,
+   per-token quota behavior and application envelopes. Do not turn a census signal
+   into a blanket managed-WAF/security bypass.
+
+## Snapshot joins and limits
+
+Each route record joins its source host candidate to the [DNS snapshot](https://github.com/tutur3u/platform/blob/main/infra/cloudflare/edge-security/inventory/hosts.json). A missing host or a custom domain remains unknown. App aliases are listed separately and do not inherit a verified proxy state from the primary host. [Traffic and security settings](/build/devops/edge-security-traffic) contain the observed provider coverage. The [proposal](/build/devops/edge-security) keeps Finance and unknown service hosts outside its selectors. No deployed endpoint was tested by this source pass.
+
+## Discovery and authentication redirects
+
+App `public/robots.txt` and selected `public/sitemap.xml` files, plus Web `src/app/robots.ts`, `sitemap.ts`, and `manifest.ts`, are discovery endpoints used without an app session. Web proxy exclusions also reserve `/.well-known`, `site.webmanifest`, `manifest.webmanifest`, and `sw.js` (`apps/web/src/proxy.ts:1460`). The proposal preserves these transport classes and static `/_next/` requests. Colab `/auth/login` and `/auth/callback` are central-auth redirects and token redemption (`apps/colab/src/server/auth.ts:104`, `:132`). Only these exact auth redirect paths on Colab are selected; a future `/auth/register` page keeps browser protection. Actual deep-link/domain-verification files and unresolved host bindings still require owner acceptance.
+
+The [review readiness amendment](/build/devops/edge-security#client-429-acceptance-is-still-required) records actual Dart/CLI 429 source behavior, the historical Hive page/socket mapping and remaining runtime acceptance. Separate lanes own the three source findings; this proposal does not fix or redeploy them.
+
+The [app-owned header inventory](/build/devops/edge-security-headers) joins intended XFO/CSP framing with live proxied responses and records the managed-transform end state. Retained Next policy is not proof that native Meet applies it; unknown runtime/storage ownership remains open. Server self-origin maintenance and recurring QR/MFA polling are separately classified in the [readiness gates](/build/devops/edge-security#shared-refresh-and-polling-must-not-use-the-login-attempt-counter).
+
+
+## Hive current origin supersedes the retained tunnel source
+
+At 16:37 GMT+7 on 2026-10-26, authenticated GETs confirmed route
+`hive.tuturuuu.com/*` targets `tuturuuu-hive-maintenance`, with workers.dev and
+preview URLs both disabled. `publishers.json` records this operator-owned
+maintenance publisher separately from repository app publishers; the sanitized
+receipt is `inventory/preparation-readiness.json`. The release owner reports the
+tunnel ingress removed. The old `compose.web.prod.sidecars.yml:26` and
+`scripts/docker-web/blue-green.js:1510` describe retained source, not today's origin.
+
+The former `/realtime` transport exception has been removed from the active
+proposal. The generic app/API and auth-limit fragments remain disabled. Before
+step 5 admits Hive, its owner must identify the restored app publisher, API and
+socket paths, repeat origin closure and complete caller acceptance. A maintenance
+503 or disabled workers.dev URL does not prove the future application works.

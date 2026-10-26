@@ -1,0 +1,28 @@
+{
+  "name": "Edge browser and machine BIC proposal",
+  "kind": "zone",
+  "phase": "http_config_settings",
+  "rules": [
+    {
+      "ref": "edge_browser_bic",
+      "description": "Baseline BIC already on; no additional protection",
+      "expression": "(not (http.host in {\"finance.tuturuuu.com\" \"finance-staging.tuturuuu.com\"}) and http.host in {\"colab.tuturuuu.com\" \"hive.tuturuuu.com\" \"lettin.tuturuuu.com\" \"meet.tuturuuu.com\" \"parley.tuturuuu.com\"} and not (not (http.host in {\"finance.tuturuuu.com\" \"finance-staging.tuturuuu.com\"}) and ((http.host in {\"colab.tuturuuu.com\" \"hive.tuturuuu.com\" \"lettin.tuturuuu.com\" \"meet.tuturuuu.com\" \"parley.tuturuuu.com\"} and (http.request.uri.path in {\"/api\" \"/verify-token\" \"/robots.txt\" \"/sitemap.xml\" \"/manifest.webmanifest\" \"/site.webmanifest\" \"/sw.js\"} or starts_with(http.request.uri.path, \"/api/\") or starts_with(http.request.uri.path, \"/_next/static/\") or starts_with(http.request.uri.path, \"/.well-known/\"))) or (http.host eq \"meet-realtime.tuturuuu.com\" and (http.request.uri.path in {\"/health\" \"/realtime\" \"/room-state\" \"/room-device\" \"/room-service\" \"/channels\" \"/channels/publish\" \"/channels/document\" \"/collaboration\" \"/collaboration/seed\" \"/collaboration/checkpoint\" \"/collaboration/runner-files\"})) or (http.host eq \"colab.tuturuuu.com\" and (http.request.uri.path in {\"/auth/login\" \"/auth/callback\"})))))",
+      "action": "set_config",
+      "enabled": false,
+      "action_parameters": {
+        "bic": true
+      }
+    },
+    {
+      "ref": "edge_machine_bic",
+      "description": "Machine transport opts out of BIC and Under Attack checks",
+      "expression": "(not (http.host in {\"finance.tuturuuu.com\" \"finance-staging.tuturuuu.com\"}) and ((http.host in {\"colab.tuturuuu.com\" \"hive.tuturuuu.com\" \"lettin.tuturuuu.com\" \"meet.tuturuuu.com\" \"parley.tuturuuu.com\"} and (http.request.uri.path in {\"/api\" \"/verify-token\" \"/robots.txt\" \"/sitemap.xml\" \"/manifest.webmanifest\" \"/site.webmanifest\" \"/sw.js\"} or starts_with(http.request.uri.path, \"/api/\") or starts_with(http.request.uri.path, \"/_next/static/\") or starts_with(http.request.uri.path, \"/.well-known/\"))) or (http.host eq \"meet-realtime.tuturuuu.com\" and (http.request.uri.path in {\"/health\" \"/realtime\" \"/room-state\" \"/room-device\" \"/room-service\" \"/channels\" \"/channels/publish\" \"/channels/document\" \"/collaboration\" \"/collaboration/seed\" \"/collaboration/checkpoint\" \"/collaboration/runner-files\"})) or (http.host eq \"colab.tuturuuu.com\" and (http.request.uri.path in {\"/auth/login\" \"/auth/callback\"}))))",
+      "action": "set_config",
+      "enabled": false,
+      "action_parameters": {
+        "bic": false,
+        "security_level": "off"
+      }
+    }
+  ]
+}

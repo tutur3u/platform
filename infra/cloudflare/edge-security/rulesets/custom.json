@@ -1,0 +1,35 @@
+{
+  "name": "Edge machine transport proposal",
+  "kind": "zone",
+  "phase": "http_request_firewall_custom",
+  "rules": [
+    {
+      "ref": "edge_probe_transport",
+      "description": "Secret-header probe template; private substitution required",
+      "expression": "(not (http.host in {\"finance.tuturuuu.com\" \"finance-staging.tuturuuu.com\"}) and http.host in {\"meet.tuturuuu.com\"} and http.request.method in {\"GET\" \"HEAD\"} and http.request.uri.path in {\"/api/build-info\" \"/\" \"/en\" \"/vi\"} and (any(http.request.headers[\"x-tuturuuu-edge-probe\"][*] eq \"__EDGE_PROBE_SECRET_CURRENT_REQUIRED__\") or any(http.request.headers[\"x-tuturuuu-edge-probe\"][*] eq \"__EDGE_PROBE_SECRET_NEXT_REQUIRED__\")))",
+      "action": "skip",
+      "enabled": false,
+      "action_parameters": {
+        "products": ["bic", "securityLevel"],
+        "phases": ["http_request_sbfm"]
+      },
+      "logging": {
+        "enabled": true
+      }
+    },
+    {
+      "ref": "edge_machine_transport",
+      "description": "Transport exemption only; origin auth and WAF remain enforced",
+      "expression": "(not (http.host in {\"finance.tuturuuu.com\" \"finance-staging.tuturuuu.com\"}) and ((http.host in {\"colab.tuturuuu.com\" \"hive.tuturuuu.com\" \"lettin.tuturuuu.com\" \"meet.tuturuuu.com\" \"parley.tuturuuu.com\"} and (http.request.uri.path in {\"/api\" \"/verify-token\" \"/robots.txt\" \"/sitemap.xml\" \"/manifest.webmanifest\" \"/site.webmanifest\" \"/sw.js\"} or starts_with(http.request.uri.path, \"/api/\") or starts_with(http.request.uri.path, \"/_next/static/\") or starts_with(http.request.uri.path, \"/.well-known/\"))) or (http.host eq \"meet-realtime.tuturuuu.com\" and (http.request.uri.path in {\"/health\" \"/realtime\" \"/room-state\" \"/room-device\" \"/room-service\" \"/channels\" \"/channels/publish\" \"/channels/document\" \"/collaboration\" \"/collaboration/seed\" \"/collaboration/checkpoint\" \"/collaboration/runner-files\"})) or (http.host eq \"colab.tuturuuu.com\" and (http.request.uri.path in {\"/auth/login\" \"/auth/callback\"}))))",
+      "action": "skip",
+      "enabled": false,
+      "action_parameters": {
+        "products": ["bic", "securityLevel"],
+        "phases": ["http_request_sbfm"]
+      },
+      "logging": {
+        "enabled": true
+      }
+    }
+  ]
+}

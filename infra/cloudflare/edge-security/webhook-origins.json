@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "mode": "observe-only",
+  "verifiedOn": "2026-10-26",
+  "signatureRequired": true,
+  "ipMatchGrantsAuthentication": false,
+  "providers": [
+    {
+      "name": "Square",
+      "source": "https://developer.squareup.com/docs/webhooks/overview#static-ip-address",
+      "productionCidrs": ["54.245.1.154/32", "34.202.99.168/32"],
+      "sandboxCidrs": ["54.212.177.79/32", "107.20.218.8/32"],
+      "hosts": ["inventory.tuturuuu.com", "tuturuuu.com"],
+      "pathTemplate": "/api/v1/inventory/square/webhook/[wsId]",
+      "authentication": "Raw-body x-square-hmacsha256-signature plus configured notification URL and signature key",
+      "beforeEnforcement": "Refresh published lists, identify production versus sandbox workspace, compare verified deliveries, preserve retry/dedupe; no IP-only bypass"
+    },
+    {
+      "name": "Polar",
+      "source": "https://polar.sh/docs/integrate/webhooks/delivery#ip-allowlist",
+      "productionCidrs": [
+        "3.134.238.10/32",
+        "3.129.111.220/32",
+        "52.15.118.168/32",
+        "3.134.178.243/32",
+        "74.220.50.0/24",
+        "74.220.58.0/24"
+      ],
+      "sandboxCidrs": [
+        "3.134.238.10/32",
+        "3.129.111.220/32",
+        "52.15.118.168/32",
+        "18.117.215.101/32",
+        "74.220.50.0/24",
+        "74.220.58.0/24"
+      ],
+      "hosts": ["inventory.tuturuuu.com", "pay.tuturuuu.com"],
+      "pathTemplates": [
+        "/api/v1/inventory/polar/webhook/[wsId]",
+        "/api/payment/webhooks"
+      ],
+      "authentication": "Raw-body supplier validateEvent or Polar Webhooks wrapper with configured signing secret",
+      "beforeEnforcement": "Production list includes newly announced 3.134.178.243; refresh lists and verify both signing-secret generations with owning SDK; observe before enforcing"
+    }
+  ],
+  "unverifiedIpLists": [
+    "SePay",
+    "AWS SNS/SES",
+    "Discord",
+    "Zalo",
+    "Own Cloudflare email router",
+    "Internal database hooks"
+  ],
+  "rollout": "Candidate origin filters only. Keep signature/shared-secret verification and replay controls in the app. Do not deploy a guessed CIDR or a broad cloud-provider ASN allowlist. Compare source IP against the relevant published environment list in observation before a separately reviewed enforcing change."
+}

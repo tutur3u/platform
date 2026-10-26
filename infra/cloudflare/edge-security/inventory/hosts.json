@@ -1,0 +1,406 @@
+{
+  "capturedAt": "2026-10-26 13:57:37 +0700",
+  "coverage": "50 public web/address DNS names; excludes five DKIM configuration CNAMEs. No origin target addresses retained.",
+  "hosts": [
+    {
+      "host": "ai.tuturuuu.com",
+      "type": "CNAME",
+      "proxied": false,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "Cloudflare zone HTTP controls do not apply to DNS-only origin traffic",
+      "financeHold": false
+    },
+    {
+      "host": "api.tuturuuu.com",
+      "type": "CNAME",
+      "proxied": false,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "Cloudflare zone HTTP controls do not apply to DNS-only origin traffic",
+      "financeHold": false
+    },
+    {
+      "host": "apps.tuturuuu.com",
+      "type": "CNAME",
+      "proxied": false,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "Cloudflare zone HTTP controls do not apply to DNS-only origin traffic",
+      "financeHold": false
+    },
+    {
+      "host": "beta.tuturuuu.com",
+      "type": "CNAME",
+      "proxied": false,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "Cloudflare zone HTTP controls do not apply to DNS-only origin traffic",
+      "financeHold": false
+    },
+    {
+      "host": "calendar.tuturuuu.com",
+      "type": "CNAME",
+      "proxied": false,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "Cloudflare zone HTTP controls do not apply to DNS-only origin traffic",
+      "financeHold": false
+    },
+    {
+      "host": "canary.tuturuuu.com",
+      "type": "CNAME",
+      "proxied": false,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "Cloudflare zone HTTP controls do not apply to DNS-only origin traffic",
+      "financeHold": false
+    },
+    {
+      "host": "chat.tuturuuu.com",
+      "type": "CNAME",
+      "proxied": false,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "Cloudflare zone HTTP controls do not apply to DNS-only origin traffic",
+      "financeHold": false
+    },
+    {
+      "host": "cms.tuturuuu.com",
+      "type": "CNAME",
+      "proxied": false,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "Cloudflare zone HTTP controls do not apply to DNS-only origin traffic",
+      "financeHold": false
+    },
+    {
+      "host": "contacts.tuturuuu.com",
+      "type": "CNAME",
+      "proxied": false,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "Cloudflare zone HTTP controls do not apply to DNS-only origin traffic",
+      "financeHold": false
+    },
+    {
+      "host": "dev.tuturuuu.com",
+      "type": "CNAME",
+      "proxied": false,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "Cloudflare zone HTTP controls do not apply to DNS-only origin traffic",
+      "financeHold": false
+    },
+    {
+      "host": "docs.tuturuuu.com",
+      "type": "CNAME",
+      "proxied": false,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "Cloudflare zone HTTP controls do not apply to DNS-only origin traffic",
+      "financeHold": false
+    },
+    {
+      "host": "drive.tuturuuu.com",
+      "type": "CNAME",
+      "proxied": false,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "Cloudflare zone HTTP controls do not apply to DNS-only origin traffic",
+      "financeHold": false
+    },
+    {
+      "host": "finance-staging.tuturuuu.com",
+      "type": "CNAME",
+      "proxied": true,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "BIC on; CF Managed + OWASP enabled; crawler_protection enabled; AI-bots block; SBFM definite allow; leaked-password rate rule",
+      "financeHold": true
+    },
+    {
+      "host": "finance.tuturuuu.com",
+      "type": "CNAME",
+      "proxied": false,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "Cloudflare zone HTTP controls do not apply to DNS-only origin traffic",
+      "financeHold": true
+    },
+    {
+      "host": "forms.tuturuuu.com",
+      "type": "CNAME",
+      "proxied": false,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "Cloudflare zone HTTP controls do not apply to DNS-only origin traffic",
+      "financeHold": false
+    },
+    {
+      "host": "git.tuturuuu.com",
+      "type": "CNAME",
+      "proxied": false,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "Cloudflare zone HTTP controls do not apply to DNS-only origin traffic",
+      "financeHold": false
+    },
+    {
+      "host": "groups.tuturuuu.com",
+      "type": "CNAME",
+      "proxied": false,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "Cloudflare zone HTTP controls do not apply to DNS-only origin traffic",
+      "financeHold": false
+    },
+    {
+      "host": "hive.tuturuuu.com",
+      "type": "CNAME",
+      "proxied": true,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "BIC on; CF Managed + OWASP enabled; crawler_protection enabled; AI-bots block; SBFM definite allow; leaked-password rate rule",
+      "financeHold": false
+    },
+    {
+      "host": "infrastructure.tuturuuu.com",
+      "type": "CNAME",
+      "proxied": false,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "Cloudflare zone HTTP controls do not apply to DNS-only origin traffic",
+      "financeHold": false
+    },
+    {
+      "host": "inventory.tuturuuu.com",
+      "type": "CNAME",
+      "proxied": false,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "Cloudflare zone HTTP controls do not apply to DNS-only origin traffic",
+      "financeHold": false
+    },
+    {
+      "host": "learn.tuturuuu.com",
+      "type": "CNAME",
+      "proxied": false,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "Cloudflare zone HTTP controls do not apply to DNS-only origin traffic",
+      "financeHold": false
+    },
+    {
+      "host": "mail.tuturuuu.com",
+      "type": "CNAME",
+      "proxied": false,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "Cloudflare zone HTTP controls do not apply to DNS-only origin traffic",
+      "financeHold": false
+    },
+    {
+      "host": "meet-vercel-rollback.tuturuuu.com",
+      "type": "CNAME",
+      "proxied": false,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "Cloudflare zone HTTP controls do not apply to DNS-only origin traffic",
+      "financeHold": false
+    },
+    {
+      "host": "mind.tuturuuu.com",
+      "type": "CNAME",
+      "proxied": false,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "Cloudflare zone HTTP controls do not apply to DNS-only origin traffic",
+      "financeHold": false
+    },
+    {
+      "host": "next.tuturuuu.com",
+      "type": "CNAME",
+      "proxied": false,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "Cloudflare zone HTTP controls do not apply to DNS-only origin traffic",
+      "financeHold": false
+    },
+    {
+      "host": "noah.tuturuuu.com",
+      "type": "CNAME",
+      "proxied": false,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "Cloudflare zone HTTP controls do not apply to DNS-only origin traffic",
+      "financeHold": false
+    },
+    {
+      "host": "nova.tuturuuu.com",
+      "type": "CNAME",
+      "proxied": false,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "Cloudflare zone HTTP controls do not apply to DNS-only origin traffic",
+      "financeHold": false
+    },
+    {
+      "host": "pay.tuturuuu.com",
+      "type": "CNAME",
+      "proxied": false,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "Cloudflare zone HTTP controls do not apply to DNS-only origin traffic",
+      "financeHold": false
+    },
+    {
+      "host": "qr.tuturuuu.com",
+      "type": "CNAME",
+      "proxied": false,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "Cloudflare zone HTTP controls do not apply to DNS-only origin traffic",
+      "financeHold": false
+    },
+    {
+      "host": "shortener.tuturuuu.com",
+      "type": "CNAME",
+      "proxied": false,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "Cloudflare zone HTTP controls do not apply to DNS-only origin traffic",
+      "financeHold": false
+    },
+    {
+      "host": "sites.tuturuuu.com",
+      "type": "CNAME",
+      "proxied": false,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "Cloudflare zone HTTP controls do not apply to DNS-only origin traffic",
+      "financeHold": false
+    },
+    {
+      "host": "staging.tuturuuu.com",
+      "type": "CNAME",
+      "proxied": false,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "Cloudflare zone HTTP controls do not apply to DNS-only origin traffic",
+      "financeHold": false
+    },
+    {
+      "host": "storefronts.tuturuuu.com",
+      "type": "CNAME",
+      "proxied": false,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "Cloudflare zone HTTP controls do not apply to DNS-only origin traffic",
+      "financeHold": false
+    },
+    {
+      "host": "storefront.tuturuuu.com",
+      "type": "CNAME",
+      "proxied": false,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "Cloudflare zone HTTP controls do not apply to DNS-only origin traffic",
+      "financeHold": false
+    },
+    {
+      "host": "stores.tuturuuu.com",
+      "type": "CNAME",
+      "proxied": false,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "Cloudflare zone HTTP controls do not apply to DNS-only origin traffic",
+      "financeHold": false
+    },
+    {
+      "host": "store.tuturuuu.com",
+      "type": "CNAME",
+      "proxied": false,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "Cloudflare zone HTTP controls do not apply to DNS-only origin traffic",
+      "financeHold": false
+    },
+    {
+      "host": "tasks.tuturuuu.com",
+      "type": "CNAME",
+      "proxied": false,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "Cloudflare zone HTTP controls do not apply to DNS-only origin traffic",
+      "financeHold": false
+    },
+    {
+      "host": "teach.tuturuuu.com",
+      "type": "CNAME",
+      "proxied": false,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "Cloudflare zone HTTP controls do not apply to DNS-only origin traffic",
+      "financeHold": false
+    },
+    {
+      "host": "tools.tuturuuu.com",
+      "type": "CNAME",
+      "proxied": false,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "Cloudflare zone HTTP controls do not apply to DNS-only origin traffic",
+      "financeHold": false
+    },
+    {
+      "host": "track.tuturuuu.com",
+      "type": "CNAME",
+      "proxied": false,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "Cloudflare zone HTTP controls do not apply to DNS-only origin traffic",
+      "financeHold": false
+    },
+    {
+      "host": "tuturuuu.com",
+      "type": "CNAME",
+      "proxied": false,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "Cloudflare zone HTTP controls do not apply to DNS-only origin traffic",
+      "financeHold": false
+    },
+    {
+      "host": "vc.tuturuuu.com",
+      "type": "CNAME",
+      "proxied": false,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "Cloudflare zone HTTP controls do not apply to DNS-only origin traffic",
+      "financeHold": false
+    },
+    {
+      "host": "vercel.tuturuuu.com",
+      "type": "CNAME",
+      "proxied": false,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "Cloudflare zone HTTP controls do not apply to DNS-only origin traffic",
+      "financeHold": false
+    },
+    {
+      "host": "workspaces.r2.storage.tuturuuu.com",
+      "type": "CNAME",
+      "proxied": true,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "BIC on; CF Managed + OWASP enabled; crawler_protection enabled; AI-bots block; SBFM definite allow; leaked-password rate rule",
+      "financeHold": false
+    },
+    {
+      "host": "www.tuturuuu.com",
+      "type": "CNAME",
+      "proxied": false,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "Cloudflare zone HTTP controls do not apply to DNS-only origin traffic",
+      "financeHold": false
+    },
+    {
+      "host": "colab.tuturuuu.com",
+      "type": "AAAA",
+      "proxied": true,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "BIC on; CF Managed + OWASP enabled; crawler_protection enabled; AI-bots block; SBFM definite allow; leaked-password rate rule",
+      "financeHold": false
+    },
+    {
+      "host": "lettin.tuturuuu.com",
+      "type": "AAAA",
+      "proxied": true,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "BIC on; CF Managed + OWASP enabled; crawler_protection enabled; AI-bots block; SBFM definite allow; leaked-password rate rule",
+      "financeHold": false
+    },
+    {
+      "host": "meet-realtime.tuturuuu.com",
+      "type": "AAAA",
+      "proxied": true,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "BIC on; CF Managed + OWASP enabled; crawler_protection enabled; AI-bots block; SBFM definite allow; leaked-password rate rule",
+      "financeHold": false
+    },
+    {
+      "host": "meet.tuturuuu.com",
+      "type": "AAAA",
+      "proxied": true,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "BIC on; CF Managed + OWASP enabled; crawler_protection enabled; AI-bots block; SBFM definite allow; leaked-password rate rule",
+      "financeHold": false
+    },
+    {
+      "host": "parley.tuturuuu.com",
+      "type": "AAAA",
+      "proxied": true,
+      "zone": "tuturuuu.com",
+      "zoneSecurity": "BIC on; CF Managed + OWASP enabled; crawler_protection enabled; AI-bots block; SBFM definite allow; leaked-password rate rule",
+      "financeHold": false
+    }
+  ]
+}
