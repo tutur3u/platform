@@ -1,3 +1,4 @@
+import { resolveStoredWorkspaceStorageUrl } from '@tuturuuu/storage-core/signed-url-policy';
 import { NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PRIVATE_DRIVE_RESOURCE_PATHS } from '@/lib/private-drive-paths.test-fixture';
@@ -107,6 +108,7 @@ describe('workspace storage share app session audience', () => {
     expect(response.headers.get('location')).toBe(
       'https://storage.example/signed-media'
     );
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
   });
 
   it('rejects task media without the task media permission', async () => {
@@ -186,13 +188,124 @@ describe('Drive sharing does not authorize private chat resources', () => {
       expect(mocks.createWorkspaceStorageSignedReadUrl).toHaveBeenCalledWith(
         'ws-123',
         path,
-        expect.objectContaining({ expiresIn: 31_536_000 })
+        expect.objectContaining({ expiresIn: 3600 })
       );
     }
   );
+
+  it.each([
+    ['clamps a one-year request to seven days', 31_536_000, 604_800],
+    ['keeps an explicit lifetime under the cap', 7200, 7200],
+    ['keeps exactly seven days', 604_800, 604_800],
+  ])('%s', async (_, expiresIn, expected) => {
+    const response = await POST(
+      new Request('http://localhost/api/v1/workspaces/ws-123/storage/share', {
+        method: 'POST',
+        body: JSON.stringify({ path: 'mira/notes.txt', expiresIn }),
+      }),
+      params
+    );
+    expect(response.status).toBe(200);
+    expect(mocks.createWorkspaceStorageSignedReadUrl).toHaveBeenLastCalledWith(
+      'ws-123',
+      'mira/notes.txt',
+      expect.objectContaining({ expiresIn: expected })
+    );
+  });
+
+  it('clamps GET redirect lifetimes too', async () => {
+    const response = await GET(
+      new Request(
+        'http://localhost/api/v1/workspaces/ws-123/storage/share?path=mira%2Fnotes.txt&expiresIn=31536000'
+      ),
+      params
+    );
+    expect(response.status).toBe(307);
+    expect(mocks.createWorkspaceStorageSignedReadUrl).toHaveBeenLastCalledWith(
+      'ws-123',
+      'mira/notes.txt',
+      expect.objectContaining({ expiresIn: 604_800 })
+    );
+  });
 });
 
 vi.mock('next/server', async (importOriginal) => ({
   ...(await importOriginal<typeof import('next/server')>()),
   connection: vi.fn().mockResolvedValue(undefined),
 }));
+
+// Documents rewrite stored signed image URLs to this redirect; following one
+// must re-check the reader's access, not trust the old token.
+describe('rewritten document image links', () => {
+  const wsId = '11111111-1111-4111-8111-111111111111';
+  const link = resolveStoredWorkspaceStorageUrl(
+    `https://project.supabase.co/storage/v1/object/sign/workspaces/${wsId}/documents/1-a.png?token=one-year-token`
+  );
+  const linkRequest = () => new Request(`http://localhost${link}`);
+  const linkParams = { params: Promise.resolve({ wsId }) };
+  const actor = (withoutPermission: (permission: string) => boolean) => ({
+    ok: true,
+    context: {
+      normalizedWsId: wsId,
+      permissions: { withoutPermission },
+      supabase: {},
+      userId: 'reader',
+    },
+  });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.canAccessFinanceTransactionStoragePath.mockResolvedValue(false);
+    mocks.createWorkspaceStorageSignedReadUrl.mockResolvedValue(
+      'https://storage.example/fresh-document-image'
+    );
+  });
+
+  it('points at the share redirect without the stored token', () => {
+    expect(link).toBe(
+      `/api/v1/workspaces/${wsId}/storage/share?path=documents%2F1-a.png`
+    );
+  });
+
+  it('returns 403 to a member without Drive access', async () => {
+    mocks.resolveWorkspaceStorageRouteAuth.mockResolvedValue(
+      actor((permission) => permission === 'view_drive')
+    );
+
+    const response = await GET(linkRequest(), linkParams);
+
+    expect(response.status).toBe(403);
+    expect(mocks.createWorkspaceStorageSignedReadUrl).not.toHaveBeenCalled();
+  });
+
+  it('returns 403 to an actor the workspace auth rejects', async () => {
+    mocks.resolveWorkspaceStorageRouteAuth.mockResolvedValue({
+      ok: false,
+      response: NextResponse.json({ message: 'Forbidden' }, { status: 403 }),
+    });
+
+    const response = await GET(linkRequest(), linkParams);
+
+    expect(response.status).toBe(403);
+    expect(mocks.createWorkspaceStorageSignedReadUrl).not.toHaveBeenCalled();
+  });
+
+  it('re-signs for an authorised reader with an uncached one-hour URL', async () => {
+    mocks.resolveWorkspaceStorageRouteAuth.mockResolvedValue(
+      actor(() => false)
+    );
+
+    const response = await GET(linkRequest(), linkParams);
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(
+      'https://storage.example/fresh-document-image'
+    );
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+    expect(mocks.createWorkspaceStorageSignedReadUrl).toHaveBeenCalledWith(
+      wsId,
+      'documents/1-a.png',
+      expect.objectContaining({ expiresIn: 3600 })
+    );
+  });
+});
