@@ -7,6 +7,7 @@ import {
   parseTutoringPolicy,
   readTutoringPolicyConfigRows,
   renderTutoringParentMessage,
+  STANDARD_TUTORING_POLICY,
   serializeTutoringPolicyConfigRows,
 } from './tutoring-policy';
 
@@ -41,31 +42,44 @@ describe('Easy Center tutoring shifts', () => {
     ).toBe('Shift 1');
   });
 
-  it('moves the untouched template to one weak-support session', () => {
-    expect(EASY_CENTER_TUTORING_POLICY.weakSupportSessions).toBe(1);
+  it('moves the untouched template to the current defaults', () => {
+    expect(EASY_CENTER_TUTORING_POLICY).toMatchObject({
+      followUpDays: 3,
+      weakSupportSessions: 1,
+    });
     expect(
       parseTutoringPolicy({
         ...EASY_CENTER_TUTORING_POLICY,
+        followUpDays: 7,
         weakSupportSessions: 2,
-      })?.weakSupportSessions
-    ).toBe(1);
+      })
+    ).toMatchObject({ followUpDays: 3, weakSupportSessions: 1 });
+    expect(
+      parseTutoringPolicy({ ...EASY_CENTER_TUTORING_POLICY, followUpDays: 7 })
+    ).toMatchObject({ followUpDays: 3, weakSupportSessions: 1 });
   });
 
-  it('keeps a staff-edited weak-support session count', () => {
+  it('keeps staff-edited weak-support and follow-up values', () => {
     // Editing the timing section saves the policy as custom.
     expect(
       parseTutoringPolicy({
         ...EASY_CENTER_TUTORING_POLICY,
         preset: 'custom',
+        followUpDays: 7,
         weakSupportSessions: 2,
-      })?.weakSupportSessions
-    ).toBe(2);
+      })
+    ).toMatchObject({ followUpDays: 7, weakSupportSessions: 2 });
     expect(
       parseTutoringPolicy({
         ...EASY_CENTER_TUTORING_POLICY,
+        followUpDays: 10,
         weakSupportSessions: 3,
-      })?.weakSupportSessions
-    ).toBe(3);
+      })
+    ).toMatchObject({ followUpDays: 10, weakSupportSessions: 3 });
+    // The standard preset keeps its own 7-day follow-up.
+    expect(
+      parseTutoringPolicy({ ...STANDARD_TUTORING_POLICY })?.followUpDays
+    ).toBe(7);
   });
 
   it('upgrades untouched legacy shifts without overwriting staff changes', () => {
