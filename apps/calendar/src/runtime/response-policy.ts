@@ -40,7 +40,7 @@ export async function applyCalendarResponsePolicy(
   headers.set('X-Robots-Tag', 'noindex, nofollow');
   const isStatic =
     (request.method === 'GET' || request.method === 'HEAD') &&
-    response.status === 200 &&
+    response.ok &&
     !headers.get('Content-Type')?.toLowerCase().includes('text/html') &&
     !headers.has('Set-Cookie') &&
     (path.startsWith('/assets/') ||

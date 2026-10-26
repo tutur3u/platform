@@ -338,7 +338,9 @@ describe('actual Calendar handler asset and API owner dispatch', () => {
         expect(input.method).toBe('PATCH');
         expect(input.redirect).toBe('manual');
         expect(input.headers.get('host')).toBeNull();
-        expect(input.headers.get('x-forwarded-host')).toBe('calendar.test');
+        expect(input.headers.get('x-forwarded-host')).toBe(
+          'calendar.tuturuuu.com'
+        );
         expect(input.headers.get('x-forwarded-proto')).toBe('https');
         expect(input.headers.get('cookie')).toBe('app=one; refresh=two');
         expect(input.headers.get('content-type')).toBe('application/json');
@@ -402,7 +404,9 @@ describe('actual Calendar handler asset and API owner dispatch', () => {
           expect(input.method).toBe('GET');
           expect(input.redirect).toBe('manual');
           expect(input.headers.get('cookie')).toBe('app=one; refresh=two');
-          expect(input.headers.get('x-forwarded-host')).toBe('calendar.test');
+          expect(input.headers.get('x-forwarded-host')).toBe(
+            'calendar.tuturuuu.com'
+          );
           expect(input.headers.get('x-forwarded-proto')).toBe('https');
           return new Response('Web owner redirect', {
             status: 307,
