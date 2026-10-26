@@ -6,9 +6,10 @@
     "access": "public"
   },
   "exports": {
-    ".": "./src/core/index.ts"
+    ".": "./src/core/index.tsx"
   },
   "scripts": {
+    "test": "vitest run",
     "type-check": "tsc --project tsconfig.typecheck.json"
   },
   "dependencies": {

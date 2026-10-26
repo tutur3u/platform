@@ -49,6 +49,20 @@ the submission's challenge, or the owner when the submission is bound to their
 own session in that challenge. Challenge password verifier fields are never
 sent to the client.
 
+Server actions apply their own authorization before using an admin client;
+rendering their caller under a protected layout is not sufficient. Whitelist
+creation requires an enabled global role manager. Submission detail reads require
+the bound session owner or an enabled manager of that challenge; only that
+manager may include hidden test cases. Aggregated results require the caller's
+own challenge session, or an enabled challenge manager when selecting another
+user or reading a challenge without a session. Disabled manager roles grant no
+bypass. These rules cover the retained Next actions and the native Start action
+suppliers, without changing database grants or central sign-in.
+
+Regression coverage: `src/start-bridge/action-security.test.ts`. Native payload
+validation is covered by `src/start-bridge/action-contracts.test.ts`; emitted
+transport and browser acceptance remain separate gates.
+
 Active-session reads select the newest start. Session inserts serialize on the
 challenge row and reject an overlapping active session with HTTP 409. Expired rows
 remain as attempt history and do not prevent a new attempt. Daily attempt limits
