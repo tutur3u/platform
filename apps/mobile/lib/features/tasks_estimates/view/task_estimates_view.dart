@@ -179,7 +179,7 @@ class _TaskEstimatesViewState extends State<TaskEstimatesView> {
             if (_isCheckingPermissions &&
                 !_hasResolvedPermissions &&
                 !hasVisibleData) {
-              return const Center(child: NovaLoadingIndicator());
+              return const AppLoadingIndicator.page();
             }
 
             if (_hasResolvedPermissions &&
@@ -189,10 +189,10 @@ class _TaskEstimatesViewState extends State<TaskEstimatesView> {
             }
 
             if (_activeTab == _tabEstimates && isEstimatesLoading) {
-              return const Center(child: NovaLoadingIndicator());
+              return const AppLoadingIndicator.page();
             }
             if (_activeTab == _tabLabels && isLabelsLoading) {
-              return const Center(child: NovaLoadingIndicator());
+              return const AppLoadingIndicator.page();
             }
 
             if (_activeTab == _tabEstimates &&

@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/meet/meet_meeting.dart';
 import 'package:mobile/data/repositories/meet_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -149,38 +150,27 @@ class _MeetPageState extends State<MeetPage> {
   }
 
   Future<void> _showNewMeetingOptions() async {
-    final choice = await showModalBottomSheet<String>(
+    final l10n = context.l10n;
+    final choice = await showAppActionSheet<String>(
       context: context,
       useRootNavigator: true,
-      useSafeArea: true,
-      builder: (sheetContext) => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8, 4, 8, 12),
-              child: Text(
-                context.l10n.meetNewMeeting,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.video_call_outlined),
-              title: Text(context.l10n.meetInstantMeeting),
-              subtitle: Text(context.l10n.meetInstantMeetingHint),
-              onTap: () => Navigator.of(sheetContext).pop('instant'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.calendar_month_outlined),
-              title: Text(context.l10n.meetScheduleMeeting),
-              subtitle: Text(context.l10n.meetScheduleMeetingHint),
-              onTap: () => Navigator.of(sheetContext).pop('schedule'),
-            ),
-          ],
+      title: l10n.meetNewMeeting,
+      actions: [
+        AppSheetAction(
+          key: const ValueKey('meet-new-instant'),
+          icon: LucideIcons.video,
+          tone: AppTone.success,
+          label: l10n.meetInstantMeeting,
+          value: 'instant',
         ),
-      ),
+        AppSheetAction(
+          key: const ValueKey('meet-new-schedule'),
+          icon: LucideIcons.calendarPlus,
+          tone: AppTone.success,
+          label: l10n.meetScheduleMeeting,
+          value: 'schedule',
+        ),
+      ],
     );
     if (!mounted) return;
     if (choice == 'schedule') {
@@ -217,53 +207,47 @@ class _MeetPageState extends State<MeetPage> {
         meeting?.time ?? DateTime.now().add(const Duration(minutes: 30));
     var durationMinutes = 60;
 
-    final saved = await showModalBottomSheet<bool>(
+    final saved = await showAppSheet<bool>(
       context: context,
       useRootNavigator: true,
-      isScrollControlled: true,
-      useSafeArea: true,
       builder: (context) => StatefulBuilder(
         builder: (context, setSheetState) {
-          final formattedTime = DateFormat.yMMMd().add_jm().format(
-            selectedTime.toLocal(),
-          );
-          return SingleChildScrollView(
-            padding: EdgeInsets.fromLTRB(
-              20,
-              20,
-              20,
-              20 + MediaQuery.viewInsetsOf(context).bottom,
-            ),
+          final l10n = context.l10n;
+          final formattedTime = DateFormat.yMMMd(
+            Localizations.localeOf(context).toString(),
+          ).add_jm().format(selectedTime.toLocal());
+          return AppSheetScaffold(
+            title: meeting == null
+                ? l10n.meetScheduleMeeting
+                : l10n.meetEditMeeting,
+            actions: [
+              AppButton.primary(
+                key: const ValueKey('meet-editor-save'),
+                onPressed: () => Navigator.of(context).pop(true),
+                child: Text(l10n.commonSave),
+              ),
+            ],
             child: Column(
-              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  meeting == null
-                      ? context.l10n.meetScheduleMeeting
-                      : context.l10n.meetEditMeeting,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 16),
-                TextField(
+                AppTextField(
                   controller: nameController,
                   autofocus: true,
-                  decoration: InputDecoration(
-                    hintText: context.l10n.inputPlaceholderMeetingName,
-                    labelText: context.l10n.meetMeetingName,
-                  ),
+                  label: l10n.meetMeetingName,
+                  placeholder: l10n.inputPlaceholderMeetingName,
                 ),
-                const SizedBox(height: 12),
-                OutlinedButton.icon(
+                const SizedBox(height: AppSpacing.md),
+                AppButton.outline(
+                  leading: const Icon(LucideIcons.clock),
                   onPressed: () async {
-                    final date = await showDatePicker(
+                    final date = await showAppDatePicker(
                       context: context,
                       initialDate: selectedTime,
                       firstDate: DateTime(2000),
                       lastDate: DateTime(2100),
                     );
                     if (date == null || !context.mounted) return;
-                    final time = await showTimePicker(
+                    final time = await showAppTimePicker(
                       context: context,
                       initialTime: TimeOfDay.fromDateTime(selectedTime),
                     );
@@ -278,36 +262,24 @@ class _MeetPageState extends State<MeetPage> {
                       );
                     });
                   },
-                  icon: const Icon(Icons.schedule_rounded),
-                  label: Text(formattedTime),
+                  child: Text(formattedTime),
                 ),
                 if (meeting == null) ...[
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<int>(
-                    initialValue: durationMinutes,
-                    decoration: InputDecoration(
-                      labelText: context.l10n.meetDuration,
-                    ),
-                    items: [30, 60, 90, 120]
-                        .map(
-                          (minutes) => DropdownMenuItem(
-                            value: minutes,
-                            child: Text(context.l10n.meetMinutes(minutes)),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (minutes) {
-                      if (minutes != null) {
-                        setSheetState(() => durationMinutes = minutes);
-                      }
-                    },
+                  const SizedBox(height: AppSpacing.md),
+                  AppSelect<int>(
+                    title: l10n.meetDuration,
+                    value: durationMinutes,
+                    options: [
+                      for (final minutes in const [30, 60, 90, 120])
+                        AppSelectOption(
+                          value: minutes,
+                          label: l10n.meetMinutes(minutes),
+                        ),
+                    ],
+                    onChanged: (minutes) =>
+                        setSheetState(() => durationMinutes = minutes),
                   ),
                 ],
-                const SizedBox(height: 16),
-                FilledButton(
-                  onPressed: () => Navigator.of(context).pop(true),
-                  child: Text(context.l10n.commonSave),
-                ),
               ],
             ),
           );
@@ -493,7 +465,7 @@ class _MeetPageState extends State<MeetPage> {
                   if (_isLoading && _meetings.isEmpty)
                     const SizedBox(
                       height: 240,
-                      child: Center(child: NovaLoadingIndicator()),
+                      child: AppLoadingIndicator.page(),
                     )
                   else if (_error != null)
                     _MeetMessageCard(message: _error!)

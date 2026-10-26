@@ -9,6 +9,7 @@ import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
+import 'package:mobile/core/ui/overlays/app_action_sheet.dart';
 import 'package:mobile/data/models/time_tracking/stats.dart';
 import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
@@ -109,20 +110,18 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
 
   void _showViewModeSheet(BuildContext context) {
     final l10n = context.l10n;
-    unawaited(
-      showModalBottomSheet<void>(
+    unawaited(() async {
+      final mode = await showAppChoiceSheet<_HeatmapViewMode>(
         context: context,
-        backgroundColor: Colors.transparent,
-        builder: (sheetContext) => _ViewModeSheet(
-          currentMode: _viewMode,
-          modeLabel: (mode) => _modeLabel(l10n, mode),
-          onSelect: (mode) {
-            Navigator.of(sheetContext).pop();
-            unawaited(_setViewMode(mode));
-          },
-        ),
-      ),
-    );
+        title: l10n.timerHeatmapViewTitle,
+        selected: _viewMode,
+        choices: [
+          for (final mode in _HeatmapViewMode.values)
+            AppSheetChoice(value: mode, label: _modeLabel(l10n, mode)),
+        ],
+      );
+      if (mode != null && mounted) await _setViewMode(mode);
+    }());
   }
 
   @override

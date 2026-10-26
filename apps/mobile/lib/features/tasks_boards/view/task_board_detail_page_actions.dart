@@ -369,7 +369,7 @@ extension on _TaskBoardDetailPageViewState {
                     if (isLoading)
                       const Padding(
                         padding: EdgeInsets.symmetric(vertical: 24),
-                        child: Center(child: NovaLoadingIndicator()),
+                        child: AppLoadingIndicator(),
                       )
                     else if (errorMessage.trim().isNotEmpty)
                       shad.Card(

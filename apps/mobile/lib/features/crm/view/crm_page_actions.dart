@@ -4,7 +4,6 @@ extension _CrmPageActions on _CrmPageState {
   Future<void> _showUserSheet({CrmUser? user}) async {
     final result = await _showOwnedSheet<bool>(
       context: context,
-      isScrollControlled: true,
       builder: (context) => _UserFormSheet(
         wsId: _wsId!,
         repository: _repository,
@@ -181,7 +180,6 @@ extension _CrmPageActions on _CrmPageState {
   Future<void> _showFeedbackSheet(CrmUser user) async {
     await _showOwnedSheet<void>(
       context: context,
-      isScrollControlled: true,
       builder: (context) => FractionallySizedBox(
         heightFactor: 0.88,
         child: _FeedbackSheet(
@@ -204,7 +202,6 @@ extension _CrmPageActions on _CrmPageState {
       if (!mounted) return;
       await _showOwnedSheet<void>(
         context: context,
-        isScrollControlled: true,
         builder: (context) => FractionallySizedBox(
           heightFactor: 0.88,
           child: _DuplicateUsersSheet(
@@ -228,7 +225,6 @@ extension _CrmPageActions on _CrmPageState {
   Future<void> _showUsersFilterSheet() async {
     final result = await _showOwnedSheet<Map<String, dynamic>>(
       context: context,
-      isScrollControlled: true,
       builder: (context) => _UsersFilterSheet(
         groups: _groups,
         status: _status,
@@ -257,7 +253,6 @@ extension _CrmPageActions on _CrmPageState {
   Future<void> _showAuditFilterSheet() async {
     final result = await _showOwnedSheet<Map<String, dynamic>>(
       context: context,
-      isScrollControlled: true,
       builder: (context) => _AuditFilterSheet(
         range: _auditRange,
         eventKind: _auditEventKind,

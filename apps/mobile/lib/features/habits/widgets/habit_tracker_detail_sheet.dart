@@ -66,7 +66,7 @@ class HabitTrackerDetailSheet extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: detailStatus == HabitsStatus.loading && detail == null
-                ? const Center(child: NovaLoadingIndicator())
+                ? const AppLoadingIndicator.page()
                 : detailStatus == HabitsStatus.error && detail == null
                 ? _DetailErrorView(error: detailError, onRetry: onRetry)
                 : detail == null

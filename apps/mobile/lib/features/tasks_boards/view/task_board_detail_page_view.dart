@@ -286,7 +286,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
               children: [
                 shellActionRegistration,
                 shellMiniNavRegistration,
-                const Center(child: NovaLoadingIndicator()),
+                const AppLoadingIndicator.page(),
               ],
             );
           }

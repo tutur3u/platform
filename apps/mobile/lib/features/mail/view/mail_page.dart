@@ -57,7 +57,7 @@ class MailPage extends StatelessWidget {
     );
     if (user == null) return const SizedBox.shrink();
     if (wsId == null) {
-      return const Center(child: NovaLoadingIndicator(size: 20));
+      return const AppLoadingIndicator.page();
     }
     if (!canDiscoverMail(user.email, appMetadata: user.appMetadata)) {
       return Center(child: Text(context.l10n.mailAccessRequired));

@@ -129,7 +129,7 @@ class _WorkspaceStatsTabState extends State<WorkspaceStatsTab> {
             ],
           ),
           if (_loading && _sessions.isEmpty)
-            const Center(child: NovaLoadingIndicator())
+            const AppLoadingIndicator.page()
           else if (_error != null && _sessions.isEmpty)
             AppPageBody(
               child: Center(

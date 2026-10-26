@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/core/utils/tiptap_description_parser.dart';
 import 'package:mobile/data/models/documents/workspace_document.dart';
 import 'package:mobile/data/repositories/document_repository.dart';
@@ -126,41 +127,24 @@ class _DocumentsPageState extends State<DocumentsPage> {
 
   Future<void> _createDocument() async {
     final controller = TextEditingController();
-    final created = await showModalBottomSheet<bool>(
+    final created = await showAppSheet<bool>(
       context: context,
-      isScrollControlled: true,
-      builder: (context) => Padding(
-        padding: EdgeInsets.fromLTRB(
-          20,
-          20,
-          20,
-          20 + MediaQuery.viewInsetsOf(context).bottom,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              context.l10n.documentsNewDocument,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: controller,
-              autofocus: true,
-              decoration: InputDecoration(
-                hintText: context.l10n.inputPlaceholderDocumentName,
-                labelText: context.l10n.documentsDocumentName,
-              ),
-              textInputAction: TextInputAction.done,
-              onSubmitted: (_) => Navigator.of(context).pop(true),
-            ),
-            const SizedBox(height: 16),
-            FilledButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: Text(context.l10n.commonCreate),
-            ),
-          ],
+      builder: (context) => AppSheetScaffold(
+        title: context.l10n.documentsNewDocument,
+        actions: [
+          AppButton.primary(
+            key: const ValueKey('documents-create-submit'),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(context.l10n.commonCreate),
+          ),
+        ],
+        child: AppTextField(
+          controller: controller,
+          autofocus: true,
+          label: context.l10n.documentsDocumentName,
+          placeholder: context.l10n.inputPlaceholderDocumentName,
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) => Navigator.of(context).pop(true),
         ),
       ),
     );
@@ -278,7 +262,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
                   if (_isLoading && _documents.isEmpty)
                     const SizedBox(
                       height: 240,
-                      child: Center(child: NovaLoadingIndicator()),
+                      child: AppLoadingIndicator.page(),
                     )
                   else if (_error != null)
                     _DocumentsMessageCard(message: _error!)

@@ -251,18 +251,7 @@ class _SingleSelectPickerSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.mutedForeground.withValues(
-                    alpha: 0.3,
-                  ),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
+            const AppSheetHandle(),
             const shad.Gap(16),
             Text(title, style: theme.typography.h4),
             const shad.Gap(12),

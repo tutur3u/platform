@@ -171,7 +171,7 @@ extension _CrmPageLayout on _CrmPageState {
                       // The list already applies the page gutters.
                       return const Padding(
                         padding: EdgeInsets.symmetric(vertical: AppSpacing.xxl),
-                        child: Center(child: NovaLoadingIndicator()),
+                        child: AppLoadingIndicator.page(),
                       );
                     }
                     if (_error != null && count == 0) {
