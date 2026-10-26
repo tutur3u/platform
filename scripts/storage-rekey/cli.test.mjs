@@ -171,7 +171,10 @@ test('mira credit refs are not scoped to the path workspace (billing ws can diff
     to: 'path-ws/mira/images/n-a.png',
     guard: true,
   });
-  assert.match(sql, /update public\.ai_credit_transactions set metadata = .* where feature = 'image_generation'/s);
+  assert.match(
+    sql,
+    /update public\.ai_credit_transactions set metadata = .* where feature = 'image_generation'/s
+  );
   assert.doesNotMatch(sql, /ws_id = 'path-ws'/);
 });
 
