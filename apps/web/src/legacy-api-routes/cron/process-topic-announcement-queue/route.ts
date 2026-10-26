@@ -191,6 +191,7 @@ async function handler(request: NextRequest) {
       const result = await sendTopicAnnouncement({
         actorUserId,
         announcementId: claimedRow.id,
+        markSkippedWhenUnverified: true,
         normalizedWsId: claimedRow.ws_id,
         request,
         resend: false,

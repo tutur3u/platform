@@ -76,7 +76,7 @@ describe('disk gate (REV-6480-2)', () => {
     expect(await diskGate('/work', {}, volume(20, 1024))).toMatchObject({
       admit: false,
     });
-    expect(await diskGate('/work', {}, volume(21, 300))).toMatchObject({
+    expect(await diskGate('/work', {}, volume(51, 300))).toMatchObject({
       admit: true,
     });
     // The measured M4 (20 GiB of 460 GiB, 4.3%) is below the 5% floor.

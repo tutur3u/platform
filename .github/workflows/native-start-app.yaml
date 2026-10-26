@@ -1,0 +1,289 @@
+name: Native Start app validation
+# Reusable, path-agnostic validation for a TanStack Start + Void + Vite+ app on
+# Cloudflare Workers that runs through @tuturuuu/start-bridge. The caller owns
+# triggers, path filters, concurrency and the ci-check gate; see
+# apps/docs/build/devops/native-start-migration.mdx. Qualification only: there
+# is no publish job, no provider credential, and production publication stays
+# HELD by productionPublicationPolicy in tuturuuu.ci.ts.
+on:
+  workflow_call:
+    inputs:
+      app:
+        description: Directory under apps/ (e.g. shortener)
+        type: string
+        required: true
+      package:
+        description: Workspace package name (e.g. @tuturuuu/shortener)
+        type: string
+        required: true
+      artifact-script:
+        description: Seal/restore helper with config, seal, verify, pack and restore commands
+        type: string
+        required: true
+      env-interface:
+        description: Interface name for emitted Wrangler binding types
+        type: string
+        required: true
+      worker-environment-type:
+        description: The Worker's exported environment type checked against emitted bindings
+        type: string
+        required: true
+      public-env:
+        description: Newline-separated NEXT_PUBLIC_*=value or TUTURUUU_NOINDEX=value fixtures for the build
+        type: string
+        required: true
+      format-paths:
+        description: Space-separated owning paths for the Biome check
+        type: string
+        required: true
+      helper-tests:
+        description: Optional source-only helper regression command
+        type: string
+        required: false
+        default: ''
+      unit-command:
+        type: string
+        required: false
+        default: bun run test
+      runtime-command:
+        type: string
+        required: false
+        default: bun run test:runtime
+      profile-env:
+        description: Optional VITE_<APP>_NATIVE_PROFILE=<name> selector applied to build, runtime and restore
+        type: string
+        required: false
+        default: ''
+      artifact-suffix:
+        description: Optional suffix that keeps artifacts apart when an app qualifies several profiles
+        type: string
+        required: false
+        default: ''
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      APP: ${{ inputs.app }}
+      APP_DIR: apps/${{ inputs.app }}
+      APP_PACKAGE: ${{ inputs.package }}
+      ARTIFACT_SCRIPT: ${{ inputs.artifact-script }}
+      ENV_INTERFACE: ${{ inputs.env-interface }}
+      WORKER_ENVIRONMENT_TYPE: ${{ inputs.worker-environment-type }}
+      PUBLIC_ENV: ${{ inputs.public-env }}
+      FORMAT_PATHS: ${{ inputs.format-paths }}
+      HELPER_TESTS: ${{ inputs.helper-tests }}
+      UNIT_COMMAND: ${{ inputs.unit-command }}
+      RUNTIME_COMMAND: ${{ inputs.runtime-command }}
+      PROFILE_ENV: ${{ inputs.profile-env }}
+      ARTIFACT_SUFFIX: ${{ inputs.artifact-suffix && format('-{0}', inputs.artifact-suffix) || '' }}
+      SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      APPS_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.22.0
+      - name: Verify immutable checkout identity and caller inputs
+        run: |
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          [[ "$APP" =~ ^[a-z0-9][a-z0-9-]*$ ]]
+          [[ "$APP_PACKAGE" =~ ^@tuturuuu/[a-z0-9][a-z0-9-]*$ ]]
+          [[ "$ARTIFACT_SCRIPT" =~ ^scripts/ci/[a-z0-9-]+-native-artifact\.py$ ]]
+          [[ "$ENV_INTERFACE" =~ ^[A-Za-z][A-Za-z0-9]*$ ]]
+          [[ "$WORKER_ENVIRONMENT_TYPE" =~ ^[A-Za-z][A-Za-z0-9]*$ ]]
+          test -f "$APP_DIR/start-bridge.routes.json"
+      - name: Export the app's own source SHA channel
+        # Artifact helpers read <APP>_SOURCE_SHA (e.g. SHORTENER_SOURCE_SHA)
+        # and refuse a generic fallback, so export the exact checkout under it.
+        run: echo "$(printf '%s' "$APP" | tr 'a-z-' 'A-Z_')_SOURCE_SHA=$SOURCE_SHA" >> "$GITHUB_ENV"
+      - name: Admit the native profile selector
+        run: |
+          [[ "$ARTIFACT_SUFFIX" =~ ^(-[a-z][a-z0-9-]*)?$ ]]
+          if [ -n "$PROFILE_ENV" ]; then
+            [[ "$PROFILE_ENV" =~ ^VITE_[A-Z0-9_]+_NATIVE_PROFILE=[a-z]+$ ]]
+            echo "$PROFILE_ENV" >> "$GITHUB_ENV"
+          fi
+      - name: Admit only public build fixtures
+        run: |
+          while IFS= read -r line; do
+            [ -z "$line" ] && continue
+            if [[ ! "$line" =~ ^(NEXT_PUBLIC_[A-Z0-9_]+|TUTURUUU_NOINDEX)=[A-Za-z0-9_.:/-]*$ ]]; then
+              echo "Rejected build fixture line" >&2
+              exit 1
+            fi
+            echo "$line" >> "$GITHUB_ENV"
+          done <<< "$PUBLIC_ENV"
+      - run: bun install --frozen-lockfile --ignore-scripts
+      - name: Binding-type harness regressions
+        run: python3 scripts/ci/native-binding-type-harness.test.py
+      - name: Helper source regressions
+        if: inputs.helper-tests != ''
+        run: bash -c "$HELPER_TESTS"
+      - name: Build required active workspace dependencies
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --filter="${APP_PACKAGE}^..." --concurrency=2
+          token: ''
+          team: ''
+      - name: Generate exact-checkout build identity
+        env:
+          PLATFORM_BUILD_COMMIT_HASH: ${{ env.SOURCE_SHA }}
+          PLATFORM_BUILD_REF_NAME: ${{ github.head_ref || github.ref_name }}
+          PLATFORM_BUILD_ENVIRONMENT: preview
+        run: bun run --silent scripts/ci/generate-build-metadata.ts
+      - name: Reject unregistered App Router routes and pages
+        run: bun packages/start-bridge/src/codegen/cli.ts check "$APP_DIR"
+      - name: Unit tests
+        working-directory: apps/${{ inputs.app }}
+        run: bash -c "$UNIT_COMMAND"
+      - name: Check owning source formatting
+        run: |
+          read -r -a paths <<< "$FORMAT_PATHS"
+          bun x --no-install biome check "${paths[@]}"
+      - name: Build native Start SSR with the official Void SDK
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: cd "$APP_DIR" && bun run build:cloudflare
+          token: ''
+          team: ''
+      - name: Reject tracked route tree drift
+        if: always()
+        run: |
+          route_tree="$APP_DIR/src/routeTree.gen.ts"
+          if git cat-file -e "HEAD:$route_tree" 2>/dev/null; then
+            git diff --exit-code HEAD -- "$route_tree"
+          fi
+      - name: Type-check native app without a build
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: cd "$APP_DIR" && bun run type-check
+          token: ''
+          team: ''
+      - name: Discover actual emitted config and assert staging resource/static contract
+        id: output
+        run: python3 "$ARTIFACT_SCRIPT" config "$APP_DIR"
+      - name: Record bounded emitted config receipt
+        if: always()
+        run: node scripts/ci/native-emitted-config-receipt.mjs "$APP_DIR" "$SOURCE_SHA" "$RUNNER_TEMP/native-emitted-config.json"
+      - name: Retain diagnostic config receipt
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ${{ inputs.app }}-native-config-receipt-${{ env.SOURCE_SHA }}${{ env.ARTIFACT_SUFFIX }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/native-emitted-config.json
+          retention-days: 7
+          if-no-files-found: error
+      - name: Generate emitted binding types outside the frozen source
+        working-directory: apps/${{ inputs.app }}
+        env:
+          EMITTED_CONFIG: ${{ steps.output.outputs.config }}
+        run: bun x --no-install wrangler types --config "$EMITTED_CONFIG" --env-interface "$ENV_INTERFACE" --include-runtime=false "$RUNNER_TEMP/native-env.d.ts"
+      - name: Check generated binding compatibility with the owning Worker
+        # Scoped harness: the generated bindings become a module importing only
+        # the Workers types they name, checked under the app's own tsconfig, so
+        # global runtime types never retype the app (see the helper's header).
+        run: |
+          config="$(python3 scripts/ci/native-binding-type-harness.py \
+            --app-dir "$APP_DIR" \
+            --generated "$RUNNER_TEMP/native-env.d.ts" \
+            --env-interface "$ENV_INTERFACE" \
+            --worker-type "$WORKER_ENVIRONMENT_TYPE" \
+            --out "$RUNNER_TEMP/native-env-check")"
+          trap 'rm -f "$config"' EXIT
+          bun x --no-install tsc --project "$config"
+      - name: Qualify the emitted exact-artifact Wrangler adapter without publication
+        working-directory: apps/${{ inputs.app }}
+        env:
+          EMITTED_CONFIG: ${{ steps.output.outputs.config }}
+        run: bun x --no-install wrangler deploy --dry-run --config "$EMITTED_CONFIG" --outdir "$RUNNER_TEMP/native-dry-run"
+      - name: Seal exact-source output before runtime acceptance
+        run: python3 "$ARTIFACT_SCRIPT" seal "$APP_DIR" --receipt "$RUNNER_TEMP/native-artifact.json"
+      - name: Exercise emitted runtime contracts in workerd
+        timeout-minutes: 4
+        working-directory: apps/${{ inputs.app }}
+        env:
+          CI: 'true'
+          CI_SOURCE_SHA: ${{ env.SOURCE_SHA }}
+        run: bash -c "$RUNTIME_COMMAND"
+      - name: Recheck output and pack only qualified bytes
+        run: |
+          python3 "$ARTIFACT_SCRIPT" verify "$APP_DIR" --receipt "$RUNNER_TEMP/native-artifact.json"
+          python3 "$ARTIFACT_SCRIPT" pack "$APP_DIR" --receipt "$RUNNER_TEMP/native-artifact.json" --archive "$RUNNER_TEMP/native.tar.gz"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ${{ inputs.app }}-native-${{ env.SOURCE_SHA }}${{ env.ARTIFACT_SUFFIX }}
+          path: ${{ runner.temp }}/native.tar.gz
+          retention-days: 7
+          if-no-files-found: error
+  restore-acceptance:
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      APP: ${{ inputs.app }}
+      APP_DIR: apps/${{ inputs.app }}
+      ARTIFACT_SCRIPT: ${{ inputs.artifact-script }}
+      RUNTIME_COMMAND: ${{ inputs.runtime-command }}
+      PROFILE_ENV: ${{ inputs.profile-env }}
+      ARTIFACT_SUFFIX: ${{ inputs.artifact-suffix && format('-{0}', inputs.artifact-suffix) || '' }}
+      SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      APPS_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.22.0
+      - name: Verify immutable checkout identity
+        run: |
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          [[ "$APP" =~ ^[a-z0-9][a-z0-9-]*$ ]]
+      - name: Export the app's own source SHA channel
+        run: echo "$(printf '%s' "$APP" | tr 'a-z-' 'A-Z_')_SOURCE_SHA=$SOURCE_SHA" >> "$GITHUB_ENV"
+      - name: Admit the native profile selector
+        run: |
+          [[ "$ARTIFACT_SUFFIX" =~ ^(-[a-z][a-z0-9-]*)?$ ]]
+          if [ -n "$PROFILE_ENV" ]; then
+            [[ "$PROFILE_ENV" =~ ^VITE_[A-Z0-9_]+_NATIVE_PROFILE=[a-z]+$ ]]
+            echo "$PROFILE_ENV" >> "$GITHUB_ENV"
+          fi
+      - run: bun install --frozen-lockfile --ignore-scripts
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ${{ inputs.app }}-native-${{ env.SOURCE_SHA }}${{ env.ARTIFACT_SUFFIX }}
+          path: ${{ runner.temp }}/native-download
+      - name: Restore into clean output with member/hash/source checks
+        run: python3 "$ARTIFACT_SCRIPT" restore "$APP_DIR" --archive "$RUNNER_TEMP/native-download/native.tar.gz" --receipt "$RUNNER_TEMP/native-artifact.json"
+      - name: Verify restored configuration
+        id: output
+        run: python3 "$ARTIFACT_SCRIPT" config "$APP_DIR"
+      - name: Recheck the Wrangler adapter on restored bytes without publication
+        working-directory: apps/${{ inputs.app }}
+        env:
+          EMITTED_CONFIG: ${{ steps.output.outputs.config }}
+        run: bun x --no-install wrangler deploy --dry-run --config "$EMITTED_CONFIG" --outdir "$RUNNER_TEMP/native-restored-dry-run"
+      - name: Repeat emitted runtime acceptance on restored output
+        timeout-minutes: 4
+        working-directory: apps/${{ inputs.app }}
+        env:
+          CI: 'true'
+          CI_SOURCE_SHA: ${{ env.SOURCE_SHA }}
+        run: bash -c "$RUNTIME_COMMAND"
+      - name: Confirm qualification did not mutate the restored artifact
+        run: python3 "$ARTIFACT_SCRIPT" verify "$APP_DIR" --receipt "$RUNNER_TEMP/native-artifact.json"

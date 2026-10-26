@@ -26,10 +26,8 @@ import {
   sanitizePath,
 } from '@tuturuuu/utils/storage-path';
 import { getSecrets } from '@tuturuuu/utils/workspace-helper';
-import {
-  filterReservedMobileDeploymentDriveEntries,
-  isReservedMobileDeploymentDrivePath,
-} from './mobile-deployment/storage-policy';
+import { filterDriveEntries, isExcludedDrivePath } from './drive-path-policy';
+import { isReservedMobileDeploymentDrivePath } from './mobile-deployment/storage-policy';
 import { getWorkspaceStorageMetrics } from './storage-analytics';
 import { WorkspaceStorageError } from './storage-download-error';
 import { downloadGuardedSupabaseStorageObject } from './storage-download-object';
@@ -48,6 +46,11 @@ import {
   WORKSPACE_STORAGE_PROVIDER_SUPABASE,
   type WorkspaceStorageProvider,
 } from './workspace-storage-config';
+import {
+  assertWorkspaceStorageMutationPathsAllowed,
+  assertWorkspaceStoragePathAllowed,
+  type WorkspaceStorageReservedAccessOptions,
+} from './workspace-storage-path-access';
 
 export { WorkspaceStorageError } from './storage-download-error';
 
@@ -130,10 +133,6 @@ interface WorkspaceStorageRawListOptions {
   limit?: number;
 }
 
-interface WorkspaceStorageReservedAccessOptions {
-  allowReservedMobileDeploymentVault?: boolean;
-}
-
 export type ResolvedWorkspaceStorageConfig =
   | {
       provider: typeof WORKSPACE_STORAGE_PROVIDER_SUPABASE;
@@ -195,22 +194,6 @@ function buildWorkspaceStorageKey(wsId: string, path = '') {
 function buildWorkspaceStoragePrefix(wsId: string, path = '') {
   const key = buildWorkspaceStorageKey(wsId, path);
   return key.endsWith('/') ? key : `${key}/`;
-}
-
-function assertWorkspaceStoragePathAllowed(
-  wsId: string,
-  path: string,
-  options?: WorkspaceStorageReservedAccessOptions
-) {
-  if (
-    !options?.allowReservedMobileDeploymentVault &&
-    isReservedMobileDeploymentDrivePath(wsId, path)
-  ) {
-    throw new WorkspaceStorageError(
-      'Mobile deployment vault files are managed by the mobile deployment API.',
-      403
-    );
-  }
 }
 
 function filterReservedWorkspaceStorageObjects<
@@ -513,7 +496,10 @@ async function listR2Directory(
   } while (continuationToken);
 
   const sorted = sortStorageObjects(
-    [...folders.values(), ...files],
+    filterDriveEntries(wsId, options.path ?? '', [
+      ...folders.values(),
+      ...files,
+    ]),
     options.sortBy ?? 'name',
     options.sortOrder ?? 'asc'
   );
@@ -559,10 +545,7 @@ async function getR2Overview(
         continue;
       }
 
-      if (
-        !includeReservedForQuota &&
-        isReservedMobileDeploymentDrivePath(wsId, relativeKey)
-      ) {
+      if (!includeReservedForQuota && isExcludedDrivePath(wsId, relativeKey)) {
         continue;
       }
 
@@ -696,6 +679,7 @@ async function countSupabaseDirectoryEntries(
   storagePath: string,
   search?: string
 ) {
+  const [wsId = '', ...segments] = storagePath.split('/');
   let offset = 0;
   let total = 0;
   while (true) {
@@ -710,7 +694,7 @@ async function countSupabaseDirectoryEntries(
       throw new WorkspaceStorageError(error.message || 'Failed to list files');
     }
     const page = data ?? [];
-    total += page.filter(
+    total += filterDriveEntries(wsId, segments.join('/'), page).filter(
       (entry) => entry.name !== EMPTY_FOLDER_PLACEHOLDER_NAME
     ).length;
     if (page.length < SUPABASE_STORAGE_LIST_PAGE_SIZE) {
@@ -899,17 +883,15 @@ export async function listWorkspaceStorageDirectory(
   const config = await resolveWorkspaceStorageConfig(wsId);
   const relativePath = normalizeRelativePath(options.path);
   assertWorkspaceStoragePathAllowed(wsId, relativePath, options);
+  if (isExcludedDrivePath(wsId, relativePath))
+    throw new WorkspaceStorageError('Forbidden', 403);
 
   if (config.provider === WORKSPACE_STORAGE_PROVIDER_R2) {
     const result = await listR2Directory(wsId, config, {
       ...options,
       path: relativePath,
     });
-    const data = filterReservedMobileDeploymentDriveEntries(
-      wsId,
-      relativePath,
-      result.data
-    );
+    const data = filterDriveEntries(wsId, relativePath, result.data);
 
     return {
       ...result,
@@ -936,7 +918,7 @@ export async function listWorkspaceStorageDirectory(
     throw new WorkspaceStorageError(error.message || 'Failed to list files');
   }
 
-  const filtered = filterReservedMobileDeploymentDriveEntries(
+  const filtered = filterDriveEntries(
     wsId,
     relativePath,
     (data ?? []).filter(
@@ -1707,6 +1689,7 @@ export async function deleteWorkspaceStorageFolderByPath(
         : undefined;
     } while (continuationToken);
 
+    assertWorkspaceStorageMutationPathsAllowed(wsId, keys, options);
     if (keys.length === 0) {
       throw new WorkspaceStorageError('Folder not found', 404);
     }
@@ -1736,6 +1719,7 @@ export async function deleteWorkspaceStorageFolderByPath(
     folderPrefix
   );
 
+  assertWorkspaceStorageMutationPathsAllowed(wsId, paths, options);
   if (paths.length === 0) {
     throw new WorkspaceStorageError('Folder not found', 404);
   }
@@ -1762,8 +1746,7 @@ export async function deleteWorkspaceStorageFolderByPath(
 
 export async function renameWorkspaceStorageEntry(
   wsId: string,
-  options: {
-    allowReservedMobileDeploymentVault?: boolean;
+  options: WorkspaceStorageReservedAccessOptions & {
     path?: string;
     currentName: string;
     newName: string;
@@ -1786,12 +1769,8 @@ export async function renameWorkspaceStorageEntry(
     : newName;
   assertWorkspaceStoragePathAllowed(wsId, currentRelativePath, options);
   assertWorkspaceStoragePathAllowed(wsId, nextRelativePath, options);
-  const currentBasePath = relativePath
-    ? posix.join(wsId, relativePath, currentName)
-    : posix.join(wsId, currentName);
-  const nextBasePath = relativePath
-    ? posix.join(wsId, relativePath, newName)
-    : posix.join(wsId, newName);
+  const currentBasePath = buildWorkspaceStorageKey(wsId, currentRelativePath);
+  const nextBasePath = buildWorkspaceStorageKey(wsId, nextRelativePath);
 
   if (config.provider === WORKSPACE_STORAGE_PROVIDER_R2) {
     const client = createR2Client(config);
@@ -1820,6 +1799,10 @@ export async function renameWorkspaceStorageEntry(
           : undefined;
       } while (continuationToken);
 
+      assertWorkspaceStorageMutationPathsAllowed(wsId, sourceKeys, options, {
+        from: currentBasePath,
+        to: nextBasePath,
+      });
       if (sourceKeys.length === 0) {
         throw new WorkspaceStorageError('Folder not found', 404);
       }
@@ -1893,20 +1876,20 @@ export async function renameWorkspaceStorageEntry(
   const supabase = await createDynamicAdminClient();
 
   if (options.isFolder) {
-    const currentRelativePrefix = relativePath
-      ? posix.join(relativePath, currentName)
-      : currentName;
-    const nextRelativePrefix = relativePath
-      ? posix.join(relativePath, newName)
-      : newName;
     const existingObjects = await listWorkspaceStorageRawObjectsForProvider(
       wsId,
       WORKSPACE_STORAGE_PROVIDER_SUPABASE,
       {
-        pathPrefix: currentRelativePrefix,
+        pathPrefix: currentRelativePath,
       }
     );
 
+    assertWorkspaceStorageMutationPathsAllowed(
+      wsId,
+      existingObjects.map((object) => object.fullPath),
+      options,
+      { from: currentBasePath, to: nextBasePath }
+    );
     if (existingObjects.length === 0) {
       throw new WorkspaceStorageError('Folder not found', 404);
     }
@@ -1915,7 +1898,7 @@ export async function renameWorkspaceStorageEntry(
       wsId,
       WORKSPACE_STORAGE_PROVIDER_SUPABASE,
       {
-        pathPrefix: nextRelativePrefix,
+        pathPrefix: nextRelativePath,
         limit: 1,
       }
     );

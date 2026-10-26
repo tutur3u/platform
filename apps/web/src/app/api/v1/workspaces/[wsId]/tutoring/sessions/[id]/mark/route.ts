@@ -1,6 +1,11 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { TutoringMarkSchema } from '@/legacy-api-routes/v1/workspaces/[wsId]/tutoring/shared';
+import { notifyCompletionSafely } from '@/lib/tutoring/completion-notification';
+import {
+  freezeLinkedLessonContent,
+  LINKED_CONTENT_NOT_STORED,
+} from '@/lib/tutoring/linked-content';
 import { resolveTutoringRouteAccess } from '@/lib/tutoring/route-access';
 
 interface Params {
@@ -9,10 +14,8 @@ interface Params {
 
 export async function POST(request: Request, { params }: Params) {
   const { wsId, id } = await params;
-  const { normalizedWsId, permissions } = await resolveTutoringRouteAccess(
-    request,
-    wsId
-  );
+  const { normalizedWsId, permissions, user } =
+    await resolveTutoringRouteAccess(request, wsId);
 
   if (!permissions) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -65,6 +68,26 @@ export async function POST(request: Request, { params }: Params) {
 
   if (!data) {
     return NextResponse.json({ message: 'Session not found' }, { status: 404 });
+  }
+
+  if (parsed.data.attendanceStatus === 'DONE') {
+    const frozen = await freezeLinkedLessonContent({
+      sbAdmin,
+      sessionId: id,
+      wsId: normalizedWsId,
+    });
+    await notifyCompletionSafely({
+      actorUserId: user?.id ?? null,
+      sbAdmin,
+      sessionId: id,
+      wsId: normalizedWsId,
+    });
+    // Completion stands; the client warns that the notes may need a check.
+    if (frozen === 'failed')
+      return NextResponse.json({
+        message: 'success',
+        warning: LINKED_CONTENT_NOT_STORED,
+      });
   }
 
   return NextResponse.json({ message: 'success' });

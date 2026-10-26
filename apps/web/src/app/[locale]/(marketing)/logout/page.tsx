@@ -1,6 +1,7 @@
 'use client';
 
 import { ArrowRight, LogOut } from '@tuturuuu/icons/lucide';
+import { logoutBrowserSessionWithInternalApi } from '@tuturuuu/internal-api/auth';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
@@ -43,10 +44,9 @@ export default function LogoutPage() {
 
   const handleLogoutAll = async () => {
     setLoggingOut(true);
-    await fetch('/api/ai/temp-auth/revoke', {
-      method: 'POST',
-      cache: 'no-store',
-    }).catch(() => undefined);
+    // Server sign-out revokes derived credentials (AI temp auth, cross-app
+    // tokens) before clearing the session; the local call clears client state.
+    await logoutBrowserSessionWithInternalApi().catch(() => undefined);
     await supabase.auth.signOut({ scope: 'local' });
     router.push('/login');
     router.refresh();

@@ -1,7 +1,7 @@
 ---
 title: "Forms"
 description: "Create forms, publish share links, embed them, and review responses and analytics."
-updatedAt: '2026-10-08'
+updatedAt: '2026-10-26'
 ---
 
 Forms (`forms.tuturuuu.com`, `apps/forms`) owns the complete form product:
@@ -26,6 +26,15 @@ validation behavior, response formatting, and analytics rules are in
 Use [Studio layouts](/platform/features/forms-studio-layouts) for layout and
 editing behavior.
 
+Author rich text in titles, descriptions and choices renders through one
+`sanitize-html` allowlist on the server and in the browser: headings,
+paragraphs, lists, emphasis, links, code, rules and images, plus `alt`,
+`href`, `rel`, `src`, `target`, `aria-*` and `data-*`. Links keep http(s),
+ftp(s), mailto, tel, sms, callto, xmpp, matrix, cid and relative URLs; `data:`
+is allowed only on images. Script, event and style attributes are removed.
+SVG, MathML, iframe, object, embed, template and form-control content is dropped
+with its whole subtree. Coverage: `apps/forms/src/features/forms/rich-text-html.test.ts`.
+
 ## Embedding and search
 
 The SDK is delivered at `/embed.js`; the embedded route is
@@ -48,3 +57,59 @@ state; this does not expose another respondent's answers.
 [Search indexing](/platform/features/search-indexing), and
 [Forms feature details](/platform/features/forms-embedding-and-seo) provide the
 implementation and behavior contracts.
+
+## Native Start candidate
+
+Generate the native entrypoints with
+`node scripts/start-bridge-codemod/cli.mjs forms --apply`. Marked generated
+files are maintained by this codemod. The App Router pages, layouts and
+server actions use the shared RSC adapter; route handlers compile in its
+RSC environment so their server-only imports keep the same boundary.
+
+Run `bun run --cwd apps/forms type-check:cloudflare` for the native type
+check and `bun run --cwd apps/forms build:cloudflare` for the real Vite+
+build on an admitted build host. The retained `build` script continues to
+serve the current publisher until an explicit cutover-preparation PR.
+
+Browser qualification must use a host matching the shared locale cookie domain.
+The canonical domain uses a Secure cookie; an HTTP loopback browser drops it and
+can fall back to English after a locale redirect. A fixture may relay the sealed
+loopback Worker at the canonical HTTPS browser origin while preserving Cookie
+and Set-Cookie. Assert the real locale cookie, `lang=vi` after hydration, and
+actual EN/VI heading markup in the SSR response; status 200 and metadata alone
+are insufficient.
+
+The native publication admits only `forms.tuturuuu.com` and the custom staging
+host `forms-staging.tuturuuu.com`. Apex `/forms`, workers.dev and unknown hosts
+are rejected before app dispatch. Apex admission remains a separate cutover.
+The app-owned `start-bridge.config.ts` supplies the nonce CSP and response
+headers. Non-assets force private, no-store caching, including removal of CDN
+cache overrides. Static files retain their cache policy only for successful
+GET/HEAD responses without HTML or cookies.
+
+Normal pages deny framing. The existing `/embed/{shareCode}` exception, stays framable by third-party sites and noindex; its CSP keeps
+the same script nonce and changes only frame ancestors. This preserves the
+retained Next publisher's `framablePathPatterns: ['embed/[^/]+']` policy in
+`apps/forms/next.config.ts`. Locale-prefixed embed URLs retain the default
+framing denial; the SDK uses the bare `/embed/{shareCode}` URL. The host, caching and
+framing contracts are covered by
+`apps/forms/src/runtime/response-security.test.ts`. Final acceptance requires
+the exact sealed artifact, public and authenticated browser checks, and an
+immediate rollback before canonical publication.
+
+For a future `/forms` admission, middleware uses Web's shared Supabase session without refreshing,
+exchanging or clearing satellite sessions. Legacy session-writing endpoints
+return 409 on that mount; host-root authentication keeps its existing behavior.
+Anonymous share/embed pages and shared-form reads and submissions remain public;
+their route-level access, Turnstile and rate limits still apply. Private page
+loaders and API handlers validate the actor and workspace access. These mount
+and anonymous-respondent cases are covered by
+`apps/forms/src/proxy-refresh.test.ts`.
+
+The native Worker also preserves the platform's canonical uploaded WebGL
+framing exception. Those proxied responses keep the upstream sandbox and framing
+headers, remain private/no-store and noindex, and do not use the embed policy.
+Composed bridge-and-wrapper tests cover WebGL documents, child assets and
+neighbouring paths. The ordinary `type-check` command checks both the retained
+app and `tsconfig.cloudflare.json`, so hosted native qualification covers the
+router, Start entry and generated adapters as well as emitted bindings.

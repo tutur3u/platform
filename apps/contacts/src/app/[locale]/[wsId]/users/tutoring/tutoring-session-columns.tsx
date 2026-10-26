@@ -287,6 +287,11 @@ export function buildTutoringSessionColumns(
               {row.original.content}
             </p>
           ) : null}
+          {row.original.content_linked ? (
+            <p className="text-muted-foreground text-xs italic">
+              {t('content_linked_badge')}
+            </p>
+          ) : null}
         </div>
       ),
     },

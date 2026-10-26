@@ -92,6 +92,7 @@ class _AssistantMemoryEditorState extends State<AssistantMemoryEditor> {
               ),
             if (state.memory != null)
               AppTextFormField(
+                placeholder: context.l10n.inputPlaceholderAssistantMemory,
                 key: const ValueKey('assistant-memory-edit-field'),
                 controller: _text,
                 minLines: 3,

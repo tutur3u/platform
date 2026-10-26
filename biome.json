@@ -24,6 +24,8 @@
       "!apps/mail/src/routeTree.gen.ts",
       "!apps/apps/src/routeTree.gen.ts",
       "!apps/shortener/src/routeTree.gen.ts",
+      "!**/src/routeTree.gen.ts",
+      "!**/*.bridge.gen.ts",
       "!apps/mobile",
       "!.worktrees",
       "!.agents/skills/security-audit"
@@ -116,5 +118,13 @@
         "organizeImports": "on"
       }
     }
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["**/routeTree.gen.ts"],
+      "formatter": { "enabled": false },
+      "linter": { "enabled": false },
+      "assist": { "enabled": false }
+    }
+  ]
 }

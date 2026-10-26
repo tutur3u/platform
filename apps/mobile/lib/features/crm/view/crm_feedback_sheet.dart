@@ -86,6 +86,7 @@ class _FeedbackSheetState extends State<_FeedbackSheet> {
                 minLines: 3,
                 maxLines: 5,
                 decoration: InputDecoration(
+                  hintText: context.l10n.inputPlaceholderFeedback,
                   labelText: context.l10n.crmFeedback,
                 ),
               ),
