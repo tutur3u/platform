@@ -71,6 +71,14 @@ check and `bun run --cwd apps/forms build:cloudflare` for the real Vite+
 build on an admitted build host. The retained `build` script continues to
 serve the current publisher until an explicit cutover-preparation PR.
 
+Browser qualification must use a host matching the shared locale cookie domain.
+The canonical domain uses a Secure cookie; an HTTP loopback browser drops it and
+can fall back to English after a locale redirect. A fixture may relay the sealed
+loopback Worker at the canonical HTTPS browser origin while preserving Cookie
+and Set-Cookie. Assert the real locale cookie, `lang=vi` after hydration, and
+actual EN/VI heading markup in the SSR response; status 200 and metadata alone
+are insufficient.
+
 The native publication admits only `forms.tuturuuu.com` and the custom staging
 host `forms-staging.tuturuuu.com`. Apex `/forms`, workers.dev and unknown hosts
 are rejected before app dispatch. Apex admission remains a separate cutover.
