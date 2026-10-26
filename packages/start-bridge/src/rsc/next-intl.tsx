@@ -20,7 +20,12 @@ export async function NextIntlClientProvider({
   timeZone?: string;
   [key: string]: unknown;
 }) {
-  const config = await loadIntlConfig(locale);
+  // Settle the hooks' config too, so translated descendants (including
+  // Suspense fallbacks) render inline instead of suspending on `use()`.
+  const [config] = await Promise.all([
+    loadIntlConfig(locale),
+    loadIntlConfig(),
+  ]);
   return (
     <IntlClientProvider
       locale={config.locale}
