@@ -472,7 +472,7 @@ test('only the production environment upload step receives the named deploy toke
   assert.equal(workflow.concurrency['cancel-in-progress'], false);
   assert.equal(
     workflow.jobs.publish.steps.find((step) =>
-      step.name.startsWith('Retain private upload')
+      step.name?.startsWith('Retain private upload')
     ).with['retention-days'],
     90
   );
