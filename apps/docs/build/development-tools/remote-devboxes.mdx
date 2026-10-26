@@ -1107,7 +1107,19 @@ only `CREATE INDEX CONCURRENTLY`; run it outside a transaction. The next migrati
 refuses a missing or invalid index before installing the reaper. If a concurrent
 build fails, inspect `pg_catalog.pg_index`, drop only the invalid
 `private.idx_devbox_runs_active_updated` index with `DROP INDEX CONCURRENTLY`
-outside a transaction, rerun the index migration, then retry the guard and DDL.
+outside a transaction, reapply that index file as an explicitly approved standalone
+SQL operation if its migration version was already recorded, then retry the guard
+and DDL. `CONCURRENTLY` still waits for long-running transactions. Inspect
+`pg_stat_progress_create_index` and `pg_stat_activity` to identify the build and
+blocking transaction. Cancel only the verified build PID with `pg_cancel_backend`,
+then inspect the index validity before the approved concurrent drop/rebuild. Do
+not cancel unrelated transactions or repair the migration ledger blindly. The
+following catalog guard fails loudly if the index is missing or invalid.
+
+The transactional claim/reaper migrations set `lock_timeout = 5s` and
+`statement_timeout = 30s`. A busy existing table aborts the migration rather than
+queuing fleet writes indefinitely; retry after the blocker clears. These settings
+must never be added to the single-statement concurrent-index migration.
 The final claim keeps the mode and drain admission predicates and lease move,
 and reaps at most 25 runs for the claiming runner after acquiring its advisory
 lock and before counting capacity. Run the trust-pool, drain-hardening, mode
