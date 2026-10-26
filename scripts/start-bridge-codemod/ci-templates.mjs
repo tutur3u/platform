@@ -231,6 +231,10 @@ export function runtimeTest({
   publicFiles,
   hasBuildInfo,
   expectations = { '/': 200 },
+  probes = [
+    { kind: 'page', path: '/' },
+    { kind: 'notFound', path: '/__native-smoke-missing__' },
+  ],
   worker = { workersDev: true, compatibilityFlags: RUNTIME.compatibilityFlags },
 }) {
   const buildInfo = hasBuildInfo
@@ -275,6 +279,8 @@ const WORKER = ${js(workerName)};
 const PUBLIC_FILES = [${publicFiles.map(js).join(', ')}];
 // From start-bridge.routes.json \`runtime\`: a status, or a redirect prefix.
 const EXPECTED = ${JSON.stringify(expectations)};
+// Response-policy probes (start-bridge.routes.json \`runtimeProbes\`).
+const POLICY_PROBES = ${JSON.stringify(probes)};
 // The Worker's mounts: the generated defaults plus the app-owned
 // start-bridge.config.ts overrides, exactly as cloudflare/worker.ts spreads
 // them (loaded with Node's type stripping).
@@ -478,14 +484,25 @@ ${buildInfo}
     assert.ok(response.status < 500, String(response.status));
   });
 
-  await t.test('the response policy covers a page, an API response and a missing page', async () => {
-    for (const [label, path] of [
-      ['SSR page', '/'],
-      ['API response', ${hasBuildInfo ? "'/api/build-info'" : "'/api/__native-smoke-policy__'"}],
-      ['missing page', '/__native-smoke-missing__'],
-    ]) {
-      const { status, headers } = await get(path);
-      const where = \`\${label} \${path} (\${status})\`;
+  await t.test('the response policy covers a rendered page, an API response and a 404', async () => {
+    // Real responses only: a redirect or an error never stands in for a page.
+    for (const probe of POLICY_PROBES) {
+      if (probe.skip) {
+        t.diagnostic(\`policy probe \${probe.kind} skipped: \${probe.skip}\`);
+        continue;
+      }
+      const { status, headers, body } = await get(probe.path);
+      const type = headers['content-type'] ?? '';
+      const where = \`\${probe.kind} \${probe.path} (\${status} \${type})\`;
+      if (probe.kind === 'api') {
+        assert.equal(status, 200, where);
+        assert.match(type, /application\\/json/u, where);
+        assert.doesNotThrow(() => JSON.parse(body), where);
+      } else {
+        assert.equal(status, probe.kind === 'page' ? 200 : 404, where);
+        assert.match(type, /text\\/html/u, where);
+        assert.match(body, /<html[\\s>]/iu, \`\${where}: an HTML document\`);
+      }
       assert.match(headers['cache-control'] ?? '', /\\bno-store\\b/u, \`\${where}: Cache-Control no-store\`);
       assert.ok(headers['x-robots-tag'], \`\${where}: X-Robots-Tag\`);
       assert.equal(headers['x-frame-options'], 'DENY', \`\${where}: X-Frame-Options\`);

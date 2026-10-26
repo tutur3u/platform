@@ -14,7 +14,8 @@
  * Web's uploaded WebGL builds carry a `sandbox` CSP that must reach the
  * browser as served. Matching is case-sensitive, like central's routes.
  */
-import { framablePathRegexes } from '@tuturuuu/utils/framable-paths';
+import { createFramablePathMatcher } from '@tuturuuu/utils/framable-paths';
+import { type AppSeoPolicy, robotsForUrl } from '@tuturuuu/utils/seo-robots';
 
 export interface ResponsePolicyContext<Env = unknown> {
   request: Request;
@@ -28,11 +29,20 @@ export interface ResponsePolicyContext<Env = unknown> {
   publicAssets?: ReadonlySet<string>;
   /** The app's `framablePaths` (from the generated Worker). */
   framablePaths?: readonly RegExp[];
+  /**
+   * The app's `seo-policy.json` entry (from the generated Worker), or `null`
+   * for an app without one (always private).
+   */
+  seoPolicy?: AppSeoPolicy | null;
 }
 
 export interface RootResponsePolicyOptions<Env = unknown> {
-  /** `X-Robots-Tag` for every response, e.g. `noindex, nofollow`. */
-  seo: string | ((context: ResponsePolicyContext<Env>) => string);
+  /**
+   * `X-Robots-Tag` for a response, or a resolver; `null` leaves the response
+   * indexable. Use `appRobots` (the app's `seo-policy.json` allowlist). An
+   * upstream `noindex` is never overridden.
+   */
+  seo: string | ((context: ResponsePolicyContext<Env>) => string | null);
   /**
    * More app-relative paths that other origins may frame, beyond the
    * platform list and the app's `framablePaths`: no `X-Frame-Options`, and
@@ -94,10 +104,34 @@ function appPathOf(url: URL, mounts: ResponsePolicyContext['mounts']) {
     : url.pathname;
 }
 
+/**
+ * Robots from the app's `seo-policy.json` entry: indexable only on its public
+ * allowlist on its canonical origin; reserved paths, other hosts, apps
+ * without a policy and `TUTURUUU_NOINDEX=1` deployments stay private.
+ */
+export function appRobots(context: ResponsePolicyContext<unknown>) {
+  const env = context.env as { TUTURUUU_NOINDEX?: string } | undefined;
+  return robotsForUrl(context.seoPolicy, new URL(context.request.url), {
+    noindex: env?.TUTURUUU_NOINDEX === '1',
+  });
+}
+
+const appMatchers = new WeakMap<readonly RegExp[], (path: string) => boolean>();
+function appFramable(patterns: readonly RegExp[] | undefined) {
+  if (!patterns?.length) return () => false;
+  // One stateless matcher per config array (g/y patterns are cloned).
+  let matcher = appMatchers.get(patterns);
+  if (!matcher) {
+    matcher = createFramablePathMatcher(patterns);
+    appMatchers.set(patterns, matcher);
+  }
+  return matcher;
+}
+
 export function createRootResponsePolicy<Env = unknown>(
   options: RootResponsePolicyOptions<Env>
 ) {
-  const framable = [...framablePathRegexes(), ...(options.framable ?? [])];
+  const isFramable = createFramablePathMatcher(options.framable);
   const fallbackCsp = options.csp ?? NO_ANCESTORS;
   return function applyRootResponsePolicy(
     response: Response,
@@ -110,16 +144,19 @@ export function createRootResponsePolicy<Env = unknown>(
     const url = new URL(context.request.url);
     const path = appPathOf(url, context.mounts);
 
-    headers.set(
-      'X-Robots-Tag',
-      typeof options.seo === 'function' ? options.seo(context) : options.seo
-    );
+    // Never weaken an upstream noindex (e.g. a private page from Web).
+    if (!/\bnoindex\b/iu.test(headers.get('X-Robots-Tag') ?? '')) {
+      const robots =
+        typeof options.seo === 'function' ? options.seo(context) : options.seo;
+      if (robots !== null) headers.set('X-Robots-Tag', robots);
+    }
     headers.set('X-Content-Type-Options', 'nosniff');
     headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-    const framed = [...framable, ...(context.framablePaths ?? [])].some(
-      (pattern) => pattern.test(path)
-    );
-    if (!framed) {
+    const framed = isFramable(path) || appFramable(context.framablePaths)(path);
+    if (framed) {
+      // Embeddable: the upstream CSP stays byte-for-byte, with no XFO.
+      headers.delete('X-Frame-Options');
+    } else {
       headers.set('X-Frame-Options', 'DENY');
       const csp = headers.get('Content-Security-Policy');
       headers.set(

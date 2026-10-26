@@ -131,6 +131,7 @@ export function workerEntry({
   proxyMatcher,
   assetsBinding,
   mounts: effectiveMounts,
+  seoPolicy = null,
 }) {
   const name = `${pascal(app)}Environment`;
   const mounts = effectiveMounts ?? defaultMounts({ app, rootHost });
@@ -197,6 +198,9 @@ interface WorkerContext {
 
 type ApiEntry = typeof import('${moduleFrom('../', API_ENTRY)}');
 
+// Robots policy: this app's entry in packages/utils/src/seo-policy.json.
+const seoPolicy = ${seoPolicy ? JSON.stringify(seoPolicy) : 'null'};
+
 ${mountComment}
 const mounts = {
   app: ${quote(app)},
@@ -245,6 +249,7 @@ export default {
           mounts,
           publicAssets,
           framablePaths: appConfig.framablePaths,
+          seoPolicy,
         })
       : response;
   },
@@ -257,16 +262,14 @@ export function appConfigModule({ app }) {
   return `// App-owned start-bridge Worker options for ${app}: the codemod created this
 // file and never overwrites it. See "Worker options" in
 // apps/docs/build/devops/start-bridge-codemod.mdx.
-import { createRootResponsePolicy } from '${BRIDGE.responsePolicy}';
+import { appRobots, createRootResponsePolicy } from '${BRIDGE.responsePolicy}';
 import { defineBridgeAppConfig } from '${BRIDGE.appConfig}';
 
-export default defineBridgeAppConfig<{ TUTURUUU_NOINDEX?: string }>({
-  // Robots, framing, sniffing, referrer and private caching on every
-  // response; only GET/HEAD static files keep their own caching.
-  wrapResponse: createRootResponsePolicy({
-    seo: ({ env }) =>
-      env?.TUTURUUU_NOINDEX === '1' ? 'noindex, nofollow' : 'index, follow',
-  }),
+export default defineBridgeAppConfig({
+  // Robots (the app's seo-policy.json allowlist on its canonical host),
+  // framing, sniffing, referrer and private caching on every response; only
+  // GET/HEAD static files keep their own caching.
+  wrapResponse: createRootResponsePolicy({ seo: appRobots }),
 });
 `;
 }

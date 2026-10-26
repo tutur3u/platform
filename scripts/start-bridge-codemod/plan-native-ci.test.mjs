@@ -368,12 +368,15 @@ test('the generated Worker states its effective mounts and fails safely', (t) =>
     /bridgeErrorResponse,\n\s*createBridgeHandler,\n\} from '@tuturuuu\/start-bridge\/start\/handler';/
   );
 
-  // Each built Worker proves the policy on a page, an API response and a 404.
+  // Each built Worker proves the policy on a rendered page, a JSON API
+  // response and a 404 page; status and content come before the headers.
   assert.match(
     runtime,
-    /\['SSR page', '\/'\],\s*\['API response', '\/api\/(?:build-info|__native-smoke-policy__)'\],\s*\['missing page', '\/__native-smoke-missing__'\],/
+    /^const POLICY_PROBES = \[\{"kind":"page","path":"\/"\},\{"kind":"api","path":"\/api\/build-info"\},\{"kind":"notFound","path":"\/__native-smoke-missing__"\}\];$/m
   );
   for (const check of [
+    /assert\.equal\(status, 200, where\);\s*assert\.match\(type, \/application\\\/json\/u, where\);/,
+    /assert\.equal\(status, probe\.kind === 'page' \? 200 : 404, where\);\s*assert\.match\(type, \/text\\\/html\/u, where\);\s*assert\.match\(body, \/<html\[\\s>\]\/iu/,
     /no-store/,
     /headers\['x-robots-tag'\]/,
     /headers\['x-frame-options'\], 'DENY'/,
@@ -389,4 +392,48 @@ test('the generated Worker states its effective mounts and fails safely', (t) =>
     ).map((write) => write.path),
     []
   );
+});
+
+test('policy probes are real pages, never a redirect standing in', (t) => {
+  const root = createFixtureRepo(t);
+  writeTree(root, {
+    '.github/workflows/native-start-app.yaml': 'on: workflow_call\n',
+  });
+  const routesPath = path.join(root, 'apps/demo/start-bridge.routes.json');
+  const withRoutes = (extra) => {
+    applyPlan(root, plan(root), { spawn: () => ({ status: 0 }) });
+    const routes = JSON.parse(fs.readFileSync(routesPath, 'utf8'));
+    fs.writeFileSync(
+      routesPath,
+      `${JSON.stringify({ ...routes, ...extra })}\n`
+    );
+    return plan(root);
+  };
+  // Finance/Track: "/" redirects to login, so no anonymous page is declared.
+  const redirecting = withRoutes({ runtime: { '/': { redirect: '/login' } } });
+  assert.match(
+    redirecting.problems.join('\n'),
+    /runtimeProbes\.page: declare an anonymous page rendering 200 HTML/
+  );
+  // An explicit page probe, or an explicit reason to skip it, is accepted.
+  for (const page of [
+    '/pricing',
+    { skip: 'auth-only; cloudflare/signed-ssr.runtime.mjs' },
+  ]) {
+    const result = withRoutes({
+      runtime: { '/': { redirect: '/login' } },
+      runtimeProbes: { page },
+    });
+    assert.deepEqual(result.problems, [], JSON.stringify(page));
+    const runtime = result.writes.find((write) =>
+      write.path.endsWith('native-built-worker.runtime.mjs')
+    ).content;
+    assert.ok(
+      runtime.includes(
+        typeof page === 'string'
+          ? `{"kind":"page","path":"${page}"}`
+          : `{"kind":"page","skip":"${page.skip}"}`
+      )
+    );
+  }
 });

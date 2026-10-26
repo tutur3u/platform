@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   mountedPath,
+  resolveRuntimeProbes,
   runtimeExpectationProblems,
   runtimeOutcomeFailure,
 } from './runtime-outcome.mjs';
@@ -144,4 +145,58 @@ test('the apex path of an app-relative path', () => {
   assert.equal(mountedPath('/forms', '/'), '/forms');
   assert.equal(mountedPath('/forms', '/en'), '/forms/en');
   assert.equal(mountedPath('', '/'), '');
+});
+
+test('policy probes default to real responses and never guess', () => {
+  assert.deepEqual(
+    resolveRuntimeProbes(undefined, {
+      expectations: { '/': 200 },
+      hasBuildInfo: true,
+    }),
+    {
+      probes: [
+        { kind: 'page', path: '/' },
+        { kind: 'api', path: '/api/build-info' },
+        { kind: 'notFound', path: '/__native-smoke-missing__' },
+      ],
+      problems: [],
+    }
+  );
+  // A redirecting root and no build-info: nothing to default to.
+  const missing = resolveRuntimeProbes(undefined, {
+    expectations: { '/': { redirect: '/login' }, '/vi': 307 },
+    hasBuildInfo: false,
+  });
+  assert.equal(missing.problems.length, 2);
+  assert.match(missing.problems.join('\n'), /runtimeProbes\.page: declare/);
+  assert.match(missing.problems.join('\n'), /runtimeProbes\.api: declare/);
+  // Declared paths and explicit skips.
+  assert.deepEqual(
+    resolveRuntimeProbes(
+      { page: '/pricing', api: { skip: 'no anonymous API' }, notFound: '/x' },
+      { expectations: {}, hasBuildInfo: false }
+    ).probes,
+    [
+      { kind: 'page', path: '/pricing' },
+      { kind: 'api', skip: 'no anonymous API' },
+      { kind: 'notFound', path: '/x' },
+    ]
+  );
+  for (const declared of [
+    [],
+    'x',
+    { page: 'pricing' },
+    { page: '//evil' },
+    { page: { skip: ' ' } },
+    { page: { skip: 'x', path: '/' } },
+    { other: '/x' },
+  ])
+    assert.notDeepEqual(
+      resolveRuntimeProbes(declared, {
+        expectations: { '/': 200 },
+        hasBuildInfo: true,
+      }).problems,
+      [],
+      JSON.stringify(declared)
+    );
 });

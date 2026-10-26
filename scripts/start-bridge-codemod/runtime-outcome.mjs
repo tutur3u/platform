@@ -82,3 +82,60 @@ export function runtimeOutcomeFailure({
 export function mountedPath(base, path) {
   return path === '/' ? base : `${base}${path}`;
 }
+
+const PROBE_KINDS = ['page', 'api', 'notFound'];
+const PROBE_DEFAULTS = {
+  page: 'an anonymous page rendering 200 HTML',
+  api: 'an anonymous API route answering 200 JSON',
+  notFound: 'a path the app answers with its 404 HTML page',
+};
+
+/**
+ * The response-policy probes of the generated runtime gate: each must be a
+ * real rendered page, JSON API response and 404 page, never a redirect.
+ * Defaults: the first `runtime` path expecting 200, `/api/build-info`, and
+ * `/__native-smoke-missing__`. `runtimeProbes` in start-bridge.routes.json
+ * overrides a probe path or skips it with a reason (an auth-only app covers
+ * it with its isolated auth fixture in its own `cloudflare/*.runtime.mjs`).
+ */
+export function resolveRuntimeProbes(declared, { expectations, hasBuildInfo }) {
+  const problems = [];
+  if (
+    declared !== undefined &&
+    (typeof declared !== 'object' ||
+      declared === null ||
+      Array.isArray(declared))
+  )
+    return { probes: [], problems: ['runtimeProbes must be an object'] };
+  for (const key of Object.keys(declared ?? {}))
+    if (!PROBE_KINDS.includes(key))
+      problems.push(
+        `runtimeProbes.${key} is not a probe (page, api, notFound)`
+      );
+  const defaults = {
+    page: Object.entries(expectations ?? {}).find(
+      ([, expected]) => expected === 200
+    )?.[0],
+    api: hasBuildInfo ? '/api/build-info' : undefined,
+    notFound: '/__native-smoke-missing__',
+  };
+  const probes = [];
+  for (const kind of PROBE_KINDS) {
+    const value = declared?.[kind] ?? defaults[kind];
+    if (typeof value === 'string' && /^\/(?!\/)/u.test(value))
+      probes.push({ kind, path: value });
+    else if (
+      value &&
+      typeof value === 'object' &&
+      Object.keys(value).length === 1 &&
+      typeof value.skip === 'string' &&
+      value.skip.trim()
+    )
+      probes.push({ kind, skip: value.skip.trim() });
+    else
+      problems.push(
+        `runtimeProbes.${kind}: declare ${PROBE_DEFAULTS[kind]} (an app-relative path), or { "skip": "<reason>" }`
+      );
+  }
+  return { probes, problems };
+}

@@ -43,6 +43,8 @@ export const API_ENTRY = `${GENERATED_DIR}/api-entry.ts`;
 export const CENTRAL_FIRST = `${GENERATED_DIR}/central-first.ts`;
 /** App-owned Worker options; created once, never overwritten. */
 export const APP_CONFIG = 'start-bridge.config.ts';
+/** Per-app robots allowlist shared with Next (`@tuturuuu/utils/seo`). */
+export const SEO_POLICY = 'packages/utils/src/seo-policy.json';
 export const APP_BASE = `${GENERATED_DIR}/app-base.ts`;
 /** `next/og` on Workers, as Meet runs it. */
 export const OG_PACKAGE = '@cloudflare/pages-plugin-vercel-og';

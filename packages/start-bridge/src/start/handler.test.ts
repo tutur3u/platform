@@ -415,3 +415,39 @@ describe('the bridge answers its own failures safely', () => {
     expect(bridgeErrorResponse().status).toBe(500);
   });
 });
+
+describe('one framable pattern shared by the handler and the policy', () => {
+  it('agrees on every request even with a g-flagged RegExp', async () => {
+    const embed = /^\/api\/embed(?:\/|$)/gu;
+    const framablePaths = [embed];
+    const handler = createBridgeHandler<Env, typeof ctx>({
+      mounts: { app: 'cms', rootHosts: ['cms.tuturuuu.com'] },
+      start: { fetch: async () => new Response('<html></html>') },
+      proxy: async () => NextResponse.next(),
+      assets: (env) => env.ASSETS,
+      centralApiOrigin: () => 'https://central.example',
+      forwardApi: async () =>
+        new Response('widget', {
+          headers: {
+            'Content-Security-Policy': 'sandbox allow-scripts',
+            'X-Frame-Options': 'SAMEORIGIN',
+          },
+        }),
+      csp: (nonce) => `script-src 'nonce-${nonce}'; frame-ancestors 'none'`,
+      framablePaths,
+    });
+    const policy = createRootResponsePolicy({ seo: 'noindex' });
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      const request = new Request('https://cms.tuturuuu.com/api/embed/w1');
+      const headers = policy(await handler(request, env, ctx), {
+        request,
+        framablePaths,
+      }).headers;
+      expect(headers.get('Content-Security-Policy'), `#${attempt}`).toBe(
+        'sandbox allow-scripts'
+      );
+      expect(headers.get('X-Frame-Options'), `#${attempt}`).toBeNull();
+    }
+    expect(embed.lastIndex).toBe(0);
+  });
+});

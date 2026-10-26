@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
+  appRobots,
   createRootResponsePolicy,
   denyFrameAncestors,
   type ResponsePolicyContext,
@@ -277,12 +278,15 @@ describe('framing and document headers', () => {
       'utf8'
     );
     expect(source).not.toMatch(/^import (?!type)[^;]*from '\.\.?\//mu);
-    // Its one package import is itself import-free.
-    const shared = readFileSync(
-      new URL('../../../utils/src/framable-paths.ts', import.meta.url),
-      'utf8'
-    );
-    expect(shared).not.toMatch(/^import /mu);
+    // Its package imports are themselves import-free (no runtime JSON).
+    for (const file of ['framable-paths.ts', 'seo-robots.ts'])
+      expect(
+        readFileSync(
+          new URL(`../../../utils/src/${file}`, import.meta.url),
+          'utf8'
+        ),
+        file
+      ).not.toMatch(/^import /mu);
   });
 });
 
@@ -349,5 +353,118 @@ describe('framable paths (uploaded WebGL builds)', () => {
     );
     expect(headers.get('X-Frame-Options')).toBeNull();
     expect(headers.get('Content-Security-Policy')).toBeNull();
+  });
+});
+
+describe('app robots from seo-policy.json', () => {
+  const seoPolicy = {
+    origin: 'https://forms.tuturuuu.com',
+    publicPaths: [''],
+    publicPatterns: ['f/[^/]+'],
+  };
+  const robotsPolicy = createRootResponsePolicy({ seo: appRobots });
+  const robotsOf = (
+    url: string,
+    env: { TUTURUUU_NOINDEX?: string } = {},
+    headers?: HeadersInit
+  ) =>
+    robotsPolicy(new Response('x', { headers }), {
+      request: new Request(url),
+      env,
+      seoPolicy,
+    }).headers.get('X-Robots-Tag');
+
+  it('leaves the public allowlist on the canonical host indexable', () => {
+    expect(robotsOf('https://forms.tuturuuu.com/')).toBeNull();
+    expect(robotsOf('https://forms.tuturuuu.com/vi/f/abc')).toBeNull();
+  });
+
+  it('keeps private paths, other hosts and staging private', () => {
+    for (const url of [
+      'https://forms.tuturuuu.com/api/v1/forms',
+      'https://forms.tuturuuu.com/login',
+      'https://forms.tuturuuu.com/f/abc/edit',
+      'https://forms-staging.tuturuuu.com/',
+    ])
+      expect(robotsOf(url), url).toBe('noindex, nofollow, nosnippet');
+    expect(
+      robotsOf('https://forms.tuturuuu.com/', { TUTURUUU_NOINDEX: '1' })
+    ).toBe('noindex, nofollow, nosnippet');
+    // No policy entry: private.
+    expect(
+      createRootResponsePolicy({ seo: appRobots })(new Response('x'), {
+        request: new Request('https://forms.tuturuuu.com/'),
+        seoPolicy: null,
+      }).headers.get('X-Robots-Tag')
+    ).toBe('noindex, nofollow, nosnippet');
+  });
+
+  it('never overrides an upstream noindex', () => {
+    expect(
+      robotsOf('https://forms.tuturuuu.com/', {}, { 'X-Robots-Tag': 'noindex' })
+    ).toBe('noindex');
+    const index = createRootResponsePolicy({ seo: 'index, follow' });
+    expect(
+      apply(
+        'https://forms.tuturuuu.com/',
+        { headers: { 'X-Robots-Tag': 'NoIndex, follow' } },
+        {},
+        index
+      ).get('X-Robots-Tag')
+    ).toBe('NoIndex, follow');
+    // A private decision still replaces an indexable upstream value.
+    expect(
+      robotsOf(
+        'https://forms.tuturuuu.com/login',
+        {},
+        { 'X-Robots-Tag': 'index, follow' }
+      )
+    ).toBe('noindex, nofollow, nosnippet');
+  });
+});
+
+describe('framable responses and stateful patterns', () => {
+  const sandbox = 'sandbox allow-scripts';
+  const webgl = '/api/v1/workspaces/ws-1/external-projects/assets/a-1/webgl';
+
+  it('removes an upstream X-Frame-Options and keeps the CSP byte-for-byte', () => {
+    for (const xfo of ['DENY', 'SAMEORIGIN']) {
+      const headers = apply(`https://cms.tuturuuu.com${webgl}`, {
+        headers: {
+          'X-Frame-Options': xfo,
+          'Content-Security-Policy': `${sandbox};  FRAME-ANCESTORS https://a.test`,
+        },
+      });
+      expect(headers.get('X-Frame-Options'), xfo).toBeNull();
+      expect(headers.get('Content-Security-Policy')).toBe(
+        `${sandbox};  FRAME-ANCESTORS https://a.test`
+      );
+    }
+  });
+
+  it('matches g/y app patterns the same on every request', () => {
+    for (const pattern of [/^\/embed\//gu, /^\/embed\//uy]) {
+      const framablePaths = [pattern];
+      for (let attempt = 0; attempt < 4; attempt += 1)
+        expect(
+          apply(
+            'https://forms.tuturuuu.com/embed/f1',
+            {},
+            { framablePaths }
+          ).get('X-Frame-Options'),
+          `${pattern} #${attempt}`
+        ).toBeNull();
+      expect(pattern.lastIndex).toBe(0);
+    }
+    const own = createRootResponsePolicy({
+      seo: 'noindex',
+      framable: [/^\/widget\//gu],
+    });
+    for (let attempt = 0; attempt < 3; attempt += 1)
+      expect(
+        apply('https://forms.tuturuuu.com/widget/w', {}, {}, own).get(
+          'X-Frame-Options'
+        )
+      ).toBeNull();
   });
 });

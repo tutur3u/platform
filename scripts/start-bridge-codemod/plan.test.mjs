@@ -263,19 +263,44 @@ test('the app-owned Worker config is created once and never overwritten', (t) =>
     (write) => write.path === 'apps/demo/start-bridge.config.ts'
   );
   assert.equal(config?.owner, 'app-owned');
-  // New conversions get the shared response policy by default.
+  // New conversions get the shared response policy, robots from the app's
+  // seo-policy.json allowlist (never a blanket "index").
   assert.match(
     config?.content ?? '',
-    /import \{ createRootResponsePolicy \} from '@tuturuuu\/start-bridge\/response-policy';/
+    /import \{ appRobots, createRootResponsePolicy \} from '@tuturuuu\/start-bridge\/response-policy';/
   );
   assert.match(
     config?.content ?? '',
-    /wrapResponse: createRootResponsePolicy\(\{\n {4}seo: \(\{ env \}\) =>\n {6}env\?\.TUTURUUU_NOINDEX === '1' \? 'noindex, nofollow' : 'index, follow',/
+    /wrapResponse: createRootResponsePolicy\(\{ seo: appRobots \}\),/
   );
+  assert.doesNotMatch(config?.content ?? '', /index, follow/);
   const worker = first.writes.find(
     (write) => write.path === 'apps/demo/cloudflare/worker.ts'
   )?.content;
   assert.match(worker, /import appConfig from '\.\.\/start-bridge\.config';/);
+  // No seo-policy.json entry for the fixture app: private everywhere.
+  assert.match(worker, /\nconst seoPolicy = null;\n/);
+  assert.match(
+    worker,
+    /framablePaths: appConfig\.framablePaths,\s*seoPolicy,\s*\}\)/
+  );
+  writeTree(root, {
+    'packages/utils/src/seo-policy.json': `${JSON.stringify({
+      demo: {
+        origin: 'https://demo.tuturuuu.com',
+        localePrefix: 'never',
+        publicPaths: [''],
+        publicPatterns: ['f/[^/]+'],
+      },
+    })}\n`,
+  });
+  assert.match(
+    plan(root).writes.find(
+      (write) => write.path === 'apps/demo/cloudflare/worker.ts'
+    )?.content ?? '',
+    /\nconst seoPolicy = \{"origin":"https:\/\/demo\.tuturuuu\.com","localePrefix":"never","publicPaths":\[""\],"publicPatterns":\["f\/\[\^\/\]\+"\]\};\n/
+  );
+  fs.rmSync(path.join(root, 'packages/utils/src/seo-policy.json'));
   assert.match(worker, /\.\.\.appConfig\.mounts,\n\};/);
   assert.match(worker, /\n {4}mounts,\n {4}csp: appConfig\.csp,/);
   // The policy gets the effective mounts and public files from the Worker,
@@ -289,7 +314,7 @@ test('the app-owned Worker config is created once and never overwritten', (t) =>
   assert.match(worker, /\n {4}framablePaths: appConfig\.framablePaths,\n/);
   assert.match(
     worker,
-    /wrapResponse\(response, \{[\s\S]*?publicAssets,\s*framablePaths: appConfig\.framablePaths,\s*\}\)/
+    /wrapResponse\(response, \{[\s\S]*?publicAssets,\s*framablePaths: appConfig\.framablePaths,\s*seoPolicy,\s*\}\)/
   );
   applyPlan(root, first, { spawn: noCommands });
   // The app's own options survive every re-run.

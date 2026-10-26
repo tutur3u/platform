@@ -1,3 +1,4 @@
+import type { AppSeoPolicy } from '@tuturuuu/utils/seo-robots';
 import type { AppMountConfig } from '../core/mounts';
 
 /**
@@ -61,6 +62,8 @@ export interface BridgeAppConfig<Env = unknown> {
       mounts?: Omit<AppMountConfig, 'app'> & { app?: string };
       publicAssets?: ReadonlySet<string>;
       framablePaths?: readonly RegExp[];
+      /** The app's seo-policy.json entry, emitted into the generated Worker. */
+      seoPolicy?: AppSeoPolicy | null;
     }
   ) => Response | Promise<Response>;
 }

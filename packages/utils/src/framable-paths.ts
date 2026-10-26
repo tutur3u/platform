@@ -24,3 +24,22 @@ export function framablePathRegexes(
 ): RegExp[] {
   return patterns.map((pattern) => new RegExp(`^/${pattern}(?:/|$)`, 'u'));
 }
+
+/** The pattern without `g`/`y`, whose `lastIndex` would make `test` stateful. */
+function stateless(pattern: RegExp) {
+  return pattern.global || pattern.sticky
+    ? new RegExp(pattern.source, pattern.flags.replace(/[gy]/gu, ''))
+    : pattern;
+}
+
+/**
+ * One stateless matcher over the platform list plus app patterns. App
+ * patterns are cloned without `g`/`y`, so repeated requests, and a handler
+ * and a response wrapper sharing the same config instances, always agree.
+ */
+export function createFramablePathMatcher(
+  extra: readonly RegExp[] = []
+): (path: string) => boolean {
+  const patterns = [...framablePathRegexes(), ...extra.map(stateless)];
+  return (path) => patterns.some((pattern) => pattern.test(path));
+}
