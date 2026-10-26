@@ -73,7 +73,7 @@ function validUrl(value: string | undefined) {
       url.hostname === '127.0.0.1' ||
       url.hostname === 'localhost' ||
       url.hostname === '[::1]';
-    // Plain HTTP is accepted only for local Wrangler/workerd verification.
+    // Plain HTTP is accepted only for local workerd verification.
     return url.protocol === 'https:' || (url.protocol === 'http:' && loopback)
       ? url.origin
       : null;
@@ -88,21 +88,34 @@ type RuntimeOverride = {
   families: ReadonlySet<AbuseGuardFamily>;
 };
 
+type RuntimeInput = {
+  binding: AbuseGuardBinding;
+  pepper: string | undefined;
+  families: string | undefined;
+  timeoutMs?: string;
+};
+
 let runtimeOverride: RuntimeOverride | null = null;
+let runtimeInput: RuntimeInput | null = null;
 const clientCache = new Map<string, AbuseGuardClient>();
 
 /**
  * Native Workers inject their `ABUSE_GUARD` service binding at the framework
- * adapter. Pass `null` to clear it (tests, or a binding removed at runtime).
+ * adapter, once per request; an unchanged input is a no-op. Pass `null` to
+ * clear it (tests, or a binding removed at runtime).
  */
-export function configureAbuseGuardRuntime(
-  input: {
-    binding: AbuseGuardBinding;
-    pepper: string | undefined;
-    families: string | undefined;
-    timeoutMs?: string;
-  } | null
-) {
+export function configureAbuseGuardRuntime(input: RuntimeInput | null) {
+  if (
+    input &&
+    runtimeInput &&
+    input.binding === runtimeInput.binding &&
+    input.pepper === runtimeInput.pepper &&
+    input.families === runtimeInput.families &&
+    input.timeoutMs === runtimeInput.timeoutMs
+  ) {
+    return;
+  }
+  runtimeInput = input;
   clientCache.clear();
   const pepper = strong(input?.pepper);
   runtimeOverride =

@@ -305,8 +305,9 @@ describe('selectAbuseGuard', () => {
         results: [{ op: 'kv.get', v: 'passed' }],
       })),
     }));
+    const binding = { run };
     configureAbuseGuardRuntime({
-      binding: { run },
+      binding,
       pepper: PEPPER,
       families: 'password',
     });
@@ -316,5 +317,16 @@ describe('selectAbuseGuard', () => {
     if (selection.kind !== 'durable-object') return;
     await expect(selection.client.get('k')).resolves.toBe('passed');
     expect(run).toHaveBeenCalledTimes(1);
+
+    // Re-configuring with the same per-request input keeps the cached client.
+    configureAbuseGuardRuntime({
+      binding,
+      pepper: PEPPER,
+      families: 'password',
+    });
+    const again = selectAbuseGuard('password', {});
+    expect(again.kind === 'durable-object' && again.client).toBe(
+      selection.client
+    );
   });
 });
