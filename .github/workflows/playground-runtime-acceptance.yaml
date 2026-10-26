@@ -17,7 +17,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: playground-runtime-${{ github.event.pull_request.number || github.ref }}
+  group: playground-runtime-${{ github.event.pull_request.number || github.ref }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
   # A started real sandbox must finish its bounded cleanup.
   cancel-in-progress: false
   queue: max

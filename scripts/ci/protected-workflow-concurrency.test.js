@@ -145,10 +145,23 @@ function context(
 }
 function expression(source, github) {
   return vm.runInNewContext(
-    source,
+    // GitHub's `labels.*.name` object filter is not JavaScript.
+    source.replaceAll('labels.*.name', 'labelNames'),
     {
-      github,
+      github: {
+        ...github,
+        event: {
+          ...github.event,
+          pull_request: {
+            ...github.event?.pull_request,
+            labelNames: (github.event?.pull_request?.labels ?? []).map(
+              (label) => label.name
+            ),
+          },
+        },
+      },
       inputs: {},
+      contains: (items, item) => items.includes(item),
       startsWith: (value, prefix) => value.startsWith(prefix),
       format: (template, ...values) =>
         template.replace(/\{([0-9]+)\}/g, (_, index) => values[index]),
