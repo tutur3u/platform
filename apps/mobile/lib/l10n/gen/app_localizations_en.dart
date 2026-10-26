@@ -855,6 +855,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get assistantLocalSourceEmpty => 'Download a model below';
+
+  @override
   String get assistantLocalStop => 'Stop local generation';
 
   @override
@@ -943,6 +946,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get assistantModelOutputCost => 'Output';
+
+  @override
+  String get assistantModelSourceTitle => 'Model source';
 
   @override
   String get assistantModelUnfavorite => 'Remove from favorites';

@@ -123,9 +123,8 @@ void registerSettingsAssistantEntrypointChecks() {
         expect(tester.element(hub).read<WorkspaceCubit>(), same(h.workspaces));
         expect(tester.widget<AssistantSettingsHub>(hub).workspaceId, 'ws');
         // Continue through the actual caller and hub into both routed editors.
-        final personality = find.widgetWithText(
-          AppListTile,
-          l10n.assistantPersonalityTitle,
+        final personality = find.byKey(
+          const ValueKey('assistant-settings-personality'),
         );
         await tester.ensureVisible(personality);
         await tester.tap(personality);
@@ -155,13 +154,6 @@ void registerSettingsAssistantEntrypointChecks() {
         expect(find.text('Routed Nova').hitTestable(), findsOneWidget);
         expect(settingsRepository.writes, 1);
         await tester.binding.handlePopRoute();
-        await _settle(tester);
-        final memory = find.widgetWithText(
-          AppDisclosure,
-          l10n.assistantMemoryTitle,
-        );
-        await tester.ensureVisible(memory);
-        await tester.tap(find.text(l10n.assistantMemoryTitle));
         await _settle(tester);
         final memoryRow = find.text('Synthetic preference');
         await tester.ensureVisible(memoryRow);
