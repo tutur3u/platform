@@ -41,6 +41,7 @@ export async function publicationReceipt({ url, env, fetcher, app }) {
   const decoded = execFileSync(
     'python3',
     [
+      '-I',
       '-c',
       `
 import io,json,sys,zipfile

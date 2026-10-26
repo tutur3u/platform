@@ -90,6 +90,15 @@ route, then rehearse canonical rollback before creating exactly
 `calendar.tuturuuu.com/*` → `tuturuuu-calendar`. Record its returned route ID.
 Rollback deletes that exact verified route ID and confirms the retained Vercel
 fallback; the accepted proxied baseline avoids a DNS propagation wait.
+The rollback target is Vercel serving the same legacy behavior as before cutover.
+The accepted CF baseline has robots 200, login redirects 307, protected requests
+401, uncached Vercel identity and GET/HEAD ACME origin reachability. The legacy
+Next app omits `X-Frame-Options: DENY` and redirects crawler requests instead of
+rendering native SSR. These are pre-existing legacy behavior: Cloudflare passes
+response headers through and the status paths retain the legacy Next responses.
+Record those differences instead of claiming the legacy target passes native
+acceptance. Native smoke and post-flip security expectations remain unchanged.
+
 
 [Vercel uses HTTP-01 for non-wildcard certificate renewal](https://vercel.com/docs/domains/working-with-ssl).
 Calendar's Worker forwards only GET/HEAD requests on the canonical host under

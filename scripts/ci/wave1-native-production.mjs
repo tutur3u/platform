@@ -57,7 +57,7 @@ export async function main({
   appRoot,
   preflightTimeoutMs = 90_000,
 } = {}) {
-  const [app, sha, mode = 'all'] = argv;
+  const [app, sha, mode] = argv;
   assert.ok(['all', 'preflight', 'upload', 'verify'].includes(mode));
   assert.ok(Object.hasOwn(profiles.apps, app), 'Unknown wave-1 frontend');
   assert.match(sha ?? '', /^[a-f0-9]{40}$/);
@@ -224,6 +224,12 @@ export async function main({
       if (matchesVersion(version, sha, digest)) matches.push(version.id);
     }
     assert.ok(matches.length <= 1, 'Ambiguous matching production versions');
+    if (matches.length)
+      assert.deepEqual(
+        deployments.deployments[0].versions,
+        [{ version_id: matches[0], percentage: 100 }],
+        'Matching production version must be active at 100% before upload'
+      );
     const candidates = matches.length
       ? deployments.deployments.filter(
           (deployment) =>
