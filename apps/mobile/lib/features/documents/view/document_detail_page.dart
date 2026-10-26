@@ -5,7 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/core/ui/components/app_loading_indicator.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/documents/workspace_document.dart';
 import 'package:mobile/data/repositories/document_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -140,17 +140,17 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
     final wsId = _wsId;
     if (wsId == null || wsId.isEmpty) return;
 
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showAppDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(context.l10n.documentsDelete),
+      builder: (context) => AppDialog(
+        title: context.l10n.documentsDelete,
         content: Text(context.l10n.documentsDeleteConfirm),
         actions: [
-          TextButton(
+          AppButton.ghost(
             onPressed: () => Navigator.of(context).pop(false),
             child: Text(context.l10n.commonCancel),
           ),
-          FilledButton(
+          AppButton.primary(
             onPressed: () => Navigator.of(context).pop(true),
             child: Text(context.l10n.commonDelete),
           ),
@@ -288,8 +288,7 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
                                   onChanged: (_) => setState(() {}),
                                 ),
                                 const SizedBox(height: 10),
-                                SwitchListTile(
-                                  contentPadding: EdgeInsets.zero,
+                                AppToggleRow(
                                   title: Text(context.l10n.documentsPublic),
                                   value: _isPublic,
                                   onChanged: (value) {

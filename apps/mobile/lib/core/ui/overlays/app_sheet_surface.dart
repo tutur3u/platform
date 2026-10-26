@@ -17,6 +17,15 @@ class AppSheetSurface extends StatelessWidget {
   final bool expands;
   final bool dialog;
 
+  /// Whether [context] already sits on a sheet or dialog surface.
+  static bool hosts(BuildContext context) =>
+      context.getInheritedWidgetOfExactType<_HostHandle>() != null;
+
+  /// Marks [child] as hosted by a caller-drawn surface without a handle, so
+  /// bodies such as `AppDialog` do not draw a second surface.
+  static Widget markHosted(Widget child) =>
+      _HostHandle(drawn: false, child: child);
+
   @override
   Widget build(BuildContext context) {
     final c = AppTokens.of(context).colorScheme;

@@ -6,9 +6,9 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile/core/icons/platform_icon.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
-import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
+import 'package:mobile/core/ui/overlays/show_app_sheet.dart' show showAppDialog;
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/data/models/task_board_summary.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
@@ -357,7 +357,8 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
   }
 
   Future<void> _openCreateBoard() async {
-    final result = await shad.showDialog<TaskBoardFormValue>(
+    final result = await showAppDialog<TaskBoardFormValue>(
+      useRootNavigator: true,
       context: context,
       builder: (_) => TaskBoardFormDialog(
         title: context.l10n.taskBoardsCreate,
@@ -380,7 +381,8 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
   }
 
   Future<void> _openEditBoard(TaskBoardSummary board) async {
-    final result = await shad.showDialog<TaskBoardFormValue>(
+    final result = await showAppDialog<TaskBoardFormValue>(
+      useRootNavigator: true,
       context: context,
       builder: (_) => TaskBoardFormDialog(
         initialName: board.name,
@@ -572,7 +574,6 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
 
   void _showFilterMenu(BuildContext context, TaskBoardsFilter selected) {
     final cubit = context.read<TaskBoardsCubit>();
-    final isCompact = context.isCompact;
     unawaited(
       showAdaptiveDrawer(
         context: context,
@@ -585,11 +586,7 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
                 return InkWell(
                   onTap: () {
                     cubit.setFilter(filter);
-                    if (isCompact) {
-                      unawaited(shad.closeOverlay<void>(drawerContext));
-                    } else {
-                      unawaited(Navigator.maybePop(drawerContext));
-                    }
+                    unawaited(Navigator.maybePop(drawerContext));
                   },
                   child: Padding(
                     padding: const EdgeInsets.symmetric(

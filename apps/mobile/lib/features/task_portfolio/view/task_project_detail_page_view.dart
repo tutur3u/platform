@@ -230,13 +230,13 @@ class _TaskProjectDetailViewState extends State<_TaskProjectDetailView> {
     String? selectedTaskId;
     var searchQuery = '';
     final didLink =
-        await shad.showDialog<bool>(
+        await showAppDialog<bool>(
           context: context,
           builder: (context) {
             return StatefulBuilder(
               builder: (context, setState) {
-                return shad.AlertDialog(
-                  title: Text(context.l10n.taskPortfolioLinkTask),
+                return AppDialog(
+                  title: context.l10n.taskPortfolioLinkTask,
                   content: SizedBox(
                     width: double.maxFinite,
                     child: availableTasks.isEmpty

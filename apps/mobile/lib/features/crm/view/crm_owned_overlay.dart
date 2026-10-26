@@ -13,7 +13,7 @@ extension _CrmOwnedSheets on _CrmPageState {
   Future<T?> _showOwnedDialog<T>({
     required BuildContext context,
     required WidgetBuilder builder,
-  }) => showDialog<T>(
+  }) => showAppDialog<T>(
     context: context,
     builder: (context) =>
         _CrmOwnedOverlay(alive: _alive, child: builder(context)),

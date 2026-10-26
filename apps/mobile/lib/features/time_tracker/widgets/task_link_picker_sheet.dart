@@ -101,11 +101,6 @@ class _TaskLinkPickerSheetState extends State<TaskLinkPickerSheet> {
   }
 
   Future<void> _closeSheet(BuildContext context) async {
-    if (context.isCompact) {
-      await shad.closeOverlay<void>(context);
-      return;
-    }
-
     await Navigator.maybePop(context);
   }
 

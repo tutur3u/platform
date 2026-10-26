@@ -327,17 +327,17 @@ class _MeetPageState extends State<MeetPage> {
     final wsId = _wsId;
     if (wsId == null || wsId.isEmpty) return;
 
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showAppDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(context.l10n.meetDelete),
+      builder: (context) => AppDialog(
+        title: context.l10n.meetDelete,
         content: Text(context.l10n.meetDeleteConfirm),
         actions: [
-          TextButton(
+          AppButton.ghost(
             onPressed: () => Navigator.of(context).pop(false),
             child: Text(context.l10n.commonCancel),
           ),
-          FilledButton(
+          AppButton.primary(
             onPressed: () => Navigator.of(context).pop(true),
             child: Text(context.l10n.commonDelete),
           ),

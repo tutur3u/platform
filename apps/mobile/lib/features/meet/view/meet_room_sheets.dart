@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
+import 'package:mobile/core/ui/components/app_toggle_row.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/meet/data/meet_call_controller.dart';
 import 'package:mobile/features/meet/data/meet_room_code.dart';
 import 'package:mobile/features/meet/view/meet_assistant_review_card.dart';
@@ -340,21 +342,24 @@ Future<void> showMeetSettingsSheet(
         animation: call,
         builder: (context, _) => ListView(
           children: [
-            SwitchListTile(
-              secondary: const Icon(Icons.lock_outline),
+            AppToggleRow(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              leading: const Icon(LucideIcons.lock),
               title: Text(context.l10n.meetLockRoom),
               value: call.stage['locked'] == true,
               onChanged: (locked) => call.setRoomLocked(locked: locked),
             ),
-            SwitchListTile(
-              secondary: const Icon(Icons.chat_bubble_outline),
+            AppToggleRow(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              leading: const Icon(LucideIcons.messageCircle),
               title: Text(context.l10n.meetSaveChat),
               value: call.settings['saveChat'] != false,
               onChanged: (enabled) =>
                   call.updateSettings({'saveChat': enabled}),
             ),
-            SwitchListTile(
-              secondary: const Icon(Icons.description_outlined),
+            AppToggleRow(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              leading: const Icon(LucideIcons.fileText),
               title: Text(context.l10n.meetShareNotes),
               value: call.settings['shareNotes'] == true,
               onChanged: (enabled) =>
@@ -365,16 +370,18 @@ Future<void> showMeetSettingsSheet(
               leading: const Icon(Icons.fiber_manual_record_outlined),
               title: Text(context.l10n.meetRecordings),
             ),
-            SwitchListTile(
-              secondary: const Icon(Icons.lock_open_outlined),
+            AppToggleRow(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              leading: const Icon(LucideIcons.lockOpen),
               title: Text(context.l10n.meetRecordingAccess),
               subtitle: Text(context.l10n.meetRecordingAccessHint),
               value: call.settings['shareRecordings'] == true,
               onChanged: (enabled) =>
                   call.updateSettings({'shareRecordings': enabled}),
             ),
-            SwitchListTile(
-              secondary: const Icon(Icons.people_outline),
+            AppToggleRow(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              leading: const Icon(LucideIcons.users),
               title: Text(context.l10n.meetParticipantRecording),
               subtitle: Text(context.l10n.meetParticipantRecordingHint),
               value: call.settings['allowParticipantRecording'] == true,
