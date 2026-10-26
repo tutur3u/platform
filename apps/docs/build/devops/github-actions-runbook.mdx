@@ -498,7 +498,11 @@ starts its reusable callee.
   admitted run, or rely on the exact-head local pass.
 - **CI Admitted check (`ci-admitted.yaml`, always on).** One small job per PR
   event reads the PR's *current* labels with a read-only token and runs the
-  admission script from the base commit. It is **red** when `ready-for-ci` is
+  admission script from the base commit. Using the base commit protects the
+  *script* from PR edits, but not the workflow file: on `pull_request` the
+  workflow YAML comes from the PR. The check is advisory, not a security
+  boundary. If the base commit lacks the script, it fails red as "admission
+  unverifiable" rather than passing. It is **red** when `ready-for-ci` is
   missing, so skipped heavy checks never read as passing. It is also red when
   the label is present now but was absent from this event's payload (the
   push/label race). Draft and WIP PRs show it red, but it blocks nothing,
@@ -512,6 +516,13 @@ starts its reusable callee.
   turns red with "re-add" guidance: remove and re-add the label to admit the
   current head. Adding the label only after the PR shows the new head SHA
   avoids the race entirely.
+- **Residual ordering false green.** CI Admitted evaluates its own event, and
+  GitHub shows the newest run per check name. A green CI Admitted run (for
+  example from the `labeled` event) can therefore coexist with a heavy
+  workflow whose newest run on the same head is a skipped run from an earlier,
+  unlabelled event. Before treating the head as hosted-green, confirm that
+  its heavy checks are not skipped. If any are, remove and re-add
+  `ready-for-ci`.
 - **Why not a per-workflow admission job:** reading current labels in each of
   the 57 heavy workflows would allocate a hosted job on every unlabelled PR
   push. One admission check per event keeps unlabelled pushes runner-free for
