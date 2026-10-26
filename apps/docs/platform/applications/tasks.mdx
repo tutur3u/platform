@@ -921,65 +921,67 @@ export async function convertNoteToProject(data: {
 
 ## Task Cycles (Sprints)
 
+Cycles are time-boxed sets of tasks in one workspace. The Cycles page lives at
+`/{wsId}/cycles` in the Tasks app and appears under **Tasks** in the sidebar for
+members with `manage_projects` (the same permission the page enforces).
+
 ```sql
-CREATE TABLE task_cycles (
-  id text PRIMARY KEY,
-  ws_id text REFERENCES workspaces(id) ON DELETE CASCADE,
+-- apps/database/supabase/migrations/20250929060000_add_task_cycles.sql
+CREATE TABLE public.task_cycles (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  ws_id uuid NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
   name text NOT NULL,
-  start_date date NOT NULL,
-  end_date date NOT NULL,
-  created_at timestamptz DEFAULT now()
+  status text DEFAULT 'planned', -- planned | active | completed | cancelled
+  start_date date,
+  end_date date
+  -- plus description, creator_id, archived, deleted, timestamps
 );
 
--- Link tasks to cycles
-ALTER TABLE workspace_tasks
-ADD COLUMN cycle_id text REFERENCES task_cycles(id) ON DELETE SET NULL;
+-- Tasks join cycles through a link table; there is no tasks.cycle_id column.
+CREATE TABLE public.task_cycle_tasks (
+  task_id uuid NOT NULL REFERENCES public.tasks(id) ON DELETE CASCADE,
+  cycle_id uuid NOT NULL REFERENCES public.task_cycles(id) ON DELETE CASCADE,
+  created_at timestamptz DEFAULT now(),
+  PRIMARY KEY (task_id, cycle_id)
+);
 ```
 
-**Usage:**
+### Cycle and backlog rules
+
+| Rule | Default and enforcement |
+|------|-------------------------|
+| Same workspace | A task can join a cycle only when its board's workspace equals the cycle's workspace. The `enforce_task_cycle_task_workspace` trigger rejects other links for every role, including service-role writes. API routes also validate both ids server-side and return `404` first. |
+| Fixed workspace | A cycle's `ws_id` cannot change once created (`prevent_task_cycle_workspace_change`). |
+| One cycle per task | A task belongs to at most one cycle (unique index on `task_cycle_tasks.task_id`). Assigning a task to another cycle moves it. |
+| Backlog | Open tasks with no cycle: list status `not_started`, `active` or `review`; task not deleted; list and board not deleted or archived. Backlog is derived, not stored. |
+| Excluded | Tasks in `documents` lists cannot join a cycle. |
+
+Exceptions: rows that existed before the workspace guard are not rewritten.
+Audit them with `apps/database/verification/task-cycle-cross-workspace-links.sql`
+and `apps/database/verification/task-cycle-duplicate-links.sql`; cleanup needs
+release-authority approval.
+
+Regression coverage: `apps/database/supabase/tests/task-cycle-workspace-guard.sql`,
+`apps/database/supabase/tests/task-cycle-one-per-task.sql`, and the route tests
+under `apps/tasks/src/app/api/v1/workspaces/[wsId]/task-cycles/`.
+
+**Usage** (from a client, through `@tuturuuu/internal-api`):
 
 ```typescript
-"use server";
+import {
+  assignTaskToCycle,
+  listWorkspaceTaskBacklog,
+  unassignTaskFromCycle,
+} from "@tuturuuu/internal-api";
 
-import { createClient } from "@tuturuuu/supabase/next/server";
+// POST /api/v1/workspaces/{wsId}/task-cycles/{cycleId}/tasks
+await assignTaskToCycle(wsId, cycleId, taskId);
 
-export async function createCycle(data: {
-  wsId: string;
-  name: string;
-  startDate: Date;
-  endDate: Date;
-}) {
-  const supabase = await createClient();
+// DELETE /api/v1/workspaces/{wsId}/task-cycles/{cycleId}/tasks/{taskId}
+await unassignTaskFromCycle(wsId, cycleId, taskId);
 
-  const { data: cycle, error } = await supabase
-    .from("task_cycles")
-    .insert({
-      ws_id: data.wsId,
-      name: data.name,
-      start_date: data.startDate.toISOString().split("T")[0],
-      end_date: data.endDate.toISOString().split("T")[0],
-    })
-    .select()
-    .single();
-
-  if (error) throw error;
-  return cycle;
-}
-
-export async function getActiveCycle(wsId: string) {
-  const supabase = await createClient();
-  const today = new Date().toISOString().split("T")[0];
-
-  const { data: cycle } = await supabase
-    .from("task_cycles")
-    .select("*")
-    .eq("ws_id", wsId)
-    .lte("start_date", today)
-    .gte("end_date", today)
-    .single();
-
-  return cycle;
-}
+// GET /api/v1/workspaces/{wsId}/task-cycles/backlog?limit=200 (max 200)
+const { tasks } = await listWorkspaceTaskBacklog(wsId, { limit: 50 });
 ```
 
 ## Task Estimation

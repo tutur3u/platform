@@ -1366,6 +1366,14 @@ export {
   type WorkspaceTaskMediaAccess,
 } from './storage';
 export {
+  assignTaskToCycle,
+  listWorkspaceTaskBacklog,
+  type TaskBacklogItem,
+  type TaskBacklogResponse,
+  type TaskCycleAssignment,
+  unassignTaskFromCycle,
+} from './task-cycles';
+export {
   addWorkspaceTaskPlanWorkspace,
   type CreateTaskPlanItemPayload,
   type CreateTaskPlanPayload,
