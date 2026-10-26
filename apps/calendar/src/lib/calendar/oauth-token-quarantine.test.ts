@@ -196,3 +196,47 @@ it('applies the cross-run breaker to interactive calls outside a run', async () 
     )
   ).toBe('deactivated');
 });
+
+it('notifies the owner once through the existing notification system', async () => {
+  const db = database();
+  const owned = { ...token, user_id: 'owner', provider: 'google' };
+  expect(
+    await quarantineCalendarAuthToken(db, owned, 'google_invalid_grant')
+  ).toBe('deactivated');
+  expect(db.rpc).toHaveBeenLastCalledWith(
+    'create_notification',
+    expect.objectContaining({
+      p_ws_id: 'workspace',
+      p_user_id: 'owner',
+      p_type: 'account_update',
+      p_code: 'calendar_reconnect_required',
+      p_entity_id: 'token-id',
+      p_data: { provider: 'google', reason: 'google_invalid_grant' },
+    })
+  );
+  expect(JSON.stringify(db.rpc.mock.calls)).not.toContain(
+    'refresh-credential-value'
+  );
+
+  for (const result of ['fenced', 'already_inactive']) {
+    const repeat = database();
+    repeat.rpc.mockResolvedValue({ data: result, error: null });
+    await quarantineCalendarAuthToken(repeat, owned, 'google_invalid_grant');
+    expect(repeat.rpc).toHaveBeenCalledTimes(1);
+  }
+});
+
+it('keeps the quarantine when the notification cannot be created', async () => {
+  vi.spyOn(console, 'warn').mockImplementation(() => {});
+  const db = database();
+  db.rpc
+    .mockResolvedValueOnce({ data: 'deactivated', error: null })
+    .mockRejectedValueOnce(new Error('notification outage'));
+  expect(
+    await quarantineCalendarAuthToken(
+      db,
+      { ...token, user_id: 'owner', provider: 'microsoft' },
+      'microsoft_invalid_grant'
+    )
+  ).toBe('deactivated');
+});

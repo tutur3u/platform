@@ -9,6 +9,7 @@ import {
   deriveCalendarOAuthPkce,
   verifyCalendarOAuthState,
 } from '@/lib/calendar/calendar-oauth-state';
+import { reactivateCalendarAuthToken } from '@/lib/calendar/calendar-token-reconnect';
 import { getGoogleCalendarOAuthConfig } from '@/lib/calendar/google-oauth-config';
 import { resolveGoogleCalendarOAuthRedirectUri } from '@/lib/calendar/google-oauth-urls';
 import {
@@ -225,17 +226,16 @@ export async function GET(request: Request) {
     if (existingToken) {
       calendarOAuthDebug('🔍 [DEBUG] Updating existing token...');
       // Update existing token
-      const { error: updateError } = await supabase
-        .from('calendar_auth_tokens')
-        .update({
+      const { error: updateError } = await reactivateCalendarAuthToken(
+        supabase,
+        existingToken.id,
+        {
           access_token: tokens.access_token,
           refresh_token: refreshToken,
           expires_at: expiresAt,
           account_name: accountName,
-          is_active: true,
-          created_at: new Date().toISOString(),
-        })
-        .eq('id', existingToken.id);
+        }
+      );
 
       if (updateError) {
         calendarOAuthError('❌ [DEBUG] Error updating token:', updateError);

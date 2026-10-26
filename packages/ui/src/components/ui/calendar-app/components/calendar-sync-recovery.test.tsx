@@ -55,6 +55,39 @@ describe('calendar sync recovery actions', () => {
     expect(value.retrySyncStatus).toHaveBeenCalledOnce();
     expect(value.syncMutation.mutate).not.toHaveBeenCalled();
   });
+  it('lists quarantined accounts with a reconnect action even when sync is healthy', () => {
+    const value = state({
+      syncHealth: {
+        state: 'healthy',
+        reason: null,
+        currentlyRunning: false,
+        lastSuccessAt: null,
+        lastFailureAt: null,
+        retryAfterSeconds: null,
+      },
+      needsReconnectAccounts: [
+        {
+          id: 'quarantined',
+          provider: 'microsoft',
+          account_email: 'owner@example.com',
+          account_name: null,
+          deactivated_reason: 'microsoft_consent_revoked',
+          deactivated_at: '2026-10-26T03:00:00Z',
+        },
+      ],
+    } as unknown as Partial<CalendarConnectionsManagerState>);
+    expect(needsCalendarSyncAttention(value)).toBeTruthy();
+    render(<CalendarSyncRecovery state={value} />);
+    expect(screen.getByRole('alert').textContent).toContain(
+      'sync_recovery.reconnect_description'
+    );
+    expect(screen.getByText('owner@example.com')).toBeTruthy();
+    expect(screen.queryByText('sync_recovery.reconnect_google')).toBeNull();
+    fireEvent.click(
+      screen.getByRole('button', { name: 'sync_recovery.reconnect_microsoft' })
+    );
+    expect(value.microsoftAuthMutation.mutate).toHaveBeenCalledOnce();
+  });
   it('offers Google reconnection for the affected account', () => {
     const value = state({
       accounts: [

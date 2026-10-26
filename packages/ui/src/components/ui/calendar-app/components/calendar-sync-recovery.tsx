@@ -8,6 +8,7 @@ type RecoveryState = Pick<
   | 'failedCalendars'
   | 'pauseFailedCalendarMutation'
   | 'accounts'
+  | 'needsReconnectAccounts'
   | 'providerAccountStatuses'
   | 'syncHealth'
   | 'syncStatusError'
@@ -26,7 +27,8 @@ export function needsCalendarSyncAttention(
     | 'syncStatusError'
     | 'providerAccountStatuses'
     | 'syncMutation'
-  >
+  > &
+    Partial<Pick<RecoveryState, 'needsReconnectAccounts'>>
 ) {
   const lastSuccess = state.syncHealth?.lastSuccessAt;
   const failedAttemptIsNewer =
@@ -36,6 +38,7 @@ export function needsCalendarSyncAttention(
     (failedAttemptIsNewer &&
       (state.syncMutation.isError || state.syncMutation.data?.ok === false)) ||
     state.syncHealth?.state === 'degraded' ||
+    !!state.needsReconnectAccounts?.length ||
     Object.values(state.providerAccountStatuses).some(
       (status) => status.state !== 'connected'
     )
@@ -53,10 +56,15 @@ export function CalendarSyncRecovery({ state }: { state: RecoveryState }) {
   const syncing = isCalendarSyncActive(state);
   const needsAttention = needsCalendarSyncAttention(state);
   if (!needsAttention && !syncing) return null;
-  const reconnectAccounts = state.accounts.filter(
-    (account) =>
-      providerAccountStatuses[account.id]?.state === 'reconnect_required'
-  );
+  // Active accounts whose status says reconnect, plus accounts sync
+  // quarantined after the provider rejected their credential.
+  const reconnectAccounts = [
+    ...state.accounts.filter(
+      (account) =>
+        providerAccountStatuses[account.id]?.state === 'reconnect_required'
+    ),
+    ...(state.needsReconnectAccounts ?? []),
+  ];
   const reason = syncStatusError
     ? 'unavailable'
     : reconnectAccounts.length

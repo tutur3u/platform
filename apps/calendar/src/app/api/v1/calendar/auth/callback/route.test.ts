@@ -103,6 +103,9 @@ function callbackRequest(
 interface ExistingCalendarToken {
   id: string;
   refresh_token: string | null;
+  is_active?: boolean;
+  deactivated_reason?: string | null;
+  deactivated_at?: string | null;
 }
 
 function createTokenResponse(refreshToken: string | null = 'refresh-token') {
@@ -330,6 +333,35 @@ describe('Google Calendar OAuth callback route', () => {
       'access-token',
       'stored-refresh-token'
     );
+  });
+
+  it('reactivates a quarantined account and clears its reason in the same update', async () => {
+    getTokenMock.mockResolvedValue(createTokenResponse('fresh-refresh-token'));
+    const supabase = createSupabaseClient({
+      existingToken: {
+        id: 'existing-token-id',
+        refresh_token: 'rejected-refresh-token',
+        is_active: false,
+        deactivated_reason: 'google_invalid_grant',
+        deactivated_at: '2026-10-26T03:00:00Z',
+      },
+    });
+    mockResolvedAuthContext(supabase.client);
+
+    const response = await GET(callbackRequest(signedState()));
+
+    expect(response.status).toBe(302);
+    expect(supabase.tokenUpdateMock).toHaveBeenCalledTimes(1);
+    expect(supabase.tokenUpdateMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        refresh_token: 'fresh-refresh-token',
+        is_active: true,
+        deactivated_reason: null,
+        deactivated_at: null,
+        created_at: expect.any(String),
+      })
+    );
+    expect(supabase.tokenInsertMock).not.toHaveBeenCalled();
   });
 
   it('does not save an active Google connection without any refresh token', async () => {

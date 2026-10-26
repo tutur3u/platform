@@ -63,6 +63,20 @@ export async function GET(request: NextRequest) {
   const runtime = checkCalendarOAuthRuntime();
   if (!runtime.ok) return runtime.response;
 
+  // Google omits the refresh token for an existing grant unless consent is
+  // shown, so reconnecting a quarantined account would keep the rejected one.
+  // Normal reconnects stay consent-free.
+  const { data: quarantined } = await supabase
+    .from('calendar_auth_tokens')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('ws_id', normalizedWsId)
+    .eq('provider', 'google')
+    .eq('is_active', false)
+    .not('deactivated_reason', 'is', null)
+    .limit(1);
+  const needsConsent = (quarantined?.length ?? 0) > 0;
+
   const auth = new OAuth2Client({
     clientId: oauthConfig.config.clientId,
     clientSecret: oauthConfig.config.clientSecret,
@@ -90,6 +104,7 @@ export async function GET(request: NextRequest) {
       'https://www.googleapis.com/auth/userinfo.profile', // Get user profile/name
     ],
     access_type: 'offline',
+    ...(needsConsent ? { prompt: 'consent' } : {}),
     include_granted_scopes: true,
   });
 

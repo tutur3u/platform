@@ -9,6 +9,10 @@ export type {
   WorkspaceCalendarEventUpdatePayload,
 } from './calendar-event-payloads';
 
+import type {
+  CalendarAccountDisconnectResponse,
+  CalendarAccountsResponse,
+} from './calendar-account-types';
 import type { ProviderCalendarsResponse } from './calendar-sync';
 
 export * from './calendar-link-preview';
@@ -244,29 +248,12 @@ export interface CalendarConnectionResponse {
   connection: CalendarConnection;
 }
 
-export interface CalendarAccount {
-  id: string;
-  provider: 'google' | 'microsoft' | string;
-  account_email: string | null;
-  account_name: string | null;
-  is_active: boolean | null;
-  created_at: string | null;
-  expires_at: string | null;
-}
-
-export interface CalendarAccountsResponse {
-  accounts: CalendarAccount[];
-  grouped: {
-    google: CalendarAccount[];
-    microsoft: CalendarAccount[];
-  };
-  total: number;
-}
-
-export interface CalendarAccountDisconnectResponse {
-  message: string;
-  success: true;
-}
+export type {
+  CalendarAccount,
+  CalendarAccountDisconnectResponse,
+  CalendarAccountNeedingReconnect,
+  CalendarAccountsResponse,
+} from './calendar-account-types';
 
 export interface CalendarAuthUrlResponse {
   authUrl: string;

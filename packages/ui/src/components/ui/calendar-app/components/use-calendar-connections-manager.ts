@@ -116,6 +116,7 @@ export function useCalendarConnectionsManager(wsId: string) {
     retry: 1,
   });
   const accounts = accountsQuery.data?.accounts || [];
+  const needsReconnectAccounts = accountsQuery.data?.needsReconnect ?? [];
   const isLoadingAccounts = accountsQuery.isLoading;
   const hasConnectedAccounts = accounts.length > 0;
   const syncStatusQuery = useQuery(
@@ -627,6 +628,7 @@ export function useCalendarConnectionsManager(wsId: string) {
     isSyncing,
     manualSyncDisabled,
     microsoftAuthMutation,
+    needsReconnectAccounts,
     newCalendarName,
     resetCalendarDataMutation,
     setExpandedPopoverAccounts,
