@@ -58,7 +58,6 @@ class HabitTrackerDetailSheet extends StatelessWidget {
       if (showLeaderboard) Tab(text: context.l10n.habitsLeaderboardTab),
     ];
 
-    // Never taller than the sheet host allows; it draws the surface.
     return LayoutBuilder(
       builder: (context, constraints) => SizedBox(
         height: constraints.hasBoundedHeight
@@ -98,20 +97,25 @@ class HabitTrackerDetailSheet extends StatelessWidget {
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            _Header(
-                              detail: currentDetail,
-                              isArchivingTracker: isArchivingTracker,
-                              onLogEntry: onLogEntry,
-                              onEditTracker: onEditTracker,
-                              onArchiveTracker: () => _confirmArchive(context),
+                            // Overlaid so a refresh never shrinks the tabs.
+                            Stack(
+                              children: [
+                                _Header(
+                                  detail: currentDetail,
+                                  isArchivingTracker: isArchivingTracker,
+                                  onLogEntry: onLogEntry,
+                                  onEditTracker: onEditTracker,
+                                  onArchiveTracker: () =>
+                                      _confirmArchive(context),
+                                ),
+                                if (isDetailRefreshing)
+                                  const PositionedDirectional(
+                                    top: 0,
+                                    end: 0,
+                                    child: AppLoadingIndicator.inline(),
+                                  ),
+                              ],
                             ),
-                            if (isDetailRefreshing) ...[
-                              const SizedBox(height: 12),
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(999),
-                                child: const NovaLoadingIndicator(size: 20),
-                              ),
-                            ],
                             const SizedBox(height: 16),
                             TabBar(tabs: tabs),
                             const SizedBox(height: 12),
