@@ -49,7 +49,7 @@ const heavy = {
   'programming-database-contract.yaml': ['contract'],
   'report-review-receipts-contract.yaml': ['contract'],
   'sdk-package-qualification.yaml': ['qualify'],
-  'shortener-cloudflare.yaml': ['validate', 'restore-acceptance'],
+  'shortener-cloudflare.yaml': ['native'],
   'sso-persistence-contract.yaml': ['contract'],
   'time-tracker-control-contract.yaml': ['contract'],
   'topic-delivery-foundation-contract.yaml': ['contract'],

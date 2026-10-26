@@ -21,7 +21,7 @@ const FONT_PREFIX = '\0tuturuuu-start-bridge-font:';
 const WORKER_CONDITIONS = ['workerd', 'worker', 'module', 'browser'];
 // Node built-ins, bare or `node:`-prefixed, served by workerd's nodejs_compat.
 const NODE_BUILTIN = new RegExp(
-  `^(?:node:)?(?:${builtinModules.map((name) => name.replace(/\//gu, '\\/')).join('|')})$`,
+  `^(?:node:)?(?:${builtinModules.join('|')})$`,
   'u'
 );
 const CLOUDFLARE_BUILTINS = [

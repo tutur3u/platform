@@ -7,21 +7,34 @@ import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readNativeRuntimeConfig } from '../../../scripts/ci/apps-native-runtime-pointer.mjs';
+import {
+  FINANCE_NATIVE_PROFILE_ENV,
+  resolveFinanceNativeProfile,
+} from './native-profile.ts';
+import profiles from './native-profiles.json' with { type: 'json' };
+
+export { profiles };
 
 export const app = await realpath(
   fileURLToPath(new URL('../', import.meta.url))
 );
-export const modes = [
-  { origin: 'https://finance.tuturuuu.com', base: '' },
-  { origin: 'https://finance-staging.tuturuuu.com', base: '' },
-];
+// The runtime suite qualifies the profile the artifact was built with.
+export const profile = resolveFinanceNativeProfile(
+  process.env[FINANCE_NATIVE_PROFILE_ENV]
+);
+export const modes = [{ origin: `https://${profile.rootHost}`, base: '' }];
+// Every other profile's root host must be refused by this artifact.
+export const foreignOrigins = Object.values(profiles)
+  .filter(({ rootHost }) => rootHost !== profile.rootHost)
+  .map(({ rootHost }) => `https://${rootHost}`);
 
 export async function financeRuntime(t, options = {}) {
   assert.equal(process.env.CI, 'true', 'Requires an emitted native build');
   const source = process.env.CI_SOURCE_SHA;
   assert.match(source ?? '', /^[a-f0-9]{40}$/);
   const { configPath, config } = readNativeRuntimeConfig(app);
-  assert.equal(config.name, 'tuturuuu-finance-vite-staging');
+  assert.equal(config.name, profile.workerName);
+  assert.equal(config.workers_dev, false);
   assert.equal(config.no_bundle, true);
   assert.equal(config.assets.run_worker_first, true);
   assert.equal(config.assets.not_found_handling, 'none');
@@ -29,14 +42,7 @@ export async function financeRuntime(t, options = {}) {
     'nodejs_compat',
     'global_fetch_strictly_public',
   ]);
-  assert.deepEqual(config.vars, {
-    TUTURUUU_NOINDEX: '1',
-    INTERNAL_WEB_API_ORIGIN: 'https://staging.tuturuuu.com',
-    NEXT_PUBLIC_WEB_APP_URL: 'https://staging.tuturuuu.com',
-    NEXT_PUBLIC_APP_URL: 'https://finance-staging.tuturuuu.com',
-    FINANCE_APP_URL: 'https://finance-staging.tuturuuu.com',
-    NEXT_PUBLIC_SUPABASE_URL: 'https://fxefojytwimjiqxseqag.supabase.co',
-  });
+  assert.deepEqual(config.vars, profile.vars);
   const scratch = await realpath(
     await mkdtemp(join(tmpdir(), 'finance-native-'))
   );

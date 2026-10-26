@@ -12,7 +12,10 @@ import {
   app,
   financeBrowserListener,
   financeRuntime,
+  foreignOrigins,
   modes,
+  profile,
+  profiles,
 } from './native-runtime-fixture.mjs';
 import {
   fixtureWorkspaceId,
@@ -21,19 +24,88 @@ import {
   syntheticSessionHeaders,
 } from './signed-ssr-fixture.mjs';
 
-const runtimeExpectations = JSON.parse(
-  await readFile(join(app, 'start-bridge.routes.json'), 'utf8')
-).runtime;
+const webOrigin = profile.vars.NEXT_PUBLIC_WEB_APP_URL;
+// The manifest records the default (staging) Web login; rebase absolute
+// redirects onto the selected profile's Web origin.
+const manifestWebOrigin = profiles.staging.vars.NEXT_PUBLIC_WEB_APP_URL;
+const runtimeExpectations = Object.fromEntries(
+  Object.entries(
+    JSON.parse(await readFile(join(app, 'start-bridge.routes.json'), 'utf8'))
+      .runtime
+  ).map(([path, expected]) => {
+    if (
+      typeof expected.redirect !== 'string' ||
+      expected.redirect.startsWith('/')
+    )
+      return [path, expected];
+    assert.ok(expected.redirect.startsWith(`${manifestWebOrigin}/`));
+    return [
+      path,
+      {
+        ...expected,
+        redirect: webOrigin + expected.redirect.slice(manifestWebOrigin.length),
+      },
+    ];
+  })
+);
 assert.deepEqual(runtimeExpectationProblems(runtimeExpectations), []);
 
 async function qualifyMode(t, mode) {
   const { origin, base } = mode;
   const signedCalls = [];
+  const webglRoot =
+    '/api/v1/workspaces/fixture/external-projects/assets/fixture/webgl';
+  const webglPaths = [webglRoot, `${webglRoot}/index.html`];
+  const neighbouringPaths = [`${webglRoot}-extra`, `${webglRoot};params`];
+  const upstreamPolicy =
+    "sandbox allow-scripts; default-src 'none'; script-src 'self' 'unsafe-inline'";
+  const webglCalls = [];
   const runtime = await financeRuntime(t, {
     financeOrigin: origin,
-    fixtureResponse: (request) =>
-      signedSsrFixtureResponse(request, signedCalls, origin),
+    fixtureResponse: (request) => {
+      const url = new URL(request.url);
+      if (
+        url.origin === 'https://finance-fixture.invalid' &&
+        [...webglPaths, ...neighbouringPaths].includes(url.pathname)
+      ) {
+        webglCalls.push(url.pathname);
+        return new Response('upstream WebGL fixture', {
+          headers: {
+            'content-type': 'text/html',
+            'content-security-policy': upstreamPolicy,
+            'x-frame-options': 'SAMEORIGIN',
+          },
+        });
+      }
+      return signedSsrFixtureResponse(request, signedCalls, origin);
+    },
   });
+  await t.test(
+    `WebGL sandbox pass-through and neighbouring framing denial at ${origin}`,
+    async () => {
+      for (const path of [...webglPaths, ...neighbouringPaths]) {
+        const response = await runtime.fetch(`${origin}${path}`, {
+          headers: { authorization: 'Bearer ttr_finance_runtime_fixture' },
+        });
+        assert.equal(response.status, 200);
+        assert.equal(await response.text(), 'upstream WebGL fixture');
+        if (webglPaths.includes(path)) {
+          assert.equal(
+            response.headers.get('content-security-policy'),
+            upstreamPolicy
+          );
+          assert.equal(response.headers.get('x-frame-options'), null);
+        } else {
+          assert.match(
+            response.headers.get('content-security-policy') ?? '',
+            /frame-ancestors 'none'/
+          );
+          assert.equal(response.headers.get('x-frame-options'), 'DENY');
+        }
+      }
+      assert.deepEqual(webglCalls, [...webglPaths, ...neighbouringPaths]);
+    }
+  );
   await t.test(
     `exact build and anonymous API admission at ${origin}${base}`,
     async () => {
@@ -127,7 +199,7 @@ async function qualifyMode(t, mode) {
         );
         assert.equal(protectedPage.status, 307);
         const login = new URL(protectedPage.headers.get('location'));
-        assert.equal(login.origin, 'https://staging.tuturuuu.com');
+        assert.equal(login.origin, webOrigin);
         assert.equal(login.pathname, '/login');
       }
       for (const path of [
@@ -266,7 +338,7 @@ async function qualifyMode(t, mode) {
         const result = await withNativeBrowserFence(
           browser,
           origin,
-          ['https://staging.tuturuuu.com'],
+          [webOrigin],
           async (page) => {
             const errors = [];
             page.on('pageerror', (error) => errors.push(error.message));
@@ -274,9 +346,7 @@ async function qualifyMode(t, mode) {
               waitUntil: 'domcontentloaded',
             });
             await page.waitForURL(
-              (url) =>
-                url.origin === 'https://staging.tuturuuu.com' &&
-                url.pathname === '/login'
+              (url) => url.origin === webOrigin && url.pathname === '/login'
             );
             assert.equal(new URL(page.url()).pathname, '/login');
             assert.equal(await page.title(), 'Disposable destination fixture');
@@ -292,7 +362,7 @@ async function qualifyMode(t, mode) {
   );
 
   await t.test(
-    'raw Host admits configured roots and rejects apex/unlisted hosts',
+    "raw Host admits its profile root and rejects apex, other profiles' and unlisted hosts",
     async () => {
       for (const mode of modes) {
         const admitted = await runtime.rawFetch(
@@ -302,6 +372,7 @@ async function qualifyMode(t, mode) {
         assert.equal((await admitted.json()).commitHash, runtime.source);
       }
       for (const origin of [
+        ...foreignOrigins,
         'https://tuturuuu.com/finance',
         'https://unknown.example.test',
       ]) {

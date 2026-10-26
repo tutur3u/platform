@@ -17,6 +17,7 @@ import {
   type NextProxy,
 } from '../next/proxy-bridge';
 import type { BridgeRequestContext } from '../server/request-context';
+import { admitMountedMutation, type BridgeCsrfOptions } from './csrf-admission';
 
 export type { AssetsBinding } from '../core/assets';
 
@@ -81,6 +82,11 @@ export interface BridgeHandlerOptions<Env, Ctx> {
    * whose upstream `Content-Security-Policy` passes through untouched.
    */
   framablePaths?: readonly RegExp[];
+  /**
+   * Same-origin admission for cookie-authenticated mutations on mounted
+   * (apex) requests, before `proxy.ts`. Root-mode requests are unaffected.
+   */
+  csrf?: BridgeCsrfOptions<Env>;
 }
 
 /**
@@ -131,6 +137,15 @@ export function createBridgeHandler<
     headers.delete(APP_BASE_HEADER);
     if (!base.isRoot) headers.set(APP_BASE_HEADER, base.basePath);
     const request = new Request(incoming, { headers });
+    if (!base.isRoot && options.csrf) {
+      const refused = admitMountedMutation({
+        appPath,
+        exemptions: options.csrf.exemptions,
+        mode: options.csrf.mode(env),
+        request: incoming,
+      });
+      if (refused) return refused;
+    }
     const nonce = options.csp ? createNonce() : undefined;
     let response: Response;
     if (

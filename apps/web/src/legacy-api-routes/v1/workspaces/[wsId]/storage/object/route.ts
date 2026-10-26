@@ -1,5 +1,5 @@
 import { canAccessFinanceTransactionStoragePath } from '@tuturuuu/finance-core/storage-access';
-import { isReservedMobileDeploymentDrivePath } from '@tuturuuu/storage-core/mobile-deployment/storage-policy';
+import { isExcludedDrivePath } from '@tuturuuu/storage-core/drive-path-policy';
 import {
   deleteWorkspaceStorageObjectByPath,
   WorkspaceStorageError,
@@ -62,7 +62,7 @@ export async function DELETE(
     );
   }
 
-  if (isReservedMobileDeploymentDrivePath(normalizedWsId, sanitizedPath)) {
+  if (isExcludedDrivePath(normalizedWsId, sanitizedPath)) {
     return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
   }
 

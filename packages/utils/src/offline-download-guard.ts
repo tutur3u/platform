@@ -8,6 +8,7 @@ import {
   buildProxySessionSubjectKey,
   getProxySessionSubjectKeyFromCookieHeader,
 } from './api-proxy-guard';
+import { type GuardRejectionReason, guardRejection } from './guard-rejection';
 import {
   getUpstashRatelimitRedisClient,
   getUpstashRestRedisClient,
@@ -35,32 +36,43 @@ export function isOfflineCapableRead(
   );
 }
 
-function unavailable() {
-  return NextResponse.json(
-    {
-      message:
-        'Download protection is temporarily unavailable. Try again later.',
-    },
-    {
-      status: 503,
-      headers: { 'Cache-Control': 'no-store', 'Retry-After': '30' },
-    }
+function unavailable(
+  request: NextRequest,
+  reason: GuardRejectionReason = 'offline-download-unavailable'
+) {
+  return guardRejection(
+    request,
+    NextResponse.json(
+      {
+        message:
+          'Download protection is temporarily unavailable. Try again later.',
+      },
+      {
+        status: 503,
+        headers: { 'Cache-Control': 'no-store', 'Retry-After': '30' },
+      }
+    ),
+    reason
   );
 }
 
-function challenge() {
-  return NextResponse.json(
-    {
-      code: 'ABUSE_CHALLENGE_REQUIRED',
-      message: 'Additional verification is required before retrying.',
-    },
-    {
-      status: 403,
-      headers: {
-        'Cache-Control': 'no-store',
-        'X-Abuse-Challenge': 'turnstile',
+function challenge(request: NextRequest) {
+  return guardRejection(
+    request,
+    NextResponse.json(
+      {
+        code: 'ABUSE_CHALLENGE_REQUIRED',
+        message: 'Additional verification is required before retrying.',
       },
-    }
+      {
+        status: 403,
+        headers: {
+          'Cache-Control': 'no-store',
+          'X-Abuse-Challenge': 'turnstile',
+        },
+      }
+    ),
+    'offline-download-challenge-required'
   );
 }
 
@@ -76,12 +88,12 @@ export async function guardOfflineDownloadRequest(request: NextRequest) {
   if (process.env.OFFLINE_DOWNLOAD_PROTECTION_ENABLED !== 'true') {
     // Keep baseline API/auth protections while this additional protection is
     // unprovisioned. Offline prefetch is unavailable until explicitly enabled.
-    return unavailable();
+    return unavailable(request, 'offline-download-inactive');
   }
   try {
     const redis = await getUpstashRestRedisClient();
     const limiterRedis = await getUpstashRatelimitRedisClient();
-    if (!redis || !limiterRedis) return unavailable();
+    if (!redis || !limiterRedis) return unavailable(request);
     const bearer = request.headers
       .get('authorization')
       ?.match(/^Bearer\s+([^\s]+)$/i)?.[1];
@@ -95,7 +107,7 @@ export async function guardOfflineDownloadRequest(request: NextRequest) {
     // Internal authenticated gateways may lack a client IP. Never combine
     // their unrelated sessions into a shared unknown-IP bucket. Public ingress
     // still supplies a real IP, retaining the rotating-token budget.
-    if (ip === 'unknown' && !sessionKey) return unavailable();
+    if (ip === 'unknown' && !sessionKey) return unavailable(request);
     const subjects = [
       ...(ip !== 'unknown'
         ? [{ key: `ip:${ip}`, minute: 1200, hour: 30000 }]
@@ -114,27 +126,35 @@ export async function guardOfflineDownloadRequest(request: NextRequest) {
         });
         const result = await limiter.limit(subject.key);
         if (!result.success) {
-          return NextResponse.json(
-            {
-              message:
-                'Read limit reached. Try again after the indicated delay.',
-            },
-            {
-              status: 429,
-              headers: {
-                'Cache-Control': 'no-store',
-                'Retry-After': `${Math.max(1, Math.ceil((result.reset - Date.now()) / 1000))}`,
-                'X-RateLimit-Policy': 'offline-capable-read',
+          return guardRejection(
+            request,
+            NextResponse.json(
+              {
+                message:
+                  'Read limit reached. Try again after the indicated delay.',
               },
-            }
+              {
+                status: 429,
+                headers: {
+                  'Cache-Control': 'no-store',
+                  'Retry-After': `${Math.max(1, Math.ceil((result.reset - Date.now()) / 1000))}`,
+                  'X-RateLimit-Policy': 'offline-capable-read',
+                },
+              }
+            ),
+            'offline-download-rate-limited'
           );
         }
       }
     }
     if (!sessionKey)
-      return NextResponse.json(
-        { message: 'Authentication required' },
-        { status: 401 }
+      return guardRejection(
+        request,
+        NextResponse.json(
+          { message: 'Authentication required' },
+          { status: 401 }
+        ),
+        'offline-download-authentication-required'
       );
     const trust = (await getCachedTrustEntries([sessionKey])).get(sessionKey);
     // Reuse established account trust. This check does not write trust markers.
@@ -143,18 +163,18 @@ export async function guardOfflineDownloadRequest(request: NextRequest) {
     const clearanceKey = `offline:clearance:${sessionKey}`;
     if (await redis.get(clearanceKey)) return null;
     const token = request.headers.get('x-tuturuuu-turnstile-token');
-    if (!token) return challenge();
+    if (!token) return challenge(request);
     try {
       await verifyTurnstileToken(request, token, {
         remoteIp: ip === 'unknown' ? undefined : ip,
       });
     } catch {
-      return challenge();
+      return challenge(request);
     }
     await redis.set(clearanceKey, 'passed', { ex: CLEARANCE_SECONDS });
     return null;
   } catch {
     // A distributed guard must not silently fall back to per-process limits.
-    return unavailable();
+    return unavailable(request);
   }
 }

@@ -1417,6 +1417,8 @@
     "connect_microsoft_desc": "Connect your Microsoft account",
     "connected_accounts": "Connected Accounts",
     "connected_calendars": "Connected Calendars",
+    "consent_restart_limited": "Google did not issue a refresh token. Wait before reconnecting this account again.",
+    "consent_restart_unavailable": "Calendar reconnection is temporarily unavailable. Try again later.",
     "create": "Create",
     "create_calendar": "Create Calendar",
     "creation_recovery_notice": "The previous creation is unconfirmed. Retry the original request first; your edits will stay open to save after confirmation.",
@@ -1510,6 +1512,8 @@
     "no_google_accounts": "No Google accounts connected yet.",
     "no_microsoft_accounts": "No Microsoft accounts connected yet.",
     "no_outbound_calendar": "No outbound calendar",
+    "oauth_spike_alert_description": "Quarantined / deferred / held / systemic / transient accounts",
+    "oauth_spike_alert_title": "Calendar OAuth needs attention",
     "outlook": "Outlook",
     "overridden_by_settings": "Overridden by your settings",
     "personal_first_day_override_desc": "You have set your personal first day of week to <bold>{firstDay}</bold>, which overrides this workspace setting. Your effective first day is <bold>{effectiveFirstDay}</bold>. Change it in Appearance & Theme settings.",
@@ -6335,6 +6339,12 @@
       "enable": "Enable notifications",
       "permission-denied": "Browser notifications are blocked. Please enable them in your browser settings.",
       "permission-request": "Enable browser notifications to stay updated"
+    },
+    "codes": {
+      "calendar_reconnect_required": {
+        "description": "Calendar sync paused because the provider stopped accepting access. Reconnect the account to resume.",
+        "title": "Reconnect your calendar"
+      }
     },
     "date_earlier": "Earlier",
     "date_this_week": "This Week",

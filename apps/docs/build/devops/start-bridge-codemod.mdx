@@ -227,7 +227,11 @@ CompiledWasm/Data modules (as `next/og`'s Workers port needs). An app whose
 Worker code runs in native SSR (`rsc: { enabled: false }`, as Calendar does)
 opts its `ssr` environment into the same conversion by adding
 `startBridgeNodeBuiltinsPlugin()` from `@tuturuuu/start-bridge/vite/rsc` to its
-Vite plugins; rsc apps need nothing. A route that
+Vite plugins. Generated apps get it in `vite.config.mts` by default, before
+`voidPlugin()`: their SSR bundles CommonJS too (Forms: sanitize-html, then
+postcss's `require('path')`). This is the same conversion the rsc environment
+always applies, so a built-in workerd lacks fails when the chunk loads, which
+the runtime gate exercises, rather than when the code runs. A route that
 needs a Node API workerd does not provide still fails when it is hit; serve it
 from Web (`centralFirst`) or port it.
 
@@ -330,6 +334,7 @@ Each app owns its profile at `apps/<app>/cloudflare/root-browser.profile.mjs`
 | `web` | `'GET /api/...'` to a response factory for Web API reads the page needs |
 | `hydration` | `request(context)`: a path prefix the client must request, or `text(context)`: a marker only the client renders. Polling pages never reach network idle |
 | `browser` | Extra browser origins: `{ origin, fulfill: 'image' \| 401 }` (e.g. a default avatar host) |
+| `serviceWorkers` | Omitted or `'block'` (default): the fixture browser blocks service workers, because a registered one answers requests before the gate's routing and would be measured instead of the Worker; the gate also asserts no service worker controls the page. `{ mode: 'allow', reason }` only for an explicit offline/service-worker run. Any other value fails validation. Every `PASS` line and the `ROOT_BROWSER_PASS` receipt record the mode |
 
 Regressions for the profile, session, egress and SSR rules run with
 `node --test scripts/ci/native-root-browser.test.mjs`.

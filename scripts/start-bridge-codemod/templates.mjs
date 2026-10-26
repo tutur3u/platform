@@ -54,7 +54,10 @@ export function viteConfig({ app, navigation, serverOnlySpecifiers, og }) {
   return `${header(app)}import tailwindcss from '@tailwindcss/vite';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
 import { startBridgePreset } from '${BRIDGE.vitePreset}';
-import { startBridgeRscPlugin } from '${BRIDGE.viteRsc}';
+import {
+  startBridgeNodeBuiltinsPlugin,
+  startBridgeRscPlugin,
+} from '${BRIDGE.viteRsc}';
 import react from '@vitejs/plugin-react';
 import rsc from '@vitejs/plugin-rsc';
 import { defineConfig } from 'vite-plus';
@@ -69,6 +72,9 @@ export default defineConfig(({ command }) => ({
   define: bridge.define,
   plugins: [
     startBridgeRscPlugin({ ${pluginOptions.join(', ')} }),
+    // SSR bundles CommonJS too (postcss via sanitize-html requires 'path'):
+    // the same Node built-in conversion the rsc environment always gets.
+    startBridgeNodeBuiltinsPlugin(),
     voidPlugin(),
     tanstackStart(bridge.tanstackStart),
     rsc(),
