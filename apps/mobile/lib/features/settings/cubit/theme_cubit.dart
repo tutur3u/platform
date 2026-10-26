@@ -2,22 +2,34 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/theme/appearance/appearance_palettes.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
+import 'package:mobile/features/settings/cubit/appearance_resolution.dart';
 import 'package:mobile/features/settings/cubit/theme_state.dart';
+import 'package:mobile/features/settings/data/account_appearance_repository.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 
 /// Cubit for managing user theme preferences.
 class ThemeCubit extends Cubit<ThemeState> {
   ThemeCubit({
     required SettingsRepository settingsRepository,
+    AccountAppearanceRepository? accountAppearanceRepository,
     ThemeMode initialThemeMode = ThemeMode.system,
     AppearanceSettings initialAppearance = const AppearanceSettings(),
   }) : _settingsRepository = settingsRepository,
+       _accountRepository = accountAppearanceRepository,
        super(
          ThemeState(themeMode: initialThemeMode, appearance: initialAppearance),
        );
 
   final SettingsRepository _settingsRepository;
+  final AccountAppearanceRepository? _accountRepository;
   int _appearanceRevision = 0;
+
+  /// Bumped on every account change so work for a previous account stops.
+  int _scopeRevision = 0;
+  bool _bound = false;
+  String? _userId;
+  AppearanceSettings? _device;
+  AppearanceSettings? _account;
 
   /// Loads the persisted theme mode.
   Future<void> loadThemeMode() async {
@@ -30,17 +42,143 @@ class ThemeCubit extends Cubit<ThemeState> {
     }
   }
 
-  /// Loads persisted appearance customisation. Installs that predate it have
-  /// no stored payload and keep the default appearance with their saved mode.
+  /// Reloads the stored appearance inputs for the bound account and shows
+  /// the resolved appearance. Installs that predate customisation have no
+  /// stored payload and keep the default appearance with their saved mode.
   Future<void> loadAppearance() async {
     final revision = _appearanceRevision;
+    final scope = _scopeRevision;
     try {
-      final raw = await _settingsRepository.getAppearance();
-      if (isClosed || revision != _appearanceRevision) return;
-      emit(state.copyWith(appearance: AppearanceSettings.decode(raw)));
+      final stored = await StoredAppearance.read(
+        _settingsRepository,
+        userId: _userId,
+      );
+      // A newer choice or account change already decided what shows.
+      if (isClosed || scope != _scopeRevision) return;
+      if (revision != _appearanceRevision) return;
+      _device = stored.device;
+      _account = stored.account;
+      _publishOverride(stored.deviceOverride);
     } on Exception catch (e) {
       debugPrint('Error loading appearance: $e');
     }
+  }
+
+  /// Follows the signed-in account: [userId] is the authenticated user, or
+  /// `null` when signed out. The previous account's appearance stops showing
+  /// immediately; the new one comes from the local cache, then the server.
+  Future<void> bindAccount(String? userId) async {
+    if (isClosed || (_bound && userId == _userId)) return;
+    final switched = _bound;
+    _bound = true;
+    _userId = userId;
+    final scope = ++_scopeRevision;
+    _account = null;
+    if (switched) {
+      _appearanceRevision++;
+      emit(state.copyWith(appearance: _resolved(), hasAccount: userId != null));
+    } else {
+      emit(state.copyWith(hasAccount: userId != null));
+    }
+    await loadAppearance();
+    if (userId == null || isClosed || scope != _scopeRevision) return;
+    await _syncAccount(userId, scope);
+  }
+
+  Future<void> _syncAccount(String userId, int scope) async {
+    final repository = _accountRepository;
+    if (repository == null) return;
+    final revision = _appearanceRevision;
+    try {
+      final cached = await _settingsRepository.getAccountAppearance(userId);
+      if (cached.pendingUpload && cached.encoded != null) {
+        await _upload(userId, cached.encoded!);
+        return;
+      }
+      final remote = await repository.load(userId);
+      if (isClosed || scope != _scopeRevision) return;
+      // A choice made while loading wins and uploads on its own.
+      if (revision != _appearanceRevision) return;
+      if (remote != null) {
+        await _settingsRepository.setAccountAppearance(
+          userId,
+          remote,
+          pendingUpload: false,
+        );
+        if (isClosed || scope != _scopeRevision) return;
+        _account = AppearanceSettings.decode(remote);
+        if (!state.deviceOverride) emit(state.copyWith(appearance: _resolved()));
+        return;
+      }
+      // First sign-in with this store: carry the device's look over.
+      final seed = cached.encoded ?? _device?.encode();
+      if (seed == null) return;
+      await _settingsRepository.setAccountAppearance(
+        userId,
+        seed,
+        pendingUpload: true,
+      );
+      _account = AppearanceSettings.decode(seed);
+      if (!state.deviceOverride) emit(state.copyWith(appearance: _resolved()));
+      await _upload(userId, seed);
+    } on Exception catch (e) {
+      debugPrint('Error syncing account appearance: $e');
+    }
+  }
+
+  /// Sends [encoded] to the account; clears the pending mark only while it
+  /// is still the newest local choice for [userId].
+  Future<void> _upload(String userId, String encoded) async {
+    final repository = _accountRepository;
+    if (repository == null) return;
+    try {
+      await repository.save(userId, encoded);
+      final cached = await _settingsRepository.getAccountAppearance(userId);
+      if (cached.encoded != encoded) return;
+      await _settingsRepository.setAccountAppearance(
+        userId,
+        encoded,
+        pendingUpload: false,
+      );
+    } on Exception catch (e) {
+      // Stays pending; the next launch or sign-in retries it.
+      debugPrint('Error uploading appearance: $e');
+    }
+  }
+
+  /// Keeps this device on its own appearance instead of the account's.
+  /// Turning it on starts from what is showing, so nothing changes until
+  /// the next edit; turning it off shows the account's appearance again.
+  Future<void> setDeviceOverride({required bool value}) async {
+    if (isClosed || value == state.deviceOverride) return;
+    _appearanceRevision++;
+    if (value) _device = state.appearance;
+    _publishOverride(value);
+    try {
+      if (value) {
+        await _settingsRepository.setAppearance(state.appearance.encode());
+      }
+      await _settingsRepository.setAppearanceDeviceOverride(value: value);
+    } on Exception catch (e) {
+      debugPrint('Error saving appearance override: $e');
+    }
+  }
+
+  AppearanceSettings _resolved({bool? deviceOverride}) => resolveAppearance(
+    deviceOverride: deviceOverride ?? state.deviceOverride,
+    userId: _userId,
+    device: _device,
+    account: _account,
+  );
+
+  void _publishOverride(bool deviceOverride) {
+    if (isClosed) return;
+    emit(
+      state.copyWith(
+        deviceOverride: deviceOverride,
+        appearance: _resolved(deviceOverride: deviceOverride),
+      ),
+    );
   }
 
   /// Sets and persists the user's theme choice. Returns whether [mode] was
@@ -84,17 +222,33 @@ class ThemeCubit extends Cubit<ThemeState> {
     emit(state.copyWith(appearance: appearance));
   }
 
-  /// Applies [appearance] immediately, then persists it. A newer change or
-  /// closing the cubit prevents an older write from landing last.
+  /// Applies [appearance] immediately, then persists it to the active
+  /// target: this device when signed out or overridden, otherwise the
+  /// account (cached locally, then uploaded). A newer change, an account
+  /// switch or closing the cubit prevents an older write from landing last.
   Future<void> setAppearance(AppearanceSettings appearance) async {
     if (isClosed) return;
     final revision = ++_appearanceRevision;
+    final scope = _scopeRevision;
+    final userId = _userId;
     emit(state.copyWith(appearance: appearance));
+    bool current() =>
+        !isClosed && revision == _appearanceRevision && scope == _scopeRevision;
+    final encoded = appearance.encode();
     try {
-      await _settingsRepository.setAppearance(
-        appearance.encode(),
-        shouldWrite: () => !isClosed && revision == _appearanceRevision,
+      if (state.deviceOverride || userId == null) {
+        _device = appearance;
+        await _settingsRepository.setAppearance(encoded, shouldWrite: current);
+        return;
+      }
+      _account = appearance;
+      await _settingsRepository.setAccountAppearance(
+        userId,
+        encoded,
+        pendingUpload: true,
       );
+      if (!current()) return;
+      await _upload(userId, encoded);
     } on Exception catch (e) {
       debugPrint('Error saving appearance: $e');
     }

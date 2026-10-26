@@ -12,6 +12,9 @@ class SettingsRepository {
   static const _themeModeKey = 'theme-mode';
   static const _appearanceKey = 'appearance-v1';
   static const _appearanceIntroSeenKey = 'appearance-intro-seen';
+  static const _appearanceDeviceOverrideKey = 'appearance-device-override';
+  static const _accountAppearancePrefix = 'appearance-account';
+  static const _accountAppearancePendingPrefix = 'appearance-account-pending';
   static const _calendarViewKey = 'calendar-view';
   static const _taskViewModeKey = 'task-view-mode';
   static const _disableDefaultTaskBoardNavigationKey =
@@ -127,6 +130,47 @@ class SettingsRepository {
     final prefs = await SharedPreferences.getInstance();
     if (shouldWrite?.call() == false) return;
     await prefs.setString(_appearanceKey, encoded);
+  }
+
+  /// Whether this device keeps its own appearance instead of the account's.
+  Future<bool> getAppearanceDeviceOverride() async =>
+      (await SharedPreferences.getInstance()).getBool(
+        _appearanceDeviceOverrideKey,
+      ) ??
+      false;
+
+  Future<void> setAppearanceDeviceOverride({required bool value}) async {
+    await (await SharedPreferences.getInstance()).setBool(
+      _appearanceDeviceOverrideKey,
+      value,
+    );
+  }
+
+  /// Last known appearance of account [userId], so it shows at launch and
+  /// offline. [pendingUpload] marks a local change the server has not
+  /// confirmed yet.
+  Future<({String? encoded, bool pendingUpload})> getAccountAppearance(
+    String userId,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    return (
+      encoded: prefs.getString('$_accountAppearancePrefix:$userId'),
+      pendingUpload:
+          prefs.getBool('$_accountAppearancePendingPrefix:$userId') ?? false,
+    );
+  }
+
+  Future<void> setAccountAppearance(
+    String userId,
+    String encoded, {
+    required bool pendingUpload,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('$_accountAppearancePrefix:$userId', encoded);
+    await prefs.setBool(
+      '$_accountAppearancePendingPrefix:$userId',
+      pendingUpload,
+    );
   }
 
   /// Whether the user has opened Appearance since the themes were introduced.

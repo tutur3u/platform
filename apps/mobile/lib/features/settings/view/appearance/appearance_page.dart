@@ -26,7 +26,7 @@ import 'package:mobile/l10n/l10n.dart';
 
 /// Settings → Appearance: mode, curated themes, accent, background style,
 /// surface tuning and the interface group. Every choice applies instantly
-/// and persists.
+/// and follows the signed-in account unless this device overrides it.
 class AppearancePage extends StatefulWidget {
   const AppearancePage({this.highlight, super.key});
 
@@ -89,6 +89,25 @@ class _AppearancePageState extends State<AppearancePage> {
               l10n.appearancePreviewTitle,
               AppearancePreview(settings: settings),
             ),
+            if (state.hasAccount)
+              Padding(
+                padding: const EdgeInsets.only(
+                  bottom: SettingsRowLayout.groupGap,
+                ),
+                child: SettingsGroup(
+                  children: [
+                    SettingsSwitchRow(
+                      key: const ValueKey('appearance-device-override'),
+                      icon: LucideIcons.smartphone,
+                      title: l10n.appearanceDeviceOverride,
+                      value: state.deviceOverride,
+                      onChanged: (value) => choose(
+                        () => cubit.setDeviceOverride(value: value),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             section(
               l10n.appearanceModeTitle,
               AppearanceSegmented<ThemeMode>(

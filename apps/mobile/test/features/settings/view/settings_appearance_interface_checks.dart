@@ -79,4 +79,36 @@ void registerSettingsAppearanceInterfaceChecks() {
     expect(toggle.value, isTrue);
     expect(tester.takeException(), isNull);
   });
+  testWidgets('the device override shows only when signed in', (tester) async {
+    final h = await _pumpAppearance(tester, const AppearanceSettings());
+    await _tapRow(tester, const ValueKey('settings-appearance-row'));
+    final override = find.byKey(const ValueKey('appearance-device-override'));
+    expect(override, findsNothing);
+
+    await h.theme.bindAccount('u1');
+    await _settle(tester);
+    expect(override, findsOneWidget);
+    expect(find.text('Use different appearance on this device'), findsOneWidget);
+
+    await tester.tap(override);
+    await _settle(tester);
+    expect(h.theme.state.deviceOverride, isTrue);
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getBool('appearance-device-override'), isTrue);
+
+    // Later choices stay on this device instead of the account.
+    final density = find.descendant(
+      of: find.byKey(const ValueKey('appearance-density')),
+      matching: find.text('Compact'),
+    );
+    await reveal(tester, density);
+    await tester.tap(density);
+    await _settle(tester);
+    expect(
+      AppearanceSettings.decode(prefs.getString('appearance-v1')).density.name,
+      'compact',
+    );
+    expect(prefs.getString('appearance-account:u1'), isNull);
+    expect(tester.takeException(), isNull);
+  });
 }
