@@ -855,6 +855,9 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String get assistantLocalSourceEmpty => 'Tải một mô hình bên dưới';
+
+  @override
   String get assistantLocalStop => 'Dừng tạo phản hồi cục bộ';
 
   @override
@@ -943,6 +946,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get assistantModelOutputCost => 'Đầu ra';
+
+  @override
+  String get assistantModelSourceTitle => 'Nguồn mô hình';
 
   @override
   String get assistantModelUnfavorite => 'Bỏ khỏi yêu thích';
