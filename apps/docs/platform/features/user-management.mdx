@@ -271,7 +271,8 @@ teacher, no deadline, existing behavior unchanged.
 
 **Rollout gate.** Everything in this section is behind the workspace secret
 `ENABLE_TOPIC_TEACHER_ASSIGNMENTS=true`, separate from
-`ENABLE_TOPIC_ANNOUNCEMENTS` and **off by default**, because workspaces already
+`ENABLE_TOPIC_ANNOUNCEMENTS` and **off by default** (it fails closed: every
+secret row with that name must be `true`), because workspaces already
 send topic announcements. With it off, the supervisor create, update, import
 and send paths behave as before the feature: a topic is required whenever one is
 written (no topic-less drafts), teacher-only fields (`teacherWorkspaceUserId`,
@@ -309,13 +310,17 @@ and the flag-off case in `send-admission.test.ts`.
   `ENABLE_TOPIC_ANNOUNCEMENTS` remains the gate for both scopes.
 - **Teacher write limits.** Teachers may change only `topic`, `body`,
   `courseBook`, `videoUrl`, and `attachmentDrafts`, and may set `status` only
-  to `draft`. Any other field (title, class, room, place, day, date, times,
+  to `draft` on a topic that is already a draft (re-saving a scheduled topic as
+  a draft would cancel its send). Any other field (title, class, room, place, day, date, times,
   source, recipients, assignment) answers 403, so a teacher cannot move their
   own deadline. They cannot edit sent, processing, or cancelled topics, cannot
   resend (`resend=true` is supervisor-only, single and bulk), and cannot create
   topics: creation is supervisor-only because the creator picks recipients.
 - **Attachments are fixed once sent.** Nobody can add or remove attachments on
   a sent or processing topic (409).
+- **Blank topics are NULL.** Every write path (create, update, teacher edit,
+  import) stores a blank or whitespace-only topic as `NULL`, never `''`, so a
+  topic-less draft is always `topic is null`.
 - **Validation before the database.** A teacher from another workspace is
   rejected with 400 instead of relying on the trigger. A blank topic outside a
   draft returns `TOPIC_REQUIRED` from update, schedule, and send.
