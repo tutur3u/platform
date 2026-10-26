@@ -53,6 +53,90 @@ Protected storage APIs remain centralized in `apps/web`:
 When adding new Drive behavior, add the protected route in `apps/web`, expose it
 from `packages/internal-api`, and consume it from `apps/drive`.
 
+## Private attachment boundaries
+
+Drive permissions apply to ordinary Drive files. They do not grant access to
+application-owned chat attachments. In every workspace, Drive share, download,
+list, export, upload, rename, and delete boundaries reserve the root names `chat`,
+`chats`, `external-apps`, `AI Agent Imports`, and `recordings` for their owning
+applications. Only the two-segment prefix `mira/images` is reserved for Mira image
+results; `mira` itself and ordinary files such as `mira/notes.txt` remain available.
+Root/directory listings and Drive analytics omit private objects; quota accounting
+continues to count their bytes. Exports omit private descendants. Recursive Drive
+renames/deletes validate every enumerated object before any mutation, so a parent
+operation cannot expose or remove `mira/images`. A `mira` folder containing only
+ordinary files can be renamed or deleted normally.
+
+This applies to Web, the Drive satellite, mobile Drive, and API-key storage APIs.
+Even an attachment's owner must use the owning application API for these paths.
+Chat and Mind APIs retain their own ownership and content checks, including
+quarantine; Drive cannot mint an alternate URL for a rejected attachment.
+Normal Drive files and the existing finance/task-specific permission rules stay
+available. Meet files intentionally saved into the owner's personal Drive retain
+that behavior.
+
+Regression coverage: the Web workspace storage share/list route tests,
+`legacy-api-routes/v1/storage/reserved-paths.test.ts`, and storage-core
+`drive-path-policy.test.ts` / `storage-analytics.test.ts`.
+
+### Private upload census
+
+Paths below are relative to `<wsId>/` in the `workspaces` bucket. The owning
+application must authorize reads; Drive permissions do not replace that check.
+These source locations are the upload contracts for the separate Storage RLS lane.
+
+| Prefix | Owning app/surface | Upload path source |
+| --- | --- | --- |
+| `chat/<chatId>/` | Web legacy AI chat | `apps/web/src/components/chat-panel.tsx:523` (upload at 526; mounted by `ai-chat/chat.tsx:16`) |
+| `chats/ai/resources/<chatId>/` | Mira AI chat and private Mind threads | `apps/web/src/legacy-api-routes/ai/chat/upload-url/route.ts:114` (signed upload at 124) |
+| `chats/ai/resources/temp/<userId>/` | Mira/Mind temporary attachments | `apps/web/src/legacy-api-routes/ai/chat/upload-url/route.ts:116` |
+| `chats/ai/resources/<resourceChatId>/` | Native assistant attachment copies | `apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/messages/ai-message-shared.ts:243` |
+| `chats/<conversationId>/` | Native Chat | `apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/chat/conversations/[conversationId]/attachments/upload-url/route.ts:76` (RPC supplies the prefix) |
+| `external-apps/<app>/chat/` | Registered external apps | `apps/web/src/lib/external-apps/workspace-drive.ts:224` |
+| `AI Agent Imports/<adapter>/<channel>/<thread>/` | Chat external-channel imports | `apps/web/src/lib/ai-agents/external-chat-attachments.ts:143` (upload at 58) |
+| `mira/images/` | Mira generated image results | `packages/ai/src/tools/executors/image.ts:109` (upload at 123) |
+| `recordings/<meeting>/<session>/` | Workspace meeting audio and chunks | `apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/meetings/[meetingId]/recordings/[sessionId]/upload/route.ts:91`; sibling `chunks/route.ts:112` |
+
+Mobile voice attachments use the same AI/native upload flow through
+`apps/mobile/lib/features/assistant/data/assistant_repository.dart:513` and 540;
+there is no additional voice-only workspace storage root. Notes voice analysis
+accepts request audio without a `workspaces` object upload.
+
+Intentional Drive outputs remain accessible: `drive/mira/qr/` is explicitly saved
+to Drive (`packages/ai/src/tools/executors/qr.ts:114`), and Meet room files and
+recordings use the creator's personal Drive (`packages/meet-core/src/routes/api/meet-call/[meetingId]/files/route.ts:38`
+and sibling `recording/route.ts:43`). See the Meet call recording decision.
+Profile/report buckets and workspace-wide branding/template/whiteboard assets,
+`task-images`, `project-updates`, and `forms` are outside this private chat/media
+namespace policy.
+
+### Reserved-name collision check
+
+A user-created `recordings` root folder could plausibly collide with the reserved
+meeting prefix: older generic folder/upload APIs allowed arbitrary root names,
+and objects beneath a user-selected `recordings` folder use the same namespace.
+This is source reasoning only; no production inventory was read and no collision
+is confirmed. Keep `recordings` reserved. A later approved operator check should
+inventory that prefix, distinguish meeting/session objects from user-created
+files, and plan reference-preserving relocation for any collisions. Do not infer
+ownership from the folder name or automatically move/delete matching objects.
+
+### Previously issued signed URLs
+
+The workspace share route defaults to 31,536,000 seconds (one year); this change
+preserves that TTL. Denying new requests does not revoke bearer URLs already
+issued for private objects, and this PR does not close direct Supabase Storage
+access governed by existing RLS. The separate Storage RLS lane owns that fix.
+
+Remediation is an approval-required operator action: inventory exposed object
+keys and references, copy/re-key or move each object to a new unpredictable key,
+verify the replacement and update owning-application references, then retire the
+old key only after the replacement is durably confirmed. Account for provider/CDN
+caches and verify that each previously issued URL no longer serves bytes before
+claiming revocation. Preserve ownership, consent, retention, and deletion rules.
+No object move, removal, key rotation, or production write is authorized or run
+by this implementation PR. Obtain explicit per-case approval before execution.
+
 ## CI/CD
 
 Preview and production deployments use dedicated Vercel workflows:

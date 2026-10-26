@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { GET } from './route';
+import { PRIVATE_DRIVE_RESOURCE_PATHS } from '@/lib/private-drive-paths.test-fixture';
+import { GET, POST } from './route';
 
 const mocks = vi.hoisted(() => ({
   canAccessFinanceTransactionStoragePath: vi.fn(),
@@ -8,7 +9,7 @@ const mocks = vi.hoisted(() => ({
   resolveWorkspaceStorageRouteAuth: vi.fn(),
 }));
 
-vi.mock('../route-auth', () => ({
+vi.mock('@/legacy-api-routes/v1/workspaces/[wsId]/storage/route-auth', () => ({
   FINANCE_TRANSACTION_STORAGE_APP_SESSION_TARGETS: ['drive', 'finance'],
   logWorkspaceStorageRouteError: vi.fn(),
   resolveWorkspaceStorageRouteAuth: mocks.resolveWorkspaceStorageRouteAuth,
@@ -128,3 +129,70 @@ describe('workspace storage share app session audience', () => {
     expect(mocks.createWorkspaceStorageSignedReadUrl).not.toHaveBeenCalled();
   });
 });
+
+// Both members belong to ws-123; only member A owns these private resources.
+describe('Drive sharing does not authorize private chat resources', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.canAccessFinanceTransactionStoragePath.mockResolvedValue(false);
+    mocks.createWorkspaceStorageSignedReadUrl.mockResolvedValue(
+      'https://storage.example/signed-object'
+    );
+    mocks.resolveWorkspaceStorageRouteAuth.mockResolvedValue({
+      ok: true,
+      context: {
+        normalizedWsId: 'ws-123',
+        userId: 'member-b',
+        permissions: {
+          withoutPermission: (permission: string) =>
+            permission !== 'view_drive',
+        },
+        supabase: {},
+      },
+    });
+  });
+
+  it.each(PRIVATE_DRIVE_RESOURCE_PATHS)(
+    'denies GET and POST sharing of %s',
+    async (path) => {
+      const redirect = await GET(shareRequest(path), params);
+      expect(redirect.status).toBe(403);
+      const share = await POST(
+        new Request('http://localhost/api/v1/workspaces/ws-123/storage/share', {
+          method: 'POST',
+          body: JSON.stringify({ path }),
+        }),
+        params
+      );
+      expect(share.status).toBe(403);
+      expect(mocks.createWorkspaceStorageSignedReadUrl).not.toHaveBeenCalled();
+    }
+  );
+
+  it.each(['documents/member-b/report.pdf', 'mira/notes.txt'])(
+    'keeps own Drive file %s shareable',
+    async (path) => {
+      const response = await POST(
+        new Request('http://localhost/api/v1/workspaces/ws-123/storage/share', {
+          method: 'POST',
+          body: JSON.stringify({ path }),
+        }),
+        params
+      );
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual({
+        signedUrl: 'https://storage.example/signed-object',
+      });
+      expect(mocks.createWorkspaceStorageSignedReadUrl).toHaveBeenCalledWith(
+        'ws-123',
+        path,
+        expect.objectContaining({ expiresIn: 31_536_000 })
+      );
+    }
+  );
+});
+
+vi.mock('next/server', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('next/server')>()),
+  connection: vi.fn().mockResolvedValue(undefined),
+}));

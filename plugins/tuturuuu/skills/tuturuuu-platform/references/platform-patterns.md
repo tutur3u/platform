@@ -1298,6 +1298,20 @@ assert the once-decoded request pathname and empty URL search/hash, including
 `%41`, `?`, `#`, and Vietnamese NFC/NFD names. See the object key transport
 section in [storage egress protection](../../../../../apps/docs/build/devops/storage-egress-protection.mdx).
 
+
+### Drive and private attachment storage
+
+Use `@tuturuuu/storage-core/drive-path-policy` at Drive boundaries, including
+mutations and export capabilities. `view_drive` and `manage_drive` never authorize
+`chat/**`, `chats/**` (AI chat, Mind, temporary/native/voice resources),
+`external-apps/**`, `AI Agent Imports/**`, `mira/images/**`, or `recordings/**` private
+media. Use the owning application's authorization and content guard for private
+reads. Preserve private-byte quota accounting while
+excluding private filenames/sizes from Drive listings and analytics. Do not put
+this Drive-only denial in the generic storage read signer: authorized native chat
+and Meet callers also use it. See the Drive application's private attachment
+boundaries decision and its route/policy regressions.
+
 ## Standalone API foundation
 
 For the explicitly authorized `apps/api` Worker migration, use the [standalone API runbook](../../../../../apps/docs/build/devops/standalone-api.mdx). Domain operations register through one policy/schema pipeline. Protected operations fail closed until the concrete Web guard and principal adapter is verified; retained Next routes keep their existing guards. Do not import Node-only graphs or treat generated inventory as runtime acceptance.
