@@ -52,10 +52,8 @@ export function guardRejection<T extends Response | null | undefined>(
     'Access-Control-Expose-Headers',
     [...exposed].join(', ')
   );
-  console.warn('Guard rejected request', {
-    reason,
-    route: routeTemplate(request.url),
-    requestId,
-  });
+  console.warn(
+    `Guard rejected request ${JSON.stringify({ reason, route: routeTemplate(request.url), requestId })}`
+  );
   return response;
 }

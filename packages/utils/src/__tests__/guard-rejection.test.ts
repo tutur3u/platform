@@ -43,11 +43,9 @@ it.each([
   );
   const requestId = response.headers.get('X-Tuturuuu-Guard-Request-Id');
   expect(requestId).toMatch(/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/u);
-  expect(warn).toHaveBeenCalledExactlyOnceWith('Guard rejected request', {
-    reason: 'offline-download-inactive',
-    route,
-    requestId,
-  });
+  expect(warn).toHaveBeenCalledExactlyOnceWith(
+    `Guard rejected request ${JSON.stringify({ reason: 'offline-download-inactive', route, requestId })}`
+  );
   expect(JSON.stringify(warn.mock.calls)).not.toContain('private-');
   expect(response.headers.get('Access-Control-Expose-Headers')).toBe(
     'Retry-After, X-Tuturuuu-Guard-Reason, X-Tuturuuu-Guard-Request-Id'
