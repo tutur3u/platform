@@ -17,6 +17,7 @@ export type NotificationType =
   | 'time_tracking_request_approved'
   | 'time_tracking_request_rejected'
   | 'time_tracking_request_needs_info'
+  | 'topic_assigned'
   | 'workspace_invite';
 
 export type NotificationChannel = 'web' | 'email' | 'sms' | 'push';
