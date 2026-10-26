@@ -508,7 +508,8 @@
                 "pages": [
                   "reference/database/schema-overview",
                   "reference/database/rls-policies",
-                  "reference/database/migrations-guide"
+                  "reference/database/migrations-guide",
+                  "reference/database/migration-incident-rollbacks"
                 ]
               },
               {
