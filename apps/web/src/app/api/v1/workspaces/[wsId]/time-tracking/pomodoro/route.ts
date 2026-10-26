@@ -157,7 +157,8 @@ export const GET = withSessionAuth<{ wsId: string }>(
         body: { error: error.code },
       });
     }
-  }
+  },
+  { allowAppSessionAuth: true }
 );
 
 export const POST = withSessionAuth<{ wsId: string }>(
@@ -167,7 +168,8 @@ export const POST = withSessionAuth<{ wsId: string }>(
       return respond({ status: 400, body: { error: 'invalid_command' } });
     const deps = await depsFor(request, wsId, user.id, supabase);
     return respond(await commandPomodoro(deps, parsed.data));
-  }
+  },
+  { allowAppSessionAuth: true }
 );
 
 export const PUT = withSessionAuth<{ wsId: string }>(
@@ -177,5 +179,6 @@ export const PUT = withSessionAuth<{ wsId: string }>(
       return respond({ status: 400, body: { error: 'invalid_config' } });
     const deps = await depsFor(request, wsId, user.id, supabase);
     return respond(await configurePomodoro(deps, parsed.data));
-  }
+  },
+  { allowAppSessionAuth: true }
 );
