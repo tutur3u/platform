@@ -3,6 +3,7 @@ part of 'app.dart';
 extension _AppPushNavigation on _AppState {
   Future<void> _loadWorkspacesWithReminders() async {
     await _workspaceCubit.loadWorkspaces();
+    _attachPomodoro(_workspaceCubit.state.currentWorkspace?.id);
     final userId = _authCubit.state.user?.id;
     if (userId != null) {
       await ReminderService.instance.startWorkspaceSession(
@@ -10,6 +11,13 @@ extension _AppPushNavigation on _AppState {
         _workspaceCubit.state,
       );
     }
+  }
+
+  /// Follows the shared Pomodoro of the current workspace.
+  void _attachPomodoro(String? wsId) {
+    final userId = _authCubit.state.user?.id;
+    if (userId == null || wsId == null) return;
+    unawaited(_pomodoroController.attach(userId: userId, wsId: wsId));
   }
 
   void _handleLifecycleState(AppLifecycleState state) {

@@ -28,28 +28,24 @@ session timing and dock transition smoothness require device verification;
 widget tests do not establish either.
 
 
-## Shared Pomodoro preparation is inactive
+## Shared Pomodoro
 
-The private time-tracker control foundation prepares actor/workspace-scoped
-configuration only. Its schema requires `mode=off`, `phase=idle`, and no deadline;
-its service-only RPCs initialize, read, and update configuration with revision
-checks. Browser roles cannot read, write, or execute those RPCs. Configuration
-contains positive integer minute durations up to 180 and a cycle length up to
-24, with explicit boolean automation choices. These are foundation storage
-bounds, not a change to the current mobile or web controls.
+The Pomodoro is shared across mobile and web for each account and workspace.
+The server holds one control per actor and workspace
+(`private.time_tracker_controls`) and plans every phase change with one state
+machine. The design, migration, API and rollback are in the cross-device
+Pomodoro build page (`build/development-tools/mobile-pomodoro-cross-device`).
 
-A repeated latest command with identical input returns its existing revision;
-a stale revision or reused command with different input fails. An optional
-prepared-session reference must belong to the same actor and workspace. It is
-an inert reference, not a live session binding: existing session deletion stays
-possible. The foundation changes no tracked work, breaks, approval policy,
-client timer, settings preference, notification delivery, or scheduler.
-
-Activation requires a later reviewed contract that normalizes Web, Track,
-quick-start, AI, direct-write and approval lifecycle paths under the same lock
-order and atomically updates phase and existing tracker accounting. This
-foundation is a prerequisite and does not deliver cross-platform Pomodoro or
-completion while every client is closed.
+- **Scope:** every signed-in account, per workspace, on mobile and web.
+- **Default:** on wherever the server has the Pomodoro API. Against an older
+  server, the app keeps the device Pomodoro described below.
+- **No server-started focus.** Nothing on the server starts focus on its own.
+  A phase that ends while no one acts leaves focus waiting, even with
+  auto-start on; only Start focus, Resume or Skip out of a break starts a
+  focus session. Breaks may still auto-start, since they track nothing.
+- **Exception:** a device Pomodoro already running when the app updates
+  finishes on that device. Start focus on a task row, which counts down on a
+  session it has just started, also stays a device Pomodoro.
 
 The `time-tracker-control-contract.yaml` workflow checks out the exact source,
 replays the complete schema in the repository-owned isolated lifecycle, runs
@@ -106,7 +102,7 @@ Shared phase/settings, pause/resume/skip, deadline reconciliation, cross-client
 realtime and background notification behavior remain separate prerequisites.
 This unwired boundary provides no all-clients-closed completion or device proof.
 
-## Device Pomodoro
+## Pomodoro controls
 
 The Timer tab has a Pomodoro panel. **Start focus** begins a focus phase for
 the timer's current title and linked task. Start focus on a board task row
@@ -126,10 +122,16 @@ does the same for that task.
   notification, which opens the Timer. A newer phase replaces it, and pausing
   or stopping cancels it. If notifications are turned off, the in-app
   countdown still ends the phase.
-- **Single device.** The countdown, deadline and cycle position are stored on
-  this device for the signed-in account. Another account's stored Pomodoro is
-  discarded at sign-in, and other devices and the web do not see the phase.
-  No migration is involved.
+- **Shared across devices.** With the shared Pomodoro, each device sends
+  Start, Pause, Resume, Skip and Stop to the server and shows the server's
+  phase. Other devices update through the account's private realtime topic
+  and when the app resumes. Each device schedules its own phase-end
+  notification from the shared deadline, corrected for its clock. A change
+  made elsewhere first wins; the device then shows the server's phase. A
+  running manual timer makes Start focus explain instead of closing it.
+- **Device Pomodoro.** Without the shared Pomodoro, the countdown, deadline
+  and cycle position are stored on this device for the signed-in account.
+  Another account's stored Pomodoro is discarded at sign-in.
 - **Missed phase ends.** A phase that ended more than a minute ago (the app
   was asleep or closed, or a timer fired late) ended unattended. Unattended
   phases end when the app opens or resumes; the phase timer, restore and
@@ -181,9 +183,6 @@ is unchanged and there is no migration. One difference from the unfiltered
 stats: a session counts on the local day it started. The Timer's own
 statistics still count all tracked time.
 
-Shared, cross-device phases need the database contract flagged in the native
-pass plan (phase 7, a draft PR).
-
 Regression coverage: `pomodoro_controller_test.dart` runs against a fake
 tracker that behaves like the server. It covers:
 
@@ -197,6 +196,11 @@ tracker that behaves like the server. It covers:
 - paused replacement;
 - concurrent restores and account isolation;
 - the on-time natural end.
+`pomodoro_shared_test.dart` covers the shared Pomodoro against a fake
+server: starts that sync settings first, phase ends settled by the server
+without starting focus, commands carrying the mirrored revision, changes made
+elsewhere, a running manual timer, the fallback for older servers, realtime
+changes and clock-skew correction.
 `pomodoro_panel_test.dart` covers the panel flow and 320dp at 2x text.
 `task_board_row_actions_flows_test.dart` covers Start focus. Widget tests do
 not establish notification delivery or timing on devices.
