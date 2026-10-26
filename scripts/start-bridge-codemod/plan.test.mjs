@@ -110,6 +110,16 @@ test('generated config targets the staging Worker and keeps Next build', (t) => 
     read('vite.config.mts'),
     /'bridge-pages': new URL\(\n?\s*'\.\/src\/start-bridge\/page-modules\.bridge\.gen\.ts',/
   );
+  // SSR converts CommonJS requires of Node built-ins like rsc does (Forms:
+  // sanitize-html -> postcss -> require('path')), before Void's plugin.
+  assert.match(
+    read('vite.config.mts'),
+    /import \{\n {2}startBridgeNodeBuiltinsPlugin,\n {2}startBridgeRscPlugin,\n\} from '@tuturuuu\/start-bridge\/vite\/rsc';/
+  );
+  assert.match(
+    read('vite.config.mts'),
+    /startBridgeRscPlugin\([\s\S]*?\),\n(?: {4}\/\/.*\n)* {4}startBridgeNodeBuiltinsPlugin\(\),\n {4}voidPlugin\(\),/
+  );
   assert.match(
     read('src/start-bridge/public-assets.bridge.gen.ts'),
     /'\/favicon\.ico',\n {2}'\/robots\.txt',/
