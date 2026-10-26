@@ -1,25 +1,30 @@
-/// <reference path="./cloudflare/native-profile-env.d.ts" />
 import { defaultContentSecurityPolicy } from '@tuturuuu/start-bridge/csp';
 import { defineBridgeAppConfig } from '@tuturuuu/start-bridge/start/app-config';
 import { framablePathRegexes } from '@tuturuuu/utils/framable-paths';
-import { resolveFinanceNativeProfile } from './cloudflare/native-profile.ts';
 import type { FinanceEnvironment } from './cloudflare/worker';
 import { publicAssets } from './src/start-bridge/public-assets.bridge.gen.ts';
 
 const framablePaths = framablePathRegexes();
-const profile = resolveFinanceNativeProfile(
-  import.meta.env?.VITE_FINANCE_NATIVE_PROFILE
-);
+// vite.config.mts defines the selected native profile's root host. Without it
+// (plain Node loaders) no root host is admitted, so the Worker fails closed.
+const rootHost = import.meta.env?.VITE_FINANCE_NATIVE_ROOT_HOST;
+
+declare global {
+  interface ImportMetaEnv {
+    readonly VITE_FINANCE_NATIVE_ROOT_HOST?: string;
+  }
+}
 
 export default defineBridgeAppConfig<FinanceEnvironment>({
   csp: defaultContentSecurityPolicy,
   mounts: {
-    rootHosts: [profile.rootHost],
+    rootHosts: rootHost ? [rootHost] : [],
     mountHosts: [],
     unknownHost: 'reject',
   },
   wrapResponse(response, { request }) {
     const secured = new Response(response.body, response);
+    // Matches Vercel Finance, which sends this on every response.
     secured.headers.set('X-Robots-Tag', 'noindex, nofollow, nosnippet');
     const pathname = new URL(request.url).pathname;
     if (framablePaths.some((pattern) => pattern.test(pathname))) {

@@ -15,6 +15,7 @@ import {
   foreignOrigins,
   modes,
   profile,
+  profiles,
 } from './native-runtime-fixture.mjs';
 import {
   fixtureWorkspaceId,
@@ -24,9 +25,29 @@ import {
 } from './signed-ssr-fixture.mjs';
 
 const webOrigin = profile.vars.NEXT_PUBLIC_WEB_APP_URL;
-const runtimeExpectations = JSON.parse(
-  await readFile(join(app, 'start-bridge.routes.json'), 'utf8')
-).runtime;
+// The manifest records the default (staging) Web login; rebase absolute
+// redirects onto the selected profile's Web origin.
+const manifestWebOrigin = profiles.staging.vars.NEXT_PUBLIC_WEB_APP_URL;
+const runtimeExpectations = Object.fromEntries(
+  Object.entries(
+    JSON.parse(await readFile(join(app, 'start-bridge.routes.json'), 'utf8'))
+      .runtime
+  ).map(([path, expected]) => {
+    if (
+      typeof expected.redirect !== 'string' ||
+      expected.redirect.startsWith('/')
+    )
+      return [path, expected];
+    assert.ok(expected.redirect.startsWith(`${manifestWebOrigin}/`));
+    return [
+      path,
+      {
+        ...expected,
+        redirect: webOrigin + expected.redirect.slice(manifestWebOrigin.length),
+      },
+    ];
+  })
+);
 assert.deepEqual(runtimeExpectationProblems(runtimeExpectations), []);
 
 async function qualifyMode(t, mode) {

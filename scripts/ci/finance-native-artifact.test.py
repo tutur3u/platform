@@ -36,7 +36,11 @@ class FinanceArtifactTest(unittest.TestCase):
             (app / "dist/client" / name).parent.mkdir(parents=True, exist_ok=True)
             (app / "public" / name).write_bytes(b"source " + name.encode())
             (app / "dist/client" / name).write_bytes(b"source " + name.encode())
-        (app / "dist/client/assets/entry.js").write_text("export const hydrated = true")
+        selected = next(v for v in wrapper.PROFILES.values() if v["workerName"] == module.IDENTITY["name"])
+        (app / "dist/client/assets/entry.js").write_text(
+            "export const hydrated = true;"
+            + json.dumps([selected["vars"]["NEXT_PUBLIC_SUPABASE_URL"], selected["vars"]["NEXT_PUBLIC_WEB_APP_URL"]])
+        )
         (app / "dist/native/index.js").write_text("export default {fetch(){return new Response('fixture')}}")
         config = {
             **module.IDENTITY, **module.NORMALIZED_DEFAULTS,
@@ -54,10 +58,14 @@ class FinanceArtifactTest(unittest.TestCase):
         self.assertIs(artifact.IDENTITY["workers_dev"], False)
         self.assertIs(base.IDENTITY["workers_dev"], True)
         self.assertEqual(artifact.NORMALIZED_DEFAULTS["topLevelName"], WORKER)
-        self.assertEqual(artifact.IDENTITY["vars"]["INTERNAL_WEB_API_ORIGIN"], "https://staging.tuturuuu.com")
-        self.assertEqual(artifact.IDENTITY["vars"]["NEXT_PUBLIC_WEB_APP_URL"], "https://staging.tuturuuu.com")
-        self.assertEqual(artifact.IDENTITY["vars"]["FINANCE_APP_URL"], "https://finance-staging.tuturuuu.com")
-        self.assertEqual(artifact.IDENTITY["vars"]["NEXT_PUBLIC_SUPABASE_URL"], "https://fxefojytwimjiqxseqag.supabase.co")
+        self.assertEqual(artifact.IDENTITY["vars"], {
+            "TUTURUUU_NOINDEX": "1",
+            "INTERNAL_WEB_API_ORIGIN": "https://staging.tuturuuu.com",
+            "NEXT_PUBLIC_WEB_APP_URL": "https://staging.tuturuuu.com",
+            "NEXT_PUBLIC_APP_URL": "https://finance-staging.tuturuuu.com",
+            "FINANCE_APP_URL": "https://finance-staging.tuturuuu.com",
+            "NEXT_PUBLIC_SUPABASE_URL": "https://fxefojytwimjiqxseqag.supabase.co",
+        })
         self.assertEqual(artifact.IDENTITY["compatibility_flags"], ["nodejs_compat", "global_fetch_strictly_public"])
         self.assertEqual(base.IDENTITY["compatibility_flags"], ["nodejs_compat"])
         self.assertEqual(base.IDENTITY["name"], "tuturuuu-apps-vite-staging")
@@ -165,6 +173,36 @@ class FinanceArtifactTest(unittest.TestCase):
         env[wrapper.PROFILE_ENV] = "production"
         subprocess.run([sys.executable, str(HERE / "finance-native-artifact.py"), "seal", str(app), "--receipt", str(receipt)], env=env, check=True)
         self.assertEqual(json.loads(receipt.read_text())["worker"], PRODUCTION_WORKER)
+
+    def test_bundles_carry_only_their_profile_values(self):
+        cases = (
+            (production, "client/assets/entry.js", "https://fxefojytwimjiqxseqag.supabase.co"),
+            (production, "native/chunk.js", "https://staging.tuturuuu.com"),
+            (production, "client/assets/entry.js", "finance-staging.tuturuuu.com"),
+            (artifact, "native/chunk.js", "https://nzamlzqfdwaaxdefwraj.supabase.co"),
+        )
+        for module, name, value in cases:
+            with self.subTest(worker=module.IDENTITY["name"], value=value):
+                app, _ = self.fixture(module)
+                target = app / "dist" / name
+                target.write_text(target.read_text() + value if target.exists() else value)
+                with self.assertRaisesRegex(ValueError, "other profile's value"):
+                    module.validate_output(app)
+
+    def test_browser_bundle_must_carry_the_profile_values(self):
+        app, _ = self.fixture(production)
+        (app / "dist/client/assets/entry.js").write_text("export const hydrated = true")
+        with self.assertRaisesRegex(ValueError, "browser bundle lacks its profile values"):
+            production.validate_output(app)
+
+    def test_rejects_the_development_coordination_secret(self):
+        app, _ = self.fixture(production)
+        (app / "dist/native/index.js").write_text("const s = 'tuturuuu-local-development-app-coordination-secret'")
+        with self.assertRaisesRegex(ValueError, "development coordination secret"):
+            production.validate_output(app)
+        (app / "dist/native/index.js").write_text("export default {}")
+        (app / "dist/native/index.js.map").write_text('{"sourcesContent":["tuturuuu-local-development-app-coordination-secret fxefojytwimjiqxseqag"]}')
+        production.validate_output(app)
 
 
 if __name__ == "__main__":

@@ -149,7 +149,13 @@ URL. Each profile admits only its own root host, so the staging-data Worker
 answers 404 for `finance.tuturuuu.com` and the production Worker answers 404 for
 the staging host. Both keep `workers_dev` off and declare no routes or custom
 domains; hostnames are attached by the operator at admission or flip time. The
-qualifier seals each profile's identity and rejects the other's output. Secrets
+Vite config pins every `NEXT_PUBLIC_*` profile value before the browser bundle
+is built and fails on a conflicting shell value; production also requires a real
+publishable key. The qualifier seals each profile's identity, rejects the other's
+output, and scans the emitted bundles (source maps excepted) for the other
+profile's Supabase project and, for production, the staging Web origin and host.
+It also rejects any bundle that still carries the local development
+coordination secret. Secrets
 (`SUPABASE_SECRET_KEY`, `TUTURUUU_APP_COORDINATION_SECRET` and the Supabase
 publishable key) are provisioned on the Worker by the owner, never in source.
 Never forward staging tokens to production Web, and never attach the staging
@@ -272,8 +278,10 @@ through a Thanh bundle. Never bypass the gate.
 
 An independent Claude review is required before integration. Conversion runs
 without `--hold`, preserving the existing Vercel publisher. No CI workflow
-publishes either Finance profile: `finance-cloudflare.yaml` only qualifies the
-staging build, and native deploys are operator actions inside an approved
+publishes either Finance profile. `finance-cloudflare.yaml` qualifies both: the
+staging job, and a same-repository `native-production` job that builds with
+`VITE_FINANCE_NATIVE_PROFILE=production` and the `PRODUCTION_SUPABASE_PUBLISHABLE_KEY`
+repository variable. Native deploys are operator actions inside an approved
 custody window. The Vercel publisher (`vercel-production-finance.yaml`) still
 runs on `production` pushes, so freeze production sync for the flip and watch;
 a new Vercel deployment would move the alias the DNS-only rollback relies on.

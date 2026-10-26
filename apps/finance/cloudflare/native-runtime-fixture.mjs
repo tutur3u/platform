@@ -13,6 +13,8 @@ import {
 } from './native-profile.ts';
 import profiles from './native-profiles.json' with { type: 'json' };
 
+export { profiles };
+
 export const app = await realpath(
   fileURLToPath(new URL('../', import.meta.url))
 );
