@@ -246,10 +246,9 @@ export async function PUT(request: Request, { params }: Params) {
     return NextResponse.json({ message: 'Session not found' }, { status: 404 });
   }
 
-  if (
-    parsed.data.attendanceStatus === 'DONE' &&
-    parsed.data.content === undefined
-  ) {
+  // Completing with no (or blank) content keeps the linked notes; only real
+  // text sent alongside the completion counts as a manual edit.
+  if (parsed.data.attendanceStatus === 'DONE' && !parsed.data.content?.trim()) {
     await freezeLinkedLessonContent({
       sbAdmin,
       sessionId: id,

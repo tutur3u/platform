@@ -225,6 +225,21 @@ describe('linked make-up content', () => {
     expect(completed.content).toBe(`${missedDate}: Unit 4: past tense`);
   });
 
+  it('treats whitespace-only content as linked when completing', async () => {
+    const blank = session({ attendance_status: 'DONE', content: '  \n ' });
+    tables.workspace_tutoring_sessions = [blank];
+    tables.workspace_user_group_sessions = [lesson('Unit 4: past tense')];
+
+    expect(
+      isLinkedContentSession({ ...blank, attendance_status: 'PENDING' })
+    ).toBe(true);
+    await freezeLinkedLessonContent({ sbAdmin, sessionId: blank.id, wsId });
+    expect(blank.content).toBe(`${missedDate}: Unit 4: past tense`);
+    expect(updates[0]?.filters).toEqual(
+      expect.arrayContaining([['eq', 'content', '  \n ']])
+    );
+  });
+
   it('logs instead of failing completion when the notes lookup fails', async () => {
     const consoleError = vi
       .spyOn(console, 'error')
