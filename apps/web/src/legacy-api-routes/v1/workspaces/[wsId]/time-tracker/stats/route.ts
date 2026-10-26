@@ -3,40 +3,18 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import {
-  MAX_COLOR_LENGTH,
-  MAX_SHORT_TEXT_LENGTH,
-} from '@tuturuuu/utils/constants';
+import { MAX_COLOR_LENGTH } from '@tuturuuu/utils/constants';
 import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { sessionTagSchema } from '@/lib/time-tracking/session-tags';
+import { statsQuerySchema } from '@/lib/time-tracking/stats-query-schema';
 import {
   isSupportedTimezone,
   loadTaggedTimeStats,
 } from '@/lib/time-tracking/tagged-stats-query';
-
-const querySchema = z.object({
-  userId: process.env.NODE_ENV === 'development' ? z.string() : z.guid(),
-  isPersonal: z.enum(['true', 'false']).transform((val) => val === 'true'),
-  timezone: z.string().max(MAX_SHORT_TEXT_LENGTH).default('UTC'),
-  summaryOnly: z
-    .enum(['true', 'false'])
-    .optional()
-    .transform((val) => val === 'true'),
-  daysBack: z
-    .string()
-    .optional()
-    .refine((val) => val === undefined || /^\d+$/.test(val), {
-      message: 'daysBack must be a non-negative integer',
-    })
-    .transform((val) => (val ? Number.parseInt(val, 10) : 365)),
-  // Counts only sessions with this tag, e.g. `pomodoro` for Focus Time.
-  tag: sessionTagSchema.optional(),
-});
 
 const dailyActivitySchema = z.object({
   date: z.string().max(MAX_COLOR_LENGTH),
@@ -64,7 +42,7 @@ export async function GET(
     const sbAdmin = await createAdminClient();
     const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
     const searchParams = Object.fromEntries(req.nextUrl.searchParams);
-    const result = querySchema.safeParse(searchParams);
+    const result = statsQuerySchema.safeParse(searchParams);
 
     if (!result.success) {
       return NextResponse.json(

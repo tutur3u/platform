@@ -49,8 +49,19 @@ class PomodoroState extends Equatable {
       taskId: json['taskId'] as String?,
       taskName: json['taskName'] as String?,
       title: json['title'] as String?,
-      runs: [
-        for (final run in json['runs'] as List<dynamic>? ?? const [])
+      runs: _runsFromJson(json),
+    );
+  }
+
+  /// Runs from a stored payload. Payloads saved before runs existed kept a
+  /// single `startedAt` and `pausedAt`; they become one run (open while the
+  /// phase was running), so a phase in progress across the app upgrade
+  /// still matches sessions by time window.
+  static List<PomodoroRun> _runsFromJson(Map<String, dynamic> json) {
+    final stored = json['runs'];
+    if (stored is List) {
+      return [
+        for (final run in stored)
           if (run is Map<String, dynamic>)
             if (DateTime.tryParse(run['start'] as String? ?? '')
                 case final start?)
@@ -58,8 +69,16 @@ class PomodoroState extends Equatable {
                 start: start,
                 end: DateTime.tryParse(run['end'] as String? ?? ''),
               ),
-      ],
-    );
+      ];
+    }
+    final legacyStart = DateTime.tryParse(json['startedAt'] as String? ?? '');
+    if (legacyStart == null) return const [];
+    return [
+      (
+        start: legacyStart,
+        end: DateTime.tryParse(json['pausedAt'] as String? ?? ''),
+      ),
+    ];
   }
 
   final PomodoroPhase phase;
