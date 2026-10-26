@@ -49,7 +49,8 @@ export async function applyCalendarResponsePolicy(
   if (isOfflineDocument) {
     headers.append('Content-Security-Policy', offlineDocumentPolicy);
   } else if (framingDenied && nonce && appConfig.csp) {
-    headers.append('Content-Security-Policy', appConfig.csp(nonce));
+    const csp = appConfig.csp(nonce, { request, response, path });
+    if (csp != null) headers.append('Content-Security-Policy', csp);
   }
   headers.set('X-Content-Type-Options', 'nosniff');
   headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
