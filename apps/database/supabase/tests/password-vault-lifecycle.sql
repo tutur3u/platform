@@ -65,6 +65,13 @@ SELECT lives_ok($q$UPDATE auth.users SET last_sign_in_at=now()
  WHERE id='e8000000-0000-0000-0000-000000000004'$q$,'ordinary auth update succeeds');
 SELECT lives_ok($q$DELETE FROM auth.users WHERE id='e8000000-0000-0000-0000-000000000004'$q$,
  'account erasure with no vault rows succeeds');
+SELECT lives_ok($q$INSERT INTO public.workspaces(id,name,personal,creator_id)
+ VALUES('e8100000-0000-0000-0000-000000000004','No vault workspace',false,'e8000000-0000-0000-0000-000000000001')$q$,
+ 'workspace creation with no vault rows succeeds while vault audit is broken');
+SELECT lives_ok($q$UPDATE public.workspaces SET name='No vault updated'
+ WHERE id='e8100000-0000-0000-0000-000000000004'$q$,'workspace update with no vault rows succeeds');
+SELECT lives_ok($q$DELETE FROM public.workspaces WHERE id='e8100000-0000-0000-0000-000000000004'$q$,
+ 'workspace erasure with no vault rows succeeds');
 SELECT set_config('request.jwt.claims','{"role":"service_role"}',true);
 SELECT lives_ok($q$UPDATE public.workspace_members SET type='GUEST'
  WHERE ws_id='e8100000-0000-0000-0000-000000000001' AND user_id='e8000000-0000-0000-0000-000000000003'$q$,
