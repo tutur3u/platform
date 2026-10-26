@@ -455,6 +455,12 @@
     "accept": "Accept",
     "archive": "Archive",
     "archive-all": "Archive all",
+    "codes": {
+      "calendar_reconnect_required": {
+        "description": "Calendar sync paused because the provider stopped accepting access. Reconnect the account to resume.",
+        "title": "Reconnect your calendar"
+      }
+    },
     "decline": "Decline",
     "empty-archive": "No archived notifications yet.",
     "inbox": "Inbox",

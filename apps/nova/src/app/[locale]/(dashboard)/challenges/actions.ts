@@ -17,7 +17,7 @@ export async function fetchAdmins(): Promise<AdminsResponse> {
     const { data: userRole, error: roleError } = await sbAdmin
       .from('platform_user_roles')
       .select(
-        'allow_challenge_management, allow_manage_all_challenges, allow_role_management'
+        'enabled, allow_challenge_management, allow_manage_all_challenges, allow_role_management'
       )
       .eq('user_id', user.id)
       .single();
@@ -29,9 +29,10 @@ export async function fetchAdmins(): Promise<AdminsResponse> {
 
     // Only allow admins to fetch other admins
     if (
-      !userRole?.allow_challenge_management &&
-      !userRole?.allow_manage_all_challenges &&
-      !userRole?.allow_role_management
+      !userRole?.enabled ||
+      (!userRole.allow_challenge_management &&
+        !userRole.allow_manage_all_challenges &&
+        !userRole.allow_role_management)
     ) {
       throw new Error('Insufficient permissions to view administrators');
     }

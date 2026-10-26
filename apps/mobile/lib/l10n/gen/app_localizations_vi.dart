@@ -1089,6 +1089,226 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantToolsLabel => 'Công cụ';
 
   @override
+  String get assistantToolLabelTasksRead => 'Đã xem công việc của bạn';
+
+  @override
+  String get assistantToolLabelTasksReadRunning => 'Đang xem công việc của bạn';
+
+  @override
+  String get assistantToolLabelTaskCreate => 'Đã tạo công việc';
+
+  @override
+  String get assistantToolLabelTaskCreateRunning => 'Đang tạo công việc';
+
+  @override
+  String get assistantToolLabelTaskUpdate => 'Đã cập nhật công việc';
+
+  @override
+  String get assistantToolLabelTaskUpdateRunning => 'Đang cập nhật công việc';
+
+  @override
+  String get assistantToolLabelTaskComplete => 'Đã hoàn thành công việc';
+
+  @override
+  String get assistantToolLabelTaskCompleteRunning => 'Đang hoàn thành công việc';
+
+  @override
+  String get assistantToolLabelTaskDelete => 'Đã xóa công việc';
+
+  @override
+  String get assistantToolLabelTaskDeleteRunning => 'Đang xóa công việc';
+
+  @override
+  String get assistantToolLabelBoardsRead => 'Đã xem các bảng của bạn';
+
+  @override
+  String get assistantToolLabelBoardsReadRunning => 'Đang xem các bảng của bạn';
+
+  @override
+  String get assistantToolLabelBoardsWrite => 'Đã cập nhật các bảng';
+
+  @override
+  String get assistantToolLabelBoardsWriteRunning => 'Đang cập nhật các bảng';
+
+  @override
+  String get assistantToolLabelCalendarRead => 'Đã xem lịch của bạn';
+
+  @override
+  String get assistantToolLabelCalendarReadRunning => 'Đang xem lịch của bạn';
+
+  @override
+  String get assistantToolLabelCalendarWrite => 'Đã cập nhật lịch';
+
+  @override
+  String get assistantToolLabelCalendarWriteRunning => 'Đang cập nhật lịch';
+
+  @override
+  String get assistantToolLabelEmailRead => 'Đã xem email của bạn';
+
+  @override
+  String get assistantToolLabelEmailReadRunning => 'Đang xem email của bạn';
+
+  @override
+  String get assistantToolLabelEmailDraft => 'Đã soạn thư trả lời';
+
+  @override
+  String get assistantToolLabelEmailDraftRunning => 'Đang soạn thư trả lời';
+
+  @override
+  String get assistantToolLabelFinanceRead => 'Đã xem tài chính của bạn';
+
+  @override
+  String get assistantToolLabelFinanceReadRunning => 'Đang xem tài chính của bạn';
+
+  @override
+  String get assistantToolLabelFinanceWrite => 'Đã cập nhật tài chính';
+
+  @override
+  String get assistantToolLabelFinanceWriteRunning => 'Đang cập nhật tài chính';
+
+  @override
+  String get assistantToolLabelTimeRead => 'Đã xem dữ liệu theo dõi thời gian';
+
+  @override
+  String get assistantToolLabelTimeReadRunning => 'Đang xem dữ liệu theo dõi thời gian';
+
+  @override
+  String get assistantToolLabelTimeWrite => 'Đã cập nhật theo dõi thời gian';
+
+  @override
+  String get assistantToolLabelTimeWriteRunning => 'Đang cập nhật theo dõi thời gian';
+
+  @override
+  String get assistantToolLabelHealthRead => 'Đã xem sức khỏe và thói quen';
+
+  @override
+  String get assistantToolLabelHealthReadRunning => 'Đang xem sức khỏe và thói quen';
+
+  @override
+  String get assistantToolLabelHealthWrite => 'Đã ghi lại tiến độ';
+
+  @override
+  String get assistantToolLabelHealthWriteRunning => 'Đang ghi lại tiến độ';
+
+  @override
+  String get assistantToolLabelDayOverview => 'Đã xem tổng quan ngày';
+
+  @override
+  String get assistantToolLabelDayOverviewRunning => 'Đang xem tổng quan ngày';
+
+  @override
+  String get assistantToolLabelMemorySave => 'Đã lưu vào bộ nhớ';
+
+  @override
+  String get assistantToolLabelMemorySaveRunning => 'Đang lưu vào bộ nhớ';
+
+  @override
+  String get assistantToolLabelMemoryRead => 'Đã xem bộ nhớ';
+
+  @override
+  String get assistantToolLabelMemoryReadRunning => 'Đang xem bộ nhớ';
+
+  @override
+  String get assistantToolLabelMemoryWrite => 'Đã cập nhật bộ nhớ';
+
+  @override
+  String get assistantToolLabelMemoryWriteRunning => 'Đang cập nhật bộ nhớ';
+
+  @override
+  String get assistantToolLabelImage => 'Đã tạo hình ảnh';
+
+  @override
+  String get assistantToolLabelImageRunning => 'Đang tạo hình ảnh';
+
+  @override
+  String get assistantToolLabelQrCode => 'Đã tạo mã QR';
+
+  @override
+  String get assistantToolLabelQrCodeRunning => 'Đang tạo mã QR';
+
+  @override
+  String get assistantToolLabelWebSearch => 'Đã tìm kiếm trên web';
+
+  @override
+  String get assistantToolLabelWebSearchRunning => 'Đang tìm kiếm trên web';
+
+  @override
+  String get assistantToolLabelChecks => 'Đã chạy kiểm tra';
+
+  @override
+  String get assistantToolLabelChecksRunning => 'Đang chạy kiểm tra';
+
+  @override
+  String get assistantToolLabelFile => 'Đã đọc tệp';
+
+  @override
+  String get assistantToolLabelFileRunning => 'Đang đọc tệp';
+
+  @override
+  String get assistantToolLabelWorkspace => 'Đã xem không gian làm việc';
+
+  @override
+  String get assistantToolLabelWorkspaceRunning => 'Đang xem không gian làm việc';
+
+  @override
+  String get assistantToolLabelSettings => 'Đã cập nhật cài đặt';
+
+  @override
+  String get assistantToolLabelSettingsRunning => 'Đang cập nhật cài đặt';
+
+  @override
+  String get assistantToolLabelOpenApp => 'Đã mở ứng dụng';
+
+  @override
+  String get assistantToolLabelOpenAppRunning => 'Đang mở ứng dụng';
+
+  @override
+  String get assistantToolLabelView => 'Đã chuẩn bị giao diện';
+
+  @override
+  String get assistantToolLabelViewRunning => 'Đang chuẩn bị giao diện';
+
+  @override
+  String assistantToolStepCount(int count) {
+    return '$count bước';
+  }
+
+  @override
+  String assistantToolStepResultCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count kết quả',
+      zero: 'Không có kết quả',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get assistantToolStepWorking => 'Đang xử lý…';
+
+  @override
+  String get assistantToolStepDetails => 'Chi tiết';
+
+  @override
+  String get assistantToolStepHideDetails => 'Ẩn chi tiết';
+
+  @override
+  String get assistantToolStepRunning => 'Đang thực hiện';
+
+  @override
+  String get assistantToolStepDone => 'Hoàn tất';
+
+  @override
+  String get assistantToolStepFailed => 'Không thể hoàn tất bước này';
+
+  @override
+  String get assistantToolStepsInProgress => 'Đang thực hiện các bước';
+
+  @override
+  String get assistantToolStepsDone => 'Đã hoàn tất các bước';
+
+  @override
   String get assistantUntitledChat => 'Đoạn chat chưa có tiêu đề';
 
   @override
@@ -10908,9 +11128,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get feedbackTitle => 'Gửi phản hồi';
 
   @override
-  String get feedbackPrivate => 'Gửi phản hồi sản phẩm riêng tư cho nhân viên Tuturuuu. Không gửi mật khẩu hoặc bí mật. Có thể đính kèm một ảnh PNG, JPEG hoặc WebP tối đa 2 MB.';
-
-  @override
   String get feedbackSubject => 'Tiêu đề';
 
   @override
@@ -11489,4 +11706,116 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get feedbackDetailsPlaceholder => 'Chuyện gì đã xảy ra, bạn mong đợi điều gì và các bước để tái hiện.';
+
+  @override
+  String settingsWorkspaceCountValue(int count) {
+    return '$count không gian';
+  }
+
+  @override
+  String get offlineStoredOnDevice => 'Lưu trên thiết bị này';
+
+  @override
+  String get offlineStorageUsed => 'Dung lượng đã dùng';
+
+  @override
+  String offlineQueuedChanges(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count thay đổi đang chờ đồng bộ',
+      zero: 'Không có thay đổi nào chờ đồng bộ',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String offlineCollectionSummary(int items, String size, String time) {
+    return '$items mục · $size · Cập nhật $time';
+  }
+
+  @override
+  String get offlineManageData => 'Quản lý dữ liệu';
+
+  @override
+  String get offlineEvictRowDescription => 'Giải phóng dung lượng. Dữ liệu sẽ được tải lại khi bạn trực tuyến.';
+
+  @override
+  String get offlineTechnicalDetails => 'Chi tiết kỹ thuật';
+
+  @override
+  String get mailSettingsReadingGroup => 'Đọc thư';
+
+  @override
+  String get mailSettingsComposeGroup => 'Người gửi và chữ ký';
+
+  @override
+  String get mailSettingsAiGroup => 'Bản nháp AI';
+
+  @override
+  String get mailSettingsDeliveryGroup => 'Gửi và chuyển tiếp';
+
+  @override
+  String get mailSettingsGroupPermissions => 'Quyền của nhóm';
+
+  @override
+  String get mailSettingsOrganizeGroup => 'Sắp xếp';
+
+  @override
+  String get mailSenderNameHelper => 'Người nhận thấy tên này bên cạnh địa chỉ của bạn.';
+
+  @override
+  String get mailSignatureHelper => 'Được thêm vào cuối thư mới và thư trả lời.';
+
+  @override
+  String get mailAutoDraftDescription => 'Chuẩn bị sẵn bản nháp trả lời để bạn xem lại trước khi gửi.';
+
+  @override
+  String get mailDraftInstructions => 'Hướng dẫn soạn nháp';
+
+  @override
+  String get mailDraftInstructionsHelper => 'Cho trợ lý biết cách viết bản nháp trả lời của bạn.';
+
+  @override
+  String get feedbackIntro => 'Hãy cho chúng tôi biết điều gì ổn và điều gì chưa ổn. Chỉ đội ngũ Tuturuuu đọc góp ý của bạn.';
+
+  @override
+  String get feedbackYourFeedback => 'Góp ý của bạn';
+
+  @override
+  String get feedbackDetailsHelper => 'Không ghi mật khẩu hoặc thông tin bí mật khác.';
+
+  @override
+  String get feedbackScreenshotGroup => 'Ảnh chụp màn hình (không bắt buộc)';
+
+  @override
+  String get feedbackAttachDescription => 'PNG, JPEG hoặc WebP, tối đa 2 MB';
+
+  @override
+  String workspacePickerCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count không gian làm việc',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get workspacePickerCreateDescription => 'Tạo không gian mới cho nhóm hoặc dự án';
+
+  @override
+  String get workspacePickerCurrentLabel => 'Không gian đang dùng';
+
+  @override
+  String get workspacePickerDefaultDescription => 'Được mở đầu tiên khi bạn khởi động ứng dụng';
+
+  @override
+  String get workspacePickerEmptyMessage => 'Các không gian bạn tạo hoặc được mời tham gia sẽ hiện ở đây.';
+
+  @override
+  String get workspacePickerNoResultsMessage => 'Thử tên hoặc gói khác, hoặc xóa nội dung tìm kiếm.';
+
+  @override
+  String get workspacePickerTeamBadge => 'Nhóm';
 }

@@ -100,6 +100,7 @@
     "@tiptap/react": "3.32.0",
     "@tuturuuu/devbox": "workspace:*",
     "@tuturuuu/types": "workspace:*",
+    "fs-native-extensions": "1.5.1",
     "prosemirror-model": "^1.25.12",
     "yaml": "^2.9.1",
     "yjs": "^13.6.33",

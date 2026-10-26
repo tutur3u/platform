@@ -5,11 +5,11 @@ import { code } from '@streamdown/code';
 import { math } from '@streamdown/math';
 import { mermaid as mermaidPlugin } from '@streamdown/mermaid';
 import { cn } from '@tuturuuu/utils/format';
-import DOMPurify from 'isomorphic-dompurify';
 import { Component, type ErrorInfo, type ReactNode, useMemo } from 'react';
 import { Streamdown } from 'streamdown';
 
 import { containsRichTextHtml, normalizeMarkdownToText } from './content';
+import { sanitizeFormsRichTextHtml } from './rich-text-html';
 
 const plugins = {
   code,
@@ -56,27 +56,6 @@ class MarkdownErrorBoundary extends Component<
 }
 
 const INLINE_ALLOWED_ELEMENTS = ['a', 'br', 'code', 'del', 'em', 'p', 'strong'];
-const RICH_TEXT_ALLOWED_TAGS = [
-  'a',
-  'blockquote',
-  'br',
-  'code',
-  'em',
-  'h1',
-  'h2',
-  'h3',
-  'hr',
-  'img',
-  'li',
-  'ol',
-  'p',
-  'pre',
-  's',
-  'strong',
-  'u',
-  'ul',
-];
-const RICH_TEXT_ALLOWED_ATTR = ['alt', 'href', 'rel', 'src', 'target'];
 
 function getMarkdownClassName(variant: 'block' | 'inline', className?: string) {
   return cn(
@@ -105,13 +84,7 @@ export function FormsMarkdown({
     [normalizedContent]
   );
   const sanitizedHtml = useMemo(
-    () =>
-      hasRichTextHtml
-        ? DOMPurify.sanitize(normalizedContent, {
-            ALLOWED_TAGS: RICH_TEXT_ALLOWED_TAGS,
-            ALLOWED_ATTR: RICH_TEXT_ALLOWED_ATTR,
-          })
-        : '',
+    () => (hasRichTextHtml ? sanitizeFormsRichTextHtml(normalizedContent) : ''),
     [hasRichTextHtml, normalizedContent]
   );
   const fallback = (

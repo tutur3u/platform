@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createOfflineWorker } from '../../../../packages/offline/src/worker';
 import {
+  calendarOfflineContract,
   isNativeStaticAsset,
   OFFLINE_SCOPE,
   OFFLINE_WORKER_URL,
@@ -120,4 +121,34 @@ describe('native Calendar offline contract', () => {
     );
     expect(entries.size).toBe(160);
   });
+});
+
+it('scopes the mounted worker, public fallback and hashed assets to Calendar', () => {
+  const contract = calendarOfflineContract('/calendar');
+  expect(contract.workerUrl).toBe('/calendar/serwist/sw.js');
+  expect(contract.scope).toBe('/calendar/');
+  expect(contract.fallback).toBe('/calendar/offline.html');
+  expect(contract.precache.every((path) => path.startsWith('/calendar/'))).toBe(
+    true
+  );
+  const request = (path: string) => {
+    const req = new Request(new URL(path, 'https://tuturuuu.com'));
+    Object.defineProperty(req, 'destination', { value: 'script' });
+    return req;
+  };
+  expect(
+    isNativeStaticAsset(
+      request('/calendar/assets/app-12345678.js'),
+      'https://tuturuuu.com',
+      '/calendar'
+    )
+  ).toBe(true);
+  for (const path of [
+    '/assets/app-12345678.js',
+    '/mail/assets/app-12345678.js',
+    '/calendar/api/private',
+  ])
+    expect(
+      isNativeStaticAsset(request(path), 'https://tuturuuu.com', '/calendar')
+    ).toBe(false);
 });

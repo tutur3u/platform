@@ -823,6 +823,21 @@ Database seeding is the process of populating your database with initial data. I
 
 In Tuturuuu, seed files are stored in `apps/database/supabase/seed.sql`. This file is automatically executed when you run `bun sb:reset` or start a fresh Supabase instance.
 
+### Replaying migrations with existing storage buckets
+
+An in-place remote `supabase db reset --linked` preserves managed storage
+tables while replaying migrations. Bucket creation must tolerate an existing
+bucket ID. Use `ON CONFLICT (id) DO NOTHING` for creation defaults; retain
+intentional upserts that apply later configuration changes. This preserves
+existing bucket settings and objects without changing fresh-database defaults.
+
+`node --test apps/database/scripts/storage-bucket-inserts.test.js` executes every
+migration bucket insert in a disposable PGlite database, replays each insert,
+and verifies that creation-only inserts preserve existing settings. This focused
+check does not replace full migration replay or authorize a remote reset. The
+database package's `sbr:reset` wrapper deletes buckets before resetting; use a
+separately approved, explicitly targeted procedure when storage must survive.
+
 ### Real Examples from Tuturuuu's Seed File
 
 Let's look at some real examples from Tuturuuu's seed.sql file:
@@ -1218,3 +1233,21 @@ try {
 ```
 
 CI pulls Supabase images anonymously from `public.ecr.aws` through `SUPABASE_INTERNAL_IMAGE_REGISTRY`; no registry login or package-read permission is needed. Seven attempts allow at most 487.5 seconds of backoff, excluding command runtime. Throttling (`toomanyrequests`, `Rate exceeded` or HTTP 429) and classified transient pull transport errors retry; SQL never replays. The baseline fingerprint includes the registry, so a registry change invalidates existing snapshots once.
+
+### Backfills with historical payload violations
+
+A `NOT VALID` check still rejects updates to historical rows, even when the
+checked payload does not change. For notification email-copy cleanup, first
+batch rows that satisfy the exact catalog check expression (SQL NULL also passes).
+If legacy oversized rows remain, capture `pg_get_constraintdef`, drop the check,
+clear only their email copies and restore the same named check `NOT VALID` in
+the same transaction. Preserve payload bytes. Keep `lock_timeout = '1s'`; the
+constraint drop takes `ACCESS EXCLUSIVE` until commit, so perform it only after
+the regular batches finish. With no oversized rows, leave the constraint intact.
+
+On a disposable full chain, reproduce SQLSTATE `23514` with the original
+migration, then verify payload bytes, email removal, byte-identical constraint
+definition, unchanged name, `convalidated = false`, and rejection of a new
+oversized insert. Also compare constraint OIDs on the safe-only path. The batch
+regression is `apps/database/supabase/tests/notification-email-payload-cleanup.sql`;
+run the other notification pgTAP suites after applying the remaining migrations.

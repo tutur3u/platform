@@ -9,6 +9,8 @@ import {
   deriveCalendarOAuthPkce,
   verifyCalendarOAuthState,
 } from '@/lib/calendar/calendar-oauth-state';
+import { reactivateCalendarAuthToken } from '@/lib/calendar/calendar-token-reconnect';
+import { buildGoogleCalendarAuthUrl } from '@/lib/calendar/google-calendar-auth-url';
 import { getGoogleCalendarOAuthConfig } from '@/lib/calendar/google-oauth-config';
 import { resolveGoogleCalendarOAuthRedirectUri } from '@/lib/calendar/google-oauth-urls';
 import {
@@ -200,6 +202,27 @@ export async function GET(request: Request) {
       typeof tokens.refresh_token === 'string' && tokens.refresh_token.trim()
         ? tokens.refresh_token
         : null;
+    // Asking again with consent makes Google issue a new refresh token.
+    const askAgainWithConsent = () =>
+      NextResponse.redirect(
+        buildGoogleCalendarAuthUrl({
+          request,
+          userId: user.id,
+          wsId,
+          clientId: oauthConfig.config.clientId,
+          clientSecret: oauthConfig.config.clientSecret,
+          consent: true,
+        })
+      );
+    // A quarantined row's stored refresh token is the one Google rejected;
+    // never revive it.
+    if (
+      !receivedRefreshToken &&
+      existingToken?.is_active === false &&
+      existingToken.deactivated_reason
+    )
+      return askAgainWithConsent();
+
     const refreshToken =
       receivedRefreshToken ||
       (typeof existingToken?.refresh_token === 'string' &&
@@ -225,17 +248,21 @@ export async function GET(request: Request) {
     if (existingToken) {
       calendarOAuthDebug('🔍 [DEBUG] Updating existing token...');
       // Update existing token
-      const { error: updateError } = await supabase
-        .from('calendar_auth_tokens')
-        .update({
+      const { error: updateError, matched } = await reactivateCalendarAuthToken(
+        supabase,
+        existingToken.id,
+        {
           access_token: tokens.access_token,
           refresh_token: refreshToken,
           expires_at: expiresAt,
           account_name: accountName,
-          is_active: true,
-          created_at: new Date().toISOString(),
-        })
-        .eq('id', existingToken.id);
+        },
+        // Reusing the stored token is only safe if sync has not rejected
+        // it since this callback read the row.
+        receivedRefreshToken
+          ? undefined
+          : { createdAt: existingToken.created_at }
+      );
 
       if (updateError) {
         calendarOAuthError('❌ [DEBUG] Error updating token:', updateError);
@@ -244,6 +271,7 @@ export async function GET(request: Request) {
           { status: 500 }
         );
       }
+      if (!receivedRefreshToken && !matched) return askAgainWithConsent();
       calendarOAuthDebug('✅ [DEBUG] Token updated successfully');
     } else {
       calendarOAuthDebug('🔍 [DEBUG] Inserting new token...');

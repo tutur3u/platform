@@ -267,21 +267,22 @@ async function getWorkspaceTierMap(
 
   for (const subscription of (data ??
     []) as WorkspaceSubscriptionTierLookupRow[]) {
-    const current = subscriptionsByWorkspace.get(subscription.ws_id) ?? [];
+    const key = subscription.ws_id.toLowerCase();
+    const current = subscriptionsByWorkspace.get(key) ?? [];
     current.push({
       ...subscription,
       product_tier: subscription.product_id
         ? (productTiersById.get(subscription.product_id) ?? null)
         : null,
     });
-    subscriptionsByWorkspace.set(subscription.ws_id, current);
+    subscriptionsByWorkspace.set(key, current);
   }
 
   return new Map(
     workspaceIds.map((workspaceId) => [
       workspaceId,
       extractTierFromSubscriptions(
-        subscriptionsByWorkspace.get(workspaceId) ?? null
+        subscriptionsByWorkspace.get(workspaceId.trim().toLowerCase()) ?? null
       ),
     ])
   );
@@ -329,22 +330,21 @@ export async function getWorkspaceTier(
   wsId: string,
   options: { useAdmin?: boolean } = {}
 ): Promise<WorkspaceProductTier> {
-  const supabase = await (options.useAdmin
-    ? createAdminClient()
-    : createClient());
-
-  const resolvedWorkspaceId = resolveWorkspaceId(wsId);
-
-  const { data } = await supabase
-    .from('workspaces')
-    .select('id')
-    .eq('id', resolvedWorkspaceId)
-    .maybeSingle();
-
-  if (!data?.id) return 'FREE';
-
-  const tierMap = await getWorkspaceTierMap([data.id]);
-  return tierMap.get(data.id) || 'FREE';
+  const resolvedId = resolveWorkspaceId(wsId);
+  // Admin reads skip the existence query (unknown workspaces have no
+  // subscriptions) but keep its canonical UUID text; RLS still gates clients.
+  const client = options.useAdmin ? null : await createClient();
+  const workspaceId = client
+    ? (
+        await client
+          .from('workspaces')
+          .select('id')
+          .eq('id', resolvedId)
+          .maybeSingle()
+      ).data?.id
+    : isWorkspaceUuidLiteral(resolvedId) && resolvedId.trim().toLowerCase();
+  if (!workspaceId) return 'FREE';
+  return (await getWorkspaceTierMap([workspaceId])).get(workspaceId) || 'FREE';
 }
 
 /**

@@ -1,7 +1,7 @@
 ---
 title: "Forms"
 description: "Create forms, publish share links, embed them, and review responses and analytics."
-updatedAt: '2026-10-08'
+updatedAt: '2026-10-26'
 ---
 
 Forms (`forms.tuturuuu.com`, `apps/forms`) owns the complete form product:
@@ -25,6 +25,15 @@ validation behavior, response formatting, and analytics rules are in
 [Forms: question types, embedding, SEO, and collaboration](/platform/features/forms-embedding-and-seo).
 Use [Studio layouts](/platform/features/forms-studio-layouts) for layout and
 editing behavior.
+
+Author rich text in titles, descriptions and choices renders through one
+`sanitize-html` allowlist on the server and in the browser: headings,
+paragraphs, lists, emphasis, links, code, rules and images, plus `alt`,
+`href`, `rel`, `src`, `target`, `aria-*` and `data-*`. Links keep http(s),
+ftp(s), mailto, tel, sms, callto, xmpp, matrix, cid and relative URLs; `data:`
+is allowed only on images. Script, event and style attributes are removed.
+SVG, MathML, iframe, object, embed, template and form-control content is dropped
+with its whole subtree. Coverage: `apps/forms/src/features/forms/rich-text-html.test.ts`.
 
 ## Embedding and search
 

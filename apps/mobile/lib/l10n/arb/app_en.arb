@@ -1569,6 +1569,90 @@
   "assistantToolNoActionNeeded": "No tools were needed for this reply.",
   "assistantToolSelectedTools": "Selected tools",
   "assistantToolsLabel": "Tools",
+  "assistantToolLabelTasksRead": "Checked your tasks",
+  "assistantToolLabelTasksReadRunning": "Checking your tasks",
+  "assistantToolLabelTaskCreate": "Created a task",
+  "assistantToolLabelTaskCreateRunning": "Creating a task",
+  "assistantToolLabelTaskUpdate": "Updated a task",
+  "assistantToolLabelTaskUpdateRunning": "Updating a task",
+  "assistantToolLabelTaskComplete": "Completed a task",
+  "assistantToolLabelTaskCompleteRunning": "Completing a task",
+  "assistantToolLabelTaskDelete": "Deleted a task",
+  "assistantToolLabelTaskDeleteRunning": "Deleting a task",
+  "assistantToolLabelBoardsRead": "Checked your boards",
+  "assistantToolLabelBoardsReadRunning": "Checking your boards",
+  "assistantToolLabelBoardsWrite": "Updated your boards",
+  "assistantToolLabelBoardsWriteRunning": "Updating your boards",
+  "assistantToolLabelCalendarRead": "Checked your calendar",
+  "assistantToolLabelCalendarReadRunning": "Checking your calendar",
+  "assistantToolLabelCalendarWrite": "Updated your calendar",
+  "assistantToolLabelCalendarWriteRunning": "Updating your calendar",
+  "assistantToolLabelEmailRead": "Checked your email",
+  "assistantToolLabelEmailReadRunning": "Checking your email",
+  "assistantToolLabelEmailDraft": "Drafted a reply",
+  "assistantToolLabelEmailDraftRunning": "Drafting a reply",
+  "assistantToolLabelFinanceRead": "Checked your finances",
+  "assistantToolLabelFinanceReadRunning": "Checking your finances",
+  "assistantToolLabelFinanceWrite": "Updated your finances",
+  "assistantToolLabelFinanceWriteRunning": "Updating your finances",
+  "assistantToolLabelTimeRead": "Checked your time tracking",
+  "assistantToolLabelTimeReadRunning": "Checking your time tracking",
+  "assistantToolLabelTimeWrite": "Updated your time tracking",
+  "assistantToolLabelTimeWriteRunning": "Updating your time tracking",
+  "assistantToolLabelHealthRead": "Checked your health and habits",
+  "assistantToolLabelHealthReadRunning": "Checking your health and habits",
+  "assistantToolLabelHealthWrite": "Logged your progress",
+  "assistantToolLabelHealthWriteRunning": "Logging your progress",
+  "assistantToolLabelDayOverview": "Reviewed your day",
+  "assistantToolLabelDayOverviewRunning": "Reviewing your day",
+  "assistantToolLabelMemorySave": "Saved to memory",
+  "assistantToolLabelMemorySaveRunning": "Saving to memory",
+  "assistantToolLabelMemoryRead": "Checked memory",
+  "assistantToolLabelMemoryReadRunning": "Checking memory",
+  "assistantToolLabelMemoryWrite": "Updated memory",
+  "assistantToolLabelMemoryWriteRunning": "Updating memory",
+  "assistantToolLabelImage": "Created an image",
+  "assistantToolLabelImageRunning": "Creating an image",
+  "assistantToolLabelQrCode": "Created a QR code",
+  "assistantToolLabelQrCodeRunning": "Creating a QR code",
+  "assistantToolLabelWebSearch": "Searched the web",
+  "assistantToolLabelWebSearchRunning": "Searching the web",
+  "assistantToolLabelChecks": "Ran checks",
+  "assistantToolLabelChecksRunning": "Running checks",
+  "assistantToolLabelFile": "Read a file",
+  "assistantToolLabelFileRunning": "Reading a file",
+  "assistantToolLabelWorkspace": "Checked your workspace",
+  "assistantToolLabelWorkspaceRunning": "Checking your workspace",
+  "assistantToolLabelSettings": "Updated your settings",
+  "assistantToolLabelSettingsRunning": "Updating your settings",
+  "assistantToolLabelOpenApp": "Opened an app",
+  "assistantToolLabelOpenAppRunning": "Opening an app",
+  "assistantToolLabelView": "Prepared a view",
+  "assistantToolLabelViewRunning": "Preparing a view",
+  "assistantToolStepCount": "{count, plural, =1{1 step} other{{count} steps}}",
+  "@assistantToolStepCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "assistantToolStepResultCount": "{count, plural, =0{No results} =1{1 result} other{{count} results}}",
+  "@assistantToolStepResultCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "assistantToolStepWorking": "Working…",
+  "assistantToolStepDetails": "Details",
+  "assistantToolStepHideDetails": "Hide details",
+  "assistantToolStepRunning": "In progress",
+  "assistantToolStepDone": "Done",
+  "assistantToolStepFailed": "Couldn't finish this step",
+  "assistantToolStepsInProgress": "Steps in progress",
+  "assistantToolStepsDone": "Steps done",
   "assistantUntitledChat": "Untitled chat",
   "assistantUpcomingLabel": "upcoming",
   "assistantVideoAttachment": "Video",
@@ -4737,7 +4821,6 @@
   "assistantPreviewPlay": "Play preview",
   "assistantPreviewPause": "Pause preview",
   "feedbackTitle": "Send feedback",
-  "feedbackPrivate": "Share product feedback privately with Tuturuuu staff. Do not include passwords or secrets. One optional PNG, JPEG or WebP screenshot, up to 2 MB.",
   "feedbackSubject": "Subject",
   "feedbackDetails": "Details",
   "feedbackAttach": "Attach screenshot",
@@ -4982,5 +5065,70 @@
   "mailDraftInstructionsPlaceholder": "e.g. Keep replies short and friendly. Sign off with my first name.",
   "mailForwardToPlaceholder": "name@example.com",
   "feedbackSubjectPlaceholder": "e.g. Calendar doesn't sync on Wi-Fi",
-  "feedbackDetailsPlaceholder": "What happened, what you expected, and the steps to get there."
+  "feedbackDetailsPlaceholder": "What happened, what you expected, and the steps to get there.",
+  "settingsWorkspaceCountValue": "{count, plural, =1{1 workspace} other{{count} workspaces}}",
+  "@settingsWorkspaceCountValue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "offlineStoredOnDevice": "Stored on this device",
+  "offlineStorageUsed": "Storage used",
+  "offlineQueuedChanges": "{count, plural, =0{No changes waiting to sync} =1{1 change waiting to sync} other{{count} changes waiting to sync}}",
+  "@offlineQueuedChanges": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "offlineCollectionSummary": "{items, plural, =1{1 item} other{{items} items}} · {size} · Updated {time}",
+  "@offlineCollectionSummary": {
+    "placeholders": {
+      "items": {
+        "type": "int"
+      },
+      "size": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineManageData": "Manage data",
+  "offlineEvictRowDescription": "Frees space. Data downloads again when you are online.",
+  "offlineTechnicalDetails": "Technical details",
+  "mailSettingsReadingGroup": "Reading",
+  "mailSettingsComposeGroup": "Sender and signature",
+  "mailSettingsAiGroup": "AI drafts",
+  "mailSettingsDeliveryGroup": "Delivery and routing",
+  "mailSettingsGroupPermissions": "Group permissions",
+  "mailSettingsOrganizeGroup": "Organize",
+  "mailSenderNameHelper": "Recipients see this name next to your address.",
+  "mailSignatureHelper": "Added to the end of new messages and replies.",
+  "mailAutoDraftDescription": "Prepare reply drafts for you to review before sending.",
+  "mailDraftInstructions": "Draft instructions",
+  "mailDraftInstructionsHelper": "Tells the assistant how to write your reply drafts.",
+  "feedbackIntro": "Tell us what works and what doesn't. Only the Tuturuuu team reads your feedback.",
+  "feedbackYourFeedback": "Your feedback",
+  "feedbackDetailsHelper": "Do not include passwords or other secrets.",
+  "feedbackScreenshotGroup": "Screenshot (optional)",
+  "feedbackAttachDescription": "PNG, JPEG or WebP, up to 2 MB",
+  "workspacePickerCount": "{count, plural, =1{1 workspace} other{{count} workspaces}}",
+  "@workspacePickerCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "workspacePickerCreateDescription": "Start a new space for a team or project",
+  "workspacePickerCurrentLabel": "Current workspace",
+  "workspacePickerDefaultDescription": "Opens first when you launch the app",
+  "workspacePickerEmptyMessage": "Workspaces you create or are invited to appear here.",
+  "workspacePickerNoResultsMessage": "Try another name or plan, or clear the search.",
+  "workspacePickerTeamBadge": "Team"
 }
