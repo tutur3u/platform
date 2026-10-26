@@ -1273,6 +1273,8 @@ malformed content, links, image exclusion, light/dark themes and enlarged text.
 
 ## Native Start runtime
 
+The native asset binding uses `html_handling: 'none'`. The offline worker precaches the exact `/offline.html` URL; extensionless redirects would send it into app routing. Calendar emits only that HTML asset and relies on no HTML auto-index or trailing-slash aliases. The emitted-runtime gate checks the exact fallback and a non-HTML stylesheet against their sealed bytes.
+
 Calendar consumes `@tuturuuu/start-bridge` for its request context, Next
 protocol adapters, function guard and generated App Router route registry.
 Run `bun packages/start-bridge/src/codegen/cli.ts generate apps/calendar`

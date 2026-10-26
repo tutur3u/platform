@@ -250,6 +250,25 @@ async function runChild() {
     }
   );
   checkedTest(
+    'native offline fallback and stylesheet keep their exact public URLs',
+    async () => {
+      for (const [path, type] of [
+        ['/offline.html', /text\/html/],
+        ['/offline.css', /text\/css/],
+      ]) {
+        const response = await fetchWorker(path);
+        assert.equal(response.status, 200, `${path} must not redirect`);
+        assert.equal(response.headers.get('location'), null);
+        assert.match(response.headers.get('content-type') ?? '', type);
+        assert.equal(
+          await response.text(),
+          readFileSync(resolve(app, `dist/client${path}`), 'utf8')
+        );
+      }
+      assert.deepEqual(unexpected, []);
+    }
+  );
+  checkedTest(
     'native exact offline URL has root worker scope and classic script bytes',
     async () => {
       const response = await fetchWorker('/serwist/sw.js');
