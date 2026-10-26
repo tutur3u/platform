@@ -482,13 +482,22 @@ release.
 - **Exceptions:** a pair without a legacy invoice keeps the join-date start
   above. Uncompleted invoices neither cover nor move the start. An exact month
   older than the legacy cutoff never moves the start earlier.
+- **Standard invoices:** a standard (non-subscription) invoice has no class
+  link and no tuition months, so it never covers, floors or creates pending
+  tuition, even though it stores a 30-day `valid_until`. This is unchanged.
+  A fee that settles a class's tuition must be issued as that class's
+  subscription invoice.
+- **Display:** the Pending tab shows one row per student and class whose
+  months column lists every owed month, oldest first. A row that stays after
+  a paid month therefore names the older reopened months, not the paid month.
 - **Open question:** should months before a student's first exact-month
   invoice ever reappear? Under this rule, an unpaid month between the legacy
   cutoff and the first exact month is hidden, as it was before exact months
   existed.
 
 Regression coverage: `apps/database/supabase/tests/pending-tuition-legacy-floor.sql`
-(legacy plus exact month, gaps after the first exact month, exact-only students,
+(legacy plus exact month, the reported receipt shape, gaps after the first exact
+month, exact-only students, standard invoices, Pending row months,
 Ho Chi Minh month boundaries) and `apps/database/supabase/tests/subscription-coverage.sql`.
 Rollback restores the previous definition with
 `apps/database/rollbacks/20261026180000_pending_tuition_legacy_floor_before_first_explicit_month.rollback.sql`.
