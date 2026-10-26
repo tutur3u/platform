@@ -17,6 +17,18 @@ up Tuturuuu devbox runners.
 - For local app validation, make sure `apps/web` is running against local
   Supabase env and that the CLI config base URL points at that app.
 
+## Manual stale-run recovery
+
+For manual stale-run recovery, use the Infrastructure app's
+`POST /api/v1/infrastructure/devboxes/runs/reap-stale`. Its browser actor resolves
+through `resolveSatelliteRequestActor(request, 'infra')`; do not verify an
+Infrastructure app-session token solely with the platform-target CLI verifier.
+The root membership and secrets/roles permission gate also applies to CLI access
+bearer tokens. Browser mutations require the exact request Origin and reject
+cross-site fetch metadata. Only a verified CLI bearer may omit Origin, not an
+ambient CLI cookie. Regression coverage is colocated in the reaper's
+`access.test.ts`; see the [remote devbox runbook](../../../../../apps/docs/build/development-tools/remote-devboxes.mdx).
+
 ## Temporary Runner Smoke
 
 Use a unique, disposable runner name:
@@ -166,6 +178,33 @@ and timestamp-only writes, and rejects future values in the freshness helper.
 Exercise NULL operator inputs and timestamp forgery in
 `apps/database/supabase/tests/devbox-claim-mode-admission.sql`; historical stale
 fixtures may disable the stamp trigger only within their rolled-back test.
+
+Claim migrations replace one function: compose changes from the latest definition
+rather than moving an older body later. The final stale-run reaper migration
+(`20261026145300`) follows mode admission (`20261026145000`), the single-statement
+concurrent active-run index (`20261026145100`) and its missing/invalid-index guard
+(`20261026145200`). Never wrap the concurrent index file in a transaction. The
+reaper must retain trust-pool, drain and mode admission, inserting
+only runner-scoped `reap_stale_devbox_runs(p_runner_id, 25)` after the claim lock.
+Run every devbox pgTAP suite against the final sequence and prove the 25-row
+bound with more than 25 stale rows plus a stale row for another runner.
+
+Reaper lease cleanup runs after the run/event update, locks affected leases in
+ID order FOR UPDATE, then checks live siblings in a separate statement with a
+fresh READ COMMITTED snapshot. Enqueue takes FOR SHARE and rejects inactive
+leases after waiting. Preserve runner-before-lease trigger order. Cover enqueue
+winning the lock, reaper winning the lock, and final-sibling cleanup. Terminal
+status uses the locked update target's current status, never a candidate copy.
+The global sweep is manual until a separately admitted Cloudflare Cron Control
+trigger meets the billable-work and durable-stop requirements; do not imply that
+an unscheduled endpoint guarantees cleanup for runners that never claim again.
+
+The lease-race SQL fixture is `supabase/fixtures/devbox-reaper-lease-race.sql`.
+Run it as the disposable local stack's `supabase_admin`, separately from the
+four ordinary devbox pgTAP suites. Loopback trust does not consume a supplied
+password, and Supabase's restricted postgres role cannot use dblink_connect_u.
+The isolated lifecycle must destroy the database after committed-session tests,
+including on failure; do not grant new production privileges to run a fixture.
 
 ## Command-line injection triage
 
