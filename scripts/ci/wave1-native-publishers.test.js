@@ -29,6 +29,25 @@ for (const app of ['calendar', 'mail', 'apps']) {
       assert.deepEqual(emitted.secrets.required, p.secrets);
       assert.equal(emitted.services, undefined);
       assert.equal(emitted.r2_buckets, undefined);
+      if (app === 'calendar') {
+        assert.equal(
+          emitted.secrets.required.includes('GOOGLE_REDIRECT_URI'),
+          env === 'production'
+        );
+        assert.equal(
+          emitted.vars.GOOGLE_REDIRECT_URI,
+          env === 'production'
+            ? undefined
+            : `https://${p.host}/api/v1/calendar/auth/callback`
+        );
+      }
+      if (app === 'calendar')
+        assert.equal(
+          emitted.vars.MICROSOFT_REDIRECT_URI,
+          env === 'production'
+            ? 'https://tuturuuu.com/api/v1/calendar/auth/microsoft/callback'
+            : `https://${p.host}/api/v1/calendar/auth/microsoft/callback`
+        );
       if (app === 'apps')
         assert.equal(
           emitted.vars.APPS_CANONICAL_HOST_ENABLED,

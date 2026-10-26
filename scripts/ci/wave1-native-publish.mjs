@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { stagingAdmission } from './wave1-native-admission.mjs';
 import {
@@ -443,7 +443,13 @@ export async function uploadArtifact({
         '--no-install',
         'wrangler',
         'deploy',
-        ...(dryRun ? ['--dry-run'] : []),
+        ...(dryRun
+          ? [
+              '--dry-run',
+              '--outdir',
+              resolve(env.RUNNER_TEMP, `${app}-${environment}-dry-run`),
+            ]
+          : []),
         '--config',
         config,
         '--message',
@@ -452,12 +458,28 @@ export async function uploadArtifact({
         digest,
       ],
       {
+        cwd: resolve(dirname(config), '../..'),
         env: {
-          ...env,
-          CLOUDFLARE_API_TOKEN: cfToken,
+          ...Object.fromEntries(
+            [
+              'PATH',
+              'HOME',
+              'USER',
+              'TMPDIR',
+              'TMP',
+              'TEMP',
+              'LANG',
+              'LC_ALL',
+            ].flatMap((name) =>
+              env[name] === undefined ? [] : [[name, env[name]]]
+            )
+          ),
+          CI: 'true',
+          ...(cfToken ? { CLOUDFLARE_API_TOKEN: cfToken } : {}),
           CLOUDFLARE_ACCOUNT_ID: p.accountId,
           WRANGLER_OUTPUT_FILE_PATH: outputFile,
           WRANGLER_SEND_METRICS: 'false',
+          WRANGLER_WRITE_LOGS: 'false',
         },
         stdio: ['ignore', 'pipe', 'pipe'],
         timeout: 180000,

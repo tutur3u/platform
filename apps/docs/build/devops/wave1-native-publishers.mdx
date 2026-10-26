@@ -446,17 +446,27 @@ its separate frontend/realtime publisher and both-version rollback requirement.
 This workflow changes no publication admission. The source policy job must admit
 the selected app before qualification or credential-bearing work can run.
 
-The original production build binds the protected `production` environment only
-for an admitted production ref and reads `PRODUCTION_SUPABASE_URL` and
+The original Calendar production build binds the protected
+`wave1-calendar-production` environment only for an admitted production ref and reads `PRODUCTION_SUPABASE_URL` and
 `PRODUCTION_SUPABASE_PUBLISHABLE_KEY`. PR/main and held production builds retain
 fixtures. The same-run archive passes original and separate-job restored runtime
 gates before the upload job restores and rechecks it again without deploy credentials.
 
-Set `WAVE1_PRODUCTION_CLOUDFLARE_API_TOKEN` only in the GitHub `production`
-environment. Only the final upload step references it; staging credentials are
-refused. The token needs Workers Scripts read/write on the reviewed account and
-Workers Routes read on the reviewed zone for topology verification. The uploader
-checks required runtime secret names; initialize the named private production
+Set `WAVE1_PRODUCTION_CLOUDFLARE_API_TOKEN` only in the dedicated GitHub
+`wave1-calendar-production` environment. Before entering the secret, require exactly
+the `production` branch, no required reviewer and disabled administrator bypass.
+The read-only topology credential belongs in the same environment under
+`WAVE1_PRODUCTION_CLOUDFLARE_READ_TOKEN`. Only it performs account zone/route,
+Custom Domain and workers.dev/preview observations; the deploy token is never a
+fallback for those reads. The deploy token needs Workers Scripts:Edit. The read
+token needs account-wide Zone, Workers Routes and Workers Scripts read access.
+Calendar production preserves `GOOGLE_REDIRECT_URI` as a required Worker secret,
+while staging declares its redirect URI as a plain var. Production Microsoft OAuth
+keeps Web's existing `https://tuturuuu.com/api/v1/calendar/auth/microsoft/callback`.
+
+The generic `production` environment is not an admitted credential store. Only
+the final upload step receives the deploy token; staging credentials are refused. Complete topology verification requires the read token to see every account zone. Restricted zone visibility cannot establish
+absence of attachments in another account zone. The uploader checks required runtime secret names; initialize the named private production
 Worker, its disabled workers.dev/preview state, runtime secrets and an accepted
 rollback version through the operator's separately reviewed provisioning procedure.
 A missing Worker or rollback baseline blocks this preparation job.
@@ -469,14 +479,19 @@ the local config declares no routes. Check topology immediately before the singl
 upload and again afterwards. Existing live Workers require the release owner's
 normal update/rollback procedure; this preparation workflow cannot update them.
 
-Each upload is bounded to 180 seconds inside a five-minute step. Reconciliation
-reads at most 99 versions and 99 workflow runs, with 15-second/1 MiB API read bounds.
-A matching active SHA/artifact is accepted without upload. A rerun, earlier
-production dispatch for the same SHA, ambiguous/inactive match, or incomplete
+Each upload is bounded to 180 seconds inside an eight-minute step. Pre-upload
+observations share a 90-second deadline; post-upload acceptance has 60 seconds.
+Reconciliation reads at most 99 versions and 99 workflow runs, with 15-second/1 MiB
+API read bounds. A matching active SHA/artifact is accepted without upload. Inspect
+all earlier production dispatches across source SHAs and every job attempt.
+An earlier started or unknown upload, ambiguous/inactive match, or incomplete
 history blocks another upload; an absent version never proves an earlier write
 failed. Retain the original run and operation identity for operator reconciliation.
-An upload exception leaves the private receipt `pending`; post-upload acceptance
-failure leaves it `uploaded`. No automatic retry, new admission or traffic switch
+A dispatch or rerun whose earlier upload step was skipped or never started can
+proceed. A matching version uses the newest earlier deployment excluding that
+version as its rollback, and requires the original receipt if no such deployment
+remains. An upload exception leaves the private receipt `pending`; post-upload
+acceptance failure leaves it `uploaded`. No automatic retry, new admission or traffic switch
 follows either state.
 
 The private 30-day artifact records the exact SHA/digest, weighted rollback

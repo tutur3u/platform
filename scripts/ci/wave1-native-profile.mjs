@@ -30,7 +30,10 @@ export function profileFor(app, environment, subdomain) {
     environment,
     name,
     host,
-    secrets: settings.secrets,
+    secrets:
+      environment === 'production' && app === 'calendar'
+        ? [...settings.secrets, 'GOOGLE_REDIRECT_URI']
+        : settings.secrets,
     accountId: profiles.accountId,
   };
 }
@@ -154,8 +157,14 @@ export function publicationConfig(base, profile, { main, assets }) {
         : {}),
       ...(profile.app === 'calendar'
         ? {
-            GOOGLE_REDIRECT_URI: `https://${profile.host}/api/v1/calendar/auth/callback`,
-            MICROSOFT_REDIRECT_URI: `https://${profile.host}/api/v1/calendar/auth/microsoft/callback`,
+            ...(!production
+              ? {
+                  GOOGLE_REDIRECT_URI: `https://${profile.host}/api/v1/calendar/auth/callback`,
+                }
+              : {}),
+            MICROSOFT_REDIRECT_URI: production
+              ? 'https://tuturuuu.com/api/v1/calendar/auth/microsoft/callback'
+              : `https://${profile.host}/api/v1/calendar/auth/microsoft/callback`,
           }
         : {}),
       ...(profile.app === 'mail'
