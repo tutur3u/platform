@@ -117,7 +117,19 @@ export async function bridgeTimerSessionAction(
     });
   let result = await run(row.revision);
   if (result.status === 409 && result.body.error === 'revision_conflict') {
-    result = await run((result.body.state as PomodoroView).revision);
+    // The Pomodoro moved on: retry only if the session is still its own.
+    let fresh: PomodoroControlRow | null;
+    try {
+      fresh = await deps.store.read();
+    } catch {
+      return { conflict: true };
+    }
+    if (!isPomodoro(fresh)) return null;
+    if (!owns(fresh, session)) {
+      if (action === 'resume') await switchPomodoroOff(deps, fresh);
+      return null;
+    }
+    result = await run(fresh.revision);
   }
   if (result.status === 200 && result.body.mismatch !== true) {
     const state = result.body.state as PomodoroView;
