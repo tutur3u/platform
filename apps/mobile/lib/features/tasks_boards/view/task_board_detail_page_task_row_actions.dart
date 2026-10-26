@@ -20,6 +20,7 @@ class _TaskRowActionHandlers {
 
 enum _TaskRowMenuAction {
   toggleDone,
+  focus,
   schedule,
   priority,
   move,
@@ -85,6 +86,13 @@ extension _TaskRowActions on _TaskBoardDetailPageViewState {
                 : l10n.taskBoardDetailReopenTask,
           ),
         AppSheetAction(
+          key: const ValueKey('task-row-menu-focus'),
+          value: _TaskRowMenuAction.focus,
+          icon: LucideIcons.timer,
+          tone: AppTone.primary,
+          label: l10n.taskBoardDetailStartFocus,
+        ),
+        AppSheetAction(
           value: _TaskRowMenuAction.schedule,
           icon: LucideIcons.calendarClock,
           tone: AppTone.info,
@@ -126,6 +134,8 @@ extension _TaskRowActions on _TaskBoardDetailPageViewState {
     switch (action) {
       case _TaskRowMenuAction.toggleDone:
         await _markTaskAsStatus(context, task, lists, doneTarget!);
+      case _TaskRowMenuAction.focus:
+        await _startTaskFocus(context, task);
       case _TaskRowMenuAction.schedule:
         await _scheduleTask(context, task);
       case _TaskRowMenuAction.priority:
@@ -216,7 +226,9 @@ extension _TaskRowActions on _TaskBoardDetailPageViewState {
     DateTime? endDate,
   }) async {
     final cubit = context.read<TaskBoardDetailCubit>();
-    final toastContext = Navigator.of(context, rootNavigator: true).context;
+    // showAppToast needs a context below the root overlay; the root
+    // navigator's own context sits above it.
+    final toastContext = context;
     final fallbackErrorMessage = context.l10n.commonSomethingWentWrong;
 
     try {
@@ -276,7 +288,7 @@ extension _TaskRowActions on _TaskBoardDetailPageViewState {
         ) ??
         false;
 
-    if (!deleted || !toastContext.mounted) return;
-    showAppToast(toastContext, message: l10n.taskBoardDetailTaskDeleted);
+    if (!deleted || !context.mounted) return;
+    showAppToast(context, message: l10n.taskBoardDetailTaskDeleted);
   }
 }
