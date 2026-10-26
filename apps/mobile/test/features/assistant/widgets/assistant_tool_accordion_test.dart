@@ -197,6 +197,21 @@ void main() {
     expect(tester.binding.hasScheduledFrame, isFalse);
   });
 
+  testWidgets('parallel calls name the pending step in the header', (
+    tester,
+  ) async {
+    await tester.pumpApp(
+      _bubble([
+        _tool('get_my_tasks', state: 'input-available'),
+        _tool('get_upcoming_events', output: {'events': <Object>[]}),
+      ], active: true),
+    );
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('Checking your tasks'), findsOneWidget);
+    expect(find.text('Checking your calendar'), findsNothing);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
   testWidgets('labels localize to Vietnamese', (tester) async {
     await tester.pumpApp(
       Builder(

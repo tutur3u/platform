@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_tool_labels.dart';
+import 'package:mobile/features/assistant/widgets/assistant_tool_steps.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 
@@ -36,9 +37,12 @@ class _AssistantToolSummaryState extends State<AssistantToolSummary> {
     final l10n = context.l10n;
     final colors = theme.colorScheme;
     final running = widget.running;
+    final latestPart = running
+        ? parts.lastWhere(isAssistantToolPartPending, orElse: () => parts.last)
+        : parts.last;
     final latest = assistantToolStepLabel(
       l10n,
-      parts.last.toolName,
+      latestPart.toolName,
       running: running,
     );
     final count = l10n.assistantToolStepCount(parts.length);
