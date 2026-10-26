@@ -47,6 +47,7 @@ export function TeacherTopicDialog({
   >([]);
   const { isPending, save } = useTeacherTopicActions({
     announcementId: announcement.id,
+    onPersisted: () => setAttachments([]),
     onSaved: onClose,
     wsId,
   });

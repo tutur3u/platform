@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { BookOpen, Loader2, PenLine } from '@tuturuuu/icons';
 import {
+  getWorkspaceCalendarSettings,
   listTopicAnnouncements,
   type TopicAnnouncementRecord,
 } from '@tuturuuu/internal-api';
@@ -17,6 +18,7 @@ import {
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { TeacherTopicDialog } from './teacher-topic-dialog';
+import { isSchedulingTimezoneReady } from './topic-announcements-scheduling';
 import { TEACHER_TOPICS_QUERY_KEY } from './use-teacher-topic-actions';
 
 const EDITABLE_STATUSES = new Set(['draft', 'queued', 'failed', 'skipped']);
@@ -27,15 +29,30 @@ const STATE_STYLES: Record<TopicAnnouncementDeliveryState, string> = {
   sent: 'border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green',
 };
 
-function formatDateTime(value: string | null | undefined) {
+const TEACHER_TOPICS_PAGE_SIZE = 50;
+
+/** Formats the deadline in the workspace timezone (browser zone fallback). */
+export function formatTeacherDeadline(
+  value: string | null | undefined,
+  timeZone: string | null
+) {
   if (!value) return null;
   const date = new Date(value);
-  return Number.isNaN(date.getTime())
-    ? null
-    : date.toLocaleString(undefined, {
-        dateStyle: 'medium',
-        timeStyle: 'short',
-      });
+  if (Number.isNaN(date.getTime())) return null;
+  const formatted = date.toLocaleString(undefined, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+    ...(timeZone ? { timeZone } : {}),
+  });
+  if (!timeZone) return formatted;
+  // dateStyle cannot be combined with timeZoneName, so add the zone label.
+  const zone = new Intl.DateTimeFormat(undefined, {
+    timeZone,
+    timeZoneName: 'short',
+  })
+    .formatToParts(date)
+    .find((part) => part.type === 'timeZoneName')?.value;
+  return zone ? `${formatted} ${zone}` : formatted;
 }
 
 /**
@@ -51,16 +68,26 @@ export function TeacherTopicsView({
 }) {
   const t = useTranslations('ws-topic-announcements');
   const [editing, setEditing] = useState<TopicAnnouncementRecord | null>(null);
+  const [page, setPage] = useState(1);
   const topicsQuery = useQuery({
     queryFn: () =>
       listTopicAnnouncements(wsId, {
-        page: 1,
-        pageSize: 100,
+        page,
+        pageSize: TEACHER_TOPICS_PAGE_SIZE,
         status: 'active',
       }),
-    queryKey: [TEACHER_TOPICS_QUERY_KEY, wsId],
+    queryKey: [TEACHER_TOPICS_QUERY_KEY, wsId, page],
   });
+  const settingsQuery = useQuery({
+    queryFn: () => getWorkspaceCalendarSettings(wsId),
+    queryKey: ['topic-announcement-calendar-settings', wsId],
+    retry: false,
+  });
+  const timeZone = isSchedulingTimezoneReady(settingsQuery.data?.timezone)
+    ? (settingsQuery.data?.timezone ?? null)
+    : null;
   const topics = topicsQuery.data?.data ?? [];
+  const totalPages = topicsQuery.data?.totalPages ?? 1;
 
   return (
     <div className="space-y-5">
@@ -95,7 +122,7 @@ export function TeacherTopicsView({
               sendDueAt: topic.send_due_at,
               sentAt: topic.sent_at,
             });
-            const dueAt = formatDateTime(topic.send_due_at);
+            const dueAt = formatTeacherDeadline(topic.send_due_at, timeZone);
             const editable = EDITABLE_STATUSES.has(topic.status);
 
             return (
@@ -144,6 +171,33 @@ export function TeacherTopicsView({
           })}
         </div>
       )}
+
+      {totalPages > 1 ? (
+        <div className="flex items-center justify-end gap-2">
+          <Button
+            disabled={page <= 1}
+            onClick={() => setPage((current) => Math.max(1, current - 1))}
+            type="button"
+            variant="outline"
+          >
+            {t('previous')}
+          </Button>
+          <span className="text-muted-foreground text-sm">
+            {t('page_count', {
+              page: page.toString(),
+              total: totalPages.toString(),
+            })}
+          </span>
+          <Button
+            disabled={page >= totalPages}
+            onClick={() => setPage((current) => current + 1)}
+            type="button"
+            variant="outline"
+          >
+            {t('next')}
+          </Button>
+        </div>
+      ) : null}
 
       {editing ? (
         <TeacherTopicDialog

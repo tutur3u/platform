@@ -73,9 +73,9 @@ export function useTopicAnnouncementActions({
     mutationFn: (announcementIds: string[]) =>
       notifyTopicAnnouncementTeachers(wsId, announcementIds),
     onError: (error) =>
-      toast.error(
-        error instanceof Error ? error.message : t('teacher_notify_failed')
-      ),
+      toast.error(t('teacher_notify_failed_after_save'), {
+        description: error instanceof Error ? error.message : undefined,
+      }),
     onSuccess: ({ data }) => {
       toast.success(
         t('teacher_notify_result', {

@@ -22,13 +22,20 @@ export interface TeacherTopicSaveInput {
   videoUrl: string;
 }
 
-/** Saves a teacher's topic and optionally sends it in one step. */
+/**
+ * Saves a teacher's topic and optionally sends it. `onPersisted` runs as soon
+ * as the save succeeds (before any send), so the dialog can drop the
+ * attachment drafts it just saved: a retry after a failed send then cannot
+ * attach (and email) the same files twice.
+ */
 export function useTeacherTopicActions({
   announcementId,
+  onPersisted,
   onSaved,
   wsId,
 }: {
   announcementId: string;
+  onPersisted?: () => void;
   onSaved: () => void;
   wsId: string;
 }) {
@@ -49,6 +56,7 @@ export function useTeacherTopicActions({
         topic: input.topic.trim(),
         videoUrl: input.videoUrl.trim() || null,
       });
+      onPersisted?.();
       if (input.send) {
         await sendTopicAnnouncement(wsId, announcementId);
       }
