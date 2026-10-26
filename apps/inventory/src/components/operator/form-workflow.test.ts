@@ -183,8 +183,8 @@ describe('Inventory operator form workflows', () => {
     expect(dataSource).toContain('const categories = useInfiniteQuery');
     expect(dataSource).toContain('listInventoryProductCategories');
     expect(dataSource).toContain('getNextPageParam');
-    expect(clientSource).toContain('data.products.fetchNextPage()');
-    expect(clientSource).toContain('data.categories.fetchNextPage()');
+    expect(clientSource).toContain('productPagination');
+    expect(clientSource).toContain('categoryPagination');
     expect(catalogSource).toContain('ProductCategoriesPanel');
     expect(catalogSource).toContain('pagination={productPagination}');
     expect(categoriesSource).toContain('createInventoryProductCategory');
@@ -215,7 +215,7 @@ describe('Inventory operator form workflows', () => {
     const shell = source('operator-dialog-shell.tsx');
     expect(shell).toContain('OperatorDialogContent');
     expect(shell).toContain('overflow-y-auto');
-    expect(shell).toContain('flex max-h-[calc(100dvh-2rem)] flex-col');
+    expect(shell).toContain('flex max-h-[calc(100dvh-1rem)] flex-col');
     expect(shell).toContain('mobileFullscreen');
     expect(source('sale-create-dialog.tsx')).toContain(
       '<OperatorDialogContent mobileFullscreen size="lg">'

@@ -565,7 +565,9 @@ describe('product routes', () => {
 
     expect(response.status).toBe(200);
     expect(mocks.adminSupabase.from).toHaveBeenCalledWith('workspace_products');
-    expect(mocks.adminSupabase.from).toHaveBeenCalledWith('inventory_products');
+    expect(mocks.privateSupabase.from).toHaveBeenCalledWith(
+      'inventory_products'
+    );
     expect(mocks.sessionSupabase.from).not.toHaveBeenCalledWith(
       'inventory_products'
     );
@@ -765,6 +767,8 @@ describe('product routes', () => {
 
     expect(response.status).toBe(200);
     expect(mocks.adminSupabase.from).toHaveBeenCalledWith('workspace_products');
-    expect(mocks.adminSupabase.from).toHaveBeenCalledWith('inventory_products');
+    expect(mocks.privateSupabase.from).toHaveBeenCalledWith(
+      'inventory_products'
+    );
   });
 });

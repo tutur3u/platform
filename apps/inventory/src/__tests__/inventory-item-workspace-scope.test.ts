@@ -254,7 +254,7 @@ describe('inventory item mutation workspace scope', () => {
 
   it('binds product category updates to the normalized route workspace', async () => {
     const categoryClient = createCategoryClient();
-    mocks.createClient.mockResolvedValue(categoryClient.client);
+    mocks.createAdminClient.mockResolvedValue(categoryClient.client);
     const request = new Request('https://app.example.com/api', {
       body: JSON.stringify({ name: 'Retail', ws_id: 'workspace-b' }),
       method: 'PUT',
@@ -290,7 +290,7 @@ describe('inventory item mutation workspace scope', () => {
 
   it('binds product category deletes to the normalized route workspace', async () => {
     const categoryClient = createCategoryClient();
-    mocks.createClient.mockResolvedValue(categoryClient.client);
+    mocks.createAdminClient.mockResolvedValue(categoryClient.client);
     const request = new Request('https://app.example.com/api', {
       method: 'DELETE',
     });
