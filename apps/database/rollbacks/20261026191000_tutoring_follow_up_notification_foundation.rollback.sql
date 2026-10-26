@@ -1,4 +1,4 @@
--- Rollback for 20261026190000_tutoring_follow_up_notification_foundation.sql.
+-- Rollback for 20261026191000_tutoring_follow_up_notification_foundation.sql.
 -- Drops the review clock, the receipts, and the tutor comment column (their
 -- data is lost), and restores the previous notification type list. Existing
 -- tutoring notifications are kept: the restored constraint stays NOT VALID
