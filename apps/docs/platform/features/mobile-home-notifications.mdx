@@ -46,6 +46,29 @@ with the redesign.
   three on laptops and desktops. The header puts the switcher beside the
   greeting from 560dp of content width.
 
+## Native pass navigation rules
+
+These decisions govern the planned native pass
+([plan](/build/development-tools/mobile-native-pass-plan)). They apply to every
+new or reworked mobile screen on Android and iOS.
+
+- **Back stays on the floating dock.** Screens add no top-left back chevron,
+  and shell bodies add no second title bar. A screen's trailing actions (for
+  example task detail's complete, share and overflow) are shell chrome actions.
+  System Back and deep-link fallbacks keep working.
+- **Workspace chips on Home.** The chip row starts with All, then the user's
+  pinned workspaces, then **More**. **More** lists the remaining workspaces
+  plus Find, Manage and New Workspace. With fewer than five workspaces, every
+  workspace gets a chip and **More** holds only those commands. Pins belong to
+  the user and are never shared.
+- **Light mode and large text.** Every new screen ships in light and dark mode
+  and supports large Dynamic Type: text scales without clipping (wrapping or
+  scaling down inside its own control), and touch targets are at least 44pt.
+  Regression tests render at 320x568 with 2x text in both modes.
+
+These rules are planned, not shipped, except where a phase PR records its own
+coverage.
+
 ## Notifications
 
 - **Grouping.** The inbox and archive are grouped by device-local calendar

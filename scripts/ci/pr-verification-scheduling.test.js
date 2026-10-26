@@ -61,12 +61,18 @@ for (const platform of ['android', 'ios', 'linux', 'macos', 'windows']) {
   heavy[`mobile-build-${platform}.yaml`] = [`build-${platform}`];
 }
 
-function context(event, draft) {
+// PR contexts carry ready-for-ci; pr-label-gate.test.js covers unlabeled PRs.
+function context(event, draft, labels = ['ready-for-ci']) {
   return {
     github: {
       event_name: event,
       ref: event === 'pull_request' ? 'refs/pull/42/merge' : 'refs/heads/main',
-      event: event === 'pull_request' ? { pull_request: { draft } } : {},
+      event:
+        event === 'pull_request'
+          ? {
+              pull_request: { draft, labels: labels.map((name) => ({ name })) },
+            }
+          : {},
     },
   };
 }
@@ -115,6 +121,7 @@ for (const [file, jobs] of Object.entries(heavy)) {
       'synchronize',
       'reopened',
       'ready_for_review',
+      'labeled',
       'converted_to_draft',
     ]);
     for (const id of jobs) {

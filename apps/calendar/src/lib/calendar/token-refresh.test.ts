@@ -35,10 +35,28 @@ const token: CalendarAuthToken = {
   is_active: true,
   created_at: '2020-01-01T00:00:00Z',
 };
-function database(error: unknown = null) {
-  const eq = vi.fn(async () => ({ error }));
-  const update = vi.fn(() => ({ eq }));
-  return { from: vi.fn(() => ({ update })), update, eq };
+function database(error: unknown = null, savedRows = 1) {
+  const query = Object.assign(Promise.resolve({ error }), {
+    eq: vi.fn(() => query),
+    select: vi.fn(async () => ({
+      data: error ? null : Array.from({ length: savedRows }, () => ({})),
+      error,
+    })),
+  });
+  const eq = query.eq;
+  const update = vi.fn(() => query);
+  // Quarantine history read by the consensus breaker: none recent.
+  const history: Record<string, unknown> = {
+    select: () => history,
+    eq: () => history,
+    gte: () => history,
+    limit: async () => ({ data: [], error: null }),
+  };
+  return {
+    from: vi.fn(() => ({ update, select: history.select })),
+    update,
+    eq,
+  };
 }
 
 describe('server-side calendar credential refresh', () => {
@@ -99,6 +117,12 @@ describe('server-side calendar credential refresh', () => {
       })
     );
     expect(db.eq).toHaveBeenCalledWith('id', 'token');
+    expect(db.eq).toHaveBeenCalledWith('created_at', token.created_at);
+  });
+  it('skips the account when a reconnect replaced the credential mid-refresh', async () => {
+    const result = await ensureValidToken(database(null, 0), token);
+    expect(result).toMatchObject({ fenced: true });
+    expect(result.error).toBeDefined();
   });
   it('does not call the provider when the old callback stored no offline credential', async () => {
     const result = await ensureValidToken(database(), {
@@ -129,12 +153,47 @@ describe('server-side calendar credential refresh', () => {
     );
     const result = await ensureValidToken(db, token);
     expect(result.error).toBe('Microsoft token refresh failed');
+    expect(result.failure).toMatchObject({ kind: 'transient' });
     expect(db.update).not.toHaveBeenCalled();
   });
-  it('marks revoked consent inactive', async () => {
+  it('quarantines revoked consent through the fenced RPC', async () => {
     const db = database();
-    refresh.mockRejectedValue({ errorCode: 'invalid_grant' });
-    expect((await ensureValidToken(db, token)).error).toBe('invalid_grant');
-    expect(db.update).toHaveBeenCalledWith({ is_active: false });
+    const rpc = vi.fn(async () => ({ data: 'deactivated', error: null }));
+    refresh.mockRejectedValue({
+      errorCode: 'invalid_grant',
+      errorNo: '70008',
+      status: 400,
+    });
+    const result = await ensureValidToken({ ...db, rpc }, token);
+    expect(result).toMatchObject({
+      error: 'invalid_grant',
+      failure: { kind: 'permanent', reason: 'microsoft_invalid_grant' },
+      quarantine: 'deactivated',
+    });
+    expect(rpc).toHaveBeenCalledWith(
+      'quarantine_calendar_auth_token',
+      expect.objectContaining({
+        p_token_id: 'token',
+        p_observed_created_at: token.created_at,
+        p_reason: 'microsoft_invalid_grant',
+      })
+    );
+    expect(JSON.stringify(rpc.mock.calls)).not.toContain('old-test-refresh');
+    expect(db.update).not.toHaveBeenCalled();
+  });
+  it('never quarantines a transient refresh failure', async () => {
+    const db = database();
+    const rpc = vi.fn();
+    refresh.mockRejectedValue({ errorCode: 'server_error', status: 503 });
+    const result = await ensureValidToken({ ...db, rpc }, token);
+    expect(result.failure).toMatchObject({ kind: 'transient' });
+    expect(rpc).not.toHaveBeenCalled();
+  });
+  it('treats a misconfigured OAuth client as systemic', async () => {
+    vi.stubEnv('MICROSOFT_CLIENT_SECRET', '');
+    const rpc = vi.fn();
+    const result = await ensureValidToken({ ...database(), rpc }, token);
+    expect(result.failure).toMatchObject({ kind: 'systemic' });
+    expect(rpc).not.toHaveBeenCalled();
   });
 });
