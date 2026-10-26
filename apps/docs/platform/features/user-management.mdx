@@ -269,6 +269,22 @@ teacher, no deadline, existing behavior unchanged.
 
 #### Teacher access and write paths
 
+**Rollout gate.** Everything in this section is behind the workspace secret
+`ENABLE_TOPIC_TEACHER_ASSIGNMENTS=true`, separate from
+`ENABLE_TOPIC_ANNOUNCEMENTS` and **off by default**, because workspaces already
+send topic announcements. With it off, the supervisor create, update, import
+and send paths behave as before the feature: a topic is required whenever one is
+written (no topic-less drafts), teacher-only fields (`teacherWorkspaceUserId`,
+`courseBook`, `videoUrl`) are ignored, no `send_due_at` is stored, a resend
+restamps `sent_at`, the teacher branch of the access check does not exist, and
+the notify route answers 404. Safety-only denials ship regardless of the flag:
+teachers cannot create topics or change fields beyond the topic content,
+`resend` is supervisor-only, attachments on sent or processing topics are
+fixed, the list search cannot widen a scope, and a send with a blank topic is
+refused. Regression coverage:
+`apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/topic-announcements/supervisor-flow-flag-off.test.ts`
+and the flag-off case in `send-admission.test.ts`.
+
 - **Supervisor scope is unchanged.** `manage_users` reads and writes every topic
   in the workspace and is still the only scope for import, contacts, templates,
   removal, and the save-and-notify action. Supervisor sending still requires
