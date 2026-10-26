@@ -180,10 +180,11 @@ execution are not supported.
 The Colab endpoint deduplicates billing using the validated workshop job ID
 and provider-call sequence. Sponsored models must have a positive known price
 before any reservation or generation starts. A pricing failure during settlement
-finalizes the run as failed and releases the reservation; it does not represent
-free successful usage. Inspect `pricing_status: unavailable` and
-`reconciliation_required: true` in run metadata, restore model pricing, and
-reconcile the retained token counts before treating sponsorship totals as complete.
+records a `settlement_reconciliation` system step with
+`reconciliation_required: true` and the retained usage and identity. It does not
+issue a zero-credit settlement or refund. Restore model pricing and reconcile
+the retained token counts before treating sponsorship totals as complete. The
+separate reservation-expiry limitation is recorded below.
 Step pricing failures likewise do not create misleading priced-zero steps.
 
 Apply and test the private-schema migrations before running the app:
