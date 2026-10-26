@@ -10,6 +10,11 @@ const READY_LABEL = 'ready-for-ci';
 // workflow run at all.)
 const PR_LABEL_GATE = `github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, '${READY_LABEL}')`;
 
+// PR runs whose payload lacks the label land in their own group, so a push
+// created just before the label was added (push/label race) can never cancel
+// the admitted run. Renders empty for push, schedule and manual events.
+const UNADMITTED_GROUP_SUFFIX = `\${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, '${READY_LABEL}') && '-unadmitted' || '' }}`;
+
 // Branch-push validators moved their non-protected pushes to the gated
 // pull_request trigger; protected and generated refs keep push validation.
 const PROTECTED_PUSH_BRANCHES = [
@@ -96,6 +101,9 @@ const ALWAYS_ON_PR_WORKFLOWS = [
   'security-review-classifier.yaml',
 ];
 
+// Always-on admission check: red unless ready-for-ci admitted this event.
+const ADMISSION_PR_WORKFLOWS = ['ci-admitted.yaml'];
+
 // Paused runtimes keep their retained policy and are neither gated nor run.
 const PAUSED_PR_WORKFLOWS = [
   'docker-setup-check.yaml',
@@ -162,6 +170,7 @@ function protectedTriggerDigest(file, on) {
 }
 
 module.exports = {
+  ADMISSION_PR_WORKFLOWS,
   ALWAYS_ON_PR_WORKFLOWS,
   HEAVY_PR_WORKFLOWS,
   PAUSED_PR_WORKFLOWS,
@@ -170,6 +179,7 @@ module.exports = {
   PROTECTED_PUSH_BRANCHES,
   PUSH_TO_PR,
   READY_LABEL,
+  UNADMITTED_GROUP_SUFFIX,
   withoutPrLabelGate,
   withoutWorkflowLabelGate,
 };
