@@ -182,7 +182,11 @@ CompiledWasm/Data modules (as `next/og`'s Workers port needs). An app whose
 Worker code runs in native SSR (`rsc: { enabled: false }`, as Calendar does)
 opts its `ssr` environment into the same conversion by adding
 `startBridgeNodeBuiltinsPlugin()` from `@tuturuuu/start-bridge/vite/rsc` to its
-Vite plugins; rsc apps need nothing. A route that
+Vite plugins. Generated apps get it in `vite.config.mts` by default, before
+`voidPlugin()`: their SSR bundles CommonJS too (Forms: sanitize-html, then
+postcss's `require('path')`). This is the same conversion the rsc environment
+always applies, so a built-in workerd lacks fails when the chunk loads, which
+the runtime gate exercises, rather than when the code runs. A route that
 needs a Node API workerd does not provide still fails when it is hit; serve it
 from Web (`centralFirst`) or port it.
 
