@@ -452,8 +452,17 @@ describe('tasks app task pages', () => {
         '/workspace-1/tasks/*',
         '/workspace-1/boards',
         '/workspace-1/boards/*',
+        '/workspace-1/cycles',
+        '/workspace-1/cycles/*',
       ],
-      children: [{ href: '/workspace-1/tasks/new' }],
+      children: [
+        { href: '/workspace-1/tasks/new' },
+        {
+          href: '/workspace-1/cycles',
+          aliases: ['/workspace-1/cycles/*'],
+          disabled: true,
+        },
+      ],
     });
     expect(links[1]).toMatchObject({
       href: '/workspace-1/calendar',
@@ -475,6 +484,22 @@ describe('tasks app task pages', () => {
     expect(links[8]).toMatchObject({
       id: 'workspace-members-settings',
       openSettingsDialog: { tab: 'workspace_members' },
+    });
+  });
+
+  it('enables Cycles only for members who can manage projects', async () => {
+    const { getNavigationLinks } = await import(
+      '@/app/[locale]/(dashboard)/[wsId]/navigation'
+    );
+
+    const links = await getNavigationLinks({
+      personalOrWsId: 'workspace-1',
+      access: { canManageCycles: true },
+    });
+
+    expect(links[0]?.children?.[1]).toMatchObject({
+      href: '/workspace-1/cycles',
+      disabled: false,
     });
   });
 

@@ -13,6 +13,7 @@ import { cookies, headers } from '@tuturuuu/start-bridge/next/headers';
 import { notFound, redirect } from '@tuturuuu/start-bridge/next/navigation';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { getRequestWorkspace } from '@tuturuuu/utils/request-workspace';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 
 /**
  * The `[wsId]` layout's guards as data: an app session, then membership or a
@@ -30,6 +31,7 @@ export async function workspaceModel(id: string) {
   if (!workspace.joined) redirect('/');
   const cookieStore = await cookies();
   const behavior = parseSidebarBehavior(cookieStore);
+  const permissions = await getPermissions({ user, wsId: workspace.id });
   return {
     kind: 'workspace' as const,
     workspace,
@@ -39,6 +41,7 @@ export async function workspaceModel(id: string) {
     behavior,
     behaviorUpdatedAt: getSidebarBehaviorUpdatedAt(cookieStore),
     defaultCollapsed: getSidebarCollapsedState(cookieStore, behavior),
+    canManageCycles: !!permissions?.containsPermission('manage_projects'),
   };
 }
 
