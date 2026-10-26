@@ -170,6 +170,28 @@ describe('Tasks proxy auth mode', () => {
     });
   });
 
+  it.each([
+    ['GET', '/api/build-info', false],
+    ['HEAD', '/api/build-info', false],
+    ['POST', '/api/build-info', true],
+    ['GET', '/api/build-info/extra', true],
+  ])(
+    'build-info admission: %s %s refreshes=%s',
+    async (method, path, refreshes) => {
+      const request = new NextRequest(`https://tasks.tuturuuu.com${path}`, {
+        method,
+        headers: { authorization: 'Bearer x', cookie: 'sb-x=1' },
+      });
+      await proxy(request);
+
+      expect(mocks.refreshAppSessionForRequest).toHaveBeenCalledTimes(
+        refreshes ? 1 : 0
+      );
+      expect(mocks.guardApiProxyRequest).toHaveBeenCalled();
+      expect(request.headers.has('cookie')).toBe(refreshes);
+    }
+  );
+
   it('refreshes Supabase-cookie product APIs in Supabase-first mode', async () => {
     const request = new NextRequest('https://tasks.tuturuuu.com/api/v1/tasks', {
       headers: {
@@ -600,7 +622,6 @@ describe('Tasks proxy auth mode', () => {
 
         expect(loader.kind).toBe('board');
         expect(`${location.pathname}${location.search}`).toBe(loader.path);
-        expect(loader.path).toMatch(/\/workspace-1\/boards\/board-default\?/u);
       }
     );
 

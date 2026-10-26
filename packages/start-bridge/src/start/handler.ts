@@ -1,3 +1,4 @@
+import { framablePathRegexes } from '@tuturuuu/utils/framable-paths';
 import type { NextRequest } from 'next/dist/server/web/spec-extension/request';
 import { forwardToCentralApi } from '../core/api-forward';
 import { type AssetsBinding, fetchAsset } from '../core/assets';
@@ -66,8 +67,20 @@ export interface BridgeHandlerOptions<Env, Ctx> {
    * Builds the `Content-Security-Policy` for a fresh per-response script
    * nonce (e.g. `defaultContentSecurityPolicy`). The nonce is in the request
    * context (`requestNonce()`); pass it to `createRouter({ ssr: { nonce } })`.
+   * It also receives the request, the response and its app-relative path;
+   * returning `null` keeps the response's own policy. Framable paths never
+   * reach it (see `framablePaths`).
    */
-  csp?: (nonce: string) => string;
+  csp?: (
+    nonce: string,
+    context: { request: Request; response: Response; path: string }
+  ) => string | null | undefined;
+  /**
+   * App-relative paths, beyond the platform's framable defaults
+   * (`@tuturuuu/utils/framable-paths`, e.g. Web's uploaded WebGL builds),
+   * whose upstream `Content-Security-Policy` passes through untouched.
+   */
+  framablePaths?: readonly RegExp[];
 }
 
 /**
@@ -90,6 +103,7 @@ export function createBridgeHandler<
       }
     });
   const publicAssets = options.publicAssets ?? new Set<string>();
+  const framable = [...framablePathRegexes(), ...(options.framablePaths ?? [])];
   const inBase = (path: string, prefix: string) =>
     path === prefix || path.startsWith(`${prefix}/`);
   const inFunctionBase = (path: string) =>
@@ -181,8 +195,18 @@ export function createBridgeHandler<
     }
     const final = base.finalizeResponse(response);
     if (!nonce || !options.csp) return final;
+    // A framable path's upstream policy (Web's `sandbox` CSP for uploaded
+    // WebGL builds) must reach the browser untouched, or the uploaded
+    // scripts run unsandboxed on the app origin.
+    if (framable.some((pattern) => pattern.test(appPath))) return final;
+    const policy = options.csp(nonce, {
+      request: incoming,
+      response: final,
+      path: appPath,
+    });
+    if (policy == null) return final;
     const secured = new Response(final.body, final);
-    secured.headers.set('Content-Security-Policy', options.csp(nonce));
+    secured.headers.set('Content-Security-Policy', policy);
     return secured;
   };
 }

@@ -4511,6 +4511,7 @@
     "app": "App",
     "apps": {
       "ai": "AI",
+      "api": "API",
       "apps": "Apps",
       "backend": "backend",
       "calendar": "Calendar",
@@ -4597,6 +4598,7 @@
       "ai_5": "API keys and integrations",
       "aiCredits": "Monthly AI credits",
       "aiLab": "AI lab",
+      "api_0": "Platform service and operations",
       "apps_0": "App discovery and switching",
       "attachments": "Finance attachments per transaction",
       "automation": "Monthly automation runs",
