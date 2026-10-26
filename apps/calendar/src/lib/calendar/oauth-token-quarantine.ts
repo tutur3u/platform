@@ -17,6 +17,8 @@ export interface QuarantineCandidate {
   ws_id: string;
   refresh_token: string;
   created_at: string;
+  user_id?: string;
+  provider?: string;
 }
 
 // Method syntax keeps parameters bivariant, so the typed Supabase client,
@@ -96,6 +98,8 @@ export async function quarantineCalendarAuthToken(
     if (MISSING_SCHEMA_CODES.has(error.code)) return 'deactivation_deferred';
     throw new Error('Calendar credential quarantine failed');
   }
+  if (data === 'deactivated')
+    await notifyReconnectRequired(client, token, reason);
   if (
     data === 'deactivated' ||
     data === 'already_inactive' ||
@@ -103,4 +107,42 @@ export async function quarantineCalendarAuthToken(
   )
     return data;
   throw new Error('Unexpected calendar credential quarantine result');
+}
+
+const PROVIDER_NAMES: Record<string, string> = {
+  google: 'Google',
+  microsoft: 'Microsoft',
+};
+
+// Tells the owner once, through the existing notification preferences and
+// channels. The quarantine fence makes 'deactivated' happen once per
+// credential, so this never repeats for the same rejection.
+async function notifyReconnectRequired(
+  client: QuarantineClient,
+  token: QuarantineCandidate,
+  reason: CalendarOAuthReasonCode
+) {
+  if (!client.rpc || !token.user_id) return;
+  const provider = PROVIDER_NAMES[token.provider ?? ''] ?? 'Calendar';
+  try {
+    const { error } = await client.rpc('create_notification', {
+      p_ws_id: token.ws_id,
+      p_user_id: token.user_id,
+      p_type: 'account_update',
+      p_code: 'calendar_reconnect_required',
+      p_title: 'Reconnect your calendar',
+      p_description: `${provider} stopped accepting access, so calendar sync paused. Reconnect the account to resume.`,
+      p_data: { provider: token.provider ?? null, reason },
+      p_entity_type: 'calendar_auth_token',
+      p_entity_id: token.id,
+      p_scope: 'workspace',
+      p_priority: 'high',
+    });
+    if (error)
+      console.warn('calendar.oauth.reconnect_notification_failed', {
+        code: error.code,
+      });
+  } catch {
+    console.warn('calendar.oauth.reconnect_notification_failed');
+  }
 }

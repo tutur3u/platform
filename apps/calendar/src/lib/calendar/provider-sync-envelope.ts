@@ -37,6 +37,8 @@ export interface ProviderSyncEnvelope {
   status: 200 | 500;
   body: {
     ok: boolean;
+    degraded: boolean;
+    transientProviders: CalendarOAuthProvider[];
     error?: string;
     providers?: CalendarOAuthProvider[];
     partialFailure: boolean;
@@ -65,6 +67,13 @@ export function buildProviderSyncEnvelope(
     }));
   const attention = outcomes.filter((entry) => entry.outcome !== 'ok');
   const brokenProviders = systemicProviders(outcomes, SYSTEMIC_ACCOUNTS);
+  const transientProviders = [
+    ...new Set(outcomes.map((entry) => entry.provider)),
+  ].filter((provider) =>
+    outcomes
+      .filter((entry) => entry.provider === provider)
+      .every((entry) => entry.outcome === 'transient')
+  );
   // Every dispatched workspace failed before completing: nothing ran.
   const nothingCompleted =
     dispatch.results.length > 0 &&
@@ -75,6 +84,8 @@ export function buildProviderSyncEnvelope(
     status: brokenProviders.length ? 500 : 200,
     body: {
       ok: !failedRun,
+      degraded: !failedRun && transientProviders.length > 0,
+      transientProviders,
       ...(brokenProviders.length
         ? {
             error: 'Calendar OAuth client failure',

@@ -448,33 +448,43 @@
       },
       "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
     },
-    "apps/forms/.gitignore": {
+    "apps/inventory/.gitignore": {
       "lines": 1,
       "uses": 1,
-      "gap": "shared-toolchain",
+      "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6858",
-        "reason": "Forms keeps the generated local adapter scratch config excluded from Git while Void emits that state. This is a state-path policy reference under the shared-toolchain owner/removal condition; it invokes no CLI."
+        "decision": "https://github.com/tutur3u/platform/pull/6771",
+        "reason": "Inventory native candidate (#6771) on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
       },
       "digest": "eaa5c36b89bb2cc16b4b93bbe4ccfdddcddacc00b12726e591d57c46be30f9e8"
     },
-    "apps/forms/cloudflare/native-built-worker.runtime.mjs": {
+    "apps/inventory/cloudflare/native-built-worker.runtime.mjs": {
       "lines": 1,
       "uses": 1,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6858",
-        "reason": "Forms generated emitted-Worker acceptance uses the owning SDK locally to qualify the exact sealed artifact without publication. Retained under the Wave 1 native owner until the existing Void publication/runtime parity gap closes."
+        "decision": "https://github.com/tutur3u/platform/pull/6771",
+        "reason": "Inventory native candidate (#6771) on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
       },
       "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
     },
-    "apps/forms/package.json": {
+    "apps/inventory/cloudflare/response-policy.runtime.mjs": {
       "lines": 1,
       "uses": 1,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6858",
-        "reason": "Forms pins its owning SDK/CLI supplier for the native build, binding types, dry-run and local emitted-Worker acceptance. The Wave 1 owner removes this dependency when equivalent cf + Void exact-artifact qualification/publication is established."
+        "decision": "https://github.com/tutur3u/platform/pull/6771",
+        "reason": "Inventory native candidate (#6771) on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
+    },
+    "apps/inventory/package.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6771",
+        "reason": "Inventory native candidate (#6771) on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
       },
       "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
     },
@@ -737,6 +747,46 @@
         "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
       },
       "digest": "77f45040daaf542945632c42fecae933033ec540b3bcdb453c79ce096bbc6bb6"
+    },
+    "apps/nova/.gitignore": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6771",
+        "reason": "Nova native candidate (#6771) on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "eaa5c36b89bb2cc16b4b93bbe4ccfdddcddacc00b12726e591d57c46be30f9e8"
+    },
+    "apps/nova/cloudflare/native-built-worker.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6771",
+        "reason": "Nova native candidate (#6771) on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
+    },
+    "apps/nova/cloudflare/response-policy.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6771",
+        "reason": "Nova native candidate (#6771) on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
+    },
+    "apps/nova/package.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6771",
+        "reason": "Nova native candidate (#6771) on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
     },
     "apps/parley/.gitignore": {
       "lines": 1,
@@ -1708,6 +1758,16 @@
       },
       "digest": "b81d2e0ccf8ab5b2a47882c43502a67fd95374000c05ed43a9bc24946a6c2054"
     },
+    "scripts/ci/nova-inventory-native-artifact.test.py": {
+      "lines": 7,
+      "uses": 7,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6771",
+        "reason": "Nova/Inventory native candidate (#6771) on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "c63cce5b834793d1c373b7e550aa81958f6e2645afd87d2444ef2e64043b9160"
+    },
     "scripts/ci/production-publication-policy.test.js": {
       "lines": 1,
       "uses": 1,
@@ -1957,6 +2017,36 @@
         "reason": "Retain the explicit exclusion of local D1/KV state from rebuildable-output cleanup. This comment documents preservation rather than CLI invocation; remove only when the owning toolchain and retained local state are retired."
       },
       "digest": "a748a547eebc824ed34217f85495ab4a686ea3c2701c612f424f66b093513ebc"
+    },
+    "apps/forms/.gitignore": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "shared-toolchain",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6858",
+        "reason": "Forms keeps the generated local adapter scratch config excluded from Git while Void emits that state. This is a state-path policy reference under the shared-toolchain owner/removal condition; it invokes no CLI."
+      },
+      "digest": "eaa5c36b89bb2cc16b4b93bbe4ccfdddcddacc00b12726e591d57c46be30f9e8"
+    },
+    "apps/forms/cloudflare/native-built-worker.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6858",
+        "reason": "Forms generated emitted-Worker acceptance uses the owning SDK locally to qualify the exact sealed artifact without publication. Retained under the Wave 1 native owner until the existing Void publication/runtime parity gap closes."
+      },
+      "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
+    },
+    "apps/forms/package.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6858",
+        "reason": "Forms pins its owning SDK/CLI supplier for the native build, binding types, dry-run and local emitted-Worker acceptance. The Wave 1 owner removes this dependency when equivalent cf + Void exact-artifact qualification/publication is established."
+      },
+      "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
     }
   }
 }
