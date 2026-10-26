@@ -2,7 +2,10 @@ import { generateAssuredCrossAppToken } from '@tuturuuu/auth/cross-app/server';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
-import { CLI_LOGIN_PAGE_SECURITY_HEADERS } from '@/lib/auth/cli-login-page-headers';
+import {
+  CLI_LOGIN_PAGE_SECURITY_HEADERS,
+  CLI_LOGIN_START_PATH,
+} from '@/lib/auth/cli-login-page-headers';
 
 function isLoopbackCallback(value: string) {
   try {
@@ -240,6 +243,13 @@ function renderCopyTokenPage(token: string, email: string | null) {
 }
 
 export async function GET(request: NextRequest) {
+  // next.config.ts header rules match the raw pathname, but production Next
+  // also serves this handler for percent-encoded spellings (e.g. /%73tart),
+  // which would arrive without the sandbox CSP. Serve only the canonical path.
+  if (new URL(request.url).pathname !== CLI_LOGIN_START_PATH) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
   const state = request.nextUrl.searchParams.get('state')?.trim();
   if (!state) {
     return NextResponse.json({ error: 'Missing state' }, { status: 400 });

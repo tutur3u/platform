@@ -93,8 +93,10 @@ browser navigation (`Sec-Fetch-Mode: navigate`, `Sec-Fetch-Dest: document`).
 `403 CLI_LOGIN_NAVIGATION_REQUIRED` and mint nothing; the CLI only opens the URL
 in a browser. Browsers send Fetch Metadata only to trustworthy origins (HTTPS
 and `localhost`), so a CLI pointed at a non-localhost `http://` dev origin gets
-`403`; use HTTPS or a `*.localhost` host. The route has no JSON response. Every
-response on the path carries
+`403`; use HTTPS, `localhost` or `127.0.0.1`. The route has no JSON response
+and answers `404` for any non-canonical (percent-encoded) spelling of its path,
+which the config header rule would not match. Every response on the canonical
+path carries
 `Content-Security-Policy: sandbox; default-src 'none'; style-src 'unsafe-inline';
 frame-ancestors 'none'` and `Cross-Origin-Opener-Policy: same-origin`, set in
 `apps/web/next.config.ts` after the platform anti-framing rule (Next applies

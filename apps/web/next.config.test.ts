@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { modifyRouteRegex } from 'next/dist/lib/redirect-status';
 import { getPathMatch } from 'next/dist/shared/lib/router/utils/path-match';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -20,8 +21,11 @@ async function finalConfigHeaders(pathname: string) {
   const headers = new Map<string, string>();
 
   for (const rule of rules) {
+    // Mirrors buildCustomRoute in next/dist/server/lib/router-utils/filesystem.js.
     const match = getPathMatch(rule.source, {
+      regexModifier: (regex) => modifyRouteRegex(regex),
       removeUnnamedParams: true,
+      sensitive: false,
       strict: true,
     });
     if (match(pathname) === false) continue;
@@ -53,5 +57,13 @@ describe('web next config headers', () => {
       "frame-ancestors 'none'"
     );
     expect(headers.has('cross-origin-opener-policy')).toBe(false);
+  });
+
+  it('does not match percent-encoded spellings, which the route handler refuses', async () => {
+    const headers = await finalConfigHeaders('/api/cli/auth/%73tart');
+
+    expect(headers.get('content-security-policy')).toBe(
+      "frame-ancestors 'none'"
+    );
   });
 });

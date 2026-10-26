@@ -247,4 +247,22 @@ describe('CLI auth start route', () => {
     expect(createClient).not.toHaveBeenCalled();
     expect(generateAssuredCrossAppToken).not.toHaveBeenCalled();
   });
+
+  it.each([
+    '/api/cli/auth/%73tart',
+    '/api/cli/auth/st%61rt',
+    '/api/cli/%61uth/start',
+    '/api/%63li/auth/%73t%61rt',
+  ])(
+    'refuses the non-canonical spelling %s without minting',
+    async (pathname) => {
+      const response = await GET(
+        navigation(`https://tuturuuu.com${pathname}?state=s1&mode=copy`)
+      );
+
+      expect(response.status).toBe(404);
+      expect(createClient).not.toHaveBeenCalled();
+      expect(generateAssuredCrossAppToken).not.toHaveBeenCalled();
+    }
+  );
 });
