@@ -12,7 +12,7 @@
 -- Existing rows are not rewritten or validated here (equivalent to NOT VALID);
 -- inspect them with the read-only count in
 -- apps/database/verification/task-cycle-cross-workspace-links.sql.
--- Rollback: apps/database/rollbacks/20261027090000_guard_task_cycle_task_workspace.rollback.sql
+-- Rollback: apps/database/rollbacks/20261027000100_guard_task_cycle_task_workspace.rollback.sql
 
 set lock_timeout = '5s';
 

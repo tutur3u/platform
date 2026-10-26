@@ -1,4 +1,4 @@
--- Rollback for 20261027090000_guard_task_cycle_task_workspace.sql.
+-- Rollback for 20261027000100_guard_task_cycle_task_workspace.sql.
 -- Removes the same-workspace link guard and the cycle ws_id immutability guard.
 -- WARNING: this reopens cross-workspace cycle links (security regression).
 -- No rows are changed. Do not use CASCADE; this file does not change the
