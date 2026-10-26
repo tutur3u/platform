@@ -231,306 +231,300 @@ class _RequestDetailSheetState extends State<RequestDetailSheet> {
       snapSizes: const [0.62, 0.92],
       expand: false,
       builder: (context, scrollController) {
-        return Container(
-          decoration: BoxDecoration(
-            color: theme.colorScheme.background,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-          ),
-          child: Column(
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  controller: scrollController,
-                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              _request.title ?? l10n.timerRequestsTitle,
-                              style: theme.typography.h3,
-                            ),
-                          ),
-                          RequestStatusBadge(status: _request.approvalStatus),
-                        ],
-                      ),
-                      if (canEditRequest) ...[
-                        const shad.Gap(12),
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: shad.OutlineButton(
-                            onPressed: () => _showEditDialog(context),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.edit,
-                                  size: 16,
-                                  color: theme.colorScheme.primary,
-                                ),
-                                const shad.Gap(8),
-                                Text(
-                                  l10n.timerRequestEdit,
-                                  style: theme.typography.small.copyWith(
-                                    color: theme.colorScheme.primary,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
+        return Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                controller: scrollController,
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            _request.title ?? l10n.timerRequestsTitle,
+                            style: theme.typography.h3,
                           ),
                         ),
+                        RequestStatusBadge(status: _request.approvalStatus),
                       ],
-                      if (_request.description != null) ...[
-                        const shad.Gap(12),
-                        Text(
-                          _request.description!,
-                          style: theme.typography.small.copyWith(
-                            color: theme.colorScheme.mutedForeground,
-                          ),
-                        ),
-                      ],
-                      const shad.Gap(16),
-                      RequestInfoRow(
-                        label: l10n.timerDuration,
-                        value: _formatDuration(_request.duration),
-                      ),
-                      if (_request.startTime != null)
-                        RequestInfoRow(
-                          label: l10n.timerStartTime,
-                          value: _formatDateTime(_request.startTime!),
-                        ),
-                      if (_request.endTime != null)
-                        RequestInfoRow(
-                          label: l10n.timerEndTime,
-                          value: _formatDateTime(_request.endTime!),
-                        ),
-                      if (_request.approvalStatus == ApprovalStatus.approved &&
-                          _request.approvedAt != null)
-                        RequestInfoRow(
-                          label: l10n.timerRequestLastModifiedBy,
-                          value: l10n.timerRequestApprovedByAt(
-                            _request.approvedByName ??
-                                l10n.timerRequestActivityUnknownUser,
-                            _formatDateTime(_request.approvedAt!),
-                          ),
-                        ),
-                      if (_request.approvalStatus == ApprovalStatus.rejected &&
-                          _request.rejectedAt != null)
-                        RequestInfoRow(
-                          label: l10n.timerRequestLastModifiedBy,
-                          value: l10n.timerRequestRejectedByAt(
-                            _request.rejectedByName ??
-                                l10n.timerRequestActivityUnknownUser,
-                            _formatDateTime(_request.rejectedAt!),
-                          ),
-                        ),
-                      if (_request.approvalStatus == ApprovalStatus.needsInfo)
-                        RequestInfoRow(
-                          label: l10n.timerRequestLastModifiedBy,
-                          value:
-                              _request.needsInfoRequestedByName ??
-                              l10n.timerRequestActivityUnknownUser,
-                        ),
-                      if (_request.images.isNotEmpty) ...[
-                        const shad.Gap(16),
-                        RequestImageGallery(
-                          wsId: widget.wsId,
-                          requestId: _request.id,
-                          imagePaths: _request.images,
-                        ),
-                      ],
-                      if (_request.rejectionReason != null) ...[
-                        const shad.Gap(12),
-                        RequestReasonBox(
-                          title: l10n.timerRequestRejectionReason,
-                          text: _request.rejectionReason!,
-                          color: theme.colorScheme.destructive,
-                          icon: Icons.close,
-                        ),
-                      ],
-                      if (_request.needsInfoReason != null) ...[
-                        const shad.Gap(12),
-                        RequestReasonBox(
-                          title: l10n.timerRequestNeedsInfoReason,
-                          text: _request.needsInfoReason!,
-                          color: theme.colorScheme.primary,
-                          icon: Icons.info,
-                        ),
-                      ],
-                      const shad.Gap(24),
-                      _ExpandableSection(
-                        title: l10n.timerRequestComments,
-                        count: _comments.length,
-                        isExpanded: _commentsExpanded,
-                        onToggle: () => setState(
-                          () => _commentsExpanded = !_commentsExpanded,
-                        ),
-                        child: _isLoadingComments
-                            ? const AppLoadingIndicator()
-                            : CommentsSection(
-                                comments: _comments,
-                                workspaceId: widget.wsId,
-                                commentController: _commentController,
-                                isAddingComment: _isAddingComment,
-                                currentUserId: _currentUserId,
-                                onAddComment: _addComment,
-                                onEditComment: _updateComment,
-                                onDeleteComment: _deleteComment,
-                                canAddComments: true,
+                    ),
+                    if (canEditRequest) ...[
+                      const shad.Gap(12),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: shad.OutlineButton(
+                          onPressed: () => _showEditDialog(context),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.edit,
+                                size: 16,
+                                color: theme.colorScheme.primary,
                               ),
-                      ),
-                      const shad.Gap(16),
-                      _ExpandableSection(
-                        title: l10n.timerRequestActivity,
-                        count: _activityCount > 0 ? _activityCount : null,
-                        isExpanded: _activityExpanded,
-                        onToggle: () => setState(
-                          () => _activityExpanded = !_activityExpanded,
-                        ),
-                        child: RequestActivitySection(
-                          wsId: widget.wsId,
-                          requestId: _request.id,
-                          repository: _repo,
-                          onTotalChanged: (count) {
-                            if (mounted && _activityCount != count) {
-                              setState(() => _activityCount = count);
-                            }
-                          },
+                              const shad.Gap(8),
+                              Text(
+                                l10n.timerRequestEdit,
+                                style: theme.typography.small.copyWith(
+                                  color: theme.colorScheme.primary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
-                  ),
-                ),
-              ),
-              if (showManagerActions)
-                RequestManagerActionsBar(
-                  onApprove: () async {
-                    await widget.onApprove();
-
-                    if (!mounted) {
-                      return;
-                    }
-
-                    setState(() {
-                      _request = _requestWithStatus(ApprovalStatus.approved);
-                    });
-                    _scheduleGracePeriodExpiryRebuild();
-                  },
-                  onReject: (reason) async {
-                    await widget.onReject(reason);
-
-                    if (!mounted) {
-                      return;
-                    }
-
-                    setState(() {
-                      _request = _requestWithStatus(
-                        ApprovalStatus.rejected,
-                        reason: reason,
-                      );
-                    });
-                    _scheduleGracePeriodExpiryRebuild();
-                  },
-                  onRequestInfo: (reason) async {
-                    await widget.onRequestInfo(reason);
-
-                    if (!mounted) {
-                      return;
-                    }
-
-                    setState(() {
-                      _request = _requestWithStatus(
-                        ApprovalStatus.needsInfo,
-                        reason: reason,
-                      );
-                    });
-                    _scheduleGracePeriodExpiryRebuild();
-                  },
-                ),
-              if (showRevertActions)
-                RequestManagerActionsBar(
-                  onApprove: () async {
-                    await widget.onApprove();
-
-                    if (!mounted) {
-                      return;
-                    }
-
-                    setState(() {
-                      _request = _requestWithStatus(ApprovalStatus.approved);
-                    });
-                    _scheduleGracePeriodExpiryRebuild();
-                  },
-                  onReject: (reason) async {
-                    await widget.onReject(reason);
-
-                    if (!mounted) {
-                      return;
-                    }
-
-                    setState(() {
-                      _request = _requestWithStatus(
-                        ApprovalStatus.rejected,
-                        reason: reason,
-                      );
-                    });
-                    _scheduleGracePeriodExpiryRebuild();
-                  },
-                  onRequestInfo: (_) async {},
-                  showApprove: canApproveRejectedRequest,
-                  showReject: canRejectApprovedRequest,
-                  showRequestInfo: false,
-                  showRevertToRejected: canRejectApprovedRequest,
-                  showRevertToApproved: canApproveRejectedRequest,
-                ),
-              if (showResubmitAction)
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const shad.Divider(),
-                    SafeArea(
-                      top: false,
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
-                        child: shad.PrimaryButton(
-                          onPressed: _isResubmitting
-                              ? null
-                              : () async {
-                                  setState(() => _isResubmitting = true);
-                                  try {
-                                    await widget.onResubmit();
-                                    if (!mounted) {
-                                      return;
-                                    }
-                                    setState(() {
-                                      _request = _requestWithStatus(
-                                        ApprovalStatus.pending,
-                                      );
-                                    });
-                                    _scheduleGracePeriodExpiryRebuild();
-                                  } finally {
-                                    if (mounted) {
-                                      setState(() => _isResubmitting = false);
-                                    }
-                                  }
-                                },
-                          child: _isResubmitting
-                              ? const SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: NovaLoadingIndicator(size: 20),
-                                )
-                              : Text(l10n.timerRequestResubmit),
+                    if (_request.description != null) ...[
+                      const shad.Gap(12),
+                      Text(
+                        _request.description!,
+                        style: theme.typography.small.copyWith(
+                          color: theme.colorScheme.mutedForeground,
                         ),
+                      ),
+                    ],
+                    const shad.Gap(16),
+                    RequestInfoRow(
+                      label: l10n.timerDuration,
+                      value: _formatDuration(_request.duration),
+                    ),
+                    if (_request.startTime != null)
+                      RequestInfoRow(
+                        label: l10n.timerStartTime,
+                        value: _formatDateTime(_request.startTime!),
+                      ),
+                    if (_request.endTime != null)
+                      RequestInfoRow(
+                        label: l10n.timerEndTime,
+                        value: _formatDateTime(_request.endTime!),
+                      ),
+                    if (_request.approvalStatus == ApprovalStatus.approved &&
+                        _request.approvedAt != null)
+                      RequestInfoRow(
+                        label: l10n.timerRequestLastModifiedBy,
+                        value: l10n.timerRequestApprovedByAt(
+                          _request.approvedByName ??
+                              l10n.timerRequestActivityUnknownUser,
+                          _formatDateTime(_request.approvedAt!),
+                        ),
+                      ),
+                    if (_request.approvalStatus == ApprovalStatus.rejected &&
+                        _request.rejectedAt != null)
+                      RequestInfoRow(
+                        label: l10n.timerRequestLastModifiedBy,
+                        value: l10n.timerRequestRejectedByAt(
+                          _request.rejectedByName ??
+                              l10n.timerRequestActivityUnknownUser,
+                          _formatDateTime(_request.rejectedAt!),
+                        ),
+                      ),
+                    if (_request.approvalStatus == ApprovalStatus.needsInfo)
+                      RequestInfoRow(
+                        label: l10n.timerRequestLastModifiedBy,
+                        value:
+                            _request.needsInfoRequestedByName ??
+                            l10n.timerRequestActivityUnknownUser,
+                      ),
+                    if (_request.images.isNotEmpty) ...[
+                      const shad.Gap(16),
+                      RequestImageGallery(
+                        wsId: widget.wsId,
+                        requestId: _request.id,
+                        imagePaths: _request.images,
+                      ),
+                    ],
+                    if (_request.rejectionReason != null) ...[
+                      const shad.Gap(12),
+                      RequestReasonBox(
+                        title: l10n.timerRequestRejectionReason,
+                        text: _request.rejectionReason!,
+                        color: theme.colorScheme.destructive,
+                        icon: Icons.close,
+                      ),
+                    ],
+                    if (_request.needsInfoReason != null) ...[
+                      const shad.Gap(12),
+                      RequestReasonBox(
+                        title: l10n.timerRequestNeedsInfoReason,
+                        text: _request.needsInfoReason!,
+                        color: theme.colorScheme.primary,
+                        icon: Icons.info,
+                      ),
+                    ],
+                    const shad.Gap(24),
+                    _ExpandableSection(
+                      title: l10n.timerRequestComments,
+                      count: _comments.length,
+                      isExpanded: _commentsExpanded,
+                      onToggle: () => setState(
+                        () => _commentsExpanded = !_commentsExpanded,
+                      ),
+                      child: _isLoadingComments
+                          ? const AppLoadingIndicator()
+                          : CommentsSection(
+                              comments: _comments,
+                              workspaceId: widget.wsId,
+                              commentController: _commentController,
+                              isAddingComment: _isAddingComment,
+                              currentUserId: _currentUserId,
+                              onAddComment: _addComment,
+                              onEditComment: _updateComment,
+                              onDeleteComment: _deleteComment,
+                              canAddComments: true,
+                            ),
+                    ),
+                    const shad.Gap(16),
+                    _ExpandableSection(
+                      title: l10n.timerRequestActivity,
+                      count: _activityCount > 0 ? _activityCount : null,
+                      isExpanded: _activityExpanded,
+                      onToggle: () => setState(
+                        () => _activityExpanded = !_activityExpanded,
+                      ),
+                      child: RequestActivitySection(
+                        wsId: widget.wsId,
+                        requestId: _request.id,
+                        repository: _repo,
+                        onTotalChanged: (count) {
+                          if (mounted && _activityCount != count) {
+                            setState(() => _activityCount = count);
+                          }
+                        },
                       ),
                     ),
                   ],
                 ),
-            ],
-          ),
+              ),
+            ),
+            if (showManagerActions)
+              RequestManagerActionsBar(
+                onApprove: () async {
+                  await widget.onApprove();
+
+                  if (!mounted) {
+                    return;
+                  }
+
+                  setState(() {
+                    _request = _requestWithStatus(ApprovalStatus.approved);
+                  });
+                  _scheduleGracePeriodExpiryRebuild();
+                },
+                onReject: (reason) async {
+                  await widget.onReject(reason);
+
+                  if (!mounted) {
+                    return;
+                  }
+
+                  setState(() {
+                    _request = _requestWithStatus(
+                      ApprovalStatus.rejected,
+                      reason: reason,
+                    );
+                  });
+                  _scheduleGracePeriodExpiryRebuild();
+                },
+                onRequestInfo: (reason) async {
+                  await widget.onRequestInfo(reason);
+
+                  if (!mounted) {
+                    return;
+                  }
+
+                  setState(() {
+                    _request = _requestWithStatus(
+                      ApprovalStatus.needsInfo,
+                      reason: reason,
+                    );
+                  });
+                  _scheduleGracePeriodExpiryRebuild();
+                },
+              ),
+            if (showRevertActions)
+              RequestManagerActionsBar(
+                onApprove: () async {
+                  await widget.onApprove();
+
+                  if (!mounted) {
+                    return;
+                  }
+
+                  setState(() {
+                    _request = _requestWithStatus(ApprovalStatus.approved);
+                  });
+                  _scheduleGracePeriodExpiryRebuild();
+                },
+                onReject: (reason) async {
+                  await widget.onReject(reason);
+
+                  if (!mounted) {
+                    return;
+                  }
+
+                  setState(() {
+                    _request = _requestWithStatus(
+                      ApprovalStatus.rejected,
+                      reason: reason,
+                    );
+                  });
+                  _scheduleGracePeriodExpiryRebuild();
+                },
+                onRequestInfo: (_) async {},
+                showApprove: canApproveRejectedRequest,
+                showReject: canRejectApprovedRequest,
+                showRequestInfo: false,
+                showRevertToRejected: canRejectApprovedRequest,
+                showRevertToApproved: canApproveRejectedRequest,
+              ),
+            if (showResubmitAction)
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const shad.Divider(),
+                  SafeArea(
+                    top: false,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
+                      child: shad.PrimaryButton(
+                        onPressed: _isResubmitting
+                            ? null
+                            : () async {
+                                setState(() => _isResubmitting = true);
+                                try {
+                                  await widget.onResubmit();
+                                  if (!mounted) {
+                                    return;
+                                  }
+                                  setState(() {
+                                    _request = _requestWithStatus(
+                                      ApprovalStatus.pending,
+                                    );
+                                  });
+                                  _scheduleGracePeriodExpiryRebuild();
+                                } finally {
+                                  if (mounted) {
+                                    setState(() => _isResubmitting = false);
+                                  }
+                                }
+                              },
+                        child: _isResubmitting
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: NovaLoadingIndicator(size: 20),
+                              )
+                            : Text(l10n.timerRequestResubmit),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+          ],
         );
       },
     );
