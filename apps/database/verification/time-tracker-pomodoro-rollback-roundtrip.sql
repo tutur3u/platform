@@ -1,4 +1,4 @@
--- Run after the 20261026180000 rollback: every Pomodoro object is gone and the
+-- Run after the 20261026194000 rollback: every Pomodoro object is gone and the
 -- foundation contract is back. Raises on the first difference.
 do $$
 begin
