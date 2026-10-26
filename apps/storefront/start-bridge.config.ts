@@ -37,15 +37,13 @@ export default defineBridgeAppConfig<StorefrontApiEnvironment>({
       'stores.tuturuuu.com',
       'storefronts.tuturuuu.com',
     ]);
+    const destination = new URL('https://store.tuturuuu.com');
+    destination.pathname = url.pathname;
+    destination.search = url.search;
     const result = redirects.has(url.hostname)
       ? new Response(null, {
           status: 307,
-          headers: {
-            Location: new URL(
-              `${url.pathname}${url.search}`,
-              'https://store.tuturuuu.com'
-            ).href,
-          },
+          headers: { Location: destination.href },
         })
       : new Response(response.body, response);
     result.headers.set('X-Robots-Tag', 'noindex, nofollow');

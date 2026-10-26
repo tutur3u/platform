@@ -118,6 +118,7 @@ test('emitted storefront Worker applies security and personalized cache policy',
       '/',
       '/api/build-info?tag=one&tag=two',
       '/login?next=%2Fdemo',
+      '//evil.example/path?x=1',
     ]) {
       const response = await worker.request(path, { host });
       assert.equal(response.status, 307);

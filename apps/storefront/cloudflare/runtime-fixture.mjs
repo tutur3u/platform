@@ -69,7 +69,7 @@ export async function startFixtureWorker(
       { method = 'GET', headers = {}, host = 'store.tuturuuu.com' } = {}
     ) {
       return new Promise((resolve, reject) => {
-        const target = new URL(path, origin);
+        const target = new URL(`${origin}${path}`);
         const req = httpRequest(
           {
             hostname: target.hostname,

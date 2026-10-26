@@ -6,7 +6,7 @@ description: Public and private inventory storefronts with Polar and Square Term
 `apps/storefront` is the buyer-facing Inventory commerce app. Operators manage
 catalog, stock, storefront visibility, and checkout-provider settings in
 `apps/inventory`; buyers browse, cart, and start checkout from
-`storefront.tuturuuu.com`.
+`store.tuturuuu.com`.
 
 ## Hosts
 
@@ -184,3 +184,7 @@ upstream CSP byte for byte and receive no X-Frame-Options. Central's sandbox
 is the security boundary for uploaded JavaScript. The wrapper never uses the
 handler-level CSP option. Neighbouring paths retain the normal framing denial;
 source and emitted regressions cover the exact path boundary and sandbox policy.
+
+Alias redirect destinations always use the fixed canonical origin, including
+when an incoming path begins with two slashes; user path text cannot replace
+the redirect host. Source and emitted alias regressions retain this boundary.

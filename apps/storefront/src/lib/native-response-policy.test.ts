@@ -138,3 +138,20 @@ describe('Storefront production redirect aliases', () => {
     expect(await response.text()).toBe('');
   });
 });
+
+it('keeps protocol-relative alias paths on the canonical origin', async () => {
+  const wrapResponse = config.wrapResponse;
+  if (!wrapResponse) throw new Error('Response policy is required');
+  const response = await wrapResponse(
+    new Response('Not Found', { status: 404 }),
+    {
+      request: new Request(
+        'https://stores.tuturuuu.com//evil.example/path?x=1'
+      ),
+      env: {},
+    }
+  );
+  expect(response.headers.get('Location')).toBe(
+    'https://store.tuturuuu.com//evil.example/path?x=1'
+  );
+});
