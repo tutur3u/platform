@@ -286,3 +286,7 @@ The earlier inventory-project timeout is not persistent evidence of a provider f
 - [Upstream Vercel pagination issue](https://github.com/vercel/vercel/issues/16286) records similar pagination limitations; our endpoint observations above are measured separately.
 - The exact non-secret query shape is `GET https://vercel.com/api/logs/request-logs?projectId=<project>&ownerId=<owner>&startDate=<window-start-ms>&endDate=<cursor-ms>&page=0`. The verification-only second call used `page=1`.
 - `vercel-followup.json` stores the fixed window, each call’s non-sensitive bound/count/outcome, project scope, and UA-family/ASN/status/WAF-action aggregates. `vercel_followup.py` is the private bounded collector; no raw rows or request IDs were written.
+
+## Later origin and header snapshot
+
+At 15:55 GMT+7, ten bounded authenticated GETs and eight public HEADs found Add security headers enabled and SAMEORIGIN on all eight proxied roots. Meet, Meet realtime, Lettin and Parley had workers.dev and previews enabled; Colab had both disabled. Calendar/Mail/Apps status reads returned404 and remain unknown. See `inventory/r3-live.json` and the [per-host framing matrix](/build/devops/edge-security-headers). These newer observations supersede older current-state assumptions without replacing historical traffic windows. No Finance Worker endpoint, origin address or iframe was probed, and no provider state was changed.

@@ -2,6 +2,12 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import {
+  deriveWorkerConfigPaths,
+  eligibleVercelHosts,
+  loadPublisherMap,
+  validateCatalogBindings,
+} from './edge-security-catalog.mjs';
+import {
   classifyRequest,
   compilePolicy,
   loadPolicy,
@@ -20,6 +26,7 @@ test('draft compiles into bounded disabled Pro proposals', () => {
       'configuration.json',
       'rate-limit.json',
       'late-transform.json',
+      'origin-transform.json',
     ].map((name) => [
       name,
       JSON.parse(
@@ -36,7 +43,7 @@ test('draft compiles into bounded disabled Pro proposals', () => {
   validateCompiled(policy, compiled);
   assert.equal(
     Object.values(compiled).flatMap((entry) => entry.rules).length,
-    6
+    7
   );
   const probe = compiled['custom.json'].rules[0];
   assert(
@@ -108,10 +115,10 @@ test('page probe exemptions require the exact secret, host, path and read method
 test('machine callers, browser pages, Finance and unknown hosts remain distinct', () => {
   const policy = loadPolicy();
   const cases = [
-    ['tuturuuu.com', '/api/v1/workspaces/ws/tasks', 'machine'],
-    ['tuturuuu.com', '/api/auth/mobile/send-otp', 'machine'],
-    ['tuturuuu.com', '/api/auth/cli/exchange', 'machine'],
-    ['mail.tuturuuu.com', '/api/webhooks/sendgrid', 'machine'],
+    ['tuturuuu.com', '/api/v1/workspaces/ws/tasks', 'inactive'],
+    ['tuturuuu.com', '/api/auth/mobile/send-otp', 'inactive'],
+    ['tuturuuu.com', '/api/auth/cli/exchange', 'inactive'],
+    ['mail.tuturuuu.com', '/api/webhooks/sendgrid', 'inactive'],
     ['meet.tuturuuu.com', '/api/cron/process', 'machine'],
     ['meet.tuturuuu.com', '/api/build-info', 'machine'],
     ['colab.tuturuuu.com', '/api/sponsorship/verify', 'machine'],
@@ -120,20 +127,20 @@ test('machine callers, browser pages, Finance and unknown hosts remain distinct'
     ['meet-realtime.tuturuuu.com', '/realtime', 'machine'],
     ['lettin.tuturuuu.com', '/verify-token', 'machine'],
     ['meet.tuturuuu.com', '/_next/static/chunk.js', 'machine'],
-    ['tuturuuu.com', '/en/login', 'browser'],
-    ['tuturuuu.com', '/auth/register', 'browser'],
+    ['tuturuuu.com', '/en/login', 'inactive'],
+    ['tuturuuu.com', '/auth/register', 'inactive'],
     ['meet.tuturuuu.com', '/auth/login', 'browser'],
     ['meet.tuturuuu.com', '/auth/callback', 'browser'],
     ['meet.tuturuuu.com', '/_next/image', 'browser'],
     ['meet.tuturuuu.com', '/_next/data/build/page.json', 'browser'],
     ['hive.tuturuuu.com', '/realtime', 'machine'],
     ['hive.tuturuuu.com', '/', 'browser'],
-    ['store.tuturuuu.com', '/api/v1/storage', 'machine'],
-    ['stores.tuturuuu.com', '/api/auth/verify', 'machine'],
-    ['api.tuturuuu.com', '/api/auth/verify', 'machine'],
+    ['store.tuturuuu.com', '/api/v1/storage', 'inactive'],
+    ['stores.tuturuuu.com', '/api/auth/verify', 'inactive'],
+    ['api.tuturuuu.com', '/api/auth/verify', 'inactive'],
     ['colab.tuturuuu.com', '/auth/login', 'machine'],
     ['colab.tuturuuu.com', '/auth/callback', 'machine'],
-    ['tuturuuu.com', '/.well-known/assetlinks.json', 'machine'],
+    ['tuturuuu.com', '/.well-known/assetlinks.json', 'inactive'],
     ['meet.tuturuuu.com', '/api-looks-like-a-page', 'browser'],
     ['finance.tuturuuu.com', '/api/build-info', 'held'],
     ['finance-staging.tuturuuu.com', '/en', 'held'],
@@ -244,6 +251,47 @@ test('negative controls reject Finance, accidental broad scopes and unsupported 
       policy.probe.rotation.overlapMinutes = 0;
     },
     (policy) => policy.serviceMachines[0].prefixes.push('/'),
+    (policy) =>
+      policy.serviceMachines.push({
+        host: 'meet.tuturuuu.com',
+        exact: ['/'],
+        prefixes: [],
+      }),
+    (policy) => policy.rateLimit.hosts.push('tuturuuu.com'),
+    (policy) => policy.applicationHosts.push('unlisted.tuturuuu.com'),
+    (policy) => {
+      policy.rateLimit.excludedExactPaths = [];
+    },
+    (policy) => {
+      policy.rateLimit.excludedPrefixes = [];
+    },
+    (policy) => {
+      policy.rateLimit.serverSideRefreshAcceptanceRequired = false;
+    },
+    (policy) => {
+      policy.rateLimit.measuredPerIpP99Required = false;
+    },
+    (policy) => {
+      policy.originLock.liveWorkerSubdomainGetRequired = false;
+    },
+    (policy) => {
+      policy.originLock.workerConfigPaths =
+        policy.originLock.workerConfigPaths.filter(
+          (path) => !path.startsWith('apps/meet/')
+        );
+    },
+    (policy) => {
+      policy.originLock.vercel.proxiedOriginHosts = ['meet.tuturuuu.com'];
+    },
+    (policy) => {
+      policy.originLock.vercel.readerEvidenceRequired = false;
+    },
+    (policy) => {
+      policy.originLock.vercel.rotationOrder.reverse();
+    },
+    (policy) => {
+      policy.framingHeaders.perHostEvidenceRequired = false;
+    },
     (policy) => {
       policy.rateLimit.characteristics = [
         'http.request.headers["authorization"]',
@@ -343,4 +391,74 @@ test('published webhook origin lists cannot replace signature authentication or 
     mutate(value);
     assert.throws(() => validateWebhookOrigins(value));
   }
+});
+
+test('publisher-derived lock includes native Meet and explicit Colab URL flags', () => {
+  const paths = deriveWorkerConfigPaths();
+  assert(paths.includes('apps/meet/void.config.ts'));
+  assert(paths.includes('apps/colab/wrangler.jsonc'));
+  assert.deepEqual(loadPolicy().originLock.workerConfigPaths, paths);
+  const map = loadPublisherMap();
+  map.workers = map.workers.filter(
+    (worker) => worker.host !== 'meet.tuturuuu.com'
+  );
+  assert.throws(() => deriveWorkerConfigPaths(map));
+  const colab = JSON.parse(
+    readFileSync(
+      new URL('../apps/colab/wrangler.jsonc', import.meta.url),
+      'utf8'
+    )
+  );
+  assert.equal(colab.workers_dev, false);
+  assert.equal(colab.preview_urls, false);
+});
+
+test('origin secret can be injected only into verified proxied Vercel origins', () => {
+  const policy = loadPolicy();
+  const compiled = compilePolicy(policy);
+  const origin = compiled['origin-transform.json'].rules[0];
+  assert.equal(origin.enabled, false);
+  assert.equal(origin.expression, 'false');
+  assert.deepEqual(origin.action_parameters.headers, {
+    'x-tuturuuu-edge-origin': {
+      operation: 'set',
+      value: '__EDGE_ORIGIN_SECRET_CURRENT_REQUIRED__',
+    },
+  });
+  const map = loadPublisherMap();
+  map.vercelOrigins = [
+    { host: 'tasks.tuturuuu.com', provider: 'vercel', providerVerified: true },
+    { host: 'meet.tuturuuu.com', provider: 'vercel', providerVerified: true },
+    { host: 'mail.tuturuuu.com', provider: 'vercel', providerVerified: false },
+  ];
+  assert.deepEqual(
+    eligibleVercelHosts(map, [
+      { host: 'tasks.tuturuuu.com', proxied: false },
+      { host: 'meet.tuturuuu.com', proxied: true },
+      { host: 'mail.tuturuuu.com', proxied: true },
+    ]),
+    []
+  );
+  assert.deepEqual(
+    eligibleVercelHosts(map, [{ host: 'tasks.tuturuuu.com', proxied: true }]),
+    ['tasks.tuturuuu.com']
+  );
+});
+
+test('auth-attempt rule excludes shared refresh and recurring poll routes', () => {
+  const policy = loadPolicy();
+  validateCatalogBindings(policy);
+  const expression =
+    compilePolicy(policy)['rate-limit.json'].rules[0].expression;
+  assert(expression.includes('and not ('));
+  for (const path of policy.rateLimit.excludedExactPaths)
+    assert(expression.includes(JSON.stringify(path)));
+  assert(
+    expression.includes(
+      'starts_with(http.request.uri.path, "/api/v1/auth/qr-login/challenges/")'
+    )
+  );
+  const dnsOnly = structuredClone(policy);
+  dnsOnly.rateLimit.hosts.push('tuturuuu.com');
+  assert.throws(() => validateCatalogBindings(dnsOnly));
 });

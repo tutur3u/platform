@@ -1,6 +1,8 @@
 {
   "$schema": "../../node_modules/wrangler/config-schema.json",
   "name": "tuturuuu-colab",
+  "workers_dev": false,
+  "preview_urls": false,
   "account_id": "e8912e2867beecc673d171907bf09649",
   "main": "src/server/worker.ts",
   "compatibility_date": "2026-06-20",

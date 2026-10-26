@@ -6,7 +6,7 @@
     {
       "ref": "edge_auth_attempts",
       "description": "Pre-auth low threshold; origin lock and client 429 acceptance required",
-      "expression": "(not (http.host in {\"finance.tuturuuu.com\" \"finance-staging.tuturuuu.com\"}) and http.host in {\"colab.tuturuuu.com\" \"hive.tuturuuu.com\" \"lettin.tuturuuu.com\" \"meet.tuturuuu.com\" \"parley.tuturuuu.com\"} and (starts_with(http.request.uri.path, \"/api/v1/auth/\") or starts_with(http.request.uri.path, \"/api/auth/\") or starts_with(http.request.uri.path, \"/api/cli/auth/\")))",
+      "expression": "(not (http.host in {\"finance.tuturuuu.com\" \"finance-staging.tuturuuu.com\"}) and http.host in {\"colab.tuturuuu.com\" \"hive.tuturuuu.com\" \"lettin.tuturuuu.com\" \"meet.tuturuuu.com\" \"parley.tuturuuu.com\"} and (starts_with(http.request.uri.path, \"/api/v1/auth/\") or starts_with(http.request.uri.path, \"/api/auth/\") or starts_with(http.request.uri.path, \"/api/cli/auth/\")) and not (http.request.uri.path in {\"/api/auth/refresh-app-session\" \"/api/auth/verify-app-token\" \"/api/v1/auth/cross-app-session/refresh\" \"/api/v1/auth/cross-app-token/verify\" \"/api/v1/auth/mfa/mobile/approvals\"} or starts_with(http.request.uri.path, \"/api/v1/auth/qr-login/challenges/\")))",
       "action": "block",
       "enabled": false,
       "action_parameters": {

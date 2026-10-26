@@ -3,6 +3,10 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { isIP } from 'node:net';
 import { fileURLToPath } from 'node:url';
 import { isDeepStrictEqual } from 'node:util';
+import {
+  validateCatalogBindings,
+  validateRolloutPrerequisites,
+} from './edge-security-catalog.mjs';
 
 const directory = new URL(
   '../infra/cloudflare/edge-security/',
@@ -47,6 +51,7 @@ export function validatePolicy(policy) {
       'plan',
       'excludedHosts',
       'applicationHosts',
+      'candidateApplicationHosts',
       'applicationMachinePrefixes',
       'applicationMachineExact',
       'serviceMachines',
@@ -56,11 +61,12 @@ export function validatePolicy(policy) {
       'originLock',
       'entrypointCustody',
       'behaviorAcknowledgements',
+      'framingHeaders',
       'prerequisites',
     ],
     'policy'
   );
-  assert.equal(policy.version, 2);
+  assert.equal(policy.version, 3);
   assert.equal(policy.status, 'draft-disabled');
   assert.equal(policy.zone, 'tuturuuu.com');
   assert.equal(policy.plan, 'Pro');
@@ -68,12 +74,20 @@ export function validatePolicy(policy) {
   const hostPattern = /^(?:[a-z0-9-]+\.)*tuturuuu\.com$/;
   const pathPattern = /^\/[A-Za-z0-9_./-]*$/;
   strings(policy.applicationHosts, hostPattern, 'applicationHosts');
+  strings(
+    policy.candidateApplicationHosts,
+    hostPattern,
+    'candidateApplicationHosts'
+  );
   for (const host of [
     'store.tuturuuu.com',
     'stores.tuturuuu.com',
     'api.tuturuuu.com',
   ])
-    assert(policy.applicationHosts.includes(host), 'Required alias missing');
+    assert(
+      policy.candidateApplicationHosts.includes(host),
+      'Required alias missing'
+    );
   strings(
     policy.applicationMachinePrefixes,
     pathPattern,
@@ -167,6 +181,11 @@ export function validatePolicy(policy) {
       'maximumRuleCount',
       'mode',
       'client429AcceptanceRequired',
+      'excludedExactPaths',
+      'excludedPrefixes',
+      'serverSideRefreshAcceptanceRequired',
+      'pollingAcceptanceRequired',
+      'measuredPerIpP99Required',
     ],
     'rateLimit'
   );
@@ -190,6 +209,7 @@ export function validatePolicy(policy) {
   );
   const allHosts = [
     ...policy.applicationHosts,
+    ...policy.candidateApplicationHosts,
     ...policy.serviceMachines.map((entry) => entry.host),
     ...policy.probe.hosts,
     ...policy.rateLimit.hosts,
@@ -202,89 +222,9 @@ export function validatePolicy(policy) {
     assert(policy.applicationHosts.includes(host), 'unknown candidate app');
   }
   strings(policy.prerequisites, /\S/, 'prerequisites');
-  validateRolloutPrerequisites(policy);
+  validateCatalogBindings(policy);
+  validateRolloutPrerequisites(policy, exactKeys);
   return policy;
-}
-
-function validateRolloutPrerequisites(policy) {
-  exactKeys(
-    policy.urlNormalization,
-    ['type', 'scope', 'reReadBeforeApply'],
-    'urlNormalization'
-  );
-  assert.equal(policy.urlNormalization.type, 'cloudflare');
-  assert.equal(policy.urlNormalization.scope, 'both');
-  assert.equal(policy.urlNormalization.reReadBeforeApply, true);
-  exactKeys(
-    policy.originLock,
-    [
-      'requiredBeforeEnforcement',
-      'workersDev',
-      'previewUrls',
-      'workerConfigPaths',
-      'vercel',
-      'reReadBeforeApply',
-    ],
-    'originLock'
-  );
-  assert.equal(policy.originLock.requiredBeforeEnforcement, true);
-  assert.equal(policy.originLock.workersDev, false);
-  assert.equal(policy.originLock.previewUrls, false);
-  assert.equal(policy.originLock.reReadBeforeApply, true);
-  assert.deepEqual(policy.originLock.workerConfigPaths, [
-    'apps/meet-realtime/wrangler.jsonc',
-    'apps/lettin/wrangler.jsonc',
-    'apps/parley/wrangler.jsonc',
-  ]);
-  exactKeys(
-    policy.originLock.vercel,
-    [
-      'requireCloudflareSourceNetwork',
-      'requireEdgeInjectedSecret',
-      'secretHeader',
-      'overwriteClientHeader',
-      'protectAllDeploymentAliases',
-      'aliasPattern',
-    ],
-    'originLock.vercel'
-  );
-  for (const flag of [
-    'requireCloudflareSourceNetwork',
-    'requireEdgeInjectedSecret',
-    'overwriteClientHeader',
-    'protectAllDeploymentAliases',
-  ])
-    assert.equal(policy.originLock.vercel[flag], true);
-  assert.equal(policy.originLock.vercel.secretHeader, 'x-tuturuuu-edge-origin');
-  assert.notEqual(policy.originLock.vercel.secretHeader, policy.probe.header);
-  assert.equal(
-    policy.originLock.vercel.aliasPattern,
-    '<app>-tuturuuu.vercel.app'
-  );
-  exactKeys(
-    policy.entrypointCustody,
-    [
-      'reReadBeforeApply',
-      'preserveForeignRules',
-      'captureRuleIdsAndPositions',
-      'skipBeforeBlockOrChallenge',
-      'financeOwnerApprovalRequired',
-    ],
-    'entrypointCustody'
-  );
-  for (const flag of Object.values(policy.entrypointCustody))
-    assert.equal(flag, true);
-  exactKeys(
-    policy.behaviorAcknowledgements,
-    [
-      'browserBicAlreadyOn',
-      'machineSecurityLevelOffBypassesUnderAttack',
-      'sbfmSkipDoesNotProveAllAiPolicyBypass',
-    ],
-    'behaviorAcknowledgements'
-  );
-  for (const flag of Object.values(policy.behaviorAcknowledgements))
-    assert.equal(flag, true);
 }
 
 export function machineExpression(policy) {
@@ -319,7 +259,7 @@ export function compilePolicy(input) {
     phases: ['http_request_sbfm'],
   };
   const ratelimit = policy.rateLimit;
-  const rateExpression = `(${exclusion} and ${hostExpression(ratelimit.hosts)} and (${pathExpression([], ratelimit.prefixes)}))`;
+  const rateExpression = `(${exclusion} and ${hostExpression(ratelimit.hosts)} and (${pathExpression([], ratelimit.prefixes)}) and not (${pathExpression(ratelimit.excludedExactPaths, ratelimit.excludedPrefixes)}))`;
   const admittedHosts = [
     ...new Set([
       ...policy.applicationHosts,
@@ -410,6 +350,31 @@ export function compilePolicy(input) {
         ),
       ],
     },
+    'origin-transform.json': {
+      name: 'Set separate origin-lock credential for verified proxied Vercel origins',
+      kind: 'zone',
+      phase: 'http_request_late_transform',
+      rules: [
+        rule(
+          'edge_set_origin_secret',
+          'High-value credential; reader/rotation acceptance required',
+          policy.originLock.vercel.proxiedOriginHosts.length
+            ? `(${exclusion} and ${hostExpression(policy.originLock.vercel.proxiedOriginHosts)})`
+            : 'false',
+          'rewrite',
+          {
+            action_parameters: {
+              headers: {
+                [policy.originLock.vercel.secretHeader]: {
+                  operation: 'set',
+                  value: policy.originLock.vercel.secretPlaceholders[0],
+                },
+              },
+            },
+          }
+        ),
+      ],
+    },
     'late-transform.json': {
       name: 'Remove probe credential before origin',
       kind: 'zone',
@@ -451,7 +416,9 @@ export function classifyRequest(policy, request) {
       ? 'machine'
       : 'browser';
   }
-  return 'unclassified';
+  return policy.candidateApplicationHosts.includes(host)
+    ? 'inactive'
+    : 'unclassified';
 }
 
 export function matchesProbe(policy, request, expectedSecrets) {
@@ -593,6 +560,6 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     JSON.parse(readFileSync(new URL('webhook-origins.json', directory), 'utf8'))
   );
   console.log(
-    'Edge proposals valid: 6 disabled rules; no provider access or apply operation.'
+    'Edge proposals valid: 7 disabled rules; no provider access or apply operation.'
   );
 }

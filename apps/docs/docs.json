@@ -372,6 +372,7 @@
                   "build/devops/edge-security",
                   "build/devops/edge-security-source",
                   "build/devops/edge-security-traffic",
+                  "build/devops/edge-security-headers",
                   "build/devops/e2e-proof-reuse",
                   "build/devops/vercel-cost-controls",
                   "build/devops/cloudflare-cron-control",

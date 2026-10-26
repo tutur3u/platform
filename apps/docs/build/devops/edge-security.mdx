@@ -6,8 +6,8 @@ description: "Disabled Cloudflare Pro fragments with origin-lock, authentication
 This remains a draft proposal. Every generated rule is disabled. No DNS, rule,
 setting, Worker, deployment or database change was applied. Finance and Finance
 staging remain excluded. The independent review accepted documentation and
-disabled fragments for integration, with the readiness requirements below before
-rollout step 2 or later. Integration does not authorize infrastructure writes.
+disabled fragments for integration, with the readiness requirements below. Steps 1–3 remain proposals for approval;
+steps 4–5 are not ready for approval. Integration does not authorize infrastructure writes.
 
 ## Inventory and current limits
 
@@ -26,7 +26,10 @@ A fresh DNS read at **26 October 2026, 14:55 GMT+7** finds **31 of the original
 36 application hosts DNS-only**, with five proxied. This corrects the review's
 30/36 count. Adding `store.tuturuuu.com`, `stores.tuturuuu.com` and
 `api.tuturuuu.com` produces **34 DNS-only out of 39**, still five proxied.
-Cloudflare HTTP rules do nothing for their DNS-only traffic. Adding a name to
+Cloudflare HTTP rules do nothing for their DNS-only traffic. The 39 names stay in
+`candidateApplicationHosts`; only the five inventoried proxied app names are
+active `applicationHosts` selectors. The validator rejects DNS-only or unknown
+active hosts. Adding a name to
 `policy.json` does not establish ownership, proxying or origin protection.
 Custom domains such as `nova.ai.vn` and `rewise.me` need their own zone evidence.
 
@@ -84,7 +87,7 @@ that can reach an origin alias directly can avoid every Cloudflare rule.
 
 | Origin | Required future control | Acceptance and rollback |
 | --- | --- | --- |
-| Cloudflare Workers | Set both `workers_dev=false` and `preview_urls=false` in the authoritative publisher configuration and reconcile hosted production/version URLs. Current source still sets workers_dev true at `apps/meet-realtime/wrangler.jsonc:58`, `apps/lettin/wrangler.jsonc:29`, `apps/parley/wrangler.jsonc:39`. | Prove canonical host works and production/preview workers.dev URLs cannot bypass zone controls. Capture previous route/version settings. Roll back only the admitted Worker settings under its owner; stop enforcement while any bypass is reopened. |
+| Cloudflare Workers | Set both `workers_dev=false` and `preview_urls=false` in the authoritative publisher configuration and reconcile hosted production/version URLs. Coverage derives from `publishers.json`, joined to the canonical targets and actual publisher config. Include native Meet `apps/meet/void.config.ts:45`, Meet realtime, Lettin, Parley and Colab. Colab now explicitly sets both URL flags false in source; this is not a deployment. | Prove canonical host works and production/preview workers.dev URLs cannot bypass zone controls. Capture previous route/version settings. Roll back only the admitted Worker settings under its owner; stop enforcement while any bypass is reopened. |
 | Existing Vercel origins | Vercel Firewall must deny unless the actual provider-observed source is in Cloudflare's published source ranges **and** an exact, separate edge-injected secret header is valid. Overwrite client-supplied `x-tuturuuu-edge-origin` at the authorized edge. Header presence or Cloudflare source IP alone is insufficient. | Establish current Vercel plan support and source-IP semantics; do not trust client X-Forwarded-For. Prove direct requests fail with no header, forged header and wrong secret, while authorized edge traffic succeeds. If this cannot be enforced, hold rollout. |
 | Vercel aliases | Apply the origin restriction to every project deployment URL, including `<app>-tuturuuu.vercel.app`, branch aliases and immutable deployment URLs. Preserve approved deployment protection. Inventory direct internal/CI callbacks before restricting them. | Verify canonical host and aliases separately. Roll back the new project rule by captured ID/version, with browser/auth enforcement paused. Do not add a broad alias/IP/UA bypass to repair a probe. |
 | DNS-only hosts | Separately authorize and prove proxy/canonical ingress plus header injection before enabling the origin restriction for that host. | A Cloudflare-only restriction on a still-DNS-only app would reject its callers. Restore that host's recorded ingress/origin rule together under the release owner, never change Finance from this lane. |
@@ -112,7 +115,9 @@ app hosts and only `/api/v1/auth/`, `/api/auth/`, `/api/cli/auth/`. Its mitigati
 is a 60-second block with JSON 429 (`AUTH_RATE_LIMITED`, `retryAfter: 60`).
 This is a proposed low threshold, not calibrated NAT capacity. Counters can be
 shared across matching hosts and paths for the same IP/colo. No method, header,
-probe-secret exclusion or per-token edge counter is claimed on Pro. Preserve the
+probe-secret exclusion or per-token edge counter is claimed on Pro. Exact
+server-refresh and polling paths are excluded below; they retain application
+authentication, token validity, quota and abuse controls. Preserve the
 existing leaked-password rule. Expand the host list only after origin/proxy
 acceptance, shared-NAT measurement and client 429 acceptance. Per-token and
 per-IP quotas after origin authentication remain application responsibilities.
@@ -136,6 +141,84 @@ Hive evidence: `docker-compose/compose.web.prod.sidecars.yml:26`,
 The Compose/proxy material is retained source, not a claim that the paused Docker
 runtime was started or that current deployment/handshake acceptance was observed.
 
+## Publisher-derived origin coverage and live status
+
+`publishers.json` joins `tuturuuu.ts` production targets, the publication fence in
+`tuturuuu.ci.ts` and each workflow's actual input/emitted config authority. A
+Wrangler-only glob misses native Meet's `apps/meet/void.config.ts`. The validator
+derives `workerConfigPaths` from that map and checks host/Worker/config identity.
+It does not confuse a source publication hold with absence of an existing Worker.
+Colab explicitly pins `workers_dev=false` and `preview_urls=false` in this PR.
+Other publisher/runtime configurations remain unchanged.
+
+At **26 October 2026, 15:55 GMT+7**, fresh subdomain GETs returned:
+
+| Worker | workers.dev | previews | Step-4 disposition |
+| --- | --- | --- | --- |
+| tuturuuu-meet | enabled | enabled | Origin lock unmet; native production publisher must be included. |
+| tuturuuu-meet-realtime | enabled | enabled | Origin lock unmet. |
+| tuturuuu-lettin | enabled | enabled | Origin lock unmet. |
+| tuturuuu-parley | enabled | enabled | Origin lock unmet. |
+| tuturuuu-colab | disabled | disabled | These two live flags pass at this timestamp; source now also pins false/false. |
+| tuturuuu-calendar / tuturuuu-mail / tuturuuu-apps | unknown after 404 | unknown | Not disabled proof. Resolve actual deployed identities and ownership. |
+
+Before **step 4**, require a fresh
+`GET /accounts/<account>/workers/scripts/<exact-worker>/subdomain` for **every**
+in-scope Worker. Record identity, time, `enabled` and `previews_enabled`; require
+false/false or a separately accepted alternate-origin control. A source flag,
+old artifact or 404 is insufficient. Finance live status must come through its
+owner, not this lane. [API fields](https://developers.cloudflare.com/api/resources/workers/subresources/scripts/subresources/subdomain/methods/get/).
+
+Inventory legacy/rollback ingress independently. `meet-vercel-rollback.tuturuuu.com`
+is a DNS-only CNAME and a possible direct Vercel origin, listed in the map's
+`legacyAliases`. Its Vercel project/account binding is not proven; step 4 must
+resolve and lock it, or obtain an explicit retired/unreachable disposition.
+The same rule applies to `vercel.tuturuuu.com`, project aliases and held/native
+publisher candidates. No legacy alias is silently treated as protected by zone rules.
+
+## Shared refresh and polling must not use the login-attempt counter
+
+Server app-session maintenance calls its **own public request origin** through
+`getAuthApiUrl` (`packages/auth/src/proxy/index.ts:229`). Verification at `:316`
+and signed refresh at `:455`/`signed-refresh.ts:124` send cookie + JSON without an
+edge identity header. Many users can share a server egress-IP counter. Refresh
+429 can become invalid refresh credentials when no still-valid access remains
+(`packages/auth/src/proxy/signed-refresh.ts:135`). Do not interpret that as a bad
+user token or roll out a limit that causes mass session failure.
+
+The generated strict auth-attempt expression excludes these exact paths:
+
+- `/api/auth/refresh-app-session` and `/api/auth/verify-app-token`.
+- Central second hops `/api/v1/auth/cross-app-session/refresh` and
+  `/api/v1/auth/cross-app-token/verify`.
+- MFA pending reads `/api/v1/auth/mfa/mobile/approvals`.
+- The capability-bearing QR challenge subtree
+  `/api/v1/auth/qr-login/challenges/`, including polling and approval. The challenge
+  creation endpoint without the trailing segment remains in the attempt counter.
+
+These transport/counter exclusions confer no origin authorization. Keep token,
+cookie, signed refresh, replay and application abuse controls. The exclusion is
+necessary until a separate design distinguishes valid server work from attempts;
+never identify it by UA, IP or header presence alone. Before **step 5**, verify
+this compiled exclusion or provide a controlled trace proving the specific
+subrequest does not enter the counter. The current source is not such a trace.
+
+QR polls every **2 seconds**, roughly 30/minute/device plus the initial read
+(`qr_login_sign_in_page.dart:30`, `:106`, `:121`). MFA approvals poll every
+**5 seconds**, roughly 12/minute/device plus event-triggered reads
+(`mfa_approval_listener.dart:18`, `:47`, `:104`). Both use `/api/v1/auth/` on the
+apex by default. QR 429 becomes a terminal error; MFA drops retryAfter and
+continues polling. Do not add `tuturuuu.com` to the strict auth limit until these
+reads are excluded or reshaped and accepted. One-second MFA UI timers are not
+one-second HTTP polling.
+
+Before step 5, calibrate the proposed threshold against **measured per-IP p99**
+on each proxied host, including peak authentication bursts, server egress sharing,
+multiple devices and Vietnamese mobile CGNAT. Record measurement window, sample
+coverage and accepted caller failures; the historical aggregate snapshots do not
+provide that p99. The validator requires inventoried application hosts and a
+proxied DNS row for every rate-limit host; DNS-only apex cannot be added silently.
+
 ## Client 429 acceptance is still required
 
 These are source traces, not executed Dart/CLI acceptance. No client is changed
@@ -148,6 +231,8 @@ unknown-write replay under JSON and HTML 429 responses.
 | Dart JSON API | Safely parses JSON or HTML errors, preserves 429, and parses numeric/HTTP-date Retry-After with JSON retryAfter fallback. General requests do not retry 429 automatically. | `apps/mobile/lib/data/sources/api_client.dart:609`, `:638`, `:662`, `:521` |
 | Mobile auth | OTP-send preserves cooldown and disables resend. OTP-verify drops retryAfter; password repository preserves it but cubit drops it. Some OTP cooldown text can be hidden without a retained duration. | `apps/mobile/lib/data/repositories/auth_repository.dart:166`, `:201`, `:272`; `apps/mobile/lib/features/auth/cubit/auth_cubit.dart:190`, `:230`; `apps/mobile/lib/features/auth/view/login_page.dart:148`, `:281` |
 | CLI verify/refresh | Non-2xx throws a status-only error before parsing JSON; Retry-After is ignored and there is no 429 backoff. | `packages/sdk/src/cli/auth.ts:65`, `:98`; `packages/sdk/src/cli/index.ts:29` |
+| Server satellite refresh | Self-origin verify/refresh can share an egress IP across users. Non-403/503 refresh errors including 429 may invalidate continuation. The exact maintenance paths are excluded from the strict attempt counter; controlled acceptance is still required. | `packages/auth/src/proxy/index.ts:229`, `:316`, `:455`; `packages/auth/src/proxy/signed-refresh.ts:124`, `:135` |
+| Mobile recurring reads | QR 2-second polling stops as an error on 429; MFA 5-second polling drops retryAfter and keeps polling. Both need exclusions or redesign before strict apex enforcement. | `apps/mobile/lib/features/security/qr_login/view/qr_login_sign_in_page.dart:30`; `apps/mobile/lib/features/security/mfa_approval/view/mfa_approval_listener.dart:18`, `:104` |
 | User SDK/internal API | Refresh retry handles 401, not 429. Error transport preserves message/code but not a retryAfter property. | `packages/sdk/src/platform.ts:950`; `packages/internal-api/src/internal-api-error.ts:29` |
 | Storage SDK | Handles JSON/HTML 429 and numeric Retry-After. Optional bounded retries cap delay at 30 seconds, shorter than the proposed 60-second mitigation; some methods do not retry. | `packages/sdk/src/storage.ts:924`, `:1002`, `:1028` |
 | EPM SDK | JSON 429 loses retry headers; HTML 429 becomes NetworkError. No backoff loop is shown. | `packages/sdk/src/epm.ts:565`, `:584` |
@@ -189,6 +274,42 @@ Rotation uses at most two accepted values and a **10-minute overlap**:
 
 No real value or automatic rotation controller is introduced by this PR.
 
+## High-value origin-secret handling
+
+The origin-lock value bypasses the entire Cloudflare front door at a Vercel
+origin when combined with an accepted Cloudflare source. It is **high value**,
+separate from the low-value probe secret. `origin-transform.json` uses a disabled
+`set` operation that overwrites client input. Its eligible hosts are derived from
+verified Vercel bindings plus proxied DNS, excluding Worker and Finance hosts.
+No non-Finance proxied Vercel origin is currently verified in this packet, so
+its expression is `false`. Do not broaden it to every proxied satellite.
+
+Static values in Cloudflare Transform Rules are readable to ruleset-read token
+holders. Vercel Developer/Viewer roles can view WAF rules; the configuration-read
+API includes condition values. Treat the embedded condition as readable by that
+configuration-reader trust boundary, even if one UI masks it. Step-4 evidence
+must identify the actual people, groups, service identities and tokens that can
+read **each side**, their permissions and the owner's explicit acceptance. Keep
+private identity evidence outside Git. Restrict both provider readers to least
+privilege; revoke unused access. Role documentation alone is not an account audit.
+[CF configuration readers](https://developers.cloudflare.com/ruleset-engine/rulesets-api/view/#view-a-specific-ruleset),
+[Vercel roles](https://vercel.com/docs/vercel-firewall/vercel-waf/custom-rules#access-roles),
+[condition-read response](https://vercel.com/docs/rest-api/security/read-firewall-configuration).
+
+Rotate a high-entropy origin value in this order, preserving the Cloudflare-source
+requirement throughout: **Vercel accepts A and B → Cloudflare sets B → Vercel
+removes A**. Verify positive canonical traffic and negative direct/no/wrong-header
+cases between steps. Use a bounded owner-recorded overlap and acknowledgments;
+never log the values or store them in the repository. Normal rollback can return
+to A only while A remains trusted, with the matching Vercel acceptance retained.
+
+On compromise, remove the affected value from Vercel immediately, revoke leaked
+reader credentials, provision a fresh value through trusted access and switch the
+edge. If no trusted value/path remains, isolate or fail closed at the origin and
+invoke the release owner's recovery; never temporarily allow arbitrary headers,
+all Cloudflare IPs alone, or a compromised value to restore availability. Record
+all rule IDs/versions and reconcile unknown writes before retry. None is applied here.
+
 ## Rollout, ordering and rollback
 
 Every future apply captures the exact source, fresh phase/version, before/after
@@ -204,20 +325,27 @@ Never replace an entrypoint with this fragment's whole rule array.
 | 1. Resolve source gaps | Separate fix owners handle External, Playground and legacy Supermemory. Review other auth/signature and host-binding gaps. | No infrastructure change; preserve open blockers. |
 | 2. Read and prove readiness | Re-read normalization cloudflare/both, DNS, quotas, all relevant phases and Finance custody. Capture IDs/positions. Resolve AI-policy coverage and controlled client 429 behavior. | Stop before apply if any fact or caller behavior is unknown. |
 | 3. Prepare disabled fragments/probes | Under fresh admission, add only owned disabled fragments, header removal and private A/B rotation configuration in safe order. Establish caller updates and origin header absence before enabling the probe exemption. | Remove/disable only newly owned rules by captured ID; preserve foreign rules and origin auth. |
-| 4. ORIGIN LOCK | Per host, separately admit proxy/canonical ingress, edge-origin header injection, Vercel Firewall/alias protection or workers.dev/version URL closure. Prove positive canonical traffic and negative direct-origin cases. | Restore that host's recorded origin/ingress controls with enforcement stopped. Do not restore a compromised secret. Finance remains separately owned. |
-| 5. Auth limit and transport canary | After origin lock, client 429 and NAT acceptance, admit the low auth rule with the matching machine transport exceptions on one host. Place skips before custom block/challenge rules. No interstitials for API/socket traffic. | Disable the new auth rule and owned transport/config rules by ID. Retain leaked-password protection, app auth and header removal. |
+| 4. ORIGIN LOCK | Fresh GET every Worker, resolve legacy/rollback aliases and actual rule-reader identities first. Per host, separately admit proxy/canonical ingress, edge-origin header injection, Vercel Firewall/alias protection or workers.dev/version URL closure. Prove positive canonical traffic and negative direct-origin cases. | Restore that host's recorded origin/ingress controls with enforcement stopped. Do not restore a compromised secret. Finance remains separately owned. |
+| 5. Auth limit and transport canary | After origin lock, server/poll exclusions, client 429 and measured per-IP p99/CGNAT acceptance, admit the low auth rule with the matching machine transport exceptions on one host. Place skips before custom block/challenge rules. No interstitials for API/socket traffic. | Disable the new auth rule and owned transport/config rules by ID. Retain leaked-password protection, app auth and header removal. |
 | 6. Browser enforcement | Preserve the BIC baseline. Admit stronger bot controls only after all machine/control/object paths and specific AI policy behavior are proven and Finance releases its hold. | Restore only captured bot/config values under the zone owner. Record any Under Attack exception that remains. |
 | 7. Provider IP filters and expansion | Re-read published environment CIDRs, prove signatures/dedupe, then admit one host/provider at a time. DNS-only and custom domains require separate origin/zone acceptance. | Revert only the new IP/host restriction; retain signature checks, dedupe and prior safe rules. |
+| 8. App-owned header end state | Follow the [header matrix and staged plan](/build/devops/edge-security-headers). Prove every affected app/runtime first, then separately authorize Managed Transform Add security headers OFF. Finance scoped exceptions stay separately owned. | Restore captured transform/exception state if unexplained policy loss occurs, with each app owner involved. No global change in this PR. |
 
 Any valid-caller challenge, incorrect 401/429, one-use-token loss, stalled stream
 or socket, or direct-origin success stops expansion. Reconcile unknown provider
 writes before retry. No provider writes, new runtime/datastore, deployment,
 production SSH, M4 build or source-lead fix is part of this amendment.
 
+The [framing inventory](/build/devops/edge-security-headers) records the new
+Managed Transform finding and separates current root headers from intended
+application policy and unverified embed behavior.
+
 ## Verification and review disposition
 
-`policy.json` compiles into six disabled rules in `custom.json`,
-`configuration.json`, `rate-limit.json` and `late-transform.json`.
+`policy.json` compiles into seven disabled rules in `custom.json`,
+`configuration.json`, `rate-limit.json`, `late-transform.json` and
+`origin-transform.json`. The origin-secret set fragment is also nonmatching
+(`false`) until a proxied Vercel origin is independently verified.
 
 ```sh
 node scripts/edge-security-rules.mjs --write
@@ -239,4 +367,6 @@ provider compilation, live origin lock or executed Dart/CLI acceptance.
 | P3 path scopes/aliases | Static-only Next paths, Colab-only redirects, store/stores/api aliases and Hive exact socket path encoded. |
 | P3 no-op/UAM | Browser BIC no-op and machine Under Attack opt-out documented explicitly. |
 | P3 plan/crawler behavior | Custom headers and path prefixes documented by phase; broad AI-policy bypass remains unverified and blocks apply. |
+| r3 Worker/secret/counter gates | Publisher-derived config coverage, fresh GET per Worker, legacy aliases, high-value origin-secret reader/rotation evidence, strict server/poll exclusions and p99/CGNAT acceptance encoded. Step 4/5 runtime acceptance remains open. |
+| Framing end state | Per-host intended/live matrix added; app-owned policy first, global Managed Transform off only after every affected app accepts; no global change now. |
 | Current Finance rule/order | New sanitized entrypoint receipt supersedes empty-state assumption; preserve owner and capture IDs/positions before each step. |

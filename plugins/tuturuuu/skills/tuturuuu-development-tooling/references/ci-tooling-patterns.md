@@ -13,7 +13,11 @@ Cloudflare expression acceptance. Origin lock, normalization scope both and clie
 429 acceptance are prerequisites. Strip probe headers in the late transform phase
 and preserve a bounded dual-value rotation. Re-read current IDs/order and Finance
 custody before apply; keep custom skips before block/challenge rules. Preserve
-existing entrypoints and exemptions;
+existing entrypoints and exemptions. Worker coverage derives from the canonical
+publisher join, not a Wrangler-only glob; require live subdomain GETs per Worker.
+Exclude server self-refresh and QR/MFA polling from strict attempt counters and
+measure per-IP p99/CGNAT before enforcement. App-owned header acceptance precedes
+any future global Managed Transform removal;
 legacy `waf=off` does not disable Ruleset Engine managed rules. Labyrinth
 injection events are not block events. Provider writes need separate admission.
 
