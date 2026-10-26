@@ -138,6 +138,20 @@ function escapeHtml(value: string) {
     .replace(/'/gu, '&#39;');
 }
 
+// Only a top-level navigation may receive the CLI token. Same-origin script
+// (fetch, iframe) carries Fetch Metadata that says otherwise; the CLI itself
+// and browsers without Fetch Metadata send none.
+function isTopLevelNavigationOrNonBrowser(request: NextRequest) {
+  const mode = request.headers.get('sec-fetch-mode');
+  const dest = request.headers.get('sec-fetch-dest');
+
+  if (mode === null && dest === null) {
+    return true;
+  }
+
+  return mode === 'navigate' && dest === 'document';
+}
+
 function acceptsJson(request: NextRequest) {
   return request.headers.get('accept')?.includes('application/json') ?? false;
 }
@@ -230,6 +244,16 @@ export async function GET(request: NextRequest) {
   const state = request.nextUrl.searchParams.get('state')?.trim();
   if (!state) {
     return NextResponse.json({ error: 'Missing state' }, { status: 400 });
+  }
+
+  if (!isTopLevelNavigationOrNonBrowser(request)) {
+    return NextResponse.json(
+      {
+        code: 'CLI_LOGIN_NAVIGATION_REQUIRED',
+        error: 'Open this page directly in the browser',
+      },
+      { headers: { 'Cache-Control': 'no-store' }, status: 403 }
+    );
   }
 
   const supabase = await createClient();

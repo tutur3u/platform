@@ -70,6 +70,29 @@ staff mailbox or root-workspace access.
   without the keyword.
 </Note>
 
+## Raw session tokens are native-only
+
+Password login and OTP verification (`/api/v1/auth/password-login`,
+`/api/v1/auth/otp/verify` and their `/api/v1/auth/mobile/*` aliases) return a
+raw Supabase access and refresh token pair only for `client: 'mobile'`, and only
+when the request carries no `Origin` and no `Sec-Fetch-*` header. Every browser
+sends at least one of those, so a browser page, including script injected into
+any `tuturuuu.com` app, gets `403 MOBILE_SESSION_BROWSER_REFUSED` before the
+credential is checked, and must sign in through the cookie session
+(`client: 'web'`). The Flutter app's `dart:io` HTTP client sends neither header,
+so native sign-in is unchanged.
+
+`GET /api/cli/auth/start` issues the CLI handoff token only to a top-level
+navigation (`Sec-Fetch-Mode: navigate`, `Sec-Fetch-Dest: document`) or to a
+request without Fetch Metadata. Same-origin `fetch` and iframe loads get
+`403 CLI_LOGIN_NAVIGATION_REQUIRED` and mint nothing.
+
+Scope: Web auth routes. Regression coverage: `lib/auth/password.test.ts`,
+`lib/auth/otp.test.ts`, `app/api/cli/auth/start/route.test.ts`. Remaining
+cookie-authenticated minting paths (cross-app handoff tokens, CLI device
+approval, API keys) are fenced by the shared-session plan's step-up and
+token-lifetime work; see [Start bridge](/build/devops/start-bridge).
+
 ## Email sign-in method preference
 
 The canonical web login (including satellite app redirects) and Flutter mobile

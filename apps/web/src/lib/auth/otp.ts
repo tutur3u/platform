@@ -38,6 +38,10 @@ import {
   getWebOtpEnabledConfig,
   type MobilePlatform,
 } from '@/lib/mobile-version-policy';
+import {
+  isBrowserRequest,
+  refuseMobileSessionForBrowser,
+} from './browser-request';
 import { shouldBypassSupabaseAuthCaptchaForDev } from './local-e2e';
 import { prepareNormalAuthRecoveryOverrideUse } from './recovery';
 
@@ -435,6 +439,10 @@ export async function verifyOtp(
   input: z.infer<typeof OtpVerifyRequestSchema>,
   context: OtpRequestContext
 ): Promise<OtpFailureResult | VerifyOtpSuccessResult> {
+  if (input.client === 'mobile' && isBrowserRequest(context.headers)) {
+    return refuseMobileSessionForBrowser(context.endpoint);
+  }
+
   const suspiciousAgentCheck = await rejectSuspiciousUserAgent(context);
   if (suspiciousAgentCheck.failure) {
     return suspiciousAgentCheck.failure;

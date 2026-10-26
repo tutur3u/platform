@@ -186,4 +186,49 @@ describe('CLI auth start route', () => {
     expect(response.status).toBe(307);
     expect(response.headers.get('location')).toContain('/login');
   });
+
+  it('issues the CLI token to a top-level browser navigation', async () => {
+    const response = await GET(
+      new NextRequest(
+        'https://tuturuuu.com/api/cli/auth/start?state=s1&mode=copy',
+        {
+          headers: {
+            'sec-fetch-dest': 'document',
+            'sec-fetch-mode': 'navigate',
+            'sec-fetch-site': 'none',
+          },
+        }
+      )
+    );
+
+    expect(response.status).toBe(200);
+    expect(generateAssuredCrossAppToken).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    ['same-origin fetch', { mode: 'cors', dest: 'empty' }],
+    ['same-origin no-cors fetch', { mode: 'no-cors', dest: 'empty' }],
+    ['iframe navigation', { mode: 'navigate', dest: 'iframe' }],
+  ])('refuses to mint a CLI token for a %s', async (_label, fetchMetadata) => {
+    const response = await GET(
+      new NextRequest(
+        'https://tuturuuu.com/api/cli/auth/start?state=s1&mode=copy',
+        {
+          headers: {
+            accept: 'application/json',
+            'sec-fetch-dest': fetchMetadata.dest,
+            'sec-fetch-mode': fetchMetadata.mode,
+            'sec-fetch-site': 'same-origin',
+          },
+        }
+      )
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toMatchObject({
+      code: 'CLI_LOGIN_NAVIGATION_REQUIRED',
+    });
+    expect(createClient).not.toHaveBeenCalled();
+    expect(generateAssuredCrossAppToken).not.toHaveBeenCalled();
+  });
 });
