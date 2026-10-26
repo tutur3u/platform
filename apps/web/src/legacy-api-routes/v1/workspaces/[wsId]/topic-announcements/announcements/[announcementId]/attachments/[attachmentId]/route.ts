@@ -29,7 +29,7 @@ export async function DELETE(request: Request, { params }: Params) {
     scope,
   });
   if (loaded.response) return loaded.response;
-  if (loaded.row.status === 'sent') {
+  if (['sent', 'processing'].includes(loaded.row.status)) {
     return NextResponse.json(
       { message: 'Sent announcement attachments cannot be removed' },
       { status: 409 }

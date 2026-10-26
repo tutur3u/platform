@@ -8,13 +8,110 @@ function readPath(row: Row, path: string) {
     .reduce<any>((value, key) => (value == null ? value : value[key]), row);
 }
 
+/** Splits a PostgREST logic-tree body on top-level commas. */
+function splitTopLevel(body: string) {
+  const parts: string[] = [];
+  let depth = 0;
+  let quoted = false;
+  let current = '';
+  for (let index = 0; index < body.length; index += 1) {
+    const char = body[index]!;
+    if (quoted) {
+      current += char;
+      if (char === '\\') {
+        current += body[index + 1] ?? '';
+        index += 1;
+      } else if (char === '"') {
+        quoted = false;
+      }
+      continue;
+    }
+    if (char === '"') quoted = true;
+    if (char === '(') depth += 1;
+    if (char === ')') depth -= 1;
+    if (char === ',' && depth === 0) {
+      parts.push(current);
+      current = '';
+      continue;
+    }
+    current += char;
+  }
+  if (quoted || depth !== 0) throw new Error(`Malformed filter: ${body}`);
+  parts.push(current);
+  return parts;
+}
+
+function unquote(value: string) {
+  if (!value.startsWith('"')) return value;
+  if (!value.endsWith('"') || value.length < 2) {
+    throw new Error(`Malformed quoted value: ${value}`);
+  }
+  return value.slice(1, -1).replace(/\\(.)/gu, '$1');
+}
+
+/**
+ * Evaluates the PostgREST logic-tree subset the topic routes emit:
+ * `and(...)`, `or(...)`, `col.eq|neq|is|in|ilike.value`, quoted values.
+ * Unknown syntax throws, so a malformed filter fails the test.
+ */
+export function compilePostgrestFilter(
+  body: string,
+  combine: 'and' | 'or' = 'or'
+): (row: Row) => boolean {
+  const terms = splitTopLevel(body).map((term) => {
+    const logic = term.match(/^(and|or)\((.*)\)$/su);
+    if (logic)
+      return compilePostgrestFilter(logic[2]!, logic[1] as 'and' | 'or');
+    const match = term.match(/^([a-z_]+)\.(eq|neq|is|in|ilike)\.(.*)$/su);
+    if (!match) throw new Error(`Unsupported filter term: ${term}`);
+    const [, column, operator, raw] = match as unknown as [
+      string,
+      string,
+      string,
+      string,
+    ];
+    if (operator === 'is') {
+      if (raw !== 'null') throw new Error(`Unsupported is value: ${raw}`);
+      return (row: Row) => row[column] == null;
+    }
+    if (operator === 'in') {
+      const list = raw.match(/^\((.*)\)$/su);
+      if (!list) throw new Error(`Malformed in list: ${raw}`);
+      const values = splitTopLevel(list[1]!).map(unquote);
+      return (row: Row) => values.includes(String(row[column]));
+    }
+    const value = unquote(raw);
+    if (operator === 'eq') return (row: Row) => String(row[column]) === value;
+    if (operator === 'neq') return (row: Row) => String(row[column]) !== value;
+    const pattern = new RegExp(
+      `^${value
+        .split('')
+        .map((char) =>
+          char === '%'
+            ? '.*'
+            : char === '_'
+              ? '.'
+              : char.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')
+        )
+        .join('')}$`,
+      'isu'
+    );
+    return (row: Row) =>
+      row[column] != null && pattern.test(String(row[column]));
+  });
+  return (row) =>
+    combine === 'and'
+      ? terms.every((term) => term(row))
+      : terms.some((term) => term(row));
+}
+
 /**
  * Minimal in-memory Supabase stand-in for topic announcement route tests.
- * Supports the filter/mutation subset those routes use; `or()` is recorded
- * but not evaluated.
+ * Supports the filter/mutation subset those routes use. `or()` filters are
+ * recorded (with the operation) and evaluated.
  */
 export function createFakeSupabase(tables: Record<string, Row[]>) {
-  const orFilters: { filter: string; table: string }[] = [];
+  const orFilters: { filter: string; mode: string; table: string }[] = [];
   const rpc = vi.fn(async () => ({ data: null, error: null }));
 
   const client: any = {
@@ -78,7 +175,8 @@ export function createFakeSupabase(tables: Record<string, Row[]>) {
           return chain;
         },
         or: (filter: string) => {
-          orFilters.push({ filter, table });
+          orFilters.push({ filter, mode, table });
+          filters.push(compilePostgrestFilter(filter));
           return chain;
         },
         order: () => chain,
@@ -118,6 +216,7 @@ export const GROUP_TOPIC = '00000000-0000-4000-8000-0000000000e2';
 export const OTHER_TOPIC = '00000000-0000-4000-8000-0000000000e3';
 export const STUDENT_TOPIC = '00000000-0000-4000-8000-0000000000e4';
 export const FOREIGN_TOPIC = '00000000-0000-4000-8000-0000000000e5';
+export const CLASS_TOPIC = '00000000-0000-4000-8000-0000000000e6';
 
 function topic(id: string, overrides: Row = {}): Row {
   return {
@@ -153,6 +252,7 @@ export function createTopicWorkspaceFixture() {
         teacher_workspace_user_id: OTHER_TEACHER_WU,
       }),
       topic(STUDENT_TOPIC, { group_id: STUDENT_GROUP }),
+      topic(CLASS_TOPIC, { group_id: TAUGHT_GROUP }),
       topic(FOREIGN_TOPIC, {
         teacher_workspace_user_id: TEACHER_WU,
         ws_id: OTHER_WS_ID,

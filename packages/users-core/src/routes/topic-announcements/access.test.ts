@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildTopicAnnouncementListOrFilter,
   buildTopicAnnouncementTeacherFilter,
   decideTopicAnnouncementAccessMode,
   isTopicAnnouncementAssignedToScope,
@@ -42,7 +43,6 @@ describe('decideTopicAnnouncementAccessMode', () => {
   });
 
   it.each([
-    ['create', 'create_user_groups_posts'],
     ['update', 'update_user_groups_posts'],
     ['read', 'update_user_groups_posts'],
     ['read', 'create_user_groups_posts'],
@@ -89,6 +89,13 @@ describe('teacher assignment helpers', () => {
     expect(
       isTopicAnnouncementAssignedToScope({ group_id: 'group-a' }, teacher)
     ).toBe(true);
+    // A co-teacher of the class cannot act on another teacher's topic.
+    expect(
+      isTopicAnnouncementAssignedToScope(
+        { group_id: 'group-a', teacher_workspace_user_id: 'wu-2' },
+        teacher
+      )
+    ).toBe(false);
     expect(
       isTopicAnnouncementAssignedToScope(
         { group_id: 'group-b', teacher_workspace_user_id: 'wu-2' },
@@ -99,27 +106,62 @@ describe('teacher assignment helpers', () => {
 
   it('builds a PostgREST filter for both assignment paths', () => {
     expect(buildTopicAnnouncementTeacherFilter(teacher)).toBe(
-      'teacher_workspace_user_id.eq.wu-1,group_id.in.(group-a)'
+      'teacher_workspace_user_id.eq.wu-1,and(teacher_workspace_user_id.is.null,group_id.in.(group-a))'
     );
     expect(
       buildTopicAnnouncementTeacherFilter({ ...teacher, groupIds: [] })
     ).toBe('teacher_workspace_user_id.eq.wu-1');
   });
 
-  it('lets teachers clear a class only while they stay the assignee', () => {
+  it('lets teachers change only the topic content', () => {
     expect(
       validateTeacherTopicAnnouncementWrite({
-        existing: { group_id: 'group-a', teacher_workspace_user_id: 'wu-2' },
-        next: { groupId: null },
+        next: {
+          attachmentDrafts: [],
+          body: 'b',
+          courseBook: 'c',
+          sessionDate: undefined,
+          status: 'draft',
+          topic: 't',
+          videoUrl: null,
+        },
+        scope: teacher,
+      })
+    ).toBeNull();
+    expect(
+      validateTeacherTopicAnnouncementWrite({
+        next: { groupId: null, sessionDate: '2026-11-01', topic: 't' },
+        scope: teacher,
+      })
+    ).toEqual({
+      message: 'Teachers cannot change: groupId, sessionDate',
+      status: 403,
+    });
+    expect(
+      validateTeacherTopicAnnouncementWrite({
+        next: { status: 'queued' },
         scope: teacher,
       })
     ).toMatchObject({ status: 403 });
     expect(
       validateTeacherTopicAnnouncementWrite({
-        existing: { group_id: 'group-a', teacher_workspace_user_id: 'wu-1' },
-        next: { groupId: null },
-        scope: teacher,
+        next: { sessionDate: '2026-11-01' },
+        scope: { kind: 'manager' },
       })
+    ).toBeNull();
+  });
+
+  it('quotes the search so it cannot widen the teacher scope', () => {
+    expect(
+      buildTopicAnnouncementListOrFilter({ q: 'a"b\\c,(d)', scope: teacher })
+    ).toBe(
+      'and(or(teacher_workspace_user_id.eq.wu-1,and(teacher_workspace_user_id.is.null,group_id.in.(group-a))),or(title.ilike."%a\\"b\\\\c,(d)%",topic.ilike."%a\\"b\\\\c,(d)%",class_label.ilike."%a\\"b\\\\c,(d)%"))'
+    );
+    expect(buildTopicAnnouncementListOrFilter({ q: '', scope: teacher })).toBe(
+      'teacher_workspace_user_id.eq.wu-1,and(teacher_workspace_user_id.is.null,group_id.in.(group-a))'
+    );
+    expect(
+      buildTopicAnnouncementListOrFilter({ q: '', scope: { kind: 'manager' } })
     ).toBeNull();
   });
 });
