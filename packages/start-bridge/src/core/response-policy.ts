@@ -45,8 +45,9 @@ export interface RootResponsePolicyOptions<Env = unknown> {
   seo: string | ((context: ResponsePolicyContext<Env>) => string | null);
   /**
    * More app-relative paths that other origins may frame, beyond the
-   * platform list and the app's `framablePaths`: no `X-Frame-Options`, and
-   * the upstream CSP (or its absence) passes through untouched.
+   * platform list and the app's `framablePaths`: no `X-Frame-Options`, and this policy leaves
+   * the CSP it receives untouched. The handler `csp` does not see these
+   * extra paths. Prefer app-config `framablePaths` when the app sets `csp`.
    */
   framable?: readonly RegExp[];
   /**
