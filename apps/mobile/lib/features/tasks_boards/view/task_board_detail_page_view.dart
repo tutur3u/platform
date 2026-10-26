@@ -496,8 +496,8 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                             ),
                         onTaskTap: (task) =>
                             _handleTaskTap(context, task, sortedLists),
-                        onTaskMove: (task) =>
-                            _openMoveTaskPicker(context, task, sortedLists),
+                        onTaskMenu: (task) =>
+                            _openTaskContextMenu(context, task, sortedLists),
                         isBulkSelectMode: state.isBulkSelectMode,
                         selectedTaskIds: state.selectedTaskIds,
                         onToggleTaskSelection: (task) => context
