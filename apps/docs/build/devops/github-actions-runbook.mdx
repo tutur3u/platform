@@ -1869,7 +1869,10 @@ cannot complete a release: the `Protected branches` ruleset covers `main` and
 `github.token` merges cleanly and then dies on
 `GH013: Changes must be made through a pull request`. `RELEASE_PLEASE_TOKEN`
 must therefore hold a personal access token (`repo` + `workflow` scopes) owned
-by an organization admin. Granting the Actions app a ruleset bypass is **not**
+by an organization admin. It is an environment secret of `release-please`
+(branches `main` and `production`, admin bypass off), which both
+`release-please.yaml` and this job declare, so a workflow on any other branch
+cannot read it. Granting the Actions app a ruleset bypass is **not**
 an alternative: pushes made with `GITHUB_TOKEN` do not trigger `push`
 workflows, so the `production` push would silently skip
 `Production Deployment Planner` and the next `Release Please` run and

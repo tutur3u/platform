@@ -542,7 +542,8 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   `secrets.RELEASE_PLEASE_TOKEN || github.token`; the bot token is still needed
   for generated PRs and releases to trigger downstream workflows.
 - `RELEASE_PLEASE_TOKEN` must be a PAT (`repo` + `workflow`) owned by an
-  organization admin. Ruleset `Protected branches` covers `main` and
+  organization admin, stored only in the branch-restricted `release-please`
+  environment (`main` + `production`) that both release jobs declare. Ruleset `Protected branches` covers `main` and
   `production` with only `OrganizationAdmin` as a bypass actor, so a run that
   falls back to `github.token` merges fine and then dies on
   `GH013: Changes must be made through a pull request`. Do not "fix" this by

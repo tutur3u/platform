@@ -23,6 +23,7 @@ const ALLOWED_ENVIRONMENTS = {
   PRODUCTION_PROJECT_ID: ['supabase-production-migrations'],
   STAGING_DB_PASSWORD: ['supabase-staging-migrations'],
   STAGING_PROJECT_ID: ['supabase-staging-migrations'],
+  RELEASE_PLEASE_TOKEN: ['release-please'],
 };
 
 const environmentName = (job) =>

@@ -577,3 +577,14 @@ test('release setup refuses local invocation before running a build', () => {
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('release automation reads its admin PAT only from the branch-restricted environment', () => {
+  // Repository secrets reach any pushed branch; the release-please environment
+  // only releases RELEASE_PLEASE_TOKEN to main and production.
+  for (const text of [workflow, releasePleaseWorkflow]) {
+    assert.equal(
+      (text.match(/^ {4}environment: release-please$/gmu) ?? []).length,
+      1
+    );
+  }
+});
