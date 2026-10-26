@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { readFile } from 'node:fs/promises';
 import { expect, it } from 'vitest';
 import { runtimeExpectationProblems } from '../../../../scripts/start-bridge-codemod/runtime-outcome.mjs';

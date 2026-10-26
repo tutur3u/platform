@@ -23,7 +23,10 @@ artifact helper rejects a missing or false sandbox flag. This staging-data
 artifact cannot be admitted as a production profile.
 
 Every response sends noindex, X-Frame-Options DENY, nosniff and the strict-origin
-referrer policy. CSP includes `frame-ancestors 'none'`. Personalized SSR and API
+referrer policy. CSP includes `frame-ancestors 'none'`. The exact shared WebGL
+asset path is the framing exception: its upstream sandbox CSP passes through
+unchanged and X-Frame-Options is removed. Exact-path, descendant and neighbouring
+framing controls run against both Pay root hosts. Personalized SSR and API
 responses use private/no-store caching and vary on Cookie, Authorization and
 Accept-Language. Only successful GET/HEAD compiled-asset responses keep their
 static caching. `global_fetch_strictly_public` is required; hosted acceptance
