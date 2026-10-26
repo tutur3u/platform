@@ -25,7 +25,25 @@ export const ALARM_PURGE_LIMIT = 1000;
 export const SCHEMA_STATEMENTS = [
   'CREATE TABLE IF NOT EXISTS entries (k TEXT PRIMARY KEY, v TEXT NOT NULL, exp INTEGER NOT NULL)',
   'CREATE INDEX IF NOT EXISTS entries_exp ON entries (exp)',
+  'CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v INTEGER NOT NULL)',
 ] as const;
+
+/** Consecutive failed cleanups retried before giving up until the next write. */
+export const ALARM_FAILURE_LIMIT = 5;
+const ALARM_RETRY_BASE_MS = 60_000;
+const ALARM_RETRY_MAX_MS = 60 * 60_000;
+
+/**
+ * Next retry for a failed cleanup with capped exponential backoff, or null
+ * once the attempt cap is reached. Lazy expiry keeps reads correct meanwhile.
+ */
+export function planCleanupRetry(now: number, failures: number) {
+  if (failures >= ALARM_FAILURE_LIMIT) return null;
+  return (
+    now +
+    Math.min(ALARM_RETRY_MAX_MS, ALARM_RETRY_BASE_MS * 2 ** (failures - 1))
+  );
+}
 
 /** A stored value the command cannot operate on; the step rolls back. */
 export class GuardCommandError extends Error {}
@@ -302,6 +320,26 @@ export function createGuardEngine(sql: SqlRunner) {
       const [row] = sql.exec('SELECT COUNT(*) AS n FROM entries').toArray();
       return Number(row?.n ?? 0);
     },
+
+    alarmFailures(): number {
+      const [row] = sql
+        .exec("SELECT v FROM meta WHERE k = 'alarm_failures'")
+        .toArray();
+      return Number(row?.v ?? 0);
+    },
+
+    setAlarmFailures(failures: number) {
+      if (failures <= 0) {
+        sql.exec("DELETE FROM meta WHERE k = 'alarm_failures'").toArray();
+        return;
+      }
+      sql
+        .exec(
+          "INSERT INTO meta (k, v) VALUES ('alarm_failures', ?) ON CONFLICT (k) DO UPDATE SET v = excluded.v",
+          failures
+        )
+        .toArray();
+    },
   };
 }
 
@@ -311,24 +349,26 @@ export type GuardEngine = ReturnType<typeof createGuardEngine>;
 export const ALARM_SLACK_MS = 60_000;
 
 /**
- * Decides the next alarm after a cleanup pass. An empty partition is deleted
- * and never re-armed; otherwise the alarm moves to a finite future expiry.
+ * Decides the next alarm after a cleanup pass. An empty partition clears its
+ * alarm and is never re-armed; otherwise the alarm moves to a finite future
+ * expiry. Storage is not wiped with deleteAll(): on SQLite-backed objects that
+ * also drops the tables a still-warm instance keeps using.
  */
 export function planCleanup(input: {
   now: number;
   purged: number;
   rowCount: number;
   maxExpiry: number | null;
-}): { deleteAll: true } | { deleteAll: false; nextAlarmAt: number } {
+}): { idle: true } | { idle: false; nextAlarmAt: number } {
   if (input.rowCount === 0 || input.maxExpiry === null) {
-    return { deleteAll: true };
+    return { idle: true };
   }
   // A full batch means more expired rows may remain; continue shortly.
   if (input.purged >= ALARM_PURGE_LIMIT) {
-    return { deleteAll: false, nextAlarmAt: input.now + 1000 };
+    return { idle: false, nextAlarmAt: input.now + 1000 };
   }
   return {
-    deleteAll: false,
+    idle: false,
     nextAlarmAt: Math.max(input.now + 1000, input.maxExpiry + 1000),
   };
 }

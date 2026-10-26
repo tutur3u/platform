@@ -10,6 +10,7 @@ import {
   createGuardEngine,
   type GuardOperation,
   planCleanup,
+  planCleanupRetry,
   type SqlRunner,
   shouldRearm,
 } from './engine';
@@ -368,16 +369,16 @@ describe('cleanup planning', () => {
   it('deletes an empty partition and never re-arms it', () => {
     expect(
       planCleanup({ now: 0, purged: 3, rowCount: 0, maxExpiry: null })
-    ).toEqual({ deleteAll: true });
+    ).toEqual({ idle: true });
   });
 
   it('re-arms only at a finite future expiry', () => {
     expect(
       planCleanup({ now: 1000, purged: 1, rowCount: 2, maxExpiry: 50_000 })
-    ).toEqual({ deleteAll: false, nextAlarmAt: 51_000 });
+    ).toEqual({ idle: false, nextAlarmAt: 51_000 });
     expect(
       planCleanup({ now: 1000, purged: 1, rowCount: 2, maxExpiry: 500 })
-    ).toEqual({ deleteAll: false, nextAlarmAt: 2000 });
+    ).toEqual({ idle: false, nextAlarmAt: 2000 });
     expect(
       planCleanup({
         now: 1000,
@@ -385,7 +386,7 @@ describe('cleanup planning', () => {
         rowCount: 5000,
         maxExpiry: 90_000,
       })
-    ).toEqual({ deleteAll: false, nextAlarmAt: 2000 });
+    ).toEqual({ idle: false, nextAlarmAt: 2000 });
   });
 
   it('bounds alarm wakes for a partition without new writes', () => {
@@ -410,10 +411,33 @@ describe('cleanup planning', () => {
         rowCount: engine.rowCount(),
         maxExpiry: engine.maxExpiry(),
       });
-      if (plan.deleteAll) break;
+      if (plan.idle) break;
       now = plan.nextAlarmAt;
     }
     expect(wakes).toBe(3);
+  });
+
+  it('retries a failed cleanup with capped backoff, then stops', () => {
+    expect(planCleanupRetry(0, 1)).toBe(60_000);
+    expect(planCleanupRetry(0, 2)).toBe(120_000);
+    expect(planCleanupRetry(0, 4)).toBe(480_000);
+    expect(planCleanupRetry(0, 5)).toBeNull();
+    expect(planCleanupRetry(0, 50)).toBeNull();
+  });
+
+  it('keeps a usable schema after an idle cleanup', () => {
+    const { engine, run } = setup();
+    run(0, { op: 'kv.set', k: K('c'), v: 'x', ttlMs: 1000, mode: 'always' });
+    engine.purgeExpired(5000, 1000);
+    expect(engine.rowCount()).toBe(0);
+    engine.setAlarmFailures(2);
+    expect(engine.alarmFailures()).toBe(2);
+    engine.setAlarmFailures(0);
+    expect(engine.alarmFailures()).toBe(0);
+    expect(run(6000, { op: 'kv.get', k: K('c') })[0]).toEqual({
+      op: 'kv.get',
+      v: null,
+    });
   });
 
   it('re-arms writes only when they extend expiry past the slack', () => {

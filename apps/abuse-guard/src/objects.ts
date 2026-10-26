@@ -10,6 +10,7 @@ import {
   type GuardEngine,
   type GuardOperation,
   planCleanup,
+  planCleanupRetry,
   shouldRearm,
 } from './engine';
 
@@ -53,13 +54,22 @@ export class GuardSubject extends DurableObject {
   }
 
   /**
-   * Bounded cleanup with no network or fan-out. Errors are logged rather than
-   * thrown, so the runtime's automatic alarm retries cannot loop; reads stay
-   * correct through lazy expiry if a cleanup is skipped.
+   * Bounded cleanup with no network or fan-out. Errors are not thrown (the
+   * runtime's automatic alarm retries would be unbounded); a failed pass
+   * re-arms with capped backoff and stops after ALARM_FAILURE_LIMIT attempts
+   * until the next write. Reads stay correct through lazy expiry meanwhile.
    */
   async alarm() {
+    await this.runCleanup();
+  }
+
+  /**
+   * The alarm body. Exposed only through this object's stub, which no route
+   * hands out; tests call it because `alarm` is reserved over RPC.
+   */
+  async runCleanup() {
+    const now = Date.now();
     try {
-      const now = Date.now();
       const purged = this.ctx.storage.transactionSync(() =>
         this.engine.purgeExpired(now, ALARM_PURGE_LIMIT)
       );
@@ -69,14 +79,22 @@ export class GuardSubject extends DurableObject {
         rowCount: this.engine.rowCount(),
         maxExpiry: this.engine.maxExpiry(),
       });
-      if (plan.deleteAll) {
+      this.engine.setAlarmFailures(0);
+      if (plan.idle) {
         await this.ctx.storage.deleteAlarm();
-        await this.ctx.storage.deleteAll();
         return;
       }
       await this.ctx.storage.setAlarm(plan.nextAlarmAt);
     } catch (error) {
       console.error('[abuse-guard] subject cleanup failed', error);
+      try {
+        const failures = this.engine.alarmFailures() + 1;
+        this.engine.setAlarmFailures(failures);
+        const retryAt = planCleanupRetry(now, failures);
+        if (retryAt !== null) await this.ctx.storage.setAlarm(retryAt);
+      } catch (retryError) {
+        console.error('[abuse-guard] cleanup retry not scheduled', retryError);
+      }
     }
   }
 }
@@ -158,7 +176,9 @@ export class GuardControl extends DurableObject {
         `[abuse-guard] daily operation budget at ${state.used}/${budget}`
       );
     }
-    if (!state.stopped && state.used > budget) {
+    // `used` counts only admitted operations, so stopping at the budget
+    // admits exactly `budget` commands per day.
+    if (!state.stopped && state.used >= budget) {
       state.stopped = true;
       state.reason = 'budget';
       state.changedAt = now;

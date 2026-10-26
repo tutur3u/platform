@@ -83,7 +83,7 @@ forget consumed replay fences and spent limits.
 | Variable (Worker) | Meaning |
 | --- | --- |
 | `ABUSE_GUARD_SECRETS` | Comma list of accepted signing secrets: current first, then the previous one during rotation. If any entry is shorter than 32 characters, the Worker rejects every RPC with 503. |
-| `ABUSE_GUARD_OPERATOR_TOKEN` | Bearer token for `/control/*`, at least 32 characters. |
+| `ABUSE_GUARD_OPERATOR_TOKEN` | Bearer token for `/control/*`, at least 32 characters. It must differ from every signing secret; if it matches one, the Worker rejects every RPC with 503. |
 | `ABUSE_GUARD_DAILY_OP_BUDGET` | Admitted commands per UTC day (default 1,000,000). |
 | `ABUSE_GUARD_LOCATION_HINT` | Placement hint for new partitions (default `apac`, near Vercel `sin1`). |
 
@@ -109,12 +109,25 @@ with a 503, refresh replay fences report `unavailable`, and password limits fail
   it persists a `budget` stop that stays in place, across restarts and new days,
   until an operator resumes. Overshoot is bounded by isolates × 200 commands.
   A budget stop fails closed for every family; each caller then applies its own policy.
+- **Alarm failures:** a failed cleanup is logged and re-armed with capped
+  exponential backoff (1, 2, 4, 8 minutes). After five consecutive failures it
+  stops until the next write; lazy expiry keeps reads correct meanwhile. An emptied
+  partition keeps its tables, because `deleteAll()` on SQLite-backed objects drops
+  them under a still-warm instance.
 - **Alarms:** each partition keeps one alarm at its latest expiry, moved only when
   a write extends it by more than 60 seconds. Cleanup purges at most 1,000 rows per
-  wake. It deletes an empty partition and never re-arms it; otherwise it re-arms
+  wake. An empty partition clears its alarm and is never re-armed; otherwise it re-arms
   once at a future expiry. Cleanup makes no network calls, and it logs errors
   instead of throwing so automatic alarm retries cannot loop. Without new writes,
   a partition's alarms end within its longest TTL.
+- **Ingress:** when the owner attaches a hostname, add a Cloudflare WAF rate-limit
+  rule for it, such as per-IP requests to `/v1/rpc` and `/control/*`. It sheds
+  unauthenticated floods before Worker billing. It is not a spend cap; the budget is.
+- **Accounting limits:** the budget counts commands, not rows written.
+  Each isolate buffers fewer than 200 commands, and those are lost on eviction.
+  Stops take up to 5 seconds per isolate to observe. Storage is bounded by
+  2 KiB × 120 days × the daily budget. See the
+  [adoption guidance](/build/development-tools/oxc-cloudflare-adoption#runaway-work-and-cost-acceptance).
 
 ### Pricing envelope
 

@@ -7,6 +7,7 @@ import {
   createBindingGuardTransport,
   createHttpGuardTransport,
 } from '@tuturuuu/utils/abuse-guard/client';
+import { hashGuardValue } from '@tuturuuu/utils/abuse-guard/crypto';
 import { build } from 'esbuild';
 import { Miniflare } from 'miniflare';
 import { afterAll, beforeAll, describe, expect, it } from 'vite-plus/test';
@@ -41,7 +42,12 @@ afterAll(async () => {
 });
 
 function createRuntime(
-  options: { budget?: string; persist?: string; secrets?: string } = {}
+  options: {
+    budget?: string;
+    persist?: string;
+    secrets?: string;
+    operator?: string;
+  } = {}
 ) {
   return new Miniflare({
     durableObjectsPersist: options.persist ?? false,
@@ -59,7 +65,7 @@ function createRuntime(
         bindings: {
           ABUSE_GUARD_SECRETS:
             options.secrets ?? `${SECRET},${'old-secret-'.padEnd(48, 'o')}`,
-          ABUSE_GUARD_OPERATOR_TOKEN: OPERATOR,
+          ABUSE_GUARD_OPERATOR_TOKEN: options.operator ?? OPERATOR,
           ABUSE_GUARD_CONTROL_CACHE_MS: '0',
           ABUSE_GUARD_DAILY_OP_BUDGET: options.budget ?? '100000',
         },
@@ -211,6 +217,49 @@ describe('abuse-guard Worker in workerd', () => {
     });
   });
 
+  it('rejects a body that is not valid UTF-8 before verifying it', async () => {
+    const response = await mf.dispatchFetch(`${ORIGIN}/v1/rpc`, {
+      method: 'POST',
+      body: new Uint8Array([0x7b, 0xff, 0x7d]),
+    });
+    expect(response.status).toBe(400);
+  });
+
+  it('keeps serving a partition after its cleanup alarm empties it', async () => {
+    const client = httpClient(mf, 'offline');
+    const key = 'offline:clearance:alarm';
+    const namespace = await mf.getDurableObjectNamespace(
+      'GUARD_SUBJECT',
+      'guard'
+    );
+    const partition = await hashGuardValue(PEPPER, 'p:offline', key);
+    const stub = namespace.get(
+      namespace.idFromName(`offline:${partition}`)
+    ) as unknown as {
+      run(cmds: unknown[]): Promise<{ ok: boolean }>;
+      runCleanup(): Promise<void>;
+    };
+    // Seed one short-lived record without an operation id, so nothing else
+    // keeps the partition alive, then run the cleanup its alarm would run.
+    await expect(
+      stub.run([
+        {
+          op: 'kv.set',
+          k: await hashGuardValue(PEPPER, 'k:offline', key),
+          v: 'passed',
+          ttlMs: 1000,
+          mode: 'always',
+        },
+      ])
+    ).resolves.toMatchObject({ ok: true });
+    await new Promise((settle) => setTimeout(settle, 1200));
+    await stub.runCleanup();
+    // The still-warm instance must keep its schema and serve the partition.
+    await expect(client.get(key)).resolves.toBeNull();
+    expect(await client.set(key, 'again', { ttlMs: 60_000 })).toBe(true);
+    await expect(client.get(key)).resolves.toBe('again');
+  });
+
   it('accepts the previous secret during rotation', async () => {
     const previous = httpClient(mf, 'replay', 'old-secret-'.padEnd(48, 'o'));
     await expect(previous.get('rotation-probe')).resolves.toBeNull();
@@ -316,6 +365,14 @@ describe('abuse-guard Worker in workerd', () => {
 });
 
 describe('secret configuration', () => {
+  it('serves nothing when the operator token reuses a signing secret', async () => {
+    const mf = createRuntime({ operator: SECRET });
+    await expect(httpClient(mf, 'replay').get('k')).rejects.toMatchObject({
+      code: 'guard_unavailable',
+    });
+    await mf.dispose();
+  });
+
   it('serves nothing when any accepted secret is short', async () => {
     const mf = createRuntime({ secrets: `${SECRET},short` });
     await expect(httpClient(mf, 'replay').get('k')).rejects.toMatchObject({
@@ -339,7 +396,7 @@ describe('daily operation budget', () => {
     expect((await control(first, 'state')).body).toMatchObject({
       stopped: true,
       reason: 'budget',
-      used: 6,
+      used: 5,
     });
     await first.dispose();
 

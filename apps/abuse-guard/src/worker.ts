@@ -127,22 +127,21 @@ async function refreshFence(env: Env) {
   }
 }
 
-/** Returns whether `ops` may run; reports usage to the control object. */
+/**
+ * Returns whether `ops` may run. Previously admitted usage is flushed to the
+ * control object before deciding, and this request's operations are counted
+ * only once admitted, so rejected requests are never billed.
+ */
 async function admit(env: Env, ops: number): Promise<'open' | 'stopped'> {
   const stale = Date.now() - fence.checkedAt >= controlCacheMs(env);
-  if (!stale && fence.stopped) return 'stopped';
-  fence.pending += ops;
-  if (stale || fence.pending >= USAGE_FLUSH_OPS) {
+  if (stale || fence.pending + ops >= USAGE_FLUSH_OPS) {
     fence.refreshing ??= refreshFence(env).finally(() => {
       fence.refreshing = null;
     });
     await fence.refreshing;
   }
-  if (fence.stopped) {
-    // A stopped fence admits nothing; do not bill these operations.
-    fence.pending = Math.max(0, fence.pending - ops);
-    return 'stopped';
-  }
+  if (fence.stopped) return 'stopped';
+  fence.pending += ops;
   return 'open';
 }
 
@@ -218,6 +217,9 @@ export async function executeRpc(
   }
 }
 
+const strictUtf8 = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true });
+
+/** The raw body, `null` when too large, or `undefined` when not UTF-8. */
 async function readBoundedBody(request: Request, maxBytes: number) {
   const declared = Number(request.headers.get('content-length'));
   if (Number.isFinite(declared) && declared > maxBytes) return null;
@@ -241,13 +243,25 @@ async function readBoundedBody(request: Request, maxBytes: number) {
     bytes.set(chunk, offset);
     offset += chunk.byteLength;
   }
-  return new TextDecoder().decode(bytes);
+  try {
+    return strictUtf8.decode(bytes);
+  } catch {
+    return undefined;
+  }
 }
 
-/** Null when the configuration is unusable: empty, or any secret is short. */
-function acceptedSecrets(value: string | undefined) {
-  const secrets = parseGuardSecrets(value);
-  return secrets.length > 0 && secrets.every(isStrongGuardSecret)
+/**
+ * Null when the configuration is unusable: empty, any secret short, or the
+ * operator token reused as a signing secret (one leak would grant both).
+ */
+function acceptedSecrets(env: Env) {
+  const secrets = parseGuardSecrets(env.ABUSE_GUARD_SECRETS);
+  const operator = env.ABUSE_GUARD_OPERATOR_TOKEN?.trim() ?? '';
+  let reused = false;
+  for (const secret of secrets) {
+    if (constantTimeEqual(secret, operator)) reused = true;
+  }
+  return secrets.length > 0 && secrets.every(isStrongGuardSecret) && !reused
     ? secrets
     : null;
 }
@@ -263,12 +277,13 @@ async function stepHash(step: ParsedGuardRpc['steps'][number]) {
 }
 
 async function handleRpc(request: Request, env: Env): Promise<RpcOutcome> {
-  const secrets = acceptedSecrets(env.ABUSE_GUARD_SECRETS);
+  const secrets = acceptedSecrets(env);
   // A Worker without a usable secret set serves nothing.
   if (!secrets) return failure(503, 'guard_unavailable');
 
   const body = await readBoundedBody(request, ABUSE_GUARD_LIMITS.maxBodyBytes);
   if (body === null) return failure(413, 'bad_request');
+  if (body === undefined) return failure(400, 'bad_request');
 
   const authorized = await verifyGuardRequest({
     secrets,
@@ -353,9 +368,13 @@ export class AbuseGuardEntrypoint extends WorkerEntrypoint<Env> {
   async run(
     rpc: unknown
   ): Promise<GuardRpcResponse | { error: GuardErrorCode }> {
-    const size = new TextEncoder().encode(
-      JSON.stringify(rpc ?? null)
-    ).byteLength;
+    let size: number;
+    try {
+      // Circular or BigInt input cannot be serialized: reject, never throw.
+      size = new TextEncoder().encode(JSON.stringify(rpc ?? null)).byteLength;
+    } catch {
+      return { error: 'bad_request' };
+    }
     if (size > ABUSE_GUARD_LIMITS.maxBodyBytes) return { error: 'bad_request' };
     const parsed = guardRpcSchema.safeParse(rpc);
     if (!parsed.success) return { error: 'bad_request' };
