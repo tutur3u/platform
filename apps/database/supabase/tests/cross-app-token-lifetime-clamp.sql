@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(23);
+select plan(25);
 
 insert into public.users (id)
 values
@@ -338,6 +338,36 @@ select lives_ok(
     order by 1, 2
   $$,
   'the redemption-delay audit parses and runs'
+);
+
+select lives_ok(
+  $$
+    select
+      origin_app,
+      count(*) as would_expire,
+      count(*) filter (where is_revoked) as already_revoked
+    from private.cross_app_tokens
+    where used_at is null
+      and expires_at > now() + interval '300 seconds'
+    group by 1
+    order by 1
+  $$,
+  'the containment preview audit parses and runs'
+);
+
+select is(
+  (
+    select sum(would_expire)::integer
+    from (
+      select origin_app, count(*) as would_expire
+      from private.cross_app_tokens
+      where used_at is null
+        and expires_at > now() + interval '300 seconds'
+      group by 1
+    ) preview
+  ),
+  3,
+  'the containment preview counts the same rows the migration expires'
 );
 
 select is(
