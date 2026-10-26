@@ -196,17 +196,6 @@ const mocks = vi.hoisted(() => {
       };
     }
 
-    if (table === 'inventory_product_prices') {
-      return {
-        select: vi.fn(() => ({
-          limit: vi.fn().mockResolvedValue({
-            data: null,
-            error: { code: 'PGRST205' },
-          }),
-        })),
-      };
-    }
-
     throw new Error(`Unexpected admin table: ${table}`);
   });
 
@@ -217,12 +206,8 @@ const mocks = vi.hoisted(() => {
         return inventoryCatalogRpc(args);
       }
 
-      if (fnName === 'edit_inventory_priced_product') {
-        return Promise.resolve({
-          data: null,
-          error: { code: 'PGRST202' },
-        });
-      }
+      if (fnName === 'edit_inventory_priced_product')
+        return Promise.resolve({ data: { updated: 1 }, error: null });
 
       throw new Error(`Unexpected private RPC: ${fnName}`);
     }),
@@ -309,6 +294,27 @@ vi.mock('server-only', () => ({}));
 vi.mock('next/headers', () => ({
   headers: vi.fn(() => Promise.resolve(new Headers())),
 }));
+
+function productInventoryPatchRequest() {
+  return new NextRequest(
+    'http://localhost/api/v1/workspaces/ws-1/products/product-1/inventory',
+    {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        inventory: [
+          {
+            warehouse_id: '11111111-1111-4111-8111-111111111111',
+            unit_id: '22222222-2222-4222-8222-222222222222',
+            amount: 5,
+            min_amount: 1,
+            price: 10,
+          },
+        ],
+      }),
+    }
+  );
+}
 
 describe('product routes', () => {
   beforeEach(() => {
@@ -525,7 +531,7 @@ describe('product routes', () => {
     expect(mocks.inventoryInsert).toHaveBeenCalled();
   });
 
-  it('updates product inventory through the admin client for protected tables', async () => {
+  it('updates product inventory through the private atomic RPC', async () => {
     mocks.productMaybeSingle.mockResolvedValue({
       data: { id: 'product-1' },
       error: null,
@@ -555,36 +561,15 @@ describe('product routes', () => {
     const { PATCH } = await import(
       '@/app/api/v1/workspaces/[wsId]/products/[productId]/inventory/route'
     );
-    const response = await PATCH(
-      new NextRequest(
-        'http://localhost/api/v1/workspaces/ws-1/products/product-1/inventory',
-        {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            inventory: [
-              {
-                warehouse_id: '11111111-1111-4111-8111-111111111111',
-                unit_id: '22222222-2222-4222-8222-222222222222',
-                amount: 5,
-                min_amount: 1,
-                price: 10,
-              },
-            ],
-          }),
-        }
-      ),
-      {
-        params: Promise.resolve({ wsId: 'ws-1', productId: 'product-1' }),
-      }
-    );
+    const response = await PATCH(productInventoryPatchRequest(), {
+      params: Promise.resolve({ wsId: 'ws-1', productId: 'product-1' }),
+    });
 
     expect(response.status).toBe(200);
     expect(mocks.adminSupabase.from).toHaveBeenCalledWith('workspace_products');
-    expect(mocks.privateSupabase.from).toHaveBeenCalledWith(
-      'inventory_products'
+    expect(mocks.privateSupabase.rpc).toHaveBeenCalledWith(
+      'edit_inventory_priced_product',
+      expect.objectContaining({ p_product_id: 'product-1', p_ws_id: 'normalized-ws' })
     );
     expect(mocks.sessionSupabase.from).not.toHaveBeenCalledWith(
       'inventory_products'
@@ -757,36 +742,15 @@ describe('product routes', () => {
     const { PATCH } = await import(
       '@/app/api/v1/workspaces/[wsId]/products/[productId]/inventory/route'
     );
-    const response = await PATCH(
-      new NextRequest(
-        'http://localhost/api/v1/workspaces/ws-1/products/product-1/inventory',
-        {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            inventory: [
-              {
-                warehouse_id: '11111111-1111-4111-8111-111111111111',
-                unit_id: '22222222-2222-4222-8222-222222222222',
-                amount: 5,
-                min_amount: 1,
-                price: 10,
-              },
-            ],
-          }),
-        }
-      ),
-      {
-        params: Promise.resolve({ wsId: 'ws-1', productId: 'product-1' }),
-      }
-    );
+    const response = await PATCH(productInventoryPatchRequest(), {
+      params: Promise.resolve({ wsId: 'ws-1', productId: 'product-1' }),
+    });
 
     expect(response.status).toBe(200);
     expect(mocks.adminSupabase.from).toHaveBeenCalledWith('workspace_products');
-    expect(mocks.privateSupabase.from).toHaveBeenCalledWith(
-      'inventory_products'
+    expect(mocks.privateSupabase.rpc).toHaveBeenCalledWith(
+      'edit_inventory_priced_product',
+      expect.objectContaining({ p_product_id: 'product-1', p_ws_id: 'normalized-ws' })
     );
   });
 });

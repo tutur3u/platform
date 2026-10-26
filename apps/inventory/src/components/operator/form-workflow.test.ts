@@ -1,16 +1,11 @@
 import { readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { getInventoryStockState } from './operator-stock';
 
-const operatorDir = join(
-  process.cwd(),
-  'apps/inventory',
-  'src',
-  'components',
-  'operator'
-);
-const inventoryDir = join(process.cwd(), 'apps/inventory');
+const operatorDir = dirname(fileURLToPath(import.meta.url));
+const inventoryDir = resolve(operatorDir, '../../..');
 
 function source(fileName: string) {
   return readFileSync(join(operatorDir, fileName), 'utf8');
