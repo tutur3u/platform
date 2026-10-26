@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -138,6 +139,50 @@ void main() {
         ),
         isFalse,
       );
+    });
+  });
+
+  group('iOS-like transitions on Android', () {
+    Future<double> pushedOffset(
+      WidgetTester tester, {
+      required bool reduce,
+    }) async {
+      final navigator = GlobalKey<NavigatorState>();
+      if (reduce) {
+        tester.platformDispatcher.accessibilityFeaturesTestValue =
+            const FakeAccessibilityFeatures(disableAnimations: true);
+        addTearDown(
+          tester.platformDispatcher.clearAccessibilityFeaturesTestValue,
+        );
+      }
+      await tester.pumpWidget(
+        MaterialApp(
+          navigatorKey: navigator,
+          theme: AppInterfaceTheme.apply(
+            AppTheme.light.copyWith(platform: TargetPlatform.android),
+            const AppInterfaceTokens(style: AppInterfaceStyle.ios),
+          ),
+          home: const Text('First'),
+        ),
+      );
+      unawaited(
+        navigator.currentState!.push(
+          MaterialPageRoute<void>(builder: (_) => const Text('Second')),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      final dx = tester.getTopLeft(find.text('Second')).dx;
+      await tester.pumpAndSettle();
+      return dx;
+    }
+
+    testWidgets('slide in normally', (tester) async {
+      expect(await pushedOffset(tester, reduce: false), greaterThan(0));
+    });
+
+    testWidgets('appear in place under reduce motion', (tester) async {
+      expect(await pushedOffset(tester, reduce: true), 0);
     });
   });
 

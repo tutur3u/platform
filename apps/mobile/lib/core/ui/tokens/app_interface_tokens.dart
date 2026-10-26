@@ -17,7 +17,7 @@ enum AppInterfaceStyle {
   material,
 }
 
-/// Row height and gap scale for lists and grouped rows.
+/// Minimum height of grouped rows. Gaps and padding do not change.
 enum AppDensity { comfortable, compact }
 
 /// Corner treatment for cards, sheets and grouped surfaces. Pills stay round.

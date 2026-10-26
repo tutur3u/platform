@@ -7789,6 +7789,12 @@ abstract class AppLocalizations {
   /// **'Weight'**
   String get habitsWorkoutWeight;
 
+  /// No description provided for @homeCalendarEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No events this week.'**
+  String get homeCalendarEmpty;
+
   /// No description provided for @homeCustomize.
   ///
   /// In en, this message translates to:
@@ -7855,17 +7861,119 @@ abstract class AppLocalizations {
   /// **'Personal calendar is unavailable.'**
   String get homePersonalAgendaUnavailable;
 
+  /// No description provided for @homeSectionCalendar.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar'**
+  String get homeSectionCalendar;
+
   /// No description provided for @homeSectionLoadFailed.
   ///
   /// In en, this message translates to:
   /// **'Pull down to try again.'**
   String get homeSectionLoadFailed;
 
+  /// No description provided for @homeSectionToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get homeSectionToday;
+
+  /// No description provided for @homeSectionUpNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Up next'**
+  String get homeSectionUpNext;
+
+  /// No description provided for @homeSeeAll.
+  ///
+  /// In en, this message translates to:
+  /// **'See all'**
+  String get homeSeeAll;
+
   /// No description provided for @homeShowWidget.
   ///
   /// In en, this message translates to:
   /// **'Show widget'**
   String get homeShowWidget;
+
+  /// No description provided for @homeTodayEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing due today.'**
+  String get homeTodayEmpty;
+
+  /// No description provided for @homeUpNextEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing coming up.'**
+  String get homeUpNextEmpty;
+
+  /// No description provided for @homeWidgetTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Today and Up next'**
+  String get homeWidgetTasks;
+
+  /// No description provided for @homeWorkspaceChipsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspaces'**
+  String get homeWorkspaceChipsLabel;
+
+  /// No description provided for @homeWorkspaceEditPins.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit pinned workspaces'**
+  String get homeWorkspaceEditPins;
+
+  /// No description provided for @homeWorkspaceFind.
+  ///
+  /// In en, this message translates to:
+  /// **'Find workspace'**
+  String get homeWorkspaceFind;
+
+  /// No description provided for @homeWorkspaceMore.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get homeWorkspaceMore;
+
+  /// No description provided for @homeWorkspaceNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New workspace'**
+  String get homeWorkspaceNew;
+
+  /// No description provided for @homeWorkspacePin.
+  ///
+  /// In en, this message translates to:
+  /// **'Pin to Home'**
+  String get homeWorkspacePin;
+
+  /// No description provided for @homeWorkspacePinsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Pinned workspaces appear as chips on Home.'**
+  String get homeWorkspacePinsDescription;
+
+  /// No description provided for @homeWorkspacePinsFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save pinned workspaces.'**
+  String get homeWorkspacePinsFailed;
+
+  /// No description provided for @homeWorkspacePinsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pinned workspaces'**
+  String get homeWorkspacePinsTitle;
+
+  /// No description provided for @homeWorkspaceUnpin.
+  ///
+  /// In en, this message translates to:
+  /// **'Unpin from Home'**
+  String get homeWorkspaceUnpin;
 
   /// No description provided for @inventoryAddCategory.
   ///
@@ -16386,6 +16494,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'A timer is already running. Starting focus stops it and starts a new session for this task.'**
   String get taskBoardDetailFocusReplaceMessage;
+
+  /// No description provided for @taskBoardDetailFocusReplacePausedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'A paused timer is waiting to resume. Starting focus ends it and starts a new session for this task.'**
+  String get taskBoardDetailFocusReplacePausedMessage;
+
+  /// No description provided for @taskBoardDetailFocusReplacePausedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'End the paused timer?'**
+  String get taskBoardDetailFocusReplacePausedTitle;
 
   /// No description provided for @taskBoardDetailFocusReplaceTitle.
   ///

@@ -4040,6 +4040,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get habitsWorkoutWeight => 'Weight';
 
   @override
+  String get homeCalendarEmpty => 'No events this week.';
+
+  @override
   String get homeCustomize => 'Customize Home';
 
   @override
@@ -4079,10 +4082,61 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homePersonalAgendaUnavailable => 'Personal calendar is unavailable.';
 
   @override
+  String get homeSectionCalendar => 'Calendar';
+
+  @override
   String get homeSectionLoadFailed => 'Pull down to try again.';
 
   @override
+  String get homeSectionToday => 'Today';
+
+  @override
+  String get homeSectionUpNext => 'Up next';
+
+  @override
+  String get homeSeeAll => 'See all';
+
+  @override
   String get homeShowWidget => 'Show widget';
+
+  @override
+  String get homeTodayEmpty => 'Nothing due today.';
+
+  @override
+  String get homeUpNextEmpty => 'Nothing coming up.';
+
+  @override
+  String get homeWidgetTasks => 'Today and Up next';
+
+  @override
+  String get homeWorkspaceChipsLabel => 'Workspaces';
+
+  @override
+  String get homeWorkspaceEditPins => 'Edit pinned workspaces';
+
+  @override
+  String get homeWorkspaceFind => 'Find workspace';
+
+  @override
+  String get homeWorkspaceMore => 'More';
+
+  @override
+  String get homeWorkspaceNew => 'New workspace';
+
+  @override
+  String get homeWorkspacePin => 'Pin to Home';
+
+  @override
+  String get homeWorkspacePinsDescription => 'Pinned workspaces appear as chips on Home.';
+
+  @override
+  String get homeWorkspacePinsFailed => 'Couldn\'t save pinned workspaces.';
+
+  @override
+  String get homeWorkspacePinsTitle => 'Pinned workspaces';
+
+  @override
+  String get homeWorkspaceUnpin => 'Unpin from Home';
 
   @override
   String get inventoryAddCategory => 'Add category';
@@ -8595,6 +8649,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get taskBoardDetailFocusReplaceMessage => 'A timer is already running. Starting focus stops it and starts a new session for this task.';
+
+  @override
+  String get taskBoardDetailFocusReplacePausedMessage => 'A paused timer is waiting to resume. Starting focus ends it and starts a new session for this task.';
+
+  @override
+  String get taskBoardDetailFocusReplacePausedTitle => 'End the paused timer?';
 
   @override
   String get taskBoardDetailFocusReplaceTitle => 'Stop the running timer?';

@@ -4027,6 +4027,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get habitsWorkoutWeight => 'Mức tạ';
 
   @override
+  String get homeCalendarEmpty => 'Không có sự kiện trong tuần này.';
+
+  @override
   String get homeCustomize => 'Tùy chỉnh Trang chủ';
 
   @override
@@ -4066,10 +4069,61 @@ class AppLocalizationsVi extends AppLocalizations {
   String get homePersonalAgendaUnavailable => 'Lịch cá nhân hiện không khả dụng.';
 
   @override
+  String get homeSectionCalendar => 'Lịch';
+
+  @override
   String get homeSectionLoadFailed => 'Kéo xuống để thử lại.';
 
   @override
+  String get homeSectionToday => 'Hôm nay';
+
+  @override
+  String get homeSectionUpNext => 'Sắp tới';
+
+  @override
+  String get homeSeeAll => 'Xem tất cả';
+
+  @override
   String get homeShowWidget => 'Hiện tiện ích';
+
+  @override
+  String get homeTodayEmpty => 'Không có việc đến hạn hôm nay.';
+
+  @override
+  String get homeUpNextEmpty => 'Chưa có việc sắp tới.';
+
+  @override
+  String get homeWidgetTasks => 'Hôm nay và Sắp tới';
+
+  @override
+  String get homeWorkspaceChipsLabel => 'Không gian làm việc';
+
+  @override
+  String get homeWorkspaceEditPins => 'Sửa không gian làm việc đã ghim';
+
+  @override
+  String get homeWorkspaceFind => 'Tìm không gian làm việc';
+
+  @override
+  String get homeWorkspaceMore => 'Thêm';
+
+  @override
+  String get homeWorkspaceNew => 'Không gian làm việc mới';
+
+  @override
+  String get homeWorkspacePin => 'Ghim vào Trang chủ';
+
+  @override
+  String get homeWorkspacePinsDescription => 'Không gian làm việc đã ghim hiển thị dạng thẻ trên Trang chủ.';
+
+  @override
+  String get homeWorkspacePinsFailed => 'Không thể lưu không gian làm việc đã ghim.';
+
+  @override
+  String get homeWorkspacePinsTitle => 'Không gian làm việc đã ghim';
+
+  @override
+  String get homeWorkspaceUnpin => 'Bỏ ghim khỏi Trang chủ';
 
   @override
   String get inventoryAddCategory => 'Thêm danh mục';
@@ -8508,6 +8562,12 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get taskBoardDetailFocusReplaceMessage => 'Một bộ bấm giờ đang chạy. Bắt đầu tập trung sẽ dừng nó và bắt đầu một phiên mới cho công việc này.';
+
+  @override
+  String get taskBoardDetailFocusReplacePausedMessage => 'Một bộ bấm giờ đang tạm dừng. Bắt đầu tập trung sẽ kết thúc nó và bắt đầu một phiên mới cho công việc này.';
+
+  @override
+  String get taskBoardDetailFocusReplacePausedTitle => 'Kết thúc bộ bấm giờ đang tạm dừng?';
 
   @override
   String get taskBoardDetailFocusReplaceTitle => 'Dừng bộ bấm giờ đang chạy?';
