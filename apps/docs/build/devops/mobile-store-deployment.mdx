@@ -66,6 +66,20 @@ Vault administration uses the signed-in Infrastructure app session and checks
 the root workspace's `manage_mobile_deployment_vault` permission. CI reads use
 the separately scoped CI token and GitHub OIDC identity.
 
+The portable AES-GCM implementation lives at
+`@tuturuuu/storage-core/vault/crypto`. The existing mobile `crypto.ts` import
+path remains the server adapter: it resolves `ENCRYPTION_MASTER_KEY` and injects
+the existing workspace-key wrapper. The core never reads request identity or
+environment variables. Scalar ciphertext remains base64 of IV, ciphertext and
+authentication tag; file ciphertext retains the `A256GCM` JSON envelope. Existing
+vault rows and hydrated bundles need no conversion. Optional authenticated context
+is reserved for new callers; existing mobile ciphertext uses no additional data.
+
+Run the focused core and mobile compatibility tests before changing this boundary.
+They cover existing wire formats, wrong-key rejection and file authentication.
+Keep OIDC claim checks, storage reservation and bundle hydration as separate
+release gates; passing crypto tests alone does not verify a mobile release.
+
 - **Secrets** — short scalar values (passwords, IDs, names) and preset
   environment variables baked into the build.
 - **Files** — signing certificates, keystores, and Firebase/Play config files.

@@ -1360,7 +1360,7 @@ export async function recordAudit(
     actorUserId?: string | null;
     environmentId: string;
     eventType: string;
-    metadata?: Json;
+    metadata?: NonNullable<Json>;
     resourceKind?: string | null;
     tokenId?: string | null;
     versionId?: string | null;

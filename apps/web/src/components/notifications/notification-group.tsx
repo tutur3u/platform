@@ -21,6 +21,7 @@ import {
   formatFieldName,
   formatValue,
   getEntityLink,
+  localizedNotificationText,
   type TranslationFn,
 } from './notification-utils';
 
@@ -358,6 +359,7 @@ function GroupedNotificationItem({
   index,
 }: GroupedNotificationItemProps) {
   const isUnread = !notification.read_at;
+  const displayText = localizedNotificationText(notification, t);
 
   return (
     <motion.div
@@ -408,12 +410,12 @@ function GroupedNotificationItem({
             isUnread ? 'text-foreground/90' : 'text-foreground/70'
           )}
         >
-          {notification.title}
+          {displayText.title}
         </p>
 
-        {notification.description && (
+        {displayText.description && (
           <p className="mt-0.5 text-foreground/50 text-xs">
-            {notification.description}
+            {displayText.description}
           </p>
         )}
 

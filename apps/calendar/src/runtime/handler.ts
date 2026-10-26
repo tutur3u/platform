@@ -1,4 +1,5 @@
 import { retarget } from '@tuturuuu/start-bridge/base-path';
+import { createNonce } from '@tuturuuu/start-bridge/csp';
 import { APP_BASE_HEADER } from '@tuturuuu/start-bridge/mounts';
 import { withBridgeRequest } from '@tuturuuu/start-bridge/request-context';
 import { createBridgeStartHandler } from '@tuturuuu/start-bridge/start/server-entry';
@@ -39,10 +40,12 @@ export async function handleCalendarRequest(
   ctx: CalendarExecutionContext,
   telemetry?: CalendarTelemetryPort
 ): Promise<Response> {
+  const nonce = createNonce();
   try {
     return await applyCalendarResponsePolicy(
       request,
-      await dispatchCalendarRequest(request, env, ctx, telemetry)
+      await dispatchCalendarRequest(request, env, ctx, nonce, telemetry),
+      nonce
     );
   } catch (error) {
     reportCalendarSsrError(error, 'handler');
@@ -54,6 +57,7 @@ async function dispatchCalendarRequest(
   request: Request,
   env: CalendarWorkerEnvironment,
   ctx: CalendarExecutionContext,
+  nonce: string,
   telemetry?: CalendarTelemetryPort
 ): Promise<Response> {
   const url = new URL(request.url);
@@ -116,57 +120,69 @@ async function dispatchCalendarRequest(
     );
   }
   return base.finalizeResponse(
-    await withBridgeRequest({ request, appBase: base.basePath }, async () =>
-      dispatchThroughCalendarProxy({
-        request,
-        proxy:
-          path === CALENDAR_FUNCTION_BASE ||
-          path.startsWith(`${CALENDAR_FUNCTION_BASE}/`)
-            ? nativeFunctionProxy
-            : proxy,
-        waitUntil: (work) => ctx.waitUntil(work),
-        cloudflare: { env, ctx },
-        telemetry:
-          telemetry ??
-          (await createCalendarTelemetryPort((work) => ctx.waitUntil(work))),
-        dispatch: async (forwarded) => {
-          const owner = beforeLocalApiOwner(forwarded.nextUrl.pathname);
-          if (owner) {
-            const origin =
-              owner === 'web'
-                ? resolveTuturuuuWebAppUrl()
-                : resolveInternalAppUrl({
-                    appName: 'tasks',
-                    candidates: [
-                      process.env.TASKS_APP_URL,
-                      process.env.NEXT_PUBLIC_TASKS_APP_URL,
-                    ],
-                    fallback:
-                      process.env.NODE_ENV === 'production'
-                        ? 'https://tasks.tuturuuu.com'
-                        : getLocalInternalAppUrl(
-                            'tasks',
-                            'http://localhost:7809'
-                          ),
-                  });
-            return fetch(
-              forwardToOwner(base.stripRequest(forwarded) ?? forwarded, origin)
+    await withBridgeRequest(
+      { request, appBase: base.basePath, nonce },
+      async () =>
+        dispatchThroughCalendarProxy({
+          request,
+          proxy:
+            path === CALENDAR_FUNCTION_BASE ||
+            path.startsWith(`${CALENDAR_FUNCTION_BASE}/`)
+              ? nativeFunctionProxy
+              : proxy,
+          waitUntil: (work) => ctx.waitUntil(work),
+          cloudflare: { env, ctx },
+          telemetry:
+            telemetry ??
+            (await createCalendarTelemetryPort((work) => ctx.waitUntil(work))),
+          dispatch: async (forwarded) => {
+            const owner = beforeLocalApiOwner(forwarded.nextUrl.pathname);
+            if (owner) {
+              const origin =
+                owner === 'web'
+                  ? resolveTuturuuuWebAppUrl()
+                  : resolveInternalAppUrl({
+                      appName: 'tasks',
+                      candidates: [
+                        process.env.TASKS_APP_URL,
+                        process.env.NEXT_PUBLIC_TASKS_APP_URL,
+                      ],
+                      fallback:
+                        process.env.NODE_ENV === 'production'
+                          ? 'https://tasks.tuturuuu.com'
+                          : getLocalInternalAppUrl(
+                              'tasks',
+                              'http://localhost:7809'
+                            ),
+                    });
+              return fetch(
+                forwardToOwner(
+                  base.stripRequest(forwarded) ?? forwarded,
+                  origin
+                )
+              );
+            }
+            const endpoint = await dispatchCalendarEndpoint(forwarded);
+            if (endpoint) return endpoint;
+            if (forwarded.nextUrl.pathname.startsWith('/api/')) {
+              if (!base.isRoot)
+                return new Response('Not Found', { status: 404 });
+              return fetch(
+                forwardToOwner(forwarded, resolveTuturuuuWebAppUrl())
+              );
+            }
+            if (
+              forwarded.nextUrl.pathname === CALENDAR_FUNCTION_BASE ||
+              forwarded.nextUrl.pathname.startsWith(
+                `${CALENDAR_FUNCTION_BASE}/`
+              )
+            )
+              return start.fetch(base.stripRequest(forwarded) ?? forwarded);
+            return start.fetch(
+              new Request(request.url, requestInit(forwarded))
             );
-          }
-          const endpoint = await dispatchCalendarEndpoint(forwarded);
-          if (endpoint) return endpoint;
-          if (forwarded.nextUrl.pathname.startsWith('/api/')) {
-            if (!base.isRoot) return new Response('Not Found', { status: 404 });
-            return fetch(forwardToOwner(forwarded, resolveTuturuuuWebAppUrl()));
-          }
-          if (
-            forwarded.nextUrl.pathname === CALENDAR_FUNCTION_BASE ||
-            forwarded.nextUrl.pathname.startsWith(`${CALENDAR_FUNCTION_BASE}/`)
-          )
-            return start.fetch(base.stripRequest(forwarded) ?? forwarded);
-          return start.fetch(new Request(request.url, requestInit(forwarded)));
-        },
-      })
+          },
+        })
     )
   );
 }
