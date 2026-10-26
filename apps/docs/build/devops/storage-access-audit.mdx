@@ -103,25 +103,44 @@ The writer is `@tuturuuu/storage-core/storage-access-audit`.
 - There is no product UI or API. Operators with database access query it for
   incident review.
 
-Example (run with an operator role). Pass the key as a psql variable read
-from the secret store, so it never appears in shell history, query logs
-attached to tickets, or chat:
+To look up an object, compute its HMAC **outside the database**, then query by
+the hex digest only. Never pass the key to `psql` (`-v`, `-c` or SQL text).
+psql inlines variables into the statement, so the key would appear in `ps`
+output and in server statement and error logs.
 
-```sql
--- psql -v audit_key="$(read from the secret store)" ...
-select occurred_at, actor_kind, action, route, outcome, item_count
-from private.storage_access_events
-where ws_id = '<workspace uuid>'
-  and object_hash = encode(
-    extensions.hmac(
-      convert_to('<wsId>/<path>', 'UTF8'),
-      convert_to(:'audit_key', 'UTF8'),
-      'sha256'
-    ),
-    'hex'
-  )
-order by occurred_at desc;
-```
+1. Make the key available without echoing it. Either load
+   `STORAGE_ACCESS_AUDIT_HMAC_KEY` into the shell environment from the secret
+   store, or point `AUDIT_KEY_FILE` at a mode-600 file that holds exactly the
+   key.
+2. Compute the digest. The object name goes on stdin and the key never appears
+   on a command line:
+
+   ```bash
+   printf '%s' '<wsId>/<path>' | node -e '
+     const fs = require("node:fs");
+     const { createHmac } = require("node:crypto");
+     const key =
+       process.env.STORAGE_ACCESS_AUDIT_HMAC_KEY ??
+       fs.readFileSync(process.env.AUDIT_KEY_FILE, "utf8").replace(/\r?\n$/, "");
+     const name = fs.readFileSync(0, "utf8");
+     process.stdout.write(
+       createHmac("sha256", key).update(name, "utf8").digest("hex") + "\n"
+     );
+   '
+   ```
+
+   The name must match the stored object exactly (`<wsId>/<relative path>`,
+   and for listings a trailing `/`).
+3. Query with the digest, which is not secret. Run it with an operator role:
+
+   ```sql
+   -- psql -v object_hash=<64-character digest> -v ws_id=<workspace uuid> ...
+   select occurred_at, actor_kind, action, route, outcome, item_count
+   from private.storage_access_events
+   where ws_id = :'ws_id'
+     and object_hash = :'object_hash'
+   order by occurred_at desc;
+   ```
 
 ## Rollout
 

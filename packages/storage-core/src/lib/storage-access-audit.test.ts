@@ -100,6 +100,24 @@ describe('toStorageAccessAuditRow', () => {
     });
   });
 
+  it('retries a failed key import instead of caching the rejection', async () => {
+    const objectHashKey = `${KEY}-import-retry`;
+    const importKey = vi
+      .spyOn(crypto.subtle, 'importKey')
+      .mockRejectedValueOnce(new Error('import failed'));
+    try {
+      await expect(
+        toStorageAccessAuditRow(event(), { objectHashKey })
+      ).rejects.toThrow('import failed');
+      const row = await toStorageAccessAuditRow(event(), { objectHashKey });
+      expect(row?.object_hash).toBe(
+        await hmac(`${WS}/Finance/Salaries 2026.xlsx`, objectHashKey)
+      );
+    } finally {
+      importKey.mockRestore();
+    }
+  });
+
   it('marks root-level files without leaking their name', async () => {
     const row = await toStorageAccessAuditRow(
       event({ path: 'secret-plan.pdf' })

@@ -129,6 +129,11 @@ async function hmacSha256Hex(key: string, value: string): Promise<string> {
       ['sign']
     );
     hmacKeys.set(key, cryptoKey);
+    // Never cache a failed import: evict it so the next event retries.
+    const pending = cryptoKey;
+    pending.catch(() => {
+      if (hmacKeys.get(key) === pending) hmacKeys.delete(key);
+    });
   }
   const signature = await crypto.subtle.sign(
     'HMAC',
