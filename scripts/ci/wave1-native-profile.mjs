@@ -11,7 +11,7 @@ export function profileFor(app, environment, subdomain) {
     'Unknown publication environment'
   );
   const settings = profiles.apps[app];
-  if (environment === 'staging')
+  if (environment === 'staging' && !settings.stagingHost)
     assert.match(
       subdomain ?? '',
       /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/,
@@ -23,14 +23,17 @@ export function profileFor(app, environment, subdomain) {
       : settings.productionWorker;
   const host =
     environment === 'staging'
-      ? `${name}.${subdomain}.workers.dev`
+      ? (settings.stagingHost ?? `${name}.${subdomain}.workers.dev`)
       : settings.canonicalHost;
   return {
     app,
     environment,
     name,
     host,
-    secrets: settings.secrets,
+    secrets:
+      environment === 'production' && app === 'calendar'
+        ? [...settings.secrets, 'GOOGLE_REDIRECT_URI']
+        : settings.secrets,
     accountId: profiles.accountId,
   };
 }
@@ -136,7 +139,7 @@ export function publicationConfig(base, profile, { main, assets }) {
     assets: { ...base.assets, directory: assets },
     workers_dev: false,
     preview_urls: false,
-    routes: production ? [{ pattern: profile.host, custom_domain: true }] : [],
+    routes: [],
     secrets: { required: profile.secrets },
     vars: {
       NEXT_PUBLIC_APP_URL: `https://${profile.host}`,
@@ -154,7 +157,11 @@ export function publicationConfig(base, profile, { main, assets }) {
         : {}),
       ...(profile.app === 'calendar'
         ? {
-            GOOGLE_REDIRECT_URI: `https://${profile.host}/api/v1/calendar/auth/callback`,
+            ...(!production
+              ? {
+                  GOOGLE_REDIRECT_URI: `https://${profile.host}/api/v1/calendar/auth/callback`,
+                }
+              : {}),
             MICROSOFT_REDIRECT_URI: `https://${profile.host}/api/v1/calendar/auth/microsoft/callback`,
           }
         : {}),

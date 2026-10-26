@@ -28,6 +28,33 @@ session timing and dock transition smoothness require device verification;
 widget tests do not establish either.
 
 
+## Focus Time and Pomodoro (planned)
+
+Focus Time is part of time tracking; there is no separate focus store. A
+Pomodoro focus interval is an ordinary tracking session, linked to a task
+when started from one, and tagged `pomodoro`. Focus Time totals (today, last
+week, the month and a seven-day chart) are tracker statistics filtered to
+those sessions.
+
+Breaks between intervals are control phases, not tracked work, so billing and
+productivity totals do not change.
+
+Pomodoro becomes a first-class timer on mobile and web with:
+
+- configurable focus, short-break and long-break lengths;
+- a long break after a configurable number of intervals;
+- auto-start for breaks and for focus;
+- phase-end notifications;
+- task linking.
+
+Until shared control activation ships, the timer is device-driven, and
+notifications fire only on the device that started it. Cross-device phases
+and all-clients-closed notifications need the database contract described
+below, plus a Cloudflare deadline scheduler. That database migration is
+flagged in the
+[native pass plan](/build/development-tools/mobile-native-pass-plan#pomodoro-and-focus-time)
+and has not been written.
+
 ## Shared Pomodoro preparation is inactive
 
 The private time-tracker control foundation prepares actor/workspace-scoped
@@ -171,8 +198,8 @@ Every focus session the Pomodoro starts carries the `pomodoro` tag. This
 includes Start focus on a task row. The session API accepts `tags`: lowercase
 slugs, at most 10, stored in the existing `tags` column.
 
-You's **Focus Time** is all tracked time linked to a task (`task_id` set),
-Pomodoro or not (decided 2026-10-26). The stats endpoint takes two optional
+**Focus Time** on the You tab is all tracked time linked to a task
+(`task_id` set), Pomodoro or not (decided 2026-10-26). The stats endpoint takes two optional
 filters: `taskLinked=true` (Focus Time) and `tag` (for example `pomodoro`,
 kept as a capability). With either, it computes today, the week from Monday,
 the month, daily activity and the streak from the matching sessions, in the
@@ -201,3 +228,6 @@ tracker that behaves like the server. It covers:
 `task_board_row_actions_flows_test.dart` covers Start focus. Widget tests do
 not establish notification delivery or timing on devices.
 
+
+`pomodoro_waiting_focus_test.dart` verifies that a waiting or automatic focus phase
+leaves an unrelated running timer intact.

@@ -17,9 +17,11 @@ release/generated-file formatting remain authoritative. No workspace has complet
 the switch merely because these tools are installed.
 
 Lettin and Parley already have Next.js/OpenNext Worker deployments. Their next
-architecture milestone is a Vite-native runtime preserving existing contracts.
-React Router Framework Mode with the Cloudflare Vite plugin is a candidate requiring
-a scoped compatibility proof. The retained `apps/tanstack-web` remains paused.
+architecture milestone is the same per-app TanStack Start + Void + Vite+ Worker
+runtime as the other web apps, reaching `next/*` only through
+`@tuturuuu/start-bridge` and preserving existing contracts. See the
+[native Start migration runbook](/build/devops/native-start-migration). The
+retired `apps/tanstack-web` is not revived.
 
 ## Platform-wide target and daily checkpoints
 
@@ -260,7 +262,7 @@ MFA, consent, membership and revocation checks in reusable policy services.
 Current seams include Lettin's Actor/Store context and SQL permission fences,
 with bindings/identity/HTTP as framework adapters. Parley/Meet domain contracts can
 remain shared while routes, session lookup and meeting UI adapters are extracted.
-A package can support Next.js, React Router or other React hosts by implementing
+A package can support Next.js, TanStack Start or other React hosts by implementing
 these small adapters; support for every framework is a goal requiring consumer
 verification, not an automatic guarantee.
 
@@ -369,6 +371,36 @@ owns provisioning, HMAC/token rotation, finite counts and the stop procedure.
 Hosted credential scope, private runtime acceptance and actual serving state remain
 separate release evidence. Production publication stays held for all four apps.
 
+### Turbo remote cache: R2 operation envelope
+
+`apps/turbo-cache` ships with `TURBO_CACHE_MODE=off`, which performs no R2
+or DO operations on artifact paths. `budget-v2` in the global Durable Object is
+the authoritative fence/counters. Every reservation and admin mutation uses a
+storage transaction, committed before allowance. Missing/corrupt/unavailable
+state fails closed. Denials and repeated unchanged admin actions do not write;
+unknown reservation outcomes are denied without retry or refund. Native DO
+storage/output gates preserve charges and fences across restart.
+
+There are **zero R2 control writes**, including initialization, admin actions and
+bursts. `_control/budget-v1` is read only on explicit first initialization to
+import prior usage; it is never an admission source or live checkpoint. Delayed
+legacy writes cannot overwrite migrated DO state. Disable/drain the old revision
+and reconcile unresolved writes before import. No periodic job, alarm or retry
+loop exists; each request has at most one admission transaction.
+
+The maximum batch is 50 hashes × four scopes (200 HEADs). Including DO and
+rate-limit calls, its conservative operation count is 202 under the configured
+208 ceiling. `apps/turbo-cache/src/stop-regression.test.ts` and
+`budget-integrity.test.ts` cover counts, failed/unknown transactions, concurrent
+reservations, delayed legacy completion after stop and restart, a 600-request
+burst with simulated control-write 429s, migration and coalesced admin actions.
+The workerd script verifies actual transactional initialization and fence/restart.
+Exact-commit build/runtime CI remains required. DO requests/storage and denied
+or status ingress remain traffic-dependent costs outside R2 admission counters;
+there is no fixed total-spend guarantee. Set mode off to stop artifact storage/DO
+calls or disable the Worker route to stop invocations. The
+[runbook](../devops/turbo-remote-cache.mdx) owns migration, pricing review and stop.
+
 ## Incident evidence
 
 Correlate scoped failing requests with authenticated Worker tail exceptions and
@@ -387,4 +419,4 @@ CI; a migration direction does not authorize production cutover.
 - [Oxlint configuration](https://oxc.rs/docs/guide/usage/linter/config.html)
 - [Oxfmt configuration](https://oxc.rs/docs/guide/usage/formatter/config.html)
 - [Vite+ migration](https://viteplus.dev/guide/migrate)
-- [React Router on Cloudflare](https://developers.cloudflare.com/workers/framework-guides/web-apps/react-router/)
+- [TanStack Start on Cloudflare](https://developers.cloudflare.com/workers/framework-guides/web-apps/tanstack-start/)
