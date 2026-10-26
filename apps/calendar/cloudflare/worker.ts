@@ -1,4 +1,5 @@
 import { handleCalendarRequest } from '#calendar-handler';
+import { forwardCalendarAcmeChallenge } from '../src/runtime/acme';
 import type {
   CalendarExecutionContext,
   CalendarWorkerEnvironment,
@@ -10,6 +11,8 @@ export default {
     env: CalendarWorkerEnvironment,
     ctx: CalendarExecutionContext
   ) {
+    const challenge = forwardCalendarAcmeChallenge(request);
+    if (challenge) return challenge;
     return handleCalendarRequest(request, env, ctx);
   },
 } satisfies ExportedHandler<CloudflareEnv>;

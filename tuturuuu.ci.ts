@@ -130,7 +130,12 @@ export const ci = {
 // Admit each app only in an explicitly reviewed wave cutover PR.
 export const productionPublicationPolicy = {
   meet: { state: 'held', reason: 'held for wave-1 cutover' },
-  calendar: { state: 'held', reason: 'held for wave-1 cutover' },
+  calendar: {
+    state: 'admitted',
+    reason:
+      'Calendar native root cutover with private smoke and rehearsed route rollback',
+    surfaces: ['frontend'],
+  },
   mail: { state: 'held', reason: 'held for wave-1 cutover' },
   apps: { state: 'held', reason: 'held for wave-1 cutover' },
   shortener: { state: 'held', reason: 'held for wave-2 cutover' },

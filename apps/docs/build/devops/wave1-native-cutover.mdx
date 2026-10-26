@@ -1,12 +1,12 @@
 ---
 title: "Wave-1 native cutover"
-description: "Publication hold, native staging acceptance, and explicit production cutover gates."
+description: "Per-app admission, private production smoke, route rollback, and production acceptance."
 ---
 
 ## Production hold
 
-`productionPublicationPolicy` in `tuturuuu.ci.ts` holds Meet, Calendar, Mail and
-Apps. A production push reports **held for wave-1 cutover** in the planner log and
+`productionPublicationPolicy` in `tuturuuu.ci.ts` admits Calendar frontend only.
+Meet, Mail and Apps remain held. A production push reports **held for wave-1 cutover** in the planner log and
 summary and selects no publisher for those apps. Manual planner dispatch and
 package recovery honor the same hold. All four direct legacy Vercel publishers and
 Meet's native frontend/realtime publisher check it before any production credential
@@ -41,24 +41,63 @@ custody of pre-hold runs and their resulting deployment baselines.
 
 ## Release gates
 
-A later explicit cutover PR must admit each app independently with the required
-surfaces and review rationale, after:
+Each app needs its own reviewed admission PR and exact accepted production SHA.
+Tests, types, lint, a real native build, sealed original/restored runtime acceptance
+and transitive supplier checks qualify that source. Keep the production publisher
+route-free; admission permits upload without moving canonical traffic. Review and
+freeze the exact promotion range before production sync.
 
-1. Exact accepted main SHA passes applicable tests, types, lint, real native builds,
-   sealed original/restored runtime acceptance and transitive supplier checks.
-2. Off-canonical staging uses distinct Worker identities and isolated resources,
-   explicit account, secret names only, no canonical routes, and exact artifact bytes.
-3. Hosted signed-in EN/VI, auth handoff/refresh/no-loop, navigation/RPC/assets and
-   app-specific provider acceptance pass. Mail needs provider/webhook/attachments;
-   Calendar needs provider/offline/Tasks; Meet needs hosted media/reconnect/SFU/TURN;
-   Apps needs redirects and canonical-host fence qualification.
-4. Release owner captures current routing IDs/proxy modes, immutable Vercel fallbacks,
-   old/new Worker versions, secret names, scheduler custody, operator and rollback
-   triggers. Meet rollback captures **both** frontend and realtime versions.
-5. Review and freeze the exact production promotion range. Source sync is not
-   permission to attach canonical routes or activate schedulers. Calendar/Mail/Apps
-   use the [private production preparation workflow](/build/devops/wave1-native-publishers#route-free-production-preparation);
-   its route-free upload precedes a separately captured routing switch.
+The production-first cutover sequence is:
+
+1. Deploy the exact sealed production artifact privately with production runtime
+   configuration. Workers.dev and version previews remain disabled. Smoke the
+   candidate on an explicitly admitted temporary custom host after upload, then
+   remove that domain before the canonical switch. Staging acceptance remains
+   useful evidence but is not a flip prerequisite.
+2. Capture the current DNS record, proxy flag, TTL, every zone route, immutable
+   Vercel fallback and old/new Worker versions. Rehearse the exact rollback and
+   measure route detachment through verified fallback in under two minutes.
+3. Attach the single reviewed canonical Worker Route. Source sync alone never
+   attaches routes or activates schedulers.
+4. Immediately verify signed-in EN/VI, auth handoff, provider connection, one read
+   and one write. The operator's production browser owns signed-in checks.
+5. Watch errors, exceptions, 5xx and auth loops for 30–60 minutes. Any auth or data
+   error triggers immediate routing rollback, followed by a fix and a fresh flip.
+
+Mail additionally needs provider/webhook/attachment checks; Calendar needs
+provider/offline/Tasks checks; Meet needs hosted media/reconnect/SFU/TURN; Apps
+needs redirects and canonical-host fence checks. Meet rollback captures **both**
+frontend and realtime versions. Calendar/Mail/Apps use the
+[private production preparation workflow](/build/devops/wave1-native-publishers#route-free-production-preparation).
+
+### Calendar route and certificate continuity
+
+Calendar temporarily admits exactly `calendar-cutover.tuturuuu.com` alongside
+its canonical and staging root hosts. Unknown hosts remain rejected and one-origin
+mounts stay disabled. Remove this temporary host in an immediate follow-up commit
+or PR after the canonical flip is accepted; include that removal in the review
+brief. Attach the temporary domain only after the private publisher succeeds.
+
+Export the full zone and Vercel fallback before writes. Proxy only Calendar's
+existing CNAME, retaining its Vercel target. Verify HTTPS, legacy smoke, redirects,
+headers, uncached identity and the ACME challenge path through Cloudflare. A
+Vercel bot challenge on Cloudflare egress fails this fallback gate. Retain any
+operator-approved Cloudflare-IP firewall bypass while Vercel is the rollback
+origin, then remove that bypass rule once Calendar leaves Vercel. If this
+baseline fails, restore DNS-only immediately. Do not change zone-wide TLS, cache
+or firewall settings. Measure attach/detach/fallback on a disposable noncanonical
+route, then rehearse canonical rollback before creating exactly
+`calendar.tuturuuu.com/*` → `tuturuuu-calendar`. Record its returned route ID.
+Rollback deletes that exact verified route ID and confirms the retained Vercel
+fallback; the accepted proxied baseline avoids a DNS propagation wait.
+
+[Vercel uses HTTP-01 for non-wildcard certificate renewal](https://vercel.com/docs/domains/working-with-ssl).
+Calendar's Worker forwards only GET/HEAD requests on the canonical host under
+`/.well-known/acme-challenge/` to the retained origin, without following redirects.
+Other hosts, paths, methods and nondefault ports keep the native host and request
+checks. Regression coverage lives in `worker-entry-acme.test.ts` and
+`root-cutover.test.ts`. Verify the origin path during baseline and after flip;
+a currently valid certificate alone does not establish future renewal safety.
 
 For Meet restore the captured frontend version, then realtime if changed; preserve
 Custom Domains. For Calendar/Mail/Apps retain their immutable Vercel deployments.
@@ -70,7 +109,7 @@ DNS TTLs and provider convergence prevent assuming instantaneous rollback.
 ## Subdomain cutover tools
 
 Native apps go live on their own subdomain first (root mode). Two read-only
-scripts support gate 4 and the post-deploy check:
+scripts support rollback capture and post-deploy checks:
 
 - `node scripts/native-cutover/capture.mjs --host <app>.tuturuuu.com --vercel-project <project> [--cf-zone-id <zone>] --out tmp/native-cutover-<app>.json`
   records DNS, the live edge (`server`, `x-vercel-id`, `cf-ray`, runtime

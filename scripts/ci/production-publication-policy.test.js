@@ -249,6 +249,23 @@ test('known unrelated publisher retains normal selection even with malformed pro
   );
 });
 
+test('Calendar admission opens only its frontend while other wave-1 apps remain held', (t) => {
+  const root = fixture(t);
+  assert.equal(
+    runPolicy(root, 'calendar-cloudflare.yaml').output,
+    'allowed=true\n'
+  );
+  for (const app of ['meet', 'mail', 'apps']) {
+    assert.equal(
+      runPolicy(
+        root,
+        app === 'meet' ? 'meet-cloudflare.yaml' : `${app}-cloudflare.yaml`
+      ).output,
+      'allowed=false\n'
+    );
+  }
+});
+
 const publishers = [
   ...apps.map((app) => ({
     workflow: `vercel-production-${app}.yaml`,
@@ -300,7 +317,7 @@ for (const { workflow, job } of publishers) {
       writes.map(([name]) => name),
       [job]
     );
-    const result = runPolicy(fixture(t), workflow, policy.run);
+    const result = runPolicy(fixture(t, heldPolicy), workflow, policy.run);
     assert.equal(result.output, 'allowed=false\n');
     assert.match(result.summary, heldReason);
   });
@@ -329,7 +346,7 @@ test('all unrelated real production targets retain planner selection with invali
 
 for (const app of ['calendar', 'mail', 'apps']) {
   test(`${app}: native staging policy allows trusted staging while shared production policy holds`, (t) => {
-    const directory = fixture(t);
+    const directory = fixture(t, heldPolicy);
     assert.equal(
       runPolicy(directory, `${app}-cloudflare.yaml`).output,
       'allowed=false\n'

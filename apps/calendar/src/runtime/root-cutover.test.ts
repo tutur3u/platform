@@ -27,7 +27,11 @@ const telemetry: CalendarTelemetryPort = {
 beforeEach(() => vi.resetAllMocks());
 
 describe('Calendar cutover boundary', () => {
-  it.each(['calendar.tuturuuu.com', 'calendar-staging.tuturuuu.com'])(
+  it.each([
+    'calendar.tuturuuu.com',
+    'calendar-staging.tuturuuu.com',
+    'calendar-cutover.tuturuuu.com',
+  ])(
     'threads a fresh CSP nonce through the proxy and Start on %s',
     async (host) => {
       const seen: string[] = [];
