@@ -59,9 +59,9 @@ approved `psql -X` session against the approved database.
 
    ```sql
    \copy (select id, ws_id, teacher_workspace_user_id, course_book, video_url, send_due_at from private.topic_announcements where teacher_workspace_user_id is not null or course_book is not null or video_url is not null or send_due_at is not null) to 'topic-teacher-columns.csv' with csv header
-   \copy (select * from private.topic_announcements where status = 'draft' and topic is null) to 'topic-drafts-without-topic.csv' with csv header
-   \copy (select r.* from private.topic_announcement_recipients r join private.topic_announcements a on a.id = r.announcement_id where a.status = 'draft' and a.topic is null) to 'topic-drafts-without-topic-recipients.csv' with csv header
-   \copy (select t.* from private.topic_announcement_attachments t join private.topic_announcements a on a.id = t.announcement_id where a.status = 'draft' and a.topic is null) to 'topic-drafts-without-topic-attachments.csv' with csv header
+   \copy (select * from private.topic_announcements where status = 'draft' and (topic is null or btrim(topic) = '')) to 'topic-drafts-without-topic.csv' with csv header
+   \copy (select r.* from private.topic_announcement_recipients r join private.topic_announcements a on a.id = r.announcement_id where a.status = 'draft' and (a.topic is null or btrim(a.topic) = '')) to 'topic-drafts-without-topic-recipients.csv' with csv header
+   \copy (select t.* from private.topic_announcement_attachments t join private.topic_announcements a on a.id = t.announcement_id where a.status = 'draft' and (a.topic is null or btrim(a.topic) = '')) to 'topic-drafts-without-topic-attachments.csv' with csv header
    ```
 
    These files hold confidential customer data: lesson content, teacher
@@ -69,10 +69,15 @@ approved `psql -X` session against the approved database.
    incident data, never to a ticket, chat, repository, or shared drive. Record
    where they are, and delete them once the incident is closed and nothing
    needs to be restored from them.
-3. **Clear the refusal.** The migration allows `topic is null` only for
-   drafts, and the rollback restores `topic not null`, so it raises `topic
-   announcements without a topic exist` and changes nothing while any such
-   draft exists. Only drafts can lack a topic. Do **one** of these:
+3. **Clear topic-less drafts, NULL and blank.** The migration lets a draft
+   have no topic, stored as `NULL` or (from writes before the app normalized
+   it) a blank string. The rollback's guard refuses only `NULL` topics: it
+   raises `topic announcements without a topic exist` and changes nothing.
+   A blank `''` topic passes that guard, but the restored `NOT VALID`
+   `topic_announcements_topic_not_blank` check then rejects every later update
+   of that row, including cancelling it. So clear both, with the same
+   `topic is null or btrim(topic) = ''` filter as the export. Only drafts can
+   lack a topic. Do **one** of these:
    - Keep the drafts with a bilingual placeholder topic:
 
      ```sql
@@ -87,7 +92,7 @@ approved `psql -X` session against the approved database.
    - Delete the drafts (step 2 exported them):
 
      ```sql
-     delete from private.topic_announcements where status = 'draft' and topic is null;
+     delete from private.topic_announcements where status = 'draft' and (topic is null or btrim(topic) = '');
      ```
 
      Their recipient and attachment rows are deleted with them (`on delete
