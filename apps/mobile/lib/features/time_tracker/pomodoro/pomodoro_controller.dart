@@ -303,7 +303,12 @@ class PomodoroController extends Cubit<PomodoroState> {
       final wsId = state.wsId!;
       final stored = state.sessionId;
       final found = stored == null
-          ? (status: FocusSessionStatus.gone, session: null)
+          ? (
+              status: await _repository.getRunningSession(wsId) == null
+                  ? FocusSessionStatus.gone
+                  : FocusSessionStatus.elsewhere,
+              session: null,
+            )
           : await _sessions.current(state);
       switch (found.status) {
         case FocusSessionStatus.running:
@@ -391,12 +396,14 @@ class PomodoroController extends Cubit<PomodoroState> {
     String? sessionId;
     if (settings.autoStartFocus && !late) {
       try {
-        sessionId = (await _repository.startSession(
-          ended.wsId!,
-          title: ended.title,
-          taskId: ended.taskId,
-          tags: const [pomodoroSessionTag],
-        )).id;
+        if (await _repository.getRunningSession(ended.wsId!) == null) {
+          sessionId = (await _repository.startSession(
+            ended.wsId!,
+            title: ended.title,
+            taskId: ended.taskId,
+            tags: const [pomodoroSessionTag],
+          )).id;
+        }
       } on Exception {
         sessionId = null;
       }
