@@ -377,6 +377,8 @@ test('the generated Worker states its effective mounts and fails safely', (t) =>
   for (const check of [
     /assert\.equal\(status, 200, where\);\s*assert\.match\(type, \/application\\\/json\/u, where\);/,
     /assert\.equal\(status, probe\.kind === 'page' \? 200 : 404, where\);\s*assert\.match\(type, \/text\\\/html\/u, where\);\s*assert\.match\(body, \/<html\[\\s>\]\/iu/,
+    /assert\.ok\(executed > 0, 'no response-policy probe ran'\);/,
+    /assert\.ok\(existsSync\(join\(app, probe\.fixture\)\)/,
     /no-store/,
     /headers\['x-robots-tag'\]/,
     /headers\['x-frame-options'\], 'DENY'/,
@@ -416,9 +418,12 @@ test('policy probes are real pages, never a redirect standing in', (t) => {
     /runtimeProbes\.page: declare an anonymous page rendering 200 HTML/
   );
   // An explicit page probe, or an explicit reason to skip it, is accepted.
+  writeTree(path.join(root, 'apps/demo'), {
+    'cloudflare/signed-ssr.runtime.mjs': '// isolated-auth SSR fixture\n',
+  });
   for (const page of [
     '/pricing',
-    { skip: 'auth-only; cloudflare/signed-ssr.runtime.mjs' },
+    { skip: 'auth-only', fixture: 'cloudflare/signed-ssr.runtime.mjs' },
   ]) {
     const result = withRoutes({
       runtime: { '/': { redirect: '/login' } },
@@ -432,8 +437,33 @@ test('policy probes are real pages, never a redirect standing in', (t) => {
       runtime.includes(
         typeof page === 'string'
           ? `{"kind":"page","path":"${page}"}`
-          : `{"kind":"page","skip":"${page.skip}"}`
+          : `{"kind":"page","skip":"${page.skip}","fixture":"${page.fixture}"}`
       )
     );
   }
+  // A skip without its fixture, or every probe skipped, is a problem.
+  assert.match(
+    withRoutes({
+      runtime: { '/': { redirect: '/login' } },
+      runtimeProbes: { page: { skip: 'auth-only' } },
+    }).problems.join('\n'),
+    /runtimeProbes\.page: declare/
+  );
+  assert.match(
+    withRoutes({
+      runtime: { '/': { redirect: '/login' } },
+      runtimeProbes: {
+        page: {
+          skip: 'auth-only',
+          fixture: 'cloudflare/signed-ssr.runtime.mjs',
+        },
+        api: { skip: 'no anonymous API' },
+        notFound: {
+          skip: 'auth-only',
+          fixture: 'cloudflare/signed-ssr.runtime.mjs',
+        },
+      },
+    }).problems.join('\n'),
+    /at least one probe must run/
+  );
 });

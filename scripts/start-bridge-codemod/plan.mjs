@@ -240,6 +240,7 @@ export function planConversion(repoRoot, app, options = {}) {
   const probes = resolveRuntimeProbes(config.runtimeProbes, {
     expectations: config.runtime,
     hasBuildInfo,
+    fixtureExists: (file) => fs.existsSync(path.join(appRoot, file)),
   });
   // An unchanged config keeps its bytes (however Biome laid it out); a
   // changed one is formatted with the owned output.

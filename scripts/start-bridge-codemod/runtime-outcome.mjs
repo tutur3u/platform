@@ -84,6 +84,18 @@ export function mountedPath(base, path) {
 }
 
 const PROBE_KINDS = ['page', 'api', 'notFound'];
+/** Probes whose skip must name the replacement runtime fixture. */
+const FIXTURE_KINDS = new Set(['page', 'notFound']);
+const FIXTURE = /^cloudflare\/[\w.-]+\.runtime\.mjs$/u;
+
+function isSkip(value, kind) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const keys = Object.keys(value).sort().join(',');
+  if (typeof value.skip !== 'string' || !value.skip.trim()) return false;
+  return FIXTURE_KINDS.has(kind)
+    ? keys === 'fixture,skip' && FIXTURE.test(value.fixture ?? '')
+    : keys === 'skip';
+}
 const PROBE_DEFAULTS = {
   page: 'an anonymous page rendering 200 HTML',
   api: 'an anonymous API route answering 200 JSON',
@@ -95,10 +107,14 @@ const PROBE_DEFAULTS = {
  * real rendered page, JSON API response and 404 page, never a redirect.
  * Defaults: the first `runtime` path expecting 200, `/api/build-info`, and
  * `/__native-smoke-missing__`. `runtimeProbes` in start-bridge.routes.json
- * overrides a probe path or skips it with a reason (an auth-only app covers
- * it with its isolated auth fixture in its own `cloudflare/*.runtime.mjs`).
+ * overrides a probe path or skips it with a reason; a skipped page or 404
+ * probe names the app's own `cloudflare/*.runtime.mjs` that covers it (e.g.
+ * its isolated-auth fixture). At least one probe always runs.
  */
-export function resolveRuntimeProbes(declared, { expectations, hasBuildInfo }) {
+export function resolveRuntimeProbes(
+  declared,
+  { expectations, hasBuildInfo, fixtureExists = () => false }
+) {
   const problems = [];
   if (
     declared !== undefined &&
@@ -124,18 +140,30 @@ export function resolveRuntimeProbes(declared, { expectations, hasBuildInfo }) {
     const value = declared?.[kind] ?? defaults[kind];
     if (typeof value === 'string' && /^\/(?!\/)/u.test(value))
       probes.push({ kind, path: value });
-    else if (
-      value &&
-      typeof value === 'object' &&
-      Object.keys(value).length === 1 &&
-      typeof value.skip === 'string' &&
-      value.skip.trim()
-    )
-      probes.push({ kind, skip: value.skip.trim() });
-    else
+    else if (isSkip(value, kind)) {
+      // A skipped page or 404 probe names the app's own runtime test that
+      // covers it (e.g. its isolated-auth fixture), which test:runtime runs.
+      if (FIXTURE_KINDS.has(kind) && !fixtureExists(value.fixture))
+        problems.push(
+          `runtimeProbes.${kind}.fixture: ${value.fixture} does not exist in the app`
+        );
+      probes.push({
+        kind,
+        skip: value.skip.trim(),
+        ...(value.fixture ? { fixture: value.fixture } : {}),
+      });
+    } else
       problems.push(
-        `runtimeProbes.${kind}: declare ${PROBE_DEFAULTS[kind]} (an app-relative path), or { "skip": "<reason>" }`
+        `runtimeProbes.${kind}: declare ${PROBE_DEFAULTS[kind]} (an app-relative path), or { "skip": "<reason>"${
+          FIXTURE_KINDS.has(kind)
+            ? ', "fixture": "cloudflare/<name>.runtime.mjs"'
+            : ''
+        } }`
       );
   }
+  if (probes.length === PROBE_KINDS.length && probes.every((p) => p.skip))
+    problems.push(
+      'runtimeProbes: at least one probe must run; every probe is skipped'
+    );
   return { probes, problems };
 }

@@ -200,3 +200,68 @@ test('policy probes default to real responses and never guess', () => {
       JSON.stringify(declared)
     );
 });
+
+test('skipped probes name a real replacement and one probe always runs', () => {
+  const context = {
+    expectations: { '/': { redirect: '/login' } },
+    hasBuildInfo: true,
+    fixtureExists: (file) => file === 'cloudflare/signed-ssr.runtime.mjs',
+  };
+  const skip = (fixture) => ({
+    skip: 'auth-only',
+    ...(fixture ? { fixture } : {}),
+  });
+  // A page/404 skip must name an existing cloudflare/*.runtime.mjs fixture.
+  assert.match(
+    resolveRuntimeProbes({ page: skip() }, context).problems.join('\n'),
+    /runtimeProbes\.page: declare .*"fixture": "cloudflare\/<name>\.runtime\.mjs"/
+  );
+  assert.match(
+    resolveRuntimeProbes(
+      { page: skip('cloudflare/missing.runtime.mjs') },
+      context
+    ).problems.join('\n'),
+    /runtimeProbes\.page\.fixture: cloudflare\/missing\.runtime\.mjs does not exist/
+  );
+  for (const fixture of [
+    'signed-ssr.runtime.mjs',
+    '../x.runtime.mjs',
+    'cloudflare/x.mjs',
+  ])
+    assert.notDeepEqual(
+      resolveRuntimeProbes({ page: skip(fixture) }, context).problems,
+      [],
+      fixture
+    );
+  const covered = resolveRuntimeProbes(
+    { page: skip('cloudflare/signed-ssr.runtime.mjs') },
+    context
+  );
+  assert.deepEqual(covered.problems, []);
+  assert.deepEqual(covered.probes[0], {
+    kind: 'page',
+    skip: 'auth-only',
+    fixture: 'cloudflare/signed-ssr.runtime.mjs',
+  });
+  // The API probe skips with a reason alone (no fixture key).
+  assert.notDeepEqual(
+    resolveRuntimeProbes(
+      {
+        page: '/pricing',
+        api: skip('cloudflare/signed-ssr.runtime.mjs'),
+      },
+      context
+    ).problems,
+    []
+  );
+  // Every probe skipped: a gate with zero fetches is rejected.
+  const allSkipped = resolveRuntimeProbes(
+    {
+      page: skip('cloudflare/signed-ssr.runtime.mjs'),
+      api: { skip: 'no anonymous API' },
+      notFound: skip('cloudflare/signed-ssr.runtime.mjs'),
+    },
+    context
+  );
+  assert.match(allSkipped.problems.join('\n'), /at least one probe must run/);
+});

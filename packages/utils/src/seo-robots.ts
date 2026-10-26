@@ -24,6 +24,27 @@ export function escapeSeoRegex(value: string) {
 }
 
 /**
+ * The path segments decoded once each, so the reserved check and the public
+ * allowlist see the same names (`/%61uth` is `/auth`). `null` for a
+ * malformed escape, an encoded separator (`%2F`, `%5C`) or a still-encoded
+ * result (double encoding).
+ */
+function decodedSegments(pathname: string): string[] | null {
+  const segments: string[] = [];
+  for (const segment of pathname.replace(/^\//u, '').split('/')) {
+    let decoded: string;
+    try {
+      decoded = decodeURIComponent(segment);
+    } catch {
+      return null;
+    }
+    if (/[/\\]|%[0-9a-f]{2}/iu.test(decoded)) return null;
+    segments.push(decoded);
+  }
+  return segments;
+}
+
+/**
  * `X-Robots-Tag` for a request, or `null` when the URL may be indexed: only
  * the app's public allowlist, on its canonical origin, outside reserved
  * private paths, and never on a preview/staging (`noindex`) deployment. An
@@ -42,7 +63,10 @@ export function robotsForUrl(
     ...policy.publicPatterns,
   ];
   if (patterns.length === 0) return PRIVATE_ROBOTS_HEADER;
-  const path = url.pathname.replace(/^\//u, '');
+  const segments = decodedSegments(url.pathname);
+  // Malformed or ambiguous encodings never become indexable.
+  if (!segments) return PRIVATE_ROBOTS_HEADER;
+  const path = segments.join('/');
   if (
     new RegExp(`^${SEO_LOCALE_PREFIX}${PRIVATE_PATH_PATTERN}`, 'u').test(path)
   )

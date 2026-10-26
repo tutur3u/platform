@@ -258,6 +258,7 @@ export function runtimeTest({
   return `// ${GENERATED_MARKER} for ${app}; re-run it instead of editing.
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
+import { existsSync } from 'node:fs';
 import { request as httpRequest } from 'node:http';
 import { cp, mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
@@ -486,11 +487,17 @@ ${buildInfo}
 
   await t.test('the response policy covers a rendered page, an API response and a 404', async () => {
     // Real responses only: a redirect or an error never stands in for a page.
+    let executed = 0;
     for (const probe of POLICY_PROBES) {
       if (probe.skip) {
-        t.diagnostic(\`policy probe \${probe.kind} skipped: \${probe.skip}\`);
+        // A skipped page or 404 probe is covered by the named app fixture,
+        // which test:runtime runs alongside this file.
+        if (probe.fixture)
+          assert.ok(existsSync(join(app, probe.fixture)), \`\${probe.kind}: \${probe.fixture} is missing\`);
+        t.diagnostic(\`policy probe \${probe.kind} skipped (\${probe.fixture ?? 'no fixture'}): \${probe.skip}\`);
         continue;
       }
+      executed += 1;
       const { status, headers, body } = await get(probe.path);
       const type = headers['content-type'] ?? '';
       const where = \`\${probe.kind} \${probe.path} (\${status} \${type})\`;
@@ -512,6 +519,7 @@ ${buildInfo}
         \`\${where}: CSP frame-ancestors\`
       );
     }
+    assert.ok(executed > 0, 'no response-policy probe ran');
   });
 
   t.diagnostic(\`denied egress origins: \${[...new Set(egress)].join(', ') || 'none'}\`);
