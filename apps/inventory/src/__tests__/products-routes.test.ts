@@ -196,6 +196,17 @@ const mocks = vi.hoisted(() => {
       };
     }
 
+    if (table === 'inventory_product_prices') {
+      return {
+        select: vi.fn(() => ({
+          limit: vi.fn().mockResolvedValue({
+            data: null,
+            error: { code: 'PGRST205' },
+          }),
+        })),
+      };
+    }
+
     throw new Error(`Unexpected admin table: ${table}`);
   });
 
@@ -204,6 +215,13 @@ const mocks = vi.hoisted(() => {
     rpc: vi.fn((fnName: string, args: Record<string, unknown>) => {
       if (fnName === 'get_inventory_catalog_products') {
         return inventoryCatalogRpc(args);
+      }
+
+      if (fnName === 'edit_inventory_priced_product') {
+        return Promise.resolve({
+          data: null,
+          error: { code: 'PGRST202' },
+        });
       }
 
       throw new Error(`Unexpected private RPC: ${fnName}`);
