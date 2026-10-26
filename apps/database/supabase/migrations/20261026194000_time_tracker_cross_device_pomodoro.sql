@@ -15,7 +15,7 @@
 --   * cloudflare_channel_role admits `time-tracker-pomodoro-<ws>-<actor>` for
 --     the actor themself while a workspace MEMBER.
 --
--- Rollback: apps/database/rollbacks/20261026180000_time_tracker_cross_device_pomodoro.rollback.sql
+-- Rollback: apps/database/rollbacks/20261026194000_time_tracker_cross_device_pomodoro.rollback.sql
 begin;
 set local lock_timeout = '5s';
 set local statement_timeout = '30s';
