@@ -106,9 +106,6 @@ function validateBiomeOutput(output) {
   return `Found ${stats.totalIssues} Biome issue(s): ${formatBiomeIssueStats(stats)}`;
 }
 
-/**
- * Calculate the display width of a string
- */
 function getDisplayWidth(str) {
   return stripAnsi(str).length;
 }
@@ -290,6 +287,12 @@ const checks = [
     command: 'node',
     args: ['scripts/check-satellite-cookie-auth.js'],
     parseOutput: () => 'Satellites authorize with app-session-aware clients',
+  },
+  {
+    name: 'browser-session-surface',
+    command: 'node',
+    args: ['scripts/check-browser-session-surface.js'],
+    parseOutput: () => 'Browser session surfaces stay within the allowlist',
   },
   {
     name: 'offline-worker-wiring',
@@ -1244,9 +1247,6 @@ function printSummary(results, options = {}) {
   }
 }
 
-/**
- * Main function
- */
 async function main(options = {}) {
   const queueHandle = await acquireCheckQueueLock({
     ...options,

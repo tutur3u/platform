@@ -81,6 +81,7 @@ test('TypeScript changes map to biome, oxlint, guards, vitest and type-check', (
     'oxlint',
     'internal-app-auth',
     'satellite-cookie-auth',
+    'browser-session-surface',
     'server-console',
     'vitest:packages/utils',
     'type-check:apps/web',

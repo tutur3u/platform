@@ -32,6 +32,7 @@ const WORKFLOW_POLICY_TESTS = [
 const AUTH_GUARDS = [
   ['internal-app-auth', 'scripts/check-internal-app-auth.js'],
   ['satellite-cookie-auth', 'scripts/check-satellite-cookie-auth.js'],
+  ['browser-session-surface', 'scripts/check-browser-session-surface.js'],
   ['server-console', 'scripts/check-server-console.js'],
 ];
 

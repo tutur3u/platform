@@ -1,0 +1,236 @@
+{
+  "browserSupabaseClientImports": [
+    "apps/calendar/src/lib/api-auth.ts",
+    "apps/forms/src/features/forms/collaboration/identity.ts",
+    "apps/forms/src/features/forms/response-copy-email.ts",
+    "apps/forms/src/lib/forms-permissions.ts",
+    "apps/hive/src/lib/api-auth.ts",
+    "apps/infrastructure/src/app/api/v1/infrastructure/changelog/utils.ts",
+    "apps/infrastructure/src/app/api/v1/infrastructure/migrate/email-blacklist/route.ts",
+    "apps/infrastructure/src/app/api/v1/infrastructure/migrate/finance-invoice-products/route.ts",
+    "apps/infrastructure/src/app/api/v1/infrastructure/migrate/finance-invoice-promotions/route.ts",
+    "apps/infrastructure/src/app/api/v1/infrastructure/migrate/finance-invoice-transaction-links/route.ts",
+    "apps/infrastructure/src/app/api/v1/infrastructure/migrate/finance-invoice-user-groups/route.ts",
+    "apps/infrastructure/src/lib/api-auth.ts",
+    "apps/inventory/src/lib/api-auth.ts",
+    "apps/learn/src/app/api/v1/workspaces/[wsId]/course-modules/[moduleId]/vocabulary/route.ts",
+    "apps/learn/src/lib/api-auth.ts",
+    "apps/mind/src/lib/api-auth.ts",
+    "apps/nova/src/lib/storage-helper.ts",
+    "apps/pay/src/app/api/payment/migrations/subscriptions/unexisted-workspaces/route.ts",
+    "apps/rewise/src/app/[locale]/(dashboard)/[wsId]/chat-link.tsx",
+    "apps/rewise/src/components/chat-panel.tsx",
+    "apps/rewise/src/lib/storage-helper.ts",
+    "apps/tasks/src/app/api/v1/users/task-settings/route.ts",
+    "apps/tasks/src/app/api/v1/workspaces/[wsId]/notes/_lib.ts",
+    "apps/tasks/src/app/api/v1/workspaces/[wsId]/tasks/journal/route.ts",
+    "apps/tasks/src/app/api/v1/workspaces/[wsId]/tasks/suggestions/route.ts",
+    "apps/tasks/src/app/api/v1/workspaces/[wsId]/templates/_lib.ts",
+    "apps/tasks/src/lib/api-auth.ts",
+    "apps/tasks/src/lib/app-session-user.ts",
+    "apps/teach/src/app/api/v1/workspaces/[wsId]/course-modules/[moduleId]/vocabulary/route.ts",
+    "apps/teach/src/lib/api-auth.ts",
+    "apps/track/src/app/[locale]/(dashboard)/[wsId]/requests/hooks/use-request-images.ts",
+    "apps/track/src/lib/api-auth.ts",
+    "apps/web/src/app/[locale]/(auth)/login/form.tsx",
+    "apps/web/src/app/[locale]/(auth)/login/passkey-login-button.tsx",
+    "apps/web/src/app/[locale]/(auth)/login/required-mfa-enrollment.tsx",
+    "apps/web/src/app/[locale]/(auth)/sso/consent/reauthenticate.tsx",
+    "apps/web/src/app/[locale]/(dashboard)/[wsId]/(dashboard)/components/mira-meeting-create.tsx",
+    "apps/web/src/app/[locale]/(dashboard)/[wsId]/notes/note-key-transfer.tsx",
+    "apps/web/src/app/[locale]/(marketing)/account/delete/page.tsx",
+    "apps/web/src/app/[locale]/(marketing)/logout/page.tsx",
+    "apps/web/src/app/[locale]/(marketing)/users/[handle]/page.tsx",
+    "apps/web/src/app/[locale]/auth-button.tsx",
+    "apps/web/src/app/api/v1/workspaces/[wsId]/settings/permissions/route.ts",
+    "apps/web/src/components/chat-panel.tsx",
+    "apps/web/src/components/mira-soul-scope.tsx",
+    "apps/web/src/components/settings/account/passkeys-settings.tsx",
+    "apps/web/src/hooks/useWhiteboardCollaboration.ts",
+    "apps/web/src/legacy-api-routes/v1/users/me/delete/route.ts",
+    "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/encryption/utils.ts",
+    "apps/web/src/lib/api-auth.ts",
+    "apps/web/src/lib/notes-voice/access.ts",
+    "apps/web/src/lib/post-check-audit.ts",
+    "packages/ai/src/chat/google/mira-timezone.ts",
+    "packages/ai/src/chat/google/route-mira-runtime.ts",
+    "packages/ai/src/tools/mira-tool-types.ts",
+    "packages/ai/src/tools/workspace-context.ts",
+    "packages/apis/src/members/route.ts",
+    "packages/auth/src/cross-app/index.ts",
+    "packages/auth/src/cross-app/navigation.ts",
+    "packages/auth/src/supabase-session-user.ts",
+    "packages/inventory-core/src/lib/api-auth.ts",
+    "packages/mind-core/src/access.ts",
+    "packages/payment-core/src/billing-helper.ts",
+    "packages/payment-core/src/customer-helper.ts",
+    "packages/payment-core/src/polar-order-helper.ts",
+    "packages/payment-core/src/polar-product-helper.ts",
+    "packages/payment-core/src/polar-seat-helper.ts",
+    "packages/payment-core/src/polar-subscription-helper.ts",
+    "packages/payment-core/src/seat-limits.ts",
+    "packages/payment-core/src/subscription-helper.ts",
+    "packages/storage-core/src/lib/storage-helper.ts",
+    "packages/supabase/src/index.ts",
+    "packages/tasks-ui/src/calendar/components/scheduling-dialog.tsx",
+    "packages/tasks-ui/src/tu-do/boards/boardId/task-actions.tsx",
+    "packages/tasks-ui/src/tu-do/boards/boardId/task-list-form.tsx",
+    "packages/tasks-ui/src/tu-do/shared/fade-setting-initializer.tsx",
+    "packages/tasks-ui/src/tu-do/shared/task-edit-dialog/hooks/create-task-with-recovery.ts",
+    "packages/tasks-ui/src/tu-do/shared/task-edit-dialog/hooks/use-task-data.ts",
+    "packages/tasks-ui/src/tu-do/shared/task-edit-dialog/hooks/use-task-form-reset.ts",
+    "packages/trigger/src/calendar-sync-coordination.ts",
+    "packages/ui/src/components/ui/calendar-app/components/use-calendar-connections-manager.ts",
+    "packages/ui/src/components/ui/legacy/calendar/settings/google-calendar-settings.tsx",
+    "packages/ui/src/components/ui/text-editor/task-item-checkbox.ts",
+    "packages/ui/src/hooks/supabase-provider.ts",
+    "packages/ui/src/hooks/use-calendar.tsx",
+    "packages/ui/src/hooks/use-yjs-collaboration.ts",
+    "packages/utils/src/onboarding-helper.ts",
+    "packages/utils/src/user-helper.ts"
+  ],
+  "postgresChangesSubscriptions": [],
+  "sessionCookieScriptAccess": [],
+  "sessionTokenResponses": [
+    {
+      "file": "apps/calendar/src/app/api/v1/calendar/auth/accounts/route.ts",
+      "reason": "Calendar provider (Google/Microsoft) OAuth tokens, stored and used server-side; not a Tuturuuu session"
+    },
+    {
+      "file": "apps/calendar/src/app/api/v1/calendar/auth/callback/route.ts",
+      "reason": "Calendar provider (Google/Microsoft) OAuth tokens, stored and used server-side; not a Tuturuuu session"
+    },
+    {
+      "file": "apps/calendar/src/app/api/v1/calendar/auth/fetch/route.ts",
+      "reason": "Calendar provider (Google/Microsoft) OAuth tokens, stored and used server-side; not a Tuturuuu session"
+    },
+    {
+      "file": "apps/calendar/src/app/api/v1/calendar/auth/import-calendars/route.ts",
+      "reason": "Calendar provider (Google/Microsoft) OAuth tokens, stored and used server-side; not a Tuturuuu session"
+    },
+    {
+      "file": "apps/calendar/src/app/api/v1/calendar/auth/list-calendars/route.ts",
+      "reason": "Calendar provider (Google/Microsoft) OAuth tokens, stored and used server-side; not a Tuturuuu session"
+    },
+    {
+      "file": "apps/calendar/src/app/api/v1/calendar/auth/microsoft/callback/route.ts",
+      "reason": "Calendar provider (Google/Microsoft) OAuth tokens, stored and used server-side; not a Tuturuuu session"
+    },
+    {
+      "file": "apps/calendar/src/app/api/v1/calendar/auth/provider-calendars/route.ts",
+      "reason": "Calendar provider (Google/Microsoft) OAuth tokens, stored and used server-side; not a Tuturuuu session"
+    },
+    {
+      "file": "apps/calendar/src/lib/calendar/google-inbound-sync.ts",
+      "reason": "Calendar provider (Google/Microsoft) OAuth tokens, stored and used server-side; not a Tuturuuu session"
+    },
+    {
+      "file": "apps/calendar/src/lib/calendar/incremental-active-sync.ts",
+      "reason": "Calendar provider (Google/Microsoft) OAuth tokens, stored and used server-side; not a Tuturuuu session"
+    },
+    {
+      "file": "apps/calendar/src/lib/calendar/provider-writes.ts",
+      "reason": "Calendar provider (Google/Microsoft) OAuth tokens, stored and used server-side; not a Tuturuuu session"
+    },
+    {
+      "file": "apps/calendar/src/lib/calendar/test-fixtures/recoverable-color-route.ts",
+      "reason": "Calendar provider (Google/Microsoft) OAuth tokens, stored and used server-side; not a Tuturuuu session"
+    },
+    {
+      "file": "apps/infrastructure/src/lib/auth/otp.ts",
+      "reason": "Unrouted copy of the Web auth services; retire with the Infrastructure auth cleanup"
+    },
+    {
+      "file": "apps/infrastructure/src/lib/auth/password.ts",
+      "reason": "Unrouted copy of the Web auth services; retire with the Infrastructure auth cleanup"
+    },
+    {
+      "file": "apps/infrastructure/src/lib/auth/qr-login.ts",
+      "reason": "Unrouted copy of the Web auth services; retire with the Infrastructure auth cleanup"
+    },
+    {
+      "file": "apps/infrastructure/src/lib/inventory/commerce/square/client.ts",
+      "reason": "Payment provider OAuth tokens, stored and used server-side"
+    },
+    {
+      "file": "apps/inventory/src/lib/sepay-api.ts",
+      "reason": "Payment provider OAuth tokens, stored and used server-side"
+    },
+    {
+      "file": "apps/mail/src/lib/mail/connected/repository.ts",
+      "reason": "Connected mail provider OAuth tokens, stored and used server-side"
+    },
+    {
+      "file": "apps/tasks/src/lib/calendar/incremental-active-sync.ts",
+      "reason": "Calendar provider (Google/Microsoft) OAuth tokens, stored and used server-side; not a Tuturuuu session"
+    },
+    {
+      "file": "apps/tasks/src/lib/calendar/provider-writes.ts",
+      "reason": "Calendar provider (Google/Microsoft) OAuth tokens, stored and used server-side; not a Tuturuuu session"
+    },
+    {
+      "file": "apps/web/src/app/api/cli/auth/refresh/route.ts",
+      "reason": "CLI bearer refresh for the native CLI"
+    },
+    {
+      "file": "apps/web/src/app/api/v1/auth/app-token/exchange/route.ts",
+      "reason": "App-coordination bearer pair for registered external apps (server-to-server exchange)"
+    },
+    {
+      "file": "apps/web/src/app/api/v1/auth/cross-app-session/refresh/route.ts",
+      "reason": "Satellite app-session refresh, called server-to-server by satellite servers"
+    },
+    {
+      "file": "apps/web/src/legacy-api-routes/v1/calendar/auth/accounts/route.ts",
+      "reason": "Calendar provider (Google/Microsoft) OAuth tokens, stored and used server-side; not a Tuturuuu session"
+    },
+    {
+      "file": "apps/web/src/lib/auth/external-app-exchange-response.ts",
+      "reason": "App-coordination bearer pair for registered external apps (server-to-server exchange)"
+    },
+    {
+      "file": "apps/web/src/lib/auth/otp.ts",
+      "reason": "Native mobile token pair for client: mobile; browser requests are refused (MOBILE_SESSION_BROWSER_REFUSED)"
+    },
+    {
+      "file": "apps/web/src/lib/auth/password.ts",
+      "reason": "Native mobile token pair for client: mobile; browser requests are refused (MOBILE_SESSION_BROWSER_REFUSED)"
+    },
+    {
+      "file": "apps/web/src/lib/auth/qr-login.ts",
+      "reason": "QR login hands the approved session to the Web login page; moves to a server-set cookie (shared-session PR4a)"
+    },
+    {
+      "file": "apps/web/src/lib/calendar/incremental-active-sync.ts",
+      "reason": "Calendar provider (Google/Microsoft) OAuth tokens, stored and used server-side; not a Tuturuuu session"
+    },
+    {
+      "file": "apps/web/src/lib/calendar/provider-writes.ts",
+      "reason": "Calendar provider (Google/Microsoft) OAuth tokens, stored and used server-side; not a Tuturuuu session"
+    },
+    {
+      "file": "apps/web/src/lib/chatgpt/oauth.ts",
+      "reason": "ChatGPT OAuth tokens, stored and used server-side"
+    },
+    {
+      "file": "apps/web/src/lib/sepay-api.ts",
+      "reason": "Payment provider OAuth tokens, stored and used server-side"
+    },
+    {
+      "file": "packages/auth/src/cross-app/server.ts",
+      "reason": "Satellite verify and refresh handlers set HttpOnly app-session cookies; the cli-app-session kind returns the CLI bearer pair"
+    },
+    {
+      "file": "packages/internal-api/src/auth.ts",
+      "reason": "Client response types for native and CLI auth flows"
+    },
+    {
+      "file": "packages/inventory-core/src/lib/inventory/commerce/square/client.ts",
+      "reason": "Payment provider OAuth tokens, stored and used server-side"
+    },
+    {
+      "file": "packages/sdk/src/cli/auth.ts",
+      "reason": "CLI client that stores its own bearer pair"
+    }
+  ]
+}
