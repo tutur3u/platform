@@ -339,6 +339,62 @@ the policy API writes all chunks in one upsert and readers reconstruct the
 validated policy. Unset or malformed values safely use the standard preset.
 Existing workspaces need no migration.
 
+## Follow-up notifications
+
+Status: database foundation only. No job, route, or screen sends these yet; the
+completion notice and the daily content check ship in later changes.
+
+These rules record Easy Center's answers and apply to any workspace that
+enables them.
+
+- **Recipients.** A class's homeroom teachers (GVCN) are its
+  `workspace_user_groups_users` members with role `TEACHER`; every one of them
+  is notified, never just one. Each is reached through its
+  `workspace_user_linked_users` account. A teacher without a linked account is
+  skipped and reported, not replaced by someone else.
+- **Office.** The office is every workspace member who holds `admin`
+  (administrators, including the creator) or `approve_reports` (supervisors),
+  checked with `has_workspace_permission`. No office role, recipient list, or
+  column exists; grant or revoke those permissions to change who is notified.
+- **Weak-support content alert.** After the configured review period (Easy
+  Center: 14 days) with no homeroom-teacher action, all homeroom teachers of
+  the class and the office are notified together, in one step. There is no
+  separate reminder or later escalation. Each unchanged period alerts each
+  recipient once.
+- **Review clock.** Any homeroom-teacher action resets the clock: keeping the
+  content, changing it, or completing/exiting support (thoát kèm). A change
+  is a new `require_attention` feedback row; exiting clears
+  `require_attention`, which ends the clock. Keeping content writes
+  `private.tutoring_weak_support_reviews.last_reviewed_at`. The clock starts at
+  the later of that value and the latest `require_attention` feedback for the
+  student in the class.
+- **Completion notice.** When the tutor marks a session done (Hoàn thành),
+  every homeroom teacher of the class is notified once per session. They then
+  update the content or exit support, and that action resets the review clock.
+- **Tutor comment.** Sessions have an optional `tutor_comment` (up to 2,000
+  characters, stored as null when empty) that the completion notice shows.
+- **Channels.** Notifications are in-app and email, created with
+  `create_notification` using the types `tutoring_weak_content_review_due` and
+  `tutoring_session_completed`. Email uses the existing notification mail
+  path and recipients' notification preferences; there is no new provider.
+- **Idempotency.** `private.tutoring_notification_receipts` records one row per
+  recipient and alert cycle or session, claimed before notifying. Reruns,
+  repeated marks, and deleted notifications never send twice; delivery is at
+  most once per recipient. Both private tables are service-role only, with RLS
+  enabled and no client policies.
+- **Residual risk (accepted for v1).** `user_feedbacks` is writable by any
+  workspace member over the Data API. A member who adds a new
+  `require_attention` feedback for the student restarts the clock and so
+  postpones the office alert by up to one review period. Each postponement
+  leaves a visible feedback row, and the alert fires one period after the
+  last one, so it cannot be suppressed without repeated inserts. Only the
+  service role can write `last_reviewed_at`.
+
+Regression coverage:
+`apps/database/supabase/tests/tutoring-follow-up-notification-foundation.sql`.
+Rollback:
+`apps/database/rollbacks/20261026191000_tutoring_follow_up_notification_foundation.rollback.sql`.
+
 ## Exports
 
 Detailed (per session) and payroll (per teacher, completed sessions and total

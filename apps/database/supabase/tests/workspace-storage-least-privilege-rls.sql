@@ -1,4 +1,5 @@
--- Contract for 20261026170000_least_privilege_workspace_storage_rls.sql:
+-- Contract for 20261026170000_least_privilege_workspace_storage_rls.sql and
+-- 20261026192000_topic_announcements_private_storage_root.sql:
 -- every root of the `workspaces` bucket (including the Drive private upload
 -- census roots and the spaced `AI Agent Imports` root) x {non-member, member, view_drive,
 -- manage_drive, chat owner/uploader, service_role} x {select, insert,
@@ -7,7 +8,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(370);
+select plan(395);
 
 -- Actors: creator (seed only), member, viewer, manager, owner, non-member.
 insert into auth.users (id) values
@@ -64,11 +65,14 @@ insert into storage_rls_objects values
   ('template_bg', '5707a6e0-0000-4000-8000-000000009711/template-backgrounds/t.png'),
   ('ai_agent_imports', '5707a6e0-0000-4000-8000-000000009711/AI Agent Imports/discord/channel/thread/g.png'),
   ('mira_images', '5707a6e0-0000-4000-8000-000000009711/mira/images/h.png'),
-  ('drive_mira_qr', '5707a6e0-0000-4000-8000-000000009711/drive/mira/qr/q.png');
+  ('drive_mira_qr', '5707a6e0-0000-4000-8000-000000009711/drive/mira/qr/q.png'),
+  ('topic_announcements', '5707a6e0-0000-4000-8000-000000009711/topic-announcements/attachments/u-a.pdf');
 insert into storage.objects (bucket_id, name)
 select 'workspaces', name from storage_rls_objects
 union all
 select 'workspaces', '5707a6e0-0000-4000-8000-000000009711/ai agent imports/discord/c/t/x.png'
+union all
+select 'workspaces', '5707a6e0-0000-4000-8000-000000009711/Topic-Announcements/attachments/x.pdf'
 union all
 select 'workspaces', '5707a6e0-0000-4000-8000-000000009711/CHATS/ai/resources/5707a6e0-0000-4000-8000-000000009721/c.pdf';
 
@@ -150,7 +154,7 @@ begin
 end;
 $$;
 
--- Structure (1-10).
+-- Structure (1-11).
 select is((select count(*)::int from pg_policies
   where schemaname = 'storage' and tablename = 'objects'
     and policyname like 'Allow workspace members to % workspace folder'), 0,
@@ -181,6 +185,9 @@ select ok(not pg_temp.storage_rls_can('manager', 'select',
 select ok(not pg_temp.storage_rls_can('manager', 'select',
   '5707a6e0-0000-4000-8000-000000009711/CHATS/ai/resources/5707a6e0-0000-4000-8000-000000009721/c.pdf'),
   'private roots match case-insensitively (no Drive fallback)');
+select ok(not pg_temp.storage_rls_can('manager', 'delete',
+  '5707a6e0-0000-4000-8000-000000009711/Topic-Announcements/attachments/x.pdf'),
+  'topic-announcements matches case-insensitively (no Drive fallback)');
 
 select ok(pg_temp.storage_rls_can('creator', 'insert', '5707a6e0-0000-4000-8000-000000009711/drive.txt'),
   'workspace creator manages Drive without an explicit role');
@@ -188,11 +195,13 @@ insert into public.workspace_default_permissions (ws_id, permission, member_type
 values ('5707a6e0-0000-4000-8000-000000009711', 'admin', 'MEMBER', true);
 select ok(pg_temp.storage_rls_can('member', 'delete', '5707a6e0-0000-4000-8000-000000009711/drive.txt')
   and not pg_temp.storage_rls_can('member', 'select',
-    '5707a6e0-0000-4000-8000-000000009711/external-apps/app/chat/conv/att'),
+    '5707a6e0-0000-4000-8000-000000009711/external-apps/app/chat/conv/att')
+  and not pg_temp.storage_rls_can('member', 'select',
+    '5707a6e0-0000-4000-8000-000000009711/topic-announcements/attachments/u-a.pdf'),
   'MEMBER default admin manages Drive but still cannot read private roots');
 delete from public.workspace_default_permissions where ws_id = '5707a6e0-0000-4000-8000-000000009711';
 
--- Matrix (11-370): 6 actors x 15 objects x 4 operations.
+-- Matrix (12-395): 6 actors x 16 objects x 4 operations.
 select is(
   pg_temp.storage_rls_can(e.actor, op.name, o.name),
   position(op.flag in e.flags) > 0,

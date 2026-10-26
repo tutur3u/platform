@@ -17440,6 +17440,7 @@ export type Database = {
           batch_id: string | null;
           body: string;
           class_label: string | null;
+          course_book: string | null;
           created_at: string;
           created_by: string | null;
           day_label: string | null;
@@ -17451,6 +17452,7 @@ export type Database = {
           place: string | null;
           room: string | null;
           scheduled_send_at: string | null;
+          send_due_at: string | null;
           sent_at: string | null;
           sent_email_audit_id: string | null;
           session_date: string | null;
@@ -17458,10 +17460,12 @@ export type Database = {
           source_type: string;
           start_time: string | null;
           status: string;
+          teacher_workspace_user_id: string | null;
           title: string;
-          topic: string;
+          topic: string | null;
           updated_at: string;
           updated_by: string | null;
+          video_url: string | null;
           ws_id: string;
         };
         ComputedFields: never;
@@ -17469,6 +17473,7 @@ export type Database = {
           batch_id?: string | null;
           body?: string;
           class_label?: string | null;
+          course_book?: string | null;
           created_at?: string;
           created_by?: string | null;
           day_label?: string | null;
@@ -17480,6 +17485,7 @@ export type Database = {
           place?: string | null;
           room?: string | null;
           scheduled_send_at?: string | null;
+          send_due_at?: string | null;
           sent_at?: string | null;
           sent_email_audit_id?: string | null;
           session_date?: string | null;
@@ -17487,16 +17493,19 @@ export type Database = {
           source_type?: string;
           start_time?: string | null;
           status?: string;
+          teacher_workspace_user_id?: string | null;
           title: string;
-          topic: string;
+          topic?: string | null;
           updated_at?: string;
           updated_by?: string | null;
+          video_url?: string | null;
           ws_id: string;
         };
         Update: {
           batch_id?: string | null;
           body?: string;
           class_label?: string | null;
+          course_book?: string | null;
           created_at?: string;
           created_by?: string | null;
           day_label?: string | null;
@@ -17508,6 +17517,7 @@ export type Database = {
           place?: string | null;
           room?: string | null;
           scheduled_send_at?: string | null;
+          send_due_at?: string | null;
           sent_at?: string | null;
           sent_email_audit_id?: string | null;
           session_date?: string | null;
@@ -17515,10 +17525,12 @@ export type Database = {
           source_type?: string;
           start_time?: string | null;
           status?: string;
+          teacher_workspace_user_id?: string | null;
           title?: string;
-          topic?: string;
+          topic?: string | null;
           updated_at?: string;
           updated_by?: string | null;
+          video_url?: string | null;
           ws_id?: string;
         };
         Relationships: [
@@ -17710,6 +17722,99 @@ export type Database = {
           transaction_id?: number;
         };
         Relationships: [];
+      };
+      tutoring_notification_receipts: {
+        Row: {
+          created_at: string;
+          group_id: string | null;
+          id: string;
+          kind: string;
+          notification_id: string | null;
+          recipient_user_id: string;
+          review_cycle_started_at: string | null;
+          student_user_id: string | null;
+          tutoring_session_id: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          group_id?: string | null;
+          id?: string;
+          kind: string;
+          notification_id?: string | null;
+          recipient_user_id: string;
+          review_cycle_started_at?: string | null;
+          student_user_id?: string | null;
+          tutoring_session_id?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          group_id?: string | null;
+          id?: string;
+          kind?: string;
+          notification_id?: string | null;
+          recipient_user_id?: string;
+          review_cycle_started_at?: string | null;
+          student_user_id?: string | null;
+          tutoring_session_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'tutoring_notification_receipts_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts_dashboard_view';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'tutoring_notification_receipts_recipient_user_id_fkey';
+            columns: ['recipient_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'tutoring_notification_receipts_recipient_user_id_fkey';
+            columns: ['recipient_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'tutoring_notification_receipts_tutoring_session_id_fkey';
+            columns: ['tutoring_session_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_tutoring_sessions';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      tutoring_weak_support_reviews: {
+        Row: {
+          group_id: string;
+          last_reviewed_at: string;
+          student_user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          group_id: string;
+          last_reviewed_at?: string;
+          student_user_id: string;
+        };
+        Update: {
+          group_id?: string;
+          last_reviewed_at?: string;
+          student_user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'tutoring_weak_support_reviews_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts_dashboard_view';
+            referencedColumns: ['group_id'];
+          },
+        ];
       };
       unmanaged_internal_profile_operations: {
         Row: {
@@ -19295,6 +19400,7 @@ export type Database = {
           start_time: string;
           student_user_id: string;
           teacher_user_id: string | null;
+          tutor_comment: string | null;
           updated_at: string;
           ws_id: string;
         };
@@ -19316,6 +19422,7 @@ export type Database = {
           start_time: string;
           student_user_id: string;
           teacher_user_id?: string | null;
+          tutor_comment?: string | null;
           updated_at?: string;
           ws_id: string;
         };
@@ -19336,6 +19443,7 @@ export type Database = {
           start_time?: string;
           student_user_id?: string;
           teacher_user_id?: string | null;
+          tutor_comment?: string | null;
           updated_at?: string;
           ws_id?: string;
         };
