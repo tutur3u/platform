@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, private, extensions;
 
-select plan(31);
+select plan(32);
 
 insert into auth.users (id) values
   ('7a5c0000-0000-4000-8000-000000000001')
@@ -163,10 +163,16 @@ select ok(
 
 -- Notification type list is extended, not replaced.
 select ok(
-  (select convalidated from pg_constraint
+  (select not convalidated from pg_constraint
    where conrelid = 'public.notifications'::regclass
      and conname = 'notifications_type_check'),
-  'notifications_type_check is validated'
+  'notifications_type_check is added NOT VALID (no scan under the lock)'
+);
+select ok(
+  (select not convalidated from pg_constraint
+   where conrelid = 'private.topic_announcements'::regclass
+     and conname = 'topic_announcements_topic_ready_check'),
+  'topic_announcements_topic_ready_check is added NOT VALID (no scan under the lock)'
 );
 select ok(
   pg_get_constraintdef((select oid from pg_constraint

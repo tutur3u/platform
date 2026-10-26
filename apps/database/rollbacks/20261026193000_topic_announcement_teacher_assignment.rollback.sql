@@ -5,8 +5,10 @@
 -- NOT NULL cannot be deferred, so complete or delete those drafts first.
 -- Removes only 'topic_assigned' from the notification type list, so it is safe
 -- whatever other migrations changed that list. Existing topic_assigned
--- notifications are kept: the constraint stays NOT VALID while any remain, so
--- new rows of the removed type are still rejected.
+-- notifications are kept. Both restored check constraints are added NOT VALID
+-- and not validated here, so no scan runs under ACCESS EXCLUSIVE; new rows are
+-- still checked. SET NOT NULL on topic necessarily scans the table once.
+-- Validate later, if needed, in a separate statement (SHARE UPDATE EXCLUSIVE).
 -- Not a migration: apply manually only with release-authority approval.
 begin;
 set local lock_timeout = '5s';
@@ -38,19 +40,6 @@ alter table private.topic_announcements
 alter table private.topic_announcements
   add constraint topic_announcements_topic_not_blank
     check (length(btrim(topic)) > 0) not valid;
-
-do $$
-begin
-  if not exists (
-    select 1
-    from private.topic_announcements
-    where length(btrim(topic)) = 0
-  ) then
-    alter table private.topic_announcements
-      validate constraint topic_announcements_topic_not_blank;
-  end if;
-end;
-$$;
 
 alter table private.topic_announcements
   drop column if exists teacher_workspace_user_id,
@@ -94,13 +83,6 @@ begin
       from unnest(array_remove(current_types, 'topic_assigned')) with ordinality as types(type_name, position)
     )
   );
-
-  if not exists (
-    select 1 from public.notifications where type = 'topic_assigned'
-  ) then
-    alter table public.notifications
-      validate constraint notifications_type_check;
-  end if;
 
   execute format(
     'comment on constraint notifications_type_check on public.notifications is %L',
