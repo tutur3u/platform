@@ -18,6 +18,7 @@ import {
   getCurrentUserDefaultWorkspace,
   withForwardedInternalApiAuth,
 } from '@tuturuuu/internal-api';
+import { withAppBase } from '@tuturuuu/start-bridge/app-url';
 import {
   guardApiProxyRequest,
   hasAuthenticatedBearerToken,
@@ -55,6 +56,7 @@ const authProxy = createCentralizedAuthProxy({
 const LOCAL_AUTH_API_PREFIX = '/api/auth/';
 
 export async function proxy(req: NextRequest): Promise<NextResponse> {
+  const mounted = Boolean(req.nextUrl.basePath);
   if (req.nextUrl.pathname.startsWith('/api')) {
     const isLocalAuthApi = req.nextUrl.pathname.startsWith(
       LOCAL_AUTH_API_PREFIX
@@ -66,7 +68,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
       req.nextUrl.pathname.startsWith('/api/cron/') &&
       isTrustedProxyBypassRequest(req.nextUrl.pathname, req.headers);
     const appSessionRefresh =
-      isLocalAuthApi || hasBearerApiSession || hasTrustedCron
+      mounted || isLocalAuthApi || hasBearerApiSession || hasTrustedCron
         ? null
         : await refreshAppSessionForRequest(req, {
             sessionMode: 'supabase-first',
@@ -106,23 +108,33 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
 
     return (
       appSessionRefresh?.response ??
-      clearSupabaseAuthCookies(req, NextResponse.next())
+      (mounted
+        ? NextResponse.next()
+        : clearSupabaseAuthCookies(req, NextResponse.next()))
     );
   }
 
+  if (
+    mounted &&
+    /^\/(?:en\/|vi\/)?verify-token\/?$/u.test(req.nextUrl.pathname)
+  )
+    return NextResponse.redirect(
+      new URL(withAppBase('/login', req.nextUrl.basePath), req.nextUrl.origin)
+    );
   const publicCompletion =
     (req.method === 'GET' || req.method === 'HEAD') &&
     PUBLIC_PATHS.includes(req.nextUrl.pathname) &&
     !req.nextUrl.searchParams.has('token');
-  const verifyTokenResponse = publicCompletion
-    ? null
-    : await consumeVerifyTokenRequest(req, { locales: supportedLocales });
+  const verifyTokenResponse =
+    mounted || publicCompletion
+      ? null
+      : await consumeVerifyTokenRequest(req, { locales: supportedLocales });
   if (verifyTokenResponse) {
     return verifyTokenResponse;
   }
 
   // Handle authentication and MFA with the centralized middleware
-  const authRes = await authProxy(req);
+  const authRes = mounted ? NextResponse.next() : await authProxy(req);
   if (authRes.status >= 400) return authRes;
 
   // If the auth middleware returned a redirect response, return it
@@ -133,10 +145,12 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   const authRequestHeaders = getRequestHeadersWithResponseCookies(req, authRes);
   if (publicCompletion) {
     authRequestHeaders.set('x-next-intl-locale', resolveCalendarLocale(req));
-    const completion = clearSupabaseAuthCookies(
-      req,
-      NextResponse.next({ request: { headers: authRequestHeaders } })
-    );
+    const completionResponse = NextResponse.next({
+      request: { headers: authRequestHeaders },
+    });
+    const completion = mounted
+      ? completionResponse
+      : clearSupabaseAuthCookies(req, completionResponse);
     propagateAuthCookies(authRes, completion);
     return completion;
   }
@@ -173,10 +187,12 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
       req.nextUrl.origin,
       '/personal'
     );
-    const loginRedirect = clearSupabaseAuthCookies(
-      req,
-      NextResponse.redirect(new URL(nextPath, req.nextUrl))
+    const loginResponse = NextResponse.redirect(
+      new URL(withAppBase(nextPath, req.nextUrl.basePath), req.nextUrl)
     );
+    const loginRedirect = mounted
+      ? loginResponse
+      : clearSupabaseAuthCookies(req, loginResponse);
     propagateAuthCookies(authRes, loginRedirect);
     return loginRedirect;
   }
@@ -214,7 +230,10 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
 
     if (newPathSegments[wsIdIndex] !== 'internal') {
       newPathSegments[wsIdIndex] = 'internal';
-      const redirectUrl = new URL(`/${newPathSegments.join('/')}`, req.nextUrl);
+      const redirectUrl = new URL(
+        withAppBase(`/${newPathSegments.join('/')}`, req.nextUrl.basePath),
+        req.nextUrl
+      );
       redirectUrl.search = req.nextUrl.search;
 
       const rootRedirect = NextResponse.redirect(redirectUrl);
@@ -236,7 +255,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
           newPathSegments[wsIdIndex] = 'personal';
 
           const redirectUrl = new URL(
-            `/${newPathSegments.join('/')}`,
+            withAppBase(`/${newPathSegments.join('/')}`, req.nextUrl.basePath),
             req.nextUrl
           );
           // Preserve query parameters
@@ -282,13 +301,16 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
             ? 'internal'
             : defaultWorkspace.id
         : 'personal';
-      const redirectUrl = new URL(`/${target}`, req.nextUrl);
+      const redirectUrl = new URL(
+        withAppBase(`/${target}`, req.nextUrl.basePath),
+        req.nextUrl
+      );
       const wsRedirect = NextResponse.redirect(redirectUrl);
       propagateAuthCookies(authRes, wsRedirect);
       return wsRedirect;
     } catch {
       const fallbackRedirect = NextResponse.redirect(
-        new URL('/personal', req.nextUrl)
+        new URL(withAppBase('/personal', req.nextUrl.basePath), req.nextUrl)
       );
       propagateAuthCookies(authRes, fallbackRedirect);
       return fallbackRedirect;

@@ -6,6 +6,13 @@ shared-package changes.
 
 ## Web And Shared UI
 
+Shared middleware rejections use `@tuturuuu/utils/guard-rejection` to attach a
+fixed scalar reason and a generated correlation ID, expose them alongside
+existing CORS headers, and emit one warning with a fixed route template. Keep
+credentials, request-provided IDs and raw paths out of diagnostics. Preserve
+status/retry/MFA-cookie behavior. See the [guard diagnostics decision](../../../../../apps/docs/platform/features/mobile-workspace-tools.mdx#guard-rejection-diagnostics)
+and its focused regression coverage before adding a reason or changing middleware.
+
 - Calendar provider cron failures retain failed dashboard diagnostics while
   isolating accounts and bounding work. Rejected Google credentials stop siblings
   and become inactive only if storage still matches; transient failures retry.
@@ -91,6 +98,13 @@ shared-package changes.
   `useEffect`.
 - Client/shared UI app API calls should go through `packages/internal-api/src/*`
   helpers instead of scattered raw `fetch('/api/...')` calls.
+- Mounted app adapters register `registerDefaultAppBaseResolver` from
+  `@tuturuuu/internal-api/client` once at startup for helpers without options.
+  Read request-local context inside the callback and return an absolute URL on
+  SSR; never capture an incoming request in the registered closure. Select
+  app-owned routes when the adapter also calls central APIs. See the
+  [bridge resolver contract](../../../../../apps/docs/build/devops/start-bridge.mdx#internal-api-resolver-registration)
+  for browser setup, teardown and regression coverage.
 - Every `fetch` inside a query function should include `{ cache: 'no-store' }`.
 - Use `@tuturuuu/icons`, `@tuturuuu/ui/dialog`, and dynamic design tokens.
   Native browser dialogs, emojis in UI code, and hard-coded hue classes are not

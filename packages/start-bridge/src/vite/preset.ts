@@ -21,7 +21,8 @@ export const NEXT_SHIMS = {
   'next-intl/routing': 'intl/routing.ts',
   'next-intl/navigation': 'intl/navigation.tsx',
   '@opennextjs/cloudflare': 'next/cloudflare-context.ts',
-  '@tuturuuu/satellite/i18n': 'intl/localized-navigation.tsx',
+  // Not the client module: server code reads its locale data (see satellite-i18n).
+  '@tuturuuu/satellite/i18n': 'intl/satellite-i18n.ts',
 } as const;
 export type NextShim = keyof typeof NEXT_SHIMS;
 
@@ -55,9 +56,28 @@ export interface StartBridgePresetOptions {
   nuqsAdapter?: boolean;
   /** Resolved `next/og` replacement, e.g. `@cloudflare/pages-plugin-vercel-og/api`. */
   og?: string;
+  /**
+   * Render `@tuturuuu/vercel`'s Analytics and Speed Insights as nothing:
+   * Vercel serves their scripts only on its own hosting (default `true`
+   * unless `shims` is explicit).
+   */
+  inertVercel?: boolean;
   /** Alias `server-only` to Start's server-only marker (default `true`). */
   serverOnly?: boolean;
+  /**
+   * RSC mode for the generic page adapter: enables Start's RSC environment
+   * and leaves `next/navigation`, `next-intl` and `next-intl/navigation` to
+   * `startBridgeRscPlugin` (`./vite/rsc`), which resolves them per environment.
+   */
+  rsc?: boolean;
 }
+
+/** Resolved per environment by `startBridgeRscPlugin` in RSC mode. */
+export const RSC_PLUGIN_SHIMS = new Set<string>([
+  'next/navigation',
+  'next-intl',
+  'next-intl/navigation',
+]);
 
 export interface StartBridgeAlias {
   find: RegExp | string;
@@ -83,7 +103,9 @@ export function startBridgeAliases(
     | 'intlRequestConfig'
     | 'nuqsAdapter'
     | 'og'
+    | 'inertVercel'
     | 'serverOnly'
+    | 'rsc'
   >
 ): StartBridgeAlias[] {
   const shims = options.shims ?? (Object.keys(NEXT_SHIMS) as NextShim[]);
@@ -96,6 +118,7 @@ export function startBridgeAliases(
   );
   for (const shim of shims) {
     if (shim === 'next-intl/server' && options.intlServer) continue;
+    if (options.rsc && RSC_PLUGIN_SHIMS.has(shim)) continue;
     const target =
       document && (shim === 'next/navigation' || shim === 'next/link')
         ? 'next/navigation-document.tsx'
@@ -133,6 +156,8 @@ export function startBridgeAliases(
   if (options.nuqsAdapter ?? !options.shims)
     exact('nuqs/adapters/next/app', 'nuqs/adapters/tanstack-router');
   if (options.og) exact('next/og', options.og);
+  if (options.inertVercel ?? !options.shims)
+    exact('@tuturuuu/vercel', own('next/vercel.tsx'));
   if (options.serverOnly ?? !options.shims)
     exact('server-only', '@tanstack/react-start/server-only');
   if (options.srcAlias !== false)
@@ -209,6 +234,7 @@ export interface StartBridgePreset {
       disableTypes: false;
     };
     serverFns: { base: string };
+    rsc?: { enabled: true };
     importProtection: {
       behavior: 'error';
       client: { specifiers: string[]; files: RegExp[] };
@@ -266,6 +292,7 @@ export function startBridgePreset(
       serverFns: {
         base: `${basePath.basePath}${options.serverFnBase ?? '/_serverFn'}`,
       },
+      ...(options.rsc ? { rsc: { enabled: true as const } } : {}),
       importProtection: {
         behavior: 'error',
         client: {

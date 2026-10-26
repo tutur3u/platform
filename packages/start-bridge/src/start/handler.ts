@@ -1,5 +1,7 @@
+import { framablePathRegexes } from '@tuturuuu/utils/framable-paths';
 import type { NextRequest } from 'next/dist/server/web/spec-extension/request';
 import { forwardToCentralApi } from '../core/api-forward';
+import { type AssetsBinding, fetchAsset } from '../core/assets';
 import { type BasePath, createBasePath } from '../core/base-path';
 import { createNonce } from '../core/csp';
 import { type BridgeEndpoint, dispatchEndpoint } from '../core/endpoints';
@@ -16,9 +18,7 @@ import {
 } from '../next/proxy-bridge';
 import type { BridgeRequestContext } from '../server/request-context';
 
-export interface AssetsBinding {
-  fetch(request: Request): Promise<Response>;
-}
+export type { AssetsBinding } from '../core/assets';
 
 export interface BridgeHandlerOptions<Env, Ctx> {
   /** Where this artifact is served; the base is resolved per request. */
@@ -47,6 +47,16 @@ export interface BridgeHandlerOptions<Env, Ctx> {
    * bracket patterns; matched against the app-relative path.
    */
   centralFirst?: readonly string[];
+  /**
+   * Picks the origin for one unowned `/api/*` request (e.g. Storefront sends
+   * `/api/v1/inventory/**` to Inventory); `undefined` keeps
+   * `centralApiOrigin`. The request still goes through the central forward:
+   * base stripping, the loop guard and hop-by-hop header removal.
+   */
+  apiOrigin?: (
+    request: NextRequest,
+    context: { env: Env; path: string }
+  ) => string | undefined;
   /** Overrides the unowned `/api/*` forwarder. */
   forwardApi?: (request: NextRequest, origin: string) => Promise<Response>;
   matches?: (pathname: string) => boolean;
@@ -57,8 +67,20 @@ export interface BridgeHandlerOptions<Env, Ctx> {
    * Builds the `Content-Security-Policy` for a fresh per-response script
    * nonce (e.g. `defaultContentSecurityPolicy`). The nonce is in the request
    * context (`requestNonce()`); pass it to `createRouter({ ssr: { nonce } })`.
+   * It also receives the request, the response and its app-relative path;
+   * returning `null` keeps the response's own policy. Framable paths never
+   * reach it (see `framablePaths`).
    */
-  csp?: (nonce: string) => string;
+  csp?: (
+    nonce: string,
+    context: { request: Request; response: Response; path: string }
+  ) => string | null | undefined;
+  /**
+   * App-relative paths, beyond the platform's framable defaults
+   * (`@tuturuuu/utils/framable-paths`, e.g. Web's uploaded WebGL builds),
+   * whose upstream `Content-Security-Policy` passes through untouched.
+   */
+  framablePaths?: readonly RegExp[];
 }
 
 /**
@@ -81,6 +103,7 @@ export function createBridgeHandler<
       }
     });
   const publicAssets = options.publicAssets ?? new Set<string>();
+  const framable = [...framablePathRegexes(), ...(options.framablePaths ?? [])];
   const inBase = (path: string, prefix: string) =>
     path === prefix || path.startsWith(`${prefix}/`);
   const inFunctionBase = (path: string) =>
@@ -116,7 +139,10 @@ export function createBridgeHandler<
     ) {
       const assets = options.assets(env);
       if (!assets) throw new Error('Assets binding is unavailable');
-      response = await assets.fetch(base.stripRequest(request) ?? request);
+      response = await fetchAsset(
+        assets,
+        base.stripRequest(request) ?? request
+      );
     } else {
       const dispatch: BridgeDispatch = async (forwarded) => {
         const pathname = forwarded.nextUrl.pathname;
@@ -129,7 +155,9 @@ export function createBridgeHandler<
             : null;
         if (endpoint) return endpoint;
         if (central || pathname === '/api' || pathname.startsWith('/api/')) {
-          const origin = options.centralApiOrigin(env);
+          const origin =
+            options.apiOrigin?.(forwarded, { env, path: pathname }) ??
+            options.centralApiOrigin(env);
           if (options.forwardApi) return options.forwardApi(forwarded, origin);
           // The central API sees the app-relative path, never the base.
           return forwardToCentralApi(
@@ -167,8 +195,18 @@ export function createBridgeHandler<
     }
     const final = base.finalizeResponse(response);
     if (!nonce || !options.csp) return final;
+    // A framable path's upstream policy (Web's `sandbox` CSP for uploaded
+    // WebGL builds) must reach the browser untouched, or the uploaded
+    // scripts run unsandboxed on the app origin.
+    if (framable.some((pattern) => pattern.test(appPath))) return final;
+    const policy = options.csp(nonce, {
+      request: incoming,
+      response: final,
+      path: appPath,
+    });
+    if (policy == null) return final;
     const secured = new Response(final.body, final);
-    secured.headers.set('Content-Security-Policy', options.csp(nonce));
+    secured.headers.set('Content-Security-Policy', policy);
     return secured;
   };
 }

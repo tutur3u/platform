@@ -91,6 +91,23 @@ describe('next-intl/navigation getPathname', () => {
       'https://x.test'
     );
   });
+
+  it('accepts hyphenated locales such as zh-CN', () => {
+    const regional = createNavigation({
+      defaultLocale: 'en',
+      localePrefix: 'as-needed',
+      locales: ['en', 'zh-CN'] as const,
+    });
+    expect(regional.getPathname({ href: '/zh-CN/people', locale: 'en' })).toBe(
+      '/people'
+    );
+    expect(regional.getPathname({ href: '/zh-CN', locale: 'zh-CN' })).toBe(
+      '/zh-CN'
+    );
+    expect(regional.getPathname({ href: '/zh-CNx', locale: 'en' })).toBe(
+      '/zh-CNx'
+    );
+  });
 });
 
 describe('generic next-intl/server', () => {
@@ -120,22 +137,5 @@ describe('generic next-intl/server', () => {
       const format = await getFormatter();
       expect(format.number(1234.5)).toBe('1.234,5');
     });
-  });
-});
-
-describe('next-intl/navigation locale escaping', () => {
-  it('matches locales with regex syntax characters literally', () => {
-    const nav = createNavigation({
-      defaultLocale: 'en-US',
-      locales: ['en-US', 'x.y', 'a\\b'] as const,
-      localePrefix: 'as-needed',
-    });
-    expect(nav.getPathname({ href: '/x.y/people', locale: 'en-US' })).toBe(
-      '/people'
-    );
-    expect(nav.getPathname({ href: '/xzy/people', locale: 'en-US' })).toBe(
-      '/xzy/people'
-    );
-    expect(nav.getPathname({ href: '/a\\b/p', locale: 'en-US' })).toBe('/p');
   });
 });

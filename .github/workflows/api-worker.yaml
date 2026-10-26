@@ -5,12 +5,14 @@ on:
     paths:
       - apps/api/**
       - packages/utils/src/platform-release.ts
+      - packages/utils/src/abuse-protection/**
       - bun.lock
       - .github/workflows/api-worker.yaml
   push:
     branches: [main]
     paths:
       - apps/api/**
+      - packages/utils/src/abuse-protection/**
       - bun.lock
       - .github/workflows/api-worker.yaml
   workflow_dispatch:
@@ -40,6 +42,7 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run --cwd apps/api registry:check
       - run: bun run --cwd apps/api test
+      - run: bun run --cwd packages/utils test src/abuse-protection --maxWorkers=2
       - run: bun run --cwd apps/api type-check
       - run: bun run --cwd apps/api lint
       - run: bun run --cwd apps/api build

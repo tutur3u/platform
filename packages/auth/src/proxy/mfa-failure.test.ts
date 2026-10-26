@@ -46,3 +46,17 @@ it('fails closed without destroying the session when assurance lookup is unavail
   expect(await response.json()).toMatchObject({ code: 'AUTH_UNAVAILABLE' });
   expect(clear).not.toHaveBeenCalled();
 });
+
+it.each([
+  ['MFA required', 403, 'auth-assurance-required'],
+  ['Account assurance unavailable', 503, 'auth-assurance-unavailable'],
+  ['App session refresh unavailable', 503, 'app-session-refresh-unavailable'],
+  ['Invalid app session', 401, 'app-session-unauthenticated'],
+] as const)(
+  'labels %s without changing its status',
+  (error, status, reason) => {
+    const response = appSessionFailureResponse(req, error);
+    expect(response.status).toBe(status);
+    expect(response.headers.get('X-Tuturuuu-Guard-Reason')).toBe(reason);
+  }
+);

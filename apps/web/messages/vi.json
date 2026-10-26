@@ -4511,6 +4511,7 @@
     "app": "Ứng dụng",
     "apps": {
       "ai": "AI",
+      "api": "API",
       "apps": "Ứng dụng",
       "backend": "backend",
       "calendar": "Lịch",
@@ -4597,6 +4598,7 @@
       "ai_5": "Khóa API và tích hợp",
       "aiCredits": "Tín dụng AI hằng tháng",
       "aiLab": "Phòng thí nghiệm AI",
+      "api_0": "Dịch vụ nền tảng và vận hành",
       "apps_0": "Khám phá và chuyển ứng dụng",
       "attachments": "Tệp đính kèm mỗi giao dịch",
       "automation": "Lượt tự động hóa hằng tháng",

@@ -1,18 +1,19 @@
 import { NextResponse } from 'next/dist/server/web/spec-extension/response';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { AssetsBinding } from '../core/assets';
 import { cookies } from '../server/request-context';
 import { routerBasepath } from './base-path';
-import { createBridgeHandler } from './handler';
+import { type BridgeHandlerOptions, createBridgeHandler } from './handler';
 
 const ctx = { waitUntil: vi.fn() };
-type Env = { ASSETS: { fetch(request: Request): Promise<Response> } };
+type Env = { ASSETS: AssetsBinding };
 
 afterEach(() => {
   vi.restoreAllMocks();
 });
 
 // One handler instance stands in for one compiled artifact.
-const assets = vi.fn(async (request: Request) => new Response(request.url));
+const assets = vi.fn(async (input: string) => new Response(input));
 const start = vi.fn(async (request: Request) => {
   (await cookies()).set('tuturuuu_app_session', 'fresh', { path: '/' });
   const mount = request.headers.get('x-tuturuuu-app-base') ?? '-';
@@ -166,5 +167,156 @@ describe('Web-first API precedence', () => {
         await get('https://meet.tuturuuu.com/api/v1/ws1/settings/theme')
       ).text()
     ).toBe('local setting');
+  });
+});
+
+describe('a root-only artifact (no apex mount, unknown hosts rejected)', () => {
+  it('rejects the apex and unknown hosts before any app code or egress', async () => {
+    const hooks = {
+      start: vi.fn(async () => new Response('start')),
+      proxy: vi.fn(async () => NextResponse.next()),
+      endpoint: vi.fn(async () => new Response('endpoint')),
+      functionProxy: vi.fn(async () => NextResponse.next()),
+      assets: vi.fn(async () => new Response('asset')),
+      centralApiOrigin: vi.fn(() => 'https://central.example'),
+      apiOrigin: vi.fn(() => undefined),
+      requestInit: vi.fn((initial: Request) => initial),
+      matches: vi.fn(() => true),
+      csp: vi.fn(() => "default-src 'self'"),
+    };
+    const rootCtx = { waitUntil: vi.fn() };
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+    const rootOnly = createBridgeHandler<Env, typeof rootCtx>({
+      mounts: {
+        app: 'cms',
+        rootHosts: ['cms.tuturuuu.com'],
+        mountHosts: [],
+        basePath: '/cms',
+        unknownHost: 'reject',
+      },
+      start: { fetch: hooks.start },
+      proxy: hooks.proxy,
+      endpoints: [{ pattern: '/api/own', module: { GET: hooks.endpoint } }],
+      serverFnBase: '/_serverFn',
+      functionBase: '/api/fn',
+      functionProxy: hooks.functionProxy,
+      publicAssets: new Set(['/robots.txt']),
+      assets: () => ({ fetch: hooks.assets }),
+      centralApiOrigin: hooks.centralApiOrigin,
+      apiOrigin: hooks.apiOrigin,
+      requestInit: hooks.requestInit,
+      matches: hooks.matches,
+      csp: hooks.csp,
+    });
+    for (const url of [
+      'https://tuturuuu.com/cms',
+      'https://tuturuuu.com/cms/en',
+      'https://tuturuuu.com/cms/api/own',
+      'https://tuturuuu.com/cms/api/v1/workspaces',
+      'https://tuturuuu.com/cms/assets/a.js',
+      'https://tuturuuu.com/cms/robots.txt',
+      'https://tuturuuu.com/cms/_serverFn/x',
+      'https://tuturuuu.com/',
+      'https://cms-preview.workers.dev/',
+    ]) {
+      const response = await rootOnly(new Request(url), env, rootCtx);
+      expect(response.status, url).toBe(404);
+      expect(await response.text(), url).toBe('Not Found');
+    }
+    for (const [name, hook] of Object.entries(hooks))
+      expect(hook, name).not.toHaveBeenCalled();
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(rootCtx.waitUntil).not.toHaveBeenCalled();
+
+    // The root host is still served (the control for the rejections above).
+    const served = await rootOnly(
+      new Request('https://cms.tuturuuu.com/'),
+      env,
+      rootCtx
+    );
+    expect(await served.text()).toBe('start');
+    expect(hooks.start).toHaveBeenCalledOnce();
+  });
+});
+
+describe('framable paths keep the upstream CSP (uploaded WebGL builds)', () => {
+  const sandbox =
+    'sandbox allow-scripts allow-downloads allow-pointer-lock allow-modals';
+  const appCsp = (nonce: string) =>
+    `default-src 'self'; script-src 'nonce-${nonce}'; frame-ancestors 'none'`;
+  const build = (
+    options: Partial<BridgeHandlerOptions<Env, typeof ctx>> = {}
+  ) =>
+    createBridgeHandler<Env, typeof ctx>({
+      mounts: {
+        app: 'cms',
+        rootHosts: ['cms.tuturuuu.com'],
+        mountHosts: ['tuturuuu.com'],
+        basePath: '/cms',
+      },
+      start: { fetch: async () => new Response('<html></html>') },
+      proxy: async () => NextResponse.next(),
+      assets: (env) => env.ASSETS,
+      centralApiOrigin: () => 'https://central.example',
+      // Web serves uploaded WebGL builds sandboxed.
+      forwardApi: async () =>
+        new Response('game', {
+          headers: { 'Content-Security-Policy': sandbox },
+        }),
+      csp: appCsp,
+      ...options,
+    });
+  const cspOf = async (handler: ReturnType<typeof build>, url: string) =>
+    (await handler(new Request(url), env, ctx)).headers.get(
+      'Content-Security-Policy'
+    );
+  const webgl = '/api/v1/workspaces/ws-1/external-projects/assets/a-1/webgl';
+
+  it('passes the sandbox CSP through on the WebGL path, root and apex', async () => {
+    const handler = build();
+    for (const url of [
+      `https://cms.tuturuuu.com${webgl}`,
+      `https://cms.tuturuuu.com${webgl}/`,
+      `https://cms.tuturuuu.com${webgl}/Build/game.js`,
+      `https://tuturuuu.com/cms${webgl}/index.html`,
+    ])
+      expect(await cspOf(handler, url), url).toBe(sandbox);
+  });
+
+  it('still applies the app CSP on neighbouring and lookalike paths', async () => {
+    const handler = build();
+    for (const path of [
+      '/api/v1/workspaces/ws-1/external-projects/assets/a-1',
+      '/api/v1/workspaces/ws-1/external-projects/assets/a-1/webglx',
+      '/api/v1/workspaces/ws-1/external-projects/assets/a-1/x/webgl',
+      '/en',
+    ]) {
+      const csp = await cspOf(handler, `https://cms.tuturuuu.com${path}`);
+      expect(csp, path).toMatch(/frame-ancestors 'none'$/u);
+      expect(csp, path).not.toContain('sandbox');
+    }
+  });
+
+  it('lets an app keep an upstream policy or add framable paths', async () => {
+    const keep = build({
+      csp: (nonce, { response, path }) =>
+        path.startsWith('/api/') &&
+        response.headers.has('Content-Security-Policy')
+          ? null
+          : appCsp(nonce),
+    });
+    expect(
+      await cspOf(
+        keep,
+        'https://cms.tuturuuu.com/api/v1/workspaces/ws-1/external-projects/assets/a-1'
+      )
+    ).toBe(sandbox);
+    expect(await cspOf(keep, 'https://cms.tuturuuu.com/en')).toMatch(
+      /frame-ancestors 'none'$/u
+    );
+    const extra = build({ framablePaths: [/^\/api\/embed(?:\/|$)/u] });
+    expect(await cspOf(extra, 'https://cms.tuturuuu.com/api/embed/x')).toBe(
+      sandbox
+    );
   });
 });

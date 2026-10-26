@@ -32,6 +32,7 @@ export const ci = {
   'calendar-cloudflare.yaml': true,
   'mail-cloudflare.yaml': true,
   'wave1-native-app.yaml': true,
+  'native-start-app.yaml': true,
   'wave1-native-publish.yaml': true,
   'colab-cloudflare.yaml': true,
   'coordination-cloudflare.yaml': true,
@@ -81,6 +82,7 @@ export const ci = {
   'vercel-production-chat.yaml': true,
   'vercel-production-cms.yaml': true,
   'vercel-production-drive.yaml': true,
+  'finance-cloudflare.yaml': true,
   'vercel-production-finance.yaml': true,
   'vercel-production-inventory.yaml': true,
   'vercel-production-infrastructure.yaml': true,
@@ -113,6 +115,9 @@ export const ci = {
   'desktop-beta.yaml': true,
   'desktop-store-draft.yaml': true,
   'mobile-build-linux.yaml': true,
+  'track-cloudflare.yaml': true,
+  'cms-cloudflare.yaml': true,
+  'storefront-cloudflare.yaml': true,
 };
 
 // Publication only: native build and original/restored acceptance remain enabled.

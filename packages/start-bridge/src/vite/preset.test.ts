@@ -36,6 +36,17 @@ describe('Vite preset', () => {
       '/^next-intl$/u',
       '@/',
     ]);
+    expect(
+      startBridgePreset(
+        {
+          appRoot,
+          app: 'calendar',
+          shims: ['next/headers'],
+          inertVercel: true,
+        },
+        {}
+      ).alias.map((alias) => String(alias.find))
+    ).toContain('/^@tuturuuu\\/vercel$/u');
     const targets = preset.alias.map((alias) => alias.replacement);
     expect(targets[2]).toMatch(/src\/next\/navigation-document\.tsx$/u);
     expect(targets[3]).toBe(targets[2]);
@@ -57,9 +68,9 @@ describe('Vite preset', () => {
       '"/meet"'
     );
     expect(preset.alias.at(-1)?.find).toBe('@/');
-    // 14 shims, server-only, the nuqs adapter swap and '@/'; no request
-    // config exists under the fixture root.
-    expect(preset.alias).toHaveLength(17);
+    // 14 shims, server-only, the nuqs adapter swap, the inert Vercel
+    // scripts and '@/'; no request config exists under the fixture root.
+    expect(preset.alias).toHaveLength(18);
   });
 
   it('adds the remaining shims and runtime asset URLs', () => {
@@ -81,6 +92,9 @@ describe('Vite preset', () => {
       '/repo/apps/apps/src/runtime/intl-server.ts'
     );
     expect(byFind('/^next\\/og$/u')).toBe('/og.js');
+    expect(byFind('/^@tuturuuu\\/vercel$/u')).toMatch(
+      /src\/next\/vercel\.tsx$/u
+    );
     expect(byFind('/^nuqs\\/adapters\\/next\\/app$/u')).toBe(
       'nuqs/adapters/tanstack-router'
     );
@@ -162,5 +176,20 @@ describe('Vite preset', () => {
     expect(byFind('/^next\\/root-params(?:\\.js)?$/u')).toMatch(
       /src\/next\/root-params\.ts$/u
     );
+  });
+
+  it('adds RSC shims and leaves navigation and intl to the RSC plugin', () => {
+    const preset = startBridgePreset({ appRoot, app: 'tools', rsc: true }, {});
+    const finds = preset.alias.map((alias) => String(alias.find));
+    expect(preset.tanstackStart.rsc).toEqual({ enabled: true });
+    expect(finds.some((find) => find.includes('next\\/navigation'))).toBe(
+      false
+    );
+    expect(finds).not.toContain(String(/^next-intl\/navigation$/u));
+    expect(finds).toContain(String(/^next-intl\/server$/u));
+    expect(finds).toContain(String(/^next\/root-params(?:\.js)?$/u));
+    expect(
+      startBridgePreset({ appRoot, app: 'tools' }, {}).tanstackStart.rsc
+    ).toBeUndefined();
   });
 });

@@ -1,3 +1,4 @@
+/// <reference path="./import-meta-env.d.ts" />
 import { prefixBase, trimTrailingSlashes } from './base-path';
 import { fromNextSourcePattern, matchRoute } from './route-match';
 
