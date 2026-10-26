@@ -2,7 +2,10 @@
 import tailwindcss from '@tailwindcss/vite';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
 import { startBridgePreset } from '@tuturuuu/start-bridge/vite';
-import { startBridgeRscPlugin } from '@tuturuuu/start-bridge/vite/rsc';
+import {
+  startBridgeNodeBuiltinsPlugin,
+  startBridgeRscPlugin,
+} from '@tuturuuu/start-bridge/vite/rsc';
 import react from '@vitejs/plugin-react';
 import rsc from '@vitejs/plugin-rsc';
 import { defineConfig } from 'vite-plus';
@@ -36,6 +39,9 @@ export default defineConfig(({ command }) => ({
         ),
       },
     }),
+    // SSR bundles CommonJS too (postcss via sanitize-html requires 'path'):
+    // the same Node built-in conversion the rsc environment always gets.
+    startBridgeNodeBuiltinsPlugin(),
     voidPlugin(),
     tanstackStart(bridge.tanstackStart),
     rsc(),
