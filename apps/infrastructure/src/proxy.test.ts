@@ -109,6 +109,78 @@ describe('Infra proxy', () => {
     expect(mocks.clearSupabaseAuthCookies).not.toHaveBeenCalled();
   });
 
+  it.each([
+    [503, 'offline-download-inactive'],
+    [503, 'offline-download-unavailable'],
+    [429, 'offline-download-rate-limited'],
+    [401, 'offline-download-authentication-required'],
+    [403, 'offline-download-challenge-required'],
+    [503, 'auth-assurance-unavailable'],
+    [403, 'auth-assurance-required'],
+    [401, 'auth-assurance-unauthenticated'],
+    [429, 'proxy-ip-blocked'],
+    [429, 'proxy-rate-limited'],
+    [413, 'proxy-payload-too-large'],
+    [400, 'proxy-content-rejected'],
+  ] as const)(
+    'preserves %s %s through the mobile gateway middleware',
+    async (status, reason) => {
+      mocks.hasAuthenticatedBearerToken.mockReturnValue(true);
+      const rejected = NextResponse.json(
+        { error: 'rejected' },
+        {
+          status,
+          headers: {
+            'X-Tuturuuu-Guard-Reason': reason,
+            'X-Tuturuuu-Guard-Request-Id': 'synthetic-request-id',
+            'Access-Control-Expose-Headers':
+              'X-Tuturuuu-Guard-Reason, X-Tuturuuu-Guard-Request-Id',
+            'Retry-After': '30',
+          },
+        }
+      );
+      mocks.guardApiProxyRequest.mockResolvedValue(rejected);
+      const response = await proxy(
+        new NextRequest(
+          'https://infrastructure.tuturuuu.com/api/v1/mobile-calendar/api/v1/workspaces/private-id/calendar/events',
+          { headers: { authorization: 'Bearer eyJnative' } }
+        )
+      );
+      expect(response.status).toBe(status);
+      expect(response.headers.get('X-Tuturuuu-Guard-Reason')).toBe(reason);
+      expect(response.headers.get('X-Tuturuuu-Guard-Request-Id')).toBe(
+        'synthetic-request-id'
+      );
+      expect(response.headers.get('Access-Control-Expose-Headers')).toContain(
+        'X-Tuturuuu-Guard-Reason'
+      );
+      expect(response.headers.get('Retry-After')).toBe('30');
+    }
+  );
+
+  it.each([
+    ['Account assurance unavailable', 503, 'auth-assurance-unavailable'],
+    ['MFA required', 403, 'auth-assurance-required'],
+    ['App session refresh unavailable', 503, 'app-session-refresh-unavailable'],
+    ['Invalid app session', 401, 'app-session-unauthenticated'],
+  ] as const)(
+    'labels early session failure %s before the shared guard',
+    async (error, status, reason) => {
+      mocks.refreshAppSessionForRequest.mockResolvedValue({ ok: false, error });
+      const response = await proxy(
+        new NextRequest(
+          'https://infrastructure.tuturuuu.com/api/v1/mobile-calendar/api/v1/users/calendar-settings'
+        )
+      );
+      expect(response.status).toBe(status);
+      expect(response.headers.get('X-Tuturuuu-Guard-Reason')).toBe(reason);
+      expect(response.headers.get('Access-Control-Expose-Headers')).toContain(
+        'X-Tuturuuu-Guard-Reason'
+      );
+      expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
+    }
+  );
+
   it('accepts a trusted scheduler without requiring a browser session', async () => {
     mocks.isTrustedProxyBypassRequest.mockReturnValue(true);
     mocks.refreshAppSessionForRequest.mockResolvedValue({ ok: false });
