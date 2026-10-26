@@ -111,3 +111,80 @@ test('legacy mode expects the guarded build-info and skips the server-function p
     false
   );
 });
+
+test('relative Location resolves against the origin', async () => {
+  const report = await runSmoke(
+    { ...base, centralLogin: `${origin}/login` },
+    nativeFetch(
+      Object.fromEntries(
+        ['/', '/vi/personal/boards'].map((path) => [
+          path,
+          (headers) =>
+            new Response(null, {
+              status: 307,
+              headers: {
+                ...headers,
+                location: `/login?returnUrl=${encodeURIComponent(`${origin}/verify-token?nextUrl=${encodeURIComponent(path)}`)}`,
+              },
+            }),
+        ])
+      )
+    )
+  );
+  assert.equal(report.ok, true, JSON.stringify(report.results));
+});
+
+for (const [name, overrides, expected] of [
+  [
+    'malformed Location',
+    {
+      '/': (headers) =>
+        new Response(null, {
+          status: 307,
+          headers: { ...headers, location: 'https://[' },
+        }),
+    },
+    /Invalid URL/u,
+  ],
+  [
+    'body read',
+    {
+      '/robots.txt': (headers) => ({
+        status: 200,
+        headers: new Headers(headers),
+        text: async () => {
+          throw new Error('body read failed');
+        },
+      }),
+    },
+    /body read failed/u,
+  ],
+  [
+    'initial fetch',
+    {
+      '/robots.txt': () => {
+        throw new Error('fetch failed');
+      },
+    },
+    /fetch failed/u,
+  ],
+  [
+    'asset fetch',
+    {
+      '/assets/index.css': () => {
+        throw new Error('asset fetch failed');
+      },
+    },
+    /asset fetch failed/u,
+  ],
+]) {
+  test(`${name} failure produces a FAIL row and remaining checks run`, async () => {
+    const report = await runSmoke(base, nativeFetch(overrides));
+    assert.equal(report.ok, false);
+    assert.equal(report.results.length, smokePlan(base).length);
+    const failed = report.results.filter((result) => !result.ok);
+    assert.equal(failed.length, 1);
+    assert.match(failed[0].failures.join(), expected);
+    assert.equal(report.results.at(-1).ok, true);
+  });
+}

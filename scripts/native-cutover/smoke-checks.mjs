@@ -78,9 +78,13 @@ export function smokePlan(options) {
   ];
 }
 
-function checkLoginReturn(location, { central, verifyPrefix, nextUrl }) {
+function checkLoginReturn(
+  location,
+  { central, verifyPrefix, nextUrl },
+  origin
+) {
   if (!location) return 'missing Location';
-  const url = new URL(location);
+  const url = new URL(location, origin);
   if (`${url.origin}${url.pathname}` !== central)
     return `Location ${url.origin}${url.pathname} is not ${central}`;
   const returnUrl = url.searchParams.get('returnUrl') ?? '';
@@ -100,66 +104,68 @@ export async function runSmoke(options, fetchImpl = fetch) {
   for (const check of smokePlan(options)) {
     const started = performance.now();
     const failures = [];
-    let response;
+    let status;
+    let ttfbMs;
     try {
-      response = await fetchImpl(`${options.origin}${check.path}`, {
+      const response = await fetchImpl(`${options.origin}${check.path}`, {
         method: check.method ?? 'GET',
         headers: { 'accept-language': ACCEPT_LANGUAGE, ...check.headers },
         body: check.body,
         redirect: 'manual',
       });
-    } catch (error) {
-      results.push({ name: check.name, ok: false, failures: [String(error)] });
-      continue;
-    }
-    const ttfbMs = Math.round(performance.now() - started);
-    const { status, headers } = response;
-    if (!check.expect.status.includes(status))
-      failures.push(`status ${status}, expected ${check.expect.status}`);
-    if (status >= 500) failures.push(`server error ${status}`);
-    const runtime = headers.get('x-tuturuuu-runtime');
-    if (native && runtime !== 'native')
-      failures.push(`x-tuturuuu-runtime ${runtime}, expected native`);
-    if (!native && runtime === 'native')
-      failures.push('served by the native Worker, expected legacy');
-    if (headers.get('x-frame-options') !== 'DENY')
-      failures.push('missing X-Frame-Options: DENY');
-    if (
-      !/frame-ancestors 'none'/u.test(
-        headers.get('content-security-policy') ?? ''
+      ttfbMs = Math.round(performance.now() - started);
+      status = response.status;
+      const { headers } = response;
+      if (!check.expect.status.includes(status))
+        failures.push(`status ${status}, expected ${check.expect.status}`);
+      if (status >= 500) failures.push(`server error ${status}`);
+      const runtime = headers.get('x-tuturuuu-runtime');
+      if (native && runtime !== 'native')
+        failures.push(`x-tuturuuu-runtime ${runtime}, expected native`);
+      if (!native && runtime === 'native')
+        failures.push('served by the native Worker, expected legacy');
+      if (headers.get('x-frame-options') !== 'DENY')
+        failures.push('missing X-Frame-Options: DENY');
+      if (
+        !/frame-ancestors 'none'/u.test(
+          headers.get('content-security-policy') ?? ''
+        )
       )
-    )
-      failures.push("missing CSP frame-ancestors 'none'");
-    if (check.expect.loginReturn) {
-      const problem = checkLoginReturn(
-        headers.get('location'),
-        check.expect.loginReturn
-      );
-      if (problem) failures.push(problem);
-    }
-    const body = await response.text();
-    if (check.expect.json) {
-      try {
-        const json = JSON.parse(body);
-        for (const [key, value] of Object.entries(check.expect.json))
-          if (json[key] !== value)
-            failures.push(`${key} ${json[key]}, expected ${value}`);
-      } catch {
-        failures.push('body is not JSON');
+        failures.push("missing CSP frame-ancestors 'none'");
+      if (check.expect.loginReturn) {
+        const problem = checkLoginReturn(
+          headers.get('location'),
+          check.expect.loginReturn,
+          options.origin
+        );
+        if (problem) failures.push(problem);
       }
-    }
-    if (check.expect.html && !/^<!DOCTYPE html>/iu.test(body.trimStart()))
-      failures.push('body is not an HTML document');
-    if (check.expect.assets) {
-      const asset = /(?:src|href)="(\/[^"]+\.(?:js|css))"/u.exec(body)?.[1];
-      if (!asset) failures.push('no script or stylesheet in the document');
-      else {
-        const assetResponse = await fetchImpl(`${options.origin}${asset}`, {
-          redirect: 'manual',
-        });
-        if (assetResponse.status !== 200)
-          failures.push(`asset ${asset} answered ${assetResponse.status}`);
+      const body = await response.text();
+      if (check.expect.json) {
+        try {
+          const json = JSON.parse(body);
+          for (const [key, value] of Object.entries(check.expect.json))
+            if (json[key] !== value)
+              failures.push(`${key} ${json[key]}, expected ${value}`);
+        } catch {
+          failures.push('body is not JSON');
+        }
       }
+      if (check.expect.html && !/^<!DOCTYPE html>/iu.test(body.trimStart()))
+        failures.push('body is not an HTML document');
+      if (check.expect.assets) {
+        const asset = /(?:src|href)="(\/[^"]+\.(?:js|css))"/u.exec(body)?.[1];
+        if (!asset) failures.push('no script or stylesheet in the document');
+        else {
+          const assetResponse = await fetchImpl(`${options.origin}${asset}`, {
+            redirect: 'manual',
+          });
+          if (assetResponse.status !== 200)
+            failures.push(`asset ${asset} answered ${assetResponse.status}`);
+        }
+      }
+    } catch (error) {
+      failures.push(String(error));
     }
     results.push({
       name: check.name,
