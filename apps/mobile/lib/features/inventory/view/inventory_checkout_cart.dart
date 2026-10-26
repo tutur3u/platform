@@ -90,7 +90,10 @@ extension _InventoryCheckoutCart on _InventoryCheckoutPageState {
             TextField(
               controller: _titleController,
               enabled: !_saving && !_season.hasPending,
-              decoration: InputDecoration(labelText: l10n.inventorySalesTitle),
+              decoration: InputDecoration(
+                hintText: context.l10n.inputPlaceholderSaleTitle,
+                labelText: l10n.inventorySalesTitle,
+              ),
             ),
             const shad.Gap(12),
             TextField(
@@ -98,7 +101,10 @@ extension _InventoryCheckoutCart on _InventoryCheckoutPageState {
               enabled: !_saving && !_season.hasPending,
               minLines: 2,
               maxLines: 4,
-              decoration: InputDecoration(labelText: l10n.inventorySalesNote),
+              decoration: InputDecoration(
+                hintText: context.l10n.inputPlaceholderNote,
+                labelText: l10n.inventorySalesNote,
+              ),
             ),
             const shad.Gap(12),
             if (_requiresManualCategory)

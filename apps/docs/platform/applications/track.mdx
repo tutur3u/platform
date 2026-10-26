@@ -40,3 +40,35 @@ The public Track description is served by Web's product page.
 Use the [Track route reference](/reference/repository/routes/track) to locate
 handlers, and [Data fetching](/platform/architecture/data-fetching) to extend a
 shared client contract rather than adding app-local raw browser API calls.
+
+## Native Start candidate
+
+Track's retained App Router pages compile through the shared Start bridge RSC
+adapter. Generate the candidate with
+`node scripts/start-bridge-codemod/cli.mjs track --apply` and rerun the
+generator instead of editing marked generated files. `bun run --cwd apps/track
+type-check:cloudflare` checks the native entry; `build:cloudflare` runs the
+real Vite+ build on an admitted build host. Production stays on Vercel until an
+explicit cutover PR.
+
+The Worker serves Track at `track.tuturuuu.com` only. The apex `/track` path
+and every unlisted host return 404 before the proxy, pages, APIs or network
+access run. A staging Worker admits extra hostnames through the
+`TUTURUUU_STAGING_HOSTS` var (comma-separated `*.workers.dev` or
+`*.tuturuuu.com` names; anything else is dropped), never from request headers.
+
+Every response carries the Next build's production headers (`X-Robots-Tag`
+from Track's SEO policy, `frame-ancestors 'none'` and `X-Frame-Options: DENY`
+except on the framable WebGL asset path, HSTS). A response's own CSP is kept,
+but `frame-ancestors 'none'` replaces any ancestor directive in each of its
+policies. It also sends `nosniff` and
+`Referrer-Policy: strict-origin-when-cross-origin`. Every dynamic response is
+`Cache-Control: private, no-store, max-age=0`, replacing any policy a handler
+set; only `GET`/`HEAD` of hashed assets and public files keep their caching. `GET`/`HEAD
+/api/build-info` is public on both builds: the proxy skips session work and
+removes cookies and `Authorization` before the handler runs. The Worker uses
+`global_fetch_strictly_public`. Covered by
+`apps/track/src/start-bridge-config.test.ts`, `apps/track/src/proxy.test.ts`,
+the emitted Worker gate and the signed-in root browser gate
+(`apps/track/cloudflare/root-browser.profile.mjs`: signed-in `/` and `/vi`
+land on the personal timer in English and Vietnamese).

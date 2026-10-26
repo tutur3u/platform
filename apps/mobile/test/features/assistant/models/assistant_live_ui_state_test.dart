@@ -20,6 +20,10 @@ void main() {
         l10n.assistantAudioUnavailable,
       );
       expect(
+        assistantLiveErrorLabel(l10n, 'live_reconnect_exhausted'),
+        l10n.assistantLiveReconnectExhausted,
+      );
+      expect(
         assistantLiveErrorLabel(l10n, 'private provider detail'),
         l10n.assistantLiveDescriptionError,
       );

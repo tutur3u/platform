@@ -12,21 +12,14 @@ import {
   testMeetProgramming,
 } from '@tuturuuu/internal-api';
 import type { MeetingProgramming } from '@tuturuuu/realtime/meet';
-import { PLAYGROUND_LANGUAGES } from '@tuturuuu/types/primitives/playgrounds';
-import { Button } from '@tuturuuu/ui/button';
-import { Input } from '@tuturuuu/ui/input';
-import { Label } from '@tuturuuu/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tuturuuu/ui/select';
 import dynamic from 'next/dynamic';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { ProgrammingResourcePicker } from './programming-resource-picker';
+import {
+  type ProgrammingKind,
+  type ProgrammingLanguage,
+  ProgrammingSetup,
+} from './programming-setup';
 
 const Workbench = dynamic(
   () => import('@tuturuuu/programming-ui').then((m) => m.ProgrammingWorkbench),
@@ -42,6 +35,8 @@ export const meetingProgrammingApi = {
   readTest: getMeetProgrammingTest,
   checkpoint: checkpointMeetProgramming,
 };
+const ACTIVE_TEST = ['queued', 'running', 'cancel_requested'];
+
 export function ProgrammingPanel({
   meetingId,
   wsId,
@@ -62,12 +57,12 @@ export function ProgrammingPanel({
   previewUrl?: (port: number) => string;
 }) {
   const t = useTranslations('programmingPlayground');
-  const locale = useLocale();
+  const locale = useLocale() === 'vi' ? 'vi' : 'en';
   const cache = useQueryClient();
-  const [kind, setKind] = useState<'problem' | 'playground'>('playground');
+  const [kind, setKind] = useState<ProgrammingKind>('playground');
   const [id, setId] = useState('');
-  const [language, setLanguage] =
-    useState<(typeof PLAYGROUND_LANGUAGES)[number]>('python');
+  const [language, setLanguage] = useState<ProgrammingLanguage>('python');
+  const [setupOpen, setSetupOpen] = useState(false);
   const key = [
     'meet-programming',
     meetingId,
@@ -84,15 +79,14 @@ export function ProgrammingPanel({
   const select = useMutation({
     mutationFn: (clear: boolean) =>
       api.select(meetingId, clear ? null : { kind, id, language }),
-    onSuccess: () => cache.invalidateQueries({ queryKey: key }),
+    onSuccess: () => {
+      setSetupOpen(false);
+      return cache.invalidateQueries({ queryKey: key });
+    },
   });
   const create = useMutation({
     mutationFn: () =>
-      api.create(meetingId, {
-        name: t('playground'),
-        empty: true,
-        language,
-      }),
+      api.create(meetingId, { name: t('playground'), empty: true, language }),
     onSuccess: async (project) => {
       setId(project.id);
       await api.select(meetingId, {
@@ -100,6 +94,7 @@ export function ProgrammingPanel({
         id: project.id,
         language,
       });
+      setSetupOpen(false);
       void cache.invalidateQueries({ queryKey: key });
     },
   });
@@ -116,104 +111,43 @@ export function ProgrammingPanel({
     const deadline = Date.now() + 120000;
     while (Date.now() < deadline) {
       const result = await api.readTest(meetingId, queued.id);
-      if (!['queued', 'running', 'cancel_requested'].includes(result.status))
+      if (!ACTIVE_TEST.includes(result.status))
         return result.output ?? result.status;
       await new Promise((resolve) => setTimeout(resolve, 500));
     }
     throw new Error('Programming test timed out');
   }
+  const showSetup = canManage && (!active || setupOpen);
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3">
-      {canManage && (
-        <div className="flex flex-wrap items-end gap-2 bg-background px-3 py-2">
-          <div className="min-w-32 space-y-1">
-            <Label>{t('resource')}</Label>
-            <Select
-              value={kind}
-              onValueChange={(value) => {
-                setKind(value as typeof kind);
-                setId('');
-                if (value === 'problem' && language === 'shell')
-                  setLanguage('python');
-              }}
-            >
-              <SelectTrigger aria-label={t('resource')}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="playground">{t('playground')}</SelectItem>
-                <SelectItem value="problem">{t('problem')}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          {wsId && accountId ? (
-            <ProgrammingResourcePicker
-              wsId={wsId}
-              accountId={accountId}
-              kind={kind}
-              id={id}
-              onSelect={(value, projectLanguage) => {
-                setId(value);
-                if (projectLanguage) setLanguage(projectLanguage);
-              }}
-            />
-          ) : (
-            <Input
-              value={id}
-              onChange={(event) => setId(event.target.value)}
-              aria-label={t('resourceId')}
-              placeholder={t('resourceId')}
-              className="min-w-48 flex-1"
-            />
-          )}
-          <div className="min-w-32 space-y-1">
-            <Label>{t('language')}</Label>
-            <Select
-              value={language}
-              onValueChange={(value) => setLanguage(value as typeof language)}
-            >
-              <SelectTrigger aria-label={t('language')}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {PLAYGROUND_LANGUAGES.filter(
-                  (l) => kind === 'playground' || l !== 'shell'
-                ).map((l) => (
-                  <SelectItem key={l} value={l}>
-                    {l}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <Button
-            disabled={!id || select.isPending}
-            onClick={() => select.mutate(false)}
-          >
-            {t('open')}
-          </Button>
-          {kind === 'playground' && (
-            <Button
-              variant="outline"
-              disabled={create.isPending}
-              onClick={() => create.mutate()}
-            >
-              {t('create')}
-            </Button>
-          )}
-          {active && (
-            <Button
-              variant="outline"
-              disabled={select.isPending}
-              onClick={() => select.mutate(true)}
-            >
-              {t('close')}
-            </Button>
-          )}
-        </div>
+    <div className="flex h-full min-h-0 flex-col gap-2">
+      {showSetup && (
+        <ProgrammingSetup
+          wsId={wsId}
+          accountId={accountId}
+          kind={kind}
+          id={id}
+          language={language}
+          pending={select.isPending || create.isPending}
+          onKind={(value) => {
+            setKind(value);
+            setId('');
+            if (value === 'problem' && language === 'shell')
+              setLanguage('python');
+          }}
+          onId={(value, projectLanguage) => {
+            setId(value);
+            if (projectLanguage) setLanguage(projectLanguage);
+          }}
+          onLanguage={setLanguage}
+          onOpen={() => select.mutate(false)}
+          onCreate={() => create.mutate()}
+          onDismiss={active ? () => setSetupOpen(false) : undefined}
+        />
       )}
       {(query.isError || select.isError || create.isError) && (
-        <p role="alert">{t('accessError')}</p>
+        <p role="alert" className="px-3 text-destructive text-sm">
+          {t('accessError')}
+        </p>
       )}
       {active ? (
         <div className="min-h-0 flex-1">
@@ -235,19 +169,41 @@ export function ProgrammingPanel({
             problem={
               active.problem
                 ? {
-                    title: active.problem.title[locale === 'vi' ? 'vi' : 'en'],
-                    prompt:
-                      active.problem.prompt[locale === 'vi' ? 'vi' : 'en'],
+                    title: active.problem.title[locale],
+                    prompt: active.problem.prompt[locale],
                   }
                 : undefined
             }
             onTest={active.problem ? test : undefined}
+            actions={
+              canManage
+                ? [
+                    {
+                      id: 'change-resource',
+                      label: t('changeResource'),
+                      onSelect: () => setSetupOpen((value) => !value),
+                    },
+                    {
+                      id: 'close-room',
+                      label: t('close'),
+                      destructive: true,
+                      disabled: select.isPending,
+                      onSelect: () => select.mutate(true),
+                    },
+                  ]
+                : []
+            }
           />
         </div>
       ) : (
-        <p role="status" className="p-6 text-muted-foreground">
-          {t(preparing || query.isPending ? 'connecting' : 'chooseResource')}
-        </p>
+        !canManage && (
+          <p
+            role="status"
+            className="m-auto px-6 text-center text-muted-foreground text-sm"
+          >
+            {t(preparing || query.isPending ? 'connecting' : 'chooseResource')}
+          </p>
+        )
       )}
     </div>
   );

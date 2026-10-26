@@ -622,6 +622,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get assistantLiveReconnectExhausted => 'The connection kept dropping. Check your network, then retry the live session.';
+
+  @override
   String get assistantLiveRetryAction => 'Retry live session';
 
   @override
@@ -11261,9 +11264,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get feedbackTitle => 'Send feedback';
 
   @override
-  String get feedbackPrivate => 'Share product feedback privately with Tuturuuu staff. Do not include passwords or secrets. One optional PNG, JPEG or WebP screenshot, up to 2 MB.';
-
-  @override
   String get feedbackSubject => 'Subject';
 
   @override
@@ -11606,4 +11606,373 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get assistantLiveSendUnknown => 'Live delivery is uncertain. Your draft was kept. Check the conversation before resending to avoid duplicates.';
+
+  @override
+  String get inputPlaceholderAddress => 'e.g. 12 Nguyen Hue, District 1';
+
+  @override
+  String get inputPlaceholderAssistantBoundaries => 'e.g. Ask before changing or deleting my data';
+
+  @override
+  String get inputPlaceholderAssistantMemory => 'e.g. Brief answers';
+
+  @override
+  String get inputPlaceholderAssistantName => 'e.g. Mira';
+
+  @override
+  String get inputPlaceholderAssistantPersonality => 'e.g. Patient, curious, and practical';
+
+  @override
+  String get inputPlaceholderAssistantTone => 'e.g. Warm and professional';
+
+  @override
+  String get inputPlaceholderAssistantVerbosity => 'e.g. Brief answers with key details';
+
+  @override
+  String get inputPlaceholderCmsCollectionDescription => 'Describe what this collection contains';
+
+  @override
+  String get inputPlaceholderCmsCollectionTitle => 'e.g. Product guides';
+
+  @override
+  String get inputPlaceholderCmsCollectionType => 'e.g. article';
+
+  @override
+  String get inputPlaceholderCmsEntryTitle => 'e.g. Getting started with your workspace';
+
+  @override
+  String get inputPlaceholderCmsSlug => 'e.g. getting-started';
+
+  @override
+  String get inputPlaceholderCmsSubtitle => 'Add a short line introducing this entry';
+
+  @override
+  String get inputPlaceholderCmsSummary => 'Summarize the main points for readers';
+
+  @override
+  String get inputPlaceholderComment => 'Write your comment here';
+
+  @override
+  String get inputPlaceholderCourseDescription => 'Describe what learners will achieve';
+
+  @override
+  String get inputPlaceholderCourseName => 'e.g. Everyday English';
+
+  @override
+  String get inputPlaceholderDate => 'Tap to choose a date';
+
+  @override
+  String get inputPlaceholderDays => 'e.g. 2';
+
+  @override
+  String get inputPlaceholderDisplayName => 'e.g. Linh';
+
+  @override
+  String get inputPlaceholderDocumentName => 'e.g. Weekly planning';
+
+  @override
+  String get inputPlaceholderEmailConfirmation => 'Enter the account email to confirm';
+
+  @override
+  String get inputPlaceholderFeedback => 'Describe what happened and what could improve';
+
+  @override
+  String get inputPlaceholderFieldKey => 'e.g. water_intake';
+
+  @override
+  String get inputPlaceholderFieldLabel => 'e.g. Water intake';
+
+  @override
+  String get inputPlaceholderFieldUnit => 'e.g. ml, km, or minutes';
+
+  @override
+  String get inputPlaceholderFlashcardBack => 'e.g. Paris';
+
+  @override
+  String get inputPlaceholderFlashcardFront => 'e.g. What is the capital of France?';
+
+  @override
+  String get inputPlaceholderFullName => 'e.g. Nguyen Minh Linh';
+
+  @override
+  String get inputPlaceholderHabitDescription => 'Describe how you will practice this habit';
+
+  @override
+  String get inputPlaceholderHabitName => 'e.g. Drink water';
+
+  @override
+  String get inputPlaceholderInventoryManufacturer => 'e.g. Acme';
+
+  @override
+  String get inputPlaceholderInventoryName => 'e.g. Office supplies';
+
+  @override
+  String get inputPlaceholderLinkText => 'e.g. Project handbook';
+
+  @override
+  String get inputPlaceholderLinkUrl => 'https://example.com';
+
+  @override
+  String get inputPlaceholderListingTitle => 'e.g. Handmade notebook';
+
+  @override
+  String get inputPlaceholderMailCalendarUrl => 'Paste a Google Calendar event link';
+
+  @override
+  String get inputPlaceholderMailDescription => 'Describe which messages belong here';
+
+  @override
+  String get inputPlaceholderMailDraftInstructions => 'e.g. Write a friendly follow-up about our meeting';
+
+  @override
+  String get inputPlaceholderMailLabelInstructions => 'e.g. Apply to invoices and payment receipts';
+
+  @override
+  String get inputPlaceholderMailName => 'e.g. Customer support';
+
+  @override
+  String get inputPlaceholderMailSubject => 'e.g. Follow-up on our meeting';
+
+  @override
+  String get inputPlaceholderMeetingName => 'e.g. Weekly team check-in';
+
+  @override
+  String get inputPlaceholderNote => 'Add details you want to remember';
+
+  @override
+  String get inputPlaceholderPassphrase => 'Enter at least 8 characters';
+
+  @override
+  String get inputPlaceholderPassphraseConfirmation => 'Enter the same passphrase again';
+
+  @override
+  String get inputPlaceholderPassphraseUnlock => 'Enter the passphrase for this note';
+
+  @override
+  String get inputPlaceholderPassword => 'Use 12–72 characters';
+
+  @override
+  String get inputPlaceholderPhone => 'e.g. +84 912 345 678';
+
+  @override
+  String get inputPlaceholderPin => 'Enter a 6-digit PIN';
+
+  @override
+  String get inputPlaceholderPinConfirmation => 'Enter the same 6-digit PIN again';
+
+  @override
+  String get inputPlaceholderPrice => 'e.g. 150000';
+
+  @override
+  String get inputPlaceholderQuantity => 'e.g. 10';
+
+  @override
+  String get inputPlaceholderQuizExplanation => 'Explain why this answer is correct or incorrect';
+
+  @override
+  String get inputPlaceholderQuizOption => 'e.g. Paris';
+
+  @override
+  String get inputPlaceholderQuizQuestion => 'e.g. What is the capital of France?';
+
+  @override
+  String get inputPlaceholderQuizSetName => 'e.g. World capitals';
+
+  @override
+  String get inputPlaceholderSaleTitle => 'e.g. Office supplies order';
+
+  @override
+  String get inputPlaceholderSharedMessage => 'Edit the message you want to share';
+
+  @override
+  String get inputPlaceholderStorefrontCurrency => 'e.g. VND';
+
+  @override
+  String get inputPlaceholderStorefrontDescription => 'Describe what customers can find here';
+
+  @override
+  String get inputPlaceholderStorefrontName => 'e.g. Linh’s stationery';
+
+  @override
+  String get inputPlaceholderStorefrontSearch => 'Search by storefront name';
+
+  @override
+  String get inputPlaceholderStorefrontSlug => 'e.g. linh-stationery';
+
+  @override
+  String get inputPlaceholderTableCell => 'Enter cell content';
+
+  @override
+  String get inputPlaceholderTargetValue => 'e.g. 2000';
+
+  @override
+  String get inputPlaceholderTimeDescription => 'Describe what you worked on';
+
+  @override
+  String get inputPlaceholderTimeTitle => 'e.g. Prepare project proposal';
+
+  @override
+  String get inputPlaceholderUpdate => 'Share progress, decisions, or next steps';
+
+  @override
+  String get inputPlaceholderUserId => 'Paste the user ID';
+
+  @override
+  String get inputPlaceholderUsername => 'e.g. minh_linh';
+
+  @override
+  String get inputPlaceholderWorkoutExercise => 'e.g. Squats';
+
+  @override
+  String get inputPlaceholderWorkoutReps => 'e.g. 12';
+
+  @override
+  String get inputPlaceholderWorkoutSets => 'e.g. 3';
+
+  @override
+  String get inputPlaceholderWorkoutWeight => 'e.g. 20';
+
+  @override
+  String get mailSenderNamePlaceholder => 'e.g. Alex Nguyen';
+
+  @override
+  String get mailSignaturePlaceholder => 'e.g. Best regards,\nAlex Nguyen\nProduct team';
+
+  @override
+  String get mailDraftInstructionsPlaceholder => 'e.g. Keep replies short and friendly. Sign off with my first name.';
+
+  @override
+  String get mailForwardToPlaceholder => 'name@example.com';
+
+  @override
+  String get feedbackSubjectPlaceholder => 'e.g. Calendar doesn\'t sync on Wi-Fi';
+
+  @override
+  String get feedbackDetailsPlaceholder => 'What happened, what you expected, and the steps to get there.';
+
+  @override
+  String settingsWorkspaceCountValue(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count workspaces',
+      one: '1 workspace',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get offlineStoredOnDevice => 'Stored on this device';
+
+  @override
+  String get offlineStorageUsed => 'Storage used';
+
+  @override
+  String offlineQueuedChanges(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count changes waiting to sync',
+      one: '1 change waiting to sync',
+      zero: 'No changes waiting to sync',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String offlineCollectionSummary(int items, String size, String time) {
+    String _temp0 = intl.Intl.pluralLogic(
+      items,
+      locale: localeName,
+      other: '$items items',
+      one: '1 item',
+    );
+    return '$_temp0 · $size · Updated $time';
+  }
+
+  @override
+  String get offlineManageData => 'Manage data';
+
+  @override
+  String get offlineEvictRowDescription => 'Frees space. Data downloads again when you are online.';
+
+  @override
+  String get offlineTechnicalDetails => 'Technical details';
+
+  @override
+  String get mailSettingsReadingGroup => 'Reading';
+
+  @override
+  String get mailSettingsComposeGroup => 'Sender and signature';
+
+  @override
+  String get mailSettingsAiGroup => 'AI drafts';
+
+  @override
+  String get mailSettingsDeliveryGroup => 'Delivery and routing';
+
+  @override
+  String get mailSettingsGroupPermissions => 'Group permissions';
+
+  @override
+  String get mailSettingsOrganizeGroup => 'Organize';
+
+  @override
+  String get mailSenderNameHelper => 'Recipients see this name next to your address.';
+
+  @override
+  String get mailSignatureHelper => 'Added to the end of new messages and replies.';
+
+  @override
+  String get mailAutoDraftDescription => 'Prepare reply drafts for you to review before sending.';
+
+  @override
+  String get mailDraftInstructions => 'Draft instructions';
+
+  @override
+  String get mailDraftInstructionsHelper => 'Tells the assistant how to write your reply drafts.';
+
+  @override
+  String get feedbackIntro => 'Tell us what works and what doesn\'t. Only the Tuturuuu team reads your feedback.';
+
+  @override
+  String get feedbackYourFeedback => 'Your feedback';
+
+  @override
+  String get feedbackDetailsHelper => 'Do not include passwords or other secrets.';
+
+  @override
+  String get feedbackScreenshotGroup => 'Screenshot (optional)';
+
+  @override
+  String get feedbackAttachDescription => 'PNG, JPEG or WebP, up to 2 MB';
+
+  @override
+  String workspacePickerCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count workspaces',
+      one: '1 workspace',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get workspacePickerCreateDescription => 'Start a new space for a team or project';
+
+  @override
+  String get workspacePickerCurrentLabel => 'Current workspace';
+
+  @override
+  String get workspacePickerDefaultDescription => 'Opens first when you launch the app';
+
+  @override
+  String get workspacePickerEmptyMessage => 'Workspaces you create or are invited to appear here.';
+
+  @override
+  String get workspacePickerNoResultsMessage => 'Try another name or plan, or clear the search.';
+
+  @override
+  String get workspacePickerTeamBadge => 'Team';
 }

@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_cache_inventory.dart';
 import 'package:mobile/core/cache/offline_preparation_coordinator.dart';
@@ -11,10 +10,11 @@ import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/inventory/cubit/inventory_access_cubit.dart';
 import 'package:mobile/features/settings/view/offline_module_preferences.dart';
+import 'package:mobile/features/settings/view/offline_module_storage_section.dart';
 import 'package:mobile/features/settings/view/offline_preparation_section.dart';
 import 'package:mobile/features/settings/view/offline_search_chrome.dart';
-import 'package:mobile/features/settings/view/offline_stored_items.dart';
 import 'package:mobile/features/settings/view/settings_dialogs.dart';
+import 'package:mobile/features/settings/view/settings_row_layout.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -198,7 +198,10 @@ class _OfflineModulePageState extends State<OfflineModulePage> {
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
           if (unavailable)
-            Text(l10n.offlinePreparationUnavailable)
+            AppStateMessage(
+              icon: LucideIcons.cloudOff,
+              title: l10n.offlinePreparationUnavailable,
+            )
           else ...[
             OfflinePreparationSection(
               productId: widget.moduleId,
@@ -210,76 +213,26 @@ class _OfflineModulePageState extends State<OfflineModulePage> {
               userId: _userId!,
               workspaceId: _workspaceId!,
             ),
-            const SizedBox(height: 20),
-            Text(l10n.offlineCoverageUnknown),
-            Text(l10n.offlineBytesExplanation),
-            if (inventory != null) ...[
-              const SizedBox(height: 12),
-              Text(l10n.offlineLogicalBytes('${inventory.logicalBytes}')),
-              Text(l10n.offlinePendingCoverage(inventory.pending)),
-              const SizedBox(height: 12),
-              if (rows!.isEmpty) Text(l10n.offlineNoStoredItems),
-              for (final row in rows)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        row.namespace,
-                        style: Theme.of(context).textTheme.titleSmall,
-                      ),
-                      Text(
-                        l10n.offlineAvailableItems(row.items, row.snapshots),
-                      ),
-                      Text(l10n.offlineLogicalBytes('${row.logicalBytes}')),
-                      Text(
-                        row.serverReportedTotal == null
-                            ? l10n.offlineExpectedTotalUnknown
-                            : l10n.offlineExpectedTotal(
-                                row.serverReportedTotal!,
-                              ),
-                      ),
-                      Text(
-                        l10n.offlineFreshness(
-                          row.staleSnapshots,
-                          row.expiredSnapshots,
-                        ),
-                      ),
-                      Text(
-                        l10n.offlineLastFetch(
-                          DateFormat.yMd(
-                            Localizations.localeOf(context).toString(),
-                          ).add_jm().format(row.lastFetch.toLocal()),
-                        ),
-                      ),
-                      OfflineStoredItems(
-                        key: ValueKey((_userId, _workspaceId, row.namespace)),
-                        store: _store,
-                        userId: _userId!,
-                        workspaceId: _workspaceId!,
-                        namespace: row.namespace,
-                        revision: row.contentRevision,
-                      ),
-                    ],
-                  ),
-                ),
-              const SizedBox(height: 16),
-              AppButton.outline(
-                onPressed: _busy || _coordinator.state.value.running
-                    ? null
-                    : _evict,
-                leading: const Icon(LucideIcons.trash2),
-                child: Text(l10n.offlineEvictTitle),
+            const SizedBox(height: SettingsRowLayout.groupGap),
+            if (inventory != null)
+              OfflineModuleStorageSection(
+                moduleId: widget.moduleId,
+                inventory: inventory,
+                rows: rows!,
+                store: _store,
+                userId: _userId!,
+                workspaceId: _workspaceId!,
+                canEvict: !_busy && !_coordinator.state.value.running,
+                onEvict: () => unawaited(_evict()),
               ),
-            ],
-            if (_error != null) ...[
-              Text(_error!, semanticsLabel: _error),
-              AppButton.ghost(
-                onPressed: _refresh,
-                child: Text(l10n.commonRetry),
+            if (_error != null)
+              AppStateMessage.inline(
+                icon: LucideIcons.triangleAlert,
+                tone: AppTone.destructive,
+                title: _error!,
+                actionLabel: l10n.commonRetry,
+                onAction: () => unawaited(_refresh()),
               ),
-            ],
           ],
         ],
       ),

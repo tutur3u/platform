@@ -150,6 +150,9 @@ supported Node executor. CI compares exact binding keys/requiredness/types again
 the existing producer, verifies unchanged artifact bytes and retains a receipt.
 Its self-contained declaration does not require shipping a generated config.
 Other resource and framework profiles still require separate qualification.
+Calendar's build-output comparison copies sealed ESM/assets into the cf format
+and verifies the same bytes after restore. It retains the publisher because
+secondary upload-module names and asset/runtime semantics need separate proof.
 
 Track CLI capability gaps independently from app migration so an unsupported
 operation does not block portable libraries or Oxc adoption.
@@ -323,6 +326,15 @@ checked before each expiry batch and invalidation chunk. See the
 operation bounds, restart/deadline/poison regressions and remaining hosted stop
 and cache-freshness evidence. Source and mocked requests do not establish billed
 usage or crash-atomic database-to-ledger persistence.
+
+Cron Control's default-off database history job adds one RPC per enabled ten-minute
+slot, deleting at most 1,000 completed rows per table. It has no in-slot retry or
+drain loop; the existing durable slot claim, pre-delete stop fence and five-failure
+budget survive ledger restarts. Counted dispatch/stop regressions and full-chain
+pgTAP cover the bounds and seven-day cutoff. The
+[history retention runbook](/build/devops/cloudflare-cron-control#seven-day-database-cron-history)
+records the daily operation envelope and stop procedure. Hosted scheduled execution,
+independent operator-stop acceptance and billed usage remain rollout evidence.
 
 CPU limits constrain an invocation, not the number of invocations or all billable
 services. Usage notifications are detection, not an automatic spending cutoff.

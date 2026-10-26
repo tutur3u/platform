@@ -26,7 +26,7 @@ const reviewCategories = [
     category: 'auth',
     owner: 'platform-auth',
     patterns: [
-      /^packages\/(?:auth|sso|satellite|turnstile)\//u,
+      /^packages\/(?:auth|sso|satellite|turnstile|start-bridge)\//u,
       /(?:^|\/)(?:auth|sso|oauth2?|sessions?|login|logout|sign-?in|sign-?up|mfa|otp|2fa|passkeys?|webauthn)(?:\/|[._-][^/]*$|$)/iu,
       /(?:^|\/)(?:proxy|middleware|api-middleware|authorization)\.(?:c|m)?[jt]s$/u,
       /(?:^|\/)(?:oidc|external-apps)[^/]*\.(?:c|m)?[jt]sx?$/iu,
@@ -183,16 +183,17 @@ function ownerForPath(filePath) {
   );
 }
 
-// Scan scope for PR/push checks. Unknown change sets scan everything.
+// Scan scope for PR/push checks. Unknown or empty change sets scan
+// everything: an empty list is never trusted as proof that nothing changed.
 function classifyScope(paths, { full = false } = {}) {
-  if (full || paths === null) {
+  const files = (paths ?? []).map(normalize).filter(Boolean);
+  if (full || files.length === 0) {
     return {
       codeqlLanguages: Object.keys(codeqlLanguages),
       dependencies: true,
       workflows: true,
     };
   }
-  const files = paths.map(normalize).filter(Boolean);
   return {
     codeqlLanguages: Object.entries(codeqlLanguages)
       .filter(([, patterns]) =>

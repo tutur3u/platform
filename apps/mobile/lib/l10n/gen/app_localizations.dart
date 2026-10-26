@@ -1285,6 +1285,12 @@ abstract class AppLocalizations {
   /// **'Session rotation detected. Reconnecting with about {timeLeft} remaining.'**
   String assistantLiveReconnectBanner(String timeLeft);
 
+  /// No description provided for @assistantLiveReconnectExhausted.
+  ///
+  /// In en, this message translates to:
+  /// **'The connection kept dropping. Check your network, then retry the live session.'**
+  String get assistantLiveReconnectExhausted;
+
   /// No description provided for @assistantLiveRetryAction.
   ///
   /// In en, this message translates to:
@@ -21295,12 +21301,6 @@ abstract class AppLocalizations {
   /// **'Send feedback'**
   String get feedbackTitle;
 
-  /// No description provided for @feedbackPrivate.
-  ///
-  /// In en, this message translates to:
-  /// **'Share product feedback privately with Tuturuuu staff. Do not include passwords or secrets. One optional PNG, JPEG or WebP screenshot, up to 2 MB.'**
-  String get feedbackPrivate;
-
   /// No description provided for @feedbackSubject.
   ///
   /// In en, this message translates to:
@@ -21930,6 +21930,678 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Live delivery is uncertain. Your draft was kept. Check the conversation before resending to avoid duplicates.'**
   String get assistantLiveSendUnknown;
+
+  /// No description provided for @inputPlaceholderAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. 12 Nguyen Hue, District 1'**
+  String get inputPlaceholderAddress;
+
+  /// No description provided for @inputPlaceholderAssistantBoundaries.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Ask before changing or deleting my data'**
+  String get inputPlaceholderAssistantBoundaries;
+
+  /// No description provided for @inputPlaceholderAssistantMemory.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Brief answers'**
+  String get inputPlaceholderAssistantMemory;
+
+  /// No description provided for @inputPlaceholderAssistantName.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Mira'**
+  String get inputPlaceholderAssistantName;
+
+  /// No description provided for @inputPlaceholderAssistantPersonality.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Patient, curious, and practical'**
+  String get inputPlaceholderAssistantPersonality;
+
+  /// No description provided for @inputPlaceholderAssistantTone.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Warm and professional'**
+  String get inputPlaceholderAssistantTone;
+
+  /// No description provided for @inputPlaceholderAssistantVerbosity.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Brief answers with key details'**
+  String get inputPlaceholderAssistantVerbosity;
+
+  /// No description provided for @inputPlaceholderCmsCollectionDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe what this collection contains'**
+  String get inputPlaceholderCmsCollectionDescription;
+
+  /// No description provided for @inputPlaceholderCmsCollectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Product guides'**
+  String get inputPlaceholderCmsCollectionTitle;
+
+  /// No description provided for @inputPlaceholderCmsCollectionType.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. article'**
+  String get inputPlaceholderCmsCollectionType;
+
+  /// No description provided for @inputPlaceholderCmsEntryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Getting started with your workspace'**
+  String get inputPlaceholderCmsEntryTitle;
+
+  /// No description provided for @inputPlaceholderCmsSlug.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. getting-started'**
+  String get inputPlaceholderCmsSlug;
+
+  /// No description provided for @inputPlaceholderCmsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a short line introducing this entry'**
+  String get inputPlaceholderCmsSubtitle;
+
+  /// No description provided for @inputPlaceholderCmsSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Summarize the main points for readers'**
+  String get inputPlaceholderCmsSummary;
+
+  /// No description provided for @inputPlaceholderComment.
+  ///
+  /// In en, this message translates to:
+  /// **'Write your comment here'**
+  String get inputPlaceholderComment;
+
+  /// No description provided for @inputPlaceholderCourseDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe what learners will achieve'**
+  String get inputPlaceholderCourseDescription;
+
+  /// No description provided for @inputPlaceholderCourseName.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Everyday English'**
+  String get inputPlaceholderCourseName;
+
+  /// No description provided for @inputPlaceholderDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to choose a date'**
+  String get inputPlaceholderDate;
+
+  /// No description provided for @inputPlaceholderDays.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. 2'**
+  String get inputPlaceholderDays;
+
+  /// No description provided for @inputPlaceholderDisplayName.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Linh'**
+  String get inputPlaceholderDisplayName;
+
+  /// No description provided for @inputPlaceholderDocumentName.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Weekly planning'**
+  String get inputPlaceholderDocumentName;
+
+  /// No description provided for @inputPlaceholderEmailConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the account email to confirm'**
+  String get inputPlaceholderEmailConfirmation;
+
+  /// No description provided for @inputPlaceholderFeedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe what happened and what could improve'**
+  String get inputPlaceholderFeedback;
+
+  /// No description provided for @inputPlaceholderFieldKey.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. water_intake'**
+  String get inputPlaceholderFieldKey;
+
+  /// No description provided for @inputPlaceholderFieldLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Water intake'**
+  String get inputPlaceholderFieldLabel;
+
+  /// No description provided for @inputPlaceholderFieldUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. ml, km, or minutes'**
+  String get inputPlaceholderFieldUnit;
+
+  /// No description provided for @inputPlaceholderFlashcardBack.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Paris'**
+  String get inputPlaceholderFlashcardBack;
+
+  /// No description provided for @inputPlaceholderFlashcardFront.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. What is the capital of France?'**
+  String get inputPlaceholderFlashcardFront;
+
+  /// No description provided for @inputPlaceholderFullName.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Nguyen Minh Linh'**
+  String get inputPlaceholderFullName;
+
+  /// No description provided for @inputPlaceholderHabitDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe how you will practice this habit'**
+  String get inputPlaceholderHabitDescription;
+
+  /// No description provided for @inputPlaceholderHabitName.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Drink water'**
+  String get inputPlaceholderHabitName;
+
+  /// No description provided for @inputPlaceholderInventoryManufacturer.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Acme'**
+  String get inputPlaceholderInventoryManufacturer;
+
+  /// No description provided for @inputPlaceholderInventoryName.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Office supplies'**
+  String get inputPlaceholderInventoryName;
+
+  /// No description provided for @inputPlaceholderLinkText.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Project handbook'**
+  String get inputPlaceholderLinkText;
+
+  /// No description provided for @inputPlaceholderLinkUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'https://example.com'**
+  String get inputPlaceholderLinkUrl;
+
+  /// No description provided for @inputPlaceholderListingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Handmade notebook'**
+  String get inputPlaceholderListingTitle;
+
+  /// No description provided for @inputPlaceholderMailCalendarUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste a Google Calendar event link'**
+  String get inputPlaceholderMailCalendarUrl;
+
+  /// No description provided for @inputPlaceholderMailDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe which messages belong here'**
+  String get inputPlaceholderMailDescription;
+
+  /// No description provided for @inputPlaceholderMailDraftInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Write a friendly follow-up about our meeting'**
+  String get inputPlaceholderMailDraftInstructions;
+
+  /// No description provided for @inputPlaceholderMailLabelInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Apply to invoices and payment receipts'**
+  String get inputPlaceholderMailLabelInstructions;
+
+  /// No description provided for @inputPlaceholderMailName.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Customer support'**
+  String get inputPlaceholderMailName;
+
+  /// No description provided for @inputPlaceholderMailSubject.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Follow-up on our meeting'**
+  String get inputPlaceholderMailSubject;
+
+  /// No description provided for @inputPlaceholderMeetingName.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Weekly team check-in'**
+  String get inputPlaceholderMeetingName;
+
+  /// No description provided for @inputPlaceholderNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Add details you want to remember'**
+  String get inputPlaceholderNote;
+
+  /// No description provided for @inputPlaceholderPassphrase.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter at least 8 characters'**
+  String get inputPlaceholderPassphrase;
+
+  /// No description provided for @inputPlaceholderPassphraseConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the same passphrase again'**
+  String get inputPlaceholderPassphraseConfirmation;
+
+  /// No description provided for @inputPlaceholderPassphraseUnlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the passphrase for this note'**
+  String get inputPlaceholderPassphraseUnlock;
+
+  /// No description provided for @inputPlaceholderPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Use 12–72 characters'**
+  String get inputPlaceholderPassword;
+
+  /// No description provided for @inputPlaceholderPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. +84 912 345 678'**
+  String get inputPlaceholderPhone;
+
+  /// No description provided for @inputPlaceholderPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a 6-digit PIN'**
+  String get inputPlaceholderPin;
+
+  /// No description provided for @inputPlaceholderPinConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the same 6-digit PIN again'**
+  String get inputPlaceholderPinConfirmation;
+
+  /// No description provided for @inputPlaceholderPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. 150000'**
+  String get inputPlaceholderPrice;
+
+  /// No description provided for @inputPlaceholderQuantity.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. 10'**
+  String get inputPlaceholderQuantity;
+
+  /// No description provided for @inputPlaceholderQuizExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'Explain why this answer is correct or incorrect'**
+  String get inputPlaceholderQuizExplanation;
+
+  /// No description provided for @inputPlaceholderQuizOption.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Paris'**
+  String get inputPlaceholderQuizOption;
+
+  /// No description provided for @inputPlaceholderQuizQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. What is the capital of France?'**
+  String get inputPlaceholderQuizQuestion;
+
+  /// No description provided for @inputPlaceholderQuizSetName.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. World capitals'**
+  String get inputPlaceholderQuizSetName;
+
+  /// No description provided for @inputPlaceholderSaleTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Office supplies order'**
+  String get inputPlaceholderSaleTitle;
+
+  /// No description provided for @inputPlaceholderSharedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit the message you want to share'**
+  String get inputPlaceholderSharedMessage;
+
+  /// No description provided for @inputPlaceholderStorefrontCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. VND'**
+  String get inputPlaceholderStorefrontCurrency;
+
+  /// No description provided for @inputPlaceholderStorefrontDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe what customers can find here'**
+  String get inputPlaceholderStorefrontDescription;
+
+  /// No description provided for @inputPlaceholderStorefrontName.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Linh’s stationery'**
+  String get inputPlaceholderStorefrontName;
+
+  /// No description provided for @inputPlaceholderStorefrontSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by storefront name'**
+  String get inputPlaceholderStorefrontSearch;
+
+  /// No description provided for @inputPlaceholderStorefrontSlug.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. linh-stationery'**
+  String get inputPlaceholderStorefrontSlug;
+
+  /// No description provided for @inputPlaceholderTableCell.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter cell content'**
+  String get inputPlaceholderTableCell;
+
+  /// No description provided for @inputPlaceholderTargetValue.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. 2000'**
+  String get inputPlaceholderTargetValue;
+
+  /// No description provided for @inputPlaceholderTimeDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe what you worked on'**
+  String get inputPlaceholderTimeDescription;
+
+  /// No description provided for @inputPlaceholderTimeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Prepare project proposal'**
+  String get inputPlaceholderTimeTitle;
+
+  /// No description provided for @inputPlaceholderUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Share progress, decisions, or next steps'**
+  String get inputPlaceholderUpdate;
+
+  /// No description provided for @inputPlaceholderUserId.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste the user ID'**
+  String get inputPlaceholderUserId;
+
+  /// No description provided for @inputPlaceholderUsername.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. minh_linh'**
+  String get inputPlaceholderUsername;
+
+  /// No description provided for @inputPlaceholderWorkoutExercise.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Squats'**
+  String get inputPlaceholderWorkoutExercise;
+
+  /// No description provided for @inputPlaceholderWorkoutReps.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. 12'**
+  String get inputPlaceholderWorkoutReps;
+
+  /// No description provided for @inputPlaceholderWorkoutSets.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. 3'**
+  String get inputPlaceholderWorkoutSets;
+
+  /// No description provided for @inputPlaceholderWorkoutWeight.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. 20'**
+  String get inputPlaceholderWorkoutWeight;
+
+  /// No description provided for @mailSenderNamePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Alex Nguyen'**
+  String get mailSenderNamePlaceholder;
+
+  /// No description provided for @mailSignaturePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Best regards,\nAlex Nguyen\nProduct team'**
+  String get mailSignaturePlaceholder;
+
+  /// No description provided for @mailDraftInstructionsPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Keep replies short and friendly. Sign off with my first name.'**
+  String get mailDraftInstructionsPlaceholder;
+
+  /// No description provided for @mailForwardToPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'name@example.com'**
+  String get mailForwardToPlaceholder;
+
+  /// No description provided for @feedbackSubjectPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Calendar doesn\'t sync on Wi-Fi'**
+  String get feedbackSubjectPlaceholder;
+
+  /// No description provided for @feedbackDetailsPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'What happened, what you expected, and the steps to get there.'**
+  String get feedbackDetailsPlaceholder;
+
+  /// No description provided for @settingsWorkspaceCountValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 workspace} other{{count} workspaces}}'**
+  String settingsWorkspaceCountValue(int count);
+
+  /// No description provided for @offlineStoredOnDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Stored on this device'**
+  String get offlineStoredOnDevice;
+
+  /// No description provided for @offlineStorageUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage used'**
+  String get offlineStorageUsed;
+
+  /// No description provided for @offlineQueuedChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No changes waiting to sync} =1{1 change waiting to sync} other{{count} changes waiting to sync}}'**
+  String offlineQueuedChanges(int count);
+
+  /// No description provided for @offlineCollectionSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{items, plural, =1{1 item} other{{items} items}} · {size} · Updated {time}'**
+  String offlineCollectionSummary(int items, String size, String time);
+
+  /// No description provided for @offlineManageData.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage data'**
+  String get offlineManageData;
+
+  /// No description provided for @offlineEvictRowDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Frees space. Data downloads again when you are online.'**
+  String get offlineEvictRowDescription;
+
+  /// No description provided for @offlineTechnicalDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Technical details'**
+  String get offlineTechnicalDetails;
+
+  /// No description provided for @mailSettingsReadingGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading'**
+  String get mailSettingsReadingGroup;
+
+  /// No description provided for @mailSettingsComposeGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Sender and signature'**
+  String get mailSettingsComposeGroup;
+
+  /// No description provided for @mailSettingsAiGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'AI drafts'**
+  String get mailSettingsAiGroup;
+
+  /// No description provided for @mailSettingsDeliveryGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivery and routing'**
+  String get mailSettingsDeliveryGroup;
+
+  /// No description provided for @mailSettingsGroupPermissions.
+  ///
+  /// In en, this message translates to:
+  /// **'Group permissions'**
+  String get mailSettingsGroupPermissions;
+
+  /// No description provided for @mailSettingsOrganizeGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Organize'**
+  String get mailSettingsOrganizeGroup;
+
+  /// No description provided for @mailSenderNameHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Recipients see this name next to your address.'**
+  String get mailSenderNameHelper;
+
+  /// No description provided for @mailSignatureHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Added to the end of new messages and replies.'**
+  String get mailSignatureHelper;
+
+  /// No description provided for @mailAutoDraftDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Prepare reply drafts for you to review before sending.'**
+  String get mailAutoDraftDescription;
+
+  /// No description provided for @mailDraftInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft instructions'**
+  String get mailDraftInstructions;
+
+  /// No description provided for @mailDraftInstructionsHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Tells the assistant how to write your reply drafts.'**
+  String get mailDraftInstructionsHelper;
+
+  /// No description provided for @feedbackIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell us what works and what doesn\'t. Only the Tuturuuu team reads your feedback.'**
+  String get feedbackIntro;
+
+  /// No description provided for @feedbackYourFeedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Your feedback'**
+  String get feedbackYourFeedback;
+
+  /// No description provided for @feedbackDetailsHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Do not include passwords or other secrets.'**
+  String get feedbackDetailsHelper;
+
+  /// No description provided for @feedbackScreenshotGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Screenshot (optional)'**
+  String get feedbackScreenshotGroup;
+
+  /// No description provided for @feedbackAttachDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'PNG, JPEG or WebP, up to 2 MB'**
+  String get feedbackAttachDescription;
+
+  /// No description provided for @workspacePickerCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 workspace} other{{count} workspaces}}'**
+  String workspacePickerCount(int count);
+
+  /// No description provided for @workspacePickerCreateDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Start a new space for a team or project'**
+  String get workspacePickerCreateDescription;
+
+  /// No description provided for @workspacePickerCurrentLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Current workspace'**
+  String get workspacePickerCurrentLabel;
+
+  /// No description provided for @workspacePickerDefaultDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Opens first when you launch the app'**
+  String get workspacePickerDefaultDescription;
+
+  /// No description provided for @workspacePickerEmptyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspaces you create or are invited to appear here.'**
+  String get workspacePickerEmptyMessage;
+
+  /// No description provided for @workspacePickerNoResultsMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Try another name or plan, or clear the search.'**
+  String get workspacePickerNoResultsMessage;
+
+  /// No description provided for @workspacePickerTeamBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Team'**
+  String get workspacePickerTeamBadge;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

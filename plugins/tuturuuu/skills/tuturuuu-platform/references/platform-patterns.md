@@ -6,6 +6,13 @@ shared-package changes.
 
 ## Web And Shared UI
 
+Shared middleware rejections use `@tuturuuu/utils/guard-rejection` to attach a
+fixed scalar reason and a generated correlation ID, expose them alongside
+existing CORS headers, and emit one warning with a fixed route template. Keep
+credentials, request-provided IDs and raw paths out of diagnostics. Preserve
+status/retry/MFA-cookie behavior. See the [guard diagnostics decision](../../../../../apps/docs/platform/features/mobile-workspace-tools.mdx#guard-rejection-diagnostics)
+and its focused regression coverage before adding a reason or changing middleware.
+
 - Calendar provider cron failures retain failed dashboard diagnostics while
   isolating accounts and bounding work. Rejected Google credentials stop siblings
   and become inactive only if storage still matches; transient failures retry.
@@ -91,12 +98,20 @@ shared-package changes.
   `useEffect`.
 - Client/shared UI app API calls should go through `packages/internal-api/src/*`
   helpers instead of scattered raw `fetch('/api/...')` calls.
+- Mounted app adapters register `registerDefaultAppBaseResolver` from
+  `@tuturuuu/internal-api/client` once at startup for helpers without options.
+  Read request-local context inside the callback and return an absolute URL on
+  SSR; never capture an incoming request in the registered closure. Select
+  app-owned routes when the adapter also calls central APIs. See the
+  [bridge resolver contract](../../../../../apps/docs/build/devops/start-bridge.mdx#internal-api-resolver-registration)
+  for browser setup, teardown and regression coverage.
 - Every `fetch` inside a query function should include `{ cache: 'no-store' }`.
 - Use `@tuturuuu/icons`, `@tuturuuu/ui/dialog`, and dynamic design tokens.
   Native browser dialogs, emojis in UI code, and hard-coded hue classes are not
   acceptable.
 - Operational status surfaces use `@tuturuuu/ui/custom/ops` (`StatusPill`,
-  `StatTile`, `ResourceMeter`, `StatePanel`, `OpsSection`, `OpsPageHeader`) and
+  `StatTile`, `ResourceMeter`, `StatePanel`, `OpsSection`, `OpsPageHeader`,
+  `LogLines`) and
   the `OpsTone` vocabulary instead of app-local tone maps. `unknown` is not
   `neutral`: stale or missing telemetry and unreachable workers render as
   unknown, never as zero or healthy. `OpsPageHeader` shares FeatureSummary's
@@ -1228,3 +1243,7 @@ extensions. Use the real installed SDK and a synthetic fetch transport to
 assert the once-decoded request pathname and empty URL search/hash, including
 `%41`, `?`, `#`, and Vietnamese NFC/NFD names. See the object key transport
 section in [storage egress protection](../../../../../apps/docs/build/devops/storage-egress-protection.mdx).
+
+## Standalone API foundation
+
+For the explicitly authorized `apps/api` Worker migration, use the [standalone API runbook](../../../../../apps/docs/build/devops/standalone-api.mdx). Domain operations register through one policy/schema pipeline. Protected operations fail closed until the concrete Web guard and principal adapter is verified; retained Next routes keep their existing guards. Do not import Node-only graphs or treat generated inventory as runtime acceptance.
