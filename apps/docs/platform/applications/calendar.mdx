@@ -453,9 +453,9 @@ requests. Nobody repairs a rejected credential by hand.
   provider's Reconnect action. The owner also gets at most one
   `account_update` notification per quarantine (code
   `calendar_reconnect_required`), delivered through their notification
-  preferences (web, email and push); breaker holds send none. Web and the
-  Calendar and Tasks popovers render it in English or Vietnamese by code; email,
-  push, mobile and apps without the keys show the stored English text.
+  preferences (web, email and push); breaker holds send none. Web and every
+  app that ships the shared notification popover render it in English or
+  Vietnamese by code; email, push and mobile show the stored English text.
 - **Reconnect.** A successful reconnect updates the same row, reactivates it and
   clears both quarantine fields in one statement. While any of the user's
   Google rows in the workspace is quarantined, every Google connect there shows
