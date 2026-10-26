@@ -117,6 +117,8 @@ export const ci = {
   'mobile-build-linux.yaml': true,
   'track-cloudflare.yaml': true,
   'cms-cloudflare.yaml': true,
+  'storefront-cloudflare.yaml': true,
+  'ai-cloudflare.yaml': true,
   'nova-cloudflare.yaml': true,
   'inventory-cloudflare.yaml': true,
 };

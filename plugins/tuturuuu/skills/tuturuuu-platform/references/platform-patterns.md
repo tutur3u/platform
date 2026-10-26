@@ -6,6 +6,13 @@ shared-package changes.
 
 ## Web And Shared UI
 
+Shared middleware rejections use `@tuturuuu/utils/guard-rejection` to attach a
+fixed scalar reason and a generated correlation ID, expose them alongside
+existing CORS headers, and emit one warning with a fixed route template. Keep
+credentials, request-provided IDs and raw paths out of diagnostics. Preserve
+status/retry/MFA-cookie behavior. See the [guard diagnostics decision](../../../../../apps/docs/platform/features/mobile-workspace-tools.mdx#guard-rejection-diagnostics)
+and its focused regression coverage before adding a reason or changing middleware.
+
 - Native satellites consume shared `@tuturuuu/start-bridge` adapters; app configs
   own hosts and SEO/security headers. Preserve forwarded WebGL sandbox CSP without
   handler-level CSP. Limit asset caching to GET/HEAD paths; keep config imports strippable.
