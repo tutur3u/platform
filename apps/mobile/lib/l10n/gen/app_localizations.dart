@@ -1735,6 +1735,12 @@ abstract class AppLocalizations {
   /// **'{size} MiB'**
   String assistantLocalSize(int size);
 
+  /// No description provided for @assistantLocalSourceEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Download a model below'**
+  String get assistantLocalSourceEmpty;
+
   /// No description provided for @assistantLocalStop.
   ///
   /// In en, this message translates to:
@@ -1914,6 +1920,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Output'**
   String get assistantModelOutputCost;
+
+  /// No description provided for @assistantModelSourceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Model source'**
+  String get assistantModelSourceTitle;
 
   /// No description provided for @assistantModelUnfavorite.
   ///
