@@ -18,10 +18,12 @@ import 'package:mobile/core/observability/mobile_observability.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
 import 'package:mobile/core/ui/icons/lucide_licenses.dart';
+import 'package:mobile/data/repositories/auth_repository.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:mobile/features/assistant/local/assistant_model_downloads.dart';
 import 'package:mobile/features/notifications/push/push_background_handler.dart';
+import 'package:mobile/features/settings/cubit/appearance_resolution.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class AppBlocObserver extends BlocObserver {
@@ -75,15 +77,6 @@ Future<void> bootstrap(
     log('Failed to load theme mode, defaulting to system: $e', stackTrace: st);
     initialThemeMode = shad.ThemeMode.system;
   }
-  AppearanceSettings initialAppearance;
-  try {
-    initialAppearance = AppearanceSettings.decode(
-      await settingsRepository.getAppearance(),
-    );
-  } on Object catch (e, st) {
-    log('Failed to load appearance, using default: $e', stackTrace: st);
-    initialAppearance = const AppearanceSettings();
-  }
   final resolvedBrightness = AppTheme.resolveBrightness(
     initialThemeMode,
     WidgetsBinding.instance.platformDispatcher.platformBrightness,
@@ -124,6 +117,18 @@ Future<void> bootstrap(
     log('Failed to initialize Supabase: $e', stackTrace: st);
   }
 
+  // Resolved after Supabase so the first frame shows the account's look.
+  AppearanceSettings initialAppearance;
+  try {
+    initialAppearance = (await StoredAppearance.read(
+      settingsRepository,
+      userId: _currentUserIdOrNull(),
+    )).resolved;
+  } on Object catch (e, st) {
+    log('Failed to load appearance, using default: $e', stackTrace: st);
+    initialAppearance = const AppearanceSettings();
+  }
+
   try {
     await CacheStore.instance.init();
     await OfflineMutationQueue.instance.init();
@@ -159,5 +164,19 @@ shad.ThemeMode _parseThemeMode(String mode) {
     case 'system':
     default:
       return shad.ThemeMode.system;
+  }
+}
+
+/// The signed-in user whose appearance shows at launch. Like the app, an
+/// account still awaiting MFA counts as signed out.
+String? _currentUserIdOrNull() {
+  try {
+    final auth = AuthRepository(supabaseClient: supabase);
+    final user = auth.getCurrentUserSync();
+    if (user == null || auth.checkMfaRequired()) return null;
+    return user.id;
+  } on Object {
+    // Supabase failed to initialize; start signed out.
+    return null;
   }
 }

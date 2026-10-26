@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
+import 'package:mobile/core/ui/tokens/app_interface_tokens.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// Localised names for appearance options.
@@ -39,5 +40,22 @@ extension AppearanceLabels on AppLocalizations {
     ThemeMode.system => settingsThemeSystem,
     ThemeMode.light => settingsThemeLight,
     ThemeMode.dark => settingsThemeDark,
+  };
+
+  String appearanceStyle(AppInterfaceStyle style) => switch (style) {
+    AppInterfaceStyle.tuturuuu => appearanceStyleTuturuuu,
+    AppInterfaceStyle.ios => appearanceStyleIos,
+    AppInterfaceStyle.material => appearanceStyleMaterial,
+  };
+
+  String appearanceDensity(AppDensity density) => switch (density) {
+    AppDensity.comfortable => appearanceDensityComfortable,
+    AppDensity.compact => appearanceDensityCompact,
+  };
+
+  String appearanceCorners(AppCornerStyle corners) => switch (corners) {
+    AppCornerStyle.rounded => appearanceCornersRounded,
+    AppCornerStyle.soft => appearanceCornersSoft,
+    AppCornerStyle.square => appearanceCornersSquare,
   };
 }

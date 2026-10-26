@@ -46,6 +46,7 @@ function resolveFixtureTargets({
   workflowMarkers,
   platformEnabled,
   includeEvidence = false,
+  publicationPolicy,
 }) {
   const output = execFileSync(
     'bun',
@@ -54,6 +55,9 @@ function resolveFixtureTargets({
       `
         import { resolveProductionVercelTargets } from './scripts/ci/resolve-production-vercel-targets.ts';
         import { ci } from './tuturuuu.ts';
+        import { productionPublicationPolicy } from './tuturuuu.ci.ts';
+        const publicationPolicy = ${JSON.stringify(publicationPolicy)};
+        if (publicationPolicy) Object.assign(productionPublicationPolicy, publicationPolicy);
         if (${JSON.stringify(platformEnabled)} !== undefined) {
           ci['vercel-production-platform.yaml'] = ${JSON.stringify(platformEnabled)};
         }
@@ -581,6 +585,12 @@ for (const eventName of ['push', 'workflow_dispatch']) {
       rootDir,
       eventName,
       targets: workflows.map((productionWorkflow) => ({ productionWorkflow })),
+      publicationPolicy: Object.fromEntries(
+        ['meet', 'calendar', 'mail', 'apps', 'shortener'].map((app) => [
+          app,
+          { state: 'held', reason: 'held for wave-1 cutover' },
+        ])
+      ),
       includeEvidence: true,
     });
     assert.equal(decisions.length, workflows.length);

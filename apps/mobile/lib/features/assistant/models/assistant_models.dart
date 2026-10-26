@@ -7,8 +7,11 @@ import 'dart:convert';
 import 'package:equatable/equatable.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:mobile/core/validation/uuid.dart';
+import 'package:mobile/features/assistant/models/assistant_attachment_failure.dart';
 import 'package:mobile/features/assistant/models/assistant_file_mime.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
+
+export 'assistant_attachment_failure.dart';
 
 part 'assistant_message.dart';
 part 'assistant_conversation_settings.dart';
@@ -415,6 +418,8 @@ class AssistantAttachment extends Equatable {
     this.storagePath,
     this.signedUrl,
     this.uploadState = AssistantAttachmentUploadState.pending,
+    this.uploadProgress,
+    this.failure,
   });
 
   final String id;
@@ -426,6 +431,10 @@ class AssistantAttachment extends Equatable {
   final String? storagePath;
   final String? signedUrl;
   final AssistantAttachmentUploadState uploadState;
+
+  /// Transient composer state, never persisted: null while preparing.
+  final double? uploadProgress;
+  final AssistantAttachmentFailure? failure;
 
   bool get isImage => type.startsWith('image/');
   bool get isUploaded =>
@@ -442,6 +451,8 @@ class AssistantAttachment extends Equatable {
     String? storagePath,
     String? signedUrl,
     AssistantAttachmentUploadState? uploadState,
+    double? uploadProgress,
+    AssistantAttachmentFailure? failure,
   }) {
     return AssistantAttachment(
       id: id ?? this.id,
@@ -453,6 +464,8 @@ class AssistantAttachment extends Equatable {
       storagePath: storagePath ?? this.storagePath,
       signedUrl: signedUrl ?? this.signedUrl,
       uploadState: uploadState ?? this.uploadState,
+      uploadProgress: uploadProgress ?? this.uploadProgress,
+      failure: failure ?? this.failure,
     );
   }
 
@@ -506,6 +519,8 @@ class AssistantAttachment extends Equatable {
     storagePath,
     signedUrl,
     uploadState,
+    uploadProgress,
+    failure,
   ];
 }
 

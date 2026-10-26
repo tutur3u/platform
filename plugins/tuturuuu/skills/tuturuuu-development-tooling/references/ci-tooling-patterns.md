@@ -542,7 +542,8 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   `secrets.RELEASE_PLEASE_TOKEN || github.token`; the bot token is still needed
   for generated PRs and releases to trigger downstream workflows.
 - `RELEASE_PLEASE_TOKEN` must be a PAT (`repo` + `workflow`) owned by an
-  organization admin. Ruleset `Protected branches` covers `main` and
+  organization admin, stored only in the branch-restricted `release-please`
+  environment (`main` + `production`) that both release jobs declare. Ruleset `Protected branches` covers `main` and
   `production` with only `OrganizationAdmin` as a bypass actor, so a run that
   falls back to `github.token` merges fine and then dies on
   `GH013: Changes must be made through a pull request`. Do not "fix" this by
@@ -736,8 +737,10 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   Required checks need a job-level `check-ci` skip instead. Moving PR CI to
   self-hosted fleet runners is a follow-up and is not adopted. See the
   [runbook](../../../../../apps/docs/build/devops/github-actions-runbook.mdx#hosted-runner-reservation-and-pr-queue-pressure).
-- Heavy PR jobs require the `ready-for-ci` label. Add it only when the PR is
-  ready to merge (`gh pr edit <n> --add-label ready-for-ci`). An exact-head local
+- Lanes push once after exact-head local gates pass. Batch review fixes rather
+  than pushing many small commits during review loops. Heavy PR jobs require
+  `ready-for-ci`; add it only after independent review APPROVES and the PR is
+  merge-ready (`gh pr edit <n> --add-label ready-for-ci`). An exact-head local
   pass still counts as green under the speed grant. A new push to a labelled PR
   reruns CI and supersedes the old run. Retrigger without a push by removing and
   re-adding the label; `gh run rerun` replays the original event, so a
@@ -1233,6 +1236,12 @@ Never delete consumption history to renew admission or infer retry permission fr
 missing local receipt or inactive version. Reconcile listed versions by detail SHA/tag and retain unresolved attempts.
 The [publisher runbook](../../../../../apps/docs/build/devops/wave1-native-publishers.mdx)
 owns the schema, bounded operation counts, residual account risk and recovery.
+For private production preparation, keep the read token confined to preflight and
+post-upload verification, and the deploy token confined to the upload step. Check
+replay history per app across source SHAs and attempts; an accepted receipt must
+match the current rollback baseline before it closes older history. A skipped
+upload after read-only refusal is retryable; an unknown write is not. Follow the
+runbook's original-run reconciliation procedure rather than clearing history.
 Run `wave1-native-publication.test.js` for the real entrypoint transport tests and
 its final-fence removal negative control, alongside publisher/policy/credential
 and workflow suites. Source-only tests do not establish hosted token permissions

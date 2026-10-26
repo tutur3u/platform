@@ -103,8 +103,8 @@ void _homeRenderCases() {
         expect(find.text('Send the Q4 venue shortlist'), findsOneWidget);
         expect(find.text('Design sync'), findsOneWidget);
         final cards = find.byType(AppGroupedCard);
-        // Tasks, events and today's summary.
-        expect(cards, findsNWidgets(3));
+        // Today, Up next, Calendar and today's summary.
+        expect(cards, findsNWidgets(4));
         final lefts = {
           for (final element in cards.evaluate())
             tester.getTopLeft(find.byWidget(element.widget)).dx,
@@ -120,10 +120,16 @@ void _homeRenderCases() {
           // Tablets and desktops lay the widgets out in columns.
           expect(lefts.length, greaterThan(1));
         }
-        final switcher = tester.getSize(
-          find.byKey(const ValueKey('home-workspace-switcher')),
-        );
-        expect(switcher.height, greaterThanOrEqualTo(44));
+        for (final key in [
+          'home-workspace-chip-${renderWorkspace.id}',
+          'home-workspace-chip-more',
+        ]) {
+          expect(
+            tester.getSize(find.byKey(ValueKey(key))).height,
+            greaterThanOrEqualTo(44),
+            reason: key,
+          );
+        }
         await _capture(tester, 'home-${size.key}-${look.key}');
         expect(tester.takeException(), isNull);
       });
@@ -167,7 +173,8 @@ void _homeRenderCases() {
         ),
       );
 
-      expect(find.byType(AppSkeletonRows), findsOneWidget);
+      // Today and Up next both wait on the task load.
+      expect(find.byType(AppSkeletonRows), findsNWidgets(2));
       expect(find.text('Pull down to try again.'), findsOneWidget);
       await _capture(tester, 'home-phone-$look-states');
       expect(tester.takeException(), isNull);
@@ -218,10 +225,7 @@ void _homeRenderCases() {
       ),
     );
 
-    for (final label in [
-      'Current workspace: Northwind Studio',
-      'Open My tasks',
-    ]) {
+    for (final label in ['More', 'See all Today']) {
       final data = tester
           .getSemantics(find.bySemanticsLabel(label))
           .getSemanticsData();
@@ -229,17 +233,15 @@ void _homeRenderCases() {
       expect(data.flagsCollection.isButton, isTrue, reason: label);
     }
 
-    // Screen-reader activation (not a pointer tap) opens the picker...
-    tester.semantics.tap(
-      find.semantics.byLabel('Current workspace: Northwind Studio'),
-    );
+    // Screen-reader activation (not a pointer tap) opens the More menu...
+    tester.semantics.tap(find.semantics.byLabel('More'));
     await settleShell(tester);
     expect(find.byType(AppSheetScaffold), findsOneWidget);
     Navigator.of(tester.element(find.byType(AppSheetScaffold))).pop();
     await settleShell(tester);
 
     // ...and the section link navigates.
-    tester.semantics.tap(find.semantics.byLabel('Open My tasks'));
+    tester.semantics.tap(find.semantics.byLabel('See all Today'));
     await settleShell(tester);
     expect(router.routerDelegate.currentConfiguration.uri.path, Routes.tasks);
     expect(tester.takeException(), isNull);

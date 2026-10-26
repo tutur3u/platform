@@ -132,3 +132,102 @@ It must not insert that same membership a second time.
 Shared phase/settings, pause/resume/skip, deadline reconciliation, cross-client
 realtime and background notification behavior remain separate prerequisites.
 This unwired boundary provides no all-clients-closed completion or device proof.
+
+## Device Pomodoro
+
+The Timer tab has a Pomodoro panel. **Start focus** begins a focus phase for
+the timer's current title and linked task. Start focus on a board task row
+does the same for that task.
+
+- **Sessions.** A focus phase is an ordinary time-tracking session started,
+  paused, resumed and stopped through the existing tracker API. Breaks are not
+  tracked work.
+- **Lengths.** Phase lengths, the long-break cycle and the auto-start choices
+  come from the existing Pomodoro settings in Settings > Apps > Timer.
+- **Waiting phases.** A phase that does not auto-start waits, and **Start
+  focus** or **Resume** begins it. A waiting focus phase starts its session
+  only then.
+- **Controls.** Pause, Resume, Skip and Stop act on the current phase. Stop
+  closes a focus phase's session.
+- **Phase-end notification.** The end of a running phase schedules one local
+  notification, which opens the Timer. A newer phase replaces it, and pausing
+  or stopping cancels it. If notifications are turned off, the in-app
+  countdown still ends the phase.
+- **Single device.** The countdown, deadline and cycle position are stored on
+  this device for the signed-in account. Another account's stored Pomodoro is
+  discarded at sign-in, and other devices and the web do not see the phase.
+  No migration is involved.
+- **Missed phase ends.** A phase that ended more than a minute ago (the app
+  was asleep or closed, or a timer fired late) ended unattended. Unattended
+  phases end when the app opens or resumes; the phase timer, restore and
+  resume all go through one serialized reconcile. Focus never auto-starts
+  after an unattended end, so no session is created for time nobody was
+  there for. A focus session that does start counts its deadline from its
+  real start. A late-stopped session is trimmed back to the phase deadline
+  only when that deadline is after the session's start, and only when the
+  workspace's edit rules allow it.
+- **The real session.** Before ending, pausing, resuming or stopping a focus
+  phase, the app re-reads the tracker. Pausing and resuming on the main Timer
+  issues a new session id that the server links only to the session right
+  before it, so the app stores each new id it finds and follows that chain
+  (it also does so on every reconcile).
+- **Which session belongs to the phase.** A session is the phase's when it
+  has the stored id or was resumed from it. A session for the phase's task
+  also counts, but only if it started while the phase was running. The phase
+  records each run, from each start or resume to the next pause, so a
+  session started during a pause is never claimed. A session the user starts
+  by hand after the phase ended or paused is never stopped, trimmed or
+  adopted. The app never stops a stale id or an unrelated session.
+- **Resuming with another timer running.** Resume will not start a session
+  while an unrelated one runs, because the server would close the user's
+  timer. It explains instead.
+- **Stop.** Stop clears the device Pomodoro first, then stops the phase's
+  session. A session already stopped elsewhere counts as stopped, so the
+  Pomodoro can never get stuck.
+- **Replacing a session.** Pomodoro **Start focus** asks before replacing a
+  running or paused session, as Start focus on a task row does. A paused one
+  is stopped first (closing its break) and put back if the start fails.
+- **Starting a phase.** The whole start runs under the Pomodoro's lock, so a
+  phase end cannot interleave. Settings load before any session changes,
+  and a failure afterwards ends the new session and puts the replaced one
+  back, so no orphan session is left. If the new session cannot be stopped
+  again, the start reports that it may still be running instead of failing
+  quietly; a failed restore keeps the original error.
+
+Every focus session the Pomodoro starts carries the `pomodoro` tag. This
+includes Start focus on a task row. The session API accepts `tags`: lowercase
+slugs, at most 10, stored in the existing `tags` column.
+
+**Focus Time** on the You tab is all tracked time linked to a task
+(`task_id` set), Pomodoro or not (decided 2026-10-26). The stats endpoint takes two optional
+filters: `taskLinked=true` (Focus Time) and `tag` (for example `pomodoro`,
+kept as a capability). With either, it computes today, the week from Monday,
+the month, daily activity and the streak from the matching sessions, in the
+user's timezone. This is done in TypeScript, so the stats database function
+is unchanged and there is no migration. One difference from the unfiltered
+stats: a session counts on the local day it started. The Timer's own
+statistics still count all tracked time.
+
+Shared, cross-device phases need the database contract flagged in the native
+pass plan (phase 7, a draft PR).
+
+Regression coverage: `pomodoro_controller_test.dart` runs against a fake
+tracker that behaves like the server. It covers:
+
+- a sleep across many cycles with both auto-starts on, and late timers;
+- focus deadlines counted from the real start;
+- no trimming before a session's start;
+- stale and unrelated sessions, resume chains of several cycles, and manual
+  sessions after a phase ends or pauses;
+- `startFocus` concurrent with a phase end, and settings that fail to load;
+- stop when the session ended elsewhere;
+- paused replacement;
+- concurrent restores and account isolation;
+- the on-time natural end.
+`pomodoro_panel_test.dart` covers the panel flow and 320dp at 2x text.
+`task_board_row_actions_flows_test.dart` covers Start focus. Widget tests do
+not establish notification delivery or timing on devices.
+
+
+`pomodoro_waiting_focus_test.dart` verifies that a waiting or automatic focus phase
+leaves an unrelated running timer intact.

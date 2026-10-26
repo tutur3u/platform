@@ -333,6 +333,42 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantAttachmentUploadFailed => 'Không tải được tệp đính kèm. Hãy xóa tệp và thử lại trước khi gửi.';
 
   @override
+  String get assistantAttachmentFailureForbidden => 'Cuộc trò chuyện này không nhận tệp đính kèm. Hãy xóa tệp hoặc bắt đầu cuộc trò chuyện mới.';
+
+  @override
+  String get assistantAttachmentFailureNetwork => 'Tải lên bị gián đoạn. Kiểm tra kết nối rồi nhấn Thử lại.';
+
+  @override
+  String get assistantAttachmentFailureServer => 'Tải lên chưa hoàn tất. Nhấn Thử lại.';
+
+  @override
+  String get assistantAttachmentFailureTooLarge => 'Tệp lớn hơn 32 MB. Hãy xóa tệp hoặc đính kèm tệp nhỏ hơn.';
+
+  @override
+  String get assistantAttachmentFailureUnsupported => 'Không hỗ trợ loại tệp này. Hãy xóa tệp để gửi.';
+
+  @override
+  String assistantAttachmentNotSentMany(int count) {
+    return '$count tệp đính kèm chưa tải lên. Thử lại hoặc xóa chúng để gửi.';
+  }
+
+  @override
+  String assistantAttachmentNotSentOne(String name, String reason) {
+    return '$name chưa tải lên. $reason';
+  }
+
+  @override
+  String get assistantAttachmentPreparing => 'Đang chuẩn bị';
+
+  @override
+  String get assistantAttachmentRetry => 'Thử lại';
+
+  @override
+  String assistantAttachmentUploadingPercent(int percent) {
+    return '$percent%';
+  }
+
+  @override
   String get assistantAttachmentUploadPending => 'Hãy đợi tải tệp lên xong rồi gửi.';
 
   @override
@@ -996,7 +1032,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantSaveAction => 'Lưu';
 
   @override
-  String get assistantScrollToBottomAction => 'Cuộn xuống cuối';
+  String get assistantScrollToBottomAction => 'Tới tin mới nhất';
 
   @override
   String get assistantSearchModels => 'Tìm mô hình';
@@ -2134,6 +2170,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get commonSave => 'Lưu';
+
+  @override
+  String get commonSearch => 'Tìm kiếm';
 
   @override
   String get commonSelectDate => 'Chọn ngày';
@@ -4247,6 +4286,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get habitsWorkoutWeight => 'Mức tạ';
 
   @override
+  String get homeCalendarEmpty => 'Không có sự kiện trong tuần này.';
+
+  @override
   String get homeCustomize => 'Tùy chỉnh Trang chủ';
 
   @override
@@ -4286,10 +4328,61 @@ class AppLocalizationsVi extends AppLocalizations {
   String get homePersonalAgendaUnavailable => 'Lịch cá nhân hiện không khả dụng.';
 
   @override
+  String get homeSectionCalendar => 'Lịch';
+
+  @override
   String get homeSectionLoadFailed => 'Kéo xuống để thử lại.';
 
   @override
+  String get homeSectionToday => 'Hôm nay';
+
+  @override
+  String get homeSectionUpNext => 'Sắp tới';
+
+  @override
+  String get homeSeeAll => 'Xem tất cả';
+
+  @override
   String get homeShowWidget => 'Hiện tiện ích';
+
+  @override
+  String get homeTodayEmpty => 'Không có việc đến hạn hôm nay.';
+
+  @override
+  String get homeUpNextEmpty => 'Chưa có việc sắp tới.';
+
+  @override
+  String get homeWidgetTasks => 'Hôm nay và Sắp tới';
+
+  @override
+  String get homeWorkspaceChipsLabel => 'Không gian làm việc';
+
+  @override
+  String get homeWorkspaceEditPins => 'Sửa không gian làm việc đã ghim';
+
+  @override
+  String get homeWorkspaceFind => 'Tìm không gian làm việc';
+
+  @override
+  String get homeWorkspaceMore => 'Thêm';
+
+  @override
+  String get homeWorkspaceNew => 'Không gian làm việc mới';
+
+  @override
+  String get homeWorkspacePin => 'Ghim vào Trang chủ';
+
+  @override
+  String get homeWorkspacePinsDescription => 'Không gian làm việc đã ghim hiển thị dạng thẻ trên Trang chủ.';
+
+  @override
+  String get homeWorkspacePinsFailed => 'Không thể lưu không gian làm việc đã ghim.';
+
+  @override
+  String get homeWorkspacePinsTitle => 'Không gian làm việc đã ghim';
+
+  @override
+  String get homeWorkspaceUnpin => 'Bỏ ghim khỏi Trang chủ';
 
   @override
   String get inventoryAddCategory => 'Thêm danh mục';
@@ -6006,6 +6099,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get navHome => 'Trang chủ';
 
   @override
+  String get navInbox => 'Hộp thư';
+
+  @override
+  String get navMira => 'Mira';
+
+  @override
   String get navMore => 'Thêm';
 
   @override
@@ -6016,6 +6115,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get navTimer => 'Bấm giờ';
+
+  @override
+  String get navYou => 'Bạn';
 
   @override
   String get notesArchive => 'Lưu trữ ghi chú';
@@ -6756,6 +6858,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get profileEmailUpdateNote => 'Email xác nhận sẽ được gửi đến cả hai địa chỉ';
 
   @override
+  String get profileFocusTime => 'Thời gian tập trung';
+
+  @override
   String get profileFullName => 'Tên đầy đủ';
 
   @override
@@ -7261,6 +7366,39 @@ class AppLocalizationsVi extends AppLocalizations {
   String get appearanceBackgroundTitle => 'Nền';
 
   @override
+  String get appearanceCornersRounded => 'Bo tròn';
+
+  @override
+  String get appearanceCornersSoft => 'Bo nhẹ';
+
+  @override
+  String get appearanceCornersSquare => 'Vuông';
+
+  @override
+  String get appearanceCornersTitle => 'Góc bo';
+
+  @override
+  String get appearanceDensityComfortable => 'Thoải mái';
+
+  @override
+  String get appearanceDensityCompact => 'Gọn';
+
+  @override
+  String get appearanceDensityTitle => 'Mật độ';
+
+  @override
+  String get appearanceDeviceOverride => 'Dùng giao diện riêng trên thiết bị này';
+
+  @override
+  String get appearanceDeviceOverrideDescription => 'Thay đổi tại đây chỉ áp dụng cho thiết bị này, không đồng bộ với tài khoản.';
+
+  @override
+  String get appearanceFeedbackTitle => 'Phản hồi và chuyển động';
+
+  @override
+  String get appearanceHapticsDescription => 'Rung nhẹ khi bạn chọn, vuốt hoặc xác nhận.';
+
+  @override
   String get appearanceIntensity => 'Cường độ';
 
   @override
@@ -7273,6 +7411,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get appearancePreviewTitle => 'Xem trước';
 
   @override
+  String get appearanceReduceMotion => 'Giảm chuyển động';
+
+  @override
+  String get appearanceReduceMotionDescription => 'Luôn giảm hiệu ứng chuyển động, kể cả khi cài đặt hệ thống đang tắt.';
+
+  @override
   String get appearanceReset => 'Khôi phục mặc định';
 
   @override
@@ -7280,6 +7424,21 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get appearanceSoftness => 'Độ mềm';
+
+  @override
+  String get appearanceStyleDescription => 'Thay đổi cách trang chuyển và danh sách cuộn. Màu sắc và bố cục giữ nguyên trên mọi thiết bị.';
+
+  @override
+  String get appearanceStyleIos => 'Kiểu iOS';
+
+  @override
+  String get appearanceStyleMaterial => 'Kiểu Material';
+
+  @override
+  String get appearanceStyleTitle => 'Phong cách';
+
+  @override
+  String get appearanceStyleTuturuuu => 'Tuturuuu';
 
   @override
   String get appearanceSurfaceOpacity => 'Độ đục của thẻ';
@@ -8552,6 +8711,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailColorYellow => 'Vàng';
 
   @override
+  String get taskBoardDetailCompleteTask => 'Hoàn thành';
+
+  @override
   String get taskBoardDetailCreateList => 'Tạo danh sách';
 
   @override
@@ -8628,6 +8790,9 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String get taskBoardDetailDueDateUpdated => 'Đã cập nhật hạn chót.';
+
+  @override
   String get taskBoardDetailEditList => 'Chỉnh sửa danh sách';
 
   @override
@@ -8668,6 +8833,36 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get taskBoardDetailFiltersActive => 'Bộ lọc đang bật';
+
+  @override
+  String get taskBoardDetailFocusReplaceConfirm => 'Dừng và bắt đầu';
+
+  @override
+  String get taskBoardDetailFocusReplaceMessage => 'Một bộ bấm giờ đang chạy. Bắt đầu tập trung sẽ dừng nó và bắt đầu một phiên mới cho công việc này.';
+
+  @override
+  String get taskBoardDetailFocusReplacePausedMessage => 'Một bộ bấm giờ đang tạm dừng. Bắt đầu tập trung sẽ kết thúc nó và bắt đầu một phiên mới cho công việc này.';
+
+  @override
+  String get taskBoardDetailFocusReplacePausedTitle => 'Kết thúc bộ bấm giờ đang tạm dừng?';
+
+  @override
+  String get taskBoardDetailFocusReplaceTitle => 'Dừng bộ bấm giờ đang chạy?';
+
+  @override
+  String get taskBoardDetailFocusStartFailedPausedEnded => 'Không thể bắt đầu tập trung và bộ bấm giờ đang tạm dừng đã kết thúc. Mở bộ bấm giờ để tiếp tục.';
+
+  @override
+  String get taskBoardDetailFocusStartFailedRestored => 'Không thể bắt đầu tập trung. Bộ bấm giờ đang tạm dừng đã được giữ nguyên.';
+
+  @override
+  String get taskBoardDetailFocusStartFailedRunning => 'Không thể bắt đầu tập trung. Bộ bấm giờ trước đó đang chạy lại.';
+
+  @override
+  String get taskBoardDetailFocusStartFailedUnknown => 'Không thể bắt đầu tập trung và không xác nhận được trạng thái của bộ bấm giờ trước đó. Mở bộ bấm giờ để kiểm tra.';
+
+  @override
+  String get taskBoardDetailFocusStarted => 'Đã bắt đầu bấm giờ cho công việc này.';
 
   @override
   String taskBoardDetailFromList(String list) {
@@ -8801,6 +8996,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailOpenRelatedTask => 'Mở công việc liên quan';
 
   @override
+  String get taskBoardDetailOpenTimer => 'Mở bộ bấm giờ';
+
+  @override
   String get taskBoardDetailOverdue => 'Quá hạn';
 
   @override
@@ -8875,9 +9073,15 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailRenameList => 'Đổi tên danh sách';
 
   @override
+  String get taskBoardDetailReopenTask => 'Mở lại';
+
+  @override
   String taskBoardDetailRestoreTasks(int count) {
     return 'Khôi phục ($count)';
   }
+
+  @override
+  String get taskBoardDetailScheduleTask => 'Lên lịch';
 
   @override
   String get taskBoardDetailSearchDone => 'Xong';
@@ -8913,6 +9117,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get taskBoardDetailSetEstimation => 'Đặt điểm ước lượng';
+
+  @override
+  String get taskBoardDetailStartFocus => 'Bắt đầu tập trung';
 
   @override
   String taskBoardDetailStartsAt(String date) {
@@ -9070,6 +9277,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get taskBoardDetailTaskLabels => 'Nhãn';
+
+  @override
+  String get taskBoardDetailTaskList => 'Danh sách';
 
   @override
   String get taskBoardDetailTaskListLabel => 'Danh sách';
@@ -10280,10 +10490,49 @@ class AppLocalizationsVi extends AppLocalizations {
   String get timerPomodoro => 'Pomodoro';
 
   @override
+  String get timerPomodoroBreakDoneBody => 'Sẵn sàng cho lượt tập trung tiếp theo?';
+
+  @override
+  String get timerPomodoroBreakDoneTitle => 'Hết giờ nghỉ';
+
+  @override
+  String timerPomodoroCycle(int current, int total) {
+    return 'Lượt tập trung $current/$total';
+  }
+
+  @override
+  String get timerPomodoroFocusDoneBody => 'Đến giờ nghỉ rồi.';
+
+  @override
+  String get timerPomodoroFocusDoneTitle => 'Đã xong lượt tập trung';
+
+  @override
+  String get timerPomodoroOrphanedSession => 'Không thể bắt đầu tập trung và một bộ bấm giờ vừa tạo có thể vẫn đang chạy. Hãy kiểm tra trang Bấm giờ.';
+
+  @override
+  String get timerPomodoroOtherRunning => 'Một bộ bấm giờ khác đang chạy. Dừng nó ở trang Bấm giờ để tiếp tục lượt tập trung này.';
+
+  @override
+  String timerPomodoroRemaining(String minutes, String seconds) {
+    return 'Còn $minutes:$seconds';
+  }
+
+  @override
   String get timerPomodoroSettings => 'Cài đặt Pomodoro';
 
   @override
   String get timerPomodoroSettingsDescription => 'Điều chỉnh thời gian tập trung, thời gian nghỉ và tự động chuyển giữa các phiên.';
+
+  @override
+  String get timerPomodoroSkip => 'Bỏ qua';
+
+  @override
+  String get timerPomodoroStart => 'Bắt đầu tập trung';
+
+  @override
+  String timerPomodoroSummary(int focus, int rest) {
+    return '$focus phút tập trung · $rest phút nghỉ';
+  }
 
   @override
   String get timerProofOfWorkRequired => 'Cần ít nhất một ảnh minh chứng.';
@@ -11344,6 +11593,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get profileMediaSet => 'Đã đặt';
+
+  @override
+  String get profileYouWorkspaces => 'Không gian làm việc';
 
   @override
   String get assistantSubmitSuccess => 'Đã gửi thành công';
