@@ -130,10 +130,26 @@ does the same for that task.
   this device for the signed-in account. Another account's stored Pomodoro is
   discarded at sign-in, and other devices and the web do not see the phase.
   No migration is involved.
-- **App closed when a phase ended.** The phase ends when the app next opens.
-  A late-stopped focus session is trimmed back to the phase deadline when the
-  workspace's edit rules allow it. Catch-up never auto-starts focus, so no
-  session is created for time nobody was there for.
+- **Missed phase ends.** A phase that ended more than a minute ago (the app
+  was asleep or closed, or a timer fired late) ended unattended. Unattended
+  phases end when the app opens or resumes; the phase timer, restore and
+  resume all go through one serialized reconcile. Focus never auto-starts
+  after an unattended end, so no session is created for time nobody was
+  there for. A focus session that does start counts its deadline from its
+  real start. A late-stopped session is trimmed back to the phase deadline
+  only when that deadline is after the session's start, and only when the
+  workspace's edit rules allow it.
+- **The real session.** Before ending, pausing, resuming or stopping a focus
+  phase, the app re-reads the tracker. Pausing and resuming on the main Timer
+  issues a new session id, so the phase acts on the session that is running
+  or paused for it: the same id, one resumed from it, or one for its task.
+  It never stops a stale id or an unrelated session.
+- **Stop.** Stop clears the device Pomodoro first, then stops the phase's
+  session. A session already stopped elsewhere counts as stopped, so the
+  Pomodoro can never get stuck.
+- **Replacing a session.** Pomodoro **Start focus** asks before replacing a
+  running or paused session, as Start focus on a task row does. A paused one
+  is stopped first (closing its break) and put back if the start fails.
 
 Shared, cross-device phases need the database contract flagged in the native
 pass plan. Tagging focus sessions as Pomodoro (for a Pomodoro-only Focus Time)
@@ -141,9 +157,17 @@ needs the session API to accept the existing `tags` column. That is an API
 change, not a migration, and it is not done yet, so Focus Time counts all
 tracked time.
 
-Regression coverage: `pomodoro_controller_test.dart` covers start, pause and
-resume, phase ends, the long-break cycle, auto-start, stop, restore catch-up
-with deadline trimming, account isolation, and the on-time natural end.
+Regression coverage: `pomodoro_controller_test.dart` runs against a fake
+tracker that behaves like the server. It covers:
+
+- a sleep across many cycles with both auto-starts on, and late timers;
+- focus deadlines counted from the real start;
+- no trimming before a session's start;
+- stale and unrelated sessions;
+- stop when the session ended elsewhere;
+- paused replacement;
+- concurrent restores and account isolation;
+- the on-time natural end.
 `pomodoro_panel_test.dart` covers the panel flow and 320dp at 2x text.
 `task_board_row_actions_flows_test.dart` covers Start focus. Widget tests do
 not establish notification delivery or timing on devices.

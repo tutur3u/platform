@@ -1,16 +1,17 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/time_tracking/pomodoro_settings.dart';
+import 'package:mobile/data/models/time_tracking/session.dart';
 import 'package:mobile/data/sources/api_exception.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_cubit.dart';
 import 'package:mobile/features/time_tracker/pomodoro/pomodoro_controller.dart';
 import 'package:mobile/features/time_tracker/pomodoro/pomodoro_state.dart';
+import 'package:mobile/features/time_tracker/widgets/focus_timer_ring.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -78,17 +79,39 @@ class _PomodoroPanelState extends State<PomodoroPanel> {
     variant: AppAlertVariant.destructive,
   );
 
+  /// Starts focus the way Start focus on a task row does: a running or
+  /// paused session is replaced only after confirmation, and a paused one is
+  /// stopped first, which closes its break.
   Future<void> _start(PomodoroController controller) async {
     final l10n = context.l10n;
     final timer = context.read<TimeTrackerCubit>().state;
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     final userId = context.read<AuthCubit>().state.user?.id;
     if (wsId == null || userId == null) return;
-    if (timer.runningSession != null) {
+    setState(() => _busy = true);
+    final ({TimeTrackingSession? running, TimeTrackingSession? paused})
+    tracking;
+    try {
+      tracking = await controller.currentTracking(wsId);
+    } on Exception {
+      if (mounted) {
+        setState(() => _busy = false);
+        _error(null, l10n.commonSomethingWentWrong);
+      }
+      return;
+    }
+    if (!mounted) return;
+    setState(() => _busy = false);
+    final paused = tracking.paused;
+    if (tracking.running != null || paused != null) {
       final confirmed = await showAppConfirmDialog(
         context: context,
-        title: l10n.taskBoardDetailFocusReplaceTitle,
-        message: l10n.taskBoardDetailFocusReplaceMessage,
+        title: paused != null
+            ? l10n.taskBoardDetailFocusReplacePausedTitle
+            : l10n.taskBoardDetailFocusReplaceTitle,
+        message: paused != null
+            ? l10n.taskBoardDetailFocusReplacePausedMessage
+            : l10n.taskBoardDetailFocusReplaceMessage,
         confirmLabel: l10n.taskBoardDetailFocusReplaceConfirm,
         cancelLabel: l10n.commonCancel,
       );
@@ -104,6 +127,7 @@ class _PomodoroPanelState extends State<PomodoroPanel> {
         title: title,
         taskId: timer.sessionTaskId,
         taskName: timer.sessionTaskName,
+        replacingPaused: paused,
       ),
     );
   }
@@ -275,76 +299,4 @@ class _ActivePomodoro extends StatelessWidget {
       ],
     );
   }
-}
-
-/// A progress ring around the remaining time. The size follows text scale
-/// so the time never clips; the arc is painted, not animated.
-class FocusTimerRing extends StatelessWidget {
-  const FocusTimerRing({
-    required this.progress,
-    required this.color,
-    required this.child,
-    super.key,
-  });
-
-  final double progress;
-  final Color color;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final scale = MediaQuery.textScalerOf(context).scale(1).clamp(1.0, 2.0);
-    final size = 168.0 * scale;
-    final track = AppTokens.of(context).colorScheme.muted;
-    return SizedBox.square(
-      dimension: size,
-      child: CustomPaint(
-        painter: _RingPainter(
-          progress: progress.clamp(0, 1).toDouble(),
-          color: color,
-          track: track,
-        ),
-        child: Padding(
-          padding: EdgeInsets.all(size * 0.16),
-          child: FittedBox(fit: BoxFit.scaleDown, child: child),
-        ),
-      ),
-    );
-  }
-}
-
-class _RingPainter extends CustomPainter {
-  const _RingPainter({
-    required this.progress,
-    required this.color,
-    required this.track,
-  });
-
-  final double progress;
-  final Color color;
-  final Color track;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    const stroke = 10.0;
-    final rect = (Offset.zero & size).deflate(stroke / 2);
-    final paint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = stroke
-      ..strokeCap = StrokeCap.round;
-    canvas.drawArc(rect, 0, math.pi * 2, false, paint..color = track);
-    if (progress > 0) {
-      canvas.drawArc(
-        rect,
-        -math.pi / 2,
-        math.pi * 2 * progress,
-        false,
-        paint..color = color,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(_RingPainter old) =>
-      old.progress != progress || old.color != color || old.track != track;
 }

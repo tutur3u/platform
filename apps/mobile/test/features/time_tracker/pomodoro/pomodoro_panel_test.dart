@@ -3,17 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/models/time_tracking/pomodoro_settings.dart';
-import 'package:mobile/data/models/time_tracking/session.dart';
 import 'package:mobile/data/models/workspace.dart';
-import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
 import 'package:mobile/features/time_tracker/pomodoro/pomodoro_controller.dart';
-import 'package:mobile/features/time_tracker/pomodoro/pomodoro_notifier.dart';
-import 'package:mobile/features/time_tracker/pomodoro/pomodoro_state.dart';
-import 'package:mobile/features/time_tracker/pomodoro/pomodoro_store.dart';
 import 'package:mobile/features/time_tracker/widgets/pomodoro_panel.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
@@ -21,75 +16,23 @@ import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 
 import '../../../helpers/helpers.dart';
+import 'pomodoro_fakes.dart';
 
 class _Timer extends MockCubit<TimeTrackerState> implements TimeTrackerCubit {}
 
-class _Workspaces extends MockCubit<WorkspaceState>
-    implements WorkspaceCubit {}
+class _Workspaces extends MockCubit<WorkspaceState> implements WorkspaceCubit {}
 
 class _Auth extends MockCubit<AuthState> implements AuthCubit {}
 
-class _Repository extends Fake implements ITimeTrackerRepository {
-  final List<String> calls = [];
-
-  @override
-  Future<TimeTrackingSession> startSession(
-    String wsId, {
-    String? title,
-    String? description,
-    String? categoryId,
-    String? taskId,
-    String? userId,
-    String? parentSessionId,
-    bool wasResumed = false,
-  }) async {
-    calls.add('start:$title');
-    return const TimeTrackingSession(id: 's1');
-  }
-
-  @override
-  Future<TimeTrackingSession> pauseSession(
-    String wsId,
-    String sessionId, {
-    String? breakTypeId,
-    String? breakTypeName,
-  }) async {
-    calls.add('pause:$sessionId');
-    return TimeTrackingSession(id: sessionId);
-  }
-}
-
-class _Notifier implements PomodoroNotifier {
-  @override
-  Future<void> schedule({
-    required DateTime at,
-    required String title,
-    required String body,
-    String? wsId,
-    String? userId,
-  }) async {}
-
-  @override
-  Future<void> cancel() async {}
-}
-
-class _Store extends PomodoroStore {
-  @override
-  Future<PomodoroState?> read() async => null;
-
-  @override
-  Future<void> write(PomodoroState state) async {}
-}
-
 void main() {
   late _Timer timer;
-  late _Repository repository;
+  late FakeTracker repository;
   late PomodoroController controller;
   final now = DateTime(2026, 10, 26, 9);
 
   setUp(() {
     timer = _Timer();
-    repository = _Repository();
+    repository = FakeTracker(() => now);
     whenListen(
       timer,
       const Stream<TimeTrackerState>.empty(),
@@ -106,8 +49,8 @@ void main() {
       repository: repository,
       loadSettings: () async => const PomodoroSettings(),
       notificationCopy: (_) => (title: '', body: ''),
-      notifier: _Notifier(),
-      store: _Store(),
+      notifier: FakeNotifier(),
+      store: FakeStore(),
       now: () => now,
     );
   });
@@ -164,10 +107,11 @@ void main() {
 
     expect(find.text('25 min focus · 5 min break'), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('pomodoro-start')));
-    await tester.pump();
-    await tester.pump();
+    for (var i = 0; i < 5; i++) {
+      await tester.pump();
+    }
 
-    expect(repository.calls, ['start:Focus time']);
+    expect(repository.calls, ['start:s1:null']);
     expect(find.text('25:00'), findsOneWidget);
     expect(find.text('Focus 1 of 4'), findsOneWidget);
 
@@ -176,6 +120,28 @@ void main() {
     await tester.pump();
     expect(repository.calls.last, 'pause:s1');
     expect(find.byKey(const ValueKey('pomodoro-resume')), findsOneWidget);
+    await controller.close();
+    await tester.pump(const Duration(seconds: 2));
+  });
+
+  testWidgets('a paused session is confirmed, stopped, then replaced', (
+    tester,
+  ) async {
+    await repository.startSession('ws', taskId: 'old');
+    await repository.pauseSession('ws', 's1');
+    await pump(tester);
+
+    await tester.tap(find.byKey(const ValueKey('pomodoro-start')));
+    await tester.pumpAndSettle();
+    expect(find.text('End the paused timer?'), findsOneWidget);
+    await tester.tap(find.text('Stop and start'));
+    for (var i = 0; i < 5; i++) {
+      await tester.pump();
+    }
+
+    expect(repository.calls.sublist(2), ['stop:s1', 'start:s2:null']);
+    expect(repository.pausedId, isNull);
+    expect(find.byKey(const ValueKey('pomodoro-remaining')), findsOneWidget);
     await controller.close();
     await tester.pump(const Duration(seconds: 2));
   });
