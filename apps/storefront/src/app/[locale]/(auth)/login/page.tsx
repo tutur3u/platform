@@ -6,11 +6,16 @@ import { normalizeAuthRedirectPath } from '@tuturuuu/auth/proxy';
 import { getSatelliteAppSession } from '@tuturuuu/satellite/auth';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { BASE_URL, WEB_APP_URL } from '@/constants/common';
+import { WEB_APP_URL } from '@/constants/common';
+import { createStorefrontPublicUrl } from '@/lib/storefront-public-url';
 
 function normalizeNextPath(value: string | string[] | undefined) {
   const rawValue = Array.isArray(value) ? value[0] : value;
-  return normalizeAuthRedirectPath(rawValue, BASE_URL, '/demo');
+  return normalizeAuthRedirectPath(
+    rawValue,
+    createStorefrontPublicUrl('/').origin,
+    '/demo'
+  );
 }
 
 export default async function LoginPage({
@@ -38,7 +43,7 @@ export default async function LoginPage({
     redirect(nextPath);
   }
 
-  const returnUrl = new URL('/verify-token', BASE_URL);
+  const returnUrl = createStorefrontPublicUrl('/verify-token');
   returnUrl.searchParams.set('nextUrl', nextPath);
 
   const loginUrl = new URL('/login', WEB_APP_URL);

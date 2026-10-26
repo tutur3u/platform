@@ -126,7 +126,8 @@ jobs:
       deployments: read
     with:
       workflow_name: finance-cloudflare.yaml
-  # Qualification only. The cutover-prep PR adds the publication hold and CSP.
+  # Qualification only: neither job publishes. Native deploys are operator
+  # actions inside an approved custody window.
   native:
     needs: check-ci
     if: needs.check-ci.outputs.should_run == 'true'
@@ -144,13 +145,35 @@ jobs:
       runtime-command: >-
         (cd ../web && bun x --no-install playwright install --with-deps chromium) &&
         node --test --test-concurrency=1 cloudflare/native-built-worker.runtime.mjs
-      # Public staging values from repository variables for same-repository
-      # events; fork pull requests (and unset variables) build with fixtures.
+      # The native profile pins the public Supabase URL and app/Web origins.
+      # Same-repository events use the staging publishable key; fork pull
+      # requests build with a placeholder.
       public-env: |
-        NEXT_PUBLIC_SUPABASE_URL=${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.STAGING_SUPABASE_URL || 'https://finance-ci.supabase.invalid' }}
         NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.STAGING_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_finance_ci_placeholder' }}
-        NEXT_PUBLIC_APP_URL=https://finance-staging.tuturuuu.com
-        NEXT_PUBLIC_WEB_APP_URL=https://staging.tuturuuu.com
         TUTURUUU_NOINDEX=1
+      format-paths: >-
+        apps/finance/cloudflare apps/finance/src/start-bridge apps/finance/src/routes apps/finance/src/router.tsx apps/finance/src/start.ts apps/finance/vite.config.mts apps/finance/void.config.ts apps/finance/vitest.config.ts apps/finance/tsconfig.json apps/finance/tsconfig.cloudflare.json apps/finance/package.json apps/finance/start-bridge.routes.json apps/finance/start-bridge.config.ts
+  native-production:
+    needs: check-ci
+    # Production public values are unavailable to fork pull requests.
+    if: needs.check-ci.outputs.should_run == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    uses: ./.github/workflows/native-start-app.yaml
+    permissions:
+      contents: read
+    with:
+      app: finance
+      package: '@tuturuuu/finance'
+      artifact-script: scripts/ci/finance-native-artifact.py
+      env-interface: FinanceGeneratedEnv
+      worker-environment-type: FinanceEnvironment
+      helper-tests: python3 scripts/ci/finance-native-artifact.test.py
+      unit-command: bun run test && bun run type-check:cloudflare
+      runtime-command: >-
+        (cd ../web && bun x --no-install playwright install --with-deps chromium) &&
+        node --test --test-concurrency=1 cloudflare/native-built-worker.runtime.mjs
+      profile-env: VITE_FINANCE_NATIVE_PROFILE=production
+      artifact-suffix: production
+      public-env: |
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
       format-paths: >-
         apps/finance/cloudflare apps/finance/src/start-bridge apps/finance/src/routes apps/finance/src/router.tsx apps/finance/src/start.ts apps/finance/vite.config.mts apps/finance/void.config.ts apps/finance/vitest.config.ts apps/finance/tsconfig.json apps/finance/tsconfig.cloudflare.json apps/finance/package.json apps/finance/start-bridge.routes.json apps/finance/start-bridge.config.ts

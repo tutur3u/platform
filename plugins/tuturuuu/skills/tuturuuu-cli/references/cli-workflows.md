@@ -32,6 +32,14 @@ After global installation, use `ttr ...` directly. Do not diagnose `bun ttr logi
 as a registry install failure: Bun interprets that form as a workspace package-script
 lookup, so inspect the local script and its error first.
 
+Check an older installation using only `ttr --version` or its package.json.
+Do not probe upgrade-subcommand support by invoking `ttr upgrade list`: old
+parsers can silently perform a global install instead. Drain shared-host jobs
+before upgrading. Bare upgrade installs npm `latest`, not main; check dev
+publication with `npm view tuturuuu@dev version` or the SDK dev workflow.
+Supported `upgrade list [--json]` is read-only, and unsupported upgrade flags or
+arguments must fail with usage before an installer runs.
+
 Upgrade an existing global install with:
 
 ```bash

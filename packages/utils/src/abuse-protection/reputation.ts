@@ -595,7 +595,7 @@ export async function recordAbuseStepUpChallenge({
           ? new Date().toISOString()
           : null,
       ip_address: normalizeIpAddress(ipAddress),
-      metadata: (metadata ?? {}) as Json,
+      metadata: (metadata ?? {}) as NonNullable<Json>,
       risk_tier: riskTier,
       route: route ?? null,
       status,

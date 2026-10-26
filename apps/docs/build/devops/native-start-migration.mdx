@@ -1,0 +1,115 @@
+---
+title: "Native Start migration runbook"
+description: "How each web app except apps/web moves to TanStack Start + Void + Vite+ on Cloudflare Workers: ownership, the bridge, basePath readiness, acceptance gates, held publication, direct cutover with an instant rollback, and the post-deploy watch."
+updatedAt: '2026-10-25'
+---
+
+Every web app except `apps/web` moves to its own TanStack Start + Void + Vite+
+Worker on Cloudflare. `apps/web` stays on Next.js until separately scheduled.
+The retired `apps/tanstack-web` tree is not part of this program and is not
+revived. Current hosting (Vercel, or Next.js/OpenNext Workers) stays canonical
+for an app until its explicit cutover PR merges.
+
+## Ownership
+
+- **One integration writer per app.** Only that lane edits the app's runtime,
+  Worker entry, Vite/Void config and owning workflow. Other lanes hand changes
+  to it.
+- **`next/*` only through `@tuturuuu/start-bridge`.** App source keeps its App
+  Router modules; the Vite preset aliases `next/*` to the bridge. Do not copy
+  shims into the app. If the bridge lacks something, extend the package
+  (additive within its frozen v0 contract) rather than forking it locally.
+- **Registries are generated.** `start-bridge-routes check` runs in the app's CI
+  and fails on any `route.*`/`page.*` that is not generated, owned by named
+  native code, or ignored with a reason.
+- Domain libraries stay framework-independent. Inject request identity,
+  storage, navigation and localization at the adapter.
+
+## basePath readiness
+
+Each app must serve both its subdomain and `tuturuuu.com/<app>` from the same
+source. `tuturuuu.com/<app>` is the app root; product marketing moves to
+`/products/<app>`. Build with `TUTURUUU_BASE_PATH=/<app>` to produce the
+path-mounted variant. The bridge supplies the asset base, server-function base,
+router basepath, Location rewriting, base-aware links and auth return URLs.
+
+Under a base, every app uses the **one shared `tuturuuu.com` root session**,
+with no per-app cookie names or paths (user decisions of 2026-10-25 and
+2026-10-26: one session for every app, held server-side in an `HttpOnly`
+cookie). Mounted apps read that session and derive their per-app claims in
+memory; they never write or clear `tuturuuu_app_session*` or Supabase session
+cookies (the mounted no-writer guard).
+Users who already hold the root session stay signed in at cutover; only users
+without one sign in once on the apex. There is no cross-host token handoff from
+the subdomain. Subdomain hosts keep their host-only app-session cookies until
+they only redirect.
+
+## Gates before cutover
+
+An app is cutover-ready only with all of the following for the exact commit:
+
+1. Exact-commit CI green: unit tests, type-check, lint, the registry check, a
+   real `vp build`, and the app's owning native workflow.
+2. Sealed emitted-Worker acceptance: the built artifact is hashed, its emitted
+   config is validated, the emitted runtime suite passes, and a fresh restore
+   of the same archive passes the same suite with unchanged bytes.
+3. Staging acceptance on the owner-provisioned staging Worker: authentication
+   and session refresh, MFA, workspace permissions, bilingual hydration, the
+   app's primary flows, and both the subdomain and `/<app>` mounts.
+4. A rollback record: the immutable prior deployment (artifact or deployment
+   ID) and the captured routing (routes, custom domains and DNS records) that
+   cutover replaces.
+
+## Held publication and cutover
+
+Production publication stays **held per app** in `productionPublicationPolicy`
+(`tuturuuu.ci.ts`) until an explicit cutover PR admits that app. Deleting a
+hold never admits publication. A cutover PR names the exact artifact, the
+routing change and the rollback record, and merges only with the gates above.
+
+Approvals:
+
+- DNS, zone, canonical-route and staging-provider changes need release-authority
+  approval.
+- Database migrations need explicit user approval. The bridge itself needs none.
+
+## Direct cutover
+
+Every app, including Tasks, Contacts and Finance, cuts over **directly** once
+the gates above pass. There are no staged canaries or traffic percentages.
+
+**Before the flip**, prepare and record an instant one-step rollback:
+
+- the immutable prior deployment (the current Vercel deployment ID, or the
+  prior Worker version), confirmed still serving;
+- the captured routing it replaces (routes, custom domains, DNS records and
+  any zone rules), with the exact command or API call that restores it;
+- who executes the rollback during the watch.
+
+**The flip** changes only the routing for that one app, in one step.
+
+**After the flip:**
+
+1. Run the post-deploy smoke within minutes: sign-in and session refresh,
+   the app's primary flows, both the subdomain and `/<app>` mounts, and a
+   check that responses carry `x-tuturuuu-runtime: native`.
+2. Watch for 30–60 minutes. Roll back immediately, without waiting for a
+   diagnosis, on any regression:
+
+   | Signal | Rollback when |
+   | --- | --- |
+   | Server errors | 5xx rate rises above the prior deployment's baseline |
+   | Authentication | Any auth loop, unexpected sign-out, or rise in auth failures |
+   | Latency | p95 TTFB clearly above the prior baseline |
+   | Client errors | Client error rate rises above the prior baseline |
+   | Smoke | Any smoke check fails |
+
+3. File a cutover report: the exact artifact and commit, the routing change,
+   smoke and watch results with the baselines used, and either the confirmed
+   cutover or the rollback with its cause.
+
+## Rollback
+
+Rolling back an app restores the captured routing to the immutable prior
+deployment in one step. Never delete the prior deployment or its routing record until the native
+runtime has served all traffic through a full release cycle.

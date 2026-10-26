@@ -175,7 +175,7 @@ async function ensureContactSubmissionsCollection(
       collection_type: CONTACT_SUBMISSIONS_COLLECTION_SLUG,
       config: {
         privateDelivery: true,
-      } as Json,
+      } as NonNullable<Json>,
       created_by: null,
       description:
         'Private inbound contact form messages saved for Richfield admins.',
@@ -343,7 +343,7 @@ export async function POST(
           formVersion: payload.formVersion,
           privateDelivery: true,
           source: 'external-project-form',
-        } as Json,
+        } as NonNullable<Json>,
         profile_data: {
           company: payload.company,
           country: payload.country ?? 'Vietnam',
@@ -354,7 +354,7 @@ export async function POST(
           name: payload.name,
           receivedAt,
           submissionStatus: 'new',
-        } as Json,
+        } as NonNullable<Json>,
         scheduled_for: null,
         slug,
         status: 'draft',
