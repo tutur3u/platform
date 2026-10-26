@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { getAiChatSignedReadUrls } from '@tuturuuu/internal-api';
+import { getAiChatSignedReadUrls } from '@tuturuuu/internal-api/ai';
 
 // Direct `<wsId>/mira/images/<file>` objects; the server re-checks access.
 const MIRA_IMAGE_PATH =

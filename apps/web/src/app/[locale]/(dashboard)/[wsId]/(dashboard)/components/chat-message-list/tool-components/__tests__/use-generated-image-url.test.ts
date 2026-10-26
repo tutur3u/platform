@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('@tuturuuu/internal-api', () => ({
+vi.mock('@tuturuuu/internal-api/ai', () => ({
   getAiChatSignedReadUrls: vi.fn(),
 }));
 
