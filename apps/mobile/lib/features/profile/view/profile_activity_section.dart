@@ -30,6 +30,7 @@ class ProfileActivitySection extends StatefulWidget {
     this.replayToken = 0,
     this.statsLoader,
     this.tag,
+    this.taskLinked = false,
     this.showHeader = true,
     this.cacheUserId,
     this.timezoneLoader,
@@ -41,8 +42,11 @@ class ProfileActivitySection extends StatefulWidget {
   final String? Function()? cacheUserId;
   final ProfileStatsLoader? statsLoader;
 
-  /// Counts only sessions with this tag; Focus Time passes the Pomodoro tag.
+  /// Counts only sessions with this tag (for example `pomodoro`).
   final String? tag;
+
+  /// Counts only sessions linked to a task; Focus Time sets it.
+  final bool taskLinked;
   final Future<String> Function()? timezoneLoader;
 
   @override
@@ -119,6 +123,7 @@ class _ProfileActivitySectionState extends State<ProfileActivitySection> {
                 isPersonal: personal,
                 timezone: timezone,
                 tag: widget.tag,
+                taskLinked: widget.taskLinked,
               ),
             );
       if (!mounted || request != _request) return;

@@ -21,8 +21,9 @@ export function isSupportedTimezone(timezone: string): boolean {
 }
 
 /**
- * Reads the user's finished sessions carrying `tag` in the lookback window,
- * page by page and bounded, then computes their stats.
+ * Reads the user's finished sessions in the lookback window that carry `tag`
+ * and, with `taskLinked`, are linked to a task, page by page and bounded,
+ * then computes their stats.
  */
 export async function loadTaggedTimeStats(
   sbAdmin: TypedSupabaseClient,
@@ -31,7 +32,8 @@ export async function loadTaggedTimeStats(
     wsId: string;
     isPersonal: boolean;
     timezone: string;
-    tag: string;
+    tag?: string;
+    taskLinked?: boolean;
     daysBack: number;
     now?: Date;
   }
@@ -48,9 +50,10 @@ export async function loadTaggedTimeStats(
       .from('time_tracking_sessions')
       .select('start_time, duration_seconds')
       .eq('user_id', options.userId)
-      .contains('tags', [options.tag])
       .not('duration_seconds', 'is', null)
       .gte('start_time', since);
+    if (options.tag) query = query.contains('tags', [options.tag]);
+    if (options.taskLinked) query = query.not('task_id', 'is', null);
     if (!options.isPersonal) query = query.eq('ws_id', options.wsId);
     const { data, error } = await query
       .order('start_time', { ascending: false })
