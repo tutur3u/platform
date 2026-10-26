@@ -1,3 +1,7 @@
+begin;
+set local lock_timeout = '5s';
+set local statement_timeout = '30s';
+
 -- Fail devbox runs that can no longer finish so they stop holding runner
 -- capacity (Judge/playground max_sandboxes) and playground busy checks.
 -- A run is stale when:
@@ -274,3 +278,4 @@ begin
     from claimed;
 end;
 $$;
+commit;
