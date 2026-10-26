@@ -139,6 +139,7 @@ describe('Vite preset', () => {
       '/meet',
       '/meet/',
       '/meet///',
+      `/meet${'/'.repeat(200_000)}`,
       '/a/b-c',
     ]) {
       const full = createBasePath({ app: 'meet', basePath: input });

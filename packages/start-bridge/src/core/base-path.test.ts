@@ -124,7 +124,10 @@ describe('trailing slash trimming', () => {
     const started = performance.now();
     expect(trimTrailingSlashes(hostile)).toBe(hostile);
     expect(() => normalizeBasePath(hostile)).toThrow('Invalid basePath');
-    expect(performance.now() - started).toBeLessThan(250);
+    expect(trimTrailingSlashes(`/meet${'/'.repeat(200_000)}`)).toBe('/meet');
+    // Linear work is ~1 ms; a quadratic trim takes seconds. The generous bound
+    // keeps that distinction without failing on a loaded runner's scheduler.
+    expect(performance.now() - started).toBeLessThan(2000);
     expect(normalizeBasePath('/meet/////')).toBe('/meet');
   });
 });

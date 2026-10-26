@@ -185,8 +185,10 @@ export function presetBasePath(
   if (!/^[a-z0-9][a-z0-9-]*$/u.test(app))
     throw new Error(`Invalid app id: ${app}`);
   // Linear trailing-slash trim (this module imports only Node built-ins).
-  let basePath = (input ?? '').trim();
-  while (basePath.endsWith('/')) basePath = basePath.slice(0, -1);
+  const trimmed = (input ?? '').trim();
+  let end = trimmed.length;
+  while (end > 0 && trimmed.charCodeAt(end - 1) === 47) end--;
+  const basePath = trimmed.slice(0, end);
   if (
     basePath &&
     !/^\/[a-z0-9][a-z0-9-]*(?:\/[a-z0-9][a-z0-9-]*)*$/u.test(basePath)
