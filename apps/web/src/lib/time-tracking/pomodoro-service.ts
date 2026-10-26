@@ -277,9 +277,7 @@ export async function commandPomodoro(
     // first revision only when this request created that control; against
     // an existing control it is stale.
     const expectedRevision =
-      creating && command.expectedRevision === 0
-        ? 1
-        : command.expectedRevision;
+      creating && command.expectedRevision === 0 ? 1 : command.expectedRevision;
     const planned = { ...command, expectedRevision };
     const stored = toPlannerState(row);
     const now = deps.now();
