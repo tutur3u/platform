@@ -1,9 +1,25 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   buildReconciliationSummary,
   decodeReconciliationCursor,
   encodeReconciliationCursor,
+  type SummaryRow,
 } from './lib';
+
+afterEach(() => vi.restoreAllMocks());
+
+function summaryRow(overrides: Partial<SummaryRow> = {}): SummaryRow {
+  return {
+    amount: 100,
+    amount_minor: 10_000,
+    currency: 'USD',
+    entry_count: 1,
+    kind: 'sale',
+    provider: 'cash',
+    status: 'linked',
+    ...overrides,
+  };
+}
 
 describe('Inventory Finance reconciliation helpers', () => {
   it('round-trips opaque cursors and rejects malformed input', () => {
@@ -112,22 +128,52 @@ describe('Inventory Finance reconciliation helpers', () => {
     expect(Object.is(summary.netSales[0]?.amount, -0)).toBe(false);
   });
 
-  it('rejects malformed database minor amounts before aggregation', () => {
-    for (const amount of ['1.5', 'NaN', '9007199254740992']) {
-      expect(() =>
-        buildReconciliationSummary([
-          {
-            amount: 0,
-            amount_minor: amount,
-            currency: 'USD',
-            entry_count: 1,
-            kind: 'sale',
-            provider: 'cash',
-            status: 'linked',
-          },
-        ])
-      ).toThrow();
-    }
+  it('skips malformed rows, counts them and preserves valid rows on both sides', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const malformed = [
+      summaryRow({ amount_minor: null }),
+      summaryRow({ amount_minor: NaN }),
+      summaryRow({ amount_minor: '1.5' }),
+      summaryRow({ amount_minor: '9007199254740992' }),
+      summaryRow({ amount_minor: '' }),
+      summaryRow({ currency: 'US' }),
+      summaryRow({ currency: '123' }),
+    ];
+    const summary = buildReconciliationSummary([
+      summaryRow(),
+      ...malformed,
+      summaryRow({ amount_minor: 200, amount: 2 }),
+    ]);
+    expect(summary.netSales).toEqual([
+      { amount: 102, amountMinor: 10_200, currency: 'USD', count: 2 },
+    ]);
+    expect(summary.grossSales).toEqual(summary.netSales);
+    expect(summary.providers[0]?.netSales).toEqual(summary.netSales);
+    expect(warn).toHaveBeenCalledExactlyOnceWith(
+      'Skipped invalid Inventory Finance reconciliation rows',
+      { skippedRows: malformed.length }
+    );
+  });
+
+  it('skips overflowing rows atomically across totals, categories, pending and providers', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const max = Number.MAX_SAFE_INTEGER;
+    const summary = buildReconciliationSummary([
+      summaryRow({ amount_minor: max }),
+      summaryRow({ amount_minor: -max, kind: 'refund' }),
+      summaryRow({ amount_minor: 1, status: 'pending' }),
+    ]);
+    expect(summary.netSales).toEqual([
+      { amount: 0, amountMinor: 0, currency: 'USD', count: 2 },
+    ]);
+    expect(summary.grossSales[0]?.amountMinor).toBe(max);
+    expect(summary.refunds[0]?.amountMinor).toBe(-max);
+    expect(summary.pending).toEqual([]);
+    expect(summary.providers[0]?.netSales).toEqual(summary.netSales);
+    expect(warn).toHaveBeenCalledExactlyOnceWith(
+      'Skipped invalid Inventory Finance reconciliation rows',
+      { skippedRows: 1 }
+    );
   });
 
   it('preserves the database unit scale for currencies that differ from Intl', () => {

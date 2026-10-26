@@ -49,14 +49,16 @@ export const minorUnitsSchema = z
 
 export type MinorUnits = z.infer<typeof minorUnitsSchema>;
 
+export const moneyCurrencySchema = z
+  .string()
+  .trim()
+  .regex(/^[a-z]{3}$/i)
+  .toUpperCase();
+
 const moneySchema = z
   .object({
     minorUnits: minorUnitsSchema,
-    currency: z
-      .string()
-      .trim()
-      .regex(/^[a-z]{3}$/i)
-      .toUpperCase(),
+    currency: moneyCurrencySchema,
   })
   .readonly()
   .brand<'Money'>();

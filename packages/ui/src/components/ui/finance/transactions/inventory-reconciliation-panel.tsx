@@ -26,11 +26,10 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
-import { parseMoneyFromMinor } from '@tuturuuu/utils/finance-money';
+import { formatInventoryReconciliationAmount } from '@tuturuuu/utils/finance-reconciliation-display';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import {
-  formatInventoryReconciliationAmount,
   InventoryReconciliationEntryRow,
   inventoryProviderTranslationKey,
 } from './inventory-reconciliation-entry-row';
@@ -206,7 +205,7 @@ export function InventoryReconciliationPanel({
         ? pending
             .map(
               (item) =>
-                `${item.count} · ${formatInventoryReconciliationAmount(parseMoneyFromMinor(item.amountMinor, item.currency))}`
+                `${item.count} · ${formatInventoryReconciliationAmount(item.amountMinor, item.currency)}`
             )
             .join(' / ')
         : t('nothing_pending'),

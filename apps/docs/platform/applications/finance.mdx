@@ -57,14 +57,22 @@ sign. API JSON keeps its existing numeric `amount` and `amountMinor` fields;
 `amount` is derived from the summed minor units. Other Finance flows retain
 their existing amount contracts.
 
+Summary aggregation skips malformed or overflowing rows atomically across all
+affected buckets and logs one `console.warn` with the skipped-row count. Valid
+rows remain available in both summary and overview responses. Display boundaries
+render a neutral placeholder for malformed amounts or currency codes.
+
 This boundary applies to the shared reconciliation UI in Web and standalone
-Finance, including line allocations and pending totals. Explicit major-unit
+Finance, including pending totals. Inventory line allocations keep their
+separate Intl-based storage scale through `minorToMajor`; they must not use the
+Finance SQL scale. Explicit major-unit
 parsing preserves the existing scaled rounding rule. Persisted units follow
 `private.inventory_finance_minor_to_major` (zero, two or three decimal places),
 including MGA's zero-decimal and CLF's two-decimal storage mapping; Intl display
-precision does not redefine stored amounts. Regression
+precision does not redefine reconciliation totals. Regression
 coverage is in `packages/utils/src/finance-money.test.ts` and the reconciliation
-`lib.test.ts`; property tests use seed `20261026`, which fast-check reports with
+`lib.test.ts`; allocation-scale and invalid-display cases are in
+`packages/utils/src/finance-reconciliation-display.test.ts`. Property tests use seed `20261026`, which fast-check reports with
 the shrunk counterexample path on failure. Token lifetime properties in
 `packages/utils/src/app-token-lifetime.test.ts` cover main's expiration and
 positive-integer signed-access TTL guarantees. Properties in

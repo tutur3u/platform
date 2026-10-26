@@ -7,20 +7,12 @@ import type {
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
-import { getCurrencyLocale } from '@tuturuuu/utils/currencies';
 import {
-  formatMoney,
-  type Money,
-  parseMoneyFromMinor,
-} from '@tuturuuu/utils/finance-money';
+  formatInventoryAllocationAmount,
+  formatInventoryReconciliationAmount,
+} from '@tuturuuu/utils/finance-reconciliation-display';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-
-export function formatInventoryReconciliationAmount(money: Money) {
-  return formatMoney(money, getCurrencyLocale(money.currency), {
-    maximumFractionDigits: money.currency === 'VND' ? 0 : 2,
-  });
-}
 
 export function inventoryProviderTranslationKey(
   provider: InventoryFinanceProvider
@@ -78,11 +70,9 @@ export function InventoryReconciliationEntryRow({
                     {allocation.quantity}× {allocation.title}
                   </span>
                   <span className="shrink-0 font-medium tabular-nums">
-                    {formatInventoryReconciliationAmount(
-                      parseMoneyFromMinor(
-                        allocation.recognizedRevenueAmount,
-                        entry.currency
-                      )
+                    {formatInventoryAllocationAmount(
+                      allocation.recognizedRevenueAmount,
+                      entry.currency
                     )}
                   </span>
                 </div>
@@ -105,7 +95,8 @@ export function InventoryReconciliationEntryRow({
       <div className="text-sm">
         <p className="font-semibold">
           {formatInventoryReconciliationAmount(
-            parseMoneyFromMinor(entry.amountMinor, entry.currency)
+            entry.amountMinor,
+            entry.currency
           )}
         </p>
         <p className="text-muted-foreground text-xs">
