@@ -56,3 +56,18 @@ zone-scoped `CLOUDFLARE_READONLY_API_TOKEN` (DNS:Read and Workers Routes:Read),
 keep capture artifacts in ignored `tmp/` or the private ledger, and never commit
 production origin URLs. Run `node --test scripts/native-cutover/*.test.mjs` for
 credential isolation, route semantics and smoke failure-continuation coverage.
+
+
+For Calendar's private production preparation, use `wave1-native-production.yaml`
+on the production branch after the app's explicit policy admission. Its protected
+`production` environment supplies only the named `WAVE1_PRODUCTION_CLOUDFLARE_API_TOKEN`
+to the final upload step. The sealed Calendar/Mail/Apps production profiles have
+no routes, workers.dev or preview ingress. Refuse existing hosted Route/Custom
+Domain attachments as well: a code deploy to an already attached Worker changes
+traffic even with an empty local route list. Preserve the initial private rollback
+baseline, exact public inputs and before/after topology. Earlier production runs,
+reruns and absent versions never authorize replay of an uncertain upload. Keep
+pending/uploaded receipts and reconcile the original operation. No canonical
+marker is emitted before the later routing flip and hosted acceptance.
+Run `scripts/ci/wave1-native-production.test.mjs` for counting transport/CLI,
+no-route profile, held-policy, unknown-outcome and workflow-secret regressions.

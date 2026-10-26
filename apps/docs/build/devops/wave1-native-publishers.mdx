@@ -8,9 +8,10 @@ description: "Owner-provisioned staging, sealed native publication profiles, pro
 Land the production hold before these publisher changes. Meet, Calendar, Mail and
 Apps production publication remains **held for wave-1 cutover**. The production
 planner holds in `tuturuuu.ci.ts` remain authoritative. Native Calendar/Mail/Apps
-jobs additionally report the source hold in `scripts/ci/wave1-native-profiles.json`;
-removing either hold alone does not authorize publication. A later explicit cutover
-PR must reconcile both policies and its exact production promotion range.
+jobs retain the fallback hold diagnostic in `scripts/ci/wave1-native-profiles.json`.
+The validated per-app `productionPublicationPolicy` controls the new private production
+uploader. A later explicit cutover PR must admit only that app and its exact
+production promotion range; deleting a diagnostic string never admits publication.
 
 These workflows add no automatic schedule and perform no provider or DNS setup.
 PR profile qualification has read-only deployment permission. Each caller grants
@@ -337,8 +338,8 @@ SFU/TURN. workers.dev does not itself prove shared canonical-domain cookie conti
 
 Before a later cutover PR, capture authoritative DNS/proxy/Route/Custom Domain IDs,
 immutable Vercel fallbacks, current Worker versions, rollback operator, explicit
-promotion range and compatible secrets/state. Production configs currently declare
-Custom Domains: their eventual publication is a traffic switch, not just code upload.
+promotion range and compatible secrets/state. Calendar/Mail/Apps production
+profiles declare no Routes or Custom Domains. Their private upload and the later release-owner routing switch are separate operations.
 Do not enable `WAVE1_PRODUCTION_PUBLISH_ENABLED`, remove holds or attach routes until
 that later release is expressly approved. Retain Vercel framework/domain settings.
 
@@ -431,3 +432,57 @@ during use, at most once per minute. Importing those modules must not start time
 workerd forbids global-scope `setInterval`. TTL checks remain authoritative on
 every read; the worker-import regression covers timer-free import and expiry.
 The unadapted dependency graph is not specific to the staging profile; production builds share it.
+
+## Route-free production preparation
+
+`wave1-native-production.yaml` is a manual, production-branch-only preparation
+workflow. Calendar is the first enabled input; Mail and Apps retain their holds
+and need their own reviewed cutover and workflow selection changes. Meet retains
+its separate frontend/realtime publisher and both-version rollback requirement.
+This workflow changes no publication admission. The source policy job must admit
+the selected app before qualification or credential-bearing work can run.
+
+The original production build binds the protected `production` environment only
+for an admitted production ref and reads `PRODUCTION_SUPABASE_URL` and
+`PRODUCTION_SUPABASE_PUBLISHABLE_KEY`. PR/main and held production builds retain
+fixtures. The same-run archive passes original and separate-job restored runtime
+gates before the upload job restores and rechecks it again without deploy credentials.
+
+Set `WAVE1_PRODUCTION_CLOUDFLARE_API_TOKEN` only in the GitHub `production`
+environment. Only the final upload step references it; staging credentials are
+refused. The token needs Workers Scripts read/write on the reviewed account and
+Workers Routes read on the reviewed zone for topology verification. The uploader
+checks required runtime secret names; initialize the named private production
+Worker, its disabled workers.dev/preview state, runtime secrets and an accepted
+rollback version through the operator's separately reviewed provisioning procedure.
+A missing Worker or rollback baseline blocks this preparation job.
+
+Production profile configs have `routes=[]`, `workers_dev=false` and
+`preview_urls=false`, with no named environment or cron triggers. The uploader also
+refuses a Worker already attached to any zone Route or Custom Domain. This matters
+because deploying new code to an attached Worker changes served traffic even when
+the local config declares no routes. Check topology immediately before the single
+upload and again afterwards. Existing live Workers require the release owner's
+normal update/rollback procedure; this preparation workflow cannot update them.
+
+Each upload is bounded to 180 seconds inside a five-minute step. Reconciliation
+reads at most 99 versions and 99 workflow runs, with 15-second/1 MiB API read bounds.
+A matching active SHA/artifact is accepted without upload. A rerun, earlier
+production dispatch for the same SHA, ambiguous/inactive match, or incomplete
+history blocks another upload; an absent version never proves an earlier write
+failed. Retain the original run and operation identity for operator reconciliation.
+An upload exception leaves the private receipt `pending`; post-upload acceptance
+failure leaves it `uploaded`. No automatic retry, new admission or traffic switch
+follows either state.
+
+The private 30-day artifact records the exact SHA/digest, weighted rollback
+versions and before-state topology. This is private code publication only, not a
+canonical deployment marker or customer delivery. Immediately before the separately
+authorized routing flip, refresh the cutover capture and rehearse restoration of
+the exact DNS/proxy/Route/Custom Domain topology. Run native smoke and the required
+30–60 minute watch after the flip. Signed-in production acceptance remains operator-owned.
+
+Regression coverage: `scripts/ci/wave1-native-production.test.mjs` executes held,
+admitted, retry, unknown-outcome, topology and reconciliation paths with counting
+provider/CLI fixtures, and verifies all three sealed frontend profiles have no routes.
+Exact-commit CI and hosted provider acceptance remain separate gates.

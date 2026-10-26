@@ -69,5 +69,6 @@
     "residualRisk": "shared-account",
     "publicationVariable": "WAVE1_STAGING_PUBLICATION_ADMISSION",
     "maxUploadsPerArtifact": 1
-  }
+  },
+  "zoneId": "618b9966111b23a37113d30865f1fbb0"
 }
