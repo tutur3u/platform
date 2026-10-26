@@ -15,6 +15,12 @@ vi.mock('@tuturuuu/auth/app-session', () => ({
   hasWebAppSessionTokenFromRequest: mocks.hasWebAppSessionTokenFromRequest,
 }));
 
+vi.mock('@tuturuuu/auth/proxy', async () => ({
+  normalizeAuthRedirectPath: (
+    await import('../../../../../../../packages/auth/src/proxy/redirect-path')
+  ).normalizeAuthRedirectPath,
+}));
+
 vi.mock('@tuturuuu/satellite/auth', () => ({
   getSatelliteAppSession: mocks.getSatelliteAppSession,
 }));

@@ -1,0 +1,23 @@
+{
+  "appDir": "src/app",
+  "api": {
+    "out": "src/start-bridge/api-registry.bridge.gen.ts",
+    "patternsOut": "src/start-bridge/api-patterns.bridge.gen.ts",
+    "lazy": true
+  },
+  "pages": {
+    "out": "src/start-bridge/page-registry.bridge.gen.ts"
+  },
+  "stripSegments": {
+    "[locale]": {
+      "locale": "en"
+    }
+  },
+  "owned": {},
+  "ignored": {},
+  "runtime": {
+    "/": {
+      "redirect": "https://staging.tuturuuu.com/login"
+    }
+  }
+}

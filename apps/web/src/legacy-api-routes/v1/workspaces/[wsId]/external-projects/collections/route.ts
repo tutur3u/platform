@@ -64,7 +64,7 @@ export async function POST(
       {
         actorId: access.user.id,
         collection_type: payload.collection_type,
-        config: payload.config as Json,
+        config: payload.config as NonNullable<Json>,
         description: payload.description ?? null,
         slug: payload.slug,
         title: payload.title,

@@ -151,6 +151,11 @@ localization changes.
   padding inside scroll content. Verify geometry and scroll-end clearance with
   `settings_compact_navigation_test.dart`; presentation changes must not alter
   timezone cubits or repositories.
+- Settings sub-page forms compose `SettingsSwitchRow`, `SettingsChoiceRow`
+  and `SettingsFieldRow` inside `SettingsCompactSection` cards; see
+  `mobile-settings-shell.mdx#settings-sub-page-forms`. Every text input needs a
+  localized placeholder; `input_placeholder_audit_test.dart` enforces it, with
+  `// input-placeholder: exempt <reason>` for rare deliberate exceptions.
 - Settings groups are rounded cards (`SettingsGroup`, `SettingsCaption`) with
   dividers at `SettingsRowLayout.textColumn`. Use `SettingsRowLayout.groupFill`
   for grouped fills so ambient appearances get the translucent card.

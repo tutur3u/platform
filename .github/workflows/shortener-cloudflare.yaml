@@ -3,6 +3,7 @@ on:
   workflow_call:
   workflow_dispatch:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
     paths:
       [
         'apps/shortener/**',
@@ -15,6 +16,7 @@ on:
         'packages/realtime/**',
         'packages/storage-core/**',
         'packages/turnstile/**',
+        'packages/start-bridge/**',
         'packages/auth/**',
         'packages/satellite/**',
         'packages/internal-api/**',
@@ -34,6 +36,8 @@ on:
         'scripts/ci/production-publication-policy.ts',
         'bun.lock',
         '.github/workflows/shortener-cloudflare.yaml',
+        '.github/workflows/native-start-app.yaml',
+        'scripts/ci/native-binding-type-harness*',
         '.github/workflows/ci-check.yml',
         '.github/actions/setup-bun-with-retry/action.yml',
         '.github/actions/run-with-turbo-remote-cache/action.yml',
@@ -62,6 +66,7 @@ on:
         'packages/realtime/**',
         'packages/storage-core/**',
         'packages/turnstile/**',
+        'packages/start-bridge/**',
         'packages/auth/**',
         'packages/satellite/**',
         'packages/internal-api/**',
@@ -81,6 +86,8 @@ on:
         'scripts/ci/production-publication-policy.ts',
         'bun.lock',
         '.github/workflows/shortener-cloudflare.yaml',
+        '.github/workflows/native-start-app.yaml',
+        'scripts/ci/native-binding-type-harness*',
         '.github/workflows/ci-check.yml',
         '.github/actions/setup-bun-with-retry/action.yml',
         '.github/actions/run-with-turbo-remote-cache/action.yml',
@@ -102,6 +109,7 @@ concurrency:
   cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 jobs:
   check-ci:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     uses: ./.github/workflows/ci-check.yml
     permissions:
       contents: read
@@ -110,193 +118,26 @@ jobs:
       workflow_name: shortener-cloudflare.yaml
   # Qualification only: production publication stays HELD by
   # scripts/ci/production-publication-policy.ts and no staging publisher exists.
-  validate:
+  native:
     needs: check-ci
     if: needs.check-ci.outputs.should_run == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    env:
-      SHORTENER_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-      WRANGLER_SEND_METRICS: 'false'
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ env.SHORTENER_SOURCE_SHA }}
-          persist-credentials: false
-      - uses: ./.github/actions/setup-bun-with-retry
-        with:
-          bun-version: 1.4.4
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: 24.22.0
-      - name: Verify immutable checkout identity
-        run: test "$(git rev-parse HEAD)" = "$SHORTENER_SOURCE_SHA"
-      - run: bun install --frozen-lockfile --ignore-scripts
-      - name: Artifact helper source regressions
-        run: python3 scripts/ci/shortener-native-artifact.test.py
-      - name: Build required active workspace dependencies
-        uses: ./.github/actions/run-with-turbo-remote-cache
-        with:
-          command: bun turbo:local run build --filter='@tuturuuu/shortener^...' --concurrency=2
-          token: ''
-          team: ''
-      - name: Generate exact-checkout build identity
-        env:
-          PLATFORM_BUILD_COMMIT_HASH: ${{ env.SHORTENER_SOURCE_SHA }}
-          PLATFORM_BUILD_REF_NAME: ${{ github.head_ref || github.ref_name }}
-          PLATFORM_BUILD_ENVIRONMENT: preview
-        run: bun run --silent scripts/ci/generate-build-metadata.ts
-      - name: Test redirect, alias, verify and API ownership boundaries
-        uses: ./.github/actions/run-with-turbo-remote-cache
-        with:
-          command: cd apps/shortener && bun run test
-          token: ''
-          team: ''
-      - name: Check native owning source formatting
-        run: bun x --no-install biome check apps/shortener/src/link apps/shortener/src/native apps/shortener/src/components apps/shortener/src/routes apps/shortener/src/router.tsx apps/shortener/src/start.ts apps/shortener/cloudflare apps/shortener/vite.config.mts apps/shortener/void.config.ts apps/shortener/vitest.config.ts apps/shortener/tsconfig.json apps/shortener/package.json
-      - name: Record Shortener route tree presence before frontend build
-        id: shortener-route-tree-before
-        shell: bash
-        run: |
-          route_tree=apps/shortener/src/routeTree.gen.ts
-          if [ -e "$route_tree" ] || [ -L "$route_tree" ]; then
-            echo 'state=present' >> "$GITHUB_OUTPUT"
-          else
-            echo 'state=absent' >> "$GITHUB_OUTPUT"
-          fi
-      - name: Build native Start SSR with the official Void SDK
-        id: shortener-frontend-build
-        uses: ./.github/actions/run-with-turbo-remote-cache
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: https://shortener-ci.supabase.invalid
-          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_shortener_ci_placeholder
-          NEXT_PUBLIC_APP_URL: https://ttr.gg
-          NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
-          TUTURUUU_NOINDEX: '1'
-        with:
-          command: cd apps/shortener && bun run build:cloudflare
-          token: ''
-          team: ''
-      - name: Retain generated Shortener route tree evidence
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: shortener-route-tree-${{ env.SHORTENER_SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
-          path: apps/shortener/src/routeTree.gen.ts
-          retention-days: 7
-          if-no-files-found: warn
-      - name: Reject tracked Shortener route tree drift
-        if: always()
-        shell: bash
-        run: |
-          route_tree=apps/shortener/src/routeTree.gen.ts
-          if git cat-file -e "HEAD:$route_tree" 2>/dev/null; then
-            git diff --exit-code HEAD -- "$route_tree"
-          fi
-      - name: Type-check native app without a build
-        uses: ./.github/actions/run-with-turbo-remote-cache
-        with:
-          command: cd apps/shortener && bun run type-check
-          token: ''
-          team: ''
-      - name: Discover actual emitted config and assert staging resource/static contract
-        id: output
-        run: python3 scripts/ci/shortener-native-artifact.py config apps/shortener
-      - name: Record bounded Shortener native emitted config receipt
-        if: always()
-        run: node scripts/ci/native-emitted-config-receipt.mjs apps/shortener "$SHORTENER_SOURCE_SHA" "$RUNNER_TEMP/native-emitted-config-shortener.json"
-      - name: Retain Shortener diagnostic config receipt
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: shortener-native-config-receipt-${{ env.SHORTENER_SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/native-emitted-config-shortener.json
-          retention-days: 7
-          if-no-files-found: error
-      - name: Generate emitted binding types outside the frozen source
-        working-directory: apps/shortener
-        env:
-          SHORTENER_EMITTED_CONFIG: ${{ steps.output.outputs.config }}
-        run: bun x --no-install wrangler types --config "$SHORTENER_EMITTED_CONFIG" --env-interface ShortenerGeneratedEnv --include-runtime=false "$RUNNER_TEMP/shortener-env.d.ts"
-      - name: Check generated binding compatibility with the owning Worker
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          import json, os
-          from pathlib import Path
-          root, temporary = Path.cwd(), Path(os.environ['RUNNER_TEMP'])
-          harness = temporary / 'shortener-env-check.ts'
-          harness.write_text('/// <reference path=' + json.dumps(str(root / 'apps/shortener/node_modules/@cloudflare/workers-types/index.d.ts')) + ' />\nimport type { ShortenerEnvironment } from ' + json.dumps(str(root / 'apps/shortener/cloudflare/worker')) + ';\ndeclare const generated: ShortenerGeneratedEnv;\nconst owned: ShortenerEnvironment = generated;\nvoid owned;\n')
-          config = {'extends': str(root / 'apps/shortener/tsconfig.json'), 'compilerOptions': {'types': ['node'], 'typeRoots': [str(root / 'node_modules/@types')], 'noEmit': True}, 'include': [str(harness), str(temporary / 'shortener-env.d.ts')]}
-          (temporary / 'shortener-env-tsconfig.json').write_text(json.dumps(config))
-          PY
-          bun x --no-install tsc --project "$RUNNER_TEMP/shortener-env-tsconfig.json"
-      - name: Qualify the emitted exact-artifact Wrangler adapter without publication
-        working-directory: apps/shortener
-        env:
-          SHORTENER_EMITTED_CONFIG: ${{ steps.output.outputs.config }}
-        run: bun x --no-install wrangler deploy --dry-run --config "$SHORTENER_EMITTED_CONFIG" --outdir "$RUNNER_TEMP/shortener-dry-run"
-      - name: Seal exact-source output before runtime acceptance
-        id: shortener-canonical-seal
-        run: python3 scripts/ci/shortener-native-artifact.py seal apps/shortener --receipt "$RUNNER_TEMP/shortener-native-artifact.json"
-      - name: Exercise emitted redirect, SSR and API contracts in workerd
-        timeout-minutes: 4
-        working-directory: apps/shortener
-        env:
-          CI: 'true'
-          CI_SOURCE_SHA: ${{ env.SHORTENER_SOURCE_SHA }}
-        run: bun run test:runtime
-      - name: Recheck output and pack only qualified bytes
-        run: |
-          python3 scripts/ci/shortener-native-artifact.py verify apps/shortener --receipt "$RUNNER_TEMP/shortener-native-artifact.json"
-          python3 scripts/ci/shortener-native-artifact.py pack apps/shortener --receipt "$RUNNER_TEMP/shortener-native-artifact.json" --archive "$RUNNER_TEMP/shortener-native.tar.gz"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: shortener-native-${{ env.SHORTENER_SOURCE_SHA }}
-          path: ${{ runner.temp }}/shortener-native.tar.gz
-          retention-days: 7
-          if-no-files-found: error
-  restore-acceptance:
-    needs: validate
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    env:
-      SHORTENER_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-      WRANGLER_SEND_METRICS: 'false'
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ env.SHORTENER_SOURCE_SHA }}
-          persist-credentials: false
-      - uses: ./.github/actions/setup-bun-with-retry
-        with:
-          bun-version: 1.4.4
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: 24.22.0
-      - name: Verify immutable checkout identity
-        run: test "$(git rev-parse HEAD)" = "$SHORTENER_SOURCE_SHA"
-      - run: bun install --frozen-lockfile --ignore-scripts
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          name: shortener-native-${{ env.SHORTENER_SOURCE_SHA }}
-          path: ${{ runner.temp }}/shortener-native-download
-      - name: Restore into clean output with member/hash/source checks
-        run: python3 scripts/ci/shortener-native-artifact.py restore apps/shortener --archive "$RUNNER_TEMP/shortener-native-download/shortener-native.tar.gz" --receipt "$RUNNER_TEMP/shortener-native-artifact.json"
-      - name: Verify restored configuration
-        id: output
-        run: python3 scripts/ci/shortener-native-artifact.py config apps/shortener
-      - name: Recheck the Wrangler adapter on restored bytes without publication
-        working-directory: apps/shortener
-        env:
-          SHORTENER_EMITTED_CONFIG: ${{ steps.output.outputs.config }}
-        run: bun x --no-install wrangler deploy --dry-run --config "$SHORTENER_EMITTED_CONFIG" --outdir "$RUNNER_TEMP/shortener-restored-dry-run"
-      - name: Repeat emitted redirect, SSR and API acceptance on restored output
-        timeout-minutes: 4
-        working-directory: apps/shortener
-        env:
-          CI: 'true'
-          CI_SOURCE_SHA: ${{ env.SHORTENER_SOURCE_SHA }}
-        run: bun run test:runtime
-      - name: Confirm qualification did not mutate the restored artifact
-        run: python3 scripts/ci/shortener-native-artifact.py verify apps/shortener --receipt "$RUNNER_TEMP/shortener-native-artifact.json"
+    uses: ./.github/workflows/native-start-app.yaml
+    permissions:
+      contents: read
+    with:
+      app: shortener
+      package: '@tuturuuu/shortener'
+      artifact-script: scripts/ci/shortener-native-artifact.py
+      env-interface: ShortenerGeneratedEnv
+      worker-environment-type: ShortenerEnvironment
+      helper-tests: python3 scripts/ci/shortener-native-artifact.test.py
+      # Public staging values from repository variables for same-repository
+      # events; fork pull requests (and unset variables) build with fixtures.
+      public-env: |
+        NEXT_PUBLIC_SUPABASE_URL=${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.STAGING_SUPABASE_URL || 'https://shortener-ci.supabase.invalid' }}
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.STAGING_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_shortener_ci_placeholder' }}
+        NEXT_PUBLIC_APP_URL=https://ttr.gg
+        NEXT_PUBLIC_WEB_APP_URL=https://tuturuuu.com
+        TUTURUUU_NOINDEX=1
+      format-paths: >-
+        apps/shortener/src/link apps/shortener/src/native apps/shortener/src/components apps/shortener/src/routes apps/shortener/src/router.tsx apps/shortener/src/start.ts apps/shortener/cloudflare apps/shortener/vite.config.mts apps/shortener/void.config.ts apps/shortener/vitest.config.ts apps/shortener/tsconfig.json apps/shortener/package.json apps/shortener/start-bridge.routes.json

@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "plugins": [],
+    "types": ["node"],
+    "noEmit": true,
+    "composite": false,
+    "incremental": false,
+    "declaration": false,
+    "declarationMap": false
+  },
+  "include": [
+    "vite.config.ts",
+    "void.config.ts",
+    "vitest.config.ts",
+    "next.config.ts"
+  ],
+  "exclude": ["node_modules", "dist", ".turbo", ".typecheck"]
+}

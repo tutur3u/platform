@@ -2,18 +2,17 @@ import {
   hasSupportedSupabaseAuthCookie,
   hasWebAppSessionTokenFromRequest,
 } from '@tuturuuu/auth/app-session';
+import { normalizeAuthRedirectPath } from '@tuturuuu/auth/proxy';
 import { getSatelliteAppSession } from '@tuturuuu/satellite/auth';
+import { withAppBase } from '@tuturuuu/start-bridge/app-url';
+import { maybeBridgeRequest } from '@tuturuuu/start-bridge/request-context/core';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { BASE_URL, WEB_APP_URL } from '@/constants/common';
 
 function normalizeNextPath(value: string | string[] | undefined) {
   const rawValue = Array.isArray(value) ? value[0] : value;
-  if (!rawValue?.startsWith('/') || rawValue.startsWith('//')) {
-    return '/dashboard';
-  }
-
-  return rawValue;
+  return normalizeAuthRedirectPath(rawValue, BASE_URL, '/dashboard');
 }
 
 export default async function LoginPage({
@@ -41,7 +40,13 @@ export default async function LoginPage({
     redirect(nextPath);
   }
 
-  const returnUrl = new URL('/verify-token', BASE_URL);
+  const context = maybeBridgeRequest();
+  const returnUrl = context
+    ? new URL(
+        withAppBase('/verify-token', context.appBase ?? ''),
+        context.request.url
+      )
+    : new URL('/verify-token', BASE_URL);
   returnUrl.searchParams.set('nextUrl', nextPath);
 
   const loginUrl = new URL('/login', WEB_APP_URL);

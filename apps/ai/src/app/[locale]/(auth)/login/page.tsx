@@ -7,6 +7,7 @@ import { getSatelliteAppSession } from '@tuturuuu/satellite/auth';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { BASE_URL, WEB_APP_URL } from '@/constants/common';
+import { createAiPublicUrl } from '@/lib/ai-public-url';
 
 const DEFAULT_AI_PATH = '/personal';
 
@@ -40,7 +41,7 @@ export default async function LoginPage({
     redirect(nextPath);
   }
 
-  const returnUrl = new URL('/verify-token', BASE_URL);
+  const returnUrl = createAiPublicUrl('/verify-token');
   returnUrl.searchParams.set('nextUrl', nextPath);
   const loginUrl = new URL('/login', WEB_APP_URL);
   loginUrl.searchParams.set('returnUrl', returnUrl.toString());

@@ -1,5 +1,6 @@
 import { AiStudioError } from '@tuturuuu/ai/studio/errors';
 import { getAiStudioRequestId } from '@tuturuuu/ai/studio/request';
+import { maybeBridgeRequest } from '@tuturuuu/start-bridge/request-context/core';
 import type { Json } from '@tuturuuu/types';
 import { NoObjectGeneratedError } from 'ai';
 import { z } from 'zod';
@@ -283,6 +284,8 @@ export async function executeTextRequest(
       prompt: input.prompt,
     });
 
+    const completion = Promise.withResolvers<void>();
+    maybeBridgeRequest()?.waitUntil?.(completion.promise);
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
       async start(controller) {
@@ -351,6 +354,8 @@ export async function executeTextRequest(
               });
             });
           controller.error(error);
+        } finally {
+          completion.resolve();
         }
       },
     });

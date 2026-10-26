@@ -1,15 +1,13 @@
 import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
 import { resolveFinanceRouteAuthContext } from '@tuturuuu/finance-core/route-auth';
 import { recordInventoryFinanceAdjustment } from '@tuturuuu/inventory-core/finance-reconciliation';
+import { minorUnitsSchema } from '@tuturuuu/utils/finance-money';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { privateFinanceDataClient } from '../private-client';
 
 const payloadSchema = z.object({
-  amountMinor: z
-    .number()
-    .int()
-    .refine((value) => value !== 0),
+  amountMinor: minorUnitsSchema.refine((value) => value !== 0),
   checkoutId: z.guid(),
   idempotencyKey: z.guid(),
   occurredAt: z.iso.datetime({ offset: true }).optional(),
