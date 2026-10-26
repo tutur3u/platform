@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { PRIVATE_DRIVE_RESOURCE_PATHS } from '@/lib/private-drive-paths.test-fixture';
 
 const mocks = vi.hoisted(() => ({
   createWorkspaceStorageExportAssetUrl: vi.fn(
@@ -189,4 +190,15 @@ describe('workspace storage export-links route', () => {
       mocks.listWorkspaceStorageRawObjectsForProvider
     ).toHaveBeenCalledTimes(1);
   });
+  it.each(PRIVATE_DRIVE_RESOURCE_PATHS)(
+    'denies private export %s before scanning or minting a token',
+    async (path) => {
+      const response = await postExportLinks(path);
+      expect(response.status).toBe(403);
+      expect(
+        mocks.listWorkspaceStorageRawObjectsForProvider
+      ).not.toHaveBeenCalled();
+      expect(mocks.createWorkspaceStorageExportToken).not.toHaveBeenCalled();
+    }
+  );
 });

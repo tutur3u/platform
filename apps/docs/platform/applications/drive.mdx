@@ -57,9 +57,10 @@ from `packages/internal-api`, and consume it from `apps/drive`.
 
 Drive permissions apply to ordinary Drive files. They do not grant access to
 application-owned chat attachments. In every workspace, Drive share, download,
-list, export, upload, rename, and delete boundaries reject the `chats` namespace
-(including AI chat, private Mind threads, temporary uploads, and native chat
-conversations) and `external-apps` chat storage. Root listings and Drive analytics
+list, export, upload, rename, and delete boundaries reject the `chat`, `chats`, `external-apps`, `AI Agent Imports`, `mira`,
+and `recordings` namespaces. This includes legacy AI chat, private Mind threads,
+temporary/native/voice chat resources, imported external-chat media, Mira image
+results, and meeting audio. Root listings and Drive analytics
 omit those objects; quota accounting continues to count their bytes.
 
 This applies to Web, the Drive satellite, mobile Drive, and API-key storage APIs.
@@ -73,6 +74,52 @@ that behavior.
 Regression coverage: the Web workspace storage share/list route tests,
 `legacy-api-routes/v1/storage/reserved-paths.test.ts`, and storage-core
 `drive-path-policy.test.ts` / `storage-analytics.test.ts`.
+
+### Private upload census
+
+Paths below are relative to `<wsId>/` in the `workspaces` bucket. The owning
+application must authorize reads; Drive permissions do not replace that check.
+These source locations are the upload contracts for the separate Storage RLS lane.
+
+| Prefix | Owning app/surface | Upload path source |
+| --- | --- | --- |
+| `chat/<chatId>/` | Web legacy AI chat | `apps/web/src/components/chat-panel.tsx:523` (upload at 526; mounted by `ai-chat/chat.tsx:16`) |
+| `chats/ai/resources/<chatId>/` | Mira AI chat and private Mind threads | `apps/web/src/legacy-api-routes/ai/chat/upload-url/route.ts:114` (signed upload at 124) |
+| `chats/ai/resources/temp/<userId>/` | Mira/Mind temporary attachments | `apps/web/src/legacy-api-routes/ai/chat/upload-url/route.ts:116` |
+| `chats/ai/resources/<resourceChatId>/` | Native assistant attachment copies | `apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/messages/ai-message-shared.ts:243` |
+| `chats/<conversationId>/` | Native Chat | `apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/chat/conversations/[conversationId]/attachments/upload-url/route.ts:76` (RPC supplies the prefix) |
+| `external-apps/<app>/chat/` | Registered external apps | `apps/web/src/lib/external-apps/workspace-drive.ts:224` |
+| `AI Agent Imports/<adapter>/<channel>/<thread>/` | Chat external-channel imports | `apps/web/src/lib/ai-agents/external-chat-attachments.ts:143` (upload at 58) |
+| `mira/images/` | Mira generated image results | `packages/ai/src/tools/executors/image.ts:109` (upload at 123) |
+| `recordings/<meeting>/<session>/` | Workspace meeting audio and chunks | `apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/meetings/[meetingId]/recordings/[sessionId]/upload/route.ts:91`; sibling `chunks/route.ts:112` |
+
+Mobile voice attachments use the same AI/native upload flow through
+`apps/mobile/lib/features/assistant/data/assistant_repository.dart:513` and 540;
+there is no additional voice-only workspace storage root. Notes voice analysis
+accepts request audio without a `workspaces` object upload.
+
+Intentional Drive outputs remain accessible: `drive/mira/qr/` is explicitly saved
+to Drive (`packages/ai/src/tools/executors/qr.ts:114`), and Meet room files and
+recordings use the creator's personal Drive (`packages/meet-core/src/routes/api/meet-call/[meetingId]/files/route.ts:38`
+and sibling `recording/route.ts:43`). See the Meet call recording decision.
+Profile/report buckets and workspace-wide branding/template/whiteboard assets
+are outside this private chat/media namespace policy.
+
+### Previously issued signed URLs
+
+The workspace share route defaults to 31,536,000 seconds (one year); this change
+preserves that TTL. Denying new requests does not revoke bearer URLs already
+issued for private objects, and this PR does not close direct Supabase Storage
+access governed by existing RLS. The separate Storage RLS lane owns that fix.
+
+Remediation is an approval-required operator action: inventory exposed object
+keys and references, copy/re-key or move each object to a new unpredictable key,
+verify the replacement and update owning-application references, then retire the
+old key only after the replacement is durably confirmed. Account for provider/CDN
+caches and verify that each previously issued URL no longer serves bytes before
+claiming revocation. Preserve ownership, consent, retention, and deletion rules.
+No object move, removal, key rotation, or production write is authorized or run
+by this implementation PR. Obtain explicit per-case approval before execution.
 
 ## CI/CD
 

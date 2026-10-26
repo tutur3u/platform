@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { PRIVATE_DRIVE_RESOURCE_PATHS } from '@/lib/private-drive-paths.test-fixture';
 import { GET, POST } from './route';
 
 const mocks = vi.hoisted(() => ({
@@ -151,29 +152,22 @@ describe('Drive sharing does not authorize private chat resources', () => {
     });
   });
 
-  it.each([
-    'chats/ai/resources/member-a-chat/notes.txt',
-    'chats/ai/resources/member-a-mind-thread/notes.txt',
-    'chats/ai/resources/member-a-chat/quarantined.html',
-    'chats/ai/resources/temp/member-a/pending.pdf',
-    'chats/member-a-native-conversation/photo.png',
-    'chats',
-    'external-apps/example/chat/conversation/attachment/notes.pdf',
-    '%63hats/ai/resources/member-a-chat/notes.txt',
-    '%2563hats/ai/resources/member-a-chat/notes.txt',
-  ])('denies GET and POST sharing of %s', async (path) => {
-    const redirect = await GET(shareRequest(path), params);
-    expect(redirect.status).toBe(403);
-    const share = await POST(
-      new Request('http://localhost/api/v1/workspaces/ws-123/storage/share', {
-        method: 'POST',
-        body: JSON.stringify({ path }),
-      }),
-      params
-    );
-    expect(share.status).toBe(403);
-    expect(mocks.createWorkspaceStorageSignedReadUrl).not.toHaveBeenCalled();
-  });
+  it.each(PRIVATE_DRIVE_RESOURCE_PATHS)(
+    'denies GET and POST sharing of %s',
+    async (path) => {
+      const redirect = await GET(shareRequest(path), params);
+      expect(redirect.status).toBe(403);
+      const share = await POST(
+        new Request('http://localhost/api/v1/workspaces/ws-123/storage/share', {
+          method: 'POST',
+          body: JSON.stringify({ path }),
+        }),
+        params
+      );
+      expect(share.status).toBe(403);
+      expect(mocks.createWorkspaceStorageSignedReadUrl).not.toHaveBeenCalled();
+    }
+  );
 
   it('keeps member B own Drive file shareable', async () => {
     const response = await POST(
@@ -190,7 +184,7 @@ describe('Drive sharing does not authorize private chat resources', () => {
     expect(mocks.createWorkspaceStorageSignedReadUrl).toHaveBeenCalledWith(
       'ws-123',
       'documents/member-b/report.pdf',
-      expect.any(Object)
+      expect.objectContaining({ expiresIn: 31_536_000 })
     );
   });
 });

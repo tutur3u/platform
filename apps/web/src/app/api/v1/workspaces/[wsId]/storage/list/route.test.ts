@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { beforeEach, expect, it, vi } from 'vitest';
+import { PRIVATE_DRIVE_RESOURCE_PATHS } from '@/lib/private-drive-paths.test-fixture';
 
 const mocks = vi.hoisted(() => ({
   listWorkspaceStorageDirectory: vi.fn(),
@@ -58,20 +59,19 @@ vi.mock('next/server', async (importOriginal) => ({
   connection: vi.fn().mockResolvedValue(undefined),
 }));
 
-it.each([
-  'chats',
-  'chats/ai/resources/member-a-mind-thread',
-  'chats/conversation-a',
-])('denies private directory %s before listing', async (path) => {
-  const response = await GET(
-    new NextRequest(
-      `https://example.test/api/v1/workspaces/workspace-test/storage/list?path=${encodeURIComponent(path)}`
-    ),
-    { params: Promise.resolve({ wsId: 'workspace-test' }) }
-  );
-  expect(response.status).toBe(403);
-  expect(mocks.listWorkspaceStorageDirectory).not.toHaveBeenCalled();
-});
+it.each(PRIVATE_DRIVE_RESOURCE_PATHS)(
+  'denies private directory %s before listing',
+  async (path) => {
+    const response = await GET(
+      new NextRequest(
+        `https://example.test/api/v1/workspaces/workspace-test/storage/list?path=${encodeURIComponent(path)}`
+      ),
+      { params: Promise.resolve({ wsId: 'workspace-test' }) }
+    );
+    expect(response.status).toBe(403);
+    expect(mocks.listWorkspaceStorageDirectory).not.toHaveBeenCalled();
+  }
+);
 
 it('filters private namespaces out of the root response', async () => {
   mocks.listWorkspaceStorageDirectory.mockResolvedValue({

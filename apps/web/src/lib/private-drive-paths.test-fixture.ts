@@ -1,0 +1,32 @@
+export const PRIVATE_DRIVE_RESOURCE_PATHS = [
+  'chats/ai/resources/member-a-chat/notes.txt',
+  'chats/ai/resources/member-a-mind-thread/notes.txt',
+  'chats/ai/resources/member-a-chat/quarantined.html',
+  'chats/ai/resources/temp/member-a/pending.pdf',
+  'chats/member-a-native-conversation/photo.png',
+  'chats',
+  'external-apps/example/chat/conversation/attachment/notes.pdf',
+  '%63hats/ai/resources/member-a-chat/notes.txt',
+  '%2563hats/ai/resources/member-a-chat/notes.txt',
+  'chat/member-a-chat/notes.txt',
+  'chat/member-a-mind-thread/notes.txt',
+  'chat/member-a-chat/quarantined.html',
+  'chat/temp/member-a/pending.pdf',
+  'chat/member-a-chat/voice-message.m4a',
+  'chat',
+  '%63hat/member-a-chat/notes.txt',
+  '%2563hat/member-a-chat/notes.txt',
+  'chat\\member-a-chat\\notes.txt',
+  'AI Agent Imports/zalo/channel/thread/private.mp3',
+  'mira/images/private-image.png',
+  'recordings/meeting/session/private.webm',
+] as const;
+
+export const PRIVATE_DRIVE_ROOTS = [
+  'chat',
+  'chats',
+  'external-apps',
+  'AI Agent Imports',
+  'mira',
+  'recordings',
+] as const;

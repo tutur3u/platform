@@ -4,6 +4,13 @@ import { filterDriveEntries, isExcludedDrivePath } from './drive-path-policy';
 describe('Drive excludes private chat namespaces', () => {
   it.each([
     'external-apps/example/chat/conversation/attachment/file.pdf',
+    'chat',
+    'chat/chat-a/file.pdf',
+    '%63hat/chat-a/file.pdf',
+    '%2563hat/chat-a/file.pdf',
+    'AI%20Agent%20Imports/zalo/thread/private.mp3',
+    'mira/images/private.png',
+    'recordings/meeting/session/private.webm',
     'chats',
     'chats/ai',
     'chats/ai/resources/chat-a/quarantined.html',
@@ -22,6 +29,9 @@ describe('Drive excludes private chat namespaces', () => {
       'documents/file.pdf',
       'documents/chats/file.txt',
       'chats-backup/file.pdf',
+      'documents/chat/file.txt',
+      'drive/mira/qr/explicit-drive-output.png',
+      'Meet/meeting/Recordings/owner-saved.webm',
     ]) {
       expect(isExcludedDrivePath('ws-1', path)).toBe(false);
     }
@@ -30,6 +40,10 @@ describe('Drive excludes private chat namespaces', () => {
   it('hides chat folders from root listings', () => {
     expect(
       filterDriveEntries('ws-1', '', [
+        { name: 'chat' },
+        { name: 'mira' },
+        { name: 'AI Agent Imports' },
+        { name: 'recordings' },
         { name: 'chats' },
         { name: '%63hats' },
         { name: 'documents' },

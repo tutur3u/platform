@@ -1235,9 +1235,10 @@ section in [storage egress protection](../../../../../apps/docs/build/devops/sto
 
 Use `@tuturuuu/storage-core/drive-path-policy` at Drive boundaries, including
 mutations and export capabilities. `view_drive` and `manage_drive` never authorize
-`chats/**` (AI chat, Mind, temporary and native chat resources) or application-owned
-`external-apps/**` chat objects. Use the owning application's authorization and
-content guard for private reads. Preserve private-byte quota accounting while
+`chat/**`, `chats/**` (AI chat, Mind, temporary/native/voice resources),
+`external-apps/**`, `AI Agent Imports/**`, `mira/**`, or `recordings/**` private
+media. Use the owning application's authorization and content guard for private
+reads. Preserve private-byte quota accounting while
 excluding private filenames/sizes from Drive listings and analytics. Do not put
 this Drive-only denial in the generic storage read signer: authorized native chat
 and Meet callers also use it. See the Drive application's private attachment

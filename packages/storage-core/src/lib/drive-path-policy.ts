@@ -4,8 +4,8 @@ import {
   isReservedMobileDeploymentDrivePath,
 } from './mobile-deployment/storage-policy';
 
-/** Chat resources require their owning chat/thread API, never Drive permissions. */
-export function isPrivateChatStoragePath(path: string): boolean {
+/** Private resources require their owning application API, never Drive permissions. */
+function isPrivateAppStoragePath(path: string): boolean {
   const sanitized = sanitizePath(path);
   if (sanitized === null) return true;
   // Match encoded aliases conservatively; transport encoding must not select
@@ -18,12 +18,19 @@ export function isPrivateChatStoragePath(path: string): boolean {
     if (decoded === root) break;
     root = decoded;
   }
-  return root === 'chats' || root === 'external-apps';
+  return [
+    'chat',
+    'chats',
+    'external-apps',
+    'AI Agent Imports',
+    'mira',
+    'recordings',
+  ].includes(root);
 }
 
 export function isExcludedDrivePath(wsId: string, path: string): boolean {
   return (
-    isPrivateChatStoragePath(path) ||
+    isPrivateAppStoragePath(path) ||
     isReservedMobileDeploymentDrivePath(wsId, path)
   );
 }
@@ -36,6 +43,6 @@ export function filterDriveEntries<T extends { name?: string | null }>(
   return filterReservedMobileDeploymentDriveEntries(wsId, path, entries).filter(
     (entry) =>
       !entry.name ||
-      !isPrivateChatStoragePath(path ? `${path}/${entry.name}` : entry.name)
+      !isPrivateAppStoragePath(path ? `${path}/${entry.name}` : entry.name)
   );
 }
