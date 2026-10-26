@@ -157,6 +157,11 @@ export async function PATCH(
           parentSessionId: session.parent_session_id,
         }
       );
+      if (bridged && 'conflict' in bridged)
+        return NextResponse.json(
+          { error: 'The Pomodoro changed on another device. Try again.' },
+          { status: 409 }
+        );
       if (bridged) return respondWithSession(sbAdmin, bridged.sessionId);
     }
     switch (body.action) {

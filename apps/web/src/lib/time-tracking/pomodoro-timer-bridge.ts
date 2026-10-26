@@ -17,11 +17,15 @@ import {
  * - Stop, pause or edit of another session leaves the Pomodoro alone.
  *
  * A manual timer is never closed by the Pomodoro, and nothing here starts
- * focus. Failures fall back to the Timer's own behaviour; the database turns
- * a Pomodoro whose session moved elsewhere OFF on its next command.
+ * focus. The Pomodoro switches OFF only when its session moved elsewhere
+ * (`mismatch`) or the command no longer applies (422). A revision conflict
+ * is retried once against the fresh state, then answered with a 409. Other
+ * failures fall back to the Timer's own behaviour.
  */
 
 export type TimerSessionAction = 'stop' | 'pause' | 'resume';
+
+export type TimerBridgeResult = { sessionId: string } | { conflict: true } | null;
 
 export interface TimerSessionRef {
   id: string;
@@ -81,14 +85,14 @@ export async function switchPomodoroOff(
 
 /**
  * Runs a Timer stop, pause or resume through the Pomodoro when the session
- * is its focus session. Returns the session to answer with, or null when
- * the Timer should act as before.
+ * is its focus session. Returns the session to answer with, a conflict for
+ * a 409, or null when the Timer should act as before.
  */
 export async function bridgeTimerSessionAction(
   deps: PomodoroDeps,
   action: TimerSessionAction,
   session: TimerSessionRef
-): Promise<{ sessionId: string } | null> {
+): Promise<TimerBridgeResult> {
   let row: PomodoroControlRow | null;
   try {
     row = await deps.store.read();
@@ -102,11 +106,16 @@ export async function bridgeTimerSessionAction(
     if (action === 'resume') await switchPomodoroOff(deps, row);
     return null;
   }
-  const result = await commandPomodoro(deps, {
-    type: action,
-    commandId: deps.newId(),
-    expectedRevision: row.revision,
-  });
+  const run = (expectedRevision: number) =>
+    commandPomodoro(deps, {
+      type: action,
+      commandId: deps.newId(),
+      expectedRevision,
+    });
+  let result = await run(row.revision);
+  if (result.status === 409 && result.body.error === 'revision_conflict') {
+    result = await run((result.body.state as PomodoroView).revision);
+  }
   if (result.status === 200 && result.body.mismatch !== true) {
     const state = result.body.state as PomodoroView;
     return {
@@ -114,6 +123,9 @@ export async function bridgeTimerSessionAction(
         action === 'resume' ? (state.sessionId ?? session.id) : session.id,
     };
   }
-  await switchPomodoroOff(deps);
+  if (result.status === 409) return { conflict: true };
+  // The database already switched a mismatch OFF; this covers the 422.
+  if (result.status === 422 || result.body.mismatch === true)
+    await switchPomodoroOff(deps);
   return null;
 }

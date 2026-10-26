@@ -150,6 +150,39 @@ describe('bridgeTimerSessionAction', () => {
   });
 });
 
+describe('bridgeTimerSessionAction conflicts', () => {
+  it('retries a revision conflict once against the fresh state', async () => {
+    const { deps, apply, row } = setup(focusRow());
+    const read = deps.store.read;
+    let reads = 0;
+    // The bridge reads a revision another device has since moved past.
+    deps.store.read = async () =>
+      reads++ === 0 ? focusRow({ revision: 2 }) : read();
+    const result = await bridgeTimerSessionAction(deps, 'pause', {
+      id: 'focus-1',
+      parentSessionId: null,
+    });
+
+    expect(result).toEqual({ sessionId: 'focus-1' });
+    expect(apply.mock.calls.at(-1)?.[0].expectedRevision).toBe(3);
+    expect(row()?.mode).toBe('pomodoro');
+  });
+
+  it('answers a lasting conflict with a 409 and keeps the Pomodoro', async () => {
+    const { deps, row } = setup(focusRow());
+    deps.store.apply = async () => {
+      throw new PomodoroStoreError('revision_conflict');
+    };
+    const result = await bridgeTimerSessionAction(deps, 'pause', {
+      id: 'focus-1',
+      parentSessionId: null,
+    });
+
+    expect(result).toEqual({ conflict: true });
+    expect(row()?.mode).toBe('pomodoro');
+  });
+});
+
 describe('switchPomodoroOff', () => {
   it('turns the Pomodoro off without session effects', async () => {
     const { deps, apply, publish, row } = setup(focusRow());
