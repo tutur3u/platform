@@ -13,7 +13,10 @@ import {
   type TopicAnnouncementsAccessContext,
   type TopicAnnouncementsSupabaseClient,
 } from '@tuturuuu/users-core/routes/topic-announcements';
-import { TOPIC_ANNOUNCEMENTS_SECRET } from '@tuturuuu/utils/topic-announcements';
+import {
+  isTopicTeacherAssignmentsEnabled,
+  TOPIC_ANNOUNCEMENTS_SECRET,
+} from '@tuturuuu/utils/topic-announcements';
 import {
   getPermissions,
   getSecret,
@@ -105,6 +108,9 @@ export async function resolveTopicAnnouncementsAccess(
   const secrets = await getSecrets({ forceAdmin: true, wsId: normalizedWsId });
   const enabled =
     getSecret(TOPIC_ANNOUNCEMENTS_SECRET, secrets ?? [])?.value === 'true';
+  const teacherAssignmentsEnabled = isTopicTeacherAssignmentsEnabled(
+    secrets ?? []
+  );
   if (!enabled) {
     return {
       response: NextResponse.json({ message: 'Not found' }, { status: 404 }),
@@ -132,6 +138,7 @@ export async function resolveTopicAnnouncementsAccess(
       !permissions.withoutPermission(
         permission as Parameters<typeof permissions.withoutPermission>[0]
       ),
+    teacherAssignmentsEnabled,
   });
   if (mode === 'denied') return { response: insufficientPermissions() };
 
@@ -167,6 +174,7 @@ export async function resolveTopicAnnouncementsAccess(
       sbAdmin,
       scope,
       supabase,
+      teacherAssignmentsEnabled,
     },
   };
 }

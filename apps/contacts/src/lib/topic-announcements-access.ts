@@ -7,7 +7,10 @@ import {
   type TopicAnnouncementAccessResolver,
   type TopicAnnouncementAccessScope,
 } from '@tuturuuu/users-core/routes/topic-announcements';
-import { TOPIC_ANNOUNCEMENTS_SECRET } from '@tuturuuu/utils/topic-announcements';
+import {
+  isTopicTeacherAssignmentsEnabled,
+  TOPIC_ANNOUNCEMENTS_SECRET,
+} from '@tuturuuu/utils/topic-announcements';
 import { getSecret, getSecrets } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { getContactsWorkspaceAccess } from './workspace';
@@ -51,8 +54,12 @@ export const resolveContactsTopicAnnouncementsAccess: TopicAnnouncementAccessRes
       };
     }
 
+    const teacherAssignmentsEnabled = isTopicTeacherAssignmentsEnabled(
+      secrets ?? []
+    );
     const mode = decideTopicAnnouncementAccessMode({
       ...options,
+      teacherAssignmentsEnabled,
       hasPermission: (permission) =>
         !access.permissions.withoutPermission(
           permission as Parameters<
@@ -87,6 +94,7 @@ export const resolveContactsTopicAnnouncementsAccess: TopicAnnouncementAccessRes
         sbAdmin: getPrivateSchemaClient(admin),
         scope,
         supabase: admin,
+        teacherAssignmentsEnabled,
       },
     };
   };
