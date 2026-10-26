@@ -26,7 +26,7 @@ on:
         default: ""
 
 concurrency:
-  group: ${{ ((github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/production') || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_repository.full_name == github.repository && ((github.event.workflow_run.name == 'Production Deployment Planner' && github.event.workflow_run.head_branch == 'production' && (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_dispatch')) || (github.event.workflow_run.name == 'Supabase Staging Migration' && github.event.workflow_run.head_branch == 'main' && (github.event.workflow_run.event == 'workflow_run' || github.event.workflow_run.event == 'workflow_dispatch'))))) && 'supabase-production-migration' || format('supabase-production-migration-ignored-{0}', github.run_id) }}
+  group: ${{ ((github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/production') || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_repository.full_name == github.repository && ((github.event.workflow_run.name == 'Production Deployment Planner' && github.event.workflow_run.head_branch == 'production' && (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_dispatch')) || (github.event.workflow_run.name == 'Supabase Staging Migration' && github.event.workflow_run.head_branch == 'main' && (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_run' || github.event.workflow_run.event == 'workflow_dispatch'))))) && 'supabase-production-migration' || format('supabase-production-migration-ignored-{0}', github.run_id) }}
   cancel-in-progress: false
   queue: max
 
@@ -36,7 +36,7 @@ permissions:
 jobs:
   evaluate-prerequisites:
     name: Evaluate production prerequisites
-    if: ${{ (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/production') || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_repository.full_name == github.repository && ((github.event.workflow_run.name == 'Production Deployment Planner' && github.event.workflow_run.head_branch == 'production' && (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_dispatch')) || (github.event.workflow_run.name == 'Supabase Staging Migration' && github.event.workflow_run.head_branch == 'main' && (github.event.workflow_run.event == 'workflow_run' || github.event.workflow_run.event == 'workflow_dispatch')))) }}
+    if: ${{ (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/production') || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_repository.full_name == github.repository && ((github.event.workflow_run.name == 'Production Deployment Planner' && github.event.workflow_run.head_branch == 'production' && (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_dispatch')) || (github.event.workflow_run.name == 'Supabase Staging Migration' && github.event.workflow_run.head_branch == 'main' && (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_run' || github.event.workflow_run.event == 'workflow_dispatch')))) }}
     timeout-minutes: 15
     runs-on: ubuntu-latest
     permissions:
@@ -56,7 +56,7 @@ jobs:
           # One producer per line: <workflow file> <workflow ID> <exact branch> <events> <conclusions>
           TRUSTED_PRODUCERS: |
             vercel-production.yaml 317228637 production push,workflow_dispatch success
-            supabase-staging.yaml 47180097 main workflow_run,workflow_dispatch success
+            supabase-staging.yaml 47180097 main push,workflow_run,workflow_dispatch success
         run: |
           set -euo pipefail
           # Expression `==` ignores case and workflow_run matches producers by name, so
@@ -482,21 +482,24 @@ jobs:
             assert(run.id === Number(p.runId) && run.run_attempt === Number(p.runAttempt) &&
               run.workflow_id === workflow.id && run.path === workflowPath &&
               run.head_branch === 'main' && sha(run.head_sha) &&
-              ['workflow_run', 'workflow_dispatch'].includes(run.event) &&
+              ['push', 'workflow_run', 'workflow_dispatch'].includes(run.event) &&
               run.status === 'completed' && run.conclusion === 'success' &&
               run.repository?.id === repository.id && run.repository?.full_name === repo &&
               run.head_repository?.id === repository.id && run.head_repository?.full_name === repo,
               'producer-current-attempt-contract');
             // For workflow_run, the pinned emitting contract binds TARGET_SHA independently
-            // of the wrapper head. Manual main dispatch checks out its own head.
-            assert(run.event !== 'workflow_dispatch' || run.head_sha === target, 'manual-source');
+            // of the wrapper head. Push and manual runs check out their own head.
+            assert(!['push', 'workflow_dispatch'].includes(run.event) || run.head_sha === target, 'direct-source');
           }
 
+          // Append future push producers here as well as in the source allowlist.
+          const directPushContracts = new Set(['74fb269fcc135b0467c19d82286f1c3484c7d4f7']);
           const contracts = [
-            [workflowPath, ['c80066e1cd038fcda3bd6c1a79c0b12993b94b49', '70937258932e55cf611c2896b788da0392c09717', '68449e684d33ca9608e6c873563ca3092543ca6c', 'ec2f81d196eff45ba05d2b87ad5bd1bb98b194da', 'd880c279f37b63628706b195e5397be1cf25acd5', '40f1cc37c1b4c0ed2b9976019c95eb145311c77d']],
+            [workflowPath, ['c80066e1cd038fcda3bd6c1a79c0b12993b94b49', '70937258932e55cf611c2896b788da0392c09717', '68449e684d33ca9608e6c873563ca3092543ca6c', 'ec2f81d196eff45ba05d2b87ad5bd1bb98b194da', 'd880c279f37b63628706b195e5397be1cf25acd5', '40f1cc37c1b4c0ed2b9976019c95eb145311c77d', '74fb269fcc135b0467c19d82286f1c3484c7d4f7']],
             ['scripts/ci/record-deployment-marker.ts', ['35eaf73931589cfe9dd62f7456a3dbe3c48c988c']],
           ];
           async function checkContracts(producerHead) {
+            let producerWorkflow;
             for (const [path, allowed] of contracts) {
               const unique = new Set();
               for (const revision of new Set([target, producerHead])) {
@@ -504,6 +507,7 @@ jobs:
                 assert(entry.type === 'file' && entry.path === path && allowed.includes(entry.sha),
                   'unknown-producer-contract');
                 unique.add(entry.sha);
+                if (path === workflowPath && revision === producerHead) producerWorkflow = entry.sha;
               }
               // Resolve each commit, then rehash each distinct allowlisted Git blob.
               for (const expected of unique) {
@@ -518,6 +522,7 @@ jobs:
                 assert(digest === expected, 'contract-blob-hash');
               }
             }
+            return producerWorkflow;
           }
 
           async function latestStatus(id, p) {
@@ -551,7 +556,10 @@ jobs:
             const { data: run } = await get(runRoute);
             checkRun(run, p, repository, workflow);
             const status = await latestStatus(marker.id, p);
-            await checkContracts(run.head_sha);
+            const producerWorkflow = await checkContracts(run.head_sha);
+            assert(directPushContracts.has(producerWorkflow)
+              ? run.event === 'push' && run.head_sha === target
+              : ['workflow_run', 'workflow_dispatch'].includes(run.event), 'producer-event-contract');
             const jobs = await inventory(`${runRoute}/attempts/${p.runAttempt}/jobs`, 'jobs');
             assert(jobs.length === 1, 'migration-job-inventory');
             const job = jobs[0];

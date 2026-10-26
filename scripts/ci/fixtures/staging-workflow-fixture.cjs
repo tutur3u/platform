@@ -39,7 +39,7 @@ function installFetchFixture() {
     path: workflowPath,
     head_branch: env.STAGING_BRANCH,
     head_sha: wrapper,
-    event: 'workflow_run',
+    event: env.STAGING_RUN_EVENT || 'workflow_run',
     status: env.STAGING_STATUS,
     conclusion: env.STAGING_RESULT,
     repository,
@@ -80,7 +80,8 @@ function installFetchFixture() {
       const entry = blobs.find(
         (entry) =>
           entry.path === file &&
-          !!entry.legacy === (file === workflowPath && kind === 'old')
+          entry.kind ===
+            (file === workflowPath && kind !== 'unknown' ? kind : 'new')
       );
       const chosen =
         kind === 'unknown' ? { ...entry, sha: 'd'.repeat(40) } : entry;
