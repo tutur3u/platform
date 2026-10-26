@@ -607,6 +607,9 @@ jobs:
     name: Migrate production database
     timeout-minutes: 15
     runs-on: ubuntu-latest
+    # Branch-restricted (main for workflow_run, production for dispatch) so
+    # other branches cannot read the Management API token or DB password.
+    environment: supabase-production-migrations
     needs: [evaluate-prerequisites]
     if: needs.evaluate-prerequisites.outputs.trusted_trigger == 'true' && needs.evaluate-prerequisites.outputs.should_deploy == 'true'
     permissions:

@@ -42,6 +42,8 @@ jobs:
       )
     timeout-minutes: 15
     runs-on: ubuntu-latest
+    # Restricted to main so other branches cannot read the migration credentials.
+    environment: supabase-staging-migrations
     steps:
       - name: Verify trusted trigger
         id: trigger
