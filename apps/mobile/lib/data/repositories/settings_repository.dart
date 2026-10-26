@@ -147,7 +147,7 @@ class SettingsRepository {
   }
 
   /// Last known appearance of account [userId], so it shows at launch and
-  /// offline. [pendingUpload] marks a local change the server has not
+  /// offline. `pendingUpload` marks a local change the server has not
   /// confirmed yet.
   Future<({String? encoded, bool pendingUpload})> getAccountAppearance(
     String userId,

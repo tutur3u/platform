@@ -88,7 +88,10 @@ void registerSettingsAppearanceInterfaceChecks() {
     await h.theme.bindAccount('u1');
     await _settle(tester);
     expect(override, findsOneWidget);
-    expect(find.text('Use different appearance on this device'), findsOneWidget);
+    expect(
+      find.text('Use different appearance on this device'),
+      findsOneWidget,
+    );
 
     await tester.tap(override);
     await _settle(tester);

@@ -7205,6 +7205,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appearanceDensityTitle => 'Density';
 
   @override
+  String get appearanceDeviceOverride => 'Use different appearance on this device';
+
+  @override
   String get appearanceFeedbackTitle => 'Feedback and motion';
 
   @override
@@ -7226,7 +7229,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appearanceReduceMotion => 'Reduce motion';
 
   @override
-  String get appearanceReduceMotionDescription => 'Always reduce animations on this device, even when the system setting is off.';
+  String get appearanceReduceMotionDescription => 'Always reduce animations, even when the system setting is off.';
 
   @override
   String get appearanceReset => 'Reset to default';

@@ -13747,6 +13747,12 @@ abstract class AppLocalizations {
   /// **'Density'**
   String get appearanceDensityTitle;
 
+  /// No description provided for @appearanceDeviceOverride.
+  ///
+  /// In en, this message translates to:
+  /// **'Use different appearance on this device'**
+  String get appearanceDeviceOverride;
+
   /// No description provided for @appearanceFeedbackTitle.
   ///
   /// In en, this message translates to:
@@ -13792,7 +13798,7 @@ abstract class AppLocalizations {
   /// No description provided for @appearanceReduceMotionDescription.
   ///
   /// In en, this message translates to:
-  /// **'Always reduce animations on this device, even when the system setting is off.'**
+  /// **'Always reduce animations, even when the system setting is off.'**
   String get appearanceReduceMotionDescription;
 
   /// No description provided for @appearanceReset.

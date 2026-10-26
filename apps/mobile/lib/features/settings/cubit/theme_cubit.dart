@@ -107,7 +107,7 @@ class ThemeCubit extends Cubit<ThemeState> {
         );
         if (isClosed || scope != _scopeRevision) return;
         _account = AppearanceSettings.decode(remote);
-        if (!state.deviceOverride) emit(state.copyWith(appearance: _resolved()));
+        emit(state.copyWith(appearance: _resolved()));
         return;
       }
       // First sign-in with this store: carry the device's look over.
@@ -119,7 +119,7 @@ class ThemeCubit extends Cubit<ThemeState> {
         pendingUpload: true,
       );
       _account = AppearanceSettings.decode(seed);
-      if (!state.deviceOverride) emit(state.copyWith(appearance: _resolved()));
+      emit(state.copyWith(appearance: _resolved()));
       await _upload(userId, seed);
     } on Exception catch (e) {
       debugPrint('Error syncing account appearance: $e');

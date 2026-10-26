@@ -5,8 +5,8 @@ import 'package:mobile/data/sources/api_client.dart';
 /// Stored per user in `user_configs` through the existing
 /// `/api/v1/users/me/configs` route as an encoded `AppearanceSettings`
 /// payload. Light/dark mode is not included; it stays a device choice.
-/// Requests are pinned to [userId], so an account switch mid-request fails
-/// instead of reading or writing the other account.
+/// Requests are pinned to the given user, so an account switch mid-request
+/// fails instead of reading or writing the other account.
 class AccountAppearanceRepository {
   AccountAppearanceRepository({ApiClient? apiClient})
     : _api = apiClient ?? ApiClient();

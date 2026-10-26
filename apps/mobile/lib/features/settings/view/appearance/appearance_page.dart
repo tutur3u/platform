@@ -101,9 +101,8 @@ class _AppearancePageState extends State<AppearancePage> {
                       icon: LucideIcons.smartphone,
                       title: l10n.appearanceDeviceOverride,
                       value: state.deviceOverride,
-                      onChanged: (value) => choose(
-                        () => cubit.setDeviceOverride(value: value),
-                      ),
+                      onChanged: (value) =>
+                          choose(() => cubit.setDeviceOverride(value: value)),
                     ),
                   ],
                 ),

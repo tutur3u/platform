@@ -158,21 +158,24 @@ void main() {
   });
 
   group('device override', () {
-    test('turning it on keeps the look and edits stay on this device', () async {
-      accounts.stored['u1'] = _aurora.encode();
-      await theme.bindAccount('u1');
-      await theme.setDeviceOverride(value: true);
-      expect(theme.state.deviceOverride, isTrue);
-      expect(theme.state.appearance, _aurora);
+    test(
+      'turning it on keeps the look and edits stay on this device',
+      () async {
+        accounts.stored['u1'] = _aurora.encode();
+        await theme.bindAccount('u1');
+        await theme.setDeviceOverride(value: true);
+        expect(theme.state.deviceOverride, isTrue);
+        expect(theme.state.appearance, _aurora);
 
-      await theme.setAppearance(_compact);
-      expect(theme.state.appearance, _compact);
-      expect(accounts.stored['u1'], _aurora.encode());
-      expect(
-        AppearanceSettings.decode(await SettingsRepository().getAppearance()),
-        _compact,
-      );
-    });
+        await theme.setAppearance(_compact);
+        expect(theme.state.appearance, _compact);
+        expect(accounts.stored['u1'], _aurora.encode());
+        expect(
+          AppearanceSettings.decode(await SettingsRepository().getAppearance()),
+          _compact,
+        );
+      },
+    );
 
     test('turning it off shows the account values again', () async {
       accounts.stored['u1'] = _aurora.encode();
@@ -251,20 +254,23 @@ void main() {
   });
 
   group('sign-out', () {
-    test('the account look stops showing and the device look returns', () async {
-      await SettingsRepository().setAppearance(_compact.encode());
-      accounts.stored['u1'] = _aurora.encode();
-      await theme.bindAccount('u1');
-      expect(theme.state.appearance, _aurora);
+    test(
+      'the account look stops showing and the device look returns',
+      () async {
+        await SettingsRepository().setAppearance(_compact.encode());
+        accounts.stored['u1'] = _aurora.encode();
+        await theme.bindAccount('u1');
+        expect(theme.state.appearance, _aurora);
 
-      final seen = <AppearanceSettings>[];
-      final sub = theme.stream.listen((s) => seen.add(s.appearance));
-      await theme.bindAccount(null);
-      await sub.cancel();
-      expect(theme.state.appearance, _compact);
-      expect(theme.state.hasAccount, isFalse);
-      expect(seen, isNot(contains(_aurora)));
-    });
+        final seen = <AppearanceSettings>[];
+        final sub = theme.stream.listen((s) => seen.add(s.appearance));
+        await theme.bindAccount(null);
+        await sub.cancel();
+        expect(theme.state.appearance, _compact);
+        expect(theme.state.hasAccount, isFalse);
+        expect(seen, isNot(contains(_aurora)));
+      },
+    );
 
     test('a cached look is not shown after relaunching signed out', () async {
       accounts.stored['u1'] = _aurora.encode();

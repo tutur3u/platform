@@ -33,5 +33,10 @@ class ThemeState extends Equatable {
   );
 
   @override
-  List<Object?> get props => [themeMode, appearance, deviceOverride, hasAccount];
+  List<Object?> get props => [
+    themeMode,
+    appearance,
+    deviceOverride,
+    hasAccount,
+  ];
 }
