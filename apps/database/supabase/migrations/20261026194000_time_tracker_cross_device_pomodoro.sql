@@ -296,7 +296,7 @@ declare
   v_result jsonb;
 begin
   if p_ws_id is null or p_actor_id is null or p_command_id is null
-    or p_expected_revision is null or p_expected_revision<1
+    or p_expected_revision is null or p_expected_revision<0
     or p_expected_revision=9223372036854775807
     or jsonb_typeof(p_command) is distinct from 'object'
     or p_command->>'type' is null
@@ -317,8 +317,10 @@ begin
   if not found then
     raise exception 'Pomodoro control not configured' using errcode='55000';
   end if;
-  v_payload:=extensions.digest(jsonb_build_object('revision',p_expected_revision,
-    'command',p_command)::text,'sha256');
+  -- The receipt is keyed by the command id and hashes the command only, so a
+  -- retry replays even when it carries a revision that has since moved on
+  -- (for example the 0 of the start that created the control).
+  v_payload:=extensions.digest(jsonb_build_object('command',p_command)::text,'sha256');
   insert into private.time_tracker_operation_scopes(ws_id,actor_id)
     values(p_ws_id,p_actor_id) on conflict do nothing;
   perform 1 from private.time_tracker_operation_scopes
@@ -331,7 +333,7 @@ begin
     end if;
     return v_receipt.result || jsonb_build_object('replayed',true);
   end if;
-  if v_control.revision<>p_expected_revision then
+  if p_expected_revision<1 or v_control.revision<>p_expected_revision then
     raise exception 'Pomodoro revision conflict' using errcode='40001';
   end if;
 
