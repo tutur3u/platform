@@ -83,3 +83,26 @@ node --test scripts/ci/check-workflow-config.test.js scripts/ci/release-workflow
 Run focused checks locally without app builds. Require the applicable lint,
 type-check, test, and real app-build workflows to pass in CI for the exact
 commit; do not run `bun validate` or app builds on the shared machine.
+
+## Storage access decision
+
+- **Scope:** every object in the `workspaces` Storage bucket, reached directly
+  through the Supabase Storage API with a user token. Server APIs that use the
+  service role are unaffected.
+- **Default:** direct access follows the app layer. A Drive object is readable
+  with `view_drive` or `manage_drive`. Writes and deletes require `manage_drive`.
+  Plain membership no longer grants Drive access.
+- **Private roots:** `chat/**` and `chats/ai/resources/**` are private to the
+  chat creator (or, for `temp/<userId>/**`, the uploader). Owners can read and
+  delete their own objects, but nobody writes them directly. Other `chats/**`,
+  `external-apps/**`, `AI Agent Imports/**`, `mira/images/**`, `recordings/**`
+  and `.tuturuuu/**` objects have no direct client access.
+- **Affected surfaces:** Web, Rewise and Mind AI chat attachments now upload
+  through `POST /api/ai/chat/upload-url`. It enforces chat ownership and issues
+  a signed upload URL. Meeting recording routes use the service role after
+  their checks. The Drive app and SDK keep their server-side checks.
+- **Intentional exceptions:** `project-updates/**` stays member-wide, matching
+  its request-scoped route. `template-backgrounds/**` is member-readable for
+  template pickers. `drive/mira/qr/**` is an intentional Drive output.
+- **Evidence:** the matrix, rollback and verification steps are in
+  [Workspace storage RLS](/build/devops/workspace-storage-rls).

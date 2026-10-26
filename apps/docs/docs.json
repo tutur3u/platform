@@ -371,6 +371,7 @@
                   "build/devops/log-drain-observability",
                   "build/devops/adaptive-abuse-rate-limits",
                   "build/devops/storage-egress-protection",
+                  "build/devops/workspace-storage-rls",
                   "build/devops/critical-app-rollout",
                   "build/devops/github-actions-runbook",
                   "build/devops/caching",

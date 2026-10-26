@@ -1,0 +1,100 @@
+---
+title: Workspace storage RLS
+description: Path-scoped Row Level Security for the workspaces Storage bucket, its regression matrix, and the tested rollback.
+---
+
+## Access model
+
+The `workspaces` bucket stores objects as `<wsId>/<root>/...`. Supabase Storage
+enforces `storage.objects` RLS for browser and user-token clients. Owning server
+APIs use the service role, which bypasses RLS. Migration
+`20261026100000_least_privilege_workspace_storage_rls.sql` replaced the original
+policies. Those let any workspace member read, write and delete every object.
+
+All rules require a `MEMBER` workspace membership (`is_org_member`; guests are
+excluded). `public.workspace_storage_object_access(name, operation)` evaluates
+them:
+
+| Root | select | insert / update | delete |
+| --- | --- | --- | --- |
+| `chat/<chatId>/**` (legacy AI attachments) | chat creator | none | chat creator |
+| `chats/ai/resources/<chatId>/**` | chat creator | none | chat creator |
+| `chats/ai/resources/temp/<userId>/**` | that user | none | that user |
+| other `chats/**` (native Chat), `external-apps/**`, `AI Agent Imports/**`, `mira/images/**`, `recordings/**`, `.tuturuuu/**` | none | none | none |
+| `project-updates/**` | member | member | member |
+| `template-backgrounds/**` | member | `manage_drive` | `manage_drive` |
+| everything else, including root-level files (Drive) | `view_drive` or `manage_drive` | `manage_drive` | `manage_drive` |
+
+- Private roots match case-insensitively and never fall back to Drive permissions.
+  `AI Agent Imports` contains spaces; the match uses the literal segment.
+  `drive/mira/qr/**` (QR codes saved to Drive) stays a Drive object; only
+  `mira/images/**` is private.
+- Names containing empty, `.` or `..` segments are denied.
+- Clients cannot write private roots. Chat uploads use
+  `POST /api/ai/chat/upload-url`, which checks membership and chat ownership
+  before it issues a signed upload URL. An existing chat must belong to the
+  caller. An id that does not exist yet is allowed for draft attachments.
+- Meeting recording routes check membership and the recording session, then use
+  the service role for storage. Playback signs only paths inside the verified
+  session folder.
+- `project-updates` keeps member access because its task route still uses a
+  request-scoped client. Move it to a service-role route before tightening it.
+- The private-root list follows the Drive private upload census in
+  [Drive](/platform/applications/drive). Add new private roots to the helper,
+  the Drive path policy and the test matrix together.
+
+RESTRICTIVE `workspace_storage_guard_*` policies enforce the same helper on every
+command. The legacy `Enable insert for authenticated users only` policy
+(`WITH CHECK (true)`) can no longer widen access to this bucket. Before this
+migration, it let non-members insert into any workspace folder.
+
+## Regression coverage
+
+`apps/database/supabase/tests/workspace-storage-least-privilege-rls.sql` covers
+15 objects across every root. Each is probed by a non-member, a member, a
+`view_drive` viewer, a `manage_drive` manager, the chat owner/uploader and
+`service_role`, for select/insert/update/delete. With 8 structural checks, that
+is 368 assertions. Each probe runs in a rolled-back subtransaction.
+
+Route tests in `apps/web/src/__tests__/mind-chat-file-app-session-route.test.ts`
+cover the upload-url and delete-file ownership checks.
+
+## Verify on a disposable stack
+
+Run this on a remote devbox only, never on the shared laptop. Copy
+`apps/database/supabase` to a scratch directory and give `config.toml` a unique
+`project_id` and free ports. Then, from `apps/database`:
+
+```bash
+ttr resources run -- node scripts/run-supabase.js --workdir "$SCRATCH" start
+ttr resources run -- node scripts/run-supabase.js --workdir "$SCRATCH" \
+  test db supabase/tests/workspace-storage-least-privilege-rls.sql
+```
+
+Stop it afterwards with `stop --project-id <id> --no-backup`.
+
+## Rollback
+
+`apps/database/rollbacks/20261026100000_least_privilege_workspace_storage_rls.rollback.sql`
+restores the exact 20231004102905 policies and drops the helper. It does not
+touch objects. Rolling back reopens the HIGH finding, so run it only as an
+approved incident rollback.
+
+To prove the rollback round trip on the disposable stack:
+
+1. Apply the rollback file with `psql -v ON_ERROR_STOP=1`.
+2. Run `apps/database/verification/workspace-storage-rls-rollback-roundtrip.sql`.
+   It runs 7 assertions: the old policies are back, the new ones are gone, prior
+   member-wide semantics apply, and objects are untouched.
+3. Re-apply the forward migration body in a transaction.
+4. Re-run the 368-assertion test.
+
+The migration sets `lock_timeout = '5s'` and `statement_timeout = '30s'`. Its
+policy DDL takes only a brief `ACCESS EXCLUSIVE` lock on `storage.objects`. If
+the lock is not acquired in 5 seconds, it fails without partial changes; retry
+it.
+
+## Related
+
+- Drive storage policy and product decision: [Drive](/platform/applications/drive)
+- Signed URL egress controls: [Storage egress protection](/build/devops/storage-egress-protection)
