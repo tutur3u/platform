@@ -256,7 +256,10 @@ test('a live Worker matching neither stage fails closed without leaking values',
     captureBefore({ plan, ...credentials(halfway) }),
     (error) => {
       assert.match(error.message, /match no recorded transition stage/);
-      assert.match(error.message, /previous: Worker vars differ: CRON_CONTROL_ENABLED_JOBS/);
+      assert.match(
+        error.message,
+        /previous: Worker vars differ: CRON_CONTROL_ENABLED_JOBS/
+      );
       assert.match(
         error.message,
         /target: Worker vars differ: CRON_CONTROL_ENABLED_JOBS\)$/
