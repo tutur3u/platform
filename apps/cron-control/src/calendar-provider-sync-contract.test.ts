@@ -172,3 +172,43 @@ it('still exhausts the budget when no workspace sync completes', async () => {
   const { state } = await runPastBudget(envelope);
   expect(state).toMatchObject({ stopped: true });
 });
+
+it.each([1, 2])(
+  'exhausts the budget when all %i evaluated accounts hit a broken client',
+  async (count) => {
+    const envelope = buildProviderSyncEnvelope(
+      {
+        processed: 1,
+        deferred: 0,
+        results: [workspace(1, { success: false, error: 'configuration' })],
+      },
+      Array.from({ length: count }, (_, index) =>
+        account(index, 'google', 'systemic')
+      )
+    );
+    const { state } = await runPastBudget(envelope);
+    expect(state).toMatchObject({
+      stopped: true,
+      stopReason: 'failure-budget-exhausted',
+    });
+  }
+);
+
+it('keeps running when a small sample mixes a broken-client signal with other failures', async () => {
+  const envelope = buildProviderSyncEnvelope(
+    {
+      processed: 1,
+      deferred: 0,
+      results: [workspace(1, { success: false, error: 'auth' })],
+    },
+    [
+      account(1, 'google', 'systemic'),
+      account(2, 'google', 'consensus_hold', {
+        reason: 'google_invalid_grant',
+      }),
+      account(3, 'microsoft', 'transient'),
+    ]
+  );
+  const { state } = await runPastBudget(envelope);
+  expect(state).toMatchObject({ stopped: false, consecutiveFailures: 0 });
+});

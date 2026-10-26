@@ -12,7 +12,8 @@ import {
 // detail stays bounded here and complete in the per-outcome logs.
 
 // Accounts that failed systemically (our OAuth client), per provider, before
-// the run counts as failed. Holds and revocations never count.
+// the run counts as failed; a smaller sample counts when every evaluated
+// account failed that way. Holds and revocations never count.
 export const SYSTEMIC_ACCOUNTS = 3;
 // Non-ok accounts listed in the body; the rest are only counted and logged.
 export const MAX_ATTENTION_ENTRIES = 50;

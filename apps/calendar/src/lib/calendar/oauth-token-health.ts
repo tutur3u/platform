@@ -178,11 +178,13 @@ export function reportCalendarDeactivationSpike(
 }
 
 /**
- * Providers whose OAuth client is broken for everyone in this run: at least
- * `threshold` accounts failed with an explicit client-wide diagnosis
- * (`systemic`) and no account obtained a fresh credential. Holds and
- * revocations of any reason only alert: an account or a single tenant (for
- * example one that removed our app) must never fail the shared job.
+ * Providers whose OAuth client is broken for everyone in this run: no account
+ * obtained a fresh credential, and either at least `threshold` accounts failed
+ * with an explicit client-wide diagnosis (`systemic`) or every evaluated
+ * account did (a small sample, such as one account with a missing secret).
+ * Holds, revocations and transient failures only alert: an account or a
+ * single tenant (for example one that removed our app) must never fail the
+ * shared job.
  */
 export function systemicProviders(
   outcomes: CalendarTokenOutcomeEntry[],
@@ -197,6 +199,7 @@ export function systemicProviders(
     const refreshedOk = own.some(
       (entry) => entry.outcome === 'ok' && entry.refreshed
     );
-    return systemic >= threshold && !refreshedOk;
+    const allSystemic = own.length > 0 && systemic === own.length;
+    return (systemic >= threshold || allSystemic) && !refreshedOk;
   });
 }

@@ -337,11 +337,38 @@ describe('Calendar provider cron ownership', () => {
     });
   });
 
-  it('does not fail the job for systemic outcomes below the threshold', async () => {
+  it('does not fail the job for a few systemic outcomes among other accounts', async () => {
     quietLogs();
-    workspacesWithOutcomes({ 'workspace-a': ['systemic', 'systemic'] });
-    expect((await GET(cronRequest())).status).toBe(200);
+    workspacesWithOutcomes({
+      'workspace-a': [
+        'systemic',
+        'systemic',
+        google('consensus_hold', { reason: 'google_invalid_grant' }),
+      ],
+    });
+    const response = await GET(cronRequest());
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      ok: true,
+      partialFailure: true,
+    });
   });
+
+  it.each([1, 2])(
+    'fails the job when all %i evaluated accounts hit a broken client',
+    async (count) => {
+      quietLogs();
+      workspacesWithOutcomes({
+        'workspace-a': Array.from({ length: count }, () => 'systemic' as const),
+      });
+      const response = await GET(cronRequest());
+      expect(response.status).toBe(500);
+      expect(await response.json()).toMatchObject({
+        ok: false,
+        providers: ['google'],
+      });
+    }
+  );
 
   it('rejects unauthorized calls before enumerating workspaces', async () => {
     expect(
