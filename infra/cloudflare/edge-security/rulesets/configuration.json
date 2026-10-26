@@ -1,0 +1,28 @@
+{
+  "name": "Edge browser and machine BIC proposal",
+  "kind": "zone",
+  "phase": "http_config_settings",
+  "rules": [
+    {
+      "ref": "edge_browser_bic",
+      "description": "Browser pages retain BIC",
+      "expression": "(not (http.host in {\"finance.tuturuuu.com\" \"finance-staging.tuturuuu.com\"}) and http.host in {\"tuturuuu.com\" \"www.tuturuuu.com\" \"beta.tuturuuu.com\" \"staging.tuturuuu.com\" \"canary.tuturuuu.com\" \"vercel.tuturuuu.com\" \"next.tuturuuu.com\" \"ai.tuturuuu.com\" \"apps.tuturuuu.com\" \"calendar.tuturuuu.com\" \"chat.tuturuuu.com\" \"cms.tuturuuu.com\" \"colab.tuturuuu.com\" \"contacts.tuturuuu.com\" \"drive.tuturuuu.com\" \"forms.tuturuuu.com\" \"git.tuturuuu.com\" \"hive.tuturuuu.com\" \"infrastructure.tuturuuu.com\" \"inventory.tuturuuu.com\" \"learn.tuturuuu.com\" \"lettin.tuturuuu.com\" \"mail.tuturuuu.com\" \"meet.tuturuuu.com\" \"mind.tuturuuu.com\" \"noah.tuturuuu.com\" \"nova.tuturuuu.com\" \"parley.tuturuuu.com\" \"pay.tuturuuu.com\" \"shortener.tuturuuu.com\" \"storefront.tuturuuu.com\" \"storefronts.tuturuuu.com\" \"tasks.tuturuuu.com\" \"teach.tuturuuu.com\" \"tools.tuturuuu.com\" \"track.tuturuuu.com\"} and not (not (http.host in {\"finance.tuturuuu.com\" \"finance-staging.tuturuuu.com\"}) and ((http.host in {\"tuturuuu.com\" \"www.tuturuuu.com\" \"beta.tuturuuu.com\" \"staging.tuturuuu.com\" \"canary.tuturuuu.com\" \"vercel.tuturuuu.com\" \"next.tuturuuu.com\" \"ai.tuturuuu.com\" \"apps.tuturuuu.com\" \"calendar.tuturuuu.com\" \"chat.tuturuuu.com\" \"cms.tuturuuu.com\" \"colab.tuturuuu.com\" \"contacts.tuturuuu.com\" \"drive.tuturuuu.com\" \"forms.tuturuuu.com\" \"git.tuturuuu.com\" \"hive.tuturuuu.com\" \"infrastructure.tuturuuu.com\" \"inventory.tuturuuu.com\" \"learn.tuturuuu.com\" \"lettin.tuturuuu.com\" \"mail.tuturuuu.com\" \"meet.tuturuuu.com\" \"mind.tuturuuu.com\" \"noah.tuturuuu.com\" \"nova.tuturuuu.com\" \"parley.tuturuuu.com\" \"pay.tuturuuu.com\" \"shortener.tuturuuu.com\" \"storefront.tuturuuu.com\" \"storefronts.tuturuuu.com\" \"tasks.tuturuuu.com\" \"teach.tuturuuu.com\" \"tools.tuturuuu.com\" \"track.tuturuuu.com\"} and (http.request.uri.path in {\"/api\" \"/verify-token\" \"/robots.txt\" \"/sitemap.xml\" \"/manifest.webmanifest\" \"/auth/login\" \"/auth/callback\" \"/site.webmanifest\" \"/sw.js\"} or starts_with(http.request.uri.path, \"/api/\") or starts_with(http.request.uri.path, \"/_next/\") or starts_with(http.request.uri.path, \"/.well-known/\"))) or (http.host eq \"meet-realtime.tuturuuu.com\" and (http.request.uri.path in {\"/health\" \"/realtime\" \"/room-state\" \"/room-device\" \"/room-service\" \"/channels\" \"/channels/publish\" \"/channels/document\" \"/collaboration\" \"/collaboration/seed\" \"/collaboration/checkpoint\" \"/collaboration/runner-files\"})))))",
+      "action": "set_config",
+      "enabled": false,
+      "action_parameters": {
+        "bic": true
+      }
+    },
+    {
+      "ref": "edge_machine_bic",
+      "description": "Machine transport avoids browser checks",
+      "expression": "(not (http.host in {\"finance.tuturuuu.com\" \"finance-staging.tuturuuu.com\"}) and ((http.host in {\"tuturuuu.com\" \"www.tuturuuu.com\" \"beta.tuturuuu.com\" \"staging.tuturuuu.com\" \"canary.tuturuuu.com\" \"vercel.tuturuuu.com\" \"next.tuturuuu.com\" \"ai.tuturuuu.com\" \"apps.tuturuuu.com\" \"calendar.tuturuuu.com\" \"chat.tuturuuu.com\" \"cms.tuturuuu.com\" \"colab.tuturuuu.com\" \"contacts.tuturuuu.com\" \"drive.tuturuuu.com\" \"forms.tuturuuu.com\" \"git.tuturuuu.com\" \"hive.tuturuuu.com\" \"infrastructure.tuturuuu.com\" \"inventory.tuturuuu.com\" \"learn.tuturuuu.com\" \"lettin.tuturuuu.com\" \"mail.tuturuuu.com\" \"meet.tuturuuu.com\" \"mind.tuturuuu.com\" \"noah.tuturuuu.com\" \"nova.tuturuuu.com\" \"parley.tuturuuu.com\" \"pay.tuturuuu.com\" \"shortener.tuturuuu.com\" \"storefront.tuturuuu.com\" \"storefronts.tuturuuu.com\" \"tasks.tuturuuu.com\" \"teach.tuturuuu.com\" \"tools.tuturuuu.com\" \"track.tuturuuu.com\"} and (http.request.uri.path in {\"/api\" \"/verify-token\" \"/robots.txt\" \"/sitemap.xml\" \"/manifest.webmanifest\" \"/auth/login\" \"/auth/callback\" \"/site.webmanifest\" \"/sw.js\"} or starts_with(http.request.uri.path, \"/api/\") or starts_with(http.request.uri.path, \"/_next/\") or starts_with(http.request.uri.path, \"/.well-known/\"))) or (http.host eq \"meet-realtime.tuturuuu.com\" and (http.request.uri.path in {\"/health\" \"/realtime\" \"/room-state\" \"/room-device\" \"/room-service\" \"/channels\" \"/channels/publish\" \"/channels/document\" \"/collaboration\" \"/collaboration/seed\" \"/collaboration/checkpoint\" \"/collaboration/runner-files\"}))))",
+      "action": "set_config",
+      "enabled": false,
+      "action_parameters": {
+        "bic": false,
+        "security_level": "off"
+      }
+    }
+  ]
+}

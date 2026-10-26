@@ -3,6 +3,16 @@
 Load this reference when changing root scripts, CI workflows, plugin validation,
 formatting behavior, or repo-wide verification.
 
+## Edge security proposal verification
+
+The [edge proposal](../../../../../apps/docs/build/devops/edge-security.mdx)
+separates source/auth signals, current proxy state, sampled traffic and supported
+Pro actions. Run `node scripts/edge-security-rules.mjs` and its sibling Node test
+for its disabled rules. These checks make no provider calls and do not establish
+Cloudflare expression acceptance. Preserve existing entrypoints and exemptions;
+legacy `waf=off` does not disable Ruleset Engine managed rules. Labyrinth
+injection events are not block events. Provider writes need separate admission.
+
 ## Incremental Oxc and Worker adoption
 
 Use root-pinned Oxlint/Oxfmt through `bun oxc:lint`, `bun oxc:format` and

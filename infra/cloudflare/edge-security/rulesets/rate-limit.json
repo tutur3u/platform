@@ -1,0 +1,20 @@
+{
+  "name": "Edge high-threshold machine flood proposal",
+  "kind": "zone",
+  "phase": "http_ratelimit",
+  "rules": [
+    {
+      "ref": "edge_machine_flood",
+      "description": "Candidate only: shared-IP effects require measurement",
+      "expression": "(not (http.host in {\"finance.tuturuuu.com\" \"finance-staging.tuturuuu.com\"}) and http.host in {\"meet.tuturuuu.com\"} and (starts_with(http.request.uri.path, \"/api/\")) and not (starts_with(http.request.uri.path, \"/api/webhooks/\") or starts_with(http.request.uri.path, \"/api/cron/\")))",
+      "action": "block",
+      "enabled": false,
+      "ratelimit": {
+        "characteristics": ["ip.src", "cf.colo.id"],
+        "period": 60,
+        "requests_per_period": 6000,
+        "mitigation_timeout": 10
+      }
+    }
+  ]
+}

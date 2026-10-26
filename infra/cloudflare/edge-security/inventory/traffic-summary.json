@@ -1,0 +1,773 @@
+{
+  "window": {
+    "z": "618b9966111b23a37113d30865f1fbb0",
+    "t0": "2026-10-25T06:58:25Z",
+    "t1": "2026-10-26T06:58:25Z"
+  },
+  "cfReturnedCount": 921,
+  "cfRawAggregateRows": 169,
+  "cfLimit": 10000,
+  "dnsAddressNames": 55,
+  "dnsWebAddressNames": 50,
+  "proxiedNames": 8,
+  "vercelProjects": 27,
+  "vercelIncompleteProjects": [
+    "platform",
+    "forms",
+    "learn",
+    "pay",
+    "ai",
+    "finance",
+    "git",
+    "nova",
+    "tasks",
+    "cms",
+    "teach",
+    "contacts",
+    "drive",
+    "storefronts",
+    "infrastructure",
+    "tools",
+    "mind",
+    "chat",
+    "calendar",
+    "mail"
+  ],
+  "cfHosts": {
+    "colab.tuturuuu.com": {
+      "count": 174,
+      "ua": {
+        "Other/unknown": 120,
+        "curl": 17,
+        "Other bot/crawler": 27,
+        "Chrome": 6,
+        "Safari": 2,
+        "Googlebot": 1,
+        "Python-urllib": 1
+      },
+      "asn": {
+        "AS8075 Microsoft Corporation": 88,
+        "AS18403 FPT Telecom Company": 36,
+        "AS396982 Google LLC": 17,
+        "AS16509 Amazon.com, Inc.": 24,
+        "AS23033 Wowrack.com": 3,
+        "AS202412 Omegatech LTD": 3,
+        "AS14618 Amazon.com, Inc.": 2,
+        "AS15169 Google LLC": 1
+      },
+      "action": {
+        "unknown": 157,
+        "block": 13,
+        "link_maze_injected": 4
+      },
+      "source": {
+        "unknown": 157,
+        "firewallManaged": 13,
+        "linkMaze": 4
+      }
+    },
+    "parley.tuturuuu.com": {
+      "count": 140,
+      "ua": {
+        "Chrome": 47,
+        "Other/unknown": 60,
+        "curl": 26,
+        "Safari": 3,
+        "Other bot/crawler": 2,
+        "Googlebot": 1,
+        "Python-urllib": 1
+      },
+      "asn": {
+        "AS218785 TC DATACENTER LIMITED": 57,
+        "AS18403 FPT Telecom Company": 46,
+        "AS8075 Microsoft Corporation": 20,
+        "AS396982 Google LLC": 5,
+        "AS202412 Omegatech LTD": 3,
+        "AS14618 Amazon.com, Inc.": 2,
+        "AS16509 Amazon.com, Inc.": 4,
+        "AS32934 Facebook, Inc.": 1,
+        "AS47890 UNMANAGED LTD": 1,
+        "AS15169 Google LLC": 1
+      },
+      "action": {
+        "unknown": 129,
+        "link_maze_injected": 6,
+        "block": 5
+      },
+      "source": {
+        "unknown": 129,
+        "linkMaze": 6,
+        "firewallManaged": 5
+      }
+    },
+    "lettin.tuturuuu.com": {
+      "count": 169,
+      "ua": {
+        "Other bot/crawler": 49,
+        "Other/unknown": 59,
+        "Googlebot": 21,
+        "curl": 15,
+        "Safari": 2,
+        "Chrome": 22,
+        "Python-urllib": 1
+      },
+      "asn": {
+        "AS4837 CHINA UNICOM China169 Backbone": 41,
+        "AS18403 FPT Telecom Company": 40,
+        "AS15169 Google LLC": 21,
+        "AS8075 Microsoft Corporation": 32,
+        "AS203020 HostRoyale Technologies Pvt Ltd": 6,
+        "AS14618 Amazon.com, Inc.": 2,
+        "AS22773 Cox Communications Inc.": 2,
+        "AS28198 SEMPRE TELECOMUNICACOES LTDA": 4,
+        "AS3320 Deutsche Telekom AG": 4,
+        "AS30689 FLOW": 2,
+        "AS7922 Comcast Cable Communications, LLC": 2,
+        "AS12400 Partner Communications Ltd.": 2,
+        "AS23724 IDC, China Telecommunications Corporation": 1,
+        "AS132203 Tencent Building, Kejizhongyi Avenue": 1,
+        "AS12389 PJSC Rostelecom": 1,
+        "AS17882 Univision LLC": 1,
+        "AS27924 AMPLIA COMMUNICATIONS LTD.": 1,
+        "AS42611 Full Fibre Limited": 1,
+        "AS396982 Google LLC": 4,
+        "AS7303 Telecom Argentina S.A.": 1
+      },
+      "action": {
+        "unknown": 141,
+        "link_maze_injected": 26,
+        "block": 2
+      },
+      "source": {
+        "unknown": 141,
+        "linkMaze": 26,
+        "firewallManaged": 2
+      }
+    },
+    "meet.tuturuuu.com": {
+      "count": 137,
+      "ua": {
+        "Chrome": 51,
+        "Other/unknown": 64,
+        "curl": 9,
+        "Bingbot": 3,
+        "Other bot/crawler": 6,
+        "Safari": 2,
+        "Firefox": 1,
+        "Python-urllib": 1
+      },
+      "asn": {
+        "AS18403 FPT Telecom Company": 90,
+        "AS8075 Microsoft Corporation": 18,
+        "AS16509 Amazon.com, Inc.": 10,
+        "AS24961 WIIT AG": 4,
+        "AS0 UNKNOWN": 3,
+        "AS396982 Google LLC": 5,
+        "AS14618 Amazon.com, Inc.": 3,
+        "AS36352 HostPapa": 1,
+        "AS208137 Feo Prest SRL": 1,
+        "AS202412 Omegatech LTD": 2
+      },
+      "action": {
+        "skip": 62,
+        "unknown": 50,
+        "link_maze_injected": 15,
+        "block": 10
+      },
+      "source": {
+        "firewallManaged": 72,
+        "unknown": 50,
+        "linkMaze": 15
+      }
+    },
+    "mail.tuturuuu.com": {
+      "count": 71,
+      "ua": {
+        "(empty)": 71
+      },
+      "asn": {
+        "AS11377 SendGrid, Inc.": 33,
+        "AS16509 Amazon.com, Inc.": 14,
+        "AS714 Apple Inc.": 12,
+        "AS15169 Google LLC": 4,
+        "AS8075 Microsoft Corporation": 2,
+        "AS396479 Mailgun Technologies Inc.": 2,
+        "AS13335 Cloudflare, Inc.": 2,
+        "AS14618 Amazon.com, Inc.": 2
+      },
+      "action": {
+        "unknown": 71
+      },
+      "source": {
+        "unknown": 71
+      }
+    },
+    "meet-realtime.tuturuuu.com": {
+      "count": 59,
+      "ua": {
+        "Dart/mobile": 27,
+        "Chrome": 11,
+        "(empty)": 6,
+        "curl": 3,
+        "Other/unknown": 9,
+        "Other bot/crawler": 2,
+        "Python-urllib": 1
+      },
+      "asn": {
+        "AS18403 FPT Telecom Company": 33,
+        "AS45899 VNPT Corp": 10,
+        "AS13335 Cloudflare, Inc.": 6,
+        "AS47583 Hostinger International Limited": 3,
+        "AS714 Apple Inc.": 2,
+        "AS396982 Google LLC": 3,
+        "AS202412 Omegatech LTD": 2
+      },
+      "action": {
+        "unknown": 45,
+        "link_maze_injected": 12,
+        "block": 2
+      },
+      "source": {
+        "unknown": 45,
+        "linkMaze": 12,
+        "firewallManaged": 2
+      }
+    },
+    "finance-staging.tuturuuu.com": {
+      "count": 71,
+      "ua": {
+        "curl": 25,
+        "Other/unknown": 34,
+        "Dart/mobile": 3,
+        "Chrome": 4,
+        "Tuturuuu-Internal-API": 2,
+        "Python-urllib": 3
+      },
+      "asn": {
+        "AS18403 FPT Telecom Company": 65,
+        "AS16509 Amazon.com, Inc.": 6
+      },
+      "action": {
+        "unknown": 61,
+        "link_maze_injected": 9,
+        "block": 1
+      },
+      "source": {
+        "unknown": 61,
+        "linkMaze": 9,
+        "bic": 1
+      }
+    },
+    "finance.tuturuuu.com": {
+      "count": 39,
+      "ua": {
+        "Chrome": 12,
+        "Python-urllib": 12,
+        "Other/unknown": 11,
+        "curl": 4
+      },
+      "asn": {
+        "AS18403 FPT Telecom Company": 39
+      },
+      "action": {
+        "unknown": 27,
+        "link_maze_injected": 8,
+        "block": 4
+      },
+      "source": {
+        "unknown": 27,
+        "linkMaze": 8,
+        "bic": 4
+      }
+    },
+    "tuturuuu.com": {
+      "count": 15,
+      "ua": {
+        "Chrome": 12,
+        "Tuturuuu-Internal-API": 3
+      },
+      "asn": {
+        "AS18403 FPT Telecom Company": 15
+      },
+      "action": {
+        "unknown": 15
+      },
+      "source": {
+        "unknown": 15
+      }
+    },
+    "hive.tuturuuu.com": {
+      "count": 35,
+      "ua": {
+        "Safari": 11,
+        "Other bot/crawler": 5,
+        "Chrome": 9,
+        "curl": 2,
+        "Other/unknown": 6,
+        "Python-urllib": 1,
+        "Edge": 1
+      },
+      "asn": {
+        "AS132203 Tencent Building, Kejizhongyi Avenue": 10,
+        "AS203020 HostRoyale Technologies Pvt Ltd": 4,
+        "AS13335 Cloudflare, Inc.": 3,
+        "AS18403 FPT Telecom Company": 6,
+        "AS396982 Google LLC": 4,
+        "AS5466 Eircom Limited": 1,
+        "AS12322 Free SAS": 2,
+        "AS16509 Amazon.com, Inc.": 2,
+        "AS14618 Amazon.com, Inc.": 1,
+        "AS12091 MTN SA": 1,
+        "AS46261 QuickPacket, LLC": 1
+      },
+      "action": {
+        "unknown": 25,
+        "link_maze_injected": 10
+      },
+      "source": {
+        "unknown": 25,
+        "linkMaze": 10
+      }
+    },
+    "workspaces.r2.storage.tuturuuu.com": {
+      "count": 10,
+      "ua": {
+        "Chrome": 6,
+        "Other/unknown": 2,
+        "Python-urllib": 1,
+        "curl": 1
+      },
+      "asn": {
+        "AS13335 Cloudflare, Inc.": 3,
+        "AS18403 FPT Telecom Company": 4,
+        "AS202412 Omegatech LTD": 2,
+        "AS14618 Amazon.com, Inc.": 1
+      },
+      "action": {
+        "unknown": 7,
+        "link_maze_injected": 2,
+        "block": 1
+      },
+      "source": {
+        "unknown": 7,
+        "linkMaze": 2,
+        "firewallManaged": 1
+      }
+    },
+    "workspaces.r2.storage.tuturuuu.com:443": {
+      "count": 1,
+      "ua": {
+        "Chrome": 1
+      },
+      "asn": {
+        "AS197769 VPS Dedicated LLC": 1
+      },
+      "action": {
+        "link_maze_injected": 1
+      },
+      "source": {
+        "linkMaze": 1
+      }
+    }
+  },
+  "vercelHosts": {
+    "tuturuuu.com": {
+      "count": 50,
+      "ua": {
+        "Tuturuuu-Internal-API": 15,
+        "Node/undici": 2,
+        "Safari": 8,
+        "Other/unknown": 2,
+        "Chrome": 6,
+        "Other bot/crawler": 2,
+        "Dart/mobile": 15
+      },
+      "asn": {
+        "AS16509": 17,
+        "AS18403": 8,
+        "AS32934": 3,
+        "AS394089": 6,
+        "AS45899": 16
+      },
+      "status": {
+        "200": 44,
+        "401": 4,
+        "307": 2
+      },
+      "projects": ["platform"]
+    },
+    "forms.tuturuuu.com": {
+      "count": 36,
+      "ua": {
+        "Chrome": 5,
+        "Other bot/crawler": 1,
+        "curl": 30
+      },
+      "asn": {
+        "AS14618": 2,
+        "AS46261": 1,
+        "AS131396": 1,
+        "AS18403": 30,
+        "AS13335": 2
+      },
+      "status": {
+        "200": 21,
+        "401": 15
+      },
+      "projects": ["forms"]
+    },
+    "learn.tuturuuu.com": {
+      "count": 26,
+      "ua": {
+        "Chrome": 1,
+        "Other bot/crawler": 8,
+        "curl": 17
+      },
+      "asn": {
+        "AS132510": 1,
+        "AS133119": 4,
+        "AS20473": 1,
+        "AS18403": 17,
+        "AS396982": 2,
+        "AS23033": 1
+      },
+      "status": {
+        "200": 16,
+        "401": 9,
+        "307": 1
+      },
+      "projects": ["learn"]
+    },
+    "pay.tuturuuu.com": {
+      "count": 27,
+      "ua": {
+        "Python-requests": 2,
+        "Other/unknown": 5,
+        "curl": 18,
+        "Other bot/crawler": 2
+      },
+      "asn": {
+        "AS396982": 7,
+        "AS18403": 18,
+        "AS16276": 2
+      },
+      "status": {
+        "200": 12,
+        "413": 4,
+        "400": 1,
+        "401": 9,
+        "307": 1
+      },
+      "projects": ["pay"]
+    },
+    "ai.tuturuuu.com": {
+      "count": 50,
+      "ua": {
+        "(empty)": 49,
+        "Other bot/crawler": 1
+      },
+      "asn": {
+        "AS13335": 49,
+        "AS16509": 1
+      },
+      "status": {
+        "200": 49,
+        "404": 1
+      },
+      "projects": ["ai"]
+    },
+    "finance.tuturuuu.com": {
+      "count": 50,
+      "ua": {
+        "Dart/mobile": 1,
+        "Chrome": 37,
+        "curl": 4,
+        "Python-urllib": 8
+      },
+      "asn": {
+        "AS45899": 1,
+        "AS18403": 33,
+        "AS13335": 16
+      },
+      "status": {
+        "200": 7,
+        "401": 27,
+        "304": 6,
+        "307": 10
+      },
+      "projects": ["finance"]
+    },
+    "track.tuturuuu.com": {
+      "count": 1,
+      "ua": {
+        "Chrome": 1
+      },
+      "asn": {
+        "AS150423": 1
+      },
+      "status": {
+        "307": 1
+      },
+      "projects": ["track"]
+    },
+    "git.tuturuuu.com": {
+      "count": 50,
+      "ua": {
+        "Other bot/crawler": 42,
+        "Other/unknown": 2,
+        "Chrome": 6
+      },
+      "asn": {
+        "AS396982": 38,
+        "AS32934": 2,
+        "AS136907": 6,
+        "AS16509": 4
+      },
+      "status": {
+        "200": 43,
+        "401": 7
+      },
+      "projects": ["git"]
+    },
+    "tasks.tuturuuu.com": {
+      "count": 49,
+      "ua": {
+        "Dart/mobile": 46,
+        "Chrome": 2,
+        "Edge": 1
+      },
+      "asn": {
+        "AS45899": 17,
+        "AS18403": 31,
+        "AS7552": 1
+      },
+      "status": {
+        "200": 49
+      },
+      "projects": ["tasks"]
+    },
+    "cms.tuturuuu.com": {
+      "count": 27,
+      "ua": {
+        "Python-requests": 1,
+        "curl": 26
+      },
+      "asn": {
+        "AS396982": 1,
+        "AS18403": 26
+      },
+      "status": {
+        "307": 15,
+        "200": 12
+      },
+      "projects": ["cms"]
+    },
+    "teach.tuturuuu.com": {
+      "count": 26,
+      "ua": {
+        "Dart/mobile": 4,
+        "Other bot/crawler": 4,
+        "curl": 18
+      },
+      "asn": {
+        "AS45899": 2,
+        "AS133119": 4,
+        "AS18403": 20
+      },
+      "status": {
+        "200": 17,
+        "401": 9
+      },
+      "projects": ["teach"]
+    },
+    "contacts.tuturuuu.com": {
+      "count": 50,
+      "ua": {
+        "Safari": 50
+      },
+      "asn": {
+        "AS18403": 50
+      },
+      "status": {
+        "200": 50
+      },
+      "projects": ["contacts"]
+    },
+    "drive.tuturuuu.com": {
+      "count": 34,
+      "ua": {
+        "Safari": 2,
+        "curl": 30,
+        "Chrome": 2
+      },
+      "asn": {
+        "AS132203": 2,
+        "AS18403": 30,
+        "AS13335": 2
+      },
+      "status": {
+        "307": 20,
+        "401": 14
+      },
+      "projects": ["drive"]
+    },
+    "store.tuturuuu.com": {
+      "count": 40,
+      "ua": {
+        "Other bot/crawler": 7,
+        "Chrome": 2,
+        "curl": 31
+      },
+      "asn": {
+        "AS16509": 5,
+        "AS24940": 2,
+        "AS207990": 2,
+        "AS18403": 31
+      },
+      "status": {
+        "404": 6,
+        "200": 19,
+        "401": 7,
+        "307": 8
+      },
+      "projects": ["storefronts"]
+    },
+    "infrastructure.tuturuuu.com": {
+      "count": 31,
+      "ua": {
+        "Dart/mobile": 31
+      },
+      "asn": {
+        "AS45899": 31
+      },
+      "status": {
+        "503": 11,
+        "200": 20
+      },
+      "projects": ["infrastructure"]
+    },
+    "tools.tuturuuu.com": {
+      "count": 20,
+      "ua": {
+        "Other bot/crawler": 5,
+        "curl": 15
+      },
+      "asn": {
+        "AS4134": 5,
+        "AS18403": 15
+      },
+      "status": {
+        "200": 20
+      },
+      "projects": ["tools"]
+    },
+    "mind.tuturuuu.com": {
+      "count": 44,
+      "ua": {
+        "curl": 38,
+        "Chrome": 6
+      },
+      "asn": {
+        "AS18403": 38,
+        "AS16509": 6
+      },
+      "status": {
+        "401": 8,
+        "200": 21,
+        "307": 15
+      },
+      "projects": ["mind"]
+    },
+    "chat.tuturuuu.com": {
+      "count": 46,
+      "ua": {
+        "curl": 40,
+        "Chrome": 6
+      },
+      "asn": {
+        "AS18403": 40,
+        "AS16509": 6
+      },
+      "status": {
+        "401": 8,
+        "200": 22,
+        "307": 16
+      },
+      "projects": ["chat"]
+    },
+    "calendar.tuturuuu.com": {
+      "count": 50,
+      "ua": {
+        "Node/undici": 22,
+        "Chrome": 28
+      },
+      "asn": {
+        "AS16509": 22,
+        "AS131396": 28
+      },
+      "status": {
+        "200": 16,
+        "502": 6,
+        "401": 26,
+        "307": 2
+      },
+      "projects": ["calendar"]
+    },
+    "apps.tuturuuu.com": {
+      "count": 49,
+      "ua": {
+        "Other bot/crawler": 28,
+        "curl": 1,
+        "Other/unknown": 2,
+        "Chrome": 11,
+        "Bingbot": 1,
+        "Googlebot": 4,
+        "Python-urllib": 1,
+        "Firefox": 1
+      },
+      "asn": {
+        "AS4837": 2,
+        "AS32934": 1,
+        "AS396982": 19,
+        "AS14618": 1,
+        "AS18403": 2,
+        "AS714": 1,
+        "AS58461": 3,
+        "AS13335": 2,
+        "AS8075": 1,
+        "AS50300": 1,
+        "AS16509": 9,
+        "AS15169": 4,
+        "AS51747": 1,
+        "AS133119": 1,
+        "AS4134": 1
+      },
+      "status": {
+        "200": 45,
+        "404": 4
+      },
+      "projects": ["apps"]
+    },
+    "mail.tuturuuu.com": {
+      "count": 50,
+      "ua": {
+        "Chrome": 38,
+        "Dart/mobile": 12
+      },
+      "asn": {
+        "AS394089": 38,
+        "AS45899": 12
+      },
+      "status": {
+        "401": 19,
+        "200": 31
+      },
+      "projects": ["mail"]
+    }
+  },
+  "calls": 42,
+  "writes": 0,
+  "vercelFailedProjects": ["inventory"],
+  "vercelFirstPageMatchedRows": 806,
+  "managedActionsFollowup": "Two GETs of executed managed rule definitions at 2026-10-26 14:16 GMT+7; no enabled challenge actions returned."
+}

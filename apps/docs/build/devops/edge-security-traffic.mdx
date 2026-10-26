@@ -1,0 +1,286 @@
+---
+title: "Edge security traffic snapshot"
+description: "Read-only DNS, security settings and aggregate traffic with explicit coverage limits."
+---
+
+Captured DNS/settings 2026-10-26 13: 57: 37 +0700; traffic window **2026-10-25 13: 58: 25 GMT+7 to 2026-10-26 13: 58: 25 GMT+7**. All provider activity was GET or GraphQL read-only queries. No Finance mutation, deployment, DNS change, origin probe, or production SSH occurred. The reserved Finance WAF token was never opened.
+
+## Coverage and limits
+
+- Zone `tuturuuu.com` is `Pro Website` (GET zone returned HTTP 200). DNS read returned 116 total records, 55 A/AAAA/CNAME records across 55 names; five DKIM CNAME names are non-web mail-configuration records. The remaining **50 web/address names include 8 proxied hosts**. DNS-only hosts do not receive this zone's HTTP edge security today; historical proxied observations do not override current DNS state.
+- Cloudflare `httpRequestsAdaptiveGroups`: **169 returned groups**, below 10000 limit, reduced to 156 sanitized UA-family/ASN/action/source groups; summed API `count` **921**. Adaptive sampling is present (`avg.sampleInterval` range 1–1.6923076923); counts are Cloudflare returned group counts, not an exact all-origin traffic census. No request paths or client IPs were queried; raw UA strings were reduced to families in memory and discarded. Twelve host strings were observed (eleven DNS names plus explicit `:443` R2 form).
+- Vercel requested the same 24 h interval for 27 projects, one first page each (50 row endpoint page size). **20 projects still had `hasMoreRows=true`**; this is a retained-log **partial window**, not complete 24 h totals or complete UA/ASN distribution. A 0-row response means no rows returned for that project, not proof of no HTTP traffic. No raw request log row, path, client IP, header, customer identifier, payload, or full UA persisted. Actual available fields include `clientUserAgent` and `asnId`; absent ASN remains unknown.
+- Vercel inventory-project log read timed out once (no retry); its host coverage is unknown. The other 26 project requests returned HTTP 200. Across them, 806 retained first-page rows matched tuturuuu.com hosts.
+- Vercel and Cloudflare observations overlap and must not be added as a global request total. Vercel rows on DNS-only hosts were not observed by Cloudflare merely because their origin appeared in the Vercel sample. UA/ASN families are descriptive clues, never authentication or skip identity.
+- Provider call budget: 40 total calls (5 initial CF reads; 6 phase/settings reads; 1 GraphQL traffic query; 1 Vercel project-list read; 27 first-page Vercel log reads). No retries, schedules, Workers invocations, or billable backend tasks were created.
+
+The ~24-hour Vercel plan retention is task-provided context, not a newly verified account entitlement. The requested interval stays within the most recent 24 hours; pagination, absent project rows, and the inventory timeout remain explicit gaps.
+
+## Current zone security
+
+| Control | Observed read-only state | Evidence |
+| --- | --- | --- |
+| Browser Integrity Check | `browser_check=on`, editable | `settings.json` |
+| Security level | `essentially_off` | `settings.json` |
+| Legacy WAF setting | `waf=off`; this does not turn off Ruleset Engine executions below | `settings.json`, `managed-entry.json` |
+| Managed WAF | Cloudflare Managed Ruleset and OWASP Core Ruleset execute with `expression=true`, enabled | `managed-entry.json` |
+| Managed exceptions | Meet GET/POST skips two OWASP cookie-character rules; Meet audio-upload exception skips one OWASP anomaly rule. Exact header-bearing expression redacted from retained evidence | `managed-entry.json` |
+| Custom WAF rules | Existing zone entrypoint version 2 has no rules array | `custom-entry.json` |
+| Rate limit | Enabled leaked-credential block: `cf.waf.credential_check.password_leaked`, 5 requests/10 s, IP+colo, mitigation 3600 s | `ratelimit-entry.json` |
+| Bot/SBFM | `sbfm_definitely_automated=allow`; verified bots allow; static-resource protection false; JS detections enabled. These returned fields do not establish a separate missing `fight_mode` field | `bot-management.json` |
+| AI crawler protection | `crawler_protection=enabled`, `ai_bots_protection=block`, `ai_training=disallow`; managed robots enabled | `bot-management.json` |
+| AI Labyrinth settings URL attempt | `/settings/ai_labyrinth` returned 400 Undefined zone setting; use actual bot-management crawler_protection field and observed linkMaze events rather than inventing this settings field | `ai-labyrinth.json`, `traffic24h.json` |
+| Configuration rules | `http_config_settings` entrypoint 404 not present | `config-entry.json` |
+
+The generic settings endpoint and Ruleset Engine entrypoints describe different controls. The managed executions are enabled despite legacy `waf=off`. A `link_maze_injected`/`linkMaze` analytics result is an injection observation, not by itself proof of a 403 or block. Current permissions allow these reads; this run did not test mutation acceptance or create disabled rules to discover plan capabilities.
+
+Two additional bounded GETs at 14:16 GMT+7 read the executed managed definitions. Cloudflare Managed version 418 has 866 block and 8 vendor log rules. OWASP version 88 has 178 score rules and one block rule. Neither returned enabled challenge actions. These vendor-managed log actions do not grant custom/rate-rule log entitlement. The complete lane used **42 read-only provider requests** and no provider writes. `managed-actions.json` records the sanitized response summary.
+
+## Host coverage
+
+| DNS host | Proxied now | CF 24 h returned count | Vercel first-page retained rows |
+| --- | --- | ---: | ---: |
+| `ai.tuturuuu.com` | no | not observed | 50 |
+| `api.tuturuuu.com` | no | not observed | not observed / unknown coverage |
+| `apps.tuturuuu.com` | no | not observed | 49 |
+| `beta.tuturuuu.com` | no | not observed | not observed / unknown coverage |
+| `calendar.tuturuuu.com` | no | not observed | 50 |
+| `canary.tuturuuu.com` | no | not observed | not observed / unknown coverage |
+| `chat.tuturuuu.com` | no | not observed | 46 |
+| `cms.tuturuuu.com` | no | not observed | 27 |
+| `contacts.tuturuuu.com` | no | not observed | 50 |
+| `dev.tuturuuu.com` | no | not observed | not observed / unknown coverage |
+| `docs.tuturuuu.com` | no | not observed | not observed / unknown coverage |
+| `drive.tuturuuu.com` | no | not observed | 34 |
+| `finance-staging.tuturuuu.com` | yes | 71 | not observed / unknown coverage |
+| `finance.tuturuuu.com` | no | 39 | 50 |
+| `forms.tuturuuu.com` | no | not observed | 36 |
+| `git.tuturuuu.com` | no | not observed | 50 |
+| `groups.tuturuuu.com` | no | not observed | not observed / unknown coverage |
+| `hive.tuturuuu.com` | yes | 35 | not observed / unknown coverage |
+| `infrastructure.tuturuuu.com` | no | not observed | 31 |
+| `inventory.tuturuuu.com` | no | not observed | not observed / unknown coverage |
+| `learn.tuturuuu.com` | no | not observed | 26 |
+| `mail.tuturuuu.com` | no | 71 | 50 |
+| `meet-vercel-rollback.tuturuuu.com` | no | not observed | not observed / unknown coverage |
+| `mind.tuturuuu.com` | no | not observed | 44 |
+| `next.tuturuuu.com` | no | not observed | not observed / unknown coverage |
+| `noah.tuturuuu.com` | no | not observed | not observed / unknown coverage |
+| `nova.tuturuuu.com` | no | not observed | not observed / unknown coverage |
+| `pay.tuturuuu.com` | no | not observed | 27 |
+| `qr.tuturuuu.com` | no | not observed | not observed / unknown coverage |
+| `shortener.tuturuuu.com` | no | not observed | not observed / unknown coverage |
+| `sites.tuturuuu.com` | no | not observed | not observed / unknown coverage |
+| `staging.tuturuuu.com` | no | not observed | not observed / unknown coverage |
+| `storefronts.tuturuuu.com` | no | not observed | not observed / unknown coverage |
+| `storefront.tuturuuu.com` | no | not observed | not observed / unknown coverage |
+| `stores.tuturuuu.com` | no | not observed | not observed / unknown coverage |
+| `store.tuturuuu.com` | no | not observed | 40 |
+| `tasks.tuturuuu.com` | no | not observed | 49 |
+| `teach.tuturuuu.com` | no | not observed | 26 |
+| `tools.tuturuuu.com` | no | not observed | 20 |
+| `track.tuturuuu.com` | no | not observed | 1 |
+| `tuturuuu.com` | no | 15 | 50 |
+| `vc.tuturuuu.com` | no | not observed | not observed / unknown coverage |
+| `vercel.tuturuuu.com` | no | not observed | not observed / unknown coverage |
+| `workspaces.r2.storage.tuturuuu.com` | yes | 10 | not observed / unknown coverage |
+| `www.tuturuuu.com` | no | not observed | not observed / unknown coverage |
+| `colab.tuturuuu.com` | yes | 174 | not observed / unknown coverage |
+| `lettin.tuturuuu.com` | yes | 169 | not observed / unknown coverage |
+| `meet-realtime.tuturuuu.com` | yes | 59 | not observed / unknown coverage |
+| `meet.tuturuuu.com` | yes | 137 | not observed / unknown coverage |
+| `parley.tuturuuu.com` | yes | 140 | not observed / unknown coverage |
+
+## Cloudflare per-host UA, ASN and security distribution
+
+Counts below are returned adaptive analytics counts. All families and ASNs are untrusted caller attributes. `unknown` is a literal analytics result, not an allow verdict.
+
+| Host | Count | UA families (all) | Top ASNs (up to 6) | Actions (all) | Sources (all) |
+| --- | ---: | --- | --- | --- | --- |
+| `colab.tuturuuu.com` | 174 | Other/unknown: 120; Other bot/crawler: 27; curl: 17; Chrome: 6; Safari: 2; Googlebot: 1; Python-urllib: 1 | AS8075 Microsoft Corporation: 88; AS18403 FPT Telecom Company: 36; AS16509 Amazon.com, Inc.: 24; AS396982 Google LLC: 17; AS23033 Wowrack.com: 3; AS202412 Omegatech LTD: 3 | unknown: 157; block: 13; link_maze_injected: 4 | unknown: 157; firewallManaged: 13; linkMaze: 4 |
+| `finance-staging.tuturuuu.com` | 71 | Other/unknown: 34; curl: 25; Chrome: 4; Dart/mobile: 3; Python-urllib: 3; Tuturuuu-Internal-API: 2 | AS18403 FPT Telecom Company: 65; AS16509 Amazon.com, Inc.: 6 | unknown: 61; link_maze_injected: 9; block: 1 | unknown: 61; linkMaze: 9; bic: 1 |
+| `finance.tuturuuu.com` | 39 | Chrome: 12; Python-urllib: 12; Other/unknown: 11; curl: 4 | AS18403 FPT Telecom Company: 39 | unknown: 27; link_maze_injected: 8; block: 4 | unknown: 27; linkMaze: 8; bic: 4 |
+| `hive.tuturuuu.com` | 35 | Safari: 11; Chrome: 9; Other/unknown: 6; Other bot/crawler: 5; curl: 2; Python-urllib: 1; Edge: 1 | AS132203 Tencent Building, Kejizhongyi Avenue: 10; AS18403 FPT Telecom Company: 6; AS203020 HostRoyale Technologies Pvt Ltd: 4; AS396982 Google LLC: 4; AS13335 Cloudflare, Inc.: 3; AS12322 Free SAS: 2 | unknown: 25; link_maze_injected: 10 | unknown: 25; linkMaze: 10 |
+| `lettin.tuturuuu.com` | 169 | Other/unknown: 59; Other bot/crawler: 49; Chrome: 22; Googlebot: 21; curl: 15; Safari: 2; Python-urllib: 1 | AS4837 CHINA UNICOM China 169 Backbone: 41; AS18403 FPT Telecom Company: 40; AS8075 Microsoft Corporation: 32; AS15169 Google LLC: 21; AS203020 HostRoyale Technologies Pvt Ltd: 6; AS28198 SEMPRE TELECOMUNICACOES LTDA: 4 | unknown: 141; link_maze_injected: 26; block: 2 | unknown: 141; linkMaze: 26; firewallManaged: 2 |
+| `mail.tuturuuu.com` | 71 | (empty): 71 | AS11377 SendGrid, Inc.: 33; AS16509 Amazon.com, Inc.: 14; AS714 Apple Inc.: 12; AS15169 Google LLC: 4; AS8075 Microsoft Corporation: 2; AS396479 Mailgun Technologies Inc.: 2 | unknown: 71 | unknown: 71 |
+| `meet-realtime.tuturuuu.com` | 59 | Dart/mobile: 27; Chrome: 11; Other/unknown: 9; (empty): 6; curl: 3; Other bot/crawler: 2; Python-urllib: 1 | AS18403 FPT Telecom Company: 33; AS45899 VNPT Corp: 10; AS13335 Cloudflare, Inc.: 6; AS47583 Hostinger International Limited: 3; AS396982 Google LLC: 3; AS714 Apple Inc.: 2 | unknown: 45; link_maze_injected: 12; block: 2 | unknown: 45; linkMaze: 12; firewallManaged: 2 |
+| `meet.tuturuuu.com` | 137 | Other/unknown: 64; Chrome: 51; curl: 9; Other bot/crawler: 6; Bingbot: 3; Safari: 2; Firefox: 1; Python-urllib: 1 | AS18403 FPT Telecom Company: 90; AS8075 Microsoft Corporation: 18; AS16509 Amazon.com, Inc.: 10; AS396982 Google LLC: 5; AS24961 WIIT AG: 4; AS0 UNKNOWN: 3 | skip: 62; unknown: 50; link_maze_injected: 15; block: 10 | firewallManaged: 72; unknown: 50; linkMaze: 15 |
+| `parley.tuturuuu.com` | 140 | Other/unknown: 60; Chrome: 47; curl: 26; Safari: 3; Other bot/crawler: 2; Googlebot: 1; Python-urllib: 1 | AS218785 TC DATACENTER LIMITED: 57; AS18403 FPT Telecom Company: 46; AS8075 Microsoft Corporation: 20; AS396982 Google LLC: 5; AS16509 Amazon.com, Inc.: 4; AS202412 Omegatech LTD: 3 | unknown: 129; link_maze_injected: 6; block: 5 | unknown: 129; linkMaze: 6; firewallManaged: 5 |
+| `tuturuuu.com` | 15 | Chrome: 12; Tuturuuu-Internal-API: 3 | AS18403 FPT Telecom Company: 15 | unknown: 15 | unknown: 15 |
+| `workspaces.r2.storage.tuturuuu.com` | 10 | Chrome: 6; Other/unknown: 2; Python-urllib: 1; curl: 1 | AS18403 FPT Telecom Company: 4; AS13335 Cloudflare, Inc.: 3; AS202412 Omegatech LTD: 2; AS14618 Amazon.com, Inc.: 1 | unknown: 7; link_maze_injected: 2; block: 1 | unknown: 7; linkMaze: 2; firewallManaged: 1 |
+| `workspaces.r2.storage.tuturuuu.com:443` | 1 | Chrome: 1 | AS197769 VPS Dedicated LLC: 1 | link_maze_injected: 1 | linkMaze: 1 |
+
+## Vercel project coverage
+
+One page per project; `more=yes` explicitly prevents claiming complete 24 h coverage. Other domains/previews were discarded from summaries; the row count before filtering is included only to explain pagination.
+
+| Project | HTTP | Fetched rows | tuturuuu.com rows | More | Observed hosts |
+| --- | ---: | ---: | ---: | --- | --- |
+| `web` | 200 | 0 | 0 | no | none returned |
+| `platform` | 200 | 50 | 50 | yes | tuturuuu.com: 50 |
+| `forms` | 200 | 50 | 36 | yes | forms.tuturuuu.com: 36 |
+| `learn` | 200 | 50 | 26 | yes | learn.tuturuuu.com: 26 |
+| `pay` | 200 | 50 | 27 | yes | pay.tuturuuu.com: 27 |
+| `ai` | 200 | 50 | 50 | yes | ai.tuturuuu.com: 50 |
+| `finance` | 200 | 50 | 50 | yes | finance.tuturuuu.com: 50 |
+| `track` | 200 | 23 | 1 | no | track.tuturuuu.com: 1 |
+| `git` | 200 | 50 | 50 | yes | git.tuturuuu.com: 50 |
+| `nova` | 200 | 50 | 0 | yes | none returned |
+| `tasks` | 200 | 50 | 49 | yes | tasks.tuturuuu.com: 49 |
+| `inventory` | None | 0 | 0 | no | none returned |
+| `cms` | 200 | 50 | 27 | yes | cms.tuturuuu.com: 27 |
+| `teach` | 200 | 50 | 26 | yes | teach.tuturuuu.com: 26 |
+| `contacts` | 200 | 50 | 50 | yes | contacts.tuturuuu.com: 50 |
+| `drive` | 200 | 50 | 34 | yes | drive.tuturuuu.com: 34 |
+| `storefronts` | 200 | 50 | 40 | yes | store.tuturuuu.com: 40 |
+| `infrastructure` | 200 | 50 | 31 | yes | infrastructure.tuturuuu.com: 31 |
+| `tools` | 200 | 50 | 20 | yes | tools.tuturuuu.com: 20 |
+| `mind` | 200 | 50 | 44 | yes | mind.tuturuuu.com: 44 |
+| `chat` | 200 | 50 | 46 | yes | chat.tuturuuu.com: 46 |
+| `shortener` | 200 | 5 | 0 | no | none returned |
+| `meet` | 200 | 0 | 0 | no | none returned |
+| `calendar` | 200 | 50 | 50 | yes | calendar.tuturuuu.com: 50 |
+| `apps` | 200 | 49 | 49 | no | apps.tuturuuu.com: 49 |
+| `mail` | 200 | 50 | 50 | yes | mail.tuturuuu.com: 50 |
+| `noah` | 200 | 30 | 0 | no | none returned |
+
+## Vercel observed-host UA and ASN sample
+
+| Host | Retainedsample rows | UA families (all) | ASNs (all) | HTTP status counts |
+| --- | ---: | --- | --- | --- |
+| `ai.tuturuuu.com` | 50 | (empty): 49; Other bot/crawler: 1 | AS13335: 49; AS16509: 1 | 200: 49; 404: 1 |
+| `apps.tuturuuu.com` | 49 | Other bot/crawler: 28; Chrome: 11; Googlebot: 4; Other/unknown: 2; curl: 1; Bingbot: 1; Python-urllib: 1; Firefox: 1 | AS396982: 19; AS16509: 9; AS15169: 4; AS58461: 3; AS4837: 2; AS18403: 2; AS13335: 2; AS32934: 1; AS14618: 1; AS714: 1; AS8075: 1; AS50300: 1; AS51747: 1; AS133119: 1; AS4134: 1 | 200: 45; 404: 4 |
+| `calendar.tuturuuu.com` | 50 | Chrome: 28; Node/undici: 22 | AS131396: 28; AS16509: 22 | 401: 26; 200: 16; 502: 6; 307: 2 |
+| `chat.tuturuuu.com` | 46 | curl: 40; Chrome: 6 | AS18403: 40; AS16509: 6 | 200: 22; 307: 16; 401: 8 |
+| `cms.tuturuuu.com` | 27 | curl: 26; Python-requests: 1 | AS18403: 26; AS396982: 1 | 307: 15; 200: 12 |
+| `contacts.tuturuuu.com` | 50 | Safari: 50 | AS18403: 50 | 200: 50 |
+| `drive.tuturuuu.com` | 34 | curl: 30; Safari: 2; Chrome: 2 | AS18403: 30; AS132203: 2; AS13335: 2 | 307: 20; 401: 14 |
+| `finance.tuturuuu.com` | 50 | Chrome: 37; Python-urllib: 8; curl: 4; Dart/mobile: 1 | AS18403: 33; AS13335: 16; AS45899: 1 | 401: 27; 307: 10; 200: 7; 304: 6 |
+| `forms.tuturuuu.com` | 36 | curl: 30; Chrome: 5; Other bot/crawler: 1 | AS18403: 30; AS14618: 2; AS13335: 2; AS46261: 1; AS131396: 1 | 200: 21; 401: 15 |
+| `git.tuturuuu.com` | 50 | Other bot/crawler: 42; Chrome: 6; Other/unknown: 2 | AS396982: 38; AS136907: 6; AS16509: 4; AS32934: 2 | 200: 43; 401: 7 |
+| `infrastructure.tuturuuu.com` | 31 | Dart/mobile: 31 | AS45899: 31 | 200: 20; 503: 11 |
+| `learn.tuturuuu.com` | 26 | curl: 17; Other bot/crawler: 8; Chrome: 1 | AS18403: 17; AS133119: 4; AS396982: 2; AS132510: 1; AS20473: 1; AS23033: 1 | 200: 16; 401: 9; 307: 1 |
+| `mail.tuturuuu.com` | 50 | Chrome: 38; Dart/mobile: 12 | AS394089: 38; AS45899: 12 | 200: 31; 401: 19 |
+| `mind.tuturuuu.com` | 44 | curl: 38; Chrome: 6 | AS18403: 38; AS16509: 6 | 200: 21; 307: 15; 401: 8 |
+| `pay.tuturuuu.com` | 27 | curl: 18; Other/unknown: 5; Python-requests: 2; Other bot/crawler: 2 | AS18403: 18; AS396982: 7; AS16276: 2 | 200: 12; 401: 9; 413: 4; 400: 1; 307: 1 |
+| `store.tuturuuu.com` | 40 | curl: 31; Other bot/crawler: 7; Chrome: 2 | AS18403: 31; AS16509: 5; AS24940: 2; AS207990: 2 | 200: 19; 307: 8; 401: 7; 404: 6 |
+| `tasks.tuturuuu.com` | 49 | Dart/mobile: 46; Chrome: 2; Edge: 1 | AS18403: 31; AS45899: 17; AS7552: 1 | 200: 49 |
+| `teach.tuturuuu.com` | 26 | curl: 18; Dart/mobile: 4; Other bot/crawler: 4 | AS18403: 20; AS133119: 4; AS45899: 2 | 200: 17; 401: 9 |
+| `tools.tuturuuu.com` | 20 | curl: 15; Other bot/crawler: 5 | AS18403: 15; AS4134: 5 | 200: 20 |
+| `track.tuturuuu.com` | 1 | Chrome: 1 | AS150423: 1 | 307: 1 |
+| `tuturuuu.com` | 50 | Tuturuuu-Internal-API: 15; Dart/mobile: 15; Safari: 8; Chrome: 6; Node/undici: 2; Other/unknown: 2; Other bot/crawler: 2 | AS16509: 17; AS45899: 16; AS18403: 8; AS394089: 6; AS32934: 3 | 200: 44; 401: 4; 307: 2 |
+
+## Reused Finance evidence
+
+- Finance receipt the private Finance cutover receipt reports the helper Python-urllib smoke 403 and attributes BIC / Labyrinth-related events; source read only, no Finance live writes or probes in this lane. The current query separately observes Finance `block:4` from `bic` and `link_maze_injected:8`; staging `block:1` from `bic` and injection 9. Do not relabel injections as blocks.
+- Current 24 h traffic confirms legitimate machine families: `Dart/mobile` on Meet realtime 27 and Finance staging 3; `Tuturuuu-Internal-API` on staging 2 and apex 3; curl family includes controlled probes. This observation does not authenticate any individual request or distinguish CIcurl from attacker curl. Source caller inventory must provide identity proofs.
+
+## Reproduction and artifacts
+
+The committed [inventory directory](https://github.com/tutur3u/platform/tree/main/infra/cloudflare/edge-security/inventory) contains sanitized DNS, controls, query and aggregate evidence. `cloudflare-traffic.json` includes the exact GraphQL query and time variables. `vercel-traffic.json` records the endpoint fields, paging limits and project outcomes. Private collectors and the original Finance receipt stay outside Git. No credentials or raw request rows are committed. Refresh through an authorized read-only collector with tokens in process environment or mode-600 header files. Never place a token in argv or use the Finance-reserved WAF token. No provider write is part of reproduction.
+
+## Bounded Vercel follow-up
+
+Window: **2026-10-25 14:23:15.598 GMT+7 to 2026-10-26 14:23:15.598 GMT+7**. Finished by 2026-10-26 14:26:01.147 GMT+7. This replaces neither the earlier snapshot nor its window; do not add overlapping counts.
+
+This follow-up made **60 additional read-only Vercel GETs**, plus two public first-party source reads. All provider requests returned HTTP 200. No Cloudflare or Finance provider/control reads occurred, and no provider writes, purchases, deployments, or configuration changes occurred. Raw rows, full UA strings, paths, client IPs, request IDs, and payloads were never persisted. Request-ID hashes existed only in memory for uniqueness checks.
+
+The sanitized result contains **2757 unique retained log rows**, of which **2267 matched tuturuuu.com hosts**. Across the central `platform` project, 1650 unique rows were read; 1552 matched our hosts. The central sample reaches back only to **2026-10-26 10:35:06.695 GMT+7**, leaving the older part of the requested 24-hour interval unqueried. It is explicitly partial, not a last-24-hour traffic total.
+
+### Pagination verification
+
+- A fixed-end `page=0` request returned 50 rows with `hasMoreRows=true`. The same window at `page=1` returned zero rows with `hasMoreRows=false`. This inconsistency prevents trusting page-number pagination here. No repeated page was blindly accumulated.
+- A third request set `endDate` to one millisecond before the earliest page-0 timestamp. It returned 50 distinct IDs, all within the older requested time bound, with no ID overlap. Every later retained page passed the same bound and uniqueness checks.
+- Backwards time windows provide useful additional caller evidence but do not prove complete retrieval. At least one full central page had multiple rows sharing its earliest timestamp; subtracting one millisecond can omit additional rows at that boundary. This timestamp-collision risk is preserved in `boundaryCollisionRisk`, rather than hidden behind a completeness claim.
+- Six small/legacy project endpoints reported no more rows for the requested retained-log interval: `track`, `apps`, `noah`, `shortener`, `meet`, `web`. This describes the endpoint response, not proof of every HTTP request or a separately verified retention entitlement. Only `track` and `apps` among those returned matching tuturuuu.com hosts.
+- No supported aggregation endpoint was found in the focused first-party CLI logs source. No undocumented SQL endpoint was invented or purchased. The maximum provider-call bound ended the high-volume central sweep.
+
+### Caller evidence from the central project
+
+| UA family | Retained matching-host rows |
+| --- | ---: |
+| Chrome | 893 |
+| Node/undici | 130 |
+| Other/unknown | 125 |
+| Tuturuuu-Internal-API | 118 |
+| Dart/mobile | 102 |
+| Other bot/crawler | 90 |
+| Safari | 77 |
+| Bingbot | 7 |
+| curl | 3 |
+| Firefox | 3 |
+| Edge | 2 |
+| Googlebot | 1 |
+| Python-urllib | 1 |
+
+Top ASNs in the central sample: 18403: 551; 16509: 258; 394089: 241; 131429: 112; 32934: 103; 45899: 103; 13335: 56; 8075: 19. UA and ASN remain untrusted caller attributes and must never authorize an edge skip.
+
+### Host-level sanitized distributions
+
+| Host | Rows | UA families | ASNs | Vercel WAF actions |
+| --- | ---: | --- | --- | --- |
+| `ai.tuturuuu.com` | 50 | (empty): 49; Other bot/crawler: 1 | 13335: 49; 16509: 1 | unknown: 50 |
+| `apps.tuturuuu.com` | 50 | Other bot/crawler: 28; Chrome: 11; Googlebot: 4; Bingbot: 2; Other/unknown: 2; curl: 1; Python-urllib: 1; Firefox: 1 | 396982: 19; 16509: 9; 15169: 4; 58461: 3; 8075: 2; 4837: 2; 18403: 2; 13335: 2; 32934: 1; 14618: 1; 714: 1; 50300: 1; 51747: 1; 133119: 1; 4134: 1 | unknown: 50 |
+| `beta.tuturuuu.com` | 35 | Chrome: 35 | 18403: 35 | unknown: 35 |
+| `calendar.tuturuuu.com` | 50 | Node/undici: 25; Chrome: 25 | 16509: 25; 131396: 25 | bypass: 25; unknown: 25 |
+| `chat.tuturuuu.com` | 46 | curl: 40; Chrome: 6 | 18403: 40; 16509: 6 | unknown: 46 |
+| `cms.tuturuuu.com` | 27 | curl: 26; Python-requests: 1 | 18403: 26; 396982: 1 | unknown: 27 |
+| `contacts.tuturuuu.com` | 50 | Safari: 50 | 18403: 50 | unknown: 50 |
+| `drive.tuturuuu.com` | 34 | curl: 29; Safari: 3; Chrome: 2 | 18403: 29; 132203: 3; 13335: 2 | unknown: 34 |
+| `forms.tuturuuu.com` | 36 | curl: 30; Chrome: 5; Other bot/crawler: 1 | 18403: 30; 14618: 2; 13335: 2; 46261: 1; 131396: 1 | unknown: 36 |
+| `git.tuturuuu.com` | 50 | Other bot/crawler: 38; Chrome: 12 | 396982: 29; 136907: 12; 203020: 9 | unknown: 50 |
+| `infrastructure.tuturuuu.com` | 14 | Dart/mobile: 7; Chrome: 6; curl: 1 | 45899: 7; 131429: 4; 18403: 2; 8075: 1 | unknown: 14 |
+| `inventory.tuturuuu.com` | 25 | Dart/mobile: 12; curl: 6; Other bot/crawler: 5; Other/unknown: 2 | 18403: 16; 45899: 4; 16509: 3; 207990: 2 | log: 23; unknown: 2 |
+| `learn.tuturuuu.com` | 26 | curl: 17; Other bot/crawler: 8; Chrome: 1 | 18403: 17; 133119: 4; 396982: 2; 132510: 1; 20473: 1; 23033: 1 | unknown: 26 |
+| `mail.tuturuuu.com` | 50 | Chrome: 50 | 131429: 25; 18403: 20; 394089: 5 | unknown: 50 |
+| `mind.tuturuuu.com` | 44 | curl: 38; Chrome: 6 | 18403: 38; 16509: 6 | unknown: 44 |
+| `pay.tuturuuu.com` | 27 | curl: 18; Other/unknown: 5; Python-requests: 2; Other bot/crawler: 2 | 18403: 18; 396982: 7; 16276: 2 | unknown: 27 |
+| `store.tuturuuu.com` | 40 | curl: 31; Other bot/crawler: 7; Chrome: 2 | 18403: 31; 16509: 5; 24940: 2; 207990: 2 | unknown: 40 |
+| `tasks.tuturuuu.com` | 49 | Dart/mobile: 46; Chrome: 2; Edge: 1 | 18403: 28; 45899: 20; 7552: 1 | log: 46; unknown: 3 |
+| `teach.tuturuuu.com` | 26 | curl: 18; Dart/mobile: 4; Other bot/crawler: 4 | 18403: 20; 133119: 4; 45899: 2 | unknown: 26 |
+| `tools.tuturuuu.com` | 20 | curl: 15; Other bot/crawler: 5 | 18403: 15; 4134: 5 | unknown: 20 |
+| `track.tuturuuu.com` | 1 | Chrome: 1 | 150423: 1 | unknown: 1 |
+| `tuturuuu.com` | 1516 | Chrome: 858; Node/undici: 130; Other/unknown: 125; Tuturuuu-Internal-API: 118; Dart/mobile: 102; Other bot/crawler: 89; Safari: 77; Bingbot: 7; curl: 3; Firefox: 3; Edge: 2; Googlebot: 1; Python-urllib: 1 | 18403: 516; 16509: 258; 394089: 241; 131429: 112; 32934: 103; 45899: 103; 13335: 56; 8075: 19; 16276: 17; 14618: 16; 14061: 12; 132203: 12; 4837: 11; 4134: 8; 396982: 4; 47583: 4; 140577: 3; 2914: 2; 45758: 2; 215439: 2; 34534: 2; 4788: 2; 133481: 2; 7922: 1; 327996: 1; 11351: 1; 24940: 1; 131396: 1; 3215: 1; 15169: 1; 3352: 1; 7552: 1 | unknown: 942; log: 574 |
+| `vercel.tuturuuu.com` | 1 | Other bot/crawler: 1 | 714: 1 | log: 1 |
+
+Vercel WAF actions are actual returned fields, separate from Cloudflare `securityAction` and `securitySource`. An absent Vercel action is recorded as `unknown`, not interpreted as an allow verdict.
+
+### Project coverage
+
+| Project | Provider GETs | Unique retained rows | Matching-host rows | Endpoint window exhausted | Oldest observed row | Remaining limit |
+| --- | ---: | ---: | ---: | --- | --- | --- |
+| `platform` | 34 | 1650 | 1552 | no | 2026-10-26 10:35:06.695 GMT+7 | call/time bound; older interval remains unqueried |
+| `track` | 1 | 23 | 1 | yes | 2026-10-25 17:22:41.823 GMT+7 | endpoint reports no more rows for remaining time window |
+| `apps` | 1 | 50 | 50 | yes | 2026-10-25 14:30:43.240 GMT+7 | endpoint reports no more rows for remaining time window |
+| `learn` | 1 | 50 | 26 | no | 2026-10-26 05:11:57.719 GMT+7 | bounded first page(s); older time window remains unqueried |
+| `pay` | 1 | 50 | 27 | no | 2026-10-26 05:03:13.346 GMT+7 | bounded first page(s); older time window remains unqueried |
+| `forms` | 1 | 50 | 36 | no | 2026-10-26 01:49:18.415 GMT+7 | bounded first page(s); older time window remains unqueried |
+| `contacts` | 1 | 50 | 50 | no | 2026-10-26 14:01:14.230 GMT+7 | bounded first page(s); older time window remains unqueried |
+| `tasks` | 1 | 50 | 49 | no | 2026-10-26 09:35:45.826 GMT+7 | bounded first page(s); older time window remains unqueried |
+| `inventory` | 2 | 100 | 25 | no | 2026-10-26 08:10:01.084 GMT+7 | bounded first page(s); older time window remains unqueried |
+| `cms` | 1 | 50 | 27 | no | 2026-10-26 04:02:39.611 GMT+7 | bounded first page(s); older time window remains unqueried |
+| `teach` | 1 | 50 | 26 | no | 2026-10-26 05:11:56.670 GMT+7 | bounded first page(s); older time window remains unqueried |
+| `drive` | 1 | 50 | 34 | no | 2026-10-26 01:49:17.367 GMT+7 | bounded first page(s); older time window remains unqueried |
+| `storefronts` | 1 | 50 | 40 | no | 2026-10-26 05:42:29.412 GMT+7 | bounded first page(s); older time window remains unqueried |
+| `infrastructure` | 1 | 50 | 14 | no | 2026-10-26 13:57:05.732 GMT+7 | bounded first page(s); older time window remains unqueried |
+| `tools` | 1 | 50 | 20 | no | 2026-10-26 05:42:00.039 GMT+7 | bounded first page(s); older time window remains unqueried |
+| `mind` | 1 | 50 | 44 | no | 2026-10-26 05:41:56.829 GMT+7 | bounded first page(s); older time window remains unqueried |
+| `chat` | 1 | 50 | 46 | no | 2026-10-26 05:40:43.301 GMT+7 | bounded first page(s); older time window remains unqueried |
+| `ai` | 1 | 50 | 50 | no | 2026-10-26 13:20:06.870 GMT+7 | bounded first page(s); older time window remains unqueried |
+| `git` | 1 | 50 | 50 | no | 2026-10-26 14:18:36.013 GMT+7 | bounded first page(s); older time window remains unqueried |
+| `nova` | 1 | 50 | 0 | no | 2026-10-26 00:31:04.456 GMT+7 | bounded first page(s); older time window remains unqueried |
+| `mail` | 1 | 50 | 50 | no | 2026-10-26 14:10:32.293 GMT+7 | bounded first page(s); older time window remains unqueried |
+| `calendar` | 1 | 50 | 50 | no | 2026-10-26 12:41:49.053 GMT+7 | bounded first page(s); older time window remains unqueried |
+| `noah` | 1 | 29 | 0 | yes | 2026-10-25 14:38:20.393 GMT+7 | endpoint reports no more rows for remaining time window |
+| `shortener` | 1 | 5 | 0 | yes | 2026-10-25 21:36:43.868 GMT+7 | endpoint reports no more rows for remaining time window |
+| `meet` | 1 | 0 | 0 | yes | no rows returned | endpoint reports no more rows for remaining time window |
+| `web` | 1 | 0 | 0 | yes | no rows returned | endpoint reports no more rows for remaining time window |
+
+The earlier inventory-project timeout is not persistent evidence of a provider fault: this separate follow-up returned two distinct inventory pages successfully. That project still has older unqueried rows, so coverage remains partial. Finance data stays exclusively in the earlier snapshot.
+
+### Sources and reproducible request shape
+
+- [First-party Vercel CLI logs source](https://raw.githubusercontent.com/vercel/vercel/main/packages/cli/src/util/logs-v2.ts) confirms the GET request shape and `startDate`/`endDate` parameters. Observed 26 October 2026, 14:22 GMT+7.
+- [Upstream Vercel pagination issue](https://github.com/vercel/vercel/issues/16286) records similar pagination limitations; our endpoint observations above are measured separately.
+- The exact non-secret query shape is `GET https://vercel.com/api/logs/request-logs?projectId=<project>&ownerId=<owner>&startDate=<window-start-ms>&endDate=<cursor-ms>&page=0`. The verification-only second call used `page=1`.
+- `vercel-followup.json` stores the fixed window, each call’s non-sensitive bound/count/outcome, project scope, and UA-family/ASN/status/WAF-action aggregates. `vercel_followup.py` is the private bounded collector; no raw rows or request IDs were written.

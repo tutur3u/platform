@@ -1,0 +1,30 @@
+[
+  {
+    "rulesetId": "efb7b8c949ac4650a09736fc376e9aee",
+    "status": 200,
+    "capturedAt": "2026-10-26 14:16:12 +0700",
+    "name": "Cloudflare Managed Ruleset",
+    "phase": "http_request_firewall_managed",
+    "version": "418",
+    "ruleCount": 874,
+    "actions": {
+      "block": 866,
+      "log": 8
+    },
+    "enabledChallengeRules": []
+  },
+  {
+    "rulesetId": "4814384a9e5d4991b9815dcfc25d2f1f",
+    "status": 200,
+    "capturedAt": "2026-10-26 14:16:12 +0700",
+    "name": "Cloudflare OWASP Core Ruleset",
+    "phase": "http_request_firewall_managed",
+    "version": "88",
+    "ruleCount": 179,
+    "actions": {
+      "score": 178,
+      "block": 1
+    },
+    "enabledChallengeRules": []
+  }
+]

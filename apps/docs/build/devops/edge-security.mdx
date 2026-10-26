@@ -1,0 +1,141 @@
+---
+title: "Edge security proposal"
+description: "Review-only Cloudflare Pro rules that preserve browser, native, CLI and service traffic."
+---
+
+This is a draft proposal. Every proposed Cloudflare rule is disabled. No DNS,
+rule, setting, Worker, deployment, or database change was applied. Finance and
+Finance staging are excluded from every selector. A later change needs the
+integration owner's admission and independent security review.
+
+## Inventory and evidence
+
+The [source inventory](/build/devops/edge-security-source) covers 1,824 app route
+entries across 30 apps, 461 retained Web legacy implementations, 1,375 client
+path literals, and manually traced native services. These are source counts,
+not unique deployed endpoints. It records 563 unresolved auth classifications.
+
+The [traffic snapshot](/build/devops/edge-security-traffic) joins 50 web/address
+DNS names to current proxy status. Eight are proxied. Cloudflare returned 169
+adaptive aggregate groups for the 24 hours ending 26 October 2026 at
+13:58:25 GMT+7. Vercel initially returned retained first-page rows. A separate bounded follow-up
+verified backwards time pagination, recovered Inventory rows and collected 2,267
+matching-host rows. Twenty projects remain partial; central coverage reaches only
+26 October 10:35 GMT+7. The two windows overlap and their counts are not additive.
+Missing observations are unknown, not proof of no callers.
+
+The rerunnable [census](https://github.com/tutur3u/platform/blob/main/infra/cloudflare/edge-security/inventory/source-census.jsonl)
+includes source paths, methods, implementation forwarding, host candidates,
+proxy status, applicable zone controls, auth signals, and caller classes.
+Its first line defines scope and source revision. Each remaining line is a
+route or client-path record. Generic auth signals require method-level review.
+Custom domains such as `nova.ai.vn` and `rewise.me` need their own zone evidence.
+
+## Supported Pro behavior
+
+The zone read returned **Pro Website**. Existing authenticated GETs read the
+settings and phase entrypoints successfully. The following capability claims
+come from current first-party documentation, checked on 26 October 2026.
+No rule was created to test write entitlement or expression acceptance.
+
+| Capability | Evidence and consequence |
+| --- | --- |
+| Custom rules | Pro permits 20 rules and no `log` action or regex. The proposal uses neither. [Custom-rule availability](https://developers.cloudflare.com/waf/custom-rules/#availability). |
+| Skip products and phases | `products: ["bic", "securityLevel"]` skips browser checks. `phases: ["http_request_sbfm"]` skips SBFM. Managed WAF and rate limiting stay active. BFM cannot be skipped. [Skip options](https://developers.cloudflare.com/waf/custom-rules/skip/options/). |
+| Configuration rules | Pro permits 25. `set_config` belongs to `http_config_settings`; `bic` is boolean and `security_level` accepts `off`. These controls require proxied traffic. [Settings](https://developers.cloudflare.com/rules/configuration-rules/settings/), [availability](https://developers.cloudflare.com/rules/configuration-rules/#availability). |
+| Rate limiting | Pro has 2 rules, IP counters, and counting periods through 60 seconds. Header/token counters require Advanced Rate Limiting. Existing leaked-password protection consumes one slot. [Rate limits](https://developers.cloudflare.com/waf/rate-limiting-rules/#availability). |
+| Initial observation | `log` is Enterprise-only, including the rate-limit action. Pro uses disabled proposals, retained analytics, then a measured high threshold with `block`. A logged skip is an actual exemption, not a no-op log rule. [Actions](https://developers.cloudflare.com/ruleset-engine/rules-language/actions/). |
+| Labyrinth | Its documented events inject links or record maze crawls; these events are not block/challenge actions. No documented per-path Labyrinth skip/config field was found. GET `/settings/ai_labyrinth` returned 400, not a valid control. Do not invent `ai_labyrinth` in Configuration Rules. [Labyrinth](https://developers.cloudflare.com/bots/additional-configurations/ai-labyrinth/). |
+| Bot protection | SBFM is included in Pro and supports scoped skips. Plain BFM does not. The current zone returns definite bots `allow`; a stronger zone-wide bot setting could affect Finance and is outside this proposal. [SBFM](https://developers.cloudflare.com/bots/get-started/super-bot-fight-mode/). |
+
+Live managed WAF and OWASP executions are enabled even though the legacy `waf`
+setting is off. Existing Meet exceptions and the leaked-password rate rule
+must be preserved. The proposal is an addition to reviewed entrypoints, never
+a whole-ruleset replacement. A follow-up GET of the two managed definitions found CF version 418 with
+866 block and 8 vendor log actions, and OWASP version 88 with 178 score actions
+and one block action. Neither returned an enabled challenge action. Vendor-managed
+log actions do not grant Pro custom/rate-rule log support. Refresh definitions
+and zone overrides before rollout; keep narrow rule-ID false-positive exceptions.
+
+## Traffic contracts
+
+| Class | Proposed behavior | Required origin control |
+| --- | --- | --- |
+| Browser pages | Keep BIC and managed WAF. Full browser bot enforcement requires a separate Finance-safe admission for zone settings. | Turnstile on abuse-sensitive auth forms, checked server-side; ordinary session and tenant checks remain. |
+| Authenticated APIs and bootstrap | Explicit app hosts and `/api/` paths skip BIC, Security Level and SBFM only. Missing/invalid credentials still reach origin rejection. | Validate bearer/app-session/API key or one-use bootstrap capability; scope permissions; per-token and per-IP quota. |
+| Webhooks | Same challenge-free API transport. Published provider IP sets are reviewed as code in `webhook-origins.json`, initially observation-only. | Verify raw-body signature/shared secret before effects; replay/dedupe and bounded work. IP/ASN/UA never authenticates the event. |
+| Realtime and service calls | Meet realtime enumerates HTTP and WebSocket paths outside `/api/`. Other service hosts remain unclassified until ownership is known. | Verify signed, expiring typed room/channel/collaboration ticket. Preserve query-token joins, Bearer HTTP calls, SSE, and upgrades. |
+| Own page probes | Narrow GET/HEAD host/path plus dedicated secret header template. No UA or IP-only skip. | Public build metadata remains public; origin invalid-key canaries must still return 401. The edge header never replaces origin authorization. |
+| Object delivery and external project hosts | R2/custom domains and unresolved aliases remain outside selectors. | Establish signed/public object contract, CORS, upload methods and source zone before extending transport exemptions. |
+
+The machine selector is a transport classification. It does not assert that
+every selected API is authenticated. It intentionally covers pre-login OTP,
+CLI refresh, public delivery, cookie sessions, and invalid-token negative controls.
+Exact Colab-style `/auth/login` and `/auth/callback` redirects, discovery metadata,
+and `/.well-known/` are classified separately from browser auth forms. A new
+`/auth/register` page retains browser controls.
+No rule skips managed WAF, rate limiting, remaining custom rules, or application
+authentication. A managed-rule false positive requires a narrow rule/path exception.
+
+Existing auth code already verifies Turnstile in
+`apps/web/src/lib/auth/otp.ts:329` and `packages/turnstile/src/server.ts:170`.
+Preserve the native proof flow and hostname/action validation. The
+[Turnstile contract](https://developers.cloudflare.com/turnstile/get-started/server-side-validation/)
+requires server-side validation and single-use tokens. Do not place interstitial
+challenges in front of the mobile/CLI bootstrap API or require desktop cookies.
+
+## Files and local verification
+
+`infra/cloudflare/edge-security/policy.json` owns host/path selectors.
+`rulesets/custom.json`, `configuration.json`, and `rate-limit.json` are generated
+review fragments. They contain five disabled rules and no deploy command.
+`webhook-origins.json` contains published Square and Polar environment CIDRs,
+required signature checks, and observation prerequisites. It is not an API payload.
+
+```sh
+node scripts/edge-security-rules.mjs --write
+node scripts/edge-security-rules.mjs
+node --test scripts/edge-security-rules.test.mjs
+```
+
+The validator checks exact compiled output, Finance exclusions, disabled state,
+Pro counter fields, expression size, probe scope, and narrow skips. Tests reject
+enabling rules, UA-only identity, broad skips, published probe secrets, Finance
+selectors, token-based Pro counters, and unsupported configuration drift.
+This validates the local proposal contract; it is not Cloudflare expression or
+plan-entitlement validation. No provider API is called by these commands.
+
+The high-threshold candidate is **6,000 API requests per 60 seconds per IP/colo**
+on Meet only, with a 10-second block. This is an uncalibrated initial ceiling,
+not a measured safe threshold. Shared NAT, internal fanout, polling, caching and
+provider retries must be measured before admission. It excludes conventional
+webhook/cron prefixes; nested hooks need explicit owner classification before
+expanding the host set. Keep the existing leaked-password rule and its ID intact.
+
+Per-token limits cannot be represented by this Pro edge rule. Enforce them after
+authentication in existing portable service boundaries, using stable token IDs
+or hashes rather than raw credentials. Any new Cloudflare limiter must have
+bounded calls/retries, idempotent progress, terminal states and a tested durable
+stop fence before rollout. This PR creates no runtime, queue, timer or datastore,
+and adds no Supabase/Vercel dependency.
+
+## Rollout and rollback proposal
+
+All steps below are future operator work. Finance custody and the independent
+review are prerequisites. No step is authorized by merging these documents.
+
+| Order | Admission and acceptance | Rollback |
+| --- | --- | --- |
+| 1. Resolve source gaps | Establish live deployment and credentials for External, Playground and legacy Supermemory. Review AI adapter signatures and unresolved auth contracts. Refresh host/phase snapshots. | Make no edge change; preserve known ownership and record unresolved gaps. |
+| 2. Observe and prepare | Capture all available retained traffic, label sampling/pagination, and measure API burst/NAT/provider distributions. Reconcile remaining Pro slots. Privately provision a rotated probe header and update only admitted probes. | Remove the new probe header at callers and revoke its value; preserve origin canaries and auth. |
+| 3. Canary transport exemptions | Add only reviewed, disabled fragments to existing entrypoints; then separately admit one non-Finance canary host. Verify origin 401/403, valid APIs, native OTP/refresh, cookies, CLI, signed webhooks, upgrades/SSE, and browser pages. | Disable added rules by their returned IDs. Preserve existing managed exceptions and rate rule; do not replace a whole entrypoint. |
+| 4. Browser enforcement | Confirm machine/control/callback/object paths are complete. Keep BIC on browser pages. Admit stronger SBFM settings only after Finance releases its hold, with all affected hosts covered. Labyrinth remains unchanged without proven per-path controls. | Restore only the recorded prior bot/config values, under zone owner custody. Keep exact before/after receipts. |
+| 5. High-threshold flood limit | Preserve leaked-password protection. Admit the remaining one Pro rate-rule slot on a single host only after burst evidence. Verify no HTML challenges and retry behavior with bounded fixtures. | Disable only `edge_machine_flood`; retain per-token app limits and existing rate protection. |
+| 6. Provider IP filters | Compare verified Square/Polar deliveries against freshly published production/sandbox sets. Enforce only with signature/replay checks, an owner and a list-refresh procedure. Unknown providers stay signature/shared-secret authenticated. | Revert the new IP restriction while retaining signature checks and dedupe. Never add broad cloud-ASN/IP authentication bypasses. |
+| 7. Extend hosts | Admit one owner at a time, including DNS-only origin acceptance before a separate proxy cutover. Custom domains need their own zone evidence. | Restore the recorded host/rule state for that admitted host; DNS changes remain a separately scoped release. |
+
+Any unexpected challenge, valid signature rejection, origin 401 regression,
+stalled socket/stream, or rising accepted-caller failures stops expansion.
+The owner disables the new rule first and reconciles provider state before retry.
+No blind replay, automatic global rollout, new monitoring controller, or
+production/database change is part of this proposal.
