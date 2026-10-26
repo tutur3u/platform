@@ -1,20 +1,27 @@
 import { z } from 'zod';
 
 /**
- * DRAFT: the server-side Pomodoro planner for cross-device phases.
+ * DRAFT: the single state machine for the cross-device Pomodoro.
  *
- * Pure and framework-free. Given the stored control state, a command and
- * the clock, it returns the next state plus the session effects that the
- * (not yet written) control RPC must apply atomically under the tracker's
- * advisory lock. It mirrors the device Pomodoro rules:
- * - a phase that ended more than `ON_TIME_MS` ago ended unattended, and
- *   focus never auto-starts after it;
- * - an auto-started focus counts its deadline from its real start;
- * - a late-closed focus session is trimmed back to its deadline only when
- *   that is after the session's start (the RPC knows the start).
+ * Pure and framework-free. The route plans with these functions; the
+ * database function only validates and applies the plan atomically under
+ * the tracker's advisory lock, with revision CAS and command replay. Nothing
+ * calls this until the migration in `mobile-pomodoro-cross-device.mdx` is
+ * approved.
  *
- * Nothing calls this until the migration in the cross-device design is
- * approved; see `mobile-pomodoro-cross-device.mdx`.
+ * Rules:
+ * - Nothing server-triggered starts focus. `reconcilePomodoro` (run before
+ *   every command, by the `reconcile` command and for read projections)
+ *   ends phases whose deadline passed; a break that ends there leaves focus
+ *   waiting for the user. Only a user command (`start`, `resume`, or `skip`
+ *   out of a break with auto-start on) starts a focus session.
+ * - A focus phase counts toward the long break only when it ran to its
+ *   deadline; a skipped focus does not.
+ * - A late-closed focus session is trimmed back to its deadline only when
+ *   that is after the session's start (the database knows the start).
+ * - Commands replay by id: the same id with the same payload returns the
+ *   stored state without changes; a different payload is a conflict.
+ * - A command that changes nothing (stop while idle) keeps the revision.
  */
 
 export const ON_TIME_MS = 60_000;
@@ -39,20 +46,24 @@ export interface PomodoroControlState {
   /** Time left while paused or waiting, in milliseconds. */
   remainingMs: number;
   completedFocus: number;
-  sessionId: string | null;
+  /** The focus session; stored in the foundation's `prepared_session_id`. */
+  preparedSessionId: string | null;
   taskId: string | null;
   title: string | null;
+  /** The last applied command, for replay. */
+  lastCommandId: string | null;
+  lastCommandKey: string | null;
 }
 
-export const IDLE_CONTROL: Omit<PomodoroControlState, 'revision'> = {
+export const IDLE_FIELDS = {
   phase: 'idle',
   deadlineAt: null,
   remainingMs: 0,
   completedFocus: 0,
-  sessionId: null,
+  preparedSessionId: null,
   taskId: null,
   title: null,
-};
+} as const satisfies Partial<PomodoroControlState>;
 
 const commandBase = {
   commandId: z.guid(),
@@ -70,10 +81,13 @@ export const pomodoroCommandSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('resume'), ...commandBase }),
   z.object({ type: z.literal('skip'), ...commandBase }),
   z.object({ type: z.literal('stop'), ...commandBase }),
+  // Persists due phase ends. Clients send it when they foreground or open a
+  // phase-end notification; it never starts focus.
+  z.object({ type: z.literal('reconcile'), ...commandBase }),
 ]);
 export type PomodoroCommand = z.infer<typeof pomodoroCommandSchema>;
 
-/** Session work the control RPC performs in the same transaction. */
+/** Session work the database applies in the same transaction. */
 export type SessionEffect =
   | { kind: 'start'; title: string; taskId: string | null; tags: ['pomodoro'] }
   | { kind: 'pause'; sessionId: string }
@@ -83,14 +97,27 @@ export type SessionEffect =
 export type PlanResult =
   | {
       ok: true;
+      /** True when the command id was already applied. */
+      replayed: boolean;
       state: PomodoroControlState;
       effects: SessionEffect[];
-      /** When the next deadline alarm should fire, if any. */
-      alarmAt: string | null;
+      /** The shared deadline clients schedule local notifications for. */
+      deadlineAt: string | null;
+      serverNow: string;
     }
-  | { ok: false; error: 'revision_conflict' | 'invalid_transition' };
+  | {
+      ok: false;
+      error: 'revision_conflict' | 'command_conflict' | 'invalid_transition';
+      serverNow: string;
+    };
 
 const iso = (ms: number) => new Date(ms).toISOString();
+
+/** A stable key of a command's payload, for replay checks. */
+export function commandKey(command: PomodoroCommand): string {
+  const { commandId: _id, expectedRevision: _revision, ...payload } = command;
+  return JSON.stringify(payload, Object.keys(payload).sort());
+}
 
 function phaseMs(phase: PomodoroPhase, config: PomodoroConfig): number {
   const minutes =
@@ -102,34 +129,42 @@ function phaseMs(phase: PomodoroPhase, config: PomodoroConfig): number {
   return minutes * 60_000;
 }
 
-function done(
-  state: PomodoroControlState,
-  effects: SessionEffect[]
-): PlanResult {
-  return { ok: true, state, effects, alarmAt: state.deadlineAt };
+function focusStart(state: PomodoroControlState): SessionEffect {
+  return {
+    kind: 'start',
+    title: state.title ?? 'Focus',
+    taskId: state.taskId,
+    tags: ['pomodoro'],
+  };
 }
 
-/** Ends the current phase at `nowMs` and moves to the next one. */
+/**
+ * Ends the current phase. `byUser` is true only for a user's `skip`; then
+ * an auto-started focus may start a session. A focus that did not run to
+ * its deadline (a skip) does not count toward the long break.
+ */
 function completePhase(
   state: PomodoroControlState,
   nowMs: number,
   config: PomodoroConfig,
-  effects: SessionEffect[]
+  effects: SessionEffect[],
+  byUser: boolean
 ): PomodoroControlState {
   const deadlineMs = state.deadlineAt ? Date.parse(state.deadlineAt) : null;
+  const reachedDeadline = deadlineMs !== null && deadlineMs <= nowMs;
   const late = deadlineMs !== null && nowMs - deadlineMs > ON_TIME_MS;
   if (state.phase === 'focus') {
-    if (state.sessionId) {
+    if (state.preparedSessionId) {
       effects.push({
         kind: 'stop',
-        sessionId: state.sessionId,
+        sessionId: state.preparedSessionId,
         trimToIfAfterStart:
           late && deadlineMs !== null ? iso(deadlineMs) : null,
       });
     }
-    const completedFocus = state.completedFocus + 1;
+    const completedFocus = state.completedFocus + (reachedDeadline ? 1 : 0);
     const phase: PomodoroPhase =
-      completedFocus % config.sessions_until_long_break === 0
+      reachedDeadline && completedFocus % config.sessions_until_long_break === 0
         ? 'long_break'
         : 'short_break';
     const length = phaseMs(phase, config);
@@ -138,34 +173,28 @@ function completePhase(
       ...state,
       phase,
       completedFocus,
-      sessionId: null,
+      preparedSessionId: null,
       remainingMs: length,
       deadlineAt: config.auto_start_breaks ? iso(startMs + length) : null,
     };
   }
   const length = phaseMs('focus', config);
-  const autoStart = config.auto_start_focus && !late;
-  if (autoStart) {
-    effects.push({
-      kind: 'start',
-      title: state.title ?? 'Focus',
-      taskId: state.taskId,
-      tags: ['pomodoro'],
-    });
-  }
+  // Only a user's skip may auto-start focus; server-side ends never do.
+  const autoStart = byUser && config.auto_start_focus;
+  if (autoStart) effects.push(focusStart(state));
   return {
     ...state,
     phase: 'focus',
     remainingMs: length,
-    // The RPC fills in the id of the session it starts.
-    sessionId: null,
+    // The database fills in the id of the session it starts.
+    preparedSessionId: null,
     deadlineAt: autoStart ? iso(nowMs + length) : null,
   };
 }
 
 /**
- * Ends every phase whose deadline has passed. Run before each command and
- * by the deadline alarm; it never auto-starts focus for a missed phase.
+ * Ends every phase whose deadline has passed. Server-side and read paths
+ * use it; it never starts focus.
  */
 export function reconcilePomodoro(
   state: PomodoroControlState,
@@ -180,9 +209,27 @@ export function reconcilePomodoro(
     next.deadlineAt !== null &&
     Date.parse(next.deadlineAt) <= nowMs
   ) {
-    next = completePhase(next, nowMs, config, effects);
+    next = completePhase(next, nowMs, config, effects, false);
   }
   return { state: next, effects };
+}
+
+/**
+ * The read-only view GET returns: the stored state as it is due now. GET
+ * writes nothing; the projection's phase ends are persisted by the next
+ * command (every command reconciles first) or a `reconcile` command.
+ */
+export function projectPomodoro(
+  stored: PomodoroControlState,
+  now: Date,
+  config: PomodoroConfig
+): {
+  state: PomodoroControlState;
+  deadlineAt: string | null;
+  serverNow: string;
+} {
+  const { state } = reconcilePomodoro(stored, now, config);
+  return { state, deadlineAt: state.deadlineAt, serverNow: now.toISOString() };
 }
 
 /** Plans a command against the stored state (reconciled first). */
@@ -192,22 +239,64 @@ export function planPomodoroCommand(
   now: Date,
   config: PomodoroConfig
 ): PlanResult {
+  const serverNow = now.toISOString();
+  const key = commandKey(command);
+  if (command.commandId === stored.lastCommandId) {
+    return stored.lastCommandKey === key
+      ? {
+          ok: true,
+          replayed: true,
+          state: stored,
+          effects: [],
+          deadlineAt: stored.deadlineAt,
+          serverNow,
+        }
+      : { ok: false, error: 'command_conflict', serverNow };
+  }
   if (command.expectedRevision !== stored.revision) {
-    return { ok: false, error: 'revision_conflict' };
+    return { ok: false, error: 'revision_conflict', serverNow };
   }
   const nowMs = now.getTime();
   const reconciled = reconcilePomodoro(stored, now, config);
   const effects = [...reconciled.effects];
-  const state = { ...reconciled.state, revision: stored.revision + 1 };
-  const running = state.phase !== 'idle' && state.deadlineAt !== null;
-  const paused = state.phase !== 'idle' && state.deadlineAt === null;
+  const state = reconciled.state;
+  const deadlineMs = state.deadlineAt ? Date.parse(state.deadlineAt) : null;
+  const paused = state.phase !== 'idle' && deadlineMs === null;
+
+  const applied = (next: PomodoroControlState): PlanResult => {
+    const changed =
+      effects.length > 0 || JSON.stringify(next) !== JSON.stringify(stored);
+    const final = changed
+      ? {
+          ...next,
+          revision: stored.revision + 1,
+          lastCommandId: command.commandId,
+          lastCommandKey: key,
+        }
+      : stored;
+    return {
+      ok: true,
+      replayed: false,
+      state: final,
+      effects,
+      deadlineAt: final.deadlineAt,
+      serverNow,
+    };
+  };
+  const invalid: PlanResult = {
+    ok: false,
+    error: 'invalid_transition',
+    serverNow,
+  };
 
   switch (command.type) {
+    case 'reconcile':
+      return applied(state);
     case 'start': {
-      if (state.phase === 'focus' && state.sessionId) {
+      if (state.phase === 'focus' && state.preparedSessionId) {
         effects.push({
           kind: 'stop',
-          sessionId: state.sessionId,
+          sessionId: state.preparedSessionId,
           trimToIfAfterStart: null,
         });
       }
@@ -218,62 +307,49 @@ export function planPomodoroCommand(
         tags: ['pomodoro'],
       });
       const length = phaseMs('focus', config);
-      return done(
-        {
-          ...state,
-          phase: 'focus',
-          completedFocus: state.phase === 'idle' ? 0 : state.completedFocus,
-          deadlineAt: iso(nowMs + length),
-          remainingMs: length,
-          sessionId: null,
-          taskId: command.taskId ?? null,
-          title: command.title,
-        },
-        effects
-      );
+      return applied({
+        ...state,
+        phase: 'focus',
+        completedFocus: state.phase === 'idle' ? 0 : state.completedFocus,
+        deadlineAt: iso(nowMs + length),
+        remainingMs: length,
+        preparedSessionId: null,
+        taskId: command.taskId ?? null,
+        title: command.title,
+      });
     }
     case 'pause': {
-      if (!running) return { ok: false, error: 'invalid_transition' };
-      if (state.phase === 'focus' && state.sessionId) {
-        effects.push({ kind: 'pause', sessionId: state.sessionId });
+      if (state.phase === 'idle' || deadlineMs === null) return invalid;
+      if (state.phase === 'focus' && state.preparedSessionId) {
+        effects.push({ kind: 'pause', sessionId: state.preparedSessionId });
       }
-      const left = Math.max(0, Date.parse(state.deadlineAt!) - nowMs);
-      return done({ ...state, deadlineAt: null, remainingMs: left }, effects);
+      const left = Math.max(0, deadlineMs - nowMs);
+      return applied({ ...state, deadlineAt: null, remainingMs: left });
     }
     case 'resume': {
-      if (!paused) return { ok: false, error: 'invalid_transition' };
+      if (!paused) return invalid;
       if (state.phase === 'focus') {
         effects.push(
-          state.sessionId
-            ? { kind: 'resume', sessionId: state.sessionId }
-            : {
-                kind: 'start',
-                title: state.title ?? 'Focus',
-                taskId: state.taskId,
-                tags: ['pomodoro'],
-              }
+          state.preparedSessionId
+            ? { kind: 'resume', sessionId: state.preparedSessionId }
+            : focusStart(state)
         );
       }
-      return done(
-        { ...state, deadlineAt: iso(nowMs + state.remainingMs) },
-        effects
-      );
+      return applied({ ...state, deadlineAt: iso(nowMs + state.remainingMs) });
     }
     case 'skip': {
-      if (state.phase === 'idle') {
-        return { ok: false, error: 'invalid_transition' };
-      }
-      return done(completePhase(state, nowMs, config, effects), effects);
+      if (state.phase === 'idle') return invalid;
+      return applied(completePhase(state, nowMs, config, effects, true));
     }
     case 'stop': {
-      if (state.phase === 'focus' && state.sessionId) {
+      if (state.phase === 'focus' && state.preparedSessionId) {
         effects.push({
           kind: 'stop',
-          sessionId: state.sessionId,
+          sessionId: state.preparedSessionId,
           trimToIfAfterStart: null,
         });
       }
-      return done({ ...IDLE_CONTROL, revision: state.revision }, effects);
+      return applied({ ...state, ...IDLE_FIELDS });
     }
   }
 }

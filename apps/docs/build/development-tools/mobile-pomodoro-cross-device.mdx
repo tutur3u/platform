@@ -28,6 +28,27 @@ planner yet.
 Phase ends must happen, with a notification, even when every client is
 closed.
 
+## Decisions (from the design review)
+
+- **One state machine.** The pure TypeScript planner in
+  `pomodoro-control.ts` decides every transition. The route plans with it;
+  the database function only checks and applies the plan under the lock. SQL
+  never re-implements phase logic.
+- **Nothing server-triggered starts focus.** A phase end reached by
+  reconcile (on read, on a `reconcile` command, or before any command) never
+  starts a focus session, even with `auto_start_focus` on and on time. Focus
+  then waits for the user. Only a user's `start`, `resume`, or `skip` out of
+  a break starts one. Breaks may still auto-start, since they create no
+  session.
+- **v1 has no Durable Object.** State is reconciled when read and before
+  every command. Each device schedules its own local notification from the
+  shared `deadlineAt`. A server-side alarm is a later, separately approved
+  step.
+- **Counting.** Only a focus that ran to its deadline counts toward the long
+  break. A skipped focus does not, and skipping a break changes nothing.
+- **No-op commands.** A command that changes nothing (for example `stop`
+  while idle) keeps the revision and writes nothing.
+
 ## Migration design (proposed, not written)
 
 ### Control table
@@ -35,6 +56,8 @@ closed.
 Relax the inert constraints and add the phase fields, in one migration:
 
 ```sql
+set local lock_timeout = '5s';
+
 alter table private.time_tracker_controls
   drop constraint time_tracker_controls_mode_check,
   drop constraint time_tracker_controls_phase_check,
@@ -47,90 +70,158 @@ alter table private.time_tracker_controls
     check (remaining_ms between 0 and 180 * 60000),
   add column completed_focus integer not null default 0
     check (completed_focus >= 0),
-  add column session_id uuid,  -- no FK, as in the foundation
   add column task_id uuid,
   add column title text check (char_length(title) <= 255),
   add constraint time_tracker_controls_phase_shape check (
-    (mode = 'off' and phase = 'idle' and deadline_at is null)
+    (mode = 'off' and phase = 'idle' and deadline_at is null
+      and prepared_session_id is null)
     or (mode = 'pomodoro' and phase <> 'idle')
   );
 ```
 
+- **Reuse `prepared_session_id`.** The foundation's column holds the focus
+  session id; no new `session_id` column. Like the foundation, it has no FK,
+  so deleting a session is never blocked.
 - Constraint names must be checked against the foundation's generated names
   before writing the migration.
 - `deadline_at` stays nullable: it is set while a phase runs and null while
   the phase is paused or waiting.
-- Like the foundation, there is no FK from `session_id` to sessions, so
-  deleting a session is never blocked.
+- `lock_timeout` keeps the `alter table` from queueing behind live tracker
+  traffic; the migration fails fast and is retried instead.
+
+**Down path (reset, then restore).** Rolling back must not fail on rows the
+new shape allows:
+
+```sql
+set local lock_timeout = '5s';
+-- 1. Reset: return every control to the inert foundation shape.
+update private.time_tracker_controls
+   set mode = 'off', phase = 'idle', deadline_at = null,
+       prepared_session_id = null
+ where mode <> 'off' or phase <> 'idle' or deadline_at is not null;
+-- 2. Restore: drop the new function, put back the original
+--    replace_running_time_tracker_session body and channel-role function,
+--    drop the helper, shape and columns, then re-add the foundation's
+--    original checks with their original names.
+drop function if exists private.command_time_tracker_pomodoro(
+  uuid, uuid, bigint, uuid, text, jsonb, jsonb);
+alter table private.time_tracker_controls
+  drop constraint time_tracker_controls_phase_shape,
+  drop column remaining_ms, drop column completed_focus,
+  drop column task_id, drop column title;
+-- ...re-add the foundation mode/phase/deadline checks verbatim.
+```
+
+Focus sessions already started stay as ordinary `pomodoro`-tagged sessions;
+the reset never touches session rows.
+
+### Shared session helper
+
+`private.replace_running_time_tracker_session` cannot be reused as is:
+
+- it raises `OFF control required` (55000) whenever `mode <> 'off'`;
+- it has no `tags` parameter;
+- it raises `Open break must be resolved` when a break is open;
+- it bumps its own scope revision and writes its own receipt.
+
+Split it. The migration adds an inner helper and makes the existing function
+a thin wrapper around it, with unchanged behaviour:
+
+```sql
+private._replace_running_session_locked(
+  p_ws_id uuid, p_actor_id uuid,
+  p_expected_running_session_id uuid,
+  p_title text, p_description text, p_category_id uuid, p_task_id uuid,
+  p_tags text[],            -- validated like sessionTagsSchema
+  p_close_open_break boolean
+) returns uuid              -- the new session id
+```
+
+- **Caller holds the lock.** It assumes the advisory xact lock and the row
+  locks are already taken, in the foundation's order.
+- **No CAS, no receipts, no mode check.** The caller owns revision, replay and
+  mode.
+- With `p_close_open_break`, an open break on the running session is ended at
+  `now()` instead of raising. The wrapper passes `false`, so its current
+  error stays.
+- It keeps the category and task validation, the future-start check and the
+  running-session conflict check.
+- The wrapper keeps its `OFF control required` check, its own scope revision
+  and receipts. The Timer's replace flow is unchanged.
 
 ### Command function
 
 ```sql
 private.command_time_tracker_pomodoro(
   p_ws_id uuid, p_actor_id uuid,
-  p_expected_revision bigint, p_command_id uuid, p_command jsonb
+  p_expected_revision bigint, p_command_id uuid, p_payload_hash text,
+  p_next_state jsonb, p_effects jsonb
 ) returns jsonb
 ```
 
-Security definer, `search_path = ''`, executable by the service role only. In
-one transaction it:
+Security definer, `search_path = ''`, executable by the service role only.
+The route reads the control row, plans with `planPomodoroCommand`, and sends
+the planned state and effects. In one transaction the function:
 
 1. Checks workspace membership, as the foundation functions do.
-2. Takes the **same advisory key and lock order** as
-   `replace_running_time_tracker_session` (control, then linked requests,
-   sessions, breaks), so Pomodoro commands and other session writers
-   serialize.
-3. Replays: when `p_command_id` equals the stored `last_command_id` with the
-   same payload, it returns the stored result without changing anything. A
-   reused id with a different payload fails.
-4. Runs revision CAS against `p_expected_revision`. A stale revision fails
-   (`409` at the API).
-5. **Reconciles first:** it ends every phase whose deadline has passed.
-   Focus never auto-starts after an unattended end (more than one minute
-   late). A late-closed focus session is trimmed to its deadline only when
-   that is after the session's start.
-6. Applies the command (`start`, `pause`, `resume`, `skip` or `stop`) and its
-   session effects:
-   - starting through the existing replacement path, with the `pomodoro`
-     tag;
-   - pausing and resuming through the existing break rows;
-   - stopping through the canonical close.
+2. Takes the **same advisory key and lock order** as the wrapper (control,
+   then linked requests, sessions, breaks).
+3. Replays from `private.time_tracker_operation_receipts`: a known
+   `p_command_id` with the same `p_payload_hash` returns the stored result; a
+   different hash fails (`409 command_conflict`). The planner's
+   `lastCommandId` mirrors this for the latest command.
+4. Runs revision CAS. A stale revision fails (`409 revision_conflict`), and
+   the route re-reads and re-plans once.
+5. Validates `p_next_state` against the table checks and the effects against
+   the locked rows: a `stop`, `pause` or `resume` must name the stored
+   `prepared_session_id` (or its resume chain), or the effect is dropped and
+   the Pomodoro goes OFF (see Timer routes).
+6. Applies the effects: `start` through `_replace_running_session_locked`
+   with `p_tags => array['pomodoro']` and `p_close_open_break => true`,
+   storing the new id in `prepared_session_id`; `pause` and `resume` through
+   the break rows; `stop` through the canonical close, then trims to
+   `trimToIfAfterStart` only when that is after the session's start.
+   Accounting, approval and threshold triggers stay in force.
+7. Writes the state and receipt, bumps the revision only when something
+   changed, and returns `{ state, deadlineAt }`.
 
-   Existing accounting, approval and threshold triggers stay in force.
-7. Writes the new state, revision, command id and payload, and returns the
-   new state and the next alarm time.
+pgTAP must match the planner's Vitest cases one for one.
 
-The pure planner (`planPomodoroCommand`, `reconcilePomodoro`) specifies
-steps 5 and 6. Its Vitest suite is the executable specification, and the
-SQL must match it case for case (pgTAP).
+### Timer routes go through the controller (before client adoption)
 
-### Writer closure (risk)
+The Timer's own start, stop, pause and resume routes are the main other
+writers. Before any client adopts the Pomodoro, they move behind the same
+lock:
 
-Legacy direct session writers still exist, as listed in the foundation's
-catalog baseline:
+- Each takes the actor's advisory lock and reads the control row.
+- When the control is OFF, they behave exactly as today.
+- When a Pomodoro is on and the request targets its `prepared_session_id`
+  (or resume chain), the route plans the matching Pomodoro command (stop,
+  pause, resume) instead, so both stay in sync.
+- On a **session mismatch** (the request targets or starts a different
+  session), the route applies the request as today and switches the
+  Pomodoro OFF (reset to idle, revision bumped, broadcast).
+- **A device never closes a manual timer.** No Pomodoro command, reconcile or
+  route on another device stops a session that is not the stored
+  `prepared_session_id` or its chain.
 
-- the Timer's own start, stop, pause and resume routes;
-- missed-entry and edit flows;
-- approval effects.
-
-A user can change the Pomodoro's session through them. The command function
-therefore re-reads the session by id, by resume parent and by task within
-the phase's runs (as the device does), and never stops an unrelated session.
-Full writer closure stays a separate prerequisite. This design does not
-claim it.
+Missed-entry, edit and approval writers still bypass this; full writer
+closure stays a separate prerequisite.
 
 ### Tests the migration must ship with
 
 - pgTAP for every planner case:
-  - CAS and replay;
-  - a sleep across many cycles with both auto-starts on;
+  - CAS, replay and a reused id with a new payload;
+  - a night across many cycles with both auto-starts on, starting nothing;
   - no trim before a session's start;
-  - a stale session id;
-  - a manual session during a pause;
+  - stop while idle keeping the revision;
+  - a stale or foreign session id turning the Pomodoro OFF;
   - concurrent commands from two connections;
-  - deletion of a referenced session.
-- Catalog assertions updated for the relaxed constraints and the new
-  function's grants.
+  - deletion of a referenced session;
+  - the wrapper's behaviour unchanged.
+- The down path run on a database with active Pomodoros.
+- Catalog assertions updated for the relaxed constraints, the helper (no
+  grants) and the new function's grants.
 - Exact-SHA CI in `time-tracker-control-contract.yaml`, with generated types
   and owned cleanup.
 
@@ -138,44 +229,77 @@ claim it.
 
 | Route | Purpose |
 | --- | --- |
-| `GET /api/v1/workspaces/{wsId}/time-tracking/pomodoro` | The actor's control state, reconciled. |
-| `POST /api/v1/workspaces/{wsId}/time-tracking/pomodoro` | A command: `{ type, commandId, expectedRevision, title?, taskId? }`, validated by `pomodoroCommandSchema`. |
+| `GET /api/v1/workspaces/{wsId}/time-tracking/pomodoro` | Read-only: the stored state projected to now with `projectPomodoro`. It writes nothing. |
+| `POST /api/v1/workspaces/{wsId}/time-tracking/pomodoro` | A command: `{ type, commandId, expectedRevision, title?, taskId? }`, validated by `pomodoroCommandSchema`. `type` is `start`, `pause`, `resume`, `skip`, `stop` or `reconcile`. |
 
 - **Location:** both handlers live under `apps/web/src/app/api/**`. They use
   app-session Bearer auth (mobile) and session auth (web), and call the
   command function with the service role.
-- **Responses:**
-  - `200` with `{ state, alarmAt }`;
-  - `409` for a revision conflict, with the current state so the client can
-    retry;
+- **Responses:** every response carries `serverNow`, so clients correct their
+  clock skew before scheduling.
+  - `200` with `{ state, deadlineAt, serverNow, replayed }`;
+  - `409` with `error` (`revision_conflict` or `command_conflict`), the
+    current state and `serverNow`;
   - `422` for an invalid transition.
+- **`reconcile`:** a client sends it when it comes to the foreground or
+  opens a phase-end notification, to persist due phase ends. It never starts
+  focus.
 - **Idempotency:** a client retries with the same `commandId`.
-- **Realtime:** after a successful command, the route broadcasts on the
-  actor's private channel, so other clients update without polling.
 
-## Deadline scheduling
+### Realtime
 
-- **Where:** a Cloudflare Durable Object per workspace and actor holds one
-  alarm at `alarmAt`. This follows the backend ownership guard: no Vercel
-  Cron, pg_cron or Edge Functions.
-- **When the alarm fires:** it calls the reconcile path (a `reconcile`
-  command with the current revision) and schedules the next alarm. It also
-  sends the phase-end push through the existing notification delivery.
-- **Cost and safety:**
-  - Bounded retries with backoff.
-  - Idempotent by revision: a stale alarm is a no-op.
-  - A durable **stop fence**: once the control returns to `mode = 'off'`, the
-    object deletes its alarm and refuses to reschedule.
-  - One alarm per active Pomodoro, so cost scales with active users.
-  - Billing evidence goes in the Cloudflare adoption guidance before rollout.
+Add a topic branch to `private.cloudflare_channel_role`
+(`20261004141204_cloudflare_channel_authorization.sql`), redefined with
+`create or replace` in the migration:
+
+```sql
+-- time-tracker-pomodoro-<ws uuid>-<actor uuid>
+elsif p_topic ~ '^time-tracker-pomodoro-[0-9a-f-]{36}-[0-9a-f-]{36}$' then
+  v_ws := substr(p_topic, 23, 36)::uuid;
+  v_target := substr(p_topic, 60, 36)::uuid;
+  if v_target = p_actor and exists (
+    select 1 from public.workspace_members m
+     where m.ws_id = v_ws and m.user_id = p_actor
+  ) then
+    return 'editor';
+  end if;
+  return null;
+```
+
+- Only the actor themself, while a workspace member, joins their topic. Other
+  members get null, even workspace admins.
+- The existing length cap and `invalid_text_representation` handling cover
+  malformed ids.
+- The route broadcasts `{ revision }` after every applied command; clients
+  re-GET. No state travels on the channel.
+- pgTAP covers own topic, another member's topic, a non-member and a
+  malformed topic.
+
+## Deadline scheduling (v1)
+
+- **No server alarm in v1.** Reconcile happens on read (projection), on a
+  `reconcile` command and before every command.
+- **Who reschedules after a pause or resume:** every client. A paused phase
+  has `deadlineAt = null`, so each device cancels its local notification on
+  the realtime broadcast or its next read; after a resume, each device
+  schedules one at the new `deadlineAt`, corrected by `serverNow`. The device
+  that sent the command does so from its own response.
+- Closed devices still notify, because each device's local notification was
+  scheduled from the shared deadline while it was open. A device that missed
+  a pause or resume shows a stale notification at most once and corrects
+  itself on its next read.
+- **Later (separately approved):** a Cloudflare Durable Object alarm per
+  actor for push delivery, with bounded retries, revision idempotence and a
+  durable stop fence. It would call `reconcile` only, so it could never start
+  focus either.
 
 ## Client adoption
 
 - **Mobile:**
   - `PomodoroController` keeps its interface. When the API is available, it
     sends commands instead of driving sessions itself.
-  - It follows realtime state and keeps local notifications only as a
-    fallback.
+  - It follows realtime revisions and schedules its local notification from
+    the shared deadline.
   - On first sync, the device state (`time-tracker.pomodoro.v1`) is offered
     as a `start` or `resume` once, then cleared.
 - **Web:** the timer shows the shared phase and remaining time and sends the
@@ -188,8 +312,10 @@ in order, each need the owner's go-ahead:
 
 1. Write the migration and pgTAP suite.
 2. Run it in the isolated lifecycle.
-3. Wire the routes.
-4. Add the Durable Object.
+3. Wire the Pomodoro routes.
+4. Route the Timer's own start, stop, pause and resume through the
+   controller, with the mismatch-goes-OFF rule.
 5. Adopt it in the clients.
+6. Optionally, add the Durable Object alarm.
 
 No migration merges without that approval.
