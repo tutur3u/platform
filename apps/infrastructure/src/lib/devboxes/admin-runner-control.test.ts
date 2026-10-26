@@ -9,6 +9,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 
 import {
   listDevboxRunnerControl,
+  reapStaleDevboxRuns,
   setDevboxRunnerDrain,
 } from './admin-runner-control';
 import type { DevboxPrivateSchemaClient } from './store-utils';
@@ -104,5 +105,19 @@ describe('devbox runner control', () => {
     await expect(setDevboxRunnerDrain('runner-1', false)).rejects.toThrow(
       'not found or revoked'
     );
+  });
+
+  it('runs the global stale-run reap with a bounded limit', async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: 4, error: null });
+    createAdminClientMock.mockResolvedValue({
+      schema: () => ({ rpc }),
+    });
+    await expect(reapStaleDevboxRuns()).resolves.toEqual({
+      limit: 200,
+      reaped: 4,
+    });
+    expect(rpc).toHaveBeenCalledWith('reap_stale_devbox_runs', {
+      p_limit: 200,
+    });
   });
 });

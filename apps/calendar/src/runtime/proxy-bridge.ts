@@ -5,7 +5,10 @@ import {
   dispatchThroughProxy,
   type NextProxy,
 } from '@tuturuuu/start-bridge/proxy-bridge';
-import { bridgeRequest } from '@tuturuuu/start-bridge/request-context';
+import {
+  bridgeRequest,
+  maybeBridgeRequest,
+} from '@tuturuuu/start-bridge/request-context';
 import { resolveTuturuuuWebAppUrl } from '@tuturuuu/utils/next-config';
 import {
   type CalendarRequestContext,
@@ -40,12 +43,14 @@ export function dispatchThroughCalendarProxy({
         cloudflare,
         telemetry,
         appBase: context.appBase,
+        nonce: context.nonce,
       },
       run
     );
   };
   return dispatchThroughProxy({
     request,
+    nonce: maybeBridgeRequest()?.nonce,
     waitUntil,
     cloudflare,
     matches: proxyMatches,

@@ -136,9 +136,29 @@ export function workerEntry({
   rootHost,
   proxyMatcher,
   assetsBinding,
+  mounts: effectiveMounts,
+  seoPolicy = null,
 }) {
   const name = `${pascal(app)}Environment`;
-  const mounts = defaultMounts({ app, rootHost });
+  const mounts = effectiveMounts ?? defaultMounts({ app, rootHost });
+  const mounted = mounts.mountHosts?.length > 0;
+  const mountComment = mounted
+    ? `// One artifact: the subdomain root and the ${mounts.mountHosts.join(', ')}${mounts.basePath} mount.`
+    : `// Root-only: served at ${mounts.rootHosts.join(', ')}; no apex mount${
+        mounts.unknownHost === 'reject'
+          ? ', and unknown hosts are rejected'
+          : ''
+      }.`;
+  const mountLines = [
+    `  rootHosts: [${mounts.rootHosts.map(quote).join(', ')}],`,
+    `  mountHosts: [${(mounts.mountHosts ?? []).map(quote).join(', ')}],`,
+    ...(mounts.basePath && mounted
+      ? [`  basePath: ${quote(mounts.basePath)},`]
+      : []),
+    ...(mounts.unknownHost
+      ? [`  unknownHost: ${quote(mounts.unknownHost)} as const,`]
+      : []),
+  ];
   const proxyImport = proxyMatcher
     ? `import { config as proxyConfig, proxy } from '${proxyModule}';`
     : `import { proxy } from '${proxyModule}';`;
@@ -162,7 +182,10 @@ import { createProxyMatcher } from '${BRIDGE.proxyMatcher}';
     : '{ fetch(request: Request): Promise<Response> }';
   return `${header(app)}/// <reference types="@vitejs/plugin-rsc/types" />
 ${assetsImport}import { createFunctionProxy } from '${BRIDGE.functionProxy}';
-${matcherImports}import { createBridgeHandler } from '${BRIDGE.handler}';
+${matcherImports}import {
+  bridgeErrorResponse,
+  createBridgeHandler,
+} from '${BRIDGE.handler}';
 import { createBridgeStartHandler } from '${BRIDGE.serverEntry}';
 ${proxyImport}
 import appConfig from '${moduleFrom('../', APP_CONFIG)}';
@@ -181,22 +204,26 @@ interface WorkerContext {
 
 type ApiEntry = typeof import('${moduleFrom('../', API_ENTRY)}');
 
+// Robots policy: this app's entry in packages/utils/src/seo-policy.json.
+const seoPolicy = ${seoPolicy ? JSON.stringify(seoPolicy) : 'null'};
+
+${mountComment}
+const mounts = {
+  app: ${quote(app)},
+${mountLines.join('\n')}
+  ...appConfig.mounts,
+};
+
 // Route handlers are server code (\`server-only\` is valid only in the rsc
 // environment), while this entry is bundled in ssr: load them from rsc.
 const handler = (
   import.meta.viteRsc.loadModule('rsc', ${quote(API_RSC_ENTRY)}) as Promise<ApiEntry>
 ).then(({ endpoints }) =>
   createBridgeHandler<${name}, WorkerContext>({
-    // One artifact: the subdomain root and the tuturuuu.com/${app} mount.
-    mounts: {
-      app: ${quote(app)},
-      rootHosts: [${mounts.rootHosts.map(quote).join(', ')}],
-      mountHosts: [${mounts.mountHosts.map(quote).join(', ')}],
-      basePath: ${quote(mounts.basePath)},
-      ...appConfig.mounts,
-    },
+    mounts,
     csp: appConfig.csp,
     apiOrigin: appConfig.apiOrigin,
+    framablePaths: appConfig.framablePaths,
     start: createBridgeStartHandler(),
     serverFnBase: ${quote(FUNCTION_BASE)},
     proxy,${matcherOption}
@@ -213,9 +240,23 @@ const handler = (
 
 export default {
   async fetch(request: Request, env: ${name}, ctx: WorkerContext) {
-    const response = await (await handler)(request, env, ctx);
+    let response: Response;
+    try {
+      response = await (await handler)(request, env, ctx);
+    } catch (error) {
+      // Even a failed route load answers through the response policy.
+      console.error('[start-bridge] worker failed', error);
+      response = bridgeErrorResponse();
+    }
     return appConfig.wrapResponse
-      ? appConfig.wrapResponse(response, { request, env })
+      ? appConfig.wrapResponse(response, {
+          request,
+          env,
+          mounts,
+          publicAssets,
+          framablePaths: appConfig.framablePaths,
+          seoPolicy,
+        })
       : response;
   },
 };
@@ -227,9 +268,15 @@ export function appConfigModule({ app }) {
   return `// App-owned start-bridge Worker options for ${app}: the codemod created this
 // file and never overwrites it. See "Worker options" in
 // apps/docs/build/devops/start-bridge-codemod.mdx.
+import { appRobots, createRootResponsePolicy } from '${BRIDGE.responsePolicy}';
 import { defineBridgeAppConfig } from '${BRIDGE.appConfig}';
 
-export default defineBridgeAppConfig({});
+export default defineBridgeAppConfig({
+  // Robots (the app's seo-policy.json allowlist on its canonical host),
+  // framing, sniffing, referrer and private caching on every response; only
+  // GET/HEAD static files keep their own caching.
+  wrapResponse: createRootResponsePolicy({ seo: appRobots }),
+});
 `;
 }
 
