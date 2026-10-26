@@ -240,6 +240,9 @@ and store tests.
 
 ### Claim admission by reported execution mode
 
+Apply `20261026145000_devbox_claim_mode_admission.sql` after the current main
+migrations before enabling capability-report freshness admission.
+
 The database flag `private.devbox_control_settings.require_reported_execution_mode`
 defaults to off and must stay off pending agent and heartbeat-handler support.
 Judge always refuses a runner reporting `trusted`, even when this flag is off.
