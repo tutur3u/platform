@@ -198,5 +198,5 @@ jobs:
         with:
           name: wave1-${{ inputs.app }}-production-publication-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/${{ inputs.app }}-production-publication.json
-          retention-days: 30
+          retention-days: 90
           if-no-files-found: warn

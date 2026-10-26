@@ -1,12 +1,12 @@
 ---
 title: "Wave-1 native cutover"
-description: "Publication hold, native staging acceptance, and explicit production cutover gates."
+description: "Per-app admission, private production smoke, route rollback, and production acceptance."
 ---
 
 ## Production hold
 
-`productionPublicationPolicy` in `tuturuuu.ci.ts` holds Meet, Calendar, Mail and
-Apps. A production push reports **held for wave-1 cutover** in the planner log and
+`productionPublicationPolicy` in `tuturuuu.ci.ts` admits Calendar frontend only.
+Meet, Mail and Apps remain held. A production push reports **held for wave-1 cutover** in the planner log and
 summary and selects no publisher for those apps. Manual planner dispatch and
 package recovery honor the same hold. All four direct legacy Vercel publishers and
 Meet's native frontend/realtime publisher check it before any production credential
@@ -28,7 +28,10 @@ record uses `state: 'admitted'` and explicit `surfaces`: `['frontend']` for Cale
 Mail and Apps, or `['frontend', 'realtime-do']` for Meet. Missing/empty/malformed
 records, unexpected fields and unknown workflow names hold publication. Deleting
 a hold never admits publication. Known unrelated publishers keep normal selection,
-and Supabase production migration eligibility keeps its existing gates. Root
+and Supabase production migration eligibility keeps its existing gates. Calendar's legacy
+Vercel production target stays disabled even after native admission. The planner
+selects Calendar's native workflow only; its legacy native-source guard remains
+intact as a final refusal boundary. Root
 `production-publication-policy.test.js` covers policy mutations, planner outcomes,
 CLI outputs and the direct publishers' dependency on the policy job.
 `production-publisher-secrets.test.js` parses all legacy/native workflow jobs and
@@ -41,24 +44,93 @@ custody of pre-hold runs and their resulting deployment baselines.
 
 ## Release gates
 
-A later explicit cutover PR must admit each app independently with the required
-surfaces and review rationale, after:
+Each app needs its own reviewed admission PR and exact accepted production SHA.
+Tests, types, lint, a real native build, sealed original/restored runtime acceptance
+and transitive supplier checks qualify that source. Keep the production publisher
+route-free; admission permits upload without moving canonical traffic. Review and
+freeze the exact promotion range before production sync.
 
-1. Exact accepted main SHA passes applicable tests, types, lint, real native builds,
-   sealed original/restored runtime acceptance and transitive supplier checks.
-2. Off-canonical staging uses distinct Worker identities and isolated resources,
-   explicit account, secret names only, no canonical routes, and exact artifact bytes.
-3. Hosted signed-in EN/VI, auth handoff/refresh/no-loop, navigation/RPC/assets and
-   app-specific provider acceptance pass. Mail needs provider/webhook/attachments;
-   Calendar needs provider/offline/Tasks; Meet needs hosted media/reconnect/SFU/TURN;
-   Apps needs redirects and canonical-host fence qualification.
-4. Release owner captures current routing IDs/proxy modes, immutable Vercel fallbacks,
-   old/new Worker versions, secret names, scheduler custody, operator and rollback
-   triggers. Meet rollback captures **both** frontend and realtime versions.
-5. Review and freeze the exact production promotion range. Source sync is not
-   permission to attach canonical routes or activate schedulers. Calendar/Mail/Apps
-   use the [private production preparation workflow](/build/devops/wave1-native-publishers#route-free-production-preparation);
-   its route-free upload precedes a separately captured routing switch.
+The production-first cutover sequence is:
+
+1. Deploy the exact sealed production artifact privately with production runtime
+   configuration. Workers.dev and version previews remain disabled. Smoke the
+   candidate on an explicitly admitted temporary custom host after upload, then
+   remove that domain before the canonical switch. Staging acceptance remains
+   useful evidence but is not a flip prerequisite.
+2. Capture the current DNS record, proxy flag, TTL, every zone route, immutable
+   Vercel fallback and old/new Worker versions. Rehearse the exact rollback and
+   measure route detachment through verified fallback in under two minutes.
+3. Attach the reviewed canonical Worker Route with its scriptless ACME exclusion. Source sync alone never
+   attaches routes or activates schedulers.
+4. Immediately verify signed-in EN/VI, auth handoff, provider connection, one read
+   and one write. The operator's production browser owns signed-in checks.
+5. Watch errors, exceptions, 5xx and auth loops for 30–60 minutes. Any auth or data
+   error triggers immediate routing rollback, followed by a fix and a fresh flip.
+
+Mail additionally needs provider/webhook/attachment checks; Calendar needs
+provider/offline/Tasks checks; Meet needs hosted media/reconnect/SFU/TURN; Apps
+needs redirects and canonical-host fence checks. Meet rollback captures **both**
+frontend and realtime versions. Calendar/Mail/Apps use the
+[private production preparation workflow](/build/devops/wave1-native-publishers#route-free-production-preparation).
+
+### Calendar route and certificate continuity
+
+Calendar temporarily admits exactly `calendar-cutover.tuturuuu.com` alongside
+its canonical and staging root hosts. Unknown hosts remain rejected and one-origin
+mounts stay disabled. Remove this temporary host in an immediate follow-up commit
+or PR after the canonical flip is accepted; include that removal in the review
+brief. Attach the temporary domain only after the private publisher succeeds.
+
+Export the full zone and Vercel fallback before writes. Proxy only Calendar's
+existing CNAME, retaining its Vercel target. Verify HTTPS, legacy smoke, redirects,
+headers, uncached identity and the ACME challenge path through Cloudflare. A
+Vercel bot challenge on Cloudflare egress fails this fallback gate. Retain any
+operator-approved Cloudflare-IP firewall bypass while Vercel is the rollback
+origin, then remove that bypass rule once Calendar leaves Vercel. If this
+baseline fails, restore DNS-only immediately. Do not change zone-wide TLS, cache
+or firewall settings. Measure attach/detach/fallback on a disposable noncanonical
+route, then prepare two explicit routes:
+
+- `calendar.tuturuuu.com/.well-known/acme-challenge/*` with **no script assigned**.
+- `calendar.tuturuuu.com/*` → `tuturuuu-calendar`.
+
+Create the scriptless exclusion first and capture its returned ID immediately
+before the main route flip. Record the main route ID after attachment. The capture
+tool retains every zone route and reports both named Calendar handles, including
+scriptless exclusions. Rehearse rollback using both exact IDs. Delete the main
+route first, confirm the Vercel fallback, then delete the owned ACME exclusion.
+Preserve any exclusion that predates this cutover instead of deleting another
+operator's route. `calendarRollbackRoutes` validates both handles and deletion
+order; its `createdAcmeRouteId` must match the ID returned by this cutover's
+route-creation operation. Record that creation receipt with the capture. Without
+that proof, rollback preserves the existing ACME exclusion. If its captured handle
+is missing during an emergency, rollback may still remove the verified main route
+and preserve all ACME exclusions. API observations must
+confirm the captured pattern and owner before each delete. The accepted proxied
+baseline avoids a DNS propagation wait.
+The rollback target is Vercel serving the same legacy behavior as before cutover.
+The accepted CF baseline has robots 200, login redirects 307, protected requests
+401, uncached Vercel identity and GET/HEAD ACME origin reachability. The legacy
+Next app omits `X-Frame-Options: DENY` and redirects crawler requests instead of
+rendering native SSR. These are pre-existing legacy behavior: Cloudflare passes
+response headers through and the status paths retain the legacy Next responses.
+Record those differences instead of claiming the legacy target passes native
+acceptance. Native smoke and post-flip security expectations remain unchanged.
+
+[Vercel uses HTTP-01 for non-wildcard certificate renewal](https://vercel.com/docs/domains/working-with-ssl).
+The more-specific [scriptless route bypasses Workers](https://developers.cloudflare.com/workers/configuration/routing/routes/#matching-behavior)
+and sends ACME traffic to the retained proxied Vercel origin. There is no Worker
+forwarding path. Keep `global_fetch_strictly_public`: fetching the canonical URL
+inside this Worker would re-enter the public route and could recurse. Route
+exclusions apply to the complete matching path prefix; origin handling still owns
+the HTTP method and challenge response. After the flip, verify GET and HEAD ACME
+requests end to end with uncached Vercel identity and no native Worker execution.
+The production publisher filters attachments by `script === name`, so this
+scriptless exclusion does not attach the Worker or prevent its private upload.
+Regression coverage includes `calendar-routes.test.mjs`, `capture.test.mjs`, the
+cutover-host ACME negative case in `root-cutover.test.ts`, and the publisher's
+scriptless-topology control. A currently valid certificate alone does not prove
+future renewal safety.
 
 For Meet restore the captured frontend version, then realtime if changed; preserve
 Custom Domains. For Calendar/Mail/Apps retain their immutable Vercel deployments.
@@ -70,7 +142,7 @@ DNS TTLs and provider convergence prevent assuming instantaneous rollback.
 ## Subdomain cutover tools
 
 Native apps go live on their own subdomain first (root mode). Two read-only
-scripts support gate 4 and the post-deploy check:
+scripts support rollback capture and post-deploy checks:
 
 - `node scripts/native-cutover/capture.mjs --host <app>.tuturuuu.com --vercel-project <project> [--cf-zone-id <zone>] --out tmp/native-cutover-<app>.json`
   records DNS, the live edge (`server`, `x-vercel-id`, `cf-ray`, runtime

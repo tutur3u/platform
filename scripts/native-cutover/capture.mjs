@@ -12,6 +12,7 @@ import { promises as dns } from 'node:dns';
 import { writeFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
+import { calendarRouteHandles } from './calendar-routes.mjs';
 
 const HOSTNAME =
   /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z](?:[a-z0-9-]{0,61}[a-z0-9])?(?![\s\S])/iu;
@@ -153,6 +154,12 @@ export async function captureState(
               'pass --cf-zone-id with a read-only CLOUDFLARE_READONLY_API_TOKEN to record the zone state',
           },
   };
+
+  if (host === 'calendar.tuturuuu.com' && capture.cloudflare.workerRoutes?.ok) {
+    capture.cloudflare.calendarRoutes = await settle(() =>
+      calendarRouteHandles(capture.cloudflare.workerRoutes.value)
+    );
+  }
 
   // Redact even a provider/CLI response that unexpectedly echoes the credential.
   return JSON.parse(

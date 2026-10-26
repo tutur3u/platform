@@ -27,7 +27,11 @@ const telemetry: CalendarTelemetryPort = {
 beforeEach(() => vi.resetAllMocks());
 
 describe('Calendar cutover boundary', () => {
-  it.each(['calendar.tuturuuu.com', 'calendar-staging.tuturuuu.com'])(
+  it.each([
+    'calendar.tuturuuu.com',
+    'calendar-staging.tuturuuu.com',
+    'calendar-cutover.tuturuuu.com',
+  ])(
     'threads a fresh CSP nonce through the proxy and Start on %s',
     async (host) => {
       const seen: string[] = [];
@@ -77,6 +81,28 @@ describe('Calendar cutover boundary', () => {
     expect(suppliers.proxy).not.toHaveBeenCalled();
     expect(suppliers.start).not.toHaveBeenCalled();
     expect(asset).not.toHaveBeenCalled();
+  });
+
+  it('does not forward cutover-host ACME requests through global fetch', async () => {
+    suppliers.proxy.mockImplementation(() => NextResponse.next());
+    suppliers.start.mockResolvedValue(
+      new Response('Not Found', { status: 404 })
+    );
+    const fetchOrigin = vi.spyOn(globalThis, 'fetch');
+    try {
+      const response = await handleCalendarRequest(
+        new Request(
+          'https://calendar-cutover.tuturuuu.com/.well-known/acme-challenge/probe'
+        ),
+        env,
+        ctx,
+        telemetry
+      );
+      expect(response.status).toBe(404);
+      expect(fetchOrigin).not.toHaveBeenCalled();
+    } finally {
+      fetchOrigin.mockRestore();
+    }
   });
 
   it.each(['GET', 'HEAD'])(
