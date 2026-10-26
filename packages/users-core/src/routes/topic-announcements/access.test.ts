@@ -1,0 +1,163 @@
+import { describe, expect, it } from 'vitest';
+import {
+  buildTopicAnnouncementTeacherFilter,
+  decideTopicAnnouncementAccessMode,
+  isTopicAnnouncementAssignedToScope,
+  validateTeacherTopicAnnouncementWrite,
+} from './access';
+import {
+  TopicAnnouncementPayloadSchema,
+  TopicAnnouncementUpdateSchema,
+} from './schemas';
+
+const has =
+  (...permissions: string[]) =>
+  (permission: string) =>
+    permissions.includes(permission);
+
+const teacher = {
+  groupIds: ['group-a'],
+  kind: 'teacher' as const,
+  workspaceUserId: 'wu-1',
+};
+
+describe('decideTopicAnnouncementAccessMode', () => {
+  it('keeps manage_users as the supervisor scope', () => {
+    expect(
+      decideTopicAnnouncementAccessMode({
+        hasPermission: has('manage_users'),
+        requireManage: true,
+        teacherAccess: 'update',
+      })
+    ).toBe('manager');
+  });
+
+  it('keeps supervisor sending gated on manage_users plus send', () => {
+    expect(
+      decideTopicAnnouncementAccessMode({
+        hasPermission: has('manage_users'),
+        requireSend: true,
+      })
+    ).toBe('denied');
+  });
+
+  it.each([
+    ['create', 'create_user_groups_posts'],
+    ['update', 'update_user_groups_posts'],
+    ['read', 'update_user_groups_posts'],
+    ['read', 'create_user_groups_posts'],
+    ['send', 'send_user_group_post_emails'],
+  ] as const)(
+    'grants the teacher branch for %s with %s',
+    (access, permission) => {
+      expect(
+        decideTopicAnnouncementAccessMode({
+          hasPermission: has(permission),
+          requireManage: access !== 'send',
+          requireSend: access === 'send',
+          teacherAccess: access,
+        })
+      ).toBe('teacher');
+    }
+  );
+
+  it('denies the teacher branch without opt-in or permission', () => {
+    expect(
+      decideTopicAnnouncementAccessMode({
+        hasPermission: has('update_user_groups_posts'),
+        requireManage: true,
+      })
+    ).toBe('denied');
+    expect(
+      decideTopicAnnouncementAccessMode({
+        hasPermission: has('create_user_groups_posts'),
+        requireManage: true,
+        teacherAccess: 'update',
+      })
+    ).toBe('denied');
+  });
+});
+
+describe('teacher assignment helpers', () => {
+  it('matches the linked teacher or a TEACHER class', () => {
+    expect(
+      isTopicAnnouncementAssignedToScope(
+        { teacher_workspace_user_id: 'wu-1' },
+        teacher
+      )
+    ).toBe(true);
+    expect(
+      isTopicAnnouncementAssignedToScope({ group_id: 'group-a' }, teacher)
+    ).toBe(true);
+    expect(
+      isTopicAnnouncementAssignedToScope(
+        { group_id: 'group-b', teacher_workspace_user_id: 'wu-2' },
+        teacher
+      )
+    ).toBe(false);
+  });
+
+  it('builds a PostgREST filter for both assignment paths', () => {
+    expect(buildTopicAnnouncementTeacherFilter(teacher)).toBe(
+      'teacher_workspace_user_id.eq.wu-1,group_id.in.(group-a)'
+    );
+    expect(
+      buildTopicAnnouncementTeacherFilter({ ...teacher, groupIds: [] })
+    ).toBe('teacher_workspace_user_id.eq.wu-1');
+  });
+
+  it('lets teachers clear a class only while they stay the assignee', () => {
+    expect(
+      validateTeacherTopicAnnouncementWrite({
+        existing: { group_id: 'group-a', teacher_workspace_user_id: 'wu-2' },
+        next: { groupId: null },
+        scope: teacher,
+      })
+    ).toMatchObject({ status: 403 });
+    expect(
+      validateTeacherTopicAnnouncementWrite({
+        existing: { group_id: 'group-a', teacher_workspace_user_id: 'wu-1' },
+        next: { groupId: null },
+        scope: teacher,
+      })
+    ).toBeNull();
+  });
+});
+
+describe('topic announcement schemas', () => {
+  const base = {
+    contactIds: ['00000000-0000-4000-8000-000000000001'],
+    title: 'Session',
+  };
+
+  it('allows an empty topic only for drafts', () => {
+    expect(TopicAnnouncementPayloadSchema.safeParse(base).success).toBe(true);
+    expect(
+      TopicAnnouncementPayloadSchema.safeParse({ ...base, status: 'queued' })
+        .success
+    ).toBe(false);
+  });
+
+  it('validates course book and video link like the database', () => {
+    expect(
+      TopicAnnouncementPayloadSchema.safeParse({
+        ...base,
+        courseBook: 'x'.repeat(201),
+      }).success
+    ).toBe(false);
+    for (const videoUrl of ['http://a.test', 'https://a.test/x y']) {
+      expect(
+        TopicAnnouncementPayloadSchema.safeParse({ ...base, videoUrl }).success
+      ).toBe(false);
+    }
+    expect(
+      TopicAnnouncementPayloadSchema.parse({ ...base, videoUrl: '' }).videoUrl
+    ).toBeNull();
+  });
+
+  it('keeps omitted update fields undefined', () => {
+    expect(TopicAnnouncementUpdateSchema.parse({ topic: 'New' })).toEqual({
+      topic: 'New',
+    });
+  });
+});

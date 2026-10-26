@@ -236,8 +236,8 @@ Topic Announcements live under Users and are gated by the workspace secret `ENAB
 
 Supervisors can create a month of sessions before topics exist, assign each
 session to the teacher who writes its topic, and track whether topics went out
-on time. Schema: `20261026193000_topic_announcement_teacher_assignment.sql`
-(inert until the teacher flow is wired). Default for every workspace: no
+on time. Schema: `20261026193000_topic_announcement_teacher_assignment.sql`.
+Default for every workspace: no
 teacher, no deadline, existing behavior unchanged.
 
 - **Draft topics.** `topic` may be empty only while `status = draft`. Every
@@ -267,7 +267,48 @@ teacher, no deadline, existing behavior unchanged.
   from our domain. Each recipient verifies once (or is linked to a confirmed
   same-workspace account).
 
-Regression coverage: `apps/database/supabase/tests/topic-announcement-teacher-assignment.sql`.
+#### Teacher access and write paths
+
+- **Supervisor scope is unchanged.** `manage_users` reads and writes every topic
+  in the workspace and is still the only scope for import, contacts, templates,
+  removal, and the save-and-notify action. Supervisor sending still requires
+  `manage_users` plus `send_user_group_post_emails`.
+- **Assignment-scoped teachers.** Without `manage_users`, a member may list,
+  preview, upload page images for, and edit a topic only when they hold
+  `create_user_groups_posts` (create) or `update_user_groups_posts` (edit) and
+  the topic is assigned to them: their linked workspace user is
+  `teacher_workspace_user_id`, or they are a `TEACHER` of the topic's class
+  (`group_id`). Teacher sending, scheduling, and cancelling a schedule require
+  `send_user_group_post_emails` plus the same assignment check. Topics outside
+  the assignment answer 404; a member with no linked workspace user is denied.
+  `ENABLE_TOPIC_ANNOUNCEMENTS` remains the gate for both scopes.
+- **Teacher write limits.** Teachers save drafts only (sending goes through the
+  send routes), cannot reassign a topic, cannot change recipients, can only
+  move a topic to a class they teach, and cannot edit sent, processing, or
+  cancelled topics. A topic a teacher creates is assigned to them.
+- **Validation before the database.** A teacher from another workspace is
+  rejected with 400 instead of relying on the trigger. A blank topic outside a
+  draft returns `TOPIC_REQUIRED` from update, schedule, and send.
+- **Deadline on every write path.** Create, update (when the date or start time
+  changes), and the schedule import store `send_due_at` through
+  `@tuturuuu/utils/topic-announcement-deadline`, using the workspace's fixed
+  calendar timezone. Without a fixed timezone the deadline stays empty.
+  `getTopicAnnouncementDeliveryState` derives Sent, Late, and Not sent.
+- **Save and notify.** `POST .../topic-announcements/notify-teachers` creates one
+  `topic_assigned` in-app notification per assigned teacher across the given
+  topics. Teachers whose workspace user is not linked to a platform account are
+  skipped and counted; nothing is emailed.
+- **Email content.** The topic email lists the course book and video link when
+  present.
+
+Regression coverage: `apps/database/supabase/tests/topic-announcement-teacher-assignment.sql`,
+`packages/utils/src/topic-announcement-deadline.test.ts`,
+`packages/users-core/src/routes/topic-announcements/access.test.ts`,
+`apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/topic-announcements/teacher-access.test.ts`
+(cross-teacher, cross-workspace, and unassigned-class denial),
+`apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/topic-announcements/teacher-writes.test.ts`,
+and the Contacts satellite list in
+`apps/contacts/src/app/api/v1/workspaces/[wsId]/topic-announcements/route.test.ts`.
 Rollback: `apps/database/rollbacks/20261026193000_topic_announcement_teacher_assignment.rollback.sql`,
 proven by
 `apps/database/verification/topic-announcement-teacher-assignment-rollback-roundtrip.sql`.

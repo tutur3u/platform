@@ -125,6 +125,9 @@ export async function sendTopicAnnouncement({
 
   if (announcementError) throw announcementError;
   if (!announcement) return { error: 'ANNOUNCEMENT_NOT_FOUND', status: 404 };
+  if (!announcement.topic?.trim()) {
+    return { error: 'TOPIC_REQUIRED', status: 409 };
+  }
   if (announcement.status === 'sent' && !resend) {
     return { error: 'ALREADY_SENT', status: 409 };
   }
@@ -280,7 +283,8 @@ export async function sendTopicAnnouncement({
     .from('topic_announcements')
     .update({
       last_error: null,
-      sent_at: new Date().toISOString(),
+      // Keep the first send time so a resend never changes on-time status.
+      sent_at: announcement.sent_at ?? new Date().toISOString(),
       sent_email_audit_id: result.auditId ?? null,
       status: 'sent',
       updated_by: actorUserId,

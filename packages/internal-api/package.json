@@ -353,6 +353,11 @@
       "import": "./dist/users-feedbacks.js",
       "require": "./dist/users-feedbacks.js"
     },
+    "./topic-announcements": {
+      "types": "./dist/topic-announcements.d.ts",
+      "import": "./dist/topic-announcements.js",
+      "require": "./dist/topic-announcements.js"
+    },
     "./workspace-configs": {
       "types": "./dist/workspace-configs.d.ts",
       "import": "./dist/workspace-configs.js",

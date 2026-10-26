@@ -2,6 +2,8 @@ import { createTopicAnnouncementListHandler } from '@tuturuuu/users-core/routes/
 import { NextResponse } from 'next/server';
 import {
   attachTopicAnnouncementGroups,
+  computeTopicAnnouncementSendDueAt,
+  getWorkspaceSchedulingTimezone,
   insertTopicAnnouncementAttachmentDrafts,
   mapTopicAnnouncementRow,
   resolveTopicAnnouncementsAccess,
@@ -10,8 +12,10 @@ import {
   TopicAnnouncementPayloadSchema,
   type TopicAnnouncementsSupabaseClient,
   topicAnnouncementAttachmentValidationResponse,
+  validateTeacherTopicAnnouncementWrite,
   validateTopicAnnouncementAttachmentDraftObjects,
   validateTopicAnnouncementGroupId,
+  validateTopicAnnouncementWorkspaceUserId,
 } from '@/legacy-api-routes/v1/workspaces/[wsId]/topic-announcements/shared';
 
 interface Params {
@@ -52,6 +56,7 @@ export async function POST(request: Request, { params }: Params) {
   const { wsId } = await params;
   const access = await resolveTopicAnnouncementsAccess(request, wsId, {
     requireManage: true,
+    teacherAccess: 'create',
   });
   if (access.response) return access.response;
 
@@ -70,8 +75,24 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
-  const { actorUserId, normalizedWsId, sbAdmin } = access.context;
+  const { actorUserId, normalizedWsId, sbAdmin, scope } = access.context;
   const payload = parsed.data;
+  const teacherWriteError = validateTeacherTopicAnnouncementWrite({
+    next: payload,
+    scope,
+  });
+  if (teacherWriteError) {
+    return NextResponse.json(
+      { message: teacherWriteError.message },
+      { status: teacherWriteError.status }
+    );
+  }
+  // Teachers always own the topics they create.
+  const teacherWorkspaceUserId =
+    scope?.kind === 'teacher'
+      ? scope.workspaceUserId
+      : (payload.teacherWorkspaceUserId ?? null);
+
   const { data: contacts, error: contactsError } = await sbAdmin
     .from('topic_announcement_contacts')
     .select('id')
@@ -93,6 +114,13 @@ export async function POST(request: Request, { params }: Params) {
   });
   if (invalidGroup) return invalidGroup;
 
+  const invalidTeacher = await validateTopicAnnouncementWorkspaceUserId({
+    normalizedWsId,
+    sbAdmin,
+    workspaceUserId: teacherWorkspaceUserId,
+  });
+  if (invalidTeacher) return invalidTeacher;
+
   const attachmentValidation =
     await validateTopicAnnouncementAttachmentDraftObjects({
       attachmentDrafts: payload.attachmentDrafts,
@@ -102,24 +130,36 @@ export async function POST(request: Request, { params }: Params) {
     return topicAnnouncementAttachmentValidationResponse(attachmentValidation);
   }
 
+  const timezone = await getWorkspaceSchedulingTimezone(
+    sbAdmin,
+    normalizedWsId
+  );
   const { data: announcement, error } = await sbAdmin
     .from('topic_announcements')
     .insert({
       body: payload.body,
       class_label: payload.classLabel,
+      course_book: payload.courseBook ?? null,
       created_by: actorUserId,
       day_label: payload.dayLabel,
       end_time: payload.endTime ?? null,
       group_id: payload.groupId ?? null,
       place: payload.place,
       room: payload.room,
+      send_due_at: computeTopicAnnouncementSendDueAt({
+        sessionDate: payload.sessionDate,
+        startTime: payload.startTime,
+        timeZone: timezone,
+      }),
       session_date: payload.sessionDate ?? null,
       source_type: payload.sourceType,
       start_time: payload.startTime ?? null,
       status: payload.status ?? 'draft',
+      teacher_workspace_user_id: teacherWorkspaceUserId,
       title: payload.title,
       topic: payload.topic,
       updated_by: actorUserId,
+      video_url: payload.videoUrl ?? null,
       ws_id: normalizedWsId,
     })
     .select('*')
