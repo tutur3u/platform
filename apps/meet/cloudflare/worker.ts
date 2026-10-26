@@ -5,6 +5,7 @@ import {
 import { verifyLiveSession } from '../src/features/live-assistant/token';
 import { handleMeetRequest } from '../src/runtime/handler';
 import { meetOneOriginConfig } from './one-origin';
+import { applyMeetDocumentHeaders } from './security-profile';
 
 export { MeetLiveDurableObject } from './live/session';
 export { MeetingAIProvider } from './provider';
@@ -12,7 +13,11 @@ export default {
   async fetch(incoming: Request, env: CloudflareEnv, ctx: ExecutionContext) {
     const decision = decideOneOriginRequest(incoming, meetOneOriginConfig(env));
     if (decision.action !== 'serve') return decision.response;
-    const response = await serveMeet(decision.request, env, ctx);
+    const response = applyMeetDocumentHeaders(
+      incoming,
+      await serveMeet(decision.request, env, ctx),
+      env
+    );
     return decision.noindex ? applyOneOriginNoindex(response) : response;
   },
 };
