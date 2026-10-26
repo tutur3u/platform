@@ -142,35 +142,39 @@ function installFetchFixture() {
     [statusRoute, status],
     [runRoute, run]
   );
-  if (env.STAGING_LATER_MANUAL === 'true') {
-    const manualUrl = 'https://github.com/example/platform/actions/runs/202';
-    const manual = {
+  const laterPush = env.STAGING_LATER_PUSH === 'true';
+  if (env.STAGING_LATER_MANUAL === 'true' || laterPush) {
+    const laterUrl = 'https://github.com/example/platform/actions/runs/202';
+    const later = {
       ...marker,
       id: 302,
       created_at: '2026-01-01T00:02:00Z',
-      payload: { ...marker.payload, runId: '202', runUrl: manualUrl },
+      payload: { ...marker.payload, runId: '202', runUrl: laterUrl },
     };
-    const manualRun = {
+    const laterRun = {
       ...run,
       id: 202,
-      event: 'workflow_dispatch',
+      event: laterPush ? 'push' : 'workflow_dispatch',
       head_sha: target,
       run_attempt: Number(env.MANUAL_ATTEMPT || 1),
       status: env.MANUAL_STATUS || 'completed',
-      conclusion:
-        env.MANUAL_RESULT === '' ? null : env.MANUAL_RESULT || 'success',
+      conclusion: laterPush
+        ? 'failure'
+        : env.MANUAL_RESULT === ''
+          ? null
+          : env.MANUAL_RESULT || 'success',
       ...(env.MANUAL_WRONG_REPOSITORY === 'true'
         ? { repository: { ...repository, id: 999 } }
         : {}),
     };
     const replies = new Map(script);
-    replies.set(markersRoute, [manual, marker]);
-    replies.set(`${base}/actions/runs/202`, manualRun);
-    replies.set(`${base}/deployments/302`, manual);
+    replies.set(markersRoute, [later, marker]);
+    replies.set(`${base}/actions/runs/202`, laterRun);
+    replies.set(`${base}/deployments/302`, later);
     replies.set(`${base}/deployments/302/statuses?per_page=1&page=1`, [
-      { ...status[0], id: 402, log_url: manualUrl },
+      { ...status[0], id: 402, log_url: laterUrl },
     ]);
-    let manualReads = 0;
+    let laterReads = 0;
     let observed = 0;
     globalThis.fetch = async (input, options) => {
       const url = new URL(input);
@@ -189,10 +193,10 @@ function installFetchFixture() {
       let reply = replies.get(route);
       if (
         route === `${base}/actions/runs/202` &&
-        ++manualReads > 1 &&
+        ++laterReads > 1 &&
         env.MANUAL_RECLASSIFIED === 'true'
       )
-        reply = { ...manualRun, event: 'push' };
+        reply = { ...laterRun, event: 'push' };
       return new Response(JSON.stringify(reply), {
         status: 200,
         headers: { 'content-type': 'application/json' },
