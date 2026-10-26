@@ -14,16 +14,16 @@ const publicEnv = {
 };
 Object.assign(process.env, publicEnv);
 
-async function publisher(t) {
+async function publisher(t, app = 'mail') {
   const { prepare, artifactDigest } = await import(
     './wave1-native-artifact.mjs'
   );
   const { profiles } = await import('./wave1-native-profile.mjs');
-  const dir = fixture(t);
-  const receipt = prepare(dir, 'mail', 'staging', 'owner-example', sha);
+  const dir = fixture(t, app);
+  const receipt = prepare(dir, app, 'staging', 'owner-example', sha);
   const admission = {
     schema: 1,
-    app: 'mail',
+    app,
     sourceSha: sha,
     artifactSha256: artifactDigest(receipt),
     ...profiles.stagingAdmission,
@@ -199,7 +199,7 @@ async function publisher(t) {
     scope: {
       databaseId: env.WAVE1_STAGING_ATTEMPT_D1_ID,
       repository: env.GITHUB_REPOSITORY,
-      app: 'mail',
+      app,
       worker: receipt.profile.name,
       accountId: receipt.profile.accountId,
     },
@@ -212,7 +212,7 @@ async function publisher(t) {
   setLedger(ledgerData);
   const { main } = await import('./wave1-native-publish.mjs');
   const options = {
-    argv: ['publish', 'mail', 'staging', sha],
+    argv: ['publish', app, 'staging', sha],
     env,
     appRoot: dir,
     fetcher,
@@ -628,3 +628,14 @@ for (const publicServing of ['workers.dev', 'preview']) {
     assert.equal(p.getLedger().entries[0].state, 'uploaded');
   });
 }
+
+test('Calendar publishes only the explicit custom staging host from its sealed profile', async (t) => {
+  const p = await publisher(t, 'calendar');
+  await p.run();
+  assert.equal(p.state.writes, 1);
+  assert.equal(p.getLedger().entries[0].state, 'activated');
+  const receipt = JSON.parse(
+    fs.readFileSync(path.join(p.dir, 'wave1-artifact.json'))
+  );
+  assert.equal(receipt.profile.host, 'calendar-staging.tuturuuu.com');
+});

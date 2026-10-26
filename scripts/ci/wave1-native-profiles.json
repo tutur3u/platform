@@ -10,7 +10,6 @@
         "NEXT_PUBLIC_SUPABASE_URL",
         "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
         "SUPABASE_SECRET_KEY",
-        "TUTURUUU_APP_COORDINATION_SECRET",
         "GOOGLE_CLIENT_ID",
         "GOOGLE_CLIENT_SECRET",
         "MICROSOFT_CLIENT_ID",
@@ -18,7 +17,8 @@
         "CRON_SECRET",
         "MICROSOFT_TENANT_ID"
       ],
-      "stagingHost": "calendar-staging.tuturuuu.com"
+      "stagingHost": "calendar-staging.tuturuuu.com",
+      "optionalSecretNames": ["TUTURUUU_APP_COORDINATION_SECRET"]
     },
     "mail": {
       "stagingWorker": "tuturuuu-mail-wave1-staging",
@@ -69,5 +69,6 @@
     "residualRisk": "shared-account",
     "publicationVariable": "WAVE1_STAGING_PUBLICATION_ADMISSION",
     "maxUploadsPerArtifact": 1
-  }
+  },
+  "zoneId": "618b9966111b23a37113d30865f1fbb0"
 }
