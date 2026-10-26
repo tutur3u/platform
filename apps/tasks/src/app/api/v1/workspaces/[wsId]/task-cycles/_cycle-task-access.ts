@@ -1,4 +1,4 @@
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import {
   getPermissions,

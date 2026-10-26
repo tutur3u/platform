@@ -1,4 +1,4 @@
--- Read-only audit for 20261027091000_index_task_cycle_tasks_one_cycle_per_task.sql.
+-- Read-only audit for 20261027000200_index_task_cycle_tasks_one_cycle_per_task.sql.
 -- Counts tasks linked to more than one cycle. The unique index cannot build
 -- while any exist; cleanup needs release-authority approval first.
 select

@@ -43,7 +43,7 @@ vi.mock('@/lib/api-auth', () => ({
     (
       handler: (
         request: NextRequest,
-        context: { supabase: typeof sessionClient; user: unknown },
+        context: { supabase: unknown; user: unknown },
         params: Record<string, string>
       ) => Promise<Response>
     ) =>
