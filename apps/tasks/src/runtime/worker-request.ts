@@ -68,6 +68,10 @@ function isStaticAssetRead(method: string, appPath: string) {
 
 const FRAME_ANCESTORS = /^frame-ancestors(?:\s|$)/iu;
 
+/** The Next build's one framable path (`createTuturuuuNextConfig`). */
+const FRAMABLE =
+  /^\/api\/v1\/workspaces\/[^/]+\/external-projects\/assets\/[^/]+\/webgl(?:\/|$)/u;
+
 /**
  * Keeps the response's own CSP but enforces `frame-ancestors 'none'` in every
  * policy it carries (a comma separates policies), replacing any ancestor
@@ -91,8 +95,8 @@ export function denyFraming(csp: string | null) {
 
 /**
  * Production parity with the Next build (robots per the Tasks SEO policy,
- * anti-framing, HSTS) plus `nosniff` and a referrer policy. Dynamic responses
- * are personalized, so none is stored by any cache, whatever the handler set
+ * anti-framing outside its framable WebGL path, HSTS) plus `nosniff` and a
+ * referrer policy. Dynamic responses are personalized, so none is stored by any cache, whatever the handler set
  * (a handler's `private, max-age` would keep it in the browser); only reads of
  * hashed assets and public files keep theirs.
  */
@@ -100,11 +104,13 @@ function decorate(response: Response, appPath: string | null, method: string) {
   const tagged = tagResponse(response, NATIVE);
   const { headers } = tagged;
   headers.set('X-Robots-Tag', PRIVATE_ROBOTS_HEADER);
-  headers.set(
-    'Content-Security-Policy',
-    denyFraming(headers.get('Content-Security-Policy'))
-  );
-  headers.set('X-Frame-Options', 'DENY');
+  if (appPath === null || !FRAMABLE.test(appPath)) {
+    headers.set(
+      'Content-Security-Policy',
+      denyFraming(headers.get('Content-Security-Policy'))
+    );
+    headers.set('X-Frame-Options', 'DENY');
+  }
   headers.set('X-Content-Type-Options', 'nosniff');
   headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   headers.set('Strict-Transport-Security', 'max-age=63072000');
