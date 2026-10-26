@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:mobile/core/theme/appearance/appearance_scope.dart';
 import 'package:mobile/core/theme/colors.dart';
 import 'package:mobile/core/ui/tokens/app_color_tokens.dart';
+import 'package:mobile/core/ui/tokens/app_interface_tokens.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Material 3 theme data for light and dark modes.
@@ -32,6 +33,40 @@ abstract final class AppTheme {
       ),
     },
   );
+
+  // Every platform slides like iOS.
+  static final _iosLikeTransitions = PageTransitionsTheme(
+    builders: {
+      for (final platform in TargetPlatform.values)
+        platform: const _AppearancePageTransitionsBuilder(
+          CupertinoPageTransitionsBuilder(),
+        ),
+    },
+  );
+
+  // Every platform zooms like Android, except iOS and macOS, whose edge-swipe
+  // Back is system-owned and needs the Cupertino route gesture.
+  static final _materialLikeTransitions = PageTransitionsTheme(
+    builders: {
+      for (final platform in TargetPlatform.values)
+        platform:
+            platform == TargetPlatform.iOS || platform == TargetPlatform.macOS
+            ? const _AppearancePageTransitionsBuilder(
+                CupertinoPageTransitionsBuilder(),
+              )
+            : const _AppearancePageTransitionsBuilder(
+                _SmoothPageTransitionsBuilder(),
+              ),
+    },
+  );
+
+  /// Page transitions for an Appearance interface style.
+  static PageTransitionsTheme pageTransitionsFor(AppInterfaceStyle style) =>
+      switch (style) {
+        AppInterfaceStyle.tuturuuu => _pageTransitions,
+        AppInterfaceStyle.ios => _iosLikeTransitions,
+        AppInterfaceStyle.material => _materialLikeTransitions,
+      };
 
   static Brightness resolveBrightness(
     shad.ThemeMode themeMode,

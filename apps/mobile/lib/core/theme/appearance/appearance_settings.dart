@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:equatable/equatable.dart';
+import 'package:mobile/core/ui/tokens/app_interface_tokens.dart';
 
 /// Curated background themes. Colour values live in `appearance_palettes.dart`.
 enum AppearanceThemeId {
@@ -43,6 +44,10 @@ class AppearanceSettings extends Equatable {
     this.softness = defaultSoftness,
     this.surfaceOpacity = defaultSurfaceOpacity,
     this.animate = false,
+    this.interfaceStyle = AppInterfaceStyle.tuturuuu,
+    this.density = AppDensity.comfortable,
+    this.corners = AppCornerStyle.rounded,
+    this.reduceMotion = false,
   });
 
   /// Decodes a stored payload. Unknown or malformed values fall back to the
@@ -95,6 +100,18 @@ class AppearanceSettings extends Equatable {
         min: minSurfaceOpacity,
       ),
       animate: json['animate'] == true,
+      interfaceStyle: pick(
+        AppInterfaceStyle.values,
+        json['interface'],
+        AppInterfaceStyle.tuturuuu,
+      ),
+      density: pick(AppDensity.values, json['density'], AppDensity.comfortable),
+      corners: pick(
+        AppCornerStyle.values,
+        json['corners'],
+        AppCornerStyle.rounded,
+      ),
+      reduceMotion: json['reduceMotion'] == true,
     );
   }
 
@@ -120,6 +137,26 @@ class AppearanceSettings extends Equatable {
   /// Opt-in slow drift for blob backgrounds. Reduced motion always wins.
   final bool animate;
 
+  /// Navigation and scroll feel; the same on Android and iOS by default.
+  final AppInterfaceStyle interfaceStyle;
+
+  /// Row height and gap scale.
+  final AppDensity density;
+
+  /// Corner treatment for cards, sheets and grouped surfaces.
+  final AppCornerStyle corners;
+
+  /// Always reduce motion on this device, even when the system setting is
+  /// off. When false the system setting decides.
+  final bool reduceMotion;
+
+  /// The interface choices as a theme extension.
+  AppInterfaceTokens get interfaceTokens => AppInterfaceTokens(
+    style: interfaceStyle,
+    density: density,
+    corners: corners,
+  );
+
   /// Whether pages show a painted gradient or blob layer.
   bool get hasAmbientBackground =>
       backgroundStyle != AppearanceBackgroundStyle.solid;
@@ -134,6 +171,10 @@ class AppearanceSettings extends Equatable {
     double? softness,
     double? surfaceOpacity,
     bool? animate,
+    AppInterfaceStyle? interfaceStyle,
+    AppDensity? density,
+    AppCornerStyle? corners,
+    bool? reduceMotion,
   }) => AppearanceSettings(
     theme: theme ?? this.theme,
     accent: accent ?? this.accent,
@@ -144,6 +185,10 @@ class AppearanceSettings extends Equatable {
         .clamp(minSurfaceOpacity, 1)
         .toDouble(),
     animate: animate ?? this.animate,
+    interfaceStyle: interfaceStyle ?? this.interfaceStyle,
+    density: density ?? this.density,
+    corners: corners ?? this.corners,
+    reduceMotion: reduceMotion ?? this.reduceMotion,
   );
 
   Map<String, Object> toJson() => {
@@ -155,6 +200,10 @@ class AppearanceSettings extends Equatable {
     'softness': softness,
     'surfaceOpacity': surfaceOpacity,
     'animate': animate,
+    'interface': interfaceStyle.name,
+    'density': density.name,
+    'corners': corners.name,
+    'reduceMotion': reduceMotion,
   };
 
   String encode() => jsonEncode(toJson());
@@ -168,5 +217,9 @@ class AppearanceSettings extends Equatable {
     softness,
     surfaceOpacity,
     animate,
+    interfaceStyle,
+    density,
+    corners,
+    reduceMotion,
   ];
 }
