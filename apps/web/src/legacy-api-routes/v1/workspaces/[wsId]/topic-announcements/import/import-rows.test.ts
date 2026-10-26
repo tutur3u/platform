@@ -22,6 +22,11 @@ import {
 } from './import-rows';
 
 const TEACHER_A = '00000000-0000-4000-8000-00000000000a';
+
+type Rows = Parameters<typeof normalizeImportRows>[0];
+/** Teacher assignments on: the teacher schedule import rules. */
+const normalize = (rows: Rows) =>
+  normalizeImportRows(rows, { teacherAssignments: true });
 const TEACHER_B = '00000000-0000-4000-8000-00000000000b';
 
 function workspaceUsersClient(rows: { id: string }[]) {
@@ -42,7 +47,7 @@ function workspaceUsersClient(rows: { id: string }[]) {
 
 describe('normalizeImportRows', () => {
   it('creates topic-less rows as drafts with a schedule title', () => {
-    const { rowErrors, validRows } = normalizeImportRows([
+    const { rowErrors, validRows } = normalize([
       {
         classLabel: 'K1A',
         contactEmail: 'Teacher@Example.com',
@@ -74,7 +79,7 @@ describe('normalizeImportRows', () => {
   });
 
   it('keeps the topic-based title when a topic exists', () => {
-    const { validRows } = normalizeImportRows([
+    const { validRows } = normalize([
       { contactEmail: 'a@example.com', topic: 'Unit 3 speaking' },
     ]);
     expect(validRows[0]).toMatchObject({
@@ -85,7 +90,7 @@ describe('normalizeImportRows', () => {
   });
 
   it('returns row errors for missing contacts, bad times and empty rows', () => {
-    const { rowErrors, validRows } = normalizeImportRows([
+    const { rowErrors, validRows } = normalize([
       { topic: 'No email' },
       { contactEmail: 'a@example.com', startTime: '25:00', topic: 'Late' },
       { contactEmail: 'b@example.com', endTime: 'soon', topic: 'Odd' },
@@ -99,6 +104,54 @@ describe('normalizeImportRows', () => {
       { message: 'Invalid end time', rowNumber: 3 },
       { message: 'Missing topic or title', rowNumber: 4 },
     ]);
+  });
+
+  describe('with teacher assignments off (pre-feature rules)', () => {
+    const legacy = (rows: Rows) =>
+      normalizeImportRows(rows, { teacherAssignments: false });
+
+    it('still requires a topic and ignores teacher ids', () => {
+      const { rowErrors, validRows } = legacy([
+        {
+          contactEmail: 'Teacher@Example.com',
+          sessionDate: '2026-10-05',
+          startTime: '5:30 PM',
+          teacherWorkspaceUserId: TEACHER_A,
+          topic: 'Unit 3 speaking',
+        },
+        { contactEmail: 'b@example.com', classLabel: 'K1A' },
+        { topic: 'No email' },
+      ]);
+      expect(validRows).toEqual([
+        {
+          classLabel: null,
+          contactEmail: 'teacher@example.com',
+          contactName: 'teacher@example.com',
+          dayLabel: null,
+          endTime: null,
+          place: null,
+          room: null,
+          rowNumber: 1,
+          sessionDate: '2026-10-05',
+          startTime: '17:30:00',
+          teacherWorkspaceUserId: null,
+          title: 'Unit 3 speaking',
+          topic: 'Unit 3 speaking',
+        },
+      ]);
+      expect(rowErrors).toEqual([
+        { message: 'Missing topic', rowNumber: 2 },
+        { message: 'Missing contact email', rowNumber: 3 },
+      ]);
+    });
+
+    it('stores unparseable times as empty instead of failing the row', () => {
+      const { rowErrors, validRows } = legacy([
+        { contactEmail: 'a@example.com', startTime: '25:00', topic: 'Late' },
+      ]);
+      expect(rowErrors).toEqual([]);
+      expect(validRows[0]).toMatchObject({ startTime: null, topic: 'Late' });
+    });
   });
 
   it('accepts AM/PM times', () => {

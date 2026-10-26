@@ -2,6 +2,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { POST as contactsPreview } from './preview/route';
 import { GET as contactsGET } from './route';
 
+const TEACHER_WORKSPACE_USER_ID = '00000000-0000-4000-8000-000000000004';
+const TAUGHT_GROUP_ID = '00000000-0000-4000-8000-000000000005';
+
 const fixture = vi.hoisted(() => ({
   webActor: false,
   populated: false,
@@ -21,7 +24,10 @@ const fixture = vi.hoisted(() => ({
 vi.mock('@tuturuuu/satellite/auth', () => ({
   getSatelliteAppSessionUser: fixture.getSatelliteAppSessionUser,
 }));
-vi.mock('@tuturuuu/utils/topic-announcements', () => ({
+vi.mock('@tuturuuu/utils/topic-announcements', async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import('@tuturuuu/utils/topic-announcements')
+  >()),
   TOPIC_ANNOUNCEMENTS_SECRET: 'TOPIC_ANNOUNCEMENTS_ENABLED',
 }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
@@ -56,7 +62,9 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
                 : false,
         }
       : null,
-  getSecrets: async () => [],
+  getSecrets: async () => [
+    { name: 'ENABLE_TOPIC_TEACHER_ASSIGNMENTS', value: 'true' },
+  ],
   getSecret: () => ({ value: fixture.enabled ? 'true' : 'false' }),
 }));
 vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({
@@ -66,7 +74,12 @@ vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({
 }));
 vi.mock('@tuturuuu/utils/workspace-user-link', () => ({
   getWorkspaceUserLinkForUser: async () =>
-    fixture.member ? { ws_id: fixture.workspaceId } : null,
+    fixture.member
+      ? {
+          virtual_user_id: TEACHER_WORKSPACE_USER_ID,
+          ws_id: fixture.workspaceId,
+        }
+      : null,
 }));
 
 function admin() {
@@ -94,7 +107,9 @@ function admin() {
             ]
           : table === 'topic_announcement_attachments'
             ? []
-            : [{ id: contact.id }];
+            : table === 'workspace_user_groups_users'
+              ? [{ group_id: TAUGHT_GROUP_ID }]
+              : [{ id: contact.id }];
     const query: any = {
       select: vi.fn().mockReturnThis(),
       eq: vi.fn((key, value) => {
@@ -102,7 +117,10 @@ function admin() {
         return query;
       }),
       neq: vi.fn().mockReturnThis(),
-      or: vi.fn().mockReturnThis(),
+      or: vi.fn((filter) => {
+        fixture.queries.push([table, 'or', filter]);
+        return query;
+      }),
       order: vi.fn().mockReturnThis(),
       in: vi.fn().mockReturnThis(),
       range: vi.fn(async () => ({
@@ -212,6 +230,20 @@ describe('actual topic handlers at Contacts-only session boundary', () => {
       'Synthetic teacher topic'
     );
     expect(fixture.getSatelliteAppSessionUser).toHaveBeenCalledWith('contacts');
+  });
+  it('scopes a teacher list to assigned topics through the app-session link', async () => {
+    fixture.manage = false;
+    const response = await contactsGET(request(), params());
+    expect(response.status).toBe(200);
+    expect(fixture.queries).toContainEqual([
+      'topic_announcements',
+      'or',
+      `teacher_workspace_user_id.eq.${TEACHER_WORKSPACE_USER_ID},and(teacher_workspace_user_id.is.null,group_id.in.(${TAUGHT_GROUP_ID}))`,
+    ]);
+  });
+  it('does not filter the supervisor list', async () => {
+    await contactsGET(request(), params());
+    expect(fixture.queries.some(([, key]) => key === 'or')).toBe(false);
   });
   it.each(['revoked', 'wrong-audience'] as const)(
     'does not admit a %s satellite identity',

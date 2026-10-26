@@ -61,10 +61,57 @@ function trimOrNull(value?: string) {
 }
 
 /**
- * Validates and normalizes import rows. Rows without a topic are allowed and
- * become drafts; their title falls back to the class, date and start time.
+ * Pre-feature import rules (teacher assignments off): a topic and contact
+ * email are required, unparseable times are stored as empty, and the title
+ * falls back to the topic. Kept exactly as before for live workspaces.
  */
-export function normalizeImportRows(rows: ImportRowInput[]) {
+function normalizeLegacyImportRows(rows: ImportRowInput[]) {
+  const rowErrors: ImportRowError[] = [];
+  const validRows = rows.flatMap((row, index): NormalizedImportRow[] => {
+    const rowNumber = index + 1;
+    const contactEmail = row.contactEmail
+      ? normalizeEmail(row.contactEmail)
+      : null;
+    const topic = row.topic?.trim();
+    if (!contactEmail) {
+      rowErrors.push({ message: 'Missing contact email', rowNumber });
+    }
+    if (!topic) {
+      rowErrors.push({ message: 'Missing topic', rowNumber });
+    }
+    if (!contactEmail || !topic) return [];
+    return [
+      {
+        classLabel: trimOrNull(row.classLabel),
+        contactEmail,
+        contactName: row.contactName?.trim() || contactEmail,
+        dayLabel: trimOrNull(row.dayLabel),
+        endTime: normalizeImportTime(row.endTime),
+        place: trimOrNull(row.place),
+        room: trimOrNull(row.room),
+        rowNumber,
+        sessionDate: row.sessionDate ?? null,
+        startTime: normalizeImportTime(row.startTime),
+        teacherWorkspaceUserId: null,
+        title: row.title?.trim() || topic.slice(0, 120),
+        topic,
+      },
+    ];
+  });
+  return { rowErrors, validRows };
+}
+
+/**
+ * Validates and normalizes import rows. With teacher assignments on, rows
+ * without a topic are allowed and become drafts (title falls back to the
+ * class, date and start time), unparseable times are row errors, and rows may
+ * carry the teacher in charge. With it off, the pre-feature rules apply.
+ */
+export function normalizeImportRows(
+  rows: ImportRowInput[],
+  { teacherAssignments }: { teacherAssignments: boolean }
+) {
+  if (!teacherAssignments) return normalizeLegacyImportRows(rows);
   const rowErrors: ImportRowError[] = [];
 
   const validRows = rows.flatMap((row, index): NormalizedImportRow[] => {

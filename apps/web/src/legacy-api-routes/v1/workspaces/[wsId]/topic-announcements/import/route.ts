@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import {
+  computeTopicAnnouncementSendDueAt,
+  getWorkspaceSchedulingTimezone,
   resolveTopicAnnouncementsAccess,
   TopicAnnouncementImportSchema,
 } from '../shared';
@@ -31,18 +33,26 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
-  const { actorUserId, normalizedWsId, sbAdmin } = access.context;
-  const teacherResponse = await validateImportTeacherIds({
-    normalizedWsId,
-    rows: parsed.data.rows.map((row, index) => ({
-      rowNumber: index + 1,
-      teacherWorkspaceUserId: row.teacherWorkspaceUserId ?? null,
-    })),
-    sbAdmin,
-  });
-  if (teacherResponse) return teacherResponse;
+  const { actorUserId, normalizedWsId, sbAdmin, teacherAssignmentsEnabled } =
+    access.context;
+  const enabled = teacherAssignmentsEnabled === true;
+  // Teacher ids and topic-less schedule rows are part of teacher-assigned
+  // topics; with the flag off the import behaves as before.
+  if (enabled) {
+    const teacherResponse = await validateImportTeacherIds({
+      normalizedWsId,
+      rows: parsed.data.rows.map((row, index) => ({
+        rowNumber: index + 1,
+        teacherWorkspaceUserId: row.teacherWorkspaceUserId ?? null,
+      })),
+      sbAdmin,
+    });
+    if (teacherResponse) return teacherResponse;
+  }
 
-  const { rowErrors, validRows } = normalizeImportRows(parsed.data.rows);
+  const { rowErrors, validRows } = normalizeImportRows(parsed.data.rows, {
+    teacherAssignments: enabled,
+  });
 
   if (validRows.length === 0) {
     return NextResponse.json({
@@ -104,6 +114,11 @@ export async function POST(request: Request, { params }: Params) {
     .single();
   if (batchError) throw batchError;
 
+  // send_due_at: 24h before the session in the workspace timezone, from the
+  // normalized date and start time (teacher assignments only).
+  const timezone = enabled
+    ? await getWorkspaceSchedulingTimezone(sbAdmin, normalizedWsId)
+    : null;
   const { data: announcements, error: announcementError } = await sbAdmin
     .from('topic_announcements')
     .insert(
@@ -116,6 +131,13 @@ export async function POST(request: Request, { params }: Params) {
         end_time: row.endTime,
         place: row.place,
         room: row.room,
+        send_due_at: enabled
+          ? computeTopicAnnouncementSendDueAt({
+              sessionDate: row.sessionDate,
+              startTime: row.startTime,
+              timeZone: timezone,
+            })
+          : null,
         session_date: row.sessionDate,
         source_row_number: row.rowNumber,
         source_type: parsed.data.sourceType,

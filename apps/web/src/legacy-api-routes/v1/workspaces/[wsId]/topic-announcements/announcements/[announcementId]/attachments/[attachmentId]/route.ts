@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
-import { resolveTopicAnnouncementsAccess } from '../../../../shared';
+import {
+  loadScopedTopicAnnouncement,
+  resolveTopicAnnouncementsAccess,
+} from '../../../../shared';
 
 interface Params {
   params: Promise<{
@@ -13,21 +16,20 @@ export async function DELETE(request: Request, { params }: Params) {
   const { announcementId, attachmentId, wsId } = await params;
   const access = await resolveTopicAnnouncementsAccess(request, wsId, {
     requireManage: true,
+    teacherAccess: 'update',
   });
   if (access.response) return access.response;
 
-  const { normalizedWsId, sbAdmin } = access.context;
-  const { data: announcement, error: announcementError } = await sbAdmin
-    .from('topic_announcements')
-    .select('id,status')
-    .eq('id', announcementId)
-    .eq('ws_id', normalizedWsId)
-    .maybeSingle();
-  if (announcementError) throw announcementError;
-  if (!announcement) {
-    return NextResponse.json({ message: 'Not found' }, { status: 404 });
-  }
-  if (announcement.status === 'sent') {
+  const { normalizedWsId, sbAdmin, scope } = access.context;
+  const loaded = await loadScopedTopicAnnouncement<{ status: string }>({
+    announcementId,
+    columns: 'id,status',
+    normalizedWsId,
+    sbAdmin,
+    scope,
+  });
+  if (loaded.response) return loaded.response;
+  if (['sent', 'processing'].includes(loaded.row.status)) {
     return NextResponse.json(
       { message: 'Sent announcement attachments cannot be removed' },
       { status: 409 }

@@ -27,6 +27,8 @@ vi.mock(
   () => {
     return {
       attachTopicAnnouncementGroups: vi.fn(async (_sbAdmin, rows) => rows),
+      computeTopicAnnouncementSendDueAt: vi.fn(() => null),
+      getWorkspaceSchedulingTimezone: vi.fn(async () => null),
       insertTopicAnnouncementAttachmentDrafts: vi.fn(
         async ({
           actorUserId,
@@ -114,7 +116,9 @@ vi.mock(
       ),
       validateTopicAnnouncementAttachmentDraftObjects:
         mocks.validateTopicAnnouncementAttachmentDraftObjects,
+      validateTeacherTopicAnnouncementWrite: vi.fn(() => null),
       validateTopicAnnouncementGroupId: vi.fn(async () => null),
+      validateTopicAnnouncementWorkspaceUserId: vi.fn(async () => null),
     };
   }
 );

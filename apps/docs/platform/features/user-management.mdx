@@ -290,8 +290,8 @@ Regression coverage: `apps/contacts/src/app/[locale]/[wsId]/users/topic-announce
 
 Supervisors can create a month of sessions before topics exist, assign each
 session to the teacher who writes its topic, and track whether topics went out
-on time. Schema: `20261026193000_topic_announcement_teacher_assignment.sql`
-(inert until the teacher flow is wired). Default for every workspace: no
+on time. Schema: `20261026193000_topic_announcement_teacher_assignment.sql`.
+Default for every workspace: no
 teacher, no deadline, existing behavior unchanged.
 
 - **Draft topics.** `topic` may be empty only while `status = draft`. Every
@@ -321,7 +321,106 @@ teacher, no deadline, existing behavior unchanged.
   from our domain. Each recipient verifies once (or is linked to a confirmed
   same-workspace account).
 
-Regression coverage: `apps/database/supabase/tests/topic-announcement-teacher-assignment.sql`.
+#### Teacher access and write paths
+
+**Rollout gate.** Everything in this section is behind the workspace secret
+`ENABLE_TOPIC_TEACHER_ASSIGNMENTS=true`, separate from
+`ENABLE_TOPIC_ANNOUNCEMENTS` and **off by default**, because workspaces already
+send topic announcements. With it off, the supervisor create, update, import
+and send paths behave as before the feature: a topic is required whenever one is
+written (no topic-less drafts), teacher-only fields (`teacherWorkspaceUserId`,
+`courseBook`, `videoUrl`) are ignored, no `send_due_at` is stored, a resend
+restamps `sent_at`, the teacher branch of the access check does not exist, and
+the notify route answers 404. Safety-only denials ship regardless of the flag:
+teachers cannot create topics or change fields beyond the topic content,
+`resend` is supervisor-only, attachments on sent or processing topics are
+fixed, the list search cannot widen a scope, and a send with a blank topic is
+refused. In Contacts, the teacher picker, the notify checkbox, the course book
+and video fields, the topic-less draft allowance, the early composer reset, the
+"My topics" teacher view and its deadlines appear only with the flag on; with
+it off the composer sends the pre-feature payload. The sidebar entry keeps its
+`manage_users` rule; teachers open "My topics" from the `topic_assigned`
+notification. Regression coverage:
+`apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/topic-announcements/supervisor-flow-flag-off.test.ts`,
+the "teacher assignments off" cases in `announcement-form.test.tsx`,
+and the flag-off case in `send-admission.test.ts`.
+
+- **Supervisor scope is unchanged.** `manage_users` reads and writes every topic
+  in the workspace and is still the only scope for import, contacts, templates,
+  removal, and the save-and-notify action. Supervisor sending still requires
+  `manage_users` plus `send_user_group_post_emails`.
+- **Assignment-scoped teachers.** Without `manage_users`, a member may list,
+  preview, upload page images for, and edit a topic only when they hold
+  `create_user_groups_posts` or `update_user_groups_posts` (edit) and the
+  topic is assigned to them: their linked workspace user is
+  `teacher_workspace_user_id`, or, only while no teacher is assigned, they are
+  a `TEACHER` of the topic's class (`group_id`). A co-teacher of the class
+  cannot act on a topic assigned to another teacher. The PATCH write repeats
+  the assignment filter, so a reassignment during an edit wins. Teacher
+  sending, scheduling, and cancelling a schedule require
+  `send_user_group_post_emails` plus the same assignment check. Topics outside
+  the assignment answer 404; a member with no linked workspace user is denied.
+  `ENABLE_TOPIC_ANNOUNCEMENTS` remains the gate for both scopes.
+- **Teacher write limits.** Teachers may change only `topic`, `body`,
+  `courseBook`, `videoUrl`, and `attachmentDrafts`, and may set `status` only
+  to `draft`. Any other field (title, class, room, place, day, date, times,
+  source, recipients, assignment) answers 403, so a teacher cannot move their
+  own deadline. They cannot edit sent, processing, or cancelled topics, cannot
+  resend (`resend=true` is supervisor-only, single and bulk), and cannot create
+  topics: creation is supervisor-only because the creator picks recipients.
+- **Attachments are fixed once sent.** Nobody can add or remove attachments on
+  a sent or processing topic (409).
+- **Validation before the database.** A teacher from another workspace is
+  rejected with 400 instead of relying on the trigger. A blank topic outside a
+  draft returns `TOPIC_REQUIRED` from update, schedule, and send.
+- **Deadline on every write path.** Create, update (when the date or start time
+  changes), and the schedule import store `send_due_at` through
+  `@tuturuuu/utils/topic-announcement-deadline`, using the workspace's fixed
+  calendar timezone. Without a fixed timezone the deadline stays empty.
+  `getTopicAnnouncementDeliveryState` derives Sent, Late, and Not sent.
+- **Save and notify.** `POST .../topic-announcements/notify-teachers` creates one
+  `topic_assigned` in-app notification per assigned teacher across the given
+  topics. Teachers whose workspace user is not linked to a platform account are
+  skipped and counted; nothing is emailed.
+- **Email content.** The topic email lists the course book and video link when
+  present.
+- **Contacts UI.** Supervisors pick the teacher in charge on the composer's
+  details step and can leave the topic empty for a draft; "Notify the teacher
+  after saving" (on by default) calls the notify route after the save. Members
+  without `manage_users` who hold a user group post permission see a scoped
+  "My topics" view at the same route instead of the supervisor workspace, with
+  Sent / Late / Not sent badges, and a form for course book, topic and
+  objectives, page images, and video link. "Save draft" and "Save & send" (shown
+  with `send_user_group_post_emails`) use the update and send routes above.
+- **No duplicate topics or emails on partial failure.** The composer resets as
+  soon as the topic is created, so a later send, schedule, or notify failure
+  cannot lead to a second topic; a notify failure has its own message. In the
+  teacher form, saved attachment drafts are cleared right after the save, before
+  any send, and the update route ignores drafts whose storage path is already
+  attached, so a retried "Save & send" never attaches or emails a file twice.
+- **Teacher picker.** The teacher-in-charge picker searches workspace users on
+  the server (name or email) instead of a fixed first page, so any user in a
+  large workspace can be assigned. The schedule import resolves teacher names
+  with the same search.
+- **Reassignment notifies.** When a supervisor changes `teacherWorkspaceUserId`
+  through the update route, the new teacher gets a `topic_assigned`
+  notification (a notify failure does not undo the change).
+- **My topics** pages past 50 topics and shows deadlines in the workspace's
+  calendar timezone (the browser zone if none is set).
+
+Regression coverage: `apps/database/supabase/tests/topic-announcement-teacher-assignment.sql`,
+`packages/utils/src/topic-announcement-deadline.test.ts`,
+`packages/users-core/src/routes/topic-announcements/access.test.ts`,
+`apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/topic-announcements/teacher-access.test.ts`
+(cross-teacher, cross-workspace, and unassigned-class denial),
+`apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/topic-announcements/teacher-writes.test.ts`,
+the Contacts satellite list in
+`apps/contacts/src/app/api/v1/workspaces/[wsId]/topic-announcements/route.test.ts`,
+the notification labels in
+`apps/web/src/components/notifications/notification-type-messages.test.ts`,
+and the Contacts UI in `announcement-form.test.tsx`,
+`teacher-topics-view.test.tsx`, and `teacher-user-picker.test.tsx` under
+`apps/contacts/src/app/[locale]/[wsId]/users/topic-announcements/`.
 Rollback: `apps/database/rollbacks/20261026193000_topic_announcement_teacher_assignment.rollback.sql`,
 proven by
 `apps/database/verification/topic-announcement-teacher-assignment-rollback-roundtrip.sql`.
