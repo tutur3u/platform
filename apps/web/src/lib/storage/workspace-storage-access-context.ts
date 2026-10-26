@@ -1,3 +1,4 @@
+import type { MiraImageAccessContext } from '@tuturuuu/storage-core/mira-image-access';
 import {
   memoizeWorkspaceStorageAccessContext,
   type WorkspaceStorageAccessContext,
@@ -74,4 +75,37 @@ export function createWorkspaceStorageAccessContext({
       return data?.creator_id ?? null;
     },
   });
+}
+
+/**
+ * Binds Mira image read access: workspace membership (shared with the bucket
+ * rules) plus the generator recorded on the image's AI credit transaction.
+ */
+export function createMiraImageAccessContext({
+  sbAdmin,
+  storageContext,
+}: {
+  sbAdmin: TypedSupabaseClient;
+  storageContext: WorkspaceStorageAccessContext;
+}): MiraImageAccessContext {
+  return {
+    userId: storageContext.userId,
+    isWorkspaceMember: (wsId) => storageContext.isWorkspaceMember(wsId),
+    async isImageGeneratedBy(name, userId) {
+      const { data, error } = await sbAdmin
+        .from('ai_credit_transactions')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('feature', 'image_generation')
+        .eq('metadata->>storagePath', name)
+        .limit(1);
+      if (error) {
+        throw new WorkspaceStorageAccessLookupError(
+          'Failed to verify image ownership',
+          { cause: error }
+        );
+      }
+      return (data?.length ?? 0) > 0;
+    },
+  };
 }

@@ -1,4 +1,8 @@
 import {
+  isMiraImagePath,
+  resolveMiraImageReadAccess,
+} from '@tuturuuu/storage-core/mira-image-access';
+import {
   classifyWorkspaceStoragePath,
   resolveWorkspaceStorageAccess,
 } from '@tuturuuu/storage-core/workspace-storage-access';
@@ -7,6 +11,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 import {
+  createMiraImageAccessContext,
   createWorkspaceStorageAccessContext,
   WorkspaceStorageAccessLookupError,
 } from '@/lib/storage/workspace-storage-access-context';
@@ -29,19 +34,26 @@ const SIGNED_URL_EXPIRY_SECONDS = 3600;
  * Request body: { paths: string[] }
  * Response: { urls: Array<{ path: string; signedUrl: string | null }> }
  *
- * Only AI chat attachment paths (`{wsId}/chats/ai/resources/...`) are
- * accepted; Drive files go through Drive APIs, which add egress controls.
- * Every path must pass the same rules as the `workspaces` bucket RLS
+ * Only AI chat attachment paths (`{wsId}/chats/ai/resources/...`) and Mira
+ * generated images (`{wsId}/mira/images/{file}`) are accepted; Drive files
+ * go through Drive APIs, which add egress controls. Chat paths must pass the
+ * same rules as the `workspaces` bucket RLS
  * (`@tuturuuu/storage-core/workspace-storage-access`): the caller must be a
- * workspace MEMBER and own the chat (or the temp folder). One denied path
- * rejects the whole request.
+ * workspace MEMBER and own the chat (or the temp folder). Mira images stay
+ * service-only in RLS and are signed on read only for the member who
+ * generated them (`@tuturuuu/storage-core/mira-image-access`). One denied
+ * path rejects the whole request.
  */
 export const POST = withSessionAuth(
   async (req, { supabase, user }) => {
     try {
       const body = await req.json();
       const { paths } = SignedReadUrlRequestSchema.parse(body);
-      if (paths.some((path) => !isAiChatResourcePath(path))) {
+      if (
+        paths.some(
+          (path) => !isAiChatResourcePath(path) && !isMiraImagePath(path)
+        )
+      ) {
         return NextResponse.json(
           { message: 'Invalid storage path' },
           { status: 400 }
@@ -54,9 +66,15 @@ export const POST = withSessionAuth(
         supabase,
         userId: user.id,
       });
+      const miraContext = createMiraImageAccessContext({
+        sbAdmin: storageAdmin,
+        storageContext: context,
+      });
       const decisions = await Promise.all(
         paths.map((path) =>
-          resolveWorkspaceStorageAccess(path, 'select', context)
+          isMiraImagePath(path)
+            ? resolveMiraImageReadAccess(path, miraContext)
+            : resolveWorkspaceStorageAccess(path, 'select', context)
         )
       );
 

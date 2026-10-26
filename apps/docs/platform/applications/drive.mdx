@@ -110,6 +110,34 @@ Profile/report buckets and workspace-wide branding/template/whiteboard assets,
 `task-images`, `project-updates`, and `forms` are outside this private chat/media
 namespace policy.
 
+### Mira generated image reads
+
+`mira/images/` stays service-only in the bucket RLS. Neither Drive nor workspace
+members can sign it directly. Chat history signs each generated image on read:
+
+- **Client.** The Web chat UI asks `POST /api/ai/chat/signed-read-url` to sign
+  the tool output's `storagePath`. The query refreshes every 50 minutes, within
+  the URL's 1-hour lifetime.
+- **Server check.** The route signs a direct `<wsId>/mira/images/<file>` object
+  only for a current workspace MEMBER who generated it. The generator is the
+  `user_id` on the image's `image_generation` AI credit transaction, matched on
+  `metadata.storagePath`.
+- **Denials.** Every other member, any non-member, nested or encoded paths, and
+  `drive/mira/qr/` are rejected.
+- **Fallback.** The stored `imageUrl` is used only while signing is pending or
+  for outputs that have no `storagePath`.
+
+This keeps images viewable after their stored URL expires or the object is
+re-keyed to revoke leaked URLs. It must be deployed before any `mira/images`
+re-key run.
+
+Regression coverage:
+
+- storage-core `mira-image-access.test.ts`.
+- Web `legacy-api-routes/ai/chat/mira-image-read-access.test.ts`.
+- The chat `use-generated-image-url.test.ts`.
+- internal-api `ai.test.ts`.
+
 ### Reserved-name collision check
 
 A user-created `recordings` root folder could plausibly collide with the reserved
