@@ -228,8 +228,9 @@ for (const app of apps) {
       surfaces: app === 'meet' ? ['frontend', 'realtime-do'] : ['frontend'],
     };
     const workflow = `${app}-cloudflare.yaml`;
-    // Only Meet currently has a native publisher in the production inventory.
-    const target = app === 'meet' ? workflow : `vercel-production-${app}.yaml`;
+    const target = ['meet', 'calendar'].includes(app)
+      ? workflow
+      : `vercel-production-${app}.yaml`;
     const root = fixture(t, policy);
     const [decision] = plan(root, [target]);
     assert.equal(decision.shouldRun, true);
@@ -255,6 +256,15 @@ test('Calendar admission opens only its frontend while other wave-1 apps remain 
     runPolicy(root, 'calendar-cloudflare.yaml').output,
     'allowed=true\n'
   );
+  for (const event of ['push', 'workflow_dispatch']) {
+    const [native, legacy] = plan(
+      root,
+      ['calendar-cloudflare.yaml', 'vercel-production-calendar.yaml'],
+      event
+    );
+    assert.equal(native.shouldRun, true);
+    assert.equal(legacy.shouldRun, false);
+  }
   for (const app of ['meet', 'mail', 'apps']) {
     assert.equal(
       runPolicy(
