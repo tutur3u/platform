@@ -33,7 +33,7 @@ plan, with its owner PR not yet merged.
 | **Log out everywhere** ends every session of the account on every device | Explicit second action | Planned |
 | Logout clears site cookies with `Clear-Site-Data: "cookies"`, so subdomain app sessions in the same browser end too | Always | Planned |
 | Logout never clears local app data (`"storage"` is not sent), so unsent drafts survive | Always | Planned |
-| Logout and a password change revoke outstanding cross-app handoff tokens | Always | Enforced: `__tests__/cross-app-token-revocation-routes.test.ts` |
+| Logout and a password change revoke outstanding cross-app handoff tokens | Always | Pending (#6839) |
 | After logout, another app on a subdomain stops accepting the session within 15 minutes | 15 min bound | Planned (app access-token lifetime 8 h to 15 min) |
 | A signed-out session's access token stops working within 15 minutes | 15 min bound | Planned (hosted access-token lifetime 60 min to 15 min) |
 
@@ -41,7 +41,7 @@ plan, with its owner PR not yet merged.
 
 | Credential | Rule | Status |
 | --- | --- | --- |
-| Cross-app handoff token | Lasts at most 60 s (300 s for CLI copy-paste), is single use, and is only for a known app or an enabled registered external app | Enforced: `apps/database/supabase/tests/cross-app-token-minting-bounds.sql` |
+| Cross-app handoff token | Lasts at most 60 s (300 s for CLI copy-paste), is single use, and is only for a known app or an enabled registered external app | Pending (#6840) |
 | CLI login token | Issued only to a top-level browser navigation; the copy page renders in an isolated origin | Enforced: `app/api/cli/auth/start/route.test.ts`, `apps/web/next.config.test.ts` |
 | Realtime join ticket | Lasts 60 s, covers one topic, cannot become a session | Enforced (existing) |
 | Storage download/upload link | One object; private links last at most 15 minutes | Planned clamp |
