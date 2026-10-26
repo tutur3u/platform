@@ -115,74 +115,23 @@ Widget _sheetSurface(BuildContext context, Widget child, Color surface) {
   );
 }
 
-/// Opens a shadcn bottom drawer on compact screens and a centered dialog on
-/// medium / expanded screens.
+/// Opens a bottom sheet on compact screens and a centered dialog on
+/// medium / expanded screens, above the shell chrome (root navigator).
 ///
-/// Returns a [Future] that completes when the overlay is dismissed, so callers
-/// can optionally `await` it to run logic after the overlay closes.
-///
-/// Wraps overlay content with a [BackButtonListener] so the Android hardware
-/// back button dismisses the overlay instead of triggering shell navigation.
+/// Uses the shared `showAppSheet` / `showAppDialog` host, so drawers share
+/// the sheet surface, drag handle, keyboard inset and modal Back binding.
+/// Close it with [dismissAdaptiveDrawerOverlay] or a Navigator pop.
 Future<void> showAdaptiveDrawer({
   required BuildContext context,
   required Widget Function(BuildContext) builder,
   double maxDialogWidth = 560,
-}) async {
-  final rootNavigatorContext = Navigator.of(
-    context,
-    rootNavigator: true,
-  ).context;
+}) => showAppSheet<void>(
+  context: context,
+  useRootNavigator: true,
+  maxDialogWidth: maxDialogWidth,
+  builder: builder,
+);
 
-  if (context.isCompact) {
-    await shad.openDrawer<void>(
-      context: rootNavigatorContext,
-      position: shad.OverlayPosition.bottom,
-      builder: (drawerContext) => BackButtonListener(
-        onBackButtonPressed: () async {
-          if (drawerContext.mounted) {
-            await shad.closeOverlay<void>(drawerContext);
-          }
-          return true;
-        },
-        child: AppearanceScope.opaqueScaffolds(builder(drawerContext)),
-      ),
-    );
-    return;
-  }
-
-  await showDialog<void>(
-    context: context,
-    barrierColor: Colors.black.withValues(alpha: 0.48),
-    builder: (dialogContext) => BackButtonListener(
-      onBackButtonPressed: () async {
-        if (dialogContext.mounted) {
-          await Navigator.maybePop(dialogContext);
-        }
-        return true;
-      },
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: maxDialogWidth),
-            child: Material(
-              color: shad.Theme.of(dialogContext).colorScheme.background,
-              borderRadius: BorderRadius.circular(12),
-              clipBehavior: Clip.antiAlias,
-              child: AppearanceScope.opaqueScaffolds(builder(dialogContext)),
-            ),
-          ),
-        ),
-      ),
-    ),
-  );
-}
-
-Future<void> dismissAdaptiveDrawerOverlay(BuildContext context) async {
-  if (context.isCompact) {
-    await shad.closeOverlay<void>(context);
-    return;
-  }
-
-  await Navigator.maybePop(context);
-}
+/// Closes the drawer that [context] belongs to.
+Future<void> dismissAdaptiveDrawerOverlay(BuildContext context) =>
+    Navigator.maybePop(context);

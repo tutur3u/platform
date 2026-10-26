@@ -135,11 +135,7 @@ class HabitTrackerDetailSheet extends StatelessWidget {
       ),
     );
     if (!context.mounted) return;
-    if (context.isCompact) {
-      await shad.closeOverlay<void>(context);
-    } else {
-      await Navigator.of(context).maybePop();
-    }
+    await Navigator.of(context).maybePop();
   }
 
   Future<void> _confirmDeleteEntry(BuildContext context, String entryId) async {
@@ -223,13 +219,7 @@ class _Header extends StatelessWidget {
                 ),
               ),
               IconButton(
-                onPressed: () {
-                  if (context.isCompact) {
-                    unawaited(shad.closeOverlay<void>(context));
-                    return;
-                  }
-                  unawaited(Navigator.of(context).maybePop());
-                },
+                onPressed: () => unawaited(Navigator.of(context).maybePop()),
                 icon: const Icon(Icons.close),
               ),
             ],

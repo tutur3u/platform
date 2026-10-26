@@ -1925,6 +1925,6 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
           shad.Alert(content: Text(context.l10n.taskBoardDetailTaskDeleted)),
     );
 
-    await shad.closeOverlay<void>(context);
+    if (context.mounted) await Navigator.maybePop(context);
   }
 }

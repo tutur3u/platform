@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart'
     hide AlertDialog, FilledButton, OutlinedButton, TextField;
 import 'package:mobile/core/input/platform_text_context_menu.dart';
-import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
@@ -171,9 +170,7 @@ class _RequestManagerActionsBarState extends State<RequestManagerActionsBar> {
 
   Future<void> _handleApprove() async {
     final toastContext = Navigator.of(context, rootNavigator: true).context;
-    final dismissOverlay = context.isCompact
-        ? () => shad.closeOverlay<void>(context)
-        : () => Navigator.maybePop(context);
+    Future<bool> dismissOverlay() => Navigator.maybePop(context);
 
     setState(() => _isProcessing = true);
 
