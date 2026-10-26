@@ -36,6 +36,9 @@ class FakeTracker extends Fake implements ITimeTrackerRepository {
   final Map<String, _Session> _sessions = {};
   int _next = 0;
 
+  /// Tags each session was started with.
+  final Map<String, List<String>> tagsOf = {};
+
   /// Endings applied by trims, by session id.
   final Map<String, DateTime> trimmedTo = {};
 
@@ -44,10 +47,16 @@ class FakeTracker extends Fake implements ITimeTrackerRepository {
       .map((s) => s.id)
       .firstOrNull;
 
+  /// The latest paused session, as the server's `type=paused` read returns.
   String? get pausedId => _sessions.values
       .where((s) => s.status == _Status.paused)
       .map((s) => s.id)
-      .firstOrNull;
+      .lastOrNull;
+
+  /// Session ids whose stop fails, as when the request cannot reach the
+  /// server.
+  final Set<String> failStop = {};
+  bool failResume = false;
 
   DateTime startOf(String id) => _sessions[id]!.start;
 
@@ -64,6 +73,9 @@ class FakeTracker extends Fake implements ITimeTrackerRepository {
     _sessions[next.id] = next;
     return next.id;
   }
+
+  /// Simulates the user pausing a session on the main Timer.
+  void pauseElsewhere(String id) => _sessions[id]!.status = _Status.paused;
 
   /// Simulates the session being stopped from another screen.
   void stopElsewhere(String id) => _sessions[id]!.status = _Status.stopped;
@@ -92,18 +104,21 @@ class FakeTracker extends Fake implements ITimeTrackerRepository {
     String? userId,
     String? parentSessionId,
     bool wasResumed = false,
+    List<String>? tags,
   }) async {
     for (final s in _sessions.values) {
       if (s.status == _Status.running) s.status = _Status.stopped;
     }
     final session = _Session('s${++_next}', taskId, clock());
     _sessions[session.id] = session;
+    tagsOf[session.id] = tags ?? const [];
     calls.add('start:${session.id}:$taskId');
     return session.model;
   }
 
   @override
   Future<TimeTrackingSession> stopSession(String wsId, String sessionId) async {
+    if (failStop.contains(sessionId)) throw Exception('offline');
     final session = _sessions[sessionId];
     if (session == null || session.status == _Status.stopped) {
       calls.add('stop-rejected:$sessionId');
@@ -131,6 +146,7 @@ class FakeTracker extends Fake implements ITimeTrackerRepository {
     String wsId,
     String sessionId,
   ) async {
+    if (failResume) throw Exception('offline');
     _sessions[sessionId]!.status = _Status.stopped;
     final next = _Session(
       's${++_next}',
@@ -184,6 +200,9 @@ class FakeStore extends PomodoroStore {
   PomodoroState? saved;
   int reads = 0;
 
+  /// When set, saving a running phase fails.
+  bool failWrite = false;
+
   @override
   Future<PomodoroState?> read() async {
     reads++;
@@ -194,6 +213,7 @@ class FakeStore extends PomodoroStore {
 
   @override
   Future<void> write(PomodoroState state) async {
+    if (failWrite && !state.isIdle) throw Exception('storage full');
     saved = state.isIdle ? null : state;
   }
 }

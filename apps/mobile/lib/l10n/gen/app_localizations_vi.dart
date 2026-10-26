@@ -10501,6 +10501,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get timerPomodoroFocusDoneTitle => 'Đã xong lượt tập trung';
 
   @override
+  String get timerPomodoroOrphanedSession => 'Không thể bắt đầu tập trung và một bộ bấm giờ vừa tạo có thể vẫn đang chạy. Hãy kiểm tra trang Bấm giờ.';
+
+  @override
   String get timerPomodoroOtherRunning => 'Một bộ bấm giờ khác đang chạy. Dừng nó ở trang Bấm giờ để tiếp tục lượt tập trung này.';
 
   @override

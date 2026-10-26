@@ -54,6 +54,7 @@ import 'package:mobile/features/tasks_boards/widgets/task_description_embed_buil
 import 'package:mobile/features/tasks_boards/widgets/task_description_viewer.dart';
 import 'package:mobile/features/tasks_estimates/utils/task_label_colors.dart';
 import 'package:mobile/features/time_tracker/pomodoro/pomodoro_controller.dart';
+import 'package:mobile/features/time_tracker/pomodoro/pomodoro_state.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';

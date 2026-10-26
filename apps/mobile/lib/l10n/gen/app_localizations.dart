@@ -20119,6 +20119,12 @@ abstract class AppLocalizations {
   /// **'Focus done'**
   String get timerPomodoroFocusDoneTitle;
 
+  /// No description provided for @timerPomodoroOrphanedSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus couldn\'t start, and a timer it created may still be running. Check the Timer page.'**
+  String get timerPomodoroOrphanedSession;
+
   /// No description provided for @timerPomodoroOtherRunning.
   ///
   /// In en, this message translates to:

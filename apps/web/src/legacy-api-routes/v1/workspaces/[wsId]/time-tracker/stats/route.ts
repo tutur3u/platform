@@ -13,6 +13,11 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { sessionTagSchema } from '@/lib/time-tracking/session-tags';
+import {
+  isSupportedTimezone,
+  loadTaggedTimeStats,
+} from '@/lib/time-tracking/tagged-stats-query';
 
 const querySchema = z.object({
   userId: process.env.NODE_ENV === 'development' ? z.string() : z.guid(),
@@ -29,6 +34,8 @@ const querySchema = z.object({
       message: 'daysBack must be a non-negative integer',
     })
     .transform((val) => (val ? Number.parseInt(val, 10) : 365)),
+  // Counts only sessions with this tag, e.g. `pomodoro` for Focus Time.
+  tag: sessionTagSchema.optional(),
 });
 
 const dailyActivitySchema = z.object({
@@ -66,7 +73,8 @@ export async function GET(
       );
     }
 
-    const { userId, isPersonal, timezone, summaryOnly, daysBack } = result.data;
+    const { userId, isPersonal, timezone, summaryOnly, daysBack, tag } =
+      result.data;
 
     // Verify authentication
     const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
@@ -92,6 +100,27 @@ export async function GET(
       return NextResponse.json(
         { error: 'Workspace access denied' },
         { status: 403 }
+      );
+    }
+
+    // Tagged stats come from the tagged sessions; no database function
+    // filters by tag.
+    if (tag) {
+      if (!isSupportedTimezone(timezone)) {
+        return NextResponse.json(
+          { error: 'Invalid timezone' },
+          { status: 400 }
+        );
+      }
+      return NextResponse.json(
+        await loadTaggedTimeStats(sbAdmin, {
+          userId,
+          wsId: normalizedWsId,
+          isPersonal,
+          timezone,
+          tag,
+          daysBack: summaryOnly ? 0 : daysBack,
+        })
       );
     }
 

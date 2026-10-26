@@ -61,6 +61,7 @@ void main() {
     addTearDown(controller.close);
 
     expect(tracker.calls, ['start:s1:t1']);
+    expect(tracker.tagsOf['s1'], ['pomodoro']);
     expect(controller.state.sessionId, 's1');
     expect(notifier.scheduledAt, t0.add(const Duration(minutes: 25)));
     expect(store.saved, controller.state);
@@ -268,6 +269,115 @@ void main() {
       await controller.skip();
 
       expect(tracker.calls.last, 'stop:$real');
+    });
+  });
+
+  group('pauses split the phase window (r3 a)', () {
+    test(
+      'a manual session started during the pause is never claimed',
+      () async {
+        final controller = await focusing();
+        addTearDown(controller.close);
+        now = t0.add(const Duration(minutes: 5));
+        await controller.pause();
+        // During the pause the user times the same task by hand, then pauses
+        // that timer too.
+        now = t0.add(const Duration(minutes: 7));
+        final manual = (await tracker.startSession('ws', taskId: 't1')).id;
+        tracker.pauseElsewhere(manual);
+        now = t0.add(const Duration(minutes: 10));
+        await controller.resume();
+        final resumed = controller.state.sessionId!;
+        // The resumed session ends elsewhere; the phase then ends.
+        tracker.stopElsewhere(resumed);
+        now = controller.state.deadline!;
+
+        await controller.reconcile();
+
+        expect(tracker.pausedId, manual, reason: 'still paused, untouched');
+        expect(tracker.calls.where((c) => c.contains(manual)), [
+          'start:$manual:t1',
+        ]);
+      },
+    );
+
+    test('runs open on resume and close on pause', () async {
+      final controller = await focusing();
+      addTearDown(controller.close);
+      now = t0.add(const Duration(minutes: 5));
+      await controller.pause();
+      now = t0.add(const Duration(minutes: 9));
+      await controller.resume();
+
+      final state = controller.state;
+      expect(state.ranAt(t0.add(const Duration(minutes: 2))), isTrue);
+      expect(state.ranAt(t0.add(const Duration(minutes: 7))), isFalse);
+      expect(state.ranAt(t0.add(const Duration(minutes: 10))), isTrue);
+      List<int?> instants(List<PomodoroRun> runs) => [
+        for (final run in runs) ...[
+          run.start.millisecondsSinceEpoch,
+          run.end?.millisecondsSinceEpoch,
+        ],
+      ];
+      expect(
+        instants(PomodoroState.fromJson(state.toJson()).runs),
+        instants(state.runs),
+      );
+    });
+  });
+
+  group('startFocus rollback (r3 b)', () {
+    test('a failed adopt stops the new session and keeps the error', () async {
+      final controller = build();
+      addTearDown(controller.close);
+      store.failWrite = true;
+
+      await expectLater(
+        controller.startFocus(userId: 'u1', wsId: 'ws', title: 'x'),
+        throwsA(
+          isA<Exception>().having((e) => '$e', 'message', contains('storage')),
+        ),
+      );
+      expect(tracker.runningId, isNull);
+      expect(controller.state.isIdle, isTrue, reason: 'state put back');
+    });
+
+    test('a new session that cannot be stopped is reported', () async {
+      final controller = build();
+      addTearDown(controller.close);
+      store.failWrite = true;
+      tracker.failStop.add('s1');
+
+      await expectLater(
+        controller.startFocus(userId: 'u1', wsId: 'ws', title: 'x'),
+        throwsA(
+          isA<PomodoroOrphanedSession>()
+              .having((e) => e.sessionId, 'sessionId', 's1')
+              .having((e) => '${e.cause}', 'cause', contains('storage')),
+        ),
+      );
+    });
+
+    test('a failed restore keeps the original error', () async {
+      final controller = build();
+      addTearDown(controller.close);
+      await tracker.startSession('ws', taskId: 'old');
+      await tracker.pauseSession('ws', 's1');
+      final paused = (await controller.currentTracking('ws')).paused;
+      store.failWrite = true;
+      tracker.failResume = true;
+
+      await expectLater(
+        controller.startFocus(
+          userId: 'u1',
+          wsId: 'ws',
+          title: 'x',
+          replacingPaused: paused,
+        ),
+        throwsA(
+          isA<Exception>().having((e) => '$e', 'message', contains('storage')),
+        ),
+      );
     });
   });
 
