@@ -508,6 +508,24 @@ remains. An upload exception leaves the private receipt `pending`; post-upload
 acceptance failure leaves it `uploaded`. No automatic retry, new admission or traffic switch
 follows either state.
 
+Upload failures retain only allowlisted exit/signal/Cloudflare-code metadata and
+sanitized provider `code: message` pairs (at most eight). If those pairs cannot be
+parsed, retain only one Wrangler `[ERROR]` headline, capped at 300 characters.
+Known credentials, token/key-shaped strings and URL credentials are redacted.
+Raw child stdout/stderr and error causes never enter the receipt or logs. Each
+message is one line and capped at 300 characters. Diagnostics do not establish
+whether a write succeeded; the receipt stays `pending` and replay stays fenced.
+
+The append-only `scripts/ci/wave1-native-production-resolutions.json` contains
+release-owner resolutions supported by audit summaries and provider-version reads,
+without raw logs. Its `failed-no-write` resolution applies only when the repository,
+app, Worker, run, attempt, source SHA, digest and original/current rollback baseline
+all match the pinned record. The original pending artifact remains unchanged.
+This skips only that resolved attempt while continuing to inspect all other
+history. A later replay that starts and fails creates its own fenced pending
+attempt; the earlier resolution cannot clear it. Every added resolution needs
+independent review of this exception to the replay fence before production sync.
+
 To unblock an uncertain upload, the release owner first preserves the original
 run/attempt, qualified archive and publication receipt, then inspects provider
 versions and deployments for that receipt's exact source/artifact annotations.
@@ -516,7 +534,9 @@ failed publish job with its original qualified archive: preflight reconciles it
 without uploading and post-verification emits an accepted-private receipt.
 A later source can then use that accepted version as its rollback baseline.
 If there is no exact active match, the receipt is missing/expired, or an earlier
-write remains unknown, keep publication held. The owner must resolve the provider
+write remains unknown, keep publication held. A separately reviewed, exact
+`failed-no-write` resolution is the only exception for a preserved pending
+artifact with no accepted version. The owner must resolve the provider
 outcome and obtain independent review of any recovery change; deleting run history,
 changing app names or retrying a fresh upload is not an unblock procedure.
 

@@ -236,7 +236,8 @@ function setup(t, { admitted = true } = {}) {
       'NODE_OPTIONS',
     ])
       assert.equal(options.env[name], undefined);
-    if (state.uncertain) throw new Error('Lost upload response');
+    if (state.uncertain)
+      throw state.uploadError ?? new Error('Lost upload response');
     if (state.duringUpload) state.attached = true;
     state.active = newId;
     state.ids = [newId];
@@ -362,6 +363,12 @@ for (const [name, mutate] of [
 test('lost upload response stays pending and is never retried', async (t) => {
   const p = setup(t);
   p.state.uncertain = true;
+  const secret = 'cf_secret_fixture_NEVER_RETAIN';
+  p.state.uploadError = Object.assign(new Error(secret), {
+    status: 1,
+    signal: null,
+    stderr: Buffer.from(`Authorization: Bearer ${secret}\nAPI [code: 10021]`),
+  });
   await assert.rejects(p.run(), /outcome is uncertain/);
   assert.equal(p.state.writes, 1);
   assert.equal(
@@ -370,6 +377,17 @@ test('lost upload response stays pending and is never retried', async (t) => {
     ).state,
     'pending'
   );
+  const saved = readFileSync(
+    join(p.appRoot, 'calendar-production-publication.json'),
+    'utf8'
+  );
+  assert.equal(saved.includes(secret), false);
+  assert.deepEqual(JSON.parse(saved).uploadFailure, {
+    exitCode: 1,
+    signal: null,
+    cfCode: 10021,
+    cfErrors: [{ code: 10021, message: 'API' }],
+  });
   p.state.prior = true;
   await assert.rejects(p.run(), /never replay/);
   assert.equal(p.state.writes, 1);

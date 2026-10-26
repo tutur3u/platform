@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
+import { isResolvedFailedNoWrite } from './wave1-native-production-resolution.mjs';
 import { boundedJson } from './wave1-native-publish.mjs';
 
 export const uploadStepName = 'Upload once without attaching serving topology';
@@ -159,6 +160,18 @@ export async function assertNoEarlierUpload({
         fetcher,
         app,
       });
+      if (
+        isResolvedFailedNoWrite({
+          env,
+          app,
+          worker,
+          run,
+          job,
+          receipt,
+          rollback,
+        })
+      )
+        continue;
       assert.equal(
         receipt.state,
         'accepted-private',
