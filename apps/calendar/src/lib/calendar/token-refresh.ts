@@ -6,9 +6,11 @@
  */
 
 // Use generic supabase client type to avoid direct dependency
+// Method syntax keeps parameters bivariant, so the typed Supabase client,
+// whose rpc accepts only known function names, is assignable.
 type SupabaseClientLike = {
-  from: (table: string) => any;
-  rpc?: (fn: string, args: Record<string, unknown>) => any;
+  from(table: string): any;
+  rpc?(fn: string, args: Record<string, unknown>): any;
 };
 
 import { OAuth2Client } from '@tuturuuu/google';

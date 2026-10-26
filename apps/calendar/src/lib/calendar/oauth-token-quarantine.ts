@@ -19,9 +19,11 @@ export interface QuarantineCandidate {
   created_at: string;
 }
 
+// Method syntax keeps parameters bivariant, so the typed Supabase client,
+// whose rpc accepts only known function names, is assignable.
 type QuarantineClient = {
-  from: (table: string) => any;
-  rpc?: (fn: string, args: Record<string, unknown>) => any;
+  from(table: string): any;
+  rpc?(fn: string, args: Record<string, unknown>): any;
 };
 
 // Distinct accounts failing with one reason, in this run plus the recent
