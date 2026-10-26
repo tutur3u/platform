@@ -27,7 +27,7 @@ export type HiveWorldEventCommand = Readonly<{
   kind: 'world-event';
   operationId: HiveOperationId;
   writer: HiveWorldWriter;
-  actorUserId: string;
+  actorUserId: string | null;
   eventType: string;
   payload: Readonly<Record<string, Json>>;
   researchSessionId: string | null;
@@ -69,6 +69,15 @@ export type HiveWriteRejection =
   | 'wrong-recipient'
   | 'insufficient-funds';
 
+export type HiveTerminalRejection = Exclude<
+  HiveWriteRejection,
+  'operation-conflict'
+>;
+
+export type HiveTerminalOutcome =
+  | { status: 'committed'; receipt: HiveWriteReceipt }
+  | { status: 'rejected'; reason: HiveTerminalRejection };
+
 export type HiveOperationIdentity = Readonly<{
   operationId: HiveOperationId;
   writer: HiveWriter;
@@ -80,13 +89,15 @@ export type HiveWriteResult =
   | { status: 'unknown'; identity: HiveOperationIdentity };
 
 export type HiveOperationObservation =
-  | { status: 'committed'; receipt: HiveWriteReceipt }
+  | HiveTerminalOutcome
   | { status: 'unresolved'; identity: HiveOperationIdentity };
 
 /**
  * One authoritative writer owns each scope. Snapshot/event/sequence or
  * trade/wallets/ledger plus the operation receipt commit atomically there.
  * The adapter compares the immutable command on replay, not only its ID.
+ * Business rejections are durable terminal outcomes too. Replays retain them;
+ * conflicting input never replaces the original outcome.
  * A transport failure returns unknown; observe that identity before retrying.
  * An unresolved observation never authorizes redispatch with a new identity.
  */

@@ -166,6 +166,92 @@ describe('Hive persistence contract against a fake authoritative writer', () => 
     expect(port.snapshot(command)).toEqual(before);
   });
 
+  it('observes a lost rejection reply and retains that rejection after funds arrive', async () => {
+    const port = new FakeHivePersistence();
+    const first = trade();
+    const rejected = trade('buyer-b');
+    port.seed(first);
+    await port.commit(first);
+    port.nextFailure = 'after-commit';
+    expect(await port.commit(rejected)).toMatchObject({ status: 'unknown' });
+    expect(await port.observe(rejected)).toEqual({
+      status: 'rejected',
+      reason: 'insufficient-funds',
+    });
+    port.seed(rejected);
+    expect(await port.commit(rejected)).toEqual({
+      status: 'rejected',
+      reason: 'insufficient-funds',
+    });
+    expect(
+      await port.commit({ ...rejected, acceptingNpcId: 'buyer-a' })
+    ).toEqual({ status: 'rejected', reason: 'operation-conflict' });
+    expect(await port.observe(rejected)).toEqual({
+      status: 'rejected',
+      reason: 'insufficient-funds',
+    });
+    expect(port.snapshot(rejected).ledger).toHaveLength(1);
+  });
+
+  it('records not-open and wrong-recipient decisions without replacing them on conflict', async () => {
+    const port = new FakeHivePersistence();
+    const missing = trade();
+    expect(await port.commit(missing)).toEqual({
+      status: 'rejected',
+      reason: 'trade-not-open',
+    });
+    expect(await port.observe(missing)).toEqual({
+      status: 'rejected',
+      reason: 'trade-not-open',
+    });
+    port.seed(missing);
+    expect(await port.commit(missing)).toEqual({
+      status: 'rejected',
+      reason: 'trade-not-open',
+    });
+    const wrong = { ...trade('buyer-b'), acceptingNpcId: 'buyer-a' };
+    expect(await port.commit(wrong)).toEqual({
+      status: 'rejected',
+      reason: 'wrong-recipient',
+    });
+    expect(await port.observe(wrong)).toEqual({
+      status: 'rejected',
+      reason: 'wrong-recipient',
+    });
+    expect(await port.commit({ ...wrong, acceptingNpcId: 'buyer-b' })).toEqual({
+      status: 'rejected',
+      reason: 'operation-conflict',
+    });
+    expect(port.snapshot(wrong).ledger).toHaveLength(0);
+  });
+
+  it('preserves nullable actors and the existing ordered last-writer-wins world behavior', async () => {
+    const port = new FakeHivePersistence();
+    const first: HiveWorldEventCommand = {
+      ...world('world-first'),
+      actorUserId: null,
+    };
+    const second: HiveWorldEventCommand = {
+      ...world('world-second'),
+      actorUserId: null,
+      world: { blocks: [], objects: [] },
+    };
+    expect(await port.commit(first)).toMatchObject({
+      status: 'committed',
+      receipt: { sequence: 1 },
+    });
+    expect(await port.commit(second)).toMatchObject({
+      status: 'committed',
+      receipt: { sequence: 2 },
+    });
+    const state = port.snapshot(first);
+    expect(state.world).toEqual(second.world);
+    expect(state.events.map((event) => event.actorUserId)).toEqual([
+      null,
+      null,
+    ]);
+  });
+
   it('uses independent sequence/receipt namespaces for independent world writers', async () => {
     const port = new FakeHivePersistence();
     const first = world();

@@ -214,8 +214,15 @@ runtime policy, build restrictions and source/data-owner custody.
 and trade/ledger persistence port. Caller operation IDs and writer scopes are
 explicit; changed input under an existing ID conflicts. World snapshot, event,
 sequence and receipt must be atomic, as must trade, wallets, ledger and receipt.
-An unknown outcome stays unresolved until its original writer observes a
-durable receipt. The fake conformance tests exercise these requirements without
+Terminal business rejections also persist with the command fingerprint in the
+authoritative writer. Observation returns that rejection, same-ID replay retains
+it even after funds or eligibility change, and changed input conflicts without
+replacing the original outcome. An unknown outcome stays unresolved until its
+original writer observes a durable committed or rejected record.
+World events match the existing nullable actor contract. Full snapshots have no
+base-revision precondition: accepted writes are ordered last-writer-wins, with a
+monotonic sequence. Adapters retain responsibility for caller authorization.
+The fake conformance tests exercise these requirements without
 wiring an adapter into the app or changing authentication or live data paths.
 
 Run the separate disposable local-runtime spike from the repository root:
@@ -236,6 +243,12 @@ control, a D1 predeclared batch with SQL triggers that abort on zero-row changes
 and the ledger/economy DO `transactionSync` fallback. Both correct candidates must
 reject competing spends, preserve totals, reject changed-ID input, roll back a
 failure after debit, and retain deduplication receipts after runtime restart.
+The current spike retains committed receipts only: its abort path rolls back
+rejected operation rows. It demonstrates transfer atomicity, not conformance to
+the port's durable-rejection recovery contract. Neither prototype can be used
+unchanged as an adapter. A D1 or DO adapter must persist fingerprinted terminal
+rejections in its authoritative writer, expose them through observation, retain
+them across restart and reject altered-input replays without replacing them.
 Fixture wallets represent Hive NPC currency, never platform AI credits. Values
 use integer minor units; conversion of production `numeric(18,2)`
 values and full trade inventory semantics remain later adapter qualification.

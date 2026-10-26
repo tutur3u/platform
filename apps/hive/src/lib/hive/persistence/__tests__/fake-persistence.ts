@@ -3,6 +3,7 @@ import type {
   HiveOperationIdentity,
   HiveOperationObservation,
   HivePersistencePort,
+  HiveTerminalOutcome,
   HiveWriteCommand,
   HiveWriteReceipt,
   HiveWriteResult,
@@ -21,7 +22,7 @@ type State = {
   sequence: number;
   events: Array<{
     id: string;
-    actorUserId: string;
+    actorUserId: string | null;
     eventType: string;
     researchSessionId: string | null;
     sequence: number;
@@ -30,7 +31,7 @@ type State = {
   wallets: Map<string, bigint>;
   trades: Map<string, Trade>;
   ledger: string[];
-  operations: Map<string, { command: string; receipt: HiveWriteReceipt }>;
+  operations: Map<string, { command: string; outcome: HiveTerminalOutcome }>;
 };
 
 type HiveWorldEventPayload = Extract<
@@ -106,7 +107,7 @@ export class FakeHivePersistence implements HivePersistencePort {
     await this.tails.get(scope(identity));
     const saved = this.state(identity).operations.get(identity.operationId);
     return saved
-      ? { status: 'committed', receipt: structuredClone(saved.receipt) }
+      ? structuredClone(saved.outcome)
       : { status: 'unresolved', identity };
   }
 
@@ -130,13 +131,15 @@ export class FakeHivePersistence implements HivePersistencePort {
     const fingerprint = canonical(command);
     const saved = state.operations.get(command.operationId);
     if (saved) {
-      return saved.command === fingerprint
+      if (saved.command !== fingerprint)
+        return { status: 'rejected', reason: 'operation-conflict' };
+      return saved.outcome.status === 'committed'
         ? {
             status: 'committed',
             replayed: true,
-            receipt: structuredClone(saved.receipt),
+            receipt: structuredClone(saved.outcome.receipt),
           }
-        : { status: 'rejected', reason: 'operation-conflict' };
+        : structuredClone(saved.outcome);
     }
     const next = structuredClone(state);
     let receipt: HiveWriteReceipt;
@@ -162,9 +165,19 @@ export class FakeHivePersistence implements HivePersistencePort {
     } else {
       const trade = next.trades.get(command.tradeId);
       if (!trade || trade.accepted)
-        return { status: 'rejected', reason: 'trade-not-open' };
+        return this.storeOutcome({
+          command,
+          next,
+          fingerprint,
+          outcome: { status: 'rejected', reason: 'trade-not-open' },
+        });
       if (trade.to !== command.acceptingNpcId)
-        return { status: 'rejected', reason: 'wrong-recipient' };
+        return this.storeOutcome({
+          command,
+          next,
+          fingerprint,
+          outcome: { status: 'rejected', reason: 'wrong-recipient' },
+        });
       const from = next.wallets.get(trade.from);
       const to = next.wallets.get(trade.to);
       if (
@@ -173,7 +186,12 @@ export class FakeHivePersistence implements HivePersistencePort {
         from < trade.offeredMinor ||
         to < trade.requestedMinor
       ) {
-        return { status: 'rejected', reason: 'insufficient-funds' };
+        return this.storeOutcome({
+          command,
+          next,
+          fingerprint,
+          outcome: { status: 'rejected', reason: 'insufficient-funds' },
+        });
       }
       next.wallets.set(
         trade.from,
@@ -194,7 +212,26 @@ export class FakeHivePersistence implements HivePersistencePort {
         ledgerId,
       };
     }
-    next.operations.set(command.operationId, { command: fingerprint, receipt });
+    return this.storeOutcome({
+      command,
+      next,
+      fingerprint,
+      outcome: { status: 'committed', receipt },
+    });
+  }
+
+  private storeOutcome({
+    command,
+    next,
+    fingerprint,
+    outcome,
+  }: {
+    command: HiveWriteCommand;
+    next: State;
+    fingerprint: string;
+    outcome: HiveTerminalOutcome;
+  }): HiveWriteResult {
+    next.operations.set(command.operationId, { command: fingerprint, outcome });
     const failure = this.nextFailure;
     this.nextFailure = 'none';
     const identity = {
@@ -204,10 +241,12 @@ export class FakeHivePersistence implements HivePersistencePort {
     if (failure === 'before-commit') return { status: 'unknown', identity };
     this.states.set(scope(command), next);
     if (failure === 'after-commit') return { status: 'unknown', identity };
-    return {
-      status: 'committed',
-      replayed: false,
-      receipt: structuredClone(receipt),
-    };
+    return outcome.status === 'committed'
+      ? {
+          status: 'committed',
+          replayed: false,
+          receipt: structuredClone(outcome.receipt),
+        }
+      : structuredClone(outcome);
   }
 }
