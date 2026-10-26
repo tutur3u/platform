@@ -11,7 +11,7 @@ export function profileFor(app, environment, subdomain) {
     'Unknown publication environment'
   );
   const settings = profiles.apps[app];
-  if (environment === 'staging')
+  if (environment === 'staging' && !settings.stagingHost)
     assert.match(
       subdomain ?? '',
       /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/,
@@ -23,7 +23,7 @@ export function profileFor(app, environment, subdomain) {
       : settings.productionWorker;
   const host =
     environment === 'staging'
-      ? `${name}.${subdomain}.workers.dev`
+      ? (settings.stagingHost ?? `${name}.${subdomain}.workers.dev`)
       : settings.canonicalHost;
   return {
     app,

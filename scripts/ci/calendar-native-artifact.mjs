@@ -141,6 +141,7 @@ function validateArtifact(directory, sealedNormalization) {
   assert.equal(config.assets?.binding, 'ASSETS');
   assert.equal(config.assets.run_worker_first, true);
   assert.equal(config.assets.not_found_handling, 'none');
+  assert.equal(config.assets.html_handling, 'none');
   const allowed = new Set([
     'name',
     'main',
@@ -172,6 +173,7 @@ function validateArtifact(directory, sealedNormalization) {
   assert.deepEqual(Object.keys(config.assets).sort(), [
     'binding',
     'directory',
+    'html_handling',
     'not_found_handling',
     'run_worker_first',
   ]);
