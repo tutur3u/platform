@@ -9,6 +9,7 @@ import {
   createWorkerEgress,
   NO_STORE,
   profileProblems,
+  serviceWorkerMode,
   sessionCookies,
   signAppSession,
   ssrProblems,
@@ -337,4 +338,45 @@ test('signed-in SSR must be a no-store 200 page in the locale with emitted asset
       'x-robots-tag is null',
     ]
   );
+});
+
+test('service workers are blocked unless a profile explicitly allows them', () => {
+  assert.deepEqual(serviceWorkerMode(profile), { mode: 'block', reason: null });
+  assert.deepEqual(serviceWorkerMode({ ...profile, serviceWorkers: 'block' }), {
+    mode: 'block',
+    reason: null,
+  });
+  const offline = {
+    ...profile,
+    serviceWorkers: { mode: 'allow', reason: ' offline fallback cache ' },
+  };
+  assert.deepEqual(serviceWorkerMode(offline), {
+    mode: 'allow',
+    reason: 'offline fallback cache',
+  });
+  assert.deepEqual(profileProblems('track', offline), []);
+
+  for (const serviceWorkers of [
+    'allow',
+    true,
+    false,
+    { mode: 'allow' },
+    { mode: 'allow', reason: '   ' },
+    { mode: 'allow', reason: 42 },
+    { mode: 'off', reason: 'x' },
+    null,
+  ]) {
+    const silent = { ...profile, serviceWorkers };
+    assert.equal(
+      serviceWorkerMode(silent),
+      null,
+      JSON.stringify(serviceWorkers)
+    );
+    assert.ok(
+      profileProblems('track', silent).some((problem) =>
+        problem.startsWith('serviceWorkers must be')
+      ),
+      JSON.stringify(serviceWorkers)
+    );
+  }
 });

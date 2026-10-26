@@ -278,6 +278,7 @@ Each app owns its profile at `apps/<app>/cloudflare/root-browser.profile.mjs`
 | `web` | `'GET /api/...'` to a response factory for Web API reads the page needs |
 | `hydration` | `request(context)`: a path prefix the client must request, or `text(context)`: a marker only the client renders. Polling pages never reach network idle |
 | `browser` | Extra browser origins: `{ origin, fulfill: 'image' \| 401 }` (e.g. a default avatar host) |
+| `serviceWorkers` | Omitted or `'block'` (default): the fixture browser blocks service workers, because a registered one answers requests before the gate's routing and would be measured instead of the Worker; the gate also asserts no service worker controls the page. `{ mode: 'allow', reason }` only for an explicit offline/service-worker run. Any other value fails validation. Every `PASS` line and the `ROOT_BROWSER_PASS` receipt record the mode |
 
 Regressions for the profile, session, egress, self-fetch and SSR rules, and a
 check that every `apps/*/cloudflare/root-browser.profile.mjs` is valid, run

@@ -9,7 +9,13 @@ type QueryResult = {
 
 const mocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
+  getSatelliteAppSessionUser: vi.fn(),
   imageResponse: vi.fn(),
+}));
+
+vi.mock('@tuturuuu/satellite/auth', () => ({
+  getSatelliteAppSessionUser: (...args: unknown[]) =>
+    mocks.getSatelliteAppSessionUser(...args),
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
@@ -92,11 +98,12 @@ function findAvatarSource(node: ReactNode): string | undefined {
 async function renderOg(avatarUrl: string | null) {
   mocks.createAdminClient.mockResolvedValue(adminClient(avatarUrl));
   const { GET } = await import('./route');
-  await GET(new Request('https://nova.test/api/og/user'), {
+  const response = await GET(new Request('https://nova.test/api/og/user'), {
     params: Promise.resolve({
       userId: '00000000000040008000000000000001',
     }),
   });
+  expect(response.status).toBe(200);
   return mocks.imageResponse.mock.calls[0]?.[0] as ReactNode;
 }
 
@@ -104,6 +111,7 @@ describe('Nova profile OG avatar source', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    mocks.getSatelliteAppSessionUser.mockResolvedValue({ id: 'signed-actor' });
     vi.stubGlobal(
       'fetch',
       vi.fn(() => {
@@ -111,6 +119,27 @@ describe('Nova profile OG avatar source', () => {
       })
     );
   });
+
+  it.each([null, { id: '' }])(
+    'denies an absent signed actor before privileged profile reads: %j',
+    async (actor) => {
+      mocks.getSatelliteAppSessionUser.mockResolvedValue(actor);
+      mocks.createAdminClient.mockResolvedValue(adminClient(null));
+      const { GET } = await import('./route');
+      const response = await GET(new Request('https://nova.test/api/og/user'), {
+        params: Promise.resolve({
+          userId: '00000000000040008000000000000001',
+        }),
+      });
+
+      expect(response.status).toBe(401);
+      expect(await response.text()).toBe('Unauthorized');
+      expect(mocks.getSatelliteAppSessionUser).toHaveBeenCalledWith('nova');
+      expect(mocks.createAdminClient).not.toHaveBeenCalled();
+      expect(mocks.imageResponse).not.toHaveBeenCalled();
+      expect(fetch).not.toHaveBeenCalled();
+    }
+  );
 
   it('passes an approved public Supabase avatar to ImageResponse', async () => {
     const avatarUrl =

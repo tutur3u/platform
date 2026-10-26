@@ -230,6 +230,10 @@ Calendar server pages must therefore:
   metadata (`id`, account email/name, provider, active state, expiry).
 - Keep token refresh and provider API calls on Calendar-local server routes;
   never expose provider credentials to client components.
+- Never filter a query by `access_token` or `refresh_token` value: PostgREST
+  sends filters in the URL. Fence by id and `created_at`, or compare a
+  fingerprint in SQL. `oauth-credential-url-filter.test.ts` in `packages/utils`
+  enforces this across apps and packages.
 
 When adding a new Calendar host route, reuse the helper instead of
 `select('*')` on `calendar_auth_tokens`.
@@ -363,16 +367,13 @@ workspace-enumeration failures retain their 401/500 responses. Dashboard rows
 use `failed` only for actual provider failures; successful admitted work is
 `completed` even when summaries report deferred accounts or connections.
 
-Google `invalid_grant` disables only the rejected account, conditional on its
-saved refresh credential still matching the attempted credential. Sibling
-calendars skip further calls in that run; healthy accounts continue. Reconnecting
-reactivates consent through the normal OAuth flow. Transient errors do not disable
-accounts. Microsoft refresh failures are isolated by account and retain the
-existing revoked-consent disable behavior, including reconnect-required refresh
-classification. Calendar-scoped Microsoft errors retain failure diagnostics while
-sibling calendars continue; auth and rate-limit errors stop that account. Deletion
-runs only after successful fetching, reconciliation and upsert. These rules apply
-to manual and background inbound sync; stored events remain visible.
+A permanently rejected credential is quarantined, not deleted; see
+[Self-healing OAuth credentials](#self-healing-oauth-credentials). Sibling
+calendars skip further calls in that run; healthy accounts continue.
+Calendar-scoped Microsoft errors retain failure diagnostics while sibling
+calendars continue; auth and rate-limit errors stop that account. Deletion runs
+only after successful fetching, reconciliation and upsert. These rules apply to
+manual and background inbound sync; stored events remain visible.
 
 Background runs admit at most 10 workspaces, 20 Google connections and 20
 Microsoft connections per workspace, with a rotating selection across ticks.
@@ -391,7 +392,9 @@ failed run. Queued workspaces and unattempted Google connections are deferred on
 cancellation; an in-flight Google failure remains failed. Microsoft stops without
 creating provider-failure entries for aborted calendars and defers the unfinished
 account plus later accounts. Earlier observed calendar failures remain failed.
-Google, Graph and Microsoft refresh transport do not retry within a cron invocation; the existing 15-minute schedule owns subsequent attempts. Never
+Google, Graph and Microsoft refresh transport do not retry internally; the
+credential check retries a transient refresh failure twice with jittered backoff
+inside the same budget, and the 15-minute schedule owns later attempts. Never
 substitute a detached promise timeout that leaves provider work running, and do
 not log provider error objects, headers, tokens, or event payloads.
 
@@ -403,6 +406,153 @@ local verification does not require building workspace dependencies. Require the
 Calendar build, tests, lint and type checks in CI for the submitted commit before
 release. This policy does not change the cron cadence or authorize a native
 Worker cutover.
+
+### Self-healing OAuth credentials
+
+Product decision (26 Oct 2026). Applies to Google and Microsoft accounts in
+every workspace, for manual sync, the provider cron and interactive provider
+requests. Nobody repairs a rejected credential by hand.
+
+- **Classification.** Each refresh failure is permanent, transient or
+  systemic. Permanent: Google `invalid_grant`, `access_denied` or
+  `unauthorized_client` (a credential from an earlier client); Microsoft
+  `invalid_grant`, `interaction_required`, consent revoked (AADSTS65001) or a
+  tenant that removed or disabled our app (AADSTS700016, 7000112); and
+  `unknown_permanent` for a token-endpoint 400/401 code not seen before.
+  Transient (5xx, 429, throttling, timeouts, network) retries and never
+  deactivates. Systemic means our OAuth client is wrong for everyone
+  (`invalid_client`, `deleted_client`, `disabled_client`, bad or expired client
+  secrets); it never deactivates.
+- **Quarantine.** A permanent failure sets `is_active = false` with
+  `deactivated_reason` and `deactivated_at` through
+  `quarantine_calendar_auth_token`. The update matches only the active row whose
+  credential fingerprint (sha256, compared in SQL) and `created_at` are
+  unchanged, so a concurrent reconnect wins. It is idempotent and deletes
+  nothing. Credentials never appear in URLs, logs or responses.
+- **Breaker.** From the third distinct account with the same reason, counting
+  rows still quarantined within the last 24 hours, quarantine holds
+  (`consensus_hold`): nothing is written, the account stays active and is still
+  shown as needing reconnect, and the spike alert fires. A misconfigured client
+  therefore cannot drain accounts.
+- **Isolation.** The scheduler reads `ok` and a bounded provider-degradation signal from a body of at most 64 KiB,
+  and five failed or unreadable runs stop the job for everyone. So `ok` reports
+  whether the run worked, not whether every account synced: a run that
+  completed returns `ok: true` with `partialFailure`, per-workspace `failures`
+  codes, `tokens.counts` and at most 50 non-ok `tokens.attention` entries
+  (hashed account, provider, outcome, reason); complete detail is in the
+  per-outcome logs. The run fails (`ok: false`) only when, for one provider,
+  at least three accounts failed with an explicit client-wide diagnosis
+  (`systemic`), or every evaluated account for that provider did, and none
+  obtained a fresh credential (HTTP 500), when no workspace sync completed,
+  or on the existing enumeration/dispatch failures.
+  Breaker holds of any reason, revocations and one tenant removing our app
+  never fail the job. `cron-control`'s
+  `calendar-provider-sync-contract.test.ts` drives these responses through the
+  scheduler's real reader and ledger.
+- **Transient provider outages.** A nonempty provider sample where every evaluated
+  account failed transiently returns `ok: true`, `degraded: true` and
+  `transientProviders` (at most Google and Microsoft). A healthy account in the
+  same provider prevents that flag; a healthy sibling provider does not hide it.
+  Cron Control records `lastOutcome: degraded` durably without spending the
+  fatal failure budget, including a single blip and repeated outages. This
+  completed nonfatal run resets the fatal streak but preserves the timestamp of
+  the last productive completion. Healthy later runs restore `lastOutcome: ok`.
+  Holds and revocations retain their existing nonfatal behavior, and explicit
+  systemic failures still take priority. Coverage: the real dispatch/ledger
+  `calendar-provider-sync-contract.test.ts` and `ledger.test.ts`.
+- **Recovery.** The calendar sync warning is the durable signal: it lists
+  quarantined accounts (by email, or name when there is none) with the
+  provider's Reconnect action. The owner also gets at most one
+  `account_update` notification per quarantine (code
+  `calendar_reconnect_required`), delivered through their notification
+  preferences (web, email and push); breaker holds send none. Web and every
+  app that ships the shared notification popover render it in English or
+  Vietnamese by code; email, push and mobile show the stored English text.
+- **Reconnect.** A successful reconnect updates the same row, reactivates it and
+  clears both quarantine fields in one statement. While any of the user's
+  Google rows in the workspace is quarantined, every Google connect there shows
+  the consent screen so Google issues a fresh refresh token; the Reconnect
+  actions in the warning and in calendar settings ask for consent too, which
+  covers held accounts. When Google returns no new refresh token, the stored one
+  is reused only through a guarded update that matches a row still active,
+  unquarantined and unchanged since the callback read it; otherwise (including
+  a quarantined row) the callback keeps the quarantine and sends the user
+  through consent again instead of reviving the rejected credential. Automatic
+  consent restarts are capped at one per account/user/workspace in each fixed
+  ten-minute window, shared across instances and newly initiated OAuth flows by
+  the existing single-use nonce ledger. Window boundaries can admit two close
+  attempts, but never an unbounded loop. A repeated missing refresh token returns
+  localized HTTP 429 with `Retry-After`; an unavailable ledger returns HTTP 503
+  and never starts another consent flow. Neither response changes the token row.
+  A genuinely fresh refresh token bypasses this restart cap and can complete
+  recovery. Explicit user-initiated reconnects retain their consent behavior;
+  ordinary connects stay consent-free. Coverage: `google-consent-restart.test.ts`
+  and the Google callback route tests.
+- **Consent restart diagnostics.** Limited and unavailable automatic restarts
+  emit callback-only `consent_restart_limited` and `consent_restart_unavailable`
+  events under `calendar.oauth.token_outcome`, with a hashed account handle.
+  These events do not enter provider-sync counters. Restart ledger expiry is at
+  least one minute ahead of the app clock to tolerate modest database clock skew
+  at a window boundary. HTTP 429 and 503 retain explicit localized JSON errors
+  and `Retry-After`; Calendar has no consumer for a post-auth error parameter,
+  so redirecting to its normal workspace page would hide the recovery error.
+- **Observability.** One `calendar.oauth.token_outcome` log line per outcome
+  carries the route template, provider, outcome, reason, provider code and a
+  hashed account id. `calendar.oauth.deactivation_spike` fires on five or more
+  quarantines, any deferred quarantine, any breaker hold or any systemic
+  outcome. The provider cron also sends due spikes to the existing
+  `create_notification` delivery queue as high-priority account updates, with
+  bilingual English/Vietnamese operator copy and aggregate counts only. Configure
+  `CALENDAR_OAUTH_ALERT_RECIPIENTS` as a comma-separated operator email list on
+  Calendar. Each address must resolve to a confirmed auth account that is a
+  current `MEMBER` of the root workspace; `GUEST` memberships are excluded. The notification is addressed only by
+  that account id, never by a copied email address. At most five distinct valid
+  configured addresses are processed per run. No affected provider account
+  identity, credential or provider payload enters the notification content. Recurring
+  holds/deferrals/systemic and all-transient provider alerts are due only in the
+  first quarter-hour of each hour; five newly quarantined accounts alert immediately. The response exposes
+  `alerts.status` and queued/failed/unknown/unresolved/suppressed counts; missing recipients are explicitly
+  `unconfigured`. Unresolved or unconfirmed non-operator addresses make no
+  notification write; an account preference that suppresses creation is reported
+  as `suppressed`. A transport result without an HTTP response (`status: 0`) is
+  an unknown write, while HTTP errors are failures. A queue failure stays visible in logs and the response while
+  holds and revocations remain nonfatal. There are at most three metadata reads
+  and one notification-write attempt per configured address, sharing one
+  five-second transport deadline. Recipient metadata reads are not retried, and
+  an unknown notification write is never replayed in the same run. Queue acceptance
+  does not prove recipient delivery; verify the existing notification sender and
+  operator receipt during release. Coverage: `oauth-spike-notification.test.ts`
+  and provider cron route tests. The five-or-more-deactivations branch is not
+  hourly-gated: the normal fifteen-minute schedule permits at most four due runs
+  and twenty notification rows per hour. A re-dispatch can repeat an alert; there
+  is no cross-run idempotency key. Recipient preferences and existing batching
+  still apply.
+- **Degradation scope.** The provider degradation signal covers OAuth token
+  refresh outcomes. A single transient account degrades the job when it is the
+  only evaluated account for that provider, even beside many healthy accounts
+  from another provider. A still-valid token counted as `ok` prevents that
+  provider's all-transient signal. Events API 5xx/quota failures with valid tokens
+  can therefore still return plain scheduler `ok` and advance
+  `lastCompletedAt`; per-workspace failure diagnostics remain the signal for
+  those failures. Degraded runs preserve the last productive completion time
+  even if another provider synced successfully. The hourly spike sink includes
+  the all-transient provider signal, including one-account samples. The default
+  minimum sample is one because single-account workspaces need outage visibility.
+  The normal fifteen-minute schedule alerts only on the hourly due run for this
+  branch, and a healthy account in the same provider suppresses it. This bounded
+  hourly noise is intentional; the signal never spends the fatal failure budget.
+  Direct re-dispatch can repeat an alert as described above. Coverage:
+  `oauth-token-health.test.ts` pins the one-account hourly and healthy-mixed cases;
+  `oauth-spike-notification.test.ts` excludes root guests.
+- **Exception.** Before the quarantine columns reach a database, quarantine is
+  deferred and accounts keep failing as before.
+
+Regression coverage: `oauth-failure`, `oauth-token-quarantine`,
+`credential-health`, `token-refresh`, `google-inbound-sync` and
+`microsoft-inbound-sync` tests; the provider cron route tests (mixed batch,
+spike, systemic); the Google and Microsoft auth callback, auth URL and accounts
+route tests; the `calendar-sync-recovery` component test; and the
+`calendar-auth-token-deactivation.sql` pgTAP fixture.
 
 ### Recovering individual calendar failures
 
