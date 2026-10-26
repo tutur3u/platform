@@ -167,3 +167,22 @@ artifact procedure; this wrapper does not qualify hosted behavior or deployment.
 - Run `bun check:changed` before pushing; when root TypeScript config or repo-wide
   script/config behavior changed, require `bun validate` to pass in CI for the exact
   commit (never run it on agent machines).
+
+## Windows Flutter installer verification
+
+Reuse `desktop-beta.yaml` and `scripts/desktop-deployment/package-windows.mjs`
+for unsigned Windows release work. A branch dispatch with `dry_run=true` builds
+only on GitHub-hosted Windows, uploads the installer and checksum receipt, and
+never publishes. `smoke-windows.ps1` silently installs that installer, checks
+required Flutter files, requires a visible window after Flutter's first frame (never show the runner
+before that callback), records installed file sizes/hashes and installer identity,
+and uninstalls. Include hidden/system files, require the exact `Tuturuuu` title,
+and bound each Inno phase to 120 seconds with a 10-second process-tree stop attempt.
+Reject reparse points and data files with MZ headers; restrict data paths to ICU, AOT and Flutter assets, denying executable/script/debug/credential types. Cache each Inno process handle before waiting so exit codes remain available.
+First frames do not establish service health; credential stripping is not same-user
+process isolation, and slow bootstrap can leave the normal window hidden. Strip OIDC request/runtime credentials before launching the app,
+and preserve the startup error if cleanup also fails. Run the Windows parse and
+smoke fixtures on a Windows runner. Keep placeholder-config smoke results
+separate from production authentication and update acceptance. Public distribution
+uses the existing protected production flow and provenance gates; see
+[the desktop runbook](../../../../../apps/docs/build/devops/desktop-beta-distribution.mdx).

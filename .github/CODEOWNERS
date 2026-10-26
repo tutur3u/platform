@@ -12,6 +12,7 @@
 /packages/auth/                    @vhpx
 /packages/sso/                     @vhpx
 /packages/turnstile/               @vhpx
+/packages/start-bridge/            @vhpx
 /packages/utils/src/api-proxy-guard.ts     @vhpx
 /packages/utils/src/required-mfa*.ts @vhpx
 /packages/satellite/src/auth.ts    @vhpx

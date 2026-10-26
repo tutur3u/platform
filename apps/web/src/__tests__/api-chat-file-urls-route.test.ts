@@ -27,6 +27,19 @@ const mocks = vi.hoisted(() => {
   };
 
   const adminSupabase = {
+    from: vi.fn((table: string) => {
+      if (table !== 'ai_chats') throw new Error('unexpected admin table');
+      return {
+        select: vi.fn(() => ({
+          eq: vi.fn(() => ({
+            maybeSingle: vi.fn(async () => ({
+              data: { creator_id: 'user-1' },
+              error: null,
+            })),
+          })),
+        })),
+      };
+    }),
     storage: {
       from: vi.fn(() => ({
         list,
@@ -56,31 +69,17 @@ vi.mock('@/lib/workspace-helper', () => ({
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
-  createAdminClient: async () => ownedChatAdmin('user-1'),
   createDynamicAdminClient: vi.fn(() => Promise.resolve(mocks.adminSupabase)),
 }));
 
 // Stored-object verification has its own tests; these cover routing only.
-vi.mock('@/legacy-api-routes/ai/chat/_lib/chat-resource-object-guard', () => ({
+vi.mock('@/app/api/ai/chat/_lib/chat-resource-object-guard', () => ({
   verifyAiChatStoredObjects: async ({
     objects,
   }: {
     objects: { path: string }[];
   }) => new Map(objects.map(({ path }) => [path, 'valid'])),
 }));
-
-/** The actor owns the requested chat; ownership is covered elsewhere. */
-function ownedChatAdmin(userId: string) {
-  const query = {
-    select: () => query,
-    eq: () => query,
-    maybeSingle: async () => ({
-      data: { id: '11111111-1111-4111-8111-111111111111', creator_id: userId },
-      error: null,
-    }),
-  };
-  return { from: () => query, schema: () => ({ from: () => query }) };
-}
 
 type FileUrlsRouteHandler = (
   request: NextRequest,
@@ -132,9 +131,7 @@ describe('chat file-urls route', () => {
       error: null,
     });
 
-    const { POST } = await import(
-      '@/legacy-api-routes/ai/chat/file-urls/route'
-    );
+    const { POST } = await import('@/app/api/ai/chat/file-urls/route');
     const response = await (POST as FileUrlsRouteHandler)(
       new NextRequest('http://localhost/api/ai/chat/file-urls', {
         method: 'POST',
@@ -196,9 +193,7 @@ describe('chat file-urls route', () => {
       },
     });
 
-    const { POST } = await import(
-      '@/legacy-api-routes/ai/chat/file-urls/route'
-    );
+    const { POST } = await import('@/app/api/ai/chat/file-urls/route');
     const response = await (POST as FileUrlsRouteHandler)(
       new NextRequest('http://localhost/api/ai/chat/file-urls', {
         method: 'POST',

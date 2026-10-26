@@ -9,6 +9,7 @@ import {
   Play,
   SquareTerminal,
 } from '@tuturuuu/icons';
+import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import { Badge } from '@tuturuuu/ui/badge';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
@@ -52,7 +53,10 @@ export default async function InfrastructureDevboxesPage({ params }: Props) {
   const { wsId } = await params;
   await enforceInfrastructureRootWorkspace(wsId);
 
-  const permissions = await getPermissions({ wsId: ROOT_WORKSPACE_ID });
+  const user = await getSatelliteAppSessionUser('infra');
+  if (!user?.id) redirect('/login');
+
+  const permissions = await getPermissions({ user, wsId: ROOT_WORKSPACE_ID });
   if (!permissions) {
     redirect(`/${wsId}/settings`);
   }

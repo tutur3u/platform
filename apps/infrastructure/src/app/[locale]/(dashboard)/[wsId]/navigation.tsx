@@ -15,6 +15,7 @@ import {
   Globe,
   History,
   LayoutDashboard,
+  ListChecks,
   Lock,
   Mail,
   MessageSquare,
@@ -70,9 +71,21 @@ function getTopLevelNavigation({
       title: t('infrastructure-tabs.overview'),
     },
     {
-      href: href(wsId, '/devboxes'),
+      aliases: [href(wsId, '/fleet/machines/*')],
+      href: href(wsId, '/fleet'),
       icon: icon(Server),
+      matchExact: true,
       sectionLabel: t('infrastructure-navigation.sections.fleet'),
+      title: t('infrastructure-tabs.fleet'),
+    },
+    {
+      href: href(wsId, '/fleet/jobs'),
+      icon: icon(ListChecks),
+      title: t('infrastructure-tabs.fleet_runs'),
+    },
+    {
+      href: href(wsId, '/devboxes'),
+      icon: icon(Settings),
       title: t('infrastructure-tabs.devboxes'),
     },
     {

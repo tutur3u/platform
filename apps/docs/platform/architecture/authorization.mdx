@@ -205,6 +205,48 @@ The API key evaluator:
 
 That keeps permission IDs consistent across browser/session routes and external API routes, even though the authentication mechanism is different.
 
+Legacy routes that validate an `API_KEY` header and then switch to an admin
+client must also prove that every path resource belongs to `[wsId]` before any
+other query, and keep `ws_id` on every later query. The dataset routes
+(`/api/v1/workspaces/[wsId]/datasets`, `.../[datasetId]` and `.../[datasetId]/full`)
+require `ai_lab` for API keys and return 404 for a dataset outside the key's
+workspace. Dataset updates accept only `name`, `description` and `url` (`ws_id`
+and unknown fields are rejected). Every request made with a verified key,
+allowed or denied (401, 403, 404, 400), is recorded in
+`workspace_api_key_usage_logs` under the key's own workspace with endpoint,
+method, status, timing, IP and user agent, but no request body or key material.
+Session callers resolve a verified server-side actor and use the shared
+`getPermissions` helper for workspace membership and `ai_lab`. Anonymous requests
+return 401, non-members return 404, and members without `ai_lab` return 403 before
+any dataset query. Pages use 401/404 render interrupts. Authorized calls use the
+admin client because `20260312113000_lock_description_tables_to_server_apis`
+removed client table grants and policies in March 2026; those grants and policies
+remain closed.
+
+This applies to dataset list/detail/explore/settings pages, metrics, imports,
+duplicate handling, and every dataset API method. The dataset parent lookup is
+bound to the verified workspace (`workspace_datasets.ws_id`). Child queries are
+bound to that verified parent through `dataset_id`; column/row ids also retain
+the dataset predicate. Inserts stamp the verified dataset or workspace, never a
+body-supplied owner. API keys retain their existing workspace and `ai_lab`
+authority and usage logging. Usage statistics keep masking values when the
+viewer lacks `ai_lab`.
+
+A dataset cell's row and column must belong to the cell's dataset. The cell and
+row write routes check this before writing, a database trigger rejects
+mismatched cells and dataset moves for rows and columns, and the
+`workspace_dataset_row_cells` view only aggregates cells and columns of the
+row's own dataset.
+
+Regression coverage: `route.test.ts` and `[datasetId]/route.test.ts` and
+`[datasetId]/cell-parent-binding.test.ts` under
+`apps/web/src/app/api/v1/workspaces/[wsId]/datasets/`, including
+`session-access.test.ts` for every endpoint and foreign parent/child ids;
+`apps/web/src/lib/datasets/{access,page-access}.test.ts`; the opt-in
+`local-chain.test.ts` for real local Auth, shared permissions, PostgREST and
+admin writes while authenticated table grants remain revoked; and
+`apps/database/supabase/tests/workspace-dataset-cell-parent.sql`.
+
 ## Current Design Rules
 
 - Use `getPermissions()` for feature-level authorization in server pages and session-auth routes.

@@ -1,3 +1,4 @@
+export * from './balancer';
 export * from './cache';
 export * from './command-policy';
 export * from './e2e-harness';

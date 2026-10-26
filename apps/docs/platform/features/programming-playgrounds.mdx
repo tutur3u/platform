@@ -26,6 +26,27 @@ the meeting prevents fresh coding tickets; outstanding tickets expire shortly.
 The host selects a Learn problem or owner-controlled playground for the room.
 Learn problem execution uses public tests; hidden test data is never shared.
 
+## Workbench layout
+
+Learn and Meet share one compact workbench (`packages/programming-ui`). It is a
+single column: a slim toolbar (project or problem title, language, connection
+state, participant count, then Run, Stop, Save and an overflow menu), a file tab
+strip with inline file creation, the code editor filling the remaining height,
+and a collapsible output panel. The output panel owns the run command and an
+optional standard-input field, and shows real run output with its exit code or
+an explicit empty state; the private preview frame renders only after the user
+opens it from the menu with a valid port, and it can be closed from the panel
+header. Less common actions (private preview, collaborator invites, and in Meet
+the host's change-resource and close-room actions) live in the overflow menu
+rather than as standalone buttons, and no persistent helper copy explains
+background saves: the panel header shows "Saved to Drive" or a save failure when
+that state is known. The editor follows the app theme class, so it never renders
+a light sheet inside a dark room. In Meet, the host's resource chooser is one
+unlabeled control row framed as a card until a resource opens; afterwards it is
+hidden and reachable again from the menu. Participants see a single waiting
+line. Regression coverage: `workbench-layout.test.ts`, `workbench-files.test.tsx`,
+`workbench-output.test.tsx` and `programming-panel.test.tsx`.
+
 ## Files and environments
 
 Project files live in the owner's **personal workspace Tuturuuu Drive**, including

@@ -1,3 +1,7 @@
+import { normalizeClientIp } from './ip-address';
+import { verifyOriginClientIpProof } from './origin-ip-proof';
+
+export { isValidIpAddress, normalizeClientIp } from './ip-address';
 /**
  * Trusted-proxy client IP resolution.
  *
@@ -16,9 +20,15 @@ export const UNKNOWN_CLIENT_IP = 'unknown';
 
 export const TRUSTED_PROXY_ENV = 'TRUSTED_PROXY';
 export const TRUSTED_PROXY_HOPS_ENV = 'TRUSTED_PROXY_HOPS';
+/** Shared secret Cloudflare injects when it proxies to the Vercel origin. */
+export const TRUSTED_PROXY_ORIGIN_SECRET_ENV = 'TRUSTED_PROXY_ORIGIN_SECRET';
+/** Request header carrying the origin secret or a versioned signed client-IP proof. */
+export const CLOUDFLARE_ORIGIN_AUTH_HEADER = 'x-tuturuuu-origin-auth';
+const MIN_ORIGIN_SECRET_LENGTH = 32;
 
 export const TRUSTED_PROXY_MODES = [
   'cloudflare',
+  'cloudflare-origin',
   'vercel',
   'forwarded',
   'none',
@@ -34,6 +44,11 @@ export interface ClientIpConfig {
    * the right; anything further left is client-supplied and ignored.
    */
   trustedHops: number;
+  /**
+   * `cloudflare-origin` only: the shared key for apex-origin authentication
+   * and signed Worker client-IP proofs. Missing or short keys never authenticate.
+   */
+  originAuthSecret?: string;
 }
 
 export type ClientIpHeaders =
@@ -78,6 +93,53 @@ function parseTrustedHops(raw: string | undefined): number {
   return Math.min(parsed, MAX_TRUSTED_HOPS);
 }
 
+let weakOriginSecretWarned = false;
+
+function resolveOriginAuthSecret(env: ClientIpEnv): string | undefined {
+  const secret = env[TRUSTED_PROXY_ORIGIN_SECRET_ENV]?.trim();
+  if (secret && secret.length >= MIN_ORIGIN_SECRET_LENGTH) return secret;
+  if (!weakOriginSecretWarned) {
+    weakOriginSecretWarned = true;
+    console.warn(
+      `[client-ip] cloudflare-origin needs ${TRUSTED_PROXY_ORIGIN_SECRET_ENV} of at least ${MIN_ORIGIN_SECRET_LENGTH} characters; Cloudflare client IPs are not trusted.`
+    );
+  }
+  return undefined;
+}
+
+/** Comparison whose time depends only on the secret's length. */
+function constantTimeEquals(actual: string, expected: string): boolean {
+  let difference = actual.length ^ expected.length;
+  for (let index = 0; index < expected.length; index++) {
+    // Past the end `charCodeAt` is NaN, which `|| 0` turns into a mismatch-safe 0.
+    difference |= (actual.charCodeAt(index) || 0) ^ expected.charCodeAt(index);
+  }
+  return difference === 0;
+}
+
+/**
+ * Whether the request came through the Cloudflare proxy that holds the
+ * configured origin secret. Direct requests to the Vercel origin never pass.
+ */
+export function isAuthenticatedCloudflareOrigin(
+  headers: ClientIpHeaders,
+  config: ClientIpConfig
+): boolean {
+  const secret = config.originAuthSecret;
+  if (
+    config.mode !== 'cloudflare-origin' ||
+    !secret ||
+    secret.length < MIN_ORIGIN_SECRET_LENGTH
+  )
+    return false;
+  const presented = readHeader(headers, CLOUDFLARE_ORIGIN_AUTH_HEADER);
+  return (
+    presented !== null &&
+    (verifyOriginClientIpProof({ proof: presented, secret }) !== null ||
+      constantTimeEquals(presented, secret))
+  );
+}
+
 /**
  * Resolve which proxy headers this deployment may trust.
  *
@@ -93,6 +155,13 @@ export function resolveTrustedProxyConfig(
   const explicit = env[TRUSTED_PROXY_ENV]?.trim().toLowerCase();
 
   if (explicit) {
+    if (explicit === 'cloudflare-origin') {
+      return {
+        mode: explicit,
+        trustedHops,
+        originAuthSecret: resolveOriginAuthSecret(env),
+      };
+    }
     if (isTrustedProxyMode(explicit)) {
       return { mode: explicit, trustedHops };
     }
@@ -147,68 +216,6 @@ function readHeader(headers: ClientIpHeaders, name: string): string | null {
   return value ?? null;
 }
 
-const IPV4_PATTERN =
-  /^(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/;
-const IPV6_GROUP_PATTERN = /^[0-9a-f]{1,4}$/i;
-
-function isValidIpv6(value: string): boolean {
-  if (value.length > 45) return false;
-
-  let groups = value;
-  let maxGroups = 8;
-  const lastColon = groups.lastIndexOf(':');
-  const tail = groups.slice(lastColon + 1);
-  if (tail.includes('.')) {
-    if (!IPV4_PATTERN.test(tail)) return false;
-    groups = `${groups.slice(0, lastColon + 1)}0`;
-    maxGroups = 7;
-  }
-
-  const halves = groups.split('::');
-  if (halves.length > 2) return false;
-
-  const parseHalf = (half: string) => (half === '' ? [] : half.split(':'));
-  const head = parseHalf(halves[0] ?? '');
-  const rest = halves.length === 2 ? parseHalf(halves[1] ?? '') : [];
-  const all = [...head, ...rest];
-  if (!all.every((group) => IPV6_GROUP_PATTERN.test(group))) return false;
-
-  // The IPv4 tail occupies two 16-bit groups but was replaced by one.
-  const groupCount = all.length + (maxGroups === 7 ? 1 : 0);
-  return halves.length === 2 ? groupCount < 8 : groupCount === 8;
-}
-
-/** Validate an IPv4 or IPv6 address literal. */
-export function isValidIpAddress(value: string): boolean {
-  if (!value) return false;
-  if (IPV4_PATTERN.test(value)) return true;
-  return value.includes(':') && isValidIpv6(value);
-}
-
-/**
- * Normalise a single header entry: trim, strip IPv6 brackets/zone ids and an
- * IPv4 `:port` suffix, lowercase IPv6. Returns null when it is not an IP.
- */
-export function normalizeClientIp(raw: string | null | undefined) {
-  let value = raw?.trim();
-  if (!value) return null;
-
-  const bracketed = /^\[([^\]]+)\](?::\d+)?$/.exec(value);
-  if (bracketed?.[1]) {
-    value = bracketed[1];
-  } else if (/^\d{1,3}(\.\d{1,3}){3}:\d+$/.test(value)) {
-    value = value.slice(0, value.lastIndexOf(':'));
-  }
-
-  const zoneIndex = value.indexOf('%');
-  if (zoneIndex > 0 && value.includes(':')) {
-    value = value.slice(0, zoneIndex);
-  }
-
-  if (!isValidIpAddress(value)) return null;
-  return value.includes(':') ? value.toLowerCase() : value;
-}
-
 function forwardedEntries(value: string | null): string[] {
   if (!value) return [];
   return value
@@ -232,6 +239,20 @@ export function pickForwardedClientIp(
   return normalizeClientIp(entries[index]);
 }
 
+function resolveVercelClientIp(headers: ClientIpHeaders): string | null {
+  // Vercel overwrites these headers and does not forward external IPs.
+  // `x-vercel-forwarded-for` survives a proxy placed in front of Vercel.
+  for (const name of [
+    'x-vercel-forwarded-for',
+    'x-real-ip',
+    'x-forwarded-for',
+  ]) {
+    const value = readHeader(headers, name);
+    if (value) return pickForwardedClientIp(value, 1);
+  }
+  return null;
+}
+
 function resolveForMode(
   headers: ClientIpHeaders,
   config: ClientIpConfig
@@ -240,19 +261,18 @@ function resolveForMode(
     case 'cloudflare':
       // Cloudflare's edge overwrites this header on every proxied request.
       return normalizeClientIp(readHeader(headers, 'cf-connecting-ip'));
-    case 'vercel': {
-      // Vercel overwrites these headers and does not forward external IPs.
-      // `x-vercel-forwarded-for` survives a proxy placed in front of Vercel.
-      for (const name of [
-        'x-vercel-forwarded-for',
-        'x-real-ip',
-        'x-forwarded-for',
-      ]) {
-        const value = readHeader(headers, name);
-        if (value) return pickForwardedClientIp(value, 1);
-      }
-      return null;
+    case 'cloudflare-origin': {
+      const signedIp = verifyOriginClientIpProof({
+        proof: readHeader(headers, CLOUDFLARE_ORIGIN_AUTH_HEADER),
+        secret: config.originAuthSecret,
+      });
+      if (signedIp) return signedIp;
+      return isAuthenticatedCloudflareOrigin(headers, config)
+        ? normalizeClientIp(readHeader(headers, 'cf-connecting-ip'))
+        : resolveVercelClientIp(headers);
     }
+    case 'vercel':
+      return resolveVercelClientIp(headers);
     case 'forwarded': {
       const forwardedFor = readHeader(headers, 'x-forwarded-for');
       if (forwardedFor) {

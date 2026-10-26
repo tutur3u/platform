@@ -3,6 +3,7 @@ import type { FilePart, ImagePart, ModelMessage, TextPart } from 'ai';
 import {
   AI_CHAT_ATTACHMENT_EXTENSIONS,
   aiChatAttachmentExtension,
+  aiChatAttachmentTextEncoding,
   inspectAiChatAttachment,
   MAX_AI_CHAT_UPLOAD_BYTES,
 } from '../attachment-content-guard';
@@ -221,7 +222,9 @@ async function getAllChatFiles(
 
           const content =
             mediaType.startsWith('text/') || mediaType === 'application/json'
-              ? new TextDecoder().decode(bytes)
+              ? new TextDecoder(
+                  aiChatAttachmentTextEncoding(new Uint8Array(bytes))
+                ).decode(bytes)
               : bytes;
 
           results[currentIndex] = {

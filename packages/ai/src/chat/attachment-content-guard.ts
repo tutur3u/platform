@@ -91,6 +91,12 @@ function isAdtsAac(head: Uint8Array) {
   return head.length >= 2 && head[0] === 0xff && (head[1]! & 0xf6) === 0xf0;
 }
 
+export function aiChatAttachmentTextEncoding(head: Uint8Array) {
+  if (startsWith(head, [0xff, 0xfe])) return 'utf-16le';
+  if (startsWith(head, [0xfe, 0xff])) return 'utf-16be';
+  return 'utf-8';
+}
+
 export function aiChatAttachmentExtension(fileName: string) {
   const dotIndex = fileName.lastIndexOf('.');
   return dotIndex === -1 ? '' : fileName.slice(dotIndex + 1).toLowerCase();
@@ -106,7 +112,19 @@ export function matchesAiChatAttachmentSignature(
 ): boolean {
   const extension = aiChatAttachmentExtension(fileName);
 
-  if (TEXT_EXTENSIONS.has(extension)) return !head.includes(0);
+  if (TEXT_EXTENSIONS.has(extension)) {
+    const encoding = aiChatAttachmentTextEncoding(head);
+    if (encoding === 'utf-8') return !head.includes(0);
+    try {
+      // The bounded prefix may end halfway through a UTF-16 character.
+      const decoded = new TextDecoder(encoding, { fatal: true }).decode(head, {
+        stream: true,
+      });
+      return !decoded.includes('\0');
+    } catch {
+      return false;
+    }
+  }
 
   switch (extension) {
     case 'png':

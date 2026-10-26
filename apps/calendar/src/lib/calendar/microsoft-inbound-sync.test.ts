@@ -36,7 +36,7 @@ type Connection = {
   sync_delete_enabled?: boolean;
 };
 function database(
-  tokens = [{ id: 'account' }],
+  tokens: Array<{ id: string; provider?: string }> = [{ id: 'account' }],
   connections: Record<string, Connection[]> = {
     account: [
       { id: 'a', calendar_id: 'a', sync_delete_enabled: false },
@@ -103,11 +103,25 @@ afterEach(() => {
 });
 
 it('records a rejected Microsoft account and continues to a healthy account', async () => {
-  const db = database([{ id: 'bad' }, { id: 'good' }], {
-    bad: [{ id: 'a', calendar_id: 'a', sync_delete_enabled: false }],
-    good: [{ id: 'b', calendar_id: 'b', sync_delete_enabled: false }],
+  const db = database(
+    [
+      { id: 'bad', provider: 'microsoft' },
+      { id: 'good', provider: 'microsoft' },
+    ],
+    {
+      bad: [{ id: 'a', calendar_id: 'a', sync_delete_enabled: false }],
+      good: [{ id: 'b', calendar_id: 'b', sync_delete_enabled: false }],
+    }
+  );
+  refresh.mockResolvedValueOnce({
+    error: 'invalid_grant',
+    failure: {
+      kind: 'permanent',
+      reason: 'microsoft_invalid_grant',
+      providerCode: 'invalid_grant/AADSTS70008',
+    },
+    quarantine: 'deactivated',
   });
-  refresh.mockResolvedValueOnce({ error: 'invalid_grant' });
   const result = await run(db);
   expect(refresh).toHaveBeenCalledTimes(2);
   expect(fetchEvents).toHaveBeenCalledTimes(1);
@@ -115,16 +129,24 @@ it('records a rejected Microsoft account and continues to a healthy account', as
     processedAccounts: 1,
     failedAccounts: 1,
     failureType: 'auth',
+    tokenOutcomes: [
+      {
+        provider: 'microsoft',
+        outcome: 'deactivated',
+        reason: 'microsoft_invalid_grant',
+      },
+      { provider: 'microsoft', outcome: 'ok' },
+    ],
   });
+  expect(JSON.stringify(result.tokenOutcomes)).not.toContain('bad');
 });
 
 it.each([
-  ['AADSTS: invalid_grant additional details', 'auth'],
-  ['Token has been revoked by administrator', 'auth'],
-  ['Reconnect calendar to grant offline access', 'auth'],
-  ['Microsoft OAuth client not configured', 'configuration'],
-])('classifies refresh state %s as %s', async (error, failureType) => {
-  refresh.mockResolvedValue({ error });
+  [{ kind: 'permanent', reason: 'microsoft_consent_revoked' }, 'auth'],
+  [{ kind: 'systemic', providerCode: 'invalid_client' }, 'configuration'],
+  [{ kind: 'transient', providerCode: 'http_503' }, 'network'],
+])('classifies refresh failure %o as %s', async (failure, failureType) => {
+  refresh.mockResolvedValue({ error: 'refresh failed', failure });
   expect(await run(database())).toMatchObject({
     failedAccounts: 1,
     failureType,

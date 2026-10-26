@@ -4,6 +4,7 @@ import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { type NextRequest, NextResponse } from 'next/server';
 import { verifyAppCoordinationToken } from './app-coordination-token';
+import { guardRejection } from './guard-rejection';
 import { accountAssuranceCredentials } from './required-mfa-credentials';
 import { isAccountAssuranceRecoveryPath } from './required-mfa-proxy';
 import { checkRequiredAccountMfa } from './required-mfa-request';
@@ -77,7 +78,7 @@ export async function enforceRequiredMfaRequest(
     cached = entry;
   }
   const result = await cached.pending;
-  if (fingerprint(request) !== identity) return unauthenticated();
+  if (fingerprint(request) !== identity) return unauthenticated(request);
   if (!result.response && result.bearerUser)
     onVerifiedBearerActor?.(result.bearerUser.id);
   return result.response;
@@ -119,13 +120,13 @@ async function enforceUncachedRequiredMfaRequest(
               .get('authorization')
               ?.match(/^Bearer\s+(\S+)$/i)?.[1] === token
           )
-            return unauthenticated();
+            return unauthenticated(request);
           continue; // An expired ambient app cookie cannot authenticate a route.
         }
         userId = verified.claims.sub;
       } else {
         const result = await getProviderUser();
-        if (result.error || !result.data.user) return unauthenticated();
+        if (result.error || !result.data.user) return unauthenticated(request);
         userId = result.data.user.id;
         providerUser = result.data.user;
       }
@@ -144,26 +145,32 @@ async function enforceUncachedRequiredMfaRequest(
         },
         { userId, appToken: appToken ? token : undefined }
       );
-      if (result.status === 'invalid') return unauthenticated();
+      if (result.status === 'invalid') return unauthenticated(request);
       if (result.status !== 'allowed') {
-        return NextResponse.json(
-          {
-            code:
-              result.status === 'required'
-                ? 'MFA_REQUIRED'
-                : 'AUTH_UNAVAILABLE',
-            error:
-              result.status === 'required'
-                ? 'MFA verification required'
-                : 'Unable to verify account security',
-          },
-          {
-            status: result.status === 'required' ? 403 : 503,
-            headers: {
-              'Cache-Control': 'no-store',
-              'X-Tuturuuu-Auth-Assurance': result.status,
+        return guardRejection(
+          request,
+          NextResponse.json(
+            {
+              code:
+                result.status === 'required'
+                  ? 'MFA_REQUIRED'
+                  : 'AUTH_UNAVAILABLE',
+              error:
+                result.status === 'required'
+                  ? 'MFA verification required'
+                  : 'Unable to verify account security',
             },
-          }
+            {
+              status: result.status === 'required' ? 403 : 503,
+              headers: {
+                'Cache-Control': 'no-store',
+                'X-Tuturuuu-Auth-Assurance': result.status,
+              },
+            }
+          ),
+          result.status === 'required'
+            ? 'auth-assurance-required'
+            : 'auth-assurance-unavailable'
         );
       }
       if (
@@ -177,22 +184,33 @@ async function enforceUncachedRequiredMfaRequest(
     }
     return null;
   } catch {
-    return NextResponse.json(
-      { code: 'AUTH_UNAVAILABLE', error: 'Unable to verify account security' },
-      {
-        status: 503,
-        headers: {
-          'Cache-Control': 'no-store',
-          'X-Tuturuuu-Auth-Assurance': 'unavailable',
+    return guardRejection(
+      request,
+      NextResponse.json(
+        {
+          code: 'AUTH_UNAVAILABLE',
+          error: 'Unable to verify account security',
         },
-      }
+        {
+          status: 503,
+          headers: {
+            'Cache-Control': 'no-store',
+            'X-Tuturuuu-Auth-Assurance': 'unavailable',
+          },
+        }
+      ),
+      'auth-assurance-unavailable'
     );
   }
 }
 
-function unauthenticated() {
-  return NextResponse.json(
-    { code: 'UNAUTHENTICATED', error: 'Authentication required' },
-    { status: 401, headers: { 'Cache-Control': 'no-store' } }
+function unauthenticated(request: RequestIdentity) {
+  return guardRejection(
+    request,
+    NextResponse.json(
+      { code: 'UNAUTHENTICATED', error: 'Authentication required' },
+      { status: 401, headers: { 'Cache-Control': 'no-store' } }
+    ),
+    'auth-assurance-unauthenticated'
   );
 }

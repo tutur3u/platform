@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { LogLines } from './log-lines';
 import { ResourceMeter } from './resource-meter';
 import { StatTile } from './stat-tile';
 import { StatePanel } from './state-panel';
@@ -157,5 +158,27 @@ describe('ops primitives', () => {
     expect(screen.getByText('Outcome unknown').getAttribute('data-tone')).toBe(
       'unknown'
     );
+  });
+
+  it('renders log text verbatim with tone and an empty state', () => {
+    const { rerender } = render(
+      <LogLines
+        emptyLabel="No output"
+        label="Run log"
+        lines={[
+          { id: '1', kind: 'log', text: '<b>not html</b>', time: '05:00:01' },
+          { id: '2', kind: 'error', text: 'boom', tone: 'critical' },
+        ]}
+      />
+    );
+
+    expect(screen.getByRole('list', { name: 'Run log' })).toBeTruthy();
+    expect(screen.getByText('<b>not html</b>')).toBeTruthy();
+    expect(
+      screen.getByText('boom').closest('li')?.getAttribute('data-tone')
+    ).toBe('critical');
+
+    rerender(<LogLines emptyLabel="No output" label="Run log" lines={[]} />);
+    expect(screen.getByText('No output')).toBeTruthy();
   });
 });

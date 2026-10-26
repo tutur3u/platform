@@ -27,6 +27,10 @@ describe('matchesAiChatAttachmentSignature', () => {
     ['a.docx', new Uint8Array([0x50, 0x4b, 0x03, 0x04])],
     ['a.xls', new Uint8Array([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1])],
     ['a.md', text('# Notes')],
+    ['a.txt', new Uint8Array([0xff, 0xfe, 0x41, 0, 0x42, 0])],
+    ['a.csv', new Uint8Array([0xfe, 0xff, 0, 0x41, 0, 0x2c, 0, 0x42])],
+    ['a.txt', new Uint8Array([0xff, 0xfe, 0x3d, 0xd8, 0, 0xde])],
+    ['a.txt', new Uint8Array([0xff, 0xfe, 0x41, 0, 0x3d, 0xd8])],
   ])('accepts a real %s', (name, head) => {
     expect(matchesAiChatAttachmentSignature(name, head)).toBe(true);
   });
@@ -37,6 +41,9 @@ describe('matchesAiChatAttachmentSignature', () => {
     ['scan.pdf', text('MZ\x90\0')],
     ['notes.txt', new Uint8Array([0x4d, 0x5a, 0, 0])],
     ['tool.exe', text('MZ')],
+    ['a.txt', new Uint8Array([0xff, 0xfe, 0, 0])],
+    ['a.csv', new Uint8Array([0xfe, 0xff, 0, 0])],
+    ['a.txt', new Uint8Array([0xff, 0xfe, 0, 0xdc])],
   ])('rejects a mislabelled %s', (name, head) => {
     expect(matchesAiChatAttachmentSignature(name, head)).toBe(false);
   });
