@@ -69,6 +69,7 @@ import 'package:mobile/features/settings/cubit/locale_cubit.dart';
 import 'package:mobile/features/settings/cubit/locale_state.dart';
 import 'package:mobile/features/settings/cubit/theme_cubit.dart';
 import 'package:mobile/features/settings/cubit/theme_state.dart';
+import 'package:mobile/features/settings/data/account_appearance_repository.dart';
 import 'package:mobile/features/settings/view/calendar_timezone_scope.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_mini_nav_cubit.dart';
@@ -197,9 +198,11 @@ class _AppState extends State<App> {
     _localeCubit = LocaleCubit(settingsRepository: _settingsRepo);
     _themeCubit = ThemeCubit(
       settingsRepository: _settingsRepo,
+      accountAppearanceRepository: AccountAppearanceRepository(),
       initialThemeMode: widget.initialThemeMode,
       initialAppearance: widget.initialAppearance,
     );
+    unawaited(_themeCubit.bindAccount(_appearanceAccountId(_authCubit.state)));
     _calendarSettingsCubit = CalendarSettingsCubit();
     _experimentalAppsCubit = ExperimentalAppsCubit(
       settingsRepository: _settingsRepo,
@@ -282,6 +285,9 @@ class _AppState extends State<App> {
       unawaited(_loadWorkspacesWithReminders());
     }
   }
+
+  static String? _appearanceAccountId(AuthState state) =>
+      state.status == AuthStatus.authenticated ? state.user?.id : null;
 
   String _currentMatchedLocation() {
     final configuration = _router.routerDelegate.currentConfiguration;
@@ -465,6 +471,8 @@ class _AppState extends State<App> {
               listener: (context, state) {
                 _syncOfflinePreparationScope(resetWorkspace: true);
                 ProfileCubit.clearMemoryCache();
+                // Appearance follows the account unless this device overrides.
+                unawaited(_themeCubit.bindAccount(_appearanceAccountId(state)));
                 // The device Pomodoro belongs to one account.
                 unawaited(_pomodoroController.restore(state.user?.id));
                 if (state.status == AuthStatus.authenticated) {

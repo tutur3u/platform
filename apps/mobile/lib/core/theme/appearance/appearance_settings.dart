@@ -146,8 +146,8 @@ class AppearanceSettings extends Equatable {
   /// Corner treatment for cards, sheets and grouped surfaces.
   final AppCornerStyle corners;
 
-  /// Always reduce motion on this device, even when the system setting is
-  /// off. When false the system setting decides.
+  /// Always reduce motion, even when the system setting is off. When false
+  /// the system setting decides.
   final bool reduceMotion;
 
   /// The interface choices as a theme extension.

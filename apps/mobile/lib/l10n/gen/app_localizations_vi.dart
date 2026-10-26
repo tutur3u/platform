@@ -7387,6 +7387,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get appearanceDensityTitle => 'Mật độ';
 
   @override
+  String get appearanceDeviceOverride => 'Dùng giao diện riêng trên thiết bị này';
+
+  @override
+  String get appearanceDeviceOverrideDescription => 'Thay đổi tại đây chỉ áp dụng cho thiết bị này, không đồng bộ với tài khoản.';
+
+  @override
   String get appearanceFeedbackTitle => 'Phản hồi và chuyển động';
 
   @override
@@ -7408,7 +7414,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get appearanceReduceMotion => 'Giảm chuyển động';
 
   @override
-  String get appearanceReduceMotionDescription => 'Luôn giảm hiệu ứng chuyển động trên thiết bị này, kể cả khi cài đặt hệ thống đang tắt.';
+  String get appearanceReduceMotionDescription => 'Luôn giảm hiệu ứng chuyển động, kể cả khi cài đặt hệ thống đang tắt.';
 
   @override
   String get appearanceReset => 'Khôi phục mặc định';

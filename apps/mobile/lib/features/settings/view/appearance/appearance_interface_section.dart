@@ -12,8 +12,8 @@ import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// Appearance → Interface: style, density, corners, haptics and reduced
-/// motion. Choices apply through the theme instantly and persist on this
-/// device only.
+/// motion. Choices apply through the theme instantly and persist with the
+/// rest of the appearance; haptics stay a device preference.
 class AppearanceInterfaceSection extends StatefulWidget {
   const AppearanceInterfaceSection({
     required this.settings,
