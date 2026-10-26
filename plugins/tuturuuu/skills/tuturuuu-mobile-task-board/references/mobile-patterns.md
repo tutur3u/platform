@@ -179,6 +179,27 @@ localization changes.
   full-screen modal content must use the adaptive sheet helpers or
   `AppearanceScope.opaqueScaffolds`. Ambient motion must stay opt-in, timer-driven
   and painter-only, and must stop under reduced motion.
+- Interface style, density and corners are `AppInterfaceTokens` on the
+  Material theme. Read radii and row heights through
+  `AppTokens.of(context).interface`, never by platform checks. The Settings
+  shell harness pumps once, so assert a stored appearance by pumping with it,
+  not by changing it mid-test.
+- Home workspace chips read pins from the `MOBILE_PINNED_WORKSPACES` user
+  config only from five workspaces, and allow edits only after a successful
+  load, retrying a failed load with backoff and on resume. Start focus treats
+  a paused session (stopped with an open break, `type=paused`) like a running
+  one and stops it before starting; a failed start resumes and re-pauses it
+  rather than losing it.
+- Root tabs are Home, Apps, Mira, Inbox and You on an icon-only dock;
+  `shell_viewport_checks.dart` asserts the dock has no text. Root-tab search
+  without its own field goes through `ShellRootSearchAction`.
+- Before editing `assistant_page.dart` or `assistant_page_layout.dart`, check
+  the open Mira chat PRs that own them; keep tab polish in owned widgets such
+  as `assistant_starter_prompts.dart` until those land.
+- The device Pomodoro is `PomodoroController` (app-level). Focus phases are
+  ordinary tracker sessions; restore catch-up never auto-starts focus and
+  trims late stops to the deadline. In widget tests, close the controller in
+  the test body only; a second close in `tearDown` hangs outside fake time.
 
 ## Task Board
 
@@ -197,6 +218,16 @@ localization changes.
   post-success close/toast path.
 - Assignee avatar stacks should size from actual occupied width so overflow
   badges do not create stray gaps or clipping.
+- List-view task rows use `AppSwipeActions` plus a long-press
+  `showAppActionSheet` menu that reuses the board cubit mutations. Selection
+  mode disables swipes. Board-page tests whose mutations invalidate caches
+  never settle in fake async, so assert on the repository call and the busy
+  dialog instead of `pumpAndSettle` after confirming.
+- Pass the page context, not the root navigator's context, to
+  `showAppToast`; the root navigator's element sits above its overlay. Keep the
+  root-navigator context only for legacy `shad.showToast` callers.
+- Optimistic `TaskBoardDetailCubit.updateTask` restores the pre-edit snapshot
+  on failure before the server refresh; do not rely on the refresh alone.
 
 ## Finance
 

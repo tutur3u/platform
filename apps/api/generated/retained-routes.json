@@ -34,7 +34,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/ai/chat/delete-file/route.ts",
-    "sourceSha256": "30880dfe3d420c2d19512e2de83809ae25d5f22b11a19126db14b57ac866d22b",
+    "sourceSha256": "294767f8fb3b7769fa48c5674fea0d213837af3e637ea4ade8b6fca161f6f7e8",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -44,7 +44,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/ai/chat/file-urls/route.ts",
-    "sourceSha256": "510bb72a91f00af194f5ebd26f754d9013b015b0f856af5eb4c0e0942b079432",
+    "sourceSha256": "bc468f049d34a9bbd5be1d92932bd2d30c1a6837efbb1ef27a3ab452f5db9939",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -124,7 +124,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/ai/chat/signed-read-url/route.ts",
-    "sourceSha256": "d756f1b0df17b91bb78b6553e9cb473a590e2b3e553eb88f1f522aafe29dcec5",
+    "sourceSha256": "c69dcd336b540e71b8002a408a55f330a63cfdd0df6797f2a5abe6d1db85187e",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -144,7 +144,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/ai/chat/upload-url/route.ts",
-    "sourceSha256": "2c0556dd55da0da77d0e34b1814306d60894bc2696d2c0d40650ae8946a64649",
+    "sourceSha256": "5b03f1bceae77fbb321668d61f1ada18291b2795f407b5fd53d0cdaa7c2c0c9f",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -2784,7 +2784,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/attachments/upload-url/route.ts",
-    "sourceSha256": "7df2d577d2d0a469b4a40364735d13d6d2a9f63d05c6f13193dd78038d69f7f8",
+    "sourceSha256": "9bba0d5c2ccc2bbc0f47d69d08505f98d3a13ced8d106bf7479471a1d261753f",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -5254,7 +5254,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/workspaces/[wsId]/topic-announcements/notify-teachers/route.ts",
-    "sourceSha256": "0dd3e6351a948a12b6525eb6d83ba579e6d4e1a8f90e5b9139a83979ae447cd1",
+    "sourceSha256": "599cbaeff8aeacfd1f205647c26b8f80a8632c6f8fb914315d1160d9dd830bbf",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -5274,7 +5274,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/workspaces/[wsId]/topic-announcements/route.ts",
-    "sourceSha256": "0af72a09cfb75d04ef2bb173e65a782379e2c8106394f644261b5aa18141f55b",
+    "sourceSha256": "19e223e3b8d09797bd77069274d8143a9fcdec5c800c6d29ae3e117ab39aa2c7",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"

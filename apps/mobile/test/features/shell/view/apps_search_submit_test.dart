@@ -183,6 +183,21 @@ void main() {
     await _pump(tester);
   }
 
+  testWidgets('the Home dock search opens Apps with its search field', (
+    tester,
+  ) async {
+    await mount(tester);
+    router.go(Routes.home);
+    await _pump(tester);
+    expect(searchField, findsNothing);
+
+    await tester.tap(find.byTooltip('Search').first);
+    await _pump(tester);
+
+    expect(router.routerDelegate.currentConfiguration.uri.path, Routes.apps);
+    expect(searchField, findsOneWidget);
+  });
+
   testWidgets('leaving Apps clears retained query and search chrome', (
     tester,
   ) async {

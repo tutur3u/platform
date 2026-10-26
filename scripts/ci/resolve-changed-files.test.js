@@ -167,14 +167,14 @@ test('Supabase workflow runs diff from the last successful migration marker', ()
   );
 });
 
-test('Vercel gating fails open when no successful deployment marker exists', () => {
+test('enabled Vercel gating fails open when no successful deployment marker exists', () => {
   const rootDir = createFixtureRoot();
   initializeGitRepo(rootDir);
   commitFile(
     rootDir,
-    'apps/calendar/src/app/page.tsx',
+    'apps/storefront/src/app/page.tsx',
     'export default function Page() { return null; }\n',
-    'calendar change'
+    'storefront change'
   );
   const previousSha = git(rootDir, ['rev-parse', 'HEAD']);
   const headSha = commitFile(
@@ -195,7 +195,7 @@ test('Vercel gating fails open when no successful deployment marker exists', () 
     ],
     size: 1,
   });
-  const workflowName = 'vercel-production-calendar.yaml';
+  const workflowName = 'vercel-production-storefront.yaml';
   const resolver = runChangedFileResolver({
     eventPath,
     headSha,

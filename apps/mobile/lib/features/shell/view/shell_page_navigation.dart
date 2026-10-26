@@ -32,7 +32,7 @@ extension _ShellPageNavigation on _ShellPageState {
           repeat: false,
           play: widget.matchedLocation == Routes.assistant,
         ),
-        semanticLabel: l10n.navAssistant,
+        semanticLabel: l10n.navMira,
         itemIndex: 1,
       ),
     ),
@@ -41,7 +41,7 @@ extension _ShellPageNavigation on _ShellPageState {
       key: _ShellPageState._notificationsKey,
       child: _buildCompactNavIcon(
         icon: Icons.notifications_outlined,
-        semanticLabel: l10n.notificationsTitle,
+        semanticLabel: l10n.navInbox,
         itemIndex: 3,
       ),
     ),
@@ -50,7 +50,7 @@ extension _ShellPageNavigation on _ShellPageState {
       child: _buildCompactNavIcon(
         icon: Icons.person_outline_rounded,
         image: const ProfileNavigationAvatar(),
-        semanticLabel: l10n.profileTitle,
+        semanticLabel: l10n.navYou,
         itemIndex: 4,
       ),
     ),

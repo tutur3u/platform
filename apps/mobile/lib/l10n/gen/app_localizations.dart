@@ -739,6 +739,66 @@ abstract class AppLocalizations {
   /// **'An attachment failed to upload. Remove it and try again before sending.'**
   String get assistantAttachmentUploadFailed;
 
+  /// No description provided for @assistantAttachmentFailureForbidden.
+  ///
+  /// In en, this message translates to:
+  /// **'This chat can\'t accept attachments. Remove it or start a new chat.'**
+  String get assistantAttachmentFailureForbidden;
+
+  /// No description provided for @assistantAttachmentFailureNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload interrupted. Check your connection and tap Retry.'**
+  String get assistantAttachmentFailureNetwork;
+
+  /// No description provided for @assistantAttachmentFailureServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload didn\'t finish. Tap Retry.'**
+  String get assistantAttachmentFailureServer;
+
+  /// No description provided for @assistantAttachmentFailureTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'File is larger than 32 MB. Remove it or attach a smaller file.'**
+  String get assistantAttachmentFailureTooLarge;
+
+  /// No description provided for @assistantAttachmentFailureUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'This file type isn\'t supported. Remove it to send.'**
+  String get assistantAttachmentFailureUnsupported;
+
+  /// No description provided for @assistantAttachmentNotSentMany.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} attachments didn\'t upload. Retry or remove them to send.'**
+  String assistantAttachmentNotSentMany(int count);
+
+  /// No description provided for @assistantAttachmentNotSentOne.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} didn\'t upload. {reason}'**
+  String assistantAttachmentNotSentOne(String name, String reason);
+
+  /// No description provided for @assistantAttachmentPreparing.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing'**
+  String get assistantAttachmentPreparing;
+
+  /// No description provided for @assistantAttachmentRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get assistantAttachmentRetry;
+
+  /// No description provided for @assistantAttachmentUploadingPercent.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}%'**
+  String assistantAttachmentUploadingPercent(int percent);
+
   /// No description provided for @assistantAttachmentUploadPending.
   ///
   /// In en, this message translates to:
@@ -2020,7 +2080,7 @@ abstract class AppLocalizations {
   /// No description provided for @assistantScrollToBottomAction.
   ///
   /// In en, this message translates to:
-  /// **'Scroll to bottom'**
+  /// **'Jump to latest'**
   String get assistantScrollToBottomAction;
 
   /// No description provided for @assistantSearchModels.
@@ -4218,6 +4278,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save'**
   String get commonSave;
+
+  /// No description provided for @commonSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get commonSearch;
 
   /// No description provided for @commonSelectDate.
   ///
@@ -8209,6 +8275,12 @@ abstract class AppLocalizations {
   /// **'Weight'**
   String get habitsWorkoutWeight;
 
+  /// No description provided for @homeCalendarEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No events this week.'**
+  String get homeCalendarEmpty;
+
   /// No description provided for @homeCustomize.
   ///
   /// In en, this message translates to:
@@ -8275,17 +8347,119 @@ abstract class AppLocalizations {
   /// **'Personal calendar is unavailable.'**
   String get homePersonalAgendaUnavailable;
 
+  /// No description provided for @homeSectionCalendar.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar'**
+  String get homeSectionCalendar;
+
   /// No description provided for @homeSectionLoadFailed.
   ///
   /// In en, this message translates to:
   /// **'Pull down to try again.'**
   String get homeSectionLoadFailed;
 
+  /// No description provided for @homeSectionToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get homeSectionToday;
+
+  /// No description provided for @homeSectionUpNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Up next'**
+  String get homeSectionUpNext;
+
+  /// No description provided for @homeSeeAll.
+  ///
+  /// In en, this message translates to:
+  /// **'See all'**
+  String get homeSeeAll;
+
   /// No description provided for @homeShowWidget.
   ///
   /// In en, this message translates to:
   /// **'Show widget'**
   String get homeShowWidget;
+
+  /// No description provided for @homeTodayEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing due today.'**
+  String get homeTodayEmpty;
+
+  /// No description provided for @homeUpNextEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing coming up.'**
+  String get homeUpNextEmpty;
+
+  /// No description provided for @homeWidgetTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Today and Up next'**
+  String get homeWidgetTasks;
+
+  /// No description provided for @homeWorkspaceChipsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspaces'**
+  String get homeWorkspaceChipsLabel;
+
+  /// No description provided for @homeWorkspaceEditPins.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit pinned workspaces'**
+  String get homeWorkspaceEditPins;
+
+  /// No description provided for @homeWorkspaceFind.
+  ///
+  /// In en, this message translates to:
+  /// **'Find workspace'**
+  String get homeWorkspaceFind;
+
+  /// No description provided for @homeWorkspaceMore.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get homeWorkspaceMore;
+
+  /// No description provided for @homeWorkspaceNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New workspace'**
+  String get homeWorkspaceNew;
+
+  /// No description provided for @homeWorkspacePin.
+  ///
+  /// In en, this message translates to:
+  /// **'Pin to Home'**
+  String get homeWorkspacePin;
+
+  /// No description provided for @homeWorkspacePinsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Pinned workspaces appear as chips on Home.'**
+  String get homeWorkspacePinsDescription;
+
+  /// No description provided for @homeWorkspacePinsFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save pinned workspaces.'**
+  String get homeWorkspacePinsFailed;
+
+  /// No description provided for @homeWorkspacePinsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pinned workspaces'**
+  String get homeWorkspacePinsTitle;
+
+  /// No description provided for @homeWorkspaceUnpin.
+  ///
+  /// In en, this message translates to:
+  /// **'Unpin from Home'**
+  String get homeWorkspaceUnpin;
 
   /// No description provided for @inventoryAddCategory.
   ///
@@ -11593,6 +11767,18 @@ abstract class AppLocalizations {
   /// **'Home'**
   String get navHome;
 
+  /// No description provided for @navInbox.
+  ///
+  /// In en, this message translates to:
+  /// **'Inbox'**
+  String get navInbox;
+
+  /// No description provided for @navMira.
+  ///
+  /// In en, this message translates to:
+  /// **'Mira'**
+  String get navMira;
+
   /// No description provided for @navMore.
   ///
   /// In en, this message translates to:
@@ -11616,6 +11802,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Timer'**
   String get navTimer;
+
+  /// No description provided for @navYou.
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get navYou;
 
   /// No description provided for @notesArchive.
   ///
@@ -13021,6 +13213,12 @@ abstract class AppLocalizations {
   /// **'Confirmation emails will be sent to both addresses'**
   String get profileEmailUpdateNote;
 
+  /// No description provided for @profileFocusTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus Time'**
+  String get profileFocusTime;
+
   /// No description provided for @profileFullName.
   ///
   /// In en, this message translates to:
@@ -13987,6 +14185,72 @@ abstract class AppLocalizations {
   /// **'Background'**
   String get appearanceBackgroundTitle;
 
+  /// No description provided for @appearanceCornersRounded.
+  ///
+  /// In en, this message translates to:
+  /// **'Rounded'**
+  String get appearanceCornersRounded;
+
+  /// No description provided for @appearanceCornersSoft.
+  ///
+  /// In en, this message translates to:
+  /// **'Soft'**
+  String get appearanceCornersSoft;
+
+  /// No description provided for @appearanceCornersSquare.
+  ///
+  /// In en, this message translates to:
+  /// **'Square'**
+  String get appearanceCornersSquare;
+
+  /// No description provided for @appearanceCornersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Corners'**
+  String get appearanceCornersTitle;
+
+  /// No description provided for @appearanceDensityComfortable.
+  ///
+  /// In en, this message translates to:
+  /// **'Comfortable'**
+  String get appearanceDensityComfortable;
+
+  /// No description provided for @appearanceDensityCompact.
+  ///
+  /// In en, this message translates to:
+  /// **'Compact'**
+  String get appearanceDensityCompact;
+
+  /// No description provided for @appearanceDensityTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Density'**
+  String get appearanceDensityTitle;
+
+  /// No description provided for @appearanceDeviceOverride.
+  ///
+  /// In en, this message translates to:
+  /// **'Use different appearance on this device'**
+  String get appearanceDeviceOverride;
+
+  /// No description provided for @appearanceDeviceOverrideDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes here stay on this device and don\'t sync to your account.'**
+  String get appearanceDeviceOverrideDescription;
+
+  /// No description provided for @appearanceFeedbackTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Feedback and motion'**
+  String get appearanceFeedbackTitle;
+
+  /// No description provided for @appearanceHapticsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Light vibrations when you choose, swipe or confirm.'**
+  String get appearanceHapticsDescription;
+
   /// No description provided for @appearanceIntensity.
   ///
   /// In en, this message translates to:
@@ -14011,6 +14275,18 @@ abstract class AppLocalizations {
   /// **'Preview'**
   String get appearancePreviewTitle;
 
+  /// No description provided for @appearanceReduceMotion.
+  ///
+  /// In en, this message translates to:
+  /// **'Reduce motion'**
+  String get appearanceReduceMotion;
+
+  /// No description provided for @appearanceReduceMotionDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Always reduce animations, even when the system setting is off.'**
+  String get appearanceReduceMotionDescription;
+
   /// No description provided for @appearanceReset.
   ///
   /// In en, this message translates to:
@@ -14028,6 +14304,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Softness'**
   String get appearanceSoftness;
+
+  /// No description provided for @appearanceStyleDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes how pages slide and lists scroll. Colors and layout stay the same on every device.'**
+  String get appearanceStyleDescription;
+
+  /// No description provided for @appearanceStyleIos.
+  ///
+  /// In en, this message translates to:
+  /// **'iOS-like'**
+  String get appearanceStyleIos;
+
+  /// No description provided for @appearanceStyleMaterial.
+  ///
+  /// In en, this message translates to:
+  /// **'Material-like'**
+  String get appearanceStyleMaterial;
+
+  /// No description provided for @appearanceStyleTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Style'**
+  String get appearanceStyleTitle;
+
+  /// No description provided for @appearanceStyleTuturuuu.
+  ///
+  /// In en, this message translates to:
+  /// **'Tuturuuu'**
+  String get appearanceStyleTuturuuu;
 
   /// No description provided for @appearanceSurfaceOpacity.
   ///
@@ -16483,6 +16789,12 @@ abstract class AppLocalizations {
   /// **'Yellow'**
   String get taskBoardDetailColorYellow;
 
+  /// No description provided for @taskBoardDetailCompleteTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete'**
+  String get taskBoardDetailCompleteTask;
+
   /// No description provided for @taskBoardDetailCreateList.
   ///
   /// In en, this message translates to:
@@ -16603,6 +16915,12 @@ abstract class AppLocalizations {
   /// **'Due {date}'**
   String taskBoardDetailDueAt(String date);
 
+  /// No description provided for @taskBoardDetailDueDateUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Due date updated.'**
+  String get taskBoardDetailDueDateUpdated;
+
   /// No description provided for @taskBoardDetailEditList.
   ///
   /// In en, this message translates to:
@@ -16686,6 +17004,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Filters active'**
   String get taskBoardDetailFiltersActive;
+
+  /// No description provided for @taskBoardDetailFocusReplaceConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop and start'**
+  String get taskBoardDetailFocusReplaceConfirm;
+
+  /// No description provided for @taskBoardDetailFocusReplaceMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'A timer is already running. Starting focus stops it and starts a new session for this task.'**
+  String get taskBoardDetailFocusReplaceMessage;
+
+  /// No description provided for @taskBoardDetailFocusReplacePausedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'A paused timer is waiting to resume. Starting focus ends it and starts a new session for this task.'**
+  String get taskBoardDetailFocusReplacePausedMessage;
+
+  /// No description provided for @taskBoardDetailFocusReplacePausedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'End the paused timer?'**
+  String get taskBoardDetailFocusReplacePausedTitle;
+
+  /// No description provided for @taskBoardDetailFocusReplaceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop the running timer?'**
+  String get taskBoardDetailFocusReplaceTitle;
+
+  /// No description provided for @taskBoardDetailFocusStartFailedPausedEnded.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t start focus, and your paused timer was ended. Open the timer to resume it.'**
+  String get taskBoardDetailFocusStartFailedPausedEnded;
+
+  /// No description provided for @taskBoardDetailFocusStartFailedRestored.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t start focus. Your paused timer is back as it was.'**
+  String get taskBoardDetailFocusStartFailedRestored;
+
+  /// No description provided for @taskBoardDetailFocusStartFailedRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t start focus. Your previous timer is running again.'**
+  String get taskBoardDetailFocusStartFailedRunning;
+
+  /// No description provided for @taskBoardDetailFocusStartFailedUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t start focus, and the previous timer\'s state couldn\'t be confirmed. Open the timer to check it.'**
+  String get taskBoardDetailFocusStartFailedUnknown;
+
+  /// No description provided for @taskBoardDetailFocusStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Timer started for this task.'**
+  String get taskBoardDetailFocusStarted;
 
   /// No description provided for @taskBoardDetailFromList.
   ///
@@ -16921,6 +17299,12 @@ abstract class AppLocalizations {
   /// **'Open related task'**
   String get taskBoardDetailOpenRelatedTask;
 
+  /// No description provided for @taskBoardDetailOpenTimer.
+  ///
+  /// In en, this message translates to:
+  /// **'Open timer'**
+  String get taskBoardDetailOpenTimer;
+
   /// No description provided for @taskBoardDetailOverdue.
   ///
   /// In en, this message translates to:
@@ -17065,11 +17449,23 @@ abstract class AppLocalizations {
   /// **'Rename list'**
   String get taskBoardDetailRenameList;
 
+  /// No description provided for @taskBoardDetailReopenTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Reopen'**
+  String get taskBoardDetailReopenTask;
+
   /// No description provided for @taskBoardDetailRestoreTasks.
   ///
   /// In en, this message translates to:
   /// **'Restore ({count})'**
   String taskBoardDetailRestoreTasks(int count);
+
+  /// No description provided for @taskBoardDetailScheduleTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule'**
+  String get taskBoardDetailScheduleTask;
 
   /// No description provided for @taskBoardDetailSearchDone.
   ///
@@ -17136,6 +17532,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Set estimation'**
   String get taskBoardDetailSetEstimation;
+
+  /// No description provided for @taskBoardDetailStartFocus.
+  ///
+  /// In en, this message translates to:
+  /// **'Start focus'**
+  String get taskBoardDetailStartFocus;
 
   /// No description provided for @taskBoardDetailStartsAt.
   ///
@@ -17430,6 +17832,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Labels'**
   String get taskBoardDetailTaskLabels;
+
+  /// No description provided for @taskBoardDetailTaskList.
+  ///
+  /// In en, this message translates to:
+  /// **'List'**
+  String get taskBoardDetailTaskList;
 
   /// No description provided for @taskBoardDetailTaskListLabel.
   ///
@@ -19693,6 +20101,54 @@ abstract class AppLocalizations {
   /// **'Pomodoro'**
   String get timerPomodoro;
 
+  /// No description provided for @timerPomodoroBreakDoneBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready for the next focus?'**
+  String get timerPomodoroBreakDoneBody;
+
+  /// No description provided for @timerPomodoroBreakDoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Break over'**
+  String get timerPomodoroBreakDoneTitle;
+
+  /// No description provided for @timerPomodoroCycle.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus {current} of {total}'**
+  String timerPomodoroCycle(int current, int total);
+
+  /// No description provided for @timerPomodoroFocusDoneBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Time for a break.'**
+  String get timerPomodoroFocusDoneBody;
+
+  /// No description provided for @timerPomodoroFocusDoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus done'**
+  String get timerPomodoroFocusDoneTitle;
+
+  /// No description provided for @timerPomodoroOrphanedSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus couldn\'t start, and a timer it created may still be running. Check the Timer page.'**
+  String get timerPomodoroOrphanedSession;
+
+  /// No description provided for @timerPomodoroOtherRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Another timer is running. Stop it on the Timer page to continue this focus.'**
+  String get timerPomodoroOtherRunning;
+
+  /// No description provided for @timerPomodoroRemaining.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes}:{seconds} left'**
+  String timerPomodoroRemaining(String minutes, String seconds);
+
   /// No description provided for @timerPomodoroSettings.
   ///
   /// In en, this message translates to:
@@ -19704,6 +20160,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tune focus sessions, breaks, and the automation between them.'**
   String get timerPomodoroSettingsDescription;
+
+  /// No description provided for @timerPomodoroSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get timerPomodoroSkip;
+
+  /// No description provided for @timerPomodoroStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start focus'**
+  String get timerPomodoroStart;
+
+  /// No description provided for @timerPomodoroSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{focus} min focus · {rest} min break'**
+  String timerPomodoroSummary(int focus, int rest);
 
   /// No description provided for @timerProofOfWorkRequired.
   ///
@@ -21708,6 +22182,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Set'**
   String get profileMediaSet;
+
+  /// No description provided for @profileYouWorkspaces.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspaces'**
+  String get profileYouWorkspaces;
 
   /// No description provided for @assistantSubmitSuccess.
   ///

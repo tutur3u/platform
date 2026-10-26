@@ -191,6 +191,14 @@ brightness. The appearance theme publishes `AppColorTokens` as a Material
 every theme, accent and light/dark mode applies without extra wiring. Role and
 type names match the legacy shadcn names. `AppElevation` and `AppMotion` hold
 shadows and durations. Spacing and radii stay in `AppSpacing` / `AppRadius`.
+`AppTokens.of(context).interface` (`AppInterfaceTokens`) carries the
+Appearance interface choices: `radius(base)` / `borderRadius(base)` for the
+corner style, `rowMinHeight` for density (row height only; gaps do not scale) and `scrollPhysics` for the style.
+Surfaces read radii through it instead of using `AppRadius` directly, and no
+component branches on the platform for these choices. `AppInterfaceTheme`
+installs the extension and page transitions on the Material theme;
+`AppInterfaceScope` applies scroll physics and the device Reduce motion
+choice below it, without changing the subtree shape.
 
 **Components.** `AppButton` (`primary`, `secondary`, `outline`, `ghost`,
 `destructive`; densities, sizes, `loading`), `AppIconButton` (required
@@ -252,6 +260,28 @@ policy, so sheets look and behave the same in every app.
   and never clamp text scaling.
 - Explicit full-screen forms and system-owned flows still open above the shell
   with `useRootNavigator: true` and `AppScaffold(headers: [AppTopBar(...)])`.
+
+**Row swipe actions.** `AppSwipeActions` gives a list row one leading
+full-swipe action (for example Complete) and up to three trailing buttons that
+stay open until one is tapped or the row is tapped. Each `AppSwipeAction` has a
+label, a Lucide icon, an `AppTone` and a callback that runs the feature's
+existing mutation; the widget owns no data. Every action is also a custom
+semantics action, so screen-reader users never need the gesture. Gestures
+mirror in right-to-left layouts, settle without animation under Reduce Motion,
+and play the selection haptic when a leading swipe arms. Buttons widen with
+enlarged text up to 75% of the row width, keep at least 44dp targets, and scale
+their labels down instead of overflowing. Disable the row (`enabled: false`)
+in selection modes. Pair it with a long-press `showAppActionSheet` that lists
+the same actions plus the rest of the row's commands. A fling commits the
+leading action only after the drag covers 15% of the row, so a flick while
+scrolling never completes anything. Fill labels use the tone's paired
+foreground token (`primaryForeground`, `destructiveForeground`) or the page
+foreground or background, whichever contrasts more.
+
+Show `showAppToast` from a context below the root overlay, such as the page's
+own context. `Navigator.of(context, rootNavigator: true).context` is the
+navigator's element, which sits above its overlay, so the toast throws
+"No Overlay widget found".
 
 The Personal and Workspace timezone pickers
 (`features/settings/view/timezone_picker_sheet.dart`) are the reference
