@@ -1,12 +1,20 @@
 part of 'task_repository.dart';
 
 extension TaskRepositoryEstimation on TaskRepository {
-  Future<List<TaskEstimateBoard>> getTaskEstimateBoards(String wsId) async {
-    final response = await _read(
-      wsId,
-      'estimation',
-      '/api/v1/workspaces/$wsId/boards/estimation',
-    );
+  Future<List<TaskEstimateBoard>> getTaskEstimateBoards(
+    String wsId, {
+    bool forceRefresh = false,
+  }) async {
+    final path = '/api/v1/workspaces/$wsId/boards/estimation';
+    final response = forceRefresh
+        ? await readThroughJson(
+            api: _apiClient,
+            namespace: 'tasks.estimation',
+            workspaceId: wsId,
+            path: path,
+            forceRefresh: true,
+          )
+        : await _read(wsId, 'estimation', path);
     final boards = TaskEstimateBoard.listFromJson(response['boards']);
     final edits = OfflineMutationQueue.instance.pending.value.where(
       (edit) =>
@@ -34,7 +42,8 @@ extension TaskRepositoryEstimation on TaskRepository {
         .toList(growable: false);
   }
 
-  Future<TaskEstimateBoard> updateBoardEstimation({
+  /// Null means the PATCH was acknowledged but its body requires a fresh read.
+  Future<TaskEstimateBoard?> updateBoardEstimation({
     required String wsId,
     required String boardId,
     required String? estimationType,
@@ -49,7 +58,7 @@ extension TaskRepositoryEstimation on TaskRepository {
       'allow_zero_estimates': allowZeroEstimates,
       'count_unestimated_issues': countUnestimatedIssues,
     };
-    return queueOrSendValue<TaskEstimateBoard>(
+    return queueOrSendValue<TaskEstimateBoard?>(
       feature: 'tasks',
       method: 'PATCH',
       path: path,
@@ -64,8 +73,17 @@ extension TaskRepositoryEstimation on TaskRepository {
         allowZeroEstimates: allowZeroEstimates,
         countUnestimatedIssues: countUnestimatedIssues,
       ),
-      send: () async =>
-          TaskEstimateBoard.fromJson(await _apiClient.patchJson(path, payload)),
+      send: () async {
+        try {
+          final response = await _apiClient.patchJson(path, payload);
+          return TaskEstimateBoard.fromJson(response);
+        } on FormatException {
+          return null;
+        } on ApiException catch (error) {
+          if (error.failureKind == ApiFailureKind.response) return null;
+          rethrow;
+        }
+      },
     );
   }
 }

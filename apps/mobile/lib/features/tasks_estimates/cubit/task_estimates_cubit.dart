@@ -78,7 +78,7 @@ class TaskEstimatesCubit extends Cubit<TaskEstimatesState> {
     );
   }
 
-  Future<void> loadBoards(String wsId) async {
+  Future<void> loadBoards(String wsId, {bool forceRefresh = false}) async {
     if (isClosed) return;
     _lastLoadWsId = wsId;
     final cacheKey = _cacheKey(wsId);
@@ -107,7 +107,10 @@ class TaskEstimatesCubit extends Cubit<TaskEstimatesState> {
     );
 
     try {
-      final boards = await _taskRepository.getTaskEstimateBoards(wsId);
+      final boards = await _taskRepository.getTaskEstimateBoards(
+        wsId,
+        forceRefresh: forceRefresh,
+      );
       if (isClosed || _lastLoadWsId != wsId) {
         return;
       }
@@ -173,6 +176,11 @@ class TaskEstimatesCubit extends Cubit<TaskEstimatesState> {
         return;
       }
 
+      if (updatedBoard == null) {
+        await loadBoards(wsId, forceRefresh: true);
+        return;
+      }
+
       final boards = state.boards
           .map(
             (board) => board.id == boardId
@@ -194,13 +202,14 @@ class TaskEstimatesCubit extends Cubit<TaskEstimatesState> {
         ),
       );
     } on Exception catch (error) {
-      if (isClosed || _lastLoadWsId != currentWsId) return;
-      emit(
-        state.copyWith(
-          status: TaskEstimatesStatus.error,
-          error: error.toString(),
-        ),
-      );
+      if (!isClosed && _lastLoadWsId == currentWsId) {
+        emit(
+          state.copyWith(
+            status: TaskEstimatesStatus.error,
+            error: error.toString(),
+          ),
+        );
+      }
       rethrow;
     }
   }

@@ -277,7 +277,7 @@ class _TaskEstimateDialogState extends State<TaskEstimateDialog> {
           content: Text(error.message),
         ),
       );
-    } on Exception catch (error) {
+    } on Exception {
       if (!mounted || !rootNavigator.mounted) {
         return;
       }
@@ -285,7 +285,7 @@ class _TaskEstimateDialogState extends State<TaskEstimateDialog> {
         context: rootNavigator.context,
         builder: (_, overlay) => shad.Alert.destructive(
           title: Text(l10n.commonSomethingWentWrong),
-          content: Text(error.toString()),
+          content: Text(l10n.commonSomethingWentWrong),
         ),
       );
     }

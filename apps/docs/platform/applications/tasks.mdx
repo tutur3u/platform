@@ -192,6 +192,10 @@ unestimated issues excluded. Invalid board fields or unsupported methods produce
 the existing error and Retry state instead of an uncaught cast. Invalid stored
 snapshots are discarded before seeding the route so entry can reload fresh data.
 Responses arriving after the estimation screen is disposed do not update it.
+A rejected save still reports failure after a workspace change. A successful
+PATCH with an unreadable response body is not replayed: the screen refetches
+boards from the server, and load failures use the translated error and Retry
+state.
 
 The estimation editor scrolls its controls and actions together on small screens
 with enlarged text. These rules apply to mobile estimation settings; web settings
