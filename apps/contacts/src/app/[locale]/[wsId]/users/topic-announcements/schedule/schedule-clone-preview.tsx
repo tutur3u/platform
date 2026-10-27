@@ -48,7 +48,7 @@ export function ScheduleClonePreview({
           </Badge>
         ))}
       </div>
-      <div className="max-h-[50vh] overflow-y-auto rounded-md border">
+      <div className="max-h-[50vh] overflow-auto rounded-md border">
         <table className="w-full text-sm">
           <thead className="sticky top-0 bg-muted/60 text-muted-foreground text-xs">
             <tr>
@@ -72,23 +72,25 @@ export function ScheduleClonePreview({
           <tbody>
             {items.map((item) => (
               <tr className="border-t" key={item.sourceId}>
-                <td className="px-3 py-1.5">{item.classLabel ?? '--'}</td>
-                <td className="px-3 py-1.5 capitalize tabular-nums">
+                <td className="whitespace-nowrap px-3 py-1.5">
+                  {item.classLabel ?? '--'}
+                </td>
+                <td className="whitespace-nowrap px-3 py-1.5 capitalize tabular-nums">
                   {formatScheduleDay(item.sourceDate, locale)}
                 </td>
-                <td className="px-3 py-1.5 capitalize tabular-nums">
+                <td className="whitespace-nowrap px-3 py-1.5 capitalize tabular-nums">
                   {item.targetDate
                     ? formatScheduleDay(item.targetDate, locale)
                     : '--'}
                 </td>
-                <td className="px-3 py-1.5 tabular-nums">
+                <td className="whitespace-nowrap px-3 py-1.5 tabular-nums">
                   {item.startTime}
                   {item.endTime ? `-${item.endTime}` : ''}
                 </td>
                 <td className="px-3 py-1.5">
                   <span
                     className={cn(
-                      'rounded border px-1.5 py-0.5 text-xs',
+                      'inline-block whitespace-nowrap rounded border px-1.5 py-0.5 text-xs',
                       STATUS_STYLE[item.status]
                     )}
                   >
@@ -97,7 +99,7 @@ export function ScheduleClonePreview({
                       : t(`schedule_clone_status_${item.status}`)}
                   </span>
                   {item.status === 'create' && !item.gvnnContactId ? (
-                    <span className="ml-1.5 text-dynamic-orange text-xs">
+                    <span className="ml-1.5 whitespace-nowrap text-dynamic-orange text-xs">
                       {t('schedule_needs_gvnn')}
                     </span>
                   ) : null}

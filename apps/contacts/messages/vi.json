@@ -9102,7 +9102,7 @@
     "schedule_duplicate_two_weeks": "Sao chép sang 2 tuần sau",
     "schedule_empty_description": "Thêm từng buổi, hoặc sao chép lịch tháng trước rồi chỉnh lại.",
     "schedule_empty_title": "Tháng này chưa có buổi nào",
-    "schedule_ends_at": "Kết thúc {time}",
+    "schedule_ends_at": "đến {time}",
     "schedule_gvnn_empty": "Không tìm thấy GVNN. Hãy gắn thẻ GVNN cho liên hệ trong mục Liên hệ.",
     "schedule_gvnn_none": "Chưa có GVNN",
     "schedule_gvnn_search": "Tìm GVNN...",

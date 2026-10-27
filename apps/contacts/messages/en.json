@@ -9102,7 +9102,7 @@
     "schedule_duplicate_two_weeks": "Copy two weeks later",
     "schedule_empty_description": "Add sessions one by one, or clone last month's schedule and adjust it.",
     "schedule_empty_title": "No sessions this month",
-    "schedule_ends_at": "Ends {time}",
+    "schedule_ends_at": "to {time}",
     "schedule_gvnn_empty": "No GVNN found. Tag a contact as GVNN in Contacts.",
     "schedule_gvnn_none": "No GVNN yet",
     "schedule_gvnn_search": "Search GVNN...",

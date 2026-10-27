@@ -97,8 +97,10 @@ export function ScheduleSessionTable(props: Props) {
             key={group.date}
           >
             <div className="flex items-center justify-between border-b bg-muted/20 px-3 py-1.5">
-              <span className="font-semibold text-sm capitalize">
-                {formatScheduleDay(group.date, locale)}
+              <span className="font-semibold text-sm">
+                <span className="capitalize">
+                  {formatScheduleDay(group.date, locale)}
+                </span>
                 <span className="ml-2 font-normal text-muted-foreground text-xs">
                   {t('schedule_session_count', { count: group.items.length })}
                 </span>

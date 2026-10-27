@@ -35,7 +35,7 @@ export function ScheduleMonthEditor({
   const editor = useScheduleEditor(wsId, month);
   const guard = useUnsavedChangesGuard(editor.isDirty);
   const [filter, setFilter] = useState<ScheduleFilter>('all');
-  const [selectedDate, setSelectedDate] = useState(`${month}-01`);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [highlightKey, setHighlightKey] = useState<string | null>(null);
   const [cloneOpen, setCloneOpen] = useState(false);
 
@@ -68,7 +68,10 @@ export function ScheduleMonthEditor({
     );
   };
 
-  const addSession = (date = selectedDate) => {
+  // Default day: the one picked in the calendar, else the latest session's.
+  const addSession = (
+    date = selectedDate ?? editor.rows.at(-1)?.sessionDate ?? `${month}-01`
+  ) => {
     setFilter('all');
     focusRow(editor.addSession(date));
   };
@@ -137,7 +140,7 @@ export function ScheduleMonthEditor({
                   ?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
               }}
               rows={editor.rows}
-              selectedDate={selectedDate}
+              selectedDate={selectedDate ?? ''}
             />
             <ScheduleMissingGvnnPanel
               onJump={(key) => {
