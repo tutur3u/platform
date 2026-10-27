@@ -9159,7 +9159,18 @@
     "schedule_notify_failed": "Đã lưu nhưng không thể thông báo cho giáo viên.",
     "schedule_notify_partial_failed": "{count, plural, other {Không thể thông báo cho # giáo viên}}",
     "schedule_save_partial": "Một buổi bắt đầu được gửi trong lúc lưu: chỉ GVNN được thay đổi và email có thể đã gửi cho GVNN trước đó. Lịch tháng đã được tải lại.",
-    "schedule_server_partially_applied": "Buổi bắt đầu được gửi trong lúc lưu: chỉ GVNN được thay đổi."
+    "schedule_server_partially_applied": "Buổi bắt đầu được gửi trong lúc lưu: chỉ GVNN được thay đổi.",
+    "existing_contact": "Liên hệ có sẵn",
+    "existing_contact_helper": "Tìm liên hệ đã có trong không gian làm việc này để dùng lại email đã lưu thay vì tạo bản trùng lặp.",
+    "existing_contact_new": "Tạo liên hệ mới",
+    "existing_contact_placeholder": "Tạo liên hệ mới",
+    "existing_contact_search_placeholder": "Tìm liên hệ theo tên hoặc email",
+    "existing_contact_search_loading": "Đang tìm liên hệ...",
+    "existing_contact_search_empty": "Không có liên hệ phù hợp",
+    "existing_contact_rejected_archived": "Liên hệ này đã được lưu trữ và không thể dùng lại.",
+    "existing_contact_rejected_foreign": "Liên hệ này không thuộc không gian làm việc này.",
+    "existing_contact_rejected_missing_email": "Liên hệ này chưa có email nên không thể dùng lại.",
+    "use_existing_contact": "Dùng liên hệ có sẵn"
   },
   "ws-topic-announcements-gate": {
     "disabled_description": "Bật thông báo chủ đề để duy trì danh sách liên hệ đã xác minh và gửi các thông báo dùng lại được từ không gian làm việc này.",
