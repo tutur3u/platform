@@ -1,0 +1,31 @@
+name: Install native runtime prerequisites
+description: Retain the caller's prerequisites with bounded apt retries and the official Ubuntu archive.
+inputs:
+  command:
+    description: Runtime prerequisite install command.
+    required: true
+  working-directory:
+    description: Directory in which to run the install command.
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Configure apt transport and install prerequisites
+      shell: bash
+      env:
+        SETUP_COMMAND: ${{ inputs.command }}
+        SETUP_DIRECTORY: ${{ inputs.working-directory }}
+      run: |
+        set -euo pipefail
+        # Playwright invokes sudo without preserving APT_CONFIG. Configure the
+        # disposable runner so its elevated apt process receives these settings.
+        sudo tee /etc/apt/apt.conf.d/99-native-runtime >/dev/null <<'EOF'
+        Acquire::Retries "3";
+        Acquire::http::Timeout "20";
+        Acquire::https::Timeout "20";
+        APT::Update::Error-Mode "any";
+        EOF
+        # Keep suites, components and Signed-By; bypass the slow Azure mirror.
+        sudo sed -i 's|^URIs:.*|URIs: https://archive.ubuntu.com/ubuntu|' /etc/apt/sources.list.d/ubuntu.sources
+        cd "$SETUP_DIRECTORY"
+        bash -c "$SETUP_COMMAND"
