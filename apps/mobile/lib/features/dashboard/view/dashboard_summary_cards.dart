@@ -94,7 +94,8 @@ class _HomeHeader extends StatelessWidget {
   }
 }
 
-/// Today's counts: active tasks, overdue tasks and upcoming events.
+/// Today's counts: active tasks, overdue tasks and upcoming events. Each
+/// count opens the list it summarises, so none is a dead number.
 class _TodaySummaryCard extends StatelessWidget {
   const _TodaySummaryCard({
     required this.activeTasks,
@@ -126,8 +127,10 @@ class _TodaySummaryCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _Metric(
+                    key: const ValueKey('home-metric-active'),
                     value: activeTasks,
                     label: l10n.dashboardActiveTasksLabel,
+                    onTap: () => context.go(Routes.tasks),
                   ),
                   VerticalDivider(
                     width: 1,
@@ -137,9 +140,11 @@ class _TodaySummaryCard extends StatelessWidget {
                     color: c.border,
                   ),
                   _Metric(
+                    key: const ValueKey('home-metric-overdue'),
                     value: overdueTasks,
                     label: l10n.dashboardTaskOverdue,
                     tone: overdueTasks > 0 ? AppTone.destructive : null,
+                    onTap: () => context.go(Routes.tasks),
                   ),
                   VerticalDivider(
                     width: 1,
@@ -149,8 +154,10 @@ class _TodaySummaryCard extends StatelessWidget {
                     color: c.border,
                   ),
                   _Metric(
+                    key: const ValueKey('home-metric-events'),
                     value: nextEvents,
                     label: l10n.dashboardUpcomingEvents,
+                    onTap: () => context.go(Routes.calendar),
                   ),
                 ],
               ),
@@ -163,10 +170,17 @@ class _TodaySummaryCard extends StatelessWidget {
 }
 
 class _Metric extends StatelessWidget {
-  const _Metric({required this.value, required this.label, this.tone});
+  const _Metric({
+    required this.value,
+    required this.label,
+    required this.onTap,
+    this.tone,
+    super.key,
+  });
 
   final int value;
   final String label;
+  final VoidCallback onTap;
   final AppTone? tone;
 
   @override
@@ -176,37 +190,41 @@ class _Metric extends StatelessWidget {
     return Expanded(
       child: Semantics(
         container: true,
+        button: true,
         label: '$label: $value',
         excludeSemantics: true,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.lg,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '$value',
-                style: tokens.typography.x3Large.copyWith(
-                  color: tone?.foreground(c) ?? c.foreground,
-                  fontWeight: FontWeight.w700,
-                  height: 1.1,
-                  fontFeatures: const [FontFeature.tabularFigures()],
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.lg,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '$value',
+                  style: tokens.typography.x3Large.copyWith(
+                    color: tone?.foreground(c) ?? c.foreground,
+                    fontWeight: FontWeight.w700,
+                    height: 1.1,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
                 ),
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                label,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: tokens.typography.xSmall.copyWith(
-                  color: c.mutedForeground,
-                  fontWeight: FontWeight.w500,
-                  height: 1.3,
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: tokens.typography.xSmall.copyWith(
+                    color: c.mutedForeground,
+                    fontWeight: FontWeight.w500,
+                    height: 1.3,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

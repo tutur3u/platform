@@ -1092,9 +1092,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantStarterPlan => 'Kế hoạch hôm nay';
 
   @override
-  String get assistantStarterSubtitle => 'Chọn một gợi ý nhanh hoặc tự gõ điều bạn cần.';
-
-  @override
   String get assistantStarterTitle => 'Chưa biết bắt đầu từ đâu?';
 
   @override

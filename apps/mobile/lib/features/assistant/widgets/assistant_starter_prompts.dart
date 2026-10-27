@@ -34,18 +34,6 @@ class AssistantStarterPrompts extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
         ),
-        const SizedBox(height: 8),
-        StaggeredEntrance(
-          replayKey: 'assistant-starter-subtitle-$replayToken',
-          delay: const Duration(milliseconds: 70),
-          child: Text(
-            context.l10n.assistantStarterSubtitle,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ),
         const SizedBox(height: 24),
         // One grouped card of rows, like Settings: no shadows or gradients on
         // list content. Labels allow four lines (AppGroupedRow's default is
@@ -53,7 +41,7 @@ class AssistantStarterPrompts extends StatelessWidget {
         // in full.
         StaggeredEntrance(
           replayKey: 'assistant-starter-rows-$replayToken',
-          delay: const Duration(milliseconds: 140),
+          delay: const Duration(milliseconds: 70),
           child: AppGroupedCard(
             children: [
               for (final prompt in prompts)
