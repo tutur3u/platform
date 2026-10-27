@@ -13,8 +13,8 @@ import re
 import subprocess
 
 DATABASE = Path(__file__).resolve().parents[1]
-SWAP = "20261027010300_workspace_delete_fk_cascade"
-VALIDATE = "20261027010400_validate_workspace_delete_fk_cascade"
+SWAP = "20261027060400_workspace_delete_fk_cascade"
+VALIDATE = "20261027060500_validate_workspace_delete_fk_cascade"
 
 
 def main():
