@@ -293,7 +293,7 @@ describe('enqueueApprovedPostEmails', () => {
     ]);
   });
 
-  it('allows a guest who is a current member of the selected group', async () => {
+  it('queues a same-workspace guest recipient regardless of group membership', async () => {
     const { sbAdmin, state } = createMockAdminClient(['guest']);
     state.membershipRows.push({
       user_id: 'guest',
@@ -304,9 +304,6 @@ describe('enqueueApprovedPostEmails', () => {
       wsId: WS_ID,
       postId: POST_ID,
     });
-    expect(state.resolvedGuestStatuses).toEqual([
-      { user_id: 'guest', is_guest: true },
-    ]);
     expect(result.queued).toBe(1);
     expect(state.upsertRows.map((row) => row.user_id)).toEqual(['guest']);
   });
