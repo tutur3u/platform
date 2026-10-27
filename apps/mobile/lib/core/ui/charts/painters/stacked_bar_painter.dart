@@ -32,33 +32,17 @@ class StackedBarPainter extends ChartPainter {
   @override
   void paint(Canvas canvas, Size size) {
     if (categories.isEmpty) return;
-    final c = ChartCanvas(size, palette, textScaler: textScaler);
-    final plot = horizontal
-        ? Rect.fromLTRB(
-            size.width * 0.32,
-            16,
-            size.width - 12,
-            size.height - 32,
-          )
-        : c.plot;
+    final c = ChartCanvas(
+      size,
+      palette,
+      axis: axis,
+      horizontal: horizontal,
+      textScaler: textScaler,
+    )..drawValueAxis(canvas);
+    final plot = c.plot;
     double valuePosition(double v) => horizontal
         ? plot.left + axis.fraction(v) * plot.width
         : plot.bottom - axis.fraction(v) * plot.height;
-    for (var tick = 0; tick <= 4; tick++) {
-      final value = axis.min + (axis.max - axis.min) * tick / 4;
-      final at = valuePosition(value);
-      canvas.drawLine(
-        horizontal ? Offset(at, plot.top) : Offset(plot.left, at),
-        horizontal ? Offset(at, plot.bottom) : Offset(plot.right, at),
-        Paint()..color = value == 0 ? palette.neutral : palette.grid,
-      );
-      c.label(
-        canvas,
-        axis.label(value),
-        horizontal ? Offset(at - 8, plot.bottom + 4) : Offset(0, at - 5),
-        maxWidth: horizontal ? 48 : 44,
-      );
-    }
     final stride = (horizontal ? plot.height : plot.width) / categories.length;
     for (var i = 0; i < categories.length; i++) {
       final category = categories[i];
@@ -158,14 +142,14 @@ class StackedBarPainter extends ChartPainter {
           Path()..addRect(
             horizontal
                 ? Rect.fromLTWH(
-                    plot.left,
+                    (valuePosition(0) - 4).clamp(plot.left, plot.right - 8),
                     plot.top + stride * i,
                     8,
                     stride * 0.7,
                   )
                 : Rect.fromLTWH(
                     at - stride * 0.3,
-                    plot.bottom - 8,
+                    (valuePosition(0) - 4).clamp(plot.top, plot.bottom - 8),
                     stride * 0.6,
                     8,
                   ),
@@ -184,5 +168,6 @@ class StackedBarPainter extends ChartPainter {
         maxWidth: horizontal ? plot.left - 8 : stride - 4,
       );
     }
+    c.dispose();
   }
 }

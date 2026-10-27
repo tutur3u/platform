@@ -6,6 +6,7 @@ export 'chart_palette.dart';
 export 'chart_patterns.dart';
 export 'chart_time_axis.dart';
 export 'chart_value_axis.dart';
+export 'chart_value_layout.dart';
 export 'painters/chart_canvas.dart';
 export 'painters/heatmap_painter.dart';
 export 'painters/line_painter.dart';

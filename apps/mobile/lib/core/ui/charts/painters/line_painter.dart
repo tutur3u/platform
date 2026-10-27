@@ -8,7 +8,7 @@ import 'package:mobile/core/ui/charts/chart_patterns.dart';
 import 'package:mobile/core/ui/charts/chart_value_axis.dart';
 import 'package:mobile/core/ui/charts/painters/chart_canvas.dart';
 
-class LinePainter extends ChartPainter {
+class LinePainter extends ChartPainter implements ChartBucketGeometry {
   const LinePainter({
     required this.series,
     required this.palette,
@@ -30,6 +30,24 @@ class LinePainter extends ChartPainter {
   final bool axes;
   final TextScaler textScaler;
 
+  ChartCanvas chartCanvas(Size size) => ChartCanvas(
+    size,
+    palette,
+    axis: axis,
+    axes: axes,
+    textScaler: textScaler,
+  );
+
+  @override
+  List<double> bucketPositions(Size size) {
+    final times = chartSeriesTimes(series);
+    if (times.isEmpty) return [];
+    final c = chartCanvas(size);
+    final positions = [for (final t in times) c.x(t, times.first, times.last)];
+    c.dispose();
+    return positions;
+  }
+
   /// Renderer geometry: each path has known vertices only.
   List<List<Offset>> vertices(
     ChartCanvas c,
@@ -47,11 +65,9 @@ class LinePainter extends ChartPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final times =
-        series.expand((s) => s.points.map((p) => p.t)).toSet().toList()..sort();
+    final times = chartSeriesTimes(series);
     if (times.isEmpty) return;
-    final c = ChartCanvas(size, palette, axes: axes, textScaler: textScaler)
-      ..drawAxes(canvas, axis, times);
+    final c = chartCanvas(size)..drawAxes(canvas, times);
     canvas
       ..save()
       ..clipRect(c.plot.inflate(5));
@@ -148,6 +164,7 @@ class LinePainter extends ChartPainter {
         );
       }
     }
+    c.dispose();
   }
 }
 

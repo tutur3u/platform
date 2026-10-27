@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:mobile/core/ui/charts/painters/chart_canvas.dart';
 import 'package:mobile/core/ui/charts/widgets/chart_selection.dart';
 
 typedef ChartPainterBuilder = CustomPainter Function(ChartSelection? selection);
@@ -35,6 +36,7 @@ class ChartPlot extends StatelessWidget {
     builder: (context, selection, _) => LayoutBuilder(
       builder: (context, constraints) {
         final size = Size(constraints.maxWidth, height);
+        final painter = painterBuilder(selection);
         void select(Offset local) {
           if (bucketCount <= 0 || seriesCount <= 0) return;
           if (hitTest != null) {
@@ -45,16 +47,19 @@ class ChartPlot extends StatelessWidget {
             );
             return;
           }
-          final positions =
-              bucketPositions ??
-              List.generate(
-                bucketCount,
-                (i) => bucketCount == 1 ? 0.5 : i / (bucketCount - 1),
-              );
+          final positions = switch ((bucketPositions, painter)) {
+            (final positions?, _) => [
+              for (final x in positions) x * size.width,
+            ],
+            (_, final ChartBucketGeometry geometry) => geometry.bucketPositions(
+              size,
+            ),
+            _ => throw StateError('Supply painter geometry or a chart hitTest'),
+          };
           var nearest = 0;
           for (var i = 1; i < positions.length; i++) {
-            if ((positions[i] * size.width - local.dx).abs() <
-                (positions[nearest] * size.width - local.dx).abs()) {
+            if ((positions[i] - local.dx).abs() <
+                (positions[nearest] - local.dx).abs()) {
               nearest = i;
             }
           }
@@ -104,10 +109,7 @@ class ChartPlot extends StatelessWidget {
               onHorizontalDragStart: (event) => select(event.localPosition),
               onHorizontalDragUpdate: (event) => select(event.localPosition),
               child: RepaintBoundary(
-                child: CustomPaint(
-                  size: size,
-                  painter: painterBuilder(selection),
-                ),
+                child: CustomPaint(size: size, painter: painter),
               ),
             ),
           ),

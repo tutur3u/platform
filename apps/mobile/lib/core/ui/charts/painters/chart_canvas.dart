@@ -3,6 +3,14 @@ import 'package:mobile/core/ui/charts/chart_data.dart';
 import 'package:mobile/core/ui/charts/chart_palette.dart';
 import 'package:mobile/core/ui/charts/chart_time_axis.dart';
 import 'package:mobile/core/ui/charts/chart_value_axis.dart';
+import 'package:mobile/core/ui/charts/chart_value_layout.dart';
+
+abstract interface class ChartBucketGeometry {
+  List<double> bucketPositions(Size size);
+}
+
+List<DateTime> chartSeriesTimes(List<ChartSeries> series) =>
+    series.expand((s) => s.points.map((p) => p.t)).toSet().toList()..sort();
 
 class ChartCanvas {
   ChartCanvas(
@@ -10,18 +18,24 @@ class ChartCanvas {
     this.palette, {
     this.textScaler = TextScaler.noScaling,
     this.axes = true,
+    this.axis = ChartValueAxis.percent,
+    this.horizontal = false,
   });
   final Size size;
   final AppChartPalette palette;
   final TextScaler textScaler;
   final bool axes;
+  final ChartValueAxis axis;
+  final bool horizontal;
+  late final valueLayout = ChartValueLayout(
+    size: size,
+    axis: axis,
+    color: palette.text,
+    textScaler: textScaler,
+    horizontal: horizontal,
+  );
   Rect get plot => axes
-      ? Rect.fromLTRB(
-          48,
-          16,
-          (size.width - 18).clamp(49, double.infinity),
-          (size.height - textScaler.scale(24) - 24).clamp(17, double.infinity),
-        )
+      ? valueLayout.plot
       : (const Offset(6, 6) &
             Size(
               (size.width - 12).clamp(1, double.infinity),
@@ -60,27 +74,38 @@ class ChartCanvas {
     return p;
   }
 
-  void drawAxes(Canvas canvas, ChartValueAxis axis, List<DateTime> times) {
+  void drawValueAxis(Canvas canvas) {
     if (!axes) return;
-    for (var i = 0; i <= 4; i++) {
-      final value = axis.min + (axis.max - axis.min) * i / 4;
-      final dy = y(value, axis);
-      canvas.drawLine(
-        Offset(plot.left, dy),
-        Offset(plot.right, dy),
-        Paint()..color = palette.grid,
-      );
-      label(canvas, axis.label(value), Offset(0, dy - 5), maxWidth: 44);
+    for (final tick in valueLayout.ticks) {
+      final at = horizontal
+          ? plot.left + axis.fraction(tick.value) * plot.width
+          : y(tick.value, axis);
+      if (tick.value != 0) {
+        canvas.drawLine(
+          horizontal ? Offset(at, plot.top) : Offset(plot.left, at),
+          horizontal ? Offset(at, plot.bottom) : Offset(plot.right, at),
+          Paint()..color = palette.grid,
+        );
+      }
+      tick.painter.paint(canvas, tick.rect.topLeft);
     }
-    if (axis.min < 0 && axis.max > 0) {
+    if (axis.min <= 0 && axis.max >= 0) {
+      final at = horizontal
+          ? plot.left + axis.fraction(0) * plot.width
+          : y(0, axis);
       canvas.drawLine(
-        Offset(plot.left, y(0, axis)),
-        Offset(plot.right, y(0, axis)),
+        horizontal ? Offset(at, plot.top) : Offset(plot.left, at),
+        horizontal ? Offset(at, plot.bottom) : Offset(plot.right, at),
         Paint()
           ..color = palette.neutral
           ..strokeWidth = 1.5,
       );
     }
+  }
+
+  void drawAxes(Canvas canvas, List<DateTime> times) {
+    if (!axes) return;
+    drawValueAxis(canvas);
     final ticks = chartTimeTicks(
       times,
       plot.width,
@@ -109,6 +134,10 @@ class ChartCanvas {
   Color seriesColor(ChartSeries series) => series.tone == null
       ? palette.slots[series.slot]
       : palette.tone(series.tone!);
+
+  void dispose() {
+    if (axes) valueLayout.dispose();
+  }
 }
 
 abstract class ChartPainter extends CustomPainter {

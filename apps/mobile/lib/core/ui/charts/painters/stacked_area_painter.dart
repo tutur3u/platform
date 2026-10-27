@@ -9,7 +9,7 @@ import 'package:mobile/core/ui/charts/chart_value_axis.dart';
 import 'package:mobile/core/ui/charts/painters/chart_canvas.dart';
 import 'package:mobile/core/ui/charts/painters/line_painter.dart';
 
-class StackedAreaPainter extends ChartPainter {
+class StackedAreaPainter extends ChartPainter implements ChartBucketGeometry {
   const StackedAreaPainter({
     required this.series,
     required this.palette,
@@ -27,10 +27,22 @@ class StackedAreaPainter extends ChartPainter {
   final int selectedSeries;
   final TextScaler textScaler;
 
+  ChartCanvas chartCanvas(Size size) =>
+      ChartCanvas(size, palette, axis: axis, textScaler: textScaler);
+
+  @override
+  List<double> bucketPositions(Size size) {
+    final times = chartSeriesTimes(series);
+    if (times.isEmpty) return [];
+    final c = chartCanvas(size);
+    final positions = [for (final t in times) c.x(t, times.first, times.last)];
+    c.dispose();
+    return positions;
+  }
+
   /// Missing components invalidate that bucket for the whole stack.
   List<List<ChartPoint>> boundaries() {
-    final times =
-        series.expand((s) => s.points.map((p) => p.t)).toSet().toList()..sort();
+    final times = chartSeriesTimes(series);
     final byTime = series
         .map((s) => {for (final p in s.points) p.t: p})
         .toList();
@@ -60,8 +72,7 @@ class StackedAreaPainter extends ChartPainter {
     final layers = boundaries();
     final times = layers.first.map((p) => p.t).toList();
     if (times.isEmpty) return;
-    final c = ChartCanvas(size, palette, textScaler: textScaler)
-      ..drawAxes(canvas, axis, times);
+    final c = chartCanvas(size)..drawAxes(canvas, times);
     canvas
       ..save()
       ..clipRect(c.plot.inflate(5));
@@ -125,5 +136,6 @@ class StackedAreaPainter extends ChartPainter {
       cadence: cadence,
     );
     canvas.restore();
+    c.dispose();
   }
 }

@@ -42,9 +42,12 @@ to paint. `Sparkline` uses the same line/gap renderer without axes.
 
 Own and dispose a widget-local `ChartSelectionController`. `ChartPlot` takes
 bucket and series counts and a `painterBuilder`; pass the selection to the
-painter's selected index parameters. For irregular time spacing, supply
-`bucketPositions` normalized to the actual plot x positions (including axis
-insets). For matrices, horizontal bars and tiles, supply a `hitTest` using the
+painter's selected index parameters. Line and area painters implement
+`ChartBucketGeometry`: their default hit positions come from their own
+`ChartCanvas`, including the measured value-label gutter and irregular time
+spacing. Custom normalized `bucketPositions` remain an explicit override.
+Other painters must provide positions or a `hitTest`; there is no full-widget
+fallback for an inset plot. For matrices, horizontal bars and tiles, use the
 same rectangles as the painter (`HeatmapPainter.cellRect`,
 `chartTreemapRects`). This keeps touch selection and the visible outline aligned.
 
@@ -55,6 +58,14 @@ other domain qualifiers in the callback when required. Left/right and semantics
 increase/decrease step buckets, up/down cycle series, Escape clears. Horizontal
 drag selects while vertical drag remains available to the parent scroll view.
 Selection and painting have no tickers or entry animations.
+
+`ChartCanvas` receives the value axis before layout. Its `valueLayout` measures
+single-line value labels, reserves a bounded gutter, and thins optional ticks
+against their measured rectangles while retaining zero and both endpoints.
+Unusually long labels fit within the gutter's text budget. The same layout is
+used by line/area geometry and vertical/horizontal bars. Every in-range zero
+gets an explicit neutral rule, including an endpoint zero; incomplete bar
+placeholders are anchored to that zero baseline.
 
 `ChartPanel` places the summary first, followed by optional coverage, plot,
 wrapping shape legend, live readout and the localized Table action. The caller
