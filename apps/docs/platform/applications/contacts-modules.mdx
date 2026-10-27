@@ -89,8 +89,10 @@ workspace, and `manage_users`. The module remains off by default; listing or
 previewing does not enable it or send email. Preview uses only contacts in the
 requested workspace that are not archived.
 
-Web accepts its normal Supabase sessions and verified registered app sessions,
-including Contacts, then checks workspace membership using that verified actor.
+Web accepts its normal Supabase sessions and verified Contacts app sessions,
+then checks workspace membership using that verified actor. App-session tokens
+for other satellites or the CLI are rejected before workspace lookup; real-verifier
+coverage lives in `apps/web/src/lib/topic-announcements-audience.test.ts`.
 The topic master flag remains an exact `true` check in the API. Both apps use the same users-core
 query, payload validation, recipient verification status, attachment filename
 normalization, and preview renderer. Contacts forwards collection mutations to

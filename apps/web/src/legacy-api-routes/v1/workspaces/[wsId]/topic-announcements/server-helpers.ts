@@ -20,7 +20,6 @@ import {
   normalizeWorkspaceId,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import { CURRENT_USER_APP_SESSION_AUTH } from '@/legacy-api-routes/v1/users/me/session-auth';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
 import { normalizeTopicAnnouncementAttachmentFileName } from '@/lib/topic-announcement-attachments';
 
@@ -92,7 +91,7 @@ export async function resolveTopicAnnouncementsAccess(
   | { context?: never; response: NextResponse }
 > {
   const session = await resolveSessionAuthContext(request, {
-    allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH,
+    allowAppSessionAuth: { targetApp: ['contacts'] },
   });
   if (!session.ok) return { response: session.response };
   const { supabase, user } = session;

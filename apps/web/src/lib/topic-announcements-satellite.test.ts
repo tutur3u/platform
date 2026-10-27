@@ -112,9 +112,7 @@ describe('Contacts-proxied topic APIs with teacher assignments off', () => {
       expect.arrayContaining([expect.objectContaining({ name: 'Anna' })])
     );
     expect(resolveSessionAuthContext).toHaveBeenCalledWith(request, {
-      allowAppSessionAuth: expect.objectContaining({
-        targetApp: expect.arrayContaining(['contacts']),
-      }),
+      allowAppSessionAuth: { targetApp: ['contacts'] },
     });
     expect(getPermissions).toHaveBeenCalledWith({
       user: { id: SUPERVISOR },
