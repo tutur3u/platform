@@ -5,13 +5,17 @@ description: "A central place to manage users, groups, and information about the
 
 ## Group Check Participants
 
-Web and Contacts accept group-check changes for current members of the post's
-group in the selected workspace. This applies to create, update and clear
-operations, including single-user and batch requests. Guest status alone neither
-grants nor removes eligibility; the user must have the same group membership.
-A batch is validated in full before changes are saved. If participant validation
-is unavailable, retry after the service recovers. Existing post permissions,
-approval rules and email delivery settings still apply.
+Web and Contacts require every check participant to belong to the post's
+workspace. New check participants must also be current members of the post's
+group. Staff can edit or clear an existing check after a student moves to another
+group in the same workspace; the exception applies only to an existing check on
+that same post. It does not admit new nonmembers or users from another workspace.
+Guest status alone neither grants nor removes eligibility.
+
+These rules apply to create, update and clear operations, including single-user
+and batch requests. A batch is validated in full before changes are saved. If
+participant validation is unavailable, retry after the service recovers. Existing
+post permissions, approval rules and email delivery settings still apply.
 
 Regression coverage: `packages/users-core/tests/routes/group-check-membership.test.ts`
 exercises both active handler families with synthetic participants.

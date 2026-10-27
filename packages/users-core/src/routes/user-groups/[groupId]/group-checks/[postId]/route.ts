@@ -111,6 +111,7 @@ export async function PUT(req: Request, { params }: Params) {
   if (!scoped.ok) return scoped.response;
   const participantError = await validatePostCheckParticipants({
     sbAdmin: scoped.sbAdmin,
+    postId: scoped.postId,
     groupId: scoped.groupId,
     wsId: scoped.wsId,
     userIds: checks.map((check) => check.user_id),
@@ -175,6 +176,7 @@ export async function DELETE(req: Request, { params }: Params) {
   const userIds = parsed.data.user_ids;
   const participantError = await validatePostCheckParticipants({
     sbAdmin: scoped.sbAdmin,
+    postId: scoped.postId,
     groupId: scoped.groupId,
     wsId: scoped.wsId,
     userIds: userIds,

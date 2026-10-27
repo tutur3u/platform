@@ -93,6 +93,7 @@ export async function PUT(req: Request, { params }: Params) {
 
   const participantError = await validatePostCheckParticipants({
     sbAdmin,
+    postId,
     groupId,
     wsId,
     userIds: (Array.isArray(parse.data) ? parse.data : [parse.data]).map(
@@ -278,6 +279,7 @@ export async function DELETE(req: Request, { params }: Params) {
 
   const participantError = await validatePostCheckParticipants({
     sbAdmin,
+    postId,
     groupId,
     wsId,
     userIds: userIds,

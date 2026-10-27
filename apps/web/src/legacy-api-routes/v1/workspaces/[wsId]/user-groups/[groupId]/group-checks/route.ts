@@ -196,6 +196,7 @@ export async function POST(req: Request, { params }: Params) {
 
   const participantError = await validatePostCheckParticipants({
     sbAdmin,
+    postId,
     groupId,
     wsId,
     userIds: insertPayload.map((item) => item.user_id),

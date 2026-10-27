@@ -69,6 +69,8 @@ let participants: Participant[];
 let lookupError: boolean;
 let mutations: string[];
 let membershipReads: URL[];
+let existingChecks: Array<{ postId: string; userId: string; wsId: string }>;
+let existingLookupError: boolean;
 
 const fixtureFetch: typeof fetch = async (input, init) => {
   const url = new URL(String(input));
@@ -92,6 +94,33 @@ const fixtureFetch: typeof fetch = async (input, init) => {
   }
   if (url.pathname === '/rest/v1/user_group_posts') {
     return Response.json((await mocks.hasPost()) ? { id: POST_ID } : null);
+  }
+  if (
+    url.pathname === '/rest/v1/user_group_post_checks' &&
+    (!init?.method || init.method === 'GET')
+  ) {
+    if (existingLookupError)
+      return Response.json(
+        { message: 'Existing lookup failed' },
+        { status: 500 }
+      );
+    const inner = url.searchParams
+      .get('select')
+      ?.includes('workspace_users!inner');
+    return Response.json(
+      existingChecks
+        .filter(
+          (row) =>
+            (!url.searchParams.has('post_id') ||
+              url.searchParams.get('post_id') === `eq.${row.postId}`) &&
+            (!inner ||
+              !url.searchParams.has('workspace_users.ws_id') ||
+              url.searchParams.get('workspace_users.ws_id') ===
+                `eq.${row.wsId}`) &&
+            (url.searchParams.get('user_id') ?? '').includes(row.userId)
+        )
+        .map((row) => ({ user_id: row.userId }))
+    );
   }
   expect(url.pathname).toBe('/rest/v1/user_group_post_checks');
   expect(new Headers(init?.headers).get('content-profile')).toBe('private');
@@ -143,6 +172,8 @@ describe('group-check participant validation', () => {
     lookupError = false;
     mutations = [];
     membershipReads = [];
+    existingChecks = [];
+    existingLookupError = false;
     const actual = await vi.importActual<
       typeof import('@tuturuuu/supabase/next/server')
     >('@tuturuuu/supabase/next/server');
@@ -183,6 +214,74 @@ describe('group-check participant validation', () => {
               expect(mocks.recordChanges).not.toHaveBeenCalled();
             }
           );
+
+          it.each([false, true])(
+            'allows an existing moved student (single=%s)',
+            async (single) => {
+              participants.push({
+                userId: OTHER,
+                wsId: WS,
+                groupId: OTHER_GROUP,
+              });
+              existingChecks = [{ postId: POST_ID, userId: OTHER, wsId: WS }];
+              const response = await invoke(
+                method,
+                single ? [OTHER] : [MEMBER, OTHER],
+                single
+              );
+              expect(response.status).toBe(200);
+              expect(mutations).toHaveLength(1);
+            }
+          );
+
+          it('rejects a foreign workspace user even with an existing check', async () => {
+            participants.push({
+              userId: OTHER,
+              wsId: OTHER_WS,
+              groupId: GROUP,
+            });
+            existingChecks = [
+              { postId: POST_ID, userId: OTHER, wsId: OTHER_WS },
+            ];
+            expect((await invoke(method, [MEMBER, OTHER])).status).toBe(400);
+            expect(mutations).toEqual([]);
+            expect(mocks.recordChanges).not.toHaveBeenCalled();
+            expect(mocks.enqueue).not.toHaveBeenCalled();
+          });
+
+          it('does not reuse an association from another post', async () => {
+            participants.push({
+              userId: OTHER,
+              wsId: WS,
+              groupId: OTHER_GROUP,
+            });
+            existingChecks = [{ postId: OTHER_GROUP, userId: OTHER, wsId: WS }];
+            expect((await invoke(method, [MEMBER, OTHER])).status).toBe(400);
+            expect(mutations).toEqual([]);
+          });
+
+          it('rejects a new nonmember beside existing moved students', async () => {
+            const newUser = '99999999-9999-4999-8999-999999999999';
+            participants.push(
+              { userId: OTHER, wsId: WS, groupId: OTHER_GROUP },
+              { userId: newUser, wsId: WS, groupId: OTHER_GROUP }
+            );
+            existingChecks = [{ postId: POST_ID, userId: OTHER, wsId: WS }];
+            expect(
+              (await invoke(method, [MEMBER, OTHER, newUser])).status
+            ).toBe(400);
+            expect(mutations).toEqual([]);
+            expect(mocks.recordChanges).not.toHaveBeenCalled();
+            expect(mocks.enqueue).not.toHaveBeenCalled();
+          });
+
+          it('fails closed when existing-association lookup fails', async () => {
+            existingLookupError = true;
+            expect((await invoke(method, [OTHER])).status).toBe(500);
+            expect(mutations).toEqual([]);
+            expect(mocks.recordChanges).not.toHaveBeenCalled();
+            expect(mocks.enqueue).not.toHaveBeenCalled();
+          });
 
           it('rejects a missing participant', async () => {
             const response = await invoke(method, [OTHER]);
