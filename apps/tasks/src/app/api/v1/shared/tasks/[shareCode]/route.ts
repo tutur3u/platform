@@ -2,6 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { getVerifiedAuthEmail } from '@tuturuuu/supabase/next/user';
 import {
   SUPPORTED_COLORS,
   type SupportedColor,
@@ -149,28 +150,29 @@ export async function GET(
     }
 
     if (!isWorkspaceMember) {
-      const { data: userPrivateDetails } = await adminClient
-        .from('user_private_details')
-        .select('email')
-        .eq('user_id', user.id)
-        .maybeSingle();
+      const email = await getVerifiedAuthEmail(adminClient, user.id);
 
-      const email = userPrivateDetails?.email ?? null;
-
-      let sharesQuery = adminClient
+      const { data: directShare, error: directShareError } = await adminClient
         .from('task_shares')
         .select('permission')
-        .eq('task_id', shareLink.task_id);
-
-      if (email) {
-        sharesQuery = sharesQuery.or(
-          `shared_with_user_id.eq.${user.id},and(shared_with_email.ilike."${email}")`
-        );
-      } else {
-        sharesQuery = sharesQuery.eq('shared_with_user_id', user.id);
-      }
-
-      const { data: shareRow } = await sharesQuery.maybeSingle();
+        .eq('task_id', shareLink.task_id)
+        .eq('shared_with_user_id', user.id)
+        .maybeSingle();
+      if (directShareError) throw directShareError;
+      const emailShare = email
+        ? await adminClient
+            .from('task_shares')
+            .select('permission')
+            .eq('task_id', shareLink.task_id)
+            .ilike('shared_with_email', email.replace(/[\\%_]/g, '\\$&'))
+            .maybeSingle()
+        : { data: null, error: null };
+      if (emailShare.error) throw emailShare.error;
+      const shareRow =
+        directShare?.permission === 'edit' ||
+        emailShare.data?.permission !== 'edit'
+          ? (directShare ?? emailShare.data)
+          : emailShare.data;
       recipientPermission = shareRow?.permission ?? null;
     }
 
@@ -530,28 +532,29 @@ export async function PATCH(
     }
 
     if (!isWorkspaceMember) {
-      const { data: userPrivateDetails } = await adminClient
-        .from('user_private_details')
-        .select('email')
-        .eq('user_id', user.id)
-        .maybeSingle();
+      const email = await getVerifiedAuthEmail(adminClient, user.id);
 
-      const email = userPrivateDetails?.email ?? null;
-
-      let sharesQuery = adminClient
+      const { data: directShare, error: directShareError } = await adminClient
         .from('task_shares')
         .select('permission')
-        .eq('task_id', shareLink.task_id);
-
-      if (email) {
-        sharesQuery = sharesQuery.or(
-          `shared_with_user_id.eq.${user.id},and(shared_with_email.ilike."${email}")`
-        );
-      } else {
-        sharesQuery = sharesQuery.eq('shared_with_user_id', user.id);
-      }
-
-      const { data: shareRow } = await sharesQuery.maybeSingle();
+        .eq('task_id', shareLink.task_id)
+        .eq('shared_with_user_id', user.id)
+        .maybeSingle();
+      if (directShareError) throw directShareError;
+      const emailShare = email
+        ? await adminClient
+            .from('task_shares')
+            .select('permission')
+            .eq('task_id', shareLink.task_id)
+            .ilike('shared_with_email', email.replace(/[\\%_]/g, '\\$&'))
+            .maybeSingle()
+        : { data: null, error: null };
+      if (emailShare.error) throw emailShare.error;
+      const shareRow =
+        directShare?.permission === 'edit' ||
+        emailShare.data?.permission !== 'edit'
+          ? (directShare ?? emailShare.data)
+          : emailShare.data;
       const recipientPermission = shareRow?.permission ?? null;
 
       if (recipientPermission !== 'edit') {

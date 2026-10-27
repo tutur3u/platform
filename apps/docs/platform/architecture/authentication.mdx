@@ -955,6 +955,21 @@ The target app validates the token with
 The target app is responsible for establishing its own session/app-session from
 that `userId`; the token never carries access or refresh tokens.
 
+Cross-app minting, redemption, and refresh derive mailbox identity from the
+subject's current `auth.users.email` only when `email_confirmed_at` is set.
+An unconfirmed account can use subject-based sessions but receives no email
+identity. Caller session payloads and editable profile email fields are not
+mailbox authority. Web and Infrastructure invitation matching, the Infrastructure
+AI whitelist, and shared board/task recipient checks use the same confirmed Auth
+identity. Explicit recipient user ids and existing workspace membership remain
+valid independently of email confirmation.
+
+Regression coverage: `cross-app-token/verify/route.test.ts`,
+`cross-app-session/refresh/route.test.ts`, workspace invitation `status.test.ts`,
+`board-access-identity.test.ts`, shared-task `route.test.ts`, and database
+`cross-app-verified-identity.sql`.
+
+
 ```typescript
 import { validateCrossAppToken } from "@tuturuuu/auth/cross-app";
 import { createClient } from "@tuturuuu/supabase/next/server";

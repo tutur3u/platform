@@ -1,3 +1,4 @@
+import { getVerifiedAuthEmail } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { Database } from '@tuturuuu/types/db';
 import {
@@ -67,16 +68,6 @@ function normalizeEmail(value: string | null | undefined) {
   return value?.trim().toLowerCase() || null;
 }
 
-function uniqueEmails(...emails: Array<string | null | undefined>) {
-  return [
-    ...new Set(
-      emails
-        .map((email) => normalizeEmail(email))
-        .filter((email): email is string => Boolean(email))
-    ),
-  ];
-}
-
 function toWorkspaceSummary(
   workspace: WorkspaceRow
 ): WorkspaceInvitationWorkspace {
@@ -131,24 +122,14 @@ async function normalizeDirectWorkspaceId(
 export async function getWorkspaceInviteCandidateEmails(
   admin: TypedSupabaseClient,
   {
-    authEmail,
     userId,
   }: {
     authEmail: string | null | undefined;
     userId: string;
   }
 ) {
-  const { data: privateDetails, error: privateDetailsError } = await admin
-    .from('user_private_details')
-    .select('email')
-    .eq('user_id', userId)
-    .maybeSingle();
-
-  if (privateDetailsError) {
-    throw privateDetailsError;
-  }
-
-  return uniqueEmails(authEmail, privateDetails?.email);
+  const email = await getVerifiedAuthEmail(admin, userId);
+  return email ? [email] : [];
 }
 
 async function fetchWorkspace(admin: TypedSupabaseClient, workspaceId: string) {
