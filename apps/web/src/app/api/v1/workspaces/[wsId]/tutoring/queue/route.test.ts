@@ -19,6 +19,7 @@ let configRows: unknown[] = [];
 let lessonRows: unknown[] = [];
 let postRows: unknown[] = [];
 let canViewPosts = true;
+let lessonError: unknown = null;
 
 function query(rows: () => unknown[]) {
   return {
@@ -46,12 +47,17 @@ function query(rows: () => unknown[]) {
     order() {
       return this;
     },
+    limit() {
+      return this;
+    },
     // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are thenable.
     then(
       resolve: (value: unknown) => unknown,
       reject: (error: unknown) => unknown
     ) {
-      return Promise.resolve({ data: rows(), error: null }).then(
+      const data = rows();
+      const error = data === lessonRows ? lessonError : null;
+      return Promise.resolve({ data: error ? null : data, error }).then(
         resolve,
         reject
       );
@@ -91,6 +97,7 @@ beforeEach(() => {
   lessonRows = [];
   postRows = [];
   canViewPosts = true;
+  lessonError = null;
   mocks.resolveAccess.mockResolvedValue({
     normalizedWsId: wsId,
     permissions: {
@@ -544,13 +551,35 @@ describe('tutoring support queue', () => {
         flagged('fb', 'Practice phonics', '2026-09-10T00:00:00Z'),
       ];
       const body = await (await listQueue()).json();
-      expect(body.data).toMatchObject([
-        {
-          reason_type: 'WEAK_SUPPORT',
-          missed_lesson_content: '',
-          missing_lesson_dates: [],
-        },
-      ]);
+      expect(body.data).toMatchObject([{ reason_type: 'WEAK_SUPPORT' }]);
+      expect(body.data[0].missed_lesson_content).toBeUndefined();
+      expect(body.data[0].missing_lesson_dates).toBeUndefined();
+    });
+
+    it('omits lesson fields when the lookup fails so the client reads sessions itself', async () => {
+      const consoleError = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => undefined);
+      attendanceRows = [absence];
+      lessonRows = [lesson('Unit 3 food')];
+      lessonError = { message: 'boom' };
+      const body = await (await listQueue()).json();
+      expect(body.data).toMatchObject([{ reason_type: 'ABSENT_RECOVERY' }]);
+      expect(body.data[0].missed_lesson_content).toBeUndefined();
+      expect(body.data[0].missed_post_content).toBeUndefined();
+      expect(body.data[0].missing_lesson_dates).toBeUndefined();
+      consoleError.mockRestore();
+    });
+
+    it('omits lesson fields when a lookup hits the row limit', async () => {
+      const consoleError = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => undefined);
+      attendanceRows = [absence];
+      lessonRows = Array.from({ length: 1000 }, () => lesson('x'));
+      const body = await (await listQueue()).json();
+      expect(body.data[0].missing_lesson_dates).toBeUndefined();
+      consoleError.mockRestore();
     });
 
     it('pins weak content to the feedback a session was opened from, not the latest', async () => {

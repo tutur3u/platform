@@ -36,9 +36,11 @@ type QueueItem = {
   feedback_created_at: string | null;
   source_feedback_id: string | null;
   content_feedback_id: string | null;
-  missed_lesson_content: string;
-  missed_post_content: string;
-  missing_lesson_dates: string[];
+  // Set only when the lesson-notes lookup succeeded; when omitted the client
+  // reads the class sessions itself.
+  missed_lesson_content?: string;
+  missed_post_content?: string;
+  missing_lesson_dates?: string[];
   content_review_due: boolean;
   content_unchanged_since: string | null;
   review_only: boolean;
@@ -396,9 +398,6 @@ async function getTutoringData(request: Request, { params }: Params) {
       source_feedback_id: hasWeak ? (feedback?.id ?? null) : null,
       content_feedback_id:
         hasWeak || contentReviewDue ? (contentFeedback?.id ?? null) : null,
-      missed_lesson_content: '',
-      missed_post_content: '',
-      missing_lesson_dates: [],
       content_review_due: contentReviewDue,
       content_unchanged_since: contentUnchangedSince,
       review_only: reviewOnly,

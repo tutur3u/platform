@@ -215,6 +215,7 @@ export function TutoringCreateCard({
                 ...form,
                 groupId: nextGroupId,
                 missedClassDate: '',
+                missingLessonDates: undefined,
                 sourceFeedbackId: null,
               });
             }}
@@ -237,6 +238,7 @@ export function TutoringCreateCard({
                 studentLabel: option?.label || form.studentLabel,
                 studentUserId: value,
                 missedClassDate: '',
+                missingLessonDates: undefined,
               })
             }
             placeholder={t('select_student')}

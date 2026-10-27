@@ -9,6 +9,13 @@ import {
 /** Used only when a group has no class session to read its time zone from. */
 const FALLBACK_TIME_ZONE = 'Asia/Ho_Chi_Minh';
 
+/**
+ * Upper bound per query. A full result may be truncated, which would turn into
+ * false "no lesson notes" claims, so it fails the lookup instead and the
+ * client falls back to reading the class sessions itself.
+ */
+const LESSON_ROW_LIMIT = 1000;
+
 interface QueueLessonTarget {
   group_id: string;
   student_user_id: string;
@@ -61,7 +68,8 @@ export async function loadQueueLessonNotes({
       .in('group_id', groupIds)
       .eq('status', 'scheduled')
       .gte('starts_at', shiftIsoDate(first, -1))
-      .lt('starts_at', shiftIsoDate(last, 2)),
+      .lt('starts_at', shiftIsoDate(last, 2))
+      .limit(LESSON_ROW_LIMIT),
     includePosts
       ? privateDb
           .from('user_group_posts')
@@ -71,10 +79,17 @@ export async function loadQueueLessonNotes({
           .gte('created_at', shiftIsoDate(first, -1))
           .lt('created_at', shiftIsoDate(last, 2))
           .order('created_at', { ascending: true })
+          .limit(LESSON_ROW_LIMIT)
       : Promise.resolve({ data: [], error: null }),
   ]);
   if (lessonsResult.error) throw lessonsResult.error;
   if (postsResult.error) throw postsResult.error;
+  if (
+    (lessonsResult.data?.length ?? 0) >= LESSON_ROW_LIMIT ||
+    (postsResult.data?.length ?? 0) >= LESSON_ROW_LIMIT
+  ) {
+    throw new Error('Tutoring queue lesson content exceeded the row limit');
+  }
   const { data } = lessonsResult;
 
   const lessonsByGroup = new Map<string, TutoringLessonNoteSession[]>();
