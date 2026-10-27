@@ -139,9 +139,10 @@ Regression coverage: `apps/database/supabase/tests/task-board-sprints.sql`
 
 ## Project ticket keys
 
-Task cards in Kanban and List, Timeline rows, My Tasks and task panel headers
-show `[KEY-N]` for the project the task joined first. Project-less tasks have no
-identifier prefix. Document cards keep their existing omission of the badge.
+Task cards in Kanban and List, Timeline rows and task panel headers show
+`[KEY-N]` for the project the task joined first. Project-less tasks have no
+identifier prefix. My Tasks lists keep showing task names only, as they did
+before project keys. Document cards keep their existing omission of the badge.
 Personal project overlays do not replace the source task's ticket identity.
 
 Each project receives a workspace-unique key from the first three ASCII letters
