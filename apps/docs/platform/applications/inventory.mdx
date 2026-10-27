@@ -106,16 +106,27 @@ Catalog managers open the editor on tap and get Edit and Delete on long-press;
 other actors have no row action until read-only item detail ships.
 
 Products have no barcode or SKU field. A scanned Tuturuuu product link
-(`https://tuturuuu.com/{ws}/inventory/products/{id}`) is fetched in the current
-workspace, under normal server authorization, and opens the item. Any other plain
-code becomes the name search, shown as "Name matches for ..." with a Clear
-action. Other links are rejected rather than searched. Barcode lookup needs a
-schema field and API filter and is not implied by this scanner.
+(`https://tuturuuu.com/{ws}/inventory/products/{uuid}`) is fetched in the current
+workspace under normal server authorization. It opens the item editor only for
+catalog managers; other actors get a name search for that product, widened to
+all statuses when the product is archived. A plain code without a URI scheme, up
+to the API's 500-character search limit, becomes the name search, shown as
+"Name matches for ..." with a Clear action. Every other payload, including other
+links, product links without a UUID, Wi-Fi credentials, `otpauth:`, `mailto:`,
+`tel:`, app intents and custom schemes, is reported as an unusable code and is
+never sent to the server or shown as a query. Barcode lookup needs a schema
+field and API filter and is not implied by this scanner.
+
+Switching the status filter or query never shows rows from the previous filter:
+a slow or failed load starts empty. A failed first load shows an error with
+Retry rather than an empty catalog, and a failed next page shows a retry footer
+instead of retrying on every scroll.
 
 Native presentation does not change server permissions, mutation authorization,
 or canonical workspace membership. Existing pending-sync indicators remain
 attached to their owning rows. Regression evidence: `inventory_items_page_test.dart`,
-`inventory_scan_test.dart`, and the compact/fractional stock widget tests.
+`inventory_items_states_test.dart`, `inventory_scan_test.dart`, and the
+compact/fractional stock widget tests.
 
 Native Overview analytics describe the loaded sample, not workspace-wide totals.
 Receipt activity groups unique dated receipts by device-local day for the selected

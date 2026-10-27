@@ -5066,6 +5066,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventorySearchProducts => 'Search products';
 
   @override
+  String get inventoryItemArchived => 'Archived';
+
+  @override
+  String get inventoryItemsLoadFailed => 'Couldn\'t load products';
+
+  @override
+  String get inventoryItemsLoadMoreFailed => 'Couldn\'t load more products';
+
+  @override
   String inventoryItemAvailable(String amount) {
     return '$amount available';
   }
@@ -5114,7 +5123,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventoryScanNotFound => 'No product in this workspace matches this code.';
 
   @override
-  String get inventoryScanNotProduct => 'This code is not a Tuturuuu product link.';
+  String get inventoryScanNotProduct => 'This code can\'t be matched to a product.';
 
   @override
   String get inventoryScanSearchInstead => 'Search instead';

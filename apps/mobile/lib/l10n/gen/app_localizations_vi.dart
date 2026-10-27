@@ -5015,6 +5015,15 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventorySearchProducts => 'Tìm sản phẩm';
 
   @override
+  String get inventoryItemArchived => 'Đã lưu trữ';
+
+  @override
+  String get inventoryItemsLoadFailed => 'Không tải được sản phẩm';
+
+  @override
+  String get inventoryItemsLoadMoreFailed => 'Không tải thêm được sản phẩm';
+
+  @override
   String inventoryItemAvailable(String amount) {
     return 'Còn $amount';
   }
@@ -5057,7 +5066,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventoryScanNotFound => 'Không có sản phẩm nào trong không gian làm việc này khớp với mã này.';
 
   @override
-  String get inventoryScanNotProduct => 'Mã này không phải liên kết sản phẩm Tuturuuu.';
+  String get inventoryScanNotProduct => 'Không thể dùng mã này để tìm sản phẩm.';
 
   @override
   String get inventoryScanSearchInstead => 'Chuyển sang tìm kiếm';

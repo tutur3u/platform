@@ -9667,6 +9667,24 @@ abstract class AppLocalizations {
   /// **'Search products'**
   String get inventorySearchProducts;
 
+  /// No description provided for @inventoryItemArchived.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived'**
+  String get inventoryItemArchived;
+
+  /// No description provided for @inventoryItemsLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load products'**
+  String get inventoryItemsLoadFailed;
+
+  /// No description provided for @inventoryItemsLoadMoreFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load more products'**
+  String get inventoryItemsLoadMoreFailed;
+
   /// No description provided for @inventoryItemAvailable.
   ///
   /// In en, this message translates to:
@@ -9742,7 +9760,7 @@ abstract class AppLocalizations {
   /// No description provided for @inventoryScanNotProduct.
   ///
   /// In en, this message translates to:
-  /// **'This code is not a Tuturuuu product link.'**
+  /// **'This code can\'t be matched to a product.'**
   String get inventoryScanNotProduct;
 
   /// No description provided for @inventoryScanSearchInstead.

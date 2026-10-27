@@ -37,12 +37,17 @@ part 'inventory_products_list.dart';
 /// Opens the camera and returns the scanned text, or null when cancelled.
 typedef InventoryScanCode = Future<String?> Function(BuildContext context);
 
+/// Opens the product editor; resolves true when the product was saved.
+typedef InventoryOpenEditor =
+    Future<bool?> Function(BuildContext context, String? productId);
+
 /// Items list: scan and search first, then each item's stock by location.
 class InventoryProductsPage extends StatefulWidget {
   const InventoryProductsPage({
     this.inventoryRepository,
     this.permissionsRepository,
     this.scanCode,
+    this.openEditor,
     super.key,
   });
 
@@ -51,6 +56,9 @@ class InventoryProductsPage extends StatefulWidget {
 
   /// Overrides the camera scanner; the scan action shows whenever it is set.
   final InventoryScanCode? scanCode;
+
+  /// Overrides the full-screen editor route.
+  final InventoryOpenEditor? openEditor;
 
   @override
   State<InventoryProductsPage> createState() => _InventoryProductsPageState();
@@ -79,10 +87,14 @@ class _InventoryProductsPageState extends State<InventoryProductsPage>
   bool _isLoadingInitial = false;
   bool _isLoadingMore = false;
   bool _hasMore = true;
+  bool _loadMoreFailed = false;
   String? _error;
   int _page = 1;
-  String _loadedQuery = '';
   String _status = 'active';
+
+  /// The filter and query the visible rows belong to. Rows are reused only
+  /// for the same key, so a slow or failed load never shows another filter.
+  (String, String)? _loadedKey;
 
   /// The query a scan filled in, shown in the body because the navbar search
   /// field stays closed.
@@ -169,6 +181,8 @@ class _InventoryProductsPageState extends State<InventoryProductsPage>
     }
     unawaited(_refreshPermissions(scope, requestToken));
 
+    final key = (_status, _query);
+    final sameKey = sameScope && _loadedKey == key;
     final cached = _inventoryRepository.peekProducts(
       wsId,
       query: _query,
@@ -176,13 +190,12 @@ class _InventoryProductsPageState extends State<InventoryProductsPage>
       pageSize: _pageSize,
     );
     setState(() {
-      _products =
-          cached?.data ??
-          (sameScope && _loadedQuery == _query ? _products : const []);
-      _loadedQuery = _query;
-      _count = cached?.count ?? (sameScope ? _count : 0);
+      _products = cached?.data ?? (sameKey ? _products : const []);
+      _count = cached?.count ?? (sameKey ? _count : 0);
+      _loadedKey = key;
       _isLoadingInitial = true;
       _isLoadingMore = false;
+      _loadMoreFailed = false;
       _error = null;
       _page = 1;
     });
@@ -232,7 +245,10 @@ class _InventoryProductsPageState extends State<InventoryProductsPage>
     if (wsId == null || _isLoadingInitial || _isLoadingMore || !_hasMore) {
       return;
     }
-    setState(() => _isLoadingMore = true);
+    setState(() {
+      _isLoadingMore = true;
+      _loadMoreFailed = false;
+    });
     try {
       final nextPage = _page + 1;
       final result = await _inventoryRepository.getProducts(
@@ -251,7 +267,7 @@ class _InventoryProductsPageState extends State<InventoryProductsPage>
       });
     } on Exception {
       if (_isStale(requestToken)) return;
-      setState(() => _hasMore = _products.length < _count);
+      setState(() => _loadMoreFailed = true);
     } finally {
       if (mounted && requestToken == _requestToken) {
         setState(() => _isLoadingMore = false);
@@ -260,7 +276,8 @@ class _InventoryProductsPageState extends State<InventoryProductsPage>
   }
 
   void _onScroll() {
-    if (!_scrollController.hasClients) return;
+    // A failed page waits for its explicit retry instead of looping.
+    if (!_scrollController.hasClients || _loadMoreFailed) return;
     final position = _scrollController.position;
     if (position.maxScrollExtent - position.pixels <= 200) {
       unawaited(_loadMore());
@@ -281,18 +298,24 @@ class _InventoryProductsPageState extends State<InventoryProductsPage>
     unawaited(_loadInitial());
   }
 
-  void _applyQuery(String? query) {
+  void _applyQuery(String? query, {String? status}) {
     _searchDebounce?.cancel();
     _searchController.text = query ?? '';
-    setState(() => _scanQuery = query);
+    setState(() {
+      _scanQuery = query;
+      if (status != null) _status = status;
+    });
     unawaited(_loadInitial());
   }
 
   Future<void> _openEditor({String? productId}) async {
-    final saved = await showInventoryProductEditorPage<bool>(
-      context,
-      productId: productId,
-    );
+    final open = widget.openEditor;
+    final saved = open != null
+        ? await open(context, productId)
+        : await showInventoryProductEditorPage<bool>(
+            context,
+            productId: productId,
+          );
     if (saved == true && mounted) {
       await _loadInitial(forceRefresh: true);
     }

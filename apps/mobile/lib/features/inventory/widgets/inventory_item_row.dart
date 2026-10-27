@@ -86,8 +86,7 @@ class InventoryItemRow extends StatelessWidget {
                       child: Text(
                         [
                           if (category.isNotEmpty) category,
-                          if (product.archived)
-                            l10n.inventoryAuditEventArchived,
+                          if (product.archived) l10n.inventoryItemArchived,
                         ].join(' · '),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -210,7 +209,8 @@ class InventoryLocationLine extends StatelessWidget {
                   padding: const EdgeInsets.only(top: 2),
                   child: Icon(
                     LucideIcons.triangleAlert,
-                    size: 14,
+                    // Tracks the amount text at large text sizes.
+                    size: MediaQuery.textScalerOf(context).scale(14),
                     color: tone!.foreground(c),
                   ),
                 ),

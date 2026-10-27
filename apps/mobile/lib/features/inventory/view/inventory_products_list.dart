@@ -44,8 +44,11 @@ extension _InventoryProductsList on _InventoryProductsPageState {
     final l10n = context.l10n;
     final products = _products;
     final scanQuery = _scanQuery;
+    final failedEmpty =
+        _error != null && products.isEmpty && !_isLoadingInitial;
     final header = <Widget>[
-      if (_error != null)
+      // A retained snapshot stays visible behind a limited-data warning.
+      if (_error != null && !failedEmpty)
         InventoryReadWarning(
           onRetry: () => unawaited(_loadInitial(forceRefresh: true)),
         ),
@@ -72,6 +75,8 @@ extension _InventoryProductsList on _InventoryProductsPageState {
             padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
             child: AppLoadingIndicator(),
           )
+        : _loadMoreFailed && products.isNotEmpty
+        ? _LoadMoreRetry(onRetry: () => unawaited(_loadMore()))
         : null;
     final Widget? placeholder = _isLoadingInitial && products.isEmpty
         ? const AppGroupedCard(
@@ -79,6 +84,18 @@ extension _InventoryProductsList on _InventoryProductsPageState {
               AppSkeletonRows(
                 count: 4,
                 leadingSize: InventoryItemRow.leadingSize,
+              ),
+            ],
+          )
+        : failedEmpty
+        ? AppGroupedCard(
+            children: [
+              AppStateMessage.inline(
+                icon: LucideIcons.cloudOff,
+                tone: AppTone.destructive,
+                title: l10n.inventoryItemsLoadFailed,
+                actionLabel: l10n.commonRetry,
+                onAction: () => unawaited(_loadInitial(forceRefresh: true)),
               ),
             ],
           )
@@ -208,7 +225,12 @@ extension _InventoryProductsList on _InventoryProductsPageState {
     } else if (_canManageCatalog) {
       await _openEditor(productId: product.id);
     } else {
-      _applyQuery(product.name?.trim() ?? '');
+      // Viewers have no detail screen yet; find the item by name, including
+      // archived items when the scanned one is archived.
+      _applyQuery(
+        product.name?.trim() ?? '',
+        status: product.archived && _status == 'active' ? 'all' : null,
+      );
     }
   }
 }
@@ -247,6 +269,38 @@ class _ScanQueryLine extends StatelessWidget {
             size: AppButtonSize.small,
             onPressed: onClear,
             child: Text(context.l10n.commonClear),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Footer after a failed page; scrolling never retries on its own.
+class _LoadMoreRetry extends StatelessWidget {
+  const _LoadMoreRetry({required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = AppTokens.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              context.l10n.inventoryItemsLoadMoreFailed,
+              style: tokens.typography.small.copyWith(
+                color: tokens.colorScheme.mutedForeground,
+              ),
+            ),
+          ),
+          AppButton.ghost(
+            size: AppButtonSize.small,
+            onPressed: onRetry,
+            child: Text(context.l10n.commonRetry),
           ),
         ],
       ),
