@@ -38,6 +38,12 @@ describe('getWorkspaceUserLinkForUser', () => {
       from: vi.fn(() => ({ select })),
     } as unknown as TypedSupabaseClient;
 
+    mocks.verifyWorkspaceMembershipType.mockResolvedValue({
+      membershipType: 'MEMBER',
+      ok: true,
+    });
+    mocks.createAdminClient.mockResolvedValue(authorizationClient);
+
     await expect(
       getWorkspaceUserLinkForUser('workspace-1', 'platform-user-1', {
         authorizationClient,
@@ -48,7 +54,14 @@ describe('getWorkspaceUserLinkForUser', () => {
       'workspace_user_linked_users'
     );
     expect(mocks.createClient).not.toHaveBeenCalled();
-    expect(mocks.createAdminClient).not.toHaveBeenCalled();
+    expect(mocks.createAdminClient).toHaveBeenCalledOnce();
+    expect(mocks.verifyWorkspaceMembershipType).toHaveBeenCalledWith(
+      expect.objectContaining({
+        supabase: authorizationClient,
+        userId: 'platform-user-1',
+        requiredType: 'MEMBER',
+      })
+    );
   });
 
   it('returns a link created by a concurrent repair even when its own RPC errors', async () => {
@@ -63,6 +76,7 @@ describe('getWorkspaceUserLinkForUser', () => {
       .mockResolvedValue({ data: null, error: null });
     const repairedMaybeSingle = vi
       .fn()
+      .mockResolvedValueOnce({ data: null, error: null })
       .mockResolvedValue({ data: repairedLink, error: null });
     const createLookupClient = (maybeSingle: ReturnType<typeof vi.fn>) => ({
       from: vi.fn(() => ({
@@ -99,6 +113,18 @@ describe('getWorkspaceUserLinkForUser', () => {
       target_user_id: 'platform-user-1',
       target_ws_id: 'workspace-1',
     });
-    expect(repairedMaybeSingle).toHaveBeenCalledOnce();
+    expect(repairedMaybeSingle).toHaveBeenCalledTimes(2);
+  });
+  it('denies a non-member before acquiring privileged profile access', async () => {
+    mocks.verifyWorkspaceMembershipType.mockResolvedValue({
+      ok: false,
+      error: 'not_member',
+    });
+    await expect(
+      getWorkspaceUserLinkForUser('workspace-1', 'platform-user-1', {
+        authorizationClient: {} as TypedSupabaseClient,
+      })
+    ).resolves.toBeNull();
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
   });
 });

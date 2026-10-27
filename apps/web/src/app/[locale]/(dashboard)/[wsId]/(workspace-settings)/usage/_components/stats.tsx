@@ -19,22 +19,7 @@ import * as datasetAccess from '@/lib/datasets/page-access';
 // Workspace Overview Stats
 // ============================================================================
 
-export async function WorkspaceMembersStats({ wsId }: { wsId: string }) {
-  const supabase = await createClient();
-  const permissions = await getPermissions({ wsId });
-  if (!permissions) notFound();
-  const { containsPermission } = permissions;
-
-  if (!containsPermission('manage_workspace_members')) {
-    return <StatisticCard title="Members" value="***" className="opacity-50" />;
-  }
-
-  const { data: count } = await supabase.rpc('get_workspace_users_count', {
-    ws_id: wsId,
-  });
-
-  return <StatisticCard title="Members" value={count || 0} />;
-}
+export { WorkspaceMembersStats } from './members-stats';
 
 export async function WorkspaceRolesStats({ wsId }: { wsId: string }) {
   const supabase = await createClient();

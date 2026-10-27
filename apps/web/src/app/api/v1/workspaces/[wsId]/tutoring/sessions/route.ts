@@ -245,7 +245,7 @@ export async function POST(request: Request, { params }: Params) {
   const scopeValidationResponse = await validateTutoringSessionScope({
     normalizedWsId,
     payload,
-    supabase,
+    supabase: sbAdmin,
   });
   if (scopeValidationResponse) {
     return scopeValidationResponse;
