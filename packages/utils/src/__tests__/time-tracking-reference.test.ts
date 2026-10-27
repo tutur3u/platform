@@ -1,8 +1,18 @@
 import { describe, expect, it, vi } from 'vitest';
-import { validateTimeTrackingReference } from '../time-tracking-reference';
+import {
+  TIME_TRACKING_REFERENCE_TABLES,
+  validateTimeTrackingReference,
+} from '../time-tracking-reference';
 
 describe('time tracking references', () => {
-  it.each(['time_tracking_categories', 'time_tracking_break_types'] as const)(
+  it('validates categories and the workspace_break_types table', () => {
+    expect(TIME_TRACKING_REFERENCE_TABLES).toEqual([
+      'time_tracking_categories',
+      'workspace_break_types',
+    ]);
+  });
+
+  it.each(TIME_TRACKING_REFERENCE_TABLES)(
     'scopes %s lookups and distinguishes lookup failures',
     async (table) => {
       const query = {
@@ -21,6 +31,8 @@ describe('time tracking references', () => {
       expect(await validateTimeTrackingReference(input)).toMatchObject({
         status: 400,
       });
+      expect(client.from).toHaveBeenCalledWith(table);
+      expect(query.eq).toHaveBeenCalledWith('id', 'reference');
       expect(query.eq).toHaveBeenCalledWith('ws_id', 'workspace');
       query.maybeSingle.mockResolvedValue({
         data: null,

@@ -1,4 +1,14 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase';
+import type { Database } from '@tuturuuu/types';
+
+// Checked against the generated schema so a misspelled table fails type-check.
+export const TIME_TRACKING_REFERENCE_TABLES = [
+  'time_tracking_categories',
+  'workspace_break_types',
+] as const satisfies readonly (keyof Database['public']['Tables'])[];
+
+export type TimeTrackingReferenceTable =
+  (typeof TIME_TRACKING_REFERENCE_TABLES)[number];
 
 export async function validateTimeTrackingReference({
   client,
@@ -8,7 +18,7 @@ export async function validateTimeTrackingReference({
 }: {
   client: TypedSupabaseClient;
   id: string | null | undefined;
-  table: 'time_tracking_categories' | 'time_tracking_break_types';
+  table: TimeTrackingReferenceTable;
   wsId: string;
 }): Promise<{ message: string; status: 400 | 500 } | null> {
   if (!id) return null;

@@ -26,7 +26,7 @@ export async function handlePauseAction({
   const referenceError = await validateTimeTrackingReference({
     client: sbAdmin,
     id: breakTypeId,
-    table: 'time_tracking_break_types',
+    table: 'workspace_break_types',
     wsId: normalizedWsId,
   });
   if (referenceError)

@@ -2,7 +2,7 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase';
 import type { Json } from '@tuturuuu/types';
 import { validateTimeTrackingReference } from '@tuturuuu/utils/time-tracking-reference';
 import { NextResponse } from 'next/server';
-
+import { validateSessionTaskWorkspace } from '../../task-validation';
 import type { EditActionBody, SessionRecord } from '../schemas';
 
 export async function handleEditAction({
@@ -34,6 +34,13 @@ export async function handleEditAction({
       { error: referenceError.message },
       { status: referenceError.status }
     );
+
+  const taskValidation = await validateSessionTaskWorkspace({
+    sbAdmin,
+    taskId,
+    wsId: normalizedWsId,
+  });
+  if (!taskValidation.ok) return taskValidation.errorResponse;
 
   const now = new Date();
   if (startTime !== undefined) {

@@ -5,6 +5,7 @@ const m = vi.hoisted(() => ({
   manager: false,
   from: vi.fn(),
   categoryWs: 'foreign',
+  taskWs: null as string | null,
   calls: [] as string[],
   mutations: [] as string[],
 }));
@@ -62,10 +63,12 @@ import { handleEditAction } from './sessions/[sessionId]/actions/edit';
 import { POST } from './sessions/route';
 
 const categoryId = '11111111-1111-4111-8111-111111111111';
+const taskId = '22222222-2222-4222-8222-222222222222';
 beforeEach(() => {
   vi.clearAllMocks();
   m.manager = false;
   m.categoryWs = 'foreign';
+  m.taskWs = null;
   m.calls = [];
   m.mutations = [];
   m.from.mockImplementation((table: string) => {
@@ -78,7 +81,14 @@ beforeEach(() => {
             : null
           : table === 'time_tracking_sessions'
             ? { id: 'session', is_running: true }
-            : [],
+            : table === 'tasks'
+              ? m.taskWs
+                ? {
+                    id: taskId,
+                    task_lists: { workspace_boards: { ws_id: m.taskWs } },
+                  }
+                : null
+              : [],
       error: null,
       count: 0,
     };
@@ -152,6 +162,34 @@ describe('session category workspace boundary', () => {
       canBypass: false,
       requestBody: { action: 'edit', categoryId },
     });
+    expect(response.status).toBe(200);
+    expect(m.mutations).toContain('time_tracking_sessions');
+  });
+});
+describe('session task workspace boundary on edit', () => {
+  const editTask = () =>
+    handleEditAction({
+      sbAdmin: { from: m.from } as never,
+      session: {
+        id: 'session',
+        is_running: true,
+        start_time: '2026-01-01T00:00:00Z',
+        user_id: 'actor',
+      } as never,
+      sessionId: 'session',
+      normalizedWsId: 'workspace',
+      canBypass: false,
+      requestBody: { action: 'edit', taskId },
+    });
+  it('returns 404 for a task from another workspace', async () => {
+    m.taskWs = 'foreign';
+    const response = await editTask();
+    expect(response.status).toBe(404);
+    expect(m.mutations).toEqual([]);
+  });
+  it('allows a task in the session workspace', async () => {
+    m.taskWs = 'workspace';
+    const response = await editTask();
     expect(response.status).toBe(200);
     expect(m.mutations).toContain('time_tracking_sessions');
   });

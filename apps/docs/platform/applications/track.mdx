@@ -41,6 +41,30 @@ Use the [Track route reference](/reference/repository/routes/track) to locate
 handlers, and [Data fetching](/platform/architecture/data-fetching) to extend a
 shared client contract rather than adding app-local raw browser API calls.
 
+## Time-tracking data boundaries
+
+These rules apply to the Track API and Web's legacy time-tracking routes alike.
+
+- **Request comments and activity**: open to the request owner or to members
+  holding `manage_time_tracking_requests`. The workspace creator and admins
+  hold it implicitly. Nonmembers are denied even with that permission.
+- **Other users' sessions and goals**: reading them with `?userId=` needs
+  `manage_time_tracking_requests`. Reading your own needs no extra permission.
+- **Categories and break types**: a `categoryId` or `breakTypeId` from another
+  workspace returns 400 before any session or break is written. Break types
+  live in `workspace_break_types`.
+- **Tasks**: a quick-start or session edit with a task from another workspace
+  returns 404 before any session is written.
+
+Regression coverage:
+`apps/track/src/app/api/v1/workspaces/[wsId]/time-tracking/requests/[id]/request-access.test.ts`,
+`apps/track/src/app/api/v1/workspaces/[wsId]/time-tracking/session-boundaries.test.ts`,
+`apps/track/src/app/api/v1/workspaces/[wsId]/time-tracking/quick-start/route.test.ts`,
+`apps/track/src/app/api/v1/workspaces/[wsId]/time-tracking/goals/route.test.ts`,
+their copies under `apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/time-tracking/`
+(the Web `session-boundaries.test.ts` also covers cross-user session and goal
+reads), and `packages/utils/src/__tests__/time-tracking-reference.test.ts`.
+
 ## Native Start candidate
 
 Track's retained App Router pages compile through the shared Start bridge RSC
