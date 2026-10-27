@@ -84,6 +84,34 @@ describe('tutoring policy API', () => {
     expect(mocks.createAdminClient).not.toHaveBeenCalled();
   });
 
+  it('saves tutor groups alongside every other policy field', async () => {
+    const tutorGroupId = '22222222-2222-4222-8222-222222222222';
+    const policy = {
+      ...EASY_CENTER_TUTORING_POLICY,
+      preset: 'custom' as const,
+      campusByGroupId: {
+        '11111111-1111-4111-8111-111111111111': 'Legacy Annex',
+      },
+      tutorGroupIds: [tutorGroupId, tutorGroupId.toUpperCase()],
+    };
+    const response = await request('PUT', policy);
+    expect(response.status).toBe(200);
+    const saved = query.upsert.mock.calls[0]?.[0] ?? [];
+    expect(readTutoringPolicyConfigRows(saved)).toEqual({
+      ...policy,
+      tutorGroupIds: [tutorGroupId],
+    });
+  });
+
+  it('rejects a tutor group that is not a UUID before writing', async () => {
+    const response = await request('PUT', {
+      ...EASY_CENTER_TUTORING_POLICY,
+      tutorGroupIds: ['not-a-group'],
+    });
+    expect(response.status).toBe(400);
+    expect(query.upsert).not.toHaveBeenCalled();
+  });
+
   it('stores a validated policy in the authorized workspace', async () => {
     const response = await request('PUT', EASY_CENTER_TUTORING_POLICY);
     expect(response.status).toBe(200);
@@ -98,5 +126,23 @@ describe('tutoring policy API', () => {
     expect(readTutoringPolicyConfigRows(saved)).toMatchObject(
       EASY_CENTER_TUTORING_POLICY
     );
+  });
+
+  it('saves the campus list alongside every other policy field', async () => {
+    const policy = {
+      ...EASY_CENTER_TUTORING_POLICY,
+      preset: 'custom' as const,
+      campusByGroupId: {
+        '11111111-1111-4111-8111-111111111111': 'Legacy Annex',
+      },
+      campusOptions: [' Campus North ', 'Campus North', ''],
+    };
+    const response = await request('PUT', policy);
+    expect(response.status).toBe(200);
+    const saved = query.upsert.mock.calls[0]?.[0] ?? [];
+    expect(readTutoringPolicyConfigRows(saved)).toEqual({
+      ...policy,
+      campusOptions: ['Campus North'],
+    });
   });
 });

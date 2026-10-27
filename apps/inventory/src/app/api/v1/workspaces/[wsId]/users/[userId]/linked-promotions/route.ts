@@ -1,5 +1,6 @@
 import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
 import { resolveFinanceRouteAuthContext } from '@tuturuuu/finance-core/route-auth';
+import type { Database, WorkspacePromotion } from '@tuturuuu/types/db';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -38,7 +39,11 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
 
-  const promoIds = [...new Set((links ?? []).map((link) => link.promo_id))];
+  const promotionLinks: Pick<
+    Database['private']['Tables']['user_linked_promotions']['Row'],
+    'promo_id'
+  >[] = links ?? [];
+  const promoIds = [...new Set(promotionLinks.map((link) => link.promo_id))];
 
   if (promoIds.length === 0) {
     return NextResponse.json([]);
@@ -61,11 +66,27 @@ export async function GET(req: Request, { params }: Params) {
   }
 
   const promotionsById = new Map(
-    (promotions ?? []).map((promotion) => [promotion.id, promotion])
+    (promotions ?? []).map(
+      (
+        promotion: Pick<
+          WorkspacePromotion,
+          | 'id'
+          | 'name'
+          | 'description'
+          | 'code'
+          | 'value'
+          | 'use_ratio'
+          | 'promo_type'
+          | 'max_uses'
+          | 'current_uses'
+          | 'ws_id'
+        >
+      ) => [promotion.id, promotion]
+    )
   );
 
   return NextResponse.json(
-    (links ?? [])
+    promotionLinks
       .map((link) => ({
         promo_id: link.promo_id,
         workspace_promotions: promotionsById.get(link.promo_id) ?? null,
@@ -151,7 +172,7 @@ export async function DELETE(req: Request, { params }: Params) {
     return access.response;
   }
 
-  const { permissions, sbAdmin } = access.context;
+  const { normalizedWsId: wsId, permissions, sbAdmin } = access.context;
   const privateDb = sbAdmin.schema('private');
 
   if (!permissions.containsPermission('update_users')) {
@@ -165,6 +186,37 @@ export async function DELETE(req: Request, { params }: Params) {
     return NextResponse.json(
       { message: 'Missing promoId parameter' },
       { status: 400 }
+    );
+  }
+
+  const [user, promotion] = await Promise.all([
+    sbAdmin
+      .from('workspace_users')
+      .select('id')
+      .eq('id', userId)
+      .eq('ws_id', wsId)
+      .maybeSingle(),
+    privateDb
+      .from('workspace_promotions')
+      .select('id')
+      .eq('id', promoId)
+      .eq('ws_id', wsId)
+      .maybeSingle(),
+  ]);
+  if (user.error || promotion.error) {
+    console.error(
+      'Error checking promotion link:',
+      user.error || promotion.error
+    );
+    return NextResponse.json(
+      { message: 'Error checking promotion link' },
+      { status: 500 }
+    );
+  }
+  if (!user.data || !promotion.data) {
+    return NextResponse.json(
+      { message: 'Promotion link not found' },
+      { status: 404 }
     );
   }
 

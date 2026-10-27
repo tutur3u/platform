@@ -124,6 +124,20 @@ This prerequisite does not change announcement history, statuses, or queue lease
 Provider acceptance, durable receipt publication, and safe recovery from ambiguous
 processing remain separate delivery requirements.
 
+### Reusing an existing topic contact
+
+The Add Contact dialog in Contacts can search this workspace's existing topic
+announcement contacts by name or email through the manager-only contacts lookup,
+which excludes archived contacts. Options show the name with the email, so
+repeated names stay distinguishable. Picking one fills its stored email, tags and
+linked user read-only and keeps its exact contact ID; confirming closes the dialog
+without a create request. The default stays "Create a new contact", and manual
+entry is unchanged. A choice outside the current workspace results, an archived
+contact, or one without an email is rejected with an inline message. Reuse never
+creates, links or assigns a teacher, and it does not change verification status or
+the send gates above. Regression coverage lives in Contacts `contact-form.test.tsx`
+and `existing-contact-selection.test.ts`.
+
 ### Inert topic delivery ledger
 
 The private delivery-attempt foundation reserves a parent revision and an
