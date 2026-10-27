@@ -242,6 +242,7 @@ export function AnnouncementForm({
               isDisabled={isSubmitting}
               setForm={setForm}
               templates={templates}
+              wsId={wsId}
             />
             {teacherAssignmentsEnabled ? (
               <AnnouncementTeacherFields
