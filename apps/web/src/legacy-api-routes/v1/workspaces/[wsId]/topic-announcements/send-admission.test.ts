@@ -23,9 +23,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: f.admin,
   createClient: vi.fn(),
 }));
-vi.mock('@tuturuuu/supabase/next/auth-session-user', () => ({
-  resolveAuthenticatedSessionUser: vi.fn(),
-}));
+vi.mock('@/lib/api-auth', () => ({ resolveSessionAuthContext: vi.fn() }));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getPermissions: vi.fn(),
   normalizeWorkspaceId: vi.fn(),
