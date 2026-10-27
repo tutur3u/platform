@@ -1,4 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { getReportReadGroupIds } from '@tuturuuu/users-core/routes/users/reports/group-read-access';
 import { verifySecret } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -27,16 +28,25 @@ export async function GET(request: Request, { params }: Params) {
     if (!permissions?.containsPermission('view_user_groups_reports')) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
     }
+    const accessibleGroupIds = await getReportReadGroupIds({
+      request: request,
+      wsId: permissions.wsId,
+      canManageUsers: permissions.containsPermission('manage_users'),
+    });
     const admin = await createAdminClient();
     const db = admin.schema('private');
-    const report = await db
+    let reportQuery = db
       .from('external_user_monthly_reports_workspace_view')
       .select(
         'id, user_email, delivery_status, delivered_at, delivery_requested_at, last_delivery_error'
       )
       .eq('id', reportId)
-      .eq('user_ws_id', wsId)
-      .maybeSingle();
+      .eq('user_ws_id', permissions.wsId)
+      .eq('group_ws_id', permissions.wsId);
+    if (accessibleGroupIds !== null) {
+      reportQuery = reportQuery.in('group_id', accessibleGroupIds);
+    }
+    const report = await reportQuery.maybeSingle();
     if (report.error) throw report.error;
     if (!report.data)
       return NextResponse.json(

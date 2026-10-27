@@ -73,6 +73,24 @@ function createAccess({ roleExists }: { roleExists: boolean }) {
         };
       }
 
+      if (table === 'workspace_members') {
+        return {
+          select() {
+            return {
+              eq(column: string, value: string) {
+                expect([column, value]).toEqual(['ws_id', 'workspace-1']);
+                return {
+                  in: async (_key: string, ids: string[]) => ({
+                    data: ids.map((user_id) => ({ user_id })),
+                    error: null,
+                  }),
+                };
+              },
+            };
+          },
+        };
+      }
+
       if (table === 'workspace_role_members') {
         return {
           delete() {
@@ -114,7 +132,9 @@ describe('external project role workspace binding', () => {
     const response = await addExternalProjectRoleMembers({
       access: access as never,
       request: new Request('http://localhost', {
-        body: JSON.stringify({ memberIds: ['user-1'] }),
+        body: JSON.stringify({
+          memberIds: ['11111111-1111-4111-8111-111111111111'],
+        }),
         method: 'POST',
       }),
       roleId: 'victim-role',
@@ -137,7 +157,7 @@ describe('external project role workspace binding', () => {
     const response = await removeExternalProjectRoleMember({
       access: access as never,
       roleId: 'victim-role',
-      userId: 'user-1',
+      userId: '11111111-1111-4111-8111-111111111111',
     });
 
     expect(response.status).toBe(404);
@@ -181,7 +201,12 @@ describe('external project role workspace binding', () => {
     const response = await addExternalProjectRoleMembers({
       access: access as never,
       request: new Request('http://localhost', {
-        body: JSON.stringify({ memberIds: ['user-1', 'user-2'] }),
+        body: JSON.stringify({
+          memberIds: [
+            '11111111-1111-4111-8111-111111111111',
+            '22222222-2222-4222-8222-222222222222',
+          ],
+        }),
         method: 'POST',
       }),
       roleId: 'role-1',
@@ -193,8 +218,8 @@ describe('external project role workspace binding', () => {
       ['ws_id', 'workspace-1'],
     ]);
     expect(calls.insertedRoleMembers).toEqual([
-      { role_id: 'role-1', user_id: 'user-1' },
-      { role_id: 'role-1', user_id: 'user-2' },
+      { role_id: 'role-1', user_id: '11111111-1111-4111-8111-111111111111' },
+      { role_id: 'role-1', user_id: '22222222-2222-4222-8222-222222222222' },
     ]);
   });
 

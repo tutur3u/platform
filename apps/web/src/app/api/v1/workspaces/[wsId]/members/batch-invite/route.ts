@@ -1,7 +1,11 @@
 import { getEffectiveAvailableSeats } from '@tuturuuu/payment-core/seat-limits';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { MAX_COLOR_LENGTH, MAX_EMAIL_LENGTH } from '@tuturuuu/utils/constants';
-import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { CURRENT_USER_APP_SESSION_AUTH } from '@/legacy-api-routes/v1/users/me/session-auth';
@@ -49,7 +53,7 @@ async function triggerImmediateNotification() {
 }
 
 export async function POST(req: Request, { params }: Params) {
-  const { wsId } = await params;
+  const { wsId: rawWsId } = await params;
 
   // Satellite apps proxy this route to web with an app-session token rather
   // than a Supabase auth cookie, so resolve the actor through the
@@ -61,6 +65,7 @@ export async function POST(req: Request, { params }: Params) {
   if (!session.ok) return session.response;
 
   const { supabase, user } = session;
+  const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
   // Verify user is a member of the workspace
   const membership = await verifyWorkspaceMembershipType({
@@ -83,6 +88,34 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
+  const permissions = await getPermissions({ wsId, user, request: req });
+  if (!permissions?.containsPermission('manage_workspace_members')) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
+  }
+  const sbAdmin = await createAdminClient();
+  const { data: disableInvite, error: settingsError } = await sbAdmin
+    .from('workspace_secrets')
+    .select('value')
+    .eq('ws_id', wsId)
+    .eq('name', 'DISABLE_INVITE')
+    .maybeSingle();
+  if (settingsError) {
+    console.error('Failed to verify workspace invite settings', {
+      error: settingsError,
+      wsId,
+    });
+    return NextResponse.json(
+      { message: 'Unable to verify invite settings' },
+      { status: 500 }
+    );
+  }
+  if (disableInvite) {
+    return NextResponse.json(
+      { message: 'Invitations are disabled' },
+      { status: 403 }
+    );
+  }
+
   // Parse and validate request body
   let body: z.infer<typeof BatchInviteSchema>;
   try {
@@ -99,7 +132,6 @@ export async function POST(req: Request, { params }: Params) {
   const uniqueEmails = [...new Set(body.emails.map((e) => e.toLowerCase()))];
 
   // Pre-flight seat check: reject entire batch if insufficient seats
-  const sbAdmin = await createAdminClient();
   const { status: seatStatus, effectiveAvailable } =
     await getEffectiveAvailableSeats(sbAdmin, wsId);
 
@@ -126,10 +158,6 @@ export async function POST(req: Request, { params }: Params) {
 
   // Insert one by one to handle individual failures gracefully
   for (const invite of invites) {
-    // Authentication, workspace membership, and seat availability have already
-    // been verified above. Use the admin client for the write so a freshly
-    // created workspace is not blocked by permission rows that are still being
-    // initialized during onboarding.
     const { error } = await sbAdmin
       .from('workspace_email_invites')
       .insert(invite);
