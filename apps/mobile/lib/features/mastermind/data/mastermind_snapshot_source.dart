@@ -7,8 +7,11 @@ import 'package:mobile/features/mastermind/model/event_feed.dart';
 abstract interface class AccessTokenProvider {
   Future<String?> currentAccessToken();
 
-  /// One silent session refresh after a 401. Null when the session cannot be
-  /// renewed, which the adapter reports as lost access.
+  /// One silent session refresh after a 401. Null only when the session is
+  /// truly gone (no session, or an invalid refresh token), which the adapter
+  /// reports as lost access. A transient failure (offline, server error,
+  /// client not ready) must throw instead: the adapter then reports the hub
+  /// as unavailable and the cached data stays.
   Future<String?> refreshAccessToken();
 }
 

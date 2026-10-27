@@ -25,6 +25,7 @@ final class HubHttpSnapshotSource implements MastermindSnapshotSource {
            : MastermindHubConfig.parseBaseUrl(baseUrl.toString()),
        _tokens = tokens,
        _client = client ?? http.Client(),
+       _ownsClient = client == null,
        _clock = clock ?? DateTime.now;
 
   /// Matches the formatted snapshot limit the parsers enforce.
@@ -36,8 +37,15 @@ final class HubHttpSnapshotSource implements MastermindSnapshotSource {
   final Uri? _base;
   final AccessTokenProvider _tokens;
   final http.Client _client;
+  final bool _ownsClient;
   final DateTime Function() _clock;
   final Duration timeout;
+
+  /// Releases the HTTP client this source created. An injected client belongs
+  /// to its caller and is left open.
+  void close() {
+    if (_ownsClient) _client.close();
+  }
 
   @override
   bool get isConfigured => _base != null;
@@ -186,60 +194,65 @@ final class HubHttpSnapshotSource implements MastermindSnapshotSource {
   }
 
   /// One request; a 401 earns exactly one silent refresh and one retry.
-  /// Null means the network failed or timed out.
+  ///
+  /// A 401 reply means access is lost only when the token provider confirms the
+  /// session is gone (it returns null). A provider that throws, or a request
+  /// that fails or times out, is null here: the hub is unavailable, which
+  /// never clears cached data.
   Future<_Reply?> _get(
     Uri uri, {
     required int maxBytes,
     String? ifNoneMatch,
   }) async {
-    var token = await _readToken(_tokens.currentAccessToken);
-    var refreshed = false;
-    if (token == null) {
-      token = await _readToken(_tokens.refreshAccessToken);
-      refreshed = true;
-      if (token == null) return _Reply(401);
-    }
-    var reply = await _exchange(uri, token, ifNoneMatch, maxBytes);
-    if (reply?.status == 401 && !refreshed) {
-      final fresh = await _readToken(_tokens.refreshAccessToken);
-      if (fresh != null && fresh != token) {
-        reply = await _exchange(uri, fresh, ifNoneMatch, maxBytes);
-      }
-    }
-    return reply;
-  }
-
-  Future<String?> _readToken(Future<String?> Function() read) async {
     try {
-      final token = await read();
-      return token == null || token.isEmpty ? null : token;
+      var token = _usable(await _tokens.currentAccessToken());
+      var refreshed = false;
+      if (token == null) {
+        token = _usable(await _tokens.refreshAccessToken());
+        refreshed = true;
+        if (token == null) return _Reply(401);
+      }
+      var reply = await _exchange(uri, token, ifNoneMatch, maxBytes);
+      if (reply?.status == 401 && !refreshed) {
+        final fresh = _usable(await _tokens.refreshAccessToken());
+        if (fresh != null && fresh != token) {
+          reply = await _exchange(uri, fresh, ifNoneMatch, maxBytes);
+        }
+      }
+      return reply;
     } on Object {
       return null;
     }
   }
 
+  String? _usable(String? token) =>
+      token == null || token.isEmpty ? null : token;
+
+  /// Runs the request under [timeout]. On expiry the request is aborted and the
+  /// body subscription cancelled, so a stalled hub cannot hold the socket.
   Future<_Reply?> _exchange(
     Uri uri,
     String token,
     String? ifNoneMatch,
     int maxBytes,
   ) async {
-    var expired = false;
+    final abort = Completer<void>();
     try {
       return await _read(
         uri,
         token,
         ifNoneMatch,
         maxBytes,
-        () => expired,
+        abort.future,
       ).timeout(
         timeout,
         onTimeout: () {
-          expired = true;
+          if (!abort.isCompleted) abort.complete();
           throw TimeoutException(null);
         },
       );
     } on Object {
+      if (!abort.isCompleted) abort.complete();
       return null;
     }
   }
@@ -249,9 +262,9 @@ final class HubHttpSnapshotSource implements MastermindSnapshotSource {
     String token,
     String? ifNoneMatch,
     int maxBytes,
-    bool Function() expired,
+    Future<void> aborted,
   ) async {
-    final request = http.Request('GET', uri)
+    final request = http.AbortableRequest('GET', uri, abortTrigger: aborted)
       ..followRedirects = false
       ..headers.addAll({
         'Accept': 'application/json',
@@ -262,20 +275,13 @@ final class HubHttpSnapshotSource implements MastermindSnapshotSource {
     final status = response.statusCode;
     final cap = status == 200 ? maxBytes : _maxErrorBytes;
     final declared = response.contentLength;
-    final builder = BytesBuilder(copy: false);
     var tooLarge = declared != null && declared > cap;
-    if (!tooLarge) {
-      await for (final chunk in response.stream) {
-        if (expired()) break;
-        builder.add(chunk);
-        if (builder.length > cap) {
-          tooLarge = true;
-          break;
-        }
-      }
-    } else {
+    final builder = BytesBuilder(copy: false);
+    if (tooLarge) {
       // Cancel the transfer instead of buffering a body we will refuse.
       await response.stream.listen(null).cancel();
+    } else {
+      tooLarge = await _drain(response.stream, builder, cap, aborted);
     }
     return _Reply(
       status,
@@ -284,6 +290,42 @@ final class HubHttpSnapshotSource implements MastermindSnapshotSource {
       bytes: tooLarge ? Uint8List(0) : builder.takeBytes(),
       tooLarge: tooLarge,
     );
+  }
+
+  /// Buffers [stream] into [builder] up to [cap] bytes; true when it is larger.
+  /// The subscription is cancelled on overflow or [aborted], so a body that
+  /// stalls after the headers neither hangs the caller nor leaks the transfer.
+  Future<bool> _drain(
+    Stream<List<int>> stream,
+    BytesBuilder builder,
+    int cap,
+    Future<void> aborted,
+  ) {
+    final done = Completer<bool>();
+    late final StreamSubscription<List<int>> subscription;
+    subscription = stream.listen(
+      (chunk) {
+        builder.add(chunk);
+        if (builder.length > cap && !done.isCompleted) {
+          unawaited(subscription.cancel());
+          done.complete(true);
+        }
+      },
+      onError: (Object error, StackTrace stack) {
+        if (!done.isCompleted) done.completeError(error, stack);
+      },
+      onDone: () {
+        if (!done.isCompleted) done.complete(false);
+      },
+      cancelOnError: true,
+    );
+    unawaited(
+      aborted.then((_) {
+        unawaited(subscription.cancel());
+        if (!done.isCompleted) done.completeError(TimeoutException(null));
+      }),
+    );
+    return done.future;
   }
 
   String? _digestFromEtag(String? value) {

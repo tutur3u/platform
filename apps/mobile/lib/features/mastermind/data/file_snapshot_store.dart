@@ -15,10 +15,17 @@ final class StoredEventCursor {
 /// Last good snapshot bytes plus digest, one directory per signed-in user:
 /// `<base>/mastermind/<sha256(userId)>/{snapshot.json,meta.json}`.
 ///
-/// The payload is the publisher-sanitized phone export in app-private storage,
-/// so it is not encrypted here (security review Q-S1). Files rely on the
-/// sandbox; there is no portable chmod. Writes are temp file, flush, rename.
-/// Anything unreadable, torn or tampered is discarded, never partially used.
+/// The payload is the publisher-sanitized phone export, so it is not
+/// encrypted here (security review Q-S1). Use it only where the OS gives the
+/// app a private cache directory (Android and iOS;
+/// `createMastermindSnapshotStore` picks the platform store): there is no
+/// portable chmod, and a desktop app's directory is not isolated from other
+/// local processes. Writes are temp file, flush, rename. Anything unreadable,
+/// torn or tampered is discarded, never partially used.
+///
+/// Every operation runs on one serial queue, so a read never observes the
+/// snapshot and meta files half way through a write, and a clear cannot be
+/// overtaken by a queued write.
 final class FileSnapshotStore implements MastermindSnapshotStore {
   FileSnapshotStore({
     required Future<Directory> Function() baseDirectory,
@@ -32,6 +39,13 @@ final class FileSnapshotStore implements MastermindSnapshotStore {
 
   final Future<Directory> Function() _baseDirectory;
   final String? Function() _userId;
+  Future<void> _tail = Future<void>.value();
+
+  Future<T> _serial<T>(Future<T> Function() operation) {
+    final future = _tail.then((_) => operation());
+    _tail = future.then<void>((_) {}, onError: (Object _) {});
+    return future;
+  }
 
   Future<Directory> _root() async =>
       Directory('${(await _baseDirectory()).path}/mastermind');
@@ -44,17 +58,23 @@ final class FileSnapshotStore implements MastermindSnapshotStore {
   }
 
   @override
-  Future<StoredSnapshot?> read() async {
+  Future<StoredSnapshot?> read() => _serial(_read);
+
+  Future<StoredSnapshot?> _read() async {
     final dir = await _userDirectory();
     if (dir == null || !dir.existsSync()) return null;
     try {
       final snapshotFile = File('${dir.path}/snapshot.json');
       final metaFile = File('${dir.path}/meta.json');
       final meta = _readMeta(await metaFile.readAsString());
+      // Size first: an oversized or mismatched file is never loaded.
+      final size = await snapshotFile.length();
+      if (meta == null || size > _maxBytes || size != meta.length) {
+        await _discard(dir);
+        return null;
+      }
       final bytes = await snapshotFile.readAsBytes();
-      if (meta == null ||
-          bytes.length > _maxBytes ||
-          bytes.length != meta.length ||
+      if (bytes.length != meta.length ||
           sha256.convert(bytes).toString() != meta.sha256) {
         await _discard(dir);
         return null;
@@ -68,6 +88,12 @@ final class FileSnapshotStore implements MastermindSnapshotStore {
 
   @override
   Future<void> write(
+    Uint8List bytes,
+    DateTime receivedAt, {
+    required String digest,
+  }) => _serial(() => _write(bytes, receivedAt, digest: digest));
+
+  Future<void> _write(
     Uint8List bytes,
     DateTime receivedAt, {
     required String digest,
@@ -100,12 +126,16 @@ final class FileSnapshotStore implements MastermindSnapshotStore {
 
   /// Logout, account switch and lost access erase every user's cache.
   @override
-  Future<void> clear() async {
+  Future<void> clear() => _serial(_clear);
+
+  Future<void> _clear() async {
     final root = await _root();
     if (root.existsSync()) await root.delete(recursive: true);
   }
 
-  Future<StoredEventCursor?> readCursor() async {
+  Future<StoredEventCursor?> readCursor() => _serial(_readCursor);
+
+  Future<StoredEventCursor?> _readCursor() async {
     final dir = await _userDirectory();
     if (dir == null) return null;
     final meta = await _previousMeta(dir);
@@ -118,10 +148,17 @@ final class FileSnapshotStore implements MastermindSnapshotStore {
           );
   }
 
-  /// Updates the cursor beside the cached snapshot; without one it is a no-op,
-  /// because the cursor is only meaningful for the export it was seen against.
+  /// Updates the cursor in the meta file beside the cached snapshot, on the
+  /// same serial queue as [write] and [clear] so it cannot interleave with a
+  /// snapshot swap or revive a cleared cache. Without a valid cached snapshot
+  /// it is a no-op, because the cursor is only meaningful for the export it was
+  /// seen against.
   Future<void> writeCursor(StoredEventCursor cursor) async {
     RangeError.checkNotNegative(cursor.lastSeenSeq, 'lastSeenSeq');
+    await _serial(() => _writeCursor(cursor));
+  }
+
+  Future<void> _writeCursor(StoredEventCursor cursor) async {
     final dir = await _userDirectory();
     if (dir == null) return;
     final raw = await _readMetaMap(dir);

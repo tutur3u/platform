@@ -21,6 +21,10 @@ final class FakeTokens implements AccessTokenProvider {
 
   String? current;
   String? refreshed;
+
+  /// When set, refreshing throws it (a retryable failure) instead of
+  /// answering null (the session is gone).
+  Exception? refreshError;
   int reads = 0;
   int refreshes = 0;
 
@@ -33,6 +37,7 @@ final class FakeTokens implements AccessTokenProvider {
   @override
   Future<String?> refreshAccessToken() async {
     refreshes++;
+    if (refreshError case final error?) throw error;
     return refreshed;
   }
 }
@@ -42,7 +47,16 @@ final class RecordedRequest {
     : method = request.method,
       url = request.url,
       headers = Map.of(request.headers),
-      followRedirects = request.followRedirects;
+      followRedirects = request.followRedirects {
+    if (request case http.Abortable(:final abortTrigger?)) {
+      abortable = true;
+      unawaited(abortTrigger.whenComplete(() => aborted = true));
+    }
+  }
+
+  /// Whether the request carried an abort trigger, and whether it has fired.
+  bool abortable = false;
+  bool aborted = false;
   final String method;
   final Uri url;
   final Map<String, String> headers;

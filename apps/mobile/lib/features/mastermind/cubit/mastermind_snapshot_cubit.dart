@@ -1,6 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:flutter/foundation.dart';
 import 'package:mobile/features/mastermind/cubit/mastermind_snapshot_state.dart';
+import 'package:mobile/features/mastermind/data/hub_capabilities.dart';
 import 'package:mobile/features/mastermind/data/mastermind_snapshot_source.dart';
 import 'package:mobile/features/mastermind/data/mastermind_snapshot_store.dart';
 import 'package:mobile/features/mastermind/model/event_feed.dart';
@@ -48,11 +49,41 @@ final class MastermindSnapshotCubit extends Cubit<MastermindSnapshotState> {
   /// no longer matches what the events route knows (409 `cursor_ahead`, or 404
   /// for a digest the pointer moved past). The cursor then restarts from the
   /// fresh snapshot's `latest_seq`.
-  Future<void> recoverFromEvents(EventsFetchUnavailable failure) =>
-      failure.needsResync ||
-          failure.kind == SnapshotUnavailableKind.digestNotFound
-      ? _refresh(conditional: false)
+  ///
+  /// A 401/403 on the events route means access is lost, exactly as on the
+  /// snapshot route: memory and disk are erased instead.
+  Future<void> recoverFromEvents(EventsFetchUnavailable failure) {
+    if (failure.kind.isAccessLost) return _revokeAccess(failure.kind);
+    return failure.needsResync ||
+            failure.kind == SnapshotUnavailableKind.digestNotFound
+        ? _refresh(conditional: false)
+        : Future<void>.value();
+  }
+
+  /// A 401/403 on GET /v1/capabilities is access lost as well. Any other
+  /// capabilities failure is left to the caller and keeps the held snapshot.
+  Future<void> handleCapabilitiesUnavailable(
+    CapabilitiesFetchUnavailable failure,
+  ) => failure.kind.isAccessLost
+      ? _revokeAccess(failure.kind)
       : Future<void>.value();
+
+  /// Invalidates in-flight reads, then drops the held snapshot from memory and
+  /// disk so a late response cannot restore it.
+  Future<void> _revokeAccess(SnapshotUnavailableKind kind) {
+    ++_generation;
+    _pending = null;
+    return _eraseAfterAccessLost(kind);
+  }
+
+  Future<void> _eraseAfterAccessLost(SnapshotUnavailableKind kind) async {
+    emit(MastermindSnapshotUnavailable(kind));
+    try {
+      await _storeOperation(_store.clear);
+    } on Object {
+      /* The in-memory state is already cleared. */
+    }
+  }
 
   Future<void> _refresh({required bool conditional}) {
     if (_pending != null) return _pending!;
@@ -191,12 +222,7 @@ final class MastermindSnapshotCubit extends Cubit<MastermindSnapshotState> {
     int generation,
   ) async {
     if (kind.isAccessLost) {
-      emit(MastermindSnapshotUnavailable(kind));
-      try {
-        await _storeOperation(_store.clear);
-      } on Object {
-        /* The in-memory state is already cleared. */
-      }
+      await _eraseAfterAccessLost(kind);
       return;
     }
     if (previous != null) {

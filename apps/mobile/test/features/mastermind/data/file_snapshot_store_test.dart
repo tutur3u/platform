@@ -163,4 +163,44 @@ void main() {
       );
     });
   });
+
+  group('serial queue', () {
+    test('a cursor write queued behind a snapshot write is applied', () async {
+      final write = store.write(_bytes('{}'), receivedAt, digest: hubDigest);
+      final cursor = store.writeCursor(const StoredEventCursor(lastSeenSeq: 7));
+      await Future.wait([write, cursor]);
+      expect((await store.readCursor())!.lastSeenSeq, 7);
+    });
+
+    test('a clear queued behind writes leaves nothing behind', () async {
+      final pending = [
+        store.write(_bytes('{}'), receivedAt, digest: hubDigest),
+        store.writeCursor(const StoredEventCursor(lastSeenSeq: 2)),
+        store.clear(),
+        store.writeCursor(const StoredEventCursor(lastSeenSeq: 3)),
+      ];
+      await Future.wait(pending);
+      expect(root().existsSync(), isFalse);
+      expect(await store.readCursor(), isNull);
+    });
+
+    test('a read queued behind a write sees the whole snapshot', () async {
+      final write = store.write(
+        _bytes('{"n":1}'),
+        receivedAt,
+        digest: hubDigest,
+      );
+      final read = store.read();
+      await write;
+      expect((await read)!.digest, hubDigest);
+    });
+  });
+
+  test('a snapshot file that outgrew its meta is discarded', () async {
+    await store.write(_bytes('{}'), receivedAt, digest: hubDigest);
+    final dir = userDirectories().single as Directory;
+    File('${dir.path}/snapshot.json').writeAsBytesSync(Uint8List(600001));
+    expect(await store.read(), isNull);
+    expect(dir.existsSync(), isFalse);
+  });
 }

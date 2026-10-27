@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobile/features/mastermind/cubit/mastermind_snapshot_cubit.dart';
 import 'package:mobile/features/mastermind/data/file_snapshot_store.dart';
+import 'package:mobile/features/mastermind/data/hub_capabilities.dart';
 import 'package:mobile/features/mastermind/data/hub_http_snapshot_source.dart';
 import 'package:mobile/features/mastermind/data/mastermind_snapshot_source.dart';
 import 'package:mobile/features/mastermind/parse/snapshot_parser.dart';
@@ -292,6 +293,69 @@ void main() {
               as EventsFetchUnavailable;
       await c.recoverFromEvents(failure);
       expect(snapshotRequests(), isEmpty);
+    });
+  });
+
+  group('lost access on events and capabilities', () {
+    Future<(MastermindSnapshotCubit, HubHttpSnapshotSource)> loaded() async {
+      final source = HubHttpSnapshotSource(
+        baseUrl: hubBase,
+        tokens: tokens,
+        client: hub.client,
+      );
+      final c = MastermindSnapshotCubit(
+        source: source,
+        store: store,
+        parser: (bytes) async => parseMastermindSnapshot(bytes),
+      );
+      await c.refresh();
+      expect(await store.read(), isNotNull);
+      return (c, source);
+    }
+
+    for (final status in [401, 403]) {
+      test('$status on events clears memory and disk', () async {
+        final (c, source) = await loaded();
+        hub.handler = (_) => hubError(status, 'x');
+        final failure =
+            await source.fetchEvents(digest: hubDigest, afterSeq: 1)
+                as EventsFetchUnavailable;
+        await c.recoverFromEvents(failure);
+        final state = c.state as MastermindSnapshotUnavailable;
+        expect(state.kind.isAccessLost, isTrue);
+        expect(await store.read(), isNull);
+      });
+
+      test('$status on capabilities clears memory and disk', () async {
+        final (c, source) = await loaded();
+        hub.handler = (_) => hubError(status, 'x');
+        final failure =
+            await source.fetchCapabilities() as CapabilitiesFetchUnavailable;
+        await c.handleCapabilitiesUnavailable(failure);
+        expect(c.state, isA<MastermindSnapshotUnavailable>());
+        expect(await store.read(), isNull);
+      });
+    }
+
+    test('a retryable capabilities failure keeps the snapshot', () async {
+      final (c, source) = await loaded();
+      hub.handler = (_) => hubError(503, 'x');
+      final failure =
+          await source.fetchCapabilities() as CapabilitiesFetchUnavailable;
+      await c.handleCapabilitiesUnavailable(failure);
+      expect(c.state, isA<MastermindSnapshotReady>());
+      expect(await store.read(), isNotNull);
+    });
+
+    test('a failed token refresh keeps the cached snapshot', () async {
+      final (c, _) = await loaded();
+      tokens
+        ..current = null
+        ..refreshError = const SocketException('offline');
+      await c.refresh();
+      final ready = c.state as MastermindSnapshotReady;
+      expect(ready.refreshFailure, isA<UnavailableRefresh>());
+      expect((await store.read())!.digest, hubDigest);
     });
   });
 }
