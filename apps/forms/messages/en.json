@@ -9089,7 +9089,10 @@
       "unassigned": "unassigned",
       "unfinished": "Unfinished",
       "unfinished_work": "Unfinished work",
-      "unknown_estimate": "unknown estimate"
+      "unknown_estimate": "unknown estimate",
+      "loading_tasks": "Loading the sprint's tasks…",
+      "retry": "Retry",
+      "tasks_failed": "Couldn't load the sprint's tasks"
     },
     "stats": {
       "lists": "columns",

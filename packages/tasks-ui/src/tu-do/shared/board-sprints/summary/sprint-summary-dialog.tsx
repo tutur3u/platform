@@ -141,7 +141,11 @@ function SummaryBody({
   const [goalResult, setGoalResult] = useState<BoardSprintGoalResult | null>(
     sprint.goal_result
   );
-  const { data: tasks = [] } = useSprintTasks({ boardId, enabled: live, wsId });
+  const tasksQuery = useSprintTasks({ boardId, enabled: live, wsId });
+  const tasks = tasksQuery.data ?? [];
+  // Ending without the full task list would send no decisions and carry
+  // everything, so the live summary waits for it.
+  const tasksReady = !live || tasksQuery.isSuccess;
   const { data: members = [] } = useBoardMembers({
     boardId,
     enabled: true,
@@ -241,7 +245,24 @@ function SummaryBody({
 
       <div className="grid gap-3 md:grid-cols-2">
         <SummaryPeople members={members} numbers={numbers} />
-        {live ? (
+        {live && !tasksReady ? (
+          <section className="flex flex-col items-start gap-2 rounded-lg border p-3 text-muted-foreground text-sm">
+            {tasksQuery.isError ? (
+              <>
+                <span>{t('tasks_failed')}</span>
+                <Button
+                  onClick={() => void tasksQuery.refetch()}
+                  size="sm"
+                  variant="outline"
+                >
+                  {t('retry')}
+                </Button>
+              </>
+            ) : (
+              <span>{t('loading_tasks')}</span>
+            )}
+          </section>
+        ) : live ? (
           <SummaryDecisions
             decisions={decisions}
             listsById={listsById}
@@ -268,9 +289,11 @@ function SummaryBody({
       <DialogFooter className="items-center gap-2 sm:justify-between">
         <span className="text-muted-foreground text-sm">
           {live
-            ? missing
-              ? t('needs_decision', { count: missing })
-              : t('ready_to_end')
+            ? !tasksReady
+              ? ''
+              : missing
+                ? t('needs_decision', { count: missing })
+                : t('ready_to_end')
             : shownResult
               ? t(`goal_status_${shownResult}`)
               : ''}
@@ -281,7 +304,10 @@ function SummaryBody({
               <Button onClick={onClose} variant="outline">
                 {t('not_yet')}
               </Button>
-              <Button disabled={missing > 0 || end.isPending} onClick={finish}>
+              <Button
+                disabled={!tasksReady || missing > 0 || end.isPending}
+                onClick={finish}
+              >
                 {t('end_and_plan', { name: nextName })}
                 <ArrowRight />
               </Button>

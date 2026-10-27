@@ -185,6 +185,31 @@ describe('SprintSummaryDialog', () => {
     );
   });
 
+  it('keeps End disabled until the sprint tasks have loaded', async () => {
+    api.listBoardTasksForSearch.mockReturnValue(new Promise(() => undefined));
+    renderSummary({ mode: 'live', shown: sprint({}) });
+
+    expect(await screen.findByText('loading_tasks')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'end_and_plan:Sprint 15' })
+    ).toBeDisabled();
+    expect(screen.queryByText('ready_to_end')).not.toBeInTheDocument();
+  });
+
+  it('offers a retry and keeps End disabled when the tasks fail to load', async () => {
+    api.listBoardTasksForSearch.mockRejectedValue(new Error('offline'));
+    renderSummary({ mode: 'live', shown: sprint({}) });
+
+    expect(await screen.findByText('tasks_failed')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'end_and_plan:Sprint 15' })
+    ).toBeDisabled();
+
+    api.listBoardTasksForSearch.mockResolvedValue([task('t2')]);
+    fireEvent.click(screen.getByRole('button', { name: 'retry' }));
+    expect(await screen.findByText('Task t2')).toBeInTheDocument();
+  });
+
   it('shows an ended sprint as its stored report', async () => {
     renderSummary({
       mode: 'report',
