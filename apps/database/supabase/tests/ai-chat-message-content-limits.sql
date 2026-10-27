@@ -64,6 +64,9 @@ select throws_ok(
   'public AI chat message table rejects oversized direct inserts'
 );
 
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000010', true);
+select set_config('request.jwt.claim.role', 'authenticated', true);
+
 select lives_ok(
   $$select public.insert_ai_chat_message(
       repeat('b', 10000),

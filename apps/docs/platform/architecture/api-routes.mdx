@@ -708,3 +708,25 @@ export async function POST(request: NextRequest) {
 - [Authorization](/platform/architecture/authorization)
 - [tRPC](/platform/architecture/trpc)
 - [Data Fetching](/platform/architecture/data-fetching)
+
+
+## AI chat and account lifecycle RPC admission
+
+`insert_ai_chat_message` requires an authenticated actor who owns the target
+legacy AI chat. Its ownership check holds the chat row stable until the insert
+finishes. Missing and inaccessible chat IDs receive the same denial; existing
+content limits remain in effect. Session-based AI chat callers keep using the
+RPC, while app-session direct persistence retains its existing explicit actor
+and chat checks.
+
+`get_user_workspace_subscription_info` is a service-role operation used by the
+Web account deletion pre-check. It is unavailable to anonymous and authenticated
+client roles, and also checks the service role inside its body. The retained
+inactive backend caller does not change that contract.
+
+Both functions pin their search path and have explicit execute grants. Regression
+coverage is in `ai-chat-subscription-rpc-access.sql` and the existing AI chat
+content-limit test. The paired rollback restores the prior definitions and
+execute grants; it is an operator-controlled recovery action. Local fixture
+checks do not replace full-schema staging anon/authenticated denial and service
+account deletion checks.
