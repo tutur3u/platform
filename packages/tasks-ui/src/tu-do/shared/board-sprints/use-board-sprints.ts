@@ -3,8 +3,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   type BoardSprint,
+  type BoardSprintEndDecision,
+  type BoardSprintGoalResult,
   type BoardSprintLengthWeeks,
   type BoardSprintsResponse,
+  endWorkspaceTaskBoardSprint,
   listWorkspaceTaskBoardSprints,
   moveTasksToWorkspaceTaskBoardSprint,
   startWorkspaceTaskBoardSprint,
@@ -147,5 +150,27 @@ export function useBoardSprintMutations({
     onSettled: refresh,
   });
 
-  return { moveTasks, setLength, start, updateGoal };
+  const end = useMutation({
+    mutationFn: ({
+      decisions,
+      goalResult,
+      sprintId,
+    }: {
+      decisions: Record<string, BoardSprintEndDecision>;
+      goalResult: BoardSprintGoalResult | null;
+      sprintId: string;
+    }) =>
+      endWorkspaceTaskBoardSprint(wsId, boardId, sprintId, {
+        decisions,
+        goal_result: goalResult,
+      }),
+    onSuccess: (data) => {
+      store(data);
+      // Tasks sent to the backlog lost their owners on the server.
+      void queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+      void queryClient.invalidateQueries({ queryKey: ['tasks-full', boardId] });
+    },
+  });
+
+  return { end, moveTasks, setLength, start, updateGoal };
 }

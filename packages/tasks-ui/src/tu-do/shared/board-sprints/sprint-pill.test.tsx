@@ -175,4 +175,30 @@ describe('SprintPill', () => {
       screen.queryByRole('button', { name: /start:Sprint 15/ })
     ).not.toBeInTheDocument();
   });
+
+  it('offers End for the running sprint and opens past sprints from the list', () => {
+    const onEndSprint = vi.fn();
+    const onSelectSprint = vi.fn();
+    render(
+      <SprintPill
+        canManage
+        currentSprint={active}
+        getProgress={progress}
+        onEndSprint={onEndSprint}
+        onSelectSprint={onSelectSprint}
+        sprints={[closed, active, planned]}
+      />
+    );
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'end_sprint:Sprint 14' })
+    );
+    expect(onEndSprint).toHaveBeenCalledWith(active);
+    expect(
+      screen.queryByRole('button', { name: /start:Sprint 15/ })
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getAllByRole('menuitem')[0]!);
+    expect(onSelectSprint).toHaveBeenCalledWith(closed);
+  });
 });
