@@ -257,13 +257,19 @@ describe('BoardPlanView', () => {
   it('keeps a successful assignment when another one fails', async () => {
     let failFirst: (error: Error) => void = () => undefined;
     api.listBoardTasksForSearch.mockResolvedValue([task('t1'), task('t5')]);
-    api.update.mockImplementation((_ws: string, id: string) =>
-      id === 't1'
-        ? new Promise((_resolve, reject) => {
-            failFirst = reject;
-          })
-        : Promise.resolve({})
-    );
+    api.update.mockImplementation((_ws: string, id: string) => {
+      if (id === 't1') {
+        return new Promise((_resolve, reject) => {
+          failFirst = reject;
+        });
+      }
+      // The server now has t5 with Ana, which a later refetch must show.
+      api.listBoardTasksForSearch.mockResolvedValue([
+        task('t1'),
+        task('t5', { assignees: [{ id: 'u-ana', display_name: 'Ana' }] }),
+      ]);
+      return Promise.resolve({});
+    });
     renderPlan({ sprints: [sprint(15, 'planned', ['t1', 't5'])] });
 
     fireEvent.click(
@@ -284,6 +290,58 @@ describe('BoardPlanView', () => {
       within(screen.getByRole('region', { name: 'Ana' })).getByText('Task t5')
     ).toBeInTheDocument();
   });
+
+  it.each([
+    ['in order', [0, 1]],
+    ['out of order', [1, 0]],
+  ])(
+    'shows the server owners after two moves of one task both fail (%s)',
+    async (_label, failOrder) => {
+      const fails: Array<(error: Error) => void> = [];
+      api.listBoardTasksForSearch.mockResolvedValue([task('t1')]);
+      api.update.mockImplementation(
+        () =>
+          new Promise((_resolve, reject) => {
+            fails.push(reject);
+          })
+      );
+      renderPlan({ sprints: [sprint(15, 'planned', ['t1'])] });
+
+      fireEvent.click(
+        await screen.findByRole('button', { name: 'assign:Task t1' })
+      );
+      fireEvent.click(screen.getAllByRole('menuitem', { name: /Ana/ })[0]!);
+      const row = (
+        await within(screen.getByRole('region', { name: 'Ana' })).findByText(
+          'Task t1'
+        )
+      ).closest('[draggable]')!;
+      const transfer = dataTransfer();
+      fireEvent.dragStart(row, { dataTransfer: transfer });
+      const binh = screen.getByRole('region', { name: 'Binh' });
+      fireEvent.dragOver(binh, { dataTransfer: transfer });
+      fireEvent.drop(binh, { dataTransfer: transfer });
+      await waitFor(() => expect(fails).toHaveLength(2));
+      const fetchesBefore = api.listBoardTasksForSearch.mock.calls.length;
+
+      for (const index of failOrder) fails[index]!(new Error('network'));
+
+      await waitFor(() =>
+        expect(api.listBoardTasksForSearch.mock.calls.length).toBeGreaterThan(
+          fetchesBefore
+        )
+      );
+      const backlog = screen.getByRole('region', { name: 'backlog' });
+      await waitFor(() =>
+        expect(within(backlog).getByText('Task t1')).toBeInTheDocument()
+      );
+      expect(
+        within(screen.getByRole('region', { name: 'Ana' })).queryByText(
+          'Task t1'
+        )
+      ).toBeNull();
+    }
+  );
 
   it('unassigns a task dropped back on the backlog', async () => {
     renderPlan({ sprints: [planned] });
