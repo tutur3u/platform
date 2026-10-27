@@ -20,6 +20,7 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import { formatSprintDateRange } from '@tuturuuu/utils/task-helper/sprints';
 import { useLocale, useTranslations } from 'next-intl';
+import { useState } from 'react';
 import { ToneButton } from '../board-header/tone-button';
 
 export interface SprintProgress {
@@ -68,6 +69,12 @@ export function SprintPill({
 }) {
   const t = useTranslations('ws-task-boards.sprints');
   const locale = useLocale();
+  const [open, setOpen] = useState(false);
+  // Actions open dialogs or settings, so the menu closes first.
+  const closeThen = (action: () => void) => () => {
+    setOpen(false);
+    action();
+  };
   const isActive = currentSprint.status === 'active';
   const progress = getProgress(currentSprint);
   const ordered = [...sprints]
@@ -95,7 +102,7 @@ export function SprintPill({
   };
 
   return (
-    <DropdownMenu>
+    <DropdownMenu onOpenChange={setOpen} open={open}>
       <DropdownMenuTrigger asChild>
         <button
           aria-label={t('switcher_label', { name: currentSprint.name })}
@@ -122,6 +129,7 @@ export function SprintPill({
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="start"
+        onCloseAutoFocus={(event) => event.preventDefault()}
         className="w-[min(24rem,calc(100vw-2rem))]"
       >
         <DropdownMenuLabel className="text-muted-foreground text-xs">
@@ -187,7 +195,7 @@ export function SprintPill({
               {startable && onStartSprint ? (
                 <ToneButton
                   disabled={starting}
-                  onClick={() => onStartSprint(startable)}
+                  onClick={closeThen(() => onStartSprint(startable))}
                   tone="green"
                 >
                   <Play />
@@ -198,7 +206,7 @@ export function SprintPill({
               {onOpenSettings ? (
                 <button
                   className="inline-flex h-7 items-center gap-2 rounded-md px-2 font-medium text-muted-foreground text-xs hover:bg-muted hover:text-foreground"
-                  onClick={onOpenSettings}
+                  onClick={closeThen(onOpenSettings)}
                   type="button"
                 >
                   <Settings className="size-3.5" />
