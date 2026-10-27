@@ -1,5 +1,5 @@
 -- Fail closed when merge permission checks return NULL (batched phase 1 helpers).
--- Part of SR-108; see 20261027150200_merge_phase_workspace_guards.
+-- Part of SR-108; see 20261027151030_merge_phase_workspace_guards.
 -- The two dynamic-identifier helpers refuse any (table, column) outside the fixed
 -- phase 1a-1d merge graph and stay service_role-only, matching the emergency
 -- revoke in 20261027151000 regardless of the order the two are applied in.

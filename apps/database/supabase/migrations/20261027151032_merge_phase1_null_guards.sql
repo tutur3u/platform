@@ -1,5 +1,5 @@
 -- Fail closed when merge permission checks return NULL (phase 1, 1a and the phased orchestrator).
--- Part of SR-108; see 20261027150200_merge_phase_workspace_guards.
+-- Part of SR-108; see 20261027151030_merge_phase_workspace_guards.
 
 BEGIN;
 
