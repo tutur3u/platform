@@ -49,13 +49,13 @@ class _InventorySearchChromeState extends State<InventorySearchChrome> {
     ownerId: 'inventory-search-${widget.location}',
     locations: {widget.location},
     actions: [
-      ShellActionSpec(
+      ShellActionSpec.search(
         id: '${widget.location}-search',
-        icon: _open ? Icons.close : Icons.search,
+        active: _open,
         tooltip: _open
             ? context.l10n.commonCancel
             : widget.hint ?? context.l10n.inventoryRedesignLoadedSearch,
-        searchController: _open ? widget.controller : null,
+        controller: widget.controller,
         searchHint: widget.hint ?? context.l10n.inventoryRedesignLoadedSearch,
         onSearchChanged: widget.onChanged,
         onSearchSubmitted: _submit,

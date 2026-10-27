@@ -739,15 +739,12 @@ class _DrivePageState extends State<DrivePage> {
               ownerId: 'drive-root-actions',
               locations: const {Routes.drive},
               actions: [
-                ShellActionSpec(
+                ShellActionSpec.search(
                   id: 'drive-search',
-                  icon: _searching
-                      ? Icons.search_off_rounded
-                      : Icons.search_rounded,
+                  active: _searching,
                   tooltip: context.l10n.driveSearchHint,
-                  callbackToken: _searching,
                   enabled: hasWorkspace,
-                  searchController: _searching ? _searchController : null,
+                  controller: _searchController,
                   searchHint: context.l10n.driveSearchHint,
                   onSearchChanged: _onSearchChanged,
                   onCloseSearch: _closeSearch,

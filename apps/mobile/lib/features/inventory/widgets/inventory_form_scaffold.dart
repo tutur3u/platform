@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/inventory/widgets/inventory_search_chrome.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/fab/extended_fab.dart';
@@ -134,7 +135,8 @@ class _InventoryFormScaffoldState extends State<InventoryFormScaffold> {
               IconButton(
                 tooltip: context.l10n.inventorySearchProducts,
                 onPressed: _toggleSearch,
-                icon: Icon(_searching ? Icons.search_off : Icons.search),
+                isSelected: _searching,
+                icon: const Icon(AppIcons.search),
               ),
             IconButton(
               tooltip: context.l10n.commonCancel,

@@ -413,14 +413,11 @@ class _MeetPageState extends State<MeetPage> {
               ownerId: 'meet-root-actions',
               locations: const {Routes.meet},
               actions: [
-                ShellActionSpec(
+                ShellActionSpec.search(
                   id: 'meet-search',
-                  icon: _showSearch
-                      ? Icons.close_rounded
-                      : Icons.search_rounded,
+                  active: _showSearch,
                   tooltip: context.l10n.meetSearchHint,
-                  callbackToken: _showSearch,
-                  searchController: _showSearch ? _searchController : null,
+                  controller: _searchController,
                   searchHint: context.l10n.meetSearchHint,
                   onSearchChanged: _onSearchChanged,
                   onCloseSearch: () {
