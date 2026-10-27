@@ -15,6 +15,10 @@ import {
 } from '@/lib/tutoring/linked-content';
 import { resolveTutoringRouteAccess } from '@/lib/tutoring/route-access';
 import { listWorkspaceTeacherIds } from '@/lib/tutoring/teachers';
+import {
+  denyWeakContentEdit,
+  isWeakSupportSession,
+} from '@/lib/tutoring/weak-content-access';
 
 interface Params {
   params: Promise<{ wsId: string; id: string }>;
@@ -89,7 +93,7 @@ export async function PUT(request: Request, { params }: Params) {
     await tutoringSessionsClient
       .from('workspace_tutoring_sessions')
       .select(
-        'id,group_id,session_date,start_time,duration_minutes,teacher_user_id,student_user_id'
+        'id,group_id,session_date,start_time,duration_minutes,teacher_user_id,student_user_id,reason_type,source_feedback_id'
       )
       .eq('id', id)
       .eq('ws_id', normalizedWsId)
@@ -111,6 +115,27 @@ export async function PUT(request: Request, { params }: Params) {
   if (!currentSession) {
     return NextResponse.json({ message: 'Session not found' }, { status: 404 });
   }
+
+  // Changing the text (or the reason) of weak-support content follows the same
+  // class-manager restriction as the feedback it comes from.
+  const changesContent =
+    parsed.data.content !== undefined ||
+    parsed.data.reasonDetail !== undefined ||
+    (parsed.data.reasonType !== undefined &&
+      parsed.data.reasonType !== currentSession.reason_type);
+  const deniedWeakContent = await denyWeakContentEdit({
+    permissions,
+    sbAdmin,
+    touchesWeakContent:
+      changesContent &&
+      (isWeakSupportSession({
+        reasonType: currentSession.reason_type,
+        sourceFeedbackId: currentSession.source_feedback_id,
+      }) ||
+        parsed.data.reasonType === 'WEAK_SUPPORT'),
+    wsId: normalizedWsId,
+  });
+  if (deniedWeakContent) return deniedWeakContent;
 
   if (parsed.data.teacherUserId) {
     const teacherCheck = await listWorkspaceTeacherIds({
