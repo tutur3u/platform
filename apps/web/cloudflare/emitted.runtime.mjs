@@ -10,10 +10,93 @@ const root = fileURLToPath(new URL('./', import.meta.url));
 const require = createRequire(new URL('../package.json', import.meta.url));
 const wranglerRequire = createRequire(require.resolve('wrangler'));
 const { Miniflare, convertV4MiniflareOptions } = wranglerRequire('miniflare');
+const { JSDOM } = require('jsdom');
+const seoCopy = Object.fromEntries(
+  await Promise.all(
+    ['en', 'vi'].map(async (locale) => [
+      locale,
+      JSON.parse(
+        await readFile(
+          new URL(`../messages/${locale}.json`, import.meta.url),
+          'utf8'
+        )
+      ).marketingSeo,
+    ])
+  )
+);
 const base = 'https://web.staging.tutur3u.com';
 const secret = 'disposable-emitted-worker-proof-secret';
 const upstream = 'https://tuturuuu-next-fixture.vercel.app';
 const ref = 'fxefojytwimjiqxseqag';
+
+function assertLegalMetadata(html, path) {
+  const document = new JSDOM(html).window.document;
+  const locale = path.startsWith('/vi/') ? 'vi' : 'en';
+  const kind = path.endsWith('/privacy') ? 'privacy' : 'terms';
+  const copy = seoCopy[locale][kind];
+  const english = `https://tuturuuu.com/${kind}`;
+  const vietnamese = `https://tuturuuu.com/vi/${kind}`;
+  const canonical = locale === 'vi' ? vietnamese : english;
+  const content = (name) =>
+    document.head.querySelector(`meta[name="${name}"]`)?.content;
+  assert.equal(document.title, `${copy.title} | Tuturuuu`, path);
+  assert.equal(content('description'), copy.description, path);
+  assert.equal(content('robots'), 'noindex, nofollow', path);
+  assert.deepEqual(
+    [...document.head.querySelectorAll('link[rel="canonical"]')].map(
+      (link) => link.href
+    ),
+    [canonical],
+    path
+  );
+  assert.deepEqual(
+    Object.fromEntries(
+      [
+        ...document.head.querySelectorAll('link[rel="alternate"][hreflang]'),
+      ].map((link) => [link.hreflang, link.href])
+    ),
+    { 'en-US': english, 'vi-VN': vietnamese, 'x-default': english },
+    path
+  );
+  assert.deepEqual(
+    Object.fromEntries(
+      [...document.head.querySelectorAll('meta[property^="og:"]')].map(
+        (tag) => [tag.getAttribute('property'), tag.content]
+      )
+    ),
+    {
+      'og:type': 'website',
+      'og:url': canonical,
+      'og:locale': locale === 'vi' ? 'vi_VN' : 'en_US',
+      'og:locale:alternate': locale === 'vi' ? 'en_US' : 'vi_VN',
+      'og:site_name': 'Tuturuuu',
+      'og:title': copy.title,
+      'og:description': copy.description,
+      'og:image': 'https://tuturuuu.com/media/logos/og-image.jpg',
+      'og:image:width': '1200',
+      'og:image:height': '630',
+      'og:image:alt': copy.title,
+    },
+    path
+  );
+  assert.deepEqual(
+    Object.fromEntries(
+      [...document.head.querySelectorAll('meta[name^="twitter:"]')].map(
+        (tag) => [tag.name, tag.content]
+      )
+    ),
+    {
+      'twitter:card': 'summary_large_image',
+      'twitter:title': copy.title,
+      'twitter:description': copy.description,
+      'twitter:image': 'https://tuturuuu.com/media/logos/og-image.jpg',
+      'twitter:creator': '@tuturuuu',
+      'twitter:site': '@tuturuuu',
+    },
+    path
+  );
+  document.defaultView.close();
+}
 
 const description =
   'emitted Web candidate on workerd with outbound fixtures only';
@@ -165,6 +248,7 @@ test(description, { timeout: 30000 }, async (t) => {
           html,
           path.startsWith('/vi/') ? /<html lang="vi"/u : /<html lang="en"/u
         );
+        assertLegalMetadata(html, path);
         assert.match(html, /<h1>/u);
         assert.match(html, /id="section-1"/u);
         assert.match(html, /mailto:legal@tuturuuu.com/u);

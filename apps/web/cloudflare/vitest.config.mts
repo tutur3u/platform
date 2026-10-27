@@ -6,6 +6,7 @@ export default defineConfig({
   resolve: {
     conditions: ['bun', 'module', 'browser', 'development|production'],
     alias: {
+      '@': new URL('../src', import.meta.url).pathname,
       '@tuturuuu/start-bridge/api-forward': new URL(
         '../../../packages/start-bridge/src/core/api-forward.ts',
         import.meta.url

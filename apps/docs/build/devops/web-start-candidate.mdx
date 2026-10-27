@@ -76,6 +76,21 @@ Native documents are no-store/noindex, use a script-free CSP and expose
 `x-tuturuuu-web-renderer: native-Start`; fallback requests expose
 `Next-fallback`. The marker is routing evidence, not source identity.
 
+The six native heads read the canonical `marketingSeo.privacy` and
+`marketingSeo.terms` message bundles. Next and Start share the framework-free
+`@tuturuuu/utils/common/page-metadata` URL and social metadata helper; the
+existing Next metadata import stays compatible. English aliases canonicalize to
+the unprefixed URL, Vietnamese to `/vi/`, with `en-US`, `vi-VN` and `x-default`
+alternates. Canonical and social URLs remain on `https://tuturuuu.com` while
+staging retains `noindex, nofollow`. The document title applies the shared site
+title template; social titles use the localized page title.
+
+`legal-metadata.test.ts` compares all six actual Start route heads against the
+Next legal layouts' metadata generators, including title, description, canonical,
+hreflang, every Open Graph field and Twitter metadata. The emitted Worker suite
+checks those tags in actual HTML against the canonical message bundles and URL
+rules, alongside the existing no-egress and cookie-neutrality assertions.
+
 Regression coverage: `native-legal.test.tsx` checks GET/HEAD, rollback,
 canonical content in both languages, cookie neutrality and fallback boundaries.
 `emitted.runtime.mjs` exercises the actual emitted Start renderer and rollback.

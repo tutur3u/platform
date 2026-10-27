@@ -1,15 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { LegalPage, legalDocument } from '../legal-page';
+import { legalHead } from '../legal-head';
+import { LegalPage } from '../legal-page';
 
 export const Route = createFileRoute('/vi/terms')({
-  head: () => {
-    const document = legalDocument('terms', 'vi');
-    return {
-      meta: [
-        { title: document.title + ' ' + document.highlightedWord },
-        { name: 'description', content: document.summaryDescription },
-      ],
-    };
-  },
+  head: () => legalHead('terms', 'vi'),
   component: () => <LegalPage kind="terms" locale="vi" />,
 });

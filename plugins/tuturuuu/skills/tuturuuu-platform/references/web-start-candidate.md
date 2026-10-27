@@ -8,7 +8,13 @@ for native route scope, staging inputs, rollback and release prerequisites.
 Public legal documents reuse `@tuturuuu/legal` through a React/Start adapter.
 Do not pull inherited Next marketing layouts, request globals or session
 resolution into the portable legal package. Preserve every canonical section
-and review notice in EN and VI.
+and review notice in EN and VI. Keep localized SEO copy sourced from the
+canonical `marketingSeo` message bundles and reuse the framework-free
+`@tuturuuu/utils/common/page-metadata` helper for locale URLs and social fields;
+retain the existing Next metadata import path. Compare actual native heads
+against the Next legal metadata generators for all six URLs, then assert the
+emitted HTML contains canonical/hreflang/Open Graph/Twitter tags and staging
+noindex. A legal body's heading and summary are not its SEO title and description.
 
 Keep document admission separate from whole-candidate admission. Unknown or
 unset slice flags fall back to attested Next; disabling the candidate returns

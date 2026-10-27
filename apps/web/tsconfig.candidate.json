@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "strict": true,
+    "paths": { "@/*": ["./src/*"] },
     "noEmit": true,
     "target": "ES2022",
     "module": "ESNext",
