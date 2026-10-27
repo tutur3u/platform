@@ -20,8 +20,11 @@ export default defineConfig({
         replacement: resolve(__dirname, '../supabase/src/next/common.ts'),
       },
       {
-        find: @tuturuuu/supabase/shared-cookie-domains,
-        replacement: resolve(__dirname, ../supabase/src/shared-cookie-domains.ts),
+        find: '@tuturuuu/supabase/shared-cookie-domains',
+        replacement: resolve(
+          __dirname,
+          '../supabase/src/shared-cookie-domains.ts'
+        ),
       },
       { find: '@', replacement: resolve(__dirname, './src') },
       {
