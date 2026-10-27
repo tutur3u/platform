@@ -5,7 +5,7 @@
 /// fails closed rather than guessing a host.
 abstract final class MastermindHubConfig {
   static const productionUrl = 'https://mastermind-hub.tutur3u.com';
-  static const stagingUrl = 'https://mastermind-hub.staging.tutur3u.com';
+  static const stagingUrl = 'https://mastermind-hub-staging.tutur3u.com';
   static const _override = String.fromEnvironment('MASTERMIND_HUB_URL');
 
   static Uri? resolve({String? flavor, String? override}) {

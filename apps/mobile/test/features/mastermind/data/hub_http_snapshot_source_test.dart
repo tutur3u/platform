@@ -44,7 +44,7 @@ void main() {
       );
       expect(
         MastermindHubConfig.resolve(flavor: 'staging', override: ''),
-        Uri.parse('https://mastermind-hub.staging.tutur3u.com'),
+        Uri.parse('https://mastermind-hub-staging.tutur3u.com'),
       );
       expect(
         MastermindHubConfig.resolve(flavor: 'development', override: ''),
