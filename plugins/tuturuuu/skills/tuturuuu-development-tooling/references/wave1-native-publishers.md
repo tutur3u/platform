@@ -105,6 +105,10 @@ measurements in the receipt. Enforce documented Paid limits pinned to the checke
 date/URLs in `wave1-native-upload-limits.mjs`; gzip size is informational, and
 startup CPU still needs hosted native acceptance. Keep maps sealed for later
 external tooling. A bootstrap upload never qualifies the native payload.
+Original and restored qualification must call `wave1-native-publish.mjs dry-run`
+so both enforce the upload limits. Qualification has no environment membership or
+forwarded credentials; trusted-main staging builds read the two public repository
+variables. Keep protected environments and deploy/control tokens on publication only.
 Use a backward scan for partial-token removal at line and capture boundaries;
 do not reintroduce an unanchored trailing-run regex. Keep both exact no-write
 resolutions append-only and run all 21 predicate mutations against each entry.

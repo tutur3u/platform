@@ -159,14 +159,14 @@
       "digest": "3aa9f9648e96a936f50ed5e36a0a9daa53e3dcbb8489b00eb549840c7737c782"
     },
     ".github/workflows/wave1-native-app.yaml": {
-      "lines": 6,
-      "uses": 8,
+      "lines": 4,
+      "uses": 4,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+        "decision": "https://github.com/tutur3u/platform/pull/6972",
+        "reason": "Release-owner approved qualification delta replaces both raw dry-run calls with the existing guarded publisher entrypoint; direct CLI usage shrinks and publication stays separate."
       },
-      "digest": "2cd0420e38464d156182a148232c06db5e8606cdac916911bff2025aee6aa556"
+      "digest": "f1721596b5dbeff59f984f004dd242a83141b7d12a242b1c89af612a4c85ff63"
     },
     ".github/workflows/wave1-native-production.yaml": {
       "lines": 6,

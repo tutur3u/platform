@@ -117,13 +117,14 @@ to the canonical host would return 503 and is forbidden.
    shared token service accepts `SUPABASE_SECRET_KEY`. Preserve Mail and Apps
    requirements. Hosted auth continuity must prove agreement with the staging issuer;
    declaring the fallback does not prove matching signing keys.
-5. Supply GitHub build/publication secret names `STAGING_SUPABASE_URL` and
-   `STAGING_SUPABASE_PUBLISHABLE_KEY` in `wave1-<app>-staging`. The trusted-main
-   staging-profile qualification job enters that main-only environment and retains
-   its required-reviewer gate. Its steps inject only the public build inputs,
-   never the deploy token. PR and production-fixture qualification use the empty
-   `wave1-native-source-qualification` environment. Do not put privileged secrets
-   there or duplicate staging inputs into repository secrets.
+5. Supply the public GitHub repository variables `STAGING_SUPABASE_URL` and
+   `STAGING_SUPABASE_PUBLISHABLE_KEY` for trusted-main staging qualification.
+   Qualification has no environment membership or forwarded credentials, so it
+   neither waits for a protected-environment reviewer nor receives publisher
+   secrets. Existing native source workflows also use these public variables.
+   The protected `wave1-<app>-staging` environment remains publication-only; retain
+   its existing deploy/control secrets and matching public-input secret names for
+   the publisher. Do not duplicate credentials into repository secrets.
    Held production builds retain fixtures and
    read no production inputs. Only public Supabase inputs reach staging builds.
    Missing values allow source-only fixture artifacts, which cannot publish: the
@@ -138,15 +139,17 @@ to the canonical host would return 503 and is forbidden.
    it freshly immediately before its sole deployment. This cannot cancel a write
    already accepted by Cloudflare. No resources, settings, secrets or DNS were created
    by authoring these workflows.
-   Both control values remain repository variables, even though build inputs are
-   environment secrets. Their fresh API observations use the existing Variables-read
-   token; no environment-variable read permission or token rotation is required.
+   Both control values remain repository variables. Their fresh API observations
+   use the existing Variables-read token; no environment-variable read permission
+   or token rotation is required.
 
 ## Exact artifact and publication gates
 
 `wave1-native-app.yaml` builds staging and held production profiles in exact-source
-CI. Each runs original workerd acceptance, Wrangler dry-run, seal, bounded archive,
-separate-job restore, repeated workerd acceptance/dry-run and final seal verification.
+CI. Each runs original workerd acceptance, the credential-free
+`wave1-native-publish.mjs dry-run` size guard, seal, bounded archive, separate-job
+restore, repeated workerd acceptance and the same size guard, then final seal
+verification.
 Mail has its own original/restored native Worker checks. Calendar and Apps keep their
 existing deeper SSR/offline/RPC/browser gates; the new checks do not replace them.
 

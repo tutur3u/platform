@@ -619,24 +619,24 @@ test('staging startup rejection retains sanitized diagnostics and its pending fe
   assert.equal(p.getLedger().entries.length, 1);
 });
 
-test('every reusable boundary forwards exactly staging credentials and public inputs', () => {
+test('only publication boundaries forward staging credentials and public inputs', () => {
   const names = [
     'CLOUDFLARE_STAGING_API_TOKEN',
     'WAVE1_CONTROL_READ_TOKEN',
     'STAGING_SUPABASE_URL',
     'STAGING_SUPABASE_PUBLISHABLE_KEY',
   ].sort();
-  for (const file of ['wave1-native-app.yaml', 'wave1-native-publish.yaml']) {
-    const workflow = readWorkflow(file);
-    assert.deepEqual(
-      Object.keys(workflow.on.workflow_call.secrets).sort(),
-      names
-    );
-  }
+  assert.equal(
+    readWorkflow('wave1-native-app.yaml').on.workflow_call.secrets,
+    undefined
+  );
+  assert.deepEqual(
+    Object.keys(
+      readWorkflow('wave1-native-publish.yaml').on.workflow_call.secrets
+    ).sort(),
+    names
+  );
   for (const [file, jobId] of [
-    ['calendar-cloudflare.yaml', 'native-profiles'],
-    ['mail-cloudflare.yaml', 'native-profiles'],
-    ['apps-cloudflare.yaml', 'native-publication-profiles'],
     ['calendar-cloudflare.yaml', 'native-publish-staging'],
     ['mail-cloudflare.yaml', 'native-publish-staging'],
     ['apps-cloudflare.yaml', 'native-publish-staging'],
