@@ -1,13 +1,22 @@
 import { getSupabaseCookieOptions } from '@tuturuuu/supabase/next/common';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  CONFIGURED_SHARED_COOKIE_DOMAINS as SUPABASE_CONFIGURED_SHARED_COOKIE_DOMAINS,
+  resetProductionOverrideErrorLogForTests as resetSupabaseProductionOverrideErrorLogForTests,
+  TUTURUUU_SHARED_COOKIE_DOMAINS as SUPABASE_TUTURUUU_SHARED_COOKIE_DOMAINS,
+} from '../../supabase/src/shared-cookie-domains';
+import { getConfiguredInternalAppDomains } from './internal-domains';
+import {
+  CONFIGURED_SHARED_COOKIE_DOMAINS,
   type CookieOptionsLike,
   getConfiguredSharedCookieDomainOverride,
   getHostOnlyCookieOptions,
   getSharedAndHostOnlyCookieDeleteOptions,
   getTuturuuuPrimarySharedCookieDomain,
   getTuturuuuSharedCookieOptions,
+  resetProductionOverrideErrorLogForTests,
   resolveTuturuuuSharedCookieDomain,
+  TUTURUUU_SHARED_COOKIE_DOMAINS,
 } from './shared-cookie';
 
 describe('shared Tuturuuu cookie helpers', () => {
@@ -265,44 +274,132 @@ describe('shared cookie delete options without an accepted override', () => {
   });
 });
 
-describe('parity with the Supabase cookie helpers', () => {
+describe('production fail-closed behavior', () => {
   const ENV_KEY = 'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN';
-  const supabaseUrl = 'https://nzamlzqfdwaaxdefwraj.supabase.co';
 
   afterEach(() => {
     vi.unstubAllEnvs();
     vi.restoreAllMocks();
+    resetProductionOverrideErrorLogForTests();
   });
 
-  it.each([
+  it.each([['VERCEL_ENV'], ['NEXT_PUBLIC_VERCEL_ENV']])(
+    'ignores the staging override when %s is production',
+    (envKey) => {
+      const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+      vi.stubEnv('VERCEL_ENV', '');
+      vi.stubEnv('NEXT_PUBLIC_VERCEL_ENV', '');
+      vi.stubEnv(envKey, 'production');
+      vi.stubEnv(ENV_KEY, '.staging.tutur3u.com');
+      vi.stubEnv(
+        'NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS',
+        'tasks:https://tasks.staging.tutur3u.com'
+      );
+
+      expect(getConfiguredSharedCookieDomainOverride()).toBeNull();
+      expect(getConfiguredSharedCookieDomainOverride()).toBeNull();
+      expect(getTuturuuuPrimarySharedCookieDomain()).toEqual(
+        TUTURUUU_SHARED_COOKIE_DOMAINS[0]
+      );
+      expect(getConfiguredInternalAppDomains()).toEqual([]);
+      expect(error).toHaveBeenCalledTimes(1);
+    }
+  );
+
+  it('keeps honoring the override on preview and staging deployments', () => {
+    vi.stubEnv('VERCEL_ENV', 'preview');
+    vi.stubEnv('NEXT_PUBLIC_VERCEL_ENV', '');
+    vi.stubEnv(ENV_KEY, '.staging.tutur3u.com');
+
+    expect(getConfiguredSharedCookieDomainOverride()?.cookieDomain).toBe(
+      '.staging.tutur3u.com'
+    );
+  });
+});
+
+describe('parity with the Supabase cookie helpers', () => {
+  const ENV_KEY = 'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN';
+  const supabaseUrl = 'https://nzamlzqfdwaaxdefwraj.supabase.co';
+  const domainLists = [
+    ...new Set([
+      ...CONFIGURED_SHARED_COOKIE_DOMAINS,
+      ...SUPABASE_CONFIGURED_SHARED_COOKIE_DOMAINS,
+    ]),
+  ];
+  const baseDomains = [
+    ...new Set(
+      [
+        ...TUTURUUU_SHARED_COOKIE_DOMAINS,
+        ...SUPABASE_TUTURUUU_SHARED_COOKIE_DOMAINS,
+      ].map((domain) => domain.hostname)
+    ),
+  ];
+  const overrideValues = [
     '',
-    '.staging.tutur3u.com',
+    ...domainLists,
+    ...domainLists.map((domain) => `.foo${domain}`),
+    ...baseDomains.map((hostname) => `.${hostname}`),
     '.tutur3u.com',
-    '.tuturuuu.com',
-    '.foo.tutur3u.com',
     '.staging.tuturuuu.com',
-  ])(
-    'resolves the same cookie domain for every host with override %j',
-    (value) => {
+  ];
+  const hosts = [
+    ...baseDomains.flatMap((hostname) => [
+      `https://${hostname}`,
+      `https://tasks.${hostname}`,
+    ]),
+    ...domainLists.flatMap((domain) => [
+      `https://${domain.slice(1)}`,
+      `https://web${domain}`,
+      `https://web${domain}.evil.test`,
+    ]),
+    'https://app.tutur3u.com',
+    'http://localhost:7803',
+  ];
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
+    resetProductionOverrideErrorLogForTests();
+    resetSupabaseProductionOverrideErrorLogForTests();
+  });
+
+  it('keeps the allowlists and defaults identical in both copies', () => {
+    expect(SUPABASE_CONFIGURED_SHARED_COOKIE_DOMAINS).toEqual(
+      CONFIGURED_SHARED_COOKIE_DOMAINS
+    );
+    expect(SUPABASE_TUTURUUU_SHARED_COOKIE_DOMAINS).toEqual(
+      TUTURUUU_SHARED_COOKIE_DOMAINS
+    );
+  });
+
+  it.each(['development', 'production'])(
+    'resolves the same cookie domain for every host and override (VERCEL_ENV=%s)',
+    (vercelEnv) => {
       vi.spyOn(console, 'warn').mockImplementation(() => {});
-      vi.stubEnv(ENV_KEY, value);
+      const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+      vi.stubEnv('VERCEL_ENV', vercelEnv);
+      vi.stubEnv('NEXT_PUBLIC_VERCEL_ENV', '');
 
-      for (const url of [
-        'https://tuturuuu.com',
-        'https://tasks.tuturuuu.com',
-        'https://tasks.tuturuuu.localhost',
-        'https://staging.tutur3u.com',
-        'https://web.staging.tutur3u.com',
-        'https://app.tutur3u.com',
-        'https://web.staging.tutur3u.com.evil.test',
-        'http://localhost:7803',
-      ]) {
-        const shared = resolveTuturuuuSharedCookieDomain(url);
-        const supabase = getSupabaseCookieOptions(supabaseUrl, url);
+      for (const value of overrideValues) {
+        vi.stubEnv(ENV_KEY, value);
 
-        expect(supabase.domain, url).toBe(shared?.cookieDomain);
-        expect(supabase.secure, url).toBe(shared?.secure);
+        for (const url of hosts) {
+          const shared = resolveTuturuuuSharedCookieDomain(url);
+          const supabase = getSupabaseCookieOptions(supabaseUrl, url);
+
+          expect(supabase.domain, `${value} ${url}`).toBe(shared?.cookieDomain);
+          expect(supabase.secure, `${value} ${url}`).toBe(shared?.secure);
+
+          if (vercelEnv === 'production') {
+            expect(shared?.cookieDomain ?? null, `${value} ${url}`).not.toBe(
+              '.staging.tutur3u.com'
+            );
+          }
+        }
       }
+
+      // Each copy logs at most once per process, and only on production.
+      expect(error).toHaveBeenCalledTimes(vercelEnv === 'production' ? 2 : 0);
     }
   );
 });

@@ -7,6 +7,7 @@ import {
   getSupabaseAuthStorageKey,
   getSupabaseCookieOptions,
 } from '../common';
+import { resetProductionOverrideErrorLogForTests } from '../../shared-cookie-domains';
 
 describe('common', () => {
   const originalEnv = process.env;
@@ -149,6 +150,39 @@ describe('common', () => {
         secure: true,
       });
     });
+
+    it.each(['VERCEL_ENV', 'NEXT_PUBLIC_VERCEL_ENV'])(
+      'ignores the staging override when %s is production and logs once',
+      (envKey) => {
+        const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+        resetProductionOverrideErrorLogForTests();
+        delete process.env.VERCEL_ENV;
+        delete process.env.NEXT_PUBLIC_VERCEL_ENV;
+        process.env[envKey] = 'production';
+        process.env.NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN =
+          '.staging.tutur3u.com';
+
+        for (let i = 0; i < 2; i++) {
+          expect(
+            getSupabaseCookieOptions(
+              supabaseUrl,
+              'https://web.staging.tutur3u.com'
+            )
+          ).toEqual({
+            name: 'sb-nzamlzqfdwaaxdefwraj-auth-token',
+            path: '/',
+            sameSite: 'lax',
+          });
+          expect(
+            getSupabaseCookieOptions(supabaseUrl, 'https://tasks.tuturuuu.com')
+              .domain
+          ).toBe('.tuturuuu.com');
+        }
+
+        expect(error).toHaveBeenCalledTimes(1);
+        error.mockRestore();
+      }
+    );
 
     it('scopes cookies to .staging.tutur3u.com on a staging host and leaves production on .tuturuuu.com', () => {
       process.env.NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN =

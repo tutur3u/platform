@@ -29,12 +29,39 @@ export const CONFIGURED_SHARED_COOKIE_DOMAINS = [
   '.staging.tutur3u.com',
 ] as const;
 
+let productionOverrideErrorLogged = false;
+
+/** Test-only: lets the once-per-process production error log fire again. */
+export function resetProductionOverrideErrorLogForTests() {
+  productionOverrideErrorLogged = false;
+}
+
+/**
+ * Server code reads `VERCEL_ENV`; browser bundles cannot see it, so they fall
+ * back to `NEXT_PUBLIC_VERCEL_ENV` when it is exposed to the client.
+ */
+function isProductionDeployment() {
+  return (
+    process.env.VERCEL_ENV === 'production' ||
+    process.env.NEXT_PUBLIC_VERCEL_ENV === 'production'
+  );
+}
+
 export function getTuturuuuSharedCookieDomains(): readonly TuturuuuSharedCookieDomain[] {
   const normalized =
     process.env.NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN?.trim().toLowerCase();
-  const accepted = CONFIGURED_SHARED_COOKIE_DOMAINS.find(
-    (domain) => domain === normalized
-  );
+  const ignoredOnProduction = Boolean(normalized) && isProductionDeployment();
+
+  if (ignoredOnProduction && !productionOverrideErrorLogged) {
+    productionOverrideErrorLogged = true;
+    console.error(
+      '[shared-cookie] Ignoring NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN on a production deployment; it must never be set on production'
+    );
+  }
+
+  const accepted = ignoredOnProduction
+    ? undefined
+    : CONFIGURED_SHARED_COOKIE_DOMAINS.find((domain) => domain === normalized);
 
   return accepted
     ? [

@@ -7,6 +7,15 @@ import {
 
 describe('managed Tuturuuu return URLs', () => {
   describe('production (shared tuturuuu.com cookie domain) is unchanged', () => {
+    beforeEach(() => {
+      vi.stubEnv('NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN', '');
+      vi.stubEnv('NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS', '');
+    });
+
+    afterEach(() => {
+      vi.unstubAllEnvs();
+    });
+
     it.each([
       'https://tuturuuu.com',
       'https://vc.tuturuuu.com',

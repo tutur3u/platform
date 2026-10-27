@@ -320,8 +320,8 @@ The registry exists only on a staging deployment:
   production deployment never acts on it, even if the variable is set by mistake.
 - Each entry's host must equal `staging.tutur3u.com` or be a subdomain of it, with
   no explicit port and no trailing dot.
-- Each entry name must be an existing app name from `PRODUCTION_INTERNAL_APP_DOMAINS`;
-  the variable cannot introduce new names.
+- Each entry name must be an existing app name from the known app map
+  (`APP_DOMAIN_MAP`); the variable cannot introduce new names.
 - Entries must be `https`, exact origins with no path, query, credentials or
   wildcards, and are matched on the exact origin only.
 
@@ -330,7 +330,15 @@ Rejected entries are ignored with a `console.warn`.
 With the staging override active the built-in production app origins
 (`PRODUCTION_INTERNAL_APP_DOMAINS`) are dropped from the registry, so a staging
 host cannot mint a token for, or redirect to, a production app. Local development
-(Portless and localhost) entries remain.
+(Portless and localhost) entries remain. External apps are not filtered: entries
+from `NEXT_PUBLIC_TUTURUUU_EXTERNAL_APP_DOMAINS` and DB-registered external apps
+still apply on staging, so they must never point at production hosts there.
+
+The override fails closed on production: when `VERCEL_ENV` is `production` (server)
+or `NEXT_PUBLIC_VERCEL_ENV` is `production` (browser bundles, which cannot see
+`VERCEL_ENV`), `NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN` is ignored, the
+production default applies, the registry stays empty, and a single
+`console.error` is logged per process.
 
 ### DNS requirement for credentialed CORS
 

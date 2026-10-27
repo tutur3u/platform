@@ -26,6 +26,8 @@ describe('auth callback route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     clearConfiguredWebOrigins();
+    vi.stubEnv('NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN', '');
+    vi.stubEnv('NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS', '');
     mocks.createClient.mockResolvedValue({
       auth: {
         exchangeCodeForSession: vi.fn().mockResolvedValue(undefined),
