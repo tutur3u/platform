@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom';
 import { HotkeysProvider } from '@tanstack/react-hotkeys';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type React from 'react';
@@ -63,8 +63,13 @@ vi.mock('../kanban-presentation', () => import('./mocks/kanban-presentation'));
 vi.mock('../board-header', () => ({
   BoardHeader: (props: any) => {
     boardHeaderProps = props;
-    return <div data-testid="board-header" />;
+    return <div data-testid="board-header">{props.planTabs}</div>;
   },
+}));
+vi.mock('../board-sprints/plan/board-plan-view', () => ({
+  BoardPlanView: (props: any) => (
+    <div data-testid="plan-view">{props.sprints.planningSprint?.name}</div>
+  ),
 }));
 vi.mock('../recycle-bin-panel', () => ({
   RecycleBinContent: () => null,
@@ -124,6 +129,55 @@ const mockTasks: Task[] = [
   },
 ];
 
+const runningAndPlanned = {
+  schemaAvailable: true,
+  sprintLengthWeeks: 2,
+  sprints: [
+    {
+      id: 'sprint-14',
+      name: 'Sprint 14',
+      sequence_number: 14,
+      status: 'active',
+      start_date: '2026-10-19',
+      end_date: '2026-10-30',
+      goal: null,
+      goal_result: null,
+      started_at: '2026-10-19T08:00:00Z',
+      ended_at: null,
+      tasks: [
+        {
+          task_id: 'task-1',
+          added_after_start: false,
+          carry_count: 0,
+          end_decision: null,
+        },
+      ],
+      report: null,
+    },
+    {
+      id: 'sprint-15',
+      name: 'Sprint 15',
+      sequence_number: 15,
+      status: 'planned',
+      start_date: '2026-11-02',
+      end_date: '2026-11-13',
+      goal: null,
+      goal_result: null,
+      started_at: null,
+      ended_at: null,
+      tasks: [
+        {
+          task_id: 'task-2',
+          added_after_start: false,
+          carry_count: 0,
+          end_decision: null,
+        },
+      ],
+      report: null,
+    },
+  ],
+};
+
 function renderBoardViews({ tasks }: { tasks: Task[] }) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
@@ -162,54 +216,7 @@ describe('BoardViews sprints', () => {
 
   it('shows only the running sprint on a board with sprints on', async () => {
     const otherTask = { ...mockTasks[0]!, id: 'task-2', name: 'Next sprint' };
-    listBoardSprintsMock.mockResolvedValue({
-      schemaAvailable: true,
-      sprintLengthWeeks: 2,
-      sprints: [
-        {
-          id: 'sprint-14',
-          name: 'Sprint 14',
-          sequence_number: 14,
-          status: 'active',
-          start_date: '2026-10-19',
-          end_date: '2026-10-30',
-          goal: null,
-          goal_result: null,
-          started_at: '2026-10-19T08:00:00Z',
-          ended_at: null,
-          tasks: [
-            {
-              task_id: 'task-1',
-              added_after_start: false,
-              carry_count: 0,
-              end_decision: null,
-            },
-          ],
-          report: null,
-        },
-        {
-          id: 'sprint-15',
-          name: 'Sprint 15',
-          sequence_number: 15,
-          status: 'planned',
-          start_date: '2026-11-02',
-          end_date: '2026-11-13',
-          goal: null,
-          goal_result: null,
-          started_at: null,
-          ended_at: null,
-          tasks: [
-            {
-              task_id: 'task-2',
-              added_after_start: false,
-              carry_count: 0,
-              end_decision: null,
-            },
-          ],
-          report: null,
-        },
-      ],
-    });
+    listBoardSprintsMock.mockResolvedValue(runningAndPlanned);
 
     renderBoardViews({ tasks: [mockTasks[0]!, otherTask] });
 
@@ -234,5 +241,28 @@ describe('BoardViews sprints', () => {
     ]);
     // No pill, so the breadcrumb shows no separator after the board.
     expect(boardHeaderProps?.sprintSlot).toBeUndefined();
+  });
+
+  it('opens the Plan tab in place of the board on sprint boards', async () => {
+    listBoardSprintsMock.mockResolvedValue(runningAndPlanned);
+    renderBoardViews({ tasks: mockTasks });
+
+    fireEvent.click(await screen.findByRole('tab', { name: 'plan_tab' }));
+
+    expect(await screen.findByTestId('plan-view')).toHaveTextContent(
+      'Sprint 15'
+    );
+    expect(screen.queryByTestId('kanban-view')).not.toBeInTheDocument();
+    expect(boardHeaderProps?.planActive).toBe(true);
+
+    fireEvent.click(screen.getByRole('tab', { name: 'board_tab' }));
+    expect(await screen.findByTestId('kanban-view')).toBeInTheDocument();
+  });
+
+  it('shows no Plan tab while sprints are off', async () => {
+    renderBoardViews({ tasks: mockTasks });
+    await waitFor(() => expect(listBoardSprintsMock).toHaveBeenCalled());
+    expect(screen.queryByRole('tab', { name: 'plan_tab' })).toBeNull();
+    expect(boardHeaderProps?.planTabs).toBeUndefined();
   });
 });

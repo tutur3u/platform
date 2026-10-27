@@ -1,10 +1,6 @@
 'use client';
 
-import {
-  formatHotkeySequence,
-  useHotkey,
-  useHotkeySequence,
-} from '@tanstack/react-hotkeys';
+import { useHotkey } from '@tanstack/react-hotkeys';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ListWorkspaceTasksOptions } from '@tuturuuu/internal-api/tasks';
 import {
@@ -59,6 +55,8 @@ import {
 } from './board-header/board-filter-state';
 import { useBoardHeaderData } from './board-header/use-board-header-data';
 import { BoardSprintPill } from './board-sprints/board-sprint-pill';
+import { BoardPlanView } from './board-sprints/plan/board-plan-view';
+import { BoardPlanTabs, type BoardTab } from './board-sprints/plan/plan-parts';
 import { useBoardSprints } from './board-sprints/use-board-sprints';
 import {
   sortLocalTasks,
@@ -79,6 +77,7 @@ import {
   normalizeTaskQuickCreateTargetList,
 } from './task-quick-create-target-list';
 import { useAutoCollapseEmptyTaskLists } from './use-auto-collapse-empty-task-lists';
+import { useBoardViewHotkeys } from './use-board-view-hotkeys';
 import { useKanbanLayoutState } from './use-kanban-layout-state';
 import { useRecycleBinTranslations } from './use-recycle-bin-translations';
 import { useTaskBoardListPreferences } from './use-task-board-list-preferences';
@@ -91,12 +90,6 @@ export type ViewType =
   | 'drafts'
   | 'recycle_bin';
 const HOTKEY_CREATE_TASK = 'C';
-const HOTKEY_GO_TO_KANBAN: ['G', 'K'] = ['G', 'K'];
-const HOTKEY_GO_TO_LIST: ['G', 'L'] = ['G', 'L'];
-const HOTKEY_GO_TO_MY_TASKS: ['G', 'M'] = ['G', 'M'];
-const HOTKEY_GO_TO_TIMELINE: ['G', 'T'] = ['G', 'T'];
-const HOTKEY_GO_TO_DRAFTS: ['G', 'D'] = ['G', 'D'];
-const HOTKEY_GO_TO_RECYCLE_BIN: ['G', 'R'] = ['G', 'R'];
 const DEFAULT_TASK_FILTERS: TaskFilters = DEFAULT_BOARD_FILTERS;
 interface Props {
   workspace: Pick<Workspace, 'id' | 'personal'>;
@@ -322,17 +315,6 @@ export function BoardViews({
       sourceWorkspaceIds,
       taskQueryOptions,
     ]
-  );
-  const viewHotkeyLabels = useMemo(
-    () => ({
-      kanban: formatHotkeySequence(HOTKEY_GO_TO_KANBAN),
-      list: formatHotkeySequence(HOTKEY_GO_TO_LIST),
-      my_tasks: formatHotkeySequence(HOTKEY_GO_TO_MY_TASKS),
-      timeline: formatHotkeySequence(HOTKEY_GO_TO_TIMELINE),
-      drafts: formatHotkeySequence(HOTKEY_GO_TO_DRAFTS),
-      recycle_bin: formatHotkeySequence(HOTKEY_GO_TO_RECYCLE_BIN),
-    }),
-    []
   );
   const shouldEagerLoadTasks =
     currentView === 'list' || currentView === 'timeline' || hasServerTaskQuery;
@@ -727,6 +709,8 @@ export function BoardViews({
     enabled: !localTaskState,
     wsId: effectiveWorkspaceId,
   });
+  const [boardTab, setBoardTab] = useState<BoardTab>('board');
+  const planActive = boardSprints.sprintsOn && boardTab === 'plan';
 
   // Apply optimistic overrides so views receive up-to-date edits (durations, name, dates) even before refetch.
   const effectiveTasks = useMemo(() => {
@@ -802,77 +786,10 @@ export function BoardViews({
     preventDefault: true,
   });
 
-  useHotkeySequence(
-    HOTKEY_GO_TO_KANBAN,
-    () => {
-      handleViewChange('kanban');
-    },
-    {
-      enabled: viewIsEnabled('kanban'),
-      ignoreInputs: true,
-      preventDefault: true,
-    }
-  );
-
-  useHotkeySequence(
-    HOTKEY_GO_TO_LIST,
-    () => {
-      handleViewChange('list');
-    },
-    {
-      enabled: viewIsEnabled('list'),
-      ignoreInputs: true,
-      preventDefault: true,
-    }
-  );
-
-  useHotkeySequence(
-    HOTKEY_GO_TO_MY_TASKS,
-    () => {
-      handleViewChange('my_tasks');
-    },
-    {
-      enabled: viewIsEnabled('my_tasks'),
-      ignoreInputs: true,
-      preventDefault: true,
-    }
-  );
-
-  useHotkeySequence(
-    HOTKEY_GO_TO_TIMELINE,
-    () => {
-      handleViewChange('timeline');
-    },
-    {
-      enabled: viewIsEnabled('timeline'),
-      ignoreInputs: true,
-      preventDefault: true,
-    }
-  );
-
-  useHotkeySequence(
-    HOTKEY_GO_TO_DRAFTS,
-    () => {
-      handleViewChange('drafts');
-    },
-    {
-      enabled: viewIsEnabled('drafts'),
-      ignoreInputs: true,
-      preventDefault: true,
-    }
-  );
-
-  useHotkeySequence(
-    HOTKEY_GO_TO_RECYCLE_BIN,
-    () => {
-      handleViewChange('recycle_bin');
-    },
-    {
-      enabled: viewIsEnabled('recycle_bin'),
-      ignoreInputs: true,
-      preventDefault: true,
-    }
-  );
+  const viewHotkeyLabels = useBoardViewHotkeys((view) => {
+    setBoardTab('board');
+    handleViewChange(view);
+  }, viewIsEnabled);
   const renderView = () => {
     switch (currentView) {
       case 'kanban':
@@ -1018,11 +935,23 @@ export function BoardViews({
             projectTaskCounts={headerData.projectTaskCounts}
             countsComplete={headerData.countsComplete}
             onCreateTask={canCreateTask ? createTaskInBoard : undefined}
+            planActive={planActive}
+            planTabs={
+              boardSprints.sprintsOn ? (
+                <BoardPlanTabs
+                  onTabChange={setBoardTab}
+                  tab={planActive ? 'plan' : 'board'}
+                />
+              ) : undefined
+            }
             sprintSlot={
               boardSprints.currentSprint ? (
                 <BoardSprintPill
                   boardId={board.id}
                   canManage={canManageBoard && !readOnly}
+                  onSelectSprint={(sprint) =>
+                    setBoardTab(sprint.status === 'planned' ? 'plan' : 'board')
+                  }
                   sprints={boardSprints}
                   tasks={tasks}
                   wsId={effectiveWorkspaceId}
@@ -1033,7 +962,22 @@ export function BoardViews({
         }
         initialLayoutReady={initialKanbanLayoutReady}
       >
-        {renderView()}
+        {planActive ? (
+          <BoardPlanView
+            boardId={board.id}
+            canManage={canManageBoard && !readOnly}
+            canPlan={!readOnly}
+            currentUserId={currentUserId}
+            defaultListId={board.default_list_id}
+            lists={boardLists}
+            onStarted={() => setBoardTab('board')}
+            sprints={boardSprints}
+            ticketPrefix={board.ticket_prefix}
+            wsId={effectiveWorkspaceId}
+          />
+        ) : (
+          renderView()
+        )}
       </KanbanPresentation>
       {showIdleBottomIsland ? idleBottomIsland : null}
     </BoardPanelFrame>
