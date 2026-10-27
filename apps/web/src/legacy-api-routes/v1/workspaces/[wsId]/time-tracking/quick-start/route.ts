@@ -2,6 +2,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
+import { validateSessionTaskWorkspace } from '../sessions/task-validation';
 
 export async function POST(
   request: NextRequest,
@@ -48,16 +49,13 @@ export async function POST(
       );
     }
 
-    // Verify task belongs to workspace
-    const { data: taskCheck } = await supabase
-      .from('tasks')
-      .select('id, name')
-      .eq('id', taskId)
-      .single();
-
-    if (!taskCheck) {
-      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
-    }
+    // Verify task belongs to workspace (before any session write)
+    const taskValidation = await validateSessionTaskWorkspace({
+      sbAdmin: supabase,
+      taskId,
+      wsId,
+    });
+    if (!taskValidation.ok) return taskValidation.errorResponse;
 
     // Use service role client for secure operations
     const sbAdmin = await createAdminClient();
