@@ -1,5 +1,3 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type { WorkspaceQuizSet } from '@tuturuuu/types';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import type { Metadata } from 'next';
@@ -7,6 +5,7 @@ import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { resolveRouteWorkspace } from '@/lib/resolve-route-workspace';
 import { getQuizSetColumns } from './columns';
+import { getData } from './data';
 import CourseModuleForm from './form';
 
 export const metadata: Metadata = {
@@ -40,7 +39,10 @@ export default async function WorkspaceCoursesPage({
   const { wsId: routeWsId, courseId, moduleId } = await params;
   const { resolvedWsId } = await resolveRouteWorkspace(routeWsId);
 
-  const { data, count } = await getData(moduleId, await searchParams);
+  const { data, count } = await getData(
+    { wsId: resolvedWsId, courseId, moduleId },
+    await searchParams
+  );
 
   const quizSets = data.map((m) => ({
     ...m,
@@ -71,42 +73,4 @@ export default async function WorkspaceCoursesPage({
       />
     </>
   );
-}
-
-async function getData(
-  moduleId: string,
-  {
-    q,
-    page = '1',
-    pageSize = '10',
-    retry = true,
-  }: { q?: string; page?: string; pageSize?: string; retry?: boolean } = {}
-) {
-  const supabase = await createAdminClient();
-
-  const queryBuilder = supabase
-    .from('course_module_quiz_sets')
-    .select('...workspace_quiz_sets(*)', {
-      count: 'exact',
-    })
-    .eq('module_id', moduleId)
-    .order('created_at', { ascending: false });
-
-  if (q) queryBuilder.ilike('name', `%${q}%`);
-
-  if (page && pageSize) {
-    const parsedPage = parseInt(page, 10);
-    const parsedSize = parseInt(pageSize, 10);
-    const start = (parsedPage - 1) * parsedSize;
-    const end = parsedPage * parsedSize;
-    queryBuilder.range(start, end).limit(parsedSize);
-  }
-
-  const { data, error, count } = await queryBuilder;
-  if (error) {
-    if (!retry) throw error;
-    return getData(moduleId, { q, pageSize, retry: false });
-  }
-
-  return { data, count } as { data: WorkspaceQuizSet[]; count: number };
 }

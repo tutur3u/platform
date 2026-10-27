@@ -9,17 +9,21 @@ import {
   SwatchBook,
   Youtube,
 } from '@tuturuuu/icons';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type { WorkspaceCourseModule } from '@tuturuuu/types';
 import LinkButton from '@tuturuuu/ui/custom/education/modules/link-button';
 import { ModuleToggles } from '@tuturuuu/ui/custom/education/modules/module-toggle';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
-import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import { resolveRouteWorkspace } from '@/lib/resolve-route-workspace';
+import {
+  getData,
+  getFlashcards,
+  getQuizSets,
+  getQuizzes,
+  getResources,
+} from './data';
 
 interface Props {
   children: ReactNode;
@@ -39,14 +43,15 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
   const { resolvedWsId } = await resolveRouteWorkspace(routeWsId);
   const commonHref = `/${routeWsId}/education/courses/${courseId}/modules/${moduleId}`;
 
-  const data = await getData(courseId, moduleId);
+  const scope = { wsId: resolvedWsId, courseId, moduleId };
+  const data = await getData(scope);
   const resources = await getResources({
     path: `${resolvedWsId}/courses/${courseId}/modules/${moduleId}/resources/`,
   });
 
-  const flashcards = await getFlashcards(moduleId);
-  const quizSets = await getQuizSets(moduleId);
-  const quizzes = await getQuizzes(moduleId);
+  const flashcards = await getFlashcards(scope);
+  const quizSets = await getQuizSets(scope);
+  const quizzes = await getQuizzes(scope);
 
   return (
     <>
@@ -128,65 +133,4 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
       {children}
     </>
   );
-}
-
-async function getData(courseId: string, moduleId: string) {
-  const supabase = await createAdminClient();
-
-  const { data, error } = await supabase
-    .from('workspace_course_modules')
-    .select('*')
-    .eq('group_id', courseId)
-    .eq('id', moduleId)
-    .maybeSingle();
-
-  if (error) throw error;
-  if (!data) notFound();
-
-  return data as WorkspaceCourseModule;
-}
-
-async function getFlashcards(moduleId: string) {
-  const supabase = await createAdminClient();
-
-  const { count, error } = await supabase
-    .from('course_module_flashcards')
-    .select('*', { count: 'exact', head: true })
-    .eq('module_id', moduleId);
-  if (error) throw error;
-
-  return count;
-}
-
-async function getQuizzes(moduleId: string) {
-  const supabase = await createAdminClient();
-
-  const { count, error } = await supabase
-    .from('course_module_quizzes')
-    .select('*', { count: 'exact', head: true })
-    .eq('module_id', moduleId);
-  if (error) throw error;
-
-  return count;
-}
-
-async function getQuizSets(moduleId: string) {
-  const supabase = await createAdminClient();
-
-  const { count, error } = await supabase
-    .from('course_module_quiz_sets')
-    .select('*', { count: 'exact', head: true })
-    .eq('module_id', moduleId);
-  if (error) throw error;
-
-  return count;
-}
-
-async function getResources({ path }: { path: string }) {
-  const supabase = await createAdminClient();
-
-  const { data, error } = await supabase.storage.from('workspaces').list(path);
-  if (error) throw error;
-
-  return data;
 }

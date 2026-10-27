@@ -1,7 +1,5 @@
-import { attachPrivateWorkspaceQuizAnswers } from '@tuturuuu/education-core/education/private-quiz-answers';
 import { ListTodo } from '@tuturuuu/icons';
 import { getSatelliteWorkspacePermissions } from '@tuturuuu/satellite/workspace-access';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import type { Metadata } from 'next';
@@ -11,6 +9,7 @@ import { getTranslations } from 'next-intl/server';
 import { resolveRouteWorkspace } from '@/lib/resolve-route-workspace';
 import AIQuizzes from './client-ai';
 import ClientQuizzes from './client-quizzes';
+import { getQuizzes } from './data';
 
 export const metadata: Metadata = {
   title: 'Quizzes',
@@ -40,7 +39,7 @@ export default async function ModuleQuizzesPage({ params }: Props) {
     notFound();
   }
 
-  const quizzes = await getQuizzes(moduleId);
+  const quizzes = await getQuizzes({ wsId: resolvedWsId, courseId, moduleId });
 
   return (
     <div className="grid gap-4">
@@ -79,18 +78,3 @@ export default async function ModuleQuizzesPage({ params }: Props) {
     </div>
   );
 }
-
-const getQuizzes = async (moduleId: string) => {
-  const supabase = await createAdminClient();
-
-  const { data, error } = await supabase
-    .from('course_module_quizzes')
-    .select('...workspace_quizzes(*, quiz_options(*))')
-    .eq('module_id', moduleId);
-
-  if (error) {
-    console.error('error', error);
-  }
-
-  return attachPrivateWorkspaceQuizAnswers(supabase, data || []);
-};
