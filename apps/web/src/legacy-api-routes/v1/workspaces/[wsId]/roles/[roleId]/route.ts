@@ -85,32 +85,48 @@ export async function PUT(req: Request, { params }: Params) {
     name: data.name,
   };
 
-  const roleQuery = supabase
+  // Update the role first so permission rows are only written for a role that
+  // belongs to the authorized workspace.
+  const roleRes = await supabase
     .from('workspace_roles')
     .update(coreData)
     .eq('id', id)
-    .eq('ws_id', resolvedWsId);
+    .eq('ws_id', resolvedWsId)
+    .select('id')
+    .maybeSingle();
 
-  const permissionsQuery = supabase.from('workspace_role_permissions').upsert(
-    permissions.map(
-      (permission): TablesInsert<'workspace_role_permissions'> => ({
-        ws_id: resolvedWsId,
-        role_id: id,
-        permission: permission.id as WorkspaceRolePermissionValue,
-        enabled: permission.enabled,
-      })
-    )
-  );
-
-  const [roleRes, permissionsRes] = await Promise.all([
-    roleQuery,
-    permissionsQuery,
-  ]);
-
-  if (roleRes.error || permissionsRes.error) {
+  if (roleRes.error) {
     console.error('Error updating workspace role', {
-      permissionsError: permissionsRes.error,
       roleError: roleRes.error,
+      roleId: id,
+      wsId: resolvedWsId,
+    });
+    return NextResponse.json(
+      { message: 'Error updating workspace role' },
+      { status: 500 }
+    );
+  }
+
+  if (!roleRes.data) {
+    return NextResponse.json({ message: 'Role not found' }, { status: 404 });
+  }
+
+  const permissionsRes = await supabase
+    .from('workspace_role_permissions')
+    .upsert(
+      permissions.map(
+        (permission): TablesInsert<'workspace_role_permissions'> => ({
+          ws_id: resolvedWsId,
+          role_id: roleRes.data.id,
+          permission: permission.id as WorkspaceRolePermissionValue,
+          enabled: permission.enabled,
+        })
+      )
+    );
+
+  if (permissionsRes.error) {
+    console.error('Error updating workspace role permissions', {
+      permissionsError: permissionsRes.error,
       roleId: id,
       wsId: resolvedWsId,
     });
