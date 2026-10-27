@@ -60,7 +60,7 @@ export class OpsHub extends DurableObject<Env> {
   async fetch(request: Request) {
     const url = new URL(request.url);
     const now = Date.now();
-    const flags = this.flags();
+    let flags = this.flags();
     if (request.method === 'GET' && url.pathname === '/status') {
       return json({
         enabled: Boolean(flags.enabled),
@@ -74,6 +74,8 @@ export class OpsHub extends DurableObject<Env> {
     if (request.method === 'POST' && url.pathname === '/ingest') {
       const parsed = ingestSchema.safeParse(await request.json());
       if (!parsed.success) return json({ error: 'Invalid payload' }, 400);
+      flags = this.flags();
+      if (!flags.enabled) return json({ error: 'Hub paused' }, 503);
       const body = parsed.data;
       if (Math.abs(now - body.sentAt) > 120_000)
         return json({ error: 'Clock skew' }, 400);
@@ -95,7 +97,8 @@ export class OpsHub extends DurableObject<Env> {
       if (ingests > 120) return json({ error: 'Ingest budget reached' }, 429);
       const existingItems = this.ctx.storage.sql
         .exec<{ id: string; version: number; data: string }>(
-          'SELECT id, version, data FROM needs_you'
+          'SELECT id, version, data FROM needs_you WHERE completedAt IS NULL OR completedAt > ?',
+          now - 30 * DAY
         )
         .toArray();
       const incoming = body.snapshot?.needsYou ?? [];

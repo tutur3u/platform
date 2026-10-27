@@ -190,6 +190,34 @@ test('bounds total event rows, hourly ingests and read/export retention', async 
   await sql('UPDATE flags SET lastPublisherAt=?', [Date.now() - 16 * 60_000]);
   assert.equal((await (await read('/status')).json()).publisherStale, true);
 });
+test('caps persisted events and accepts only one concurrent copy of a sequence', async () => {
+  for (let batch = 0; batch < 11; batch++) {
+    const body = envelope(3 + batch, {
+      events: Array.from({ length: 100 }, (_, index) => ({
+        seq: 2 + batch * 100 + index,
+        ts: Date.now(),
+        kind: 'shipped',
+        product: 'tuturuuu',
+        severity: 'info',
+        title: 'Release shipped',
+      })),
+    });
+    if (batch === 0) {
+      const responses = await Promise.all(
+        Array.from({ length: 4 }, () => ingest(body))
+      );
+      assert.deepEqual(
+        responses.map((r) => r.status).sort(),
+        [200, 409, 409, 409]
+      );
+    } else assert.equal((await ingest(body)).status, 200);
+  }
+  assert.deepEqual(await sql('SELECT COUNT(*) AS count FROM events'), [
+    { count: 1000 },
+  ]);
+  assert.equal((await (await read('/events')).json()).events.length, 200);
+  assert.equal((await (await read('/hub/export')).json()).events.length, 1000);
+});
 test('erases isolated data and leaves a durable disabled replay tombstone', async () => {
   assert.equal(
     (await ingest(envelope(1, { snapshot: snapshot() }), other)).status,
@@ -208,8 +236,11 @@ test('erases isolated data and leaves a durable disabled replay tombstone', asyn
 });
 test('kill switch survives restart, denies ingest and all reads except status', async () => {
   assert.equal(
-    (await ingest(envelope(3, { snapshot: { ...snapshot(), enabled: false } })))
-      .status,
+    (
+      await ingest(
+        envelope(14, { snapshot: { ...snapshot(), enabled: false } })
+      )
+    ).status,
     200
   );
   await server.restart();
@@ -222,9 +253,9 @@ test('kill switch survives restart, denies ingest and all reads except status', 
   ]) {
     assert.equal((await read(target)).status, 503);
   }
-  assert.equal((await ingest(envelope(4))).status, 503);
+  assert.equal((await ingest(envelope(15))).status, 503);
   assert.equal((await (await read('/status')).json()).enabled, false);
   assert.deepEqual(await sql('SELECT seq,enabled FROM flags'), [
-    { seq: 3, enabled: 0 },
+    { seq: 14, enabled: 0 },
   ]);
 });
