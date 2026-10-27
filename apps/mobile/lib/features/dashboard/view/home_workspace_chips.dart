@@ -121,22 +121,32 @@ class _HomeWorkspaceChipsState extends State<HomeWorkspaceChips>
   /// [pins] on success, the last persisted pins after a rollback.
   Future<List<String>> _savePins(List<String> pins) async {
     final revision = ++_revision;
+    final auth = context.read<AuthCubit>();
+    final userId = auth.state.user?.id;
     setState(() => _pins = pins);
-    final write = _saving.then((_) => _write(pins, revision));
+    final write = _saving.then((_) => _write(pins, revision, auth, userId));
     _saving = write.catchError((Object _) {});
     await write;
     return _pins;
   }
 
   /// Each save replaces the whole list, so a save superseded while queued is
-  /// skipped and only the latest edit reaches the server.
-  Future<void> _write(List<String> pins, int revision) async {
-    if (!mounted || revision != _revision) return;
+  /// skipped and only the latest edit reaches the server. The latest edit is
+  /// written even if Home unmounts meanwhile, but never after the account
+  /// that made it signs out or switches.
+  Future<void> _write(
+    List<String> pins,
+    int revision,
+    AuthCubit auth,
+    String? userId,
+  ) async {
+    bool sameUser() => auth.state.user?.id == userId;
+    if (revision != _revision || !sameUser()) return;
     try {
       await _repository.save(pins);
-      _persisted = pins;
+      if (sameUser()) _persisted = pins;
     } on Exception {
-      if (!mounted || revision != _revision) return;
+      if (!mounted || revision != _revision || !sameUser()) return;
       setState(() => _pins = _persisted);
       showAppToast(
         context,

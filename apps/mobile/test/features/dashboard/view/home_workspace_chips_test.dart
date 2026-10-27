@@ -373,6 +373,76 @@ void main() {
       await tester.pumpAndSettle();
     });
 
+    testWidgets('when every save fails, pins roll back to the stored list', (
+      tester,
+    ) async {
+      final pins = _Pins(['ws-3'])
+        ..gate = Completer<void>()
+        ..failFor = (_) => true;
+      await pump(tester, _workspaces(6), pins);
+      await openPinsEditor(tester);
+
+      await tester.tap(pinRow('ws-5'));
+      await tester.pump();
+      await tester.tap(pinRow('ws-1'));
+      await tester.pump();
+      pins.gate!.complete();
+      await tester.pumpAndSettle();
+
+      // Neither edit was saved, so ws-5 is not restored either.
+      expect(pins.stored, ['ws-3']);
+      expect(find.text("Couldn't save pinned workspaces."), findsOneWidget);
+      expect(tester.widget<AppCheckboxRow>(pinRow('ws-3')).value, isTrue);
+      expect(tester.widget<AppCheckboxRow>(pinRow('ws-5')).value, isFalse);
+      expect(tester.widget<AppCheckboxRow>(pinRow('ws-1')).value, isFalse);
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('a queued edit is still saved after Home unmounts', (
+      tester,
+    ) async {
+      final pins = _Pins(['ws-3'])..gate = Completer<void>();
+      await pump(tester, _workspaces(6), pins);
+      await openPinsEditor(tester);
+
+      await tester.tap(pinRow('ws-5'));
+      await tester.pump();
+      await tester.tap(pinRow('ws-1'));
+      await tester.pump();
+      // Leaving Home disposes the row while the first save is held.
+      await tester.pumpWidget(const SizedBox());
+      pins.gate!.complete();
+      await tester.pumpAndSettle();
+
+      expect(pins.saves, [
+        ['ws-3', 'ws-5'],
+        ['ws-3', 'ws-5', 'ws-1'],
+      ]);
+      expect(pins.stored, ['ws-3', 'ws-5', 'ws-1']);
+    });
+
+    testWidgets('a queued edit is dropped once its account signs out', (
+      tester,
+    ) async {
+      final pins = _Pins(['ws-3'])..gate = Completer<void>();
+      await pump(tester, _workspaces(6), pins);
+      await openPinsEditor(tester);
+
+      await tester.tap(pinRow('ws-5'));
+      await tester.pump();
+      await tester.tap(pinRow('ws-1'));
+      await tester.pump();
+      await tester.pumpWidget(const SizedBox());
+      when(() => auth.state).thenReturn(const AuthState.unauthenticated());
+      pins.gate!.complete();
+      await tester.pumpAndSettle();
+
+      expect(pins.saves, [
+        ['ws-3', 'ws-5'],
+      ]);
+    });
+
     testWidgets('chips scroll instead of clipping at 2x text on 320dp', (
       tester,
     ) async {

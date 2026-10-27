@@ -28,8 +28,9 @@ with the redesign.
   retries after 2, 8 and 30 seconds and again when the app resumes. Saves run
   one at a time, and an edit made while a save is in flight (for example
   behind a security check) replaces any queued edit, so only the latest list
-  is written and saves never race. A failed latest save restores the last
-  stored pins, and the Edit pinned workspaces checkboxes follow what is
+  is written and saves never race. The latest edit is still written if Home
+  closes meanwhile, but not after its account signs out or switches. A failed
+  latest save restores the last stored pins, and the Edit pinned workspaces checkboxes follow what is
   stored, not the tap. Chip pills are 44dp tall with 48dp
   touch targets, and long names ellipsize inside a chip while the row
   scrolls.
@@ -125,7 +126,8 @@ occurrence projected into a different calendar day.
 - `test/features/dashboard/view/home_workspace_chips_test.dart` covers the
   chip rules (all chips below five workspaces, pins in order led by an
   unpinned current workspace, stale pins skipped), switching, the More menu,
-  pinning per user, serialized latest-wins saves, failed-save rollback and
+  pinning per user, serialized latest-wins saves (kept after Home unmounts,
+  dropped after sign-out), failed-save rollback to the stored pins and
   2x text at 320dp. The render
   cases above assert the Today, Up next and Calendar sections and screen-reader
   activation of More and See all.
