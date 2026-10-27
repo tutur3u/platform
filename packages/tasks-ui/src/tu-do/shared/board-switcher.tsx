@@ -29,6 +29,8 @@ import { useTasksHref } from '../tasks-route-context';
 import { announceTaskBoardSwitch } from './board-switch-transition';
 
 interface BoardSwitcherProps {
+  /** Overrides the trigger width and styling. */
+  className?: string;
   board: Pick<WorkspaceTaskBoard, 'id' | 'name' | 'ws_id' | 'ticket_prefix'> & {
     icon?: WorkspaceTaskBoard['icon'];
   };
@@ -72,7 +74,11 @@ function getDaysRemaining(deletedAt: string) {
   return Math.max(0, 30 - daysPassed);
 }
 
-export function BoardSwitcher({ board, translations }: BoardSwitcherProps) {
+export function BoardSwitcher({
+  board,
+  className,
+  translations,
+}: BoardSwitcherProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const tasksHref = useTasksHref();
@@ -303,13 +309,16 @@ export function BoardSwitcher({ board, translations }: BoardSwitcherProps) {
 
   return (
     <Combobox
-      className="w-[min(22rem,70vw)] [&_button]:h-7 [&_button]:min-h-7 [&_button]:px-2 sm:[&_button]:h-8 sm:[&_button]:min-h-8"
+      className={
+        className ??
+        'w-[min(22rem,70vw)] [&_button]:h-7 [&_button]:min-h-7 [&_button]:px-2 sm:[&_button]:h-8 sm:[&_button]:min-h-8'
+      }
       createText={canCreateBoard ? t.createBoard : undefined}
       creatingText={canCreateBoard ? t.creatingBoard : undefined}
       disabled={isFetchingBoards}
       emptyText={isFetchingBoards ? t.loadingBoards : t.noOtherBoards}
       label={
-        <span className="truncate font-semibold text-foreground text-sm">
+        <span className="truncate font-medium text-foreground text-sm">
           {translateBoardName(board.name)}
         </span>
       }

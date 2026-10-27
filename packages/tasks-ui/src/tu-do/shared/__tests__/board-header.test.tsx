@@ -6,19 +6,20 @@ import type React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { setActiveBoardRefresh } from '../board-broadcast-context';
 import { BoardHeader } from '../board-header';
+import { DEFAULT_BOARD_FILTERS } from '../board-header/board-filter-state';
 
 const navigationMocks = vi.hoisted(() => ({
   replace: vi.fn(),
 }));
 const internalApiMocks = vi.hoisted(() => ({
   getWorkspaceTaskBoard: vi.fn(),
-}));
-const comboboxMocks = vi.hoisted(() => ({
-  seenOptions: [] as { description?: string; label: string; value: string }[][],
+  listWorkspaceTaskProjects: vi.fn(),
 }));
 
 vi.mock('next-intl', () => ({
-  useTranslations: () => (key: string) => key,
+  useLocale: () => 'en',
+  useTranslations: () => (key: string, values?: Record<string, unknown>) =>
+    values && 'name' in values ? `${key}:${values.name}` : key,
 }));
 
 vi.mock('next/navigation', () => ({
@@ -35,100 +36,76 @@ vi.mock('next/link', () => ({
   default: ({
     children,
     href,
+    ...props
   }: {
     children: React.ReactNode;
     href: string;
-  }) => <a href={href}>{children}</a>,
-}));
-
-vi.mock('@tuturuuu/ui/hooks/use-board-actions', () => ({
-  useBoardActions: () => ({
-    archiveBoard: vi.fn(),
-    unarchiveBoard: vi.fn(),
-  }),
-}));
-
-vi.mock('@tuturuuu/ui/custom/combobox', () => ({
-  Combobox: function MockCombobox({
-    ariaLabel,
-    className,
-    colorizeTriggerIcon,
-    disabled,
-    hideTriggerLabel,
-    onChange,
-    options,
-    placeholder,
-    selected,
-    triggerIcon,
-    triggerTooltip,
-  }: {
-    ariaLabel?: string;
-    className?: string;
-    colorizeTriggerIcon?: boolean;
-    disabled?: boolean;
-    hideTriggerLabel?: boolean;
-    onChange?: (value: string) => void;
-    options: { description?: string; label: string; value: string }[];
-    placeholder?: string;
-    selected: string;
-    triggerIcon?: React.ReactNode;
-    triggerTooltip?: React.ReactNode;
-  }) {
-    comboboxMocks.seenOptions.push(options);
-
-    return (
-      <select
-        aria-label={
-          ariaLabel ??
-          (hideTriggerLabel
-            ? options.find((option) => option.value === selected)?.label
-            : placeholder)
-        }
-        className={className}
-        data-colorize-trigger-icon={String(colorizeTriggerIcon)}
-        data-has-trigger-icon={String(Boolean(triggerIcon))}
-        data-trigger-tooltip={
-          typeof triggerTooltip === 'string' ? triggerTooltip : undefined
-        }
-        disabled={disabled}
-        value={selected}
-        onChange={(event) => onChange?.(event.target.value)}
-      >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    );
-  },
+  }) => (
+    <a href={href} {...props}>
+      {children}
+    </a>
+  ),
 }));
 
 vi.mock('@tuturuuu/internal-api/tasks', () => ({
   getWorkspaceTaskBoard: (
     ...args: Parameters<typeof internalApiMocks.getWorkspaceTaskBoard>
   ) => internalApiMocks.getWorkspaceTaskBoard(...args),
+  listWorkspaceTaskProjects: (
+    ...args: Parameters<typeof internalApiMocks.listWorkspaceTaskProjects>
+  ) => internalApiMocks.listWorkspaceTaskProjects(...args),
 }));
 
+// Menus render inline so items are reachable without pointer simulation.
 vi.mock('@tuturuuu/ui/dropdown-menu', () => ({
   DropdownMenu: ({ children }: { children: React.ReactNode }) => (
     <div>{children}</div>
   ),
   DropdownMenuContent: ({ children }: { children: React.ReactNode }) => (
-    <div>{children}</div>
+    <div role="menu">{children}</div>
   ),
   DropdownMenuItem: ({
     children,
-    onClick,
+    disabled,
+    onSelect,
+    role = 'menuitem',
   }: {
     children: React.ReactNode;
-    onClick?: () => void;
+    disabled?: boolean;
+    onSelect?: () => void;
+    role?: string;
   }) => (
-    <button onClick={onClick} type="button">
+    <button
+      disabled={disabled}
+      onClick={() => onSelect?.()}
+      role={role}
+      type="button"
+    >
+      {children}
+    </button>
+  ),
+  DropdownMenuCheckboxItem: ({
+    checked,
+    children,
+    onCheckedChange,
+  }: {
+    checked?: boolean;
+    children: React.ReactNode;
+    onCheckedChange?: (checked: boolean) => void;
+  }) => (
+    <button
+      aria-checked={checked}
+      onClick={() => onCheckedChange?.(!checked)}
+      role="menuitemcheckbox"
+      type="button"
+    >
       {children}
     </button>
   ),
   DropdownMenuSeparator: () => <hr />,
+  DropdownMenuShortcut: ({ children }: { children: React.ReactNode }) => (
+    <span>{children}</span>
+  ),
   DropdownMenuTrigger: ({ children }: { children: React.ReactNode }) => (
     <>{children}</>
   ),
@@ -148,36 +125,19 @@ vi.mock('../board-user-presence-avatars', () => ({
   ),
 }));
 
-vi.mock('../boards/boardId/task-filter', () => ({
-  TaskFilter: () => <div data-testid="task-filter" />,
-}));
-
-vi.mock('../boards/boardId/kanban/planner/kanban-planner-dialog', () => ({
+vi.mock('../../boards/boardId/kanban/planner/kanban-planner-dialog', () => ({
   KanbanPlannerDialog: ({ open }: { open: boolean }) =>
     open ? <div role="dialog">planner-dialog</div> : null,
 }));
 
-vi.mock('../boards/board-share-dialog', () => ({
+vi.mock('../../boards/board-share-dialog', () => ({
   BoardShareDialog: ({ open }: { open: boolean }) =>
     open ? <div role="dialog">share-dialog</div> : null,
 }));
 
-vi.mock('../boards/create-board-anywhere-dialog', () => ({
-  CreateBoardAnywhereDialog: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="create-board-anywhere">{children}</div>
-  ),
-}));
-
-vi.mock('../boards/copy-board-dialog', () => ({
-  CopyBoardDialog: () => <div data-testid="copy-board-dialog" />,
-}));
-
-vi.mock('../boards/form', () => ({
-  TaskBoardForm: () => <div data-testid="task-board-form" />,
-}));
-
-vi.mock('../templates/save-as-template-dialog', () => ({
-  SaveAsTemplateDialog: () => <div data-testid="save-as-template-dialog" />,
+vi.mock('../../boards/create-board-anywhere-dialog', () => ({
+  CreateBoardAnywhereDialog: ({ open }: { open?: boolean }) =>
+    open ? <div role="dialog">create-board-dialog</div> : null,
 }));
 
 const mockBoard = {
@@ -188,47 +148,56 @@ const mockBoard = {
   ws_id: 'ws-1',
 } as const;
 
+const people = [
+  {
+    id: 'me',
+    display_name: 'Linh',
+    avatar_url: null,
+    email: null,
+    taskCount: 3,
+  },
+  {
+    id: 'minh',
+    display_name: 'Minh',
+    avatar_url: null,
+    email: null,
+    taskCount: 2,
+  },
+];
+
+type HeaderProps = React.ComponentProps<typeof BoardHeader>;
+
+function headerElement(overrides?: Partial<HeaderProps>) {
+  return (
+    <BoardHeader
+      workspaceId="ws-1"
+      board={mockBoard}
+      currentUserId="me"
+      currentView="kanban"
+      filters={DEFAULT_BOARD_FILTERS}
+      isMultiSelectMode={false}
+      isPersonalWorkspace={false}
+      listStatusFilter="all"
+      onFiltersChange={vi.fn()}
+      onListStatusFilterChange={vi.fn()}
+      onUpdate={vi.fn()}
+      onViewChange={vi.fn()}
+      setIsMultiSelectMode={vi.fn()}
+      {...overrides}
+    />
+  );
+}
+
 function renderBoardHeader(
-  overrides?: Partial<React.ComponentProps<typeof BoardHeader>>,
+  overrides?: Partial<HeaderProps>,
   sidebarContext?: React.ContextType<typeof SidebarContext>
 ) {
   const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: {
-        retry: false,
-      },
-    },
+    defaultOptions: { queries: { retry: false } },
   });
-
   const content = (
     <QueryClientProvider client={queryClient}>
-      <BoardHeader
-        workspaceId="ws-1"
-        board={mockBoard}
-        currentView="kanban"
-        filters={{
-          assignees: [],
-          dueDateRange: null,
-          estimationRange: null,
-          includeMyTasks: false,
-          includeUnassigned: false,
-          labels: [],
-          priorities: [],
-          projects: [],
-          sourceBoardIds: [],
-          sourceScope: 'all_visible',
-          sourceWorkspaceIds: [],
-        }}
-        isMultiSelectMode={false}
-        isPersonalWorkspace={false}
-        listStatusFilter="all"
-        onFiltersChange={vi.fn()}
-        onListStatusFilterChange={vi.fn()}
-        onUpdate={vi.fn()}
-        onViewChange={vi.fn()}
-        setIsMultiSelectMode={vi.fn()}
-        {...overrides}
-      />
+      {headerElement(overrides)}
     </QueryClientProvider>
   );
 
@@ -243,24 +212,36 @@ function renderBoardHeader(
   );
 }
 
+const expandedSidebar = (handleBehaviorChange = vi.fn()) => ({
+  behavior: 'expanded' as const,
+  handleBehaviorChange,
+  localOverride: false,
+  setBehavior: vi.fn(),
+  setLocalOverride: vi.fn(),
+});
+
 describe('BoardHeader', () => {
   beforeEach(() => {
-    comboboxMocks.seenOptions = [];
     navigationMocks.replace.mockReset();
     internalApiMocks.getWorkspaceTaskBoard.mockReset();
     internalApiMocks.getWorkspaceTaskBoard.mockResolvedValue({
       board: mockBoard,
     });
+    internalApiMocks.listWorkspaceTaskProjects.mockReset();
+    internalApiMocks.listWorkspaceTaskProjects.mockResolvedValue([
+      { id: 'p-platform', name: 'Platform', status: 'active' },
+      { id: 'p-gone', name: 'Gone', status: 'deleted' },
+    ]);
     setActiveBoardRefresh(null);
   });
 
-  it('refreshes the active board from the header', async () => {
+  it('refreshes the active board from More', async () => {
     const refresh = vi.fn().mockResolvedValue(undefined);
     const onUpdate = vi.fn();
     setActiveBoardRefresh(refresh);
     renderBoardHeader({ onUpdate });
 
-    fireEvent.click(screen.getByRole('button', { name: 'common.refresh' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'common.refresh' }));
 
     await waitFor(() => {
       expect(refresh).toHaveBeenCalledWith({ includeLists: true });
@@ -268,115 +249,87 @@ describe('BoardHeader', () => {
     });
   });
 
-  it('renders a direct board settings button with compact outline header styling', () => {
-    renderBoardHeader();
+  it('keeps search, Share, New task and More in the first row', () => {
+    const onCreateTask = vi.fn();
+    renderBoardHeader({ onCreateTask });
 
-    const settingsButton = screen.getByRole('button', {
-      name: 'ws-task-boards.actions.board_settings',
-    });
-
-    expect(settingsButton).toHaveClass('border', 'h-7', 'w-7', 'px-0');
-    expect(settingsButton).toHaveClass('sm:h-8', 'sm:w-8');
-    expect(settingsButton).not.toHaveTextContent(
-      'ws-task-boards.actions.board_settings'
+    expect(screen.getByLabelText('common.search_tasks')).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole('button', { name: 'ws-task-boards.header.share' })
     );
-  });
+    expect(screen.getByRole('dialog')).toHaveTextContent('share-dialog');
 
-  it('keeps board actions in the canonical settings dialog', () => {
-    renderBoardHeader();
-
+    fireEvent.click(
+      screen.getByRole('button', { name: 'ws-task-boards.header.new_task' })
+    );
+    expect(onCreateTask).toHaveBeenCalledTimes(1);
     expect(
-      screen.queryByRole('button', { name: 'common.actions' })
-    ).not.toBeInTheDocument();
-    expect(
-      screen.getByRole('button', {
-        name: 'ws-task-boards.actions.board_settings',
-      })
+      screen.getByRole('button', { name: 'ws-task-boards.header.more' })
     ).toBeInTheDocument();
   });
 
-  it('renders a compact hide-sidebar button when sidebar context is available', () => {
+  it('opens Create board from More', () => {
+    renderBoardHeader();
+
+    fireEvent.click(
+      screen.getByRole('menuitem', {
+        name: 'ws-task-boards.create_anywhere.action',
+      })
+    );
+
+    expect(screen.getByRole('dialog')).toHaveTextContent('create-board-dialog');
+  });
+
+  it('toggles task selection from More', () => {
+    const setIsMultiSelectMode = vi.fn();
+    renderBoardHeader({ setIsMultiSelectMode });
+
+    fireEvent.click(
+      screen.getByRole('menuitem', { name: /common\.choose_tasks/ })
+    );
+
+    expect(setIsMultiSelectMode).toHaveBeenCalledWith(true);
+  });
+
+  it('hides the sidebar from More when sidebar context is available', () => {
     const handleBehaviorChange = vi.fn();
+    renderBoardHeader(undefined, expandedSidebar(handleBehaviorChange));
 
-    renderBoardHeader(undefined, {
-      behavior: 'expanded',
-      handleBehaviorChange,
-      localOverride: false,
-      setBehavior: vi.fn(),
-      setLocalOverride: vi.fn(),
-    });
-
-    const hideButton = screen.getByRole('button', {
-      name: 'common.hide_sidebar',
-    });
-
-    expect(hideButton).toHaveClass('border', 'h-7', 'w-7', 'px-0');
-    fireEvent.click(hideButton);
+    fireEvent.click(
+      screen.getByRole('menuitem', { name: 'common.hide_sidebar' })
+    );
     expect(handleBehaviorChange).toHaveBeenCalledWith('hidden');
   });
 
-  it('does not render the hide-sidebar button without context or when already hidden', () => {
+  it('does not offer hide-sidebar without context or when already hidden', () => {
     const { rerender } = renderBoardHeader();
-
     expect(
-      screen.queryByRole('button', { name: 'common.hide_sidebar' })
+      screen.queryByRole('menuitem', { name: 'common.hide_sidebar' })
     ).not.toBeInTheDocument();
 
     rerender(
       <SidebarContext.Provider
-        value={{
-          behavior: 'hidden',
-          handleBehaviorChange: vi.fn(),
-          localOverride: false,
-          setBehavior: vi.fn(),
-          setLocalOverride: vi.fn(),
-        }}
+        value={{ ...expandedSidebar(), behavior: 'hidden' }}
       >
         <QueryClientProvider client={new QueryClient()}>
-          <BoardHeader
-            workspaceId="ws-1"
-            board={mockBoard}
-            currentView="kanban"
-            filters={{
-              assignees: [],
-              dueDateRange: null,
-              estimationRange: null,
-              includeMyTasks: false,
-              includeUnassigned: false,
-              labels: [],
-              priorities: [],
-              projects: [],
-              sourceBoardIds: [],
-              sourceScope: 'all_visible',
-              sourceWorkspaceIds: [],
-            }}
-            isMultiSelectMode={false}
-            isPersonalWorkspace={false}
-            listStatusFilter="all"
-            onFiltersChange={vi.fn()}
-            onListStatusFilterChange={vi.fn()}
-            onUpdate={vi.fn()}
-            onViewChange={vi.fn()}
-            setIsMultiSelectMode={vi.fn()}
-          />
+          {headerElement()}
         </QueryClientProvider>
       </SidebarContext.Provider>
     );
-
     expect(
-      screen.queryByRole('button', { name: 'common.hide_sidebar' })
+      screen.queryByRole('menuitem', { name: 'common.hide_sidebar' })
     ).not.toBeInTheDocument();
   });
 
-  it('prefetches current board settings before opening the dialog', async () => {
-    renderBoardHeader();
+  it('prefetches board settings when More is hovered', async () => {
+    const onBoardSettingsIntent = vi.fn();
+    renderBoardHeader({ onBoardSettingsIntent });
 
-    fireEvent.mouseEnter(
-      screen.getByRole('button', {
-        name: 'ws-task-boards.actions.board_settings',
-      })
+    fireEvent.pointerEnter(
+      screen.getByRole('button', { name: 'ws-task-boards.header.more' })
     );
 
+    expect(onBoardSettingsIntent).toHaveBeenCalledTimes(1);
     await waitFor(() => {
       expect(internalApiMocks.getWorkspaceTaskBoard).toHaveBeenCalledWith(
         'ws-1',
@@ -386,25 +339,11 @@ describe('BoardHeader', () => {
     });
   });
 
-  it('calls the board settings intent hook before opening the dialog', () => {
-    const onBoardSettingsIntent = vi.fn();
-
-    renderBoardHeader({ onBoardSettingsIntent });
-
-    fireEvent.pointerDown(
-      screen.getByRole('button', {
-        name: 'ws-task-boards.actions.board_settings',
-      })
-    );
-
-    expect(onBoardSettingsIntent).toHaveBeenCalledTimes(1);
-  });
-
   it('opens contextual board settings through query state', () => {
     renderBoardHeader();
 
     fireEvent.click(
-      screen.getByRole('button', {
+      screen.getByRole('menuitem', {
         name: 'ws-task-boards.actions.board_settings',
       })
     );
@@ -427,12 +366,11 @@ describe('BoardHeader', () => {
     );
 
     renderBoardHeader();
-
-    const settingsButton = screen.getByRole('button', {
-      name: 'ws-task-boards.actions.board_settings',
-    });
-    fireEvent.pointerDown(settingsButton);
-    fireEvent.click(settingsButton);
+    fireEvent.click(
+      screen.getByRole('menuitem', {
+        name: 'ws-task-boards.actions.board_settings',
+      })
+    );
 
     expect(handleSettingsIntent).toHaveBeenCalledTimes(1);
     expect(navigationMocks.replace).not.toHaveBeenCalled();
@@ -445,6 +383,8 @@ describe('BoardHeader', () => {
 
   it('renders a natural public title and hides member-only controls in read-only mode', () => {
     renderBoardHeader({
+      people,
+      projectTaskCounts: new Map(),
       publicView: true,
       readOnly: true,
       titlePrefix: <span data-testid="public-title-prefix">Tuturuuu /</span>,
@@ -454,209 +394,178 @@ describe('BoardHeader', () => {
     expect(screen.getByTestId('public-title-prefix')).toBeInTheDocument();
     expect(screen.getByText('Roadmap')).toBeInTheDocument();
     expect(screen.queryByTestId('board-user-presence')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('task-filter')).not.toBeInTheDocument();
     expect(
-      screen.queryByLabelText('ws-task-boards.share.action')
+      screen.queryByRole('button', { name: 'ws-task-boards.header.share' })
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByLabelText('ws-task-plans.planner')
+      screen.queryByRole('button', { name: 'ws-task-boards.header.more' })
     ).not.toBeInTheDocument();
-  });
-
-  it('hides the board picker when showing My Tasks', () => {
-    renderBoardHeader({
-      currentView: 'my_tasks',
-    });
-
-    expect(screen.queryByTestId('board-switcher')).not.toBeInTheDocument();
+    expect(screen.queryByText('Linh')).not.toBeInTheDocument();
     expect(
-      screen.getByText('ws-task-boards.views.my_tasks')
+      screen.queryByRole('button', { name: /ws-task-boards\.header\.focus/ })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'common.sort' })
     ).toBeInTheDocument();
   });
 
-  it('shows planner as a personal kanban toolbar button and opens the dialog', () => {
-    renderBoardHeader({
-      isPersonalWorkspace: true,
-    });
+  it('hides the board picker when showing My Tasks', () => {
+    renderBoardHeader({ currentView: 'my_tasks' });
 
-    fireEvent.click(screen.getByLabelText('ws-task-plans.planner'));
-
-    expect(screen.getByRole('dialog')).toHaveTextContent('planner');
+    expect(screen.queryByTestId('board-switcher')).not.toBeInTheDocument();
+    expect(
+      screen.getAllByText('ws-task-boards.views.my_tasks').length
+    ).toBeGreaterThan(0);
   });
 
-  it('hides planner outside personal kanban editing', () => {
-    const { rerender } = renderBoardHeader({
-      currentView: 'list',
-      isPersonalWorkspace: true,
-    });
+  it('offers the personal planner in More only on personal kanban', () => {
+    const { rerender } = renderBoardHeader({ isPersonalWorkspace: true });
 
-    expect(
-      screen.queryByLabelText('ws-task-plans.planner')
-    ).not.toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole('menuitem', { name: 'ws-task-plans.planner' })
+    );
+    expect(screen.getByRole('dialog')).toHaveTextContent('planner');
 
     rerender(
       <QueryClientProvider client={new QueryClient()}>
-        <BoardHeader
-          workspaceId="ws-1"
-          board={mockBoard}
-          currentView="kanban"
-          filters={{
-            assignees: [],
-            dueDateRange: null,
-            estimationRange: null,
-            includeMyTasks: false,
-            includeUnassigned: false,
-            labels: [],
-            priorities: [],
-            projects: [],
-            sourceBoardIds: [],
-            sourceScope: 'all_visible',
-            sourceWorkspaceIds: [],
-          }}
-          isMultiSelectMode={false}
-          isPersonalWorkspace
-          listStatusFilter="all"
-          onFiltersChange={vi.fn()}
-          onListStatusFilterChange={vi.fn()}
-          onUpdate={vi.fn()}
-          onViewChange={vi.fn()}
-          publicView
-          setIsMultiSelectMode={vi.fn()}
-        />
+        {headerElement({ currentView: 'list', isPersonalWorkspace: true })}
       </QueryClientProvider>
     );
-
     expect(
-      screen.queryByLabelText('ws-task-plans.planner')
+      screen.queryByRole('menuitem', { name: 'ws-task-plans.planner' })
     ).not.toBeInTheDocument();
   });
 
-  it('shows presence avatars for workspace boards', () => {
-    renderBoardHeader();
-
-    expect(screen.getByTestId('board-user-presence')).toBeInTheDocument();
-  });
-
-  it('hides presence avatars for unshared personal boards', () => {
-    renderBoardHeader({
-      isPersonalWorkspace: true,
-    });
-
-    expect(screen.queryByTestId('board-user-presence')).not.toBeInTheDocument();
-  });
-
-  it('shows presence avatars for personal boards shared with guests', () => {
-    renderBoardHeader({
-      board: {
-        ...mockBoard,
-        has_guest_access: true,
+  it.each([
+    ['workspace boards', {}, true],
+    ['unshared personal boards', { isPersonalWorkspace: true }, false],
+    [
+      'personal boards shared with guests',
+      {
+        board: { ...mockBoard, has_guest_access: true },
+        isPersonalWorkspace: true,
       },
-      isPersonalWorkspace: true,
-    });
-
-    expect(screen.getByTestId('board-user-presence')).toBeInTheDocument();
-  });
-
-  it('shows presence avatars for direct board guest access', () => {
-    renderBoardHeader({
-      board: {
-        ...mockBoard,
-        access_type: 'guest',
+      true,
+    ],
+    [
+      'direct board guest access',
+      {
+        board: { ...mockBoard, access_type: 'guest' as const },
+        isPersonalWorkspace: true,
       },
-      isPersonalWorkspace: true,
-    });
-
-    expect(screen.getByTestId('board-user-presence')).toBeInTheDocument();
+      true,
+    ],
+  ])('presence avatars for %s', (_label, overrides, visible) => {
+    renderBoardHeader(overrides as Partial<HeaderProps>);
+    expect(Boolean(screen.queryByTestId('board-user-presence'))).toBe(visible);
   });
 
-  it('updates status, view, and sort through combobox controls', () => {
+  it('filters by person pills where picking yourself is Mine', () => {
+    const onFiltersChange = vi.fn();
+    renderBoardHeader({ onFiltersChange, people, unassignedCount: 1 });
+
+    fireEvent.click(screen.getByRole('button', { name: /Linh/ }));
+    expect(onFiltersChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        assignees: [expect.objectContaining({ id: 'me' })],
+        includeMyTasks: true,
+      })
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /common\.unassigned/ }));
+    expect(onFiltersChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ assignees: [], includeUnassigned: true })
+    );
+  });
+
+  it('turns Focus on as my open tasks by priority', () => {
     const onFiltersChange = vi.fn();
     const onListStatusFilterChange = vi.fn();
-    const onViewChange = vi.fn();
+    renderBoardHeader({ onFiltersChange, onListStatusFilterChange, people });
 
+    fireEvent.click(
+      screen.getByRole('button', { name: /ws-task-boards\.header\.focus/ })
+    );
+
+    expect(onListStatusFilterChange).toHaveBeenCalledWith('open');
+    expect(onFiltersChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        includeMyTasks: true,
+        sortBy: 'priority-high',
+      })
+    );
+  });
+
+  it('filters by project from the dropdown, skipping deleted projects', async () => {
+    const onFiltersChange = vi.fn();
     renderBoardHeader({
       onFiltersChange,
-      onListStatusFilterChange,
+      projectTaskCounts: new Map([['p-platform', 4]]),
+    });
+
+    const platform = await screen.findByRole('menuitemcheckbox', {
+      name: /Platform/,
+    });
+    expect(platform).toHaveTextContent('4');
+    expect(screen.queryByText('Gone')).not.toBeInTheDocument();
+
+    fireEvent.click(platform);
+    expect(onFiltersChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        projects: [{ id: 'p-platform', name: 'Platform' }],
+      })
+    );
+  });
+
+  it('sorts by priority only and switches views with shortcuts shown', () => {
+    const onFiltersChange = vi.fn();
+    const onViewChange = vi.fn();
+    renderBoardHeader({
+      availableViews: ['kanban', 'list', 'timeline', 'drafts'],
+      onFiltersChange,
       onViewChange,
+      viewHotkeyLabels: { list: 'G L' },
     });
 
-    fireEvent.change(screen.getByLabelText('common.all'), {
-      target: { value: 'active' },
-    });
-    expect(onListStatusFilterChange).toHaveBeenCalledWith('active');
-
-    fireEvent.change(screen.getByLabelText('ws-task-boards.views.kanban'), {
-      target: { value: 'list' },
-    });
-    expect(onViewChange).toHaveBeenCalledWith('list');
-
-    fireEvent.change(screen.getByLabelText('common.sort'), {
-      target: { value: 'priority-high' },
-    });
+    fireEvent.click(
+      screen.getByRole('menuitemradio', {
+        name: /ws-task-boards\.filters\.sort_options\.high_to_low/,
+      })
+    );
     expect(onFiltersChange).toHaveBeenCalledWith(
       expect.objectContaining({ sortBy: 'priority-high' })
     );
+    expect(screen.queryByText(/due_date/)).not.toBeInTheDocument();
+
+    const listItem = screen.getByText('G L').closest('button');
+    if (!listItem) throw new Error('list view item missing');
+    expect(listItem).toHaveTextContent('G L');
+    fireEvent.click(listItem);
+    expect(onViewChange).toHaveBeenCalledWith('list');
+    expect(screen.getByText('task-drafts.title')).toBeInTheDocument();
+    expect(screen.queryByText('common.recycle_bin')).not.toBeInTheDocument();
   });
 
-  it('uses short board view descriptions including drafts and recycle bin keys', () => {
+  it('clears every filter, including the open status scope', () => {
+    const onFiltersChange = vi.fn();
+    const onListStatusFilterChange = vi.fn();
     renderBoardHeader({
-      availableViews: ['kanban', 'list', 'timeline', 'drafts', 'recycle_bin'],
+      filters: { ...DEFAULT_BOARD_FILTERS, includeUnassigned: true },
+      listStatusFilter: 'open',
+      onFiltersChange,
+      onListStatusFilterChange,
     });
 
-    const viewOptions = comboboxMocks.seenOptions.find((options) =>
-      options.some((option) => option.value === 'kanban')
-    );
+    fireEvent.click(screen.getByRole('button', { name: 'common.clear' }));
 
-    expect(viewOptions).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          value: 'kanban',
-          description: 'ws-task-boards.views.kanban_description',
-        }),
-        expect.objectContaining({
-          value: 'list',
-          description: 'ws-task-boards.views.list_description',
-        }),
-        expect.objectContaining({
-          value: 'timeline',
-          description: 'ws-task-boards.views.timeline_description',
-        }),
-        expect.objectContaining({
-          value: 'drafts',
-          description: 'task-drafts.board_view_description',
-        }),
-        expect.objectContaining({
-          value: 'recycle_bin',
-          description: 'common.recycle_bin_board_description',
-        }),
-      ])
-    );
+    expect(onFiltersChange).toHaveBeenCalledWith(DEFAULT_BOARD_FILTERS);
+    expect(onListStatusFilterChange).toHaveBeenCalledWith('all');
   });
 
-  it('passes instant tooltip labels and monochrome trigger mode to toolbar comboboxes', () => {
+  it('shows no Clear button while nothing is filtered', () => {
     renderBoardHeader();
-
-    const status = screen.getByLabelText('common.all');
-    const view = screen.getByLabelText('ws-task-boards.views.kanban');
-    const sort = screen.getByLabelText('common.sort');
-
-    expect(status).toHaveAttribute(
-      'data-trigger-tooltip',
-      'common.status: common.all'
-    );
-    expect(view).toHaveAttribute(
-      'data-trigger-tooltip',
-      'common.view: ws-task-boards.views.kanban'
-    );
-    expect(view).toHaveAttribute('data-has-trigger-icon', 'true');
-    expect(sort).toHaveAttribute(
-      'data-trigger-tooltip',
-      'common.sort: common.sort'
-    );
-
-    for (const control of [status, view, sort]) {
-      expect(control).toHaveAttribute('data-colorize-trigger-icon', 'false');
-      expect(control.className).toContain('[&_button_svg]:text-current');
-    }
+    expect(
+      screen.queryByRole('button', { name: 'common.clear' })
+    ).not.toBeInTheDocument();
   });
 });
