@@ -247,8 +247,11 @@ select is(
 );
 
 -- Leaving the board leaves its sprints.
+-- Like the move routes, clear the board number so the target board assigns one.
 update public.tasks
-set list_id = (select id from public.task_lists where board_id = '00000000-0000-4000-8000-0000000e5021' and status = 'active' limit 1)
+set
+  list_id = (select id from public.task_lists where board_id = '00000000-0000-4000-8000-0000000e5021' and status = 'active' limit 1),
+  display_number = null
 where id = '00000000-0000-4000-8000-0000000e5101';
 select is(
   (
