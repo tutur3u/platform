@@ -13851,7 +13851,7 @@
       "tabs_label": "Sprint views",
       "task_count": "{count, plural, one {# task} other {# tasks}}",
       "tasks_done": "Tasks done",
-      "tasks_of": "{done} / {total} tasks",
+      "tasks_of": "{done} / {total, plural, one {# task} other {# tasks}}",
       "tasks_open": "{count, plural, one {# task open} other {# tasks open}}",
       "to_backlog": "Backlog",
       "turned_off": "Sprints turned off",
