@@ -89,12 +89,23 @@ workspace, and `manage_users`. The module remains off by default; listing or
 previewing does not enable it or send email. Preview uses only contacts in the
 requested workspace that are not archived.
 
-Web retains its Supabase-session admission. Both apps use the same users-core
+Web accepts its normal Supabase sessions and verified registered app sessions,
+including Contacts, then checks workspace membership using that verified actor.
+The topic master flag remains an exact `true` check in the API. Both apps use the same users-core
 query, payload validation, recipient verification status, attachment filename
 normalization, and preview renderer. Contacts forwards collection mutations to
-Web after its existing session and API edge guards; other topic mutation routes
-and the delivery worker retain their current ownership. This read/preview repair
-does not establish satellite mutation or provider-delivery readiness.
+Web after its existing session and API edge guards. All nested topic API paths
+also forward explicitly to Web, except the local preview POST. Contacts, templates,
+create and send retain their existing manager permissions when teacher assignments
+are off. Schedule APIs and the sidebar schedule child require
+`ENABLE_TOPIC_TEACHER_ASSIGNMENTS=true`; the flag defaults off. Personal workspaces
+remain denied by the API. Teacher access still requires the per-route capability
+and assignment scope. Synthetic route regressions cover Contacts and Templates
+GET, Add Contact POST, the enabled monthly schedule with GVCN, and denied
+identity, membership, permissions, flags and personal workspaces in
+`apps/web/src/lib/topic-announcements-satellite.test.ts`. Proxy and sidebar
+regressions live in Contacts. These checks do not establish live deployment or
+provider-delivery readiness.
 
 Regression coverage exercises the local Contacts routes with the actual workspace
 access helper, denied sessions and membership/capabilities, shared recipient

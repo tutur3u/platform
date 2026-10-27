@@ -1,8 +1,4 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   decideTopicAnnouncementAccessMode,
   getPrivateSchemaClient,
@@ -24,6 +20,8 @@ import {
   normalizeWorkspaceId,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { CURRENT_USER_APP_SESSION_AUTH } from '@/legacy-api-routes/v1/users/me/session-auth';
+import { resolveSessionAuthContext } from '@/lib/api-auth';
 import { normalizeTopicAnnouncementAttachmentFileName } from '@/lib/topic-announcement-attachments';
 
 export {
@@ -93,11 +91,13 @@ export async function resolveTopicAnnouncementsAccess(
   | { context: TopicAnnouncementsAccessContext; response?: never }
   | { context?: never; response: NextResponse }
 > {
-  const supabase = (await createClient(
-    request
-  )) as TopicAnnouncementsSupabaseClient;
+  const session = await resolveSessionAuthContext(request, {
+    allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH,
+  });
+  if (!session.ok) return { response: session.response };
+  const { supabase, user } = session;
   const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
-  const permissions = await getPermissions({ request, wsId: normalizedWsId });
+  const permissions = await getPermissions({ user, wsId: normalizedWsId });
 
   if (!permissions) {
     return {
@@ -141,13 +141,6 @@ export async function resolveTopicAnnouncementsAccess(
     teacherAssignmentsEnabled,
   });
   if (mode === 'denied') return { response: insufficientPermissions() };
-
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-  if (!user) {
-    return {
-      response: NextResponse.json({ message: 'Unauthorized' }, { status: 401 }),
-    };
-  }
 
   let scope: TopicAnnouncementAccessScope = { kind: 'manager' };
   if (mode === 'teacher') {
