@@ -6410,16 +6410,6 @@
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
   },
   {
-    "path": "/api/workspaces/{wsId}/users/{userId}",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/workspaces/[wsId]/users/[userId]/route.ts",
-    "sourceSha256": "808878d69471f00d766311f0bd3fa1072b81c6fa453cd37db5905cbbc37135ad",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
     "path": "/api/workspaces/{wsId}/users/indicators/groups/migrate",
     "sideEffects": "unknown",
     "shadow": "never",
@@ -6435,16 +6425,6 @@
     "shadow": "never",
     "source": "apps/web/src/app/api/workspaces/[wsId]/users/indicators/migrate/route.ts",
     "sourceSha256": "77dc64168fe61be87c80a88bacd8f29f4d0325eeda8781cf49cca4d31a5ef970",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/workspaces/{wsId}/users",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/workspaces/[wsId]/users/route.ts",
-    "sourceSha256": "977cc8ef482bcb46e2d0eca39f77cb30481da9a919298d0e098779d0abb5fdee",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"

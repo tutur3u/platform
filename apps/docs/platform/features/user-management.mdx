@@ -3,6 +3,23 @@ title: "User Management"
 description: "A central place to manage users, groups, and information about them."
 ---
 
+## Group Check Participants
+
+Web and Contacts require every check participant to belong to the post's
+workspace. New check participants must also be current members of the post's
+group. Staff can edit or clear an existing check after a student moves to another
+group in the same workspace; the exception applies only to an existing check on
+that same post. It does not admit new nonmembers or users from another workspace.
+Guest status alone neither grants nor removes eligibility.
+
+These rules apply to create, update and clear operations, including single-user
+and batch requests. A batch is validated in full before changes are saved. If
+participant validation is unavailable, retry after the service recovers. Existing
+post permissions, approval rules and email delivery settings still apply.
+
+Regression coverage: `packages/users-core/tests/routes/group-check-membership.test.ts`
+exercises both active handler families with synthetic participants.
+
 ## Post Email Delivery Recovery
 
 The post email queue now treats provider-accepted delivery as durable once it is written to `email_audit`. The `sent_emails` table is still the primary history surface for the product UI, but queue retries must not resend a post email just because the follow-up `sent_emails` insert or `user_group_post_checks.email_id` link failed.
@@ -703,3 +720,11 @@ Regression coverage lives in
 traversal, foreign workspaces, invalid resolved IDs, alias resolution, authorization
 and budget ordering with synthetic storage fixtures. Hosted Storage behavior is
 a separate acceptance boundary.
+
+## Workspace user API lifecycle
+
+Web, Contacts, and mobile use the versioned `/api/v1/workspaces/{wsId}/users`
+collection and item contracts. The unused unversioned collection and item
+handlers are retired. The separate indicator migration endpoints retain their
+existing lifecycle. `scripts/retired-workspace-user-routes.test.mjs` checks the
+active route and inventory boundary.
