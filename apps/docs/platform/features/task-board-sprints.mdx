@@ -1,0 +1,65 @@
+---
+title: "Task board sprints"
+description: "Per-board sprints: turning them on, planning, starting, ending and the derived sprint due date"
+---
+
+## Scope and default
+
+Sprints belong to one task board. A board has sprints off by default and keeps
+today's views. A workspace member who can edit the board turns sprints on from
+Board settings by picking a length of one or two weeks; Off turns them off again
+and keeps every past sprint and report.
+
+A sprint is a task cycle with a `board_id`. A board has at most one running
+sprint and one sprint being planned. Sprints run Monday to Friday of their last
+week, so the next sprint starts the Monday after the current one ends. Changing
+the length applies to the sprint being planned and every later one.
+
+## Membership
+
+Turning sprints on puts every open task on the board into Sprint 1, the sprint
+being planned. After that, a new task, or a task moved onto the board, joins the
+running sprint (marked as added mid-sprint) or, when none is running, the sprint
+being planned. A task sits in one open sprint per board; moving a task to
+another board drops its open sprint. Done tasks stay in the sprint they
+finished in.
+
+The backlog is not a separate list. It is the unassigned tasks of the sprint
+being planned.
+
+## Due dates
+
+A task with no due date of its own is due when its sprint ends. That date is
+derived and never written into `tasks.end_date`, so moving a sprint or carrying
+a task rewrites nothing. Only an own due date can make a task overdue.
+
+## Starting and ending
+
+Starting and ending a sprint, and changing its length, are limited to workspace
+members who can edit the board; board guests can plan (goals and membership)
+but cannot start or end. Starting the planned sprint opens the next one for
+planning.
+
+Ending is atomic and idempotent. Every open task gets a decision: carry it into
+the next sprint with its owner, or send it to the backlog, which removes its
+assignees. A missing decision carries. The end stores a report: tasks in the
+sprint, done, added mid-sprint, carried in from earlier sprints, carried on,
+sent to the backlog, the same totals in estimation points, and per-person
+totals. Ending twice returns the stored report.
+
+Board sprints change only through the service-role RPCs
+`set_board_sprint_length`, `start_board_sprint`, `end_board_sprint` and
+`move_tasks_to_board_sprint`, called by the tasks API after its board-access
+checks. Direct row writes stay available for workspace-wide cycles only.
+
+## Exceptions
+
+Workspace-wide cycles without a board keep their existing behavior. The
+personal planner still writes `tasks.end_date` for the day it plans, so planner
+tasks count as having their own due date.
+
+Regression coverage: `apps/database/supabase/tests/task-board-sprints.sql`
+(run by the Task board database contract workflow),
+`apps/tasks/src/app/api/v1/workspaces/[wsId]/task-boards/[boardId]/sprints/route.test.ts`,
+`packages/utils/src/task-helper/sprints.test.ts` and
+`packages/internal-api/src/task-sprints.test.ts`.
