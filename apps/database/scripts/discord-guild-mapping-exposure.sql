@@ -1,4 +1,4 @@
--- READ ONLY: pre-merge gate for 20261027150500_scope_discord_guild_member_access.
+-- READ ONLY: pre-merge gate for 20261027151510_scope_discord_guild_member_access.
 -- Run it BEFORE the PR merges, on staging and on production: staging applies
 -- the migration on merge, so a post-merge run is too late. Use psql as the
 -- migration role, not the Supabase SQL editor, which shows only the last result:
