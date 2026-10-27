@@ -88,6 +88,7 @@ export interface TopicAnnouncementRecord {
   body: string;
   class_label: string | null;
   contacts: TopicAnnouncementContact[];
+  course_book?: string | null;
   created_at: string;
   day_label: string | null;
   end_time: string | null;
@@ -98,14 +99,18 @@ export interface TopicAnnouncementRecord {
   place: string | null;
   room: string | null;
   scheduled_send_at: string | null;
+  /** 24h before the session in the workspace timezone; see topic-announcement-deadline. */
+  send_due_at?: string | null;
   sent_email_audit_id: string | null;
   sent_at: string | null;
   session_date: string | null;
   source_type: string;
   start_time: string | null;
   status: TopicAnnouncementStatus;
+  teacher_workspace_user_id?: string | null;
   title: string;
   topic: string;
+  video_url?: string | null;
 }
 
 export interface TopicAnnouncementTemplateRecord {
@@ -156,8 +161,19 @@ export interface TopicAnnouncementPayload {
   sourceType?: string;
   startTime?: string | null;
   status?: TopicAnnouncementStatus;
+  teacherWorkspaceUserId?: string | null;
+  courseBook?: string | null;
+  videoUrl?: string | null;
   title: string;
+  /** May be blank only while the announcement is saved as a draft. */
   topic: string;
+}
+
+export interface TopicAssignmentNotificationResult {
+  failedTeachers: number;
+  notifiedTeachers: number;
+  skippedUnlinkedTeachers: number;
+  unassignedAnnouncements: number;
 }
 
 export interface TopicAnnouncementEmailPreviewContent {
@@ -333,6 +349,23 @@ export async function updateTopicAnnouncement(
       body: JSON.stringify(payload),
       headers: { 'Content-Type': 'application/json' },
       method: 'PATCH',
+    }
+  );
+}
+
+/** Supervisor "save & notify": one in-app notification per assigned teacher. */
+export async function notifyTopicAnnouncementTeachers(
+  workspaceId: string,
+  announcementIds: string[],
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ data: TopicAssignmentNotificationResult }>(
+    `${basePath(workspaceId)}/notify-teachers`,
+    {
+      body: JSON.stringify({ announcementIds }),
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
     }
   );
 }

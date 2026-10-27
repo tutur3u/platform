@@ -105,6 +105,7 @@ export const ALL_NOTIFICATION_TYPES: NotificationType[] = [
   'time_tracking_request_approved',
   'time_tracking_request_rejected',
   'time_tracking_request_needs_info',
+  'topic_assigned',
 ];
 
 export const MENTION_TYPES: NotificationType[] = ['task_mention'];
@@ -166,6 +167,7 @@ const ICON_MAP: Record<string, typeof Bell> = {
   time_tracking_request_approved: CheckCircle2,
   time_tracking_request_rejected: AlertCircle,
   time_tracking_request_needs_info: AlertCircle,
+  topic_assigned: ClipboardList,
 };
 
 export function getNotificationIcon(
@@ -217,6 +219,11 @@ export function getEntityLink(
 
   if (entity_type === 'time_tracking_request' && entity_id) {
     return `/${targetWsId}/time-tracker/requests`;
+  }
+
+  // Web redirects users/* to the Contacts app when that rollout is enabled.
+  if (entity_type === 'topic_announcement') {
+    return `/${targetWsId}/users/topic-announcements/announcements`;
   }
 
   return null;

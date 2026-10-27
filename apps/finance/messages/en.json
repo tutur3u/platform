@@ -6353,6 +6353,7 @@
         "task_start_date_changed": "Start date changes",
         "task_title_changed": "Title changes",
         "task_updated": "Task updates",
+        "topic_assigned": "Topics assigned to you",
         "workspace_activity": "Workspace activity",
         "workspace_invite": "Workspace invitations"
       },
@@ -6430,6 +6431,7 @@
       "task_start_date_changed": "Start Date Changed",
       "task_title_changed": "Title Changed",
       "task_updated": "Task Updated",
+      "topic_assigned": "Topic assigned",
       "workspace_invite": "Workspace Invite"
     },
     "unified_view": "Unified",
