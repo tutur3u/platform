@@ -28,6 +28,8 @@ export async function addWorkspaceRoleMembers({
     .from('workspace_members')
     .select('user_id')
     .eq('ws_id', wsId)
+    // Guests can't hold roles; only full members are assignable.
+    .eq('type', 'MEMBER')
     .in('user_id', memberIds);
   if (membersError) {
     console.error('Error validating workspace role members', {

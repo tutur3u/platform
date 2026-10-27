@@ -113,6 +113,7 @@ function allow(...names: string[]) {
 }
 const own = '11111111-1111-4111-8111-111111111111';
 const foreign = '22222222-2222-4222-8222-222222222222';
+const guestMember = '33333333-3333-4333-8333-333333333333';
 const context = { user: { id: 'actor' }, supabase: db };
 beforeEach(() => {
   vi.clearAllMocks();
@@ -131,7 +132,10 @@ beforeEach(() => {
   mocks.cms.mockResolvedValue({ admin: db, normalizedWorkspaceId: 'ws-a' });
   tables = {
     workspace_roles: [{ id: own, ws_id: 'ws-a' }],
-    workspace_members: [{ user_id: own, ws_id: 'ws-a' }],
+    workspace_members: [
+      { user_id: own, ws_id: 'ws-a', type: 'MEMBER' },
+      { user_id: guestMember, ws_id: 'ws-a', type: 'GUEST' },
+    ],
     workspace_user_groups_users: [
       {
         group_id: own,
@@ -146,6 +150,17 @@ beforeEach(() => {
   };
 });
 describe('SR-222 role members', () => {
+  it('rejects workspace guests before adding role rows', async () => {
+    const response = await addRoleMembers(
+      new Request('https://example.invalid/roles', {
+        method: 'POST',
+        body: JSON.stringify({ memberIds: [guestMember] }),
+      }),
+      { params: Promise.resolve({ wsId: 'ws-a', roleId: own }) }
+    );
+    expect(response.status).toBe(400);
+    expect(writes).not.toHaveBeenCalled();
+  });
   it('rejects non-workspace members before adding role rows', async () => {
     const response = await addRoleMembers(
       new Request('https://example.invalid/roles', {

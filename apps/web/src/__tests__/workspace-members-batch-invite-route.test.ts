@@ -165,7 +165,7 @@ describe('workspace members batch invite route', () => {
     );
   });
 
-  it('resolves the personal alias to the concrete workspace id', async () => {
+  it('writes invites under the resolved permissions.wsId, not the raw route id', async () => {
     mocks.resolveWorkspaceRouteAccess.mockResolvedValue(
       routeAccess({ wsId: 'personal-ws-id' })
     );

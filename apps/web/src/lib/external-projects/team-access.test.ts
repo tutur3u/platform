@@ -80,10 +80,15 @@ function createAccess({ roleExists }: { roleExists: boolean }) {
               eq(column: string, value: string) {
                 expect([column, value]).toEqual(['ws_id', 'workspace-1']);
                 return {
-                  in: async (_key: string, ids: string[]) => ({
-                    data: ids.map((user_id) => ({ user_id })),
-                    error: null,
-                  }),
+                  eq(typeColumn: string, typeValue: string) {
+                    expect([typeColumn, typeValue]).toEqual(['type', 'MEMBER']);
+                    return {
+                      in: async (_key: string, ids: string[]) => ({
+                        data: ids.map((user_id) => ({ user_id })),
+                        error: null,
+                      }),
+                    };
+                  },
                 };
               },
             };
