@@ -33,11 +33,22 @@ class SettingsAudienceModeSection extends StatelessWidget {
     }
     final l10n = context.l10n;
     final layers = state.layers;
+    String name(AudienceMode mode) => audienceModeLabel(l10n, mode);
+    // Name the layer the "no choice" option falls back to.
     final inherited = resolveAudienceMode(
       workspaceDefault: layers.workspaceDefault,
       account: layers.account,
-    ).mode;
-    String name(AudienceMode mode) => audienceModeLabel(l10n, mode);
+    );
+    final inheritedLabel = switch (inherited.source) {
+      AudienceModeSource.workspaceDefault => l10n.settingsModeWorkspaceDefault(
+        name(inherited.mode),
+      ),
+      AudienceModeSource.account => l10n.settingsModeAccountDefault(
+        name(inherited.mode),
+      ),
+      AudienceModeSource.override || AudienceModeSource.fallback =>
+        l10n.settingsModeFallbackDefault(name(inherited.mode)),
+    };
 
     return SettingsSection(
       title: l10n.settingsModeTitle,
@@ -53,12 +64,7 @@ class SettingsAudienceModeSection extends StatelessWidget {
             title: l10n.settingsModeMine,
             value: layers.personal,
             options: [
-              AppSelectOption(
-                value: null,
-                label: isPersonalWorkspace
-                    ? l10n.settingsModeAccountDefault(name(inherited))
-                    : l10n.settingsModeWorkspaceDefault(name(inherited)),
-              ),
+              AppSelectOption(value: null, label: inheritedLabel),
               for (final mode in AudienceMode.values)
                 AppSelectOption(
                   value: mode,

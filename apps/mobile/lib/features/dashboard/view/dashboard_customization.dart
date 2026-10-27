@@ -1,25 +1,19 @@
 part of 'dashboard_page.dart';
 
 extension _DashboardCustomization on _DashboardViewState {
-  List<String> _availableHomeWidgetIds(
-    BuildContext context, {
-    bool listen = true,
-  }) {
+  /// Build-time only: module visibility and the mode gate use `select`.
+  List<String> _availableHomeWidgetIds(BuildContext context) {
     final modules = AppRegistry.modules(context);
     final user = context.read<AuthCubit>().state.user;
-    final mode = listen
-        ? context.select<AudienceModeCubit?, AudienceMode>(
-            (cubit) => cubit?.state.mode ?? AudienceMode.general,
-          )
-        : context.read<AudienceModeCubit?>()?.state.mode ??
-              AudienceMode.general;
+    final mode = context.select<AudienceModeCubit?, AudienceMode>(
+      (cubit) => cubit?.state.mode ?? AudienceMode.general,
+    );
     // Offered only once access is confirmed, so a member without
     // view_user_groups never sees a placeholder for it.
-    final classesAccess = listen
-        ? context.select<ClassesTodayCubit?, ClassesTodayAccess?>(
-            (cubit) => cubit?.state.access,
-          )
-        : context.read<ClassesTodayCubit?>()?.state.access;
+    final classesAccess = context
+        .select<ClassesTodayCubit?, ClassesTodayAccess?>(
+          (cubit) => cubit?.state.access,
+        );
     return [
       for (final id in mode.profile.homeWidgets)
         if (id != classesTodayHomeWidgetId ||
@@ -47,6 +41,7 @@ extension _DashboardCustomization on _DashboardViewState {
   ) {
     final user = context.read<AuthCubit>().state.user;
     final available = _availableHomeWidgetIds(context);
+    _availableIds = available;
     final layout = context.watch<DashboardLayoutCubit>().state;
     final cards = <String, Widget>{
       classesTodayHomeWidgetId: StaggeredEntrance(
@@ -107,7 +102,8 @@ extension _DashboardCustomization on _DashboardViewState {
 
   void _showHomeCustomization(BuildContext context) {
     final layoutCubit = context.read<DashboardLayoutCubit>();
-    final available = _availableHomeWidgetIds(context, listen: false);
+    // The sheet opens from a tap, outside build: reuse the built list.
+    final available = _availableIds;
     unawaited(
       showOrderEditorSheet(
         context,

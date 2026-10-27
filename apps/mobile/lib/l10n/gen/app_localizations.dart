@@ -25632,6 +25632,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Done'**
   String get classesDone;
+
+  /// No description provided for @settingsModeFallbackDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Default ({mode})'**
+  String settingsModeFallbackDefault(String mode);
+
+  /// No description provided for @classesTodayStale.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t refresh. Showing the last saved classes.'**
+  String get classesTodayStale;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

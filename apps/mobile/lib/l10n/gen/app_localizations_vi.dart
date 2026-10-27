@@ -13517,4 +13517,12 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get classesDone => 'Đã xong';
+
+  @override
+  String settingsModeFallbackDefault(String mode) {
+    return 'Mặc định ($mode)';
+  }
+
+  @override
+  String get classesTodayStale => 'Không thể làm mới. Đang hiển thị danh sách lớp đã lưu gần nhất.';
 }

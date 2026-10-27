@@ -2,7 +2,6 @@ import 'package:equatable/equatable.dart';
 import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
-import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/classes/data/class_session.dart';
 
@@ -12,8 +11,6 @@ enum ClassScope { mine, all }
 
 /// Teachers start on their own classes when the source can tell them apart.
 const ClassScope defaultClassScope = ClassScope.mine;
-
-const viewUserGroupsPermission = 'view_user_groups';
 
 class ClassesTodaySnapshot extends Equatable {
   const ClassesTodaySnapshot({
@@ -63,28 +60,32 @@ abstract interface class ClassesTodayRepository {
     required ClassScope scope,
   });
 
-  Future<bool> canViewClasses(String wsId);
+  /// Drops the stored snapshot, for example after the server denies access.
+  Future<void> forget({
+    required String userId,
+    required String wsId,
+    required DateTime day,
+  });
 }
 
-/// Lists the day's sessions from `GET …/user-groups/sessions`, which needs
-/// `view_user_groups`. It cannot tell which classes the actor teaches.
+/// The server's answer decides access: `view_user_groups` is enforced by the
+/// API, so a denial is authoritative while any other failure is transient.
+bool isClassesAccessDenied(Object error) =>
+    error is ApiException && const {401, 403, 404}.contains(error.statusCode);
+
+/// Lists the day's sessions from `GET …/user-groups/sessions`, which the
+/// server gates on `view_user_groups`. It cannot tell which classes the
+/// actor teaches.
 class SessionsClassesTodayRepository implements ClassesTodayRepository {
-  SessionsClassesTodayRepository({
-    ApiClient? apiClient,
-    CacheStore? store,
-    WorkspacePermissionsRepository? permissions,
-  }) : _apiOverride = apiClient,
-       _storeOverride = store,
-       _permissionsOverride = permissions;
+  SessionsClassesTodayRepository({ApiClient? apiClient, CacheStore? store})
+    : _apiOverride = apiClient,
+      _storeOverride = store;
 
   // Created on first use: General mode never builds these clients.
   final ApiClient? _apiOverride;
   final CacheStore? _storeOverride;
-  final WorkspacePermissionsRepository? _permissionsOverride;
   late final ApiClient _api = _apiOverride ?? ApiClient();
   late final CacheStore _store = _storeOverride ?? CacheStore.instance;
-  late final WorkspacePermissionsRepository _permissions =
-      _permissionsOverride ?? WorkspacePermissionsRepository();
 
   static String sessionsPath(String wsId, DateTime day) {
     final start = DateTime(day.year, day.month, day.day);
@@ -147,8 +148,15 @@ class SessionsClassesTodayRepository implements ClassesTodayRepository {
   }
 
   @override
-  Future<bool> canViewClasses(String wsId) async =>
-      (await _permissions.getPermissions(
-        wsId: wsId,
-      )).containsPermission(viewUserGroupsPermission);
+  Future<void> forget({
+    required String userId,
+    required String wsId,
+    required DateTime day,
+  }) async {
+    try {
+      await _store.remove(_key(userId, wsId, day));
+    } on Object {
+      // The next denial retries the removal.
+    }
+  }
 }

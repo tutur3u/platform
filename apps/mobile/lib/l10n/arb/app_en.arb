@@ -6154,5 +6154,14 @@
         "type": "String"
       }
     }
+  },
+  "settingsModeFallbackDefault": "Default ({mode})",
+  "classesTodayStale": "Couldn't refresh. Showing the last saved classes.",
+  "@settingsModeFallbackDefault": {
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      }
+    }
   }
 }

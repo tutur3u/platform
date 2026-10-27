@@ -45,9 +45,14 @@ what they could already open.
 - **Where to change it:** Settings → Workspace → Mode. Admins also see
   "Default for members"; personal workspaces have no member default.
 - **Education Home:** a "Today's classes" card leads Home (hideable and
-  reorderable like other Home widgets). It appears only when the member holds
-  `view_user_groups`; finished sessions sink below current and upcoming ones,
-  and the card shows states as words, never count chips.
+  reorderable like other Home widgets). The server decides access: the card is
+  offered on Home and in the customization sheet only after the sessions read
+  succeeds, which requires `view_user_groups`. A denial removes the card and
+  its stored copy; any other failure keeps the last classes with an inline
+  notice. In General mode the card's data is never requested. Finished
+  sessions sink below current and upcoming ones, phases update at each start
+  and end, the list reloads after midnight, and states are words, never count
+  chips.
 - **Teacher scope:** teachers see only the classes they teach by default, with
   a "Show all" switch. This is a presentation filter, not a security boundary.
   Until the consolidated Today endpoint can tell which classes a teacher
@@ -58,6 +63,8 @@ what they could already open.
   replayed (the config write is idempotent); the admin default is online only.
 
 Regression coverage: `test/features/audience_mode/`, `test/features/classes/`,
+`test/features/dashboard/view/home_mode_gate_test.dart` (General never fetches;
+no access means absent from Home and the customization sheet),
 `test/features/settings/view/settings_audience_mode_section_test.dart`, the
 onboarding mode-slide cases in `test/features/onboarding/onboarding_page_test.dart`,
 and the Home order case in `dashboard_layout_cubit_test.dart`.

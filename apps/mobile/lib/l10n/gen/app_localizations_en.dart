@@ -13659,4 +13659,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get classesDone => 'Done';
+
+  @override
+  String settingsModeFallbackDefault(String mode) {
+    return 'Default ($mode)';
+  }
+
+  @override
+  String get classesTodayStale => 'Couldn\'t refresh. Showing the last saved classes.';
 }

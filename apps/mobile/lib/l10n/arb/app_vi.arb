@@ -5913,5 +5913,7 @@
   "classesTodayEmpty": "Hôm nay không có lớp",
   "classesUntitled": "Lớp chưa đặt tên",
   "classesInProgress": "Đang diễn ra",
-  "classesDone": "Đã xong"
+  "classesDone": "Đã xong",
+  "settingsModeFallbackDefault": "Mặc định ({mode})",
+  "classesTodayStale": "Không thể làm mới. Đang hiển thị danh sách lớp đã lưu gần nhất."
 }

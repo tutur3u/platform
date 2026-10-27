@@ -65,6 +65,31 @@ void main() {
     expect(find.text('Default for members'), findsNothing);
   });
 
+  testWidgets('names the account preference when no admin default exists', (
+    tester,
+  ) async {
+    final repository = FakeAudienceModeRepository()
+      ..account = AudienceMode.education;
+    await pumpSection(
+      tester,
+      admin: false,
+      cubit: await boundCubit(repository, 'ec'),
+    );
+    expect(find.text('Your default (Education)'), findsOneWidget);
+    expect(find.text('Workspace default (Education)'), findsNothing);
+  });
+
+  testWidgets('names the built-in default when nothing is stored', (
+    tester,
+  ) async {
+    await pumpSection(
+      tester,
+      admin: false,
+      cubit: await boundCubit(FakeAudienceModeRepository(), 'ec'),
+    );
+    expect(find.text('Default (General)'), findsOneWidget);
+  });
+
   testWidgets('admins also set the default for members', (tester) async {
     final repository = FakeAudienceModeRepository();
     await pumpSection(

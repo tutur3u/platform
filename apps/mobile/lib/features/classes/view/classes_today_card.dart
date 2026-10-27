@@ -56,6 +56,18 @@ class ClassesTodayCard extends StatelessWidget {
               _SessionRow(session: session, phase: session.phaseAt(now)),
           ];
         }
+        // A failed refresh keeps the last data and says so.
+        if (state.snapshot != null &&
+            state.status == ClassesTodayStatus.error) {
+          rows.add(
+            AppStateMessage.inline(
+              icon: LucideIcons.cloudOff,
+              tone: AppTone.warning,
+              title: l10n.classesTodayStale,
+              message: l10n.homeSectionLoadFailed,
+            ),
+          );
+        }
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,

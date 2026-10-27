@@ -17,7 +17,11 @@ void main() {
     FakeClassesTodayRepository repository, {
     double textScale = 1,
   }) async {
-    final cubit = ClassesTodayCubit(repository: repository, clock: () => now);
+    final cubit = ClassesTodayCubit(
+      repository: repository,
+      clock: () => now,
+      scheduler: FakeTickScheduler().call,
+    );
     addTearDown(cubit.close);
     await cubit.load(userId: 'u1', wsId: 'ec');
     await tester.pumpThemedHome(
@@ -93,6 +97,28 @@ void main() {
     expect(find.text('My classes'), findsOneWidget);
     expect(find.text('All classes today'), findsOneWidget);
     expect(repository.fetches.last, endsWith('/all'));
+  });
+
+  testWidgets('a failed refresh keeps the rows and says so', (tester) async {
+    await pumpCard(
+      tester,
+      FakeClassesTodayRepository()
+        ..cached = ClassesTodaySnapshot(
+          sessions: [
+            session(
+              'a',
+              start: DateTime(2026, 10, 27, 11),
+              groupName: 'IELTS A',
+            ),
+          ],
+        )
+        ..error = Exception('server'),
+    );
+    expect(find.text('IELTS A'), findsOneWidget);
+    expect(
+      find.text("Couldn't refresh. Showing the last saved classes."),
+      findsOneWidget,
+    );
   });
 
   testWidgets('renders nothing without access', (tester) async {

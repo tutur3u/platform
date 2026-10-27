@@ -30,6 +30,7 @@ import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
 import 'package:mobile/features/calendar/utils/calendar_description_content.dart';
 import 'package:mobile/features/classes/cubit/classes_today_cubit.dart';
+import 'package:mobile/features/classes/data/classes_today_repository.dart';
 import 'package:mobile/features/classes/view/classes_today_card.dart';
 import 'package:mobile/features/classes/view/classes_today_scope.dart';
 import 'package:mobile/features/dashboard/cubit/dashboard_layout_cubit.dart';
@@ -68,11 +69,16 @@ class DashboardPage extends StatelessWidget {
     this.active = true,
     this.taskListCubit,
     this.calendarCubit,
+    this.classesTodayRepository,
     super.key,
   });
 
   final int replayToken;
   final bool active;
+
+  /// Fixture source for the Education Today card in tests.
+  @visibleForTesting
+  final ClassesTodayRepository? classesTodayRepository;
 
   /// Caller-owned data sources for render tests. When set, the page neither
   /// creates nor initially loads them; workspace and refresh flows still call
@@ -139,6 +145,7 @@ class DashboardPage extends StatelessWidget {
           ),
       ],
       child: ClassesTodayScope(
+        repository: classesTodayRepository,
         child: _DashboardView(replayToken: replayToken, active: active),
       ),
     );
@@ -178,6 +185,9 @@ class _DashboardViewState extends State<_DashboardView> {
   final _meetCardKey = GlobalKey<_DashboardMeetCardState>();
   final _financeCardKey = GlobalKey<_DashboardFinanceCardState>();
   final _notesCardKey = GlobalKey<_DashboardNotesCardState>();
+
+  /// Home widget ids offered by the last build, for the customization sheet.
+  List<String> _availableIds = const [];
 
   @override
   Widget build(BuildContext context) {
