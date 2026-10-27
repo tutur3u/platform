@@ -34,6 +34,9 @@ const query = {
   update: vi.fn(() => query),
 };
 
+vi.mock('@/lib/tutoring/module-gate', () => ({
+  isTutoringEnabledForWorkspace: async () => true,
+}));
 vi.mock('next/server', () => ({
   NextResponse: { json: Response.json },
 }));
