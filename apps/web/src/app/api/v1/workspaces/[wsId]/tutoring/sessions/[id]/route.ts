@@ -260,7 +260,10 @@ export async function PUT(request: Request, { params }: Params) {
     .eq('ws_id', normalizedWsId);
   // The weak-content verdict above rests on the reason and source feedback we
   // read; pin both so a concurrent change cannot slip content past the check.
-  if (changesContent) {
+  // Any reason in the payload is pinned, even one equal to the stale read, so
+  // it cannot undo a concurrent switch. Attendance-only edits stay unpinned.
+  const pinsReason = changesContent || parsed.data.reasonType !== undefined;
+  if (pinsReason) {
     updateQuery = updateQuery.eq('reason_type', currentSession.reason_type);
     updateQuery =
       currentSession.source_feedback_id === null
@@ -281,7 +284,7 @@ export async function PUT(request: Request, { params }: Params) {
   }
 
   if (!data) {
-    if (changesContent) {
+    if (pinsReason) {
       return NextResponse.json(
         { message: 'Session changed before the update' },
         { status: 409 }
@@ -380,14 +383,22 @@ export async function DELETE(request: Request, { params }: Params) {
     );
   }
 
-  const { data: deleted, error: deleteError } = await tutoringSessionsClient
+  // The weak-content verdict above rests on the reason and source feedback we
+  // read; pin both so a concurrent switch cannot delete protected content.
+  const deleteQuery = tutoringSessionsClient
     .from('workspace_tutoring_sessions')
     .delete()
     .eq('id', id)
     .eq('ws_id', normalizedWsId)
-    .in('attendance_status', ['PENDING', 'CANCELLED'])
-    .select('id')
-    .maybeSingle();
+    .eq('reason_type', session.reason_type)
+    .in('attendance_status', ['PENDING', 'CANCELLED']);
+  const { data: deleted, error: deleteError } =
+    await (session.source_feedback_id === null
+      ? deleteQuery.is('source_feedback_id', null)
+      : deleteQuery.eq('source_feedback_id', session.source_feedback_id)
+    )
+      .select('id')
+      .maybeSingle();
 
   if (deleteError) {
     console.error('Failed to delete tutoring session', {
