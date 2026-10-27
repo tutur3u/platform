@@ -63,13 +63,17 @@ export function ScheduleMonthEditor({
       ? editor.rows.filter((row) => !row.gvnnContactId && !row.locked)
       : editor.rows;
 
-  const focusRow = (key: string) => {
+  const focusRow = (key: string, { focus = false } = {}) => {
     setHighlightKey(key);
-    requestAnimationFrame(() =>
-      document
-        .getElementById(scheduleRowDomId(key))
-        ?.scrollIntoView?.({ behavior: 'smooth', block: 'center' })
-    );
+    requestAnimationFrame(() => {
+      const element = document.getElementById(scheduleRowDomId(key));
+      element?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+      if (focus) {
+        element
+          ?.querySelector<HTMLElement>('input:not([disabled])')
+          ?.focus({ preventScroll: true });
+      }
+    });
   };
 
   // Default day: the one picked in the calendar, else the latest session's.
@@ -168,6 +172,7 @@ export function ScheduleMonthEditor({
             onDuplicate={(row, days) =>
               focusRow(duplicate(editor, row, days, month))
             }
+            onMoved={(key) => focusRow(key, { focus: true })}
             onRemove={editor.removeRow}
             onUpdate={editor.updateRow}
             originalByKey={editor.originalByKey}

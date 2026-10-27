@@ -123,17 +123,64 @@ export async function insertScheduleSessions({
   return sessions.flatMap((_, index) => idByRow.get(index + 1) ?? []);
 }
 
+async function isStillEditableUnsent(
+  sbAdmin: TopicAnnouncementsSupabaseClient,
+  id: string
+) {
+  const { data, error } = await sbAdmin
+    .from('topic_announcements')
+    .select('status,sent_at')
+    .eq('id', id)
+    .maybeSingle();
+  if (error) throw error;
+  return Boolean(
+    data &&
+      !data.sent_at &&
+      (SCHEDULE_EDITABLE_STATUSES as readonly string[]).includes(data.status)
+  );
+}
+
+async function setRecipient(
+  sbAdmin: TopicAnnouncementsSupabaseClient,
+  id: string,
+  contactId: string | null
+) {
+  const { error: deleteError } = await sbAdmin
+    .from('topic_announcement_recipients')
+    .delete()
+    .eq('announcement_id', id);
+  if (deleteError) throw deleteError;
+  if (!contactId) return;
+  const { error: insertError } = await sbAdmin
+    .from('topic_announcement_recipients')
+    .insert({ announcement_id: id, contact_id: contactId });
+  if (insertError) throw insertError;
+}
+
+export type ScheduleSessionUpdateResult =
+  | 'locked'
+  | 'recipient_conflict'
+  | 'updated';
+
 /**
- * Updates one session and replaces its GVNN when it changed. The write is
- * conditional on the session still being editable, so a session that was
- * queued or started sending after the save was validated is left untouched
- * (returns false) instead of being rewritten or losing its recipient.
+ * Updates one session and replaces its GVNN when it changed. The field
+ * write is conditional on the session still being editable, so a session
+ * queued or sending after the save was validated is left untouched
+ * (`locked`).
+ *
+ * The GVNN swap is two writes (no transaction without an RPC). It removes
+ * the old recipient before adding the new one, so a send racing it sees
+ * either the old GVNN or none (the send then refuses with NO_RECIPIENTS),
+ * never both. Afterwards the session must still be editable and unsent;
+ * otherwise the previous GVNN is restored and `recipient_conflict` is
+ * returned so the editor reloads instead of claiming the change.
  */
 export async function updateScheduleSession({
   actorUserId,
   gvnnChanged,
   id,
   normalizedWsId,
+  previousGvnnContactId,
   sbAdmin,
   session,
   timeZone,
@@ -142,10 +189,11 @@ export async function updateScheduleSession({
   gvnnChanged: boolean;
   id: string;
   normalizedWsId: string;
+  previousGvnnContactId: string | null;
   sbAdmin: TopicAnnouncementsSupabaseClient;
   session: ScheduleSessionWrite;
   timeZone: string | null;
-}): Promise<boolean> {
+}): Promise<ScheduleSessionUpdateResult> {
   const { data, error } = await sbAdmin
     .from('topic_announcements')
     .update({
@@ -159,21 +207,14 @@ export async function updateScheduleSession({
     .in('status', [...SCHEDULE_EDITABLE_STATUSES])
     .select('id');
   if (error) throw error;
-  if ((data ?? []).length === 0) return false;
-  if (!gvnnChanged) return true;
+  if ((data ?? []).length === 0) return 'locked';
+  if (!gvnnChanged) return 'updated';
 
-  const { error: deleteError } = await sbAdmin
-    .from('topic_announcement_recipients')
-    .delete()
-    .eq('announcement_id', id);
-  if (deleteError) throw deleteError;
-  if (!session.gvnnContactId) return true;
+  await setRecipient(sbAdmin, id, session.gvnnContactId);
+  if (await isStillEditableUnsent(sbAdmin, id)) return 'updated';
 
-  const { error: insertError } = await sbAdmin
-    .from('topic_announcement_recipients')
-    .insert({ announcement_id: id, contact_id: session.gvnnContactId });
-  if (insertError) throw insertError;
-  return true;
+  await setRecipient(sbAdmin, id, previousGvnnContactId);
+  return 'recipient_conflict';
 }
 
 /**

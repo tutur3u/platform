@@ -284,16 +284,28 @@ module unchanged.
   by a database unique key.
 - **Edit and remove.** Start time, minutes, class, GVNN, room and campus are
   edited inline; "Move to date..." in a row's menu moves a session within the
-  month. Saves are validated as a whole before anything is written, and each
-  write re-checks that its session is still a draft, failed or skipped one: a
-  session that was queued or started sending in the meantime is left unchanged
-  and the save returns `409` with the sessions that did save, after which the
-  editor reloads the month. Removing a session cancels it
-  (`status = 'cancelled'`) like any announcement, keeping its topic and audit
-  trail. Queued, sending and sent sessions are read-only and labelled as such.
-- **Unsaved changes.** Changing month, following an in-app link, browser Back or
-  Forward, and closing or reloading the tab all ask before discarding edits.
-  Problems on a row are shown once it has been edited or a save was attempted.
+  month and focuses it at its new date. Saves are validated as a whole before
+  anything is written, and each write re-checks that its session is still a
+  draft, failed or skipped one: a session that was queued or started sending
+  in the meantime is left unchanged and the save returns `409` with the
+  sessions that did save, after which the editor reloads the month.
+- **Changing the GVNN.** Swapping a session's GVNN is two writes (there is no
+  transaction without a database function). The old recipient is removed
+  before the new one is added, so a send racing the swap sees the old GVNN or
+  none (and then refuses with `NO_RECIPIENTS`), never both. If the session was
+  queued or sent during the swap, the previous GVNN is restored and the save
+  reports a conflict. A fully atomic swap would need an RPC (a migration).
+- **Removing.** Removing a session cancels it (`status = 'cancelled'`) like any
+  announcement, keeping its topic and audit trail. Queued, sending and sent
+  sessions are read-only and labelled as such.
+- **Unsaved changes.** Changing month, following an in-app link, one step of
+  browser Back, and closing or reloading the tab all ask before discarding
+  edits. Back is guarded by keeping one extra history entry for the page while
+  there are edits, and only when the tab has an earlier page; confirmed
+  navigation removes that entry first, so none is left behind. Jumping back
+  several pages at once from the Back button's history menu is not
+  intercepted. Problems on a row are shown once it has been edited or a save
+  was attempted.
 - **Import.** The CSV import is unchanged by this feature; the schedule editor
   does not use it.
 
@@ -308,8 +320,12 @@ routes and nothing written; edit and delete locks including mid-save
 conflicts, retried removal, slot conflicts, archived classes and GVNN, same
 class teacher kept, clone revival of removed sessions),
 `apps/contacts/src/app/[locale]/[wsId]/users/topic-announcements/schedule/schedule-draft.test.ts`
-and `schedule-month-editor.test.tsx` (save payload, validation shown after
-touch, missing-GVNN reminder, Back guard, delivery-state labels).
+`schedule-month-editor.test.tsx` and `schedule-unsaved-guard.test.tsx`
+(save payload, validation shown after touch, missing-GVNN reminder, Back and
+link guards without stray history entries, rows kept in saved order,
+delivery-state labels), and
+`apps/web/src/lib/topic-schedule/schedule-races.test.ts` (GVNN swap racing a
+send, chunked recipient reads).
 
 ### Teacher-assigned topics
 

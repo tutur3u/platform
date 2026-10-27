@@ -72,6 +72,11 @@ function renderEditor(onMonthChange = vi.fn()) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // An earlier page exists, so the Back guard is armed.
+  Object.defineProperty(window, 'navigation', {
+    configurable: true,
+    value: { currentEntry: { index: 1 } },
+  });
   mocks.getTopicScheduleMonth.mockResolvedValue({
     data: {
       classes: [
@@ -246,7 +251,7 @@ describe('ScheduleMonthEditor', () => {
     fireEvent.click(
       await screen.findByRole('button', { name: 'schedule_discard_confirm' })
     );
-    expect(onMonthChange).toHaveBeenCalledWith('2026-12');
+    await waitFor(() => expect(onMonthChange).toHaveBeenCalledWith('2026-12'));
   });
 
   it('previews the clone before committing it', async () => {

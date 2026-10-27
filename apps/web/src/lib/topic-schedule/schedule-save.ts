@@ -264,15 +264,16 @@ export async function saveScheduleMonth(
 
   const updatedIds: string[] = [];
   for (const update of updates) {
+    const previousGvnnContactId =
+      existingById.get(update.id)?.gvnnContactId ?? null;
     const updated = await updateScheduleSession({
       ...context,
-      gvnnChanged:
-        existingById.get(update.id)?.gvnnContactId !==
-        update.write.gvnnContactId,
+      gvnnChanged: previousGvnnContactId !== update.write.gvnnContactId,
       id: update.id,
+      previousGvnnContactId,
       session: update.write,
     });
-    if (updated) updatedIds.push(update.id);
+    if (updated === 'updated') updatedIds.push(update.id);
     else {
       conflicts.push({
         code: 'locked',
