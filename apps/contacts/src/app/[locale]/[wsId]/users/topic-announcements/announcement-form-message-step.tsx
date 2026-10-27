@@ -6,13 +6,18 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import type { Dispatch, SetStateAction } from 'react';
 import { AnnouncementAttachmentsField } from './announcement-attachments-field';
-import type { AnnouncementFormValues } from './announcement-form-state';
+import {
+  type AnnouncementFormValues,
+  NO_TEACHER,
+} from './announcement-form-state';
+import { TopicExtrasFields } from './announcement-teacher-fields';
 
 interface Props {
   disabled: boolean;
   form: AnnouncementFormValues;
   onUploadAttachment: (file: File) => Promise<TopicAnnouncementAttachmentDraft>;
   setForm: Dispatch<SetStateAction<AnnouncementFormValues>>;
+  teacherAssignmentsEnabled?: boolean;
 }
 
 export function AnnouncementFormMessageStep({
@@ -20,6 +25,7 @@ export function AnnouncementFormMessageStep({
   form,
   onUploadAttachment,
   setForm,
+  teacherAssignmentsEnabled = false,
 }: Props) {
   const t = useTranslations('ws-topic-announcements');
 
@@ -45,7 +51,28 @@ export function AnnouncementFormMessageStep({
           placeholder={t('topic_primary_placeholder')}
           value={form.topic}
         />
+        {teacherAssignmentsEnabled &&
+        form.teacherWorkspaceUserId !== NO_TEACHER &&
+        !form.topic.trim() ? (
+          <p className="text-muted-foreground text-xs">
+            {t('topic_pending_teacher')}
+          </p>
+        ) : null}
       </div>
+      {teacherAssignmentsEnabled ? (
+        <TopicExtrasFields
+          courseBook={form.courseBook}
+          disabled={disabled}
+          idPrefix="topic"
+          onCourseBookChange={(courseBook) =>
+            setForm((current) => ({ ...current, courseBook }))
+          }
+          onVideoUrlChange={(videoUrl) =>
+            setForm((current) => ({ ...current, videoUrl }))
+          }
+          videoUrl={form.videoUrl}
+        />
+      ) : null}
       <AnnouncementAttachmentsField
         attachments={form.attachmentDrafts}
         disabled={disabled}

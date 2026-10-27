@@ -26,6 +26,7 @@ import {
   createDefaultScheduledDate,
   getAnnouncementStepValidity,
   INITIAL_ANNOUNCEMENT_FORM,
+  NO_TEACHER,
 } from './announcement-form-state';
 import {
   AnnouncementStepIndicator,
@@ -33,6 +34,7 @@ import {
 } from './announcement-form-stepper';
 import { AnnouncementRecipientsPicker } from './announcement-recipients-picker';
 import { AnnouncementSaveTemplateDialog } from './announcement-save-template-dialog';
+import { AnnouncementTeacherFields } from './announcement-teacher-fields';
 import type { TemplateFormValues } from './template-form-dialog';
 import { TopicAnnouncementsHelpTip } from './topic-announcements-help-tip';
 
@@ -46,12 +48,24 @@ interface Props {
   isSavingTemplate: boolean;
   isScheduling: boolean;
   isSending: boolean;
-  onCreate: (payload: TopicAnnouncementPayload) => Promise<void>;
+  /** Each create callback resolves to the new announcement id. */
+  onCreate: (payload: TopicAnnouncementPayload) => Promise<string | undefined>;
   onCreateAndSchedule: (
     payload: TopicAnnouncementPayload,
-    scheduledSendAt: string
-  ) => Promise<void>;
-  onCreateAndSend: (payload: TopicAnnouncementPayload) => Promise<void>;
+    scheduledSendAt: string,
+    onCreated?: (announcementId: string) => void
+  ) => Promise<string | undefined>;
+  onCreateAndSend: (
+    payload: TopicAnnouncementPayload,
+    onCreated?: (announcementId: string) => void
+  ) => Promise<string | undefined>;
+  /**
+   * ENABLE_TOPIC_TEACHER_ASSIGNMENTS. Off: the composer, payload and submit
+   * flow are the pre-feature ones (no teacher, course book or video fields).
+   */
+  teacherAssignmentsEnabled?: boolean;
+  /** Supervisor "save & notify" for the assigned teacher. */
+  onNotifyTeachers?: (announcementIds: string[]) => Promise<void>;
   onSaveTemplate: (values: TemplateFormValues) => void;
   onTimezoneRequired: () => void;
   onUploadAttachment: (file: File) => Promise<TopicAnnouncementAttachmentDraft>;
@@ -74,6 +88,8 @@ export function AnnouncementForm({
   onCreate,
   onCreateAndSchedule,
   onCreateAndSend,
+  onNotifyTeachers,
+  teacherAssignmentsEnabled = false,
   onSaveTemplate,
   onTimezoneRequired,
   onUploadAttachment,
@@ -99,6 +115,7 @@ export function AnnouncementForm({
   const canSubmit =
     validSteps.review &&
     canUseDeliveryMode &&
+    (deliveryMode === 'draft' || form.topic.trim().length > 0) &&
     (deliveryMode !== 'schedule' || Boolean(scheduledAt && schedulingTimezone));
   const submitLabel = getSubmitLabel(deliveryMode, t);
 
@@ -125,19 +142,64 @@ export function AnnouncementForm({
       return;
     }
 
-    const payload = buildTopicAnnouncementPayload(form);
+    const payload = buildTopicAnnouncementPayload(form, {
+      teacherAssignments: teacherAssignmentsEnabled,
+    });
+    if (!teacherAssignmentsEnabled) {
+      // Pre-feature flow, unchanged.
+      try {
+        if (deliveryMode === 'send') {
+          await onCreateAndSend(payload);
+        } else if (deliveryMode === 'schedule' && scheduledAt) {
+          await onCreateAndSchedule(payload, scheduledAt.toISOString());
+        } else {
+          await onCreate(payload);
+        }
+        resetForm();
+      } catch {
+        // Mutation handlers already surface errors through toasts; keep the draft.
+      }
+      return;
+    }
+
+    const shouldNotify =
+      Boolean(onNotifyTeachers) &&
+      form.notifyTeacher &&
+      form.teacherWorkspaceUserId !== NO_TEACHER;
+
+    // Reset as soon as the topic exists, so a later send, schedule or notify
+    // failure cannot lead to submitting (and emailing) a second copy.
+    let createdId: string | undefined;
+    const onCreated = (announcementId: string) => {
+      createdId = announcementId;
+      resetForm();
+    };
 
     try {
       if (deliveryMode === 'send') {
-        await onCreateAndSend(payload);
+        await onCreateAndSend(payload, onCreated);
       } else if (deliveryMode === 'schedule' && scheduledAt) {
-        await onCreateAndSchedule(payload, scheduledAt.toISOString());
+        await onCreateAndSchedule(
+          payload,
+          scheduledAt.toISOString(),
+          onCreated
+        );
       } else {
-        await onCreate(payload);
+        const announcementId = await onCreate(payload);
+        if (announcementId) onCreated(announcementId);
       }
-      resetForm();
+      if (!createdId) resetForm();
     } catch {
-      // Mutation handlers already surface errors through toasts; keep the draft.
+      // Mutation handlers surface the error. Without a created topic the
+      // form keeps the draft; with one it was already reset.
+    }
+
+    if (createdId && shouldNotify && onNotifyTeachers) {
+      try {
+        await onNotifyTeachers([createdId]);
+      } catch {
+        // The notify mutation shows its own toast; the topic stays saved.
+      }
     }
   };
 
@@ -173,18 +235,29 @@ export function AnnouncementForm({
         />
 
         {step === 'details' ? (
-          <AnnouncementFormDetailsStep
-            form={form}
-            groups={groups}
-            isDisabled={isSubmitting}
-            setForm={setForm}
-            templates={templates}
-          />
+          <>
+            <AnnouncementFormDetailsStep
+              form={form}
+              groups={groups}
+              isDisabled={isSubmitting}
+              setForm={setForm}
+              templates={templates}
+            />
+            {teacherAssignmentsEnabled ? (
+              <AnnouncementTeacherFields
+                disabled={isSubmitting}
+                form={form}
+                setForm={setForm}
+                wsId={wsId}
+              />
+            ) : null}
+          </>
         ) : null}
 
         {step === 'message' ? (
           <AnnouncementFormMessageStep
             disabled={isSubmitting}
+            teacherAssignmentsEnabled={teacherAssignmentsEnabled}
             form={form}
             onUploadAttachment={onUploadAttachment}
             setForm={setForm}
