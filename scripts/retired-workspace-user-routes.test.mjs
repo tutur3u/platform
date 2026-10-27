@@ -22,7 +22,7 @@ for (const route of retired) {
       );
     }
     assert.equal(
-      existsSync(new URL('apps/web/src/app/api/v1/' + route, root)),
+      existsSync(new URL(`apps/web/src/app/api/v1/${route}`, root)),
       true
     );
   });
@@ -48,6 +48,6 @@ test('published route index omits retired collection/item routes', () => {
     '/api/workspaces/[wsId]/users',
     '/api/workspaces/[wsId]/users/[userId]',
   ]) {
-    assert.equal(index.includes('`' + path + '` |'), false, path);
+    assert.equal(index.includes(`\`${path}\` |`), false, path);
   }
 });
