@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, private, extensions;
 set local role service_role;
-select plan(34);
+select plan(35);
 
 insert into public.users (id, display_name) values
   ('00000000-0000-4000-8000-0000000e5001', 'Sprint Owner'),
@@ -88,6 +88,15 @@ select is(
   (public.start_board_sprint((select id from public.task_cycles where board_id = '00000000-0000-4000-8000-0000000e5020' and sequence_number = 1), '00000000-0000-4000-8000-0000000e5001')).status,
   'active',
   'starting the planned sprint makes it active'
+);
+select is(
+  (
+    select end_date - date_trunc('week', start_date + 2)::date
+    from public.task_cycles
+    where board_id = '00000000-0000-4000-8000-0000000e5020' and sequence_number = 1
+  ),
+  11,
+  'a sprint started before its planned Monday keeps its two weeks'
 );
 select is(
   (select name || ':' || status from public.task_cycles where board_id = '00000000-0000-4000-8000-0000000e5020' and sequence_number = 2),
