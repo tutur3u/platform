@@ -206,7 +206,20 @@ group; a clear `CS1`, `CS2`, `Cơ sở 1`, or `Cơ sở 2` marker in the group n
 is inferred when no override exists. The existing generic `Lớp học` group tag
 does not identify a campus. Ambiguous groups show no campus on the schedule
 and `Chưa xác định` in the parent draft until staff set an override. The
-Easy Center template uses the resolved label in the parent draft. The
+Easy Center template uses the resolved label in the parent draft.
+
+Each workspace keeps its own campus list (`campusOptions` in the same
+`TUTORING_POLICY` config, default empty). Labels are trimmed, blank entries
+are dropped, duplicates are removed, and a label longer than 80 characters
+fails validation. Policies saved before the list existed read as an empty
+list with every other field unchanged, and saving the Campuses section keeps
+all other policy fields. The class-to-campus editor offers the list plus any
+label already mapped to a class, so earlier free-text mappings stay selectable
+and are never dropped; staff can still type a new label. Topic announcements
+offer the same choices as a **Place** picker (see User Management). No campus
+names are built in or seeded; each center enters its own. Coverage:
+`tutoring-campus-options.test.ts`, the policy `route.test.ts`, and
+`tutoring-policy-save.test.tsx`. The
 center's tuition remains free to
 learners; payroll exports count completed teaching time.
 
@@ -242,6 +255,12 @@ off by default):
   attention flag on that learner's feedback for that class. The feedback text
   stays as history, and sessions already scheduled remain for staff to complete
   or cancel. Flagging the learner again puts them back on the list.
+
+Group-member feedback uses the authorized workspace for both the learner and
+class. Teachers retain feedback history after a learner leaves the class; current
+class membership is not required. This matches Contacts. The usual view/edit
+permissions and weak-content policy still apply. The web group-member feedback
+`route.test.ts` covers scoping, former-member history and weak-content denial.
 
 Regression coverage:
 [`weak-content-access.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/tutoring/weak-content-access.test.ts),
@@ -450,6 +469,35 @@ Regression coverage: `apps/web/src/lib/tutoring/teachers.test.ts`,
 `apps/web/src/lib/tutoring/teacher-assignment-routes.test.ts`, and the tutoring
 teacher catalog's colocated `route.test.ts` cover workspace boundaries, teacher
 eligibility, permission denial, error handling, pagination, and session writes.
+
+### Tutor groups
+
+Tutors are usually students outside the class, so they have no title of their
+own: a tutor is a workspace user with `TEACHER` membership in a group that staff
+mark as a **tutor group**.
+
+- **Scope and default.** The `tutorGroupIds` list in the tutoring policy
+  (Contacts, Tutoring policy, Tutor groups) is workspace-wide and defaults to
+  empty. Policies saved before the setting existed read as no tutor groups, and
+  every policy field round-trips on save. Presets keep the chosen groups.
+- **Roles combine.** The teacher catalog returns `isTutor` (`TEACHER` in any
+  tutor group) and `isClassTeacher` (`TEACHER` in any other group). Both can be
+  true, so a homeroom lecturer who also tutors keeps both. No role or permission
+  is added and tutor-group teachers stay valid tutoring teachers.
+- **Picker.** The tutoring teacher picker shows **Tutor** and **Teacher** labels
+  beside the name, both when both apply, and a **Tutors only** toggle that
+  filters the catalog with `tutorsOnly=true`. Nothing else about the picker
+  changes.
+- **Queues.** Tutor groups have no real students, so they are excluded from the
+  make-up and weak-support queues by group id, in addition to the name-based
+  exclusion rules.
+- **Setup is configuration.** Staff create a group such as "Giáo viên kèm", add
+  each tutor as `TEACHER`, and select it in the policy. Nothing is seeded.
+
+Regression coverage: `tutoring-policy.test.ts` (parser, round trip, exclusion by
+id), the policy, queue and teacher catalog `route.test.ts` files, `teachers.test.ts`
+(tutor-only, class-only, both), and the Contacts `tutoring-teacher-picker.test.tsx`
+and `tutoring-tutor-groups.test.tsx`.
 
 
 ### Queue handoff and missed-date defaults

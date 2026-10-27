@@ -146,9 +146,8 @@ jobs:
       worker-environment-type: FinanceEnvironment
       helper-tests: python3 scripts/ci/finance-native-artifact.test.py
       unit-command: bun run test && bun run type-check:cloudflare
-      runtime-command: >-
-        (cd ../web && bun x --no-install playwright install --with-deps chromium) &&
-        node --test --test-concurrency=1 cloudflare/native-built-worker.runtime.mjs
+      runtime-setup-command: cd ../web && bun x --no-install playwright install --with-deps chromium
+      runtime-command: node --test --test-concurrency=1 cloudflare/native-built-worker.runtime.mjs
       # The native profile pins the public Supabase URL and app/Web origins.
       # Same-repository events use the staging publishable key; fork pull
       # requests build with a placeholder.
@@ -172,9 +171,8 @@ jobs:
       worker-environment-type: FinanceEnvironment
       helper-tests: python3 scripts/ci/finance-native-artifact.test.py
       unit-command: bun run test && bun run type-check:cloudflare
-      runtime-command: >-
-        (cd ../web && bun x --no-install playwright install --with-deps chromium) &&
-        node --test --test-concurrency=1 cloudflare/native-built-worker.runtime.mjs
+      runtime-setup-command: cd ../web && bun x --no-install playwright install --with-deps chromium
+      runtime-command: node --test --test-concurrency=1 cloudflare/native-built-worker.runtime.mjs
       profile-env: VITE_FINANCE_NATIVE_PROFILE=production
       artifact-suffix: production
       public-env: |

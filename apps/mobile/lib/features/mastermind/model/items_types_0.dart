@@ -1,0 +1,70 @@
+part of 'snapshot.dart';
+
+final class SecurityItem implements NeedsYouItem, LaneItem, BacklogEntry {
+  const SecurityItem({
+    required this.title,
+    required this.severity,
+    required this.state,
+    this.product,
+  });
+
+  @override
+  final String title;
+  final Severity severity;
+  final LaneState state;
+  final Product? product;
+}
+
+final class NeedsYou implements NeedsYouItem {
+  NeedsYou({
+    required this.id,
+    required this.title,
+    required this.body,
+    required List<String> options,
+    required this.recommendedOption,
+    required this.state,
+    required this.versionHash,
+    this.kind,
+    this.severity,
+    this.product,
+  }) : options = List.unmodifiable(options);
+
+  final String id;
+  @override
+  final String title;
+  final String body;
+  final List<String> options;
+  final String? recommendedOption;
+  final ItemState state;
+  final String versionHash;
+  final ItemKind? kind;
+  final Severity? severity;
+  final Product? product;
+}
+
+final class Lane implements LaneItem {
+  const Lane({
+    required this.id,
+    required this.title,
+    required this.role,
+    required this.state,
+    required this.providerModel,
+    required this.ageSeconds,
+    required this.etaSeconds,
+    this.product,
+    this.area,
+    this.kind,
+  });
+
+  final String id;
+  @override
+  final String title;
+  final String role;
+  final LaneState state;
+  final String providerModel;
+  final int? ageSeconds;
+  final int? etaSeconds;
+  final Product? product;
+  final Area? area;
+  final LaneKind? kind;
+}
