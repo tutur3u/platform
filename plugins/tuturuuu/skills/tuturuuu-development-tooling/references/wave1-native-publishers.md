@@ -83,8 +83,14 @@ or error causes, and never infer write failure from a diagnostic alone. See the
 publisher runbook for redaction limits and independent review requirements.
 The public repository exposes workflow logs and receipt artifacts. Unknown
 unlabelled secrets below 24 characters cannot be reliably detected. Scrub known
-values before normalization, redact complete query/credential values, and
-neutralize workflow-command markers; never rely on artifact privacy.
+values on raw input and after control normalization. Bound each analyzed line to
+4,096 characters before diagnostic regexes, redact supported query/credential
+values and collapse maximal workflow-command marker runs. Known-token wrap
+matching is bounded and does not cover arbitrary encodings; see the runbook's
+exact coverage and the one-MiB performance regression. Never rely on artifact
+privacy. Publisher import or scanned-file moves require the full root-script
+collector as well as focused tests: temporary-copy dependency lists and the
+shrink-only CLI usage inventory can fail outside check:changed's selected files.
 A matching version needs a distinct earlier rollback. Bound all preflight reads
 under one deadline, filter attachments to the Worker across all account zones,
 and pass only the CLI environment it needs. Dry-run output belongs outside the
