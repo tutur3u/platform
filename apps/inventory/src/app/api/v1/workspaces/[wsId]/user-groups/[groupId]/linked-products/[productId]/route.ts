@@ -59,12 +59,14 @@ export async function PATCH(req: Request, { params }: Params) {
   }
   const [warehouse, unit] = await Promise.all([
     sbAdmin
+      .schema('private')
       .from('inventory_warehouses')
       .select('id')
       .eq('id', body.warehouseId)
       .eq('ws_id', permissions.wsId)
       .maybeSingle(),
     sbAdmin
+      .schema('private')
       .from('inventory_units')
       .select('id')
       .eq('id', body.unitId)
