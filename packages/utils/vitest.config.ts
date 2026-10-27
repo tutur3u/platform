@@ -32,6 +32,13 @@ export default defineConfig({
         replacement: resolve(__dirname, '../internal-api/src/tasks.ts'),
       },
       {
+        find: '@tuturuuu/internal-api/workspace-config-ids',
+        replacement: resolve(
+          __dirname,
+          '../internal-api/src/workspace-config-ids.ts'
+        ),
+      },
+      {
         find: '@tuturuuu/internal-api/workspace-configs',
         replacement: resolve(
           __dirname,
