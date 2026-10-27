@@ -1,0 +1,57 @@
+name: Required account MFA database contract
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled, converted_to_draft]
+    paths:
+      - 'apps/database/supabase/migrations/**'
+      - 'apps/database/supabase/tests/required-account-mfa.sql'
+      - 'apps/database/scripts/verify-required-account-mfa-contract.mjs'
+      - 'apps/database/scripts/programming-database-tap.mjs'
+      - 'apps/database/scripts/run-supabase*.js'
+      - '.github/actions/cache-supabase-images/**'
+      - 'scripts/ci/supabase-image-cache*'
+      - '.github/workflows/required-account-mfa-contract.yaml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
+  cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
+jobs:
+  check-ci:
+    if: (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    permissions:
+      contents: read
+      deployments: read
+    uses: ./.github/workflows/ci-check.yml
+    with:
+      workflow_name: required-account-mfa-contract.yaml
+  contract:
+    needs: check-ci
+    if: (always() && needs.check-ci.result == 'success') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      SUPABASE_INTERNAL_IMAGE_REGISTRY: public.ecr.aws
+    steps:
+      - name: Require an enabled contract gate
+        env:
+          CONTRACT_ENABLED: ${{ needs.check-ci.outputs.should_run }}
+        run: test "$CONTRACT_ENABLED" = true
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - name: Install dependencies
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+      - uses: ./.github/actions/cache-supabase-images
+      - name: Apply complete schema and run strict required-account-mfa pgTAP
+        run: node apps/database/scripts/verify-required-account-mfa-contract.mjs
