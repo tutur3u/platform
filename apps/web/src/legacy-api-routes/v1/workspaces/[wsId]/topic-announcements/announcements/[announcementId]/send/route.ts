@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { withScheduleSendClaim } from '@/lib/topic-schedule/send-claim';
 import { sendTopicAnnouncement } from '../../../email';
 import {
   loadScopedTopicAnnouncement,
@@ -49,14 +50,15 @@ export async function POST(request: Request, { params }: Params) {
   });
   if (loaded.response) return loaded.response;
 
-  const result = await sendTopicAnnouncement({
-    actorUserId,
+  const sendRequest = {
     announcementId,
     normalizedWsId,
-    request,
     resend: parsed.data.resend,
     sbAdmin,
-  });
+  };
+  const result = await withScheduleSendClaim(sendRequest, () =>
+    sendTopicAnnouncement({ ...sendRequest, actorUserId, request })
+  );
 
   if ('error' in result) {
     return NextResponse.json(

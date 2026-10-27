@@ -115,10 +115,13 @@ export function useScheduleEditor(wsId: string, month: string) {
   }, []);
 
   const saveMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async ({ notifyTeachers }: { notifyTeachers: boolean }) => {
       const { payload, sessionKeys } = draftSavePayload(rows, original, month);
       try {
-        return await saveTopicScheduleMonth(wsId, payload);
+        return await saveTopicScheduleMonth(wsId, {
+          ...payload,
+          notifyTeachers,
+        });
       } catch (error) {
         if (error instanceof TopicScheduleSaveRejectedError) {
           if (error.conflict) {

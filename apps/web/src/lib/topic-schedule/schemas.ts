@@ -45,6 +45,8 @@ export const ScheduleSaveSchema = z
   .object({
     deleteIds: z.array(z.string().uuid()).max(SCHEDULE_SAVE_MAX_ROWS),
     month: MonthSchema,
+    /** Notify the GVCN of sessions this save assigns to them. */
+    notifyTeachers: z.boolean().optional(),
     sessions: z.array(ScheduleSessionInputSchema).max(SCHEDULE_SAVE_MAX_ROWS),
   })
   .superRefine((value, context) => {
@@ -70,6 +72,8 @@ export const ScheduleCloneSchema = z
     dryRun: z.boolean(),
     /** Re-create sessions that were removed from the target month. */
     includeRemoved: z.boolean().optional(),
+    /** Notify the GVCN of the sessions the clone creates. */
+    notifyTeachers: z.boolean().optional(),
     sourceMonth: MonthSchema,
     targetMonth: MonthSchema,
   })

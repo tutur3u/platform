@@ -39,6 +39,8 @@ interface Props {
   issues: readonly DraftIssue[];
   month: string;
   onDuplicate: (row: DraftSession, days: number) => void;
+  /** Called after "Move to date..." so the editor can focus the row. */
+  onMoved: (key: string) => void;
   onRemove: (key: string) => void;
   onUpdate: (key: string, patch: Partial<DraftSession>) => void;
   original: DraftSession | undefined;
@@ -60,6 +62,7 @@ export function ScheduleSessionRow({
   issues,
   month,
   onDuplicate,
+  onMoved,
   onRemove,
   onUpdate,
   original,
@@ -154,6 +157,10 @@ export function ScheduleSessionRow({
           </p>
         </div>
         <Combobox
+          ariaDescribedBy={
+            issues.includes('missing_class') ? messageId : undefined
+          }
+          ariaInvalid={issues.includes('missing_class')}
           ariaLabel={t('schedule_column_class')}
           className={cn(
             'h-8 w-full',
@@ -241,6 +248,7 @@ export function ScheduleSessionRow({
           onMove={(sessionDate) => {
             set({ sessionDate });
             setMoving(false);
+            onMoved(row.key);
           }}
         />
       ) : null}

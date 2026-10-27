@@ -307,16 +307,60 @@ module unchanged.
   by a database unique key.
 - **Edit and remove.** Start time, minutes, class, GVNN, room and campus are
   edited inline; "Move to date..." in a row's menu moves a session within the
-  month. Saves are validated as a whole before anything is written, and each
-  write re-checks that its session is still a draft, failed or skipped one: a
-  session that was queued or started sending in the meantime is left unchanged
-  and the save returns `409` with the sessions that did save, after which the
-  editor reloads the month. Removing a session cancels it
-  (`status = 'cancelled'`) like any announcement, keeping its topic and audit
-  trail. Queued, sending and sent sessions are read-only and labelled as such.
-- **Unsaved changes.** Changing month, following an in-app link, browser Back or
-  Forward, and closing or reloading the tab all ask before discarding edits.
-  Problems on a row are shown once it has been edited or a save was attempted.
+  month and focuses it at its new date. Saves are validated as a whole before
+  anything is written, and each write re-checks that its session is still a
+  draft, failed or skipped one: a session that was queued or started sending
+  in the meantime is left unchanged and the save returns `409` with the
+  sessions that did save, after which the editor reloads the month.
+- **Changing the GVNN.** A GVNN change is written before the other fields,
+  and only while the session is still editable. A send now claims a schedule
+  session (editable to `processing`) before it reads the recipients, so the
+  editor and a send cannot both win:
+  - claimed before the save: nothing changes (`locked`);
+  - claimed during the GVNN swap: the other fields stay as they were and the
+    save reports `partially_applied` with the GVNN as the only change; the
+    email may have used the previous GVNN, and nothing is restored because the
+    send may already have read the recipients;
+  - the swap removes the old recipient before adding the new one, so a send
+    sees the old GVNN or none (and refuses with `NO_RECIPIENTS`), never both;
+  - if the swap itself fails, the previous GVNN is put back while the session
+    is still editable.
+  A fully atomic swap would need a database function (a migration).
+- **Sending schedule sessions.** "Send now" and bulk send claim a schedule
+  session first; a session already queued or sending answers `SEND_CONFLICT`
+  and a sent one `ALREADY_SENT` (a resend may claim it). If the send stops
+  early the claim returns to the previous status. A queued schedule session
+  that the queue finds without a recipient is marked `failed` with
+  `NO_RECIPIENTS` (editable, so a GVNN can be assigned) instead of being
+  retried every 15 minutes. The claim matches the exact status it read and is
+  released to that status. If a Send now never finishes (the function was
+  stopped, or the release failed), the queue marks the session `failed` with
+  `PROCESSING_TIMEOUT` after 15 minutes: editable, and never sent
+  automatically. Other announcements send exactly as before.
+- **Save & notify teachers.** Saving the schedule or committing a clone can
+  notify each GVCN of the sessions that request assigned to them: new
+  sessions, or a class change that gives a session another teacher. The
+  checkbox ("Notify teachers (N)") appears next to Save and in the clone
+  dialog when N > 0 and is on by default. It reuses the `topic_assigned`
+  in-app notification and `notify-teachers` sender: one notification per
+  teacher, nothing emailed. Teachers without a linked account are skipped
+  and reported in a toast. Unchanged, retried or same-teacher saves assign
+  nothing and notify nothing, so no extra state is stored; a notification
+  that fails after the save is reported and not retried. Known limits: two
+  tabs saving the same new session at once can each notify, and a session
+  moved from teacher A to B and back to A notifies A again. When part of a
+  conflicting save went through, its notification outcome is shown too.
+- **Removing.** Removing a session cancels it (`status = 'cancelled'`) like any
+  announcement, keeping its topic and audit trail. Queued, sending and sent
+  sessions are read-only and labelled as such.
+- **Unsaved changes.** Changing month, following an in-app link, one step of
+  browser Back, and closing or reloading the tab all ask before discarding
+  edits. Back is guarded by keeping one extra history entry for the page while
+  there are edits, and only when the tab has an earlier page; confirmed
+  navigation removes that entry first, so none is left behind. Jumping back
+  several pages at once from the Back button's history menu is not
+  intercepted. Problems on a row are shown once it has been edited or a save
+  was attempted.
 - **Import.** The CSV import is unchanged by this feature; the schedule editor
   does not use it.
 
@@ -331,8 +375,16 @@ routes and nothing written; edit and delete locks including mid-save
 conflicts, retried removal, slot conflicts, archived classes and GVNN, same
 class teacher kept, clone revival of removed sessions),
 `apps/contacts/src/app/[locale]/[wsId]/users/topic-announcements/schedule/schedule-draft.test.ts`
-and `schedule-month-editor.test.tsx` (save payload, validation shown after
-touch, missing-GVNN reminder, Back guard, delivery-state labels).
+`schedule-month-editor.test.tsx` and `schedule-unsaved-guard.test.tsx`
+(save payload, validation shown after touch, missing-GVNN reminder, Back and
+link guards without stray history entries, rows kept in saved order,
+delivery-state labels), and
+`apps/web/src/lib/topic-schedule/schedule-races.test.ts` (GVNN swap racing a
+send, chunked recipient reads),
+`apps/web/src/lib/topic-schedule/schedule-notify.test.ts` (notify on new
+sessions and teacher changes, none on unchanged or retried saves, other
+workspace links and sessions ignored, flag off, clone),
+`schedule-notify-toast.test.ts` (skipped unlinked teachers toast).
 
 ### Teacher-assigned topics
 

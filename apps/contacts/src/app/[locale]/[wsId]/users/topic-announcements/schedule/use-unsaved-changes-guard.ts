@@ -19,15 +19,54 @@ function pushSentinel() {
   );
 }
 
+const onSentinel = () => Boolean(window.history.state?.[SENTINEL]);
+
+/**
+ * Whether Back leads to an earlier page in this tab. Uses the Navigation API
+ * where available (`history.length` also counts Forward entries).
+ */
+function hasEarlierEntry() {
+  const index = (
+    window as { navigation?: { currentEntry?: { index?: number } | null } }
+  ).navigation?.currentEntry?.index;
+  return typeof index === 'number' ? index > 0 : window.history.length > 1;
+}
+
+/** Falls back to running the action if the Back traversal never reports. */
+const LEAVE_FALLBACK_MS = 500;
+
+/** Pops the extra entry first, then runs `action` on the page beneath it. */
+function leaveSentinelThen(action: () => void) {
+  if (!onSentinel()) {
+    action();
+    return;
+  }
+  let done = false;
+  const run = () => {
+    if (done) return;
+    done = true;
+    window.removeEventListener('popstate', onPopState);
+    action();
+  };
+  const onPopState = () => setTimeout(run, 0);
+  window.addEventListener('popstate', onPopState, { once: true });
+  window.history.back();
+  setTimeout(run, LEAVE_FALLBACK_MS);
+}
+
 /**
  * Protects unsaved schedule edits:
  * - closing or reloading the tab triggers the browser's own leave prompt;
  * - in-app links and month changes open the caller's confirmation dialog
  *   (through `isPending`) instead of navigating;
- * - Back/Forward: while there are edits an extra history entry for the same
- *   URL is kept on top (which also drops any Forward entries). Leaving it
- *   means the user pressed Back, so it is restored and the dialog asks
- *   first; confirming goes back past it.
+ * - one step of browser Back: while there are edits and an earlier page
+ *   exists, an extra history entry for this URL is kept on top (dropping any
+ *   Forward entries). Leaving it means Back was pressed, so it is restored and
+ *   the dialog asks first. Jumping several entries at once (the Back button's
+ *   history menu) lands on another page and is not intercepted.
+ *
+ * Confirmed navigation pops the extra entry before navigating, so no stray
+ * entry is left behind; discarding in place drops it as well.
  */
 export function useUnsavedChangesGuard(isDirty: boolean) {
   const router = useRouter();
@@ -43,15 +82,18 @@ export function useUnsavedChangesGuard(isDirty: boolean) {
   useEffect(() => {
     if (!isDirty) return;
     leavingRef.current = false;
-    pushSentinel();
+    const guardedHref = window.location.href;
+    const trapBack = hasEarlierEntry();
+    if (trapBack) pushSentinel();
 
     const onBeforeUnload = (event: BeforeUnloadEvent) => {
       event.preventDefault();
     };
     const onPopState = () => {
-      if (leavingRef.current || window.history.state?.[SENTINEL]) return;
+      if (!trapBack || leavingRef.current || onSentinel()) return;
+      if (window.location.href !== guardedHref) return;
       pushSentinel();
-      setPending({ inPlace: false, run: () => window.history.go(-2) });
+      setPending({ inPlace: false, run: () => window.history.back() });
     };
     const onClick = (event: MouseEvent) => {
       if (event.defaultPrevented || event.button !== 0) return;
@@ -90,9 +132,7 @@ export function useUnsavedChangesGuard(isDirty: boolean) {
       window.removeEventListener('popstate', onPopState);
       document.removeEventListener('click', onClick, true);
       // Saved or discarded in place: drop the extra entry again.
-      if (!leavingRef.current && window.history.state?.[SENTINEL]) {
-        window.history.back();
-      }
+      if (!leavingRef.current && onSentinel()) window.history.back();
     };
   }, [isDirty]);
 
@@ -112,8 +152,12 @@ export function useUnsavedChangesGuard(isDirty: boolean) {
     const action = pending;
     setPending(null);
     if (!action) return;
-    leavingRef.current = !action.inPlace;
-    action.run();
+    if (action.inPlace) {
+      action.run();
+      return;
+    }
+    leavingRef.current = true;
+    leaveSentinelThen(action.run);
   }, [pending]);
 
   const cancel = useCallback(() => setPending(null), []);

@@ -75,3 +75,19 @@ export function TopicAnnouncementsUnavailableGate() {
     />
   );
 }
+
+/**
+ * Personal workspaces cannot use topic announcements: every topic API refuses
+ * them, so the module is not mounted there (no requests that can only 404).
+ */
+export function TopicAnnouncementsPersonalGate() {
+  const t = useTranslations('ws-topic-announcements-gate');
+
+  return (
+    <WorkspaceFeatureUnavailableGate
+      description={t('personal_description')}
+      icon={<TriangleAlert className="h-7 w-7" />}
+      title={t('personal_title')}
+    />
+  );
+}

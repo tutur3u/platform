@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { buildMissingGvnnReminder } from './missing-gvnn';
 import {
   countDraftChanges,
+  countDraftTeacherAssignments,
   draftFromSessions,
   draftGvcnId,
   draftSavePayload,
@@ -161,5 +162,33 @@ describe('missing GVNN reminder', () => {
     });
     expect(reminder.total).toBe(1);
     expect(reminder.classes[0]!.groupId).toBe('k2');
+  });
+});
+
+describe('teacher assignments to notify', () => {
+  const classById = new Map([
+    ['k1', { id: 'k1', name: 'K1', primaryTeacherId: 't1', teachers: [] }],
+    ['k2', { id: 'k2', name: 'K2', primaryTeacherId: 't2', teachers: [] }],
+    ['k3', { id: 'k3', name: 'K3', primaryTeacherId: null, teachers: [] }],
+  ]);
+
+  it('counts new rows with a GVCN and class changes to another teacher', () => {
+    const original = draftFromSessions([
+      saved(),
+      saved({ id: 's2', startTime: '18:30' }),
+    ]);
+    const originalByKey = new Map(original.map((row) => [row.key, row]));
+    const rows = [
+      { ...original[0]!, room: 'P9' }, // same class: no
+      { ...original[1]!, groupId: 'k2' }, // t1 -> t2: yes
+      { ...newDraftSession('n1', '2026-11-03'), groupId: 'k1' }, // new: yes
+      { ...newDraftSession('n2', '2026-11-04'), groupId: 'k3' }, // no GVCN: no
+    ];
+    expect(countDraftTeacherAssignments(rows, originalByKey, classById)).toBe(
+      2
+    );
+    expect(
+      countDraftTeacherAssignments(original, originalByKey, classById)
+    ).toBe(0);
   });
 });

@@ -15,6 +15,7 @@ import {
 import {
   cancelScheduleSessions,
   insertScheduleSessions,
+  type ScheduleSessionPartialField,
   type ScheduleSessionWrite,
   updateScheduleSession,
 } from './schedule-write';
@@ -22,6 +23,7 @@ import type { ScheduleSaveInput, ScheduleSessionInput } from './schemas';
 
 export type ScheduleRowErrorCode =
   | 'duplicate_slot'
+  | 'partially_applied'
   | 'ends_after_midnight'
   | 'invalid_class'
   | 'invalid_contact'
@@ -31,6 +33,8 @@ export type ScheduleRowErrorCode =
 
 export interface ScheduleRowError {
   code: ScheduleRowErrorCode;
+  /** For `partially_applied`: what did change (the rest did not). */
+  fields?: ScheduleSessionPartialField[];
   /** Index into `sessions`, or null for a `deleteIds` entry. */
   index: number | null;
   sessionId: string | null;
@@ -42,6 +46,11 @@ export interface ScheduleSaveSummary {
   /** New rows already saved identically (a retried save): not re-created. */
   existingIds: string[];
   updatedIds: string[];
+  /**
+   * Sessions this request created or moved to another teacher: the only ones
+   * whose GVCN should hear about it. A retried or unchanged save has none.
+   */
+  assignedIds: string[];
 }
 
 export type ScheduleSaveResult =
@@ -263,19 +272,26 @@ export async function saveScheduleMonth(
     .map((id) => ({ code: 'locked', index: null, sessionId: id }));
 
   const updatedIds: string[] = [];
+  const reassignedIds: string[] = [];
   for (const update of updates) {
+    const previousGvnnContactId =
+      existingById.get(update.id)?.gvnnContactId ?? null;
     const updated = await updateScheduleSession({
       ...context,
-      gvnnChanged:
-        existingById.get(update.id)?.gvnnContactId !==
-        update.write.gvnnContactId,
+      gvnnChanged: previousGvnnContactId !== update.write.gvnnContactId,
       id: update.id,
+      previousGvnnContactId,
       session: update.write,
     });
-    if (updated) updatedIds.push(update.id);
-    else {
+    if (updated.kind === 'updated') {
+      updatedIds.push(update.id);
+      const before = existingById.get(update.id)?.teacherWorkspaceUserId;
+      const after = update.write.teacherWorkspaceUserId;
+      if (after && after !== before) reassignedIds.push(update.id);
+    } else {
       conflicts.push({
-        code: 'locked',
+        code: updated.kind === 'partial' ? 'partially_applied' : 'locked',
+        ...(updated.kind === 'partial' ? { fields: updated.fields } : {}),
         index: input.sessions.findIndex((row) => row.id === update.id),
         sessionId: update.id,
       });
@@ -288,6 +304,8 @@ export async function saveScheduleMonth(
   });
 
   const saved = {
+    // New sessions without a GVCN are ignored by the notifier.
+    assignedIds: [...createdIds, ...reassignedIds],
     createdIds,
     deletedIds: [
       ...cancelled,

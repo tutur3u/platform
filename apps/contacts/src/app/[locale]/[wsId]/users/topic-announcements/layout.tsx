@@ -6,18 +6,17 @@ import { getSecret, getSecrets } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { connection } from 'next/server';
 import type { ReactNode } from 'react';
-import {
-  isWorkspaceFeatureEnabled,
-  resolveWorkspaceFeatureAccess,
-} from '@/components/feature-gate/workspace-feature-access';
+import { resolveWorkspaceFeatureAccess } from '@/components/feature-gate/workspace-feature-access';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { getContactsWorkspacePermissions } from '@/lib/workspace';
 import { TeacherTopicsView } from './teacher-topics-view';
 import {
   TopicAnnouncementsDisabledGate,
   TopicAnnouncementsForbiddenGate,
+  TopicAnnouncementsPersonalGate,
   TopicAnnouncementsUnavailableGate,
 } from './topic-announcements-gate';
+import { isTopicAnnouncementsModuleEnabled } from './topic-announcements-module';
 import { TopicAnnouncementsShell } from './topic-announcements-shell';
 
 export const metadata: Metadata = {
@@ -70,15 +69,17 @@ export default async function TopicAnnouncementsLayout({
             permissions?.containsPermission('send_user_group_post_emails')
           ),
           canView: isSupervisor || isTeacher,
-          // The module has always required an explicit opt-in secret, so shared
-          // workspaces keep defaulting to off; only the 404 changes.
-          enabled: isWorkspaceFeatureEnabled({
-            defaultEnabled: false,
-            isPersonal,
-            value: getSecret(TOPIC_ANNOUNCEMENTS_SECRET, secrets ?? [])?.value,
-          }),
+          // The same rule as the topic APIs: the secret must be exactly
+          // 'true'. Anything the APIs refuse must not mount the module, whose
+          // queries would only 404.
+          enabled: isTopicAnnouncementsModuleEnabled(
+            getSecret(TOPIC_ANNOUNCEMENTS_SECRET, secrets ?? [])?.value
+          ),
           hasWorkspaceAccess: Boolean(permissions),
         });
+
+        // Every topic API refuses personal workspaces.
+        if (isPersonal) return <TopicAnnouncementsPersonalGate />;
 
         if (access.status === 'unavailable') {
           return <TopicAnnouncementsUnavailableGate />;

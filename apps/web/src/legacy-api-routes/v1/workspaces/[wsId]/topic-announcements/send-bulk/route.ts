@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { withScheduleSendClaim } from '@/lib/topic-schedule/send-claim';
 import { sendTopicAnnouncement } from '../email';
 import {
   isTopicAnnouncementAssignedToScope,
@@ -71,14 +72,15 @@ export async function POST(request: Request, { params }: Params) {
       });
       continue;
     }
-    const result = await sendTopicAnnouncement({
-      actorUserId,
+    const sendRequest = {
       announcementId,
       normalizedWsId,
-      request,
       resend: parsed.data.resend,
       sbAdmin,
-    });
+    };
+    const result = await withScheduleSendClaim(sendRequest, () =>
+      sendTopicAnnouncement({ ...sendRequest, actorUserId, request })
+    );
     results.push({ announcementId, ...result });
   }
 

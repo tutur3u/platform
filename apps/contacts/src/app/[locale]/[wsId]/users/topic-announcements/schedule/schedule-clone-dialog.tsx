@@ -23,6 +23,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { ScheduleClonePreview } from './schedule-clone-preview';
 import { formatScheduleMonth } from './schedule-format';
+import { toastScheduleNotification } from './schedule-notify-toast';
 import { topicScheduleQueryKey } from './use-schedule-editor';
 
 /**
@@ -59,10 +60,12 @@ export function ScheduleCloneDialog({
   });
   // Sessions removed from this month are skipped unless re-added explicitly.
   const [includeRemoved, setIncludeRemoved] = useState(false);
+  const [notifyTeachers, setNotifyTeachers] = useState(true);
   const handleOpenChange = (next: boolean) => {
     if (!next) {
       queryClient.removeQueries({ queryKey: previewKey });
       setIncludeRemoved(false);
+      setNotifyTeachers(true);
     }
     onOpenChange(next);
   };
@@ -72,10 +75,12 @@ export function ScheduleCloneDialog({
         ...request,
         dryRun: false,
         includeRemoved,
+        notifyTeachers: notifyCount > 0 && notifyTeachers,
       }),
     onError: () => toast.error(t('schedule_clone_failed')),
     onSuccess: async ({ data }) => {
       toast.success(t('schedule_cloned', { count: data.createdIds.length }));
+      toastScheduleNotification(t, data.notification);
       await queryClient.invalidateQueries({
         queryKey: topicScheduleQueryKey(wsId, month),
       });
@@ -88,6 +93,13 @@ export function ScheduleCloneDialog({
   const createCount =
     items.filter((item) => item.status === 'create').length +
     (includeRemoved ? removedCount : 0);
+  // Created sessions that get a GVCN; their teachers can be notified.
+  const notifyCount = items.filter(
+    (item) =>
+      item.teacherWorkspaceUserId &&
+      (item.status === 'create' ||
+        (includeRemoved && item.status === 'removed'))
+  ).length;
 
   return (
     <Dialog onOpenChange={handleOpenChange} open={open}>
@@ -139,6 +151,17 @@ export function ScheduleCloneDialog({
                   }
                 />
                 {t('schedule_clone_include_removed', { count: removedCount })}
+              </Label>
+            ) : null}
+            {notifyCount > 0 ? (
+              <Label className="flex items-center gap-2 font-normal text-sm">
+                <Checkbox
+                  checked={notifyTeachers}
+                  onCheckedChange={(checked) =>
+                    setNotifyTeachers(checked === true)
+                  }
+                />
+                {t('schedule_notify_teachers', { count: notifyCount })}
               </Label>
             ) : null}
           </div>
