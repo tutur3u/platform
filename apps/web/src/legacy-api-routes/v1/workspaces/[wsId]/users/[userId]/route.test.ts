@@ -53,7 +53,10 @@ vi.mock('@/lib/post-email-queue', () => ({
   },
 }));
 
-import { DELETE, PUT } from './route';
+import {
+  DELETE,
+  PUT,
+} from '@/app/api/v1/workspaces/[wsId]/users/[userId]/route';
 
 function createGuestGroupsQuery() {
   let eqCallCount = 0;
