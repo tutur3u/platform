@@ -183,3 +183,17 @@ security review before integration.
 
 Upstream references: [MSAL advisory](https://github.com/AzureAD/microsoft-authentication-library-for-js/security/advisories/GHSA-xcx6-jx8p-x3h5)
 and [MSAL v7 migration guide](https://github.com/AzureAD/microsoft-authentication-library-for-js/blob/dev/lib/msal-node/docs/v7-migration.md).
+
+## Discord mapping scope
+
+Discord mapping reads and mutations require membership in the workspace linked
+to that mapping's guild. Inserts and updates also require the mapped platform
+user to belong to the same workspace. Moving an existing mapping to another
+guild rechecks the destination workspace. Existing platform integration
+permissions remain required through the integration table's policy. Anonymous
+clients cannot read or change mappings. These rules apply to direct Data API
+access as well as the web integration handlers.
+
+Coverage: `apps/database/supabase/tests/discord-guild-mapping-boundary.sql`.
+The migration changes no existing mapping data; rollout owners must inspect
+unbound guilds and mapped users outside the linked workspace before acceptance.
