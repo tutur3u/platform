@@ -132,7 +132,7 @@ extension _MailWorkspaceControls on _MailWorkspaceState {
                 tooltip: l10n.mailSearch,
                 onPressed: () =>
                     _updateState(() => _searchVisible = !_searchVisible),
-                icon: const Icon(Icons.search),
+                icon: const Icon(AppIcons.search),
               ),
             ],
           ),
@@ -148,7 +148,7 @@ extension _MailWorkspaceControls on _MailWorkspaceState {
                   decoration: InputDecoration(
                     hintText: l10n.mailSearch,
                     isDense: true,
-                    prefixIcon: const Icon(Icons.search),
+                    prefixIcon: const Icon(AppIcons.search),
                     suffixIcon: IconButton(
                       tooltip: l10n.commonCancel,
                       icon: const Icon(Icons.close),

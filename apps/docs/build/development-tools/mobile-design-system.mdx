@@ -244,6 +244,14 @@ policy, so sheets look and behave the same in every app.
   navigator, below the shell's top navbar and floating dock. While an overlay
   is open, modal registrations replace the page's chrome actions for every
   location.
+- **Search actions.** Every shell Search action is a
+  `ShellActionSpec.search(...)`: a dock action with `AppIcons.search`, the
+  close glyph while active, highlight while a query applies, and the shared
+  48dp dock target. Register one only on screens that search their own
+  content; root tabs without content to search show none. List a screen's
+  primary dock action (create, view) before Search: phones under 400dp keep
+  only the first dock action in the dock (`meet_dock_order_test.dart`,
+  `drive_page_test.dart`).
 - **Dynamic search.** Pass `search: AppSheetSearch(...)` to
   `AppSheetScaffold`. Inside the shell, it registers a dock search action;
   tapping it turns the top navbar into the shell search field bound to the
@@ -495,6 +503,13 @@ AppSwitch and AppCheckbox draw their own token-based surfaces on every platform.
 Use showAppDatePicker and showAppTimePicker for in-app date/time editing. Both use the modal host so Back dismisses the picker before its parent editor. Date bounds, leap days and 12/24-hour input are preserved; year selection supports the shell search action. Existing framework localizations supply English and Vietnamese picker labels. System-owned permission dialogs remain OS-owned.
 
 Regression coverage: test/core/ui/app_selection_controls_test.dart and test/core/ui/app_date_time_picker_test.dart.
+
+`AppComposerRow` lays out a growing prompt field between icon controls. Pad
+the field with `AppComposerRow.fieldPadding(minHeight:, lineHeight:)` (use
+`AppComposerRow.lineHeightOf` for the scaled line): one line then shares the
+row's centre with every control, and extra lines grow upward while controls
+stay centred on the last line. The Mira composer uses it;
+`assistant_composer_alignment_test.dart` covers 1x and 2x text and growth.
 
 Selection rows respond to taps on their labels as well as the control. Toast
 handles become closed when their overlay is disposed, canceling their dismissal

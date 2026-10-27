@@ -15,6 +15,7 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/theme/appearance/appearance_scope.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
 import 'package:mobile/core/theme/appearance/appearance_theme.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/core/ui/overlays/app_sheet_scaffold.dart';
 import 'package:mobile/core/widgets/shadcn_material_bridge.dart';

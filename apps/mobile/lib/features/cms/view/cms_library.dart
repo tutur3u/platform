@@ -36,10 +36,7 @@ extension _CmsLibrary on _CmsPageState {
       if (status != null) () => status,
       if (status == null) ...[
         ?(notice == null ? null : () => notice),
-        () => AppSectionHeader(
-          title: l10n.cmsCollections,
-          count: collections.length,
-        ),
+        () => AppSectionHeader(title: l10n.cmsCollections),
         if (collections.isEmpty)
           () => AppGroupedCard(
             children: [
@@ -72,7 +69,7 @@ extension _CmsLibrary on _CmsPageState {
           ),
         () => Padding(
           padding: const EdgeInsets.only(top: AppLayout.sectionGap),
-          child: _libraryFilters(context, searched, entries.length),
+          child: _libraryFilters(context, searched),
         ),
         if (entries.isEmpty)
           () => AppGroupedCard(
@@ -114,11 +111,7 @@ extension _CmsLibrary on _CmsPageState {
     );
   }
 
-  Widget _libraryFilters(
-    BuildContext context,
-    List<CmsEntry> searched,
-    int visible,
-  ) {
+  Widget _libraryFilters(BuildContext context, List<CmsEntry> searched) {
     final l10n = context.l10n;
     final selectedCollection = _collections
         .where((row) => row.id == _selectedCollectionId)
@@ -128,7 +121,7 @@ extension _CmsLibrary on _CmsPageState {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        AppSectionHeader(title: l10n.cmsEntries, count: visible),
+        AppSectionHeader(title: l10n.cmsEntries),
         AppFilterBar<String?>(
           options: [
             AppFilterOption(

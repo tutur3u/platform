@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
-import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/widgets/workspace_picker_sheet.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-/// The You tab's shortcut rows below identity and Focus Time: Workspaces
-/// (with a count), Timeline and Settings. Each opens an existing surface.
+/// The You tab's shortcut rows below identity and Focus Time: Workspaces,
+/// Timeline and Settings. Each opens an existing surface.
 class ProfileYouRows extends StatelessWidget {
   const ProfileYouRows({required this.onOpenTimeline, super.key});
 
@@ -18,9 +16,6 @@ class ProfileYouRows extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final count = context.select<WorkspaceCubit, int>(
-      (cubit) => cubit.state.workspaces.length,
-    );
     return AppGroupedCard(
       children: [
         AppGroupedRow(
@@ -30,7 +25,6 @@ class ProfileYouRows extends StatelessWidget {
             tone: AppTone.success,
           ),
           title: Text(l10n.profileYouWorkspaces),
-          trailing: count == 0 ? null : Text('$count'),
           showChevron: true,
           onTap: () => showWorkspacePickerSheet(context),
         ),
