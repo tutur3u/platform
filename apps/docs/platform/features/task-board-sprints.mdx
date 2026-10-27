@@ -38,7 +38,9 @@ a task rewrites nothing. Only an own due date can make a task overdue.
 Starting and ending a sprint, and changing its length, are limited to workspace
 members who can edit the board; board guests can plan (goals and membership)
 but cannot start or end. Starting the planned sprint opens the next one for
-planning.
+planning. A sprint started before its planned Monday keeps its length: it
+starts that day and ends on the Friday of its last week (a weekend start counts
+from the next Monday), and the next sprint is planned after it.
 
 Ending is atomic and idempotent. Every open task gets a decision: carry it into
 the next sprint with its owner, or send it to the backlog, which removes its
