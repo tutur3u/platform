@@ -115,3 +115,15 @@ stack for every edit.
   refunds and replacement windows against real disposable Redis Lua execution.
 - Keep join-limit retry copy distinct from failed-password copy in all shared
   English and Vietnamese bundles.
+
+## Admin-backed workspace references
+
+Check both resource ownership and action permission before admin reads or writes.
+For time requests, test owners and request managers alongside denied members.
+For categories, break types, calendar tasks, and mailbox messages, test a missing
+or foreign reference before any mutation, plus a valid same-workspace control.
+Board capacity writers must compare the resolved board workspace to the workspace
+used for permission checks. Board guests do not receive private member/share
+directories. The [authorization decision](../../../../../apps/docs/platform/architecture/authorization.mdx#workspace-resource-access)
+lists surfaces and regression paths. Preserve existing tests and use separate
+focused files when adding coverage near the authored-file size limit.

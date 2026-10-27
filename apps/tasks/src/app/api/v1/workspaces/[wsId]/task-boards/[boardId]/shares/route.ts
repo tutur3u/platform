@@ -116,6 +116,14 @@ async function requireBoardShareManager({
   });
 
   if ('error' in access) return access;
+  if (access.access.mode !== 'member') {
+    return {
+      error: NextResponse.json(
+        { error: 'Workspace membership required' },
+        { status: 403 }
+      ),
+    };
+  }
 
   return { boardId: access.boardId, sbAdmin, wsId: access.wsId } as const;
 }

@@ -195,6 +195,21 @@ export async function POST(request: Request, { params }: Params) {
   try {
     const body = await request.json();
     const event = CreateEventSchema.parse(body);
+    if (event.task_id) {
+      const { data: task, error } = await sbAdmin
+        .from('tasks')
+        .select('id, task_lists!inner(workspace_boards!inner(ws_id))')
+        .eq('id', event.task_id)
+        .maybeSingle();
+      if (error)
+        return NextResponse.json(
+          { error: 'Failed to validate task' },
+          { status: 500 }
+        );
+      if (!task || task.task_lists?.workspace_boards?.ws_id !== wsId) {
+        return NextResponse.json({ error: 'Invalid task' }, { status: 400 });
+      }
+    }
     if (event.providerColor && !googleColorOperationModeEnabled())
       return unsupportedProviderSaga();
     if (event.providerColor && body.color !== undefined)

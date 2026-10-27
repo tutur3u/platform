@@ -84,13 +84,18 @@ export async function requireCapacityAccess({
   })) as TypedSupabaseClient;
   const access = await resolveTaskBoardAccess({
     boardId,
-    requiredPermission: 'view',
+    requiredPermission: write ? 'edit' : 'view',
     sbAdmin,
     supabase,
     user,
     wsId,
   });
   if ('error' in access) return access;
+  if (access.wsId !== wsId) {
+    return {
+      error: NextResponse.json({ error: 'Board not found' }, { status: 404 }),
+    };
+  }
   return { boardId: access.boardId, sbAdmin, wsId: access.wsId };
 }
 
