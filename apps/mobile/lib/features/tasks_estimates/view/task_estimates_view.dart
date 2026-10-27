@@ -198,7 +198,9 @@ class _TaskEstimatesViewState extends State<TaskEstimatesView> {
             if (_activeTab == _tabEstimates &&
                 estimatesState.status == TaskEstimatesStatus.error &&
                 estimatesState.boards.isEmpty) {
-              return TaskEstimatesErrorView(error: estimatesState.error);
+              return TaskEstimatesErrorView(
+                error: context.l10n.taskBoardsLoadError,
+              );
             }
             if (_activeTab == _tabLabels &&
                 labelsState.status == TaskLabelsStatus.error &&
