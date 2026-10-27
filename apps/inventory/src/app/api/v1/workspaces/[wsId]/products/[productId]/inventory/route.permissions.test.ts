@@ -68,7 +68,8 @@ const context = {
 const request = (method: string) =>
   new Request('http://localhost/inventory', {
     method,
-    body: method === 'DELETE' ? undefined : JSON.stringify({}),
+    body:
+      method === 'DELETE' || method === 'GET' ? undefined : JSON.stringify({}),
   });
 
 describe('product inventory route stock permission model', () => {
@@ -78,14 +79,34 @@ describe('product inventory route stock permission model', () => {
     pricedEditMock.mockResolvedValue({ deleted: 0, inserted: 0, updated: 0 });
   });
 
+  describe('GET', () => {
+    const call = async () => {
+      const route = await import('./route');
+      return route.GET(request('GET'), context);
+    };
+
+    it('allows view_inventory_stock alone', async () => {
+      grant('view_inventory_stock');
+      expect((await call()).status).toBe(200);
+    });
+
+    it('allows view_stock_quantity alone', async () => {
+      grant('view_stock_quantity');
+      expect((await call()).status).toBe(200);
+    });
+
+    it('returns 403 without any stock permission', async () => {
+      grant('view_inventory_catalog');
+      expect((await call()).status).toBe(403);
+    });
+  });
+
   describe.each(['POST', 'PATCH', 'DELETE'] as const)('%s', (method) => {
     const call = async () => {
       const route = await import('./route');
       return route[method](request(method), context);
     };
-    // Past the gate the handler runs on its own payload rules; only the
-    // permission 403 is under test here.
-    const passesGate = (status: number) => expect(status).not.toBe(403);
+    const passesGate = (status: number) => expect(status).toBe(200);
 
     it('allows adjust_inventory_stock alone', async () => {
       grant('adjust_inventory_stock');

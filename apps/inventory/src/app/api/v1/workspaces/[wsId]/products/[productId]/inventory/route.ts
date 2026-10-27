@@ -1,6 +1,9 @@
 import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
 import { safelyRevalidateWorkspaceStorefronts } from '@tuturuuu/inventory-core/commerce/public-storefront';
-import { canAdjustInventoryStock } from '@tuturuuu/inventory-core/permissions';
+import {
+  canAdjustInventoryStock,
+  canViewInventoryStock,
+} from '@tuturuuu/inventory-core/permissions';
 import { editPricedProduct } from '@tuturuuu/inventory-core/priced-product-edit';
 import { validateInventoryItemWorkspaceRelations } from '@tuturuuu/inventory-core/relation-validation';
 import { getStockChangeAmount } from '@tuturuuu/inventory-core/stock-change';
@@ -531,8 +534,7 @@ export async function GET(req: Request, { params }: Params) {
   const sbAdmin = await createAdminClient();
   const inventoryClient = sbAdmin.schema('private');
 
-  const { containsPermission } = permissions;
-  if (!containsPermission('view_stock_quantity')) {
+  if (!canViewInventoryStock(permissions)) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
   }
 
