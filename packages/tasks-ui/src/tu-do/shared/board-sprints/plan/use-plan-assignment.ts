@@ -5,13 +5,16 @@ import { updateWorkspaceTask } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
+import { useRef } from 'react';
 import { useBoardBroadcast } from '../../board-broadcast-context';
 import type { BoardMember } from '../../board-members-query';
 import {
+  applyOptimisticTaskPatch,
   patchTaskInVisibleCaches,
-  restoreVisibleTaskCaches,
-  snapshotVisibleTaskCaches,
+  settleOptimisticTaskPatch,
 } from '../../task-cache-patches';
+
+type TaskAssignee = NonNullable<Task['assignees']>[number];
 
 /** Where a dragged or picked task comes from and goes to; null is the backlog. */
 export interface PlanMove {
@@ -45,22 +48,23 @@ export function usePlanAssignment({
   const queryClient = useQueryClient();
   const broadcast = useBoardBroadcast();
 
+  // The latest move per task; an older failure must not undo a newer move.
+  const latestMutationByTask = useRef(new Map<string, string>());
+
   const mutation = useMutation({
     mutationFn: ({
       assigneeIds,
       taskId,
     }: {
       assigneeIds: string[];
+      previousAssignees: TaskAssignee[];
       taskId: string;
     }) => updateWorkspaceTask(wsId, taskId, { assignee_ids: assigneeIds }),
-    onMutate: async ({ assigneeIds, taskId }) => {
-      const snapshot = snapshotVisibleTaskCaches(queryClient, boardId, [
-        taskId,
-      ]);
-      patchTaskInVisibleCaches({
+    onMutate: ({ assigneeIds, taskId }) => {
+      const mutationId = applyOptimisticTaskPatch({
         queryClient,
         boardId,
-        taskId,
+        taskIds: [taskId],
         updater: (task) => ({
           ...task,
           assignees: assigneeIds.flatMap((id) => {
@@ -79,16 +83,38 @@ export function usePlanAssignment({
           }),
         }),
       });
-      return { snapshot };
+      latestMutationByTask.current.set(taskId, mutationId);
+      return { mutationId };
     },
-    onError: (_error, _variables, context) => {
-      if (context?.snapshot) {
-        restoreVisibleTaskCaches(queryClient, context.snapshot);
+    onError: (_error, { previousAssignees, taskId }, context) => {
+      // Roll back only this task's owners, and only if no newer move replaced them.
+      if (
+        context &&
+        latestMutationByTask.current.get(taskId) === context.mutationId
+      ) {
+        patchTaskInVisibleCaches({
+          queryClient,
+          boardId,
+          taskId,
+          updater: (task) => ({ ...task, assignees: previousAssignees }),
+        });
       }
       toast.error(t('assign_failed'));
     },
     onSuccess: (_data, { taskId }) => {
       broadcast?.('task:relations-changed', { taskId });
+    },
+    onSettled: (_data, _error, { taskId }, context) => {
+      if (!context) return;
+      settleOptimisticTaskPatch({
+        queryClient,
+        boardId,
+        taskIds: [taskId],
+        mutationId: context.mutationId,
+      });
+      if (latestMutationByTask.current.get(taskId) === context.mutationId) {
+        latestMutationByTask.current.delete(taskId);
+      }
     },
   });
 
@@ -99,7 +125,11 @@ export function usePlanAssignment({
       next.length === current.length &&
       next.every((id) => current.includes(id));
     if (unchanged) return;
-    mutation.mutate({ assigneeIds: next, taskId: task.id });
+    mutation.mutate({
+      assigneeIds: next,
+      previousAssignees: task.assignees ?? [],
+      taskId: task.id,
+    });
   };
 
   return { move, isPending: mutation.isPending };
