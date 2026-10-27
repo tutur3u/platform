@@ -521,7 +521,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                             context,
                             lists: _timelineOpenLists(sortedLists),
                             state: state,
-                            pageSizeHint: _timelinePageSize,
+                            pageSizeHint: taskTimelinePageSize,
                           );
                         },
                         onTaskTap: (task) =>

@@ -266,8 +266,16 @@ localization changes.
   centre grow upward, so their items are stored bottom-up. Keep rows lazy
   (`SliverList.builder` with per-row card segments) rather than building a
   day's card as one widget. Date-placed views must load every page of the
-  lists they summarize (`task_board_detail_page_timeline_loading.dart`) and
-  must not state that a day is empty while pages remain. Test fixtures should
+  lists they summarize (`task_board_detail_page_timeline_loading.dart`,
+  policy in `utils/task_board_timeline_paging.dart`: 100 per page, two lists
+  at a time, a 2,000-task board budget) and must not state that a day is
+  empty while pages remain. Do not page from `setView` or a scroll trigger:
+  they bypass the budget and cap, and a near-bottom trigger made the
+  all-pages tests pass without the scheduler. Prove such a test by disabling
+  the scheduler and watching it fail. `_emitListTasksPage` processes only the
+  arriving page (its descriptions and its list); keep it that way.
+  `moveTask` checks for a running mutation before bumping
+  `_loadRequestToken`; a rejected move must not orphan in-flight list reads. Test fixtures should
   serve tasks only through `getBoardTasksForList` and honour `limit` and
   `offset`; board-detail tasks hide paging bugs.
 

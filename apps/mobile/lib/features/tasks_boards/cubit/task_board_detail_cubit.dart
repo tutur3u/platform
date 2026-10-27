@@ -20,6 +20,7 @@ import 'package:mobile/features/tasks_boards/data/task_broadcast_client.dart';
 part 'task_board_detail_state.dart';
 part 'task_board_detail_cache_merge.dart';
 part 'task_board_detail_mutation_guard.dart';
+part 'task_board_detail_page_merge.dart';
 
 class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState>
     with _TaskBoardMutationRunner {
@@ -535,8 +536,16 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState>
       return;
     }
 
-    final pageSize =
-        state.listPageSizeById[listId] ?? _normalizePageSize(pageSizeHint);
+    // A larger hint grows the page size of later pages (the Timeline asks
+    // for 100 after the List view loaded 15); offsets count tasks, so the
+    // change is safe.
+    final storedPageSize = state.listPageSizeById[listId];
+    final hintedPageSize = _normalizePageSize(pageSizeHint);
+    final pageSize = storedPageSize == null
+        ? hintedPageSize
+        : loadMore && pageSizeHint != null && hintedPageSize > storedPageSize
+        ? hintedPageSize
+        : storedPageSize;
     final offset = loadMore ? (state.listOffsetsById[listId] ?? 0) : 0;
     final cacheKey = _listTasksCacheKey(
       wsId: wsId,
@@ -1184,8 +1193,10 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState>
 
     // Ignore list reads started before the optimistic move. A stale cached
     // revalidation can otherwise put the task back in its previous list.
-    _loadRequestToken++;
+    // Reject a concurrent move before invalidating in-flight list reads;
+    // otherwise those reads are dropped and their lists stay loading.
     _ensureNoMutationInProgress();
+    _loadRequestToken++;
     _optimisticallyMoveTaskToList(taskId: taskId, listId: listId);
 
     try {
@@ -1781,11 +1792,10 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState>
     );
   }
 
+  /// The Timeline pages its open lists itself, within a board budget and
+  /// a concurrency cap; see `taskTimelineListsToLoad`.
   void setView(TaskBoardDetailView view) {
     emit(state.copyWith(currentView: view));
-    if (view == TaskBoardDetailView.timeline) {
-      unawaited(ensureAllListsLoaded());
-    }
   }
 
   void setSearchQuery(String value) {
@@ -2692,17 +2702,17 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState>
       return false;
     }
 
-    final existing = loadMore
-        ? (state.listTasksByListId[listId] ?? const <TaskBoardTask>[])
-        : const <TaskBoardTask>[];
-    final merged = _mergeTaskPages(existing, page);
-    final baseTasksByList = Map<String, List<TaskBoardTask>>.from(
-      state.listTasksByListId,
-    )..[listId] = List.unmodifiable(merged);
-    final nextTasksByList = _mergeCurrentBoardTaskSnapshots(
-      board: board,
-      tasksByList: baseTasksByList,
+    final previous = state.listTasksByListId[listId] ?? const <TaskBoardTask>[];
+    final merged = _mergeTaskPages(
+      loadMore ? previous : const <TaskBoardTask>[],
+      page,
     );
+    final pageIds = {for (final task in page) task.id};
+    final listTasks = _withBoardSnapshots(board, merged, pageIds);
+    final nextTasksByList = Map<String, List<TaskBoardTask>>.unmodifiable({
+      ...state.listTasksByListId,
+      listId: listTasks,
+    });
     final nextLoadingDone = {...state.loadingListIds}..remove(listId);
     final listHasMore = page.length >= pageSize;
     final nextHasMore = Map<String, bool>.from(state.listHasMoreById)
@@ -2733,8 +2743,9 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState>
         selectedTaskIds: sanitizedSelectedTaskIds,
         isBulkSelectMode:
             state.isBulkSelectMode && sanitizedSelectedTaskIds.isNotEmpty,
-        taskDescriptionSearchIndex: _buildTaskDescriptionSearchIndex(
-          nextBoard.tasks,
+        taskDescriptionSearchIndex: _searchIndexWithPage(
+          replaced: loadMore ? const <TaskBoardTask>[] : previous,
+          pageTasks: listTasks.where((task) => pageIds.contains(task.id)),
         ),
         listTasksByListId: nextTasksByList,
         loadedListIds: nextLoaded,

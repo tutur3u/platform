@@ -30,6 +30,9 @@ class _TimelineRepository extends RowActionsRepository {
   final bool holdAfterFirstPage;
   final List<({int limit, int offset})> pages = [];
 
+  /// How many pages the List view had fetched before the Timeline opened.
+  int pagesBeforeTimeline = 0;
+
   @override
   Future<TaskBoardDetail> getTaskBoardDetail(
     String wsId,
@@ -99,6 +102,7 @@ Future<_TimelineRepository> _pumpTimeline(
     workspaceCubit: rowActionsWorkspaceCubit(),
     repository: repository,
   );
+  repository.pagesBeforeTimeline = repository.pages.length;
   BlocProvider.of<TaskBoardDetailCubit>(
     tester.element(find.byType(Scrollable).first),
   ).setView(TaskBoardDetailView.timeline);
@@ -137,20 +141,27 @@ void main() {
       expect(tester.getTopLeft(todayHeader).dy - scrollTop, lessThan(120));
     });
 
-    testWidgets('loads every page of open lists before placing today', (
+    testWidgets('loads every page without scrolling and places page five', (
       tester,
     ) async {
       final repository = await _pumpTimeline(tester, [
-        for (var i = 0; i < 260; i++)
+        for (var i = 0; i < 449; i++)
           _task('bulk-$i', 'Bulk task $i', start: 5, end: 6),
         _task('task-today', 'Due today task', end: 0),
       ]);
 
-      // The today task is the last of 261 tasks: on page one of the List
-      // view it would be missing, and Today would read as empty.
-      expect(repository.pages.last.offset, greaterThanOrEqualTo(240));
+      // No drag or fling happened: the Timeline paged on its own. The
+      // today task is task 450, on page five at 100 per page; first-page
+      // loading would leave Today empty.
+      final timelinePages = repository.pages.skip(
+        repository.pagesBeforeTimeline,
+      );
+      expect(timelinePages, isNotEmpty);
+      expect(timelinePages.every((page) => page.limit == 100), isTrue);
+      expect(repository.pages.last.offset, greaterThanOrEqualTo(400));
       expect(_key('task-timeline-row-task-today'), findsOneWidget);
       expect(_key('task-timeline-nothing-today'), findsNothing);
+      expect(_key('task-timeline-today-loading'), findsNothing);
     });
 
     testWidgets('never claims nothing today while pages remain', (

@@ -1951,10 +1951,15 @@ dragging on a 68dp-per-day grid. It applies to every device size.
   due day is before today. Days and "today" follow the user's timezone
   setting, as Calendar does, and the agenda re-anchors at midnight.
 - The agenda needs every open task, not the first page the List view starts
-  from, so the Timeline loads every page of each open list (100 tasks per
-  page, up to 2,000 tasks per list unattended; beyond that it offers Load
-  more). While pages remain it never says "Nothing scheduled today": Today
+  from, so the Timeline loads every page of each open list by itself, with
+  no scrolling needed: 100 tasks per page whichever view loaded the list
+  first, at most two lists at a time, and up to 2,000 tasks across the board
+  unattended (beyond that it offers Load more). Done and Closed lists are not
+  paged. While pages remain it never says "Nothing scheduled today": Today
   shows that tasks are still loading, or that some are not loaded yet.
+- Each arriving page is processed on its own: only its tasks' descriptions
+  are parsed for search and only its list is rebuilt, so loading a large
+  board stays linear.
 - **Week**, **Month** (the default) and **All** limit how far ahead the agenda
   lists work. Overdue work always shows. When the range hides later tasks,
   **Show later tasks** switches to All.
@@ -1970,8 +1975,12 @@ dragging on a 68dp-per-day grid. It applies to every device size.
 Regression coverage: `task_board_timeline_agenda_test.dart` (placement,
 start-only tasks, the timezone setting and next-midnight delay, ranges,
 ordering, a 20,000-task board, rebuild memoization) and
+`task_board_timeline_paging_test.dart` (two lists at a time, board budget),
+`task_board_detail_cubit_paging_test.dart` (a page re-processes only its own
+list, page size growth, a rejected move leaves loads able to finish) and
 `task_board_timeline_test.dart` (Today anchor and button, Show overdue, every
-page loaded before placing today, no empty claim while a page is pending,
+page loaded without scrolling with today's task on page five, no empty claim
+while a page is pending,
 start-only rows, range and Show later, tap to open, lazy building with 1,500
 tasks, the empty state, 320dp at 2x text, light/dark/blob renders). The
 midnight re-anchor is covered by the delay calculation, not a widget clock.

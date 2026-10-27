@@ -141,65 +141,55 @@ class _TaskBoardTimelineViewState extends State<_TaskBoardTimelineView> {
           itemBuilder: (context, index) => item(items[index]),
         );
 
-    return NotificationListener<ScrollNotification>(
-      onNotification: (notification) {
-        final metrics = notification.metrics;
-        if (notification.depth == 0 &&
-            widget.hasMoreTasks &&
-            !widget.isLoadingMoreTasks &&
-            metrics.pixels >= metrics.maxScrollExtent - 600) {
-          widget.onLoadMore();
-        }
-        return false;
-      },
-      child: CustomScrollView(
-        controller: widget.scrollController,
-        center: _todayKey,
-        physics: const AlwaysScrollableScrollPhysics(),
-        slivers: [
-          // Before the centre, slivers grow upward: index 0 sits just above
-          // today, so the overdue items are stored bottom-up.
-          SliverAppPage(
-            includeTop: false,
-            includeBottom: false,
-            sliver: list(_items.pastBottomUp),
-          ),
-          SliverAppPage(
-            key: _todayKey,
-            includeTop: false,
-            includeBottom: false,
-            sliver: list(_items.today),
-          ),
-          SliverAppPage(
-            includeTop: false,
-            sliver: SliverMainAxisGroup(
-              slivers: [
-                list(_items.after),
-                if (widget.isLoadingMoreTasks)
-                  const SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.only(top: AppSpacing.lg),
-                      child: Center(child: AppLoadingIndicator()),
-                    ),
-                  )
-                else if (widget.hasMoreTasks)
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: AppSpacing.lg),
-                      child: Center(
-                        child: AppButton.outline(
-                          key: const ValueKey('task-timeline-load-more'),
-                          onPressed: widget.onLoadMore,
-                          child: Text(context.l10n.timerHistoryLoadMore),
-                        ),
+    // No scroll-triggered paging: the page schedules every page itself
+    // (see _scheduleTimelinePages), within the board budget and concurrency.
+    return CustomScrollView(
+      controller: widget.scrollController,
+      center: _todayKey,
+      physics: const AlwaysScrollableScrollPhysics(),
+      slivers: [
+        // Before the centre, slivers grow upward: index 0 sits just above
+        // today, so the overdue items are stored bottom-up.
+        SliverAppPage(
+          includeTop: false,
+          includeBottom: false,
+          sliver: list(_items.pastBottomUp),
+        ),
+        SliverAppPage(
+          key: _todayKey,
+          includeTop: false,
+          includeBottom: false,
+          sliver: list(_items.today),
+        ),
+        SliverAppPage(
+          includeTop: false,
+          sliver: SliverMainAxisGroup(
+            slivers: [
+              list(_items.after),
+              if (widget.isLoadingMoreTasks)
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.only(top: AppSpacing.lg),
+                    child: Center(child: AppLoadingIndicator()),
+                  ),
+                )
+              else if (widget.hasMoreTasks)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: AppSpacing.lg),
+                    child: Center(
+                      child: AppButton.outline(
+                        key: const ValueKey('task-timeline-load-more'),
+                        onPressed: widget.onLoadMore,
+                        child: Text(context.l10n.timerHistoryLoadMore),
                       ),
                     ),
                   ),
-              ],
-            ),
+                ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
