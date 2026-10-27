@@ -579,6 +579,29 @@ proven by
 `apps/database/verification/topic-announcement-teacher-assignment-rollback-roundtrip.sql`.
 
 
+
+### Teacher deadline notices (schema only)
+
+Migration `20261027095000_topic_teacher_deadline_notices` prepares the GVCN
+deadline notices; no sender is wired yet, so nothing changes for users.
+
+- **Types.** `topic_due_soon` (one reminder before the 24-hour deadline,
+  `send_due_at`) and `topic_late` (one notice after it passes unsent).
+- **One email, not two.** These notices email the teacher directly
+  (`sendWorkspaceEmail`, with the email audit) at their confirmed account
+  email. `should_send_notification` answers false for their email channel,
+  so `create_notification` records only the in-app notification and never
+  queues a digest email for them. Other types are unchanged.
+- **At most one of each.** `private.topic_announcement_teacher_notices` holds
+  one receipt per announcement, kind and `send_due_at`, claimed with
+  `insert ... on conflict do nothing` before notifying. A rerun, restart or
+  overlapping run never notifies twice, deleting the notification keeps the
+  receipt, and a new `send_due_at` (the session moved) re-arms both notices.
+  Receipts are service-role only and cascade with the announcement.
+- **Rollback.** `apps/database/rollbacks/20261027095000_topic_teacher_deadline_notices.rollback.sql`,
+  proved by `apps/database/verification/topic-teacher-deadline-notices-rollback-roundtrip.sql`.
+
+Regression coverage: `apps/database/supabase/tests/topic-teacher-deadline-notices.sql`.
 ### Mobile profile image optimization
 
 Mobile avatars use a square crop; choose 512–1024 pixels per side. Banners use
