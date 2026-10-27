@@ -253,13 +253,24 @@ export async function PUT(request: Request, { params }: Params) {
     }
   }
 
-  const { data, error } = await tutoringSessionsClient
+  let updateQuery = tutoringSessionsClient
     .from('workspace_tutoring_sessions')
     .update(updates)
     .eq('id', id)
-    .eq('ws_id', normalizedWsId)
-    .select('id')
-    .maybeSingle();
+    .eq('ws_id', normalizedWsId);
+  // The weak-content verdict above rests on the reason and source feedback we
+  // read; pin both so a concurrent change cannot slip content past the check.
+  if (changesContent) {
+    updateQuery = updateQuery.eq('reason_type', currentSession.reason_type);
+    updateQuery =
+      currentSession.source_feedback_id === null
+        ? updateQuery.is('source_feedback_id', null)
+        : updateQuery.eq(
+            'source_feedback_id',
+            currentSession.source_feedback_id
+          );
+  }
+  const { data, error } = await updateQuery.select('id').maybeSingle();
 
   if (error) {
     console.error('Failed to update tutoring session', error);
@@ -270,6 +281,12 @@ export async function PUT(request: Request, { params }: Params) {
   }
 
   if (!data) {
+    if (changesContent) {
+      return NextResponse.json(
+        { message: 'Session changed before the update' },
+        { status: 409 }
+      );
+    }
     return NextResponse.json({ message: 'Session not found' }, { status: 404 });
   }
 
@@ -321,7 +338,7 @@ export async function DELETE(request: Request, { params }: Params) {
   const tutoringSessionsClient = sbAdmin.schema('private');
   const sessionQuery = tutoringSessionsClient
     .from('workspace_tutoring_sessions')
-    .select('id,attendance_status')
+    .select('id,attendance_status,reason_type,source_feedback_id')
     .eq('id', id)
     .eq('ws_id', normalizedWsId);
   const { data: session, error: lookupError } =
@@ -341,6 +358,18 @@ export async function DELETE(request: Request, { params }: Params) {
   if (!session) {
     return NextResponse.json({ message: 'Session not found' }, { status: 404 });
   }
+  // Deleting weak-support content follows the same class-manager restriction as
+  // editing it.
+  const deniedWeakContent = await denyWeakContentEdit({
+    permissions,
+    sbAdmin,
+    touchesWeakContent: isWeakSupportSession({
+      reasonType: session.reason_type,
+      sourceFeedbackId: session.source_feedback_id,
+    }),
+    wsId: normalizedWsId,
+  });
+  if (deniedWeakContent) return deniedWeakContent;
   if (
     session.attendance_status !== 'PENDING' &&
     session.attendance_status !== 'CANCELLED'

@@ -2,7 +2,11 @@ import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { GET } from './route';
 
-const state = vi.hoisted(() => ({ list: vi.fn(), normalize: vi.fn() }));
+const state = vi.hoisted(() => ({
+  db: {} as Record<string, unknown>,
+  list: vi.fn(),
+  normalize: vi.fn(),
+}));
 vi.mock('@tuturuuu/education-core/todo/service', () => ({
   listEducationTodo: state.list,
 }));
@@ -10,7 +14,7 @@ vi.mock('@tuturuuu/education-core/tulearn/access', () => ({
   tulearnAccessErrorResponse: () => null,
 }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
-  createAdminClient: async () => 'admin',
+  createAdminClient: async () => state.db,
 }));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   normalizeWorkspaceId: state.normalize,
@@ -38,6 +42,7 @@ vi.mock('@/lib/api-auth', () => ({
 describe('teach personal to do route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    state.db = {};
     state.normalize.mockResolvedValue('verified-workspace');
     state.list.mockResolvedValue({ data: [], count: 0 });
   });
@@ -49,7 +54,8 @@ describe('teach personal to do route', () => {
       { params: Promise.resolve({ wsId: 'alias' }) }
     );
     expect(state.list).toHaveBeenCalledWith({
-      db: 'admin',
+      db: state.db,
+      isTutoringEnabled: expect.any(Function),
       userId: 'signed-in-actor',
       wsId: 'verified-workspace',
       app: 'teach',
@@ -58,6 +64,32 @@ describe('teach personal to do route', () => {
       pageSize: 20,
     });
     expect(response.headers.get('Cache-Control')).toBe('private, no-store');
+  });
+  it('resolves the tutoring toggle from the workspace config of the verified workspace', async () => {
+    await GET(
+      new NextRequest('https://example.test/api/todo?kind=tutoring') as never,
+      { params: Promise.resolve({ wsId: 'alias' }) }
+    );
+    const { isTutoringEnabled } = state.list.mock.calls[0]?.[0] as {
+      isTutoringEnabled: (wsId: string) => Promise<boolean>;
+    };
+    const reads: [string, unknown][] = [];
+    const builder = {
+      eq: (column: string, value: unknown) => {
+        reads.push([column, value]);
+        return builder;
+      },
+      maybeSingle: async () => ({
+        data: { value: 'false', personal: false },
+        error: null,
+      }),
+      select: () => builder,
+    };
+    state.db.from = () => builder;
+
+    expect(await isTutoringEnabled('verified-workspace')).toBe(false);
+    expect(reads).toContainEqual(['ws_id', 'verified-workspace']);
+    expect(reads).toContainEqual(['id', 'ENABLE_TUTORING']);
   });
   it.each(['studentId=another-student', 'page=0', 'pageSize=101', 'kind=all'])(
     'rejects unsafe or invalid query %s before reading data',

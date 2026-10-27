@@ -1,4 +1,4 @@
-import { quotePostgrestValue } from '@tuturuuu/utils/postgrest-filter';
+import { buildPostgrestIlikeOrFilter } from '@tuturuuu/utils/postgrest-filter';
 import { NextResponse } from 'next/server';
 import type { TopicAnnouncementsSupabaseClient } from './read-helpers';
 
@@ -96,12 +96,9 @@ export function buildTopicAnnouncementTeacherFilter(
   return filters.join(',');
 }
 
-/** PostgREST `or` filter body for the list search box. */
+/** PostgREST `or` filter body for the list search box (literal substring). */
 export function buildTopicAnnouncementSearchFilter(q: string) {
-  const pattern = quotePostgrestValue(`%${q}%`);
-  return ['title', 'topic', 'class_label']
-    .map((column) => `${column}.ilike.${pattern}`)
-    .join(',');
+  return buildPostgrestIlikeOrFilter(['title', 'topic', 'class_label'], q);
 }
 
 /**

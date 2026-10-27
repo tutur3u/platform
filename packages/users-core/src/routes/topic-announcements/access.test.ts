@@ -182,8 +182,12 @@ describe('teacher assignment helpers', () => {
     expect(
       buildTopicAnnouncementListOrFilter({ q: 'a"b\\c,(d)', scope: teacher })
     ).toBe(
-      'and(or(teacher_workspace_user_id.eq.wu-1,and(teacher_workspace_user_id.is.null,group_id.in.(group-a))),or(title.ilike."%a\\"b\\\\c,(d)%",topic.ilike."%a\\"b\\\\c,(d)%",class_label.ilike."%a\\"b\\\\c,(d)%"))'
+      'and(or(teacher_workspace_user_id.eq.wu-1,and(teacher_workspace_user_id.is.null,group_id.in.(group-a))),or(title.ilike."%a\\"b\\\\\\\\c,(d)%",topic.ilike."%a\\"b\\\\\\\\c,(d)%",class_label.ilike."%a\\"b\\\\\\\\c,(d)%"))'
     );
+    // LIKE wildcards in the box match literally, like the other searches.
+    expect(
+      buildTopicAnnouncementListOrFilter({ q: '50%_off', scope: teacher })
+    ).toContain('title.ilike."%50\\\\%\\\\_off%"');
     expect(buildTopicAnnouncementListOrFilter({ q: '', scope: teacher })).toBe(
       'teacher_workspace_user_id.eq.wu-1,and(teacher_workspace_user_id.is.null,group_id.in.(group-a))'
     );

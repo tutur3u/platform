@@ -80,9 +80,16 @@ and, when the module is off, every tutoring route (sessions, queue, policy,
 teachers, export, mark, message preview, weak-support end) answers `404` like an
 unknown workspace, before any tutoring data is read. A missing value follows the
 UI default (on for shared workspaces, off for personal ones), the value is
-trimmed and case-insensitive, and an unreadable toggle fails closed. Coverage:
+trimmed and case-insensitive, and an unreadable toggle fails closed. The
+Teach and Learn to-do lists (`teach/todo`, `tulearn/todo`) read the same toggle
+through `@tuturuuu/education-core/todo/tutoring-module`: with `kind=tutoring`
+they return an empty list while the module is off, so session content is not
+served there either. Coverage:
 [`module-gate.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/tutoring/module-gate.test.ts),
-[`module-gate-routes.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/tutoring/module-gate-routes.test.ts).
+[`module-gate-routes.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/tutoring/module-gate-routes.test.ts)
+(which also asserts every tutoring route handler goes through
+`resolveTutoringRouteAccess`), and
+[`todo/service.test.ts`](https://github.com/tutur3u/platform/blob/main/packages/education-core/src/todo/service.test.ts).
 
 In the UI, a disabled workspace renders an enable screen rather than a 404. Members with
 `manage_workspace_settings` get an **Enable tutoring** button that writes
@@ -250,12 +257,21 @@ off by default):
 - **Sessions are weak-support content too.** A tutoring session counts as weak
   content when its `reasonType` is `WEAK_SUPPORT` or it has a
   `sourceFeedbackId` (it came from a flagged feedback). With the policy on,
-  `POST /tutoring/sessions` for such a session, and
+  `POST /tutoring/sessions` for such a session,
   `PUT /tutoring/sessions/{id}` that changes its `content`, `reasonDetail` or
-  `reasonType` (or turns a session into weak support), also need
-  `update_user_groups` and otherwise answer `403` with
-  `TUTORING_CONTENT_RESTRICTED`. `ABSENT_RECOVERY` content, and attendance or
-  schedule changes on weak-support sessions, are unaffected.
+  `reasonType` (or turns a session into weak support), and
+  `DELETE /tutoring/sessions/{id}` also need `update_user_groups` and
+  otherwise answer `403` with `TUTORING_CONTENT_RESTRICTED`. The Contacts UI
+  shows a specific "only class managers can change weak-support content"
+  message for that code instead of the generic failure toast. A content edit
+  is applied only while the session still has the reason and source feedback
+  the check read; if they changed in between, the write answers `409`.
+  A queue row that has both an absence and flagged feedback creates an
+  `ABSENT_RECOVERY` session with a `sourceFeedbackId`. Because of that
+  `sourceFeedbackId` it counts as weak content and is restricted like a
+  `WEAK_SUPPORT` session. Plain `ABSENT_RECOVERY` content (no
+  `sourceFeedbackId`), and attendance or schedule changes on weak-support
+  sessions, are unaffected.
 - **End tutoring** (Thoát kèm) is an explicit queue action for weak-support and
   office-review rows, confirmed in an in-app dialog. It calls
   `POST /api/v1/workspaces/{wsId}/tutoring/weak-support/end`, which clears the

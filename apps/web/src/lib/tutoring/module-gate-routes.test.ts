@@ -1,4 +1,6 @@
 // @vitest-environment node
+import { readdirSync, readFileSync } from 'node:fs';
+import { join, relative, resolve } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const wsId = '5d23287f-9094-4714-b8e0-dcce877464a0';
@@ -114,6 +116,60 @@ beforeEach(() => {
   state.configValue = null;
   state.personal = false;
   state.schemaCalls = 0;
+});
+
+const tutoringRoutesDir = resolve(
+  __dirname,
+  '../../app/api/v1/workspaces/[wsId]/tutoring'
+);
+
+function listRouteFiles(dir: string): string[] {
+  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) return listRouteFiles(path);
+    return entry.name === 'route.ts' ? [path] : [];
+  });
+}
+
+const routeFiles = listRouteFiles(tutoringRoutesDir).map((path) => ({
+  name: relative(tutoringRoutesDir, path),
+  source: readFileSync(path, 'utf8'),
+}));
+
+describe('every tutoring route is behind the ENABLE_TUTORING gate', () => {
+  it('finds the tutoring routes', () => {
+    expect(routeFiles.length).toBeGreaterThanOrEqual(9);
+  });
+
+  it.each(routeFiles)(
+    '$name never reads permissions directly',
+    ({ source }) => {
+      expect(source).not.toMatch(/\bgetPermissions\b/);
+    }
+  );
+
+  it.each(routeFiles)(
+    '$name resolves access through resolveTutoringRouteAccess',
+    ({ source }) => {
+      expect(source).toMatch(
+        /export (?:async function|const) (?:GET|POST|PUT|PATCH|DELETE)\b/
+      );
+      expect(source).toContain('resolveTutoringRouteAccess(');
+    }
+  );
+
+  it.each(
+    routeFiles.filter(({ source }) => /export async function/.test(source))
+  )('$name gates every exported handler', ({ source }) => {
+    const handlers = source
+      .split(/^export async function /m)
+      .slice(1)
+      .filter((handler) => /^(GET|POST|PUT|PATCH|DELETE)\b/.test(handler));
+
+    for (const handler of handlers) {
+      expect(handler).toContain('resolveTutoringRouteAccess(');
+    }
+  });
 });
 
 describe('ENABLE_TUTORING server gate', () => {
