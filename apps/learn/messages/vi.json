@@ -1311,7 +1311,10 @@
       "unassigned": "chưa giao",
       "unfinished": "Chưa xong",
       "unfinished_work": "Việc chưa xong",
-      "unknown_estimate": "chưa ước lượng"
+      "unknown_estimate": "chưa ước lượng",
+      "loading_tasks": "Đang tải công việc của sprint…",
+      "retry": "Thử lại",
+      "tasks_failed": "Không thể tải công việc của sprint"
     }
   },
   "ws-task-templates": {
