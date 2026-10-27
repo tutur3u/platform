@@ -53,6 +53,11 @@ export interface TutoringPolicy {
   campusByGroupId: Record<string, string>;
   /** Workspace campus labels offered to class mappings and announcement places. */
   campusOptions: string[];
+  /**
+   * Groups whose TEACHER members are tutors. These groups hold no real
+   * students, so queues skip them and teachers in them are labelled as tutors.
+   */
+  tutorGroupIds: string[];
   /** Class group id to the label of the shift rule its classes follow. */
   shiftByGroupId: Record<string, string>;
   parentMessageTemplate: string;
@@ -79,6 +84,7 @@ export const STANDARD_TUTORING_POLICY: TutoringPolicy = {
   groupExclusions: [],
   campusByGroupId: {},
   campusOptions: [],
+  tutorGroupIds: [],
   shiftByGroupId: {},
   parentMessageTemplate: DEFAULT_PARENT_MESSAGE_TEMPLATE,
 };
@@ -270,6 +276,18 @@ function isGroupLabelMap(entries: [string, unknown][], maxLength: number) {
   );
 }
 
+export const TUTORING_TUTOR_GROUP_LIMIT = 100;
+
+/** Group UUIDs, lowercased and deduplicated; null when any entry is invalid. */
+function parseTutorGroupIds(value: unknown) {
+  if (!Array.isArray(value) || value.length > TUTORING_TUTOR_GROUP_LIMIT * 2)
+    return null;
+  if (!value.every((id) => typeof id === 'string' && UUID.test(id)))
+    return null;
+  const ids = [...new Set(value.map((id: string) => id.toLowerCase()))];
+  return ids.length <= TUTORING_TUTOR_GROUP_LIMIT ? ids : null;
+}
+
 /** Strict validation is shared by settings UI and the API write boundary. */
 export function parseTutoringPolicy(value: unknown): TutoringPolicy | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
@@ -282,6 +300,7 @@ export function parseTutoringPolicy(value: unknown): TutoringPolicy | null {
     weakContentReviewDays: defaults.weakContentReviewDays,
     restrictWeakContentEditors: defaults.restrictWeakContentEditors,
     groupExclusions: defaults.groupExclusions,
+    tutorGroupIds: [],
     shiftByGroupId: {},
     ...saved,
   };
@@ -351,6 +370,8 @@ export function parseTutoringPolicy(value: unknown): TutoringPolicy | null {
     Array.isArray(candidate.shiftByGroupId)
   )
     return null;
+  const tutorGroupIds = parseTutorGroupIds(candidate.tutorGroupIds);
+  if (!tutorGroupIds) return null;
 
   const groupExclusions: TutoringGroupExclusion[] = [];
   for (const raw of candidate.groupExclusions) {
@@ -443,6 +464,7 @@ export function parseTutoringPolicy(value: unknown): TutoringPolicy | null {
       campusEntries.map(([groupId, name]) => [groupId, String(name).trim()])
     ),
     campusOptions,
+    tutorGroupIds,
     shiftByGroupId: Object.fromEntries(
       shiftEntries.map(([groupId, label]) => [groupId, String(label).trim()])
     ),
@@ -450,12 +472,18 @@ export function parseTutoringPolicy(value: unknown): TutoringPolicy | null {
   };
 }
 
-/** Match group names using the workspace's editable eligibility rules. */
+/**
+ * Match groups using the workspace's editable eligibility rules. Tutor groups
+ * hold no real students, so they are excluded whatever their name is.
+ */
 export function isTutoringGroupExcluded(
   policy: TutoringPolicy,
   groupName: string,
-  reason: 'make_up' | 'weak_support'
+  reason: 'make_up' | 'weak_support',
+  groupId?: string | null
 ) {
+  if (groupId && policy.tutorGroupIds.includes(groupId.toLowerCase()))
+    return true;
   const name = groupName.trim().toLocaleLowerCase();
   return policy.groupExclusions.some((rule) => {
     if (rule.scope !== 'all' && rule.scope !== reason) return false;

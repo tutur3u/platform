@@ -470,6 +470,35 @@ Regression coverage: `apps/web/src/lib/tutoring/teachers.test.ts`,
 teacher catalog's colocated `route.test.ts` cover workspace boundaries, teacher
 eligibility, permission denial, error handling, pagination, and session writes.
 
+### Tutor groups
+
+Tutors are usually students outside the class, so they have no title of their
+own: a tutor is a workspace user with `TEACHER` membership in a group that staff
+mark as a **tutor group**.
+
+- **Scope and default.** The `tutorGroupIds` list in the tutoring policy
+  (Contacts, Tutoring policy, Tutor groups) is workspace-wide and defaults to
+  empty. Policies saved before the setting existed read as no tutor groups, and
+  every policy field round-trips on save. Presets keep the chosen groups.
+- **Roles combine.** The teacher catalog returns `isTutor` (`TEACHER` in any
+  tutor group) and `isClassTeacher` (`TEACHER` in any other group). Both can be
+  true, so a homeroom lecturer who also tutors keeps both. No role or permission
+  is added and tutor-group teachers stay valid tutoring teachers.
+- **Picker.** The tutoring teacher picker shows **Tutor** and **Teacher** labels
+  beside the name, both when both apply, and a **Tutors only** toggle that
+  filters the catalog with `tutorsOnly=true`. Nothing else about the picker
+  changes.
+- **Queues.** Tutor groups have no real students, so they are excluded from the
+  make-up and weak-support queues by group id, in addition to the name-based
+  exclusion rules.
+- **Setup is configuration.** Staff create a group such as "Giáo viên kèm", add
+  each tutor as `TEACHER`, and select it in the policy. Nothing is seeded.
+
+Regression coverage: `tutoring-policy.test.ts` (parser, round trip, exclusion by
+id), the policy, queue and teacher catalog `route.test.ts` files, `teachers.test.ts`
+(tutor-only, class-only, both), and the Contacts `tutoring-teacher-picker.test.tsx`
+and `tutoring-tutor-groups.test.tsx`.
+
 
 ### Queue handoff and missed-date defaults
 

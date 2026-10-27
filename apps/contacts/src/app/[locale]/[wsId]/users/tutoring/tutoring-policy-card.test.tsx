@@ -30,7 +30,7 @@ describe('tutoring section settings', () => {
     );
     expect(screen.queryAllByRole('spinbutton')).toHaveLength(0);
     expect(screen.getAllByRole('button', { name: 'policy_edit' })).toHaveLength(
-      7
+      8
     );
     fireEvent.click(screen.getAllByRole('button', { name: 'policy_edit' })[1]!);
     expect(screen.getAllByRole('spinbutton')).toHaveLength(7);

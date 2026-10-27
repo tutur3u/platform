@@ -289,6 +289,77 @@ describe('Easy Center tutoring shifts', () => {
   });
 });
 
+describe('tutor groups', () => {
+  const tutorGroupId = '22222222-2222-4222-8222-222222222222';
+  const { tutorGroupIds: _omitted, ...legacy } = EASY_CENTER_TUTORING_POLICY;
+
+  it('parses legacy policies without the key as no tutor groups', () => {
+    expect(parseTutoringPolicy(legacy)).toEqual(EASY_CENTER_TUTORING_POLICY);
+    expect(parseTutoringPolicy(legacy)?.tutorGroupIds).toEqual([]);
+  });
+
+  it('keeps unique group UUIDs and rejects anything else', () => {
+    expect(
+      parseTutoringPolicy({
+        ...EASY_CENTER_TUTORING_POLICY,
+        tutorGroupIds: [tutorGroupId, tutorGroupId.toUpperCase()],
+      })?.tutorGroupIds
+    ).toEqual([tutorGroupId]);
+    for (const tutorGroupIds of [
+      'not-a-list',
+      ['not-a-uuid'],
+      [tutorGroupId, 7],
+      Array.from(
+        { length: 101 },
+        (_, index) =>
+          `00000000-0000-4000-8000-${String(index).padStart(12, '0')}`
+      ),
+    ])
+      expect(
+        parseTutoringPolicy({ ...EASY_CENTER_TUTORING_POLICY, tutorGroupIds })
+      ).toBeNull();
+  });
+
+  it('round trips through the stored config rows', () => {
+    const policy = {
+      ...EASY_CENTER_TUTORING_POLICY,
+      tutorGroupIds: [tutorGroupId],
+    };
+    expect(
+      readTutoringPolicyConfigRows(serializeTutoringPolicyConfigRows(policy))
+    ).toEqual(policy);
+  });
+
+  it('excludes a tutor group from every queue by id, whatever its name', () => {
+    const policy = {
+      ...STANDARD_TUTORING_POLICY,
+      tutorGroupIds: [tutorGroupId],
+    };
+    for (const reason of ['make_up', 'weak_support'] as const) {
+      expect(
+        isTutoringGroupExcluded(policy, 'English A', reason, tutorGroupId)
+      ).toBe(true);
+      expect(
+        isTutoringGroupExcluded(
+          policy,
+          'English A',
+          reason,
+          tutorGroupId.toUpperCase()
+        )
+      ).toBe(true);
+      expect(
+        isTutoringGroupExcluded(
+          policy,
+          'English A',
+          reason,
+          '33333333-3333-4333-8333-333333333333'
+        )
+      ).toBe(false);
+      expect(isTutoringGroupExcluded(policy, 'English A', reason)).toBe(false);
+    }
+  });
+});
+
 describe('tutoring policy storage', () => {
   it('round trips the full center preset under the database value limit', () => {
     const rows = serializeTutoringPolicyConfigRows(EASY_CENTER_TUTORING_POLICY);
