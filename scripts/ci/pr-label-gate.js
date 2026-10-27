@@ -80,6 +80,7 @@ const HEAVY_PR_WORKFLOWS = [
   'sso-persistence-contract.yaml',
   'storefront-cloudflare.yaml',
   'supabase-baseline.yaml',
+  'task-board-database-contract.yaml',
   'time-tracker-control-contract.yaml',
   'topic-delivery-foundation-contract.yaml',
   'track-cloudflare.yaml',

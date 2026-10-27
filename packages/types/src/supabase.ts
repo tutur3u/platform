@@ -34334,19 +34334,28 @@ export type Database = {
       };
       task_cycle_tasks: {
         Row: {
+          added_after_start: boolean;
+          carry_count: number;
           created_at: string | null;
           cycle_id: string;
+          end_decision: string | null;
           task_id: string;
         };
         ComputedFields: never;
         Insert: {
+          added_after_start?: boolean;
+          carry_count?: number;
           created_at?: string | null;
           cycle_id: string;
+          end_decision?: string | null;
           task_id: string;
         };
         Update: {
+          added_after_start?: boolean;
+          carry_count?: number;
           created_at?: string | null;
           cycle_id?: string;
+          end_decision?: string | null;
           task_id?: string;
         };
         Relationships: [
@@ -34376,14 +34385,20 @@ export type Database = {
       task_cycles: {
         Row: {
           archived: boolean | null;
+          board_id: string | null;
           created_at: string | null;
           creator_id: string;
           deleted: boolean | null;
           description: string | null;
           end_date: string | null;
+          ended_at: string | null;
+          goal: string | null;
+          goal_result: string | null;
           id: string;
           name: string;
+          sequence_number: number | null;
           start_date: string | null;
+          started_at: string | null;
           status: string | null;
           updated_at: string | null;
           ws_id: string;
@@ -34391,33 +34406,52 @@ export type Database = {
         ComputedFields: never;
         Insert: {
           archived?: boolean | null;
+          board_id?: string | null;
           created_at?: string | null;
           creator_id?: string;
           deleted?: boolean | null;
           description?: string | null;
           end_date?: string | null;
+          ended_at?: string | null;
+          goal?: string | null;
+          goal_result?: string | null;
           id?: string;
           name: string;
+          sequence_number?: number | null;
           start_date?: string | null;
+          started_at?: string | null;
           status?: string | null;
           updated_at?: string | null;
           ws_id: string;
         };
         Update: {
           archived?: boolean | null;
+          board_id?: string | null;
           created_at?: string | null;
           creator_id?: string;
           deleted?: boolean | null;
           description?: string | null;
           end_date?: string | null;
+          ended_at?: string | null;
+          goal?: string | null;
+          goal_result?: string | null;
           id?: string;
           name?: string;
+          sequence_number?: number | null;
           start_date?: string | null;
+          started_at?: string | null;
           status?: string | null;
           updated_at?: string | null;
           ws_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'task_cycles_board_id_fkey';
+            columns: ['board_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_boards';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'task_cycles_creator_id_fkey';
             columns: ['creator_id'];
@@ -36880,6 +36914,106 @@ export type Database = {
             columns: ['task_id'];
             isOneToOne: false;
             referencedRelation: 'tasks';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      task_sprint_reports: {
+        Row: {
+          added_points: number;
+          added_tasks: number;
+          backlog_tasks: number;
+          board_id: string;
+          carried_in_tasks: number;
+          carried_tasks: number;
+          committed_points: number;
+          cycle_id: string;
+          done_points: number;
+          done_tasks: number;
+          ended_at: string;
+          ended_by: string | null;
+          goal: string | null;
+          goal_result: string | null;
+          next_cycle_id: string | null;
+          people: Json;
+          total_tasks: number;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          added_points?: number;
+          added_tasks?: number;
+          backlog_tasks?: number;
+          board_id: string;
+          carried_in_tasks?: number;
+          carried_tasks?: number;
+          committed_points?: number;
+          cycle_id: string;
+          done_points?: number;
+          done_tasks?: number;
+          ended_at?: string;
+          ended_by?: string | null;
+          goal?: string | null;
+          goal_result?: string | null;
+          next_cycle_id?: string | null;
+          people?: Json;
+          total_tasks?: number;
+          ws_id: string;
+        };
+        Update: {
+          added_points?: number;
+          added_tasks?: number;
+          backlog_tasks?: number;
+          board_id?: string;
+          carried_in_tasks?: number;
+          carried_tasks?: number;
+          committed_points?: number;
+          cycle_id?: string;
+          done_points?: number;
+          done_tasks?: number;
+          ended_at?: string;
+          ended_by?: string | null;
+          goal?: string | null;
+          goal_result?: string | null;
+          next_cycle_id?: string | null;
+          people?: Json;
+          total_tasks?: number;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_sprint_reports_board_id_fkey';
+            columns: ['board_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_boards';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_sprint_reports_cycle_id_fkey';
+            columns: ['cycle_id'];
+            isOneToOne: true;
+            referencedRelation: 'task_cycles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_sprint_reports_ended_by_fkey';
+            columns: ['ended_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_sprint_reports_next_cycle_id_fkey';
+            columns: ['next_cycle_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_cycles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_sprint_reports_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
             referencedColumns: ['id'];
           },
         ];
@@ -40418,6 +40552,7 @@ export type Database = {
           id: string;
           name: string | null;
           next_task_number: number;
+          sprint_length_weeks: number | null;
           template_id: string | null;
           ticket_prefix: string | null;
           ws_id: string;
@@ -40441,6 +40576,7 @@ export type Database = {
           id?: string;
           name?: string | null;
           next_task_number?: number;
+          sprint_length_weeks?: number | null;
           template_id?: string | null;
           ticket_prefix?: string | null;
           ws_id: string;
@@ -40463,6 +40599,7 @@ export type Database = {
           id?: string;
           name?: string | null;
           next_task_number?: number;
+          sprint_length_weeks?: number | null;
           template_id?: string | null;
           ticket_prefix?: string | null;
           ws_id?: string;
@@ -49755,6 +49892,21 @@ export type Database = {
         Args: { p_now: string; p_ws_id: string };
         Returns: undefined;
       };
+      end_board_sprint: {
+        Args: {
+          p_actor_id?: string;
+          p_cycle_id: string;
+          p_decisions?: Json;
+          p_goal_result?: string;
+        };
+        Returns: Database['public']['Tables']['task_sprint_reports']['Row'];
+        SetofOptions: {
+          from: '*';
+          to: 'task_sprint_reports';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       ensure_discord_guild_member_identity_index: {
         Args: Record<PropertyKey, never>;
         Returns: boolean;
@@ -52398,6 +52550,14 @@ export type Database = {
         };
         Returns: Json;
       };
+      move_tasks_to_board_sprint: {
+        Args: {
+          p_board_id: string;
+          p_cycle_id?: string;
+          p_task_ids: string[];
+        };
+        Returns: number;
+      };
       normalize_task_sort_keys: {
         Args: Record<PropertyKey, never>;
         Returns: undefined;
@@ -52826,6 +52986,16 @@ export type Database = {
           relevance: number;
         }[];
       };
+      set_board_sprint_length: {
+        Args: { p_actor_id?: string; p_board_id: string; p_weeks: number };
+        Returns: Database['public']['Tables']['task_cycles']['Row'];
+        SetofOptions: {
+          from: '*';
+          to: 'task_cycles';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       set_default_break_type: {
         Args: { p_target_id: string; p_ws_id: string };
         Returns: {
@@ -53059,6 +53229,16 @@ export type Database = {
           p_ws_id: string;
         };
         Returns: Json;
+      };
+      start_board_sprint: {
+        Args: { p_actor_id?: string; p_cycle_id: string };
+        Returns: Database['public']['Tables']['task_cycles']['Row'];
+        SetofOptions: {
+          from: '*';
+          to: 'task_cycles';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
       };
       strict_payload_field_byte_limit: {
         Args: { _column_name: string; _table_name: string };
