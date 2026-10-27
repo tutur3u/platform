@@ -14,6 +14,11 @@
  * are injected by the caller.
  */
 
+import {
+  isServiceOnlyWorkspaceStorageRoot,
+  normalizeWorkspaceStorageRoot,
+} from './workspace-storage-roots';
+
 export type WorkspaceStorageOperation =
   | 'select'
   | 'insert'
@@ -51,15 +56,6 @@ export interface WorkspaceStorageAccessContext {
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/** Roots that never fall back to Drive permissions (lower-cased). */
-const SERVICE_ONLY_ROOTS = new Set([
-  'external-apps',
-  'ai agent imports',
-  'recordings',
-  'topic-announcements',
-  '.tuturuuu',
-]);
-
 function decodeFully(value: string): string {
   let current = value;
   for (let pass = 0; pass < 5; pass += 1) {
@@ -89,11 +85,11 @@ function classifyLiteral(name: string): WorkspaceStoragePathClass | null {
   }
 
   // Root-level files (`<wsId>/<file>`) are Drive objects.
-  const root = depth > 2 ? parts[1]!.toLowerCase() : null;
+  const root = depth > 2 ? normalizeWorkspaceStorageRoot(parts[1]!) : null;
 
   if (
-    (root && SERVICE_ONLY_ROOTS.has(root)) ||
-    (root === 'mira' && parts[2]?.toLowerCase() === 'images' && depth >= 4)
+    root !== null &&
+    isServiceOnlyWorkspaceStorageRoot(root, depth >= 4 ? parts[2] : undefined)
   ) {
     return { kind: 'private', wsId };
   }

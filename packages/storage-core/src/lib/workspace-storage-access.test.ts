@@ -241,3 +241,47 @@ describe('resolveWorkspaceStorageAccess edge cases', () => {
     expect(getAiChatCreatorId).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('private root normalization matches literal RLS segments', () => {
+  it.each(
+    [
+      'CHAT/x',
+      'Chats/x',
+      'External-Apps/x',
+      'ai agent imports/x',
+      'Mira/Images/x',
+      'RECORDINGS/x',
+      '.TUTURUUU/x',
+      'Topic-Announcements/x',
+    ].flatMap((path) => [path, `${path}/nested/file.pdf`])
+  )('classifies %s as private', (path) => {
+    expect(classifyWorkspaceStoragePath(`${WS}/${path}`)).toEqual({
+      kind: 'private',
+      wsId: WS,
+    });
+    expect(classifyWorkspaceStoragePath(`/${WS}/${path}`)).toBeNull();
+    expect(classifyWorkspaceStoragePath(`${WS}//${path}`)).toBeNull();
+  });
+
+  it.each([
+    'chatter/x',
+    'recordings-public/x',
+    'external-apps-backup/x',
+    '.tuturuuu-public/x',
+    'topic-announcements-public/x',
+    'AI  Agent Imports/x',
+    'AI Agent Imports /x',
+    ' AI Agent Imports/x',
+    'Mira/ Images/x',
+    'Mira/Images-public/x',
+    'documents/CHAT/x',
+    'Mira/Images',
+    'CHAT',
+    'CHAT\\x',
+  ])('preserves the literal Drive object %s', (path) => {
+    expect(classifyWorkspaceStoragePath(`${WS}/${path}`)).toEqual({
+      kind: 'drive',
+      wsId: WS,
+    });
+  });
+});
