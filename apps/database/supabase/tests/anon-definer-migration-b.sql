@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(108);
+select plan(122);
 
 create function pg_temp.adb_id(n integer) returns uuid
 language sql immutable
@@ -21,6 +21,29 @@ as $$
     where p.oid = p_target and acl.grantee = 0 and acl.privilege_type = 'EXECUTE'
   )
 $$;
+
+-- Signed-in/service expectations transferred from A's catalog snapshot.
+create temporary table adb_execute_expected(signature text primary key) on commit drop;
+insert into adb_execute_expected values
+  ('public.get_workspace_overview(text,text,text,text,text,text,text,integer,integer)'),
+  ('public.get_recent_audit_logs(integer)'),
+  ('public.get_power_users(integer)'),
+  ('public.deduct_ai_credits(uuid,text,integer,integer,integer,text,uuid,uuid,jsonb)'),
+  ('public.deduct_ai_credits(uuid,text,integer,integer,integer,text,uuid,uuid,jsonb,uuid,integer,integer)'),
+  ('public.get_or_create_credit_balance(uuid)'),
+  ('public.get_or_create_credit_balance(uuid,uuid)'),
+  ('public.get_ai_credit_usage_summary(uuid,timestamptz)'),
+  ('public.get_ai_credit_usage_summary(uuid,timestamptz,uuid)'),
+  ('public.admin_list_ai_credit_transactions(integer,integer,uuid,uuid,text,text,text,text,timestamptz,timestamptz)'),
+  ('public.cleanup_role_inconsistencies()'),
+  ('public.get_or_create_notification_batch(uuid,uuid,text,integer)'),
+  ('public.get_or_create_notification_batch(uuid,uuid,text,integer,text)'),
+  ('public.normalize_task_sort_keys()');
+select ok(to_regprocedure(signature) is not null
+  and not has_function_privilege('authenticated', to_regprocedure(signature), 'execute')
+  and has_function_privilege('service_role', to_regprocedure(signature), 'execute'),
+  'reviewed B service_role-only expectation: ' || signature)
+from adb_execute_expected order by signature;
 
 -- Older overloads are shadowed by newer ones with defaults, so a call by name
 -- raises 42725. Rename them inside this rolled-back transaction so each body
