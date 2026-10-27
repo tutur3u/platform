@@ -227,7 +227,11 @@ test('PR label admission separates concurrency groups without changing cancellat
   const admitted = pr([{ name: 'bug' }, { name: 'ready-for-ci' }]);
   assert.equal(admitted.cancel, true);
   assert.ok(admitted.group.endsWith('-latest'));
-  for (const labels of [[], [{ name: 'bug' }], [{ name: 'not-ready-for-ci' }]]) {
+  for (const labels of [
+    [],
+    [{ name: 'bug' }],
+    [{ name: 'not-ready-for-ci' }],
+  ]) {
     const unadmitted = pr(labels);
     assert.equal(unadmitted.cancel, true);
     assert.equal(unadmitted.group, `${admitted.group}-unadmitted`);
