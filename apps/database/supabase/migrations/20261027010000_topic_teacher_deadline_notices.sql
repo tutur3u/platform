@@ -82,8 +82,9 @@ begin
 end;
 $$;
 
--- Same body as 20251111080749 (plus the 20261024023000 search_path and
--- grants), with one rule first: the deadline notice types never use the
+-- Same body as 20251111080749, the 20261024023000 grants and the
+-- 20261024025000 pinned search path (pg_catalog, pg_temp; every name in the
+-- body is schema-qualified), with one rule first: the deadline notice types never use the
 -- notification email channel, because their sender emails directly.
 create or replace function public.should_send_notification(
   p_user_id uuid,
@@ -95,7 +96,7 @@ create or replace function public.should_send_notification(
 returns boolean
 language plpgsql
 security definer
-set search_path = ''
+set search_path = pg_catalog, pg_temp
 as $$
 declare
   v_preference boolean;

@@ -38,10 +38,10 @@ select is(
     gen_random_uuid(), 'topic_late', 'email', 'workspace', gen_random_uuid()),
   true, 'rollback removes the deadline email rule');
 select ok(
-  (select prosecdef and proconfig @> array['search_path=""']
+  (select prosecdef and proconfig @> array['search_path=pg_catalog, pg_temp']
     from pg_proc
     where oid = 'public.should_send_notification(uuid, text, text, public.notification_scope, uuid)'::regprocedure),
-  'should_send_notification keeps security definer and an empty search_path'
+  'should_send_notification keeps security definer and the pinned pg_catalog, pg_temp search_path'
 );
 select ok(
   not has_function_privilege('authenticated',

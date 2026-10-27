@@ -115,10 +115,10 @@ select is(
     'workspace', '7a5d0000-0000-4000-8000-000000000011'),
   true, 'other types keep their email default');
 select ok(
-  (select prosecdef and proconfig @> array['search_path=""']
+  (select prosecdef and proconfig @> array['search_path=pg_catalog, pg_temp']
     from pg_proc
     where oid = 'public.should_send_notification(uuid, text, text, public.notification_scope, uuid)'::regprocedure),
-  'should_send_notification keeps security definer and an empty search_path'
+  'should_send_notification keeps security definer and the pinned pg_catalog, pg_temp search_path'
 );
 select ok(
   not has_function_privilege('authenticated',

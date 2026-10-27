@@ -24,7 +24,7 @@ create or replace function public.should_send_notification(
 returns boolean
 language plpgsql
 security definer
-set search_path = ''
+set search_path = pg_catalog, pg_temp
 as $$
 declare
   v_preference boolean;
