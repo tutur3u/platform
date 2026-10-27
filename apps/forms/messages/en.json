@@ -9085,7 +9085,7 @@
       "sent_backlog": "Sent back to the backlog",
       "summary_title": "{name} summary",
       "tasks_done": "Tasks done",
-      "tasks_of": "{done} / {total} tasks",
+      "tasks_of": "{done} / {total, plural, one {# task} other {# tasks}}",
       "tasks_open": "{count, plural, one {# task open} other {# tasks open}}",
       "to_backlog": "Backlog",
       "unassigned": "unassigned",
