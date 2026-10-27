@@ -234,73 +234,68 @@ Topic Announcements live under Users and are gated by the workspace secret `ENAB
 - User group and course storage uploads are quota-sensitive and must use the server-mediated `uploadWorkspaceUserGroupStorageFile` / group storage multipart route. Do not mint signed upload URLs from this route because the app server cannot verify the final object size after a direct provider upload.
 - Attachment rows keep workspace, announcement, storage path, content type, and size metadata. Email delivery downloads the stored files and switches to raw MIME only when attachments exist; regular no-attachment messages should keep the standard SES `SendEmailCommand` path.
 
-### Teacher schedule import
+### Monthly GVNN schedule
 
-Supervisors can load a monthly teacher schedule spreadsheet on the import page
-instead of retyping it. Scope: the contacts app import page and
-`POST /api/v1/workspaces/{wsId}/topic-announcements/import`. **Gate:** only
-with `ENABLE_TOPIC_TEACHER_ASSIGNMENTS=true` (see "Rollout gate" below). With
-it off, the import page and API are the pre-feature ones: the original import
-panel, a topic required on every row, unparseable times stored as empty, no
-teacher ids and no deadline. Default with the flag on: a sheet
-is treated as a teacher schedule only when its header has `TIME`, a `DATE` or
-`DAY` column, and a `TEACHER-CLASS`, `AM/PM` or `TEACHER` column; every other
-sheet keeps the generic announcement template behavior.
+Supervisors enter each month's foreign-teacher (GVNN) schedule directly in the
+system; there is no spreadsheet import. Scope: the contacts app
+**Topic announcements > GVNN schedule** tab and
+`GET`/`PUT /api/v1/workspaces/{wsId}/topic-announcements/schedule` plus
+`POST .../schedule/clone`. **Gate:** supervisor scope (`manage_users`) and only
+with `ENABLE_TOPIC_TEACHER_ASSIGNMENTS=true`; with it off the tab is hidden and
+every schedule route returns `404`, so live workspaces keep the pre-feature
+module unchanged.
 
-- **Columns.** The header row may sit below title rows (the first 20 rows are
-  scanned). Headers are matched case- and accent-insensitively, so English and
-  Vietnamese variants work: `DAY`, `DATE`, `TIME`, `AM/PM`, `END TIME`,
-  `TEACHER-CLASS`, `CLASS`, `PLACE`/campus, `ROOM`, `TEACHER` (the Vietnamese
-  teacher in charge), foreign teacher name, `EMAIL`, `TOPIC`, `TITLE`.
-- **Merged cells.** Merged ranges are filled from the sheet metadata, and
-  `DAY`/`DATE` are also filled down from the row above, so one merged date
-  cell covers every session of that day. Blank separator rows are skipped.
-- **Teacher-class.** A combined cell is split on the first spaced `-`, `/` or
-  `|` (else the first bare one) into foreign teacher name and class. A cell
-  that cannot be split stays as the class and the row asks for a contact.
-- **Dates and times.** Dates accept Excel date serials, `YYYY-MM-DD`, and
-  day-first `D/M/YYYY` (the current year is assumed when it is omitted).
-  `TIME` and `AM/PM` are joined into 24-hour `HH:MM`; `5:30 PM`, `5.30`,
-  `5h30`, Excel time fractions and `sáng`/`chiều` markers are accepted.
-- **Default duration.** Without an `END TIME` column, end time is start time
-  plus the session length, 30 minutes by default. Operators can change the
-  length in the preview and apply it to every row. Sessions that would end
-  after midnight are row errors.
-- **Matching.** Each teacher name is looked up with the server-side workspace
-  user search (the same search as the composer's teacher picker), so any user
-  in a large workspace can match; candidates are then matched on full name,
-  display name or email, exact match first, then accent-insensitive.
-  Importing waits for the lookups to finish. A foreign teacher without an email is matched
-  against existing contacts by name. No match or more than one match is a row
-  error; the import never guesses.
-- **Row errors.** Unmatched or ambiguous teacher, unknown or ambiguous contact,
-  missing or invalid date, and missing or invalid time are shown per row in the
-  editable table. Operators fix the cell or remove the row; rows with errors are
-  never submitted.
-- **Drafts.** Imported rows are always created as drafts in one
-  `topic_announcement_batches` batch. A row without a topic is allowed and gets
-  a title from its class, date and start time; create-and-send stays disabled
-  until every row has a topic.
-- **Server checks.** The import API accepts an optional
-  `teacherWorkspaceUserId` per row and returns `400` with the offending row
-  numbers when any id is not a workspace user of the same workspace, before
-  anything is written (the database trigger stays as a backstop). That check is
-  workspace membership only: any workspace user can be the teacher in charge.
-  Invalid start or end times are reported as row errors instead of being
-  dropped.
-- **Limits.** Workbooks over 5 MB are refused before parsing, and merged
-  ranges are clamped to the sheet's data. Import rows have the same length
-  limits as creating one announcement (title 300, topic 20,000, labels 500)
-  regardless of the flag; an over-length cell is a row error for that row
-  (and flagged in the teacher import preview), not a rejected import.
-- **Deadline.** With the flag on, the import stores `send_due_at` from each
-  row's normalized date and start time in the workspace timezone.
+- **Session.** A session is a topic-less draft announcement with
+  `source_type = 'schedule'`: class (`group_id` and its name), date, start and
+  end time, room, campus, the GVCN as `teacher_workspace_user_id`, and the GVNN
+  as its one recipient contact. It also stores the 24-hour `send_due_at`
+  deadline described below.
+- **Duration.** A GVNN period defaults to **30 minutes** (end = start + 30); the
+  supervisor can change it per session (5 to 240 minutes, ending before
+  midnight). The duration is stored per session through its end time.
+- **GVCN (homeroom teacher).** Assigned by the server, never by the client: the
+  class's `TEACHER` member in `workspace_user_groups_users`. With several
+  teachers the earliest assigned (membership `created_at`, then id) is used;
+  every teacher of the class still has topic access through the group rule.
+  A class with no teacher is saved without a GVCN and shown as "No homeroom
+  teacher". Editing a session within the same class keeps its assigned
+  teacher; moving it to another class assigns that class's GVCN.
+- **GVNN.** Data only, no role: any active contact tagged `GVNN`
+  (case-insensitive) is offered in the picker. Sessions can be saved without a
+  GVNN and show "Needs GVNN"; the editor shows a count badge, a filter and a
+  per-class list with jump-to-session for the month. Classes later marked as
+  not needing a GVNN are excluded from that list.
+- **Clone from the previous month.** Each session maps to the **same nth
+  weekday** of the target month (the 2nd Tuesday stays the 2nd Tuesday), which
+  keeps a class's two or three monthly GVNN sessions in the same weeks; filling
+  every matching weekday would give four or five. A 5th weekday the target
+  month lacks is shown as "not placed" and skipped, never moved. There is no
+  holiday calendar. The clone copies class, time, duration, room, campus and
+  GVNN (if the contact is still active), re-resolves the GVCN, and never copies
+  topics or attachments. The supervisor sees a preview before committing.
+- **Idempotency.** A class cannot have two sessions with the same date and
+  start time. Re-cloning, committing a stale preview or retrying a save skips
+  slots that already exist instead of duplicating them. Two clones committed at
+  exactly the same moment are not protected by a database unique key.
+- **Edit and remove.** Every field can be edited per session, and saves are
+  validated as a whole before anything is written. Removing a session cancels
+  it (`status = 'cancelled'`) like any announcement, keeping its topic and
+  audit trail. Sessions already queued, processing or sent are read-only.
+  Leaving the month, the page or the tab with unsaved changes asks for
+  confirmation.
+- **Import API.** The CSV import keeps its pre-feature behavior with the flag
+  off. With it on, rows may carry `teacherWorkspaceUserId` (workspace
+  membership checked before writing) and rows without a topic become drafts.
+  Over-length cells are row errors with either setting.
 
-Regression coverage: `apps/contacts/src/app/[locale]/[wsId]/users/topic-announcements/teacher-schedule-parser.test.ts`,
-`apps/contacts/src/app/[locale]/[wsId]/users/topic-announcements/teacher-schedule-values.test.ts`, `apps/contacts/src/app/[locale]/[wsId]/users/topic-announcements/import-row-preview.test.ts`,
-`apps/contacts/src/app/[locale]/[wsId]/users/topic-announcements/teacher-schedule-import.test.tsx`,
-`apps/contacts/src/app/[locale]/[wsId]/users/topic-announcements/import/import-page-client.test.tsx`
-(pre-feature panel with the flag off),
+Regression coverage: `packages/utils/src/topic-schedule.test.ts` (nth-weekday
+mapping across month lengths, the 5th-weekday edge, no holiday skipping, GVCN
+choice), `apps/web/src/lib/topic-schedule/schedule-routes.test.ts` (GVCN
+auto-assign, idempotent save and re-clone, cross-workspace denial, locking),
+`apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/topic-announcements/supervisor-flow-flag-off.test.ts`
+(flag off: no schedule routes, nothing written),
+`apps/contacts/src/app/[locale]/[wsId]/users/topic-announcements/schedule/schedule-draft.test.ts`
+(save payload, validation, missing-GVNN reminder),
 `apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/topic-announcements/import/import-rows.test.ts`.
 
 ### Teacher-assigned topics
@@ -396,7 +391,8 @@ and the flag-off case in `send-admission.test.ts`.
   rejected with 400 instead of relying on the trigger. A blank topic outside a
   draft returns `TOPIC_REQUIRED` from update, schedule, and send.
 - **Deadline on every write path.** Create, update (when the date or start time
-  changes), and the schedule import store `send_due_at` through
+  changes), the import, and the GVNN schedule editor and clone store
+  `send_due_at` through
   `@tuturuuu/utils/topic-announcement-deadline`, using the workspace's fixed
   calendar timezone. Without a fixed timezone the deadline stays empty.
   `getTopicAnnouncementDeliveryState` derives Sent, Late, and Not sent.
@@ -422,8 +418,8 @@ and the flag-off case in `send-admission.test.ts`.
   attached, so a retried "Save & send" never attaches or emails a file twice.
 - **Teacher picker.** The teacher-in-charge picker searches workspace users on
   the server (name or email) instead of a fixed first page, so any user in a
-  large workspace can be assigned. The schedule import resolves teacher names
-  with the same search.
+  large workspace can be assigned. The GVNN schedule does not use the picker:
+  it assigns the class's GVCN automatically.
 - **Reassignment notifies.** When a supervisor changes `teacherWorkspaceUserId`
   through the update route, the new teacher gets a `topic_assigned`
   notification (a notify failure does not undo the change).

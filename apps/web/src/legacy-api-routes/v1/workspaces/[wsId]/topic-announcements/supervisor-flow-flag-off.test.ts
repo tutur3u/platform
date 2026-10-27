@@ -58,6 +58,12 @@ const { GET: LIST, POST: CREATE } = await import(
 const { POST: NOTIFY } = await import(
   '@/app/api/v1/workspaces/[wsId]/topic-announcements/notify-teachers/route'
 );
+const SCHEDULE = await import(
+  '@/app/api/v1/workspaces/[wsId]/topic-announcements/schedule/route'
+);
+const { POST: CLONE } = await import(
+  '@/app/api/v1/workspaces/[wsId]/topic-announcements/schedule/clone/route'
+);
 const { PATCH } = await import('./announcements/[announcementId]/route');
 const { POST: SEND } = await import(
   './announcements/[announcementId]/send/route'
@@ -226,5 +232,25 @@ describe('supervisor flow with teacher assignments off', () => {
     const notify = await NOTIFY(json({ announcementIds: [OWN_TOPIC] }), params);
     expect(notify.status).toBe(404);
     expect(mocks.admin.rpc).not.toHaveBeenCalled();
+  });
+
+  it('exposes no schedule editor or month clone', async () => {
+    const before = JSON.stringify(mocks.admin.tables);
+    const listed = await SCHEDULE.GET(
+      new Request('http://localhost/?month=2026-11'),
+      params
+    );
+    expect(listed.status).toBe(404);
+    const saved = await SCHEDULE.PUT(
+      json({ deleteIds: [OWN_TOPIC], month: '2026-11', sessions: [] }, 'PUT'),
+      params
+    );
+    expect(saved.status).toBe(404);
+    const cloned = await CLONE(
+      json({ dryRun: false, sourceMonth: '2026-10', targetMonth: '2026-11' }),
+      params
+    );
+    expect(cloned.status).toBe(404);
+    expect(JSON.stringify(mocks.admin.tables)).toBe(before);
   });
 });

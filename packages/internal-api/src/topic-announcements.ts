@@ -202,10 +202,7 @@ export interface TopicAnnouncementImportRow {
   room?: string;
   sessionDate?: string;
   startTime?: string;
-  /** Workspace user in charge of the topic; validated against the workspace. */
-  teacherWorkspaceUserId?: string;
   title?: string;
-  /** Optional: rows without a topic are created as drafts. */
   topic?: string;
 }
 
@@ -621,3 +618,5 @@ export async function sendTopicAnnouncementsBulk(
     method: 'POST',
   });
 }
+
+export * from './topic-schedule';

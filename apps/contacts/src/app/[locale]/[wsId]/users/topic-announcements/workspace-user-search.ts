@@ -7,7 +7,6 @@ import {
   type WorkspaceBasicUserRecord,
 } from '@tuturuuu/internal-api';
 import { useDebounce } from '@tuturuuu/ui/hooks/use-debounce';
-import { useMemo } from 'react';
 
 /** Results per search; the picker narrows further as the operator types. */
 export const WORKSPACE_USER_SEARCH_LIMIT = 20;
@@ -66,15 +65,10 @@ export function useWorkspaceUsersByNames(wsId: string, names: string[]) {
     })),
   });
 
-  const dataKey = results.map((result) => result.dataUpdatedAt).join(',');
-  // biome-ignore lint/correctness/useExhaustiveDependencies: dataKey tracks every result's data.
-  const candidatesByName = useMemo(() => {
-    const map = new Map<string, WorkspaceBasicUserRecord[]>();
-    distinct.forEach((name, index) => {
-      map.set(name, results[index]?.data?.data ?? []);
-    });
-    return map;
-  }, [dataKey, distinct.join('\n')]);
+  const candidatesByName = new Map<string, WorkspaceBasicUserRecord[]>();
+  distinct.forEach((name, index) => {
+    candidatesByName.set(name, results[index]?.data?.data ?? []);
+  });
   return {
     candidatesByName,
     isError: results.some((result) => result.isError),
