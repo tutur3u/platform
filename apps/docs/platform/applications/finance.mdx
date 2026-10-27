@@ -804,3 +804,19 @@ presence of malformed customer timestamps remain unproven.
 `invoice-card-date.test.tsx` covers actual card/template transitions in both
 locales and preview modes, malformed date boundaries, missing dates, and valid
 formatting. Source checks do not establish a live customer export or deployment.
+
+## Finance aggregate access and budget calculations
+
+Budget spending sums expenses only through wallets in the budget workspace.
+Moving a transaction refreshes the budgets for both its old and new wallets;
+deleting it refreshes the old workspace. Budget reference changes recompute
+spending, and database triggers reject foreign wallet/category references.
+Cached totals are corrected during migration without deleting budget rows or
+changing their configured references. Historical invalid references require
+explicit repair before those budgets can be edited.
+
+Regression coverage: `finance-workspace-boundaries.sql`. Invoice analytics sibling RPCs
+are service-only behind the existing authorized routes. Transaction statistics
+bind authenticated calls to the current user; service calls must provide an
+actor with finance read permission.
+
