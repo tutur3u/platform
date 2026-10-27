@@ -126,6 +126,10 @@ and its focused regression coverage before adding a reason or changing middlewar
   [bridge resolver contract](../../../../../apps/docs/build/devops/start-bridge.mdx#internal-api-resolver-registration)
   for browser setup, teardown and regression coverage.
 - Every `fetch` inside a query function should include `{ cache: 'no-store' }`.
+- Web mounts the Sonner toaster. Client mutations should import `toast` from
+  `@tuturuuu/ui/sonner`; the legacy `hooks/use-toast` store has no mounted Web
+  consumer and can silently hide failures. Preserve safe API errors, pending
+  confirmation and mutation retry policy; see the workspace deletion regressions.
 - Use `@tuturuuu/icons`, `@tuturuuu/ui/dialog`, and dynamic design tokens.
   Native browser dialogs, emojis in UI code, and hard-coded hue classes are not
   acceptable.
