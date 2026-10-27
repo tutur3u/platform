@@ -6,7 +6,6 @@ import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { toast } from '@tuturuuu/ui/sonner';
 import type { BoardBroadcastFn } from '../../../../shared/board-broadcast-context';
-import { invalidateKanbanDeadlineTasks } from '../data/kanban-deadline-query';
 import type { BulkOperationI18n } from './bulk-operation-i18n';
 import {
   getInternalApiOptions,
@@ -191,8 +190,6 @@ export function useBulkMoveToBoard(
       for (const tid of movedTaskIds) {
         broadcast?.('task:delete', { taskId: tid });
       }
-      void invalidateKanbanDeadlineTasks(queryClient, boardId);
-      void invalidateKanbanDeadlineTasks(queryClient, data.targetBoardId);
 
       if (data.failures.length > 0) {
         toast.warning(
@@ -394,7 +391,6 @@ export function useBulkMoveToList(
         boardId,
         previousTasks: context?.previousTasks,
         previousFullTasks: context?.previousFullTasks,
-        previousDeadlineTasks: context?.previousDeadlineTasks,
         failedTaskIds,
       });
 
@@ -423,7 +419,6 @@ export function useBulkMoveToList(
           },
         });
       }
-      void invalidateKanbanDeadlineTasks(queryClient, boardId);
 
       if (data.failures.length > 0) {
         toast.warning(
@@ -584,7 +579,6 @@ export function useBulkMoveToStatus(
         boardId,
         previousTasks: context?.previousTasks,
         previousFullTasks: context?.previousFullTasks,
-        previousDeadlineTasks: context?.previousDeadlineTasks,
         failedTaskIds,
       });
 
@@ -613,7 +607,6 @@ export function useBulkMoveToStatus(
           },
         });
       }
-      void invalidateKanbanDeadlineTasks(queryClient, boardId);
 
       if (data.failures.length > 0) {
         toast.warning(

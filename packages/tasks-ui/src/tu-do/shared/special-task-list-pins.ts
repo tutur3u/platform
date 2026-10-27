@@ -1,12 +1,8 @@
-export type SpecialTaskListPin =
-  | 'closed_tasks'
-  | 'external_tasks'
-  | 'overdue'
-  | 'upcoming';
+export type SpecialTaskListPin = 'closed_tasks' | 'external_tasks';
 
+// Older configs may still list the removed Overdue/Upcoming panels; parsing
+// skips them because they are not in this list.
 export const SPECIAL_TASK_LIST_PIN_VALUES: readonly SpecialTaskListPin[] = [
-  'overdue',
-  'upcoming',
   'external_tasks',
   'closed_tasks',
 ];
