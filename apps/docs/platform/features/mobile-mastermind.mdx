@@ -1,0 +1,90 @@
+---
+title: Mobile Mastermind
+description: Who sees the Mastermind section in the mobile app, how it behaves before data arrives, and what it never shows.
+---
+
+Mastermind is an internal fleet overview. The mobile section reads one
+sanitized snapshot from the Mastermind hub Worker. This page records the
+product rules of the shell entry and the Home tab; later tabs extend it.
+
+## Who sees it
+
+- **Scope:** the Apps hub offers Mastermind only when the active workspace is
+  the root workspace, the root permission set contains `view_infrastructure`,
+  and the build has a hub source configured.
+- **Default:** hidden. It is not an experimental module and cannot be enabled
+  from Settings.
+- **Authority:** this check is cosmetic. The hub Worker's owner allowlist is the
+  real gate, and a 403 from the hub hides the entry until the next access sync.
+- **Deep links and push taps:** any `/mastermind/**` location is held on a
+  neutral skeleton while the access check runs, then redirected to the Apps hub
+  unless access is loaded and enabled. A 403 keeps the user on the screen so it
+  can explain itself; the entry disappears from the Apps hub.
+- **Account changes:** logout and account switch erase the cached snapshot,
+  memory and disk, and re-check access for the selected workspace.
+
+## Data source
+
+Fixture builds (development flavor with `MASTERMIND_FIXTURE`) read the bundled
+synthetic sample. Every other build reads the hub for its flavor
+(`mastermind-hub.tutur3u.com` for production,
+`mastermind-hub-staging.tutur3u.com` for staging) or for `MASTERMIND_HUB_URL`,
+and stays disconnected when none names an HTTPS host. The app-level runtime owns
+the source, the cache and the refresh scheduler and closes them with the app.
+Each Mastermind screen only attaches to and detaches from the scheduler, so
+refresh runs only while a screen is open and the app is in the foreground.
+
+## Tabs
+
+Home, Inbox, Work, Ship and Insights share one mini-app shell: the top navbar
+shows the destination title and no Back button, and the floating dock owns Back.
+Only Home is implemented; the other tabs show a "coming soon" empty state behind
+the same access gate and freshness strip.
+
+## Freshness strip
+
+Every tab starts with one line, inside the scroll view. Data age is
+informational because publishing is manual at first; only a failed refresh or a
+degraded source is a warning. Times are absolute GMT+7.
+
+| Condition | Strip |
+|---|---|
+| Published within 5 minutes | Updated `<time>` |
+| Older | Mastermind last published `<age>` · `<time>` |
+| Refresh could not reach the hub | Offline · showing `<time>` |
+| Hub schema newer than the app | Update the app to read the latest Mastermind data · showing `<time>` |
+| Hub answered something unreadable | Couldn't read the latest update · showing `<time>` |
+| Any source not ok | appended: `<n>` sources degraded |
+
+## Before data arrives
+
+| State | Shown |
+|---|---|
+| Loading, nothing held | Skeleton cards, never a spinner alone |
+| Not configured | "Mastermind isn't connected on this build." No retry |
+| 401 after a session refresh | Sign in again |
+| 403 | "This account isn't allowed to view Mastermind." No retry |
+| 404 no snapshot | "Mastermind hasn't published yet." Retry |
+| Network or 5xx | "Can't reach Mastermind." Retry |
+| Rejected snapshot | A fixed category message, never the parser path. Retry |
+
+## Home
+
+Needs you comes first, then lanes at a glance, ship, quota, recent decisions and
+activity. Needs you lists up to three normal items (decision, then action, then
+FYI, then publisher order); "See all (N)" counts normal items only.
+
+**Security rows** render as a single non-tappable "`<Product>` · security fix"
+line in a trailing "Security" group with no count. They have no severity, title
+or detail anywhere, are never counted, and never reorder anything. Event
+summaries apply the same collapse.
+
+## Regression coverage
+
+`apps/mobile/test/features/mastermind/view`: `mastermind_entry_test.dart`
+(entry gating, route gate, mini-app shell, runtime reset),
+`mastermind_section_test.dart` (access gate, scheduler lifetime, whole-section
+states), `mastermind_freshness_test.dart` (strip states),
+`mastermind_home_page_test.dart` (ordering, security redaction, dock
+clearance, tab links) and `home_model_test.dart`. The registered-destination
+smoke test builds every `/mastermind/**` route through the production router.
