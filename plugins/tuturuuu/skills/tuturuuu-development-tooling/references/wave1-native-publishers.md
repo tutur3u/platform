@@ -137,3 +137,10 @@ For SQLite DO counters and purge batches, count SQL RETURNING rows, never cursor
 rowsWritten: workerd counts index writes in that billing metric. Node SQLite can
 mask the difference. Retain the real workerd regression for duplicate buckets,
 transaction rollback and restart alongside statement-bound SQLite tests.
+
+Disable is not erasure: retain content, reject every non-status route with 503,
+and continue only bounded retention cleanup without staleness updates. Explicit
+DELETE erasure clears content and stops alarms; it must run before disable under
+the strict non-status 503 contract. Arm maintenance before accepting durable data
+and preserve the existing deadline across heartbeats. Export must honor the same
+30-day idle horizon as ordinary reads, independently of when the alarm runs.

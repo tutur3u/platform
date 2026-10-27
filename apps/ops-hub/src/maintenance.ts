@@ -35,7 +35,7 @@ export function maintainHub(
   lastPublisherAt: number,
   now: number
 ) {
-  if (!enabled) return null;
+  if (!lastPublisherAt) return null;
   if (now - lastPublisherAt >= 30 * DAY) {
     eraseContent(sql);
     return null;
@@ -87,9 +87,13 @@ export function maintainHub(
     )
       backlog = true;
   }
-  sql.exec(
-    'UPDATE flags SET stale=? WHERE id=1',
-    now - lastPublisherAt > 15 * 60_000 ? 1 : 0
+  if (enabled)
+    sql.exec(
+      'UPDATE flags SET stale=? WHERE id=1',
+      now - lastPublisherAt > 15 * 60_000 ? 1 : 0
+    );
+  return Math.min(
+    now + (backlog ? CATCHUP_DELAY : HOUR),
+    lastPublisherAt + 30 * DAY
   );
-  return now + (backlog ? CATCHUP_DELAY : HOUR);
 }

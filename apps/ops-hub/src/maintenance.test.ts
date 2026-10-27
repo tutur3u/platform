@@ -68,9 +68,6 @@ it('purges SQLite retention boundaries, preserves open items and has bounded nor
   expect(db.prepare('SELECT COUNT(*) AS count FROM events').get()).toEqual({
     count: 1,
   });
-  const before = operations();
-  expect(maintainHub(sql, false, now, now)).toBeNull();
-  expect(operations()).toBe(before);
   expect(maintainHub(sql, true, now - 31 * DAY, now)).toBeNull();
   expect(db.prepare('SELECT COUNT(*) AS count FROM needs_you').get()).toEqual({
     count: 0,
@@ -130,5 +127,43 @@ it('purges the full quota storage ceiling before a durable terminal stop', () =>
   const before = operations();
   expect(maintainHub(sql, false, 0, Date.now())).toBeNull();
   expect(operations()).toBe(before);
+  db.close();
+});
+
+it('disabled hubs retain content and run retention only until the final purge horizon', () => {
+  const { db, sql } = database();
+  const now = 100 * DAY;
+  db.exec(
+    "INSERT INTO snapshot VALUES('retained'); INSERT INTO needs_you VALUES(NULL); UPDATE flags SET stale=0"
+  );
+  db.prepare('INSERT INTO events VALUES(?)').run(now - DAY);
+  db.prepare('INSERT INTO events VALUES(?)').run(now - 31 * DAY);
+  db.prepare('INSERT INTO metrics VALUES(?,?)').run(
+    'quota_series',
+    now - 8 * DAY
+  );
+  db.exec("INSERT INTO metric_counts VALUES('quota_series',1)");
+  expect(maintainHub(sql, false, now - HOUR, now)).toBe(now + HOUR);
+  expect(db.prepare('SELECT COUNT(*) AS count FROM snapshot').get()).toEqual({
+    count: 1,
+  });
+  expect(db.prepare('SELECT COUNT(*) AS count FROM events').get()).toEqual({
+    count: 1,
+  });
+  expect(db.prepare('SELECT COUNT(*) AS count FROM needs_you').get()).toEqual({
+    count: 1,
+  });
+  expect(db.prepare('SELECT COUNT(*) AS count FROM metrics').get()).toEqual({
+    count: 0,
+  });
+  expect(db.prepare('SELECT stale FROM flags').get()).toEqual({ stale: 0 });
+  expect(maintainHub(sql, false, now - 31 * DAY, now)).toBeNull();
+  expect(db.prepare('SELECT COUNT(*) AS count FROM snapshot').get()).toEqual({
+    count: 0,
+  });
+  expect(db.prepare('SELECT COUNT(*) AS count FROM needs_you').get()).toEqual({
+    count: 0,
+  });
+  expect(db.prepare('SELECT stale FROM flags').get()).toEqual({ stale: 0 });
   db.close();
 });

@@ -12,10 +12,13 @@ export function exportPage(
   sql: SqlStorage,
   section: string,
   after: number,
-  now: number
+  now: number,
+  expired = false
 ) {
   if (!EXPORT_SECTIONS.some((name) => name === section))
     throw new Error('Invalid section');
+  if (expired)
+    return { section, rows: [], nextAfter: null, sections: EXPORT_SECTIONS };
   const predicate =
     section === 'events'
       ? `AND ts > ${now - 30 * DAY}`

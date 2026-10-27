@@ -74,12 +74,14 @@ answered/withdrawn, while open items remain. Snapshot is replaced on ingest;
 its needs-you projection comes from the retained item table. Reads independently
 filter expired records. Publisher staleness is computed after 15 minutes on every
 status read, and persisted by maintenance. With no new publisher activity,
-maintenance stops after 30 days after all content, including stale snapshots and open items, has been purged.
+maintenance purges all content at the 30-day horizon and stops scheduling.
 
-A signed snapshot with `enabled:false` durably pauses the hub and cancels
-its alarm, and atomically purges all content. Every route except authenticated status then returns 503, including
-ingest. There is no HTTP resume route in P0: resumption needs an explicitly
-authorized operator action against the DO, beyond this code-only delivery.
+A signed snapshot with `enabled:false` durably pauses ingest and read access
+while retaining the content. Every route except authenticated status returns 503,
+including ingest and DELETE /hub. Only bounded retention maintenance continues;
+it does not update staleness or emit alerts. There is no HTTP resume route in P0:
+resumption needs an explicitly authorized operator action against the DO, beyond
+this code-only delivery. Explicit erasure must run before disabling or de-allowlisting.
 DELETE `/hub` clears snapshot, events, items, decisions and observations and leaves only a disabled
 replay tombstone (sequence/counters, no content), preventing a captured signed
 ingest from recreating erased content. Erase before removing the user from both
@@ -92,8 +94,8 @@ Limits: 256 KiB streamed ingest, 100 events per envelope, 1,000 retained events,
 successful ingests per object per hour. Reads return at most 200 events. Export is paginated by section and row cursor;
 each page contains at most 200 rows. There are no outgoing provider requests, queues,
 cron triggers, retries or fan-out. Invalid assertions do not touch the DO.
-Maintenance uses fixed-size deletion batches and stops
-on disabled state, including after restart. Stop reduces background work; it
+Maintenance uses fixed-size deletion batches. Disabled hubs run only retention
+cleanup; explicit erasure and the final retention horizon stop scheduling. Stop reduces background work; it
 cannot prevent the billing of an incoming request reaching Cloudflare.
 
 On an admitted host, run from `apps/ops-hub`:
@@ -177,14 +179,17 @@ select each bucket endpoint without scanning every raw point. Staff
 and cadence return their current snapshot. Historical rows are filtered by their
 retention window before downsampling. This endpoint never fetches providers.
 
-The normal hourly alarm is retained across heartbeats. Each maintenance pass
+The normal hourly alarm is armed before committing accepted content and retained across heartbeats. Each maintenance pass
 purges at most eight batches of 512 rows per time series, plus bounded events,
 items and decisions. An expired-row backlog schedules a one-minute catch-up pass;
 persisted deletion progress survives retry/restart. Row caps bound the remaining
 work, and no pass starts an unbounded loop. After 30 days without ingest, all
 content, including stale snapshots and open items, is purged and scheduling ends.
-Disabled state returns 503 for every non-status route; its content is already
-purged atomically, so cancelling maintenance cannot strand retained data.
+Disabled state returns 503 for every non-status route and retains data. Only
+retention-purge work continues, without staleness updates; it stops after the
+final 30-day horizon. DELETE /hub is a separate explicit purge that clears content,
+sets a durable erasure tombstone and cancels the alarm. A late erased-object alarm
+exits without scheduling more work.
 
 GET /hub/export uses section (snapshot/events/needs_you/decisions/metrics/
 observability_snapshot), after (row cursor, default 0), and optional seq. Each

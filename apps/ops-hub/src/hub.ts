@@ -72,7 +72,7 @@ export class OpsHub extends DurableObject<Env> {
   }
   async fetch(request: Request) {
     const url = new URL(request.url);
-    const now = Date.now();
+    let now = Date.now();
     let flags = this.flags();
     if (request.method === 'GET' && url.pathname === '/status') {
       return json({
@@ -82,7 +82,8 @@ export class OpsHub extends DurableObject<Env> {
         seq: flags.seq,
         lastPublisherAt: flags.lastPublisherAt || null,
         publisherStale:
-          !flags.lastPublisherAt || now - flags.lastPublisherAt > 15 * 60_000,
+          Boolean(flags.enabled) &&
+          (!flags.lastPublisherAt || now - flags.lastPublisherAt > 15 * 60_000),
       });
     }
     if (!flags.enabled) return json({ error: 'Hub paused' }, 503);
@@ -95,6 +96,17 @@ export class OpsHub extends DurableObject<Env> {
       if (Math.abs(now - body.sentAt) > 120_000)
         return json({ error: 'Clock skew' }, 400);
       if (body.seq <= flags.seq) return json({ error: 'Sequence replay' }, 409);
+      const scheduled = await this.ctx.storage.getAlarm();
+      if (scheduled === null) await this.ctx.storage.setAlarm(now + HOUR);
+      flags = this.flags();
+      now = Date.now();
+      if (!flags.enabled) {
+        if (flags.erased) await this.ctx.storage.deleteAlarm();
+        return json({ error: 'Hub paused' }, 503);
+      }
+      if (body.seq <= flags.seq) return json({ error: 'Sequence replay' }, 409);
+      if (Math.abs(now - body.sentAt) > 120_000)
+        return json({ error: 'Clock skew' }, 400);
       let eventSeq = flags.lastEventSeq;
       for (const event of body.events) {
         if (
@@ -179,8 +191,6 @@ export class OpsHub extends DurableObject<Env> {
             );
           }
         }
-        if (body.snapshot?.enabled === false)
-          eraseContent(this.ctx.storage.sql);
         this.ctx.storage.sql.exec(
           `UPDATE flags SET enabled=?,seq=?,lastPublisherAt=?,lastEventSeq=?,
           windowStart=?,ingests=?,stale=0 WHERE id=1`,
@@ -192,13 +202,6 @@ export class OpsHub extends DurableObject<Env> {
           ingests
         );
       });
-      if (body.snapshot?.enabled === false) {
-        await this.ctx.storage.deleteAlarm();
-      } else {
-        const scheduled = await this.ctx.storage.getAlarm();
-        if (scheduled === null && this.flags().enabled)
-          await this.ctx.storage.setAlarm(now + HOUR);
-      }
       return json({ seq: body.seq, v: 2 });
     }
     if (request.method === 'DELETE' && url.pathname === '/hub') {
@@ -263,7 +266,8 @@ export class OpsHub extends DurableObject<Env> {
           this.ctx.storage.sql,
           url.searchParams.get('section') ?? 'snapshot',
           Number(url.searchParams.get('after') ?? 0),
-          now
+          now,
+          expired
         ),
       });
     }
@@ -271,7 +275,7 @@ export class OpsHub extends DurableObject<Env> {
   }
   async alarm() {
     const flags = this.flags();
-    if (!flags.enabled) {
+    if (flags.erased || !flags.lastPublisherAt) {
       await this.ctx.storage.deleteAlarm();
       return;
     }

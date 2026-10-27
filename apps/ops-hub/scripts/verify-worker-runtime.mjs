@@ -234,14 +234,67 @@ test('caps persisted events and accepts only one concurrent copy of a sequence',
   assert.equal(exported, 1000);
 });
 test('erases isolated data and leaves a durable disabled replay tombstone', async () => {
+  const at = Date.now() - 120_000;
   assert.equal(
-    (await ingest(envelope(1, { snapshot: snapshot() }), other)).status,
+    (
+      await ingest(
+        envelope(1, {
+          snapshot: snapshot(),
+          decisions: [
+            {
+              id: 'erase-fixture',
+              at,
+              title: 'Erase fixture',
+              by: 'user',
+              category: 'user',
+              area: 'infra',
+              why: 'Fixture',
+              risk: 'low',
+              reversible: true,
+            },
+          ],
+          observability: {
+            quota_series: [{ instance: 'erase-fixture', t: at, pct: 50 }],
+            speed_series: [],
+            children_series: [],
+            staff: [],
+            ci: [],
+            cadence: [],
+          },
+        }),
+        other
+      )
+    ).status,
     200
   );
-  assert.equal((await read('/hub', 'DELETE', other)).status, 200);
   assert.deepEqual(
-    await sql('SELECT COUNT(*) AS count FROM snapshot', [], other),
-    [{ count: 0 }]
+    await sql('SELECT COUNT(*) AS count FROM metrics', [], other),
+    [{ count: 1 }]
+  );
+  const [purge, racingIngest] = await Promise.all([
+    read('/hub', 'DELETE', other),
+    ingest(envelope(2, { snapshot: snapshot() }), other),
+  ]);
+  assert.equal(purge.status, 200);
+  assert.ok([200, 503].includes(racingIngest.status));
+  for (const table of [
+    'snapshot',
+    'events',
+    'needs_you',
+    'decisions',
+    'metrics',
+    'metric_dimensions',
+    'metric_counts',
+    'observability_snapshot',
+  ]) {
+    assert.deepEqual(
+      await sql(`SELECT COUNT(*) AS count FROM ${table}`, [], other),
+      [{ count: 0 }]
+    );
+  }
+  assert.equal(
+    (await (await read('/status', 'GET', other)).json()).erased,
+    true
   );
   assert.equal((await ingest(envelope(2), other)).status, 503);
   assert.equal(
@@ -391,7 +444,15 @@ test('v2 persists only approved decision fields and bounds/downsamples observati
   const sampled = await (
     await read('/observability?series=quota_series')
   ).json();
-  assert.ok(sampled.points.length <= 500 && sampled.points.length < 5040);
+  assert.ok(sampled.points.length > 0 && sampled.points.length <= 500);
+  assert.ok(
+    (
+      await sql(
+        "SELECT COUNT(*) AS count FROM metrics WHERE series='quota_series' AND t>?",
+        [now - 7 * 86_400_000]
+      )
+    )[0].count >= 5040
+  );
   assert.equal(sampled.pointCap, 500);
   assert.ok(sampled.points.every((row) => row.t > now - 7 * 86_400_000));
   await sql('UPDATE metrics SET t=? WHERE dimension=?', [
@@ -479,7 +540,26 @@ test('v2 persists only approved decision fields and bounds/downsamples observati
   assert.ok(page.nextAfter > 0);
   assert.equal((await read('/hub/export?section=metrics&seq=14')).status, 409);
 });
-test('kill switch survives restart, denies ingest and all reads except status', async () => {
+test('export hides every section beyond the publisher idle horizon before the alarm runs', async () => {
+  await sql('UPDATE flags SET lastPublisherAt=?', [
+    Date.now() - 31 * 86_400_000,
+  ]);
+  for (const section of [
+    'snapshot',
+    'needs_you',
+    'events',
+    'decisions',
+    'metrics',
+    'observability_snapshot',
+  ]) {
+    const page = await (await read(`/hub/export?section=${section}`)).json();
+    assert.deepEqual(page.rows, []);
+    assert.equal(page.nextAfter, null);
+  }
+  assert.ok((await sql('SELECT COUNT(*) AS count FROM snapshot'))[0].count > 0);
+  await sql('UPDATE flags SET lastPublisherAt=?', [Date.now()]);
+});
+test('disable retains content across restart, denies non-status routes and suppresses staleness', async () => {
   assert.equal(
     (
       await ingest(
@@ -500,19 +580,21 @@ test('kill switch survives restart, denies ingest and all reads except status', 
   }
   assert.equal((await ingest(envelope(18))).status, 503);
   assert.equal((await (await read('/status')).json()).enabled, false);
+  assert.equal((await read('/hub', 'DELETE')).status, 503);
+  await sql('UPDATE flags SET lastPublisherAt=?', [Date.now() - 16 * 60_000]);
+  assert.equal((await (await read('/status')).json()).publisherStale, false);
   for (const table of [
     'snapshot',
     'events',
-    'needs_you',
     'decisions',
     'metrics',
     'metric_dimensions',
     'metric_counts',
     'observability_snapshot',
   ]) {
-    assert.deepEqual(await sql(`SELECT COUNT(*) AS count FROM ${table}`), [
-      { count: 0 },
-    ]);
+    assert.ok(
+      (await sql(`SELECT COUNT(*) AS count FROM ${table}`))[0].count > 0
+    );
   }
   assert.deepEqual(await sql('SELECT seq,enabled FROM flags'), [
     { seq: 17, enabled: 0 },
