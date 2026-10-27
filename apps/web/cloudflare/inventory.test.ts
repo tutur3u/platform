@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import manifest from '../start-route-manifest.json';
-import { routePattern } from './inventory';
+import { generateInventory, routeManifest, routePattern } from './inventory';
 import { createSourceGraph } from './inventory-source';
 
 const temporary: string[] = [];
@@ -23,6 +23,36 @@ function fixture() {
 }
 
 describe('Web route census', () => {
+  it('keeps source churn in the artifact and orders modules by codepoint', () => {
+    const { root, write } = fixture();
+    write('apps/web/vercel.json', '{"crons":[]}');
+    write('packages/fixture/package.json', '{"exports":{}}');
+    write(
+      'apps/web/src/app/page.tsx',
+      "import './a'; import './Z'; export default () => null;"
+    );
+    write('apps/web/src/app/a.ts', 'export const a = 1;');
+    write('apps/web/src/app/Z.ts', 'export const z = 1;');
+    const before = generateInventory(root);
+    write('apps/web/src/app/a.ts', "'use server'; export const a = 2;");
+    const after = generateInventory(root);
+    expect(Object.keys(after.modules)).toEqual(
+      Object.keys(after.modules).sort()
+    );
+    expect(
+      Object.keys(after.modules).indexOf('apps/web/src/app/Z.ts')
+    ).toBeLessThan(Object.keys(after.modules).indexOf('apps/web/src/app/a.ts'));
+    expect(before.modules).not.toEqual(after.modules);
+    expect(before.routes).not.toEqual(after.routes);
+    expect(routeManifest(before)).toEqual(routeManifest(after));
+    expect(routeManifest(after)).not.toHaveProperty('modules');
+    expect(routeManifest(after).routes[0]).not.toHaveProperty('boundaries');
+    expect(routeManifest(after).routes[0]).not.toHaveProperty('roots');
+    write('apps/web/src/app/new/page.tsx', 'export default () => null;');
+    expect(routeManifest(generateInventory(root))).not.toEqual(
+      routeManifest(after)
+    );
+  });
   it('traces actions and aliased framework calls through cycles, reexports and workspace source exports', () => {
     const { root, write } = fixture();
     write(

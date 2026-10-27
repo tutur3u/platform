@@ -12,7 +12,7 @@ const wranglerRequire = createRequire(require.resolve('wrangler'));
 const { Miniflare, convertV4MiniflareOptions } = wranglerRequire('miniflare');
 const base = 'https://web.staging.tutur3u.com';
 const secret = 'disposable-emitted-worker-proof-secret';
-const upstream = 'https://web-next-fixture.vercel.app';
+const upstream = 'https://tuturuuu-next-fixture.vercel.app';
 const ref = 'fxefojytwimjiqxseqag';
 
 const description =

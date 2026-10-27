@@ -3,7 +3,7 @@ import {
   forwardToCentralApi,
   HOP_BY_HOP_HEADERS,
 } from '@tuturuuu/start-bridge/api-forward';
-import { createOriginClientIpProof } from '../../../packages/utils/src/abuse-protection/origin-ip-proof';
+import { createOriginClientIpProof } from '@tuturuuu/utils/abuse-protection/origin-ip-proof';
 import { stagingProfile } from './profile';
 
 export type Fetcher = NonNullable<ForwardOptions['fetcher']>;
@@ -26,6 +26,13 @@ export async function proxyNext(
   if (!proof) return new Response('Missing trusted client IP', { status: 400 });
   const headers = new Headers(request.headers);
   stripConnectionHeaders(headers);
+  for (const name of [...headers.keys()]) {
+    if (
+      ['forwarded', 'true-client-ip', 'cf-connecting-ip'].includes(name) ||
+      name.startsWith('x-vercel-')
+    )
+      headers.delete(name);
+  }
   headers.set('x-tuturuuu-origin-auth', proof);
   headers.set('x-forwarded-for', ip);
   headers.set('x-real-ip', ip);

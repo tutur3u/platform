@@ -99,8 +99,7 @@ export function generateInventory(repo: string) {
     'apps/web/next.config.ts',
     'apps/web/src/app/sw.ts',
   ]);
-  // Proxy-only URL bridges have no App Router file. Their source digest is
-  // retained below: changing proxy ownership requires regenerating this census.
+  // Proxy-only URL bridges have no App Router file.
   const bridges = [
     ['mail', 'mail'],
     ['finance', 'finance'],
@@ -199,7 +198,27 @@ export function generateInventory(repo: string) {
     },
     routes: entries,
     modules: Object.fromEntries(
-      [...graph.modules].sort(([a], [b]) => a.localeCompare(b))
+      [...graph.modules].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+    ),
+  };
+}
+
+export function routeManifest(inventory: ReturnType<typeof generateInventory>) {
+  return {
+    schemaVersion: 2,
+    generatedBy: inventory.generatedBy,
+    serviceWorker: inventory.serviceWorker,
+    crons: inventory.crons,
+    summary: inventory.summary,
+    routes: inventory.routes.map(
+      ({ pattern, source, category, owner, disposition, cronOwner }) => ({
+        pattern,
+        source,
+        category,
+        owner,
+        disposition,
+        cronOwner,
+      })
     ),
   };
 }

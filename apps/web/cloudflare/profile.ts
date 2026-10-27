@@ -38,7 +38,7 @@ export function admittedOrigin(request: Request, env: WebCandidateEnv) {
       upstream.hostname === stagingProfile.host ||
       upstream.hostname === 'tuturuuu.com' ||
       upstream.hostname.endsWith('.tuturuuu.com') ||
-      (!upstream.hostname.endsWith('.vercel.app') &&
+      (!/^tuturuuu(?:-[a-z0-9-]+)?\.vercel\.app$/u.test(upstream.hostname) &&
         !upstream.hostname.endsWith('.staging.tutur3u.com'))
     )
       return null;

@@ -1,12 +1,12 @@
+import { resolveClientIp } from '@tuturuuu/utils/abuse-protection/client-ip';
+import { verifyOriginClientIpProof } from '@tuturuuu/utils/abuse-protection/origin-ip-proof';
 import { describe, expect, it, vi } from 'vitest';
-import { resolveClientIp } from '../../../packages/utils/src/abuse-protection/client-ip';
-import { verifyOriginClientIpProof } from '../../../packages/utils/src/abuse-protection/origin-ip-proof';
 import type { Fetcher } from './fallback';
 import { createWebCandidateHandler } from './handler';
 import { stagingProfile, type WebCandidateEnv } from './profile';
 
 const secret = 'disposable-test-origin-proof-key-123456';
-const origin = 'https://web-next-fixture.vercel.app';
+const origin = 'https://tuturuuu-next-fixture.vercel.app';
 const env: WebCandidateEnv = {
   WEB_START_CANDIDATE: 'staging',
   NEXT_FALLBACK_ORIGIN: origin,
@@ -75,10 +75,14 @@ describe('Web candidate admission', () => {
     'https://tuturuuu.com',
     'https://web.tuturuuu.com',
     'https://evil.test',
+    'https://drive-next-fixture.vercel.app',
+    'https://eviltuturuuu-next.vercel.app',
+    'https://tuturuuu-next.vercel.app.evil.test',
+    'https://nested.tuturuuu-next.vercel.app',
     `${origin}/path`,
     `${origin}/?a=1`,
-    'http://web-next-fixture.vercel.app',
-    'https://user:pass@web-next-fixture.vercel.app',
+    'http://tuturuuu-next-fixture.vercel.app',
+    'https://user:pass@tuturuuu-next-fixture.vercel.app',
   ])('rejects upstream %s', async (upstream) => {
     const { handler, fetcher } = setup();
     expect(
@@ -132,7 +136,6 @@ describe('Next compatibility', () => {
       'next-router-state-tree': '%5B%22%22%5D',
       rsc: '1',
       'x-cron-secret': 'test-cron',
-      'x-vercel-cron-secret': 'test-vercel-cron',
       'x-webhook-secret': 'test-webhook',
       'x-tuturuuu-turnstile-token': 'test-turnstile',
       'x-middleware-rewrite': '/vi/login',
@@ -162,6 +165,11 @@ describe('Next compatibility', () => {
       request('/', {
         headers: {
           'x-tuturuuu-origin-auth': 'spoofed',
+          forwarded: 'for=192.0.2.99;host=evil.test;proto=http',
+          'true-client-ip': '192.0.2.99',
+          'x-vercel-forwarded-for': '192.0.2.99',
+          'x-vercel-ip-country': 'XX',
+          'x-vercel-cron-secret': 'spoofed',
           'x-forwarded-for': '192.0.2.99',
           'x-real-ip': '192.0.2.99',
           'x-forwarded-host': 'evil.test',
@@ -184,6 +192,15 @@ describe('Next compatibility', () => {
         originAuthSecret: secret,
       })
     ).toBe('203.0.113.10');
+    for (const name of [
+      'forwarded',
+      'true-client-ip',
+      'cf-connecting-ip',
+      'x-vercel-forwarded-for',
+      'x-vercel-ip-country',
+      'x-vercel-cron-secret',
+    ])
+      expect(headers.has(name)).toBe(false);
     expect(headers.get('x-forwarded-for')).toBe('203.0.113.10');
     expect(headers.get('x-real-ip')).toBe('203.0.113.10');
     expect(headers.get('x-forwarded-host')).toBe(stagingProfile.host);

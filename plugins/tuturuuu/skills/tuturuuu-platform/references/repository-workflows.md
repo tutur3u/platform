@@ -8,7 +8,9 @@ Consult only the section relevant to the current task. Paths are repository-rela
   alongside the owning Next.js satellites. Its [Web 1 Start candidate](../../../../../apps/docs/build/devops/web-start-candidate.mdx)
   is default-off and forwards existing routes to an attested staging Next origin.
   Use `build:candidate` only on an admitted remote host or CI; inventory generation
-  and focused proxy tests are build-free. No candidate route is production-owned.
+  and focused proxy tests are build-free. Commit only route-level inventory;
+  retain the full module census with hashes in the CI artifact documented in
+  the candidate runbook. No candidate route is production-owned.
 - `apps/backend` and `apps/tanstack-web`: paused Rust/TanStack Start source,
   not in use. Do not run, update, or refresh them during ordinary app work.
 - Docker setup is inactive and the Docker cron runner is retired. Use the local
