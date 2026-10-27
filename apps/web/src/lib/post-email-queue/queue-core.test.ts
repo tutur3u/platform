@@ -16,6 +16,10 @@ const WS_ID = 'ws-1';
 const RECENT_POST_CREATED_AT = new Date().toISOString();
 
 type MockState = {
+  membershipRows: Array<{ user_id: string; group_id: string; ws_id: string }>;
+  membershipError: boolean;
+  groups: Array<{ id: string; ws_id: string; is_guest: boolean }>;
+  resolvedGuestStatuses: Array<{ user_id: string; is_guest: boolean }>;
   allCheckChunks: number[];
   existingQueueRows: Array<{ id: string; status: string; user_id: string }>;
   sentReceiverChunks: number[];
@@ -39,9 +43,41 @@ function createMockQueryBuilder(
 
   const execute = () => {
     switch (table) {
+      case 'workspace_user_groups_users':
+        return {
+          data: state.membershipRows
+            .filter(
+              (row) =>
+                (!eqFilters.has('group_id') ||
+                  eqFilters.get('group_id') === row.group_id) &&
+                (!eqFilters.has('workspace_users.ws_id') ||
+                  eqFilters.get('workspace_users.ws_id') === row.ws_id) &&
+                (inFilters.get('user_id') ?? []).includes(row.user_id)
+            )
+            .map((row) => ({ user_id: row.user_id })),
+          error: state.membershipError
+            ? new Error('Fixture membership lookup failed')
+            : null,
+        };
+
       case 'user_group_post_checks': {
         const chunkUserIds = inFilters.get('user_id') ?? userIds;
         if (selectClause?.includes('user:workspace_users')) {
+          state.resolvedGuestStatuses.push(
+            ...chunkUserIds.map((user_id) => ({
+              user_id,
+              is_guest: state.membershipRows.some(
+                (membership) =>
+                  membership.user_id === user_id &&
+                  state.groups.some(
+                    (group) =>
+                      group.id === membership.group_id &&
+                      group.ws_id === WS_ID &&
+                      group.is_guest
+                  )
+              ),
+            }))
+          );
           return {
             data: chunkUserIds.map((userId) => ({
               approved_by: APPROVER_ID,
@@ -168,10 +204,9 @@ function createMockQueryBuilder(
   Object.defineProperty(builder, 'then', {
     value<TResult1 = unknown, TResult2 = never>(
       onfulfilled?:
-        | ((value: {
-            data: unknown;
-            error: null;
-          }) => TResult1 | PromiseLike<TResult1>)
+        | ((
+            value: ReturnType<typeof execute>
+          ) => TResult1 | PromiseLike<TResult1>)
         | null,
       onrejected?:
         | ((reason: unknown) => TResult2 | PromiseLike<TResult2>)
@@ -199,6 +234,18 @@ function createMockAdminClient(
   } = {}
 ) {
   const state: MockState = {
+    membershipRows: userIds.map((user_id) => ({
+      user_id,
+      group_id: GROUP_ID,
+      ws_id: WS_ID,
+    })),
+    membershipError: false,
+    groups: [
+      { id: GROUP_ID, ws_id: WS_ID, is_guest: false },
+      { id: 'guest-group', ws_id: WS_ID, is_guest: true },
+      { id: 'other-group', ws_id: WS_ID, is_guest: false },
+    ],
+    resolvedGuestStatuses: [],
     allCheckChunks: [],
     existingQueueRows: [],
     sentReceiverIds: [],
@@ -221,6 +268,57 @@ function createMockAdminClient(
 }
 
 describe('enqueueApprovedPostEmails', () => {
+  it('queues only current members in the post workspace', async () => {
+    const ids = ['member', 'nonmember', 'guest', 'foreign'];
+    const { sbAdmin, state } = createMockAdminClient(ids);
+    state.membershipRows = [
+      { user_id: 'member', group_id: GROUP_ID, ws_id: WS_ID },
+      { user_id: 'nonmember', group_id: 'other-group', ws_id: WS_ID },
+      { user_id: 'guest', group_id: 'guest-group', ws_id: WS_ID },
+      { user_id: 'foreign', group_id: GROUP_ID, ws_id: 'other-workspace' },
+    ];
+    const result = await enqueueApprovedPostEmails(sbAdmin as never, {
+      wsId: WS_ID,
+      postId: POST_ID,
+    });
+    expect(state.resolvedGuestStatuses).toContainEqual({
+      user_id: 'guest',
+      is_guest: true,
+    });
+    expect(result.queued).toBe(1);
+    expect(state.upsertRows.map((row) => row.user_id)).toEqual(['member']);
+  });
+
+  it('allows a guest who is a current member of the selected group', async () => {
+    const { sbAdmin, state } = createMockAdminClient(['guest']);
+    state.membershipRows.push({
+      user_id: 'guest',
+      group_id: 'guest-group',
+      ws_id: WS_ID,
+    });
+    const result = await enqueueApprovedPostEmails(sbAdmin as never, {
+      wsId: WS_ID,
+      postId: POST_ID,
+    });
+    expect(state.resolvedGuestStatuses).toEqual([
+      { user_id: 'guest', is_guest: true },
+    ]);
+    expect(result.queued).toBe(1);
+    expect(state.upsertRows.map((row) => row.user_id)).toEqual(['guest']);
+  });
+
+  it('does not queue when membership resolution fails', async () => {
+    const { sbAdmin, state } = createMockAdminClient(['member']);
+    state.membershipError = true;
+    await expect(
+      enqueueApprovedPostEmails(sbAdmin as never, {
+        wsId: WS_ID,
+        postId: POST_ID,
+      })
+    ).rejects.toThrow('Fixture membership lookup failed');
+    expect(state.upsertRows).toEqual([]);
+  });
+
   it('collects paginated select results beyond the first 1000 rows', async () => {
     const rows = await fetchAllPaginatedRows<number>(async (from, to) => ({
       data: Array.from(
