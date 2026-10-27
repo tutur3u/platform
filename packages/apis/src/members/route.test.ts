@@ -1,4 +1,17 @@
 import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('@tuturuuu/utils/workspace-helper', () => ({
+  getPermissions: vi.fn(),
+  normalizeWorkspaceId: vi.fn(),
+}));
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createClient: vi.fn(),
+  createAdminClient: vi.fn(),
+}));
+vi.mock('@tuturuuu/payment/polar/server', () => ({
+  createPolarClient: vi.fn(),
+}));
+
 import {
   revokeDirectBoardGuestAccess,
   revokeWorkspaceMemberAccessRecords,

@@ -23088,6 +23088,1680 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Team'**
   String get workspacePickerTeamBadge;
+
+  /// No description provided for @mastermindAccountFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get mastermindAccountFilter;
+
+  /// No description provided for @mastermindAgeBasis.
+  ///
+  /// In en, this message translates to:
+  /// **'Age basis'**
+  String get mastermindAgeBasis;
+
+  /// No description provided for @mastermindAgeDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 day ago} other{{count} days ago}}'**
+  String mastermindAgeDays(int count);
+
+  /// No description provided for @mastermindAgeHours.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 h ago} other{{count} h ago}}'**
+  String mastermindAgeHours(int count);
+
+  /// No description provided for @mastermindAgeMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{just now} =1{1 min ago} other{{count} min ago}}'**
+  String mastermindAgeMinutes(int count);
+
+  /// No description provided for @mastermindAllFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get mastermindAllFilter;
+
+  /// No description provided for @mastermindAreaCi.
+  ///
+  /// In en, this message translates to:
+  /// **'CI'**
+  String get mastermindAreaCi;
+
+  /// No description provided for @mastermindAreaCost.
+  ///
+  /// In en, this message translates to:
+  /// **'Cost'**
+  String get mastermindAreaCost;
+
+  /// No description provided for @mastermindAreaEducation.
+  ///
+  /// In en, this message translates to:
+  /// **'Education'**
+  String get mastermindAreaEducation;
+
+  /// No description provided for @mastermindAreaFinance.
+  ///
+  /// In en, this message translates to:
+  /// **'Finance'**
+  String get mastermindAreaFinance;
+
+  /// No description provided for @mastermindAreaHub.
+  ///
+  /// In en, this message translates to:
+  /// **'Hub'**
+  String get mastermindAreaHub;
+
+  /// No description provided for @mastermindAreaInfra.
+  ///
+  /// In en, this message translates to:
+  /// **'Infrastructure'**
+  String get mastermindAreaInfra;
+
+  /// No description provided for @mastermindAreaMemory.
+  ///
+  /// In en, this message translates to:
+  /// **'Memory'**
+  String get mastermindAreaMemory;
+
+  /// No description provided for @mastermindAreaOrg.
+  ///
+  /// In en, this message translates to:
+  /// **'Organization'**
+  String get mastermindAreaOrg;
+
+  /// No description provided for @mastermindAreaPerf.
+  ///
+  /// In en, this message translates to:
+  /// **'Performance'**
+  String get mastermindAreaPerf;
+
+  /// No description provided for @mastermindAreaProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Product'**
+  String get mastermindAreaProduct;
+
+  /// No description provided for @mastermindAreaQuota.
+  ///
+  /// In en, this message translates to:
+  /// **'Quota'**
+  String get mastermindAreaQuota;
+
+  /// No description provided for @mastermindAreaRelease.
+  ///
+  /// In en, this message translates to:
+  /// **'Release'**
+  String get mastermindAreaRelease;
+
+  /// No description provided for @mastermindAreaSecurity.
+  ///
+  /// In en, this message translates to:
+  /// **'Security'**
+  String get mastermindAreaSecurity;
+
+  /// No description provided for @mastermindAreaTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Tasks'**
+  String get mastermindAreaTasks;
+
+  /// No description provided for @mastermindAreaUsers.
+  ///
+  /// In en, this message translates to:
+  /// **'Users'**
+  String get mastermindAreaUsers;
+
+  /// No description provided for @mastermindAreaUx.
+  ///
+  /// In en, this message translates to:
+  /// **'UX'**
+  String get mastermindAreaUx;
+
+  /// No description provided for @mastermindBacklogEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Backlog is clear'**
+  String get mastermindBacklogEmptyTitle;
+
+  /// No description provided for @mastermindBacklogLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Backlog'**
+  String get mastermindBacklogLabel;
+
+  /// No description provided for @mastermindBasisCheckinWorkflow.
+  ///
+  /// In en, this message translates to:
+  /// **'Check-in workflow'**
+  String get mastermindBasisCheckinWorkflow;
+
+  /// No description provided for @mastermindBasisGithubDeployment.
+  ///
+  /// In en, this message translates to:
+  /// **'GitHub deployment'**
+  String get mastermindBasisGithubDeployment;
+
+  /// No description provided for @mastermindBasisVercelDeployment.
+  ///
+  /// In en, this message translates to:
+  /// **'Vercel deployment'**
+  String get mastermindBasisVercelDeployment;
+
+  /// No description provided for @mastermindCategoryAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic'**
+  String get mastermindCategoryAuto;
+
+  /// No description provided for @mastermindCategoryDelegated.
+  ///
+  /// In en, this message translates to:
+  /// **'Delegated'**
+  String get mastermindCategoryDelegated;
+
+  /// No description provided for @mastermindCategoryUser.
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get mastermindCategoryUser;
+
+  /// No description provided for @mastermindChartBurn.
+  ///
+  /// In en, this message translates to:
+  /// **'Burn rate'**
+  String get mastermindChartBurn;
+
+  /// No description provided for @mastermindChartCiJobs.
+  ///
+  /// In en, this message translates to:
+  /// **'CI jobs'**
+  String get mastermindChartCiJobs;
+
+  /// No description provided for @mastermindChartCreditsBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Credit balance'**
+  String get mastermindChartCreditsBalance;
+
+  /// No description provided for @mastermindChartCreditsBurn.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily burn and target'**
+  String get mastermindChartCreditsBurn;
+
+  /// No description provided for @mastermindChartCreditsVsTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Burn vs target'**
+  String get mastermindChartCreditsVsTarget;
+
+  /// No description provided for @mastermindChartCriticalTrend.
+  ///
+  /// In en, this message translates to:
+  /// **'Critical findings'**
+  String get mastermindChartCriticalTrend;
+
+  /// No description provided for @mastermindChartDeliveryModes.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivery modes'**
+  String get mastermindChartDeliveryModes;
+
+  /// No description provided for @mastermindChartFailures.
+  ///
+  /// In en, this message translates to:
+  /// **'Run failures'**
+  String get mastermindChartFailures;
+
+  /// No description provided for @mastermindChartFleetCounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Threads by role'**
+  String get mastermindChartFleetCounts;
+
+  /// No description provided for @mastermindChartFleetStates.
+  ///
+  /// In en, this message translates to:
+  /// **'Thread states'**
+  String get mastermindChartFleetStates;
+
+  /// No description provided for @mastermindChartFleetTree.
+  ///
+  /// In en, this message translates to:
+  /// **'Fleet structure'**
+  String get mastermindChartFleetTree;
+
+  /// No description provided for @mastermindChartLatency.
+  ///
+  /// In en, this message translates to:
+  /// **'Result pickup time'**
+  String get mastermindChartLatency;
+
+  /// No description provided for @mastermindChartMergeToLive.
+  ///
+  /// In en, this message translates to:
+  /// **'Merge to live'**
+  String get mastermindChartMergeToLive;
+
+  /// No description provided for @mastermindChartMessageFlow.
+  ///
+  /// In en, this message translates to:
+  /// **'Message flow'**
+  String get mastermindChartMessageFlow;
+
+  /// No description provided for @mastermindChartMessageHeatmap.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages by hour'**
+  String get mastermindChartMessageHeatmap;
+
+  /// No description provided for @mastermindChartModelDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Median duration'**
+  String get mastermindChartModelDuration;
+
+  /// No description provided for @mastermindChartModelRuns.
+  ///
+  /// In en, this message translates to:
+  /// **'Runs by model'**
+  String get mastermindChartModelRuns;
+
+  /// No description provided for @mastermindChartModelSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Success and rework'**
+  String get mastermindChartModelSuccess;
+
+  /// No description provided for @mastermindChartOpenPrs.
+  ///
+  /// In en, this message translates to:
+  /// **'Open pull requests'**
+  String get mastermindChartOpenPrs;
+
+  /// No description provided for @mastermindChartPendingRuns.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending runs'**
+  String get mastermindChartPendingRuns;
+
+  /// No description provided for @mastermindChartProjection.
+  ///
+  /// In en, this message translates to:
+  /// **'Projected at reset'**
+  String get mastermindChartProjection;
+
+  /// No description provided for @mastermindChartQueueDepth.
+  ///
+  /// In en, this message translates to:
+  /// **'Queue depth'**
+  String get mastermindChartQueueDepth;
+
+  /// No description provided for @mastermindChartSecurityRegister.
+  ///
+  /// In en, this message translates to:
+  /// **'Findings by severity and status'**
+  String get mastermindChartSecurityRegister;
+
+  /// No description provided for @mastermindChartSessionPerSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Session use per success'**
+  String get mastermindChartSessionPerSuccess;
+
+  /// No description provided for @mastermindChartSessionRemaining.
+  ///
+  /// In en, this message translates to:
+  /// **'Session budget left'**
+  String get mastermindChartSessionRemaining;
+
+  /// No description provided for @mastermindChartShips.
+  ///
+  /// In en, this message translates to:
+  /// **'Production releases'**
+  String get mastermindChartShips;
+
+  /// No description provided for @mastermindChartTimeToFix.
+  ///
+  /// In en, this message translates to:
+  /// **'Time to fix'**
+  String get mastermindChartTimeToFix;
+
+  /// No description provided for @mastermindChartTokensPerSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Tokens per success'**
+  String get mastermindChartTokensPerSuccess;
+
+  /// No description provided for @mastermindChartWeeklyRemaining.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly budget left'**
+  String get mastermindChartWeeklyRemaining;
+
+  /// No description provided for @mastermindCi.
+  ///
+  /// In en, this message translates to:
+  /// **'CI'**
+  String get mastermindCi;
+
+  /// No description provided for @mastermindColumnChange7d.
+  ///
+  /// In en, this message translates to:
+  /// **'Change 7 d'**
+  String get mastermindColumnChange7d;
+
+  /// No description provided for @mastermindColumnChildrenPerRoot.
+  ///
+  /// In en, this message translates to:
+  /// **'Children per root'**
+  String get mastermindColumnChildrenPerRoot;
+
+  /// No description provided for @mastermindColumnDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Day'**
+  String get mastermindColumnDay;
+
+  /// No description provided for @mastermindColumnDeeperPerRoot.
+  ///
+  /// In en, this message translates to:
+  /// **'Deeper per root'**
+  String get mastermindColumnDeeperPerRoot;
+
+  /// No description provided for @mastermindColumnDepth1.
+  ///
+  /// In en, this message translates to:
+  /// **'Depth 1'**
+  String get mastermindColumnDepth1;
+
+  /// No description provided for @mastermindColumnDepth2Plus.
+  ///
+  /// In en, this message translates to:
+  /// **'Depth 2+'**
+  String get mastermindColumnDepth2Plus;
+
+  /// No description provided for @mastermindColumnFindings.
+  ///
+  /// In en, this message translates to:
+  /// **'Findings'**
+  String get mastermindColumnFindings;
+
+  /// No description provided for @mastermindColumnHour.
+  ///
+  /// In en, this message translates to:
+  /// **'Hour'**
+  String get mastermindColumnHour;
+
+  /// No description provided for @mastermindColumnMedian.
+  ///
+  /// In en, this message translates to:
+  /// **'Median'**
+  String get mastermindColumnMedian;
+
+  /// No description provided for @mastermindColumnMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages'**
+  String get mastermindColumnMessages;
+
+  /// No description provided for @mastermindColumnReceiver.
+  ///
+  /// In en, this message translates to:
+  /// **'Receiver'**
+  String get mastermindColumnReceiver;
+
+  /// No description provided for @mastermindColumnRoots.
+  ///
+  /// In en, this message translates to:
+  /// **'Roots'**
+  String get mastermindColumnRoots;
+
+  /// No description provided for @mastermindColumnSender.
+  ///
+  /// In en, this message translates to:
+  /// **'Sender'**
+  String get mastermindColumnSender;
+
+  /// No description provided for @mastermindColumnSeverity.
+  ///
+  /// In en, this message translates to:
+  /// **'Severity'**
+  String get mastermindColumnSeverity;
+
+  /// No description provided for @mastermindColumnStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get mastermindColumnStatus;
+
+  /// No description provided for @mastermindColumnTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get mastermindColumnTime;
+
+  /// No description provided for @mastermindColumnTopLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Top level'**
+  String get mastermindColumnTopLevel;
+
+  /// No description provided for @mastermindColumnTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get mastermindColumnTotal;
+
+  /// No description provided for @mastermindCommit.
+  ///
+  /// In en, this message translates to:
+  /// **'Commit'**
+  String get mastermindCommit;
+
+  /// No description provided for @mastermindCoverageComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete'**
+  String get mastermindCoverageComplete;
+
+  /// No description provided for @mastermindCoverageMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'No source'**
+  String get mastermindCoverageMissing;
+
+  /// No description provided for @mastermindCoveragePartial.
+  ///
+  /// In en, this message translates to:
+  /// **'Partial data'**
+  String get mastermindCoveragePartial;
+
+  /// No description provided for @mastermindCoverageStale.
+  ///
+  /// In en, this message translates to:
+  /// **'Stale'**
+  String get mastermindCoverageStale;
+
+  /// No description provided for @mastermindCriticalOpenFact.
+  ///
+  /// In en, this message translates to:
+  /// **'Critical open'**
+  String get mastermindCriticalOpenFact;
+
+  /// No description provided for @mastermindDataSourcesAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Data sources'**
+  String get mastermindDataSourcesAction;
+
+  /// No description provided for @mastermindDecidedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Decided by'**
+  String get mastermindDecidedBy;
+
+  /// No description provided for @mastermindDecisionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Decisions'**
+  String get mastermindDecisionsTitle;
+
+  /// No description provided for @mastermindDeploy.
+  ///
+  /// In en, this message translates to:
+  /// **'Deploy'**
+  String get mastermindDeploy;
+
+  /// No description provided for @mastermindDeployError.
+  ///
+  /// In en, this message translates to:
+  /// **'error'**
+  String get mastermindDeployError;
+
+  /// No description provided for @mastermindDeployFailedFact.
+  ///
+  /// In en, this message translates to:
+  /// **'Deploy failed'**
+  String get mastermindDeployFailedFact;
+
+  /// No description provided for @mastermindDeployFailure.
+  ///
+  /// In en, this message translates to:
+  /// **'failure'**
+  String get mastermindDeployFailure;
+
+  /// No description provided for @mastermindDeployInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'in progress'**
+  String get mastermindDeployInProgress;
+
+  /// No description provided for @mastermindDeployInactive.
+  ///
+  /// In en, this message translates to:
+  /// **'inactive'**
+  String get mastermindDeployInactive;
+
+  /// No description provided for @mastermindDeployPending.
+  ///
+  /// In en, this message translates to:
+  /// **'pending'**
+  String get mastermindDeployPending;
+
+  /// No description provided for @mastermindDeployQueued.
+  ///
+  /// In en, this message translates to:
+  /// **'queued'**
+  String get mastermindDeployQueued;
+
+  /// No description provided for @mastermindDeploySuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'success'**
+  String get mastermindDeploySuccess;
+
+  /// No description provided for @mastermindDigestGap.
+  ///
+  /// In en, this message translates to:
+  /// **'Some earlier updates aren\'t included.'**
+  String get mastermindDigestGap;
+
+  /// No description provided for @mastermindEffortFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'Effort'**
+  String get mastermindEffortFilter;
+
+  /// No description provided for @mastermindEnvProduction.
+  ///
+  /// In en, this message translates to:
+  /// **'Production'**
+  String get mastermindEnvProduction;
+
+  /// No description provided for @mastermindEnvStaging.
+  ///
+  /// In en, this message translates to:
+  /// **'Staging'**
+  String get mastermindEnvStaging;
+
+  /// No description provided for @mastermindEnvironmentsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Environments'**
+  String get mastermindEnvironmentsTitle;
+
+  /// No description provided for @mastermindEventBacklog.
+  ///
+  /// In en, this message translates to:
+  /// **'Backlog'**
+  String get mastermindEventBacklog;
+
+  /// No description provided for @mastermindEventDecision.
+  ///
+  /// In en, this message translates to:
+  /// **'Decision'**
+  String get mastermindEventDecision;
+
+  /// No description provided for @mastermindEventEnvironment.
+  ///
+  /// In en, this message translates to:
+  /// **'Environment'**
+  String get mastermindEventEnvironment;
+
+  /// No description provided for @mastermindEventLane.
+  ///
+  /// In en, this message translates to:
+  /// **'Lane'**
+  String get mastermindEventLane;
+
+  /// No description provided for @mastermindEventNeedsYou.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs you'**
+  String get mastermindEventNeedsYou;
+
+  /// No description provided for @mastermindEventProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Release'**
+  String get mastermindEventProduct;
+
+  /// No description provided for @mastermindEventQuota.
+  ///
+  /// In en, this message translates to:
+  /// **'Quota'**
+  String get mastermindEventQuota;
+
+  /// No description provided for @mastermindEventReceipt.
+  ///
+  /// In en, this message translates to:
+  /// **'Receipt'**
+  String get mastermindEventReceipt;
+
+  /// No description provided for @mastermindEvidence.
+  ///
+  /// In en, this message translates to:
+  /// **'Evidence'**
+  String get mastermindEvidence;
+
+  /// No description provided for @mastermindFilterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get mastermindFilterAll;
+
+  /// No description provided for @mastermindFilterButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter'**
+  String get mastermindFilterButton;
+
+  /// No description provided for @mastermindFilterOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get mastermindFilterOther;
+
+  /// No description provided for @mastermindFilterRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Running'**
+  String get mastermindFilterRunning;
+
+  /// No description provided for @mastermindFilterWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting'**
+  String get mastermindFilterWaiting;
+
+  /// No description provided for @mastermindFloor.
+  ///
+  /// In en, this message translates to:
+  /// **'Floor {value}'**
+  String mastermindFloor(String value);
+
+  /// No description provided for @mastermindFreshCached.
+  ///
+  /// In en, this message translates to:
+  /// **'cached'**
+  String get mastermindFreshCached;
+
+  /// No description provided for @mastermindFreshFresh.
+  ///
+  /// In en, this message translates to:
+  /// **'fresh'**
+  String get mastermindFreshFresh;
+
+  /// No description provided for @mastermindInsightsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Insights'**
+  String get mastermindInsightsLabel;
+
+  /// No description provided for @mastermindKindAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Action'**
+  String get mastermindKindAction;
+
+  /// No description provided for @mastermindKindBacklog.
+  ///
+  /// In en, this message translates to:
+  /// **'Backlog'**
+  String get mastermindKindBacklog;
+
+  /// No description provided for @mastermindKindDecision.
+  ///
+  /// In en, this message translates to:
+  /// **'Decision'**
+  String get mastermindKindDecision;
+
+  /// No description provided for @mastermindKindDesign.
+  ///
+  /// In en, this message translates to:
+  /// **'Design'**
+  String get mastermindKindDesign;
+
+  /// No description provided for @mastermindKindFyi.
+  ///
+  /// In en, this message translates to:
+  /// **'FYI'**
+  String get mastermindKindFyi;
+
+  /// No description provided for @mastermindKindImplementation.
+  ///
+  /// In en, this message translates to:
+  /// **'Implementation'**
+  String get mastermindKindImplementation;
+
+  /// No description provided for @mastermindKindLane.
+  ///
+  /// In en, this message translates to:
+  /// **'Lane'**
+  String get mastermindKindLane;
+
+  /// No description provided for @mastermindKindResearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Research'**
+  String get mastermindKindResearch;
+
+  /// No description provided for @mastermindKindReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Review'**
+  String get mastermindKindReview;
+
+  /// No description provided for @mastermindKindStaff.
+  ///
+  /// In en, this message translates to:
+  /// **'Staff'**
+  String get mastermindKindStaff;
+
+  /// No description provided for @mastermindKindTest.
+  ///
+  /// In en, this message translates to:
+  /// **'Test'**
+  String get mastermindKindTest;
+
+  /// No description provided for @mastermindLaneAge.
+  ///
+  /// In en, this message translates to:
+  /// **'Age'**
+  String get mastermindLaneAge;
+
+  /// No description provided for @mastermindLaneArea.
+  ///
+  /// In en, this message translates to:
+  /// **'Area'**
+  String get mastermindLaneArea;
+
+  /// No description provided for @mastermindLaneEta.
+  ///
+  /// In en, this message translates to:
+  /// **'ETA {duration}'**
+  String mastermindLaneEta(String duration);
+
+  /// No description provided for @mastermindLaneKind.
+  ///
+  /// In en, this message translates to:
+  /// **'Kind'**
+  String get mastermindLaneKind;
+
+  /// No description provided for @mastermindLaneModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Model'**
+  String get mastermindLaneModel;
+
+  /// No description provided for @mastermindLaneProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Product'**
+  String get mastermindLaneProduct;
+
+  /// No description provided for @mastermindLaneRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Role'**
+  String get mastermindLaneRole;
+
+  /// No description provided for @mastermindLaneState.
+  ///
+  /// In en, this message translates to:
+  /// **'State'**
+  String get mastermindLaneState;
+
+  /// No description provided for @mastermindLanesEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No lanes in this view'**
+  String get mastermindLanesEmpty;
+
+  /// No description provided for @mastermindLanesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Lanes'**
+  String get mastermindLanesLabel;
+
+  /// No description provided for @mastermindLastActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Last active'**
+  String get mastermindLastActive;
+
+  /// No description provided for @mastermindLiveFor.
+  ///
+  /// In en, this message translates to:
+  /// **'live {duration}'**
+  String mastermindLiveFor(String duration);
+
+  /// No description provided for @mastermindMeasuredRuns.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 measured run} other{{count} measured runs}}'**
+  String mastermindMeasuredRuns(int count);
+
+  /// No description provided for @mastermindNeedsYouHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Answer in the Inbox on your Mac.'**
+  String get mastermindNeedsYouHint;
+
+  /// No description provided for @mastermindNeedsYouTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs you'**
+  String get mastermindNeedsYouTitle;
+
+  /// No description provided for @mastermindNoDataInPeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'No data in this period'**
+  String get mastermindNoDataInPeriod;
+
+  /// No description provided for @mastermindNoProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'No product'**
+  String get mastermindNoProduct;
+
+  /// No description provided for @mastermindNotConnectedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Mastermind data isn\'t published to this app yet.'**
+  String get mastermindNotConnectedMessage;
+
+  /// No description provided for @mastermindNotConnectedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Not connected'**
+  String get mastermindNotConnectedTitle;
+
+  /// No description provided for @mastermindNotReversible.
+  ///
+  /// In en, this message translates to:
+  /// **'Not reversible'**
+  String get mastermindNotReversible;
+
+  /// No description provided for @mastermindNothingNeedsYou.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing needs you'**
+  String get mastermindNothingNeedsYou;
+
+  /// No description provided for @mastermindNowLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Now'**
+  String get mastermindNowLabel;
+
+  /// No description provided for @mastermindObservedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Observed'**
+  String get mastermindObservedAt;
+
+  /// No description provided for @mastermindOriginLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Origin'**
+  String get mastermindOriginLabel;
+
+  /// No description provided for @mastermindPartialBucket.
+  ///
+  /// In en, this message translates to:
+  /// **'partial bucket'**
+  String get mastermindPartialBucket;
+
+  /// No description provided for @mastermindProductFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'Product'**
+  String get mastermindProductFilter;
+
+  /// No description provided for @mastermindProductsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Products'**
+  String get mastermindProductsLabel;
+
+  /// No description provided for @mastermindRange24h.
+  ///
+  /// In en, this message translates to:
+  /// **'24 h'**
+  String get mastermindRange24h;
+
+  /// No description provided for @mastermindRange7d.
+  ///
+  /// In en, this message translates to:
+  /// **'7 days'**
+  String get mastermindRange7d;
+
+  /// No description provided for @mastermindReceiptRecorded.
+  ///
+  /// In en, this message translates to:
+  /// **'Receipt recorded'**
+  String get mastermindReceiptRecorded;
+
+  /// No description provided for @mastermindRecentEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing new.'**
+  String get mastermindRecentEmpty;
+
+  /// No description provided for @mastermindRecentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent'**
+  String get mastermindRecentTitle;
+
+  /// No description provided for @mastermindRecommended.
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended'**
+  String get mastermindRecommended;
+
+  /// No description provided for @mastermindRejectedInline.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t read the latest snapshot. Showing {time}.'**
+  String mastermindRejectedInline(String time);
+
+  /// No description provided for @mastermindRejectedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'It uses a format this app version doesn\'t read. Update the app.'**
+  String get mastermindRejectedMessage;
+
+  /// No description provided for @mastermindRejectedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This snapshot can\'t be shown'**
+  String get mastermindRejectedTitle;
+
+  /// No description provided for @mastermindReleasesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Releases'**
+  String get mastermindReleasesTitle;
+
+  /// No description provided for @mastermindResetsAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Resets {dateTime}'**
+  String mastermindResetsAt(String dateTime);
+
+  /// No description provided for @mastermindReversible.
+  ///
+  /// In en, this message translates to:
+  /// **'Reversible'**
+  String get mastermindReversible;
+
+  /// No description provided for @mastermindRiskHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'high'**
+  String get mastermindRiskHigh;
+
+  /// No description provided for @mastermindRiskLow.
+  ///
+  /// In en, this message translates to:
+  /// **'low'**
+  String get mastermindRiskLow;
+
+  /// No description provided for @mastermindRiskMed.
+  ///
+  /// In en, this message translates to:
+  /// **'medium'**
+  String get mastermindRiskMed;
+
+  /// No description provided for @mastermindRoleFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'Role'**
+  String get mastermindRoleFilter;
+
+  /// No description provided for @mastermindRunsToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Runs today'**
+  String get mastermindRunsToday;
+
+  /// No description provided for @mastermindSampleData.
+  ///
+  /// In en, this message translates to:
+  /// **'Sample data'**
+  String get mastermindSampleData;
+
+  /// No description provided for @mastermindSamples.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 sample} other{{count} samples}}'**
+  String mastermindSamples(int count);
+
+  /// No description provided for @mastermindScopeCoordination.
+  ///
+  /// In en, this message translates to:
+  /// **'Coordination'**
+  String get mastermindScopeCoordination;
+
+  /// No description provided for @mastermindScopeDelivery.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivery'**
+  String get mastermindScopeDelivery;
+
+  /// No description provided for @mastermindScopeFleet.
+  ///
+  /// In en, this message translates to:
+  /// **'Fleet'**
+  String get mastermindScopeFleet;
+
+  /// No description provided for @mastermindScopeModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Models'**
+  String get mastermindScopeModels;
+
+  /// No description provided for @mastermindScopeSecurity.
+  ///
+  /// In en, this message translates to:
+  /// **'Security'**
+  String get mastermindScopeSecurity;
+
+  /// No description provided for @mastermindScopeUsage.
+  ///
+  /// In en, this message translates to:
+  /// **'Usage'**
+  String get mastermindScopeUsage;
+
+  /// No description provided for @mastermindSecurityFix.
+  ///
+  /// In en, this message translates to:
+  /// **'Security fix'**
+  String get mastermindSecurityFix;
+
+  /// No description provided for @mastermindSecurityIssue.
+  ///
+  /// In en, this message translates to:
+  /// **'Security issue'**
+  String get mastermindSecurityIssue;
+
+  /// No description provided for @mastermindSelectedReadout.
+  ///
+  /// In en, this message translates to:
+  /// **'{date} · {series} · {value}'**
+  String mastermindSelectedReadout(String date, String series, String value);
+
+  /// No description provided for @mastermindSeriesActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get mastermindSeriesActive;
+
+  /// No description provided for @mastermindSeriesBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance'**
+  String get mastermindSeriesBalance;
+
+  /// No description provided for @mastermindSeriesBurn.
+  ///
+  /// In en, this message translates to:
+  /// **'Burn'**
+  String get mastermindSeriesBurn;
+
+  /// No description provided for @mastermindSeriesCapacity.
+  ///
+  /// In en, this message translates to:
+  /// **'Capacity'**
+  String get mastermindSeriesCapacity;
+
+  /// No description provided for @mastermindSeriesCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get mastermindSeriesCompleted;
+
+  /// No description provided for @mastermindSeriesCriticalClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'Critical closed'**
+  String get mastermindSeriesCriticalClosed;
+
+  /// No description provided for @mastermindSeriesCriticalOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Critical open'**
+  String get mastermindSeriesCriticalOpen;
+
+  /// No description provided for @mastermindSeriesIdle.
+  ///
+  /// In en, this message translates to:
+  /// **'idle'**
+  String get mastermindSeriesIdle;
+
+  /// No description provided for @mastermindSeriesOtherError.
+  ///
+  /// In en, this message translates to:
+  /// **'Other error'**
+  String get mastermindSeriesOtherError;
+
+  /// No description provided for @mastermindSeriesOtherTerminal.
+  ///
+  /// In en, this message translates to:
+  /// **'Other finished'**
+  String get mastermindSeriesOtherTerminal;
+
+  /// No description provided for @mastermindSeriesQueue.
+  ///
+  /// In en, this message translates to:
+  /// **'Queue'**
+  String get mastermindSeriesQueue;
+
+  /// No description provided for @mastermindSeriesQueued.
+  ///
+  /// In en, this message translates to:
+  /// **'Queued'**
+  String get mastermindSeriesQueued;
+
+  /// No description provided for @mastermindSeriesRework.
+  ///
+  /// In en, this message translates to:
+  /// **'Rework'**
+  String get mastermindSeriesRework;
+
+  /// No description provided for @mastermindSeriesRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'running'**
+  String get mastermindSeriesRunning;
+
+  /// No description provided for @mastermindSeriesStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get mastermindSeriesStart;
+
+  /// No description provided for @mastermindSeriesSteer.
+  ///
+  /// In en, this message translates to:
+  /// **'Steer'**
+  String get mastermindSeriesSteer;
+
+  /// No description provided for @mastermindSeriesSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Success'**
+  String get mastermindSeriesSuccess;
+
+  /// No description provided for @mastermindSeriesTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Target'**
+  String get mastermindSeriesTarget;
+
+  /// No description provided for @mastermindSeriesUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'unknown'**
+  String get mastermindSeriesUnknown;
+
+  /// No description provided for @mastermindSeriesUsageLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Usage limit'**
+  String get mastermindSeriesUsageLimit;
+
+  /// No description provided for @mastermindSeriesWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'waiting'**
+  String get mastermindSeriesWaiting;
+
+  /// No description provided for @mastermindSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Session'**
+  String get mastermindSession;
+
+  /// No description provided for @mastermindSeverityCritical.
+  ///
+  /// In en, this message translates to:
+  /// **'Critical'**
+  String get mastermindSeverityCritical;
+
+  /// No description provided for @mastermindSeverityHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get mastermindSeverityHigh;
+
+  /// No description provided for @mastermindSeverityLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Low'**
+  String get mastermindSeverityLow;
+
+  /// No description provided for @mastermindSeverityMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium'**
+  String get mastermindSeverityMedium;
+
+  /// No description provided for @mastermindSeverityUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get mastermindSeverityUnknown;
+
+  /// No description provided for @mastermindShowAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Show all'**
+  String get mastermindShowAll;
+
+  /// No description provided for @mastermindSnapshotAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Snapshot {time}'**
+  String mastermindSnapshotAt(String time);
+
+  /// No description provided for @mastermindSnapshotOutOfDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Snapshot out of date'**
+  String get mastermindSnapshotOutOfDate;
+
+  /// No description provided for @mastermindSnapshotSectionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sections'**
+  String get mastermindSnapshotSectionsTitle;
+
+  /// No description provided for @mastermindSourceCheckin.
+  ///
+  /// In en, this message translates to:
+  /// **'Check-in'**
+  String get mastermindSourceCheckin;
+
+  /// No description provided for @mastermindSourceCi.
+  ///
+  /// In en, this message translates to:
+  /// **'CI'**
+  String get mastermindSourceCi;
+
+  /// No description provided for @mastermindSourceDecisions.
+  ///
+  /// In en, this message translates to:
+  /// **'Decisions'**
+  String get mastermindSourceDecisions;
+
+  /// No description provided for @mastermindSourceDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Directory'**
+  String get mastermindSourceDirectory;
+
+  /// No description provided for @mastermindSourceGithub.
+  ///
+  /// In en, this message translates to:
+  /// **'GitHub'**
+  String get mastermindSourceGithub;
+
+  /// No description provided for @mastermindSourceInbox.
+  ///
+  /// In en, this message translates to:
+  /// **'Inbox'**
+  String get mastermindSourceInbox;
+
+  /// No description provided for @mastermindSourceLedger.
+  ///
+  /// In en, this message translates to:
+  /// **'Ledger'**
+  String get mastermindSourceLedger;
+
+  /// No description provided for @mastermindSourceOpenItems.
+  ///
+  /// In en, this message translates to:
+  /// **'Open items'**
+  String get mastermindSourceOpenItems;
+
+  /// No description provided for @mastermindSourceQuotaCache.
+  ///
+  /// In en, this message translates to:
+  /// **'Quota cache'**
+  String get mastermindSourceQuotaCache;
+
+  /// No description provided for @mastermindSourceQuotaWatcher.
+  ///
+  /// In en, this message translates to:
+  /// **'Quota watcher'**
+  String get mastermindSourceQuotaWatcher;
+
+  /// No description provided for @mastermindSourceSpeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed'**
+  String get mastermindSourceSpeed;
+
+  /// No description provided for @mastermindSourceStateOk.
+  ///
+  /// In en, this message translates to:
+  /// **'OK'**
+  String get mastermindSourceStateOk;
+
+  /// No description provided for @mastermindSourceT3.
+  ///
+  /// In en, this message translates to:
+  /// **'T3'**
+  String get mastermindSourceT3;
+
+  /// No description provided for @mastermindSourceWorkforce.
+  ///
+  /// In en, this message translates to:
+  /// **'Workforce'**
+  String get mastermindSourceWorkforce;
+
+  /// No description provided for @mastermindSourcesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sources'**
+  String get mastermindSourcesTitle;
+
+  /// No description provided for @mastermindStaffGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Staff'**
+  String get mastermindStaffGroup;
+
+  /// No description provided for @mastermindStateAnswered.
+  ///
+  /// In en, this message translates to:
+  /// **'answered'**
+  String get mastermindStateAnswered;
+
+  /// No description provided for @mastermindStateCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'cancelled'**
+  String get mastermindStateCancelled;
+
+  /// No description provided for @mastermindStateCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'completed'**
+  String get mastermindStateCompleted;
+
+  /// No description provided for @mastermindStateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'failed'**
+  String get mastermindStateFailed;
+
+  /// No description provided for @mastermindStateIdle.
+  ///
+  /// In en, this message translates to:
+  /// **'idle'**
+  String get mastermindStateIdle;
+
+  /// No description provided for @mastermindStateOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'open'**
+  String get mastermindStateOpen;
+
+  /// No description provided for @mastermindStateQueued.
+  ///
+  /// In en, this message translates to:
+  /// **'queued'**
+  String get mastermindStateQueued;
+
+  /// No description provided for @mastermindStateRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'running'**
+  String get mastermindStateRunning;
+
+  /// No description provided for @mastermindStateStale.
+  ///
+  /// In en, this message translates to:
+  /// **'stale'**
+  String get mastermindStateStale;
+
+  /// No description provided for @mastermindStateUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'unknown'**
+  String get mastermindStateUnknown;
+
+  /// No description provided for @mastermindStateWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'waiting'**
+  String get mastermindStateWaiting;
+
+  /// No description provided for @mastermindStateWithdrawn.
+  ///
+  /// In en, this message translates to:
+  /// **'withdrawn'**
+  String get mastermindStateWithdrawn;
+
+  /// No description provided for @mastermindSummaryAsOf.
+  ///
+  /// In en, this message translates to:
+  /// **'as of {time}'**
+  String mastermindSummaryAsOf(String time);
+
+  /// No description provided for @mastermindSummaryAtLeast.
+  ///
+  /// In en, this message translates to:
+  /// **'at least {count}'**
+  String mastermindSummaryAtLeast(int count);
+
+  /// No description provided for @mastermindSummaryClosedIsState.
+  ///
+  /// In en, this message translates to:
+  /// **'Closed counts show register state, not new fixes.'**
+  String get mastermindSummaryClosedIsState;
+
+  /// No description provided for @mastermindSummaryCreditsNeedsTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs a daily target.'**
+  String get mastermindSummaryCreditsNeedsTarget;
+
+  /// No description provided for @mastermindSummaryCreditsNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Credits are not money or tokens.'**
+  String get mastermindSummaryCreditsNote;
+
+  /// No description provided for @mastermindSummaryCreditsTargetMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily target unavailable.'**
+  String get mastermindSummaryCreditsTargetMissing;
+
+  /// No description provided for @mastermindSummaryDeliveryModesUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivery mode counts unavailable.'**
+  String get mastermindSummaryDeliveryModesUnavailable;
+
+  /// No description provided for @mastermindSummaryEstimateNotCost.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimate, not a cost.'**
+  String get mastermindSummaryEstimateNotCost;
+
+  /// No description provided for @mastermindSummaryFleetNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Now: {running} running, {waiting} waiting, {idle} idle.'**
+  String mastermindSummaryFleetNow(String running, String waiting, String idle);
+
+  /// No description provided for @mastermindSummaryLatencyCaveat.
+  ///
+  /// In en, this message translates to:
+  /// **'Measures recorded parent starts.'**
+  String get mastermindSummaryLatencyCaveat;
+
+  /// No description provided for @mastermindSummaryModelsTop.
+  ///
+  /// In en, this message translates to:
+  /// **'{model} ran most: {count} runs, {success} success.'**
+  String mastermindSummaryModelsTop(String model, int count, String success);
+
+  /// No description provided for @mastermindSummaryNoFixDates.
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable: the register has no fix dates.'**
+  String get mastermindSummaryNoFixDates;
+
+  /// No description provided for @mastermindSummaryNoMessageStream.
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable: no message stream recorded.'**
+  String get mastermindSummaryNoMessageStream;
+
+  /// No description provided for @mastermindSummarySecurityCell.
+  ///
+  /// In en, this message translates to:
+  /// **'{product}, {severity}, {status}: {count}'**
+  String mastermindSummarySecurityCell(String product, String severity, String status, int count);
+
+  /// No description provided for @mastermindSummaryShipsLowerBound.
+  ///
+  /// In en, this message translates to:
+  /// **'At least {count} production releases observed.'**
+  String mastermindSummaryShipsLowerBound(int count);
+
+  /// No description provided for @mastermindSummaryUsageLowest.
+  ///
+  /// In en, this message translates to:
+  /// **'{account} has the least left: {percent}.'**
+  String mastermindSummaryUsageLowest(String account, String percent);
+
+  /// No description provided for @mastermindSummaryUsageShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Projected SHORT at reset {time}.'**
+  String mastermindSummaryUsageShort(String time);
+
+  /// No description provided for @mastermindSummaryWeeklyNotReported.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly window not reported.'**
+  String get mastermindSummaryWeeklyNotReported;
+
+  /// No description provided for @mastermindTableLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Table'**
+  String get mastermindTableLink;
+
+  /// No description provided for @mastermindTentative.
+  ///
+  /// In en, this message translates to:
+  /// **'tentative'**
+  String get mastermindTentative;
+
+  /// No description provided for @mastermindTimeZoneCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'GMT+7'**
+  String get mastermindTimeZoneCaption;
+
+  /// No description provided for @mastermindTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Mastermind'**
+  String get mastermindTitle;
+
+  /// No description provided for @mastermindUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable'**
+  String get mastermindUnavailable;
+
+  /// No description provided for @mastermindUnitCredits.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} credits'**
+  String mastermindUnitCredits(String value);
+
+  /// No description provided for @mastermindUnitCreditsPerDay.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} credits/day'**
+  String mastermindUnitCreditsPerDay(String value);
+
+  /// No description provided for @mastermindUnitHours.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} h'**
+  String mastermindUnitHours(String value);
+
+  /// No description provided for @mastermindUnitMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} min'**
+  String mastermindUnitMinutes(String value);
+
+  /// No description provided for @mastermindUnitPercent.
+  ///
+  /// In en, this message translates to:
+  /// **'{value}%'**
+  String mastermindUnitPercent(String value);
+
+  /// No description provided for @mastermindUnitPp.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} pp'**
+  String mastermindUnitPp(String value);
+
+  /// No description provided for @mastermindUnitPpPerHour.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} pp/h'**
+  String mastermindUnitPpPerHour(String value);
+
+  /// No description provided for @mastermindUnitSeconds.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} s'**
+  String mastermindUnitSeconds(String value);
+
+  /// No description provided for @mastermindUnitTokens.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} tokens'**
+  String mastermindUnitTokens(String value);
+
+  /// No description provided for @mastermindVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Version'**
+  String get mastermindVersion;
+
+  /// No description provided for @mastermindWeekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly'**
+  String get mastermindWeekly;
+
+  /// No description provided for @mastermindWhy.
+  ///
+  /// In en, this message translates to:
+  /// **'Why'**
+  String get mastermindWhy;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

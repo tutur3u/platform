@@ -63,6 +63,7 @@ export function ContactsPanel({
           <ContactForm
             isCreating={isCreating}
             onCreate={onCreate}
+            onSelectExisting={() => onAddDialogOpenChange(false)}
             workspaceUsers={workspaceUsers}
             wsId={wsId}
           />

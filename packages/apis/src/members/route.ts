@@ -54,6 +54,27 @@ export async function GET(
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
+  const user = authContext?.user ?? (await supabase.auth.getUser()).data.user;
+  if (!user) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+  const { data: membership, error: membershipError } = await supabase
+    .from('workspace_members')
+    .select('user_id')
+    .eq('ws_id', wsId)
+    .eq('user_id', user.id)
+    .maybeSingle();
+  if (membershipError) {
+    console.error('Error checking workspace membership:', membershipError);
+    return NextResponse.json(
+      { message: 'Error checking workspace membership' },
+      { status: 500 }
+    );
+  }
+  if (!membership) {
+    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+  }
+
   // Fetch workspace creator_id
   const { data: workspace } = await supabase
     .from('workspaces')

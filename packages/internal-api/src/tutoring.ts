@@ -319,6 +319,10 @@ export interface TutoringTeacher {
   id: string;
   full_name: string | null;
   display_name: string | null;
+  /** TEACHER in a group the policy marks as a tutor group. */
+  isTutor: boolean;
+  /** TEACHER in any other group, so a person can be both. */
+  isClassTeacher: boolean;
 }
 
 export async function listTutoringTeachers(
@@ -327,6 +331,7 @@ export async function listTutoringTeachers(
     page?: number;
     pageSize?: number;
     q?: string;
+    tutorsOnly?: boolean;
   } = {},
   options?: InternalApiClientOptions
 ) {
