@@ -13,12 +13,20 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 /// workspace while Education mode is active. In any other mode it stays
 /// empty and never touches the network.
 class ClassesTodayScope extends StatefulWidget {
-  const ClassesTodayScope({required this.child, this.repository, super.key});
+  const ClassesTodayScope({
+    required this.child,
+    this.repository,
+    this.clock,
+    super.key,
+  });
 
   final Widget child;
 
   @visibleForTesting
   final ClassesTodayRepository? repository;
+
+  @visibleForTesting
+  final DateTime Function()? clock;
 
   @override
   State<ClassesTodayScope> createState() => _ClassesTodayScopeState();
@@ -27,9 +35,21 @@ class ClassesTodayScope extends StatefulWidget {
 class _ClassesTodayScopeState extends State<ClassesTodayScope> {
   late final ClassesTodayCubit _cubit = ClassesTodayCubit(
     repository: widget.repository ?? SessionsClassesTodayRepository(),
+    clock: widget.clock,
   );
   final List<StreamSubscription<Object?>> _subscriptions = [];
+  late final AppLifecycleListener _lifecycle;
   ({String? userId, String? wsId})? _bound;
+
+  @override
+  void initState() {
+    super.initState();
+    // Dart timers pause while the device sleeps, so the midnight wake can
+    // miss the day rolling over; catch up as soon as the app is back.
+    _lifecycle = AppLifecycleListener(
+      onResume: () => unawaited(_cubit.resume()),
+    );
+  }
 
   @override
   void didChangeDependencies() {
@@ -66,6 +86,7 @@ class _ClassesTodayScopeState extends State<ClassesTodayScope> {
 
   @override
   void dispose() {
+    _lifecycle.dispose();
     for (final subscription in _subscriptions) {
       unawaited(subscription.cancel());
     }

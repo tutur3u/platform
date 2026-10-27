@@ -197,6 +197,79 @@ void main() {
     },
   );
 
+  test(
+    'resuming on a new day reloads even though the timer never fired',
+    () async {
+      var clock = DateTime(2026, 10, 27, 22);
+      final scheduler = FakeTickScheduler();
+      final repository = FakeClassesTodayRepository(
+        snapshot: ClassesTodaySnapshot(
+          sessions: [session('yesterday', start: DateTime(2026, 10, 27, 23))],
+        ),
+      );
+      final cubit = ClassesTodayCubit(
+        repository: repository,
+        clock: () => clock,
+        scheduler: scheduler.call,
+      );
+      addTearDown(cubit.close);
+      await cubit.load(userId: 'u1', wsId: 'ec');
+      expect(cubit.state.snapshot?.sessions.single.id, 'yesterday');
+      expect(repository.fetches, hasLength(1));
+      final armedBeforeSleep = scheduler.scheduled.length;
+
+      // The device sleeps overnight: the monotonic timer is never fired.
+      clock = DateTime(2026, 10, 28, 7);
+      repository.snapshot = ClassesTodaySnapshot(
+        sessions: [session('today', start: DateTime(2026, 10, 28, 9))],
+      );
+      await cubit.resume();
+
+      expect(repository.fetches, hasLength(2));
+      expect(cubit.state.snapshot?.sessions.map((s) => s.id), ['today']);
+      expect(scheduler.scheduled.length, greaterThan(armedBeforeSleep));
+      // The wake is re-armed from the new day: 09:00 class start is 2 h away.
+      expect(scheduler.scheduled.last.$1, const Duration(hours: 2));
+    },
+  );
+
+  test('resuming on the same day re-renders without a fetch', () async {
+    var clock = now;
+    final scheduler = FakeTickScheduler();
+    final repository = FakeClassesTodayRepository(
+      snapshot: ClassesTodaySnapshot(
+        sessions: [session('a', start: DateTime(2026, 10, 27, 11))],
+      ),
+    );
+    final cubit = ClassesTodayCubit(
+      repository: repository,
+      clock: () => clock,
+      scheduler: scheduler.call,
+    );
+    addTearDown(cubit.close);
+    await cubit.load(userId: 'u1', wsId: 'ec');
+    clock = DateTime(2026, 10, 27, 11, 30);
+    await cubit.resume();
+    expect(repository.fetches, hasLength(1));
+    expect(cubit.state.tick, 1);
+    // Re-armed from the wall clock: the class ends at 12:30.
+    expect(scheduler.scheduled.last.$1, const Duration(hours: 1));
+  });
+
+  test('resuming with nothing bound does nothing', () async {
+    final scheduler = FakeTickScheduler();
+    final repository = FakeClassesTodayRepository();
+    final cubit = ClassesTodayCubit(
+      repository: repository,
+      clock: () => now,
+      scheduler: scheduler.call,
+    );
+    addTearDown(cubit.close);
+    await cubit.resume();
+    expect(repository.fetches, isEmpty);
+    expect(scheduler.scheduled, isEmpty);
+  });
+
   test('loads the day and applies "all" until the source can scope', () async {
     final repository = FakeClassesTodayRepository(
       snapshot: ClassesTodaySnapshot(

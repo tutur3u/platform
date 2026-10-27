@@ -163,6 +163,20 @@ class ClassesTodayCubit extends Cubit<ClassesTodayState> {
 
   Future<void> refresh() => load(userId: state.userId, wsId: state.wsId);
 
+  /// Catches up after the app was suspended. Timers run on the monotonic
+  /// clock, which stops while the device sleeps, so the pending wake can be
+  /// hours late: reload if the calendar day rolled over, otherwise re-render
+  /// the session phases and re-arm the wake from the wall clock.
+  Future<void> resume() async {
+    if (isClosed || state.wsId == null) return;
+    if (_dateOf(_clock()) != _day) {
+      await refresh();
+      return;
+    }
+    emit(state.copyWith(tick: state.tick + 1));
+    _scheduleTick();
+  }
+
   Future<void> setScope(ClassScope scope) async {
     if (scope == state.scope) return;
     emit(state.copyWith(scope: scope));
