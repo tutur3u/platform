@@ -67,7 +67,8 @@ review prove baseline equivalence. Existing migration history stays immutable.
   ACLs, including later private-schema moves; qualify relations before narrowing
   the path. Keep private-schema regression checks for explicit qualified access.
   Lock rows in a fixed order before a check-then-delete, and never let a manual
-  rollback re-grant `PUBLIC` or `anon`.
+  rollback re-grant `PUBLIC` or `anon`. Definer helpers that take table or column
+  identifiers stay `service_role`-only and raise outside an exact allowlist.
 - Public functions created before `20260522172925` inherited EXECUTE for
   `PUBLIC`, `anon` and `authenticated`. When touching one, revoke from all three,
   grant only the roles its callers use, and check RLS policies and invoker

@@ -1,5 +1,8 @@
 -- Fail closed when merge permission checks return NULL (batched phase 1 helpers).
 -- Part of SR-108; see 20261027150200_merge_phase_workspace_guards.
+-- The two dynamic-identifier helpers refuse any (table, column) outside the fixed
+-- phase 1a-1d merge graph and stay service_role-only, matching the emergency
+-- revoke in 20261027151000 regardless of the order the two are applied in.
 
 BEGIN;
 
@@ -16,6 +19,39 @@ DECLARE
   v_has_more BOOLEAN := FALSE;
   v_remaining INTEGER := 0;
 BEGIN
+  -- Only the fixed phase 1a-1d merge references; anything else is refused before any check or write.
+  IF ((_table_name, _column_name) IN (VALUES
+    ('external_user_monthly_report_logs', 'creator_id'),
+    ('external_user_monthly_report_logs', 'user_id'),
+    ('external_user_monthly_reports', 'creator_id'),
+    ('external_user_monthly_reports', 'updated_by'),
+    ('external_user_monthly_reports', 'user_id'),
+    ('finance_invoices', 'creator_id'),
+    ('finance_invoices', 'customer_id'),
+    ('guest_users_lead_generation', 'user_id'),
+    ('healthcare_checkups', 'patient_id'),
+    ('payroll_run_items', 'user_id'),
+    ('product_stock_changes', 'beneficiary_id'),
+    ('product_stock_changes', 'creator_id'),
+    ('sent_emails', 'receiver_id'),
+    ('user_feedbacks', 'creator_id'),
+    ('user_feedbacks', 'user_id'),
+    ('user_group_post_logs', 'creator_id'),
+    ('user_group_posts', 'creator_id'),
+    ('user_group_posts', 'updated_by'),
+    ('user_indicators', 'creator_id'),
+    ('wallet_transactions', 'creator_id'),
+    ('workforce_contracts', 'user_id'),
+    ('workspace_products', 'creator_id'),
+    ('workspace_promotions', 'creator_id'),
+    ('workspace_promotions', 'owner_id'),
+    ('workspace_user_status_changes', 'creator_id'),
+    ('workspace_user_status_changes', 'user_id')
+  )) IS NOT TRUE THEN
+    RAISE EXCEPTION 'Unsupported merge reference %.%', _table_name, _column_name
+      USING ERRCODE = '22023';
+  END IF;
+
   -- Validate authentication
   v_user_id := auth.uid();
   IF v_user_id IS NULL THEN
@@ -77,9 +113,9 @@ BEGIN
 END;
 $function$;
 
-REVOKE EXECUTE ON FUNCTION public.merge_workspace_users_batch_update(uuid, uuid, uuid, text, text, integer) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.merge_workspace_users_batch_update(uuid, uuid, uuid, text, text, integer) FROM PUBLIC, anon, authenticated;
 
-GRANT EXECUTE ON FUNCTION public.merge_workspace_users_batch_update(uuid, uuid, uuid, text, text, integer) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.merge_workspace_users_batch_update(uuid, uuid, uuid, text, text, integer) TO service_role;
 
 CREATE OR REPLACE FUNCTION public.merge_workspace_users_table_batch(_source_id uuid, _target_id uuid, _ws_id uuid, _table_name text, _column_name text, _batch_size integer DEFAULT 1000)
  RETURNS jsonb
@@ -95,6 +131,39 @@ DECLARE
   v_count_before INT;
   v_count_after INT;
 BEGIN
+  -- Only the fixed phase 1a-1d merge references; anything else is refused before any check or write.
+  IF ((_table_name, _column_name) IN (VALUES
+    ('external_user_monthly_report_logs', 'creator_id'),
+    ('external_user_monthly_report_logs', 'user_id'),
+    ('external_user_monthly_reports', 'creator_id'),
+    ('external_user_monthly_reports', 'updated_by'),
+    ('external_user_monthly_reports', 'user_id'),
+    ('finance_invoices', 'creator_id'),
+    ('finance_invoices', 'customer_id'),
+    ('guest_users_lead_generation', 'user_id'),
+    ('healthcare_checkups', 'patient_id'),
+    ('payroll_run_items', 'user_id'),
+    ('product_stock_changes', 'beneficiary_id'),
+    ('product_stock_changes', 'creator_id'),
+    ('sent_emails', 'receiver_id'),
+    ('user_feedbacks', 'creator_id'),
+    ('user_feedbacks', 'user_id'),
+    ('user_group_post_logs', 'creator_id'),
+    ('user_group_posts', 'creator_id'),
+    ('user_group_posts', 'updated_by'),
+    ('user_indicators', 'creator_id'),
+    ('wallet_transactions', 'creator_id'),
+    ('workforce_contracts', 'user_id'),
+    ('workspace_products', 'creator_id'),
+    ('workspace_promotions', 'creator_id'),
+    ('workspace_promotions', 'owner_id'),
+    ('workspace_user_status_changes', 'creator_id'),
+    ('workspace_user_status_changes', 'user_id')
+  )) IS NOT TRUE THEN
+    RAISE EXCEPTION 'Unsupported merge reference %.%', _table_name, _column_name
+      USING ERRCODE = '22023';
+  END IF;
+
   -- Validate authentication
   v_user_id := auth.uid();
   IF v_user_id IS NULL THEN
@@ -190,9 +259,9 @@ BEGIN
 END;
 $function$;
 
-REVOKE EXECUTE ON FUNCTION public.merge_workspace_users_table_batch(uuid, uuid, uuid, text, text, integer) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.merge_workspace_users_table_batch(uuid, uuid, uuid, text, text, integer) FROM PUBLIC, anon, authenticated;
 
-GRANT EXECUTE ON FUNCTION public.merge_workspace_users_table_batch(uuid, uuid, uuid, text, text, integer) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.merge_workspace_users_table_batch(uuid, uuid, uuid, text, text, integer) TO service_role;
 
 CREATE OR REPLACE FUNCTION public.merge_workspace_users_phase1a_batch(_source_id uuid, _target_id uuid, _ws_id uuid, _batch_size integer DEFAULT 5000)
  RETURNS jsonb

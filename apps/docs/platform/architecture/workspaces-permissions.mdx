@@ -30,11 +30,18 @@ Phase 5 locks the source and target rows in id order before merging, so a
 concurrent or swapped merge cannot delete both profiles. Phase 4 locks both
 platform-link rows before transferring a link.
 
+The two dynamic-identifier helpers the batched phases call,
+`merge_workspace_users_batch_update` and `merge_workspace_users_table_batch`,
+are not client entry points: only `service_role` and the definer phase functions
+may execute them, and both raise `22023` for any (table, column) outside the
+fixed phase 1a–1d merge references.
+
 Regression coverage: `apps/database/supabase/tests/merge-phase-workspace-guards.sql`
 and `apps/database/supabase/tests/merge-workspace-users-null-guards.sql`.
 Manual reversal is in the matching `apps/database/rollbacks/20261027150200`–`150203`
 rollback files. A rollback removes these guards and reopens SR-108 for
-authenticated callers; it never re-grants `PUBLIC` or `anon`.
+authenticated callers of the phase functions; it never re-grants `PUBLIC` or
+`anon`, and the two helpers stay `service_role`-only.
 
 ## Mental Model
 

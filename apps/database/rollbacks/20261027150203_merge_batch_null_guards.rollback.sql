@@ -1,7 +1,9 @@
 -- Manual rollback only; restores the prior definitions from main.
 -- WARNING: a rollback removes the NULL-safe merge permission guards and
--- reopens SR-108 for authenticated callers. Anonymous and PUBLIC execute
--- stay revoked; only authenticated and service_role keep execute.
+-- reopens SR-108 for authenticated callers of the phase functions, and drops
+-- the (table, column) allowlist from the dynamic-identifier helpers. Those two
+-- helpers stay service_role-only (never authenticated, anon or PUBLIC), so the
+-- rollback cannot undo the emergency revoke in 20261027151000.
 
 BEGIN;
 
@@ -79,9 +81,9 @@ BEGIN
 END;
 $function$;
 
-REVOKE EXECUTE ON FUNCTION public.merge_workspace_users_batch_update(uuid, uuid, uuid, text, text, integer) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.merge_workspace_users_batch_update(uuid, uuid, uuid, text, text, integer) FROM PUBLIC, anon, authenticated;
 
-GRANT EXECUTE ON FUNCTION public.merge_workspace_users_batch_update(uuid, uuid, uuid, text, text, integer) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.merge_workspace_users_batch_update(uuid, uuid, uuid, text, text, integer) TO service_role;
 
 CREATE OR REPLACE FUNCTION public.merge_workspace_users_table_batch(_source_id uuid, _target_id uuid, _ws_id uuid, _table_name text, _column_name text, _batch_size integer DEFAULT 1000)
  RETURNS jsonb
@@ -192,9 +194,9 @@ BEGIN
 END;
 $function$;
 
-REVOKE EXECUTE ON FUNCTION public.merge_workspace_users_table_batch(uuid, uuid, uuid, text, text, integer) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.merge_workspace_users_table_batch(uuid, uuid, uuid, text, text, integer) FROM PUBLIC, anon, authenticated;
 
-GRANT EXECUTE ON FUNCTION public.merge_workspace_users_table_batch(uuid, uuid, uuid, text, text, integer) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.merge_workspace_users_table_batch(uuid, uuid, uuid, text, text, integer) TO service_role;
 
 CREATE OR REPLACE FUNCTION public.merge_workspace_users_phase1a_batch(_source_id uuid, _target_id uuid, _ws_id uuid, _batch_size integer DEFAULT 5000)
  RETURNS jsonb
