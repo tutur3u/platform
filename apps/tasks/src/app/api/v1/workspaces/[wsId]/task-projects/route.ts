@@ -194,11 +194,6 @@ export const POST = withSessionAuth<RouteParams>(
 
       const sbAdmin = await createAdminClient();
 
-      const permissions = await getPermissions({ user, wsId });
-      if (!permissions?.containsPermission('manage_projects')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-
       // Parse and validate request body
       const body = await request.json();
       const { name, description, ticket_key } = z
@@ -211,6 +206,15 @@ export const POST = withSessionAuth<RouteParams>(
           description: z.string().max(1000, 'Description too long').optional(),
         })
         .parse(body);
+
+      // Any member can create a project and get a derived key; choosing the
+      // key is project management, like editing it later.
+      if (ticket_key !== undefined) {
+        const permissions = await getPermissions({ user, wsId });
+        if (!permissions?.containsPermission('manage_projects')) {
+          return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        }
+      }
 
       // Create project
       const { data: project, error: projectError } = await sbAdmin
