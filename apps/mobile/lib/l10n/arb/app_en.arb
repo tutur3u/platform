@@ -5216,5 +5216,517 @@
   "workspacePickerDefaultDescription": "Opens first when you launch the app",
   "workspacePickerEmptyMessage": "Workspaces you create or are invited to appear here.",
   "workspacePickerNoResultsMessage": "Try another name or plan, or clear the search.",
-  "workspacePickerTeamBadge": "Team"
+  "workspacePickerTeamBadge": "Team",
+  "@mastermindAgeDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindAgeHours": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindAgeMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindFloor": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindLaneEta": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindLiveFor": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindMeasuredRuns": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindRejectedInline": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindResetsAt": {
+    "placeholders": {
+      "dateTime": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindSamples": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindSelectedReadout": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "series": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindSnapshotAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindSummaryAsOf": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindSummaryAtLeast": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindSummaryFleetNow": {
+    "placeholders": {
+      "running": {
+        "type": "String"
+      },
+      "waiting": {
+        "type": "String"
+      },
+      "idle": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindSummaryModelsTop": {
+    "placeholders": {
+      "model": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      },
+      "success": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindSummarySecurityCell": {
+    "placeholders": {
+      "product": {
+        "type": "String"
+      },
+      "severity": {
+        "type": "String"
+      },
+      "status": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindSummaryShipsLowerBound": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindSummaryUsageLowest": {
+    "placeholders": {
+      "account": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindSummaryUsageShort": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindUnitCredits": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindUnitCreditsPerDay": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindUnitHours": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindUnitMinutes": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindUnitPercent": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindUnitPp": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindUnitPpPerHour": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindUnitSeconds": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindUnitTokens": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindAccountFilter": "Account",
+  "mastermindAgeBasis": "Age basis",
+  "mastermindAgeDays": "{count, plural, =1{1 day ago} other{{count} days ago}}",
+  "mastermindAgeHours": "{count, plural, =1{1 h ago} other{{count} h ago}}",
+  "mastermindAgeMinutes": "{count, plural, =0{just now} =1{1 min ago} other{{count} min ago}}",
+  "mastermindAllFilter": "All",
+  "mastermindAreaCi": "CI",
+  "mastermindAreaCost": "Cost",
+  "mastermindAreaEducation": "Education",
+  "mastermindAreaFinance": "Finance",
+  "mastermindAreaHub": "Hub",
+  "mastermindAreaInfra": "Infrastructure",
+  "mastermindAreaMemory": "Memory",
+  "mastermindAreaOrg": "Organization",
+  "mastermindAreaPerf": "Performance",
+  "mastermindAreaProduct": "Product",
+  "mastermindAreaQuota": "Quota",
+  "mastermindAreaRelease": "Release",
+  "mastermindAreaSecurity": "Security",
+  "mastermindAreaTasks": "Tasks",
+  "mastermindAreaUsers": "Users",
+  "mastermindAreaUx": "UX",
+  "mastermindBacklogEmptyTitle": "Backlog is clear",
+  "mastermindBacklogLabel": "Backlog",
+  "mastermindBasisCheckinWorkflow": "Check-in workflow",
+  "mastermindBasisGithubDeployment": "GitHub deployment",
+  "mastermindBasisVercelDeployment": "Vercel deployment",
+  "mastermindCategoryAuto": "Automatic",
+  "mastermindCategoryDelegated": "Delegated",
+  "mastermindCategoryUser": "You",
+  "mastermindChartBurn": "Burn rate",
+  "mastermindChartCiJobs": "CI jobs",
+  "mastermindChartCreditsBalance": "Credit balance",
+  "mastermindChartCreditsBurn": "Daily burn and target",
+  "mastermindChartCreditsVsTarget": "Burn vs target",
+  "mastermindChartCriticalTrend": "Critical findings",
+  "mastermindChartDeliveryModes": "Delivery modes",
+  "mastermindChartFailures": "Run failures",
+  "mastermindChartFleetCounts": "Threads by role",
+  "mastermindChartFleetStates": "Thread states",
+  "mastermindChartFleetTree": "Fleet structure",
+  "mastermindChartLatency": "Result pickup time",
+  "mastermindChartMergeToLive": "Merge to live",
+  "mastermindChartMessageFlow": "Message flow",
+  "mastermindChartMessageHeatmap": "Messages by hour",
+  "mastermindChartModelDuration": "Median duration",
+  "mastermindChartModelRuns": "Runs by model",
+  "mastermindChartModelSuccess": "Success and rework",
+  "mastermindChartOpenPrs": "Open pull requests",
+  "mastermindChartPendingRuns": "Pending runs",
+  "mastermindChartProjection": "Projected at reset",
+  "mastermindChartQueueDepth": "Queue depth",
+  "mastermindChartSecurityRegister": "Findings by severity and status",
+  "mastermindChartSessionPerSuccess": "Session use per success",
+  "mastermindChartSessionRemaining": "Session budget left",
+  "mastermindChartShips": "Production releases",
+  "mastermindChartTimeToFix": "Time to fix",
+  "mastermindChartTokensPerSuccess": "Tokens per success",
+  "mastermindChartWeeklyRemaining": "Weekly budget left",
+  "mastermindCi": "CI",
+  "mastermindColumnChange7d": "Change 7 d",
+  "mastermindColumnChildrenPerRoot": "Children per root",
+  "mastermindColumnDay": "Day",
+  "mastermindColumnDeeperPerRoot": "Deeper per root",
+  "mastermindColumnDepth1": "Depth 1",
+  "mastermindColumnDepth2Plus": "Depth 2+",
+  "mastermindColumnFindings": "Findings",
+  "mastermindColumnHour": "Hour",
+  "mastermindColumnMedian": "Median",
+  "mastermindColumnMessages": "Messages",
+  "mastermindColumnReceiver": "Receiver",
+  "mastermindColumnRoots": "Roots",
+  "mastermindColumnSender": "Sender",
+  "mastermindColumnSeverity": "Severity",
+  "mastermindColumnStatus": "Status",
+  "mastermindColumnTime": "Time",
+  "mastermindColumnTopLevel": "Top level",
+  "mastermindColumnTotal": "Total",
+  "mastermindCommit": "Commit",
+  "mastermindCoverageComplete": "Complete",
+  "mastermindCoverageMissing": "No source",
+  "mastermindCoveragePartial": "Partial data",
+  "mastermindCoverageStale": "Stale",
+  "mastermindCriticalOpenFact": "Critical open",
+  "mastermindDataSourcesAction": "Data sources",
+  "mastermindDecidedBy": "Decided by",
+  "mastermindDecisionsTitle": "Decisions",
+  "mastermindDeploy": "Deploy",
+  "mastermindDeployError": "error",
+  "mastermindDeployFailedFact": "Deploy failed",
+  "mastermindDeployFailure": "failure",
+  "mastermindDeployInProgress": "in progress",
+  "mastermindDeployInactive": "inactive",
+  "mastermindDeployPending": "pending",
+  "mastermindDeployQueued": "queued",
+  "mastermindDeploySuccess": "success",
+  "mastermindDigestGap": "Some earlier updates aren't included.",
+  "mastermindEffortFilter": "Effort",
+  "mastermindEnvProduction": "Production",
+  "mastermindEnvStaging": "Staging",
+  "mastermindEnvironmentsTitle": "Environments",
+  "mastermindEventBacklog": "Backlog",
+  "mastermindEventDecision": "Decision",
+  "mastermindEventEnvironment": "Environment",
+  "mastermindEventLane": "Lane",
+  "mastermindEventNeedsYou": "Needs you",
+  "mastermindEventProduct": "Release",
+  "mastermindEventQuota": "Quota",
+  "mastermindEventReceipt": "Receipt",
+  "mastermindEvidence": "Evidence",
+  "mastermindFilterAll": "All",
+  "mastermindFilterButton": "Filter",
+  "mastermindFilterOther": "Other",
+  "mastermindFilterRunning": "Running",
+  "mastermindFilterWaiting": "Waiting",
+  "mastermindFloor": "Floor {value}",
+  "mastermindFreshCached": "cached",
+  "mastermindFreshFresh": "fresh",
+  "mastermindInsightsLabel": "Insights",
+  "mastermindKindAction": "Action",
+  "mastermindKindBacklog": "Backlog",
+  "mastermindKindDecision": "Decision",
+  "mastermindKindDesign": "Design",
+  "mastermindKindFyi": "FYI",
+  "mastermindKindImplementation": "Implementation",
+  "mastermindKindLane": "Lane",
+  "mastermindKindResearch": "Research",
+  "mastermindKindReview": "Review",
+  "mastermindKindStaff": "Staff",
+  "mastermindKindTest": "Test",
+  "mastermindLaneAge": "Age",
+  "mastermindLaneArea": "Area",
+  "mastermindLaneEta": "ETA {duration}",
+  "mastermindLaneKind": "Kind",
+  "mastermindLaneModel": "Model",
+  "mastermindLaneProduct": "Product",
+  "mastermindLaneRole": "Role",
+  "mastermindLaneState": "State",
+  "mastermindLanesEmpty": "No lanes in this view",
+  "mastermindLanesLabel": "Lanes",
+  "mastermindLastActive": "Last active",
+  "mastermindLiveFor": "live {duration}",
+  "mastermindMeasuredRuns": "{count, plural, =1{1 measured run} other{{count} measured runs}}",
+  "mastermindNeedsYouHint": "Answer in the Inbox on your Mac.",
+  "mastermindNeedsYouTitle": "Needs you",
+  "mastermindNoDataInPeriod": "No data in this period",
+  "mastermindNoProduct": "No product",
+  "mastermindNotConnectedMessage": "Mastermind data isn't published to this app yet.",
+  "mastermindNotConnectedTitle": "Not connected",
+  "mastermindNotReversible": "Not reversible",
+  "mastermindNothingNeedsYou": "Nothing needs you",
+  "mastermindNowLabel": "Now",
+  "mastermindObservedAt": "Observed",
+  "mastermindOriginLabel": "Origin",
+  "mastermindPartialBucket": "partial bucket",
+  "mastermindProductFilter": "Product",
+  "mastermindProductsLabel": "Products",
+  "mastermindRange24h": "24 h",
+  "mastermindRange7d": "7 days",
+  "mastermindReceiptRecorded": "Receipt recorded",
+  "mastermindRecentEmpty": "Nothing new.",
+  "mastermindRecentTitle": "Recent",
+  "mastermindRecommended": "Recommended",
+  "mastermindRejectedInline": "Couldn't read the latest snapshot. Showing {time}.",
+  "mastermindRejectedMessage": "It uses a format this app version doesn't read. Update the app.",
+  "mastermindRejectedTitle": "This snapshot can't be shown",
+  "mastermindReleasesTitle": "Releases",
+  "mastermindResetsAt": "Resets {dateTime}",
+  "mastermindReversible": "Reversible",
+  "mastermindRiskHigh": "high",
+  "mastermindRiskLow": "low",
+  "mastermindRiskMed": "medium",
+  "mastermindRoleFilter": "Role",
+  "mastermindRunsToday": "Runs today",
+  "mastermindSampleData": "Sample data",
+  "mastermindSamples": "{count, plural, =1{1 sample} other{{count} samples}}",
+  "mastermindScopeCoordination": "Coordination",
+  "mastermindScopeDelivery": "Delivery",
+  "mastermindScopeFleet": "Fleet",
+  "mastermindScopeModels": "Models",
+  "mastermindScopeSecurity": "Security",
+  "mastermindScopeUsage": "Usage",
+  "mastermindSecurityFix": "Security fix",
+  "mastermindSecurityIssue": "Security issue",
+  "mastermindSelectedReadout": "{date} · {series} · {value}",
+  "mastermindSeriesActive": "Active",
+  "mastermindSeriesBalance": "Balance",
+  "mastermindSeriesBurn": "Burn",
+  "mastermindSeriesCapacity": "Capacity",
+  "mastermindSeriesCompleted": "Completed",
+  "mastermindSeriesCriticalClosed": "Critical closed",
+  "mastermindSeriesCriticalOpen": "Critical open",
+  "mastermindSeriesIdle": "idle",
+  "mastermindSeriesOtherError": "Other error",
+  "mastermindSeriesOtherTerminal": "Other finished",
+  "mastermindSeriesQueue": "Queue",
+  "mastermindSeriesQueued": "Queued",
+  "mastermindSeriesRework": "Rework",
+  "mastermindSeriesRunning": "running",
+  "mastermindSeriesStart": "Start",
+  "mastermindSeriesSteer": "Steer",
+  "mastermindSeriesSuccess": "Success",
+  "mastermindSeriesTarget": "Target",
+  "mastermindSeriesUnknown": "unknown",
+  "mastermindSeriesUsageLimit": "Usage limit",
+  "mastermindSeriesWaiting": "waiting",
+  "mastermindSession": "Session",
+  "mastermindSeverityCritical": "Critical",
+  "mastermindSeverityHigh": "High",
+  "mastermindSeverityLow": "Low",
+  "mastermindSeverityMedium": "Medium",
+  "mastermindSeverityUnknown": "Unknown",
+  "mastermindShowAll": "Show all",
+  "mastermindSnapshotAt": "Snapshot {time}",
+  "mastermindSnapshotOutOfDate": "Snapshot out of date",
+  "mastermindSnapshotSectionsTitle": "Sections",
+  "mastermindSourceCheckin": "Check-in",
+  "mastermindSourceCi": "CI",
+  "mastermindSourceDecisions": "Decisions",
+  "mastermindSourceDirectory": "Directory",
+  "mastermindSourceGithub": "GitHub",
+  "mastermindSourceInbox": "Inbox",
+  "mastermindSourceLedger": "Ledger",
+  "mastermindSourceOpenItems": "Open items",
+  "mastermindSourceQuotaCache": "Quota cache",
+  "mastermindSourceQuotaWatcher": "Quota watcher",
+  "mastermindSourceSpeed": "Speed",
+  "mastermindSourceStateOk": "OK",
+  "mastermindSourceT3": "T3",
+  "mastermindSourceWorkforce": "Workforce",
+  "mastermindSourcesTitle": "Sources",
+  "mastermindStaffGroup": "Staff",
+  "mastermindStateAnswered": "answered",
+  "mastermindStateCancelled": "cancelled",
+  "mastermindStateCompleted": "completed",
+  "mastermindStateFailed": "failed",
+  "mastermindStateIdle": "idle",
+  "mastermindStateOpen": "open",
+  "mastermindStateQueued": "queued",
+  "mastermindStateRunning": "running",
+  "mastermindStateStale": "stale",
+  "mastermindStateUnknown": "unknown",
+  "mastermindStateWaiting": "waiting",
+  "mastermindStateWithdrawn": "withdrawn",
+  "mastermindSummaryAsOf": "as of {time}",
+  "mastermindSummaryAtLeast": "at least {count}",
+  "mastermindSummaryClosedIsState": "Closed counts show register state, not new fixes.",
+  "mastermindSummaryCreditsNeedsTarget": "Needs a daily target.",
+  "mastermindSummaryCreditsNote": "Credits are not money or tokens.",
+  "mastermindSummaryCreditsTargetMissing": "Daily target unavailable.",
+  "mastermindSummaryDeliveryModesUnavailable": "Delivery mode counts unavailable.",
+  "mastermindSummaryEstimateNotCost": "Estimate, not a cost.",
+  "mastermindSummaryFleetNow": "Now: {running} running, {waiting} waiting, {idle} idle.",
+  "mastermindSummaryLatencyCaveat": "Measures recorded parent starts.",
+  "mastermindSummaryModelsTop": "{model} ran most: {count} runs, {success} success.",
+  "mastermindSummaryNoFixDates": "Unavailable: the register has no fix dates.",
+  "mastermindSummaryNoMessageStream": "Unavailable: no message stream recorded.",
+  "mastermindSummarySecurityCell": "{product}, {severity}, {status}: {count}",
+  "mastermindSummaryShipsLowerBound": "At least {count} production releases observed.",
+  "mastermindSummaryUsageLowest": "{account} has the least left: {percent}.",
+  "mastermindSummaryUsageShort": "Projected SHORT at reset {time}.",
+  "mastermindSummaryWeeklyNotReported": "Weekly window not reported.",
+  "mastermindTableLink": "Table",
+  "mastermindTentative": "tentative",
+  "mastermindTimeZoneCaption": "GMT+7",
+  "mastermindTitle": "Mastermind",
+  "mastermindUnavailable": "Unavailable",
+  "mastermindUnitCredits": "{value} credits",
+  "mastermindUnitCreditsPerDay": "{value} credits/day",
+  "mastermindUnitHours": "{value} h",
+  "mastermindUnitMinutes": "{value} min",
+  "mastermindUnitPercent": "{value}%",
+  "mastermindUnitPp": "{value} pp",
+  "mastermindUnitPpPerHour": "{value} pp/h",
+  "mastermindUnitSeconds": "{value} s",
+  "mastermindUnitTokens": "{value} tokens",
+  "mastermindVersion": "Version",
+  "mastermindWeekly": "Weekly",
+  "mastermindWhy": "Why"
 }
