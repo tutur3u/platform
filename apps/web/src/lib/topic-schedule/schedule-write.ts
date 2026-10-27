@@ -53,6 +53,20 @@ function sessionColumns(
 
 /** Unique violation: here, the topic_announcements_schedule_slot_unique index. */
 const UNIQUE_VIOLATION = '23505';
+const SLOT_INDEX = 'topic_announcements_schedule_slot_unique';
+
+/**
+ * A refusal by the slot uniqueness index only. Other unique violations are
+ * real errors and propagate.
+ */
+function isSlotConflict(
+  error: { code?: string; details?: string; message?: string } | null
+) {
+  return (
+    error?.code === UNIQUE_VIOLATION &&
+    `${error.message ?? ''} ${error.details ?? ''}`.includes(SLOT_INDEX)
+  );
+}
 
 /**
  * Inserts sessions as topic-less drafts in one batch, plus their GVNN.
@@ -109,14 +123,14 @@ export async function insertScheduleSessions({
     .from('topic_announcements')
     .insert(rows)
     .select('id,source_row_number');
-  if (error?.code === UNIQUE_VIOLATION) {
+  if (isSlotConflict(error)) {
     for (const row of rows) {
       const { data: single, error: rowError } = await sbAdmin
         .from('topic_announcements')
         .insert(row)
         .select('id,source_row_number')
         .single();
-      if (rowError?.code === UNIQUE_VIOLATION) continue;
+      if (isSlotConflict(rowError)) continue;
       if (rowError) throw rowError;
       idByRow.set(single.source_row_number, single.id);
     }
@@ -184,6 +198,37 @@ async function setRecipient(
 /** Fields a conflicting save may still have changed on a session. */
 export type ScheduleSessionPartialField = 'gvnn';
 
+type RecipientRestoreResult =
+  | 'contact_unavailable'
+  | 'locked'
+  | 'not_found'
+  | 'set';
+
+/**
+ * Puts a session's GVNN back through private.set_topic_schedule_recipient:
+ * one transaction that locks the session row, re-checks it is editable and
+ * unsent, checks the contact, and only then swaps the recipient.
+ */
+async function restoreScheduleRecipient({
+  contactId,
+  id,
+  normalizedWsId,
+  sbAdmin,
+}: {
+  contactId: string | null;
+  id: string;
+  normalizedWsId: string;
+  sbAdmin: TopicAnnouncementsSupabaseClient;
+}): Promise<RecipientRestoreResult> {
+  const { data, error } = await sbAdmin.rpc('set_topic_schedule_recipient', {
+    p_announcement_id: id,
+    p_contact_id: contactId,
+    p_ws_id: normalizedWsId,
+  });
+  if (error) throw error;
+  return data as RecipientRestoreResult;
+}
+
 export type ScheduleSessionUpdateResult =
   /** Fields and GVNN saved. */
   | { kind: 'updated' }
@@ -231,7 +276,7 @@ async function updateFieldsIfEditable({
     .eq('source_type', SCHEDULE_SOURCE_TYPE)
     .in('status', [...SCHEDULE_EDITABLE_STATUSES])
     .select('id');
-  if (error?.code === UNIQUE_VIOLATION) return 'slot_taken';
+  if (isSlotConflict(error)) return 'slot_taken';
   if (error) throw error;
   return (data ?? []).length > 0 ? 'updated' : 'locked';
 }
@@ -278,21 +323,29 @@ export async function updateScheduleSession({
 
   if (!gvnnChanged) return { kind: await writeFields() };
 
+  const restorePrevious = () =>
+    restoreScheduleRecipient({
+      contactId: previousGvnnContactId,
+      id,
+      normalizedWsId: context.normalizedWsId,
+      sbAdmin,
+    });
+
   if (!(await isStillEditableUnsent(sbAdmin, id))) return { kind: 'locked' };
   try {
     await setRecipient(sbAdmin, id, session.gvnnContactId);
   } catch (error) {
-    if (await isStillEditableUnsent(sbAdmin, id)) {
-      await setRecipient(sbAdmin, id, previousGvnnContactId);
-    }
+    await restorePrevious();
     throw error;
   }
 
   const written = await writeFields();
   if (written === 'updated') return { kind: 'updated' };
-  if (written === 'slot_taken' && (await isStillEditableUnsent(sbAdmin, id))) {
-    // The edit did not apply, so neither does its GVNN change.
-    await setRecipient(sbAdmin, id, previousGvnnContactId);
+  // The edit did not apply, so neither does its GVNN change. The restore is
+  // one locked transaction: it rewrites nothing when a send claimed the
+  // session meanwhile or the previous GVNN can no longer be a recipient, and
+  // then the new GVNN stays (reported as a GVNN-only change).
+  if (written === 'slot_taken' && (await restorePrevious()) === 'set') {
     return { kind: 'slot_taken' };
   }
   return { fields: ['gvnn'], kind: 'partial' };

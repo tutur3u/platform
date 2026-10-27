@@ -3,11 +3,14 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, private, extensions;
-select plan(1);
+select plan(2);
 
 select hasnt_index('private', 'topic_announcements',
   'topic_announcements_schedule_slot_unique',
   'rollback drops the schedule slot uniqueness index');
+select hasnt_function('private', 'set_topic_schedule_recipient',
+  array['uuid', 'uuid', 'uuid'],
+  'rollback drops the atomic recipient restore');
 
 select * from finish();
 rollback;

@@ -351,7 +351,15 @@ module unchanged.
   class, date and start time. When it refuses a row (another request took
   the slot after this one checked it), the other sessions still save, the
   save reports that row as a `duplicate_slot` conflict (409, with what did
-  save), and a clone marks the session "already scheduled".
+  save), and a clone marks the session "already scheduled". An edit refused
+  this way is a per-row `duplicate_slot` conflict that changes nothing: its
+  GVNN is put back through `private.set_topic_schedule_recipient`, one
+  transaction that locks the session row (a send's claim waits), re-checks it
+  is editable and checks the contact. If a send claimed the session or the
+  previous GVNN can no longer be a recipient (archived), nothing is rewritten
+  and the new GVNN stays, reported as a GVNN-only change; a session is never
+  left without a recipient. Only the slot index's violations are treated this
+  way; any other unique violation is an error.
 - **Applying the slot index.** The migration first looks for slots that
   already hold more than one non-cancelled session. If any exist, in any
   workspace, it stops with their count and session ids and changes nothing;
