@@ -229,6 +229,17 @@ localization changes.
 - Optimistic `TaskBoardDetailCubit.updateTask` restores the pre-edit snapshot
   on failure before the server refresh; do not rely on the refresh alone.
 
+### Estimation recovery
+
+Validate estimation rows through `TaskEstimateBoard.listFromJson` for both API
+responses and cache decoders. Parsing after `CacheStore.peek/read` escapes its
+corrupt-record recovery boundary. Convert invalid input to `FormatException`
+so the estimation cubit can publish its existing error state; do not catch every
+programming error. Check closed/superseded loads before publishing asynchronous
+results. Keep estimation form actions inside the scrollable content so title and
+actions cannot exhaust a small dialog at enlarged text sizes. The model, cubit,
+and dialog tests under `apps/mobile/test` cover these boundaries.
+
 ## Finance
 
 - Finance amount visibility is app-scoped. Persist through settings, expose it

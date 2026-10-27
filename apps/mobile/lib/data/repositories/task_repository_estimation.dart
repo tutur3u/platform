@@ -7,12 +7,7 @@ extension TaskRepositoryEstimation on TaskRepository {
       'estimation',
       '/api/v1/workspaces/$wsId/boards/estimation',
     );
-    final boards = (response['boards'] as List<dynamic>? ?? const [])
-        .whereType<Map<String, dynamic>>()
-        .map(
-          (row) => TaskEstimateBoard.fromJson(Map<String, dynamic>.from(row)),
-        )
-        .toList(growable: false);
+    final boards = TaskEstimateBoard.listFromJson(response['boards']);
     final edits = OfflineMutationQueue.instance.pending.value.where(
       (edit) =>
           edit.feature == 'tasks' &&

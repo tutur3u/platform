@@ -90,7 +90,7 @@ extension _TaskPlanningContent on _TaskPlanningViewState {
       _TaskPlanningTab.estimates
           when estimatesState.status == TaskEstimatesStatus.error &&
               estimatesState.boards.isEmpty =>
-        estimatesState.error,
+        context.l10n.taskBoardsLoadError,
       _TaskPlanningTab.labels
           when labelsState.status == TaskLabelsStatus.error &&
               labelsState.labels.isEmpty =>
