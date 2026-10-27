@@ -11,6 +11,7 @@ import {
   normalizeWorkspaceId,
 } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 
 interface Params {
   params: Promise<{
@@ -110,7 +111,16 @@ export async function DELETE(
   const { wsId } = await params;
   const searchParams = req.nextUrl.searchParams;
 
-  const userId = searchParams.get('id');
+  const parsedUserId = z
+    .string()
+    .trim()
+    .pipe(z.guid().toLowerCase())
+    .nullable()
+    .safeParse(searchParams.get('id'));
+  if (!parsedUserId.success) {
+    return NextResponse.json({ message: 'Invalid member id' }, { status: 400 });
+  }
+  const userId = parsedUserId.data;
   const userEmail = searchParams.get('email');
   const normalizedUserEmail = userEmail?.trim().toLowerCase() || null;
 
