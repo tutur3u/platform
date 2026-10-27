@@ -537,7 +537,6 @@ export async function enqueueApprovedPostEmails(
     await getEligibleRecipients(sbAdmin, {
       wsId,
       postId,
-      groupId: post.group_id,
       userIds,
     });
 

@@ -733,13 +733,14 @@ active route and inventory boundary.
 
 Post approval lists and their counts use the selected workspace for both the
 post and its recipient. Web and Infrastructure email enqueueing and queued or
-immediate delivery require current membership in the post's group, within that
-workspace. Leaving a group after approval makes an unsent recipient ineligible;
-a queued attempt is cancelled when eligibility is resolved. Lookup failures stop
-delivery. Previously completed sends remain historical records.
+immediate delivery require that the recipient and post group share a workspace.
+A queue row must also refer to that post's group.
 
-Guest status is derived from membership in a group marked `is_guest`. A guest
-may receive a post when they also belong to that post's group. Regression coverage
-lives in the approval read, recipient lookup, queue-core and batch-membership tests.
-SQL reconciliation is a separate database rollout and is not changed by these
-application guards.
+An existing check is the recipient association. Moving to another group does not
+remove that association, cancel queued or retrying messages, or prevent a new
+enqueue for that check. Delivery recovery still recognizes provider-accepted
+messages and restores their recorded sent state without resending.
+
+Guest status is derived from membership in a group marked `is_guest`; it does not
+replace the existing check association or the workspace rule. Regression coverage
+lives in the approval read, queue-core, batch history and delivery recovery tests.

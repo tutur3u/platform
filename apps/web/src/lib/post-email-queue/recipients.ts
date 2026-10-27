@@ -2,7 +2,6 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { GroupPostCheck } from '@tuturuuu/types/db';
 import { preloadBlockedEmailCache } from '@/lib/email-blacklist';
 import { isWorkspaceUserInactiveForPostEmail } from './eligibility';
-import { getPostEmailGroupMemberIds } from './group-membership';
 import { buildEligibleRecipientsDiagnostics } from './logic';
 import type {
   EligibleRecipient,
@@ -21,12 +20,10 @@ export async function getEligibleRecipients(
   {
     wsId,
     postId,
-    groupId,
     userIds,
   }: {
     wsId: string;
     postId: string;
-    groupId: string;
     userIds?: string[];
   }
 ): Promise<{
@@ -102,13 +99,7 @@ export async function getEligibleRecipients(
     kept: [] as string[],
   };
 
-  const members = await getPostEmailGroupMemberIds(sbAdmin, {
-    wsId,
-    groupId,
-    userIds: rows.map((row) => row.user_id),
-  });
   const filtered = rows
-    .filter((row) => members.has(row.user_id))
     .filter((row) => {
       const hasCompletion = row.is_completed !== null;
       const isApproved = row.approval_status === 'APPROVED';

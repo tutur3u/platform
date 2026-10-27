@@ -1,7 +1,6 @@
 import { EmailService } from '@tuturuuu/email-service';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase';
 import { preloadBlockedEmailCache } from '@/lib/email-blacklist';
-import { getPostEmailGroupMemberIds } from './group-membership';
 import type {
   BatchPrefetchContext,
   BatchSourceInfo,
@@ -120,45 +119,10 @@ export async function prefetchBatchData(
     });
   }
 
-  const groups = new Map<
-    string,
-    { wsId: string; groupId: string; userIds: Set<string> }
-  >();
-  for (const row of rows) {
-    const post = posts.get(row.post_id);
-    if (!post || post.ws_id !== row.ws_id || post.group_id !== row.group_id) {
-      continue;
-    }
-    const key = `${post.ws_id}:${post.group_id}`;
-    const group = groups.get(key) ?? {
-      wsId: post.ws_id,
-      groupId: post.group_id,
-      userIds: new Set<string>(),
-    };
-    group.userIds.add(row.user_id);
-    groups.set(key, group);
-  }
-
-  const membersByGroup = new Map<string, Set<string>>();
-  for (const [key, group] of groups) {
-    membersByGroup.set(
-      key,
-      await getPostEmailGroupMemberIds(sbAdmin, {
-        wsId: group.wsId,
-        groupId: group.groupId,
-        userIds: [...group.userIds],
-      })
-    );
-  }
-
   const checks = new Map<string, PrefetchedPostCheck>();
   for (const check of checkRows) {
     const post = posts.get(check.post_id);
-    if (
-      !post ||
-      check.user?.ws_id !== post.ws_id ||
-      !membersByGroup.get(`${post.ws_id}:${post.group_id}`)?.has(check.user_id)
-    ) {
+    if (!post || check.user?.ws_id !== post.ws_id) {
       continue;
     }
     checks.set(`${check.post_id}:${check.user_id}`, check);
