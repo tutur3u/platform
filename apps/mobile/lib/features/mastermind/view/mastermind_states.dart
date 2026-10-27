@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
+import 'package:mobile/core/ui/overlays/app_dialog.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/mastermind/data/mastermind_snapshot_source.dart';
 import 'package:mobile/features/mastermind/parse/snapshot_parser.dart';
@@ -37,13 +38,18 @@ class MastermindUnavailable extends StatelessWidget {
     return switch (kind) {
       SnapshotUnavailableKind.unauthorized => AppStateMessage(
         icon: LucideIcons.logIn,
-        title: l10n.mastermindSignInAgainTitle,
-        actionLabel: l10n.mastermindSignInAction,
-        onAction: () => context.read<AuthCubit>().signOut(),
+        title: l10n.mastermindSessionRejectedTitle,
+        message: l10n.mastermindSessionRejectedMessage,
+        tone: AppTone.warning,
+        actionLabel: l10n.mastermindTryAgain,
+        onAction: onRetry,
+        secondaryActionLabel: l10n.mastermindSignOutAction,
+        onSecondaryAction: () => _confirmSignOut(context),
       ),
       SnapshotUnavailableKind.forbidden => AppStateMessage(
         icon: LucideIcons.shieldOff,
         title: l10n.mastermindForbiddenTitle,
+        message: l10n.mastermindForbiddenMessage,
       ),
       SnapshotUnavailableKind.noSnapshot => AppStateMessage(
         icon: LucideIcons.inbox,
@@ -62,6 +68,23 @@ class MastermindUnavailable extends StatelessWidget {
       ),
     };
   }
+}
+
+/// A 401 can be a Worker-side misconfiguration or clock skew rather than a bad
+/// session, and signing out drops every saved account on the device, so it is
+/// only ever the user's explicit second choice.
+Future<void> _confirmSignOut(BuildContext context) async {
+  final l10n = context.l10n;
+  final auth = context.read<AuthCubit>();
+  final confirmed = await showAppConfirmDialog(
+    context: context,
+    title: l10n.mastermindSignOutConfirmTitle,
+    message: l10n.mastermindSignOutConfirmMessage,
+    confirmLabel: l10n.mastermindSignOutConfirmAction,
+    cancelLabel: l10n.commonCancel,
+    destructive: true,
+  );
+  if (confirmed) await auth.signOut();
 }
 
 class MastermindRejected extends StatelessWidget {

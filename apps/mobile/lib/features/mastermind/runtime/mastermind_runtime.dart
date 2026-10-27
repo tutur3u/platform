@@ -5,6 +5,7 @@ import 'package:mobile/features/mastermind/access/mastermind_access_cubit.dart';
 import 'package:mobile/features/mastermind/cubit/mastermind_refresh_scheduler.dart';
 import 'package:mobile/features/mastermind/cubit/mastermind_snapshot_cubit.dart';
 import 'package:mobile/features/mastermind/data/hub_http_snapshot_source.dart';
+import 'package:mobile/features/mastermind/data/mastermind_connectivity.dart';
 import 'package:mobile/features/mastermind/data/mastermind_snapshot_source.dart';
 import 'package:mobile/features/mastermind/data/mastermind_snapshot_store.dart';
 import 'package:mobile/features/mastermind/data/snapshot_source_factory.dart';
@@ -21,9 +22,15 @@ final class MastermindRuntime {
     required this.snapshot,
     required this.scheduler,
     MastermindSnapshotSource? source,
+    Stream<bool>? onlineChanges,
   }) : _source = source {
     _accessSub = access.stream.listen(_onAccess);
     _snapshotSub = snapshot.stream.listen(_onSnapshot);
+    // A connectivity plugin error only means the device stays assumed online.
+    _onlineSub = onlineChanges?.listen(
+      (online) => scheduler.setOnline(online: online),
+      onError: (Object _) {},
+    );
   }
 
   /// Fixture or live source per build configuration; see
@@ -33,6 +40,7 @@ final class MastermindRuntime {
     WorkspacePermissionsRepository? permissions,
     MastermindSnapshotSource? source,
     MastermindSnapshotStore? store,
+    Stream<bool>? onlineChanges,
   }) {
     final resolved = source ?? createMastermindSnapshotSource();
     final cubit = MastermindSnapshotCubit(
@@ -47,6 +55,7 @@ final class MastermindRuntime {
       snapshot: cubit,
       scheduler: MastermindRefreshScheduler.forCubit(cubit),
       source: resolved,
+      onlineChanges: onlineChanges ?? mastermindOnlineChanges(),
     );
   }
 
@@ -56,6 +65,7 @@ final class MastermindRuntime {
   final MastermindSnapshotSource? _source;
   late final StreamSubscription<MastermindAccessState> _accessSub;
   late final StreamSubscription<MastermindSnapshotState> _snapshotSub;
+  late final StreamSubscription<bool>? _onlineSub;
 
   // Losing access erases the held snapshot, memory and disk.
   void _onAccess(MastermindAccessState state) {
@@ -85,7 +95,16 @@ final class MastermindRuntime {
     await synced;
   }
 
+  /// App resume: a failed access check (offline, a Worker blip) must not hide
+  /// the module until the next workspace change.
+  Future<void> retryAccessAfterError(String? wsId) async {
+    if (access.state.status == MastermindAccessStatus.error) {
+      await access.sync(wsId);
+    }
+  }
+
   Future<void> close() async {
+    await _onlineSub?.cancel();
     await _accessSub.cancel();
     await _snapshotSub.cancel();
     scheduler.dispose();

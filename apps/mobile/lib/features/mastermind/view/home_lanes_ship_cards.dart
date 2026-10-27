@@ -70,9 +70,9 @@ class HomeShipCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    void open() => context.go(Routes.mastermindShip);
     return AppGroupedSection.spaced(
       caption: l10n.mastermindTabShip,
+      // Rows are not tappable until the Ship tab has real content.
       children: [
         if (model.failingEnvironments.isEmpty && model.releases.isEmpty)
           AppGroupedRow(title: Text(l10n.mastermindShipEmpty)),
@@ -96,7 +96,6 @@ class HomeShipCard extends StatelessWidget {
               variant: AppBadgeVariant.warning,
               child: Text(l10n.mastermindNeedsAttention),
             ),
-            onTap: open,
           ),
         for (final release in model.releases)
           AppGroupedRow(
@@ -112,7 +111,6 @@ class HomeShipCard extends StatelessWidget {
                       ),
                     ),
             ),
-            onTap: open,
           ),
       ],
     );

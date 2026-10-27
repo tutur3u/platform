@@ -5082,6 +5082,13 @@
       }
     }
   },
+  "@mastermindCouldntRefreshShowing": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "@mastermindCountState": {
     "placeholders": {
       "count": {
@@ -5450,6 +5457,7 @@
   "mastermindColumnTotal": "Tổng",
   "mastermindCommit": "Commit",
   "mastermindCouldntReadShowing": "Không đọc được bản cập nhật mới nhất · đang hiển thị {time}",
+  "mastermindCouldntRefreshShowing": "Không làm mới được · đang hiển thị {time}",
   "mastermindCountState": "{count} {state}",
   "mastermindCoverageComplete": "Đầy đủ",
   "mastermindCoverageMissing": "Không có nguồn",
@@ -5489,6 +5497,7 @@
   "mastermindFilterRunning": "Đang chạy",
   "mastermindFilterWaiting": "Đang chờ",
   "mastermindFloor": "Ngưỡng {value}",
+  "mastermindForbiddenMessage": "Hãy nhờ chủ sở hữu Mastermind cấp quyền truy cập.",
   "mastermindForbiddenTitle": "Tài khoản này không được phép xem Mastermind.",
   "mastermindFreshCached": "từ bộ đệm",
   "mastermindFreshFresh": "mới",
@@ -5593,10 +5602,14 @@
   "mastermindSeriesWaiting": "đang chờ",
   "mastermindSession": "Phiên",
   "mastermindSessionLeft": "Phiên còn {value}",
+  "mastermindSessionRejectedMessage": "Hãy thử lại. Nếu vẫn lỗi, hãy đăng xuất rồi đăng nhập lại.",
+  "mastermindSessionRejectedTitle": "Mastermind không xác minh được phiên của bạn.",
   "mastermindShipEmpty": "Chưa có bản phát hành nào",
   "mastermindShowAll": "Xem tất cả",
-  "mastermindSignInAction": "Đăng nhập",
-  "mastermindSignInAgainTitle": "Đăng nhập lại để xem Mastermind",
+  "mastermindSignOutAction": "Đăng xuất và đăng nhập lại",
+  "mastermindSignOutConfirmAction": "Đăng xuất",
+  "mastermindSignOutConfirmMessage": "Thao tác này đăng xuất bạn khỏi Tuturuuu trên thiết bị này, gồm mọi tài khoản đã lưu. Bạn sẽ cần đăng nhập lại.",
+  "mastermindSignOutConfirmTitle": "Đăng xuất khỏi Tuturuuu?",
   "mastermindSnapshotAt": "Ảnh chụp lúc {time}",
   "mastermindSnapshotOutOfDate": "Ảnh chụp đã cũ",
   "mastermindSnapshotSectionsTitle": "Các phần",
@@ -5655,6 +5668,7 @@
   "mastermindTentative": "tạm tính",
   "mastermindTimeZoneCaption": "GMT+7",
   "mastermindTitle": "Mastermind",
+  "mastermindTryAgain": "Thử lại",
   "mastermindUnavailable": "Không khả dụng",
   "mastermindUnitCredits": "{value} tín dụng",
   "mastermindUnitCreditsPerDay": "{value} tín dụng/ngày",

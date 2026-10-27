@@ -12331,6 +12331,11 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String mastermindCouldntRefreshShowing(String time) {
+    return 'Không làm mới được · đang hiển thị $time';
+  }
+
+  @override
   String mastermindCountState(int count, String state) {
     return '$count $state';
   }
@@ -12452,6 +12457,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String mastermindFloor(String value) {
     return 'Ngưỡng $value';
   }
+
+  @override
+  String get mastermindForbiddenMessage => 'Hãy nhờ chủ sở hữu Mastermind cấp quyền truy cập.';
 
   @override
   String get mastermindForbiddenTitle => 'Tài khoản này không được phép xem Mastermind.';
@@ -12802,16 +12810,28 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String get mastermindSessionRejectedMessage => 'Hãy thử lại. Nếu vẫn lỗi, hãy đăng xuất rồi đăng nhập lại.';
+
+  @override
+  String get mastermindSessionRejectedTitle => 'Mastermind không xác minh được phiên của bạn.';
+
+  @override
   String get mastermindShipEmpty => 'Chưa có bản phát hành nào';
 
   @override
   String get mastermindShowAll => 'Xem tất cả';
 
   @override
-  String get mastermindSignInAction => 'Đăng nhập';
+  String get mastermindSignOutAction => 'Đăng xuất và đăng nhập lại';
 
   @override
-  String get mastermindSignInAgainTitle => 'Đăng nhập lại để xem Mastermind';
+  String get mastermindSignOutConfirmAction => 'Đăng xuất';
+
+  @override
+  String get mastermindSignOutConfirmMessage => 'Thao tác này đăng xuất bạn khỏi Tuturuuu trên thiết bị này, gồm mọi tài khoản đã lưu. Bạn sẽ cần đăng nhập lại.';
+
+  @override
+  String get mastermindSignOutConfirmTitle => 'Đăng xuất khỏi Tuturuuu?';
 
   @override
   String mastermindSnapshotAt(String time) {
@@ -13011,6 +13031,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindTitle => 'Mastermind';
+
+  @override
+  String get mastermindTryAgain => 'Thử lại';
 
   @override
   String get mastermindUnavailable => 'Không khả dụng';

@@ -122,7 +122,7 @@ class HomeDecisionsCard extends StatelessWidget {
                 Gmt7.dateTime(decision.at, locale),
               ].join(' · '),
             ),
-            onTap: () => context.go(Routes.mastermindInbox),
+            // Decisions have no detail screen yet: no tap until Inbox lands.
           ),
       ],
     );

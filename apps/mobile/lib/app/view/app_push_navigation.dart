@@ -35,6 +35,11 @@ extension _AppPushNavigation on _AppState {
       _appLockCubit.lock();
     }
 
+    unawaited(
+      _mastermind.retryAccessAfterError(
+        _workspaceCubit.state.currentWorkspace?.id,
+      ),
+    );
     unawaited(_refreshOfflinePreparationOnResume());
     unawaited(_appVersionCubit.checkVersion(background: true));
     unawaited(CacheWarmupCoordinator.instance.prewarmHome());

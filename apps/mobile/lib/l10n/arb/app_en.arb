@@ -5246,6 +5246,13 @@
       }
     }
   },
+  "@mastermindCouldntRefreshShowing": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "@mastermindCountState": {
     "placeholders": {
       "count": {
@@ -5614,6 +5621,7 @@
   "mastermindColumnTotal": "Total",
   "mastermindCommit": "Commit",
   "mastermindCouldntReadShowing": "Couldn't read the latest update · showing {time}",
+  "mastermindCouldntRefreshShowing": "Couldn't refresh · showing {time}",
   "mastermindCountState": "{count} {state}",
   "mastermindCoverageComplete": "Complete",
   "mastermindCoverageMissing": "No source",
@@ -5653,6 +5661,7 @@
   "mastermindFilterRunning": "Running",
   "mastermindFilterWaiting": "Waiting",
   "mastermindFloor": "Floor {value}",
+  "mastermindForbiddenMessage": "Ask a Mastermind owner for access.",
   "mastermindForbiddenTitle": "This account isn't allowed to view Mastermind.",
   "mastermindFreshCached": "cached",
   "mastermindFreshFresh": "fresh",
@@ -5757,10 +5766,14 @@
   "mastermindSeriesWaiting": "waiting",
   "mastermindSession": "Session",
   "mastermindSessionLeft": "Session {value} left",
+  "mastermindSessionRejectedMessage": "Try again. If it keeps happening, sign out and sign in again.",
+  "mastermindSessionRejectedTitle": "Mastermind couldn't verify your session.",
   "mastermindShipEmpty": "No releases reported",
   "mastermindShowAll": "Show all",
-  "mastermindSignInAction": "Sign in",
-  "mastermindSignInAgainTitle": "Sign in again to view Mastermind",
+  "mastermindSignOutAction": "Sign out and sign in again",
+  "mastermindSignOutConfirmAction": "Sign out",
+  "mastermindSignOutConfirmMessage": "This signs you out of Tuturuuu on this device, including every saved account. You'll need to sign in again.",
+  "mastermindSignOutConfirmTitle": "Sign out of Tuturuuu?",
   "mastermindSnapshotAt": "Snapshot {time}",
   "mastermindSnapshotOutOfDate": "Snapshot out of date",
   "mastermindSnapshotSectionsTitle": "Sections",
@@ -5819,6 +5832,7 @@
   "mastermindTentative": "tentative",
   "mastermindTimeZoneCaption": "GMT+7",
   "mastermindTitle": "Mastermind",
+  "mastermindTryAgain": "Try again",
   "mastermindUnavailable": "Unavailable",
   "mastermindUnitCredits": "{value} credits",
   "mastermindUnitCreditsPerDay": "{value} credits/day",

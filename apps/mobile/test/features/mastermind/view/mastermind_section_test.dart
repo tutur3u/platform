@@ -2,32 +2,43 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/mastermind/cubit/mastermind_snapshot_cubit.dart';
 import 'package:mobile/features/mastermind/data/mastermind_snapshot_source.dart';
 import 'package:mobile/features/mastermind/view/mastermind_section.dart';
 import 'package:mobile/features/mastermind/view/mastermind_states.dart';
+import 'package:mocktail/mocktail.dart';
 
 import '../../../helpers/helpers.dart';
 import '../../../helpers/mastermind_home_fixture.dart';
 import '../../../helpers/mastermind_view_harness.dart';
+
+class _MockAuthCubit extends MockCubit<AuthState> implements AuthCubit {}
 
 Future<MastermindViewHarness> _pump(
   WidgetTester tester, {
   TestAccess access = TestAccess.enabled,
   FakeHubSource? source,
   void Function()? afterAccess,
+  AuthCubit? auth,
 }) async {
   final harness = MastermindViewHarness(source: source);
   addTearDown(harness.dispose);
   await harness.setAccess(access);
   afterAccess?.call();
+  final section = MastermindSection(
+    builder: (context, ready, freshness) => const Text('content'),
+  );
   await tester.pumpApp(
     harness.wrap(
-      MastermindSection(
-        builder: (context, ready, freshness) => const Text('content'),
-      ),
+      auth == null
+          ? section
+          : BlocProvider<AuthCubit>.value(value: auth, child: section),
     ),
   );
   await tester.pumpAndSettle();
@@ -89,6 +100,36 @@ void main() {
     });
   });
 
+  group('app lifecycle', () {
+    testWidgets('resuming refreshes now, pausing does not', (tester) async {
+      final harness = await _pump(tester);
+      expect(harness.source.calls, 1);
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await tester.pumpAndSettle();
+      expect(harness.source.calls, 1);
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+      expect(harness.source.calls, 2);
+    });
+
+    testWidgets('resuming also clears a stopped scheduler', (tester) async {
+      final source = FakeHubSource()
+        ..fetcher = () async =>
+            _unavailable(SnapshotUnavailableKind.unauthorized);
+      final harness = await _pump(tester, source: source);
+      final before = source.calls;
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+
+      expect(source.calls, greaterThan(before));
+      expect(harness.scheduler.consecutiveFailures, 0);
+    });
+  });
+
   group('whole-section states', () {
     testWidgets('loading with nothing held shows skeleton cards', (
       tester,
@@ -117,13 +158,73 @@ void main() {
       expect(find.text('Retry'), findsNothing);
     });
 
-    testWidgets('unauthorized asks to sign in again', (tester) async {
-      final source = FakeHubSource()
-        ..fetcher = () async =>
-            _unavailable(SnapshotUnavailableKind.unauthorized);
-      await _pump(tester, source: source);
-      expect(find.text('Sign in again to view Mastermind'), findsOneWidget);
-      expect(find.text('Sign in'), findsOneWidget);
+    group('unauthorized', () {
+      late _MockAuthCubit auth;
+      late FakeHubSource source;
+
+      setUp(() {
+        auth = _MockAuthCubit();
+        whenListen(
+          auth,
+          const Stream<AuthState>.empty(),
+          initialState: const AuthState.unknown(),
+        );
+        when(auth.signOut).thenAnswer((_) async {});
+        source = FakeHubSource()
+          ..fetcher = () async =>
+              _unavailable(SnapshotUnavailableKind.unauthorized);
+      });
+
+      testWidgets('offers Try again first and signs nobody out', (
+        tester,
+      ) async {
+        await _pump(tester, source: source, auth: auth);
+        expect(
+          find.text("Mastermind couldn't verify your session."),
+          findsOneWidget,
+        );
+        expect(find.text('Try again'), findsOneWidget);
+        expect(find.text('Sign out and sign in again'), findsOneWidget);
+        final before = source.calls;
+
+        await tester.tap(find.text('Try again'));
+        await tester.pumpAndSettle();
+
+        expect(source.calls, greaterThan(before));
+        verifyNever(auth.signOut);
+      });
+
+      testWidgets('asks before signing out, and cancelling keeps the session', (
+        tester,
+      ) async {
+        await _pump(tester, source: source, auth: auth);
+
+        await tester.tap(find.text('Sign out and sign in again'));
+        await tester.pumpAndSettle();
+        expect(find.text('Sign out of Tuturuuu?'), findsOneWidget);
+        expect(
+          find.textContaining('including every saved account'),
+          findsOneWidget,
+        );
+        verifyNever(auth.signOut);
+
+        await tester.tap(find.text('Cancel'));
+        await tester.pumpAndSettle();
+        expect(find.text('Sign out of Tuturuuu?'), findsNothing);
+        verifyNever(auth.signOut);
+      });
+
+      testWidgets('signs out only after the user confirms', (tester) async {
+        await _pump(tester, source: source, auth: auth);
+
+        await tester.tap(find.text('Sign out and sign in again'));
+        await tester.pumpAndSettle();
+        verifyNever(auth.signOut);
+
+        await tester.tap(find.text('Sign out'));
+        await tester.pumpAndSettle();
+        verify(auth.signOut).called(1);
+      });
     });
 
     testWidgets(
@@ -137,6 +238,7 @@ void main() {
           find.text("This account isn't allowed to view Mastermind."),
           findsOneWidget,
         );
+        expect(find.text('Ask a Mastermind owner for access.'), findsOneWidget);
         expect(find.text('Retry'), findsNothing);
         expect(harness.access.state.forbidden, isTrue);
         expect(harness.access.state.visible, isFalse);

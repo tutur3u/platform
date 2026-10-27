@@ -63,8 +63,13 @@ class _AttachedSectionState extends State<_AttachedSection>
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) => _runtime.scheduler
-      .setForeground(foreground: state == AppLifecycleState.resumed);
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final resumed = state == AppLifecycleState.resumed;
+    _runtime.scheduler.setForeground(foreground: resumed);
+    // Resuming is a refresh trigger of its own: the held snapshot may be
+    // hours old, and a backoff that grew while asleep should not delay it.
+    if (resumed) unawaited(_runtime.scheduler.refreshNow());
+  }
 
   @override
   void dispose() {
@@ -80,7 +85,11 @@ class _AttachedSectionState extends State<_AttachedSection>
     child: widget.builder(
       context,
       ready,
-      MastermindFreshness.of(ready, clock: _runtime.snapshot.clock),
+      MastermindFreshness.of(
+        ready,
+        clock: _runtime.snapshot.clock,
+        online: _runtime.scheduler.isOnline,
+      ),
     ),
   );
 

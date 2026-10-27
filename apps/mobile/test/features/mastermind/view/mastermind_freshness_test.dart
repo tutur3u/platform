@@ -67,6 +67,18 @@ void main() {
           ),
           clock: clock,
         ).kind,
+        MastermindFreshnessKind.couldntRefresh,
+      );
+      expect(
+        MastermindFreshness.of(
+          _ready(
+            failure: const UnavailableRefresh(
+              SnapshotUnavailableKind.unavailable,
+            ),
+          ),
+          clock: clock,
+          online: false,
+        ).kind,
         MastermindFreshnessKind.offline,
       );
       expect(
@@ -109,14 +121,16 @@ void main() {
     Future<void> pumpStrip(
       WidgetTester tester,
       MastermindSnapshotReady ready,
-      Duration age,
-    ) => tester.pumpApp(
+      Duration age, {
+      bool online = true,
+    }) => tester.pumpApp(
       Align(
         alignment: Alignment.topLeft,
         child: MastermindFreshnessStrip(
           freshness: MastermindFreshness.of(
             ready,
             clock: () => generatedAt.add(age),
+            online: online,
           ),
         ),
       ),
@@ -147,8 +161,26 @@ void main() {
           ),
         ),
         const Duration(hours: 3),
+        online: false,
       );
       expect(find.text('Offline · showing $_time'), findsOneWidget);
+      expect(find.byIcon(AppIcons.warning), findsOneWidget);
+    });
+
+    testWidgets('a failed refresh while online does not claim offline', (
+      tester,
+    ) async {
+      await pumpStrip(
+        tester,
+        _ready(
+          failure: const UnavailableRefresh(
+            SnapshotUnavailableKind.unavailable,
+          ),
+        ),
+        const Duration(hours: 3),
+      );
+      expect(find.text("Couldn't refresh · showing $_time"), findsOneWidget);
+      expect(find.textContaining('Offline'), findsNothing);
       expect(find.byIcon(AppIcons.warning), findsOneWidget);
     });
 

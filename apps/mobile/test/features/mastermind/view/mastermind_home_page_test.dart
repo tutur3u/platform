@@ -283,13 +283,27 @@ void main() {
       'See all (4)': '/mastermind/inbox',
       '1 failed': '/mastermind/work?state=failed',
       'Usage': '/mastermind/insights',
-      'Live just now': '/mastermind/ship',
     }.entries) {
       testWidgets('${entry.key} opens ${entry.value}', (tester) async {
         final visited = await pumpRouted(tester);
         await tester.tap(find.text(entry.key));
         await tester.pumpAndSettle();
         expect(visited, [entry.value]);
+      });
+    }
+
+    // Decisions and releases have no detail screen yet, so their rows are
+    // plain text until Inbox and Ship land.
+    for (final label in [
+      'Decision log 3',
+      'Live just now',
+      'Needs attention',
+    ]) {
+      testWidgets('$label is not tappable yet', (tester) async {
+        final visited = await pumpRouted(tester);
+        await tester.tap(find.text(label).first, warnIfMissed: false);
+        await tester.pumpAndSettle();
+        expect(visited, isEmpty);
       });
     }
   });

@@ -264,6 +264,10 @@ void main() {
       expect(MastermindHubConfig.resolve(flavor: 'development'), isNull);
     });
 
+    test('production stays off until the beta rollout', () {
+      expect(MastermindHubConfig.resolve(flavor: 'production'), isNull);
+    });
+
     test('the staging flavor names the staging host', () {
       expect(
         MastermindHubConfig.resolve(flavor: 'staging').toString(),

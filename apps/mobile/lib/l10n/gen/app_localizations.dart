@@ -23569,6 +23569,12 @@ abstract class AppLocalizations {
   /// **'Couldn\'t read the latest update · showing {time}'**
   String mastermindCouldntReadShowing(String time);
 
+  /// No description provided for @mastermindCouldntRefreshShowing.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t refresh · showing {time}'**
+  String mastermindCouldntRefreshShowing(String time);
+
   /// No description provided for @mastermindCountState.
   ///
   /// In en, this message translates to:
@@ -23802,6 +23808,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Floor {value}'**
   String mastermindFloor(String value);
+
+  /// No description provided for @mastermindForbiddenMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask a Mastermind owner for access.'**
+  String get mastermindForbiddenMessage;
 
   /// No description provided for @mastermindForbiddenTitle.
   ///
@@ -24427,6 +24439,18 @@ abstract class AppLocalizations {
   /// **'Session {value} left'**
   String mastermindSessionLeft(String value);
 
+  /// No description provided for @mastermindSessionRejectedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again. If it keeps happening, sign out and sign in again.'**
+  String get mastermindSessionRejectedMessage;
+
+  /// No description provided for @mastermindSessionRejectedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Mastermind couldn\'t verify your session.'**
+  String get mastermindSessionRejectedTitle;
+
   /// No description provided for @mastermindShipEmpty.
   ///
   /// In en, this message translates to:
@@ -24439,17 +24463,29 @@ abstract class AppLocalizations {
   /// **'Show all'**
   String get mastermindShowAll;
 
-  /// No description provided for @mastermindSignInAction.
+  /// No description provided for @mastermindSignOutAction.
   ///
   /// In en, this message translates to:
-  /// **'Sign in'**
-  String get mastermindSignInAction;
+  /// **'Sign out and sign in again'**
+  String get mastermindSignOutAction;
 
-  /// No description provided for @mastermindSignInAgainTitle.
+  /// No description provided for @mastermindSignOutConfirmAction.
   ///
   /// In en, this message translates to:
-  /// **'Sign in again to view Mastermind'**
-  String get mastermindSignInAgainTitle;
+  /// **'Sign out'**
+  String get mastermindSignOutConfirmAction;
+
+  /// No description provided for @mastermindSignOutConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This signs you out of Tuturuuu on this device, including every saved account. You\'ll need to sign in again.'**
+  String get mastermindSignOutConfirmMessage;
+
+  /// No description provided for @mastermindSignOutConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out of Tuturuuu?'**
+  String get mastermindSignOutConfirmTitle;
 
   /// No description provided for @mastermindSnapshotAt.
   ///
@@ -24798,6 +24834,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Mastermind'**
   String get mastermindTitle;
+
+  /// No description provided for @mastermindTryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get mastermindTryAgain;
 
   /// No description provided for @mastermindUnavailable.
   ///

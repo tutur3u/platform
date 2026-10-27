@@ -14,9 +14,10 @@ import '../../../helpers/mastermind_hub_harness.dart';
 void main() {
   group('configuration fails closed', () {
     test('base URL by flavor and override', () {
+      // Production stays unconfigured until the beta rollout.
       expect(
         MastermindHubConfig.resolve(flavor: 'production', override: ''),
-        Uri.parse('https://mastermind-hub.tutur3u.com'),
+        isNull,
       );
       expect(
         MastermindHubConfig.resolve(flavor: 'staging', override: ''),

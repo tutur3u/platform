@@ -26,6 +26,8 @@ class MastermindFreshnessStrip extends StatelessWidget {
         time,
       ),
       MastermindFreshnessKind.offline => l10n.mastermindOfflineShowing(time),
+      MastermindFreshnessKind.couldntRefresh =>
+        l10n.mastermindCouldntRefreshShowing(time),
       MastermindFreshnessKind.updateApp => l10n.mastermindUpdateAppShowing(
         time,
       ),

@@ -10,8 +10,11 @@ enum MastermindFreshnessKind {
   /// Older, informational only: publishing is manual at first.
   lastPublished,
 
-  /// The refresh failed to reach the hub; showing what is held.
+  /// The device has no connection; showing what is held.
   offline,
+
+  /// The device is online but the refresh failed; showing what is held.
+  couldntRefresh,
 
   /// The hub speaks a schema this build does not read.
   updateApp,
@@ -32,13 +35,17 @@ final class MastermindFreshness {
   factory MastermindFreshness.of(
     MastermindSnapshotReady ready, {
     Clock? clock,
+    bool online = true,
   }) {
     final snapshot = ready.snapshot;
     final age = (clock ?? DateTime.now)().toUtc().difference(
       snapshot.generatedAt.toUtc(),
     );
     final kind = switch (ready.refreshFailure) {
-      UnavailableRefresh() => MastermindFreshnessKind.offline,
+      UnavailableRefresh() =>
+        online
+            ? MastermindFreshnessKind.couldntRefresh
+            : MastermindFreshnessKind.offline,
       RejectedRefresh(reason: RejectionReason.unsupportedVersion) =>
         MastermindFreshnessKind.updateApp,
       RejectedRefresh() => MastermindFreshnessKind.unreadable,
@@ -67,6 +74,7 @@ final class MastermindFreshness {
 
   bool get isWarning =>
       kind == MastermindFreshnessKind.offline ||
+      kind == MastermindFreshnessKind.couldntRefresh ||
       kind == MastermindFreshnessKind.updateApp ||
       kind == MastermindFreshnessKind.unreadable ||
       degradedSources > 0;

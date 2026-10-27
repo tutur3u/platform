@@ -53,6 +53,7 @@ import 'package:mobile/features/finance/cubit/finance_cubit.dart';
 import 'package:mobile/features/habits/cubit/habits_access_cubit.dart';
 import 'package:mobile/features/habits/cubit/habits_cubit.dart';
 import 'package:mobile/features/inventory/cubit/inventory_access_cubit.dart';
+import 'package:mobile/features/mastermind/runtime/mastermind_auth_reset.dart';
 import 'package:mobile/features/mastermind/runtime/mastermind_runtime.dart';
 import 'package:mobile/features/notifications/data/archive_opened_notification.dart';
 import 'package:mobile/features/notifications/push/push_notification_service.dart';
@@ -512,27 +513,7 @@ class _AppState extends State<App> {
                 }
               },
             ),
-            // Logout or account switch: the cached snapshot belongs to the
-            // previous account and must not outlive it.
-            BlocListener<AuthCubit, AuthState>(
-              listenWhen: (prev, curr) =>
-                  (curr.status == AuthStatus.unauthenticated &&
-                      prev.status != AuthStatus.unauthenticated) ||
-                  (prev.user?.id != null &&
-                      curr.user?.id != null &&
-                      prev.user?.id != curr.user?.id),
-              listener: (context, state) => unawaited(
-                _mastermind.reset(
-                  wsId: state.status == AuthStatus.authenticated
-                      ? context
-                            .read<WorkspaceCubit>()
-                            .state
-                            .currentWorkspace
-                            ?.id
-                      : null,
-                ),
-              ),
-            ),
+            mastermindAuthResetListener(_mastermind),
             BlocListener<WorkspaceCubit, WorkspaceState>(
               listenWhen: (previous, current) =>
                   previous.currentWorkspace?.id != current.currentWorkspace?.id,

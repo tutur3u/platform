@@ -12467,6 +12467,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String mastermindCouldntRefreshShowing(String time) {
+    return 'Couldn\'t refresh · showing $time';
+  }
+
+  @override
   String mastermindCountState(int count, String state) {
     return '$count $state';
   }
@@ -12588,6 +12593,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String mastermindFloor(String value) {
     return 'Floor $value';
   }
+
+  @override
+  String get mastermindForbiddenMessage => 'Ask a Mastermind owner for access.';
 
   @override
   String get mastermindForbiddenTitle => 'This account isn\'t allowed to view Mastermind.';
@@ -12940,16 +12948,28 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get mastermindSessionRejectedMessage => 'Try again. If it keeps happening, sign out and sign in again.';
+
+  @override
+  String get mastermindSessionRejectedTitle => 'Mastermind couldn\'t verify your session.';
+
+  @override
   String get mastermindShipEmpty => 'No releases reported';
 
   @override
   String get mastermindShowAll => 'Show all';
 
   @override
-  String get mastermindSignInAction => 'Sign in';
+  String get mastermindSignOutAction => 'Sign out and sign in again';
 
   @override
-  String get mastermindSignInAgainTitle => 'Sign in again to view Mastermind';
+  String get mastermindSignOutConfirmAction => 'Sign out';
+
+  @override
+  String get mastermindSignOutConfirmMessage => 'This signs you out of Tuturuuu on this device, including every saved account. You\'ll need to sign in again.';
+
+  @override
+  String get mastermindSignOutConfirmTitle => 'Sign out of Tuturuuu?';
 
   @override
   String mastermindSnapshotAt(String time) {
@@ -13150,6 +13170,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindTitle => 'Mastermind';
+
+  @override
+  String get mastermindTryAgain => 'Try again';
 
   @override
   String get mastermindUnavailable => 'Unavailable';
