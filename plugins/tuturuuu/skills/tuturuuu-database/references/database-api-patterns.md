@@ -91,6 +91,7 @@ review prove baseline equivalence. Existing migration history stays immutable.
   revoke; schema ACLs cannot subtract the implicit global PUBLIC grant. Provider
   defaults require their owner. See the RPC hardening runbook and
   `20261027151200_anon-definer-execute.sql` for the catalog and privilege snapshot.
+- Admin-only report RPCs can retain an internal workspace-permission guard without granting authenticated EXECUTE. Test ACLs first, then grant authenticated only inside the rolled-back pgTAP transaction to prove both denial and permitted-member behavior. Before removing an obsolete overload, inspect `pg_get_functiondef` and final SQL/trigger callers on a fresh full replay; historical callers may have been replaced. See the RPC hardening runbook and `anon-definer-migration-c.sql`.
 - Views over RLS-protected tables need `security_invoker` before broad grants.
 
 ## Outbound SSO persistence
