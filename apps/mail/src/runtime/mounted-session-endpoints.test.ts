@@ -209,31 +209,35 @@ it.each(['DELETE', 'PUT', 'PATCH'])(
       ctx
     );
     expect(response.status).toBe(409);
-    for (const call of Object.values(calls)) expect(call).not.toHaveBeenCalled();
+    for (const call of Object.values(calls))
+      expect(call).not.toHaveBeenCalled();
   }
 );
 
 it.each([
   'https://mail.tuturuuu.com/login',
   'https://staging.tuturuuu.com/mail/login',
-])('keeps document security headers after bridge dispatch on %s', async (url) => {
-  calls.start.mockResolvedValueOnce(
-    new Response('<!doctype html><title>Mail</title>', {
-      headers: { 'content-type': 'text/html; charset=utf-8' },
-    })
-  );
-  const response = await handleMailRequest(new Request(url), env, ctx);
-  expect(response.status).toBe(200);
-  expect(calls.routing).toHaveBeenCalledTimes(1);
-  expect(calls.start).toHaveBeenCalledTimes(1);
-  expect(response.headers.get('x-content-type-options')).toBe('nosniff');
-  expect(response.headers.get('permissions-policy')).toContain('camera=()');
-  expect(response.headers.get('content-security-policy-report-only')).toContain(
-    "default-src 'self'"
-  );
-  expect(response.headers.get('content-security-policy')).toBe(
-    "frame-ancestors 'none'"
-  );
-  expect(response.headers.get('x-frame-options')).toBe('DENY');
-  expect(response.headers.get('cache-control')).toBe('private, no-store');
-});
+])(
+  'keeps document security headers after bridge dispatch on %s',
+  async (url) => {
+    calls.start.mockResolvedValueOnce(
+      new Response('<!doctype html><title>Mail</title>', {
+        headers: { 'content-type': 'text/html; charset=utf-8' },
+      })
+    );
+    const response = await handleMailRequest(new Request(url), env, ctx);
+    expect(response.status).toBe(200);
+    expect(calls.routing).toHaveBeenCalledTimes(1);
+    expect(calls.start).toHaveBeenCalledTimes(1);
+    expect(response.headers.get('x-content-type-options')).toBe('nosniff');
+    expect(response.headers.get('permissions-policy')).toContain('camera=()');
+    expect(
+      response.headers.get('content-security-policy-report-only')
+    ).toContain("default-src 'self'");
+    expect(response.headers.get('content-security-policy')).toBe(
+      "frame-ancestors 'none'"
+    );
+    expect(response.headers.get('x-frame-options')).toBe('DENY');
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+  }
+);
