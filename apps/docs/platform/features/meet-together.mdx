@@ -52,3 +52,13 @@ Everyone who has access to the plan will be able to see the plan details and the
   Mobile support is experimental, so it's recommended to use a desktop browser
   for the best experience.
 </Warning>
+
+## Plan creation access
+
+Creating a plan requires a signed-in creator. Creating a workspace plan also
+requires `MEMBER` membership in that workspace. Plans without a workspace remain
+available to signed-in creators. A membership lookup failure returns an error
+before creating the plan or an associated poll.
+
+The shared Meet plan dialog and `POST /api/v1/meet/plans` use this same server
+boundary. Regression coverage: `packages/apis/src/meet/actions/plans.test.ts`.

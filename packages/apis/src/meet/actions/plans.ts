@@ -6,6 +6,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { parseTimeFromTimetz } from '@tuturuuu/utils/time-helper';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { revalidatePath } from 'next/cache';
 
 // Types for batched operations
@@ -205,10 +206,23 @@ export interface CreatePlanInput {
 }
 
 export async function createPlan(data: CreatePlanInput) {
-  const sbAdmin = await createAdminClient();
   const supabase = await createClient();
 
   const { user } = await resolveAuthenticatedSessionUser(supabase);
+
+  if (!user) return { error: 'Not authenticated' };
+  if (data.ws_id) {
+    const membership = await verifyWorkspaceMembershipType({
+      supabase,
+      userId: user.id,
+      wsId: data.ws_id,
+    });
+    if (membership.error === 'membership_lookup_failed') {
+      return { error: 'Failed to verify workspace access' };
+    }
+    if (!membership.ok) return { error: 'Forbidden' };
+  }
+  const sbAdmin = await createAdminClient();
 
   // Backend validation: ensure end_time is after start_time
   if (data.start_time && data.end_time) {
