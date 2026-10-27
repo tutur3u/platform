@@ -108,5 +108,9 @@ describe('board sprint helpers', () => {
     expect(formatSprintDateRange(active, 'en-GB')).toBe(
       '19 Oct 2026 - 30 Oct 2026'
     );
+    // The app's English locale reads day first too.
+    expect(formatSprintDateRange(active, 'en')).toBe(
+      '19 Oct 2026 - 30 Oct 2026'
+    );
   });
 });
