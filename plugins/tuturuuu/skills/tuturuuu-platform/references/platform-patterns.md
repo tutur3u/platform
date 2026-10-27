@@ -1332,3 +1332,15 @@ provider whose entire nonempty sample failed transiently. Keep the bounded
 reader and durable ledger. Degraded runs reset the fatal streak without
 advancing the last productive completion; holds and revocations remain nonfatal.
 See `apps/docs/platform/applications/calendar.mdx` and the scheduler contract tests.
+
+
+### Verified mailbox identity
+
+Use `getVerifiedAuthEmail(admin, userId)` from `@tuturuuu/supabase/next/user`
+for recipient-email authorization. It reads Auth by the authenticated subject,
+requires a matching id, and returns no mailbox unless `email_confirmed_at` is set.
+If Auth was already fetched and subject-bound, use `getConfirmedAuthEmail(user)`.
+Keep editable profile/contact emails and supplied session emails for display only.
+Direct recipient ids remain valid without a confirmed mailbox. Cross-app SQL must
+canonicalize at both minting and redemption so outstanding handoffs follow the
+same rule; preserve the signed MFA transfer and existing bearer-redemption ACL.

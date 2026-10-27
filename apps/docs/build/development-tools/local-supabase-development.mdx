@@ -1290,3 +1290,23 @@ definition, unchanged name, `convalidated = false`, and rejection of a new
 oversized insert. Also compare constraint OIDs on the safe-only path. The batch
 regression is `apps/database/supabase/tests/notification-email-payload-cleanup.sql`;
 run the other notification pgTAP suites after applying the remaining migrations.
+
+
+### Task RPC user-client admission
+
+`apps/database/supabase/tests/time-task-rpc-scoping.sql` checks caller admission
+and service-only writer grants. Apply the migration snapshot to an isolated
+local stack before testing the actual Tasks dashboard and Mira Tasks handlers:
+
+```sh
+ttr resources run -- node apps/database/scripts/verify-task-rpc-user-callers.mjs --root <disposable-root>
+```
+
+The runner accepts only a disposable local root and loopback API URL. It obtains
+that stack's test credentials in memory and passes them only to the test process.
+The fixture creates disposable Auth users and tasks, invokes the real handlers
+with a real authenticated Supabase client, checks anonymous and different-user
+RPC denial through PostgREST, and removes its synthetic team workspace and user.
+Personal workspace cleanup remains owned by the Auth deletion lifecycle.
+The integration test skips unless the runner supplies its three `TEST_SUPABASE_*`
+variables; the ordinary unit suite does not require a running database.

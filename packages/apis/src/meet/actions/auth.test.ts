@@ -56,6 +56,7 @@ const mocks = vi.hoisted(() => {
 
   return {
     calls,
+    getPlan: vi.fn(),
     createAdminClient: vi.fn(async () => ({ from })),
     queue(key: string, response: { data: unknown; error: unknown }) {
       if (key === 'meet_together_guests:select') {
@@ -76,6 +77,8 @@ const mocks = vi.hoisted(() => {
     },
   };
 });
+
+vi.mock('@tuturuuu/utils/plan-helpers', () => ({ getPlan: mocks.getPlan }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: () => mocks.createAdminClient(),
@@ -112,8 +115,33 @@ describe('Meet guest login', () => {
     // Client IP headers are trusted only behind a configured proxy (#6554).
     vi.stubEnv('TRUSTED_PROXY', 'cloudflare');
     mocks.reset();
+    mocks.getPlan.mockResolvedValue({
+      id: PLAN_ID,
+      is_public: true,
+      ws_id: null,
+    });
     limits.check.mockResolvedValue({ allowed: true, refund: limits.refund });
   });
+
+  it.each(['private personal plan', 'workspace plan'])(
+    'denies guest login to an inaccessible %s before guest lookup or writes',
+    async () => {
+      mocks.getPlan.mockResolvedValue(null);
+      mocks.queue('meet_together_guests:select', { data: null, error: null });
+      mocks.queue('meet_together_guests:insert', {
+        data: { id: 'guest-1', name: 'Ann' },
+        error: null,
+      });
+      const { guestLogin } = await import('./auth.js');
+      expect(
+        await guestLogin(PLAN_ID, { name: 'Ann', password: 'fixture' })
+      ).toEqual({ error: 'Invalid request' });
+      expect(mocks.getPlan).toHaveBeenCalledWith(PLAN_ID, {
+        actorUserId: null,
+      });
+      expect(mocks.calls).toEqual([]);
+    }
+  );
 
   it('creates a guest with a scrypt hash and returns a session, not the hash', async () => {
     mocks.queue('meet_together_guests:select', { data: null, error: null });

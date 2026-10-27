@@ -42,7 +42,7 @@ const PROTECTED_TRIGGERS = {
   'docs-seo-check.yaml': '6305e545b85b27e8',
   'external-internal-packages.yaml': '4d532cf88497bbd2',
   'external-project-storage-analytics-contract.yaml': '02e3e1d0d939ac56',
-  'finance-cloudflare.yaml': '892ac95ed04e14f7',
+  'finance-cloudflare.yaml': 'd5dc7fa96048fd6b',
   'forms-cloudflare.yaml': '4c98fb3cb1df4d96',
   'i18n-check.yaml': '6305e545b85b27e8',
   'inventory-cloudflare.yaml': '4558d318d6aaaba3',
