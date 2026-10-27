@@ -59,7 +59,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Setup repository minimum Rust toolchain
-        uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # verified stable implementation
+        uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # verified stable implementation
         with:
           toolchain: "1.95.0"
           components: clippy, rustfmt
@@ -130,7 +130,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Setup repository minimum Rust toolchain
-        uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # verified stable implementation
+        uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # verified stable implementation
         with:
           toolchain: "1.95.0"
           components: clippy, rustfmt
