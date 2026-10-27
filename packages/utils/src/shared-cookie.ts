@@ -1,6 +1,6 @@
 export interface TuturuuuSharedCookieDomain {
-  cookieDomain: '.tuturuuu.com' | '.tuturuuu.localhost';
-  hostname: 'tuturuuu.com' | 'tuturuuu.localhost';
+  cookieDomain: string;
+  hostname: string;
   secure: boolean;
 }
 
@@ -40,6 +40,83 @@ export const TUTURUUU_SHARED_COOKIE_DOMAINS = [
     secure: false,
   },
 ] as const satisfies readonly TuturuuuSharedCookieDomain[];
+
+export const TUTURUUU_SHARED_COOKIE_DOMAIN_ENV_KEY =
+  'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN';
+
+/**
+ * Registrable domains an environment-configured shared cookie domain must sit
+ * strictly beneath (for example `.staging.tutur3u.com`). The registrable domain
+ * itself is never accepted from configuration: `.tutur3u.com` would share
+ * staging cookies with every other tutur3u.com host.
+ */
+const CONFIGURED_SHARED_COOKIE_PARENT_HOSTNAMES = [
+  'tutur3u.com',
+  'tuturuuu.com',
+] as const;
+
+const warnedSharedCookieDomainValues = new Set<string>();
+
+function warnIgnoredSharedCookieDomain(value: string, reason: string) {
+  if (warnedSharedCookieDomainValues.has(value)) return;
+
+  warnedSharedCookieDomainValues.add(value);
+  console.warn(
+    `[shared-cookie] Ignoring ${TUTURUUU_SHARED_COOKIE_DOMAIN_ENV_KEY} "${value}": ${reason}`
+  );
+}
+
+function parseConfiguredSharedCookieDomain(
+  value: string | undefined
+): TuturuuuSharedCookieDomain | null {
+  const normalized = value?.trim().toLowerCase();
+
+  if (!normalized) return null;
+
+  if (!/^\.[a-z0-9-]+(\.[a-z0-9-]+)+$/u.test(normalized)) {
+    warnIgnoredSharedCookieDomain(
+      normalized,
+      'expected a leading-dot hostname such as .staging.tutur3u.com'
+    );
+    return null;
+  }
+
+  const hostname = normalized.slice(1);
+  const isStrictSubdomain = CONFIGURED_SHARED_COOKIE_PARENT_HOSTNAMES.some(
+    (parent) => hostname.endsWith(`.${parent}`)
+  );
+
+  if (!isStrictSubdomain) {
+    warnIgnoredSharedCookieDomain(
+      normalized,
+      'must be a subdomain of tutur3u.com or tuturuuu.com, never the registrable domain itself'
+    );
+    return null;
+  }
+
+  return { cookieDomain: normalized, hostname, secure: true };
+}
+
+/**
+ * Shared cookie domains for this deployment. Production defaults to
+ * `.tuturuuu.com`; a deployment that must stay cookie-isolated (staging) sets
+ * `NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN` (for example
+ * `.staging.tutur3u.com`) which replaces the production domain. The first
+ * entry is the primary (managed) domain.
+ */
+export function getTuturuuuSharedCookieDomains(): readonly TuturuuuSharedCookieDomain[] {
+  const configured = parseConfiguredSharedCookieDomain(
+    process.env.NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN
+  );
+
+  return configured
+    ? [configured, ...TUTURUUU_SHARED_COOKIE_DOMAINS.slice(1)]
+    : TUTURUUU_SHARED_COOKIE_DOMAINS;
+}
+
+export function getTuturuuuPrimarySharedCookieDomain(): TuturuuuSharedCookieDomain {
+  return getTuturuuuSharedCookieDomains()[0] as TuturuuuSharedCookieDomain;
+}
 
 const ENV_APP_URL_KEYS = [
   'PORTLESS_URL',
@@ -142,7 +219,7 @@ function domainForUrl(url: string | URL | null | undefined) {
   if (!hostname) return null;
 
   return (
-    TUTURUUU_SHARED_COOKIE_DOMAINS.find(
+    getTuturuuuSharedCookieDomains().find(
       (entry) =>
         hostname === entry.hostname || hostname.endsWith(`.${entry.hostname}`)
     ) ?? null

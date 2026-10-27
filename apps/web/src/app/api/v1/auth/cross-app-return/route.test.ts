@@ -33,10 +33,13 @@ function createRequest(
   returnUrl: string,
   options?: {
     generateToken?: boolean;
+    origin?: string;
   }
 ) {
-  return new NextRequest('http://localhost/api/v1/auth/cross-app-return', {
-    body: JSON.stringify({ ...options, returnUrl }),
+  const { origin = 'http://localhost', ...body } = options ?? {};
+
+  return new NextRequest(`${origin}/api/v1/auth/cross-app-return`, {
+    body: JSON.stringify({ ...body, returnUrl }),
     method: 'POST',
   });
 }
@@ -265,7 +268,7 @@ describe('cross-app return route', () => {
     const response = await POST(
       createRequest(
         'https://vc.tuturuuu.com/verify-token?nextUrl=%2Fworkspace%2Fpersonal%2Fplans',
-        { generateToken: false }
+        { generateToken: false, origin: 'https://tuturuuu.com' }
       )
     );
 
@@ -281,6 +284,7 @@ describe('cross-app return route', () => {
     const response = await POST(
       createRequest('https://vercel.tuturuuu.com', {
         generateToken: false,
+        origin: 'https://tuturuuu.com',
       })
     );
 
@@ -295,7 +299,8 @@ describe('cross-app return route', () => {
   it('redirects managed wildcard Tuturuuu returns directly after authentication', async () => {
     const response = await POST(
       createRequest(
-        'https://vc.tuturuuu.com/verify-token?nextUrl=%2Fworkspace%2Fpersonal%2Fplans'
+        'https://vc.tuturuuu.com/verify-token?nextUrl=%2Fworkspace%2Fpersonal%2Fplans',
+        { origin: 'https://tuturuuu.com' }
       )
     );
 
@@ -313,6 +318,125 @@ describe('cross-app return route', () => {
     expect(returnUrl.searchParams.has('token')).toBe(false);
     expect(returnUrl.searchParams.has('originApp')).toBe(false);
     expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
+  describe('staging hosts outside the shared cookie domain', () => {
+    const stagingWebOrigin = 'https://web.staging.tutur3u.com';
+    const stagingTasksOrigin = 'https://tasks.staging.tutur3u.com';
+
+    it('hands off a token to a registered staging satellite when no staging cookie domain is configured', async () => {
+      vi.stubEnv(
+        'NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS',
+        `tasks:${stagingTasksOrigin}`
+      );
+
+      const response = await POST(
+        createRequest(
+          `${stagingTasksOrigin}/verify-token?nextUrl=%2Fpersonal`,
+          {
+            origin: stagingWebOrigin,
+          }
+        )
+      );
+
+      expect(response.status).toBe(200);
+      const body = (await response.json()) as {
+        returnUrl: string;
+        targetApp: string;
+      };
+      const returnUrl = new URL(body.returnUrl);
+
+      expect(body.targetApp).toBe('tasks');
+      expect(returnUrl.origin).toBe(stagingTasksOrigin);
+      expect(returnUrl.pathname).toBe('/verify-token');
+      expect(returnUrl.searchParams.get('token')).toBe('cross-app-token');
+      expect(mocks.rpc).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not shortcut an unregistered staging satellite as managed', async () => {
+      const response = await POST(
+        createRequest(`${stagingTasksOrigin}/personal`, {
+          origin: stagingWebOrigin,
+        })
+      );
+
+      expect(response.status).toBe(400);
+      expect(mocks.rpc).not.toHaveBeenCalled();
+    });
+
+    it('does not skip the token for a tuturuuu.com return URL from a staging web host', async () => {
+      const response = await POST(
+        createRequest('https://vc.tuturuuu.com/workspace/personal/plans', {
+          origin: stagingWebOrigin,
+        })
+      );
+
+      expect(response.status).toBe(400);
+      expect(mocks.rpc).not.toHaveBeenCalled();
+    });
+
+    it('does not skip the token for a registered staging satellite from a tuturuuu.com web host', async () => {
+      vi.stubEnv(
+        'NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS',
+        `tasks:${stagingTasksOrigin}`
+      );
+
+      const response = await POST(
+        createRequest(
+          `${stagingTasksOrigin}/verify-token?nextUrl=%2Fpersonal`,
+          {
+            origin: 'https://tuturuuu.com',
+          }
+        )
+      );
+
+      expect(response.status).toBe(200);
+      const body = (await response.json()) as { targetApp: string };
+
+      expect(body.targetApp).toBe('tasks');
+      expect(mocks.rpc).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not skip the token for a host outside the shared domain even when staging is configured', async () => {
+      vi.stubEnv(
+        'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN',
+        '.staging.tutur3u.com'
+      );
+      vi.stubEnv(
+        'NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS',
+        'tasks:https://tasks.example.tutur3u.com'
+      );
+
+      const response = await POST(
+        createRequest(
+          'https://tasks.example.tutur3u.com/verify-token?nextUrl=%2Fpersonal',
+          { origin: stagingWebOrigin }
+        )
+      );
+
+      expect(response.status).toBe(200);
+      expect(mocks.rpc).toHaveBeenCalledTimes(1);
+    });
+
+    it('keeps the tokenless managed path for unregistered hosts inside the configured staging domain', async () => {
+      vi.stubEnv(
+        'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN',
+        '.staging.tutur3u.com'
+      );
+
+      const response = await POST(
+        createRequest('https://preview.staging.tutur3u.com/personal', {
+          generateToken: false,
+          origin: stagingWebOrigin,
+        })
+      );
+
+      expect(response.status).toBe(200);
+      await expect(response.json()).resolves.toMatchObject({
+        targetApp: 'managed-tuturuuu',
+      });
+      expect(mocks.rpc).not.toHaveBeenCalled();
+    });
   });
 
   it('rejects managed wildcard hostname lookalikes', async () => {

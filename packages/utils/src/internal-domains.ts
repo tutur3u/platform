@@ -1,3 +1,4 @@
+import { getConfiguredInternalAppDomains } from './internal-domains-env';
 import {
   getTuturuuuPortlessAppOrigin,
   TUTURUUU_PORTLESS_APP_HOSTS,
@@ -456,12 +457,15 @@ export function getConfiguredExternalAppDomains(): AppDomain[] {
     .filter((entry): entry is AppDomain => Boolean(entry));
 }
 
+export { getConfiguredInternalAppDomains };
+
 export function getAppDomainMap(): AppDomain[] {
   return [
     ...APP_DOMAIN_MAP.map((domain) => ({
       ...domain,
       kind: 'internal' as const,
     })),
+    ...getConfiguredInternalAppDomains(),
     ...getConfiguredExternalAppDomains(),
   ];
 }

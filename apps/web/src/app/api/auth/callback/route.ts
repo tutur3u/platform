@@ -45,11 +45,13 @@ function replaceLegacyOnboardingDestination(url: URL) {
  * - Relative paths (same origin)
  * - Same-origin absolute URLs
  * - Trusted internal app domains and registered external app origins
- * - Managed *.tuturuuu.com URLs for temporary internal app subdomains
+ * - Managed *.tuturuuu.com URLs for temporary internal app subdomains, only
+ *   when this request is itself on the shared-cookie tuturuuu.com domain
  */
 async function validateRedirectUrl(
   encodedUrl: string,
-  requestOrigin: string
+  requestOrigin: string,
+  request: NextRequest
 ): Promise<{
   url: string;
   isExternal: boolean;
@@ -93,7 +95,9 @@ async function validateRedirectUrl(
       };
     }
 
-    const managedReturnUrl = normalizeManagedTuturuuuReturnUrl(decodedUrl);
+    const managedReturnUrl = normalizeManagedTuturuuuReturnUrl(decodedUrl, {
+      currentHost: request,
+    });
 
     if (managedReturnUrl) {
       return {
@@ -200,7 +204,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   if (multiAccount) {
     const addAccountUrl = new URL('/add-account', redirectOrigin);
     if (_returnUrl) {
-      const validated = await validateRedirectUrl(_returnUrl, redirectOrigin);
+      const validated = await validateRedirectUrl(
+        _returnUrl,
+        redirectOrigin,
+        request
+      );
       if (validated) {
         addAccountUrl.searchParams.set('returnUrl', validated.url);
       }
@@ -210,7 +218,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
   // Handle returnUrl with cross-app token generation for external apps
   if (_returnUrl) {
-    const validated = await validateRedirectUrl(_returnUrl, redirectOrigin);
+    const validated = await validateRedirectUrl(
+      _returnUrl,
+      redirectOrigin,
+      request
+    );
 
     if (validated) {
       if (validated.isExternal && validated.targetApp) {

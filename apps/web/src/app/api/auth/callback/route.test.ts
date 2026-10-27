@@ -110,6 +110,59 @@ describe('auth callback route', () => {
     );
   });
 
+  it('does not treat tuturuuu.com returnUrl values as managed from a staging host', async () => {
+    const managedReturnUrl = encodeURIComponent(
+      'https://vc.tuturuuu.com/workspace/personal/plans'
+    );
+    const response = await GET(
+      new NextRequest(
+        `https://web.staging.tutur3u.com/api/auth/callback?returnUrl=${managedReturnUrl}`
+      )
+    );
+
+    expect(response.headers.get('location')).not.toContain('vc.tuturuuu.com');
+  });
+
+  it('routes registered staging satellites through login confirmation for the token handoff', async () => {
+    vi.stubEnv(
+      'NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS',
+      'tasks:https://tasks.staging.tutur3u.com'
+    );
+    const satelliteReturnUrl = encodeURIComponent(
+      'https://tasks.staging.tutur3u.com/personal'
+    );
+    const response = await GET(
+      new NextRequest(
+        `https://web.staging.tutur3u.com/api/auth/callback?returnUrl=${satelliteReturnUrl}`
+      )
+    );
+    const location = new URL(response.headers.get('location') ?? '');
+
+    expect(location.pathname).toBe('/login');
+    expect(location.searchParams.get('returnUrl')).toBe(
+      'https://tasks.staging.tutur3u.com/personal'
+    );
+  });
+
+  it('keeps managed redirects inside the configured staging shared cookie domain', async () => {
+    vi.stubEnv(
+      'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN',
+      '.staging.tutur3u.com'
+    );
+    const managedReturnUrl = encodeURIComponent(
+      'https://preview.staging.tutur3u.com/workspace/personal/plans'
+    );
+    const response = await GET(
+      new NextRequest(
+        `https://web.staging.tutur3u.com/api/auth/callback?returnUrl=${managedReturnUrl}`
+      )
+    );
+
+    expect(response.headers.get('location')).toBe(
+      'https://preview.staging.tutur3u.com/workspace/personal/plans'
+    );
+  });
+
   it('rejects managed wildcard hostname lookalike returnUrl values', async () => {
     const managedLookalikeReturnUrl = encodeURIComponent(
       'https://vc.tuturuuu.com.evil.test/workspace/personal/plans'

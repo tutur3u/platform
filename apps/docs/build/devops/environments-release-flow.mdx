@@ -238,6 +238,69 @@ running `supabase db push --include-all`. This keeps production schema changes
 behind application deployment, staging validation, and branch promotion
 for the same commit.
 
+## Staging Host Scheme And Login Handoff
+
+Production keeps one shared cookie domain: web and every satellite live on
+`tuturuuu.com` / `*.tuturuuu.com`, share the `.tuturuuu.com` session cookie, and
+no behavior in this section changes that.
+
+Staging is a separate, cookie-isolated environment. Every staging surface
+(web, Next satellites and Workers) lives on `https://<app>.staging.tutur3u.com`,
+for example `https://web.staging.tutur3u.com` and
+`https://tasks.staging.tutur3u.com`. Its shared cookie domain is exactly
+`.staging.tutur3u.com`, never `.tutur3u.com` and never `.tuturuuu.com`.
+
+Two environment variables describe a non-production host scheme. Both are
+`NEXT_PUBLIC_` values because the login form and the app-domain registry also run
+in the browser.
+
+| Variable | Format | Default |
+| --- | --- | --- |
+| `NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN` | One leading-dot domain, for example `.staging.tutur3u.com` | Unset: production `.tuturuuu.com` |
+| `NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS` | Comma or newline separated `name:https://origin` entries | Unset: no extra apps |
+
+```text
+NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN=.staging.tutur3u.com
+NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS=platform:https://web.staging.tutur3u.com,tasks:https://tasks.staging.tutur3u.com,meet:https://meet.staging.tutur3u.com
+```
+
+Per-app alias template: `https://<app>.staging.tutur3u.com`, where `<app>` is the
+app name used in `PRODUCTION_INTERNAL_APP_DOMAINS` (the web app is registered as
+`platform`, for example `platform:https://web.staging.tutur3u.com`).
+
+### Shared cookie domain
+
+`packages/utils/src/shared-cookie.ts` is the single source for the shared cookie
+domain. The override must be a strict subdomain of `tutur3u.com` or
+`tuturuuu.com`; the registrable domain itself (`.tutur3u.com`), a public suffix,
+a wildcard, or a value without a leading dot is ignored with a `console.warn` and
+production behavior stays in force. The override replaces `.tuturuuu.com` for that
+deployment, so a staging host never sets or reads a production cookie.
+
+### Managed shortcut versus token handoff
+
+The tokenless "managed" return path (`apps/web/src/lib/auth/managed-tuturuuu-return-url.ts`,
+used by `/api/v1/auth/cross-app-return`, `/api/auth/callback` and the login form)
+applies only when the return host and the current web host both sit under the
+configured shared cookie domain. Any other combination, including a production
+host returning to a staging host or the reverse, goes through the cross-app token
+handoff (`/verify-token`). With neither variable set the behavior is byte-for-byte
+the production behavior.
+
+### Internal app registry
+
+`NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS` registers staging apps as `internal`
+apps so they receive `/verify-token` (unlike
+`NEXT_PUBLIC_TUTURUUU_EXTERNAL_APP_DOMAINS`, which registers `external` apps).
+Entries must be `https`, exact origins with no path, query, credentials or
+wildcards; entries are matched on the exact origin only. Malformed entries are
+ignored with a `console.warn`.
+
+Regression coverage: `packages/utils/src/shared-cookie.test.ts`,
+`packages/utils/src/internal-domains.test.ts`,
+`apps/web/src/lib/auth/managed-tuturuuu-return-url.test.ts` and the
+`cross-app-return` and `auth/callback` route tests.
+
 ## Self-Hosted Web Release Flow
 
 If a server receives code through `git pull`, use the Docker production commands from
