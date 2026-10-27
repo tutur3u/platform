@@ -202,6 +202,20 @@ describe('unsaved-changes guard', () => {
     await waitFor(() => expect(back).toHaveBeenCalledTimes(1));
   });
 
+  it('ignores a multi-step jump that lands on another page', async () => {
+    renderEditor();
+    await editFirstRoom();
+    const href = window.location.href;
+    window.history.replaceState(null, '', '/elsewhere');
+    window.dispatchEvent(new PopStateEvent('popstate', { state: null }));
+    await flush();
+    expect(push).toHaveBeenCalledTimes(1);
+    expect(
+      screen.queryByRole('button', { name: 'schedule_discard_confirm' })
+    ).toBeNull();
+    window.history.replaceState(null, '', href);
+  });
+
   it('does not trap Back when there is no earlier page', async () => {
     setHistoryIndex(0);
     renderEditor();

@@ -196,6 +196,51 @@ describe('process-topic-announcement-queue cron route', () => {
     );
   });
 
+  it('fails a schedule session the queue finds without recipients', async () => {
+    queueResult({ data: null, error: null });
+    queueResult({
+      data: [
+        {
+          created_by: 'creator-user',
+          id: 'announcement-1',
+          updated_by: 'updater-user',
+          ws_id: 'workspace-1',
+        },
+      ],
+      error: null,
+    });
+    queueResult({
+      data: {
+        created_by: 'creator-user',
+        id: 'announcement-1',
+        updated_by: 'updater-user',
+        ws_id: 'workspace-1',
+      },
+      error: null,
+    });
+    mocks.sendTopicAnnouncement.mockResolvedValueOnce({
+      error: 'NO_RECIPIENTS',
+      status: 409,
+    });
+
+    const { GET } = await import('./route');
+    await GET(cronRequest({ authorization: 'Bearer cron-secret' }));
+
+    // Scoped to schedule sessions still processing: other rows keep the
+    // pre-existing behaviour.
+    const failQuery = mocks.queries[3];
+    expect(failQuery?.table).toBe('topic_announcements');
+    expect(failQuery?.calls).toContainEqual([
+      'update',
+      [{ last_error: 'NO_RECIPIENTS', status: 'failed' }],
+    ]);
+    expect(failQuery?.calls).toContainEqual([
+      'eq',
+      ['source_type', 'schedule'],
+    ]);
+    expect(failQuery?.calls).toContainEqual(['eq', ['status', 'processing']]);
+  });
+
   it('does not send a row already claimed by another cron invocation', async () => {
     queueResult({ data: null, error: null });
     queueResult({

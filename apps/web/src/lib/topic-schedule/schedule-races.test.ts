@@ -4,7 +4,9 @@ import {
   GVNN,
   GVNN_2,
   K1,
+  K2,
   SUPERVISOR,
+  T1,
   WS,
 } from './schedule-fixture.test-helper';
 
@@ -101,51 +103,90 @@ beforeEach(() => {
 });
 
 describe('GVNN swap racing a send', () => {
-  it('restores the previous GVNN when the session is queued mid-swap', async () => {
-    const { data } = await (await save([session()])).json();
-    const id = data.createdIds[0];
-    // The session is queued right after its old recipient is removed.
-    hook('topic_announcement_recipients', 'delete', () => {
-      row(id).status = 'queued';
+  async function created(overrides: Record<string, unknown> = {}) {
+    const { data } = await (await save([session(overrides)])).json();
+    return data.createdIds[0] as string;
+  }
+
+  const recipientIds = () =>
+    mocks.admin.tables.topic_announcement_recipients.map(
+      (item: { contact_id: string }) => item.contact_id
+    );
+
+  it('changes nothing when the session is claimed before the swap', async () => {
+    const id = await created();
+    hook('topic_announcements', 'select', (columns) => {
+      if (columns === 'status,sent_at') row(id).status = 'processing';
     });
-    const response = await save([session({ gvnnContactId: GVNN_2, id })]);
+    const response = await save([
+      session({ gvnnContactId: GVNN_2, id, room: 'P9' }),
+    ]);
     expect(response.status).toBe(409);
     await expect(response.json()).resolves.toMatchObject({
       rowErrors: [{ code: 'locked', sessionId: id }],
-      saved: { updatedIds: [] },
     });
-    expect(mocks.admin.tables.topic_announcement_recipients).toMatchObject([
-      { announcement_id: id, contact_id: GVNN },
-    ]);
-    expect(mocks.admin.tables.topic_announcement_recipients).toHaveLength(1);
+    expect(recipientIds()).toEqual([GVNN]);
+    expect(row(id).room).toBeNull();
   });
 
-  it('also restores it when the session is sent mid-swap', async () => {
-    const { data } = await (await save([session()])).json();
-    const id = data.createdIds[0];
-    hook('topic_announcement_recipients', 'insert', () => {
-      row(id).sent_at = '2026-10-12T00:00:00.000Z';
+  it('reports a GVNN-only change when claimed during the swap', async () => {
+    const id = await created();
+    hook('topic_announcement_recipients', 'delete', () => {
+      row(id).status = 'processing';
     });
-    const response = await save([session({ gvnnContactId: GVNN_2, id })]);
+    // A class change too: it must not apply (or notify) on a partial save.
+    const response = await save([
+      session({ gvnnContactId: GVNN_2, groupId: K2, id, room: 'P9' }),
+    ]);
     expect(response.status).toBe(409);
-    expect(
-      mocks.admin.tables.topic_announcement_recipients.map(
-        (item: { contact_id: string }) => item.contact_id
-      )
-    ).toEqual([GVNN]);
+    await expect(response.json()).resolves.toMatchObject({
+      rowErrors: [{ code: 'partially_applied', fields: ['gvnn'] }],
+    });
+    expect(recipientIds()).toEqual([GVNN_2]);
+    expect(row(id)).toMatchObject({
+      group_id: K1,
+      room: null,
+      teacher_workspace_user_id: T1,
+    });
+  });
+
+  it('saves everything when a racing send released its claim', async () => {
+    const id = await created();
+    // The send claimed, found no recipient mid-swap, and released the claim.
+    hook('topic_announcement_recipients', 'delete', () => {
+      row(id).status = 'processing';
+    });
+    hook('topic_announcement_recipients', 'insert', () => {
+      row(id).status = 'draft';
+    });
+    const response = await save([
+      session({ gvnnContactId: GVNN_2, id, room: 'P9' }),
+    ]);
+    expect(response.status).toBe(200);
+    expect(recipientIds()).toEqual([GVNN_2]);
+    expect(row(id).room).toBe('P9');
+  });
+
+  it('puts the previous GVNN back when the swap itself fails', async () => {
+    const id = await created();
+    let failed = false;
+    hook('topic_announcement_recipients', 'insert', () => {
+      if (failed) return;
+      failed = true;
+      throw new Error('insert failed');
+    });
+    await expect(
+      save([session({ gvnnContactId: GVNN_2, id })])
+    ).rejects.toThrow('insert failed');
+    expect(recipientIds()).toEqual([GVNN]);
   });
 
   it('swaps the GVNN when nothing races it', async () => {
-    const { data } = await (await save([session()])).json();
-    const id = data.createdIds[0];
+    const id = await created();
     expect((await save([session({ gvnnContactId: GVNN_2, id })])).status).toBe(
       200
     );
-    expect(
-      mocks.admin.tables.topic_announcement_recipients.map(
-        (item: { contact_id: string }) => item.contact_id
-      )
-    ).toEqual([GVNN_2]);
+    expect(recipientIds()).toEqual([GVNN_2]);
   });
 });
 

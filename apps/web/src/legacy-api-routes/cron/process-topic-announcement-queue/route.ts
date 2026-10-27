@@ -8,6 +8,7 @@ import {
   type TopicAnnouncementsSupabaseClient,
 } from '@/legacy-api-routes/v1/workspaces/[wsId]/topic-announcements/shared';
 import { withCronLogDrain } from '@/lib/infrastructure/log-drain';
+import { failScheduleSendWithoutRecipients } from '@/lib/topic-schedule/send-claim';
 
 const LOG_PREFIX = '[TopicAnnouncementQueueCron]';
 const BATCH_LIMIT = 25;
@@ -199,6 +200,13 @@ async function handler(request: NextRequest) {
       });
 
       if ('error' in result) {
+        if (result.error === 'NO_RECIPIENTS') {
+          await failScheduleSendWithoutRecipients({
+            announcementId: claimedRow.id,
+            sbAdmin,
+            wsId: claimedRow.ws_id,
+          });
+        }
         results.push({
           announcementId: row.id,
           error: result.error,

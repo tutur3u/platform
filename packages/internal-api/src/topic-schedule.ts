@@ -60,6 +60,7 @@ export interface TopicScheduleSessionInput {
 
 export type TopicScheduleRowErrorCode =
   | 'duplicate_slot'
+  | 'partially_applied'
   | 'ends_after_midnight'
   | 'invalid_class'
   | 'invalid_contact'
@@ -69,6 +70,8 @@ export type TopicScheduleRowErrorCode =
 
 export interface TopicScheduleRowError {
   code: TopicScheduleRowErrorCode;
+  /** For `partially_applied`: what did change (only the GVNN today). */
+  fields?: 'gvnn'[];
   index: number | null;
   sessionId: string | null;
 }
@@ -113,7 +116,9 @@ export interface TopicScheduleCloneItem {
 export class TopicScheduleSaveRejectedError extends InternalApiError {
   constructor(
     public readonly rowErrors: TopicScheduleRowError[],
-    public readonly conflict: boolean
+    public readonly conflict: boolean,
+    /** "Notify teachers" outcome for the part of a conflicting save that went through. */
+    public readonly notification: TopicScheduleNotification = null
   ) {
     super(
       conflict ? 'Some sessions changed while saving' : 'Invalid sessions',
@@ -162,11 +167,15 @@ export async function saveTopicScheduleMonth(
     const data = (await response
       .clone()
       .json()
-      .catch(() => null)) as { rowErrors?: TopicScheduleRowError[] } | null;
+      .catch(() => null)) as {
+      notification?: TopicScheduleNotification;
+      rowErrors?: TopicScheduleRowError[];
+    } | null;
     if (data?.rowErrors?.length) {
       throw new TopicScheduleSaveRejectedError(
         data.rowErrors,
-        response.status === 409
+        response.status === 409,
+        data.notification ?? null
       );
     }
   }

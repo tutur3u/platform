@@ -110,10 +110,22 @@ export function ScheduleMonthEditor({
     editor.save.mutate(
       { notifyTeachers: notifyCount > 0 && notifyTeachers },
       {
-        onError: (error) =>
-          error instanceof TopicScheduleSaveRejectedError && error.conflict
-            ? toast.warning(t('schedule_save_conflict'))
-            : toast.error(t('schedule_save_failed')),
+        onError: (error) => {
+          if (
+            !(error instanceof TopicScheduleSaveRejectedError) ||
+            !error.conflict
+          ) {
+            toast.error(t('schedule_save_failed'));
+            return;
+          }
+          toast.warning(
+            error.rowErrors.some((row) => row.code === 'partially_applied')
+              ? t('schedule_save_partial')
+              : t('schedule_save_conflict')
+          );
+          // The rest of the save went through; report its notifications too.
+          toastScheduleNotification(t, error.notification);
+        },
         onSuccess: ({ data }) => {
           toast.success(saveSummary(t, data));
           toastScheduleNotification(t, data.notification);

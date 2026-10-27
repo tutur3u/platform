@@ -15,6 +15,7 @@ import {
 import {
   cancelScheduleSessions,
   insertScheduleSessions,
+  type ScheduleSessionPartialField,
   type ScheduleSessionWrite,
   updateScheduleSession,
 } from './schedule-write';
@@ -22,6 +23,7 @@ import type { ScheduleSaveInput, ScheduleSessionInput } from './schemas';
 
 export type ScheduleRowErrorCode =
   | 'duplicate_slot'
+  | 'partially_applied'
   | 'ends_after_midnight'
   | 'invalid_class'
   | 'invalid_contact'
@@ -31,6 +33,8 @@ export type ScheduleRowErrorCode =
 
 export interface ScheduleRowError {
   code: ScheduleRowErrorCode;
+  /** For `partially_applied`: what did change (the rest did not). */
+  fields?: ScheduleSessionPartialField[];
   /** Index into `sessions`, or null for a `deleteIds` entry. */
   index: number | null;
   sessionId: string | null;
@@ -279,14 +283,15 @@ export async function saveScheduleMonth(
       previousGvnnContactId,
       session: update.write,
     });
-    if (updated === 'updated') {
+    if (updated.kind === 'updated') {
       updatedIds.push(update.id);
       const before = existingById.get(update.id)?.teacherWorkspaceUserId;
       const after = update.write.teacherWorkspaceUserId;
       if (after && after !== before) reassignedIds.push(update.id);
     } else {
       conflicts.push({
-        code: 'locked',
+        code: updated.kind === 'partial' ? 'partially_applied' : 'locked',
+        ...(updated.kind === 'partial' ? { fields: updated.fields } : {}),
         index: input.sessions.findIndex((row) => row.id === update.id),
         sessionId: update.id,
       });

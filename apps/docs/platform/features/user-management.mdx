@@ -289,12 +289,27 @@ module unchanged.
   draft, failed or skipped one: a session that was queued or started sending
   in the meantime is left unchanged and the save returns `409` with the
   sessions that did save, after which the editor reloads the month.
-- **Changing the GVNN.** Swapping a session's GVNN is two writes (there is no
-  transaction without a database function). The old recipient is removed
-  before the new one is added, so a send racing the swap sees the old GVNN or
-  none (and then refuses with `NO_RECIPIENTS`), never both. If the session was
-  queued or sent during the swap, the previous GVNN is restored and the save
-  reports a conflict. A fully atomic swap would need an RPC (a migration).
+- **Changing the GVNN.** A GVNN change is written before the other fields,
+  and only while the session is still editable. A send now claims a schedule
+  session (editable to `processing`) before it reads the recipients, so the
+  editor and a send cannot both win:
+  - claimed before the save: nothing changes (`locked`);
+  - claimed during the GVNN swap: the other fields stay as they were and the
+    save reports `partially_applied` with the GVNN as the only change; the
+    email may have used the previous GVNN, and nothing is restored because the
+    send may already have read the recipients;
+  - the swap removes the old recipient before adding the new one, so a send
+    sees the old GVNN or none (and refuses with `NO_RECIPIENTS`), never both;
+  - if the swap itself fails, the previous GVNN is put back while the session
+    is still editable.
+  A fully atomic swap would need a database function (a migration).
+- **Sending schedule sessions.** "Send now" and bulk send claim a schedule
+  session first; a session already queued or sending answers `SEND_CONFLICT`
+  and a sent one `ALREADY_SENT` (a resend may claim it). If the send stops
+  early the claim returns to the previous status. A queued schedule session
+  that the queue finds without a recipient is marked `failed` with
+  `NO_RECIPIENTS` (editable, so a GVNN can be assigned) instead of being
+  retried every 15 minutes. Other announcements send exactly as before.
 - **Save & notify teachers.** Saving the schedule or committing a clone can
   notify each GVCN of the sessions that request assigned to them: new
   sessions, or a class change that gives a session another teacher. The
@@ -304,7 +319,10 @@ module unchanged.
   teacher, nothing emailed. Teachers without a linked account are skipped
   and reported in a toast. Unchanged, retried or same-teacher saves assign
   nothing and notify nothing, so no extra state is stored; a notification
-  that fails after the save is reported and not retried.
+  that fails after the save is reported and not retried. Known limits: two
+  tabs saving the same new session at once can each notify, and a session
+  moved from teacher A to B and back to A notifies A again. When part of a
+  conflicting save went through, its notification outcome is shown too.
 - **Removing.** Removing a session cancels it (`status = 'cancelled'`) like any
   announcement, keeping its topic and audit trail. Queued, sending and sent
   sessions are read-only and labelled as such.

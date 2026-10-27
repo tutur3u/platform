@@ -157,43 +157,36 @@ async function setRecipient(
   if (insertError) throw insertError;
 }
 
-export type ScheduleSessionUpdateResult =
-  | 'locked'
-  | 'recipient_conflict'
-  | 'updated';
+/** Fields a conflicting save may still have changed on a session. */
+export type ScheduleSessionPartialField = 'gvnn';
 
-/**
- * Updates one session and replaces its GVNN when it changed. The field
- * write is conditional on the session still being editable, so a session
- * queued or sending after the save was validated is left untouched
- * (`locked`).
- *
- * The GVNN swap is two writes (no transaction without an RPC). It removes
- * the old recipient before adding the new one, so a send racing it sees
- * either the old GVNN or none (the send then refuses with NO_RECIPIENTS),
- * never both. Afterwards the session must still be editable and unsent;
- * otherwise the previous GVNN is restored and `recipient_conflict` is
- * returned so the editor reloads instead of claiming the change.
- */
-export async function updateScheduleSession({
+export type ScheduleSessionUpdateResult =
+  /** Fields and GVNN saved. */
+  | { kind: 'updated' }
+  /** The session was already in delivery: nothing was changed. */
+  | { kind: 'locked' }
+  /**
+   * The session entered delivery while the GVNN was being swapped: only the
+   * GVNN changed, and a send may have used either GVNN. Nothing is restored,
+   * because a send may already have read the recipients.
+   */
+  | { fields: ScheduleSessionPartialField[]; kind: 'partial' };
+
+async function updateFieldsIfEditable({
   actorUserId,
-  gvnnChanged,
   id,
   normalizedWsId,
-  previousGvnnContactId,
   sbAdmin,
   session,
   timeZone,
 }: {
   actorUserId: string;
-  gvnnChanged: boolean;
   id: string;
   normalizedWsId: string;
-  previousGvnnContactId: string | null;
   sbAdmin: TopicAnnouncementsSupabaseClient;
   session: ScheduleSessionWrite;
   timeZone: string | null;
-}): Promise<ScheduleSessionUpdateResult> {
+}) {
   const { data, error } = await sbAdmin
     .from('topic_announcements')
     .update({
@@ -207,14 +200,64 @@ export async function updateScheduleSession({
     .in('status', [...SCHEDULE_EDITABLE_STATUSES])
     .select('id');
   if (error) throw error;
-  if ((data ?? []).length === 0) return 'locked';
-  if (!gvnnChanged) return 'updated';
+  return (data ?? []).length > 0;
+}
 
-  await setRecipient(sbAdmin, id, session.gvnnContactId);
-  if (await isStillEditableUnsent(sbAdmin, id)) return 'updated';
+/**
+ * Updates one session and, when it changed, its GVNN. Every write happens
+ * only while the session is still editable, and a send now claims a session
+ * (editable to processing) before it reads the recipients, so the order is:
+ *
+ * 1. re-check the session is editable and unsent, else `locked` (nothing
+ *    changed);
+ * 2. swap the GVNN: remove the old recipient, then add the new one, so a send
+ *    racing it sees the old GVNN or none (and refuses with NO_RECIPIENTS),
+ *    never both;
+ * 3. write the fields, conditional on the session still being editable.
+ *
+ * If step 3 finds the session claimed, a send started during the swap: the
+ * fields stay as they were and the result is `partial` (only the GVNN
+ * changed). Nothing is restored then, since that send may have read either
+ * recipient. If the swap itself fails, the previous GVNN is put back while
+ * the session is still editable.
+ */
+export async function updateScheduleSession({
+  gvnnChanged,
+  id,
+  previousGvnnContactId,
+  sbAdmin,
+  session,
+  ...context
+}: {
+  actorUserId: string;
+  gvnnChanged: boolean;
+  id: string;
+  normalizedWsId: string;
+  previousGvnnContactId: string | null;
+  sbAdmin: TopicAnnouncementsSupabaseClient;
+  session: ScheduleSessionWrite;
+  timeZone: string | null;
+}): Promise<ScheduleSessionUpdateResult> {
+  const writeFields = () =>
+    updateFieldsIfEditable({ ...context, id, sbAdmin, session });
 
-  await setRecipient(sbAdmin, id, previousGvnnContactId);
-  return 'recipient_conflict';
+  if (!gvnnChanged) {
+    return (await writeFields()) ? { kind: 'updated' } : { kind: 'locked' };
+  }
+
+  if (!(await isStillEditableUnsent(sbAdmin, id))) return { kind: 'locked' };
+  try {
+    await setRecipient(sbAdmin, id, session.gvnnContactId);
+  } catch (error) {
+    if (await isStillEditableUnsent(sbAdmin, id)) {
+      await setRecipient(sbAdmin, id, previousGvnnContactId);
+    }
+    throw error;
+  }
+
+  return (await writeFields())
+    ? { kind: 'updated' }
+    : { fields: ['gvnn'], kind: 'partial' };
 }
 
 /**
