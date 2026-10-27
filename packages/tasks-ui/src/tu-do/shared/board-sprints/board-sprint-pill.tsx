@@ -17,12 +17,14 @@ import {
 export function BoardSprintPill({
   boardId,
   canManage,
+  onSelectSprint,
   sprints,
   tasks,
   wsId,
 }: {
   boardId: string;
   canManage: boolean;
+  onSelectSprint?: (sprint: BoardSprint) => void;
   sprints: ReturnType<typeof useBoardSprints>;
   tasks: Task[];
   wsId: string;
@@ -50,6 +52,7 @@ export function BoardSprintPill({
       currentSprint={sprints.currentSprint}
       getProgress={getProgress}
       onOpenSettings={canManage ? openBoardSettings : undefined}
+      onSelectSprint={onSelectSprint}
       onStartSprint={(sprint) =>
         start.mutate(sprint.id, {
           onSuccess: () => toast.success(t('started', { name: sprint.name })),
