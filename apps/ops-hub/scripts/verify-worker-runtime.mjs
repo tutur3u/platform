@@ -385,6 +385,9 @@ test('v2 persists only approved decision fields and bounds/downsamples observati
     'INSERT INTO metric_dimensions(series,dimension,lastAt) VALUES(?,?,?)',
     ['quota_series', 'history', now]
   );
+  await sql(
+    "UPDATE metric_counts SET cnt=(SELECT COUNT(*) FROM metrics WHERE series='quota_series') WHERE series='quota_series'"
+  );
   const sampled = await (
     await read('/observability?series=quota_series')
   ).json();
@@ -424,6 +427,53 @@ test('v2 persists only approved decision fields and bounds/downsamples observati
     (await (await read('/observability?series=cadence')).json()).points,
     []
   );
+  const counters = await sql(
+    "SELECT cnt FROM metric_counts WHERE series='quota_series'"
+  );
+  const actual = await sql(
+    "SELECT COUNT(*) AS cnt FROM metrics WHERE series='quota_series'"
+  );
+  assert.deepEqual(counters, actual);
+  await sql(
+    "CREATE TRIGGER fail_ingest BEFORE INSERT ON metrics WHEN NEW.dimension='failure-fixture' BEGIN SELECT RAISE(ABORT,'fixture-failure'); END"
+  );
+  assert.equal(
+    (
+      await ingest(
+        envelope(16, {
+          observability: {
+            ...observability,
+            quota_series: [{ instance: 'failure-fixture', t: at, pct: 50 }],
+          },
+        })
+      )
+    ).status,
+    400
+  );
+  assert.deepEqual(await sql('SELECT seq FROM flags'), [{ seq: 15 }]);
+  assert.deepEqual(
+    await sql(
+      "SELECT COUNT(*) AS count FROM metric_dimensions WHERE dimension='failure-fixture'"
+    ),
+    [{ count: 0 }]
+  );
+  assert.deepEqual(
+    await sql("SELECT cnt FROM metric_counts WHERE series='quota_series'"),
+    actual
+  );
+  await sql('DROP TRIGGER fail_ingest');
+  await server.restart();
+  assert.equal((await ingest(envelope(16, { observability }))).status, 200);
+  assert.deepEqual(
+    await sql("SELECT cnt FROM metric_counts WHERE series='quota_series'"),
+    actual
+  );
+  assert.deepEqual(
+    await sql(
+      "SELECT COUNT(*) AS cnt FROM metrics WHERE series='quota_series'"
+    ),
+    actual
+  );
   const page = await (await read('/hub/export?section=metrics')).json();
   assert.equal(page.rows.length, 200);
   assert.ok(page.nextAfter > 0);
@@ -433,7 +483,7 @@ test('kill switch survives restart, denies ingest and all reads except status', 
   assert.equal(
     (
       await ingest(
-        envelope(16, { snapshot: { ...snapshot(), enabled: false } })
+        envelope(17, { snapshot: { ...snapshot(), enabled: false } })
       )
     ).status,
     200
@@ -448,7 +498,7 @@ test('kill switch survives restart, denies ingest and all reads except status', 
   ]) {
     assert.equal((await read(target)).status, 503);
   }
-  assert.equal((await ingest(envelope(17))).status, 503);
+  assert.equal((await ingest(envelope(18))).status, 503);
   assert.equal((await (await read('/status')).json()).enabled, false);
   for (const table of [
     'snapshot',
@@ -457,6 +507,7 @@ test('kill switch survives restart, denies ingest and all reads except status', 
     'decisions',
     'metrics',
     'metric_dimensions',
+    'metric_counts',
     'observability_snapshot',
   ]) {
     assert.deepEqual(await sql(`SELECT COUNT(*) AS count FROM ${table}`), [
@@ -464,6 +515,6 @@ test('kill switch survives restart, denies ingest and all reads except status', 
     ]);
   }
   assert.deepEqual(await sql('SELECT seq,enabled FROM flags'), [
-    { seq: 16, enabled: 0 },
+    { seq: 17, enabled: 0 },
   ]);
 });

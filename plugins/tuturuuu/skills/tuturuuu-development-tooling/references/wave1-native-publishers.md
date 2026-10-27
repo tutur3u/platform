@@ -132,3 +132,8 @@ Use the bounded dimension registry and indexed bucket-endpoint reads rather than
 full-history DISTINCT/GROUP BY scans. Preserve the hourly alarm across heartbeats;
 batched catch-up cleanup must make persisted progress and stop after content erasure.
 The workerd suite and real-SQLite maintenance tests cover these boundaries.
+
+For SQLite DO counters and purge batches, count SQL RETURNING rows, never cursor
+rowsWritten: workerd counts index writes in that billing metric. Node SQLite can
+mask the difference. Retain the real workerd regression for duplicate buckets,
+transaction rollback and restart alongside statement-bound SQLite tests.

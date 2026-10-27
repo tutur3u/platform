@@ -24,6 +24,7 @@ export function validateDecisions(
   return true;
 }
 export function storeDecisions(sql: SqlStorage, rows: Decision[]) {
+  if (rows.length === 0) return;
   for (const row of rows)
     sql.exec(
       'INSERT OR IGNORE INTO decisions(id,at,category,data) VALUES(?,?,?,?)',

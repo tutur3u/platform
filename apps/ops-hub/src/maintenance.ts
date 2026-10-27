@@ -15,6 +15,7 @@ const TABLES = [
   'decisions',
   'metrics',
   'metric_dimensions',
+  'metric_counts',
   'observability_snapshot',
 ];
 export function eraseContent(sql: Sql) {
@@ -22,9 +23,9 @@ export function eraseContent(sql: Sql) {
     // 220 batches cover the hard 110,672-row metrics ceiling; other tables are smaller.
     for (let batch = 0; batch < 220; batch++) {
       const result = sql.exec(
-        `DELETE FROM ${table} WHERE rowid IN (SELECT rowid FROM ${table} LIMIT ${DELETE_BATCH})`
+        `DELETE FROM ${table} WHERE rowid IN (SELECT rowid FROM ${table} LIMIT ${DELETE_BATCH}) RETURNING rowid`
       );
-      if (result.rowsWritten < DELETE_BATCH) break;
+      if (result.toArray().length < DELETE_BATCH) break;
     }
   }
 }
@@ -56,17 +57,25 @@ export function maintainHub(
     'ci',
   ]) {
     const cutoff = now - (series === 'quota_series' ? 7 : 30) * DAY;
+    let removed = 0;
     for (let batch = 0; batch < 8; batch++) {
-      if (
-        sql.exec(
+      const written = sql
+        .exec(
           `DELETE FROM metrics WHERE rowid IN
-        (SELECT rowid FROM metrics WHERE series=? AND t<=? LIMIT ${DELETE_BATCH})`,
+        (SELECT rowid FROM metrics WHERE series=? AND t<=? LIMIT ${DELETE_BATCH}) RETURNING rowid`,
           series,
           cutoff
-        ).rowsWritten < DELETE_BATCH
-      )
-        break;
+        )
+        .toArray().length;
+      removed += written;
+      if (written < DELETE_BATCH) break;
     }
+    if (removed > 0)
+      sql.exec(
+        'UPDATE metric_counts SET cnt=cnt-? WHERE series=?',
+        removed,
+        series
+      );
     if (
       sql
         .exec(

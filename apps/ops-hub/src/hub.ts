@@ -158,9 +158,10 @@ export class OpsHub extends DurableObject<Env> {
             JSON.stringify(event)
           );
         }
-        this.ctx.storage.sql.exec(
-          'DELETE FROM events WHERE seq NOT IN (SELECT seq FROM events ORDER BY seq DESC LIMIT 1000)'
-        );
+        if (body.events.length > 0)
+          this.ctx.storage.sql.exec(
+            'DELETE FROM events WHERE seq NOT IN (SELECT seq FROM events ORDER BY seq DESC LIMIT 1000)'
+          );
         if (body.snapshot) {
           this.ctx.storage.sql.exec(
             'INSERT OR REPLACE INTO snapshot(id,data) VALUES(1,?)',

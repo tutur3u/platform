@@ -114,6 +114,16 @@ These commands do not run a release build or contact hosted services.
 Compatibility date is pinned to 2026-10-19, supported by the repository's
 pinned workerd. CI owns the separate release-build check.
 
+Persisted per-series row counters make cap checks constant-size;
+new rows and retention deletions update counters in the same SQLite transaction.
+
+Logical row counters and deletion batch sizes use SQL RETURNING rows. Cloudflare's
+rowsWritten metric also counts index updates and cannot serve as a logical row
+count; see the [SQLite storage API](https://developers.cloudflare.com/durable-objects/api/sqlite-storage-api/).
+The workerd regression checks counter equality after duplicate buckets, a forced
+transaction rollback and restart. Billing additionally includes maintained indexes;
+logical row/statement caps are bounds on work, not a claim of zero storage cost.
+
 ## Frozen publisher contract: schema v2
 
 Version 1 is rejected. The signature domain prefix is ops-hub-publisher-v2.

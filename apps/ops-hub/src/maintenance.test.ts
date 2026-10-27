@@ -12,14 +12,14 @@ function database() {
   const db = new DatabaseSync(':memory:');
   db.exec(`CREATE TABLE events(ts INTEGER); CREATE TABLE needs_you(completedAt INTEGER);
     CREATE TABLE decisions(at INTEGER); CREATE TABLE metrics(series TEXT,t INTEGER);
-    CREATE TABLE metric_dimensions(series TEXT,lastAt INTEGER); CREATE TABLE snapshot(data TEXT); CREATE TABLE observability_snapshot(at INTEGER,data TEXT);
+    CREATE TABLE metric_counts(series TEXT PRIMARY KEY,cnt INTEGER CHECK(cnt>=0)); CREATE TABLE metric_dimensions(series TEXT,lastAt INTEGER); CREATE TABLE snapshot(data TEXT); CREATE TABLE observability_snapshot(at INTEGER,data TEXT);
     CREATE TABLE flags(id INTEGER,stale INTEGER); INSERT INTO flags VALUES(1,0)`);
   let operations = 0;
   const sql = {
     exec(query: string, ...params: (number | string)[]) {
       operations++;
       const statement = db.prepare(query);
-      if (query.startsWith('SELECT'))
+      if (query.startsWith('SELECT') || query.includes('RETURNING'))
         return { rowsWritten: 0, toArray: () => statement.all(...params) };
       const result = statement.run(...params);
       return { rowsWritten: Number(result.changes), toArray: () => [] };
@@ -44,8 +44,11 @@ it('purges SQLite retention boundaries, preserves open items and has bounded nor
     now - 8 * DAY
   );
   db.exec("INSERT INTO observability_snapshot VALUES(0,'expired')");
+  db.exec(
+    "INSERT INTO metric_counts VALUES('quota_series',1); INSERT INTO metric_counts VALUES('speed_series',1)"
+  );
   expect(maintainHub(sql, true, now - HOUR, now)).toBe(now + HOUR);
-  expect(operations()).toBe(14);
+  expect(operations()).toBe(15);
   expect(
     db.prepare('SELECT COUNT(*) AS count FROM observability_snapshot').get()
   ).toEqual({ count: 0 });
@@ -79,8 +82,14 @@ it('uses bounded deletion batches, persists catch-up progress and survives a ret
   const now = 100 * DAY;
   db.exec(`WITH RECURSIVE n(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM n WHERE x<5000)
     INSERT INTO metrics SELECT 'quota_series',0 FROM n`);
+  db.exec("INSERT INTO metric_counts VALUES('quota_series',5000)");
   expect(maintainHub(sql, true, now, now)).toBe(now + CATCHUP_DELAY);
-  expect(operations()).toBe(21);
+  expect(
+    db
+      .prepare("SELECT cnt FROM metric_counts WHERE series='quota_series'")
+      .get()
+  ).toEqual({ cnt: 904 });
+  expect(operations()).toBe(22);
   expect(db.prepare('SELECT COUNT(*) AS count FROM metrics').get()).toEqual({
     count: 904,
   });
@@ -103,7 +112,7 @@ it('purges the full quota storage ceiling before a durable terminal stop', () =>
     "INSERT INTO snapshot VALUES('private'); INSERT INTO needs_you VALUES(NULL); INSERT INTO observability_snapshot VALUES(0,'private')"
   );
   eraseContent(sql);
-  expect(operations()).toBeLessThanOrEqual(165);
+  expect(operations()).toBeLessThanOrEqual(166);
   for (const table of [
     'snapshot',
     'events',
@@ -111,6 +120,7 @@ it('purges the full quota storage ceiling before a durable terminal stop', () =>
     'decisions',
     'metrics',
     'metric_dimensions',
+    'metric_counts',
     'observability_snapshot',
   ]) {
     expect(db.prepare(`SELECT COUNT(*) AS count FROM ${table}`).get()).toEqual({

@@ -10,6 +10,7 @@ export function initializeObservability(sql: SqlStorage) {
     series TEXT NOT NULL, dimension TEXT NOT NULL, t INTEGER NOT NULL, data TEXT NOT NULL,
     PRIMARY KEY(series,dimension,t));
     CREATE INDEX IF NOT EXISTS metrics_time ON metrics(series,t);
+    CREATE TABLE IF NOT EXISTS metric_counts(series TEXT PRIMARY KEY,cnt INTEGER NOT NULL CHECK(cnt>=0));
     CREATE TABLE IF NOT EXISTS metric_dimensions(series TEXT NOT NULL,dimension TEXT NOT NULL,lastAt INTEGER NOT NULL,PRIMARY KEY(series,dimension));
     CREATE TABLE IF NOT EXISTS observability_snapshot(id INTEGER PRIMARY KEY CHECK(id=1),at INTEGER NOT NULL,data TEXT NOT NULL);`);
 }
@@ -90,6 +91,7 @@ export function storeObservability(
     now - 7 * DAY,
     now - 30 * DAY
   );
+  const inserted = new Map<string, number>();
   for (const row of points(observation)) {
     sql.exec(
       `INSERT INTO metric_dimensions(series,dimension,lastAt) VALUES(?,?,?)
@@ -98,26 +100,47 @@ export function storeObservability(
       row.dimension,
       row.t
     );
-    // Last point in a two-minute quota bucket wins; repeated snapshots cannot multiply rows.
-    sql.exec(
-      'INSERT OR REPLACE INTO metrics(series,dimension,t,data) VALUES(?,?,?,?)',
-      row.series,
-      row.dimension,
-      row.t,
-      JSON.stringify({ ...row.data, t: row.t })
-    );
+    const written = sql
+      .exec(
+        'INSERT OR IGNORE INTO metrics(series,dimension,t,data) VALUES(?,?,?,?) RETURNING t',
+        row.series,
+        row.dimension,
+        row.t,
+        JSON.stringify({ ...row.data, t: row.t })
+      )
+      .toArray().length;
+    inserted.set(row.series, (inserted.get(row.series) ?? 0) + written);
+    if (written === 0)
+      sql.exec(
+        'UPDATE metrics SET data=? WHERE series=? AND dimension=? AND t=?',
+        JSON.stringify({ ...row.data, t: row.t }),
+        row.series,
+        row.dimension,
+        row.t
+      );
   }
-  for (const series of [
-    'quota_series',
-    'speed_series',
-    'children_series',
-    'ci',
-  ]) {
+  for (const [series, added] of inserted) {
+    const previous =
+      sql
+        .exec<{ cnt: number }>(
+          'SELECT cnt FROM metric_counts WHERE series=?',
+          series
+        )
+        .toArray()[0]?.cnt ?? 0;
+    const count = previous + added;
+    const limit = series === 'quota_series' ? QUOTA_CAP : OTHER_SERIES_CAP;
+    const overflow = Math.max(0, count - limit);
+    if (overflow > 0)
+      sql.exec(
+        `DELETE FROM metrics WHERE rowid IN
+      (SELECT rowid FROM metrics WHERE series=? ORDER BY t,dimension LIMIT ?)`,
+        series,
+        overflow
+      );
     sql.exec(
-      `DELETE FROM metrics WHERE rowid IN
-      (SELECT rowid FROM metrics WHERE series=? ORDER BY t DESC,dimension LIMIT -1 OFFSET ?)`,
+      'INSERT INTO metric_counts(series,cnt) VALUES(?,?) ON CONFLICT(series) DO UPDATE SET cnt=excluded.cnt',
       series,
-      series === 'quota_series' ? QUOTA_CAP : OTHER_SERIES_CAP
+      count - overflow
     );
   }
   sql.exec(
