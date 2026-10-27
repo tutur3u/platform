@@ -14,6 +14,22 @@ const state = vi.hoisted(() => ({
           id: 'other-class-teacher',
           full_name: 'Center Teacher',
           display_name: null,
+          isTutor: false,
+          isClassTeacher: true,
+        },
+        {
+          id: 'tutor',
+          full_name: 'Student Tutor',
+          display_name: null,
+          isTutor: true,
+          isClassTeacher: false,
+        },
+        {
+          id: 'both',
+          full_name: 'Lecturer Tutor',
+          display_name: null,
+          isTutor: true,
+          isClassTeacher: true,
         },
       ],
       page: 1,
@@ -56,9 +72,14 @@ vi.mock('@tuturuuu/ui/custom/combobox', () => ({
         <button type="button" onClick={props.onLoadMore}>
           More
         </button>
-        <span>
-          {props.options.map((option: any) => option.label).join(', ')}
-        </span>
+        <ul>
+          {props.options.map((option: any) => (
+            <li key={option.value}>
+              {option.label}
+              {option.badge ? ` [${option.badge}]` : ''}
+            </li>
+          ))}
+        </ul>
       </>
     );
   },
@@ -76,13 +97,14 @@ describe('center teacher picker', () => {
         wsId="center"
       />
     );
-    expect(screen.getByText('Center Teacher')).toBeInTheDocument();
+    expect(screen.getByText('Center Teacher [teacher]')).toBeInTheDocument();
     expect(screen.queryByText('Homeroom Teacher')).not.toBeInTheDocument();
     void state.config.queryFn({ pageParam: 2 });
     expect(state.request).toHaveBeenCalledWith('center', {
       page: 2,
       pageSize: 20,
       q: undefined,
+      tutorsOnly: undefined,
     });
     expect(state.config.getNextPageParam({ page: 1, totalPages: 2 })).toBe(2);
     expect(
@@ -95,9 +117,45 @@ describe('center teacher picker', () => {
       'tutoring-teachers',
       'center',
       'Center',
+      false,
     ]);
     fireEvent.click(screen.getByText('Choose'));
     expect(change).toHaveBeenCalledWith('other-class-teacher');
-    expect(state.config.queryKey).toEqual(['tutoring-teachers', 'center', '']);
+    expect(state.config.queryKey).toEqual([
+      'tutoring-teachers',
+      'center',
+      '',
+      false,
+    ]);
+  });
+
+  it('labels tutors, class teachers and people who are both', () => {
+    render(<TutoringTeacherPicker onChange={vi.fn()} value="" wsId="center" />);
+    expect(screen.getByText('Center Teacher [teacher]')).toBeInTheDocument();
+    expect(screen.getByText('Student Tutor [tutor]')).toBeInTheDocument();
+    expect(
+      screen.getByText('Lecturer Tutor [tutor · teacher]')
+    ).toBeInTheDocument();
+  });
+
+  it('asks only for tutors when the tutors only toggle is on', () => {
+    render(<TutoringTeacherPicker onChange={vi.fn()} value="" wsId="center" />);
+    const toggle = screen.getByRole('switch', { name: 'tutors_only' });
+    expect(toggle).not.toBeChecked();
+    fireEvent.click(toggle);
+    expect(toggle).toBeChecked();
+    expect(state.config.queryKey).toEqual([
+      'tutoring-teachers',
+      'center',
+      '',
+      true,
+    ]);
+    void state.config.queryFn({ pageParam: 1 });
+    expect(state.request).toHaveBeenCalledWith('center', {
+      page: 1,
+      pageSize: 20,
+      q: undefined,
+      tutorsOnly: true,
+    });
   });
 });

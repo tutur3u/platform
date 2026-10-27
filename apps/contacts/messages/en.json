@@ -9547,7 +9547,13 @@
     "policy_restrict_weak_content_help": "When on, only members who can manage classes (update user groups) can set, edit, or end weak-support tutoring content.",
     "policy_restrict_weak_content_off": "Off",
     "policy_restrict_weak_content_on": "On",
-    "tutoring_content": "Tutoring content"
+    "tutoring_content": "Tutoring content",
+    "policy_tutor_groups": "Tutor groups",
+    "policy_tutor_groups_description": "Mark the groups whose teachers are tutors rather than class teachers. A tutor can also be a class teacher in another group and keeps both labels.",
+    "policy_select_tutor_groups": "Select tutor groups",
+    "policy_tutor_groups_note": "Tutor groups hold no real students, so they are left out of the make-up and weak-support queues.",
+    "tutor": "Tutor",
+    "tutors_only": "Tutors only"
   },
   "ws-user-attendance": {
     "absent": "Absent",

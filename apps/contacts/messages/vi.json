@@ -9547,7 +9547,13 @@
     "policy_restrict_weak_content_help": "Khi bật, chỉ thành viên có quyền quản lý lớp (cập nhật nhóm người dùng) mới được điền, sửa hoặc kết thúc nội dung kèm yếu.",
     "policy_restrict_weak_content_off": "Tắt",
     "policy_restrict_weak_content_on": "Bật",
-    "tutoring_content": "Nội dung kèm"
+    "tutoring_content": "Nội dung kèm",
+    "policy_tutor_groups": "Nhóm giáo viên kèm",
+    "policy_tutor_groups_description": "Đánh dấu các nhóm có giáo viên là giáo viên kèm chứ không phải giáo viên lớp. Một người có thể vừa là giáo viên kèm vừa là giáo viên của lớp khác và giữ cả hai nhãn.",
+    "policy_select_tutor_groups": "Chọn nhóm giáo viên kèm",
+    "policy_tutor_groups_note": "Nhóm giáo viên kèm không có học viên thật nên không xuất hiện trong hàng đợi học bù và hỗ trợ học yếu.",
+    "tutor": "Giáo viên kèm",
+    "tutors_only": "Chỉ giáo viên kèm"
   },
   "ws-user-attendance": {
     "absent": "Vắng mặt",

@@ -15,6 +15,7 @@ export type PolicySectionId =
   | 'groupShifts'
   | 'weak'
   | 'campuses'
+  | 'tutors'
   | 'message';
 const TITLES = {
   presets: 'policy_presets',
@@ -23,6 +24,7 @@ const TITLES = {
   groupShifts: 'policy_group_shifts',
   weak: 'policy_weak_rules',
   campuses: 'policy_campuses',
+  tutors: 'policy_tutor_groups',
   message: 'policy_parent_template',
 } as const;
 const NUMERIC = [
@@ -153,6 +155,20 @@ function PolicySummary({
     ) : (
       <p className="text-muted-foreground text-sm">
         {t('policy_campuses_description')}
+      </p>
+    );
+  if (id === 'tutors')
+    return policy.tutorGroupIds.length ? (
+      <ul className="space-y-1 text-sm">
+        {policy.tutorGroupIds.map((groupId) => (
+          <li key={groupId}>
+            {groups.find((group) => group.id === groupId)?.name || groupId}
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <p className="text-muted-foreground text-sm">
+        {t('policy_tutor_groups_description')}
       </p>
     );
   return (

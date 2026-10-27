@@ -5,6 +5,8 @@ import { listTutoringTeachers } from '@tuturuuu/internal-api/tutoring';
 import { Button } from '@tuturuuu/ui/button';
 import { Combobox, type ComboboxOption } from '@tuturuuu/ui/custom/combobox';
 import { useDebounce } from '@tuturuuu/ui/hooks/use-debounce';
+import { Label } from '@tuturuuu/ui/label';
+import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 
@@ -25,16 +27,18 @@ export function TutoringTeacherPicker({
   const t = useTranslations('ws-tutoring');
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<ComboboxOption>();
+  const [tutorsOnly, setTutorsOnly] = useState(false);
   const [q] = useDebounce(search, 250);
   const query = useInfiniteQuery({
     enabled: !disabled,
     initialPageParam: 1,
-    queryKey: ['tutoring-teachers', wsId, q],
+    queryKey: ['tutoring-teachers', wsId, q, tutorsOnly],
     queryFn: ({ pageParam }) =>
       listTutoringTeachers(wsId, {
         page: pageParam,
         pageSize: 20,
         q: q || undefined,
+        tutorsOnly: tutorsOnly || undefined,
       }),
     getNextPageParam: (page) =>
       page.page < page.totalPages ? page.page + 1 : undefined,
@@ -42,11 +46,18 @@ export function TutoringTeacherPicker({
   const options = useMemo(() => {
     const teachers = new Map<string, ComboboxOption>();
     for (const page of query.data?.pages ?? [])
-      for (const person of page.data)
+      for (const person of page.data) {
+        // A person can hold both roles; each label shows alongside the name.
+        const roles = [
+          person.isTutor ? t('tutor') : null,
+          person.isClassTeacher ? t('teacher') : null,
+        ].filter(Boolean);
         teachers.set(person.id, {
           value: person.id,
           label: person.display_name || person.full_name || person.id,
+          ...(roles.length ? { badge: roles.join(' · ') } : {}),
         });
+      }
     // Preserve a selected label across search pages, without adding arbitrary people to the catalog.
     const current =
       selected?.value === value
@@ -58,6 +69,17 @@ export function TutoringTeacherPicker({
   }, [query.data?.pages, value, selected, knownOptions, t]);
   return (
     <div className="space-y-1">
+      <div className="flex items-center gap-2">
+        <Switch
+          checked={tutorsOnly}
+          disabled={disabled}
+          id={`tutoring-tutors-only-${wsId}`}
+          onCheckedChange={setTutorsOnly}
+        />
+        <Label className="text-xs" htmlFor={`tutoring-tutors-only-${wsId}`}>
+          {t('tutors_only')}
+        </Label>
+      </div>
       <Combobox
         disabled={disabled}
         emptyText={query.isError ? t('teachers_load_failed') : t('no_teachers')}

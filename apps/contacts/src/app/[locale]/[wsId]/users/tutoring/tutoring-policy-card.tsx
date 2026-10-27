@@ -24,6 +24,7 @@ import {
   TutoringPolicySection,
 } from './tutoring-policy-section';
 import { TutoringShiftRulesEditor } from './tutoring-shift-rules-editor';
+import { TutoringTutorGroups } from './tutoring-tutor-groups';
 import { TutoringWeakRules } from './tutoring-weak-rules';
 
 interface Props {
@@ -66,6 +67,7 @@ export function TutoringPolicyCard({
       'groupExclusions',
     ],
     campuses: ['campusByGroupId'],
+    tutors: ['tutorGroupIds'],
     message: ['parentMessageTemplate'],
   };
   const submittedPolicy =
@@ -154,6 +156,7 @@ export function TutoringPolicyCard({
               setDraft({
                 ...STANDARD_TUTORING_POLICY,
                 campusByGroupId: draft.campusByGroupId,
+                tutorGroupIds: draft.tutorGroupIds,
                 shiftByGroupId: draft.shiftByGroupId,
               })
             }
@@ -168,6 +171,7 @@ export function TutoringPolicyCard({
               setDraft({
                 ...EASY_CENTER_TUTORING_POLICY,
                 campusByGroupId: draft.campusByGroupId,
+                tutorGroupIds: draft.tutorGroupIds,
                 shiftByGroupId: draft.shiftByGroupId,
                 timeRules: EASY_CENTER_TUTORING_POLICY.timeRules.map(
                   (rule) => ({
@@ -310,6 +314,15 @@ export function TutoringPolicyCard({
             selected=""
           />
         ) : null}
+      </TutoringPolicySection>
+
+      <TutoringPolicySection {...sectionProps} id="tutors">
+        <TutoringTutorGroups
+          canConfigure={canConfigure}
+          groups={groups}
+          onChange={edit}
+          policy={draft}
+        />
       </TutoringPolicySection>
 
       <TutoringPolicySection {...sectionProps} id="message">
