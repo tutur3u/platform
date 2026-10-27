@@ -315,9 +315,14 @@ idempotency key for a running or completed reservation returns HTTP 409 before
 provider execution, including ordinary and sponsored AI Studio requests. Clients
 must retain the original operation identity when reconciling an uncertain result.
 
-Mira and Mind attachment preparation verifies that the authenticated actor owns
-the source AI chat before listing or downloading its storage prefix. A Mind
-thread id alone grants no AI-chat attachment access. Workspace admission remains
-required by each route. Missing chats and lookup failures attach no files.
-Regression coverage lives in `metering-execution-claim.test.ts` and
-`message-file-ownership.test.ts` in `packages/ai/src`.
+Mira and Mind prompt attachment preparation and `convert_file_to_markdown`
+verify that the authenticated actor owns the source AI chat and belongs to the
+workspace before accessing that workspace's chat storage prefix. AI chats are
+global records; their UUID alone grants no attachment access, including when
+reused as a Mind thread id. The conversion check precedes listing, signing,
+credit reservation and conversion. Missing actors, foreign or missing chats,
+workspace membership failures and lookup errors expose no files or foreign
+details. Authorized user-group file conversion retains its separate group-read
+check. Regression coverage lives in `metering-execution-claim.test.ts`,
+`message-file-ownership.test.ts` and `markitdown-ownership.test.ts` in
+`packages/ai/src`.

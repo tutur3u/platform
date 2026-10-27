@@ -63,6 +63,9 @@ describe('chat attachment ownership boundary', () => {
     expect(mocks.from).toHaveBeenCalledWith('ai_chats');
     expect(mocks.eq).toHaveBeenCalledWith('id', 'chat');
     expect(mocks.eq).toHaveBeenCalledWith('creator_id', 'actor');
+    expect(mocks.from).toHaveBeenCalledWith('workspace_members');
+    expect(mocks.eq).toHaveBeenCalledWith('ws_id', 'workspace');
+    expect(mocks.eq).toHaveBeenCalledWith('user_id', 'actor');
     expect(mocks.list).toHaveBeenCalledWith(
       'workspace/chats/ai/resources/chat',
       expect.any(Object)

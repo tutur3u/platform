@@ -16,12 +16,16 @@ shared-package changes.
   RLS prerequisite, and already-issued read URL limitation.
 - Shared JSON content validation bounds streamed bytes and structural complexity
   before constructing and scanning leaf paths. Keep skipped emoji fields inside
-  structural bounds; preserve route-specific body limits and test adversarial
+  structural bounds except for explicit machine-state exemptions. Whiteboard
+  PATCH saves strip the top-level snapshot and use an 8 MiB streamed cap; other
+  fields retain generic checks. Preserve route-specific body limits and test adversarial
   structure with small deterministic fixtures. See [request validation bounds](../../../../../apps/docs/platform/features/mobile-workspace-tools.mdx#request-content-validation-bounds).
 - Provider execution requires a newly acquired metered reservation; an existing
   idempotent reservation returns 409 before invoking a provider. AI-chat attachment
   reads require the authenticated source-chat owner even when a different product
-  uses the same UUID. Keep workspace admission in each route. See [AI Studio](../../../../../apps/docs/platform/ai/ai-studio.mdx#execution-and-attachment-authorization).
+  uses the same UUID. Prompt preparation and conversion tools share the owner
+  and workspace-membership fence before storage reads/signing; AI chats have no
+  workspace column. Keep workspace admission in each route. See [AI Studio](../../../../../apps/docs/platform/ai/ai-studio.mdx#execution-and-attachment-authorization).
 
 
 - Workspace user reads share the users-core field projection and effective

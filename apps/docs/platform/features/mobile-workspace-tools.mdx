@@ -2065,8 +2065,17 @@ JSON mutations checked by the shared proxy content guard, including Tools, have
 a 2 MiB streamed validation bound, at most 10,000 visited values, nesting depth
 32, and path length 2,048 characters. Structural checks run before per-field
 emoji and text scanning. The proxy's existing route body limit still applies.
-These bounds also apply to fields exempted from emoji checks; trusted server
-bypass credentials retain their existing behavior. Over-limit content returns
-HTTP 400 with `REQUEST_COMPLEXITY_EXCEEDED`. Existing invalid JSON handling
+These bounds also apply to fields exempted from emoji checks, with two
+intentional machine-state exceptions: task-description Yjs state keeps its
+existing structural exemption, and `PATCH /api/v1/workspaces/:wsId/whiteboards/:id`
+removes the top-level `snapshot` before structural and text checks. Whiteboard
+saves instead have an 8 MiB streamed body cap, allowing multi-hundred-shape
+boards and dense freehand strokes beyond the generic 2 MiB budget while
+bounding JSON parsing. Other whiteboard fields retain the generic validation
+rules; other routes and methods keep the 2 MiB cap. Trusted server bypass
+credentials retain their existing behavior. Over-limit content returns
+HTTP 400 with `REQUEST_COMPLEXITY_EXCEEDED`; the earlier proxy body-size gate
+returns HTTP 413 when its route cap is exceeded. Existing invalid JSON handling
 remains with the route. Regression coverage:
-`packages/utils/src/__tests__/request-emoji-complexity.test.ts`.
+`packages/utils/src/__tests__/request-emoji-complexity.test.ts` and
+`packages/utils/src/__tests__/request-whiteboard-bounds.test.ts`.

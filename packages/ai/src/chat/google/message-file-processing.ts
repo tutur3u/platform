@@ -1,5 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { FilePart, ImagePart, ModelMessage, TextPart } from 'ai';
+import { canAccessAiChatAttachments } from '../attachment-access';
 import {
   AI_CHAT_ATTACHMENT_EXTENSIONS,
   aiChatAttachmentExtension,
@@ -142,13 +143,15 @@ async function getAllChatFiles(
   if (!actorId) return [];
   try {
     const sbAdmin = await createAdminClient();
-    const { data: chat, error } = await sbAdmin
-      .from('ai_chats')
-      .select('id')
-      .eq('id', chatId)
-      .eq('creator_id', actorId)
-      .maybeSingle();
-    if (error || !chat) return [];
+    if (
+      !(await canAccessAiChatAttachments({
+        supabase: sbAdmin,
+        wsId,
+        chatId,
+        actorId,
+      }))
+    )
+      return [];
 
     const storagePath = `${wsId}/chats/ai/resources/${chatId}`;
     const { files, truncated } = await listAllChatResourceFiles(

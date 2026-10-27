@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
+import { whiteboardSaveByteLimit } from './whiteboard-request-policy';
 
 export const MAX_EMOJIS_PER_FIELD = 10;
 export const MAX_SHORT_TEXT_FIELD_GRAPHEMES = 280;
@@ -306,6 +307,8 @@ export async function getRequestContentViolationForRequest(
     return null;
   }
 
+  const whiteboardLimit = whiteboardSaveByteLimit(request);
+  const maxContentBytes = whiteboardLimit ?? MAX_CONTENT_BYTES;
   let rawBody = '';
   try {
     const body = request.clone().body;
@@ -318,9 +321,9 @@ export async function getRequestContentViolationForRequest(
         const chunk = await reader.read();
         if (chunk.done) break;
         bytes += chunk.value.byteLength;
-        if (bytes > MAX_CONTENT_BYTES) {
+        if (bytes > maxContentBytes) {
           void reader.cancel().catch(() => {});
-          return complexityViolation(bytes, MAX_CONTENT_BYTES);
+          return complexityViolation(bytes, maxContentBytes);
         }
         rawBody += decoder.decode(chunk.value, { stream: true });
       }
@@ -337,7 +340,17 @@ export async function getRequestContentViolationForRequest(
   }
 
   try {
-    const parsedBody = JSON.parse(rawBody);
+    let parsedBody: unknown = JSON.parse(rawBody);
+    if (
+      whiteboardLimit !== undefined &&
+      parsedBody &&
+      typeof parsedBody === 'object' &&
+      !Array.isArray(parsedBody)
+    ) {
+      parsedBody = Object.fromEntries(
+        Object.entries(parsedBody).filter(([key]) => key !== 'snapshot')
+      );
+    }
 
     if (
       options?.allowDescriptionYjsState === true &&
