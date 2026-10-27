@@ -83,11 +83,14 @@ or error causes, and never infer write failure from a diagnostic alone. See the
 publisher runbook for redaction limits and independent review requirements.
 The public repository exposes workflow logs and receipt artifacts. Unknown
 unlabelled secrets below 24 characters cannot be reliably detected. Scrub known
-values on raw input and after control normalization. Bound each analyzed line to
-4,096 characters before diagnostic regexes, redact supported query/credential
-values and collapse maximal workflow-command marker runs. Known-token wrap
-matching is bounded and does not cover arbitrary encodings; see the runbook's
-exact coverage and the one-MiB performance regression. Never rely on artifact
+values on raw and ANSI-stripped input, then after control normalization. Bound
+each analyzed line to 4,096 characters and discard any trailing partial token
+run on clipping. Parse only the last code suffix with an anchored suffix regex;
+never match an ambiguous whitespace prefix. Redact supported query/credential
+values and collapse maximal workflow-command marker runs. Known-token whitespace
+and control runs are unbounded within the input budget; only code-suffix units
+are bounded. See the runbook's exact grammar and specific one-MiB performance
+fixtures; arbitrary encodings are unsupported. Never rely on artifact
 privacy. Publisher import or scanned-file moves require the full root-script
 collector as well as focused tests: temporary-copy dependency lists and the
 shrink-only CLI usage inventory can fail outside check:changed's selected files.

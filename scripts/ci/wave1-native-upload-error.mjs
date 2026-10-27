@@ -3,7 +3,13 @@ import { stripVTControlCharacters } from 'node:util';
 const signals = new Set(['SIGINT', 'SIGTERM', 'SIGKILL']);
 const diagnosticLineLimit = 4096;
 const tokenSeparator =
-  '(?:[\\s\\p{C}\\p{M}│┃|]|\\[code:[ \t]{0,16}[0-9]{1,9}\\]){0,64}';
+  '[\\s\\p{C}\\p{M}│┃|]*(?:\\[code:[ \t]{0,16}[0-9]{1,9}\\][\\s\\p{C}\\p{M}│┃|]*){0,64}';
+
+function clipDiagnosticLine(line) {
+  return line.length > diagnosticLineLimit
+    ? line.slice(0, diagnosticLineLimit).replace(/[A-Za-z0-9_+/.=%-]+$/u, '')
+    : line;
+}
 
 function redactKnown(message, secrets) {
   let value = message;
@@ -23,7 +29,7 @@ function redactKnown(message, secrets) {
 }
 
 function redactFields(message) {
-  const fields = /\b([a-z0-9_.-]+)[\]"'`)]*\s*[:=]\s*/giu;
+  const fields = /\b([a-z0-9_.-]+)[\\\]"'`)]*\s*[:=]\s*/giu;
   const credentialName =
     /auth|credentials?|pwd|signature|sig|token|key|secret|password/iu;
   let result = '',
@@ -65,12 +71,12 @@ function redactFields(message) {
 function sanitize(message, secrets) {
   // Scrub the entire raw value before truncation, including tokens crossing line boundaries.
   const raw = redactKnown(message, secrets);
-  const bounded = raw.split(/\r?\n/u, 1)[0].slice(0, diagnosticLineLimit);
-  const normalized = stripVTControlCharacters(bounded).replace(
+  const normalized = stripVTControlCharacters(raw).replace(
     /[\p{Cc}\p{Cf}]/gu,
-    ' '
+    (char) => (char === '\n' || char === '\r' ? char : ' ')
   );
-  let value = redactKnown(normalized, secrets)
+  const scrubbed = redactKnown(normalized, secrets);
+  let value = clipDiagnosticLine(scrubbed.split(/\r?\n/u, 1)[0])
     .replace(/\s+/gu, ' ')
     .replace(/\b[a-z][a-z0-9+.-]*:\/\/[^\s/]*@[^\s]*/giu, '[REDACTED URL]')
     .replace(/([?&][^=\s&#?]+)=([^#\s&]*)/gu, '$1=[REDACTED]')
@@ -95,13 +101,14 @@ export class NativeUploadError extends Error {
         ? error.stderr.slice(0, 1024 * 1024)
         : '';
     // Known values must be removed before line splitting or Unicode/space normalization.
-    const stderr = redactKnown(rawStderr, secrets);
+    const stderr = redactKnown(
+      stripVTControlCharacters(redactKnown(rawStderr, secrets)),
+      secrets
+    );
     const codes = new Set();
     // Bound each line before any diagnostic matching regex. The full raw known-token
     // pass above remains necessary for credentials split across lines or controls.
-    const lines = stderr
-      .split(/\r?\n/u)
-      .map((line) => line.slice(0, diagnosticLineLimit));
+    const lines = stderr.split(/\r?\n/u).map(clipDiagnosticLine);
     let cfErrors = [];
     for (const rawLine of lines) {
       if (!rawLine.includes('[code:')) continue;
@@ -109,11 +116,13 @@ export class NativeUploadError extends Error {
       for (const match of line.matchAll(/\[code:\s*([0-9]{1,9})\]/gu))
         codes.add(Number(match[1]));
       if (cfErrors.length >= 8) continue;
-      const match = /^\s*(.+?)\s*\[code:\s*([0-9]{1,9})\]\s*$/u.exec(line);
-      if (match)
+      const marker = line.lastIndexOf('[code:');
+      const suffix = /^\[code:\s*([0-9]{1,9})\]\s*$/u.exec(line.slice(marker));
+      const message = line.slice(0, marker).trim();
+      if (suffix && message)
         cfErrors.push({
-          code: Number(match[2]),
-          message: sanitize(match[1], secrets),
+          code: Number(suffix[1]),
+          message: sanitize(message, secrets),
         });
     }
     if (!cfErrors.length) {
