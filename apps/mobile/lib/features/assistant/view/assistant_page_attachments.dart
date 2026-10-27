@@ -4,6 +4,8 @@ extension _AssistantAttachments on _AssistantPageState {
   /// An attachment to a new chat creates that chat first. While a prior
   /// creation outcome is unknown, only the informed New chat flow may create
   /// one, exactly as a text send does; uploading first could never succeed.
+  /// Callers check the remote guard first, so the local-model lane never
+  /// reaches the New chat flow, which could clear the draft unasked.
   Future<bool> _readyAttachmentChat(String wsId) async {
     final chatState = _chatCubit.state;
     if (!chatState.creationOutcomeUnknown || chatState.storedChatId != null) {
@@ -78,6 +80,7 @@ extension _AssistantAttachments on _AssistantPageState {
   }
 
   Future<void> _pickFiles(String wsId) async {
+    if (!_remoteGuard(wsId).current) return;
     if (!await _readyAttachmentChat(wsId)) return;
     final guard = _remoteGuard(wsId);
     if (!guard.current) return;
@@ -100,6 +103,7 @@ extension _AssistantAttachments on _AssistantPageState {
   }
 
   Future<void> _pickGalleryMedia(String wsId) async {
+    if (!_remoteGuard(wsId).current) return;
     if (!await _readyAttachmentChat(wsId)) return;
     final guard = _remoteGuard(wsId);
     if (!guard.current) return;
@@ -218,6 +222,7 @@ extension _AssistantAttachments on _AssistantPageState {
   }
 
   Future<void> _captureMedia(String wsId, {required bool video}) async {
+    if (!_remoteGuard(wsId).current) return;
     if (!await _readyAttachmentChat(wsId)) return;
     final guard = _remoteGuard(wsId);
     if (!guard.current) return;

@@ -193,6 +193,26 @@ void main() {
     expect(h.chat.state.composerAttachments, isEmpty);
     expect(h.repository.api.creates, 0);
 
+    final recorderCalls = <String>[];
+    tester.binding.defaultBinaryMessenger
+      ..setMockMethodCallHandler(
+        const MethodChannel('com.llfbandit.record/messages'),
+        (call) async {
+          recorderCalls.add(call.method);
+          if (call.method == 'create') {
+            final id = (call.arguments as Map)['recorderId'];
+            tester.binding.defaultBinaryMessenger.setMockStreamHandler(
+              EventChannel('com.llfbandit.record/events/$id'),
+              MockStreamHandler.inline(onListen: (_, _) {}),
+            );
+          }
+          return call.method == 'hasPermission' ? true : null;
+        },
+      )
+      ..setMockMethodCallHandler(
+        const MethodChannel('plugins.flutter.io/path_provider'),
+        (call) async => Directory.systemTemp.path,
+      );
     await tester.tap(microphone);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Start a new chat'));
@@ -203,6 +223,43 @@ void main() {
       );
     }
     expect(h.chat.state.creationOutcomeUnknown, isFalse);
+    expect(h.repository.api.creates, 0);
+    // The confirmed new chat goes on to record the voice note.
+    expect(recorderCalls, contains('start'));
+    expect(
+      find.byKey(const ValueKey('assistant-inline-voice-waveform')),
+      findsOneWidget,
+    );
+    await tester.tap(find.byKey(const ValueKey('voice-cancel')));
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 10)),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('assistant-inline-voice-waveform')),
+      findsNothing,
+    );
+  });
+
+  testWidgets('files from the sheet wait for informed recovery', (
+    tester,
+  ) async {
+    final h = RepairHarness();
+    addTearDown(() => h.dispose(tester));
+    await h.mount(tester, initialPreferences: legacy);
+    expect(h.chat.state.creationOutcomeUnknown, isTrue);
+    await tester.tap(find.byKey(const ValueKey('assistant-composer-options')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Add attachments'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Files'));
+    await tester.pumpAndSettle();
+    // Picking first would upload into a chat that cannot be created.
+    expect(find.text('Start a new chat'), findsOneWidget);
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(h.chat.state.creationOutcomeUnknown, isTrue);
+    expect(h.chat.state.composerAttachments, isEmpty);
     expect(h.repository.api.creates, 0);
   });
 
