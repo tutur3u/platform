@@ -34,6 +34,7 @@ function lexSql(sql, { keepStrings = false } = {}) {
   let index = 0;
   const comments = [];
   const bodies = [];
+  const identifiers = [];
   const emit = (end, keep) => {
     const chunk = sql.slice(index, end);
     code += keep ? chunk : chunk.replace(/[^\n]/g, ' ');
@@ -100,7 +101,15 @@ function lexSql(sql, { keepStrings = false } = {}) {
             String.fromCodePoint(parseInt(long ?? short, 16))
           );
       }
-      // Preserve simple names (including quoted roles), but no SQL delimiters.
+      // Keep source offsets while masking delimiters; restore unique tokens
+      // after splitting statements. UTF-16 hex also preserves lone surrogates.
+      if (!/^[A-Za-z0-9_$]+$/.test(identifier)) {
+        identifiers.push({
+          start: index,
+          end,
+          token: `"\uE000${Buffer.from(identifier, 'utf16le').toString('hex')}"`,
+        });
+      }
       const safe = `"${/^[A-Za-z0-9_$]+$/.test(identifier) ? identifier : identifier.replace(/[^\n]/g, '_')}"`;
       const chunk = sql.slice(index, end);
       code += safe + ' '.repeat(Math.max(0, chunk.length - safe.length));
@@ -126,7 +135,7 @@ function lexSql(sql, { keepStrings = false } = {}) {
       }
     }
   }
-  return { code, comments, bodies };
+  return { code, comments, bodies, identifiers };
 }
 
 function countNewlines(text) {
@@ -135,7 +144,7 @@ function countNewlines(text) {
 
 // Splits lexed SQL into normalized (lowercase, single-spaced) statements.
 function parseStatements(sql) {
-  const { code, comments, bodies } = lexSql(sql);
+  const { code, comments, bodies, identifiers } = lexSql(sql);
   const statements = [];
   let line = 1;
   let offset = 0;
@@ -143,8 +152,19 @@ function parseStatements(sql) {
     const startLine = line + countNewlines(/^\s*/.exec(part)[0]);
     const body = part.trim();
     if (body) {
+      const text = identifiers
+        .filter(
+          (entry) => entry.start >= offset && entry.end <= offset + part.length
+        )
+        .reduceRight(
+          (text, entry) =>
+            text.slice(0, entry.start - offset) +
+            entry.token +
+            text.slice(entry.end - offset),
+          part
+        );
       statements.push({
-        text: body.replace(/\s+/g, ' ').toLowerCase(),
+        text: text.trim().replace(/\s+/g, ' ').toLowerCase(),
         start: offset + part.indexOf(body),
         end: offset + part.length,
         startLine,
@@ -154,8 +174,19 @@ function parseStatements(sql) {
     line += countNewlines(part);
     offset += part.length + 1;
   }
-  for (const body of bodies) {
-    for (const comment of lexSql(body.text).comments) {
+  const pending = [...bodies];
+  for (let index = 0; index < pending.length; index++) {
+    const body = pending[index];
+    const nested = lexSql(body.text);
+    for (const child of nested.bodies) {
+      pending.push({
+        ...child,
+        start: body.start + child.start,
+        end: body.start + child.end,
+        line: body.line + child.line - 1,
+      });
+    }
+    for (const comment of nested.comments) {
       comments.push({
         ...comment,
         start: body.start + comment.start,
@@ -298,7 +329,7 @@ function roleList(text) {
 
 const GRANT = /^(?:alter default privileges\s.*?)?\bgrant\s(.+?)\sto\s(.+)$/;
 const DEFINER =
-  /^(?:create (?:or replace )?|alter )(function|procedure)\s(.+)$/;
+  /^(?:create (?:or replace )?|alter )(function|procedure|routine)\s(.+)$/;
 const REVOKE_FUNCTION =
   /^revoke\s(?:all(?: privileges)?|execute)\son (function|procedure|routine)s?\s(.+?)\sfrom\s(.+)$/;
 
@@ -311,6 +342,40 @@ function openGrantees(text) {
 
 function routineKey(name, types) {
   return types ? `${name}(${types.join(',')})` : name;
+}
+
+function scanBodyGrants(initialBody) {
+  const findings = [];
+  const pending = [initialBody];
+  for (let index = 0; index < pending.length; index++) {
+    const body = pending[index];
+    const { code, bodies } = lexSql(body.text, { keepStrings: true });
+    for (const nested of bodies) {
+      pending.push({ ...nested, line: body.line + nested.line - 1 });
+    }
+    const pattern = /\bgrant\b[^;']*/gi;
+    for (const match of code.matchAll(pattern)) {
+      const normalized = lexSql(match[0])
+        .code.replace(/\s+/g, ' ')
+        .trim()
+        .toLowerCase();
+      const grant = GRANT.exec(normalized);
+      if (!grant) continue;
+      const roles = roleList(grant[2]);
+      const open = roles.filter((role) => OPEN_ROLES.includes(role));
+      const computed = roles.some((role) => /^%[si](?![a-z0-9_])/.test(role));
+      if (open.length || computed)
+        findings.push({
+          rule: RULES.anonGrant,
+          line: body.line + countNewlines(body.text.slice(0, match.index)),
+          ...(open.length ? {} : { severity: 'warning' }),
+          detail: open.length
+            ? `literal body grant to ${open.join(', ')}`
+            : 'WARNING: body grant has a computed grantee; review the generated SQL',
+        });
+    }
+  }
+  return findings;
 }
 
 function scanSql(sql, { definerRule }) {
@@ -373,7 +438,9 @@ function scanSql(sql, { definerRule }) {
         .filter(
           (entry) =>
             entry.start > definer.statement.start &&
-            (entry.kind === definer.kind || entry.kind === 'routine')
+            (entry.kind === definer.kind ||
+              entry.kind === 'routine' ||
+              definer.kind === 'routine')
         )
         .flatMap((entry) => entry.roles)
     );
@@ -398,28 +465,7 @@ function scanSql(sql, { definerRule }) {
     )
       continue;
     if (isAllowed(statement, comments, RULES.anonGrant)) continue;
-    const { code } = lexSql(body.text, { keepStrings: true });
-    const pattern = /\bgrant\b[^;']*/gi;
-    for (const match of code.matchAll(pattern)) {
-      const normalized = lexSql(match[0])
-        .code.replace(/\s+/g, ' ')
-        .trim()
-        .toLowerCase();
-      const grant = GRANT.exec(normalized);
-      if (!grant) continue;
-      const roles = roleList(grant[2]);
-      const open = roles.filter((role) => OPEN_ROLES.includes(role));
-      const computed = roles.some((role) => /^%[si](?![a-z0-9_])/.test(role));
-      if (open.length || computed)
-        findings.push({
-          rule: RULES.anonGrant,
-          line: body.line + countNewlines(body.text.slice(0, match.index)),
-          ...(open.length ? {} : { severity: 'warning' }),
-          detail: open.length
-            ? `literal body grant to ${open.join(', ')}`
-            : 'WARNING: body grant has a computed grantee; review the generated SQL',
-        });
-    }
+    findings.push(...scanBodyGrants(body));
   }
   return findings.sort((left, right) => left.line - right.line);
 }

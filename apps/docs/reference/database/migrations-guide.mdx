@@ -484,8 +484,9 @@ Unversioned files are always checked.
    that the forward migration closed; grant to `authenticated` or
    `service_role` instead.
 2. **Unrevoked `SECURITY DEFINER` functions and procedures** (migrations
-   only). Every `CREATE [OR REPLACE] FUNCTION`, `ALTER FUNCTION`, or
-   `CREATE [OR REPLACE] PROCEDURE` setting `SECURITY DEFINER` needs a revoke
+   only). Every `CREATE [OR REPLACE] FUNCTION` or `PROCEDURE`, and every
+   `ALTER FUNCTION`, `ALTER PROCEDURE`, or `ALTER ROUTINE` setting
+   `SECURITY DEFINER` needs a revoke
    for the same name and argument types from both `public` and `anon`
    **after that statement in the same file**. An earlier revoke does not
    cover a subsequent alteration or drop-and-recreate. Use `ON PROCEDURE`
@@ -498,13 +499,16 @@ Unversioned files are always checked.
    ```
 
 Comments and ordinary string literals are ignored. Quoted identifiers are
-neutralized before parsing SQL delimiters; Unicode-escaped role identifiers
+neutralized before parsing SQL delimiters without merging distinct names;
+Unicode-escaped role identifiers
 are decoded, including a custom `UESCAPE` character. In dollar-quoted `DO`,
 function and procedure bodies, a literal `grant ... to anon` or `public`
-is also rejected, including `EXECUTE '...'` and `EXECUTE format('...')`.
+is also rejected, including `EXECUTE '...'`, `EXECUTE format('...')`, and
+nested dollar-quoted literals.
 A `%s` or `%I` grantee produces a non-failing `WARNING` for manual review.
 These warnings are printed even for legacy files; they do not change
-`--report`'s non-failing behavior.
+`--report`'s non-failing behavior. Regression coverage lives in
+`scripts/ci/sql-grant-guard.test.js` (H1, H2, and H4).
 
 This is a static guard, not a PostgreSQL parser. Review dynamically assembled
 SQL, non-ASCII dollar tags, grants nested in `CREATE SCHEMA`, non-default

@@ -472,3 +472,93 @@ test('computed body grantees warn through the CLI without failing either mode', 
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('H1: ALTER ROUTINE SECURITY DEFINER requires a later matching revoke', () => {
+  const alter = 'alter routine public.f(uuid) security definer;';
+  assert.equal(definers(alter).length, 1);
+  assert.equal(definers(`${revokeDefiner} ${alter}`).length, 1);
+  for (const kind of ['function', 'procedure', 'routine']) {
+    assert.deepEqual(
+      definers(
+        `${alter} revoke all on ${kind} public.f(uuid) from public, anon;`
+      ),
+      []
+    );
+  }
+  assert.equal(
+    definers(`${alter} revoke all on routine public.f(text) from public, anon;`)
+      .length,
+    1
+  );
+});
+
+test('H2: nested dollar-quoted body grants are checked recursively', () => {
+  const sql = [
+    'do $$ begin',
+    '  execute $i$grant execute on function public.f() to anon$i$;',
+    'end $$;',
+    'do $outer$ begin',
+    '  execute $middle$do $inner$grant select on public.t to public$inner$$middle$;',
+    'end $outer$;',
+  ].join('\n');
+  assert.deepEqual(
+    grants(sql).map((finding) => [finding.line, finding.detail]),
+    [
+      [2, 'literal body grant to anon'],
+      [5, 'literal body grant to public'],
+    ]
+  );
+  assert.deepEqual(
+    grants(
+      `-- allow-anon-grant: reviewed catalog\n${sql.split('\n').slice(0, 3).join('\n')}`
+    ),
+    []
+  );
+  assert.deepEqual(
+    grants(
+      'do $$ begin execute $i$grant select on public.t to authenticated$i$; end $$;'
+    ),
+    []
+  );
+  assert.deepEqual(
+    grants(
+      'do $$ begin execute $i$-- allow-anon-grant: reviewed catalog\ngrant select on t to anon$i$; end $$;'
+    ),
+    []
+  );
+  assert.deepEqual(
+    grants('select $$execute $i$grant select on t to anon$i$$$;'),
+    []
+  );
+  assert.deepEqual(
+    grants('do $$ begin -- execute $i$grant select on t to anon$i$;\nend $$;'),
+    []
+  );
+});
+
+test('H4: distinct quoted routine identifiers cannot share a revoke', () => {
+  const names = [
+    '"a-b"',
+    '"x y"',
+    '"a_b"',
+    '"x;y"',
+    '"x,y"',
+    '"x.y"',
+    '"x(y"',
+    '"x\ny"',
+  ];
+  for (const name of names) {
+    const create = `create function public.${name}(uuid) returns void language sql security definer as $$ select $$;`;
+    for (const target of names) {
+      const findings = definers(
+        `${create}\nrevoke all on function public.${target}(uuid) from public, anon;`
+      );
+      assert.equal(
+        findings.length,
+        name === target ? 0 : 1,
+        `${name} vs ${target}`
+      );
+      if (findings.length) assert.equal(findings[0].line, 1);
+    }
+  }
+});
