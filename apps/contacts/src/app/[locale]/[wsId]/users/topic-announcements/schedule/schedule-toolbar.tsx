@@ -20,7 +20,6 @@ export type ScheduleFilter = 'all' | 'needs_gvnn';
 interface Props {
   changeCount: number;
   filter: ScheduleFilter;
-  hasIssues: boolean;
   isLoading: boolean;
   isSaving: boolean;
   missingCount: number;
@@ -37,7 +36,6 @@ interface Props {
 export function ScheduleToolbar({
   changeCount,
   filter,
-  hasIssues,
   isLoading,
   isSaving,
   missingCount,
@@ -140,7 +138,7 @@ export function ScheduleToolbar({
         ) : null}
         <Button
           className="gap-2"
-          disabled={changeCount === 0 || hasIssues || isSaving}
+          disabled={changeCount === 0 || isSaving}
           onClick={onSave}
           size="sm"
         >

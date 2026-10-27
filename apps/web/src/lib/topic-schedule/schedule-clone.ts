@@ -48,15 +48,27 @@ export async function cloneScheduleMonth(
   },
   {
     dryRun,
+    includeRemoved = false,
     sourceMonth,
     targetMonth,
-  }: { dryRun: boolean; sourceMonth: string; targetMonth: string }
+  }: {
+    dryRun: boolean;
+    includeRemoved?: boolean;
+    sourceMonth: string;
+    targetMonth: string;
+  }
 ): Promise<ScheduleCloneResult> {
-  const [classes, sourceSessions, targetSessions] = await Promise.all([
-    loadScheduleClasses(context),
-    loadScheduleSessions({ ...context, month: sourceMonth }),
-    loadScheduleSessions({ ...context, month: targetMonth }),
-  ]);
+  const [classes, sourceSessions, targetSessions, removedTargetSessions] =
+    await Promise.all([
+      loadScheduleClasses(context),
+      loadScheduleSessions({ ...context, month: sourceMonth }),
+      loadScheduleSessions({ ...context, month: targetMonth }),
+      loadScheduleSessions({
+        ...context,
+        month: targetMonth,
+        status: 'cancelled',
+      }),
+    ]);
   const contacts = await loadScheduleContacts({
     ...context,
     referencedIds: sourceSessions.map((session) => session.gvnnContactId),
@@ -66,6 +78,8 @@ export async function cloneScheduleMonth(
 
   const plan = planScheduleClone({
     classes,
+    includeRemoved,
+    removedTargetSessions,
     sourceSessions,
     targetMonth,
     targetSessions,

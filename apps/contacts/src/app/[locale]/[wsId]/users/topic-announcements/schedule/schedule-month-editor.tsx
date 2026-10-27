@@ -1,6 +1,10 @@
 'use client';
 
-import type { TopicScheduleClass } from '@tuturuuu/internal-api/topic-announcements';
+import {
+  type TopicScheduleClass,
+  TopicScheduleSaveRejectedError,
+  type TopicScheduleSaveResult,
+} from '@tuturuuu/internal-api/topic-announcements';
 import { Button } from '@tuturuuu/ui/button';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -76,19 +80,23 @@ export function ScheduleMonthEditor({
     focusRow(editor.addSession(date));
   };
 
-  const save = () =>
+  const save = () => {
+    const firstIssue = editor.rows.find((row) => editor.issues.has(row.key));
+    if (firstIssue) {
+      editor.showAllIssues();
+      setFilter('all');
+      focusRow(firstIssue.key);
+      toast.error(t('schedule_fix_issues', { count: editor.issues.size }));
+      return;
+    }
     editor.save.mutate(undefined, {
-      onError: () => toast.error(t('schedule_save_failed')),
-      onSuccess: ({ data }) =>
-        toast.success(
-          t('schedule_saved', {
-            count:
-              data.createdIds.length +
-              data.updatedIds.length +
-              data.deletedIds.length,
-          })
-        ),
+      onError: (error) =>
+        error instanceof TopicScheduleSaveRejectedError && error.conflict
+          ? toast.warning(t('schedule_save_conflict'))
+          : toast.error(t('schedule_save_failed')),
+      onSuccess: ({ data }) => toast.success(saveSummary(t, data)),
     });
+  };
 
   if (editor.query.isError) {
     return (
@@ -110,14 +118,13 @@ export function ScheduleMonthEditor({
       <ScheduleToolbar
         changeCount={editor.changeCount}
         filter={filter}
-        hasIssues={editor.issues.size > 0}
         isLoading={editor.query.isLoading}
         isSaving={editor.save.isPending}
         missingCount={reminder.total}
         month={month}
         onAdd={() => addSession()}
         onClone={() => setCloneOpen(true)}
-        onDiscard={() => guard.guard(editor.discard)}
+        onDiscard={() => guard.guard(editor.discard, { inPlace: true })}
         onFilterChange={setFilter}
         onMonthChange={(delta) =>
           guard.guard(() => onMonthChange(shiftScheduleMonth(month, delta)))
@@ -166,6 +173,7 @@ export function ScheduleMonthEditor({
             originalByKey={editor.originalByKey}
             rows={visibleRows}
             serverErrors={editor.serverErrors}
+            showIssues={editor.shouldShowIssues}
           />
         </div>
       )}
@@ -210,4 +218,16 @@ function duplicate(
       startTime: row.startTime,
     }
   );
+}
+
+/** "Saved N changes", or "already up to date" for a retried save. */
+function saveSummary(
+  t: ReturnType<typeof useTranslations>,
+  data: TopicScheduleSaveResult
+) {
+  const count =
+    data.createdIds.length + data.updatedIds.length + data.deletedIds.length;
+  return count === 0 && data.existingIds.length > 0
+    ? t('schedule_already_saved')
+    : t('schedule_saved', { count });
 }

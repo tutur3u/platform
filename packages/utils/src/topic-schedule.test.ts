@@ -37,6 +37,16 @@ describe('schedule months', () => {
   });
 });
 
+describe('scheduleWeekdayOccurrence', () => {
+  it('counts the nth weekday at each week boundary', () => {
+    expect(
+      ['01', '07', '08', '14', '15', '21', '22', '28', '29', '31'].map((day) =>
+        scheduleWeekdayOccurrence(`2026-12-${day}`)
+      )
+    ).toEqual([1, 1, 2, 2, 3, 3, 4, 4, 5, 5]);
+  });
+});
+
 describe('mapToSameNthWeekday', () => {
   it('keeps the nth weekday between months of different lengths', () => {
     // 2026-10-13 is the 2nd Tuesday of October.

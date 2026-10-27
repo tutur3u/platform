@@ -7,7 +7,11 @@ import {
   scheduleWeekdayOccurrence,
 } from '@tuturuuu/utils/topic-schedule';
 
-export type ScheduleClonePlanStatus = 'create' | 'exists' | 'unplaced';
+export type ScheduleClonePlanStatus =
+  | 'create'
+  | 'exists'
+  | 'removed'
+  | 'unplaced';
 export type ScheduleCloneUnplacedReason = 'class_removed' | 'no_such_weekday';
 
 export interface ScheduleClonePlanItem {
@@ -29,22 +33,32 @@ export interface ScheduleClonePlanItem {
  * every matching weekday would give 4-5. A 5th weekday the target lacks is
  * `unplaced`, never moved to another date. A slot (class, date, start) that
  * already exists in the target, or was planned earlier in this run, is
- * `exists`, so re-cloning or retrying never duplicates. There is no holiday
- * calendar: every mapped date is kept.
+ * `exists`, so re-cloning or retrying never duplicates. A slot whose session
+ * was deliberately removed (cancelled) in the target month is `removed` and
+ * skipped unless `includeRemoved` is set. There is no holiday calendar: every
+ * mapped date is kept.
  */
 export function planScheduleClone({
   classes,
+  includeRemoved = false,
+  removedTargetSessions = [],
   sourceSessions,
   targetMonth,
   targetSessions,
 }: {
   classes: readonly ScheduleClass[];
+  includeRemoved?: boolean;
+  /** Cancelled sessions of the target month. */
+  removedTargetSessions?: readonly ScheduleSession[];
   sourceSessions: readonly ScheduleSession[];
   targetMonth: string;
   targetSessions: readonly ScheduleSession[];
 }): ScheduleClonePlanItem[] {
   const classById = new Map(classes.map((item) => [item.id, item]));
   const taken = new Set(targetSessions.map(scheduleSlotKey));
+  const removed = includeRemoved
+    ? new Set<string>()
+    : new Set(removedTargetSessions.map(scheduleSlotKey));
 
   const ordered = [...sourceSessions].sort((left, right) =>
     `${left.sessionDate} ${left.startTime} ${left.classLabel}`.localeCompare(
@@ -87,7 +101,11 @@ export function planScheduleClone({
       sessionDate: targetDate,
       startTime: source.startTime,
     });
-    const status = taken.has(key) ? ('exists' as const) : ('create' as const);
+    const status = taken.has(key)
+      ? ('exists' as const)
+      : removed.has(key)
+        ? ('removed' as const)
+        : ('create' as const);
     taken.add(key);
     return {
       ...base,

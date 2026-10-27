@@ -3,13 +3,38 @@ import { NextResponse } from 'next/server';
 import {
   computeTopicAnnouncementSendDueAt,
   getWorkspaceSchedulingTimezone,
+  normalizeEmail,
   resolveTopicAnnouncementsAccess,
   TopicAnnouncementImportSchema,
 } from '../shared';
-import { normalizeImportRows, validateImportTeacherIds } from './import-rows';
 
 interface Params {
   params: Promise<{ wsId: string }>;
+}
+
+function normalizeTime(value?: string) {
+  if (!value) return null;
+  const trimmed = value.trim();
+  const match = trimmed.match(
+    /^(\d{1,2}):(\d{2})(?::\d{2})?(?:\s*(AM|PM))?$/iu
+  );
+  if (!match) return null;
+
+  const [, hourRaw = '0', minuteRaw = '0', meridiemRaw] = match;
+  let hour = Number.parseInt(hourRaw, 10);
+  const minute = Number.parseInt(minuteRaw, 10);
+  if (!Number.isFinite(hour) || !Number.isFinite(minute)) return null;
+  if (minute < 0 || minute > 59) return null;
+
+  const meridiem = meridiemRaw?.toUpperCase();
+  if (meridiem) {
+    if (hour < 1 || hour > 12) return null;
+    hour = meridiem === 'PM' ? (hour % 12) + 12 : hour % 12;
+  } else if (hour < 0 || hour > 23) {
+    return null;
+  }
+
+  return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00`;
 }
 
 export async function POST(request: Request, { params }: Params) {
@@ -36,23 +61,35 @@ export async function POST(request: Request, { params }: Params) {
 
   const { actorUserId, normalizedWsId, sbAdmin, teacherAssignmentsEnabled } =
     access.context;
-  const enabled = teacherAssignmentsEnabled === true;
-  // Teacher ids and topic-less schedule rows are part of teacher-assigned
-  // topics; with the flag off the import behaves as before.
-  if (enabled) {
-    const teacherResponse = await validateImportTeacherIds({
-      normalizedWsId,
-      rows: parsed.data.rows.map((row, index) => ({
-        rowNumber: index + 1,
-        teacherWorkspaceUserId: row.teacherWorkspaceUserId ?? null,
-      })),
-      sbAdmin,
-    });
-    if (teacherResponse) return teacherResponse;
-  }
+  const rowErrors: { message: string; rowNumber: number }[] = [];
+  const validRows = parsed.data.rows.flatMap((row, index) => {
+    const rowNumber = index + 1;
+    const contactEmail = row.contactEmail
+      ? normalizeEmail(row.contactEmail)
+      : null;
+    const topic = row.topic?.trim();
 
-  const { rowErrors, validRows } = normalizeImportRows(parsed.data.rows, {
-    teacherAssignments: enabled,
+    if (!contactEmail) {
+      rowErrors.push({ message: 'Missing contact email', rowNumber });
+    }
+    if (!topic) {
+      rowErrors.push({ message: 'Missing topic', rowNumber });
+    }
+
+    if (!contactEmail || !topic) return [];
+
+    return [
+      {
+        ...row,
+        contactEmail,
+        contactName: row.contactName?.trim() || contactEmail,
+        endTime: normalizeTime(row.endTime),
+        rowNumber,
+        startTime: normalizeTime(row.startTime),
+        title: row.title?.trim() || topic.slice(0, 120),
+        topic,
+      },
+    ];
   });
 
   if (validRows.length === 0) {
@@ -115,9 +152,9 @@ export async function POST(request: Request, { params }: Params) {
     .single();
   if (batchError) throw batchError;
 
-  // send_due_at: 24h before the session in the workspace timezone, from the
-  // normalized date and start time (teacher assignments only).
-  const timezone = enabled
+  // send_due_at (24h before the session in the workspace timezone) is owned
+  // by the deadline helper; keep it out of the row mapping below.
+  const timezone = teacherAssignmentsEnabled
     ? await getWorkspaceSchedulingTimezone(sbAdmin, normalizedWsId)
     : null;
   const { data: announcements, error: announcementError } = await sbAdmin
@@ -126,27 +163,26 @@ export async function POST(request: Request, { params }: Params) {
       validRows.map((row) => ({
         batch_id: batch.id,
         body: '',
-        class_label: row.classLabel,
+        class_label: row.classLabel?.trim() || null,
         created_by: actorUserId,
-        day_label: row.dayLabel,
+        day_label: row.dayLabel?.trim() || null,
         end_time: row.endTime,
-        place: row.place,
-        room: row.room,
-        send_due_at: enabled
+        place: row.place?.trim() || null,
+        room: row.room?.trim() || null,
+        send_due_at: teacherAssignmentsEnabled
           ? computeTopicAnnouncementSendDueAt({
               sessionDate: row.sessionDate,
               startTime: row.startTime,
               timeZone: timezone,
             })
           : null,
-        session_date: row.sessionDate,
+        session_date: row.sessionDate ?? null,
         source_row_number: row.rowNumber,
         source_type: parsed.data.sourceType,
         start_time: row.startTime,
         status: 'draft',
-        teacher_workspace_user_id: row.teacherWorkspaceUserId,
         title: row.title,
-        topic: normalizeTopicAnnouncementTopic(row.topic ?? undefined) ?? null,
+        topic: normalizeTopicAnnouncementTopic(row.topic),
         updated_by: actorUserId,
         ws_id: normalizedWsId,
       }))

@@ -1,6 +1,11 @@
 'use client';
 
-import { CopyPlus, MoreHorizontal, Trash2 } from '@tuturuuu/icons';
+import {
+  CalendarDays,
+  CopyPlus,
+  MoreHorizontal,
+  Trash2,
+} from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
   DropdownMenu,
@@ -11,14 +16,16 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { useTranslations } from 'next-intl';
 
-/** Duplicate (same day, +1 or +2 weeks) and remove for one session row. */
+/** Move, duplicate (same day, +1 or +2 weeks) and remove for one row. */
 export function ScheduleRowActions({
   hasTopic,
   onDuplicate,
+  onMove,
   onRemove,
 }: {
   hasTopic: boolean;
   onDuplicate: (days: number) => void;
+  onMove: () => void;
   onRemove: () => void;
 }) {
   const t = useTranslations('ws-topic-announcements');
@@ -35,6 +42,11 @@ export function ScheduleRowActions({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
+        <DropdownMenuItem onSelect={onMove}>
+          <CalendarDays className="mr-2 h-4 w-4" />
+          {t('schedule_move_date')}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={() => onDuplicate(0)}>
           <CopyPlus className="mr-2 h-4 w-4" />
           {t('schedule_duplicate')}

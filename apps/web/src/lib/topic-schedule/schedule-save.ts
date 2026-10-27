@@ -7,9 +7,10 @@ import {
   scheduleSlotKey,
 } from '@tuturuuu/utils/topic-schedule';
 import {
+  isScheduleSessionEditable,
   loadScheduleClasses,
   loadScheduleSessions,
-  SCHEDULE_LOCKED_STATUSES,
+  SCHEDULE_SOURCE_TYPE,
 } from './schedule-data';
 import {
   cancelScheduleSessions,
@@ -35,15 +36,24 @@ export interface ScheduleRowError {
   sessionId: string | null;
 }
 
+export interface ScheduleSaveSummary {
+  createdIds: string[];
+  deletedIds: string[];
+  /** New rows already saved identically (a retried save): not re-created. */
+  existingIds: string[];
+  updatedIds: string[];
+}
+
 export type ScheduleSaveResult =
-  | { ok: false; rowErrors: ScheduleRowError[] }
+  | ({ ok: true } & ScheduleSaveSummary)
+  /** Validation failed; nothing was written. */
+  | { conflict: false; ok: false; rowErrors: ScheduleRowError[] }
+  /** Some sessions entered delivery mid-save; the rest were saved. */
   | {
-      createdIds: string[];
-      deletedIds: string[];
-      /** New rows whose slot already existed (a retried save): not re-created. */
-      existingIds: string[];
-      ok: true;
-      updatedIds: string[];
+      conflict: true;
+      ok: false;
+      rowErrors: ScheduleRowError[];
+      saved: ScheduleSaveSummary;
     };
 
 interface ScheduleSaveContext {
@@ -100,12 +110,48 @@ function isUnchanged(existing: ScheduleSession, next: ScheduleSessionWrite) {
   );
 }
 
+/** A saved session with the same slot and the same editor fields. */
+function hasSameContent(existing: ScheduleSession, next: ScheduleSessionWrite) {
+  return (
+    existing.endTime === next.endTime &&
+    (existing.room ?? null) === next.room &&
+    (existing.place ?? null) === next.place &&
+    existing.gvnnContactId === next.gvnnContactId
+  );
+}
+
+/** Deleted ids this workspace already cancelled (a retried removal). */
+async function loadAlreadyCancelledIds(
+  { normalizedWsId, sbAdmin }: ScheduleSaveContext,
+  ids: string[]
+) {
+  if (ids.length === 0) return new Set<string>();
+  const { data, error } = await sbAdmin
+    .from('topic_announcements')
+    .select('id')
+    .eq('ws_id', normalizedWsId)
+    .eq('source_type', SCHEDULE_SOURCE_TYPE)
+    .eq('status', 'cancelled')
+    .in('id', ids);
+  if (error) throw error;
+  return new Set((data ?? []).map((row: { id: string }) => row.id));
+}
+
 /**
  * Saves one month of editor changes. Everything is validated before any
- * write, so a rejected save changes nothing. The GVCN is never taken from
- * the client: a new session or a class change gets the class's current
- * GVCN; an edit within the same class keeps the assigned teacher (who may
- * already be writing the topic) and only fills it when it was empty.
+ * write, so a rejected save changes nothing; each write then re-checks that
+ * its session is still editable, and a session that entered delivery in the
+ * meantime is reported as a `locked` conflict instead of being changed.
+ *
+ * Retries are safe: removing an already-removed session succeeds, and a new
+ * row whose slot already holds an identical session is reported in
+ * `existingIds` rather than created twice. A different session in that slot
+ * is a `duplicate_slot` row error.
+ *
+ * The GVCN is never taken from the client: a new session or a class change
+ * gets the class's current GVCN; an edit within the same class keeps the
+ * assigned teacher (who may already be writing the topic) and only fills it
+ * when it was empty.
  */
 export async function saveScheduleMonth(
   context: ScheduleSaveContext,
@@ -120,8 +166,14 @@ export async function saveScheduleMonth(
   const existingById = new Map(
     existing.map((session) => [session.id, session])
   );
-  const contactIds = await loadActiveContactIds(context, [
-    ...new Set(input.sessions.flatMap((row) => row.gvnnContactId ?? [])),
+  const [contactIds, alreadyCancelled] = await Promise.all([
+    loadActiveContactIds(context, [
+      ...new Set(input.sessions.flatMap((row) => row.gvnnContactId ?? [])),
+    ]),
+    loadAlreadyCancelledIds(
+      context,
+      input.deleteIds.filter((id) => !existingById.has(id))
+    ),
   ]);
 
   const rowErrors: ScheduleRowError[] = [];
@@ -131,21 +183,22 @@ export async function saveScheduleMonth(
     sessionId: string | null = null
   ) => rowErrors.push({ code, index, sessionId });
 
+  const cancelIds: string[] = [];
   for (const id of input.deleteIds) {
     const session = existingById.get(id);
-    if (!session) fail('not_found', null, id);
-    else if (SCHEDULE_LOCKED_STATUSES.has(session.status)) {
+    if (session && !isScheduleSessionEditable(session.status)) {
       fail('locked', null, id);
-    }
+    } else if (session) cancelIds.push(id);
+    else if (!alreadyCancelled.has(id)) fail('not_found', null, id);
   }
 
   const editedIds = new Set(input.sessions.flatMap((row) => row.id ?? []));
   const removedIds = new Set([...input.deleteIds, ...editedIds]);
-  // Slots held after the save by sessions this request does not touch.
+  // Sessions this request does not touch, by slot.
   const untouchedSlots = new Map(
     existing
       .filter((session) => !removedIds.has(session.id))
-      .map((session) => [scheduleSlotKey(session), session.id])
+      .map((session) => [scheduleSlotKey(session), session])
   );
   const claimedSlots = new Set<string>();
 
@@ -163,7 +216,7 @@ export async function saveScheduleMonth(
     );
 
     if (row.id && !current) fail('not_found', index, row.id);
-    if (current && SCHEDULE_LOCKED_STATUSES.has(current.status)) {
+    if (current && !isScheduleSessionEditable(current.status)) {
       fail('locked', index, row.id);
     }
     if (scheduleDateMonth(row.sessionDate) !== month) {
@@ -176,11 +229,17 @@ export async function saveScheduleMonth(
     if (!endTime) fail('ends_after_midnight', index, row.id ?? null);
     if (rowErrors.length > errorCount || !scheduleClass || !endTime) return;
 
+    const sameClass = current?.groupId === row.groupId;
+    const teacher =
+      (sameClass ? current?.teacherWorkspaceUserId : null) ??
+      scheduleClass.primaryTeacherId;
+    const write = toWrite(row, scheduleClass, endTime, teacher);
+
     const key = scheduleSlotKey(row);
     const holder = untouchedSlots.get(key);
-    if (!current && holder) {
-      // Same class, date and start already saved: a retried request.
-      existingIds.push(holder);
+    if (!current && holder && hasSameContent(holder, write)) {
+      // The identical session is already saved: a retried request.
+      existingIds.push(holder.id);
       return;
     }
     if (holder || claimedSlots.has(key)) {
@@ -189,21 +248,23 @@ export async function saveScheduleMonth(
     }
     claimedSlots.add(key);
 
-    const sameClass = current?.groupId === row.groupId;
-    const teacher =
-      (sameClass ? current?.teacherWorkspaceUserId : null) ??
-      scheduleClass.primaryTeacherId;
-    const write = toWrite(row, scheduleClass, endTime, teacher);
     if (!current) inserts.push(write);
     else if (!isUnchanged(current, write))
       updates.push({ id: current.id, write });
   });
 
-  if (rowErrors.length > 0) return { ok: false, rowErrors };
+  if (rowErrors.length > 0) return { conflict: false, ok: false, rowErrors };
 
-  await cancelScheduleSessions({ ...context, ids: input.deleteIds });
+  const cancelled = new Set(
+    await cancelScheduleSessions({ ...context, ids: cancelIds })
+  );
+  const conflicts: ScheduleRowError[] = cancelIds
+    .filter((id) => !cancelled.has(id))
+    .map((id) => ({ code: 'locked', index: null, sessionId: id }));
+
+  const updatedIds: string[] = [];
   for (const update of updates) {
-    await updateScheduleSession({
+    const updated = await updateScheduleSession({
       ...context,
       gvnnChanged:
         existingById.get(update.id)?.gvnnContactId !==
@@ -211,6 +272,14 @@ export async function saveScheduleMonth(
       id: update.id,
       session: update.write,
     });
+    if (updated) updatedIds.push(update.id);
+    else {
+      conflicts.push({
+        code: 'locked',
+        index: input.sessions.findIndex((row) => row.id === update.id),
+        sessionId: update.id,
+      });
+    }
   }
   const createdIds = await insertScheduleSessions({
     ...context,
@@ -218,11 +287,17 @@ export async function saveScheduleMonth(
     sourceName: `schedule ${month}`,
   });
 
-  return {
+  const saved = {
     createdIds,
-    deletedIds: [...input.deleteIds],
+    deletedIds: [
+      ...cancelled,
+      ...input.deleteIds.filter((id) => alreadyCancelled.has(id)),
+    ],
     existingIds,
-    ok: true,
-    updatedIds: updates.map((update) => update.id),
+    updatedIds,
   };
+  if (conflicts.length > 0) {
+    return { conflict: true, ok: false, rowErrors: conflicts, saved };
+  }
+  return { ...saved, ok: true };
 }

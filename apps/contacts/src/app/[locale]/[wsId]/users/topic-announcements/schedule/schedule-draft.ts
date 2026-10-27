@@ -30,6 +30,8 @@ export interface DraftSession {
   room: string;
   sessionDate: string;
   startTime: string;
+  /** Saved status; new rows are `draft`. */
+  status: string;
   /** GVCN as saved; null for a new row (the server assigns it). */
   teacherWorkspaceUserId: string | null;
 }
@@ -54,6 +56,7 @@ export function draftFromSessions(
     id: session.id,
     key: session.id,
     locked: LOCKED_STATUSES.has(session.status),
+    status: session.status,
     place: session.place ?? '',
     room: session.room ?? '',
     sessionDate: session.sessionDate,
@@ -75,6 +78,7 @@ export function newDraftSession(
     id: null,
     key,
     locked: false,
+    status: 'draft',
     place: previous?.place ?? '',
     room: previous?.room ?? '',
     sessionDate,

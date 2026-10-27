@@ -21,6 +21,14 @@ export function formatScheduleDay(date: string, locale: string) {
   }).format(utcDate(date));
 }
 
+/** Full date for accessible names, e.g. "Tuesday, November 10, 2026". */
+export function formatScheduleLongDay(date: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
+    dateStyle: 'full',
+    timeZone: 'UTC',
+  }).format(utcDate(date));
+}
+
 /** Short weekday names, Monday first. */
 export function scheduleWeekdayHeaders(locale: string) {
   const format = new Intl.DateTimeFormat(locale, {

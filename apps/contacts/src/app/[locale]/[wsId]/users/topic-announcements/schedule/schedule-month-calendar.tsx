@@ -4,7 +4,11 @@ import { cn } from '@tuturuuu/utils/format';
 import { useLocale, useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import type { DraftSession } from './schedule-draft';
-import { scheduleMonthCells, scheduleWeekdayHeaders } from './schedule-format';
+import {
+  formatScheduleLongDay,
+  scheduleMonthCells,
+  scheduleWeekdayHeaders,
+} from './schedule-format';
 
 /**
  * Month overview: sessions per day, with a marker on days that still need a
@@ -55,7 +59,8 @@ export function ScheduleMonthCalendar({
             <button
               aria-label={t('schedule_calendar_day', {
                 count: entry?.total ?? 0,
-                date,
+                date: formatScheduleLongDay(date, locale),
+                missing: entry?.missing ?? 0,
               })}
               aria-pressed={selected}
               className={cn(

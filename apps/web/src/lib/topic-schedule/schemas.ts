@@ -68,6 +68,8 @@ export type ScheduleSaveInput = z.infer<typeof ScheduleSaveSchema>;
 export const ScheduleCloneSchema = z
   .object({
     dryRun: z.boolean(),
+    /** Re-create sessions that were removed from the target month. */
+    includeRemoved: z.boolean().optional(),
     sourceMonth: MonthSchema,
     targetMonth: MonthSchema,
   })

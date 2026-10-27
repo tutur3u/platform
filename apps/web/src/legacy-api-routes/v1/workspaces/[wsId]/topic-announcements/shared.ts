@@ -290,22 +290,18 @@ export async function validateTopicAnnouncementAttachmentDraftObjects({
 export const TopicAnnouncementImportSchema = z.object({
   rows: z
     .array(
-      // Coarse request-size caps only; the create length limits are applied
-      // per row (normalizeImportRows) so one long cell is a row error, not a
-      // rejected import.
       z.object({
-        classLabel: z.string().trim().max(5000).optional(),
+        classLabel: z.string().trim().optional(),
         contactEmail: EMAIL_SCHEMA.optional(),
-        contactName: z.string().trim().max(5000).optional(),
-        dayLabel: z.string().trim().max(5000).optional(),
-        endTime: z.string().trim().max(200).optional(),
-        place: z.string().trim().max(5000).optional(),
-        room: z.string().trim().max(5000).optional(),
+        contactName: z.string().trim().optional(),
+        dayLabel: z.string().trim().optional(),
+        endTime: z.string().trim().optional(),
+        place: z.string().trim().optional(),
+        room: z.string().trim().optional(),
         sessionDate: z.string().date().optional(),
-        startTime: z.string().trim().max(200).optional(),
-        teacherWorkspaceUserId: z.string().uuid().optional(),
-        title: z.string().trim().max(5000).optional(),
-        topic: z.string().trim().max(100_000).optional(),
+        startTime: z.string().trim().optional(),
+        title: z.string().trim().optional(),
+        topic: z.string().trim().optional(),
       })
     )
     .min(1)

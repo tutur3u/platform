@@ -43,6 +43,10 @@ export function useScheduleEditor(wsId: string, month: string) {
   const [serverErrors, setServerErrors] = useState<
     Map<string, TopicScheduleRowError['code'][]>
   >(new Map());
+  // Rows the user has edited, and whether a save was attempted: problems are
+  // shown only for those, not on a row that was just added.
+  const [touched, setTouched] = useState<ReadonlySet<string>>(new Set());
+  const [showAllIssues, setShowAllIssues] = useState(false);
   const sequence = useRef(0);
   const rows = edited ?? original;
 
@@ -86,10 +90,14 @@ export function useScheduleEditor(wsId: string, month: string) {
   );
 
   const updateRow = useCallback(
-    (key: string, patch: Partial<DraftSession>) =>
+    (key: string, patch: Partial<DraftSession>) => {
+      setTouched((current) =>
+        current.has(key) ? current : new Set([...current, key])
+      );
       update((current) =>
         current.map((row) => (row.key === key ? { ...row, ...patch } : row))
-      ),
+      );
+    },
     [update]
   );
 
@@ -99,9 +107,11 @@ export function useScheduleEditor(wsId: string, month: string) {
     [update]
   );
 
-  const discard = useCallback(() => {
+  const reset = useCallback(() => {
     setEdited(null);
     setServerErrors(new Map());
+    setTouched(new Set());
+    setShowAllIssues(false);
   }, []);
 
   const saveMutation = useMutation({
@@ -111,9 +121,19 @@ export function useScheduleEditor(wsId: string, month: string) {
         return await saveTopicScheduleMonth(wsId, payload);
       } catch (error) {
         if (error instanceof TopicScheduleSaveRejectedError) {
-          setServerErrors(
-            mapServerErrors(error.rowErrors, sessionKeys, original)
-          );
+          if (error.conflict) {
+            // Part of the save went through and some sessions entered
+            // delivery meanwhile: reload the month as it now is.
+            await queryClient.invalidateQueries({
+              queryKey: topicScheduleQueryKey(wsId, month),
+            });
+            reset();
+          } else {
+            setShowAllIssues(true);
+            setServerErrors(
+              mapServerErrors(error.rowErrors, sessionKeys, original)
+            );
+          }
         }
         throw error;
       }
@@ -122,15 +142,21 @@ export function useScheduleEditor(wsId: string, month: string) {
       await queryClient.invalidateQueries({
         queryKey: topicScheduleQueryKey(wsId, month),
       });
-      setEdited(null);
+      reset();
     },
   });
+
+  /** Whether a row's problems should be shown yet. */
+  const shouldShowIssues = useCallback(
+    (key: string) => showAllIssues || touched.has(key),
+    [showAllIssues, touched]
+  );
 
   return {
     addSession,
     changeCount,
     data: query.data,
-    discard,
+    discard: reset,
     isDirty: changeCount > 0,
     issues,
     original,
@@ -140,6 +166,8 @@ export function useScheduleEditor(wsId: string, month: string) {
     rows,
     save: saveMutation,
     serverErrors,
+    shouldShowIssues,
+    showAllIssues: () => setShowAllIssues(true),
     updateRow,
   };
 }

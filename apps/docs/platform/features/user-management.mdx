@@ -274,29 +274,42 @@ module unchanged.
   GVNN (if the contact is still active), re-resolves the GVCN, and never copies
   topics or attachments. The supervisor sees a preview before committing.
 - **Idempotency.** A class cannot have two sessions with the same date and
-  start time. Re-cloning, committing a stale preview or retrying a save skips
-  slots that already exist instead of duplicating them. Two clones committed at
-  exactly the same moment are not protected by a database unique key.
-- **Edit and remove.** Every field can be edited per session, and saves are
-  validated as a whole before anything is written. Removing a session cancels
-  it (`status = 'cancelled'`) like any announcement, keeping its topic and
-  audit trail. Sessions already queued, processing or sent are read-only.
-  Leaving the month, the page or the tab with unsaved changes asks for
-  confirmation.
-- **Import API.** The CSV import keeps its pre-feature behavior with the flag
-  off. With it on, rows may carry `teacherWorkspaceUserId` (workspace
-  membership checked before writing) and rows without a topic become drafts.
-  Over-length cells are row errors with either setting.
+  start time. Re-cloning or committing a stale preview skips slots that already
+  hold a session. A slot whose session was removed this month is skipped too
+  ("removed earlier") unless the supervisor chooses to re-add removed sessions.
+  Retrying a save never duplicates: a new row whose slot already holds an
+  identical session is reported as already saved, while a different session in
+  that slot is a per-row conflict; removing an already removed session
+  succeeds. Two clones committed at exactly the same moment are not protected
+  by a database unique key.
+- **Edit and remove.** Start time, minutes, class, GVNN, room and campus are
+  edited inline; "Move to date..." in a row's menu moves a session within the
+  month. Saves are validated as a whole before anything is written, and each
+  write re-checks that its session is still a draft, failed or skipped one: a
+  session that was queued or started sending in the meantime is left unchanged
+  and the save returns `409` with the sessions that did save, after which the
+  editor reloads the month. Removing a session cancels it
+  (`status = 'cancelled'`) like any announcement, keeping its topic and audit
+  trail. Queued, sending and sent sessions are read-only and labelled as such.
+- **Unsaved changes.** Changing month, following an in-app link, browser Back or
+  Forward, and closing or reloading the tab all ask before discarding edits.
+  Problems on a row are shown once it has been edited or a save was attempted.
+- **Import.** The CSV import is unchanged by this feature; the schedule editor
+  does not use it.
 
 Regression coverage: `packages/utils/src/topic-schedule.test.ts` (nth-weekday
-mapping across month lengths, the 5th-weekday edge, no holiday skipping, GVCN
-choice), `apps/web/src/lib/topic-schedule/schedule-routes.test.ts` (GVCN
-auto-assign, idempotent save and re-clone, cross-workspace denial, locking),
-`apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/topic-announcements/supervisor-flow-flag-off.test.ts`
-(flag off: no schedule routes, nothing written),
+mapping across month lengths, the 5th-weekday edge, week boundaries, no holiday
+skipping, GVCN choice), `apps/web/src/lib/topic-schedule/clone-plan.test.ts`
+(in-run dedupe, removed classes, removed slots),
+`apps/web/src/lib/topic-schedule/schedule-routes.test.ts` (GVCN auto-assign,
+idempotent save and re-clone, cross-workspace denial, locking),
+`apps/web/src/lib/topic-schedule/schedule-safety.test.ts` (flag off: no
+routes and nothing written; edit and delete locks including mid-save
+conflicts, retried removal, slot conflicts, archived classes and GVNN, same
+class teacher kept, clone revival of removed sessions),
 `apps/contacts/src/app/[locale]/[wsId]/users/topic-announcements/schedule/schedule-draft.test.ts`
-(save payload, validation, missing-GVNN reminder),
-`apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/topic-announcements/import/import-rows.test.ts`.
+and `schedule-month-editor.test.tsx` (save payload, validation shown after
+touch, missing-GVNN reminder, Back guard, delivery-state labels).
 
 ### Teacher-assigned topics
 

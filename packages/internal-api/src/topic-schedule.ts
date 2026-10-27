@@ -87,17 +87,29 @@ export interface TopicScheduleCloneItem {
   sourceDate: string;
   sourceId: string;
   startTime: string;
-  status: 'create' | 'exists' | 'unplaced';
+  /** `removed`: the target slot's session was removed; skipped by default. */
+  status: 'create' | 'exists' | 'removed' | 'unplaced';
   targetDate: string | null;
   teacherWorkspaceUserId: string | null;
   weekday: number;
   weekdayOccurrence: number;
 }
 
-/** Thrown when a save is rejected; nothing was written. */
+/**
+ * Thrown when a save is rejected. With `conflict` false nothing was written;
+ * with `conflict` true some sessions entered delivery mid-save and were left
+ * unchanged while the rest were saved, so the month should be reloaded.
+ */
 export class TopicScheduleSaveRejectedError extends InternalApiError {
-  constructor(public readonly rowErrors: TopicScheduleRowError[]) {
-    super('Invalid sessions', 400, 'SCHEDULE_ROWS_INVALID');
+  constructor(
+    public readonly rowErrors: TopicScheduleRowError[],
+    public readonly conflict: boolean
+  ) {
+    super(
+      conflict ? 'Some sessions changed while saving' : 'Invalid sessions',
+      conflict ? 409 : 400,
+      conflict ? 'SCHEDULE_CONFLICT' : 'SCHEDULE_ROWS_INVALID'
+    );
     this.name = 'TopicScheduleSaveRejectedError';
   }
 }
@@ -134,13 +146,16 @@ export async function saveTopicScheduleMonth(
     method: 'PUT',
   });
 
-  if (response.status === 400) {
+  if (response.status === 400 || response.status === 409) {
     const data = (await response
       .clone()
       .json()
       .catch(() => null)) as { rowErrors?: TopicScheduleRowError[] } | null;
     if (data?.rowErrors?.length) {
-      throw new TopicScheduleSaveRejectedError(data.rowErrors);
+      throw new TopicScheduleSaveRejectedError(
+        data.rowErrors,
+        response.status === 409
+      );
     }
   }
   if (!response.ok) throw await parseInternalApiError(response);
@@ -150,7 +165,12 @@ export async function saveTopicScheduleMonth(
 
 export async function cloneTopicScheduleMonth(
   workspaceId: string,
-  payload: { dryRun: boolean; sourceMonth: string; targetMonth: string },
+  payload: {
+    dryRun: boolean;
+    includeRemoved?: boolean;
+    sourceMonth: string;
+    targetMonth: string;
+  },
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);

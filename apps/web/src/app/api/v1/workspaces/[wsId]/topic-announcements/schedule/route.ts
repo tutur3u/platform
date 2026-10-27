@@ -67,9 +67,17 @@ export async function PUT(request: Request, { params }: Params) {
     parsed.data
   );
   if (!result.ok) {
+    // 409: some sessions entered delivery mid-save and were left unchanged;
+    // the rest of the save went through (`saved`). 400: nothing was written.
     return NextResponse.json(
-      { message: 'Invalid sessions', rowErrors: result.rowErrors },
-      { status: 400 }
+      result.conflict
+        ? {
+            message: 'Some sessions changed while saving',
+            rowErrors: result.rowErrors,
+            saved: result.saved,
+          }
+        : { message: 'Invalid sessions', rowErrors: result.rowErrors },
+      { status: result.conflict ? 409 : 400 }
     );
   }
 

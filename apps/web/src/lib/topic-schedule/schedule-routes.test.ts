@@ -1,5 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createFakeSupabase } from '@/legacy-api-routes/v1/workspaces/[wsId]/topic-announcements/topic-announcement-fake-supabase.test-helper';
+import {
+  createScheduleFixture,
+  FOREIGN_CONTACT,
+  FOREIGN_GROUP,
+  FOREIGN_SESSION,
+  GVNN,
+  GVNN_2,
+  K1,
+  K2,
+  K3,
+  SUPERVISOR,
+  T1,
+  T2,
+  T3,
+  WS,
+} from './schedule-fixture.test-helper';
 
 const mocks = vi.hoisted(() => ({
   admin: null as any,
@@ -34,21 +49,6 @@ vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({
   WorkspaceStorageError: class extends Error {},
 }));
 
-const SUPERVISOR = '00000000-0000-4000-8000-0000000000a9';
-const WS = '00000000-0000-4000-8000-000000000001';
-const OTHER_WS = '00000000-0000-4000-8000-000000000002';
-const K1 = '00000000-0000-4000-8000-0000000000c1'; // one teacher
-const K2 = '00000000-0000-4000-8000-0000000000c2'; // two teachers
-const K3 = '00000000-0000-4000-8000-0000000000c3'; // no teacher
-const FOREIGN_GROUP = '00000000-0000-4000-8000-0000000000c9';
-const T1 = '00000000-0000-4000-8000-0000000000b1';
-const T2 = '00000000-0000-4000-8000-0000000000b2';
-const T3 = '00000000-0000-4000-8000-0000000000b3';
-const GVNN = '00000000-0000-4000-8000-0000000000d1';
-const GVNN_2 = '00000000-0000-4000-8000-0000000000d2';
-const FOREIGN_CONTACT = '00000000-0000-4000-8000-0000000000d9';
-const FOREIGN_SESSION = '00000000-0000-4000-8000-0000000000e9';
-
 const { GET, PUT } = await import(
   '@/app/api/v1/workspaces/[wsId]/topic-announcements/schedule/route'
 );
@@ -57,87 +57,6 @@ const { POST: CLONE } = await import(
 );
 
 const params = { params: Promise.resolve({ wsId: WS }) };
-
-function member(groupId: string, userId: string, createdAt: string, ws = WS) {
-  return {
-    created_at: createdAt,
-    group_id: groupId,
-    role: 'TEACHER',
-    user_id: userId,
-    workspace_user_groups: { ws_id: ws },
-  };
-}
-
-function fixture() {
-  return createFakeSupabase({
-    topic_announcement_batches: [],
-    topic_announcement_contacts: [
-      {
-        archived: false,
-        email: 'a@x.test',
-        id: GVNN,
-        name: 'Anna',
-        tags: ['GVNN'],
-        ws_id: WS,
-      },
-      {
-        archived: false,
-        email: 'b@x.test',
-        id: GVNN_2,
-        name: 'Ben',
-        tags: ['gvnn'],
-        ws_id: WS,
-      },
-      {
-        archived: false,
-        email: 'p@x.test',
-        id: 'parent',
-        name: 'Parent',
-        tags: [],
-        ws_id: WS,
-      },
-      {
-        archived: false,
-        email: 'f@x.test',
-        id: FOREIGN_CONTACT,
-        name: 'F',
-        tags: ['GVNN'],
-        ws_id: OTHER_WS,
-      },
-    ],
-    topic_announcement_recipients: [],
-    topic_announcements: [
-      {
-        group_id: FOREIGN_GROUP,
-        id: FOREIGN_SESSION,
-        session_date: '2026-11-03',
-        source_type: 'schedule',
-        start_time: '17:30:00',
-        status: 'draft',
-        ws_id: OTHER_WS,
-      },
-    ],
-    workspace_user_groups: [
-      { archived: false, id: K1, name: 'K1', ws_id: WS },
-      { archived: false, id: K2, name: 'K2', ws_id: WS },
-      { archived: null, id: K3, name: 'K3', ws_id: WS },
-      { archived: false, id: FOREIGN_GROUP, name: 'X', ws_id: OTHER_WS },
-    ],
-    workspace_user_groups_users: [
-      member(K1, T1, '2026-09-01T00:00:00Z'),
-      member(K2, T2, '2026-09-05T00:00:00Z'),
-      member(K2, T3, '2026-09-02T00:00:00Z'),
-      { ...member(K3, T1, '2026-09-01T00:00:00Z'), role: 'STUDENT' },
-      member(FOREIGN_GROUP, T1, '2026-09-01T00:00:00Z', OTHER_WS),
-    ],
-    workspace_users: [
-      { full_name: 'Thu', id: T1, ws_id: WS },
-      { full_name: 'Lan', id: T2, ws_id: WS },
-      { full_name: 'Mai', id: T3, ws_id: WS },
-    ],
-    workspaces: [{ id: WS, personal: false, timezone: 'Asia/Ho_Chi_Minh' }],
-  });
-}
 
 function request(body: unknown, method: string) {
   return new Request('http://localhost', {
@@ -180,7 +99,7 @@ const rows = () =>
   );
 
 beforeEach(() => {
-  mocks.admin = fixture();
+  mocks.admin = createScheduleFixture();
   mocks.granted = new Set(['manage_users']);
 });
 

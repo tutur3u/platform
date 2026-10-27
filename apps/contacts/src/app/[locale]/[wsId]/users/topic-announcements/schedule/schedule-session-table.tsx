@@ -11,7 +11,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import { TopicAnnouncementsEmptyState } from '../topic-announcements-empty-state';
 import type { DraftIssue, DraftSession } from './schedule-draft';
-import { formatScheduleDay } from './schedule-format';
+import { formatScheduleDay, formatScheduleLongDay } from './schedule-format';
 import { SCHEDULE_GRID_COLUMNS } from './schedule-layout';
 import { ScheduleSessionRow } from './schedule-session-row';
 
@@ -29,6 +29,8 @@ interface Props {
   originalByKey: ReadonlyMap<string, DraftSession>;
   rows: readonly DraftSession[];
   serverErrors: ReadonlyMap<string, TopicScheduleRowError['code'][]>;
+  /** Whether a row's problems are shown yet (touched or save attempted). */
+  showIssues: (key: string) => boolean;
 }
 
 export function ScheduleSessionTable(props: Props) {
@@ -48,11 +50,16 @@ export function ScheduleSessionTable(props: Props) {
       .sort(([left], [right]) => left.localeCompare(right))
       .map(([date, items]) => ({
         date,
-        items: [...items].sort((left, right) =>
-          left.startTime.localeCompare(right.startTime)
-        ),
+        // Saved start time, new rows last: typing a time never moves rows.
+        items: [...items].sort((left, right) => {
+          const leftStart = props.originalByKey.get(left.key)?.startTime;
+          const rightStart = props.originalByKey.get(right.key)?.startTime;
+          if (leftStart && rightStart)
+            return leftStart.localeCompare(rightStart);
+          return leftStart ? -1 : rightStart ? 1 : 0;
+        }),
       }));
-  }, [rows]);
+  }, [props.originalByKey, rows]);
 
   if (groups.length === 0) {
     return (
@@ -80,7 +87,6 @@ export function ScheduleSessionTable(props: Props) {
         <div
           className={`${SCHEDULE_GRID_COLUMNS} border-b bg-muted/40 px-3 py-2 font-medium text-muted-foreground text-xs`}
         >
-          <span>{t('schedule_column_date')}</span>
           <span>{t('schedule_column_start')}</span>
           <span>{t('schedule_column_minutes')}</span>
           <span>{t('schedule_column_class')}</span>
@@ -90,51 +96,53 @@ export function ScheduleSessionTable(props: Props) {
           <span>{t('schedule_column_campus')}</span>
           <span className="sr-only">{t('schedule_column_actions')}</span>
         </div>
-        {groups.map((group) => (
-          <section
-            aria-label={group.date}
-            id={`schedule-day-${group.date}`}
-            key={group.date}
-          >
-            <div className="flex items-center justify-between border-b bg-muted/20 px-3 py-1.5">
-              <span className="font-semibold text-sm">
-                <span className="capitalize">
+        {groups.map((group) => {
+          const day = formatScheduleLongDay(group.date, locale);
+          return (
+            <section
+              aria-label={day}
+              id={`schedule-day-${group.date}`}
+              key={group.date}
+            >
+              <div className="flex items-center justify-between border-b bg-muted/20 px-3 py-1.5">
+                <span className="font-semibold text-sm capitalize">
                   {formatScheduleDay(group.date, locale)}
                 </span>
-                <span className="ml-2 font-normal text-muted-foreground text-xs">
-                  {t('schedule_session_count', { count: group.items.length })}
-                </span>
-              </span>
-              <Button
-                aria-label={t('schedule_add_on_day', { date: group.date })}
-                className="h-7 gap-1 px-2 text-xs"
-                onClick={() => onAdd(group.date)}
-                size="sm"
-                variant="ghost"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                {t('schedule_add_short')}
-              </Button>
-            </div>
-            {group.items.map((row) => (
-              <ScheduleSessionRow
-                classById={props.classById}
-                classes={props.classes}
-                contacts={props.contacts}
-                highlighted={props.highlightKey === row.key}
-                issues={props.issues.get(row.key) ?? []}
-                key={row.key}
-                month={month}
-                onDuplicate={props.onDuplicate}
-                onRemove={props.onRemove}
-                onUpdate={props.onUpdate}
-                original={props.originalByKey.get(row.key)}
-                row={row}
-                serverErrors={props.serverErrors.get(row.key) ?? []}
-              />
-            ))}
-          </section>
-        ))}
+                <Button
+                  aria-label={t('schedule_add_on_day', { date: day })}
+                  className="h-7 gap-1 px-2 text-xs"
+                  onClick={() => onAdd(group.date)}
+                  size="sm"
+                  variant="ghost"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  {t('schedule_add_short')}
+                </Button>
+              </div>
+              {group.items.map((row) => (
+                <ScheduleSessionRow
+                  classById={props.classById}
+                  classes={props.classes}
+                  contacts={props.contacts}
+                  highlighted={props.highlightKey === row.key}
+                  issues={
+                    props.showIssues(row.key)
+                      ? (props.issues.get(row.key) ?? [])
+                      : []
+                  }
+                  key={row.key}
+                  month={month}
+                  onDuplicate={props.onDuplicate}
+                  onRemove={props.onRemove}
+                  onUpdate={props.onUpdate}
+                  original={props.originalByKey.get(row.key)}
+                  row={row}
+                  serverErrors={props.serverErrors.get(row.key) ?? []}
+                />
+              ))}
+            </section>
+          );
+        })}
       </div>
     </div>
   );

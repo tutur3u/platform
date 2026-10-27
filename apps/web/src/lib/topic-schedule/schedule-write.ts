@@ -1,6 +1,9 @@
 import type { TopicAnnouncementsSupabaseClient } from '@tuturuuu/users-core/routes/topic-announcements';
 import { computeTopicAnnouncementSendDueAt } from '@tuturuuu/utils/topic-announcement-deadline';
-import { SCHEDULE_SOURCE_TYPE } from './schedule-data';
+import {
+  SCHEDULE_EDITABLE_STATUSES,
+  SCHEDULE_SOURCE_TYPE,
+} from './schedule-data';
 
 /** Session fields written by the editor and the month clone. */
 export interface ScheduleSessionWrite {
@@ -120,7 +123,12 @@ export async function insertScheduleSessions({
   return sessions.flatMap((_, index) => idByRow.get(index + 1) ?? []);
 }
 
-/** Updates one draft session and replaces its GVNN when it changed. */
+/**
+ * Updates one session and replaces its GVNN when it changed. The write is
+ * conditional on the session still being editable, so a session that was
+ * queued or started sending after the save was validated is left untouched
+ * (returns false) instead of being rewritten or losing its recipient.
+ */
 export async function updateScheduleSession({
   actorUserId,
   gvnnChanged,
@@ -137,8 +145,8 @@ export async function updateScheduleSession({
   sbAdmin: TopicAnnouncementsSupabaseClient;
   session: ScheduleSessionWrite;
   timeZone: string | null;
-}) {
-  const { error } = await sbAdmin
+}): Promise<boolean> {
+  const { data, error } = await sbAdmin
     .from('topic_announcements')
     .update({
       ...sessionColumns(session, timeZone),
@@ -147,27 +155,32 @@ export async function updateScheduleSession({
     })
     .eq('id', id)
     .eq('ws_id', normalizedWsId)
-    .eq('source_type', SCHEDULE_SOURCE_TYPE);
+    .eq('source_type', SCHEDULE_SOURCE_TYPE)
+    .in('status', [...SCHEDULE_EDITABLE_STATUSES])
+    .select('id');
   if (error) throw error;
-  if (!gvnnChanged) return;
+  if ((data ?? []).length === 0) return false;
+  if (!gvnnChanged) return true;
 
   const { error: deleteError } = await sbAdmin
     .from('topic_announcement_recipients')
     .delete()
     .eq('announcement_id', id);
   if (deleteError) throw deleteError;
-  if (!session.gvnnContactId) return;
+  if (!session.gvnnContactId) return true;
 
   const { error: insertError } = await sbAdmin
     .from('topic_announcement_recipients')
     .insert({ announcement_id: id, contact_id: session.gvnnContactId });
   if (insertError) throw insertError;
+  return true;
 }
 
 /**
  * Removes sessions the way announcements are removed elsewhere: they become
  * `cancelled`, keeping any topic, attachments and audit trail, and drop out
- * of the schedule, its slot checks and later payroll counts.
+ * of the schedule and later payroll counts. Only still-editable sessions are
+ * cancelled; returns the ids that were.
  */
 export async function cancelScheduleSessions({
   actorUserId,
@@ -179,9 +192,9 @@ export async function cancelScheduleSessions({
   ids: readonly string[];
   normalizedWsId: string;
   sbAdmin: TopicAnnouncementsSupabaseClient;
-}) {
-  if (ids.length === 0) return;
-  const { error } = await sbAdmin
+}): Promise<string[]> {
+  if (ids.length === 0) return [];
+  const { data, error } = await sbAdmin
     .from('topic_announcements')
     .update({
       last_error: null,
@@ -191,6 +204,9 @@ export async function cancelScheduleSessions({
     })
     .eq('ws_id', normalizedWsId)
     .eq('source_type', SCHEDULE_SOURCE_TYPE)
-    .in('id', [...ids]);
+    .in('status', [...SCHEDULE_EDITABLE_STATUSES])
+    .in('id', [...ids])
+    .select('id');
   if (error) throw error;
+  return (data ?? []).map((row: { id: string }) => row.id);
 }

@@ -1,7 +1,6 @@
 'use client';
 
 import { CheckCircle2, UserX } from '@tuturuuu/icons';
-import { Badge } from '@tuturuuu/ui/badge';
 import { useLocale, useTranslations } from 'next-intl';
 import type { MissingGvnnReminder } from './missing-gvnn';
 import { formatScheduleDay } from './schedule-format';
@@ -22,7 +21,7 @@ export function ScheduleMissingGvnnPanel({
       aria-labelledby="schedule-missing-gvnn-title"
       className="rounded-lg border p-3"
     >
-      <div className="mb-2 flex items-center justify-between gap-2">
+      <div className="mb-2">
         <h3
           className="flex items-center gap-2 font-semibold text-sm"
           id="schedule-missing-gvnn-title"
@@ -30,7 +29,6 @@ export function ScheduleMissingGvnnPanel({
           <UserX className="h-4 w-4 text-dynamic-orange" />
           {t('schedule_needs_gvnn')}
         </h3>
-        <Badge variant="secondary">{reminder.total}</Badge>
       </div>
 
       {reminder.total === 0 ? (

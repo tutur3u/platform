@@ -159,17 +159,78 @@ describe('ScheduleMonthEditor', () => {
     });
   });
 
-  it('blocks saving a new session until it has a class', async () => {
+  it("shows a new row's problems only after a save attempt", async () => {
     renderEditor();
     await screen.findByText('schedule_session_count:3');
     fireEvent.click(
       screen.getByRole('button', { name: 'schedule_add_session' })
     );
+    expect(screen.queryByText('schedule_issue_missing_class')).toBeNull();
+    fireEvent.click(
+      screen.getByRole('button', { name: 'schedule_save_changes:1' })
+    );
     expect(screen.getByText('schedule_issue_missing_class')).toBeTruthy();
-    const save = screen.getByRole('button', {
-      name: 'schedule_save_changes:1',
+    expect(mocks.saveTopicScheduleMonth).not.toHaveBeenCalled();
+  });
+
+  it('marks an invalid field and links it to its message', async () => {
+    renderEditor();
+    await screen.findByText('schedule_session_count:3');
+    const minutes = screen.getAllByLabelText('schedule_column_minutes')[0]!;
+    fireEvent.change(minutes, { target: { value: '0' } });
+    expect(minutes.getAttribute('aria-invalid')).toBe('true');
+    const message = document.getElementById(
+      minutes.getAttribute('aria-describedby') ?? ''
+    );
+    expect(message?.textContent).toContain('schedule_issue_invalid_duration');
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('asks before going Back with unsaved changes', async () => {
+    renderEditor();
+    await screen.findByText('schedule_session_count:3');
+    fireEvent.change(screen.getAllByLabelText('schedule_column_room')[0]!, {
+      target: { value: '202' },
     });
-    expect((save as HTMLButtonElement).disabled).toBe(true);
+    // What a browser does on Back: land on the previous entry, then popstate.
+    window.history.replaceState(null, '', window.location.href);
+    window.dispatchEvent(new PopStateEvent('popstate', { state: null }));
+    expect(
+      await screen.findByRole('button', { name: 'schedule_discard_confirm' })
+    ).toBeTruthy();
+  });
+
+  it('keeps one guard entry while editing, even with an unstable router', async () => {
+    const back = vi.spyOn(window.history, 'back');
+    const push = vi.spyOn(window.history, 'pushState');
+    renderEditor();
+    await screen.findByText('schedule_session_count:3');
+    const room = screen.getAllByLabelText('schedule_column_room')[0]!;
+    fireEvent.change(room, { target: { value: '202' } });
+    fireEvent.change(room, { target: { value: '203' } });
+    expect(push).toHaveBeenCalledTimes(1);
+    expect(back).not.toHaveBeenCalled();
+    expect(
+      screen.queryByRole('button', { name: 'schedule_discard_confirm' })
+    ).toBeNull();
+    back.mockRestore();
+    push.mockRestore();
+  });
+
+  it('labels sessions in delivery by their state', async () => {
+    mocks.getTopicScheduleMonth.mockResolvedValueOnce({
+      data: {
+        classes: [],
+        gvnnContacts: [],
+        sessions: [
+          session({ id: 'q', status: 'queued' }),
+          session({ id: 'p', startTime: '18:00', status: 'processing' }),
+        ],
+      },
+    });
+    renderEditor();
+    expect(await screen.findByText('schedule_locked_queued')).toBeTruthy();
+    expect(screen.getByText('schedule_locked_sending')).toBeTruthy();
   });
 
   it('asks before leaving the month with unsaved changes', async () => {
@@ -232,6 +293,7 @@ describe('ScheduleMonthEditor', () => {
     await waitFor(() =>
       expect(mocks.cloneTopicScheduleMonth).toHaveBeenCalledWith('ws-1', {
         dryRun: false,
+        includeRemoved: false,
         sourceMonth: '2026-10',
         targetMonth: '2026-11',
       })

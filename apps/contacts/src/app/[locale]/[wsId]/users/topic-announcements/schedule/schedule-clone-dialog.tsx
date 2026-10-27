@@ -7,6 +7,7 @@ import {
   type TopicScheduleCloneItem,
 } from '@tuturuuu/internal-api/topic-announcements';
 import { Button } from '@tuturuuu/ui/button';
+import { Checkbox } from '@tuturuuu/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -15,9 +16,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
+import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
 import { shiftScheduleMonth } from '@tuturuuu/utils/topic-schedule';
 import { useLocale, useTranslations } from 'next-intl';
+import { useState } from 'react';
 import { ScheduleClonePreview } from './schedule-clone-preview';
 import { formatScheduleMonth } from './schedule-format';
 import { topicScheduleQueryKey } from './use-schedule-editor';
@@ -54,13 +57,22 @@ export function ScheduleCloneDialog({
     queryKey: previewKey,
     staleTime: 0,
   });
+  // Sessions removed from this month are skipped unless re-added explicitly.
+  const [includeRemoved, setIncludeRemoved] = useState(false);
   const handleOpenChange = (next: boolean) => {
-    if (!next) queryClient.removeQueries({ queryKey: previewKey });
+    if (!next) {
+      queryClient.removeQueries({ queryKey: previewKey });
+      setIncludeRemoved(false);
+    }
     onOpenChange(next);
   };
   const commit = useMutation({
     mutationFn: () =>
-      cloneTopicScheduleMonth(wsId, { ...request, dryRun: false }),
+      cloneTopicScheduleMonth(wsId, {
+        ...request,
+        dryRun: false,
+        includeRemoved,
+      }),
     onError: () => toast.error(t('schedule_clone_failed')),
     onSuccess: async ({ data }) => {
       toast.success(t('schedule_cloned', { count: data.createdIds.length }));
@@ -72,7 +84,10 @@ export function ScheduleCloneDialog({
   });
 
   const items: TopicScheduleCloneItem[] = preview.data?.data.items ?? [];
-  const createCount = items.filter((item) => item.status === 'create').length;
+  const removedCount = items.filter((item) => item.status === 'removed').length;
+  const createCount =
+    items.filter((item) => item.status === 'create').length +
+    (includeRemoved ? removedCount : 0);
 
   return (
     <Dialog onOpenChange={handleOpenChange} open={open}>
@@ -110,7 +125,23 @@ export function ScheduleCloneDialog({
             </Button>
           </div>
         ) : (
-          <ScheduleClonePreview items={items} />
+          <div className="space-y-3">
+            <ScheduleClonePreview
+              includeRemoved={includeRemoved}
+              items={items}
+            />
+            {removedCount > 0 ? (
+              <Label className="flex items-center gap-2 font-normal text-sm">
+                <Checkbox
+                  checked={includeRemoved}
+                  onCheckedChange={(checked) =>
+                    setIncludeRemoved(checked === true)
+                  }
+                />
+                {t('schedule_clone_include_removed', { count: removedCount })}
+              </Label>
+            ) : null}
+          </div>
         )}
 
         <DialogFooter>

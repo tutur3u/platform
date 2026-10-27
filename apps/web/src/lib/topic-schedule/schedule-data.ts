@@ -13,17 +13,25 @@ import {
   scheduleMonthRange,
   TOPIC_SCHEDULE_GVCN_ROLE,
 } from '@tuturuuu/utils/topic-schedule';
+import { chunkArray } from '@/lib/post-email-queue/utils';
 
 /** `source_type` of announcements created by the schedule editor. */
 export const SCHEDULE_SOURCE_TYPE = 'schedule';
 /** Upper bound on sessions read for one month. */
 export const SCHEDULE_MONTH_SESSION_LIMIT = 1000;
-/** Sessions in these states have been handed to delivery; not editable. */
-export const SCHEDULE_LOCKED_STATUSES = new Set([
-  'processing',
-  'queued',
-  'sent',
-]);
+/**
+ * Statuses the editor may change. Queued, processing and sent sessions are in
+ * delivery; cancelled ones were removed. Writes re-check this in the database.
+ */
+export const SCHEDULE_EDITABLE_STATUSES = [
+  'draft',
+  'failed',
+  'skipped',
+] as const;
+
+export function isScheduleSessionEditable(status: string) {
+  return (SCHEDULE_EDITABLE_STATUSES as readonly string[]).includes(status);
+}
 
 const SESSION_COLUMNS =
   'id,group_id,class_label,session_date,start_time,end_time,room,place,status,topic,sent_at,teacher_workspace_user_id';
@@ -123,18 +131,24 @@ export async function loadScheduleSessions({
   month,
   normalizedWsId,
   sbAdmin,
+  status = 'active',
 }: {
   month: string;
   normalizedWsId: string;
   sbAdmin: TopicAnnouncementsSupabaseClient;
+  /** `active` (default): everything but cancelled; `cancelled`: only those. */
+  status?: 'active' | 'cancelled';
 }): Promise<ScheduleSession[]> {
   const { end, start } = scheduleMonthRange(month);
-  const { data: rows, error } = await sbAdmin
+  const query = sbAdmin
     .from('topic_announcements')
     .select(SESSION_COLUMNS)
     .eq('ws_id', normalizedWsId)
-    .eq('source_type', SCHEDULE_SOURCE_TYPE)
-    .neq('status', 'cancelled')
+    .eq('source_type', SCHEDULE_SOURCE_TYPE);
+  const { data: rows, error } = await (status === 'cancelled'
+    ? query.eq('status', 'cancelled')
+    : query.neq('status', 'cancelled')
+  )
     .gte('session_date', start)
     .lte('session_date', end)
     .order('session_date')
@@ -144,11 +158,12 @@ export async function loadScheduleSessions({
 
   const ids = (rows ?? []).map((row: Row) => row.id);
   const gvnnByAnnouncement = new Map<string, string>();
-  if (ids.length > 0) {
+  // Chunked so a full month never builds one oversized `in()` filter.
+  for (const chunk of chunkArray(ids)) {
     const { data: recipients, error: recipientsError } = await sbAdmin
       .from('topic_announcement_recipients')
       .select('announcement_id,contact_id')
-      .in('announcement_id', ids);
+      .in('announcement_id', chunk);
     if (recipientsError) throw recipientsError;
     for (const recipient of recipients ?? []) {
       gvnnByAnnouncement.set(recipient.announcement_id, recipient.contact_id);

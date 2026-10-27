@@ -9,9 +9,8 @@ import type {
 import { Combobox } from '@tuturuuu/ui/custom/combobox';
 import { Input } from '@tuturuuu/ui/input';
 import { cn } from '@tuturuuu/utils/format';
-import { scheduleMonthRange } from '@tuturuuu/utils/topic-schedule';
 import { useTranslations } from 'next-intl';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   type DraftIssue,
   type DraftSession,
@@ -21,15 +20,22 @@ import {
 } from './schedule-draft';
 import { ScheduleGvcnCell } from './schedule-gvcn-cell';
 import { SCHEDULE_GRID_COLUMNS, scheduleRowDomId } from './schedule-layout';
+import { ScheduleMoveDateDialog } from './schedule-move-date-dialog';
 import { ScheduleRowActions } from './schedule-row-actions';
 
 const NO_GVNN = '__none__';
+const START_ISSUES = new Set<DraftIssue>([
+  'duplicate_slot',
+  'ends_after_midnight',
+  'invalid_time',
+]);
 
 interface Props {
   classById: ReadonlyMap<string, TopicScheduleClass>;
   classes: readonly TopicScheduleClass[];
   contacts: readonly TopicScheduleGvnnContact[];
   highlighted: boolean;
+  /** Blocking problems, already limited to touched rows or a save attempt. */
   issues: readonly DraftIssue[];
   month: string;
   onDuplicate: (row: DraftSession, days: number) => void;
@@ -38,6 +44,12 @@ interface Props {
   original: DraftSession | undefined;
   row: DraftSession;
   serverErrors: readonly TopicScheduleRowError['code'][];
+}
+
+function lockedLabelKey(status: string) {
+  if (status === 'queued') return 'schedule_locked_queued' as const;
+  if (status === 'processing') return 'schedule_locked_sending' as const;
+  return 'schedule_locked_sent' as const;
 }
 
 export function ScheduleSessionRow({
@@ -55,11 +67,25 @@ export function ScheduleSessionRow({
   serverErrors,
 }: Props) {
   const t = useTranslations('ws-topic-announcements');
-  const range = scheduleMonthRange(month);
+  const [moving, setMoving] = useState(false);
   const set = (patch: Partial<DraftSession>) => onUpdate(row.key, patch);
   const endTime = draftEndTime(row);
   const changed = isDraftRowChanged(row, original);
   const disabled = row.locked;
+  const messageId = `${scheduleRowDomId(row.key)}-issues`;
+  const messages = [
+    ...issues.map((issue) => t(`schedule_issue_${issue}`)),
+    ...serverErrors.map((code) => t(`schedule_server_${code}`)),
+  ];
+  const invalid = (field: 'minutes' | 'start') =>
+    field === 'start'
+      ? issues.some((issue) => START_ISSUES.has(issue)) ||
+        serverErrors.includes('duplicate_slot')
+      : issues.includes('invalid_duration');
+  const describe = (field: 'minutes' | 'start') =>
+    invalid(field)
+      ? { 'aria-describedby': messageId, 'aria-invalid': true }
+      : {};
 
   const classOptions = useMemo(
     () => classes.map((item) => ({ label: item.name, value: item.id })),
@@ -78,10 +104,6 @@ export function ScheduleSessionRow({
     ],
     [contacts, row.gvnnContactId, t]
   );
-  const messages = [
-    ...issues.map((issue) => t(`schedule_issue_${issue}`)),
-    ...serverErrors.map((code) => t(`schedule_server_${code}`)),
-  ];
 
   return (
     <div
@@ -100,26 +122,15 @@ export function ScheduleSessionRow({
     >
       <div className={SCHEDULE_GRID_COLUMNS}>
         <Input
-          aria-label={t('schedule_column_date')}
-          className="h-8 px-2 text-sm"
+          aria-label={t('schedule_column_start')}
+          className="h-8 px-2 text-sm tabular-nums"
           disabled={disabled}
-          max={range.end}
-          min={range.start}
-          onChange={(event) => set({ sessionDate: event.target.value })}
-          type="date"
-          value={row.sessionDate}
+          onChange={(event) => set({ startTime: event.target.value })}
+          step={300}
+          type="time"
+          value={row.startTime}
+          {...describe('start')}
         />
-        <div>
-          <Input
-            aria-label={t('schedule_column_start')}
-            className="h-8 px-2 text-sm tabular-nums"
-            disabled={disabled}
-            onChange={(event) => set({ startTime: event.target.value })}
-            step={300}
-            type="time"
-            value={row.startTime}
-          />
-        </div>
         <div className="space-y-0.5">
           <Input
             aria-label={t('schedule_column_minutes')}
@@ -136,6 +147,7 @@ export function ScheduleSessionRow({
             step={5}
             type="number"
             value={row.durationMinutes || ''}
+            {...describe('minutes')}
           />
           <p className="text-[11px] text-muted-foreground tabular-nums">
             {endTime ? t('schedule_ends_at', { time: endTime }) : '--'}
@@ -143,7 +155,10 @@ export function ScheduleSessionRow({
         </div>
         <Combobox
           ariaLabel={t('schedule_column_class')}
-          className="h-8 w-full"
+          className={cn(
+            'h-8 w-full',
+            issues.includes('missing_class') && 'border-dynamic-red/60'
+          )}
           disabled={disabled}
           emptyText={t('schedule_class_empty')}
           onChange={(value) => set({ groupId: (value as string) || null })}
@@ -160,7 +175,7 @@ export function ScheduleSessionRow({
           ariaLabel={t('schedule_column_gvnn')}
           className={cn(
             'h-8 w-full',
-            !row.gvnnContactId && 'border-dynamic-orange/50 text-dynamic-orange'
+            !row.gvnnContactId && 'border-dynamic-orange/50'
           )}
           disabled={disabled}
           emptyText={t('schedule_gvnn_empty')}
@@ -193,10 +208,10 @@ export function ScheduleSessionRow({
         />
         <div className="flex items-center justify-end gap-0.5">
           {row.locked ? (
-            <Lock
-              aria-label={t('schedule_locked')}
-              className="h-4 w-4 text-muted-foreground"
-            />
+            <span className="flex items-center gap-1 text-muted-foreground text-xs">
+              <Lock aria-hidden className="h-3.5 w-3.5" />
+              {t(lockedLabelKey(row.status))}
+            </span>
           ) : row.hasTopic ? (
             <FileText
               aria-label={t('schedule_has_topic')}
@@ -207,15 +222,27 @@ export function ScheduleSessionRow({
             <ScheduleRowActions
               hasTopic={row.hasTopic}
               onDuplicate={(days) => onDuplicate(row, days)}
+              onMove={() => setMoving(true)}
               onRemove={() => onRemove(row.key)}
             />
           )}
         </div>
       </div>
       {messages.length > 0 ? (
-        <p className="mt-1 text-dynamic-red text-xs" role="alert">
+        <p className="mt-1 text-dynamic-red text-xs" id={messageId}>
           {messages.join(' · ')}
         </p>
+      ) : null}
+      {moving ? (
+        <ScheduleMoveDateDialog
+          date={row.sessionDate}
+          month={month}
+          onClose={() => setMoving(false)}
+          onMove={(sessionDate) => {
+            set({ sessionDate });
+            setMoving(false);
+          }}
+        />
       ) : null}
     </div>
   );
