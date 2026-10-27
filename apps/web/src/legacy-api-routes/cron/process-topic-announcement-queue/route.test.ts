@@ -139,6 +139,7 @@ describe('process-topic-announcement-queue cron route', () => {
   });
 
   it('claims a queued announcement before sending it', async () => {
+    queueResult({ data: null, error: null }); // stale schedule sweep
     queueResult({ data: null, error: null });
     queueResult({
       data: [
@@ -178,7 +179,7 @@ describe('process-topic-announcement-queue cron route', () => {
       ],
     });
 
-    const claimQuery = mocks.queries[2];
+    const claimQuery = mocks.queries[3];
     expect(claimQuery?.calls).toContainEqual([
       'update',
       [
@@ -201,6 +202,7 @@ describe('process-topic-announcement-queue cron route', () => {
   });
 
   it('fails a schedule session the queue finds without recipients', async () => {
+    queueResult({ data: null, error: null }); // stale schedule sweep
     queueResult({ data: null, error: null });
     queueResult({
       data: [
@@ -232,7 +234,7 @@ describe('process-topic-announcement-queue cron route', () => {
 
     // Scoped to schedule sessions still processing: other rows keep the
     // pre-existing behaviour.
-    const failQuery = mocks.queries[3];
+    const failQuery = mocks.queries[4];
     expect(failQuery?.table).toBe('topic_announcements');
     expect(failQuery?.calls).toContainEqual([
       'update',
@@ -246,16 +248,15 @@ describe('process-topic-announcement-queue cron route', () => {
   });
 
   it('fails schedule sessions left processing by a dead Send now', async () => {
-    queueResult({ data: null, error: null });
-    queueResult({ data: [], error: null });
-
+    queueResult({ data: null, error: null }); // stale schedule sweep
     const { GET } = await import('./route');
     const response = await GET(
       cronRequest({ authorization: 'Bearer cron-secret' })
     );
     expect(response.status).toBe(200);
 
-    const sweep = mocks.queries.at(-1);
+    // The sweep is the first query of every run.
+    const sweep = mocks.queries[0];
     expect(sweep?.table).toBe('topic_announcements');
     expect(sweep?.calls).toEqual([
       ['update', [{ last_error: 'PROCESSING_TIMEOUT', status: 'failed' }]],
@@ -266,7 +267,37 @@ describe('process-topic-announcement-queue cron route', () => {
     ]);
   });
 
+  it('still sweeps stale schedule claims when the stale reset fails', async () => {
+    queueResult({ data: null, error: null }); // stale schedule sweep
+    queueResult({ data: null, error: { message: 'reset failed' } });
+
+    const { GET } = await import('./route');
+    const response = await GET(
+      cronRequest({ authorization: 'Bearer cron-secret' })
+    );
+    expect(response.status).toBe(500);
+    expect(mocks.queries[0]?.calls[0]).toEqual([
+      'update',
+      [{ last_error: 'PROCESSING_TIMEOUT', status: 'failed' }],
+    ]);
+    expect(mocks.sendTopicAnnouncement).not.toHaveBeenCalled();
+  });
+
+  it('keeps processing the queue when the sweep itself fails', async () => {
+    queueResult({ data: null, error: { message: 'sweep failed' } });
+    queueResult({ data: null, error: null });
+    queueResult({ data: [], error: null });
+
+    const { GET } = await import('./route');
+    const response = await GET(
+      cronRequest({ authorization: 'Bearer cron-secret' })
+    );
+    expect(response.status).toBe(200);
+    expect(mocks.queries).toHaveLength(3);
+  });
+
   it('does not send a row already claimed by another cron invocation', async () => {
+    queueResult({ data: null, error: null }); // stale schedule sweep
     queueResult({ data: null, error: null });
     queueResult({
       data: [

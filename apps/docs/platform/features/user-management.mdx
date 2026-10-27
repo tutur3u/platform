@@ -335,8 +335,10 @@ module unchanged.
   retried every 15 minutes. The claim matches the exact status it read and is
   released to that status. If a Send now never finishes (the function was
   stopped, or the release failed), the queue marks the session `failed` with
-  `PROCESSING_TIMEOUT` after 15 minutes: editable, and never sent
-  automatically. Other announcements send exactly as before.
+  `PROCESSING_TIMEOUT` 15–30 minutes later (the queue runs every 15 minutes
+  and reclaims claims older than 15): editable, and never sent automatically.
+  This sweep runs first in every queue run, so it still happens when the rest
+  of the run fails. Other announcements send exactly as before.
 - **Save & notify teachers.** Saving the schedule or committing a clone can
   notify each GVCN of the sessions that request assigned to them: new
   sessions, or a class change that gives a session another teacher. The
