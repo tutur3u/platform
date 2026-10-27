@@ -836,6 +836,10 @@ async function getPermissionsImpl({
           )
           .eq('user_id', userId)
           .eq('workspace_roles.ws_id', resolvedWorkspaceId)
+          .eq(
+            'workspace_roles.workspace_role_permissions.ws_id',
+            resolvedWorkspaceId
+          )
           .eq('workspace_roles.workspace_role_permissions.enabled', true)
       : Promise.resolve({ data: [], error: null });
 
@@ -858,14 +862,6 @@ async function getPermissionsImpl({
 
   if (permissionsError) return null;
   if (defaultError) return null;
-
-  // if (DEV_MODE) {
-  //   console.log('--------------------');
-  //   console.log('Is creator', isCreator);
-  //   console.log('Workspace permissions', permissionsData);
-  //   console.log('Default permissions', defaultData);
-  //   console.log('--------------------');
-  // }
 
   const permissions = isCreator
     ? rolePermissions({
