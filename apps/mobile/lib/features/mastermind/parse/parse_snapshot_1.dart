@@ -15,7 +15,6 @@ Observability parseObservability(JsonReader r) {
       'fleet',
       'coordination',
       'delivery',
-      'security',
     ],
     [
       'quota_series',
@@ -30,7 +29,6 @@ Observability parseObservability(JsonReader r) {
       'fleet',
       'coordination',
       'delivery',
-      'security',
     ],
   );
   return Observability(
@@ -52,7 +50,6 @@ Observability parseObservability(JsonReader r) {
     fleet: parseFleet(r.field('fleet')),
     coordination: parseCoordination(r.field('coordination')),
     delivery: parseDelivery(r.field('delivery')),
-    security: parseSecurity(r.field('security')),
   );
 }
 

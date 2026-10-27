@@ -66,9 +66,7 @@ EnvironmentRow parseEnvironmentRow(JsonReader r) {
 QuotaPoint parseQuotaPoint(JsonReader r) {
   r.keys(['instance', 't', 'pct'], ['instance', 't', 'pct']);
   return QuotaPoint(
-    instance: r
-        .field('instance')
-        .string(maxLength: 60, pattern: RegExp(r'^[A-Za-z0-9_]+$')),
+    instance: r.field('instance').stringIn(PoolLabels.quota),
     t: r.field('t').utcTimestamp(),
     pct: r.field('pct').nullable((v) => v.number(min: 0, max: 100)),
   );
@@ -80,9 +78,7 @@ QuotaForecast parseQuotaForecast(JsonReader r) {
     ['instance', 'projected_empty_at', 'resets_at'],
   );
   return QuotaForecast(
-    instance: r
-        .field('instance')
-        .string(maxLength: 60, pattern: RegExp(r'^[A-Za-z0-9_]+$')),
+    instance: r.field('instance').stringIn(PoolLabels.quota),
     projectedEmptyAt: r
         .field('projected_empty_at')
         .nullable((v) => v.utcTimestamp()),

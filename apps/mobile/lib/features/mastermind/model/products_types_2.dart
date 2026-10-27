@@ -35,15 +35,11 @@ final class Staff {
     required this.role,
     required this.title,
     required this.state,
-    required this.lastActive,
     required this.model,
-    required this.runsToday,
   });
 
   final String role;
   final String title;
   final LaneState state;
-  final DateTime? lastActive;
   final String model;
-  final int runsToday;
 }

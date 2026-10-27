@@ -30,11 +30,11 @@ MastermindSnapshot parseRootSnapshot(JsonReader r) {
     ],
   );
   return MastermindSnapshot(
-    schemaVersion: r.field('schema_version').string(constant: '1.3'),
+    schemaVersion: r.field('schema_version').string(constant: '1.4'),
     generatedAt: r.field('generated_at').utcTimestamp(),
     now: parseSnapshotNow(r.field('now')),
-    lanes: r.field('lanes').list(parseLaneItem),
-    backlog: r.field('backlog').list(parseBacklogEntry),
+    lanes: parseLaneItems(r.field('lanes')),
+    backlog: parseBacklogEntries(r.field('backlog')),
     products: parseSnapshotProducts(r.field('products')),
     environments: r.field('environments').list(parseEnvironmentRow),
     decisions: r.field('decisions').list(parseDecision, maxItems: 1000),
@@ -54,7 +54,7 @@ SnapshotNow parseSnapshotNow(JsonReader r) {
     latestSeq: r.field('latest_seq').integer(min: 0),
     cursorGap: r.field('cursor_gap').boolean(),
     digest: r.field('digest').list(parseSnapshotEvent),
-    needsYou: r.field('needs_you').list(parseOpenNeedsYou),
+    needsYou: parseOpenNeedsYouItems(r.field('needs_you')),
   );
 }
 

@@ -36,9 +36,7 @@ ProductQuota parseProductQuota(JsonReader r) {
     ['instance', 'remaining_percent', 'age_seconds'],
   );
   return ProductQuota(
-    instance: r
-        .field('instance')
-        .string(maxLength: 60, pattern: RegExp(r'^[A-Za-z0-9_]+$')),
+    instance: r.field('instance').stringIn(PoolLabels.quota),
     remainingPercent: r
         .field('remaining_percent')
         .nullable((v) => v.number(min: 0, max: 100)),

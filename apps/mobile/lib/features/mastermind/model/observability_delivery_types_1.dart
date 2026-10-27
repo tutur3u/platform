@@ -25,19 +25,3 @@ final class OpenPrPoint {
   final Product product;
   final int? count;
 }
-
-final class Security {
-  Security({
-    required this.coverage,
-    required List<SecurityRegisterEntry> register,
-    required List<SecurityPoint> series,
-    required List<TimeToFixPoint> timeToFix,
-  }) : register = List.unmodifiable(register),
-       series = List.unmodifiable(series),
-       timeToFix = List.unmodifiable(timeToFix);
-
-  final Coverage coverage;
-  final List<SecurityRegisterEntry> register;
-  final List<SecurityPoint> series;
-  final List<TimeToFixPoint> timeToFix;
-}

@@ -3,9 +3,12 @@ import 'package:flutter/foundation.dart';
 import 'package:mobile/features/mastermind/cubit/mastermind_snapshot_state.dart';
 import 'package:mobile/features/mastermind/data/mastermind_snapshot_source.dart';
 import 'package:mobile/features/mastermind/data/mastermind_snapshot_store.dart';
+import 'package:mobile/features/mastermind/model/event_feed.dart';
 import 'package:mobile/features/mastermind/parse/snapshot_parser.dart';
 import 'package:mobile/features/mastermind/presentation/snapshot_age.dart';
 
+export 'package:mobile/features/mastermind/model/event_feed.dart'
+    show EventFeedAppend, EventFeedResync, EventFeedStep;
 export 'mastermind_snapshot_state.dart';
 
 typedef SnapshotParser = Future<ParseOutcome> Function(Uint8List bytes);
@@ -165,6 +168,20 @@ final class MastermindSnapshotCubit extends Cubit<MastermindSnapshotState> {
             }
         }
     }
+  }
+
+  /// Applies one events page against the cursor implied by the held snapshot.
+  /// A gap (the first schema 1.4 feed, retention, or an older export) adopts
+  /// the fresh snapshot instead of applying events, which resets the cursor to
+  /// that snapshot's `latest_seq`.
+  Future<EventFeedStep> applyEventFeed(MastermindEventFeed feed) async {
+    final current = state;
+    final cursor = current is MastermindSnapshotReady
+        ? current.snapshot.now.latestSeq
+        : 0;
+    final step = reconcileEventFeed(cursor: cursor, feed: feed);
+    if (step is EventFeedResync) await refresh();
+    return step;
   }
 
   /// Invalidates in-flight reads; erasure follows any admitted write.

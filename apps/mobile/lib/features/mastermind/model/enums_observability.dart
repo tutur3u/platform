@@ -46,34 +46,6 @@ enum FailureCause {
   final String wireName;
 }
 
-enum Severity {
-  critical('critical'),
-  high('high'),
-  medium('medium'),
-  low('low'),
-  unknown('unknown');
-
-  const Severity(this.wireName);
-  final String wireName;
-}
-
-enum RegisterStatus {
-  open('OPEN'),
-  assigned('ASSIGNED'),
-  inFix('IN-FIX'),
-  inReview('IN-REVIEW'),
-  approved('APPROVED'),
-  revise('REVISE'),
-  staging('STAGING'),
-  shipped('SHIPPED'),
-  verified('VERIFIED'),
-  refuted('REFUTED'),
-  acceptedRisk('ACCEPTED-RISK');
-
-  const RegisterStatus(this.wireName);
-  final String wireName;
-}
-
 enum SourceName {
   inbox('inbox'),
   openItems('open_items'),
@@ -115,8 +87,7 @@ enum ItemState {
 enum ItemKind {
   decision('decision'),
   action('action'),
-  fyi('fyi'),
-  security('security');
+  fyi('fyi');
 
   const ItemKind(this.wireName);
   final String wireName;

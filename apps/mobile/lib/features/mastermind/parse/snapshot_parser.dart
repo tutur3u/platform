@@ -8,7 +8,6 @@ part 'parse_items_0.dart';
 part 'parse_items_1.dart';
 part 'parse_observability_delivery_0.dart';
 part 'parse_observability_delivery_1.dart';
-part 'parse_observability_delivery_2.dart';
 part 'parse_observability_fleet_0.dart';
 part 'parse_observability_fleet_1.dart';
 part 'parse_observability_fleet_2.dart';
@@ -65,7 +64,7 @@ ParseOutcome parseMastermindSnapshot(Uint8List bytes) {
   try {
     final reader = JsonReader(decoded);
     final root = reader.object();
-    if (root.containsKey('schema_version') && root['schema_version'] != '1.3') {
+    if (root.containsKey('schema_version') && root['schema_version'] != '1.4') {
       return const ParseOutcome.rejected(RejectionReason.unsupportedVersion);
     }
     return ParseOutcome.accepted(parseRootSnapshot(reader));

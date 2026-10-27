@@ -124,33 +124,12 @@ enum Coverage {
   final String wireName;
 }
 
-enum AccountDisplayName {
-  soc('soc'),
-  hehe('hehe'),
-  skora('skora'),
-  mira('mira'),
-  kv('kv'),
-  aiedu('aiedu'),
-  skoraCodex('skora-codex');
-
-  const AccountDisplayName(this.wireName);
-  final String wireName;
-}
-
 enum Pacing {
   short('SHORT'),
   ok('OK'),
   surplus('SURPLUS');
 
   const Pacing(this.wireName);
-  final String wireName;
-}
-
-enum CreditDisplayName {
-  skoraCodex('skora-codex'),
-  aiedu('aiedu');
-
-  const CreditDisplayName(this.wireName);
   final String wireName;
 }
 

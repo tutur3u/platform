@@ -37,9 +37,6 @@ void main() {
     'unknown lane key': (r) => map(list(r['lanes']).first)['unexpected'] = true,
     'missing required key': (r) => r.remove('sources'),
     'unknown product': (r) => map(list(r['backlog']).first)['product'] = 'new',
-    'unknown register status': (r) =>
-        map(list(observability(r, 'security')['register']).first)['status'] =
-            'NEW',
     'unknown pacing': (r) => map(usageRow(r)['session'])['pacing'] = 'NEW',
     'timestamp Z': (r) => r['generated_at'] = '2026-01-31T17:30:00Z',
     'impossible calendar day': (r) =>
@@ -66,29 +63,14 @@ void main() {
         map(list(map(r['now'])['needs_you']).first)['version_hash'] = 'x' * 64,
     'bad sha': (r) => map(list(r['environments']).first)['sha'] = 'not-hex',
     'bad actor': (r) => map(list(r['decisions']).first)['by'] = 'someone',
+    'account handle': (r) => usageRow(r)['instance'] = 'claude_mira',
     'account punctuation': (r) => usageRow(r)['instance'] = 'fixture-account',
-    'account too long': (r) => usageRow(r)['instance'] = 'x' * 61,
     'account empty': (r) => usageRow(r)['instance'] = '',
     'security extra body': (r) => r['lanes'] = [
-      {
-        'title': 'Security issue',
-        'severity': 'high',
-        'state': 'open',
-        'body': 'not allowed',
-      },
+      {'title': 'Security issue', 'state': 'open', 'body': 'not allowed'},
     ],
     'security wrong title': (r) => r['lanes'] = [
-      {'title': 'Private issue', 'severity': 'high', 'state': 'open'},
-    ],
-    'security decision extra why': (r) => r['decisions'] = [
-      {
-        'id': 'd_000000000001',
-        'at': '2026-01-31T17:30:00+00:00',
-        'title': 'Security fix',
-        'area': 'security',
-        'risk': 'low',
-        'why': 'not allowed',
-      },
+      {'title': 'Private issue', 'state': 'open'},
     ],
     'needs you not open': (r) =>
         map(list(map(r['now'])['needs_you']).first)['state'] = 'answered',
@@ -107,7 +89,7 @@ void main() {
 
   test('unsupported schema version is a distinct category', () {
     final root = MastermindSnapshotBuilder.defaults().toJson()
-      ..['schema_version'] = '1.4';
+      ..['schema_version'] = '1.3';
     expect(
       (parseMastermindSnapshot(encode(root)) as ParseRejected).reason,
       RejectionReason.unsupportedVersion,
@@ -160,7 +142,7 @@ void main() {
     expect(snapshot.lanes.last, isA<SecurityItem>());
     expect(snapshot.now.needsYou.last, isA<SecurityItem>());
     expect(snapshot.backlog.last, isA<SecurityItem>());
-    expect(snapshot.decisions.last, isA<SecurityDecision>());
+    expect(snapshot.decisions.every((d) => d is JournalDecision), isTrue);
   });
   test('builder coverage gaps downsampling stale cursor and empty stream', () {
     final b = MastermindSnapshotBuilder.defaults()
@@ -180,25 +162,6 @@ void main() {
     expect(snapshot.observability.coordination.messages, isEmpty);
     final points = snapshot.observability.usage.series;
     expect(points[2].t.difference(points[1].t), const Duration(minutes: 105));
-  });
-  test('account ids accept format-only aliases throughout the contract', () {
-    final root = MastermindSnapshotBuilder.defaults().toJson();
-    void replace(Object? value) {
-      if (value is Map<String, dynamic>) {
-        for (final key in value.keys.toList()) {
-          if (key == 'instance') {
-            value[key] = 'SYNTHETIC_987';
-          } else {
-            replace(value[key]);
-          }
-        }
-      } else if (value is List) {
-        value.forEach(replace);
-      }
-    }
-
-    replace(root);
-    expect(parseMastermindSnapshot(encode(root)), isA<ParseAccepted>());
   });
   test('deterministic malformed byte fuzz never escapes the parser', () {
     final random = Random(23);

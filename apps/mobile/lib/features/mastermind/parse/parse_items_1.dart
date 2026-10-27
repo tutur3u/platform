@@ -53,20 +53,3 @@ JournalDecision parseJournalDecision(JsonReader r) {
         : null,
   );
 }
-
-SecurityDecision parseSecurityDecision(JsonReader r) {
-  r.keys(
-    ['id', 'at', 'title', 'area', 'risk', 'product'],
-    ['id', 'at', 'title', 'area', 'risk'],
-  );
-  return SecurityDecision(
-    id: r.field('id').string(pattern: RegExp(r'^d_[a-f0-9]{12}$')),
-    at: r.field('at').utcTimestamp(),
-    title: r.field('title').string(constant: 'Security fix'),
-    area: r.field('area').string(constant: 'security'),
-    risk: r.field('risk').enumOf<Risk>(Risk.values, (v) => v.wireName),
-    product: r.has('product')
-        ? r.field('product').enumOf<Product>(Product.values, (v) => v.wireName)
-        : null,
-  );
-}

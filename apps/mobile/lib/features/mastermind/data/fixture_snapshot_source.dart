@@ -33,7 +33,7 @@ final class FixtureSnapshotSource implements MastermindSnapshotSource {
     final snapshot = jsonDecode(utf8.decode(bytes)) as Map<String, dynamic>;
     final now = snapshot['now'] as Map<String, dynamic>;
     final events = {
-      'schema_version': '1.3',
+      'schema_version': '1.4',
       'after_seq': now['after_seq'],
       'latest_seq': now['latest_seq'],
       'cursor_gap': now['cursor_gap'],

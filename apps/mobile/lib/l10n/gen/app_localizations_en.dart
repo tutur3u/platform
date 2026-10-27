@@ -12279,9 +12279,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindAreaRelease => 'Release';
 
   @override
-  String get mastermindAreaSecurity => 'Security';
-
-  @override
   String get mastermindAreaTasks => 'Tasks';
 
   @override
@@ -12328,9 +12325,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindChartCreditsVsTarget => 'Burn vs target';
-
-  @override
-  String get mastermindChartCriticalTrend => 'Critical findings';
 
   @override
   String get mastermindChartDeliveryModes => 'Delivery modes';
@@ -12381,9 +12375,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindChartQueueDepth => 'Queue depth';
 
   @override
-  String get mastermindChartSecurityRegister => 'Findings by severity and status';
-
-  @override
   String get mastermindChartSessionPerSuccess => 'Session use per success';
 
   @override
@@ -12391,9 +12382,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindChartShips => 'Production releases';
-
-  @override
-  String get mastermindChartTimeToFix => 'Time to fix';
 
   @override
   String get mastermindChartTokensPerSuccess => 'Tokens per success';
@@ -12444,9 +12432,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindColumnSender => 'Sender';
 
   @override
-  String get mastermindColumnSeverity => 'Severity';
-
-  @override
   String get mastermindColumnStatus => 'Status';
 
   @override
@@ -12472,9 +12457,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindCoverageStale => 'Stale';
-
-  @override
-  String get mastermindCriticalOpenFact => 'Critical open';
 
   @override
   String get mastermindDataSourcesAction => 'Data sources';
@@ -12649,9 +12631,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindLanesLabel => 'Lanes';
 
   @override
-  String get mastermindLastActive => 'Last active';
-
-  @override
   String mastermindLiveFor(String duration) {
     return 'live $duration';
   }
@@ -12762,9 +12741,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindRoleFilter => 'Role';
 
   @override
-  String get mastermindRunsToday => 'Runs today';
-
-  @override
   String get mastermindSampleData => 'Sample data';
 
   @override
@@ -12791,13 +12767,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindScopeModels => 'Models';
 
   @override
-  String get mastermindScopeSecurity => 'Security';
-
-  @override
   String get mastermindScopeUsage => 'Usage';
-
-  @override
-  String get mastermindSecurityFix => 'Security fix';
 
   @override
   String get mastermindSecurityIssue => 'Security issue';
@@ -12821,12 +12791,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindSeriesCompleted => 'Completed';
-
-  @override
-  String get mastermindSeriesCriticalClosed => 'Critical closed';
-
-  @override
-  String get mastermindSeriesCriticalOpen => 'Critical open';
 
   @override
   String get mastermindSeriesIdle => 'idle';
@@ -12872,21 +12836,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindSession => 'Session';
-
-  @override
-  String get mastermindSeverityCritical => 'Critical';
-
-  @override
-  String get mastermindSeverityHigh => 'High';
-
-  @override
-  String get mastermindSeverityLow => 'Low';
-
-  @override
-  String get mastermindSeverityMedium => 'Medium';
-
-  @override
-  String get mastermindSeverityUnknown => 'Unknown';
 
   @override
   String get mastermindShowAll => 'Show all';
@@ -12997,9 +12946,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get mastermindSummaryClosedIsState => 'Closed counts show register state, not new fixes.';
-
-  @override
   String get mastermindSummaryCreditsNeedsTarget => 'Needs a daily target.';
 
   @override
@@ -13028,15 +12974,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get mastermindSummaryNoFixDates => 'Unavailable: the register has no fix dates.';
-
-  @override
   String get mastermindSummaryNoMessageStream => 'Unavailable: no message stream recorded.';
-
-  @override
-  String mastermindSummarySecurityCell(String product, String severity, String status, int count) {
-    return '$product, $severity, $status: $count';
-  }
 
   @override
   String mastermindSummaryShipsLowerBound(int count) {

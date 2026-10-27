@@ -23197,12 +23197,6 @@ abstract class AppLocalizations {
   /// **'Release'**
   String get mastermindAreaRelease;
 
-  /// No description provided for @mastermindAreaSecurity.
-  ///
-  /// In en, this message translates to:
-  /// **'Security'**
-  String get mastermindAreaSecurity;
-
   /// No description provided for @mastermindAreaTasks.
   ///
   /// In en, this message translates to:
@@ -23298,12 +23292,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Burn vs target'**
   String get mastermindChartCreditsVsTarget;
-
-  /// No description provided for @mastermindChartCriticalTrend.
-  ///
-  /// In en, this message translates to:
-  /// **'Critical findings'**
-  String get mastermindChartCriticalTrend;
 
   /// No description provided for @mastermindChartDeliveryModes.
   ///
@@ -23401,12 +23389,6 @@ abstract class AppLocalizations {
   /// **'Queue depth'**
   String get mastermindChartQueueDepth;
 
-  /// No description provided for @mastermindChartSecurityRegister.
-  ///
-  /// In en, this message translates to:
-  /// **'Findings by severity and status'**
-  String get mastermindChartSecurityRegister;
-
   /// No description provided for @mastermindChartSessionPerSuccess.
   ///
   /// In en, this message translates to:
@@ -23424,12 +23406,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Production releases'**
   String get mastermindChartShips;
-
-  /// No description provided for @mastermindChartTimeToFix.
-  ///
-  /// In en, this message translates to:
-  /// **'Time to fix'**
-  String get mastermindChartTimeToFix;
 
   /// No description provided for @mastermindChartTokensPerSuccess.
   ///
@@ -23527,12 +23503,6 @@ abstract class AppLocalizations {
   /// **'Sender'**
   String get mastermindColumnSender;
 
-  /// No description provided for @mastermindColumnSeverity.
-  ///
-  /// In en, this message translates to:
-  /// **'Severity'**
-  String get mastermindColumnSeverity;
-
   /// No description provided for @mastermindColumnStatus.
   ///
   /// In en, this message translates to:
@@ -23586,12 +23556,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Stale'**
   String get mastermindCoverageStale;
-
-  /// No description provided for @mastermindCriticalOpenFact.
-  ///
-  /// In en, this message translates to:
-  /// **'Critical open'**
-  String get mastermindCriticalOpenFact;
 
   /// No description provided for @mastermindDataSourcesAction.
   ///
@@ -23929,12 +23893,6 @@ abstract class AppLocalizations {
   /// **'Lanes'**
   String get mastermindLanesLabel;
 
-  /// No description provided for @mastermindLastActive.
-  ///
-  /// In en, this message translates to:
-  /// **'Last active'**
-  String get mastermindLastActive;
-
   /// No description provided for @mastermindLiveFor.
   ///
   /// In en, this message translates to:
@@ -24127,12 +24085,6 @@ abstract class AppLocalizations {
   /// **'Role'**
   String get mastermindRoleFilter;
 
-  /// No description provided for @mastermindRunsToday.
-  ///
-  /// In en, this message translates to:
-  /// **'Runs today'**
-  String get mastermindRunsToday;
-
   /// No description provided for @mastermindSampleData.
   ///
   /// In en, this message translates to:
@@ -24169,23 +24121,11 @@ abstract class AppLocalizations {
   /// **'Models'**
   String get mastermindScopeModels;
 
-  /// No description provided for @mastermindScopeSecurity.
-  ///
-  /// In en, this message translates to:
-  /// **'Security'**
-  String get mastermindScopeSecurity;
-
   /// No description provided for @mastermindScopeUsage.
   ///
   /// In en, this message translates to:
   /// **'Usage'**
   String get mastermindScopeUsage;
-
-  /// No description provided for @mastermindSecurityFix.
-  ///
-  /// In en, this message translates to:
-  /// **'Security fix'**
-  String get mastermindSecurityFix;
 
   /// No description provided for @mastermindSecurityIssue.
   ///
@@ -24228,18 +24168,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Completed'**
   String get mastermindSeriesCompleted;
-
-  /// No description provided for @mastermindSeriesCriticalClosed.
-  ///
-  /// In en, this message translates to:
-  /// **'Critical closed'**
-  String get mastermindSeriesCriticalClosed;
-
-  /// No description provided for @mastermindSeriesCriticalOpen.
-  ///
-  /// In en, this message translates to:
-  /// **'Critical open'**
-  String get mastermindSeriesCriticalOpen;
 
   /// No description provided for @mastermindSeriesIdle.
   ///
@@ -24330,36 +24258,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Session'**
   String get mastermindSession;
-
-  /// No description provided for @mastermindSeverityCritical.
-  ///
-  /// In en, this message translates to:
-  /// **'Critical'**
-  String get mastermindSeverityCritical;
-
-  /// No description provided for @mastermindSeverityHigh.
-  ///
-  /// In en, this message translates to:
-  /// **'High'**
-  String get mastermindSeverityHigh;
-
-  /// No description provided for @mastermindSeverityLow.
-  ///
-  /// In en, this message translates to:
-  /// **'Low'**
-  String get mastermindSeverityLow;
-
-  /// No description provided for @mastermindSeverityMedium.
-  ///
-  /// In en, this message translates to:
-  /// **'Medium'**
-  String get mastermindSeverityMedium;
-
-  /// No description provided for @mastermindSeverityUnknown.
-  ///
-  /// In en, this message translates to:
-  /// **'Unknown'**
-  String get mastermindSeverityUnknown;
 
   /// No description provided for @mastermindShowAll.
   ///
@@ -24565,12 +24463,6 @@ abstract class AppLocalizations {
   /// **'at least {count}'**
   String mastermindSummaryAtLeast(int count);
 
-  /// No description provided for @mastermindSummaryClosedIsState.
-  ///
-  /// In en, this message translates to:
-  /// **'Closed counts show register state, not new fixes.'**
-  String get mastermindSummaryClosedIsState;
-
   /// No description provided for @mastermindSummaryCreditsNeedsTarget.
   ///
   /// In en, this message translates to:
@@ -24619,23 +24511,11 @@ abstract class AppLocalizations {
   /// **'{model} ran most: {count} runs, {success} success.'**
   String mastermindSummaryModelsTop(String model, int count, String success);
 
-  /// No description provided for @mastermindSummaryNoFixDates.
-  ///
-  /// In en, this message translates to:
-  /// **'Unavailable: the register has no fix dates.'**
-  String get mastermindSummaryNoFixDates;
-
   /// No description provided for @mastermindSummaryNoMessageStream.
   ///
   /// In en, this message translates to:
   /// **'Unavailable: no message stream recorded.'**
   String get mastermindSummaryNoMessageStream;
-
-  /// No description provided for @mastermindSummarySecurityCell.
-  ///
-  /// In en, this message translates to:
-  /// **'{product}, {severity}, {status}: {count}'**
-  String mastermindSummarySecurityCell(String product, String severity, String status, int count);
 
   /// No description provided for @mastermindSummaryShipsLowerBound.
   ///
