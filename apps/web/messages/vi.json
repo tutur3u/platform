@@ -25378,6 +25378,26 @@
       }
     },
     "singular": "Bảng nhiệm vụ",
+    "sprints": {
+      "active": "Đang chạy",
+      "done_count": "{done}/{total} xong",
+      "length_failed": "Không thể lưu độ dài sprint",
+      "length_saved": "Đã lưu độ dài sprint",
+      "next": "Kế tiếp",
+      "off": "Tắt",
+      "settings_description": "Lên kế hoạch từng sprint trên bảng này. Công việc chưa có hạn riêng sẽ đến hạn khi sprint kết thúc.",
+      "settings_title": "Sprint",
+      "sprint_length": "Độ dài sprint",
+      "sprints": "Sprint",
+      "start": "Bắt đầu {name}",
+      "start_failed": "Không thể bắt đầu sprint",
+      "started": "Đã bắt đầu {name}",
+      "switcher_label": "{name}, đổi sprint",
+      "task_count": "{count} công việc",
+      "turned_off": "Đã tắt sprint",
+      "unavailable": "Sprint chưa khả dụng",
+      "weeks": "{count} tuần"
+    },
     "stats": {
       "lists": "cột",
       "tasks": "công việc"

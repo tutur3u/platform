@@ -17151,6 +17151,26 @@
       "ticket_prefix_placeholder": "e.g. PROJ"
     },
     "singular": "Task Board",
+    "sprints": {
+      "active": "Active",
+      "done_count": "{done}/{total} done",
+      "length_failed": "Couldn't save the sprint length",
+      "length_saved": "Sprint length saved",
+      "next": "Next",
+      "off": "Off",
+      "settings_description": "Plan one sprint at a time on this board. Tasks without their own due date are due when the sprint ends.",
+      "settings_title": "Sprints",
+      "sprint_length": "Sprint length",
+      "sprints": "Sprints",
+      "start": "Start {name}",
+      "start_failed": "Couldn't start the sprint",
+      "started": "{name} started",
+      "switcher_label": "{name}, switch sprint",
+      "task_count": "{count, plural, one {# task} other {# tasks}}",
+      "turned_off": "Sprints turned off",
+      "unavailable": "Sprints aren't available yet",
+      "weeks": "{count, plural, one {# week} other {# weeks}}"
+    },
     "stats": {
       "lists": "columns",
       "tasks": "tasks"

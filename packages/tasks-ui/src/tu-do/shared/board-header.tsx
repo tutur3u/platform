@@ -1,13 +1,10 @@
-import { useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Plus, Share2, UserStar, X, Zap } from '@tuturuuu/icons';
-import { getWorkspaceTaskBoard } from '@tuturuuu/internal-api/tasks';
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Button } from '@tuturuuu/ui/button';
 import { useOptionalSidebar } from '@tuturuuu/ui/custom/sidebar-context';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import { BoardShareDialog } from '../boards/board-share-dialog';
@@ -31,6 +28,7 @@ import { BoardSearchInput } from './board-header/board-search-input';
 import { BoardSortMenu } from './board-header/board-sort-menu';
 import { BoardViewMenu } from './board-header/board-view-menu';
 import { ToneButton } from './board-header/tone-button';
+import { useOpenBoardSettings } from './board-header/use-open-board-settings';
 import { BoardSwitcher } from './board-switcher';
 import { BoardUserPresenceAvatarsComponent } from './board-user-presence-avatars';
 import type { ViewType } from './board-views';
@@ -79,16 +77,8 @@ interface Props {
   projectTaskCounts?: Map<string, number>;
   countsComplete?: boolean;
   onCreateTask?: () => void;
-}
-
-const BOARD_SETTINGS_PRELOAD_EVENT = 'tuturuuu:board-settings-intent';
-const SETTINGS_DIALOG_OPEN_INTENT_EVENT =
-  'tuturuuu:settings-dialog-open-intent';
-
-function getBrowserInternalApiOptions() {
-  return typeof window !== 'undefined'
-    ? { baseUrl: window.location.origin }
-    : undefined;
+  /** Sprint pill shown after the board in the breadcrumb. */
+  sprintSlot?: ReactNode;
 }
 
 export function BoardHeader({
@@ -119,16 +109,13 @@ export function BoardHeader({
   projectTaskCounts,
   countsComplete = true,
   onCreateTask,
+  sprintSlot,
 }: Props) {
   const t = useTranslations();
-  const queryClient = useQueryClient();
   const [shareBoardOpen, setShareBoardOpen] = useState(false);
   const [plannerOpen, setPlannerOpen] = useState(false);
   const [createBoardOpen, setCreateBoardOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
   const enabledViews = availableViews ?? ['kanban', 'list', 'timeline'];
   const interactiveControlsVisible = !readOnly;
   const managerControlsVisible = !hideActions && !readOnly;
@@ -153,6 +140,12 @@ export function BoardHeader({
         email: null,
       })
     : undefined;
+  const { openBoardSettings, prefetchBoardSettings } = useOpenBoardSettings({
+    boardId: board.id,
+    enabled: managerControlsVisible,
+    onBoardSettingsIntent,
+    workspaceId,
+  });
   const focusOn = isFocusActive(filters, listStatusFilter, currentUserId);
   const filtersActive = hasActiveBoardFilters(filters, listStatusFilter);
 
@@ -179,46 +172,6 @@ export function BoardHeader({
     onFiltersChange({ ...filters, searchQuery });
     // Timeline cannot show search results, so searching opens List.
     if (searchQuery && currentView === 'timeline') onViewChange('list');
-  }
-
-  function prefetchBoardSettings() {
-    if (!managerControlsVisible) return;
-
-    onBoardSettingsIntent?.();
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new Event(BOARD_SETTINGS_PRELOAD_EVENT));
-    }
-
-    void queryClient.prefetchQuery({
-      queryKey: ['task-board-settings', workspaceId, board.id],
-      queryFn: async () => {
-        const payload = await getWorkspaceTaskBoard(
-          workspaceId,
-          board.id,
-          getBrowserInternalApiOptions()
-        );
-        return payload.board;
-      },
-      staleTime: 30_000,
-    });
-  }
-
-  function openBoardSettings() {
-    prefetchBoardSettings();
-
-    const openIntent = new CustomEvent(SETTINGS_DIALOG_OPEN_INTENT_EVENT, {
-      cancelable: true,
-      detail: { settingsBoardId: board.id, settingsTab: 'task_board' },
-    });
-    window.dispatchEvent(openIntent);
-
-    if (openIntent.defaultPrevented) return;
-
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('settingsDialog', 'open');
-    params.set('settingsTab', 'task_board');
-    params.set('settingsBoardId', board.id);
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   }
 
   async function refreshBoard() {
@@ -294,6 +247,17 @@ export function BoardHeader({
           </Link>
         ) : null}
         {title}
+        {sprintSlot && !publicView && currentView !== 'my_tasks' ? (
+          <>
+            <span
+              aria-hidden="true"
+              className="-mx-1 text-lg text-muted-foreground"
+            >
+              /
+            </span>
+            {sprintSlot}
+          </>
+        ) : null}
         <span className="min-w-0 flex-1" />
         {presenceVisible ? (
           <BoardUserPresenceAvatarsComponent
