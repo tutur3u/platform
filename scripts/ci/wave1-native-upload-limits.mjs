@@ -137,7 +137,7 @@ export function measureUpload(configPath, outdir, secretNames = [], cliSize) {
       !file.name
         .split('/')
         .some((name) =>
-          ['.assetsignore', 'wrangler.json', '.dev.vars'].includes(name)
+          ['.assetsignore', basename(configPath), '.dev.vars'].includes(name)
         )
   );
   const vars = Object.values(config.vars ?? {});
