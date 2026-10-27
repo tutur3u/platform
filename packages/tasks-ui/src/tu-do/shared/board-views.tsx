@@ -54,13 +54,7 @@ import {
   sanitizeSavedBoardFilters,
 } from './board-header/board-filter-state';
 import { useBoardHeaderData } from './board-header/use-board-header-data';
-import { BoardSprintPill } from './board-sprints/board-sprint-pill';
-import { BoardPlanView } from './board-sprints/plan/board-plan-view';
-import { BoardPlanTabs, type BoardTab } from './board-sprints/plan/plan-parts';
-import {
-  SprintSummaryDialog,
-  type SprintSummaryTarget,
-} from './board-sprints/summary/sprint-summary-dialog';
+import { useBoardSprintSurface } from './board-sprints/use-board-sprint-surface';
 import { useBoardSprints } from './board-sprints/use-board-sprints';
 import {
   sortLocalTasks,
@@ -713,13 +707,16 @@ export function BoardViews({
     enabled: !localTaskState,
     wsId: effectiveWorkspaceId,
   });
-  const [boardTab, setBoardTab] = useState<BoardTab>('board');
-  const planActive = boardSprints.sprintsOn && boardTab === 'plan';
-  const [summary, setSummary] = useState<SprintSummaryTarget | null>(null);
-  const openLiveSummary = () => {
-    const running = boardSprints.sprints.find((s) => s.status === 'active');
-    if (running) setSummary({ mode: 'live', sprintId: running.id });
-  };
+  const sprintSurface = useBoardSprintSurface({
+    board,
+    canManage: canManageBoard && !readOnly,
+    canPlan: !readOnly,
+    currentUserId,
+    lists: boardLists,
+    sprints: boardSprints,
+    tasks,
+    wsId: effectiveWorkspaceId,
+  });
 
   // Apply optimistic overrides so views receive up-to-date edits (durations, name, dates) even before refetch.
   const effectiveTasks = useMemo(() => {
@@ -796,7 +793,7 @@ export function BoardViews({
   });
 
   const viewHotkeyLabels = useBoardViewHotkeys((view) => {
-    setBoardTab('board');
+    sprintSurface.showBoard();
     handleViewChange(view);
   }, viewIsEnabled);
   const renderView = () => {
@@ -944,74 +941,16 @@ export function BoardViews({
             projectTaskCounts={headerData.projectTaskCounts}
             countsComplete={headerData.countsComplete}
             onCreateTask={canCreateTask ? createTaskInBoard : undefined}
-            planActive={planActive}
-            planTabs={
-              boardSprints.sprintsOn ? (
-                <BoardPlanTabs
-                  onTabChange={setBoardTab}
-                  tab={planActive ? 'plan' : 'board'}
-                />
-              ) : undefined
-            }
-            sprintSlot={
-              boardSprints.currentSprint ? (
-                <BoardSprintPill
-                  boardId={board.id}
-                  canManage={canManageBoard && !readOnly}
-                  onEndSprint={(sprint) =>
-                    setSummary({ mode: 'live', sprintId: sprint.id })
-                  }
-                  onSelectSprint={(sprint) => {
-                    if (sprint.status === 'completed') {
-                      setSummary({ mode: 'report', sprintId: sprint.id });
-                      return;
-                    }
-                    setBoardTab(sprint.status === 'planned' ? 'plan' : 'board');
-                  }}
-                  sprints={boardSprints}
-                  tasks={tasks}
-                  wsId={effectiveWorkspaceId}
-                />
-              ) : undefined
-            }
+            planActive={sprintSurface.planActive}
+            planTabs={sprintSurface.planTabs}
+            sprintSlot={sprintSurface.sprintSlot}
           />
         }
         initialLayoutReady={initialKanbanLayoutReady}
       >
-        {planActive ? (
-          <BoardPlanView
-            boardId={board.id}
-            canManage={canManageBoard && !readOnly}
-            canPlan={!readOnly}
-            currentUserId={currentUserId}
-            defaultListId={board.default_list_id}
-            lists={boardLists}
-            onEndActive={openLiveSummary}
-            onStarted={() => setBoardTab('board')}
-            sprints={boardSprints}
-            ticketPrefix={board.ticket_prefix}
-            wsId={effectiveWorkspaceId}
-          />
-        ) : (
-          renderView()
-        )}
+        {sprintSurface.planView ?? renderView()}
       </KanbanPresentation>
-      {boardSprints.sprintsOn ? (
-        <SprintSummaryDialog
-          boardId={board.id}
-          canEnd={canManageBoard && !readOnly}
-          lists={boardLists}
-          nextSprint={boardSprints.planningSprint}
-          onEnded={() => setBoardTab('plan')}
-          onOpenChange={(open) => !open && setSummary(null)}
-          sprint={
-            boardSprints.sprints.find((s) => s.id === summary?.sprintId) ?? null
-          }
-          target={summary}
-          ticketPrefix={board.ticket_prefix}
-          wsId={effectiveWorkspaceId}
-        />
-      ) : null}
+      {sprintSurface.summaryDialog}
       {showIdleBottomIsland ? idleBottomIsland : null}
     </BoardPanelFrame>
   );
