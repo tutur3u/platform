@@ -81,7 +81,7 @@ describe('board recipient identity', () => {
   it('does not fall back to editable profile email', async () => {
     const shares = await loadTaskBoardGuestSharesForWorkspace({
       sbAdmin: client(false),
-      user: { id: 'actor', email: null },
+      user: { id: 'actor', email: undefined },
       workspaceId: 'workspace',
     });
     expect(shares).toEqual([]);
