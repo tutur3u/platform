@@ -360,6 +360,7 @@
                   "build/devops/contacts-start-candidate",
                   "build/devops/apps-viteplus-cloudflare",
                   "build/devops/start-bridge",
+                  "build/devops/web-start-candidate",
                   "build/devops/tasks-viteplus-cloudflare",
                   "build/devops/start-bridge-codemod",
                   "build/devops/finance-pay-start",

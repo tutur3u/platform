@@ -5,7 +5,7 @@ updatedAt: '2026-10-25'
 ---
 
 Every web app except `apps/web` moves to its own TanStack Start + Void + Vite+
-Worker on Cloudflare. `apps/web` stays on Next.js until separately scheduled.
+Worker on Cloudflare. `apps/web` now has a separately scheduled [Web 1 candidate](/build/devops/web-start-candidate); all existing Web routes remain on Next.js.
 The retired `apps/tanstack-web` tree is not part of this program and is not
 revived. Current hosting (Vercel, or Next.js/OpenNext Workers) stays canonical
 for an app until its explicit cutover PR merges.

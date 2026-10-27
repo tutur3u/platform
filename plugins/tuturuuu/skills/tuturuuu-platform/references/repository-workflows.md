@@ -5,7 +5,10 @@ Consult only the section relevant to the current task. Paths are repository-rela
 ## 4. Repository Map
 
 - `apps/web`: maintained Next.js platform on port `7803`; live route owner
-  alongside the owning Next.js satellites.
+  alongside the owning Next.js satellites. Its [Web 1 Start candidate](../../../../../apps/docs/build/devops/web-start-candidate.mdx)
+  is default-off and forwards existing routes to an attested staging Next origin.
+  Use `build:candidate` only on an admitted remote host or CI; inventory generation
+  and focused proxy tests are build-free. No candidate route is production-owned.
 - `apps/backend` and `apps/tanstack-web`: paused Rust/TanStack Start source,
   not in use. Do not run, update, or refresh them during ordinary app work.
 - Docker setup is inactive and the Docker cron runner is retired. Use the local
