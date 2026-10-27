@@ -19,7 +19,14 @@ declare
   candidate text;
   suffix integer := 1;
 begin
-  if new.ticket_key is not null then return new; end if;
+  if new.ticket_key is not null then
+    -- Choosing a key is project management; members get the derived key.
+    if auth.role() = 'authenticated' and
+      not coalesce(public.has_workspace_permission(new.ws_id, auth.uid(), 'manage_projects'), false) then
+      raise exception 'PROJECT_TICKET_KEY_MANAGEMENT_DENIED' using errcode = '42501';
+    end if;
+    return new;
+  end if;
   -- Serialize generated keys within a workspace, including concurrent inserts.
   perform pg_advisory_xact_lock(hashtextextended(new.ws_id::text, 1984));
   base_key := left(regexp_replace(regexp_replace(upper(new.name collate "C"), '[^A-Z0-9]', '', 'g'), '^[0-9]+', ''), 3);
