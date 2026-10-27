@@ -1,4 +1,4 @@
--- Rollback for 20261027095000_topic_teacher_deadline_notices.sql.
+-- Rollback for 20261027010000_topic_teacher_deadline_notices.sql.
 -- Drops the deadline notice receipts (their data is lost), restores
 -- should_send_notification without the deadline-notice email rule, and
 -- restores the notification type list without 'topic_due_soon' and
