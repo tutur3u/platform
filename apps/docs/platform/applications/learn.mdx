@@ -82,6 +82,13 @@ GET /api/v1/tulearn/bootstrap
 
 Workspace-scoped learner routes use the normalized workspace id so aliases like `personal` do not diverge between selection and final reads. Linked learners in `workspace_user_linked_users` count as eligible student access even when the platform user is not a direct workspace member, so course lists and learner dashboard bootstrap must agree on the same workspace set.
 
+## Learner test access
+
+The Learn start, attempt, save-answer, and submit routes require the selected
+course in the student's assigned, published courses for the resolved workspace.
+Parent and guest subjects keep their existing read-only restrictions. Course
+access is checked before test, answer, attempt, or grading operations.
+
 ## Parent links
 
 Parent access is explicit and read-only in v1. The existing Tulearn schema adds:

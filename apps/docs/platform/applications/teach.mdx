@@ -132,3 +132,18 @@ access is checked before test, answer, attempt, or grading operations.
 
 Coverage lives in Teach's `quizzes/workspace-links.test.ts` and Learn's
 `tests/[testId]/access.test.ts`.
+
+## Quiz set module links
+
+Creating a quiz set with a `moduleId` links it to that course module only when
+the module's course group belongs to the resolved Teach workspace. Row-level
+security on `course_module_quiz_sets` only proves the module is visible to the
+caller, so a member of two workspaces could otherwise attach a quiz set to the
+other workspace's module. The route checks the module's workspace with the
+service client before any write; a missing or foreign module returns 404, a
+failed lookup returns 500, and neither creates the quiz set or the link. The
+created quiz set must also carry the resolved workspace id before it is linked.
+The `quiz-sets/[setId]/modules` link and unlink routes already apply the same
+rule through `requireQuizModuleAccess`.
+
+Coverage lives in Teach's `quiz-sets/route.test.ts`.
