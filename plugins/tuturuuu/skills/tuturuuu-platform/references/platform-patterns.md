@@ -6,6 +6,12 @@ shared-package changes.
 
 ## Web And Shared UI
 
+- Workspace user reads share the users-core field projection and effective
+  public/private permissions. Attendance and score adapters verify every requested
+  user/class against the permission workspace. Preserve app-session actors and
+  authorized response shapes; see [user read permissions](../../../../../apps/docs/platform/features/user-management.mdx#workspace-user-read-permissions)
+  and the linked route regressions.
+
 Shared middleware rejections use `@tuturuuu/utils/guard-rejection` to attach a
 fixed scalar reason and a generated correlation ID, expose them alongside
 existing CORS headers, and emit one warning with a fixed route template. Keep

@@ -65,6 +65,29 @@ Workspace members can have workspace-specific display names, similar to server p
 - Auto-linking runs on `workspace_members` insert. If a virtual profile is created or its email is corrected after membership already exists, use the database-page repair action to reconcile the link.
 - Repair is conservative: a link is inserted only when one unlinked workspace profile and one existing member platform account share the same normalized email. Missing emails, no member match, duplicate workspace profiles, duplicate platform matches, and platform accounts already linked elsewhere are reported as skipped cases.
 
+### Workspace user read permissions
+
+Session-based user lists and web user detail reads require
+`view_users_public_info` or `view_users_private_info`. The default is denial
+when neither permission is granted, including for guests without an effective
+user-read permission. Public-only readers receive no email, phone, birthday,
+gender, ethnicity, guardian, national ID, address, or notes. Private-only readers
+receive no public profile fields. Attendance counts additionally require
+`check_user_attendance`. Web and Contacts share the field projection; existing
+workspace API-key integrations retain their separate workspace-key authorization.
+
+Per-user attendance requires `check_user_attendance`; the user, selected classes,
+and returned attendance must belong to the requested workspace. Per-member
+vitals require `view_user_groups_scores` and workspace ownership of both the
+user and class. Authorized responses retain their existing shapes. Contacts'
+editor-specific user lookup retains its separate `update_users` gate and limited
+form projection. Mobile CRM continues to use the permission-filtered
+`users/database` read.
+
+Regression coverage:
+`packages/users-core/tests/routes/workspace-read-authorization.test.ts` covers
+permission denial, field projection, resource scoping, and authorized responses.
+
 ## Attendance Manager Visibility And Counting
 
 In Contacts workspace settings, open **Attendance → Display & Totals**, turn off **Show Managers in Attendance**, and save. The setting is shared by every group attendance-taking view. Both attendance settings default on for workspaces without an explicit value.
