@@ -3,6 +3,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { validatePostCheckParticipants } from '@tuturuuu/users-core/lib/post-check-participants';
 import { MAX_URL_LENGTH } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
@@ -88,6 +89,21 @@ export async function PUT(req: Request, { params }: Params) {
     : SingleSchema.safeParse(data);
   if (!parse.success) {
     return NextResponse.json({ message: 'Invalid payload' }, { status: 400 });
+  }
+
+  const participantError = await validatePostCheckParticipants({
+    sbAdmin,
+    groupId,
+    wsId,
+    userIds: (Array.isArray(parse.data) ? parse.data : [parse.data]).map(
+      (item) => item.user_id
+    ),
+  });
+  if (participantError) {
+    return NextResponse.json(
+      { message: participantError.message },
+      { status: participantError.status }
+    );
   }
 
   const multiple = isArray;
@@ -258,6 +274,19 @@ export async function DELETE(req: Request, { params }: Params) {
     .maybeSingle();
   if (!post) {
     return NextResponse.json({ message: 'Post not found' }, { status: 404 });
+  }
+
+  const participantError = await validatePostCheckParticipants({
+    sbAdmin,
+    groupId,
+    wsId,
+    userIds: userIds,
+  });
+  if (participantError) {
+    return NextResponse.json(
+      { message: participantError.message },
+      { status: participantError.status }
+    );
   }
 
   const previousStates = await getExistingPostCheckStates(

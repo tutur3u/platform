@@ -6,6 +6,7 @@ import {
   getExistingPostCheckStates,
   recordPostCheckChanges,
 } from '../../../../../lib/post-check-audit';
+import { validatePostCheckParticipants } from '../../../../../lib/post-check-participants';
 import { upsertPostChecks } from '../../../../../lib/post-check-write';
 import { getUserGroupRoutePermissions } from '../../../../../lib/user-groups/route-auth';
 import {
@@ -108,6 +109,19 @@ export async function PUT(req: Request, { params }: Params) {
 
   const scoped = await resolveScopedPost(req, params);
   if (!scoped.ok) return scoped.response;
+  const participantError = await validatePostCheckParticipants({
+    sbAdmin: scoped.sbAdmin,
+    groupId: scoped.groupId,
+    wsId: scoped.wsId,
+    userIds: checks.map((check) => check.user_id),
+  });
+  if (participantError) {
+    return NextResponse.json(
+      { message: participantError.message },
+      { status: participantError.status }
+    );
+  }
+
   const previousStates = await getExistingPostCheckStates(
     scoped.sbAdmin,
     scoped.postId,
@@ -159,6 +173,19 @@ export async function DELETE(req: Request, { params }: Params) {
   if (!scoped.ok) return scoped.response;
 
   const userIds = parsed.data.user_ids;
+  const participantError = await validatePostCheckParticipants({
+    sbAdmin: scoped.sbAdmin,
+    groupId: scoped.groupId,
+    wsId: scoped.wsId,
+    userIds: userIds,
+  });
+  if (participantError) {
+    return NextResponse.json(
+      { message: participantError.message },
+      { status: participantError.status }
+    );
+  }
+
   const previousStates = await getExistingPostCheckStates(
     scoped.sbAdmin,
     scoped.postId,

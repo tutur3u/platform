@@ -1,4 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { validatePostCheckParticipants } from '@tuturuuu/users-core/lib/post-check-participants';
 import { MAX_URL_LENGTH } from '@tuturuuu/utils/constants';
 import {
   getPermissions,
@@ -192,6 +193,19 @@ export async function POST(req: Request, { params }: Params) {
           post_id: postId, // Ensure it uses the validated postId
         },
       ];
+
+  const participantError = await validatePostCheckParticipants({
+    sbAdmin,
+    groupId,
+    wsId,
+    userIds: insertPayload.map((item) => item.user_id),
+  });
+  if (participantError) {
+    return NextResponse.json(
+      { message: participantError.message },
+      { status: participantError.status }
+    );
+  }
 
   const { error } = await sbAdmin
     .schema('private')

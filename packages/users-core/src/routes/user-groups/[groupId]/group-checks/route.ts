@@ -6,6 +6,7 @@ import {
   getExistingPostCheckStates,
   recordPostCheckChanges,
 } from '../../../../lib/post-check-audit';
+import { validatePostCheckParticipants } from '../../../../lib/post-check-participants';
 import { upsertPostChecks } from '../../../../lib/post-check-write';
 import { getUserGroupRoutePermissions } from '../../../../lib/user-groups/route-auth';
 import {
@@ -167,6 +168,19 @@ export async function POST(req: Request, { params }: Params) {
     'update_user_groups_posts'
   );
   if (!scoped.ok) return scoped.response;
+
+  const participantError = await validatePostCheckParticipants({
+    sbAdmin: scoped.sbAdmin,
+    groupId: scoped.groupId,
+    wsId: scoped.wsId,
+    userIds: checks.map((check) => check.user_id),
+  });
+  if (participantError) {
+    return NextResponse.json(
+      { message: participantError.message },
+      { status: participantError.status }
+    );
+  }
 
   const previousStates = await getExistingPostCheckStates(
     scoped.sbAdmin,
