@@ -41,7 +41,16 @@ const ACTOR_ID = '55555555-5555-4555-8555-555555555555';
 describe('shared group-check collection route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    const membershipQuery = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      in: vi.fn().mockResolvedValue({
+        data: [{ user_id: USER_ID }, { user_id: ACTOR_ID }],
+        error: null,
+      }),
+    };
     mocks.createAdminClient.mockResolvedValue({
+      from: vi.fn(() => membershipQuery),
       schema: vi.fn(() => ({
         from: vi.fn(() => ({ upsert: mocks.upsert })),
       })),

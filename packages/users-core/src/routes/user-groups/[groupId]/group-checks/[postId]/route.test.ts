@@ -54,7 +54,16 @@ describe('shared group-check item route', () => {
     mocks.deleteRows.mockReturnValue({
       eq: vi.fn(() => ({ in: mocks.inUsers })),
     });
+    const membershipQuery = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      in: vi.fn().mockResolvedValue({
+        data: [{ user_id: USER_ID }, { user_id: ACTOR_ID }],
+        error: null,
+      }),
+    };
     mocks.createAdminClient.mockResolvedValue({
+      from: vi.fn(() => membershipQuery),
       schema: vi.fn(() => ({
         from: vi.fn(() => ({
           delete: mocks.deleteRows,

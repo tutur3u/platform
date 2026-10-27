@@ -387,6 +387,7 @@ gate, then calls the template with:
 | `public-env` | Newline-separated `NEXT_PUBLIC_*`/`TUTURUUU_NOINDEX` build fixtures; anything else is rejected |
 | `format-paths` | Owning paths for Biome |
 | `helper-tests`, `unit-command`, `runtime-command` | Optional overrides |
+| `runtime-setup-command` | Optional prerequisite install (for example Playwright browsers) run in its own 10-minute step before each runtime step, so slow mirrors cannot consume the tight runtime timeout |
 
 The template validates the inputs and runs, on the exact source SHA: frozen
 install, dependency build, build identity, the registry check, unit tests,

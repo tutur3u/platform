@@ -326,20 +326,22 @@ async function getTutoringData(request: Request, { params }: Params) {
     const feedback = latestFeedbackMap.get(key);
     const groupName = groupNameMap.get(groupId) ?? 'Unknown group';
     const hasAbsent =
-      deficit > 0 && !isTutoringGroupExcluded(policy, groupName, 'make_up');
+      deficit > 0 &&
+      !isTutoringGroupExcluded(policy, groupName, 'make_up', groupId);
     const completedDay = feedback
       ? completedFeedbackDays.get(feedback.id)
       : undefined;
     const hasWeak = Boolean(
       feedback &&
-        !isTutoringGroupExcluded(policy, groupName, 'weak_support') &&
+        !isTutoringGroupExcluded(policy, groupName, 'weak_support', groupId) &&
         !scheduledFeedbackIds.has(feedback.id) &&
         (completedDay === undefined ||
           todayNumber - completedDay >= reassessmentDays)
     );
 
     const contentUnchangedSince =
-      feedback && !isTutoringGroupExcluded(policy, groupName, 'weak_support')
+      feedback &&
+      !isTutoringGroupExcluded(policy, groupName, 'weak_support', groupId)
         ? unchangedFeedbackSince(feedbackHistoryMap.get(key) ?? [])
         : null;
     const contentReviewDue = isWeakContentReviewDue(

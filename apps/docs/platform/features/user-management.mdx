@@ -3,6 +3,23 @@ title: "User Management"
 description: "A central place to manage users, groups, and information about them."
 ---
 
+## Group Check Participants
+
+Web and Contacts require every check participant to belong to the post's
+workspace. New check participants must also be current members of the post's
+group. Staff can edit or clear an existing check after a student moves to another
+group in the same workspace; the exception applies only to an existing check on
+that same post. It does not admit new nonmembers or users from another workspace.
+Guest status alone neither grants nor removes eligibility.
+
+These rules apply to create, update and clear operations, including single-user
+and batch requests. A batch is validated in full before changes are saved. If
+participant validation is unavailable, retry after the service recovers. Existing
+post permissions, approval rules and email delivery settings still apply.
+
+Regression coverage: `packages/users-core/tests/routes/group-check-membership.test.ts`
+exercises both active handler families with synthetic participants.
+
 ## Post Email Delivery Recovery
 
 The post email queue now treats provider-accepted delivery as durable once it is written to `email_audit`. The `sent_emails` table is still the primary history surface for the product UI, but queue retries must not resend a post email just because the follow-up `sent_emails` insert or `user_group_post_checks.email_id` link failed.
@@ -238,6 +255,7 @@ Topic Announcements live under Users and are gated by the workspace secret `ENAB
 - Actual announcements are sent by the enabled workspace sender and are written to `email_audit`.
 - The composer and table send flow preview the same server-rendered HTML and text payload that delivery uses. Operators should review that rendered preview before sending or scheduling announcements.
 - The first import preset supports foreign-teacher schedule rows with day/date, class, room, time, teacher/contact, email, place, and topic fields. The import UI now uses an editable Excel-like table as the review surface; uploaded spreadsheets, CSV, and direct paste all load into that table so operators can correct every email field before creating drafts or sending valid rows in bulk.
+- **Place picker.** The composer's Place field offers the workspace's campus labels (the tutoring campus list plus labels mapped to classes) and stores the chosen label as plain text in `place`; `room` stays a separate field. A manual or template place that is not a campus still works and is saved unchanged. The labels come only from the current workspace's tutoring policy through `GET /api/v1/workspaces/{wsId}/topic-announcements/campus-options`, which requires the same supervisor access as creating a topic (`manage_users`) and returns only the labels, not the policy. With no campuses configured, only the free-text place is shown. Coverage: `campus-options/route.test.ts`, `announcement-place-field.test.tsx`.
 - Workspace-shared **announcement templates** store reusable title, topic starter text, class metadata, optional default group, and default recipient ids. Operators apply a template in the composer, then edit the topic field before sending.
 - Operators can fork an existing sent or draft announcement into a new draft. The fork copies title, topic, class context, recipients, and attachment references, but never copies sent, queued, scheduled, or email audit state.
 - **Scheduled send** sets `status = queued` and `scheduled_send_at` using the workspace's fixed IANA timezone from calendar settings. Scheduling is blocked while the workspace timezone is still `auto` or unset; use the same calendar timezone gate as the main calendar product.
@@ -703,3 +721,11 @@ Regression coverage lives in
 traversal, foreign workspaces, invalid resolved IDs, alias resolution, authorization
 and budget ordering with synthetic storage fixtures. Hosted Storage behavior is
 a separate acceptance boundary.
+
+## Workspace user API lifecycle
+
+Web, Contacts, and mobile use the versioned `/api/v1/workspaces/{wsId}/users`
+collection and item contracts. The unused unversioned collection and item
+handlers are retired. The separate indicator migration endpoints retain their
+existing lifecycle. `scripts/retired-workspace-user-routes.test.mjs` checks the
+active route and inventory boundary.
