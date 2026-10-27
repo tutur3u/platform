@@ -1,7 +1,6 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Trash2 } from '@tuturuuu/icons';
 import { updateTutoringPolicy } from '@tuturuuu/internal-api/tutoring';
 import {
   EASY_CENTER_TUTORING_POLICY,
@@ -11,13 +10,13 @@ import {
 } from '@tuturuuu/internal-api/tutoring-policy';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { Button } from '@tuturuuu/ui/button';
-import { Combobox } from '@tuturuuu/ui/custom/combobox';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { TutoringCampusSettings } from './tutoring-campus-settings';
 import { TutoringGroupShifts } from './tutoring-group-shifts';
 import {
   type PolicySectionId,
@@ -66,7 +65,7 @@ export function TutoringPolicyCard({
       'restrictWeakContentEditors',
       'groupExclusions',
     ],
-    campuses: ['campusByGroupId'],
+    campuses: ['campusByGroupId', 'campusOptions'],
     tutors: ['tutorGroupIds'],
     message: ['parentMessageTemplate'],
   };
@@ -156,6 +155,7 @@ export function TutoringPolicyCard({
               setDraft({
                 ...STANDARD_TUTORING_POLICY,
                 campusByGroupId: draft.campusByGroupId,
+                campusOptions: draft.campusOptions,
                 tutorGroupIds: draft.tutorGroupIds,
                 shiftByGroupId: draft.shiftByGroupId,
               })
@@ -171,6 +171,7 @@ export function TutoringPolicyCard({
               setDraft({
                 ...EASY_CENTER_TUTORING_POLICY,
                 campusByGroupId: draft.campusByGroupId,
+                campusOptions: draft.campusOptions,
                 tutorGroupIds: draft.tutorGroupIds,
                 shiftByGroupId: draft.shiftByGroupId,
                 timeRules: EASY_CENTER_TUTORING_POLICY.timeRules.map(
@@ -248,72 +249,12 @@ export function TutoringPolicyCard({
       </TutoringPolicySection>
 
       <TutoringPolicySection {...sectionProps} id="campuses">
-        <div>
-          <h3 className="font-medium">{t('policy_campuses')}</h3>
-          <p className="text-muted-foreground text-sm">
-            {t('policy_campuses_description')}
-          </p>
-        </div>
-        {Object.entries(draft.campusByGroupId).map(([groupId, name]) => (
-          <div className="flex items-end gap-2" key={groupId}>
-            <div className="min-w-0 flex-1 space-y-1">
-              <Label htmlFor={`policy-campus-${groupId}`}>
-                {groups.find((group) => group.id === groupId)?.name ?? groupId}
-              </Label>
-              <Input
-                disabled={!canConfigure}
-                id={`policy-campus-${groupId}`}
-                maxLength={80}
-                onChange={(event) =>
-                  edit({
-                    campusByGroupId: {
-                      ...draft.campusByGroupId,
-                      [groupId]: event.target.value,
-                    },
-                  })
-                }
-                placeholder={t('policy_campus_name')}
-                value={name}
-              />
-            </div>
-            {canConfigure ? (
-              <Button
-                aria-label={t('policy_remove_campus')}
-                onClick={() => {
-                  const next = { ...draft.campusByGroupId };
-                  delete next[groupId];
-                  edit({ campusByGroupId: next });
-                }}
-                size="icon"
-                variant="ghost"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            ) : null}
-          </div>
-        ))}
-        {canConfigure ? (
-          <Combobox
-            emptyText={t('no_groups')}
-            onChange={(value) =>
-              edit({
-                campusByGroupId: {
-                  ...draft.campusByGroupId,
-                  [value as string]: '',
-                },
-              })
-            }
-            options={groups
-              .filter((group) => !(group.id in draft.campusByGroupId))
-              .map((group) => ({
-                label: group.name || group.id,
-                value: group.id,
-              }))}
-            placeholder={t('policy_add_campus')}
-            searchPlaceholder={t('search_groups')}
-            selected=""
-          />
-        ) : null}
+        <TutoringCampusSettings
+          canConfigure={canConfigure}
+          groups={groups}
+          onChange={edit}
+          policy={draft}
+        />
       </TutoringPolicySection>
 
       <TutoringPolicySection {...sectionProps} id="tutors">

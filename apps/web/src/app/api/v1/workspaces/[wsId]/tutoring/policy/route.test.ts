@@ -127,4 +127,22 @@ describe('tutoring policy API', () => {
       EASY_CENTER_TUTORING_POLICY
     );
   });
+
+  it('saves the campus list alongside every other policy field', async () => {
+    const policy = {
+      ...EASY_CENTER_TUTORING_POLICY,
+      preset: 'custom' as const,
+      campusByGroupId: {
+        '11111111-1111-4111-8111-111111111111': 'Legacy Annex',
+      },
+      campusOptions: [' Campus North ', 'Campus North', ''],
+    };
+    const response = await request('PUT', policy);
+    expect(response.status).toBe(200);
+    const saved = query.upsert.mock.calls[0]?.[0] ?? [];
+    expect(readTutoringPolicyConfigRows(saved)).toEqual({
+      ...policy,
+      campusOptions: ['Campus North'],
+    });
+  });
 });
