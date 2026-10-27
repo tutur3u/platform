@@ -87,6 +87,26 @@ Regression coverage: `packages/tasks-ui/src/tu-do/shared/__tests__/board-views-s
 `packages/tasks-ui/src/tu-do/shared/board-sprints/sprint-pill.test.tsx` and
 `packages/tasks-ui/src/tu-do/shared/__tests__/board-header.test.tsx`.
 
+## Plan tab
+
+Boards with sprints on get Plan and Board tabs at the start of the header's
+second row; boards with sprints off show neither. Plan always works on the
+sprint being planned. On the left, the backlog lists its unassigned open tasks,
+with a search field, a priority sort and a Project filter. On the right are the
+sprint name and dates, the sprint goal, and one section per board member with
+the tasks they own in that sprint.
+
+Planning is assigning. Dragging a backlog task onto a person, or picking a
+person from the task's avatar button, makes them its owner. Dragging a task
+between people swaps that owner and keeps co-owners. Dragging it back to the
+backlog removes every owner. Add to backlog creates an unassigned task in the
+sprint being planned, even while another sprint runs. Board guests who can
+edit may plan; Start, shown only while no sprint runs, is for members who can
+edit the board and switches back to Board.
+
+Regression coverage: `packages/tasks-ui/src/tu-do/shared/board-sprints/plan/board-plan-view.test.tsx`
+and `packages/tasks-ui/src/tu-do/shared/__tests__/board-views-sprints.test.tsx`.
+
 ## Exceptions
 
 Workspace-wide cycles without a board keep their existing behavior. The
