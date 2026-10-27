@@ -174,3 +174,40 @@ it('refuses redirects, non-JSON, unsafe origins and oversized responses', async 
     ).toBe(503);
   }
 });
+
+it.each([
+  '/decisions?after=0&category=auto',
+  '/observability?since=0&series=children_series',
+  '/hub/export?section=metrics&after=0&seq=1',
+])(
+  'forwards the v2 read contract %s with a target-bound assertion',
+  async (target) => {
+    const response = await forwardOpsHubRequest(request(target), {
+      authorize,
+      config,
+      fetch: upstream,
+    });
+    expect(response.status).toBe(200);
+    const [url, init] = upstream.mock.calls[0]!;
+    expect(url).toBe(config().workerUrl + target);
+    const assertion = new Headers(init?.headers).get(ASSERTION_HEADER)!;
+    expect(await verifyAssertion(gatewaySecret, assertion, 'GET', target)).toBe(
+      user
+    );
+  }
+);
+it.each(['/decisions?category=unknown', '/observability?series=unknown'])(
+  'conceals invalid v2 query %s',
+  async (target) => {
+    expect(
+      (
+        await forwardOpsHubRequest(request(target), {
+          authorize,
+          config,
+          fetch: upstream,
+        })
+      ).status
+    ).toBe(404);
+    expect(upstream).not.toHaveBeenCalled();
+  }
+);
