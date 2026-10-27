@@ -12867,7 +12867,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindReplyChecking => 'Checking whether replies are available…';
 
   @override
-  String get mastermindReplyChooseOrWrite => 'Choose an option or write your own reply.';
+  String get mastermindReplyChooseOrWrite => 'Choose an option or write your own reply (up to 500 characters and 10 lines).';
 
   @override
   String mastermindReplyConfirmMessage(String title, String reply) {
@@ -12878,11 +12878,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindReplyConfirmTitle => 'Send this reply?';
 
   @override
-  String get mastermindReplyConflict => 'This reply was already used for something else. Review it and send a new one.';
+  String get mastermindReplyConflict => 'Something went wrong with this reply. Review it and send it again.';
 
   @override
   String mastermindReplyCounter(int count, int limit) {
     return '$count/$limit';
+  }
+
+  @override
+  String mastermindReplyCounterSemantics(int count, int limit) {
+    return '$count of $limit characters used';
   }
 
   @override
@@ -12933,16 +12938,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindReplyTextPlaceholder => 'Write a reply for Mastermind';
 
   @override
-  String get mastermindReplyTooLarge => 'That reply is too long. Shorten it and try again.';
+  String get mastermindReplyTooLarge => 'That reply is too long. Keep it to 500 characters and 10 lines, then try again.';
 
   @override
   String get mastermindReplyUnauthorized => 'We couldn\'t confirm your session. Try again.';
 
   @override
-  String get mastermindReplyUnauthorizedAgain => 'Your session can\'t reach Mastermind. Try again, or sign in again.';
+  String get mastermindReplyUnauthorizedAgain => 'Your session can\'t reach Mastermind. Try again, or sign out and sign in again.';
 
   @override
-  String get mastermindReplyUnsafeText => 'That text can\'t be sent. Use plain words, without links, long numbers or personal details.';
+  String get mastermindReplyUnsafeText => 'That text can\'t be sent. Use plain words and punctuation only, without links, long numbers or personal details, in 10 lines or fewer.';
 
   @override
   String get mastermindReplyUseRecommended => 'Use recommended';

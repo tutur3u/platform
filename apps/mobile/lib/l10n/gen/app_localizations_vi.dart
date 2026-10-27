@@ -12729,7 +12729,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindReplyChecking => 'Đang kiểm tra xem có thể trả lời không…';
 
   @override
-  String get mastermindReplyChooseOrWrite => 'Chọn một phương án hoặc tự viết câu trả lời.';
+  String get mastermindReplyChooseOrWrite => 'Chọn một phương án hoặc tự viết câu trả lời (tối đa 500 ký tự và 10 dòng).';
 
   @override
   String mastermindReplyConfirmMessage(String title, String reply) {
@@ -12740,7 +12740,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindReplyConfirmTitle => 'Gửi câu trả lời này?';
 
   @override
-  String get mastermindReplyConflict => 'Câu trả lời này đã được dùng cho nội dung khác. Hãy xem lại và gửi câu mới.';
+  String get mastermindReplyConflict => 'Đã xảy ra sự cố với câu trả lời này. Hãy xem lại và gửi lại.';
 
   @override
   String mastermindReplyCounter(int count, int limit) {
@@ -12748,7 +12748,12 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String get mastermindReplyDiscard => 'Bỏ';
+  String mastermindReplyCounterSemantics(int count, int limit) {
+    return 'Đã dùng $count trên $limit ký tự';
+  }
+
+  @override
+  String get mastermindReplyDiscard => 'Bỏ câu trả lời';
 
   @override
   String get mastermindReplyForbidden => 'Tài khoản này không thể gửi câu trả lời.';
@@ -12794,16 +12799,16 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindReplyTextPlaceholder => 'Viết câu trả lời cho Mastermind';
 
   @override
-  String get mastermindReplyTooLarge => 'Câu trả lời quá dài. Hãy rút gọn và thử lại.';
+  String get mastermindReplyTooLarge => 'Câu trả lời quá dài. Hãy giữ trong 500 ký tự và 10 dòng rồi thử lại.';
 
   @override
   String get mastermindReplyUnauthorized => 'Chúng tôi không xác nhận được phiên đăng nhập của bạn. Hãy thử lại.';
 
   @override
-  String get mastermindReplyUnauthorizedAgain => 'Phiên đăng nhập của bạn không truy cập được Mastermind. Hãy thử lại hoặc đăng nhập lại.';
+  String get mastermindReplyUnauthorizedAgain => 'Phiên đăng nhập của bạn không truy cập được Mastermind. Hãy thử lại hoặc đăng xuất rồi đăng nhập lại.';
 
   @override
-  String get mastermindReplyUnsafeText => 'Không thể gửi nội dung này. Hãy dùng chữ thường, không kèm liên kết, số dài hay thông tin cá nhân.';
+  String get mastermindReplyUnsafeText => 'Không thể gửi nội dung này. Hãy chỉ dùng chữ và dấu câu thông thường, không kèm liên kết, dãy số dài hay thông tin cá nhân. Tối đa 10 dòng.';
 
   @override
   String get mastermindReplyUseRecommended => 'Dùng phương án đề xuất';

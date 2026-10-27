@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/components/app_badge.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/inbox_model.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
 import 'package:mobile/features/mastermind/replies/mastermind_replies_cubit.dart';
+import 'package:mobile/features/mastermind/replies/reply_models.dart';
 import 'package:mobile/features/mastermind/view/home_needs_you_card.dart';
 import 'package:mobile/features/mastermind/view/inbox/inbox_filters.dart';
 import 'package:mobile/features/mastermind/view/inbox/inbox_item_tile.dart';
@@ -37,11 +40,18 @@ class _MastermindInboxPageState extends State<MastermindInboxPage> {
   @override
   Widget build(BuildContext context) => MastermindSection(
     builder: (context, ready, freshness) {
-      final model = MastermindInboxModel.from(
+      var model = MastermindInboxModel.from(
         ready.snapshot,
         query: _query,
         product: _product,
       );
+      // The chips only exist while two products are present: a filter whose
+      // chip is gone could never be cleared and would strand the list.
+      if (_product != null &&
+          (model.products.length < 2 || !model.products.contains(_product))) {
+        _product = null;
+        model = MastermindInboxModel.from(ready.snapshot, query: _query);
+      }
       return MastermindRepliesWatcher(
         child: AppPageScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -127,6 +137,13 @@ class _MastermindInboxPageState extends State<MastermindInboxPage> {
       };
 }
 
+/// The one reply waiting to send, if exactly one is: it has a single place to
+/// go, where several do not.
+OutboxEntry? _onlyPending(MastermindRepliesState state) =>
+    state.pendingCount == 1
+    ? state.outbox.firstWhere((entry) => entry.status == OutboxStatus.pending)
+    : null;
+
 /// "N replies waiting to send": queued on the device, not yet accepted.
 class _PendingReplies extends StatelessWidget {
   const _PendingReplies();
@@ -136,19 +153,28 @@ class _PendingReplies extends StatelessWidget {
     final replies = MastermindRepliesWatcher.cubitOf(context);
     return BlocBuilder<MastermindRepliesCubit, MastermindRepliesState>(
       bloc: replies,
-      buildWhen: (a, b) => a.pendingCount != b.pendingCount,
-      builder: (context, state) => state.pendingCount == 0
-          ? const SizedBox.shrink()
-          : AppGroupedSection.spaced(
-              children: [
-                AppGroupedRow(
-                  leading: const AppIconTile(icon: LucideIcons.send),
-                  title: Text(
-                    context.l10n.mastermindRepliesWaiting(state.pendingCount),
-                  ),
-                ),
-              ],
+      buildWhen: (a, b) =>
+          a.pendingCount != b.pendingCount ||
+          _onlyPending(a)?.idempotencyKey != _onlyPending(b)?.idempotencyKey,
+      builder: (context, state) {
+        if (state.pendingCount == 0) return const SizedBox.shrink();
+        final only = _onlyPending(state);
+        return AppGroupedSection.spaced(
+          children: [
+            AppGroupedRow(
+              leading: const AppIconTile(icon: LucideIcons.send),
+              title: Text(
+                context.l10n.mastermindRepliesWaiting(state.pendingCount),
+              ),
+              showChevron: only != null,
+              onTap: only == null
+                  ? null
+                  : () =>
+                        context.go(Routes.mastermindInboxItemPath(only.itemId)),
             ),
+          ],
+        );
+      },
     );
   }
 }

@@ -34,6 +34,30 @@ class CodePointLimitFormatter extends TextInputFormatter {
   }
 }
 
+/// Caps input at [limit] lines, as the hub does. Text typed or pasted at the
+/// end loses its surplus lines; an edit that would push the last line out of
+/// the field from the middle is refused rather than silently eating words.
+class LineLimitFormatter extends TextInputFormatter {
+  const LineLimitFormatter(this.limit);
+
+  final int limit;
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final lines = newValue.text.split(RegExp(r'\r\n|\n|\r'));
+    if (lines.length <= limit) return newValue;
+    if (newValue.selection.end != newValue.text.length) return oldValue;
+    final kept = lines.take(limit).join('\n');
+    return TextEditingValue(
+      text: kept,
+      selection: TextSelection.collapsed(offset: kept.length),
+    );
+  }
+}
+
 /// Option tiles and a free-text reply for one open question.
 ///
 /// A reply is one thing or the other, as the hub's contract says: picking an
@@ -178,6 +202,7 @@ class _ReplyComposerState extends State<ReplyComposer> {
           keyboardType: TextInputType.multiline,
           textCapitalization: TextCapitalization.sentences,
           inputFormatters: const [
+            LineLimitFormatter(mastermindReplyLineLimit),
             CodePointLimitFormatter(mastermindReplyTextLimit),
           ],
           onChanged: _typed,
@@ -186,12 +211,19 @@ class _ReplyComposerState extends State<ReplyComposer> {
           padding: const EdgeInsets.only(top: AppSpacing.xs),
           child: Align(
             alignment: AlignmentDirectional.centerEnd,
-            child: Text(
-              l10n.mastermindReplyCounter(
+            child: Semantics(
+              label: l10n.mastermindReplyCounterSemantics(
                 _text.text.runes.length,
                 mastermindReplyTextLimit,
               ),
-              style: Theme.of(context).textTheme.bodySmall,
+              excludeSemantics: true,
+              child: Text(
+                l10n.mastermindReplyCounter(
+                  _text.text.runes.length,
+                  mastermindReplyTextLimit,
+                ),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
             ),
           ),
         ),

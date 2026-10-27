@@ -5209,6 +5209,16 @@
       }
     }
   },
+  "@mastermindReplyCounterSemantics": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
   "@mastermindReplyRateLimited": {
     "placeholders": {
       "minutes": {
@@ -5625,12 +5635,13 @@
   "mastermindRepliesWaiting": "{count, plural, other{{count} câu trả lời đang chờ gửi}}",
   "mastermindReplyCheckFailed": "Không kiểm tra được việc trả lời có khả dụng không.",
   "mastermindReplyChecking": "Đang kiểm tra xem có thể trả lời không…",
-  "mastermindReplyChooseOrWrite": "Chọn một phương án hoặc tự viết câu trả lời.",
+  "mastermindReplyChooseOrWrite": "Chọn một phương án hoặc tự viết câu trả lời (tối đa 500 ký tự và 10 dòng).",
   "mastermindReplyConfirmMessage": "Trả lời cho: {title}\nCâu trả lời của bạn: {reply}",
   "mastermindReplyConfirmTitle": "Gửi câu trả lời này?",
-  "mastermindReplyConflict": "Câu trả lời này đã được dùng cho nội dung khác. Hãy xem lại và gửi câu mới.",
+  "mastermindReplyConflict": "Đã xảy ra sự cố với câu trả lời này. Hãy xem lại và gửi lại.",
   "mastermindReplyCounter": "{count}/{limit}",
-  "mastermindReplyDiscard": "Bỏ",
+  "mastermindReplyCounterSemantics": "Đã dùng {count} trên {limit} ký tự",
+  "mastermindReplyDiscard": "Bỏ câu trả lời",
   "mastermindReplyForbidden": "Tài khoản này không thể gửi câu trả lời.",
   "mastermindReplyNotSaved": "Không lưu được câu trả lời trên thiết bị nên chưa gửi. Hãy thử lại.",
   "mastermindReplyOnMac": "Trả lời trên máy Mac",
@@ -5643,10 +5654,10 @@
   "mastermindReplySent": "Đã gửi · đang chờ Mastermind",
   "mastermindReplyStale": "Câu hỏi đã thay đổi hoặc đã được trả lời. Hãy xem lại.",
   "mastermindReplyTextPlaceholder": "Viết câu trả lời cho Mastermind",
-  "mastermindReplyTooLarge": "Câu trả lời quá dài. Hãy rút gọn và thử lại.",
+  "mastermindReplyTooLarge": "Câu trả lời quá dài. Hãy giữ trong 500 ký tự và 10 dòng rồi thử lại.",
   "mastermindReplyUnauthorized": "Chúng tôi không xác nhận được phiên đăng nhập của bạn. Hãy thử lại.",
-  "mastermindReplyUnauthorizedAgain": "Phiên đăng nhập của bạn không truy cập được Mastermind. Hãy thử lại hoặc đăng nhập lại.",
-  "mastermindReplyUnsafeText": "Không thể gửi nội dung này. Hãy dùng chữ thường, không kèm liên kết, số dài hay thông tin cá nhân.",
+  "mastermindReplyUnauthorizedAgain": "Phiên đăng nhập của bạn không truy cập được Mastermind. Hãy thử lại hoặc đăng xuất rồi đăng nhập lại.",
+  "mastermindReplyUnsafeText": "Không thể gửi nội dung này. Hãy chỉ dùng chữ và dấu câu thông thường, không kèm liên kết, dãy số dài hay thông tin cá nhân. Tối đa 10 dòng.",
   "mastermindReplyUseRecommended": "Dùng phương án đề xuất",
   "mastermindReplyYourReply": "Câu trả lời của bạn: {reply}",
   "mastermindReservePacing": "Nhịp dự trữ (quy tắc biểu đồ)",

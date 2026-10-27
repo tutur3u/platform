@@ -210,6 +210,34 @@ void main() {
       expect(find.text('First decision'), findsOneWidget);
     });
 
+    testWidgets('search does not match the Reply on Mac placeholder', (
+      tester,
+    ) async {
+      await _pump(tester, inboxJson(_mixed));
+      await tester.enterText(find.byType(TextField), 'reply on');
+      await tester.pumpAndSettle();
+      expect(find.text('Fyi note'), findsNothing);
+      expect(find.text('No matching items'), findsOneWidget);
+    });
+
+    testWidgets('a product filter is reset when its product leaves', (
+      tester,
+    ) async {
+      final harness = await _pump(tester, inboxJson(_mixed));
+      await tester.tap(find.widgetWithText(AppChip, 'Mastermind'));
+      await tester.pumpAndSettle();
+      expect(find.text('First decision'), findsNothing);
+
+      // The refresh drops the only Mastermind item, and with it the chips.
+      harness.source.bytes = snapshotBytes(inboxJson(_mixed.sublist(0, 3)));
+      await harness.snapshot.refresh();
+      await tester.pumpAndSettle();
+      expect(find.byType(AppChip), findsNothing);
+      expect(find.text('First decision'), findsOneWidget);
+      expect(find.text('Action item'), findsOneWidget);
+      expect(find.text('No matching items'), findsNothing);
+    });
+
     testWidgets('no product chips when there is one product', (tester) async {
       await _pump(tester, inboxJson([inboxItem(1)]));
       expect(find.byType(AppChip), findsNothing);
@@ -231,6 +259,48 @@ void main() {
       await replies.submit(item: parsedItem(inboxItem(1)), text: 'Hello');
       await _pump(tester, inboxJson([inboxItem(1)]), replies: replies);
       expect(find.text('1 reply waiting to send'), findsOneWidget);
+    });
+
+    testWidgets('one waiting reply opens its item; several do not', (
+      tester,
+    ) async {
+      final router = GoRouter(
+        initialLocation: Routes.mastermindInbox,
+        routes: [
+          GoRoute(
+            path: Routes.mastermindInbox,
+            builder: (_, _) => const MastermindInboxPage(),
+          ),
+          GoRoute(
+            path: Routes.mastermindInboxItem,
+            builder: (_, state) =>
+                Text('detail ${state.pathParameters['itemId']}'),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+      final replies = repliesCubit(
+        transport: FakeReplyTransport(const [ReplyUnavailable()]),
+      );
+      await replies.submit(item: parsedItem(inboxItem(7)), text: 'Hello');
+      await _pump(
+        tester,
+        inboxJson([inboxItem(7), inboxItem(8)]),
+        replies: replies,
+        router: router,
+      );
+      await replies.submit(item: parsedItem(inboxItem(8)), text: 'Hello');
+      await tester.pumpAndSettle();
+      expect(find.text('2 replies waiting to send'), findsOneWidget);
+      await tester.tap(find.text('2 replies waiting to send'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('detail'), findsNothing);
+
+      await replies.discard(inboxItemId(8), inboxHash('a'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('1 reply waiting to send'));
+      await tester.pumpAndSettle();
+      expect(find.text('detail ${inboxItemId(7)}'), findsOneWidget);
     });
 
     testWidgets('shows nothing when none are waiting', (tester) async {

@@ -5,7 +5,6 @@ import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/inbox_model.dart';
 import 'package:mobile/features/mastermind/replies/mastermind_replies_cubit.dart';
-import 'package:mobile/features/mastermind/replies/reply_models.dart';
 import 'package:mobile/features/mastermind/view/inbox/inbox_item_tile.dart';
 import 'package:mobile/features/mastermind/view/inbox/mastermind_replies_watcher.dart';
 import 'package:mobile/features/mastermind/view/inbox/reply_composer.dart';
@@ -28,7 +27,7 @@ class ItemReplySection extends StatelessWidget {
     return BlocBuilder<MastermindRepliesCubit, MastermindRepliesState>(
       bloc: replies,
       builder: (context, state) {
-        final entry = _entryFor(state);
+        final entry = state.entryFor(item.id, item.versionHash);
         if (entry != null) {
           return ReplyEntryPanel(
             entry: entry,
@@ -52,14 +51,6 @@ class ItemReplySection extends StatelessWidget {
         );
       },
     );
-  }
-
-  /// A reply is bound to the exact version of the question it answered.
-  OutboxEntry? _entryFor(MastermindRepliesState state) {
-    final entry = state.entryFor(item.id);
-    return entry != null && entry.versionHash == item.versionHash
-        ? entry
-        : null;
   }
 }
 

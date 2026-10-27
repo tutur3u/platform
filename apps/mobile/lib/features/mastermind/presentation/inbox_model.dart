@@ -79,7 +79,9 @@ bool _matches(NeedsYou item, String needle) =>
     item.title.toLowerCase().contains(needle) ||
     item.body.toLowerCase().contains(needle) ||
     (item.product?.wireName.toLowerCase().contains(needle) ?? false) ||
-    item.options.any((option) => option.toLowerCase().contains(needle));
+    selectableOptions(
+      item,
+    ).any((option) => option.$2.toLowerCase().contains(needle));
 
 List<SecurityItem> _onePerProduct(List<NeedsYouItem> items) {
   final seen = <Product?>{};

@@ -85,9 +85,14 @@ final class MastermindRepliesState {
 
   bool get canReply => capability == ReplyCapability.supported;
 
-  OutboxEntry? entryFor(String itemId) {
+  /// A reply is bound to the exact version of the question it answered, so a
+  /// queued reply to an older version of the item is never mistaken for this
+  /// one.
+  OutboxEntry? entryFor(String itemId, String versionHash) {
     for (final entry in outbox) {
-      if (entry.itemId == itemId) return entry;
+      if (entry.itemId == itemId && entry.versionHash == versionHash) {
+        return entry;
+      }
     }
     return null;
   }

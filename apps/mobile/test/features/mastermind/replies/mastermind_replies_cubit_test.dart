@@ -230,8 +230,8 @@ void main() {
       await cubit.submit(item: _item, optionIndex: 0);
       expect(cubit.state.statusFor(_item.id).issue, ReplyIssue.offline);
       expect(cubit.state.pendingCount, 1);
-      await cubit.retry(_item.id);
-      await cubit.retry(_item.id);
+      await cubit.retry(_item.id, _item.versionHash);
+      await cubit.retry(_item.id, _item.versionHash);
       final keys = transport.sent.map((e) => e.idempotencyKey).toSet();
       expect(transport.sent, hasLength(3));
       expect(keys, hasLength(1));
@@ -276,8 +276,8 @@ void main() {
       addTearDown(cubit.close);
       await cubit.submit(item: _item, optionIndex: 0);
       transport.gate = Completer<void>();
-      final first = cubit.retry(_item.id);
-      final second = cubit.retry(_item.id);
+      final first = cubit.retry(_item.id, _item.versionHash);
+      final second = cubit.retry(_item.id, _item.versionHash);
       transport.gate!.complete();
       await Future.wait([first, second]);
       expect(transport.sent, hasLength(2));
@@ -413,12 +413,12 @@ void main() {
       expect(status.retryAt, now.add(const Duration(minutes: 3)));
       expect(cubit.state.pendingCount, 1);
 
-      await cubit.retry(_item.id);
+      await cubit.retry(_item.id, _item.versionHash);
       await cubit.flush();
       expect(transport.sent, hasLength(1), reason: 'still rate limited');
 
       now = now.add(const Duration(minutes: 3, seconds: 1));
-      await cubit.retry(_item.id);
+      await cubit.retry(_item.id, _item.versionHash);
       expect(transport.sent, hasLength(2));
       expect(transport.sent.map((e) => e.idempotencyKey).toSet(), hasLength(1));
     });
@@ -446,11 +446,11 @@ void main() {
       expect(status.authFailures, 1);
       expect(cubit.state.pendingCount, 1);
 
-      await cubit.retry(_item.id);
+      await cubit.retry(_item.id, _item.versionHash);
       status = cubit.state.statusFor(_item.id);
       expect(status.authFailures, 2);
 
-      await cubit.retry(_item.id);
+      await cubit.retry(_item.id, _item.versionHash);
       expect(cubit.state.outbox.single.status, OutboxStatus.sent);
       expect(cubit.state.statusFor(_item.id).issue, isNull);
       expect(transport.sent.map((e) => e.idempotencyKey).toSet(), hasLength(1));
@@ -480,7 +480,7 @@ void main() {
       );
       addTearDown(cubit.close);
       await cubit.submit(item: _item, text: 'Hello');
-      await cubit.discard(_item.id);
+      await cubit.discard(_item.id, _item.versionHash);
       expect(cubit.state.outbox, isEmpty);
       expect(await store.inner.read(), isEmpty);
     });

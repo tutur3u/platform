@@ -24292,7 +24292,7 @@ abstract class AppLocalizations {
   /// No description provided for @mastermindReplyChooseOrWrite.
   ///
   /// In en, this message translates to:
-  /// **'Choose an option or write your own reply.'**
+  /// **'Choose an option or write your own reply (up to 500 characters and 10 lines).'**
   String get mastermindReplyChooseOrWrite;
 
   /// No description provided for @mastermindReplyConfirmMessage.
@@ -24310,7 +24310,7 @@ abstract class AppLocalizations {
   /// No description provided for @mastermindReplyConflict.
   ///
   /// In en, this message translates to:
-  /// **'This reply was already used for something else. Review it and send a new one.'**
+  /// **'Something went wrong with this reply. Review it and send it again.'**
   String get mastermindReplyConflict;
 
   /// No description provided for @mastermindReplyCounter.
@@ -24318,6 +24318,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count}/{limit}'**
   String mastermindReplyCounter(int count, int limit);
+
+  /// No description provided for @mastermindReplyCounterSemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} of {limit} characters used'**
+  String mastermindReplyCounterSemantics(int count, int limit);
 
   /// No description provided for @mastermindReplyDiscard.
   ///
@@ -24400,7 +24406,7 @@ abstract class AppLocalizations {
   /// No description provided for @mastermindReplyTooLarge.
   ///
   /// In en, this message translates to:
-  /// **'That reply is too long. Shorten it and try again.'**
+  /// **'That reply is too long. Keep it to 500 characters and 10 lines, then try again.'**
   String get mastermindReplyTooLarge;
 
   /// No description provided for @mastermindReplyUnauthorized.
@@ -24412,13 +24418,13 @@ abstract class AppLocalizations {
   /// No description provided for @mastermindReplyUnauthorizedAgain.
   ///
   /// In en, this message translates to:
-  /// **'Your session can\'t reach Mastermind. Try again, or sign in again.'**
+  /// **'Your session can\'t reach Mastermind. Try again, or sign out and sign in again.'**
   String get mastermindReplyUnauthorizedAgain;
 
   /// No description provided for @mastermindReplyUnsafeText.
   ///
   /// In en, this message translates to:
-  /// **'That text can\'t be sent. Use plain words, without links, long numbers or personal details.'**
+  /// **'That text can\'t be sent. Use plain words and punctuation only, without links, long numbers or personal details, in 10 lines or fewer.'**
   String get mastermindReplyUnsafeText;
 
   /// No description provided for @mastermindReplyUseRecommended.

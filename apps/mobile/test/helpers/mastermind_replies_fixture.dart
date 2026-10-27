@@ -101,6 +101,9 @@ final class SpyOutboxStore implements MastermindOutboxStore {
   final inner = MemoryOutboxStore();
   bool failWrites = false;
 
+  /// When set, a write waits for it before it is stored.
+  Completer<void>? writeGate;
+
   @override
   Future<List<OutboxEntry>> read() => inner.read();
 
@@ -108,6 +111,7 @@ final class SpyOutboxStore implements MastermindOutboxStore {
   Future<void> write(List<OutboxEntry> entries) async {
     log?.add('write:${entries.length}');
     if (failWrites) throw StateError('disk full');
+    if (writeGate case final gate?) await gate.future;
     await inner.write(entries);
   }
 

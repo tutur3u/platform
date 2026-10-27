@@ -1,6 +1,12 @@
+import 'dart:convert';
+
 /// The hub rejects longer text with 413 or 400, so the composer never lets it
 /// reach the wire. Counted in code points, as the Worker counts them.
 const mastermindReplyTextLimit = 500;
+
+/// The hub refuses more than this many lines as `unsafe_text` (it counts them
+/// after collapsing blank runs; the composer is stricter and caps raw lines).
+const mastermindReplyLineLimit = 10;
 
 /// A Needs-you item with nothing real to pick carries this single option. It is
 /// a pointer to the Mac, never a choice: the Worker answers 400 if it is sent.
@@ -145,11 +151,13 @@ List<OutboxEntry> normalizeOutbox(
       : kept.sublist(kept.length - _maxOutboxEntries);
 }
 
-/// Non-empty after trimming and within the limit; the hub owns the rest of the
-/// text policy and answers `unsafe_text`.
+/// Non-empty after trimming and within the code point and line limits; the hub
+/// owns the rest of the text policy and answers `unsafe_text`.
 bool isValidReplyText(String text) {
   final trimmed = text.trim();
-  return trimmed.isNotEmpty && trimmed.runes.length <= mastermindReplyTextLimit;
+  return trimmed.isNotEmpty &&
+      trimmed.runes.length <= mastermindReplyTextLimit &&
+      const LineSplitter().convert(trimmed).length <= mastermindReplyLineLimit;
 }
 
 /// What the user has composed for one item and not yet sent. It outlives a

@@ -207,6 +207,7 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
       return false;
     }
     if (text != null && !isValidReplyText(text)) return false;
+    if (!await _mayReply()) return false;
     await ensureLoaded();
     final existing = state.outbox.where(
       (entry) =>
@@ -235,20 +236,27 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
     return true;
   }
 
-  /// Sends the queued reply for [itemId] again, with its original key.
-  Future<void> retry(String itemId) async {
-    final entry = state.entryFor(itemId);
+  /// Sends the queued reply for [itemId] at [versionHash] again, with its
+  /// original key. Nothing goes out while replies are off: it stays queued.
+  Future<void> retry(String itemId, String versionHash) async {
+    final entry = state.entryFor(itemId, versionHash);
     if (entry == null || entry.status != OutboxStatus.pending) return;
     final retryAt = state.statusFor(itemId).retryAt;
     if (retryAt != null && _clock().isBefore(retryAt)) return;
+    if (!await _mayReply()) return;
     await _dispatch(entry);
   }
 
   /// Retries every queued reply that is neither waiting out a 429 nor refused
-  /// by the session or account. Called when the app resumes or a page opens.
-  Future<void> flush() async {
+  /// by the session or account. Called when the app resumes, a page opens or
+  /// the device comes back online ([recheckCapabilities]: the hub may have
+  /// turned replies off meanwhile). While replies are off, queued entries stay
+  /// queued: neither sent nor dropped.
+  Future<void> flush({bool recheckCapabilities = false}) async {
     await ensureLoaded();
+    await loadCapabilities(force: recheckCapabilities);
     for (final entry in List.of(state.outbox)) {
+      if (!state.canReply) return;
       if (entry.status != OutboxStatus.pending) continue;
       final status = state.statusFor(entry.itemId);
       final blocked =
@@ -260,18 +268,26 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
   }
 
   /// Drops a queued reply the user no longer wants sent.
-  Future<void> discard(String itemId) async {
-    final entry = state.entryFor(itemId);
+  Future<void> discard(String itemId, String versionHash) async {
+    final entry = state.entryFor(itemId, versionHash);
     if (entry == null) return;
     emit(state.copyWith(outbox: _without(entry)));
     _setStatus(itemId, ReplyItemStatus.idle);
     await _persist();
   }
 
+  /// Whether replies are on, asking the hub first if that is not yet known.
+  Future<bool> _mayReply() async {
+    await loadCapabilities();
+    return state.canReply;
+  }
+
   Future<void> _dispatch(OutboxEntry entry) async {
     final transport = _transport;
     final key = entry.idempotencyKey;
-    if (_inFlight.contains(key)) return;
+    // The last line of defence for every path (submit, retry, flush): a reply
+    // is never sent while the hub does not say replies are on.
+    if (!state.canReply || _inFlight.contains(key)) return;
     final generation = _generation;
     final before = state.statusFor(entry.itemId);
     _setStatus(
@@ -289,10 +305,15 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
     }
     _inFlight.remove(key);
     if (!_current(generation)) return;
-    await _apply(entry, outcome, before.authFailures);
+    await _apply(entry, outcome, before.authFailures, generation);
   }
 
-  Future<void> _apply(OutboxEntry entry, ReplyOutcome outcome, int auth) async {
+  Future<void> _apply(
+    OutboxEntry entry,
+    ReplyOutcome outcome,
+    int auth,
+    int generation,
+  ) async {
     final id = entry.itemId;
     switch (outcome) {
       case ReplyAccepted():
@@ -320,7 +341,7 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
           );
         }
         await _drop(entry, ReplyIssue.stale);
-        await _refreshSnapshot?.call();
+        if (_current(generation)) await _refreshSnapshot?.call();
       case ReplyKeyConflict():
         await _drop(entry, ReplyIssue.conflict);
       case ReplyRejected(:final unsafeText):
@@ -332,6 +353,8 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
         await _drop(entry, ReplyIssue.tooLarge);
       case ReplyForbidden(:final disabled):
         await _drop(entry, ReplyIssue.forbidden);
+        // The drop awaited the store: a logout meanwhile owns the cleanup.
+        if (!_current(generation)) return;
         if (disabled) {
           emit(state.copyWith(capability: ReplyCapability.unsupported));
         } else {

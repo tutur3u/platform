@@ -124,10 +124,19 @@ Where replies are off, or the hub cannot be asked, the detail shows the options
 read-only and "Reply on your Mac"; there is no composer. The Worker owns the
 switch, so it flips without a store release.
 
+- **Gate in code:** submit, retry and flush all refuse to send unless the hub
+  says replies are on, not only the composer's visibility. Entries queued while
+  replies are off stay queued: neither sent nor dropped, until capabilities say
+  `replies: true` again. Coming back online re-asks the hub before flushing.
+- **Known answer kept offline:** a known "supported" answer survives a failed
+  re-check. Going offline never flips it, so the outbox keeps working with no
+  connection; only an answer from the hub (`replies: false`) turns replies off.
+
 - **Contract:** `POST /v1/replies` with exactly
   `{schema_version: "1.4", item_id, version_hash, option_index | text}`: one of
   an option index (into the item's own `options[]`) or free text of at most 500
-  characters, counted in code points. Choosing an option clears the text and
+  characters, counted in code points, and at most 10 lines (the hub's limit; the
+  composer caps both as you type). Choosing an option clears the text and
   typing clears the option. The text field has a placeholder and a counter. A
   confirmation asks before anything is sent.
 - **Idempotency:** the `Idempotency-Key` is a random v4 UUID from a secure
@@ -138,13 +147,19 @@ switch, so it flips without a store release.
   stays queued on the device, per user, in the snapshot cache directory, and is
   sent again when an Inbox screen opens, when the app resumes and when the device
   comes back online. It can be retried or discarded. Entries expire after seven
-  days and are dropped when a live snapshot no longer has the item open. Logout,
+  days and are dropped when a live snapshot no longer has the item open. Queued
+  replies live in the OS cache directory, not the documents directory: that
+  keeps them out of device backups, at the cost that the OS may purge the cache
+  under storage pressure and silently lose a queued reply. We accept that
+  trade-off, because a reply is short-lived and a lost one is re-asked; a reply
+  already accepted by the hub is unaffected. Logout,
   account switch and lost access erase the outbox with the snapshot cache, behind
   the same generation fences, so an in-flight send cannot revive it.
 - **409 `stale_item`:** the item is refreshed, the typed words are kept, and the
   screen says "This question changed or was already answered. Review it again."
   An option stays selected only if it is still the same option at the same
-  place. `idempotency_conflict` drops the queued entry.
+  place. `idempotency_conflict` drops the queued entry with "Something went
+  wrong with this reply. Review it and send it again."
 - **Other answers:** 400 (`unsafe_text` explains the text policy) and 413 keep
   the words to edit; 429 waits out `Retry-After` and disables the retry until
   then; 403 `replies_disabled` hides the composer and 403 `forbidden` is lost
@@ -152,6 +167,14 @@ switch, so it flips without a store release.
 - **401:** the reply stays queued. The first failure offers "Try again"; only
   after a repeat does "Sign out and sign in again" appear, and it asks first,
   because signing out removes every saved account on the device.
+- **Waiting rows:** the Inbox shows "N replies waiting to send" while replies
+  are queued; with exactly one, the row opens that item. A queued reply binds to
+  its item id and `version_hash`, so a reply to an older version of a question is
+  never shown as the answer to the current one. A 429 counts down on its own and
+  re-enables "Try again" when `Retry-After` has passed.
+- **Search:** it never matches the "Reply on Mac" placeholder option.
+- **Accessibility:** the reply status line is a live region, and the character
+  counter has a spoken label ("12 of 500 characters used").
 
 Delivery status beyond "Sent · waiting for Mastermind" (the item leaving the
 next snapshot) is not polled yet.
@@ -174,7 +197,9 @@ smoke test builds every `/mastermind/**` route through the production router.
 `reply_outbox_store_test.dart` (per-user persistence, corruption, clear),
 `hub_reply_transport_test.dart` (headers, every status, the 401 retry with the
 same key), `mastermind_replies_cubit_test.dart` (capability gate, persist before
-send, idempotent retry, 409/400/401/403/413/429, logout fencing, snapshot sync)
-and `mastermind_runtime_replies_test.dart` (logout, switch and lost access clear
+send, idempotent retry, 409/400/401/403/413/429, logout fencing, snapshot sync),
+`mastermind_replies_gate_test.dart` (nothing is sent while replies are off,
+including a reconnect flush; a logout racing a refused reply; entries bound to
+item id and version) and `mastermind_runtime_replies_test.dart` (logout, switch and lost access clear
 the outbox). The screens are in `view/mastermind_inbox_page_test.dart` and
 `view/mastermind_item_page_test.dart`.

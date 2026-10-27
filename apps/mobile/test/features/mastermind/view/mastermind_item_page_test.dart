@@ -8,8 +8,11 @@ import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/mastermind/data/hub_capabilities.dart';
 import 'package:mobile/features/mastermind/data/mastermind_snapshot_source.dart';
 import 'package:mobile/features/mastermind/replies/mastermind_replies_cubit.dart';
+import 'package:mobile/features/mastermind/replies/reply_models.dart';
+import 'package:mobile/features/mastermind/replies/reply_outbox_store.dart';
 import 'package:mobile/features/mastermind/replies/reply_outcome.dart';
 import 'package:mobile/features/mastermind/view/inbox/mastermind_item_page.dart';
+import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../../helpers/helpers.dart';
@@ -46,11 +49,15 @@ Future<_Page> _pump(
   int id = 1,
   List<ReplyOutcome> outcomes = const [ReplyAccepted()],
   bool replies = true,
+  DateTime Function()? clock,
+  MastermindOutboxStore? store,
 }) async {
   _surface(tester);
   final transport = FakeReplyTransport(outcomes);
   late final MastermindViewHarness harness;
   final cubit = repliesCubit(
+    clock: clock,
+    store: store,
     transport: transport,
     fetchCapabilities: capabilities(replies: replies),
     refreshSnapshot: () => harness.snapshot.refresh(),
@@ -97,7 +104,14 @@ void main() {
         items: [inboxItem(1, body: body, title: 'Pick one')],
         replies: false,
       );
-      expect(find.text('Pick one'), findsWidgets);
+      // The title is the shell title, not repeated in the body.
+      expect(find.text('Pick one'), findsNothing);
+      expect(
+        tester
+            .widget<ShellTitleOverride>(find.byType(ShellTitleOverride))
+            .title,
+        'Pick one',
+      );
       expect(find.text(body), findsOneWidget);
       expect(find.text('Decision'), findsOneWidget);
       expect(find.text('Tuturuuu'), findsOneWidget);
@@ -225,6 +239,28 @@ void main() {
       await _pump(tester);
       expect(find.text('Write a reply for Mastermind'), findsOneWidget);
       expect(find.text('0/500'), findsOneWidget);
+    });
+
+    testWidgets('caps the text at 10 lines', (tester) async {
+      await _pump(tester);
+      await tester.enterText(
+        find.byType(TextField),
+        List.generate(12, (i) => 'line $i').join('\n'),
+      );
+      await tester.pump();
+      final text = tester.widget<EditableText>(find.byType(EditableText));
+      expect(text.controller.text.split('\n'), hasLength(10));
+      expect(text.controller.text, endsWith('line 9'));
+    });
+
+    testWidgets('the counter has a spoken label', (tester) async {
+      final handle = tester.ensureSemantics();
+      await _pump(tester);
+      expect(find.bySemanticsLabel('0 of 500 characters used'), findsOneWidget);
+      await tester.enterText(find.byType(TextField), 'Hello');
+      await tester.pump();
+      expect(find.bySemanticsLabel('5 of 500 characters used'), findsOneWidget);
+      handle.dispose();
     });
 
     testWidgets('caps the text at 500 characters', (tester) async {
@@ -369,6 +405,43 @@ void main() {
     });
   });
 
+  group('status panel', () {
+    testWidgets('the status line is a live region', (tester) async {
+      await _pump(tester);
+      await tester.enterText(find.byType(TextField), 'Hello');
+      await tester.pump();
+      await _confirm(tester);
+      expect(
+        find.ancestor(
+          of: find.text('Sent · waiting for Mastermind'),
+          matching: find.byWidgetPredicate(
+            (w) => w is Semantics && w.properties.liveRegion == true,
+          ),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets("a queued reply to an older version is not this question's", (
+      tester,
+    ) async {
+      final store = MemoryOutboxStore();
+      OutboxEntry entry(String hash, String text) => OutboxEntry(
+        idempotencyKey:
+            '00000000-0000-4000-8000-00000000000${hash == 'a' ? 1 : 2}',
+        itemId: inboxItemId(1),
+        versionHash: inboxHash(hash),
+        createdAt: DateTime.utc(2026, 1, 31, 17, 30),
+        text: text,
+      );
+      await store.write([entry('b', 'old words'), entry('a', 'current words')]);
+      await _pump(tester, outcomes: const [ReplyUnavailable()], store: store);
+      expect(find.text('Your reply: current words'), findsOneWidget);
+      expect(find.text('Your reply: old words'), findsNothing);
+      expect(find.byType(TextField), findsNothing);
+    });
+  });
+
   group('409 stale_item', () {
     testWidgets('shows the refreshed question and keeps the draft', (
       tester,
@@ -384,7 +457,12 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(find.text('Refreshed'), findsWidgets);
+      expect(
+        tester
+            .widget<ShellTitleOverride>(find.byType(ShellTitleOverride))
+            .title,
+        'Refreshed',
+      );
       expect(find.text('my draft'), findsOneWidget);
       expect(find.text('This question was updated'), findsOneWidget);
     });
@@ -425,6 +503,39 @@ void main() {
         _enabled(tester, find.widgetWithText(AppButton, 'Try again')),
         isFalse,
       );
+    });
+
+    testWidgets('the 429 countdown ticks and re-enables Try again itself', (
+      tester,
+    ) async {
+      var now = DateTime.utc(2026, 1, 31, 17, 32);
+      await _pump(
+        tester,
+        outcomes: const [ReplyRateLimited(retryAfter: Duration(minutes: 2))],
+        clock: () => now,
+      );
+      await tester.enterText(find.byType(TextField), 'Hello');
+      await tester.pump();
+      await _confirm(tester);
+      final retry = find.widgetWithText(AppButton, 'Try again');
+      expect(find.textContaining('Try again in 2 min'), findsOneWidget);
+      expect(_enabled(tester, retry), isFalse);
+
+      now = now.add(const Duration(minutes: 1));
+      await tester.pump(const Duration(minutes: 1));
+      expect(find.textContaining('Try again in 1 min'), findsOneWidget);
+      expect(_enabled(tester, retry), isFalse);
+
+      now = now.add(const Duration(minutes: 1));
+      await tester.pump(const Duration(minutes: 1));
+      expect(find.textContaining('Too many replies'), findsNothing);
+      expect(
+        find.text(
+          'Saved on this device. It will be sent when Mastermind is reachable.',
+        ),
+        findsOneWidget,
+      );
+      expect(_enabled(tester, retry), isTrue);
     });
 
     testWidgets('403 replies_disabled hides the composer', (tester) async {

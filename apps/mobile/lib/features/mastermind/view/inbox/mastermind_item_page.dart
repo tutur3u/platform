@@ -113,25 +113,26 @@ class _Detail extends StatelessWidget {
               ),
             ],
           ),
+        // The title is the shell's title override above; the body repeats none.
         AppGroupedSection.spaced(
           children: [
-            AppGroupedRow(
-              title: Text(item.title),
-              subtitle: Wrap(
-                spacing: AppSpacing.xs,
-                runSpacing: AppSpacing.xs,
-                children: [
-                  if (item.kind case final kind?)
-                    AppBadge(
-                      child: Text(MastermindLabels.itemKind(l10n, kind)),
-                    ),
-                  if (item.product case final product?)
-                    AppBadge.outline(
-                      child: Text(MastermindLabels.product(product)),
-                    ),
-                ],
+            if (item.kind != null || item.product != null)
+              AppGroupedRow(
+                title: Wrap(
+                  spacing: AppSpacing.xs,
+                  runSpacing: AppSpacing.xs,
+                  children: [
+                    if (item.kind case final kind?)
+                      AppBadge(
+                        child: Text(MastermindLabels.itemKind(l10n, kind)),
+                      ),
+                    if (item.product case final product?)
+                      AppBadge.outline(
+                        child: Text(MastermindLabels.product(product)),
+                      ),
+                  ],
+                ),
               ),
-            ),
             if (item.body.isNotEmpty) AppGroupedRow(title: Text(item.body)),
           ],
         ),

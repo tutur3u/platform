@@ -39,8 +39,11 @@ final class MastermindRuntime {
     // A connectivity plugin error only means the device stays assumed online.
     _onlineSub = onlineChanges?.listen((online) {
       scheduler.setOnline(online: online);
-      // Back online: queued replies go out without waiting for a screen.
-      if (online) unawaited(this.replies.flush());
+      // Back online: queued replies go out without waiting for a screen, once
+      // the hub confirms replies are still on.
+      if (online) {
+        unawaited(this.replies.flush(recheckCapabilities: true));
+      }
     }, onError: (Object _) {});
   }
 

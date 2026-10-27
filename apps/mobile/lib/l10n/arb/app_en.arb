@@ -5373,6 +5373,16 @@
       }
     }
   },
+  "@mastermindReplyCounterSemantics": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
   "@mastermindReplyRateLimited": {
     "placeholders": {
       "minutes": {
@@ -5789,11 +5799,12 @@
   "mastermindRepliesWaiting": "{count, plural, =1{1 reply waiting to send} other{{count} replies waiting to send}}",
   "mastermindReplyCheckFailed": "Couldn't check whether replies are available.",
   "mastermindReplyChecking": "Checking whether replies are available…",
-  "mastermindReplyChooseOrWrite": "Choose an option or write your own reply.",
+  "mastermindReplyChooseOrWrite": "Choose an option or write your own reply (up to 500 characters and 10 lines).",
   "mastermindReplyConfirmMessage": "Reply to: {title}\nYour reply: {reply}",
   "mastermindReplyConfirmTitle": "Send this reply?",
-  "mastermindReplyConflict": "This reply was already used for something else. Review it and send a new one.",
+  "mastermindReplyConflict": "Something went wrong with this reply. Review it and send it again.",
   "mastermindReplyCounter": "{count}/{limit}",
+  "mastermindReplyCounterSemantics": "{count} of {limit} characters used",
   "mastermindReplyDiscard": "Discard",
   "mastermindReplyForbidden": "This account can't send replies.",
   "mastermindReplyNotSaved": "Couldn't save the reply on this device, so it wasn't sent. Try again.",
@@ -5807,10 +5818,10 @@
   "mastermindReplySent": "Sent · waiting for Mastermind",
   "mastermindReplyStale": "This question changed or was already answered. Review it again.",
   "mastermindReplyTextPlaceholder": "Write a reply for Mastermind",
-  "mastermindReplyTooLarge": "That reply is too long. Shorten it and try again.",
+  "mastermindReplyTooLarge": "That reply is too long. Keep it to 500 characters and 10 lines, then try again.",
   "mastermindReplyUnauthorized": "We couldn't confirm your session. Try again.",
-  "mastermindReplyUnauthorizedAgain": "Your session can't reach Mastermind. Try again, or sign in again.",
-  "mastermindReplyUnsafeText": "That text can't be sent. Use plain words, without links, long numbers or personal details.",
+  "mastermindReplyUnauthorizedAgain": "Your session can't reach Mastermind. Try again, or sign out and sign in again.",
+  "mastermindReplyUnsafeText": "That text can't be sent. Use plain words and punctuation only, without links, long numbers or personal details, in 10 lines or fewer.",
   "mastermindReplyUseRecommended": "Use recommended",
   "mastermindReplyYourReply": "Your reply: {reply}",
   "mastermindReservePacing": "Reserve pacing (chart rule)",

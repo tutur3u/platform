@@ -49,7 +49,11 @@ class ReplyIssueBanner extends StatelessWidget {
 
 /// The state of a reply that is on the device or already accepted: sending,
 /// queued (with retry and discard), rate limited, session trouble, or sent.
-class ReplyEntryPanel extends StatelessWidget {
+///
+/// While a 429 is being waited out it counts down on its own and re-enables
+/// "Try again" the moment [ReplyItemStatus.retryAt] passes, without needing
+/// another state change.
+class ReplyEntryPanel extends StatefulWidget {
   const ReplyEntryPanel({
     required this.entry,
     required this.status,
@@ -62,6 +66,59 @@ class ReplyEntryPanel extends StatelessWidget {
   final MastermindRepliesCubit replies;
 
   @override
+  State<ReplyEntryPanel> createState() => _ReplyEntryPanelState();
+}
+
+class _ReplyEntryPanelState extends State<ReplyEntryPanel> {
+  Timer? _tick;
+
+  OutboxEntry get entry => widget.entry;
+  ReplyItemStatus get status => widget.status;
+  MastermindRepliesCubit get replies => widget.replies;
+
+  @override
+  void initState() {
+    super.initState();
+    _schedule();
+  }
+
+  @override
+  void didUpdateWidget(covariant ReplyEntryPanel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _schedule();
+  }
+
+  @override
+  void dispose() {
+    _tick?.cancel();
+    super.dispose();
+  }
+
+  /// Time left of the 429 wait, or null when there is none.
+  Duration? get _remaining {
+    final until = status.retryAt;
+    if (status.issue != ReplyIssue.rateLimited || until == null) return null;
+    final left = until.difference(replies.now());
+    return left.isNegative || left == Duration.zero ? null : left;
+  }
+
+  /// One timer, set for the next moment the screen would read differently: the
+  /// next whole-minute boundary of the countdown, or the end of the wait.
+  void _schedule() {
+    _tick?.cancel();
+    _tick = null;
+    final left = _remaining;
+    if (left == null) return;
+    const minute = Duration(minutes: 1);
+    final minutesLeft = (left.inMicroseconds / minute.inMicroseconds).ceil();
+    final untilChange = left - minute * (minutesLeft - 1);
+    _tick = Timer(untilChange, () {
+      if (!mounted) return;
+      setState(_schedule);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final reply = entry.optionLabel ?? entry.text ?? '';
@@ -72,7 +129,9 @@ class ReplyEntryPanel extends StatelessWidget {
       children: [
         AppGroupedRow(
           leading: AppIconTile(icon: icon, tone: tone),
-          title: Text(title),
+          // A live region, so a screen reader announces sending, queued, rate
+          // limited and sent as they change.
+          title: Semantics(liveRegion: true, child: Text(title)),
           subtitle: Text(l10n.mastermindReplyYourReply(reply)),
         ),
         if (!sent && !status.sending) _actions(context),
@@ -88,11 +147,12 @@ class ReplyEntryPanel extends StatelessWidget {
     if (status.sending) {
       return (LucideIcons.send, AppTone.neutral, l10n.mastermindReplySending);
     }
+    final left = _remaining;
     return switch (status.issue) {
-      ReplyIssue.rateLimited => (
+      ReplyIssue.rateLimited when left != null => (
         AppIcons.warning,
         AppTone.warning,
-        l10n.mastermindReplyRateLimited(_minutesLeft(context)),
+        l10n.mastermindReplyRateLimited(_minutesLeft(left)),
       ),
       ReplyIssue.unauthorized => (
         AppIcons.warning,
@@ -105,16 +165,12 @@ class ReplyEntryPanel extends StatelessWidget {
     };
   }
 
-  int _minutesLeft(BuildContext context) {
-    final until = status.retryAt;
-    if (until == null) return 1;
-    final seconds = until.difference(replies.now()).inSeconds;
-    return seconds <= 0 ? 1 : (seconds / 60).ceil();
-  }
+  static int _minutesLeft(Duration left) =>
+      (left.inMicroseconds / Duration.microsecondsPerMinute).ceil();
 
   Widget _actions(BuildContext context) {
     final l10n = context.l10n;
-    final waiting = status.issue == ReplyIssue.rateLimited;
+    final waiting = _remaining != null;
     return Padding(
       padding: const EdgeInsets.all(AppSpacing.md),
       child: Wrap(
@@ -124,7 +180,8 @@ class ReplyEntryPanel extends StatelessWidget {
           AppButton.primary(
             onPressed: waiting
                 ? null
-                : () => unawaited(replies.retry(entry.itemId)),
+                : () =>
+                      unawaited(replies.retry(entry.itemId, entry.versionHash)),
             child: Text(l10n.mastermindTryAgain),
           ),
           // Signing out is offered only once a plain retry has failed again.
@@ -135,7 +192,8 @@ class ReplyEntryPanel extends StatelessWidget {
               child: Text(l10n.mastermindSignOutAction),
             ),
           AppButton.ghost(
-            onPressed: () => unawaited(replies.discard(entry.itemId)),
+            onPressed: () =>
+                unawaited(replies.discard(entry.itemId, entry.versionHash)),
             child: Text(l10n.mastermindReplyDiscard),
           ),
         ],
