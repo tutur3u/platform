@@ -515,11 +515,30 @@ Known credentials, token/key-shaped strings and URL credentials are redacted.
 Raw child stdout/stderr and error causes never enter the receipt or logs. Each
 message is one line and capped at 300 characters. Diagnostics do not establish
 whether a write succeeded; the receipt stays `pending` and replay stays fenced.
-Known credentials are removed from raw text before whitespace/zero-width
-normalization or line selection, including display-wrapped forms. All URL query
-values are redacted. Credential keywords include auth, credentials, pwd, sig,
-signature and numbered names. Quoted values retain no escaped-quote or semicolon
-continuation. Workflow command markers `##[` and `::` are neutralized anywhere.
+Within the 1 MiB stderr capture, known credentials are scrubbed from raw text
+and its ANSI-stripped form before line selection. Decoded messages are scrubbed
+again after ANSI removal and control-to-space normalization, before clipping.
+Known-value matching covers whitespace, Unicode control/combining characters and
+the supported box-prefixed/code-suffix wraps. Whitespace/control/combining runs
+have no length limit within the input budget; at most 64 code-suffix units are
+allowed between token characters. Arbitrary display encodings are unsupported.
+Each diagnostic line is clipped to 4,096 characters before diagnostic matching.
+When clipping occurs, the trailing token-shaped run is removed so a shortened
+credential cannot escape the long-token redaction. Decoded JSON messages have
+their own line budget. Only the final `[code: ...]` suffix is parsed for a provider
+pair; the preceding text is trimmed without a prefix-matching regex. Retained
+messages still have the 300-character, one-line limit. Clipped trailing runs and
+detail outside these budgets are discarded, including potentially useful text.
+Query values within analyzed lines are redacted. Credential keywords include
+auth, credentials, pwd, sig, signature and numbered names, including supported
+closing bracket/quote/backtick key wrappers and escaped JSON quotes. Quoted values are scanned through
+escaped quotes and semicolon continuations. Maximal runs of workflow-command
+markers are collapsed so nested `###[` or `:::` cannot recreate a command.
+Performance regressions cover specific 1 MiB fixtures: one long headline with a
+known credential in the scrub list (five samples), and repeated space-heavy code
+lines with valid or invalid suffixes (three samples per fixture). Each sample
+constructs and serializes the retained diagnostic and must finish below 1,000 ms.
+These fixtures do not establish a time bound for every possible diagnostic.
 
 `tutur3u/platform` is public: workflow logs and receipt artifacts are
 world-readable. "Private" describes the detached Worker, not artifact secrecy.
