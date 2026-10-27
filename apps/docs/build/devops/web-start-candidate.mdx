@@ -59,25 +59,46 @@ Requests fail closed unless all of these runtime settings are admitted:
 - `AUTH_COOKIE_DOMAIN=.staging.tutur3u.com` and
   `NEXT_PUBLIC_SUPABASE_URL=https://fxefojytwimjiqxseqag.supabase.co`.
 - `NEXT_FALLBACK_ORIGIN` is one exact HTTPS staging Next deployment origin,
-  with no path, credentials or query. Only the Web project's `tuturuuu.vercel.app` or `tuturuuu-*.vercel.app` hostname, or a
-  staging-domain hostname is accepted; canonical Tuturuuu hosts are rejected.
-  It has no default. The release owner must verify that deployment's actual
-  Supabase project, API rewrites and satellite targets before admitting it.
-- `TRUSTED_PROXY_ORIGIN_SECRET` is supplied separately and matches the staging
-  Next origin's secret. No secret is checked in or forwarded as a raw value.
+  with no path, credentials or query. The hostname filter accepts
+  `tuturuuu.vercel.app`, the `tuturuuu-*.vercel.app` prefix, or a staging-domain
+  hostname; canonical Tuturuuu hosts are rejected. The Vercel prefix is not
+  bound to our Vercel team, project or deployment ID and does not prove ownership.
+  It has no default. Before forwarding any request, the release owner must
+  verify the exact origin's Vercel team, project, immutable deployment ID, actual
+  Supabase project, API rewrites and satellite targets. Retain that admission
+  receipt privately and repeat verification when the origin changes.
+- `TRUSTED_PROXY_ORIGIN_SECRET` must be a staging-only secret of at least 32
+  characters, shared only by this Worker and its staging Next origin, and
+  **distinct from production's origin-IP-proof secret**. No secret is checked
+  in or forwarded as a raw value. Proofs authenticate the IP and timestamp,
+  without binding the environment, host or audience; reusing the production
+  key would let staging proofs verify in production. Before staging publication
+  and after either key rotates, the release owner must compare their SHA-256
+  fingerprints privately through the approved secret store and record only a
+  distinct-key verification receipt. Equal or unavailable fingerprints block
+  publication. Runtime admission checks key presence and length only; it has
+  no production fingerprint configured and cannot enforce key separation.
 
 The staging Next deployment must return
 `x-tuturuuu-staging-supabase-ref: fxefojytwimjiqxseqag` on **every** response,
 including errors, redirects and the service-worker script. Configure that
 attestation only after verifying its actual database identity. Missing or
 mismatched attestation returns 502 without exposing the upstream body or cookies.
+This identity attestation fails closed **after forwarding**; it does not bind
+Vercel team ownership or prevent credentials and the signed proof from reaching
+an incorrectly admitted origin. Verify ownership before any request is sent.
 This requirement deliberately blocks enabling the candidate against an
 unqualified Next deployment; Web 1 does not change the current Next deployment
 or add its marker. Domain cookies must specify exactly
 `.staging.tutur3u.com`; host-only cookies, including `__Host-` cookies, retain
 host-only semantics on `web.staging.tutur3u.com`, the browser-facing response
 host. They are not shared with central staging or other satellites; the proxy
-does not widen them to the staging zone. Other cookie domains return 502.
+does not widen them to the staging zone. Other or empty cookie domains return
+502. Each Set-Cookie may contain at most one Domain attribute; duplicates are
+rejected even when their values match, regardless of attribute name casing or
+whitespace. The entire response is rejected without its body or any cookies.
+`handler.test.ts` covers multiple/mixed-case/equal domains, host-only cookies,
+and preservation of a single staging domain.
 
 The Worker preserves auth, session, webhook, `x-cron-secret`, RSC and action
 headers. It removes hop-by-hop headers, `forwarded`, `true-client-ip`,
