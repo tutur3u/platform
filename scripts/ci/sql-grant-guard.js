@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 // Fails when a new migration or rollback grants privileges to PUBLIC or anon,
-// or when a new migration creates a SECURITY DEFINER function without revoking
-// EXECUTE from PUBLIC and anon in the same file. Files before the cutoff are
+// or when a new migration creates/alters a SECURITY DEFINER routine without
+// subsequently revoking EXECUTE from PUBLIC and anon in the same file. Files before the cutoff are
 // legacy; `--report` lists them for visibility without failing.
 // Policy: apps/docs/reference/database/migrations-guide.mdx#sql-grant-guard
 
@@ -28,11 +28,12 @@ const ALLOW_MARKERS = {
 
 // Returns the SQL with comments, string literals and dollar-quoted bodies
 // blanked (newlines kept, so line numbers survive), plus the `--` comments.
-function lexSql(sql) {
+function lexSql(sql, { keepStrings = false } = {}) {
   let code = '';
   let line = 1;
   let index = 0;
   const comments = [];
+  const bodies = [];
   const emit = (end, keep) => {
     const chunk = sql.slice(index, end);
     code += keep ? chunk : chunk.replace(/[^\n]/g, ' ');
@@ -45,7 +46,7 @@ function lexSql(sql) {
     if (sql.startsWith('--', index)) {
       const newline = sql.indexOf('\n', index);
       const end = newline < 0 ? sql.length : newline;
-      comments.push({ line, text: sql.slice(index + 2, end) });
+      comments.push({ line, start: index, text: sql.slice(index + 2, end) });
       emit(end, false);
     } else if (sql.startsWith('/*', index)) {
       let depth = 0;
@@ -75,18 +76,36 @@ function lexSql(sql) {
           break;
         }
       }
-      emit(Math.min(cursor, sql.length), false);
-    } else if (char === '"') {
-      let cursor = index + 1;
+      emit(Math.min(cursor, sql.length), keepStrings);
+    } else if (char === '"' || /^[uU]&"/.test(sql.slice(index, index + 3))) {
+      const unicode = char !== '"';
+      const quote = index + (unicode ? 2 : 0);
+      let cursor = quote + 1;
       while (cursor < sql.length) {
         if (sql[cursor] !== '"') cursor++;
         else if (sql[cursor + 1] === '"') cursor += 2;
-        else {
-          cursor++;
-          break;
-        }
+        else break;
       }
-      emit(Math.min(cursor, sql.length), true);
+      let identifier = sql.slice(quote + 1, cursor);
+      let end = Math.min(cursor + 1, sql.length);
+      if (unicode) {
+        const escapeClause = /^\s+uescape\s+'(.)'/i.exec(sql.slice(end));
+        const escapeChar = escapeClause?.[1] ?? '\\';
+        if (escapeClause) end += escapeClause[0].length;
+        identifier = identifier
+          .replace(/[\s\S]/g, (character) =>
+            character === escapeChar ? '\\' : character
+          )
+          .replace(/\\(?:\+([0-9a-f]{6})|([0-9a-f]{4}))/gi, (_, long, short) =>
+            String.fromCodePoint(parseInt(long ?? short, 16))
+          );
+      }
+      // Preserve simple names (including quoted roles), but no SQL delimiters.
+      const safe = `"${/^[A-Za-z0-9_$]+$/.test(identifier) ? identifier : identifier.replace(/[^\n]/g, '_')}"`;
+      const chunk = sql.slice(index, end);
+      code += safe + ' '.repeat(Math.max(0, chunk.length - safe.length));
+      line += countNewlines(chunk);
+      index = end;
     } else {
       const tag =
         char === '$' && !/[\w$]/.test(sql[index - 1] ?? '')
@@ -96,6 +115,9 @@ function lexSql(sql) {
           : null;
       if (tag) {
         const close = sql.indexOf(tag[0], index + tag[0].length);
+        const start = index + tag[0].length;
+        const end = close < 0 ? sql.length : close;
+        bodies.push({ start, end, line, text: sql.slice(start, end) });
         emit(close < 0 ? sql.length : close + tag[0].length, false);
       } else {
         code += char;
@@ -104,7 +126,7 @@ function lexSql(sql) {
       }
     }
   }
-  return { code, comments };
+  return { code, comments, bodies };
 }
 
 function countNewlines(text) {
@@ -113,31 +135,61 @@ function countNewlines(text) {
 
 // Splits lexed SQL into normalized (lowercase, single-spaced) statements.
 function parseStatements(sql) {
-  const { code, comments } = lexSql(sql);
+  const { code, comments, bodies } = lexSql(sql);
   const statements = [];
   let line = 1;
+  let offset = 0;
   for (const part of code.split(';')) {
     const startLine = line + countNewlines(/^\s*/.exec(part)[0]);
     const body = part.trim();
     if (body) {
       statements.push({
         text: body.replace(/\s+/g, ' ').toLowerCase(),
+        start: offset + part.indexOf(body),
+        end: offset + part.length,
         startLine,
-        endLine: startLine + countNewlines(body),
+        endLine: line + countNewlines(part),
       });
     }
     line += countNewlines(part);
+    offset += part.length + 1;
   }
-  return { statements, comments };
+  for (const body of bodies) {
+    for (const comment of lexSql(body.text).comments) {
+      comments.push({
+        ...comment,
+        start: body.start + comment.start,
+        line: body.line + comment.line - 1,
+      });
+    }
+  }
+  for (const comment of comments) {
+    comment.statement = statements.find(
+      (statement) =>
+        comment.start >= statement.start && comment.start <= statement.end
+    );
+    if (comment.statement) continue;
+    // A trailing comment belongs to the immediately preceding statement only.
+    const previous = statements
+      .filter((statement) => statement.end < comment.start)
+      .at(-1);
+    if (previous?.endLine === comment.line) {
+      comment.statement = previous;
+    } else {
+      comment.statement = statements.find(
+        (statement) =>
+          statement.start > comment.start &&
+          statement.startLine === comment.line + 1
+      );
+    }
+  }
+  return { statements, comments, bodies };
 }
 
 function isAllowed(statement, comments, rule) {
   const marker = new RegExp(`^\\s*${ALLOW_MARKERS[rule]}\\s*:\\s*\\S`, 'i');
   return comments.some(
-    (comment) =>
-      comment.line >= statement.startLine - 1 &&
-      comment.line <= statement.endLine &&
-      marker.test(comment.text)
+    (comment) => comment.statement === statement && marker.test(comment.text)
   );
 }
 
@@ -245,9 +297,10 @@ function roleList(text) {
 // --- Rules ---------------------------------------------------------------
 
 const GRANT = /^(?:alter default privileges\s.*?)?\bgrant\s(.+?)\sto\s(.+)$/;
-const CREATE_FUNCTION = /^create (?:or replace )?function\s(.+)$/;
+const DEFINER =
+  /^(?:create (?:or replace )?|alter )(function|procedure)\s(.+)$/;
 const REVOKE_FUNCTION =
-  /^revoke\s.+?\son (?:function|routine)s?\s(.+?)\sfrom\s(.+)$/;
+  /^revoke\s(?:all(?: privileges)?|execute)\son (function|procedure|routine)s?\s(.+?)\sfrom\s(.+)$/;
 
 function openGrantees(text) {
   if (!/^(?:grant|alter default privileges)\s/.test(text)) return [];
@@ -261,7 +314,7 @@ function routineKey(name, types) {
 }
 
 function scanSql(sql, { definerRule }) {
-  const { statements, comments } = parseStatements(sql);
+  const { statements, comments, bodies } = parseStatements(sql);
   const findings = [];
   const definers = [];
   const revoked = new Map();
@@ -278,27 +331,32 @@ function scanSql(sql, { definerRule }) {
 
     const revoke = REVOKE_FUNCTION.exec(statement.text);
     if (revoke) {
-      const fromRoles = roleList(revoke[2]);
-      for (const target of splitTopLevel(revoke[1])) {
+      const fromRoles = roleList(revoke[3]);
+      for (const target of splitTopLevel(revoke[2])) {
         const routine = readRoutine(target);
         if (!routine) continue;
         const types =
           routine.args === null ? null : signatureTypes(routine.args);
         const key = routineKey(routine.name, types);
-        const roleSet = revoked.get(key) ?? new Set();
-        for (const role of fromRoles) roleSet.add(role);
-        revoked.set(key, roleSet);
+        const entries = revoked.get(key) ?? [];
+        entries.push({
+          start: statement.start,
+          kind: revoke[1],
+          roles: fromRoles,
+        });
+        revoked.set(key, entries);
       }
     }
 
-    const create = CREATE_FUNCTION.exec(statement.text);
+    const create = DEFINER.exec(statement.text);
     if (definerRule && create && /\bsecurity definer\b/.test(statement.text)) {
-      const routine = readRoutine(create[1]);
-      if (routine && routine.args !== null) {
+      const routine = readRoutine(create[2]);
+      if (routine) {
         definers.push({
           statement,
           name: routine.name,
-          types: signatureTypes(routine.args),
+          kind: create[1],
+          types: routine.args === null ? null : signatureTypes(routine.args),
         });
       }
     }
@@ -307,17 +365,60 @@ function scanSql(sql, { definerRule }) {
   for (const definer of definers) {
     if (isAllowed(definer.statement, comments, RULES.definerPublic)) continue;
     const key = routineKey(definer.name, definer.types);
-    const roles = new Set([
-      ...(revoked.get(key) ?? []),
-      ...(revoked.get(definer.name) ?? []),
-    ]);
+    const roles = new Set(
+      [
+        ...(revoked.get(key) ?? []),
+        ...(key === definer.name ? [] : (revoked.get(definer.name) ?? [])),
+      ]
+        .filter(
+          (entry) =>
+            entry.start > definer.statement.start &&
+            (entry.kind === definer.kind || entry.kind === 'routine')
+        )
+        .flatMap((entry) => entry.roles)
+    );
     const missing = OPEN_ROLES.filter((role) => !roles.has(role));
     if (missing.length > 0) {
       findings.push({
         rule: RULES.definerPublic,
         line: definer.statement.startLine,
-        detail: `creates SECURITY DEFINER function ${key} without revoking EXECUTE from ${missing.join(', ')}`,
+        detail: `creates SECURITY DEFINER ${definer.kind} ${key} without revoking EXECUTE from ${missing.join(', ')}`,
       });
+    }
+  }
+  for (const body of bodies) {
+    const statement = statements.find(
+      (entry) => body.start >= entry.start && body.end <= entry.end
+    );
+    if (
+      !statement ||
+      !/^(?:do\b|create (?:or replace )?(?:function|procedure)\b)/.test(
+        statement.text
+      )
+    )
+      continue;
+    if (isAllowed(statement, comments, RULES.anonGrant)) continue;
+    const { code } = lexSql(body.text, { keepStrings: true });
+    const pattern = /\bgrant\b[^;']*/gi;
+    for (const match of code.matchAll(pattern)) {
+      const normalized = lexSql(match[0])
+        .code.replace(/\s+/g, ' ')
+        .trim()
+        .toLowerCase();
+      const grant = GRANT.exec(normalized);
+      if (!grant) continue;
+      const roles = roleList(grant[2]);
+      const open = roles.filter((role) => OPEN_ROLES.includes(role));
+      const computed = roles.some((role) => /^%[si](?![a-z0-9_])/.test(role));
+      if (open.length || computed)
+        findings.push({
+          rule: RULES.anonGrant,
+          line: body.line + countNewlines(body.text.slice(0, match.index)),
+          ...(open.length ? {} : { severity: 'warning' }),
+          detail: open.length
+            ? `literal body grant to ${open.join(', ')}`
+            : 'WARNING: body grant has a computed grantee; review the generated SQL',
+        });
     }
   }
   return findings.sort((left, right) => left.line - right.line);
@@ -327,7 +428,7 @@ const GUIDANCE = {
   [RULES.anonGrant]:
     'Grant to authenticated or service_role instead, or add "-- allow-anon-grant: <reason>" on the same or preceding line.',
   [RULES.definerPublic]:
-    'Add "revoke all on function <signature> from public, anon;" in the same file, or "-- allow-definer-public: <reason>" on the same or preceding line.',
+    'Add "revoke all on function <signature> from public, anon;" after its create/alter in the same file (use procedure for procedures), or "-- allow-definer-public: <reason>" on the same or preceding line.',
 };
 
 // --- Repository evaluation ----------------------------------------------
@@ -351,6 +452,7 @@ function fileVersion(file) {
 function evaluateSqlFiles({ files, readFile, cutoff = MIGRATION_CUTOFF }) {
   const violations = [];
   const legacy = [];
+  const warnings = [];
   for (const file of files) {
     const definerRule = file.startsWith(`${MIGRATIONS_DIR}/`);
     if (!definerRule && !file.startsWith(`${ROLLBACKS_DIR}/`)) continue;
@@ -363,10 +465,15 @@ function evaluateSqlFiles({ files, readFile, cutoff = MIGRATION_CUTOFF }) {
         file,
         message: `${file}:${finding.line} ${finding.detail}. ${GUIDANCE[finding.rule]}`,
       };
-      (enforced ? violations : legacy).push(entry);
+      (finding.severity === 'warning'
+        ? warnings
+        : enforced
+          ? violations
+          : legacy
+      ).push(entry);
     }
   }
-  return { violations, legacy };
+  return { violations, legacy, warnings };
 }
 
 function checkRepository(rootDir = ROOT_DIR) {
@@ -399,7 +506,8 @@ function formatLegacyReport(legacy, cutoff = MIGRATION_CUTOFF) {
 }
 
 if (require.main === module) {
-  const { violations, legacy } = checkRepository();
+  const { violations, legacy, warnings } = checkRepository();
+  for (const warning of warnings) console.warn(warning.message);
   if (process.argv.includes('--report')) {
     console.log(formatLegacyReport(legacy));
   } else {

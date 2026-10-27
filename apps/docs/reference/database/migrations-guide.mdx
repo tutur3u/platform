@@ -483,20 +483,40 @@ Unversioned files are always checked.
    `apps/database/rollbacks/*.sql`. Rollbacks must not restore an open grant
    that the forward migration closed; grant to `authenticated` or
    `service_role` instead.
-2. **Unrevoked `SECURITY DEFINER` functions** (migrations only). Every
-   `CREATE [OR REPLACE] FUNCTION ... SECURITY DEFINER` needs a revoke for the
-   same name and argument types from both `public` and `anon` in the same
-   file, even when it replaces a function revoked earlier:
+2. **Unrevoked `SECURITY DEFINER` functions and procedures** (migrations
+   only). Every `CREATE [OR REPLACE] FUNCTION`, `ALTER FUNCTION`, or
+   `CREATE [OR REPLACE] PROCEDURE` setting `SECURITY DEFINER` needs a revoke
+   for the same name and argument types from both `public` and `anon`
+   **after that statement in the same file**. An earlier revoke does not
+   cover a subsequent alteration or drop-and-recreate. Use `ON PROCEDURE`
+   for procedures (`ON ROUTINE` also works). `REVOKE GRANT OPTION FOR`
+   removes only delegation rights and does not satisfy this rule:
 
    ```sql
    revoke all on function public.example(uuid, text) from public, anon;
    grant execute on function public.example(uuid, text) to service_role;
    ```
 
-The guard ignores text in comments, string literals and dollar-quoted bodies,
-so dynamic `EXECUTE 'grant ...'` inside PL/pgSQL is not detected; review
-those by hand. For a reviewed exception, put a comment with a reason on the
-statement's first line, any line of the statement, or the line before it:
+Comments and ordinary string literals are ignored. Quoted identifiers are
+neutralized before parsing SQL delimiters; Unicode-escaped role identifiers
+are decoded, including a custom `UESCAPE` character. In dollar-quoted `DO`,
+function and procedure bodies, a literal `grant ... to anon` or `public`
+is also rejected, including `EXECUTE '...'` and `EXECUTE format('...')`.
+A `%s` or `%I` grantee produces a non-failing `WARNING` for manual review.
+These warnings are printed even for legacy files; they do not change
+`--report`'s non-failing behavior.
+
+This is a static guard, not a PostgreSQL parser. Review dynamically assembled
+SQL, non-ASCII dollar tags, grants nested in `CREATE SCHEMA`, non-default
+`search_path`, and `standard_conforming_strings = off` manually. The timestamp
+cutoff also leaves newly added backdated files unenforced. Signature matching
+is conservative and does not expand schema-wide revokes or every type alias.
+
+For a reviewed exception, put a comment with a reason within the statement,
+after it on the same line, or on a standalone line immediately before it.
+A trailing comment belongs only to the statement immediately before it and
+cannot exempt the next statement. The same `allow-anon-grant` marker exempts
+literal body grants and computed-grantee warnings:
 
 ```sql
 -- allow-anon-grant: public catalog read by signed-out visitors

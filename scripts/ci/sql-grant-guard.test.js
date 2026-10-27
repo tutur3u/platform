@@ -149,7 +149,7 @@ test('allow-anon-grant exempts on the same or preceding line with a reason', () 
   );
 });
 
-test('GRANT text in comments, literals and dollar-quoted bodies is ignored', () => {
+test('comments and ordinary literals are ignored but body grants are checked', () => {
   const sql = [
     '-- grant execute on function public.f() to anon;',
     '/* grant select on public.t to public; /* nested */ still a comment',
@@ -169,7 +169,10 @@ test('GRANT text in comments, literals and dollar-quoted bodies is ignored', () 
     '$body$;',
     'revoke all on function public.g() from public, anon;',
   ].join('\n');
-  assert.deepEqual(grants(sql), []);
+  assert.deepEqual(
+    grants(sql).map((finding) => finding.line),
+    [8, 9, 14]
+  );
 });
 
 test('a SECURITY DEFINER function without a revoke fails', () => {
@@ -280,4 +283,192 @@ test('files before the cutoff are reported as legacy, not enforced', () => {
     formatLegacyReport(legacy),
     /\(not enforced\): 2\n {2}anon-grant: 2 in 2 files\n {2}definer-public: 0 in 0 files/
   );
+});
+
+const createDefiner =
+  'create function public.f(uuid) returns void language sql security definer as $$ select $$;';
+const revokeDefiner =
+  'revoke execute on function public.f(uuid) from public, anon;';
+
+test('hardening 1: ALTER FUNCTION SECURITY DEFINER requires a later revoke', () => {
+  const alter = 'alter function public.f(uuid) security definer;';
+  assert.equal(definers(alter).length, 1);
+  assert.deepEqual(definers(`${alter} ${revokeDefiner}`), []);
+  assert.equal(definers(`${revokeDefiner} ${alter}`).length, 1);
+});
+
+test('hardening 2: revokes before a create or drop-and-recreate do not count', () => {
+  assert.equal(
+    definers(`${revokeDefiner} drop function public.f(uuid); ${createDefiner}`)
+      .length,
+    1
+  );
+  assert.equal(
+    definers(
+      `${createDefiner} ${revokeDefiner} drop function public.f(uuid); ${createDefiner}`
+    ).length,
+    1
+  );
+  assert.equal(
+    definers(
+      `revoke execute on function public.f from public, anon; ${createDefiner}`
+    ).length,
+    1
+  );
+  assert.deepEqual(definers(`${createDefiner} ${revokeDefiner}`), []);
+});
+
+test('hardening 3: GRANT OPTION FOR leaves execute privileges in place', () => {
+  assert.equal(
+    definers(
+      `${createDefiner} revoke grant option for execute on function public.f(uuid) from public, anon;`
+    ).length,
+    1
+  );
+  assert.equal(
+    definers(
+      `${createDefiner} revoke select on function public.f(uuid) from public, anon;`
+    ).length,
+    1
+  );
+  assert.deepEqual(definers(`${createDefiner} ${revokeDefiner}`), []);
+});
+
+test('hardening 4: quoted identifier punctuation cannot hide a grant', () => {
+  for (const name of [
+    '"x;"',
+    '"a to b"',
+    '"x""; to y"',
+    'U&"x;"',
+    '"a\nto\nb"',
+  ]) {
+    assert.equal(
+      grants(`grant execute on function public.f(${name} uuid) to anon;`)
+        .length,
+      1,
+      name
+    );
+  }
+  for (const role of [
+    'U&"\\0061non"',
+    'U&"\\+000061non"',
+    'U&"!0061non" UESCAPE \'!\'',
+  ]) {
+    assert.equal(
+      grants(`grant select on public.t to ${role};`).length,
+      1,
+      role
+    );
+  }
+  assert.deepEqual(grants('grant select on public.t to "a to b", "x;";'), []);
+  assert.equal(grants('grant select on public.t to "anon";').length, 1);
+});
+
+test('hardening 5: literal body grants fail and computed grantees only warn', () => {
+  for (const prefix of [
+    'do',
+    'create function public.g() returns void language plpgsql as',
+  ]) {
+    for (const command of [
+      "execute 'grant select on public.t to public';",
+      "execute format('grant select on %I to anon', 't');",
+    ]) {
+      const sql = `${prefix} $body$ begin ${command} end $body$;`;
+      const result = evaluate({ [MIGRATION]: sql });
+      assert.equal(result.violations.length, 1, sql);
+      assert.equal(result.violations[0].rule, RULES.anonGrant);
+      assert.deepEqual(
+        evaluate({
+          [MIGRATION]: `-- allow-anon-grant: reviewed public catalog\n${sql}`,
+        }).violations,
+        []
+      );
+    }
+  }
+  for (const role of ['%s', '%I', '%s%s']) {
+    const result = evaluate({
+      [MIGRATION]: `do $$ begin execute format('grant select on %I to ${role}', 't', target_role); end $$;`,
+    });
+    assert.deepEqual(result.violations, []);
+    assert.equal(result.warnings.length, 1);
+    assert.match(result.warnings[0].message, /WARNING/);
+  }
+  assert.deepEqual(
+    grants(
+      "do $$ begin -- grant select on t to anon;\nexecute 'grant select on t to service_role'; end $$;"
+    ),
+    []
+  );
+  assert.deepEqual(grants('select $$ grant select on t to anon $$;'), []);
+});
+
+test('hardening 6: an allow-comment belongs only to its own statement', () => {
+  const sql =
+    'grant select on public.t to authenticated; -- allow-anon-grant: prior statement\ngrant select on public.t to anon;';
+  assert.equal(grants(sql).length, 1);
+  assert.equal(
+    grants(
+      'grant select on t to anon; grant select on t to public; -- allow-anon-grant: second only'
+    ).length,
+    1
+  );
+  assert.equal(
+    definers(
+      `${createDefiner} -- allow-definer-public: first only\n${createDefiner}`
+    ).length,
+    1
+  );
+  assert.deepEqual(
+    grants('-- allow-anon-grant: catalog\ngrant select on t to anon;'),
+    []
+  );
+});
+
+test('hardening 7: SECURITY DEFINER procedures need procedure revokes', () => {
+  const sql =
+    'create or replace procedure public.p(p_id uuid) language sql security definer as $$ select $$;';
+  assert.equal(definers(sql).length, 1);
+  assert.deepEqual(
+    definers(
+      `${sql} revoke all on procedure public.p(uuid) from public, anon;`
+    ),
+    []
+  );
+  assert.deepEqual(
+    definers(
+      `${sql} revoke execute on routine public.p(uuid) from public, anon;`
+    ),
+    []
+  );
+  assert.equal(
+    definers(`${sql} revoke all on function public.p(uuid) from public, anon;`)
+      .length,
+    1
+  );
+});
+
+test('computed body grantees warn through the CLI without failing either mode', () => {
+  const fs = require('node:fs');
+  const os = require('node:os');
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'sql-grant-guard-'));
+  try {
+    const script = path.join(root, 'scripts/ci/sql-grant-guard.js');
+    fs.mkdirSync(path.dirname(script), { recursive: true });
+    fs.copyFileSync(path.join(__dirname, 'sql-grant-guard.js'), script);
+    const migration = path.join(root, MIGRATION);
+    fs.mkdirSync(path.dirname(migration), { recursive: true });
+    fs.writeFileSync(
+      migration,
+      "do $$ begin execute format('grant select on %I to %I', 't', target_role); end $$;"
+    );
+    for (const args of [[], ['--report']]) {
+      const result = spawnSync(process.execPath, [script, ...args], {
+        encoding: 'utf8',
+      });
+      assert.equal(result.status, 0, result.stderr);
+      assert.match(result.stderr, /WARNING: body grant has a computed grantee/);
+    }
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
 });
