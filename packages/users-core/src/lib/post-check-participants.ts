@@ -1,4 +1,10 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import type { Database } from '@tuturuuu/types';
+
+type ExistingPostCheckUser = Pick<
+  Database['private']['Tables']['user_group_post_checks']['Row'],
+  'user_id'
+>;
 
 type ParticipantError = { message: string; status: 400 | 500 };
 
@@ -38,7 +44,8 @@ export async function validatePostCheckParticipants({
       .select('user_id, workspace_users!inner(ws_id)')
       .eq('post_id', postId)
       .eq('workspace_users.ws_id', wsId)
-      .in('user_id', nonMembers);
+      .in('user_id', nonMembers)
+      .returns<ExistingPostCheckUser[]>();
     if (existingError || !existingChecks) {
       return { message: 'Unable to validate check participants', status: 500 };
     }

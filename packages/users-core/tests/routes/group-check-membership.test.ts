@@ -130,9 +130,9 @@ const fixtureFetch: typeof fetch = async (input, init) => {
 
 type Surface = {
   label: string;
-  POST: typeof POST;
-  PUT: typeof PUT;
-  DELETE: typeof DELETE;
+  POST: (...args: Parameters<typeof POST>) => Promise<Response>;
+  PUT: (...args: Parameters<typeof PUT>) => Promise<Response>;
+  DELETE: (...args: Parameters<typeof DELETE>) => Promise<Response>;
 };
 let surface: Surface;
 async function invoke(
