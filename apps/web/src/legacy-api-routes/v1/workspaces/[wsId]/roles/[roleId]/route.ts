@@ -111,13 +111,15 @@ export async function PUT(req: Request, { params }: Params) {
     return NextResponse.json({ message: 'Role not found' }, { status: 404 });
   }
 
+  const updatedRoleId = roleRes.data.id;
+
   const permissionsRes = await supabase
     .from('workspace_role_permissions')
     .upsert(
       permissions.map(
         (permission): TablesInsert<'workspace_role_permissions'> => ({
           ws_id: resolvedWsId,
-          role_id: roleRes.data.id,
+          role_id: updatedRoleId,
           permission: permission.id as WorkspaceRolePermissionValue,
           enabled: permission.enabled,
         })

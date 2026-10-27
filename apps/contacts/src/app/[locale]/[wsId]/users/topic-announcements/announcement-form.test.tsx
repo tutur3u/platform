@@ -40,6 +40,10 @@ vi.mock('@tuturuuu/internal-api', () => ({
   previewTopicAnnouncementEmail: mocks.previewTopicAnnouncementEmail,
 }));
 
+vi.mock('@tuturuuu/internal-api/topic-announcements', () => ({
+  listTopicAnnouncementCampusOptions: vi.fn(async () => ({ data: [] })),
+}));
+
 vi.mock('@tuturuuu/ui/hooks/use-debounce', () => ({
   useDebounce: (value: string) => [value],
 }));
