@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/inventory/widgets/inventory_form_scaffold.dart';
 import 'package:mobile/features/inventory/widgets/inventory_search_chrome.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
@@ -69,8 +70,11 @@ void main() {
           child: const Text('Synthetic content'),
         ),
       );
-      await tester.tap(find.byIcon(Icons.search));
+      await tester.tap(find.byIcon(AppIcons.search));
       await tester.pump();
+      // Open search shows the close glyph, like every shell search action.
+      expect(find.byIcon(AppIcons.close), findsOneWidget);
+      expect(find.byIcon(AppIcons.search), findsNothing);
       final field = find.byType(TextField);
       await tester.enterText(field, query);
       changes.clear();

@@ -181,21 +181,15 @@ class _HabitsViewState extends State<_HabitsView> {
             builder: (context, state) {
               final shellActions = <ShellActionSpec>[
                 if (_supportsSearch)
-                  ShellActionSpec(
+                  ShellActionSpec.search(
                     id: 'habits-search',
-                    inDock: true,
-                    callbackToken: (_isSearchVisible, state.searchQuery),
-                    icon: _isSearchVisible
-                        ? Icons.close_rounded
-                        : Icons.search_rounded,
+                    active: _isSearchVisible,
+                    hasQuery: state.searchQuery.isNotEmpty,
+                    callbackToken: state.searchQuery,
                     tooltip: _isSearchVisible
                         ? context.l10n.commonClearSearch
                         : context.l10n.habitsSearchHint,
-                    highlighted:
-                        _isSearchVisible || state.searchQuery.isNotEmpty,
-                    searchController: _isSearchVisible
-                        ? _searchController
-                        : null,
+                    controller: _searchController,
                     searchHint: context.l10n.habitsSearchHint,
                     onSearchChanged: (value) =>
                         context.read<HabitsCubit>().setSearchQuery(value),

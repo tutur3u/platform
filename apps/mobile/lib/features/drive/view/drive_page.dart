@@ -738,27 +738,9 @@ class _DrivePageState extends State<DrivePage> {
             ShellChromeActions(
               ownerId: 'drive-root-actions',
               locations: const {Routes.drive},
+              // View precedes Search: phones under 400dp keep only the first
+              // dock action in the dock.
               actions: [
-                ShellActionSpec(
-                  id: 'drive-search',
-                  icon: _searching
-                      ? Icons.search_off_rounded
-                      : Icons.search_rounded,
-                  tooltip: context.l10n.driveSearchHint,
-                  callbackToken: _searching,
-                  enabled: hasWorkspace,
-                  searchController: _searching ? _searchController : null,
-                  searchHint: context.l10n.driveSearchHint,
-                  onSearchChanged: _onSearchChanged,
-                  onCloseSearch: _closeSearch,
-                  onPressed: () {
-                    if (_searching) {
-                      _closeSearch();
-                    } else {
-                      setState(() => _searching = true);
-                    }
-                  },
-                ),
                 ShellActionSpec(
                   id: 'drive-view',
                   inDock: true,
@@ -781,6 +763,23 @@ class _DrivePageState extends State<DrivePage> {
                   callbackToken: '$_sortBy:$_sortOrder',
                   enabled: hasWorkspace,
                   onPressed: _showSortSheet,
+                ),
+                ShellActionSpec.search(
+                  id: 'drive-search',
+                  active: _searching,
+                  tooltip: context.l10n.driveSearchHint,
+                  enabled: hasWorkspace,
+                  controller: _searchController,
+                  searchHint: context.l10n.driveSearchHint,
+                  onSearchChanged: _onSearchChanged,
+                  onCloseSearch: _closeSearch,
+                  onPressed: () {
+                    if (_searching) {
+                      _closeSearch();
+                    } else {
+                      setState(() => _searching = true);
+                    }
+                  },
                 ),
                 if (_canManageDrive)
                   ShellActionSpec(

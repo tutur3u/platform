@@ -205,14 +205,13 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                   }
                 },
               ),
-              ShellActionSpec(
+              ShellActionSpec.search(
                 id: 'task-board-detail-search',
-                icon: _searchVisible ? Icons.close_rounded : Icons.search,
+                active: _searchVisible,
+                hasQuery: state.searchQuery.trim().isNotEmpty,
                 tooltip: context.l10n.taskBoardDetailSearchTitle,
-                highlighted:
-                    _searchVisible || state.searchQuery.trim().isNotEmpty,
                 enabled: detail != null,
-                searchController: _searchVisible ? _searchController : null,
+                controller: _searchController,
                 searchHint: context.l10n.taskBoardDetailSearchPlaceholder,
                 onSearchChanged: context
                     .read<TaskBoardDetailCubit>()

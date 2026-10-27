@@ -74,13 +74,14 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('rows show the workspace count and open their surfaces', (
+  testWidgets('rows open their surfaces without a workspace count', (
     tester,
   ) async {
     await pump(tester);
 
     expect(find.text('Workspaces'), findsOneWidget);
-    expect(find.text('3'), findsOneWidget);
+    // A bare count drives nothing, so the row does not show one.
+    expect(find.text('3'), findsNothing);
     for (final key in ['workspaces', 'timeline', 'settings']) {
       expect(
         tester.getSize(find.byKey(ValueKey('you-row-$key'))).height,

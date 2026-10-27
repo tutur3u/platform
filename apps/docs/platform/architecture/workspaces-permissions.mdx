@@ -260,6 +260,20 @@ It uses `withoutPermission(...)` to:
 
 This is why a missing permission often appears first as a disabled nav item, not as a late 403 from the clicked page.
 
+### Workspace secrets page
+
+Web's workspace secrets page, including `/personal/secrets`, resolves the workspace
+before applying the same `getWorkspaceSecretsAccess` check as the secrets API.
+Access requires the target workspace's `manage_workspace_secrets` permission or
+an existing platform administrator permission. Denied access returns not found,
+rather than throwing a render error. The page retains the API-selected database
+client and its row-security behavior; workspace permission alone does not bypass
+platform-only database policies. Returned rows keep the edit and delete menu.
+
+Regression coverage: the secrets `page.test.tsx`, `row-actions.test.tsx`, and the
+API's `access.test.ts` cover resolved aliases, denied access before data reads,
+row controls, and database-client selection.
+
 ### Mobile module flags
 
 The mobile app can hide experimental app modules per workspace through

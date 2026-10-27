@@ -90,8 +90,6 @@ extension _ShellPageLayout on _ShellPageState {
     return Stack(
       fit: StackFit.expand,
       children: [
-        // First, so its position never shifts with the routed child below.
-        const ShellRootSearchAction(),
         Offstage(
           offstage: !rootVisible,
           child: TickerMode(

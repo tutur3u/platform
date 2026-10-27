@@ -247,4 +247,97 @@ void _homeRenderCases() {
     expect(tester.takeException(), isNull);
     semantics.dispose();
   });
+
+  testWidgets('Home metrics open their lists by pointer and screen reader', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    final now = DateTime.now();
+    final tasks = _Tasks();
+    final calendar = _Calendar();
+    whenListen(
+      tasks,
+      const Stream<TaskListState>.empty(),
+      initialState: TaskListState(
+        status: TaskListStatus.loaded,
+        hasLoadedOnce: true,
+        totalActiveTasks: 7,
+        overdueTasks: [
+          UserTask(
+            id: 't1',
+            name: 'Synthetic overdue task',
+            endDate: now.subtract(const Duration(days: 2)),
+            list: _list('Offsite', 'Planning'),
+          ),
+        ],
+      ),
+    );
+    whenListen(
+      calendar,
+      const Stream<CalendarState>.empty(),
+      initialState: const CalendarState(
+        status: CalendarStatus.loaded,
+        hasLoadedOnce: true,
+      ),
+    );
+    addTearDown(() async {
+      await tasks.close();
+      await calendar.close();
+    });
+    final appearance = renderAppearances['classic-light']!;
+    final router = await pumpShellRender(
+      tester,
+      location: Routes.home,
+      size: renderSizes['phone']!,
+      appearance: appearance.$1,
+      themeMode: appearance.$2,
+      // Only the summary, so every metric is on screen.
+      preferences: const {
+        'home-widgets-hidden': [
+          'tasks',
+          'calendar',
+          'mail',
+          'meet',
+          'finance',
+          'notes',
+        ],
+      },
+      extraLocations: const [Routes.tasks, Routes.calendar],
+      homePageBuilder: (token) => HomePage(
+        replayToken: token,
+        taskListCubit: tasks,
+        calendarCubit: calendar,
+      ),
+    );
+    String path() => router.routerDelegate.currentConfiguration.uri.path;
+    Future<void> home() async {
+      router.go(Routes.home);
+      await settleShell(tester);
+    }
+
+    for (final (key, label, target) in [
+      ('home-metric-active', 'Active tasks: 7', Routes.tasks),
+      ('home-metric-overdue', 'Overdue: 1', Routes.tasks),
+      ('home-metric-events', 'Upcoming events: 0', Routes.calendar),
+    ]) {
+      final data = tester
+          .getSemantics(find.bySemanticsLabel(label))
+          .getSemanticsData();
+      expect(data.hasAction(SemanticsAction.tap), isTrue, reason: label);
+      expect(data.flagsCollection.isButton, isTrue, reason: label);
+
+      // Screen-reader activation, not a pointer tap.
+      tester.semantics.tap(find.semantics.byLabel(label));
+      await settleShell(tester);
+      expect(path(), target, reason: label);
+      await home();
+
+      await tester.tap(find.byKey(ValueKey(key)));
+      await settleShell(tester);
+      expect(path(), target, reason: key);
+      await home();
+    }
+    expect(tester.takeException(), isNull);
+    semantics.dispose();
+  });
 }

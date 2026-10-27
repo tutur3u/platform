@@ -108,13 +108,13 @@ class _WorkspaceStatsTabState extends State<WorkspaceStatsTab> {
             ownerId: 'time-tracker-stats-workspace-search',
             locations: const {Routes.timerStats, Routes.timerManagement},
             actions: [
-              ShellActionSpec(
+              ShellActionSpec.search(
                 id: 'time-tracker-stats-workspace-search',
-                icon: _searchVisible ? Icons.close_rounded : Icons.search,
+                active: _searchVisible,
+                hasQuery: hasActiveSearch,
+                callbackToken: _searchCtrl.text.trim(),
                 tooltip: l10n.timerSearchSessions,
-                callbackToken: (_searchVisible, _searchCtrl.text.trim()),
-                highlighted: _searchVisible || hasActiveSearch,
-                searchController: _searchVisible ? _searchCtrl : null,
+                controller: _searchCtrl,
                 searchHint: l10n.timerSearchSessions,
                 onSearchChanged: _onSearchChanged,
                 onCloseSearch: _closeSearch,

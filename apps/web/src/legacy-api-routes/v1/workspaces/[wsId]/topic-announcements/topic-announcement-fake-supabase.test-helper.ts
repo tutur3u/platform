@@ -177,6 +177,10 @@ export function createFakeSupabase(tables: Record<string, Row[]>) {
           }));
           return chain;
         },
+        limit: async (count: number) => ({
+          data: run().slice(0, count),
+          error: null,
+        }),
         maybeSingle: async () => ({ data: run()[0] ?? null, error: null }),
         neq: (key: string, value: unknown) => {
           filters.push((row) => readPath(row, key) !== value);

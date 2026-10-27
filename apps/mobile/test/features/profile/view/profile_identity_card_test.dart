@@ -9,9 +9,14 @@ import 'package:mobile/l10n/l10n.dart';
 
 const ValueKey<String> _edit = ValueKey('profile-edit-identity');
 
-Future<GoRouter> _pump(WidgetTester tester, {Locale? locale}) async {
+Future<GoRouter> _pump(
+  WidgetTester tester, {
+  Locale? locale,
+  Size size = const Size(390, 844),
+  double textScale = 1,
+}) async {
   tester.view
-    ..physicalSize = const Size(390, 844)
+    ..physicalSize = size
     ..devicePixelRatio = 1;
   addTearDown(tester.view.reset);
   final router = GoRouter(
@@ -48,6 +53,12 @@ Future<GoRouter> _pump(WidgetTester tester, {Locale? locale}) async {
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: router,
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(
+          context,
+        ).copyWith(textScaler: TextScaler.linear(textScale)),
+        child: child!,
+      ),
     ),
   );
   await tester.pumpAndSettle();
@@ -55,22 +66,35 @@ Future<GoRouter> _pump(WidgetTester tester, {Locale? locale}) async {
 }
 
 void main() {
-  testWidgets('edit is one labelled icon button that opens profile settings', (
+  testWidgets('edit is one labelled button that opens profile settings', (
     tester,
   ) async {
     await _pump(tester);
     expect(find.byKey(_edit), findsOneWidget);
-    // Icon-only: the label is the accessible name, not visible text.
-    expect(find.text('Edit profile'), findsNothing);
-    expect(find.bySemanticsLabel('Edit profile'), findsOneWidget);
-    final size = tester.getSize(find.byKey(_edit));
-    expect(size.width, greaterThanOrEqualTo(44));
-    expect(size.height, greaterThanOrEqualTo(44));
-    // It sits beside the avatar on the trailing edge, not under the email.
     expect(
-      tester.getTopLeft(find.byKey(_edit)).dy,
-      lessThan(tester.getTopLeft(find.text('Linh Tran')).dy),
+      find.descendant(
+        of: find.byKey(_edit),
+        matching: find.text('Edit profile'),
+      ),
+      findsOneWidget,
     );
+    final size = tester.getSize(find.byKey(_edit));
+    expect(size.height, greaterThanOrEqualTo(44));
+
+    // It shares the text column's trailing gutter and is centred in the band
+    // beside the avatar's lower half, clear of the cover edge.
+    final card = tester.getRect(
+      find.byKey(const ValueKey('profile-overview-content')),
+    );
+    final name = tester.getRect(find.text('Linh Tran'));
+    final label = tester.getRect(find.text('Edit profile'));
+    final edit = tester.getRect(find.byKey(_edit));
+    expect(name.left - card.left, 16);
+    expect(card.right - edit.right, closeTo(16, 0.5));
+    // The band is the avatar's lower 40dp, which ends 12dp above the name.
+    final bandCentre = name.top - 12 - 20;
+    expect(edit.center.dy, closeTo(bandCentre, 0.5));
+    expect(label.center.dy, closeTo(bandCentre, 1));
 
     await tester.tap(find.byKey(_edit));
     await tester.pumpAndSettle();
@@ -79,6 +103,26 @@ void main() {
 
   testWidgets('the edit label is localized', (tester) async {
     await _pump(tester, locale: const Locale('vi'));
-    expect(find.bySemanticsLabel('Sửa hồ sơ'), findsOneWidget);
+    expect(find.text('Sửa hồ sơ'), findsOneWidget);
+  });
+
+  testWidgets('at 3x text on 320dp the edit action never reaches the avatar', (
+    tester,
+  ) async {
+    await _pump(tester, size: const Size(320, 900), textScale: 3);
+    final avatar = tester.getRect(
+      find.byKey(const ValueKey('profile-identity-avatar')),
+    );
+    final edit = tester.getRect(find.byKey(_edit));
+    expect(edit.left, greaterThan(avatar.right));
+    // Too narrow for the label: the icon form keeps the name and target.
+    expect(find.text('Edit profile'), findsNothing);
+    expect(find.bySemanticsLabel('Edit profile'), findsOneWidget);
+    expect(edit.height, greaterThanOrEqualTo(44));
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.byKey(_edit));
+    await tester.pumpAndSettle();
+    expect(find.text('Profile settings'), findsOneWidget);
   });
 }

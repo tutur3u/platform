@@ -2197,12 +2197,6 @@ abstract class AppLocalizations {
   /// **'Day plan'**
   String get assistantStarterPlan;
 
-  /// No description provided for @assistantStarterSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Pick a quick starter or type your own.'**
-  String get assistantStarterSubtitle;
-
   /// No description provided for @assistantStarterTitle.
   ///
   /// In en, this message translates to:
