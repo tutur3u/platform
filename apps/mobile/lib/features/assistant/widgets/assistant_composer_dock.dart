@@ -96,9 +96,11 @@ class AssistantComposerDock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final content = Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
+    const promptStyle = TextStyle(fontSize: 16, height: 1.25);
+    final rowHeight = assistantComposerHeight(context);
+    final content = AppComposerRow(
+      minHeight: rowHeight,
+      leading: [
         AssistantComposerOptions(
           localOnly: localOnly,
           localModelLabel: localModelLabel,
@@ -115,26 +117,29 @@ class AssistantComposerDock extends StatelessWidget {
           onCloseComposer: onCloseComposer,
           onDismissKeyboard: focusNode.unfocus,
         ),
-        Expanded(
-          child: ListenableBuilder(
-            listenable: focusNode,
-            builder: (context, _) => AppTextField(
-              key: const ValueKey('assistant-composer-editor'),
-              style: const TextStyle(fontSize: 16, height: 1.25),
-              contentPadding: const EdgeInsets.symmetric(vertical: 12),
-              controller: controller,
-              focusNode: focusNode,
-              minLines: 1,
-              maxLines: 5,
-              keyboardType: TextInputType.multiline,
-              textInputAction: TextInputAction.newline,
-              onTapOutside: (_) => focusNode.unfocus(),
-              placeholder: context.l10n.assistantAskPlaceholder,
-              hintMaxLines: 1,
-              borderless: true,
-            ),
+      ],
+      field: ListenableBuilder(
+        listenable: focusNode,
+        builder: (context, _) => AppTextField(
+          key: const ValueKey('assistant-composer-editor'),
+          style: promptStyle,
+          contentPadding: AppComposerRow.fieldPadding(
+            minHeight: rowHeight,
+            lineHeight: AppComposerRow.lineHeightOf(context, promptStyle),
           ),
+          controller: controller,
+          focusNode: focusNode,
+          minLines: 1,
+          maxLines: 5,
+          keyboardType: TextInputType.multiline,
+          textInputAction: TextInputAction.newline,
+          onTapOutside: (_) => focusNode.unfocus(),
+          placeholder: context.l10n.assistantAskPlaceholder,
+          hintMaxLines: 1,
+          borderless: true,
         ),
+      ),
+      trailing: [
         ValueListenableBuilder<TextEditingValue>(
           valueListenable: controller,
           builder: (context, value, _) {
