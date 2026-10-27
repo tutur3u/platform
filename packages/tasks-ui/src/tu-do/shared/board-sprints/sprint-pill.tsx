@@ -73,7 +73,8 @@ export function SprintPill({
   // Actions open dialogs or settings, so the menu closes first.
   const closeThen = (action: () => void) => () => {
     setOpen(false);
-    action();
+    // Let the menu finish closing before a dialog takes focus.
+    requestAnimationFrame(action);
   };
   const isActive = currentSprint.status === 'active';
   const progress = getProgress(currentSprint);
@@ -145,7 +146,7 @@ export function SprintPill({
                 'items-center gap-3 py-2',
                 isCurrent && 'bg-dynamic-green/10'
               )}
-              onSelect={() => onSelectSprint?.(sprint)}
+              onSelect={closeThen(() => onSelectSprint?.(sprint))}
             >
               <span className="grid w-4 place-items-center text-muted-foreground">
                 {sprint.status === 'active' ? (
