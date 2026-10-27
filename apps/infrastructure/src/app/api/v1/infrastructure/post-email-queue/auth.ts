@@ -1,37 +1,26 @@
 import { resolveSatelliteRequestActor } from '@tuturuuu/satellite/workspace-access';
+import type { PermissionId } from '@tuturuuu/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
-export async function requirePostEmailQueueRootAdmin(request: Request) {
+export async function requirePostEmailQueueRootAdmin(
+  request: Request,
+  permission: PermissionId = 'view_infrastructure'
+) {
   const actor = await resolveSatelliteRequestActor(request, 'infra');
-
-  if (!actor) {
+  if (!actor)
     return {
       error: NextResponse.json({ message: 'Unauthorized' }, { status: 401 }),
     };
-  }
-
-  const { data: rootWorkspaceUser, error } = await actor.admin
-    .from('workspace_user_linked_users')
-    .select('platform_user_id')
-    .eq('platform_user_id', actor.user.id)
-    .eq('ws_id', ROOT_WORKSPACE_ID)
-    .maybeSingle();
-
-  if (error) {
-    return {
-      error: NextResponse.json(
-        { message: 'Unable to verify root workspace access' },
-        { status: 500 }
-      ),
-    };
-  }
-
-  if (!rootWorkspaceUser) {
+  const permissions = await getPermissions({
+    user: actor.user,
+    wsId: ROOT_WORKSPACE_ID,
+  });
+  if (!permissions?.containsPermission(permission)) {
     return {
       error: NextResponse.json({ message: 'Forbidden' }, { status: 403 }),
     };
   }
-
   return { user: actor.user };
 }
