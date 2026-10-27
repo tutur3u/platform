@@ -1,4 +1,4 @@
--- Rollback proof for 20261027010100_topic_schedule_slot_unique.sql.
+-- Rollback proof for 20261027060200_topic_schedule_slot_unique.sql.
 -- Run ONLY against a disposable local stack, after the rollback file.
 begin;
 create extension if not exists pgtap with schema extensions;

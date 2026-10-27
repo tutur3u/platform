@@ -347,7 +347,7 @@ module unchanged.
   that slot is a per-row conflict; removing an already removed session
   succeeds. Requests committed at the same instant are refused by the
   database too: `topic_announcements_schedule_slot_unique` (migration
-  `20261027010100`) allows one non-cancelled schedule session per workspace,
+  `20261027060200`) allows one non-cancelled schedule session per workspace,
   class, date and start time. When it refuses a row (another request took
   the slot after this one checked it), the other sessions still save, the
   save reports that row as a `duplicate_slot` conflict (409, with what did
