@@ -1937,13 +1937,24 @@ The board **Timeline** view is a vertical, day-grouped agenda for phones,
 replacing the horizontal Gantt chart that needed sideways scrolling and
 dragging on a 68dp-per-day grid. It applies to every device size.
 
-- It opens on **Today**. Overdue days (open tasks whose last day has passed)
-  sit above Today, nearest first, with an Overdue label; upcoming days follow
-  below. **Today** in the toolbar scrolls back to the anchor.
-- Each task appears once: an overdue task on its last day, a task running
+- It opens on **Today**. Overdue days sit above Today, nearest first, with an
+  Overdue label; upcoming days follow below. When there is overdue work,
+  **Show overdue** at the top of Today jumps up to it, and **Today** in the
+  toolbar scrolls back to the anchor.
+- Each task appears once: an overdue task on its due day, a task running
   today on Today (multi-day tasks show "Day 3 of 6, ends Oct 30"), and a later
-  task on its first day with its date span. Done and closed lists are left
-  out, as before. Rows show the priority, name, span and list.
+  task on its first day with its date span. A task with only a start date
+  has nothing due, so it is never overdue: once started it stays on Today as
+  "Started Oct 21". Done and closed lists are left out, as before. Rows show
+  the priority, name, span and list.
+- Overdue uses the board's one rule, shared with the quick actions sheet: the
+  due day is before today. Days and "today" follow the user's timezone
+  setting, as Calendar does, and the agenda re-anchors at midnight.
+- The agenda needs every open task, not the first page the List view starts
+  from, so the Timeline loads every page of each open list (100 tasks per
+  page, up to 2,000 tasks per list unattended; beyond that it offers Load
+  more). While pages remain it never says "Nothing scheduled today": Today
+  shows that tasks are still loading, or that some are not loaded yet.
 - **Week**, **Month** (the default) and **All** limit how far ahead the agenda
   lists work. Overdue work always shows. When the range hides later tasks,
   **Show later tasks** switches to All.
@@ -1957,10 +1968,13 @@ dragging on a 68dp-per-day grid. It applies to every device size.
   only when tasks, the day or the range change.
 
 Regression coverage: `task_board_timeline_agenda_test.dart` (placement,
-ranges, ordering, a 20,000-task board, rebuild memoization) and
-`task_board_timeline_test.dart` (Today anchor and button, overdue above, range
-and Show later, tap to open, lazy building with 1,500 tasks, the empty state,
-320dp at 2x text, light/dark/blob renders).
+start-only tasks, the timezone setting and next-midnight delay, ranges,
+ordering, a 20,000-task board, rebuild memoization) and
+`task_board_timeline_test.dart` (Today anchor and button, Show overdue, every
+page loaded before placing today, no empty claim while a page is pending,
+start-only rows, range and Show later, tap to open, lazy building with 1,500
+tasks, the empty state, 320dp at 2x text, light/dark/blob renders). The
+midnight re-anchor is covered by the delay calculation, not a widget clock.
 
 ### Task board row gestures
 

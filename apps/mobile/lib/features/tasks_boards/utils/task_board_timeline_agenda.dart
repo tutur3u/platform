@@ -1,4 +1,5 @@
 import 'package:mobile/data/models/task_board_task.dart';
+import 'package:mobile/features/tasks_boards/utils/task_due_dates.dart';
 
 /// How far ahead the board timeline lists upcoming work.
 enum TaskTimelineRange {
@@ -25,6 +26,10 @@ enum TaskTimelinePlacement {
   /// Started before today and runs through today: carried onto today.
   ongoing,
 
+  /// Started before today with no due date: carried onto today. Never
+  /// overdue, because nothing is due.
+  open,
+
   /// A multi-day task starting on this day.
   starts,
 
@@ -39,12 +44,16 @@ class TaskTimelineEntry {
     required this.start,
     required this.end,
     required this.placement,
+    this.hasDue = true,
   });
 
   final TaskBoardTask task;
   final DateTime start;
   final DateTime end;
   final TaskTimelinePlacement placement;
+
+  /// False for a task with only a start date; its [end] is then its start.
+  final bool hasDue;
 
   /// Days the task spans, inclusive.
   int get spanDays => _dayDifference(start, end) + 1;
@@ -94,15 +103,19 @@ class TaskTimelineAgenda {
       hasHiddenLater;
 }
 
-/// Builds the agenda for the open [tasks] as of [now].
+/// Builds the agenda for the open [tasks] as of [now], in [zone] (the
+/// user's timezone setting; null uses the device zone).
 ///
+/// The overdue rule is [taskIsOverdue]: the due day is before today. Tasks
+/// with only a start date have nothing due, so they are never overdue.
 /// Runs in O(n log n) for n tasks; callers memoize it per input change.
 TaskTimelineAgenda buildTaskTimelineAgenda({
   required Iterable<TaskBoardTask> tasks,
   required DateTime now,
   required TaskTimelineRange range,
+  String? zone,
 }) {
-  final today = _day(now);
+  final today = taskDay(now, zone);
   final rangeDays = range.days;
   final lastDay = rangeDays == null
       ? null
@@ -114,17 +127,31 @@ TaskTimelineAgenda buildTaskTimelineAgenda({
   var hasHiddenLater = false;
 
   for (final task in tasks) {
-    final rawStart = task.startDate ?? task.endDate;
-    final rawEnd = task.endDate ?? task.startDate;
-    if (rawStart == null || rawEnd == null) {
+    final startDate = task.startDate;
+    final endDate = task.endDate;
+    if (startDate == null && endDate == null) {
       unscheduled.add(task);
       continue;
     }
-    final a = _day(rawStart.toLocal());
-    final b = _day(rawEnd.toLocal());
+    final a = taskDay(startDate ?? endDate!, zone);
+    final b = taskDay(endDate ?? startDate!, zone);
     final start = a.isAfter(b) ? b : a;
     final end = a.isAfter(b) ? a : b;
+    final hasDue = endDate != null;
     final multiDay = start != end;
+
+    if (!hasDue && start.isBefore(today)) {
+      todayEntries.add(
+        TaskTimelineEntry(
+          task: task,
+          start: start,
+          end: end,
+          placement: TaskTimelinePlacement.open,
+          hasDue: false,
+        ),
+      );
+      continue;
+    }
 
     if (end.isBefore(today)) {
       past
@@ -148,6 +175,7 @@ TaskTimelineAgenda buildTaskTimelineAgenda({
               : multiDay
               ? TaskTimelinePlacement.starts
               : TaskTimelinePlacement.single,
+          hasDue: hasDue,
         ),
       );
     } else if (lastDay != null && start.isAfter(lastDay)) {
@@ -163,6 +191,7 @@ TaskTimelineAgenda buildTaskTimelineAgenda({
               placement: multiDay
                   ? TaskTimelinePlacement.starts
                   : TaskTimelinePlacement.single,
+              hasDue: hasDue,
             ),
           );
     }
@@ -212,8 +241,6 @@ int _compareTasks(TaskBoardTask a, TaskBoardTask b) {
   return byName != 0 ? byName : a.id.compareTo(b.id);
 }
 
-DateTime _day(DateTime value) => DateTime(value.year, value.month, value.day);
-
 /// Calendar-day difference that ignores daylight-saving hour shifts.
 int _dayDifference(DateTime from, DateTime to) => DateTime.utc(
   to.year,
@@ -239,6 +266,7 @@ class TaskTimelineAgendaCache {
   Map<String, List<TaskBoardTask>> _tasksByList = const {};
   DateTime? _day;
   TaskTimelineRange? _range;
+  String? _zone;
 
   /// The agenda for the tasks of [listIds], in that list order.
   TaskTimelineAgenda resolve({
@@ -246,12 +274,14 @@ class TaskTimelineAgendaCache {
     required Map<String, List<TaskBoardTask>> tasksByList,
     required DateTime now,
     required TaskTimelineRange range,
+    String? zone,
   }) {
-    final day = _day0(now);
+    final day = taskDay(now, zone);
     final cached = _agenda;
     if (cached != null &&
         day == _day &&
         range == _range &&
+        zone == _zone &&
         _sameIds(listIds) &&
         _sameTasks(listIds, tasksByList)) {
       return cached;
@@ -263,6 +293,7 @@ class TaskTimelineAgendaCache {
     };
     _day = day;
     _range = range;
+    _zone = zone;
     final visible = listIds.toSet();
     return _agenda = buildTaskTimelineAgenda(
       tasks: [
@@ -272,6 +303,7 @@ class TaskTimelineAgendaCache {
       ],
       now: now,
       range: range,
+      zone: zone,
     );
   }
 
@@ -298,7 +330,4 @@ class TaskTimelineAgendaCache {
     }
     return true;
   }
-
-  static DateTime _day0(DateTime value) =>
-      DateTime(value.year, value.month, value.day);
 }

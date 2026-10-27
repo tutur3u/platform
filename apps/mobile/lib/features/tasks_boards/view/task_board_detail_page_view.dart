@@ -402,9 +402,10 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                     }
                   } else if (state.currentView ==
                       TaskBoardDetailView.timeline) {
-                    for (final list in sortedLists) {
-                      _requestInitialListLoadOnce(list.id, pageSizeHint, state);
-                    }
+                    _scheduleTimelinePages(
+                      context,
+                      _timelineOpenLists(sortedLists),
+                    );
                   }
 
                   return NovaRefreshIndicator(
@@ -509,15 +510,18 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                       TaskBoardDetailView.timeline => _TaskBoardTimelineView(
                         lists: sortedLists,
                         tasksByList: filteredByList,
-                        hasMoreTasks: _hasMoreTasksForLists(sortedLists, state),
+                        hasMoreTasks: _timelineHasMore(
+                          _timelineOpenLists(sortedLists),
+                          state,
+                        ),
                         isLoadingMoreTasks: state.isLoadingListTasks,
                         scrollController: _timelineVerticalScrollController,
                         onLoadMore: () {
                           _loadMoreVisibleLists(
                             context,
-                            lists: sortedLists,
+                            lists: _timelineOpenLists(sortedLists),
                             state: state,
-                            pageSizeHint: pageSizeHint,
+                            pageSizeHint: _timelinePageSize,
                           );
                         },
                         onTaskTap: (task) =>

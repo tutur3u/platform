@@ -29,8 +29,15 @@ class _TimelineTaskItem extends _TimelineItem {
   final bool last;
 }
 
+/// Today has nothing loaded; whether it is truly empty depends on whether
+/// every page is loaded.
 class _TimelineNothingTodayItem extends _TimelineItem {
   const _TimelineNothingTodayItem();
+}
+
+/// Overdue days are above the opening position; this jumps to them.
+class _TimelineOverdueJumpItem extends _TimelineItem {
+  const _TimelineOverdueJumpItem();
 }
 
 class _TimelineUnscheduledHeaderItem extends _TimelineItem {
@@ -76,6 +83,7 @@ class _TimelineItems {
     return _TimelineItems(
       pastBottomUp: past.reversed.toList(growable: false),
       today: [
+        if (agenda.past.isNotEmpty) const _TimelineOverdueJumpItem(),
         _TimelineDayHeaderItem(agenda.today.day),
         if (agenda.today.entries.isEmpty)
           const _TimelineNothingTodayItem()
@@ -110,14 +118,24 @@ class _TimelineItemView extends StatelessWidget {
   const _TimelineItemView({
     required this.item,
     required this.listNames,
+    required this.allLoaded,
+    required this.loading,
     required this.onTaskTap,
     required this.onShowLater,
+    required this.onShowOverdue,
+    required this.onLoadMore,
   });
 
   final _TimelineItem item;
   final Map<String, String> listNames;
+
+  /// Every page of every open list is loaded.
+  final bool allLoaded;
+  final bool loading;
   final ValueChanged<TaskBoardTask> onTaskTap;
   final VoidCallback onShowLater;
+  final VoidCallback onShowOverdue;
+  final VoidCallback onLoadMore;
 
   @override
   Widget build(BuildContext context) {
@@ -136,12 +154,40 @@ class _TimelineItemView extends StatelessWidget {
           onTap: () => onTaskTap(task.task),
         ),
       ),
+      // Never claim today is empty while pages remain unloaded.
       _TimelineNothingTodayItem() => _TimelineCardSegment(
         first: true,
         last: true,
-        child: AppGroupedRow(
-          leading: const AppIconTile(icon: LucideIcons.sun),
-          title: Text(l10n.taskTimelineNothingToday),
+        child: allLoaded
+            ? AppGroupedRow(
+                key: const ValueKey('task-timeline-nothing-today'),
+                leading: const AppIconTile(icon: LucideIcons.sun),
+                title: Text(l10n.taskTimelineNothingToday),
+              )
+            : AppGroupedRow(
+                key: const ValueKey('task-timeline-today-loading'),
+                leading: loading
+                    ? const AppLoadingIndicator.inline()
+                    : const AppIconTile(icon: LucideIcons.cloudDownload),
+                title: Text(
+                  loading
+                      ? l10n.taskTimelineLoadingTasks
+                      : l10n.taskTimelineNotAllLoaded,
+                ),
+                showChevron: !loading,
+                onTap: loading ? null : onLoadMore,
+              ),
+      ),
+      _TimelineOverdueJumpItem() => Padding(
+        padding: const EdgeInsets.only(top: AppSpacing.sm),
+        child: Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: AppButton.ghost(
+            key: const ValueKey('task-timeline-show-overdue'),
+            onPressed: onShowOverdue,
+            leading: const Icon(LucideIcons.arrowUp),
+            child: Text(l10n.taskTimelineShowOverdue),
+          ),
         ),
       ),
       _TimelineUnscheduledHeaderItem() => _TimelineSectionTitle(

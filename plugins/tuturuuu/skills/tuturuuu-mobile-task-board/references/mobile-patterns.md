@@ -265,7 +265,11 @@ localization changes.
   `CustomScrollView` with `center:` on today's sliver; slivers before the
   centre grow upward, so their items are stored bottom-up. Keep rows lazy
   (`SliverList.builder` with per-row card segments) rather than building a
-  day's card as one widget.
+  day's card as one widget. Date-placed views must load every page of the
+  lists they summarize (`task_board_detail_page_timeline_loading.dart`) and
+  must not state that a day is empty while pages remain. Test fixtures should
+  serve tasks only through `getBoardTasksForList` and honour `limit` and
+  `offset`; board-detail tasks hide paging bugs.
 
 ### Estimation recovery
 

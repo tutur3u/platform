@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/models/task_board_task.dart';
 import 'package:mobile/features/tasks_boards/utils/task_board_timeline_agenda.dart';
+import 'package:mobile/features/tasks_boards/utils/task_due_dates.dart';
 
 final _now = DateTime(2026, 10, 27, 15, 30);
 
@@ -58,6 +59,63 @@ void main() {
       expect(_ids(agenda.upcoming.single), ['later-single', 'later']);
       expect(agenda.unscheduled.map((task) => task.id), ['undated']);
       expect(agenda.hasHiddenLater, isFalse);
+    });
+
+    test('a task with only a start date is never overdue', () {
+      final agenda = _build([
+        _task('started-long-ago', start: -30),
+        _task('starts-today', start: 0),
+        _task('starts-later', start: 4),
+      ]);
+
+      expect(agenda.past, isEmpty);
+      final started = agenda.today.entries.firstWhere(
+        (entry) => entry.task.id == 'started-long-ago',
+      );
+      expect(started.placement, TaskTimelinePlacement.open);
+      expect(started.hasDue, isFalse);
+      expect(started.start, DateTime(2026, 9, 27));
+      expect(
+        agenda.today.entries
+            .firstWhere((entry) => entry.task.id == 'starts-today')
+            .placement,
+        TaskTimelinePlacement.single,
+      );
+      expect(agenda.upcoming.single.entries.single.hasDue, isFalse);
+    });
+
+    test('days and today follow the user timezone setting', () {
+      // 20:00 UTC on Oct 27 is 03:00 on Oct 28 in Ho Chi Minh City.
+      final now = DateTime.utc(2026, 10, 27, 20);
+      final dueLateUtc = TaskBoardTask(
+        id: 'due',
+        listId: 'list-1',
+        endDate: DateTime.utc(2026, 10, 27, 19),
+      );
+      final agenda = buildTaskTimelineAgenda(
+        tasks: [dueLateUtc],
+        now: now,
+        range: TaskTimelineRange.all,
+        zone: 'Asia/Ho_Chi_Minh',
+      );
+
+      expect(agenda.today.day, DateTime(2026, 10, 28));
+      expect(
+        agenda.today.entries.single.placement,
+        TaskTimelinePlacement.single,
+      );
+      expect(
+        taskIsOverdue(
+          endDate: dueLateUtc.endDate,
+          now: now,
+          zone: 'Asia/Ho_Chi_Minh',
+        ),
+        isFalse,
+      );
+      expect(
+        taskTimeUntilNextDay(now, 'Asia/Ho_Chi_Minh'),
+        const Duration(hours: 21),
+      );
     });
 
     test('reversed dates are swapped and spans count calendar days', () {

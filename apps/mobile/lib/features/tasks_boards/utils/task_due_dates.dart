@@ -29,3 +29,20 @@ bool taskIsOverdue({
   required DateTime now,
   String? zone,
 }) => endDate != null && taskDay(endDate, zone).isBefore(taskDay(now, zone));
+
+/// Time from [now] until the next midnight in [zone], so day views can
+/// re-anchor "today" when the date changes.
+Duration taskTimeUntilNextDay(DateTime now, String? zone) {
+  if (zone == null) {
+    final local = now.toLocal();
+    return DateTime(local.year, local.month, local.day + 1).difference(local);
+  }
+  final location = timezoneLocation(zone);
+  final wall = tz.TZDateTime.from(now, location);
+  return tz.TZDateTime(
+    location,
+    wall.year,
+    wall.month,
+    wall.day + 1,
+  ).difference(wall);
+}

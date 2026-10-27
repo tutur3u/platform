@@ -10155,6 +10155,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskQuickActionsUnassigned => 'Chưa giao cho ai';
 
   @override
+  String get taskTimelineLoadingTasks => 'Đang tải công việc…';
+
+  @override
+  String get taskTimelineNotAllLoaded => 'Một số việc chưa được tải';
+
+  @override
   String get taskTimelineNothingToday => 'Hôm nay chưa có việc nào';
 
   @override
@@ -10173,6 +10179,14 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get taskTimelineShowLater => 'Hiện các việc về sau';
+
+  @override
+  String get taskTimelineShowOverdue => 'Xem việc quá hạn';
+
+  @override
+  String taskTimelineStarted(String date) {
+    return 'Bắt đầu $date';
+  }
 
   @override
   String get tasksAllCaughtUp => 'Đã hoàn thành tất cả!';

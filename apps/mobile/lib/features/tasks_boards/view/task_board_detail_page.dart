@@ -112,6 +112,7 @@ part 'task_board_detail_page_task_row_swipe.dart';
 part 'task_board_detail_page_timeline.dart';
 part 'task_board_detail_page_timeline_headers.dart';
 part 'task_board_detail_page_timeline_items.dart';
+part 'task_board_detail_page_timeline_loading.dart';
 part 'task_board_detail_page_timeline_rows.dart';
 part 'task_board_detail_page_utils.dart';
 part 'task_board_detail_page_view.dart';

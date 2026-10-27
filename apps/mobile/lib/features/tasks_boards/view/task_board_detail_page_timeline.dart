@@ -4,7 +4,10 @@ part of 'task_board_detail_page.dart';
 ///
 /// One [CustomScrollView] centred on today's group: overdue days grow upward
 /// above it and upcoming days downward, each built lazily row by row. The
-/// agenda is rebuilt only when the tasks, the day or the range change.
+/// agenda is rebuilt only when the tasks, the day, the zone or the range
+/// change, and re-anchors on the new day at midnight in the user's zone.
+/// [hasMoreTasks] means open lists still have unloaded pages; the agenda
+/// then never claims a day is empty.
 class _TaskBoardTimelineView extends StatefulWidget {
   const _TaskBoardTimelineView({
     required this.lists,
@@ -35,9 +38,25 @@ class _TaskBoardTimelineViewState extends State<_TaskBoardTimelineView> {
   TaskTimelineRange _range = TaskTimelineRange.month;
   TaskTimelineAgenda? _itemsAgenda;
   _TimelineItems _items = const _TimelineItems.empty();
+  Timer? _midnight;
+
+  @override
+  void dispose() {
+    _midnight?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final zone = taskTimezone(context);
+    final now = DateTime.now();
+    _midnight ??= Timer(
+      taskTimeUntilNextDay(now, zone) + const Duration(seconds: 1),
+      () {
+        _midnight = null;
+        if (mounted) setState(() {});
+      },
+    );
     final openLists = [
       for (final list in widget.lists)
         if (!_taskListDone(list)) list,
@@ -45,8 +64,9 @@ class _TaskBoardTimelineViewState extends State<_TaskBoardTimelineView> {
     final agenda = _cache.resolve(
       listIds: [for (final list in openLists) list.id],
       tasksByList: widget.tasksByList,
-      now: DateTime.now(),
+      now: now,
       range: _range,
+      zone: zone,
     );
     if (!identical(agenda, _itemsAgenda)) {
       _itemsAgenda = agenda;
@@ -84,11 +104,17 @@ class _TaskBoardTimelineViewState extends State<_TaskBoardTimelineView> {
             Expanded(
               child: agenda.hasScheduled || agenda.unscheduled.isNotEmpty
                   ? _scrollView(context, listNames)
+                  : widget.isLoadingMoreTasks
+                  ? const AppLoadingIndicator.page()
                   : AppStateMessage(
                       icon: LucideIcons.calendarRange,
                       title: context.l10n.taskBoardDetailTimelineEmptyTitle,
                       message:
                           context.l10n.taskBoardDetailTimelineEmptyDescription,
+                      actionLabel: widget.hasMoreTasks
+                          ? context.l10n.timerHistoryLoadMore
+                          : null,
+                      onAction: widget.hasMoreTasks ? widget.onLoadMore : null,
                     ),
             ),
           ],
@@ -101,8 +127,12 @@ class _TaskBoardTimelineViewState extends State<_TaskBoardTimelineView> {
     Widget item(_TimelineItem item) => _TimelineItemView(
       item: item,
       listNames: listNames,
+      allLoaded: !widget.hasMoreTasks,
+      loading: widget.isLoadingMoreTasks,
       onTaskTap: (task) => unawaited(widget.onTaskTap(task)),
       onShowLater: () => setState(() => _range = TaskTimelineRange.all),
+      onShowOverdue: _scrollToOverdue,
+      onLoadMore: widget.onLoadMore,
     );
     SliverList list(List<_TimelineItem> items, {Key? key}) =>
         SliverList.builder(
@@ -173,17 +203,23 @@ class _TaskBoardTimelineViewState extends State<_TaskBoardTimelineView> {
     );
   }
 
-  void _scrollToToday() {
+  void _scrollToToday() => _scrollTo((position) => 0);
+
+  /// Overdue days sit above today, so their top is the minimum extent.
+  void _scrollToOverdue() => _scrollTo((position) => position.minScrollExtent);
+
+  void _scrollTo(double Function(ScrollPosition position) target) {
     final controller = widget.scrollController;
     if (!controller.hasClients) return;
+    final offset = target(controller.position);
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
     if (reduceMotion) {
-      controller.jumpTo(0);
+      controller.jumpTo(offset);
       return;
     }
     unawaited(
       controller.animateTo(
-        0,
+        offset,
         duration: AppMotion.slow,
         curve: AppMotion.standard,
       ),

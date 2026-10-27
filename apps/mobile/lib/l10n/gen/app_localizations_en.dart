@@ -10267,6 +10267,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskQuickActionsUnassigned => 'Unassigned';
 
   @override
+  String get taskTimelineLoadingTasks => 'Loading tasks…';
+
+  @override
+  String get taskTimelineNotAllLoaded => 'Some tasks aren\'t loaded yet';
+
+  @override
   String get taskTimelineNothingToday => 'Nothing scheduled today';
 
   @override
@@ -10285,6 +10291,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get taskTimelineShowLater => 'Show later tasks';
+
+  @override
+  String get taskTimelineShowOverdue => 'Show overdue';
+
+  @override
+  String taskTimelineStarted(String date) {
+    return 'Started $date';
+  }
 
   @override
   String get tasksAllCaughtUp => 'You\'re all caught up!';

@@ -94,6 +94,9 @@ class _TimelineTaskRow extends StatelessWidget {
               entry.spanDays,
               date.format(entry.end),
             ),
+            TaskTimelinePlacement.open => l10n.taskTimelineStarted(
+              date.format(entry.start),
+            ),
             TaskTimelinePlacement.starts =>
               '${date.format(entry.start)} – ${date.format(entry.end)}',
             TaskTimelinePlacement.single => null,

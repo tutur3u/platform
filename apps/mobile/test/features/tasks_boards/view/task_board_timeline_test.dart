@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -17,18 +19,23 @@ import '../../../helpers/helpers.dart';
 import '../../../helpers/phone_surface.dart';
 import 'task_board_row_actions_fixture.dart';
 
-/// Serves [tasks] in the open Todo list, whatever the page size.
+/// Serves [tasks] in the open Todo list only through list pages, as the API
+/// does, page by page as the app asks.
 class _TimelineRepository extends RowActionsRepository {
-  _TimelineRepository(this.tasks);
+  _TimelineRepository(this.tasks, {this.holdAfterFirstPage = false});
 
   final List<TaskBoardTask> tasks;
+
+  /// When set, every page after the first never completes.
+  final bool holdAfterFirstPage;
+  final List<({int limit, int offset})> pages = [];
 
   @override
   Future<TaskBoardDetail> getTaskBoardDetail(
     String wsId,
     String boardId,
   ) async =>
-      (await super.getTaskBoardDetail(wsId, boardId)).copyWith(tasks: tasks);
+      (await super.getTaskBoardDetail(wsId, boardId)).copyWith(tasks: const []);
 
   @override
   Future<List<TaskBoardTask>> getBoardTasksForList(
@@ -39,9 +46,17 @@ class _TimelineRepository extends RowActionsRepository {
     List<WorkspaceUserOption> members = const <WorkspaceUserOption>[],
     List<TaskLabel> labels = const <TaskLabel>[],
     List<TaskProjectSummary> projects = const <TaskProjectSummary>[],
-  }) async => offset > 0
-      ? const <TaskBoardTask>[]
-      : tasks.where((task) => task.listId == listId).toList();
+  }) async {
+    pages.add((limit: limit, offset: offset));
+    if (holdAfterFirstPage && offset > 0) {
+      return await Completer<List<TaskBoardTask>>().future;
+    }
+    return tasks
+        .where((task) => task.listId == listId)
+        .skip(offset)
+        .take(limit)
+        .toList();
+  }
 }
 
 DateTime _day(int offset) {
@@ -70,19 +85,32 @@ final List<TaskBoardTask> _standardTasks = [
 
 Finder _key(String key) => find.byKey(ValueKey(key));
 
-Future<void> _pumpTimeline(
+Future<_TimelineRepository> _pumpTimeline(
   WidgetTester tester,
-  List<TaskBoardTask> tasks,
-) async {
+  List<TaskBoardTask> tasks, {
+  bool holdAfterFirstPage = false,
+}) async {
+  final repository = _TimelineRepository(
+    tasks,
+    holdAfterFirstPage: holdAfterFirstPage,
+  );
   await pumpRowActionsBoard(
     tester,
     workspaceCubit: rowActionsWorkspaceCubit(),
-    repository: _TimelineRepository(tasks),
+    repository: repository,
   );
   BlocProvider.of<TaskBoardDetailCubit>(
     tester.element(find.byType(Scrollable).first),
   ).setView(TaskBoardDetailView.timeline);
-  await tester.pumpAndSettle();
+  if (holdAfterFirstPage) {
+    // A held page keeps the loading indicator animating.
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+  } else {
+    await tester.pumpAndSettle();
+  }
+  return repository;
 }
 
 void main() {
@@ -95,7 +123,7 @@ void main() {
       final todayHeader = find.textContaining('Today ·');
       expect(todayHeader, findsOneWidget);
       final scrollTop = tester.getTopLeft(find.byType(CustomScrollView)).dy;
-      expect(tester.getTopLeft(todayHeader).dy - scrollTop, lessThan(48));
+      expect(tester.getTopLeft(todayHeader).dy - scrollTop, lessThan(120));
       expect(_key('task-timeline-row-task-1'), findsOneWidget);
       expect(find.textContaining('Day 3 of 6'), findsOneWidget);
 
@@ -106,7 +134,58 @@ void main() {
 
       await tester.tap(_key('task-timeline-today-button'));
       await tester.pumpAndSettle();
-      expect(tester.getTopLeft(todayHeader).dy - scrollTop, lessThan(48));
+      expect(tester.getTopLeft(todayHeader).dy - scrollTop, lessThan(120));
+    });
+
+    testWidgets('loads every page of open lists before placing today', (
+      tester,
+    ) async {
+      final repository = await _pumpTimeline(tester, [
+        for (var i = 0; i < 260; i++)
+          _task('bulk-$i', 'Bulk task $i', start: 5, end: 6),
+        _task('task-today', 'Due today task', end: 0),
+      ]);
+
+      // The today task is the last of 261 tasks: on page one of the List
+      // view it would be missing, and Today would read as empty.
+      expect(repository.pages.last.offset, greaterThanOrEqualTo(240));
+      expect(_key('task-timeline-row-task-today'), findsOneWidget);
+      expect(_key('task-timeline-nothing-today'), findsNothing);
+    });
+
+    testWidgets('never claims nothing today while pages remain', (
+      tester,
+    ) async {
+      await _pumpTimeline(tester, [
+        for (var i = 0; i < 150; i++)
+          _task('bulk-$i', 'Bulk task $i', start: 3),
+        _task('task-today', 'Due today task', end: 0),
+      ], holdAfterFirstPage: true);
+
+      expect(_key('task-timeline-nothing-today'), findsNothing);
+      expect(_key('task-timeline-today-loading'), findsOneWidget);
+      expect(find.text('Loading tasks…'), findsOneWidget);
+    });
+
+    testWidgets('a start-only task is ongoing, never overdue', (tester) async {
+      await _pumpTimeline(tester, [
+        _task('task-1', 'Alpha task', end: 0),
+        _task('task-started', 'Started task', start: -5),
+      ]);
+
+      expect(find.textContaining('Started'), findsWidgets);
+      expect(_key('task-timeline-row-task-started'), findsOneWidget);
+      expect(_key('task-timeline-show-overdue'), findsNothing);
+      expect(find.text('Overdue'), findsNothing);
+    });
+
+    testWidgets('Show overdue jumps to the overdue days', (tester) async {
+      await _pumpTimeline(tester, _standardTasks);
+
+      expect(find.text('Overdue task'), findsNothing);
+      await tester.tap(_key('task-timeline-show-overdue'));
+      await tester.pumpAndSettle();
+      expect(find.text('Overdue task'), findsOneWidget);
     });
 
     testWidgets('the range hides later work until Show later', (tester) async {
