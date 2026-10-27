@@ -18,6 +18,7 @@ const guestBoard = {
   count_unestimated_issues: false,
   extended_estimation: false,
   next_task_number: 1,
+  sprint_length_weeks: null,
   template_id: null,
   ticket_prefix: null,
   default_list_id: null,
