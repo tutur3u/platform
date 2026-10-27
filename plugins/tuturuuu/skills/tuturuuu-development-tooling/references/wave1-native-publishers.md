@@ -70,6 +70,21 @@ baseline, exact public inputs and before/after topology. Earlier production runs
 reruns and absent versions never authorize replay of an uncertain upload. Keep
 pending/uploaded receipts and reconcile the original operation. Inspect earlier
 upload steps across SHAs and all attempts, allowing proven pre-upload refusals.
+Keep the original artifact unchanged. An owner-resolved `failed-no-write` attempt
+can be matched only through the reviewed append-only production resolutions file,
+with exact run/attempt/SHA/digest and both original/current rollback baselines.
+Continue checking other history; a later started pending replay remains fenced.
+Refuse a hosted version matching either the resolved SHA or digest before the
+replay. Keep run, job, artifact and receipt fixtures independent, and run the
+21-predicate mutation harness when changing resolution matching.
+Upload diagnostics retain only allowlisted process/code fields and bounded,
+sanitized provider messages or one ERROR headline. Never retain raw child output
+or error causes, and never infer write failure from a diagnostic alone. See the
+publisher runbook for redaction limits and independent review requirements.
+The public repository exposes workflow logs and receipt artifacts. Unknown
+unlabelled secrets below 24 characters cannot be reliably detected. Scrub known
+values before normalization, redact complete query/credential values, and
+neutralize workflow-command markers; never rely on artifact privacy.
 A matching version needs a distinct earlier rollback. Bound all preflight reads
 under one deadline, filter attachments to the Worker across all account zones,
 and pass only the CLI environment it needs. Dry-run output belongs outside the

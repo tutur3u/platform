@@ -508,6 +508,45 @@ remains. An upload exception leaves the private receipt `pending`; post-upload
 acceptance failure leaves it `uploaded`. No automatic retry, new admission or traffic switch
 follows either state.
 
+Upload failures retain only allowlisted exit/signal/Cloudflare-code metadata and
+sanitized provider `code: message` pairs (at most eight). If those pairs cannot be
+parsed, retain only one Wrangler `[ERROR]` headline, capped at 300 characters.
+Known credentials, token/key-shaped strings and URL credentials are redacted.
+Raw child stdout/stderr and error causes never enter the receipt or logs. Each
+message is one line and capped at 300 characters. Diagnostics do not establish
+whether a write succeeded; the receipt stays `pending` and replay stays fenced.
+Known credentials are removed from raw text before whitespace/zero-width
+normalization or line selection, including display-wrapped forms. All URL query
+values are redacted. Credential keywords include auth, credentials, pwd, sig,
+signature and numbered names. Quoted values retain no escaped-quote or semicolon
+continuation. Workflow command markers `##[` and `::` are neutralized anywhere.
+
+`tutur3u/platform` is public: workflow logs and receipt artifacts are
+world-readable. "Private" describes the detached Worker, not artifact secrecy.
+Pattern redaction cannot identify an unknown secret under 24 characters without
+a credential keyword. Keep such values out of provider messages; redaction is
+not a confidentiality guarantee for arbitrary unlabelled text.
+
+The append-only `scripts/ci/wave1-native-production-resolutions.json` contains
+release-owner resolutions supported by audit summaries and provider-version reads,
+without raw logs. Its `failed-no-write` resolution applies only when the repository,
+app, Worker, run, attempt, source SHA, digest and original/current rollback baseline
+all match the pinned record. The original pending artifact remains unchanged.
+This skips only that resolved attempt while continuing to inspect all other
+history. A later replay that starts and fails creates its own fenced pending
+attempt; the earlier resolution cannot clear it. Every added resolution needs
+independent review of this exception to the replay fence before production sync.
+Read-only preflight also refuses any hosted version whose source SHA **or**
+artifact digest matches a resolved no-write operation, including an inactive
+orphan. Reconcile that provider contradiction before any upload.
+
+`wave1-native-production-resolution-predicates.test.mjs` gives each of the 21
+matching predicates an independent negative. Reproduce the single-condition
+mutation proof with `node scripts/ci/wave1-native-resolution-mutations.mjs --out
+<private-report.json>`; the unchanged baseline must pass and every removed
+predicate must fail its corresponding test. History fixtures keep run, job,
+artifact and receipt identities independent.
+
 To unblock an uncertain upload, the release owner first preserves the original
 run/attempt, qualified archive and publication receipt, then inspects provider
 versions and deployments for that receipt's exact source/artifact annotations.
@@ -516,7 +555,9 @@ failed publish job with its original qualified archive: preflight reconciles it
 without uploading and post-verification emits an accepted-private receipt.
 A later source can then use that accepted version as its rollback baseline.
 If there is no exact active match, the receipt is missing/expired, or an earlier
-write remains unknown, keep publication held. The owner must resolve the provider
+write remains unknown, keep publication held. A separately reviewed, exact
+`failed-no-write` resolution is the only exception for a preserved pending
+artifact with no accepted version. The owner must resolve the provider
 outcome and obtain independent review of any recovery change; deleting run history,
 changing app names or retrying a fresh upload is not an unblock procedure.
 
