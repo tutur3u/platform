@@ -97,7 +97,7 @@ void main() {
     final ready = c.state as MastermindSnapshotReady;
     expect(ready.digest, hubDigest);
     expect(
-      (ready.refreshFailure as RejectedRefresh).reason,
+      (ready.refreshFailure! as RejectedRefresh).reason,
       RejectionReason.schemaViolation,
     );
   });
@@ -124,7 +124,7 @@ void main() {
     final ready = c.state as MastermindSnapshotReady;
     expect(ready.digest, hubDigest);
     expect(
-      (ready.refreshFailure as RejectedRefresh).reason,
+      (ready.refreshFailure! as RejectedRefresh).reason,
       RejectionReason.unsupportedVersion,
     );
     expect((await store.read())!.digest, hubDigest);
@@ -171,7 +171,7 @@ void main() {
       final ready = c.state as MastermindSnapshotReady;
       expect(ready.origin, SnapshotOrigin.cache);
       expect(
-        (ready.refreshFailure as UnavailableRefresh).kind,
+        (ready.refreshFailure! as UnavailableRefresh).kind,
         SnapshotUnavailableKind.unavailable,
       );
       expect(await store.read(), isNotNull);

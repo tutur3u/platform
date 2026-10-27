@@ -13,7 +13,7 @@ const hubDigest =
 const otherDigest =
     'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
 
-final hubBase = Uri.parse('https://hub.example.test');
+final Uri hubBase = Uri.parse('https://hub.example.test');
 
 /// Synthetic bearer tokens only; nothing here is a real credential.
 final class FakeTokens implements AccessTokenProvider {
@@ -72,7 +72,7 @@ final class FakeHub {
     client = MockClient.streaming((request, _) async {
       final recorded = RecordedRequest(request);
       requests.add(recorded);
-      return handler(recorded);
+      return await handler(recorded);
     });
   }
 

@@ -103,10 +103,10 @@ void main() {
 
   test('attempts never overlap', () async {
     final gate = Completer<void>();
-    final h = _Harness()..gates.add(gate);
-    h.scheduler.attach();
-    final first = h.active;
-    first.fire();
+    final h = _Harness()
+      ..gates.add(gate)
+      ..scheduler.attach();
+    final first = h.active..fire();
     await pumpEventQueue();
     expect(h.calls, 1);
     // No next timer until the in-flight refresh finishes.
