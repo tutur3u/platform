@@ -4,6 +4,7 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import { MAX_NAME_LENGTH } from '@tuturuuu/utils/constants';
 import { sanitizePathStrict } from '@tuturuuu/utils/storage-path';
+import { validateLinkedSession } from '@tuturuuu/utils/time-tracking-linked-session';
 import {
   getPermissions,
   verifyWorkspaceMembershipType,
@@ -140,6 +141,18 @@ export async function POST(
         );
       }
     }
+
+    const linkedSessionError = await validateLinkedSession({
+      client: sbAdmin,
+      sessionId: parsed.linkedSessionId,
+      userId: user.id,
+      wsId: normalizedWsId,
+    });
+    if (linkedSessionError)
+      return NextResponse.json(
+        { error: linkedSessionError.message },
+        { status: linkedSessionError.status }
+      );
 
     // Create time tracking request (images already uploaded via signed URLs)
     const { data, error } = await sbAdmin

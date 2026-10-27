@@ -37,6 +37,17 @@ Track resolves the actor through its app session, then checks workspace access
 and permissions. Time histories, requests, and management pages are noindex.
 The public Track description is served by Web's product page.
 
+### Linked sessions on time requests
+
+A time request may link an existing session (`linkedSessionId`); approving the
+request then updates that session in place instead of creating a new one. The
+link is accepted only when the session belongs to the same workspace and to the
+user filing the request, and it is checked before the request is written. A
+foreign, cross-workspace, or unknown session is rejected with `400 Invalid
+linked session`. The Web and Track request routes share one validator,
+`validateLinkedSession` in `@tuturuuu/utils/time-tracking-linked-session`,
+covered by `linked-session.test.ts` beside each route.
+
 Use the [Track route reference](/reference/repository/routes/track) to locate
 handlers, and [Data fetching](/platform/architecture/data-fetching) to extend a
 shared client contract rather than adding app-local raw browser API calls.
