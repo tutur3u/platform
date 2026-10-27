@@ -1,12 +1,5 @@
 part of 'task_board_detail_page.dart';
 
-const List<String> _taskQuickActionPriorityOptions = [
-  'critical',
-  'high',
-  'normal',
-  'low',
-];
-
 /// Statuses the quick sheet offers, in board order. Documents lists hold
 /// notes rather than work, so they are never a status target.
 const List<String> _taskQuickActionStatusOrder = [
@@ -33,7 +26,9 @@ class _TaskQuickActionCallbacks {
   });
 
   final void Function(TaskBoardTask task, String status) onStatus;
-  final void Function(TaskBoardTask task, String priority) onPriority;
+
+  /// A null priority clears it (the web's None).
+  final void Function(TaskBoardTask task, String? priority) onPriority;
   final void Function(TaskBoardTask task) onDueDate;
   final void Function(TaskBoardTask task) onClearDueDate;
   final void Function(TaskBoardTask task) onOpenDetails;
@@ -104,10 +99,7 @@ class _TaskQuickActionsSheet extends StatelessWidget {
       for (final candidate in _taskQuickActionStatusOrder)
         if (boardStatuses.contains(candidate)) candidate,
     ];
-    final priority = _normalizeTaskPriority(
-      live.priority,
-      _taskQuickActionPriorityOptions,
-    );
+    final priority = TaskPriorityLevel.tryParse(live.priority)?.value;
 
     return AppSheetScaffold(
       title: title,
@@ -129,7 +121,7 @@ class _TaskQuickActionsSheet extends StatelessWidget {
           ],
           _TaskQuickSectionCaption(l10n.taskBoardDetailPriority),
           _TaskQuickPriorityGrid(
-            selected: live.priority == null ? null : priority,
+            selected: priority,
             enabled: !busy,
             onSelected: (value) => callbacks.onPriority(live, value),
           ),
@@ -139,11 +131,13 @@ class _TaskQuickActionsSheet extends StatelessWidget {
             board: board,
             list: list,
             listName: listName,
+            enabled: !busy,
             callbacks: callbacks,
           ),
           const SizedBox(height: AppLayout.sectionGap),
           AppButton.outline(
             key: const ValueKey('task-quick-open-details'),
+            enabled: !busy,
             onPressed: () => callbacks.onOpenDetails(live),
             leading: const Icon(LucideIcons.maximize2),
             child: Text(l10n.taskBoardDetailOpenFullDetails),

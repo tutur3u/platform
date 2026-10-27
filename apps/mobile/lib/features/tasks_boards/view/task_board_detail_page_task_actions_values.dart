@@ -82,7 +82,12 @@ class _TaskQuickAvatarStack extends StatelessWidget {
                     radius: size / 2 - 2,
                     backgroundColor: c.muted,
                     child: Text(
-                      person.name.characters.first.toUpperCase(),
+                      person.name
+                              .trim()
+                              .characters
+                              .firstOrNull
+                              ?.toUpperCase() ??
+                          '',
                       style: TextStyle(fontSize: 11, color: c.foreground),
                     ),
                   ),

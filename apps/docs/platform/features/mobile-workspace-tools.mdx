@@ -1986,26 +1986,34 @@ sheet. It replaces the earlier button grid; the long-press menu is unchanged.
   The current status is selected. Another status moves the task to that
   status's list, asking which list when there are several, and closes the
   sheet.
-- **Priority**: Critical, High, Normal and Low with the web's icons and
-  colours: unicorn head (red), horse head (orange), rabbit (yellow) and
-  turtle (blue), from Lucide and Lucide Lab. The same icons mark priority
-  everywhere on the mobile board. The Vietnamese Critical label matches the
-  web (Khẩn cấp).
+- **Priority**: None, Urgent, High, Medium and Low, the web's task priority
+  menu wording (Vietnamese: Không có, Khẩn cấp, Cao, Trung bình, Thấp). The
+  four levels use the web's icons and colours: unicorn head (red), horse head
+  (orange), rabbit (yellow) and turtle (blue), from Lucide and Lucide Lab.
+  None clears the priority. Every mobile task surface (cards, filters, bulk
+  edit, row menu, recycle bin, My tasks and the timer task picker) uses the
+  same labels and icons.
 - **Fields**: Assignees (team workspaces with members), Due date (with a clear
   button), Labels (boards with labels) and Move task. Each row shows its
-  current value and opens its picker.
+  current value and opens its picker. A task is overdue once its due day,
+  in the user's timezone setting, is before today; a task without a due date
+  is never overdue.
 - **Open full details** closes the sheet and opens the task.
 - Priority and field edits keep the sheet open and update it in place, so
   several can be made in a row. They save without a success toast because the
   sheet shows the saved value; failures still roll back and show the error.
-  While one edit saves, the sheet disables its controls and ignores taps,
-  because the board runs one mutation at a time.
+  While one edit saves, every control dims and ignores taps, because the
+  board runs one mutation at a time. A mutation started anyway is rejected
+  before any optimistic change, so nothing needs rolling back.
 - No count chips: assignee and label names replace overflow counts.
 
 Regression coverage: `task_priority_visuals_test.dart` (web order, icons,
-colours, English and Vietnamese labels), `task_board_quick_actions_test.dart`
-(icons and order, selected semantics, statuses offered, dropped concurrent
-edit, status move, due-date clear, 320dp at 2x text, light/dark/blob renders)
+colours, English and Vietnamese labels including None),
+`task_board_quick_actions_test.dart` (icons, labels and order, selected
+semantics, statuses offered, None clears, dropped concurrent edit with every
+control disabled, status move, due-date clear, 320dp at 2x text,
+light/dark/blob renders), `task_board_detail_cubit_mutation_guard_test.dart`
+(a rejected concurrent update or move changes nothing)
 and `task_board_quick_actions_edits_test.dart` (consecutive edits save from
 the live task). Widget tests do not establish touch feel on devices.
 

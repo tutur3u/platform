@@ -44,7 +44,8 @@ class _TaskQuickStatusGrid extends StatelessWidget {
   }
 }
 
-/// The four web priorities, critical first, with their web icons.
+/// None, then the four web priorities, Urgent first, as the web menu lists
+/// them.
 class _TaskQuickPriorityGrid extends StatelessWidget {
   const _TaskQuickPriorityGrid({
     required this.selected,
@@ -52,15 +53,25 @@ class _TaskQuickPriorityGrid extends StatelessWidget {
     required this.onSelected,
   });
 
-  /// Null when the task has no priority yet.
+  /// Null when the task has no priority, which selects None.
   final String? selected;
   final bool enabled;
-  final ValueChanged<String> onSelected;
+  final ValueChanged<String?> onSelected;
 
   @override
   Widget build(BuildContext context) {
+    final c = AppTokens.of(context).colorScheme;
     return _TaskQuickChoiceRow(
       children: [
+        _TaskQuickChoiceTile(
+          key: const ValueKey('task-quick-priority-none'),
+          icon: TaskPriorityLevel.noneIcon,
+          label: TaskPriorityLevel.noneLabel(context.l10n),
+          accent: c.mutedForeground,
+          selected: selected == null,
+          enabled: enabled,
+          onTap: () => onSelected(null),
+        ),
         for (final level in TaskPriorityLevel.values)
           _TaskQuickChoiceTile(
             key: ValueKey('task-quick-priority-${level.value}'),
@@ -76,7 +87,7 @@ class _TaskQuickPriorityGrid extends StatelessWidget {
   }
 }
 
-/// Lays tiles out in equal columns: up to four per row on a phone, fewer
+/// Lays tiles out in equal columns: up to five per row on a phone, fewer
 /// when large text needs the width.
 class _TaskQuickChoiceRow extends StatelessWidget {
   const _TaskQuickChoiceRow({required this.children});
@@ -88,14 +99,14 @@ class _TaskQuickChoiceRow extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final textScale = MediaQuery.textScalerOf(context).scale(1);
-        final minTileWidth = 72 * textScale;
+        final minTileWidth = 60 * textScale;
         final fit = math.max(
           1,
           ((constraints.maxWidth + AppSpacing.sm) /
                   (minTileWidth + AppSpacing.sm))
               .floor(),
         );
-        final columns = math.min(children.length, math.min(fit, 4));
+        final columns = math.min(children.length, math.min(fit, 5));
         final tileWidth =
             (constraints.maxWidth - AppSpacing.sm * (columns - 1)) / columns;
         return Wrap(
@@ -130,7 +141,7 @@ class _TaskQuickChoiceTile extends StatelessWidget {
   final Color accent;
   final bool selected;
 
-  /// False while an edit saves; the tile keeps its look but takes no taps.
+  /// False while an edit saves: the tile dims and takes no taps.
   final bool enabled;
   final VoidCallback onTap;
 
@@ -147,44 +158,50 @@ class _TaskQuickChoiceTile extends StatelessWidget {
       label: label,
       enabled: enabled,
       onTap: activate,
-      child: Material(
-        color: selected
-            ? accent.withValues(alpha: c.isDark ? 0.2 : 0.12)
-            : c.muted.withValues(alpha: 0.5),
-        shape: RoundedRectangleBorder(
-          borderRadius: radius,
-          side: BorderSide(
-            color: selected ? accent.withValues(alpha: 0.6) : c.border,
-            width: selected ? 1.5 : 1,
+      // Dim inside the node so the tile keeps its own semantics.
+      child: Opacity(
+        opacity: enabled ? 1 : 0.55,
+        child: Material(
+          color: selected
+              ? accent.withValues(alpha: c.isDark ? 0.2 : 0.12)
+              : c.muted.withValues(alpha: 0.5),
+          shape: RoundedRectangleBorder(
+            borderRadius: radius,
+            side: BorderSide(
+              color: selected ? accent.withValues(alpha: 0.6) : c.border,
+              width: selected ? 1.5 : 1,
+            ),
           ),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: activate,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 72),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.xs,
-                vertical: AppSpacing.md,
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(icon, size: 22, color: accent),
-                  const SizedBox(height: AppSpacing.sm),
-                  Text(
-                    label,
-                    maxLines: 2,
-                    textAlign: TextAlign.center,
-                    overflow: TextOverflow.ellipsis,
-                    style: tokens.typography.xSmall.copyWith(
-                      color: selected ? accent : c.foreground,
-                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                      height: 1.2,
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: activate,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 72),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.xs,
+                  vertical: AppSpacing.md,
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(icon, size: 22, color: accent),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      label,
+                      maxLines: 2,
+                      textAlign: TextAlign.center,
+                      overflow: TextOverflow.ellipsis,
+                      style: tokens.typography.xSmall.copyWith(
+                        color: selected ? accent : c.foreground,
+                        fontWeight: selected
+                            ? FontWeight.w700
+                            : FontWeight.w500,
+                        height: 1.2,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

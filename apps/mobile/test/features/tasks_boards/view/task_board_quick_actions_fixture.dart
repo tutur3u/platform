@@ -11,6 +11,7 @@ import 'task_board_row_actions_fixture.dart';
 typedef QuickActionUpdate = ({
   String taskId,
   String? priority,
+  bool clearPriority,
   DateTime? endDate,
   bool clearEndDate,
   List<String>? labelIds,
@@ -96,6 +97,7 @@ class QuickActionsRepository extends RowActionsRepository {
     List<String>? assigneeIds,
     bool? completed,
     bool clearDescription = false,
+    bool clearPriority = false,
     bool clearStartDate = false,
     bool clearEndDate = false,
     bool clearEstimationPoints = false,
@@ -103,6 +105,7 @@ class QuickActionsRepository extends RowActionsRepository {
     sent.add((
       taskId: taskId,
       priority: priority,
+      clearPriority: clearPriority,
       endDate: endDate,
       clearEndDate: clearEndDate,
       labelIds: labelIds,
@@ -113,7 +116,7 @@ class QuickActionsRepository extends RowActionsRepository {
       id: taskId,
       listId: current.listId,
       name: name ?? current.name,
-      priority: priority ?? current.priority,
+      priority: clearPriority ? null : priority ?? current.priority,
       endDate: clearEndDate ? null : endDate ?? current.endDate,
       labelIds: labelIds ?? current.labelIds,
       assigneeIds: assigneeIds ?? current.assigneeIds,

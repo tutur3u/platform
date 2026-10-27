@@ -1,13 +1,15 @@
 part of 'task_board_detail_page.dart';
 
 /// Assignees, due date, labels and list rows of the quick sheet. Each row
-/// shows the current value and opens that field's picker.
+/// shows the current value and opens that field's picker. While an edit
+/// saves ([enabled] false) the rows dim and take no taps.
 class _TaskQuickFieldsCard extends StatelessWidget {
   const _TaskQuickFieldsCard({
     required this.task,
     required this.board,
     required this.list,
     required this.listName,
+    required this.enabled,
     required this.callbacks,
   });
 
@@ -15,6 +17,7 @@ class _TaskQuickFieldsCard extends StatelessWidget {
   final TaskBoardDetail? board;
   final TaskBoardList? list;
   final String listName;
+  final bool enabled;
   final _TaskQuickActionCallbacks callbacks;
 
   @override
@@ -23,18 +26,18 @@ class _TaskQuickFieldsCard extends StatelessWidget {
     final c = AppTokens.of(context).colorScheme;
     final assignees = _taskQuickAssignees(task, board);
     final labels = _taskQuickLabels(task, board);
-    final endDate = task.endDate?.toLocal();
+    final zone = taskTimezone(context);
+    final endDate = task.endDate == null ? null : taskDay(task.endDate!, zone);
     final overdue =
-        endDate != null &&
-        endDate.isBefore(DateTime.now()) &&
+        taskIsOverdue(endDate: task.endDate, now: DateTime.now(), zone: zone) &&
         !_taskIsCompletedInBoard(task, list);
-    final onAssignees = callbacks.onAssignees;
-    final onLabels = callbacks.onLabels;
-    final onMove = callbacks.onMove;
+    final onAssignees = enabled ? callbacks.onAssignees : null;
+    final onLabels = enabled ? callbacks.onLabels : null;
+    final onMove = enabled ? callbacks.onMove : null;
 
-    return AppGroupedCard(
+    final card = AppGroupedCard(
       children: [
-        if (onAssignees != null)
+        if (callbacks.onAssignees != null)
           AppGroupedRow(
             key: const ValueKey('task-quick-assignees'),
             leading: const AppIconTile(
@@ -53,7 +56,7 @@ class _TaskQuickFieldsCard extends StatelessWidget {
                 ? null
                 : _TaskQuickAvatarStack(assignees: assignees),
             showChevron: true,
-            onTap: () => onAssignees(task),
+            onTap: onAssignees == null ? null : () => onAssignees(task),
           ),
         AppGroupedRow(
           key: const ValueKey('task-quick-due-date'),
@@ -77,12 +80,14 @@ class _TaskQuickFieldsCard extends StatelessWidget {
                   key: const ValueKey('task-quick-clear-due-date'),
                   tooltip: l10n.taskBoardDetailRemoveDueDate,
                   icon: const Icon(LucideIcons.x),
-                  onPressed: () => callbacks.onClearDueDate(task),
+                  onPressed: enabled
+                      ? () => callbacks.onClearDueDate(task)
+                      : null,
                 ),
           showChevron: endDate == null,
-          onTap: () => callbacks.onDueDate(task),
+          onTap: enabled ? () => callbacks.onDueDate(task) : null,
         ),
-        if (onLabels != null)
+        if (callbacks.onLabels != null)
           AppGroupedRow(
             key: const ValueKey('task-quick-labels'),
             leading: const AppIconTile(
@@ -94,7 +99,7 @@ class _TaskQuickFieldsCard extends StatelessWidget {
                 ? Text(l10n.taskQuickActionsNoLabels)
                 : _TaskQuickLabelLine(labels: labels),
             showChevron: true,
-            onTap: () => onLabels(task),
+            onTap: onLabels == null ? null : () => onLabels(task),
           ),
         AppGroupedRow(
           key: const ValueKey('task-quick-list'),
@@ -105,10 +110,11 @@ class _TaskQuickFieldsCard extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-          showChevron: onMove != null,
+          showChevron: callbacks.onMove != null,
           onTap: onMove == null ? null : () => onMove(task),
         ),
       ],
     );
+    return enabled ? card : Opacity(opacity: 0.55, child: card);
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/tasks_boards/view/task_board_detail_page.dart';
@@ -36,6 +37,7 @@ void main() {
       await openSheet(tester);
 
       const expected = {
+        'none': LucideIcons.x,
         'critical': LucideLabIcons.unicornHead,
         'high': LucideLabIcons.horseHead,
         'normal': LucideIcons.rabbit,
@@ -60,6 +62,12 @@ void main() {
       expect(quickActionTile('task-quick-status-active'), findsOneWidget);
       expect(quickActionTile('task-quick-status-done'), findsOneWidget);
       expect(quickActionTile('task-quick-status-closed'), findsNothing);
+      // Web wording: None, Urgent, High, Medium, Low.
+      for (final label in ['None', 'Urgent', 'High', 'Medium', 'Low']) {
+        expect(find.text(label), findsWidgets);
+      }
+      expect(find.text('Critical'), findsNothing);
+      expect(find.text('Normal'), findsNothing);
       // Values replace the old count chips: names, not "+N".
       expect(find.textContaining('Finance', findRichText: true), findsWidgets);
       expect(find.textContaining(RegExp(r'^\+\d+$')), findsNothing);
@@ -72,6 +80,34 @@ void main() {
 
       await tester.tap(quickActionTile('task-quick-priority-critical'));
       await tester.pump();
+
+      // While the edit saves, every control is visibly disabled.
+      expect(
+        tester
+            .widget<AppButton>(quickActionTile('task-quick-open-details'))
+            .enabled,
+        isFalse,
+      );
+      expect(
+        tester
+            .widget<AppIconButton>(quickActionTile('task-quick-clear-due-date'))
+            .onPressed,
+        isNull,
+      );
+      expect(
+        tester
+            .widget<AppGroupedRow>(quickActionTile('task-quick-labels'))
+            .onTap,
+        isNull,
+      );
+      expect(
+        find.ancestor(
+          of: quickActionTile('task-quick-labels'),
+          matching: find.byType(Opacity),
+        ),
+        findsWidgets,
+      );
+
       await tester.tap(
         quickActionTile('task-quick-priority-low'),
         warnIfMissed: false,
@@ -94,6 +130,21 @@ void main() {
       expect(repository.moves, ['task-1->list-2']);
       expect(quickActionTile('task-quick-status-done'), findsNothing);
       await drainToasts(tester);
+    });
+
+    testWidgets('None clears the priority', (tester) async {
+      await openSheet(tester);
+
+      await tester.tap(quickActionTile('task-quick-priority-none'));
+      await settleQuickActionMutation(tester);
+
+      final update = repository.sent.single;
+      expect(update.clearPriority, isTrue);
+      expect(update.priority, isNull);
+      expect(
+        tester.getSemantics(quickActionTile('task-quick-priority-none')),
+        isSemantics(isSelected: true),
+      );
     });
 
     testWidgets('the due date clears without a picker', (tester) async {

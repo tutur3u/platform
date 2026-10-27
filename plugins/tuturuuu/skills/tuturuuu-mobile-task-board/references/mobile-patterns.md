@@ -227,11 +227,20 @@ localization changes.
   until `isMutating` clears, and keep that test alone in its file. The store
   is a process-wide singleton that serializes writes, so a write left
   pending by an earlier test blocks every later mutation
-  (`task_board_quick_actions_edits_test.dart`).
-- Priority visuals come from `TaskPriorityLevel`
-  (`tasks_boards/widgets/task_priority_visuals.dart`): the web's order, Lucide
-  and Lucide Lab icons and dynamic colours. Do not draw priority with Material
-  arrows. The design render harness loads both Lucide fonts.
+  (`task_board_quick_actions_edits_test.dart`). Do not add a timer-based
+  timeout there: its pending timer fails every board widget test whose
+  mutation never settles in fake async.
+- Priority visuals and labels come from `TaskPriorityLevel`
+  (`tasks_boards/widgets/task_priority_visuals.dart`): the web's order and
+  wording (Urgent, High, Medium, Low, plus None), Lucide and Lucide Lab icons
+  and dynamic colours. Do not add per-surface priority strings or hues. The
+  design render harness loads both Lucide fonts.
+- Board mutations reject a concurrent call with
+  `TaskBoardMutationInProgressException` (an `Exception`) before any
+  optimistic change; call `_ensureNoMutationInProgress` first in new
+  optimistic mutations.
+- Overdue is one rule (`utils/task_due_dates.dart`): the due day in the
+  user's timezone setting is before today. No due date, never overdue.
 - The tap quick sheet follows the cubit for its task and passes the live task
   to every edit, so consecutive edits never save a stale snapshot. Edits made
   where the saved value is visible pass `announce: false` (no success toast;

@@ -118,6 +118,7 @@ class RowActionsRepository extends TaskRepository {
     List<String>? assigneeIds,
     bool? completed,
     bool clearDescription = false,
+    bool clearPriority = false,
     bool clearStartDate = false,
     bool clearEndDate = false,
     bool clearEstimationPoints = false,

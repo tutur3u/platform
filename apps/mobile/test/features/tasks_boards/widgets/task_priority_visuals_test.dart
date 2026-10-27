@@ -42,16 +42,18 @@ void main() {
     final en = await AppLocalizations.delegate.load(const Locale('en'));
     final vi = await AppLocalizations.delegate.load(const Locale('vi'));
     expect(TaskPriorityLevel.values.map((level) => level.label(en)), [
-      'Critical',
+      'Urgent',
       'High',
-      'Normal',
+      'Medium',
       'Low',
     ]);
     expect(TaskPriorityLevel.values.map((level) => level.label(vi)), [
       'Khẩn cấp',
       'Cao',
-      'Bình thường',
+      'Trung bình',
       'Thấp',
     ]);
+    expect(TaskPriorityLevel.noneLabel(en), 'None');
+    expect(TaskPriorityLevel.noneLabel(vi), 'Không có');
   });
 }

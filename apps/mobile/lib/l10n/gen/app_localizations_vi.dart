@@ -9013,19 +9013,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailPriority => 'Độ ưu tiên';
 
   @override
-  String get taskBoardDetailPriorityCritical => 'Nghiêm trọng';
-
-  @override
-  String get taskBoardDetailPriorityHigh => 'Cao';
-
-  @override
-  String get taskBoardDetailPriorityLow => 'Thấp';
-
-  @override
   String get taskBoardDetailPriorityNone => 'Không ưu tiên';
-
-  @override
-  String get taskBoardDetailPriorityNormal => 'Bình thường';
 
   @override
   String get taskBoardDetailPriorityUpdated => 'Đã cập nhật độ ưu tiên.';
@@ -10099,16 +10087,19 @@ class AppLocalizationsVi extends AppLocalizations {
   String get tasksPlanAhead => 'Lên kế hoạch sớm';
 
   @override
-  String get tasksPriorityCritical => 'Khẩn cấp';
-
-  @override
   String get tasksPriorityHigh => 'Cao';
 
   @override
   String get tasksPriorityLow => 'Thấp';
 
   @override
-  String get tasksPriorityNormal => 'Bình thường';
+  String get tasksPriorityMedium => 'Trung bình';
+
+  @override
+  String get tasksPriorityNone => 'Không có';
+
+  @override
+  String get tasksPriorityUrgent => 'Khẩn cấp';
 
   @override
   String get tasksRequiresAttention => 'Cần xử lý ngay';

@@ -3,10 +3,13 @@ import 'package:mobile/core/theme/dynamic_colors.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-/// Task priorities in the web's order, with the web's icons and colours.
+/// Task priorities in the web's order, with the web's labels, icons and
+/// colours.
 ///
-/// Mirrors `PRIORITY_ICONS` and `PRIORITY_BADGE_COLORS` in
-/// `packages/tasks-ui/src/tu-do/utils`: critical is the Lucide Lab unicorn
+/// Mirrors `PRIORITY_LABELS`, `PRIORITY_ICONS` and `PRIORITY_BADGE_COLORS` in
+/// `packages/tasks-ui/src/tu-do/utils` and the task priority menu: Urgent,
+/// High, Medium and Low (vi: Khẩn cấp, Cao, Trung bình, Thấp), plus None for
+/// no priority. Critical is the Lucide Lab unicorn
 /// head, high the horse head, normal the rabbit and low the turtle, tinted
 /// with the shared dynamic red, orange, yellow and blue tokens.
 enum TaskPriorityLevel {
@@ -44,9 +47,15 @@ enum TaskPriorityLevel {
   };
 
   String label(AppLocalizations l10n) => switch (this) {
-    TaskPriorityLevel.critical => l10n.tasksPriorityCritical,
+    TaskPriorityLevel.critical => l10n.tasksPriorityUrgent,
     TaskPriorityLevel.high => l10n.tasksPriorityHigh,
-    TaskPriorityLevel.normal => l10n.tasksPriorityNormal,
+    TaskPriorityLevel.normal => l10n.tasksPriorityMedium,
     TaskPriorityLevel.low => l10n.tasksPriorityLow,
   };
+
+  /// The web's "None" choice: no priority.
+  static String noneLabel(AppLocalizations l10n) => l10n.tasksPriorityNone;
+
+  /// The web's icon for the "None" choice.
+  static const IconData noneIcon = LucideIcons.x;
 }

@@ -17329,35 +17329,11 @@ abstract class AppLocalizations {
   /// **'Priority'**
   String get taskBoardDetailPriority;
 
-  /// No description provided for @taskBoardDetailPriorityCritical.
-  ///
-  /// In en, this message translates to:
-  /// **'Critical'**
-  String get taskBoardDetailPriorityCritical;
-
-  /// No description provided for @taskBoardDetailPriorityHigh.
-  ///
-  /// In en, this message translates to:
-  /// **'High'**
-  String get taskBoardDetailPriorityHigh;
-
-  /// No description provided for @taskBoardDetailPriorityLow.
-  ///
-  /// In en, this message translates to:
-  /// **'Low'**
-  String get taskBoardDetailPriorityLow;
-
   /// No description provided for @taskBoardDetailPriorityNone.
   ///
   /// In en, this message translates to:
   /// **'No priority'**
   String get taskBoardDetailPriorityNone;
-
-  /// No description provided for @taskBoardDetailPriorityNormal.
-  ///
-  /// In en, this message translates to:
-  /// **'Normal'**
-  String get taskBoardDetailPriorityNormal;
 
   /// No description provided for @taskBoardDetailPriorityUpdated.
   ///
@@ -19417,12 +19393,6 @@ abstract class AppLocalizations {
   /// **'Plan ahead'**
   String get tasksPlanAhead;
 
-  /// No description provided for @tasksPriorityCritical.
-  ///
-  /// In en, this message translates to:
-  /// **'Critical'**
-  String get tasksPriorityCritical;
-
   /// No description provided for @tasksPriorityHigh.
   ///
   /// In en, this message translates to:
@@ -19435,11 +19405,23 @@ abstract class AppLocalizations {
   /// **'Low'**
   String get tasksPriorityLow;
 
-  /// No description provided for @tasksPriorityNormal.
+  /// No description provided for @tasksPriorityMedium.
   ///
   /// In en, this message translates to:
-  /// **'Normal'**
-  String get tasksPriorityNormal;
+  /// **'Medium'**
+  String get tasksPriorityMedium;
+
+  /// No description provided for @tasksPriorityNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get tasksPriorityNone;
+
+  /// No description provided for @tasksPriorityUrgent.
+  ///
+  /// In en, this message translates to:
+  /// **'Urgent'**
+  String get tasksPriorityUrgent;
 
   /// No description provided for @tasksRequiresAttention.
   ///

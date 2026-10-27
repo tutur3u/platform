@@ -196,45 +196,53 @@ extension _TaskRowActions on _TaskBoardDetailPageViewState {
     BuildContext context,
     TaskBoardTask task,
   ) async {
+    // The choice sheet needs a non-null value; '' stands for None.
+    const none = '';
     final selected = await showAppChoiceSheet<String>(
       context: context,
       title: context.l10n.taskBoardDetailChangePriority,
-      selected: _normalizeTaskPriority(
-        task.priority,
-        _taskQuickActionPriorityOptions,
-      ),
+      selected: TaskPriorityLevel.tryParse(task.priority)?.value ?? none,
       choices: [
-        for (final priority in _taskQuickActionPriorityOptions)
+        AppSheetChoice(
+          key: const ValueKey('task-row-priority-none'),
+          value: none,
+          label: TaskPriorityLevel.noneLabel(context.l10n),
+          icon: TaskPriorityLevel.noneIcon,
+        ),
+        for (final level in TaskPriorityLevel.values)
           AppSheetChoice(
-            key: ValueKey('task-row-priority-$priority'),
-            value: priority,
-            label: _taskPriorityStyle(context, priority).label,
-            icon: _taskPriorityStyle(context, priority).icon,
+            key: ValueKey('task-row-priority-${level.value}'),
+            value: level.value,
+            label: level.label(context.l10n),
+            icon: level.icon,
           ),
       ],
     );
     if (selected == null || !context.mounted) return;
-    await _changeTaskPriority(context, task, selected);
+    await _changeTaskPriority(
+      context,
+      task,
+      selected == none ? null : selected,
+    );
   }
 
   Future<void> _changeTaskPriority(
     BuildContext context,
     TaskBoardTask task,
-    String priority, {
+    String? priority, {
     bool announce = true,
   }) async {
-    final normalizedPriority = _normalizeTaskPriority(
-      priority,
-      _taskQuickActionPriorityOptions,
-    );
-    if (task.priority == normalizedPriority) return;
+    // Null clears the priority (the web's None).
+    final next = TaskPriorityLevel.tryParse(priority)?.value;
+    if (TaskPriorityLevel.tryParse(task.priority)?.value == next) return;
     await _runTaskRowUpdate(
       context,
       task,
       successMessage: announce
           ? context.l10n.taskBoardDetailPriorityUpdated
           : null,
-      priority: normalizedPriority,
+      priority: next,
+      clearPriority: next == null,
     );
   }
 
@@ -246,6 +254,7 @@ extension _TaskRowActions on _TaskBoardDetailPageViewState {
     TaskBoardTask task, {
     required String? successMessage,
     String? priority,
+    bool clearPriority = false,
     DateTime? endDate,
     bool clearEndDate = false,
     List<String>? labelIds,
@@ -263,7 +272,8 @@ extension _TaskRowActions on _TaskBoardDetailPageViewState {
         name: task.name?.trim().isNotEmpty == true
             ? task.name!.trim()
             : context.l10n.taskBoardDetailUntitledTask,
-        priority: priority ?? task.priority,
+        priority: clearPriority ? null : priority ?? task.priority,
+        clearPriority: clearPriority,
         startDate: task.startDate,
         endDate: clearEndDate ? null : endDate ?? task.endDate,
         clearEndDate: clearEndDate,
