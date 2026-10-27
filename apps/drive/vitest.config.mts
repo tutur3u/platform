@@ -28,6 +28,15 @@ export default defineConfig({
     setupFiles: ['./vitest.setup.ts'],
   },
   resolve: {
-    alias: [{ find: '@', replacement: resolve(__dirname, './src') }],
+    alias: [
+      { find: '@', replacement: resolve(__dirname, './src') },
+      {
+        find: '@tuturuuu/supabase/next/common',
+        replacement: resolve(
+          __dirname,
+          '../../packages/supabase/src/next/common.ts'
+        ),
+      },
+    ],
   },
 });

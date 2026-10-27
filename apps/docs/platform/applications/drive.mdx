@@ -342,3 +342,24 @@ commit; do not run `bun validate` or app builds on the shared machine.
   template pickers. `drive/mira/qr/**` is an intentional Drive output.
 - **Evidence:** the matrix, rollback and verification steps are in
   [Workspace storage RLS](/build/devops/workspace-storage-rls).
+
+## Start candidate staging cookies and authentication
+
+The unprovisioned Start candidate remains restricted to
+`drive.staging.tutur3u.com`. A staging deployment shares the single
+`.staging.tutur3u.com` zone across Drive, Web and central staging by setting
+`NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN=.staging.tutur3u.com`, the exact
+allowlisted override described in the environments release flow; it is ignored
+on production deployments. Without it, and on production, Supabase cookies use
+`.tuturuuu.com` and hosts outside the zone keep host-only cookies. The candidate
+scopes ordinary response cookies to the staging zone with Secure, while
+`__Host-` cookies retain their original host-only scope and attributes,
+including deletion headers.
+
+Unauthenticated pages redirect to central staging login through a Drive
+`verify-token` return URL that retains the original destination. Unauthenticated API requests return 401 before Start or upstream
+forwarding. `src/start-candidate/worker-auth.test.ts` runs the real Drive proxy,
+shared auth and bridge with fixture Start/RSC and provider adapters;
+`staging-policy.test.ts` and Supabase's `staging-cookie-domain.test.ts` cover
+cookie rotations, deletions and zone isolation. Hosted login and provider
+sessions still require staging acceptance before publication.

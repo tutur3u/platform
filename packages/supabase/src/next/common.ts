@@ -93,10 +93,6 @@ function resolveSharedCookieDomainForUrl(url: string | URL | null | undefined) {
     return null;
   }
 
-  if (hostname === 'drive.staging.tutur3u.com') {
-    return { cookieDomain: '.staging.tutur3u.com', secure: true };
-  }
-
   return (
     getTuturuuuSharedCookieDomains().find(
       (entry) =>

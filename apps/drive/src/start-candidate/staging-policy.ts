@@ -17,7 +17,6 @@ export const stagingVars = {
   NEXT_PUBLIC_SUPABASE_URL: STAGING_SUPABASE_ORIGIN,
   SUPABASE_SERVER_URL: STAGING_SUPABASE_ORIGIN,
   SUPABASE_URL: STAGING_SUPABASE_ORIGIN,
-  TUTURUUU_COOKIE_DOMAIN: STAGING_COOKIE_DOMAIN,
 };
 
 export function isDriveStagingEnvironment(
@@ -35,6 +34,10 @@ export function scopeStagingCookies(response: Response): Response {
   const cookies = scoped.headers.getSetCookie();
   scoped.headers.delete('Set-Cookie');
   for (const cookie of cookies) {
+    if (cookie.trimStart().startsWith('__Host-')) {
+      scoped.headers.append('Set-Cookie', cookie);
+      continue;
+    }
     const attributes = cookie
       .split(';')
       .filter(
