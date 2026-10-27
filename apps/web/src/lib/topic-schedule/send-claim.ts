@@ -49,22 +49,24 @@ export async function withScheduleSendClaim<Result>(
     ...SCHEDULE_EDITABLE_STATUSES,
     ...(resend ? ['sent'] : []),
   ];
+  const conflict: ScheduleSendConflict = {
+    error:
+      previousStatus === 'sent' && !resend ? 'ALREADY_SENT' : 'SEND_CONFLICT',
+    status: 409,
+  };
+  if (!claimable.includes(previousStatus)) return conflict;
+  // Claim exactly the status read above, so releasing restores what was
+  // really there (a status that changed in between fails the claim instead).
   const { data: claimed, error: claimError } = await sbAdmin
     .from('topic_announcements')
     .update({ status: 'processing' })
     .eq('id', announcementId)
     .eq('ws_id', normalizedWsId)
     .eq('source_type', SCHEDULE_SOURCE_TYPE)
-    .in('status', claimable)
+    .eq('status', previousStatus)
     .select('id');
   if (claimError) throw claimError;
-  if ((claimed ?? []).length === 0) {
-    return {
-      error:
-        previousStatus === 'sent' && !resend ? 'ALREADY_SENT' : 'SEND_CONFLICT',
-      status: 409,
-    };
-  }
+  if ((claimed ?? []).length === 0) return conflict;
 
   try {
     return await send();
@@ -106,5 +108,29 @@ export async function failScheduleSendWithoutRecipients({
     .eq('ws_id', wsId)
     .eq('source_type', SCHEDULE_SOURCE_TYPE)
     .eq('status', 'processing');
+  if (error) throw error;
+}
+
+/**
+ * Schedule sessions have no `scheduled_send_at`, so the queue's stale reset
+ * never sees a Send-now claim whose function died (or whose release write
+ * failed). Sessions left `processing` past the cutoff are marked `failed`
+ * with PROCESSING_TIMEOUT: editable, and never sent automatically. Scheduled
+ * sends and other announcements keep the queue's own reset.
+ */
+export async function failStaleScheduleClaims({
+  cutoff,
+  sbAdmin,
+}: {
+  cutoff: string;
+  sbAdmin: TopicAnnouncementsSupabaseClient;
+}) {
+  const { error } = await sbAdmin
+    .from('topic_announcements')
+    .update({ last_error: 'PROCESSING_TIMEOUT', status: 'failed' })
+    .eq('source_type', SCHEDULE_SOURCE_TYPE)
+    .eq('status', 'processing')
+    .is('scheduled_send_at', null)
+    .lt('updated_at', cutoff);
   if (error) throw error;
 }

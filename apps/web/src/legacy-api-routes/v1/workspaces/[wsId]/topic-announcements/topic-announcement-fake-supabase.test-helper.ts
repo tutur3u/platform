@@ -161,6 +161,14 @@ export function createFakeSupabase(tables: Record<string, Row[]>) {
           filters.push((row) => String(readPath(row, key)) >= value);
           return chain;
         },
+        is: (key: string, value: null) => {
+          filters.push((row) => (readPath(row, key) ?? null) === value);
+          return chain;
+        },
+        lt: (key: string, value: string) => {
+          filters.push((row) => String(readPath(row, key)) < value);
+          return chain;
+        },
         lte: (key: string, value: string) => {
           filters.push((row) => String(readPath(row, key)) <= value);
           return chain;

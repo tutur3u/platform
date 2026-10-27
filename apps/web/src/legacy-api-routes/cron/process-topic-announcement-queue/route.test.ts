@@ -37,6 +37,10 @@ function createQuery(table: string, result: QueryResult) {
       query.calls.push(['eq', args]);
       return query;
     }),
+    is: vi.fn((...args: unknown[]) => {
+      query.calls.push(['is', args]);
+      return query;
+    }),
     limit: vi.fn((...args: unknown[]) => {
       query.calls.push(['limit', args]);
       return Promise.resolve(result);
@@ -239,6 +243,27 @@ describe('process-topic-announcement-queue cron route', () => {
       ['source_type', 'schedule'],
     ]);
     expect(failQuery?.calls).toContainEqual(['eq', ['status', 'processing']]);
+  });
+
+  it('fails schedule sessions left processing by a dead Send now', async () => {
+    queueResult({ data: null, error: null });
+    queueResult({ data: [], error: null });
+
+    const { GET } = await import('./route');
+    const response = await GET(
+      cronRequest({ authorization: 'Bearer cron-secret' })
+    );
+    expect(response.status).toBe(200);
+
+    const sweep = mocks.queries.at(-1);
+    expect(sweep?.table).toBe('topic_announcements');
+    expect(sweep?.calls).toEqual([
+      ['update', [{ last_error: 'PROCESSING_TIMEOUT', status: 'failed' }]],
+      ['eq', ['source_type', 'schedule']],
+      ['eq', ['status', 'processing']],
+      ['is', ['scheduled_send_at', null]],
+      ['lt', ['updated_at', '2026-06-02T11:45:00.000Z']],
+    ]);
   });
 
   it('does not send a row already claimed by another cron invocation', async () => {

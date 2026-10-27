@@ -167,6 +167,17 @@ describe('Send now on a schedule session', () => {
     expect(row(id).status).toBe('draft');
   });
 
+  it('restores exactly the status it claimed', async () => {
+    const id = await created();
+    row(id).status = 'failed';
+    mocks.sendTopicAnnouncement.mockResolvedValueOnce({
+      error: 'NO_RECIPIENTS',
+      status: 409,
+    });
+    await send(id);
+    expect(row(id).status).toBe('failed');
+  });
+
   it('refuses a session already in delivery instead of sending it', async () => {
     const id = await created();
     row(id).status = 'queued';

@@ -13,7 +13,17 @@ const mocks = vi.hoisted(() => ({
   cloneTopicScheduleMonth: vi.fn(),
   getTopicScheduleMonth: vi.fn(),
   push: vi.fn(),
+  RejectedError: class extends Error {
+    constructor(
+      public readonly rowErrors: unknown[],
+      public readonly conflict: boolean,
+      public readonly notification: unknown = null
+    ) {
+      super('rejected');
+    }
+  },
   saveTopicScheduleMonth: vi.fn(),
+  toast: { error: vi.fn(), success: vi.fn(), warning: vi.fn() },
 }));
 
 vi.mock('next-intl', () => ({
@@ -24,14 +34,12 @@ vi.mock('next-intl', () => ({
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: mocks.push }),
 }));
-vi.mock('@tuturuuu/ui/sonner', () => ({
-  toast: { error: vi.fn(), success: vi.fn() },
-}));
+vi.mock('@tuturuuu/ui/sonner', () => ({ toast: mocks.toast }));
 vi.mock('@tuturuuu/internal-api/topic-announcements', () => ({
   cloneTopicScheduleMonth: mocks.cloneTopicScheduleMonth,
   getTopicScheduleMonth: mocks.getTopicScheduleMonth,
   saveTopicScheduleMonth: mocks.saveTopicScheduleMonth,
-  TopicScheduleSaveRejectedError: class extends Error {},
+  TopicScheduleSaveRejectedError: mocks.RejectedError,
 }));
 
 function session(overrides: Record<string, unknown>) {
@@ -164,6 +172,64 @@ describe('ScheduleMonthEditor', () => {
         expect.objectContaining({ durationMinutes: 30, id: 's1', room: '202' }),
       ],
     });
+  });
+
+  async function saveRoomEdit() {
+    renderEditor();
+    await screen.findByText('schedule_session_count:3');
+    fireEvent.change(screen.getAllByLabelText('schedule_column_room')[0]!, {
+      target: { value: '202' },
+    });
+    fireEvent.click(
+      screen.getByRole('button', { name: 'schedule_save_changes:1' })
+    );
+  }
+
+  it('reports a partial save and the notifications that still went out', async () => {
+    mocks.saveTopicScheduleMonth.mockRejectedValueOnce(
+      new mocks.RejectedError(
+        [
+          {
+            code: 'partially_applied',
+            fields: ['gvnn'],
+            index: 0,
+            sessionId: 's1',
+          },
+        ],
+        true,
+        {
+          failed: false,
+          result: {
+            failedTeachers: 0,
+            notifiedTeachers: 1,
+            skippedUnlinkedTeachers: 0,
+            unassignedAnnouncements: 0,
+          },
+        }
+      )
+    );
+    await saveRoomEdit();
+    await waitFor(() =>
+      expect(mocks.toast.warning).toHaveBeenCalledWith('schedule_save_partial')
+    );
+    expect(mocks.toast.warning).not.toHaveBeenCalledWith(
+      'schedule_save_conflict'
+    );
+    expect(mocks.toast.success).toHaveBeenCalledWith('schedule_notify_sent:1');
+  });
+
+  it('reports a plain conflict without a notification', async () => {
+    mocks.saveTopicScheduleMonth.mockRejectedValueOnce(
+      new mocks.RejectedError(
+        [{ code: 'locked', index: 0, sessionId: 's1' }],
+        true
+      )
+    );
+    await saveRoomEdit();
+    await waitFor(() =>
+      expect(mocks.toast.warning).toHaveBeenCalledWith('schedule_save_conflict')
+    );
+    expect(mocks.toast.success).not.toHaveBeenCalled();
   });
 
   it("shows a new row's problems only after a save attempt", async () => {
