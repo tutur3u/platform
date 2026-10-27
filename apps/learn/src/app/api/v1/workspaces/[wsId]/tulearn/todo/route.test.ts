@@ -70,7 +70,8 @@ describe('learn personal to do route', () => {
       new NextRequest('https://example.test/api/todo?kind=tutoring') as never,
       { params: Promise.resolve({ wsId: 'alias' }) }
     );
-    const { isTutoringEnabled } = state.list.mock.calls[0]?.[0] as {
+    const [args] = state.list.mock.calls[0] ?? [];
+    const { isTutoringEnabled } = args as {
       isTutoringEnabled: (wsId: string) => Promise<boolean>;
     };
     const reads: [string, unknown][] = [];
