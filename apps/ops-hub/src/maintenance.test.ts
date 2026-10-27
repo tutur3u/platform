@@ -12,7 +12,7 @@ function database() {
   const db = new DatabaseSync(':memory:');
   db.exec(`CREATE TABLE events(ts INTEGER); CREATE TABLE needs_you(completedAt INTEGER);
     CREATE TABLE decisions(at INTEGER); CREATE TABLE metrics(series TEXT,t INTEGER);
-    CREATE TABLE metric_dimensions(series TEXT,lastAt INTEGER); CREATE TABLE snapshot(data TEXT); CREATE TABLE observability_snapshot(data TEXT);
+    CREATE TABLE metric_dimensions(series TEXT,lastAt INTEGER); CREATE TABLE snapshot(data TEXT); CREATE TABLE observability_snapshot(at INTEGER,data TEXT);
     CREATE TABLE flags(id INTEGER,stale INTEGER); INSERT INTO flags VALUES(1,0)`);
   let operations = 0;
   const sql = {
@@ -43,8 +43,12 @@ it('purges SQLite retention boundaries, preserves open items and has bounded nor
     'speed_series',
     now - 8 * DAY
   );
+  db.exec("INSERT INTO observability_snapshot VALUES(0,'expired')");
   expect(maintainHub(sql, true, now - HOUR, now)).toBe(now + HOUR);
-  expect(operations()).toBe(13);
+  expect(operations()).toBe(14);
+  expect(
+    db.prepare('SELECT COUNT(*) AS count FROM observability_snapshot').get()
+  ).toEqual({ count: 0 });
   expect(db.prepare('SELECT * FROM events').all()).toEqual([{ ts: now - DAY }]);
   expect(db.prepare('SELECT * FROM needs_you').all()).toEqual([
     { completedAt: null },
@@ -76,7 +80,7 @@ it('uses bounded deletion batches, persists catch-up progress and survives a ret
   db.exec(`WITH RECURSIVE n(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM n WHERE x<5000)
     INSERT INTO metrics SELECT 'quota_series',0 FROM n`);
   expect(maintainHub(sql, true, now, now)).toBe(now + CATCHUP_DELAY);
-  expect(operations()).toBe(20);
+  expect(operations()).toBe(21);
   expect(db.prepare('SELECT COUNT(*) AS count FROM metrics').get()).toEqual({
     count: 904,
   });
@@ -96,7 +100,7 @@ it('purges the full quota storage ceiling before a durable terminal stop', () =>
   db.exec(`WITH RECURSIVE n(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM n WHERE x<80672)
     INSERT INTO metrics SELECT 'quota_series',0 FROM n`);
   db.exec(
-    "INSERT INTO snapshot VALUES('private'); INSERT INTO needs_you VALUES(NULL); INSERT INTO observability_snapshot VALUES('private')"
+    "INSERT INTO snapshot VALUES('private'); INSERT INTO needs_you VALUES(NULL); INSERT INTO observability_snapshot VALUES(0,'private')"
   );
   eraseContent(sql);
   expect(operations()).toBeLessThanOrEqual(165);

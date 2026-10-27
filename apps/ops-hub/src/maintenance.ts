@@ -42,6 +42,7 @@ export function maintainHub(
   sql.exec('DELETE FROM events WHERE ts <= ?', now - 30 * DAY);
   sql.exec('DELETE FROM needs_you WHERE completedAt <= ?', now - 30 * DAY);
   sql.exec('DELETE FROM decisions WHERE at <= ?', now - 30 * DAY);
+  sql.exec('DELETE FROM observability_snapshot WHERE at <= ?', now - 30 * DAY);
   sql.exec(
     "DELETE FROM metric_dimensions WHERE (series='quota_series' AND lastAt<=?) OR (series!='quota_series' AND lastAt<=?)",
     now - 7 * DAY,

@@ -92,13 +92,6 @@ export class OpsHub extends DurableObject<Env> {
       flags = this.flags();
       if (!flags.enabled) return json({ error: 'Hub paused' }, 503);
       const body = parsed.data;
-      if (
-        !validateDecisions(this.ctx.storage.sql, body.decisions, now) ||
-        (body.observability &&
-          !validateObservability(this.ctx.storage.sql, body.observability, now))
-      ) {
-        return json({ error: 'Invalid decision or observability batch' }, 400);
-      }
       if (Math.abs(now - body.sentAt) > 120_000)
         return json({ error: 'Clock skew' }, 400);
       if (body.seq <= flags.seq) return json({ error: 'Sequence replay' }, 409);
@@ -117,6 +110,13 @@ export class OpsHub extends DurableObject<Env> {
         now - flags.windowStart >= HOUR ? now : flags.windowStart;
       const ingests = windowStart === flags.windowStart ? flags.ingests + 1 : 1;
       if (ingests > 120) return json({ error: 'Ingest budget reached' }, 429);
+      if (
+        !validateDecisions(this.ctx.storage.sql, body.decisions, now) ||
+        (body.observability &&
+          !validateObservability(this.ctx.storage.sql, body.observability, now))
+      ) {
+        return json({ error: 'Invalid decision or observability batch' }, 400);
+      }
       const existingItems = this.ctx.storage.sql
         .exec<{ id: string; version: number; data: string }>(
           'SELECT id, version, data FROM needs_you WHERE completedAt IS NULL OR completedAt > ?',

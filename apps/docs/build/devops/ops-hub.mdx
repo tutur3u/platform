@@ -63,7 +63,7 @@ or the required sanitized-sample approval.
 ## Read and lifecycle contract (v2)
 
 GET `/status`, `/snapshot`, `/events?after=<seq>`, `/needs-you`,
-`/environments` , `/decisions?after=&category=`, `/observability?since=&series=` and `/hub/export` require a valid gateway assertion.
+`/environments`, `/decisions?after=&category=`, `/observability?since=&series=` and `/hub/export` require a valid gateway assertion.
 The infrastructure gateway exposes these routes plus DELETE `/hub`.
 Gateway assertions use `x-ops-hub-user`, last 60 seconds, and bind the user,
 HTTP method, path and query. Publisher signatures grant ingest only.
@@ -74,7 +74,7 @@ answered/withdrawn, while open items remain. Snapshot is replaced on ingest;
 its needs-you projection comes from the retained item table. Reads independently
 filter expired records. Publisher staleness is computed after 15 minutes on every
 status read, and persisted by maintenance. With no new publisher activity,
-maintenance stops after 30 days once all expirable records have been purged.
+maintenance stops after 30 days after all content, including stale snapshots and open items, has been purged.
 
 A signed snapshot with `enabled:false` durably pauses the hub and cancels
 its alarm, and atomically purges all content. Every route except authenticated status then returns 503, including

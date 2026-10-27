@@ -125,3 +125,10 @@ the portable protocol export. See the [ops runbook](../../../../../apps/docs/bui
 for strict signed envelopes, request/storage budgets, retention, tombstone erasure
 and the disabled-state alarm fence. Hosted acceptance and publisher sample approval
 remain independent release gates. Do not infer deployment authority from CI wiring.
+
+The initial publisher contract is v2: decisions have stable IDs and a five-field
+security projection; quota history uses two-minute buckets with seven-day retention.
+Use the bounded dimension registry and indexed bucket-endpoint reads rather than
+full-history DISTINCT/GROUP BY scans. Preserve the hourly alarm across heartbeats;
+batched catch-up cleanup must make persisted progress and stop after content erasure.
+The workerd suite and real-SQLite maintenance tests cover these boundaries.

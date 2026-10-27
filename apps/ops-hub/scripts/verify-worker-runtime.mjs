@@ -400,16 +400,40 @@ test('v2 persists only approved decision fields and bounds/downsamples observati
       await (await read('/observability?series=quota_series')).json()
     ).points.some((row) => row.instance === 'main')
   );
+  assert.equal(
+    (
+      await ingest(
+        envelope(15, {
+          observability: {
+            ...observability,
+            staff: [{ ...observability.staff[0], role: 'new-role' }],
+            cadence: [],
+          },
+        })
+      )
+    ).status,
+    200
+  );
+  assert.deepEqual(
+    (await (await read('/observability?series=staff')).json()).points.map(
+      (row) => row.role
+    ),
+    ['new-role']
+  );
+  assert.deepEqual(
+    (await (await read('/observability?series=cadence')).json()).points,
+    []
+  );
   const page = await (await read('/hub/export?section=metrics')).json();
   assert.equal(page.rows.length, 200);
   assert.ok(page.nextAfter > 0);
-  assert.equal((await read('/hub/export?section=metrics&seq=13')).status, 409);
+  assert.equal((await read('/hub/export?section=metrics&seq=14')).status, 409);
 });
 test('kill switch survives restart, denies ingest and all reads except status', async () => {
   assert.equal(
     (
       await ingest(
-        envelope(15, { snapshot: { ...snapshot(), enabled: false } })
+        envelope(16, { snapshot: { ...snapshot(), enabled: false } })
       )
     ).status,
     200
@@ -424,7 +448,7 @@ test('kill switch survives restart, denies ingest and all reads except status', 
   ]) {
     assert.equal((await read(target)).status, 503);
   }
-  assert.equal((await ingest(envelope(16))).status, 503);
+  assert.equal((await ingest(envelope(17))).status, 503);
   assert.equal((await (await read('/status')).json()).enabled, false);
   for (const table of [
     'snapshot',
@@ -440,6 +464,6 @@ test('kill switch survives restart, denies ingest and all reads except status', 
     ]);
   }
   assert.deepEqual(await sql('SELECT seq,enabled FROM flags'), [
-    { seq: 15, enabled: 0 },
+    { seq: 16, enabled: 0 },
   ]);
 });
