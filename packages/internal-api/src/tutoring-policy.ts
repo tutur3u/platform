@@ -1,3 +1,15 @@
+import {
+  getTutoringCampusChoices,
+  parseTutoringCampusOptions,
+  TUTORING_CAMPUS_LABEL_MAX_LENGTH,
+} from './tutoring-campus-options';
+
+export {
+  getTutoringCampusChoices,
+  parseTutoringCampusOptions,
+  TUTORING_CAMPUS_LABEL_MAX_LENGTH,
+};
+
 export const TUTORING_POLICY_CONFIG_ID = 'TUTORING_POLICY';
 export const TUTORING_POLICY_PART_PREFIX = 'TUTORING_POLICY_PART_';
 const CONFIG_VALUE_LIMIT = 900;
@@ -39,6 +51,8 @@ export interface TutoringPolicy {
   timeRules: TutoringTimeRule[];
   groupExclusions: TutoringGroupExclusion[];
   campusByGroupId: Record<string, string>;
+  /** Workspace campus labels offered to class mappings and announcement places. */
+  campusOptions: string[];
   /** Class group id to the label of the shift rule its classes follow. */
   shiftByGroupId: Record<string, string>;
   parentMessageTemplate: string;
@@ -64,6 +78,7 @@ export const STANDARD_TUTORING_POLICY: TutoringPolicy = {
   timeRules: [],
   groupExclusions: [],
   campusByGroupId: {},
+  campusOptions: [],
   shiftByGroupId: {},
   parentMessageTemplate: DEFAULT_PARENT_MESSAGE_TEMPLATE,
 };
@@ -359,7 +374,10 @@ export function parseTutoringPolicy(value: unknown): TutoringPolicy | null {
   }
 
   const campusEntries = Object.entries(candidate.campusByGroupId);
-  if (!isGroupLabelMap(campusEntries, 80)) return null;
+  if (!isGroupLabelMap(campusEntries, TUTORING_CAMPUS_LABEL_MAX_LENGTH))
+    return null;
+  const campusOptions = parseTutoringCampusOptions(candidate.campusOptions);
+  if (!campusOptions) return null;
   // Assignments may name a since-renamed shift; they then match nothing
   // rather than invalidating the whole policy.
   const shiftEntries = Object.entries(candidate.shiftByGroupId);
@@ -424,6 +442,7 @@ export function parseTutoringPolicy(value: unknown): TutoringPolicy | null {
     campusByGroupId: Object.fromEntries(
       campusEntries.map(([groupId, name]) => [groupId, String(name).trim()])
     ),
+    campusOptions,
     shiftByGroupId: Object.fromEntries(
       shiftEntries.map(([groupId, label]) => [groupId, String(label).trim()])
     ),

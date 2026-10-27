@@ -13,6 +13,8 @@
       "component": "platform",
       "package-name": "platform",
       "release-type": "simple",
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": false,
       "version-file": "platform-version.txt",
       "changelog-path": "CHANGELOG.md",
       "extra-files": [

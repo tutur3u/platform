@@ -139,8 +139,15 @@ function PolicySummary({
       </p>
     );
   if (id === 'campuses')
-    return Object.entries(policy.campusByGroupId).length ? (
+    return Object.entries(policy.campusByGroupId).length ||
+      policy.campusOptions.length ? (
       <dl className="space-y-2">
+        {policy.campusOptions.length ? (
+          <div className="flex justify-between gap-3">
+            <dt>{t('policy_campus_options')}</dt>
+            <dd>{policy.campusOptions.join(', ')}</dd>
+          </div>
+        ) : null}
         {Object.entries(policy.campusByGroupId).map(([groupId, name]) => (
           <div className="flex justify-between gap-3" key={groupId}>
             <dt>
