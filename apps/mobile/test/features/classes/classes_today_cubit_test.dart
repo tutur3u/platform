@@ -84,6 +84,61 @@ void main() {
     expect(repository.forgotten, isEmpty);
   });
 
+  test('a Turnstile challenge is not an access denial', () async {
+    final cached = ClassesTodaySnapshot(
+      sessions: [session('a', start: DateTime(2026, 10, 27, 11))],
+    );
+    final repository = FakeClassesTodayRepository()
+      ..cached = cached
+      ..error = const ApiException(
+        message: 'Verification required',
+        statusCode: 403,
+        isVerificationRequired: true,
+      );
+    final cubit = ClassesTodayCubit(
+      repository: repository,
+      clock: () => now,
+      scheduler: FakeTickScheduler().call,
+    );
+    addTearDown(cubit.close);
+    await cubit.load(userId: 'u1', wsId: 'ec');
+    expect(cubit.state.access, ClassesTodayAccess.granted);
+    expect(cubit.state.status, ClassesTodayStatus.error);
+    expect(cubit.state.snapshot, cached);
+    expect(repository.forgotten, isEmpty);
+  });
+
+  // In America/New_York, 2026-11-01 runs 25 hours (clocks fall back at
+  // 02:00). Adding 24 h to its midnight lands at 23:00, before 23:30, and
+  // used to schedule a negative delay. Run with TZ=America/New_York to
+  // exercise the transition; other zones still check the same invariants.
+  test('the midnight wake survives a 25-hour fall-back day', () async {
+    final lateEvening = DateTime(2026, 11, 1, 23, 30);
+    final scheduler = FakeTickScheduler();
+    final cubit = ClassesTodayCubit(
+      repository: FakeClassesTodayRepository(),
+      clock: () => lateEvening,
+      scheduler: scheduler.call,
+    );
+    addTearDown(cubit.close);
+    await cubit.load(userId: 'u1', wsId: 'ec');
+    final delay = scheduler.scheduled.last.$1;
+    expect(delay, greaterThanOrEqualTo(const Duration(seconds: 1)));
+    expect(lateEvening.add(delay), DateTime(2026, 11, 2));
+  });
+
+  test('a wake is never shorter than one second', () async {
+    final scheduler = FakeTickScheduler();
+    final cubit = ClassesTodayCubit(
+      repository: FakeClassesTodayRepository(),
+      clock: () => DateTime(2026, 10, 27, 23, 59, 59, 999),
+      scheduler: scheduler.call,
+    );
+    addTearDown(cubit.close);
+    await cubit.load(userId: 'u1', wsId: 'ec');
+    expect(scheduler.scheduled.last.$1, const Duration(seconds: 1));
+  });
+
   test('a cold server error never claims access', () async {
     final repository = FakeClassesTodayRepository()
       ..error = const ApiException(message: 'Boom', statusCode: 500);

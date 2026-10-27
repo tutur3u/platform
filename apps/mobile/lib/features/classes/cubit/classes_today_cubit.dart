@@ -177,14 +177,19 @@ class ClassesTodayCubit extends Cubit<ClassesTodayState> {
     _cancelTimer();
     if (isClosed || state.wsId == null) return;
     final current = _clock();
-    var next = _dateOf(current).add(const Duration(days: 1));
+    // Calendar midnight, not +24 h: DST days run 23 or 25 hours.
+    var next = DateTime(current.year, current.month, current.day + 1);
     for (final session in state.snapshot?.sessions ?? const <ClassSession>[]) {
       for (final edge in [session.startsAt, session.endsAt]) {
         if (edge.isAfter(current) && edge.isBefore(next)) next = edge;
       }
     }
-    _timer = _schedule(next.difference(current), _onTick);
+    final delay = next.difference(current);
+    _timer = _schedule(delay < _minTick ? _minTick : delay, _onTick);
   }
+
+  /// Never wake in a tight loop, whatever the clock or zone does.
+  static const _minTick = Duration(seconds: 1);
 
   void _onTick() {
     if (isClosed || state.wsId == null) return;

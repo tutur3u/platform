@@ -70,8 +70,11 @@ abstract interface class ClassesTodayRepository {
 
 /// The server's answer decides access: `view_user_groups` is enforced by the
 /// API, so a denial is authoritative while any other failure is transient.
+/// A Turnstile challenge is a 403 too, but it says nothing about access.
 bool isClassesAccessDenied(Object error) =>
-    error is ApiException && const {401, 403, 404}.contains(error.statusCode);
+    error is ApiException &&
+    !error.isVerificationRequired &&
+    const {401, 403, 404}.contains(error.statusCode);
 
 /// Lists the day's sessions from `GET …/user-groups/sessions`, which the
 /// server gates on `view_user_groups`. It cannot tell which classes the
