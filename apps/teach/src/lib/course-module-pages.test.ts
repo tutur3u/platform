@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import ModuleContentPage from '@/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/content/page';
 import {
   getFlashcards as countFlashcards,
   getQuizSets as countQuizSets,
@@ -7,11 +8,15 @@ import {
   getData as getModule,
 } from '@/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/data';
 import { getFlashcards } from '@/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/flashcards/data';
+import ModulePreviewPage from '@/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/page';
 import { getData as getQuizSets } from '@/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/quiz-sets/data';
 import { getQuizzes } from '@/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/quizzes/data';
+import ModuleYoutubeLinksPage from '@/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/youtube-links/page';
+import type { CourseModulePageScope } from '@/lib/course-module-page-access';
 
 const mocks = vi.hoisted(() => ({
   from: vi.fn(),
+  listResources: vi.fn(async () => ({ data: [], error: null })),
   notFound: vi.fn(() => {
     throw new Error('NEXT_NOT_FOUND');
   }),
@@ -20,12 +25,66 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: vi.fn(async () => ({
     from: mocks.from,
+    storage: { from: () => ({ list: mocks.listResources }) },
     schema: (schema: string) => ({
       from: (table: string) => mocks.from(`${schema}.${table}`),
     }),
   })),
 }));
 vi.mock('next/navigation', () => ({ notFound: mocks.notFound }));
+vi.mock('next/server', () => ({ connection: vi.fn() }));
+vi.mock('next-intl/server', () => ({
+  getTranslations: async () => (key: string) => key,
+}));
+vi.mock('@/lib/resolve-route-workspace', () => ({
+  resolveRouteWorkspace: async (wsId: string) => ({ resolvedWsId: wsId }),
+}));
+vi.mock('@tuturuuu/icons', () => ({
+  BookText: 'BookText',
+  Goal: 'Goal',
+  ListTodo: 'ListTodo',
+  Paperclip: 'Paperclip',
+  Sparkles: 'Sparkles',
+  SwatchBook: 'SwatchBook',
+  Youtube: 'Youtube',
+}));
+vi.mock('@tuturuuu/ui/accordion', () => ({ Accordion: 'Accordion' }));
+vi.mock('@tuturuuu/ui/button', () => ({ Button: 'Button' }));
+vi.mock('@tuturuuu/ui/custom/feature-summary', () => ({
+  default: 'FeatureSummary',
+}));
+vi.mock('@tuturuuu/ui/custom/education/modules/content-section', () => ({
+  CourseSection: 'CourseSection',
+}));
+vi.mock('@tuturuuu/ui/custom/education/modules/resources/file-display', () => ({
+  FileDisplay: 'FileDisplay',
+}));
+vi.mock('@tuturuuu/ui/custom/education/modules/youtube/embed', () => ({
+  YoutubeEmbed: 'YoutubeEmbed',
+}));
+vi.mock(
+  '@tuturuuu/ui/custom/education/modules/youtube/delete-link-button',
+  () => ({ default: 'DeleteLinkButton' })
+);
+vi.mock('@tuturuuu/ui/custom/education/modules/youtube/form', () => ({
+  default: 'YouTubeLinkForm',
+}));
+vi.mock('@tuturuuu/ui/separator', () => ({ Separator: 'Separator' }));
+vi.mock('@tuturuuu/ui/text-editor/editor', () => ({
+  RichTextEditor: 'RichTextEditor',
+}));
+vi.mock(
+  '@/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/flashcards/client-flashcards',
+  () => ({ default: 'ClientFlashcards' })
+);
+vi.mock(
+  '@/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/quizzes/client-quizzes',
+  () => ({ default: 'ClientQuizzes' })
+);
+vi.mock(
+  '@/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/content/content-editor',
+  () => ({ ModuleContentEditor: 'ModuleContentEditor' })
+);
 
 type Row = Record<string, unknown>;
 const scope = {
@@ -37,6 +96,8 @@ const ownModule = {
   id: scope.moduleId,
   group_id: scope.courseId,
   name: 'Own module',
+  content: { type: 'doc', content: [] },
+  youtube_links: ['https://www.youtube.com/watch?v=own-video'],
 };
 const groups = [
   { id: scope.courseId, ws_id: scope.wsId },
@@ -61,7 +122,7 @@ const tables: Record<string, Row[]> = {
       id: 'quiz-1',
       question: 'Question?',
       answer: null,
-      quiz_options: [],
+      quiz_options: [{ id: 'option-1', is_correct: true }],
     },
     {
       module_id: 'foreign-module',
@@ -116,7 +177,7 @@ class Query {
   filters = new Map<string, unknown>();
   selected = '';
   head = false;
-  single = false;
+  singular = false;
   constructor(readonly table: string) {}
   select(value: string, options?: { head?: boolean }) {
     this.selected = value;
@@ -144,8 +205,11 @@ class Query {
     return this;
   }
   maybeSingle() {
-    this.single = true;
+    this.singular = true;
     return this;
+  }
+  single() {
+    return this.maybeSingle();
   }
   execute(): { data: Row[] | Row | null; error: Error | null; count: number } {
     const data = (tables[this.table] ?? []).filter((row) => {
@@ -154,9 +218,20 @@ class Query {
           ? row
           : modules.find((m) => m.id === row.module_id);
       const group = groups.find((g) => g.id === module?.group_id);
-      if (this.selected.includes('workspace_user_groups!inner') && !group)
-        return false;
+      const moduleInner =
+        this.table === 'workspace_course_modules' ||
+        this.selected.includes('workspace_course_modules!inner');
+      const groupInner = this.selected.includes('workspace_user_groups!inner');
+      if (moduleInner && (!module || (groupInner && !group))) return false;
       return [...this.filters].every(([key, expected]) => {
+        // Embedded filters only remove parents through an unbroken inner-join path.
+        if (
+          key.endsWith('workspace_user_groups.ws_id') &&
+          (!moduleInner || !groupInner)
+        )
+          return true;
+        if (key === 'workspace_course_modules.group_id' && !moduleInner)
+          return true;
         const actual = key.endsWith('workspace_user_groups.ws_id')
           ? group?.ws_id
           : key === 'workspace_course_modules.group_id'
@@ -168,7 +243,7 @@ class Query {
       });
     });
     return {
-      data: this.head ? null : this.single ? (data[0] ?? null) : data,
+      data: this.head ? null : this.singular ? (data[0] ?? null) : data,
       error: null,
       count: data.length,
     };
@@ -196,6 +271,21 @@ const loaders = [
   ['quiz sets', getQuizSets],
   ['flashcards', getFlashcards],
   ['layout module', getModule],
+  [
+    'preview',
+    (ids: CourseModulePageScope) =>
+      ModulePreviewPage({ params: Promise.resolve({ ...ids, locale: 'en' }) }),
+  ],
+  [
+    'content',
+    (ids: CourseModulePageScope) =>
+      ModuleContentPage({ params: Promise.resolve(ids) }),
+  ],
+  [
+    'youtube links',
+    (ids: CourseModulePageScope) =>
+      ModuleYoutubeLinksPage({ params: Promise.resolve(ids) }),
+  ],
 ] as const;
 
 for (const [name, load] of loaders) {
@@ -218,6 +308,7 @@ for (const [name, load] of loaders) {
           'NEXT_NOT_FOUND'
         );
         expect(mocks.notFound).toHaveBeenCalledOnce();
+        expect(mocks.listResources).not.toHaveBeenCalled();
         expect(mocks.from.mock.calls.map(([table]) => table)).toEqual([
           'workspace_course_modules',
         ]);
@@ -235,6 +326,7 @@ for (const [name, load] of loaders) {
         return query;
       });
       await expect(load(scope)).rejects.toThrow('lookup failed');
+      expect(mocks.listResources).not.toHaveBeenCalled();
       expect(mocks.from.mock.calls.map(([table]) => table)).toEqual([
         'workspace_course_modules',
       ]);
@@ -243,6 +335,36 @@ for (const [name, load] of loaders) {
 }
 
 describe('own workspace module data', () => {
+  it('loads preview resources, flashcards and quiz options after validation', async () => {
+    const preview = await ModulePreviewPage({
+      params: Promise.resolve({ ...scope, locale: 'en' }),
+    });
+    expect(mocks.from.mock.calls.map(([table]) => table)).toEqual([
+      'workspace_course_modules',
+      'course_module_flashcards',
+      'course_module_quizzes',
+    ]);
+    expect(mocks.listResources).toHaveBeenCalledWith(
+      `${scope.wsId}/courses/${scope.courseId}/modules/${scope.moduleId}/resources/`,
+      { sortBy: { column: 'created_at', order: 'desc' } }
+    );
+    const quizzes =
+      preview.props.children[3].props.content.props.children.props.quizzes;
+    expect(quizzes).toEqual([tables.course_module_quizzes?.[0]]);
+    expect(quizzes[0].quiz_options[0].is_correct).toBe(true);
+  });
+  it('returns module content to the editor', async () => {
+    const page = await ModuleContentPage({ params: Promise.resolve(scope) });
+    expect(page.props.children[1].props.content).toEqual(ownModule.content);
+  });
+  it('returns module YouTube links to the form', async () => {
+    const page = await ModuleYoutubeLinksPage({
+      params: Promise.resolve(scope),
+    });
+    expect(page.props.children[0].props.form.props.links).toEqual(
+      ownModule.youtube_links
+    );
+  });
   it('returns quizzes with their private answers after validation', async () => {
     expect(await getQuizzes(scope)).toEqual([
       { ...tables.course_module_quizzes?.[0], answer: { correct: true } },
@@ -292,3 +414,31 @@ for (const [name, count] of [
     });
   });
 }
+
+describe('PostgREST fixture join semantics', () => {
+  it.each([
+    [
+      'workspace_course_modules',
+      'workspace_user_groups(ws_id)',
+      'workspace_user_groups.ws_id',
+    ],
+    [
+      'course_module_quizzes',
+      'workspace_course_modules!inner(workspace_user_groups(ws_id))',
+      'workspace_course_modules.workspace_user_groups.ws_id',
+    ],
+    [
+      'course_module_quizzes',
+      'workspace_course_modules(workspace_user_groups!inner(ws_id))',
+      'workspace_course_modules.workspace_user_groups.ws_id',
+    ],
+    [
+      'course_module_quizzes',
+      'workspace_course_modules(group_id)',
+      'workspace_course_modules.group_id',
+    ],
+  ])('keeps parent rows for a left join in %s: %s', (table, select, key) => {
+    const query = new Query(table).select(select).eq(key, 'missing');
+    expect(query.execute().data).toEqual(tables[table]);
+  });
+});

@@ -1,5 +1,4 @@
 import { Youtube } from '@tuturuuu/icons';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import DeleteLinkButton from '@tuturuuu/ui/custom/education/modules/youtube/delete-link-button';
 import { YoutubeEmbed } from '@tuturuuu/ui/custom/education/modules/youtube/embed';
 import YouTubeLinkForm from '@tuturuuu/ui/custom/education/modules/youtube/form';
@@ -9,6 +8,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
+import { requireCourseModulePageAccess } from '@/lib/course-module-page-access';
 import { resolveRouteWorkspace } from '@/lib/resolve-route-workspace';
 import { extractYoutubeId } from '@/utils/url-helper';
 
@@ -32,7 +32,12 @@ export default async function ModuleYoutubeLinksPage({ params }: Props) {
   const { wsId: routeWsId, courseId, moduleId } = await params;
   const { resolvedWsId } = await resolveRouteWorkspace(routeWsId);
   const t = await getTranslations();
-  const links = await getYoutubeLinks(moduleId, courseId);
+  const { module } = await requireCourseModulePageAccess({
+    wsId: resolvedWsId,
+    courseId,
+    moduleId,
+  });
+  const links = module.youtube_links;
 
   return (
     <div className="grid gap-4">
@@ -86,20 +91,3 @@ export default async function ModuleYoutubeLinksPage({ params }: Props) {
     </div>
   );
 }
-
-const getYoutubeLinks = async (moduleId: string, courseId: string) => {
-  const supabase = await createAdminClient();
-
-  const { data, error } = await supabase
-    .from('workspace_course_modules')
-    .select('youtube_links')
-    .eq('id', moduleId)
-    .eq('group_id', courseId)
-    .single();
-
-  if (error) {
-    console.error('error', error);
-  }
-
-  return data?.youtube_links;
-};
