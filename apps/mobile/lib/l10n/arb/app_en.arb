@@ -418,6 +418,27 @@
       }
     }
   },
+  "@inventoryItemAvailable": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "@inventoryItemMoreLocations": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@inventoryScanMatches": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
   "@inventoryRedesignPendingCount": {
     "placeholders": {
       "count": {
@@ -2859,6 +2880,22 @@
   "inventorySalesTitle": "Title",
   "inventorySaveProduct": "Save product",
   "inventorySearchProducts": "Search products",
+  "inventoryItemAvailable": "{amount} available",
+  "inventoryItemMoreLocations": "{count, plural, =1{1 more location} other{{count} more locations}}",
+  "inventoryItemNoStock": "No stock configured",
+  "inventoryItemStockHidden": "Stock hidden",
+  "inventoryItemsEmptyTitle": "No products yet",
+  "inventoryItemsNoMatch": "No products match",
+  "inventoryItemsNoMatchMessage": "Search matches product names. Try another name or clear the search.",
+  "inventoryItemsNoneArchived": "No archived products",
+  "inventoryScanAction": "Scan code",
+  "inventoryScanHint": "Point the camera at a product QR code or barcode.",
+  "inventoryScanMatches": "Name matches for “{code}”",
+  "inventoryScanNotFound": "No product in this workspace matches this code.",
+  "inventoryScanNotProduct": "This code is not a Tuturuuu product link.",
+  "inventoryScanSearchInstead": "Search instead",
+  "inventoryScanTitle": "Scan a code",
+  "inventoryScanUnavailable": "Camera unavailable",
   "inventorySeasonHistoricalReadOnly": "Scheduled sale history is read only here. Recorded prices are preserved.",
   "inventorySeasonPriceAsOf": "Season prices · {currency} · as of {asOf} (UTC) · season dates in {timeZone}",
   "inventorySeasonPriceCached": "Offline draft using saved season prices. Prices and availability will be checked when syncing.",

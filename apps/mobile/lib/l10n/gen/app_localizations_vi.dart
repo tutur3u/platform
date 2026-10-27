@@ -5015,6 +5015,60 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventorySearchProducts => 'Tìm sản phẩm';
 
   @override
+  String inventoryItemAvailable(String amount) {
+    return 'Còn $amount';
+  }
+
+  @override
+  String inventoryItemMoreLocations(int count) {
+    return 'Thêm $count vị trí';
+  }
+
+  @override
+  String get inventoryItemNoStock => 'Chưa thiết lập tồn kho';
+
+  @override
+  String get inventoryItemStockHidden => 'Tồn kho bị ẩn';
+
+  @override
+  String get inventoryItemsEmptyTitle => 'Chưa có sản phẩm';
+
+  @override
+  String get inventoryItemsNoMatch => 'Không có sản phẩm phù hợp';
+
+  @override
+  String get inventoryItemsNoMatchMessage => 'Tìm kiếm theo tên sản phẩm. Hãy thử tên khác hoặc xoá tìm kiếm.';
+
+  @override
+  String get inventoryItemsNoneArchived => 'Không có sản phẩm đã lưu trữ';
+
+  @override
+  String get inventoryScanAction => 'Quét mã';
+
+  @override
+  String get inventoryScanHint => 'Hướng camera vào mã QR hoặc mã vạch của sản phẩm.';
+
+  @override
+  String inventoryScanMatches(String code) {
+    return 'Tên khớp với “$code”';
+  }
+
+  @override
+  String get inventoryScanNotFound => 'Không có sản phẩm nào trong không gian làm việc này khớp với mã này.';
+
+  @override
+  String get inventoryScanNotProduct => 'Mã này không phải liên kết sản phẩm Tuturuuu.';
+
+  @override
+  String get inventoryScanSearchInstead => 'Chuyển sang tìm kiếm';
+
+  @override
+  String get inventoryScanTitle => 'Quét mã';
+
+  @override
+  String get inventoryScanUnavailable => 'Không dùng được camera';
+
+  @override
   String get inventorySeasonHistoricalReadOnly => 'Lịch sử bán theo mùa chỉ có thể xem tại đây. Giá đã ghi nhận được giữ nguyên.';
 
   @override

@@ -5,7 +5,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
 import 'package:mobile/data/models/workspace.dart';
-import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -26,15 +25,6 @@ class _Workspace extends MockCubit<WorkspaceState> implements WorkspaceCubit {}
 class _Permissions extends Mock implements WorkspacePermissionsRepository {}
 
 class _Api extends Mock implements ApiClient {}
-
-class _Finance extends FinanceRepository {
-  _Finance() : super(apiClient: _Api());
-  @override
-  Future<String> getWorkspaceDefaultCurrency(
-    String wsId, {
-    bool forceRefresh = false,
-  }) async => 'USD';
-}
 
 class _Inventory extends InventoryRepository {
   _Inventory() : super(apiClient: _Api());
@@ -109,7 +99,6 @@ void main() {
           ],
           child: InventoryProductsPage(
             inventoryRepository: inventory,
-            financeRepository: _Finance(),
             permissionsRepository: permissions,
           ),
         ),
