@@ -144,3 +144,8 @@ DELETE erasure clears content and stops alarms; it must run before disable under
 the strict non-status 503 contract. Arm maintenance before accepting durable data
 and preserve the existing deadline across heartbeats. Export must honor the same
 30-day idle horizon as ordinary reads, independently of when the alarm runs.
+
+When adding a Worker to CODEOWNERS, register its folder in
+`scripts/ci/security-paths.js` and run `security-codeowners-sync.test.js` plus
+`security-paths.test.js`. The cross-check guards native ownership against security
+classification drift; the changed-file planner may not select it for a CODEOWNERS edit.

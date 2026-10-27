@@ -57,7 +57,7 @@ const reviewCategories = [
     category: 'runner-sandbox',
     owner: 'runtime',
     patterns: [
-      /^apps\/(?:devbox-control|cron-control|coordination|playground|storage-unzip-proxy)\//u,
+      /^apps\/(?:devbox-control|cron-control|coordination|ops-hub|playground|storage-unzip-proxy)\//u,
       /^packages\/(?:devbox|trigger|workflows)\//u,
       /^apps\/(?:web|infrastructure)\/src\/lib\/devboxes\//u,
       /(?:^|\/)Dockerfile[^/]*$/u,
