@@ -14,9 +14,11 @@ import { useMemo, useState } from 'react';
 import { buildMissingGvnnReminder } from './missing-gvnn';
 import { ScheduleCloneDialog } from './schedule-clone-dialog';
 import { ScheduleDiscardDialog } from './schedule-discard-dialog';
+import { countDraftTeacherAssignments } from './schedule-draft';
 import { scheduleRowDomId } from './schedule-layout';
 import { ScheduleMissingGvnnPanel } from './schedule-missing-gvnn-panel';
 import { ScheduleMonthCalendar } from './schedule-month-calendar';
+import { toastScheduleNotification } from './schedule-notify-toast';
 import { ScheduleSessionTable } from './schedule-session-table';
 import { type ScheduleFilter, ScheduleToolbar } from './schedule-toolbar';
 import { useScheduleEditor } from './use-schedule-editor';
@@ -42,6 +44,9 @@ export function ScheduleMonthEditor({
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [highlightKey, setHighlightKey] = useState<string | null>(null);
   const [cloneOpen, setCloneOpen] = useState(false);
+  // "Save & notify teachers": on by default; applies only to sessions the
+  // save assigns to a GVCN (new, or moved to a class with another teacher).
+  const [notifyTeachers, setNotifyTeachers] = useState(true);
 
   const classes = editor.data?.classes ?? NO_CLASSES;
   const classById = useMemo(
@@ -57,6 +62,15 @@ export function ScheduleMonthEditor({
         exemptGroupIds: NO_EXEMPT_CLASSES,
       }),
     [classById, editor.rows, t]
+  );
+  const notifyCount = useMemo(
+    () =>
+      countDraftTeacherAssignments(
+        editor.rows,
+        editor.originalByKey,
+        classById
+      ),
+    [classById, editor.originalByKey, editor.rows]
   );
   const visibleRows =
     filter === 'needs_gvnn'
@@ -93,13 +107,19 @@ export function ScheduleMonthEditor({
       toast.error(t('schedule_fix_issues', { count: editor.issues.size }));
       return;
     }
-    editor.save.mutate(undefined, {
-      onError: (error) =>
-        error instanceof TopicScheduleSaveRejectedError && error.conflict
-          ? toast.warning(t('schedule_save_conflict'))
-          : toast.error(t('schedule_save_failed')),
-      onSuccess: ({ data }) => toast.success(saveSummary(t, data)),
-    });
+    editor.save.mutate(
+      { notifyTeachers: notifyCount > 0 && notifyTeachers },
+      {
+        onError: (error) =>
+          error instanceof TopicScheduleSaveRejectedError && error.conflict
+            ? toast.warning(t('schedule_save_conflict'))
+            : toast.error(t('schedule_save_failed')),
+        onSuccess: ({ data }) => {
+          toast.success(saveSummary(t, data));
+          toastScheduleNotification(t, data.notification);
+        },
+      }
+    );
   };
 
   if (editor.query.isError) {
@@ -121,6 +141,9 @@ export function ScheduleMonthEditor({
     <div className="space-y-4">
       <ScheduleToolbar
         changeCount={editor.changeCount}
+        notifyCount={notifyCount}
+        notifyTeachers={notifyTeachers}
+        onNotifyTeachersChange={setNotifyTeachers}
         filter={filter}
         isLoading={editor.query.isLoading}
         isSaving={editor.save.isPending}

@@ -42,6 +42,11 @@ export interface ScheduleSaveSummary {
   /** New rows already saved identically (a retried save): not re-created. */
   existingIds: string[];
   updatedIds: string[];
+  /**
+   * Sessions this request created or moved to another teacher: the only ones
+   * whose GVCN should hear about it. A retried or unchanged save has none.
+   */
+  assignedIds: string[];
 }
 
 export type ScheduleSaveResult =
@@ -263,6 +268,7 @@ export async function saveScheduleMonth(
     .map((id) => ({ code: 'locked', index: null, sessionId: id }));
 
   const updatedIds: string[] = [];
+  const reassignedIds: string[] = [];
   for (const update of updates) {
     const previousGvnnContactId =
       existingById.get(update.id)?.gvnnContactId ?? null;
@@ -273,8 +279,12 @@ export async function saveScheduleMonth(
       previousGvnnContactId,
       session: update.write,
     });
-    if (updated === 'updated') updatedIds.push(update.id);
-    else {
+    if (updated === 'updated') {
+      updatedIds.push(update.id);
+      const before = existingById.get(update.id)?.teacherWorkspaceUserId;
+      const after = update.write.teacherWorkspaceUserId;
+      if (after && after !== before) reassignedIds.push(update.id);
+    } else {
       conflicts.push({
         code: 'locked',
         index: input.sessions.findIndex((row) => row.id === update.id),
@@ -289,6 +299,8 @@ export async function saveScheduleMonth(
   });
 
   const saved = {
+    // New sessions without a GVCN are ignored by the notifier.
+    assignedIds: [...createdIds, ...reassignedIds],
     createdIds,
     deletedIds: [
       ...cancelled,

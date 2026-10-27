@@ -11,6 +11,8 @@ import {
 } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import { Checkbox } from '@tuturuuu/ui/checkbox';
+import { Label } from '@tuturuuu/ui/label';
 import { cn } from '@tuturuuu/utils/format';
 import { useLocale, useTranslations } from 'next-intl';
 import { formatScheduleMonth } from './schedule-format';
@@ -19,6 +21,10 @@ export type ScheduleFilter = 'all' | 'needs_gvnn';
 
 interface Props {
   changeCount: number;
+  /** Sessions this save would assign to a GVCN (0 hides the option). */
+  notifyCount: number;
+  notifyTeachers: boolean;
+  onNotifyTeachersChange: (notify: boolean) => void;
   filter: ScheduleFilter;
   isLoading: boolean;
   isSaving: boolean;
@@ -35,6 +41,9 @@ interface Props {
 
 export function ScheduleToolbar({
   changeCount,
+  notifyCount,
+  notifyTeachers,
+  onNotifyTeachersChange,
   filter,
   isLoading,
   isSaving,
@@ -135,6 +144,17 @@ export function ScheduleToolbar({
           >
             {t('schedule_discard')}
           </Button>
+        ) : null}
+        {notifyCount > 0 ? (
+          <Label className="flex items-center gap-2 font-normal text-sm">
+            <Checkbox
+              checked={notifyTeachers}
+              onCheckedChange={(checked) =>
+                onNotifyTeachersChange(checked === true)
+              }
+            />
+            {t('schedule_notify_teachers', { count: notifyCount })}
+          </Label>
         ) : null}
         <Button
           className="gap-2"

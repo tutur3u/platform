@@ -295,6 +295,16 @@ module unchanged.
   none (and then refuses with `NO_RECIPIENTS`), never both. If the session was
   queued or sent during the swap, the previous GVNN is restored and the save
   reports a conflict. A fully atomic swap would need an RPC (a migration).
+- **Save & notify teachers.** Saving the schedule or committing a clone can
+  notify each GVCN of the sessions that request assigned to them: new
+  sessions, or a class change that gives a session another teacher. The
+  checkbox ("Notify teachers (N)") appears next to Save and in the clone
+  dialog when N > 0 and is on by default. It reuses the `topic_assigned`
+  in-app notification and `notify-teachers` sender: one notification per
+  teacher, nothing emailed. Teachers without a linked account are skipped
+  and reported in a toast. Unchanged, retried or same-teacher saves assign
+  nothing and notify nothing, so no extra state is stored; a notification
+  that fails after the save is reported and not retried.
 - **Removing.** Removing a session cancels it (`status = 'cancelled'`) like any
   announcement, keeping its topic and audit trail. Queued, sending and sent
   sessions are read-only and labelled as such.
@@ -325,7 +335,11 @@ class teacher kept, clone revival of removed sessions),
 link guards without stray history entries, rows kept in saved order,
 delivery-state labels), and
 `apps/web/src/lib/topic-schedule/schedule-races.test.ts` (GVNN swap racing a
-send, chunked recipient reads).
+send, chunked recipient reads),
+`apps/web/src/lib/topic-schedule/schedule-notify.test.ts` (notify on new
+sessions and teacher changes, none on unchanged or retried saves, other
+workspace links and sessions ignored, flag off, clone),
+`schedule-notify-toast.test.ts` (skipped unlinked teachers toast).
 
 ### Teacher-assigned topics
 

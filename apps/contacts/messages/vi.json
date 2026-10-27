@@ -9152,7 +9152,12 @@
     "schedule_move_date": "Chuyển sang ngày khác...",
     "schedule_move_date_confirm": "Chuyển",
     "schedule_move_date_title": "Chuyển buổi sang ngày khác",
-    "schedule_save_conflict": "Một số buổi đã được xếp hàng gửi trong lúc lưu nên không bị thay đổi. Lịch tháng đã được tải lại."
+    "schedule_save_conflict": "Một số buổi đã được xếp hàng gửi trong lúc lưu nên không bị thay đổi. Lịch tháng đã được tải lại.",
+    "schedule_notify_teachers": "{count, plural, other {Thông báo cho giáo viên (# buổi)}}",
+    "schedule_notify_sent": "{count, plural, other {Đã thông báo cho # giáo viên}}",
+    "schedule_notify_skipped": "{count, plural, other {# giáo viên chưa liên kết tài khoản nên không được thông báo}}",
+    "schedule_notify_failed": "Đã lưu nhưng không thể thông báo cho giáo viên.",
+    "schedule_notify_partial_failed": "{count, plural, other {Không thể thông báo cho # giáo viên}}"
   },
   "ws-topic-announcements-gate": {
     "disabled_description": "Bật thông báo chủ đề để duy trì danh sách liên hệ đã xác minh và gửi các thông báo dùng lại được từ không gian làm việc này.",

@@ -158,6 +158,8 @@ describe('ScheduleMonthEditor', () => {
     expect(mocks.saveTopicScheduleMonth).toHaveBeenCalledWith('ws-1', {
       deleteIds: [],
       month: '2026-11',
+      // A room edit assigns no teacher, so nobody is notified.
+      notifyTeachers: false,
       sessions: [
         expect.objectContaining({ durationMinutes: 30, id: 's1', room: '202' }),
       ],
@@ -299,6 +301,8 @@ describe('ScheduleMonthEditor', () => {
       expect(mocks.cloneTopicScheduleMonth).toHaveBeenCalledWith('ws-1', {
         dryRun: false,
         includeRemoved: false,
+        // The cloned session has a GVCN, so its teacher is notified.
+        notifyTeachers: true,
         sourceMonth: '2026-10',
         targetMonth: '2026-11',
       })

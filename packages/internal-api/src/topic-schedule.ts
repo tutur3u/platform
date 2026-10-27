@@ -4,6 +4,7 @@ import {
   type InternalApiClientOptions,
 } from './client';
 import { InternalApiError, parseInternalApiError } from './internal-api-error';
+import type { TopicAssignmentNotificationResult } from './topic-announcements';
 
 /** One GVNN schedule session. Dates are `YYYY-MM-DD`, times `HH:MM`. */
 export interface TopicScheduleSession {
@@ -72,10 +73,19 @@ export interface TopicScheduleRowError {
   sessionId: string | null;
 }
 
+/** Outcome of "notify teachers"; null when it was off or nothing changed. */
+export type TopicScheduleNotification =
+  | { failed: false; result: TopicAssignmentNotificationResult }
+  | { failed: true; result: null }
+  | null;
+
 export interface TopicScheduleSaveResult {
+  /** Sessions this save created or moved to another teacher. */
+  assignedIds: string[];
   createdIds: string[];
   deletedIds: string[];
   existingIds: string[];
+  notification: TopicScheduleNotification;
   updatedIds: string[];
 }
 
@@ -135,6 +145,8 @@ export async function saveTopicScheduleMonth(
   payload: {
     deleteIds: string[];
     month: string;
+    /** Notify the GVCN of sessions this save assigns to them. */
+    notifyTeachers?: boolean;
     sessions: TopicScheduleSessionInput[];
   },
   options?: InternalApiClientOptions
@@ -168,6 +180,7 @@ export async function cloneTopicScheduleMonth(
   payload: {
     dryRun: boolean;
     includeRemoved?: boolean;
+    notifyTeachers?: boolean;
     sourceMonth: string;
     targetMonth: string;
   },
@@ -175,7 +188,11 @@ export async function cloneTopicScheduleMonth(
 ) {
   const client = getInternalApiClient(options);
   return client.json<{
-    data: { createdIds: string[]; items: TopicScheduleCloneItem[] };
+    data: {
+      createdIds: string[];
+      items: TopicScheduleCloneItem[];
+      notification: TopicScheduleNotification;
+    };
   }>(`${schedulePath(workspaceId)}/clone`, {
     body: JSON.stringify(payload),
     headers: { 'Content-Type': 'application/json' },

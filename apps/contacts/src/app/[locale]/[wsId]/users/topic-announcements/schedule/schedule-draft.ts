@@ -205,3 +205,21 @@ export function draftGvcnId(
     ? (classById.get(row.groupId)?.primaryTeacherId ?? null)
     : null;
 }
+
+/**
+ * Rows a save would assign to a GVCN: new rows whose class has one, and saved
+ * rows whose class change gives them a different teacher. Only these are
+ * notified by "Notify teachers"; an unchanged row never is.
+ */
+export function countDraftTeacherAssignments(
+  rows: readonly DraftSession[],
+  originalByKey: ReadonlyMap<string, DraftSession>,
+  classById: ReadonlyMap<string, TopicScheduleClass>
+) {
+  return rows.filter((row) => {
+    if (row.locked) return false;
+    const original = originalByKey.get(row.key);
+    const teacher = draftGvcnId(row, original, classById);
+    return Boolean(teacher) && teacher !== original?.teacherWorkspaceUserId;
+  }).length;
+}
