@@ -98,9 +98,16 @@ function concurrencyPolicy(workflow) {
     };
     const evaluate = (code) =>
       runInNewContext(
-        code,
+        code.replace(
+          /github\.event\.pull_request\.labels\.\*\.name/gu,
+          '(github.event.pull_request.labels ?? []).map(label => label.name)'
+        ),
         {
           github,
+          contains: (values, search) =>
+            values.some(
+              (value) => String(value).toLowerCase() === search.toLowerCase()
+            ),
           startsWith: (value, prefix) => value.startsWith(prefix),
           format: (template, ...values) =>
             template.replace(/\{([0-9]+)\}/gu, (_, index) => values[index]),
@@ -205,6 +212,31 @@ test('validation supersedes main/PR runs while protected pushes and qualificatio
     '../../../.github/workflows/topic-delivery-foundation-contract.yaml'
   );
   assertValidationConcurrency(concurrencyPolicy(workflow));
+});
+
+test('PR label admission separates concurrency groups without changing cancellation', () => {
+  const policy = concurrencyPolicy(
+    read('../../../.github/workflows/topic-delivery-foundation-contract.yaml')
+  );
+  const pr = (labels) =>
+    policy({
+      event_name: 'pull_request',
+      ref: 'refs/pull/99/merge',
+      event: { pull_request: { number: 99, labels } },
+    });
+  const admitted = pr([{ name: 'bug' }, { name: 'ready-for-ci' }]);
+  assert.equal(admitted.cancel, true);
+  assert.ok(admitted.group.endsWith('-latest'));
+  for (const labels of [
+    [],
+    [{ name: 'bug' }],
+    [{ name: 'not-ready-for-ci' }],
+  ]) {
+    const unadmitted = pr(labels);
+    assert.equal(unadmitted.cancel, true);
+    assert.equal(unadmitted.group, `${admitted.group}-unadmitted`);
+  }
+  assert.deepEqual(pr([{ name: 'READY-FOR-CI' }]), admitted);
 });
 
 test('concurrency controls reject the old main policy and missing isolation or cancellation guards', () => {
