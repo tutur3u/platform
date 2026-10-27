@@ -4787,6 +4787,8 @@
   "workspaceHiddenLoadError": "Workspace visibility preferences are unavailable. Saved hidden choices are kept.",
   "workspaceManageTitle": "Manage workspaces",
   "workspaceVisibleTitle": "Visible workspaces",
+  "workspaceHiddenCurrentToast": "Workspace hidden. Switched to another visible workspace.",
+  "workspaceHiddenLastToast": "All workspaces are hidden. Show a workspace to continue.",
   "workspaceHiddenTitle": "Hidden workspaces",
   "workspaceHiddenUpdateError": "Unable to save this change. Try again when connected.",
   "workspaceHideAction": "Hide",

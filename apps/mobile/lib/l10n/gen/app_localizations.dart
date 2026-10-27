@@ -21151,6 +21151,18 @@ abstract class AppLocalizations {
   /// **'Visible workspaces'**
   String get workspaceVisibleTitle;
 
+  /// No description provided for @workspaceHiddenCurrentToast.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace hidden. Switched to another visible workspace.'**
+  String get workspaceHiddenCurrentToast;
+
+  /// No description provided for @workspaceHiddenLastToast.
+  ///
+  /// In en, this message translates to:
+  /// **'All workspaces are hidden. Show a workspace to continue.'**
+  String get workspaceHiddenLastToast;
+
   /// No description provided for @workspaceHiddenTitle.
   ///
   /// In en, this message translates to:

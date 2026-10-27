@@ -195,11 +195,7 @@ class _WorkspaceListView extends StatelessWidget {
         (l10n.workspaceTeamSection, LucideIcons.users, sections.team),
       ])
         if (workspaces.isNotEmpty) ...[
-          (_) => AppSectionHeader(
-            title: title,
-            icon: icon,
-            count: workspaces.length,
-          ),
+          (_) => AppSectionHeader(title: title, icon: icon),
           for (final (index, workspace) in workspaces.indexed)
             (_) => AppGroupedSlice(
               position: AppSlicePosition.of(index, workspaces.length),

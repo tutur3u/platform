@@ -205,7 +205,7 @@ class _WorkspacePickerSheetState extends State<WorkspacePickerSheet> {
                 ),
             ],
             slivers: [
-              if (!hiddenOnly)
+              if (!hiddenOnly && widget.mode == WorkspacePickerMode.current)
                 SliverToBoxAdapter(
                   child: AppButton.outline(
                     key: const ValueKey('workspace-picker-manage'),

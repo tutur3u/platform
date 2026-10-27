@@ -220,7 +220,7 @@ Widget _emptyState(
       title: l10n.workspaceHiddenEmpty,
     );
   }
-  if (data.state.workspaces.isNotEmpty) {
+  if (data.state.workspaces.any((workspace) => !workspace.deleted)) {
     return AppStateMessage(
       icon: LucideIcons.eyeOff,
       title: l10n.workspaceAllHidden,

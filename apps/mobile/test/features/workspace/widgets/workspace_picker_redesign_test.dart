@@ -169,6 +169,7 @@ void main() {
       loaded,
       mode: WorkspacePickerMode.defaultWorkspace,
     );
+    expect(find.byKey(const ValueKey('workspace-picker-manage')), findsNothing);
     expect(find.text('Default workspace'), findsWidgets);
     expect(
       find.byKey(const ValueKey('workspace-current-personal_ws')),
