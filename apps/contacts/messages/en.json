@@ -8214,6 +8214,20 @@
       },
       "status_label": "Status"
     },
+    "header": {
+      "focus": "Focus",
+      "focus_hint": "My open tasks, highest priority first",
+      "more": "More board actions",
+      "more_people": "{count} more",
+      "new_task": "New task",
+      "no_projects": "No projects yet",
+      "project": "Project",
+      "projects_selected": "{count} projects",
+      "share": "Share",
+      "shift_click": "Shift-click",
+      "task_count": "{count, plural, one {# task} other {# tasks}}",
+      "you": "{name} (you)"
+    },
     "icon_label": "Icon",
     "icon_picker": {
       "clear": "Clear",
