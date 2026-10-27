@@ -86,6 +86,37 @@ records exact identities, secret names, resource continuity, archive/runtime gat
 stop control, rollback receipts and remaining hosted acceptance. Meet's off-canonical
 profile is defined separately and has no automated staging publisher here.
 
+## Drive staging candidate
+
+`apps/drive` has an additive Start/RSC bridge candidate. Its current Next app
+continues to own production. `void.config.ts` defines the route-free
+`tuturuuu-drive-vite-staging` profile with `workers_dev: false`; only
+`drive.staging.tutur3u.com` is admitted at the Worker root. No DNS, custom domain,
+production route, publisher or infrastructure provisioning is part of this candidate.
+
+The candidate uses the staging Supabase project pinned in `supabase-staging.yaml`,
+forwards storage to `https://staging.tutur3u.com`, and refuses missing or mismatched
+runtime origins before loading routes. The Vite config also rejects non-staging
+build origins. Supply only the staging publishable key and staging server secrets;
+never reuse production credentials. Session cookies use `.staging.tutur3u.com`
+exactly, with Secure and HSTS. Browser Supabase cookies admit this exact Drive
+host only. Staging responses are private and unindexable. English and Vietnamese
+routes, Drive session audience and central API ownership remain unchanged.
+
+Storage still uses the existing central APIs, path guards and storage RLS from
+#6879. No candidate-specific storage grants, bucket changes, service-role bypasses
+or migrations are introduced. Focused regression tests live in
+`apps/drive/src/start-candidate` and the Supabase cookie adapter tests.
+
+Before cutover, require exact-commit CI and native build acceptance, independent
+security review, emitted Worker and browser acceptance, central staging auth/API
+availability, and an explicit promotion/rollback review. A separately authorized
+staging deploy must verify cross-app login, refresh/logout and cookie deletion,
+wrong-app/expired sessions, bilingual navigation, upload/list/download/share,
+consent and private/cross-workspace storage denials against the staging database.
+Unit fixtures do not establish hosted session or storage RLS acceptance. Keep
+Wrangler for Worker runtime checks until cf CLI operation parity is verified.
+
 ## Hosted scheduler map
 
 | Job family | Scheduler declaration | Processor path |
