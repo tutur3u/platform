@@ -9159,7 +9159,12 @@
     "schedule_notify_failed": "Đã lưu nhưng không thể thông báo cho giáo viên.",
     "schedule_notify_partial_failed": "{count, plural, other {Không thể thông báo cho # giáo viên}}",
     "schedule_save_partial": "Một buổi bắt đầu được gửi trong lúc lưu: chỉ GVNN được thay đổi và email có thể đã gửi cho GVNN trước đó. Lịch tháng đã được tải lại.",
-    "schedule_server_partially_applied": "Buổi bắt đầu được gửi trong lúc lưu: chỉ GVNN được thay đổi."
+    "schedule_server_partially_applied": "Buổi bắt đầu được gửi trong lúc lưu: chỉ GVNN được thay đổi.",
+    "place_campus_empty": "Không tìm thấy cơ sở",
+    "place_campus_picker": "Chọn cơ sở làm địa điểm",
+    "place_campus_placeholder": "Chọn cơ sở",
+    "place_campus_search": "Tìm cơ sở",
+    "place_manual_placeholder": "Hoặc nhập địa điểm khác"
   },
   "ws-topic-announcements-gate": {
     "disabled_description": "Bật thông báo chủ đề để duy trì danh sách liên hệ đã xác minh và gửi các thông báo dùng lại được từ không gian làm việc này.",
@@ -9536,7 +9541,16 @@
     "policy_restrict_weak_content_help": "Khi bật, chỉ thành viên có quyền quản lý lớp (cập nhật nhóm người dùng) mới được điền, sửa hoặc kết thúc nội dung kèm yếu.",
     "policy_restrict_weak_content_off": "Tắt",
     "policy_restrict_weak_content_on": "Bật",
-    "tutoring_content": "Nội dung kèm"
+    "tutoring_content": "Nội dung kèm",
+    "policy_add_campus_option": "Thêm cơ sở",
+    "policy_campus_option_label": "Tên cơ sở",
+    "policy_campus_options": "Danh sách cơ sở",
+    "policy_campus_options_description": "Các cơ sở của không gian làm việc này. Gán cơ sở cho lớp và địa điểm thông báo chủ đề chọn từ danh sách này.",
+    "policy_class_campuses": "Cơ sở của lớp",
+    "policy_no_campus_options": "Chưa có cơ sở. Nhập tên để sử dụng.",
+    "policy_remove_campus_option": "Xóa cơ sở",
+    "policy_search_campuses": "Tìm hoặc nhập cơ sở",
+    "policy_use_campus_label": "Dùng tên này"
   },
   "ws-user-attendance": {
     "absent": "Vắng mặt",

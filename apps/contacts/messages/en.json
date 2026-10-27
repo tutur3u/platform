@@ -9159,7 +9159,12 @@
     "schedule_notify_failed": "Saved, but teachers could not be notified.",
     "schedule_notify_partial_failed": "{count, plural, one {Could not notify # teacher} other {Could not notify # teachers}}",
     "schedule_save_partial": "A session started sending while you saved: only its GVNN changed, and the email may have used the previous GVNN. The month has been reloaded.",
-    "schedule_server_partially_applied": "Sending started while saving: only the GVNN changed."
+    "schedule_server_partially_applied": "Sending started while saving: only the GVNN changed.",
+    "place_campus_empty": "No matching campus",
+    "place_campus_picker": "Choose a campus for the place",
+    "place_campus_placeholder": "Choose a campus",
+    "place_campus_search": "Search campuses",
+    "place_manual_placeholder": "Or type another place"
   },
   "ws-topic-announcements-gate": {
     "disabled_description": "Turn topic announcements on to keep a verified contact list and send reusable announcements from this workspace.",
@@ -9536,7 +9541,16 @@
     "policy_restrict_weak_content_help": "When on, only members who can manage classes (update user groups) can set, edit, or end weak-support tutoring content.",
     "policy_restrict_weak_content_off": "Off",
     "policy_restrict_weak_content_on": "On",
-    "tutoring_content": "Tutoring content"
+    "tutoring_content": "Tutoring content",
+    "policy_add_campus_option": "Add campus",
+    "policy_campus_option_label": "Campus label",
+    "policy_campus_options": "Campus list",
+    "policy_campus_options_description": "Campuses this workspace uses. Class assignments and topic announcement places choose from this list.",
+    "policy_class_campuses": "Class campuses",
+    "policy_no_campus_options": "No campuses yet. Type a label to use it.",
+    "policy_remove_campus_option": "Remove campus",
+    "policy_search_campuses": "Search or type a campus",
+    "policy_use_campus_label": "Use this label"
   },
   "ws-user-attendance": {
     "absent": "Absent",

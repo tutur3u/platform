@@ -206,7 +206,20 @@ group; a clear `CS1`, `CS2`, `Cơ sở 1`, or `Cơ sở 2` marker in the group n
 is inferred when no override exists. The existing generic `Lớp học` group tag
 does not identify a campus. Ambiguous groups show no campus on the schedule
 and `Chưa xác định` in the parent draft until staff set an override. The
-Easy Center template uses the resolved label in the parent draft. The
+Easy Center template uses the resolved label in the parent draft.
+
+Each workspace keeps its own campus list (`campusOptions` in the same
+`TUTORING_POLICY` config, default empty). Labels are trimmed, blank entries
+are dropped, duplicates are removed, and a label longer than 80 characters
+fails validation. Policies saved before the list existed read as an empty
+list with every other field unchanged, and saving the Campuses section keeps
+all other policy fields. The class-to-campus editor offers the list plus any
+label already mapped to a class, so earlier free-text mappings stay selectable
+and are never dropped; staff can still type a new label. Topic announcements
+offer the same choices as a **Place** picker (see User Management). No campus
+names are built in or seeded; each center enters its own. Coverage:
+`tutoring-campus-options.test.ts`, the policy `route.test.ts`, and
+`tutoring-policy-save.test.tsx`. The
 center's tuition remains free to
 learners; payroll exports count completed teaching time.
 

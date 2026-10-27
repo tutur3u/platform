@@ -516,6 +516,18 @@ export async function listTopicAnnouncementTemplates(
   );
 }
 
+/** Campus labels from the workspace tutoring policy, for the place picker. */
+export async function listTopicAnnouncementCampusOptions(
+  workspaceId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ data: string[] }>(
+    `${basePath(workspaceId)}/campus-options`,
+    { cache: 'no-store' }
+  );
+}
+
 export async function createTopicAnnouncementTemplate(
   workspaceId: string,
   payload: TopicAnnouncementTemplatePayload,

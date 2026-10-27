@@ -5210,6 +5210,16 @@
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
   },
   {
+    "path": "/api/v1/workspaces/{wsId}/topic-announcements/campus-options",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/topic-announcements/campus-options/route.ts",
+    "sourceSha256": "99469963d7a137deb6b9fdb2128479a39d28ca4a1dc4e7ed0b6b23c7ce9413bb",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
     "path": "/api/v1/workspaces/{wsId}/topic-announcements/contacts/{contactId}",
     "sideEffects": "unknown",
     "shadow": "never",
