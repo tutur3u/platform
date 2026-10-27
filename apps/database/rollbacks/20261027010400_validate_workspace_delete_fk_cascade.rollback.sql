@@ -16,5 +16,11 @@ alter table public.workspace_documents
     foreign key (ws_id) references public.workspaces(id)
     on delete cascade not valid;
 
+alter table private.team_members
+  drop constraint project_members_project_id_fkey,
+  add constraint project_members_project_id_fkey
+    foreign key (team_id) references public.workspace_teams(id)
+    on delete cascade not valid;
+
 notify pgrst, 'reload schema';
 commit;

@@ -34,8 +34,28 @@ def main():
         return subprocess.run(command, input=sql, text=True, capture_output=True,
                               check=True).stdout
 
-    def apply(relative):
-        run(psql + ["--single-transaction"], (DATABASE / relative).read_text())
+    def apply(relative, validation=False):
+        sql = (DATABASE / relative).read_text()
+        if validation:
+            # Assert lock mode inside the validation transaction, before COMMIT.
+            guard = """
+do $$ begin
+  if exists (select 1 from pg_locks where pid=pg_backend_pid()
+    and mode='AccessExclusiveLock' and relation in (
+      'public.workspaces'::regclass, 'public.realtime_log_aggregations'::regclass,
+      'public.workspace_documents'::regclass, 'private.team_members'::regclass)) then
+    raise exception 'Validation retained an ACCESS EXCLUSIVE swap lock';
+  end if;
+end $$;
+"""
+            if re.search(r"commit;\s*$", sql, re.IGNORECASE):
+                sql = re.sub(r"commit;\s*$", lambda _: guard + "commit;\n", sql,
+                             flags=re.IGNORECASE)
+            else:
+                sql += guard
+        # Every phase is a separate connection/transaction. Never wrap the
+        # rollback swap and its later validation in one transaction.
+        run(psql + ["--single-transaction"], sql)
 
     def state(expected_action, validated):
         actual = run(psql, """
@@ -44,9 +64,12 @@ from pg_constraint where
  (conrelid='public.realtime_log_aggregations'::regclass
   and conname='realtime_log_aggregations_ws_id_fkey') or
  (conrelid='public.workspace_documents'::regclass
-  and conname='workspace_documents_ws_id_fkey') order by conname;
+  and conname='workspace_documents_ws_id_fkey') or
+ (conrelid='private.team_members'::regclass
+  and conname='project_members_project_id_fkey') order by conname;
 """)
         expected = (
+            f"project_members_project_id_fkey:{expected_action[2]}:{validated}\n"
             f"realtime_log_aggregations_ws_id_fkey:{expected_action[0]}:{validated}\n"
             f"workspace_documents_ws_id_fkey:{expected_action[1]}:{validated}\n"
         )
@@ -72,34 +95,41 @@ from pg_constraint where
         (args.output_dir / f"{label}.tap").write_text(output)
         if re.search(r"^not ok|^Bail out!|^# Looks like", output, re.MULTILINE):
             raise AssertionError(f"Behavior regression failed: {label}")
-        if "1..22" not in output:
+        if "1..30" not in output:
             raise AssertionError(f"Incomplete behavior regression: {label}")
-        print(f"PASS {label}: 22 pgTAP assertions")
+        print(f"PASS {label}: 30 pgTAP assertions")
 
-    state("na", "true")
+    state("naa", "true")
     original = dump("main-before")
     apply(f"supabase/migrations/{SWAP}.sql")
-    state("cc", "false")
+    state("ccc", "false")
     swapped = dump("swap-first")
     regression("swap-not-valid")
-    apply(f"supabase/migrations/{VALIDATE}.sql")
-    state("cc", "true")
+    apply(f"supabase/migrations/{VALIDATE}.sql", validation=True)
+    state("ccc", "true")
     validated = dump("validated-first")
     regression("validated")
     apply(f"rollbacks/{VALIDATE}.rollback.sql")
-    state("cc", "false")
+    state("ccc", "false")
     identical(swapped, dump("validation-down"), "validation down restores NOT VALID schema")
     apply(f"rollbacks/{SWAP}.rollback.sql")
-    state("na", "true")
-    identical(original, dump("swap-down"), "D down restores exact main schema")
+    state("naa", "false")
+    original_not_valid = dump("rollback-swap-not-valid")
+    apply(f"rollbacks/{SWAP}.rollback-validate.sql", validation=True)
+    state("naa", "true")
+    identical(original, dump("swap-down"), "two-step D down restores exact main schema")
     apply(f"supabase/migrations/{SWAP}.sql")
-    state("cc", "false")
+    state("ccc", "false")
     identical(swapped, dump("swap-second"), "D up-down-up is byte-identical")
-    apply(f"supabase/migrations/{VALIDATE}.sql")
-    state("cc", "true")
+    apply(f"supabase/migrations/{VALIDATE}.sql", validation=True)
+    state("ccc", "true")
     identical(validated, dump("validated-second"), "validation up-down-up is byte-identical")
     apply(f"rollbacks/{SWAP}.rollback.sql")
-    state("na", "true")
+    state("naa", "false")
+    identical(original_not_valid, dump("rollback-swap-second"),
+              "rollback NOT VALID swaps are byte-identical")
+    apply(f"rollbacks/{SWAP}.rollback-validate.sql", validation=True)
+    state("naa", "true")
     identical(original, dump("main-after"), "rehearsal leaves exact main schema restored")
 
 

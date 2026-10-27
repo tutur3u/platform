@@ -575,3 +575,12 @@ immutable DELETE trigger. Keep the NOT VALID swap and validation in separate
 migration files; promoting both files applies both, so separate deployment needs
 separate promotion. Rollbacks must restore original update/delete actions and
 validation state; restoring a previously validated FK entails a validation scan.
+Commit rollback NOT VALID swaps before running their separate rollback validation
+file; never combine both files in one transaction and hold swap/index locks over
+the scan. The roundtrip verifier asserts that validation retains no ACCESS
+EXCLUSIVE lock on the workspace or affected child tables. Allow 15 minutes for
+validation of the unpruned realtime log table; check its size/row estimate,
+meeting/document workspace mismatches, and long workspace transactions before
+release. The document ws_id index uses a plain CREATE INDEX IF NOT EXISTS on its
+small table, so plan for write blocking during index creation. If an index with
+that name predates D on a target, preserve it rather than dropping it on rollback.

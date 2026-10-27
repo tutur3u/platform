@@ -31,6 +31,29 @@ select is((select confupdtype::text from pg_constraint
     and conname = 'workspace_documents_ws_id_fkey'), 'a',
   'document ON UPDATE NO ACTION is preserved');
 
+select is((select confdeltype::text from pg_constraint
+  where conrelid = 'private.team_members'::regclass
+    and conname = 'project_members_project_id_fkey'), 'c',
+  'team membership rows cascade from their workspace team');
+select is((select confupdtype::text from pg_constraint
+  where conrelid = 'private.team_members'::regclass
+    and conname = 'project_members_project_id_fkey'), 'a',
+  'team membership ON UPDATE NO ACTION is preserved');
+select ok(exists (
+  select 1 from pg_index i join pg_class idx on idx.oid = i.indexrelid
+  join pg_attribute a on a.attrelid = i.indrelid and a.attnum = i.indkey[0]
+  where i.indrelid = 'public.workspace_documents'::regclass
+    and idx.relname = 'workspace_documents_ws_id_idx' and i.indisvalid
+    and i.indnatts = 1 and a.attname = 'ws_id' and i.indpred is null
+), 'workspace documents have a valid single-column ws_id index');
+
+insert into public.workspace_teams(id, ws_id, name) values
+  (pg_temp.wdf_id(50), pg_temp.wdf_id(10), 'Deleted workspace team'),
+  (pg_temp.wdf_id(51), pg_temp.wdf_id(11), 'Other workspace team');
+insert into private.team_members(team_id, user_id) values
+  (pg_temp.wdf_id(50), pg_temp.wdf_id(1)),
+  (pg_temp.wdf_id(51), pg_temp.wdf_id(1));
+
 insert into public.realtime_log_aggregations(ws_id, time_bucket, kind, total_count)
 values (pg_temp.wdf_id(10), now(), 'workspace-delete-fixture', 7),
   (pg_temp.wdf_id(11), now(), 'workspace-delete-fixture', 3);
@@ -48,7 +71,7 @@ insert into private.meeting_documents(meeting_id, document_id, yjs_state) values
 -- Exercise privileged database deletion; this does not exercise the HTTP route.
 set local role service_role;
 select lives_ok($q$delete from public.workspaces where id = pg_temp.wdf_id(10)$q$,
-  'deleting a workspace populated with logs, documents and meeting children succeeds');
+  'deleting a workspace populated with logs, documents, meeting children and team membership succeeds');
 reset role;
 select is((select count(*) from public.workspaces where id = pg_temp.wdf_id(10)),
   0::bigint, 'workspace was actually deleted');
@@ -70,6 +93,18 @@ select is((select count(*) from public.workspace_documents where id = pg_temp.wd
   1::bigint, 'unscoped document survives');
 select is((select count(*) from auth.users where id = pg_temp.wdf_id(1)),
   1::bigint, 'workspace creator account survives');
+select is((select count(*) from public.workspace_teams where id = pg_temp.wdf_id(50)),
+  0::bigint, 'workspace team is removed');
+select is((select count(*) from private.team_members where team_id = pg_temp.wdf_id(50)),
+  0::bigint, 'no team membership orphan remains');
+select is((select count(*) from public.users where id = pg_temp.wdf_id(1)),
+  1::bigint, 'team member user survives the workspace cascade');
+select is((select count(*) from private.team_members
+  where team_id = pg_temp.wdf_id(51) and user_id = pg_temp.wdf_id(1)),
+  1::bigint, 'the same user membership in another workspace survives');
+select throws_ok($q$insert into private.team_members(team_id, user_id)
+  values (pg_temp.wdf_id(50), pg_temp.wdf_id(1))$q$,
+  '23503', null, 'team FK immediately rejects new membership orphans');
 select throws_ok($q$insert into public.workspace_documents(ws_id) values (pg_temp.wdf_id(10))$q$,
   '23503', null, 'NOT VALID or validated FK still rejects a new document orphan');
 select throws_ok($q$insert into public.realtime_log_aggregations(ws_id, time_bucket, kind)

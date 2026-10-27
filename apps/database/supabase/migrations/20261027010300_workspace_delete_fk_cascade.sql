@@ -1,4 +1,4 @@
--- Part D: repair only the approved workspace-owned document/log delete blockers.
+-- Part D: repair approved workspace document/log/team-membership delete blockers.
 -- Catalog audit on the full main migration chain (through 20261026193000):
 -- 465 reachable tables; 51 candidate blocking FKs, including transitive parents.
 -- NO ACTION/RESTRICT candidates may already resolve through co-cascade paths;
@@ -60,8 +60,9 @@
 -- public.workspace_products | workspace_products_owner_id_fkey | RESTRICT | private.inventory_owners
 -- public.workspace_settings | workspace_settings_referral_promo_fkey | SET NULL (NOT NULL target) | private.workspace_promotions
 --
--- Disposition: change ONLY realtime_log_aggregations_ws_id_fkey and
--- workspace_documents_ws_id_fkey. Preserve all other candidates for Mastermind.
+-- Disposition: change realtime_log_aggregations_ws_id_fkey,
+-- workspace_documents_ws_id_fkey and project_members_project_id_fkey only.
+-- Preserve the other 48 candidates for Mastermind.
 -- No workspace-deletion retention policy has been approved. In particular:
 -- * Topic delivery: immutable receipts and RESTRICT audit/parent references.
 -- * AI Live: billing reservations may differ from the access workspace.
@@ -71,7 +72,8 @@
 --   user-authored/history or cross-workspace references; no blanket cascade.
 -- * Mind composites and deferred inventory merge provenance: existing ownership
 --   cascades; preserve ordinary detach and history semantics.
--- * Team membership: not changed without a populated transitive scope proof.
+-- * Team membership: approved after populated 23503 proof. Only membership
+--   rows cascade from workspace_teams; user accounts are never deleted.
 -- * Referral settings: composite SET NULL includes the NOT NULL workspace key;
 --   CASCADE would erase live settings on promotion deletion. Separate decision.
 -- Options for retained-history blockers: soft-delete the workspace, or approve
@@ -96,14 +98,18 @@
 -- 1. Document + JSON content + meeting document + log bucket: DELETE -> 23503,
 --    workspace_documents_ws_id_fkey.
 -- 2. Temporarily repair document FK: DELETE -> 23502, realtime_log_aggregations.ws_id.
--- 3. Repair log FK: DELETE succeeds; documents, logs and meeting children = 0.
+-- 3. Repair log FK: original fixture DELETE succeeds; affected children = 0.
+-- 4. A team-only populated workspace also fails 23503 on
+--    project_members_project_id_fkey; its approved CASCADE removes memberships,
+--    leaving user accounts and memberships in other workspaces intact.
 -- The old block/attribute tables were dropped by 20241024135412; do not recreate.
 --
 -- NOT VALID enforces new writes/deletes immediately without scanning old rows.
 -- Validation is deliberately in 20261027010400, a separately shippable file.
 -- Preserve ON UPDATE, match type, deferrability and all privileges.
 -- Reserved after EC A/B/C 20261027010000-20261027010200 (owner-confirmed).
--- Rollback restores the exact validated original definitions and delete defects.
+-- Rollback swaps original definitions NOT VALID, commits, then validates in a
+-- separate rollback-validate file. Never combine those phases in a transaction.
 
 set local lock_timeout = '5s';
 set local statement_timeout = '120s';
@@ -119,5 +125,17 @@ alter table public.workspace_documents
   add constraint workspace_documents_ws_id_fkey
     foreign key (ws_id) references public.workspaces(id)
     on delete cascade not valid;
+
+alter table private.team_members
+  drop constraint project_members_project_id_fkey,
+  add constraint project_members_project_id_fkey
+    foreign key (team_id) references public.workspace_teams(id)
+    on delete cascade not valid;
+
+-- Workspace deletion needs an index on the referencing document column.
+-- Plain CREATE INDEX takes a SHARE lock and blocks writes while it runs. The
+-- document table is small; keep this explicit, bounded non-concurrent operation.
+create index if not exists workspace_documents_ws_id_idx
+  on public.workspace_documents (ws_id);
 
 notify pgrst, 'reload schema';

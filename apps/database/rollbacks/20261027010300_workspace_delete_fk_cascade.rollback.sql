@@ -1,6 +1,8 @@
--- Restore the exact pre-D definitions, including validated state.
+-- Step 1: restore pre-D FK definitions as NOT VALID, then COMMIT.
 -- Reintroduces the known document 23503 and log NOT NULL 23502 delete failures.
--- Validation scans are necessary to restore the original catalog byte-for-byte.
+-- Step 2: run 20261027010300_workspace_delete_fk_cascade.rollback-validate.sql
+-- in a SEPARATE transaction to restore the original validated catalog.
+-- Do not wrap both files in one transaction: swap/index locks must be released.
 -- Manual rollback only with release-authority approval; never an automatic down.
 begin;
 set local lock_timeout = '5s';
@@ -16,10 +18,14 @@ alter table public.workspace_documents
   add constraint workspace_documents_ws_id_fkey
     foreign key (ws_id) references public.workspaces(id) not valid;
 
-alter table public.realtime_log_aggregations
-  validate constraint realtime_log_aggregations_ws_id_fkey;
-alter table public.workspace_documents
-  validate constraint workspace_documents_ws_id_fkey;
+alter table private.team_members
+  drop constraint project_members_project_id_fkey,
+  add constraint project_members_project_id_fkey
+    foreign key (team_id) references public.workspace_teams(id) not valid;
+
+-- D introduces this index on the main baseline. If it predated D on a target,
+-- preserve that pre-existing index instead of executing this DROP during rollback.
+drop index if exists public.workspace_documents_ws_id_idx;
 
 notify pgrst, 'reload schema';
 commit;
