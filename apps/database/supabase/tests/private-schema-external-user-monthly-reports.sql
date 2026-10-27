@@ -472,9 +472,14 @@ select ok(
         'merge_workspace_users_phase1b_batch',
         'merge_workspace_users_batch_update'
       )
-      and not coalesce(proc_row.proconfig, '{}') @> array[
-        'search_path=public, private, pg_temp'
-      ]
+      and not (
+        coalesce(proc_row.proconfig, '{}') @> array['search_path=public, private, pg_temp']
+        or (
+          coalesce(proc_row.proconfig, '{}') @> array['search_path=pg_catalog, pg_temp']
+          and proc_row.prosrc like '%private.external_user_monthly_reports%'
+          and proc_row.prosrc like '%private.external_user_monthly_report_logs%'
+        )
+      )
   ),
   'workspace user merge RPCs resolve report tables through private schema'
 );

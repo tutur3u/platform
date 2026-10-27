@@ -223,16 +223,19 @@ select ok(
 
 select ok(
   (
-    select bool_and(position('private' in setting) > 0)
+    select bool_and(
+      coalesce(proconfig, '{}') @> array['search_path=public, private, pg_temp']
+      or (coalesce(proconfig, '{}') @> array['search_path=pg_catalog, pg_temp']
+        and prosrc like '%private.healthcare_checkups%')
+    )
     from (
-      select unnest(proconfig) as setting
+      select proconfig, prosrc
       from pg_proc
       where oid in (
         'public.merge_workspace_users_phase1c(uuid,uuid,uuid)'::regprocedure,
         'public.merge_workspace_users_phase1c_batch(uuid,uuid,uuid,integer)'::regprocedure
       )
     ) as function_settings
-    where setting like 'search_path=%'
   ),
   'workspace-user merge phase functions can resolve private healthcare checkups'
 );

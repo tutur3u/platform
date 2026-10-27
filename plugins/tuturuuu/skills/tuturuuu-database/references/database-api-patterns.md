@@ -61,6 +61,11 @@ review prove baseline equivalence. Existing migration history stays immutable.
   optional arguments only after verifying their SQL defaults preserve behavior.
 - Public `SECURITY DEFINER` RPCs must enforce `auth.uid()` and workspace/RBAC
   checks internally, then revoke broad execution and grant only required roles.
+- For resumable multi-phase RPCs, authorize every phase before any early success
+  return. Treat permission results `IS DISTINCT FROM TRUE` as denial. Recreate
+  replacements and manual rollbacks from the full-chain catalog definition and
+  ACLs, including later private-schema moves; qualify relations before narrowing
+  the path. Keep private-schema regression checks for explicit qualified access.
 - Public functions created before `20260522172925` inherited EXECUTE for
   `PUBLIC`, `anon` and `authenticated`. When touching one, revoke from all three,
   grant only the roles its callers use, and check RLS policies and invoker

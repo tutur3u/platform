@@ -14,6 +14,19 @@ It focuses on the implementation that page components, route handlers, and the i
 - `packages/utils/src/permissions.tsx`
 - `apps/web/src/lib/api-middleware.ts`
 
+## Workspace user merge phases
+
+Every resumable workspace-user merge phase requires a signed-in actor with both
+`delete_users` and `update_users` in the selected workspace. The target profile
+must belong to that workspace, and source and target must differ. A completed
+merge remains resumable for an authorized caller. The web and Contacts shared
+merge route uses the request-scoped user client for these RPCs; privileged clients
+without an authenticated subject do not bypass the actor check.
+
+Regression coverage: `apps/database/supabase/tests/merge-phase-workspace-guards.sql`.
+Manual reversal of the function definitions and grants is in
+`apps/database/rollbacks/20261027031900_merge_phase_workspace_guards.rollback.sql`.
+
 ## Mental Model
 
 There are four layers, and most bugs come from mixing them together:
