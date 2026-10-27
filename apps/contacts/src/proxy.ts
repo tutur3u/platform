@@ -185,15 +185,17 @@ function getSharedUserProfileRedirect(request: NextRequest) {
   );
 }
 
-function shouldForwardTopicAnnouncementMutation(
+function shouldForwardTopicAnnouncementRequest(
   pathname: string,
   method: string
 ) {
-  return (
-    /^\/api\/v1\/workspaces\/[^/]+\/topic-announcements\/?$/u.test(pathname) &&
-    method !== 'GET' &&
-    method !== 'HEAD'
+  const match = pathname.match(
+    /^\/api\/v1\/workspaces\/[^/]+\/topic-announcements(?:\/(.*))?$/u
   );
+  if (!match) return false;
+  const subroute = match[1]?.replace(/\/$/u, '');
+  if (!subroute) return method !== 'GET' && method !== 'HEAD';
+  return !(subroute === 'preview' && method === 'POST');
 }
 
 export async function proxy(request: NextRequest): Promise<NextResponse> {
@@ -228,10 +230,9 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       return preserveMfaRecoveryCookies(request, guardResponse);
     }
 
-    // The collection GET is local. Preserve the existing Web mutation route;
-    // Next fallback rewrites do not run for an unsupported local route method.
+    // Only collection reads and preview POST are local; Web owns the rest.
     if (
-      shouldForwardTopicAnnouncementMutation(
+      shouldForwardTopicAnnouncementRequest(
         request.nextUrl.pathname,
         request.method
       )

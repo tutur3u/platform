@@ -28,11 +28,14 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: vi.fn(async () => mocks.admin),
   createClient: vi.fn(async () => mocks.admin),
 }));
-vi.mock('@tuturuuu/supabase/next/auth-session-user', () => ({
-  resolveAuthenticatedSessionUser: vi.fn(async () => ({
+vi.mock('@/lib/api-auth', () => ({
+  resolveSessionAuthContext: vi.fn(async () => ({
+    ok: true,
     user: { id: TEACHER_PLATFORM_ID },
+    supabase: mocks.admin,
   })),
 }));
+
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getPermissions: vi.fn(async () => ({
     withoutPermission: (permission: string) => !mocks.granted.has(permission),

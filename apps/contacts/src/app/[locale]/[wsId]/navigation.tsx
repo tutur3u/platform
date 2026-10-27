@@ -36,9 +36,11 @@ export type { NavLink } from '@tuturuuu/ui/custom/navigation';
 export async function getNavigationLinks({
   permissions,
   personalOrWsId,
+  teacherAssignmentsEnabled = false,
 }: {
   permissions?: PermissionsResult;
   personalOrWsId: string;
+  teacherAssignmentsEnabled?: boolean;
 }): Promise<(NavLink | null)[]> {
   const t = await getTranslations();
   const withoutPermission = (
@@ -175,6 +177,15 @@ export async function getNavigationLinks({
           icon: <MailCheck className="h-4 w-4" />,
           sectionLabel: t('ws-topic-announcements.nav_group_setup'),
         },
+        ...(teacherAssignmentsEnabled
+          ? [
+              {
+                title: t('ws-topic-announcements.nav_schedule'),
+                href: `/${personalOrWsId}/users/topic-announcements/schedule`,
+                icon: <Calendar className="h-4 w-4" />,
+              },
+            ]
+          : []),
         {
           title: t('ws-topic-announcements.nav_templates'),
           href: `/${personalOrWsId}/users/topic-announcements/templates`,
