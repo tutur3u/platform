@@ -256,6 +256,12 @@ off by default):
   stays as history, and sessions already scheduled remain for staff to complete
   or cancel. Flagging the learner again puts them back on the list.
 
+Group-member feedback uses the authorized workspace for both the learner and
+class. Teachers retain feedback history after a learner leaves the class; current
+class membership is not required. This matches Contacts. The usual view/edit
+permissions and weak-content policy still apply. The web group-member feedback
+`route.test.ts` covers scoping, former-member history and weak-content denial.
+
 Regression coverage:
 [`weak-content-access.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/tutoring/weak-content-access.test.ts),
 [`weak-support/end/route.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/tutoring/weak-support/end/route.test.ts),
