@@ -97,10 +97,18 @@ function query(initial: Row[]) {
 }
 const db = { from: vi.fn((name: string) => query(tables[name] ?? [])) };
 function allow(...names: string[]) {
-  mocks.permissions.mockResolvedValue({
+  const permissions = {
     wsId: 'ws-a',
+    membershipType: 'MEMBER',
     containsPermission: (name: string) => names.includes(name),
     withoutPermission: (name: string) => !names.includes(name),
+  };
+  mocks.permissions.mockResolvedValue(permissions);
+  mocks.access.mockResolvedValue({
+    ok: true,
+    permissions,
+    supabase: db,
+    user: { id: 'actor' },
   });
 }
 const own = '11111111-1111-4111-8111-111111111111';
@@ -110,7 +118,6 @@ beforeEach(() => {
   vi.clearAllMocks();
   allow();
   mocks.admin.mockResolvedValue(db);
-  mocks.access.mockResolvedValue({ ok: true, permissions: { wsId: 'ws-a' } });
   mocks.session.mockResolvedValue({ ok: true, ...context });
   mocks.teach.mockResolvedValue({
     normalizedWsId: 'ws-a',
@@ -203,6 +210,12 @@ describe('SR-241 batch invitations', () => {
     tables.workspace_secrets = [
       { ws_id: 'ws-a', name: 'DISABLE_INVITE', value: 'true' },
     ];
+    expect((await invite(request(), params())).status).toBe(403);
+    expect(writes).not.toHaveBeenCalled();
+  });
+  it('blocks invitations to personal workspaces', async () => {
+    allow('manage_workspace_members');
+    tables.workspaces = [{ id: 'ws-a', personal: true }];
     expect((await invite(request(), params())).status).toBe(403);
     expect(writes).not.toHaveBeenCalled();
   });

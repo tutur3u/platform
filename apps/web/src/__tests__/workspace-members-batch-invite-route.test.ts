@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { CURRENT_USER_APP_SESSION_AUTH } from '@/legacy-api-routes/v1/users/me/session-auth';
 
 const mocks = vi.hoisted(() => {
   const adminInsert = vi.fn();
   const getEffectiveAvailableSeats = vi.fn();
-  const resolveSessionAuthContext = vi.fn();
-  const verifyWorkspaceMembershipType = vi.fn();
+  const resolveWorkspaceRouteAccess = vi.fn();
+  const workspaceMaybeSingle = vi.fn();
+  const secretMaybeSingle = vi.fn();
   const progressMaybeSingle = vi.fn();
   const progressUpsert = vi.fn();
 
@@ -26,6 +26,22 @@ const mocks = vi.hoisted(() => {
   };
   const adminSupabase = {
     from: vi.fn((table: string) => {
+      if (table === 'workspaces') {
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({ maybeSingle: workspaceMaybeSingle })),
+          })),
+        };
+      }
+      if (table === 'workspace_secrets') {
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              eq: vi.fn(() => ({ maybeSingle: secretMaybeSingle })),
+            })),
+          })),
+        };
+      }
       if (table !== 'workspace_email_invites') {
         throw new Error(`Unexpected admin table: ${table}`);
       }
@@ -39,14 +55,15 @@ const mocks = vi.hoisted(() => {
     getEffectiveAvailableSeats,
     progressMaybeSingle,
     progressUpsert,
-    resolveSessionAuthContext,
+    resolveWorkspaceRouteAccess,
+    secretMaybeSingle,
     sessionSupabase,
-    verifyWorkspaceMembershipType,
+    workspaceMaybeSingle,
   };
 });
 
-vi.mock('@/lib/api-auth', () => ({
-  resolveSessionAuthContext: mocks.resolveSessionAuthContext,
+vi.mock('@/lib/workspace-route-access', () => ({
+  resolveWorkspaceRouteAccess: mocks.resolveWorkspaceRouteAccess,
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
@@ -58,25 +75,42 @@ vi.mock('@tuturuuu/payment-core/seat-limits', () => ({
   getEffectiveAvailableSeats: mocks.getEffectiveAvailableSeats,
 }));
 
-vi.mock('@tuturuuu/utils/workspace-helper', () => ({
-  verifyWorkspaceMembershipType: mocks.verifyWorkspaceMembershipType,
-}));
+function routeAccess({
+  membershipType = 'MEMBER',
+  permitted = true,
+  wsId = 'workspace-1',
+}: {
+  membershipType?: string;
+  permitted?: boolean;
+  wsId?: string;
+} = {}) {
+  return {
+    ok: true,
+    permissions: {
+      membershipType,
+      wsId,
+      withoutPermission: () => !permitted,
+    },
+    supabase: mocks.sessionSupabase,
+    user: { id: 'owner-1' },
+  };
+}
 
-async function postBatchInvite(body: unknown) {
+async function postBatchInvite(body: unknown, wsId = 'workspace-1') {
   const { POST } = await import(
     '@/app/api/v1/workspaces/[wsId]/members/batch-invite/route'
   );
 
   return POST(
     new Request(
-      'http://localhost/api/v1/workspaces/workspace-1/members/batch-invite',
+      `http://localhost/api/v1/workspaces/${wsId}/members/batch-invite`,
       {
         body: JSON.stringify(body),
         headers: { 'Content-Type': 'application/json' },
         method: 'POST',
       }
     ),
-    { params: Promise.resolve({ wsId: 'workspace-1' }) }
+    { params: Promise.resolve({ wsId }) }
   );
 }
 
@@ -85,15 +119,12 @@ describe('workspace members batch invite route', () => {
     vi.resetModules();
     vi.clearAllMocks();
     process.env.CRON_SECRET = '';
-    mocks.resolveSessionAuthContext.mockResolvedValue({
-      ok: true,
-      supabase: mocks.sessionSupabase,
-      user: { id: 'owner-1' },
+    mocks.resolveWorkspaceRouteAccess.mockResolvedValue(routeAccess());
+    mocks.workspaceMaybeSingle.mockResolvedValue({
+      data: { personal: false },
+      error: null,
     });
-    mocks.verifyWorkspaceMembershipType.mockResolvedValue({
-      ok: true,
-      type: 'MEMBER',
-    });
+    mocks.secretMaybeSingle.mockResolvedValue({ data: null, error: null });
     mocks.getEffectiveAvailableSeats.mockResolvedValue({
       effectiveAvailable: 10,
       status: { isSeatBased: false, seatCount: 0 },
@@ -116,11 +147,6 @@ describe('workspace members batch invite route', () => {
       successCount: 1,
       totalRequested: 1,
     });
-    expect(mocks.verifyWorkspaceMembershipType).toHaveBeenCalledWith({
-      supabase: mocks.sessionSupabase,
-      userId: 'owner-1',
-      wsId: 'workspace-1',
-    });
     expect(mocks.adminInsert).toHaveBeenCalledWith({
       email: 'member@example.com',
       invited_by: 'owner-1',
@@ -130,17 +156,39 @@ describe('workspace members batch invite route', () => {
 
   // Regression: satellite apps proxy this route to web with an app-session
   // token instead of a Supabase auth cookie.
-  it('resolves the actor through app-session-aware auth', async () => {
+  it('resolves workspace access through app-session-aware route access', async () => {
     await postBatchInvite({ emails: ['member@example.com'] });
 
-    expect(mocks.resolveSessionAuthContext).toHaveBeenCalledWith(
+    expect(mocks.resolveWorkspaceRouteAccess).toHaveBeenCalledWith(
       expect.any(Request),
-      { allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH }
+      'workspace-1'
     );
   });
 
+  it('resolves the personal alias to the concrete workspace id', async () => {
+    mocks.resolveWorkspaceRouteAccess.mockResolvedValue(
+      routeAccess({ wsId: 'personal-ws-id' })
+    );
+
+    const response = await postBatchInvite(
+      { emails: ['member@example.com'] },
+      'personal'
+    );
+
+    expect(mocks.resolveWorkspaceRouteAccess).toHaveBeenCalledWith(
+      expect.any(Request),
+      'personal'
+    );
+    expect(response.status).toBe(200);
+    expect(mocks.adminInsert).toHaveBeenCalledWith({
+      email: 'member@example.com',
+      invited_by: 'owner-1',
+      ws_id: 'personal-ws-id',
+    });
+  });
+
   it('returns the auth failure response for unauthenticated requests', async () => {
-    mocks.resolveSessionAuthContext.mockResolvedValue({
+    mocks.resolveWorkspaceRouteAccess.mockResolvedValue({
       ok: false,
       response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
     });
@@ -148,7 +196,67 @@ describe('workspace members batch invite route', () => {
     const response = await postBatchInvite({ emails: ['member@example.com'] });
 
     expect(response.status).toBe(401);
-    expect(mocks.verifyWorkspaceMembershipType).not.toHaveBeenCalled();
+    expect(mocks.adminInsert).not.toHaveBeenCalled();
+  });
+
+  it('rejects callers without member management permission', async () => {
+    mocks.resolveWorkspaceRouteAccess.mockResolvedValue(
+      routeAccess({ permitted: false })
+    );
+
+    const response = await postBatchInvite({ emails: ['member@example.com'] });
+
+    expect(response.status).toBe(403);
+    expect(mocks.adminInsert).not.toHaveBeenCalled();
+  });
+
+  it('rejects guest memberships', async () => {
+    mocks.resolveWorkspaceRouteAccess.mockResolvedValue(
+      routeAccess({ membershipType: 'GUEST' })
+    );
+
+    const response = await postBatchInvite({ emails: ['member@example.com'] });
+
+    expect(response.status).toBe(403);
+    expect(mocks.adminInsert).not.toHaveBeenCalled();
+  });
+
+  it('blocks batch invitations to personal workspaces', async () => {
+    mocks.workspaceMaybeSingle.mockResolvedValue({
+      data: { personal: true },
+      error: null,
+    });
+
+    const response = await postBatchInvite({ emails: ['member@example.com'] });
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      message: 'Cannot invite members to a personal workspace.',
+    });
+    expect(mocks.adminInsert).not.toHaveBeenCalled();
+  });
+
+  it('fails closed when the personal workspace lookup errors', async () => {
+    mocks.workspaceMaybeSingle.mockResolvedValue({
+      data: null,
+      error: { message: 'boom' },
+    });
+
+    const response = await postBatchInvite({ emails: ['member@example.com'] });
+
+    expect(response.status).toBe(500);
+    expect(mocks.adminInsert).not.toHaveBeenCalled();
+  });
+
+  it('honors the workspace invitation stop setting', async () => {
+    mocks.secretMaybeSingle.mockResolvedValue({
+      data: { value: 'true' },
+      error: null,
+    });
+
+    const response = await postBatchInvite({ emails: ['member@example.com'] });
+
+    expect(response.status).toBe(403);
     expect(mocks.adminInsert).not.toHaveBeenCalled();
   });
 });
