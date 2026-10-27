@@ -10267,6 +10267,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskQuickActionsUnassigned => 'Unassigned';
 
   @override
+  String get taskTimelineNothingToday => 'Nothing scheduled today';
+
+  @override
+  String taskTimelineOngoing(int day, int total, String date) {
+    return 'Day $day of $total, ends $date';
+  }
+
+  @override
+  String get taskTimelineRangeAll => 'All';
+
+  @override
+  String get taskTimelineRangeMonth => 'Month';
+
+  @override
+  String get taskTimelineRangeWeek => 'Week';
+
+  @override
+  String get taskTimelineShowLater => 'Show later tasks';
+
+  @override
   String get tasksAllCaughtUp => 'You\'re all caught up!';
 
   @override

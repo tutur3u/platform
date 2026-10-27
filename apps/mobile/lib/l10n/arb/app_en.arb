@@ -4565,6 +4565,19 @@
   "taskQuickActionsNoLabels": "No labels",
   "taskQuickActionsStatus": "Status",
   "taskQuickActionsUnassigned": "Unassigned",
+  "taskTimelineNothingToday": "Nothing scheduled today",
+  "taskTimelineOngoing": "Day {day} of {total}, ends {date}",
+  "@taskTimelineOngoing": {
+    "placeholders": {
+      "day": {"type": "int"},
+      "total": {"type": "int"},
+      "date": {"type": "String"}
+    }
+  },
+  "taskTimelineRangeAll": "All",
+  "taskTimelineRangeMonth": "Month",
+  "taskTimelineRangeWeek": "Week",
+  "taskTimelineShowLater": "Show later tasks",
   "tasksAllCaughtUp": "You're all caught up!",
   "tasksAllCaughtUpSubtitle": "No pending tasks right now",
   "tasksCompleteByEndOfDay": "Complete by end of day",

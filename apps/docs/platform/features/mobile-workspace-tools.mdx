@@ -594,8 +594,9 @@ cached data must never grant mutation permissions.
 Use the available window width, including split-screen windows, when choosing
 columns. Home uses a full-width workspace selector and independently flowing card columns;
 the Apps hub uses content-sized rows so larger text can grow.
-Drive and CMS allow their grids to use the wider workspace. Kanban and timeline
-are work surfaces: do not wrap them in the reading-column width constraint.
+Drive and CMS allow their grids to use the wider workspace. Kanban is a work
+surface: do not wrap it in the reading-column width constraint. The board
+timeline is a day-grouped agenda at the detail page width.
 Tablet Kanban fills the available height and puts dock clearance inside each
 scrolling task list. It shows multiple independently scrolling lists; compact windows keep
 the swipe-between-lists interaction. Leave room for the shell dock and task actions.
@@ -1929,6 +1930,37 @@ content/dock padding are unchanged. Actual-shell regression coverage in
 `settings_secrets_shell_checks.dart` checks English/Vietnamese, narrow layouts and
 large text, including denial visibility and dock Back. This scoped correction
 does not establish the cause of the reported Assistant Settings TestFlight issue.
+
+### Board timeline agenda
+
+The board **Timeline** view is a vertical, day-grouped agenda for phones,
+replacing the horizontal Gantt chart that needed sideways scrolling and
+dragging on a 68dp-per-day grid. It applies to every device size.
+
+- It opens on **Today**. Overdue days (open tasks whose last day has passed)
+  sit above Today, nearest first, with an Overdue label; upcoming days follow
+  below. **Today** in the toolbar scrolls back to the anchor.
+- Each task appears once: an overdue task on its last day, a task running
+  today on Today (multi-day tasks show "Day 3 of 6, ends Oct 30"), and a later
+  task on its first day with its date span. Done and closed lists are left
+  out, as before. Rows show the priority, name, span and list.
+- **Week**, **Month** (the default) and **All** limit how far ahead the agenda
+  lists work. Overdue work always shows. When the range hides later tasks,
+  **Show later tasks** switches to All.
+- Undated tasks are listed under **Unscheduled tasks** with a hint to add
+  dates; the earlier cap of eight with a "+N" count is gone.
+- Tapping a row opens the task quick actions. Rescheduling moves from dragging
+  bars to the task's date fields; the drag and resize handles are removed.
+- No count chips: the range chip, the "N tasks" chips and the per-list task
+  totals are gone. The day header names the day instead of counting tasks.
+- Rows build lazily in both directions from Today, and the agenda is rebuilt
+  only when tasks, the day or the range change.
+
+Regression coverage: `task_board_timeline_agenda_test.dart` (placement,
+ranges, ordering, a 20,000-task board, rebuild memoization) and
+`task_board_timeline_test.dart` (Today anchor and button, overdue above, range
+and Show later, tap to open, lazy building with 1,500 tasks, the empty state,
+320dp at 2x text, light/dark/blob renders).
 
 ### Task board row gestures
 
