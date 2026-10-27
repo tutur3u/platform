@@ -12,7 +12,7 @@ CREATE OR REPLACE FUNCTION public.start_board_sprint(
 RETURNS public.task_cycles
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
 DECLARE
   v_cycle public.task_cycles%ROWTYPE;

@@ -236,7 +236,7 @@ CREATE OR REPLACE FUNCTION private.create_planned_board_sprint(
 RETURNS public.task_cycles
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
 DECLARE
   v_board RECORD;
@@ -297,7 +297,7 @@ CREATE OR REPLACE FUNCTION public.set_board_sprint_length(
 RETURNS public.task_cycles
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
 DECLARE
   v_active public.task_cycles%ROWTYPE;
@@ -375,7 +375,7 @@ CREATE OR REPLACE FUNCTION public.start_board_sprint(
 RETURNS public.task_cycles
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
 DECLARE
   v_cycle public.task_cycles%ROWTYPE;

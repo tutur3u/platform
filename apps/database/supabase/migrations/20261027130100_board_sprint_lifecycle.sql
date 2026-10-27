@@ -13,7 +13,7 @@ CREATE OR REPLACE FUNCTION public.end_board_sprint(
 RETURNS public.task_sprint_reports
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
 DECLARE
   v_cycle public.task_cycles%ROWTYPE;
@@ -217,7 +217,7 @@ CREATE OR REPLACE FUNCTION public.move_tasks_to_board_sprint(
 RETURNS INTEGER
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
 DECLARE
   v_target public.task_cycles%ROWTYPE;
@@ -308,7 +308,7 @@ CREATE OR REPLACE FUNCTION private.sync_task_board_sprint_membership()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
 DECLARE
   v_cycle RECORD;
