@@ -151,6 +151,11 @@ import {
   resolveInlineTaskTargetList,
   resolveInlineTaskTargetWorkspaceId,
 } from './task-edit-dialog/utils/inline-task-target-list';
+import { getTaskMentionTranslations } from './task-edit-dialog/utils/mention-translations';
+import {
+  setTaskPanelOpen,
+  useIsTaskPanelSurfaceActive,
+} from './task-panel-surface';
 import { TaskShareDialog } from './task-share-dialog';
 import type { TaskFilters } from './types';
 import { UnsavedChangesWarningDialog } from './unsaved-changes-warning-dialog';
@@ -689,15 +694,17 @@ export function TaskEditDialog({
   const currentList = availableLists?.find(
     (list) => list.id === formState.selectedListId
   );
+  const panelSurface = useIsTaskPanelSurfaceActive();
   const openingPresentation = useMemo(
     () =>
       resolveTaskDialogOpeningPresentation({
         preferences: presentationPreferences,
         draftId,
         mode,
+        panelSurface,
         selectedListStatus: currentList?.status,
       }),
-    [currentList?.status, draftId, mode, presentationPreferences]
+    [currentList?.status, draftId, mode, panelSurface, presentationPreferences]
   );
 
   // Update browser tab title
@@ -2345,6 +2352,10 @@ export function TaskEditDialog({
 
   const showCompactDialog = presentation === 'compact' && !draftId;
   const showFocusedDialog = presentation === 'focused' && !draftId;
+  const isPanel = presentation === 'panel' && !draftId;
+  // Lets the board leave room for the side panel while it is open.
+  useEffect(() => setTaskPanelOpen(isOpen && isPanel), [isOpen, isPanel]);
+  useEffect(() => () => setTaskPanelOpen(false), []);
   const compactDescriptionPreview = useMemo(() => {
     if (isCreateMode) return null;
 
@@ -2604,11 +2615,19 @@ export function TaskEditDialog({
         handleCustomDateSelect={handleCustomDateSelect}
       />
 
-      <Dialog open={isOpen} onOpenChange={handleDialogOpenChange} modal={true}>
+      <Dialog
+        open={isOpen}
+        onOpenChange={handleDialogOpenChange}
+        modal={!isPanel}
+      >
         <DialogContent
           showCloseButton={false}
           presentation={
-            presentation === 'fullscreen' ? 'fullscreen' : 'default'
+            presentation === 'fullscreen'
+              ? 'fullscreen'
+              : isPanel
+                ? 'panel'
+                : 'default'
           }
           className={
             showCompactDialog
@@ -2626,7 +2645,9 @@ export function TaskEditDialog({
             e.stopPropagation();
           }}
           onPointerDownOutside={(e) => {
+            // The side panel stays open while the board is used; X or Esc closes it.
             if (
+              isPanel ||
               suggestionMenus.showCustomDatePicker ||
               suggestionMenus.slashState.open ||
               suggestionMenus.mentionState.open
@@ -2635,6 +2656,7 @@ export function TaskEditDialog({
           }}
           onInteractOutside={(e) => {
             if (
+              isPanel ||
               suggestionMenus.showCustomDatePicker ||
               suggestionMenus.slashState.open ||
               suggestionMenus.mentionState.open
@@ -2977,33 +2999,7 @@ export function TaskEditDialog({
                           descriptionLimit={MAX_TASK_DESCRIPTION_LENGTH}
                           isDescriptionOverLimit={isDescriptionOverLimit}
                           disabled={taskControlsDisabled}
-                          mentionTranslations={{
-                            delete_task: t('delete_task'),
-                            delete_task_confirmation: (name: string) =>
-                              t('delete_task_confirmation', { name }),
-                            cancel: t('cancel'),
-                            deleting: t('deleting'),
-                            set_custom_due_date: t('set_custom_due_date'),
-                            custom_due_date_description: t(
-                              'custom_due_date_description'
-                            ),
-                            remove_due_date: t('remove_due_date'),
-                            create_new_label: t('create_new_label'),
-                            create_new_label_description: t(
-                              'create_new_label_description'
-                            ),
-                            label_name: t('label_name'),
-                            color: t('color'),
-                            preview: t('preview'),
-                            creating: t('creating'),
-                            create_label: t('create_label'),
-                            create_new_project: t('create_new_project'),
-                            create_new_project_description: t(
-                              'create_new_project_description'
-                            ),
-                            project_name: t('project_name'),
-                            create_project: t('create_project'),
-                          }}
+                          mentionTranslations={getTaskMentionTranslations(t)}
                         />
                       </div>
                     )}

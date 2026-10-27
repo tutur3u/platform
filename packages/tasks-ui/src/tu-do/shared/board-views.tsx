@@ -24,6 +24,7 @@ import {
   useUpdateUserWorkspaceConfig,
   useUserWorkspaceConfig,
 } from '@tuturuuu/ui/hooks/use-user-workspace-config';
+import { cn } from '@tuturuuu/utils/format';
 import {
   getPersonalExternalStagingListId,
   normalizeUnprioritizedPosition,
@@ -72,6 +73,7 @@ import {
   type SpecialTaskListPin,
   serializeSpecialTaskListPins,
 } from './special-task-list-pins';
+import { useIsTaskPanelOpen, useTaskPanelSurface } from './task-panel-surface';
 import {
   DEFAULT_TASK_QUICK_CREATE_TARGET_LIST,
   normalizeTaskQuickCreateTargetList,
@@ -773,6 +775,8 @@ export function BoardViews({
     boardId: board.id,
     enabled: !localTaskState,
   });
+  useTaskPanelSurface(!localTaskState);
+  const taskPanelOpen = useIsTaskPanelOpen() && !localTaskState;
 
   useHotkey(HOTKEY_CREATE_TASK, createTaskInBoard, {
     enabled: canCreateTask,
@@ -1002,7 +1006,12 @@ export function BoardViews({
     idleBottomIsland &&
     (currentView !== 'kanban' || !kanbanBulkSelectionActive);
   return (
-    <div className="-m-2 -mb-4 flex h-[calc(100vh-0.5rem)] flex-1 flex-col md:-mx-4">
+    <div
+      className={cn(
+        '-m-2 -mb-4 flex h-[calc(100vh-0.5rem)] flex-1 flex-col transition-[padding] duration-200 md:-mx-4',
+        taskPanelOpen && 'sm:pr-[28rem]'
+      )}
+    >
       <KanbanPresentation
         boardId={board.id}
         currentView={currentView}
