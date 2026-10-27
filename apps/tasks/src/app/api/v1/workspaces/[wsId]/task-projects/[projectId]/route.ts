@@ -5,6 +5,7 @@ import {
   MAX_LONG_TEXT_LENGTH,
   MAX_NAME_LENGTH,
 } from '@tuturuuu/utils/constants';
+import { projectTicketKeySchema } from '@tuturuuu/utils/task-project-ticket-key';
 import {
   getPermissions,
   normalizeWorkspaceId,
@@ -35,6 +36,7 @@ const updateProjectSchema = z
         message: 'Project name cannot be empty or whitespace only',
       })
       .optional(),
+    ticket_key: projectTicketKeySchema.optional(),
     description: z.string().max(MAX_LONG_TEXT_LENGTH).nullable().optional(), // Plain text (TipTap handles conversion)
     priority: z
       .enum(['critical', 'high', 'normal', 'low'])
@@ -206,6 +208,7 @@ async function updateProject(
     // Build update object with only provided fields
     type UpdateData = Partial<{
       name: string;
+      ticket_key: string;
       description: string | null;
       priority: 'critical' | 'high' | 'normal' | 'low' | null;
       lead_id: string | null;
@@ -226,6 +229,8 @@ async function updateProject(
     }>;
 
     const updateData: UpdateData = {};
+    if (validatedData.ticket_key !== undefined)
+      updateData.ticket_key = validatedData.ticket_key;
     if (validatedData.name !== undefined) updateData.name = validatedData.name;
     if (validatedData.description !== undefined) {
       updateData.description = validatedData.description || null;
@@ -309,6 +314,12 @@ async function updateProject(
       `)
       .maybeSingle();
 
+    if (updateError?.code === '23505') {
+      return NextResponse.json(
+        { error: 'Project key is already used in this workspace' },
+        { status: 409 }
+      );
+    }
     if (updateError) {
       console.error('Error updating project:', updateError);
       return NextResponse.json(
@@ -328,6 +339,8 @@ async function updateProject(
     return NextResponse.json({
       id: updatedProject.id,
       name: updatedProject.name,
+      ticket_key: updatedProject.ticket_key,
+      next_ticket_number: updatedProject.next_ticket_number,
       description: updatedProject.description,
       priority: updatedProject.priority,
       lead_id: updatedProject.lead_id,

@@ -81,7 +81,10 @@ describe('buildPublicTaskBoardPayload', () => {
       projects: [
         {
           task_id: 'task-1',
+          ticket_number: 12,
+          created_at: '2026-01-01',
           task_projects: {
+            ticket_key: 'LAU',
             id: 'project-1',
             name: 'Launch',
             status: 'active',
@@ -123,6 +126,11 @@ describe('buildPublicTaskBoardPayload', () => {
           assignees: [{ id: 'user-1', display_name: 'Ava Nguyen' }],
         },
       ],
+    });
+    expect(payload.tasks[0]?.projects[0]).toMatchObject({
+      ticket_key: 'LAU',
+      ticket_number: 12,
+      created_at: '2026-01-01',
     });
     expect(payload.tasks).toHaveLength(1);
     expect(payload.tasks[0]).not.toHaveProperty('description');

@@ -136,3 +136,40 @@ Regression coverage: `apps/database/supabase/tests/task-board-sprints.sql`
 `apps/tasks/src/app/api/v1/workspaces/[wsId]/task-cycles/[cycleId]/route.test.ts`,
 `packages/utils/src/task-helper/sprints.test.ts` and
 `packages/internal-api/src/task-sprints.test.ts`.
+
+## Project ticket keys
+
+Task cards in Kanban and List, Timeline rows, My Tasks and task panel headers
+show `[KEY-N]` for the project the task joined first. Project-less tasks have no
+identifier prefix. Document cards keep their existing omission of the badge.
+Personal project overlays do not replace the source task's ticket identity.
+
+Each project receives a workspace-unique key from the first three ASCII letters
+or digits of its name, uppercased with leading digits removed. Names producing
+fewer than two usable characters use `PRJ`. Collisions append a number beginning
+with 2 (`PLA`, `PLA2`, `PLA3`). Existing projects are assigned deterministically
+by workspace, creation time and project ID. People with `manage_projects` can
+edit the Key in project configuration: 2–10 uppercase ASCII letters/digits,
+starting with a letter. Editing a key relabels its tasks without changing numbers.
+
+Each project allocates task numbers atomically from its own increasing counter.
+Existing links are numbered by link creation time, task creation time, then task
+ID. Missing historical join timestamps use task creation time. Equal project
+join timestamps use project ID to choose the displayed badge. Saving an unchanged
+membership keeps its number and join time. Removing and later rejoining a project
+allocates a fresh number; removed numbers are never reused.
+
+Search accepts any linked project's current key and number, including a secondary
+project. Legacy board prefix/display-number lookups remain supported for every
+task, including project-less tasks. Historical project keys are not aliases after
+a key edit. Workspace and board visibility still apply before pagination/counts.
+
+Regression coverage: `apps/database/supabase/tests/task-project-ticket-keys.sql`,
+`packages/utils/src/task-helper/shared.test.ts`,
+`packages/utils/src/task-project-ticket-key.test.ts`,
+`packages/tasks-ui/src/tu-do/shared/__tests__/board-task-search.test.ts`,
+`packages/tasks-ui/src/tu-do/projects/projectId/components/project-ticket-key-field.test.tsx`
+and `apps/tasks/src/app/api/v1/workspaces/[wsId]/task-projects/ticket-keys.test.ts`.
+The Task board database contract workflow runs the SQL fixture after replaying
+the complete schema. Database execution and exact-commit app builds belong to
+CI or the authorized integration environment; no local build is required.

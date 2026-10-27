@@ -54,7 +54,12 @@ export interface Task {
     avatar_url?: string;
     handle?: string;
   }[];
+  // Source identity survives personal project overlays.
+  ticket_projects?: Task['projects'];
   projects?: {
+    ticket_key?: string | null;
+    ticket_number?: number | null;
+    created_at?: string | null;
     id: string;
     name: string;
     status: string;

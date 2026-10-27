@@ -167,7 +167,7 @@ describe('getTaskCardHydratingOpenOptions', () => {
 });
 
 describe('getTaskCardTicketIdentifier', () => {
-  it('waits for local board metadata instead of flashing the generic prefix', () => {
+  it('omits the identifier for project-less tasks', () => {
     expect(
       getTaskCardTicketIdentifier({
         boardConfig: undefined,
@@ -177,7 +177,7 @@ describe('getTaskCardTicketIdentifier', () => {
     ).toBeNull();
   });
 
-  it('uses cached local and embedded external prefixes immediately', () => {
+  it('uses project identity for both local and external cards', () => {
     expect(
       getTaskCardTicketIdentifier({
         boardConfig: {
@@ -189,15 +189,37 @@ describe('getTaskCardTicketIdentifier', () => {
           allow_zero_estimates: false,
         },
         isExternalTask: false,
-        task,
+        task: {
+          ...task,
+          projects: [
+            {
+              id: 'p',
+              name: 'Platform',
+              status: 'active',
+              ticket_key: 'PLA',
+              ticket_number: 12,
+            },
+          ],
+        },
       })
-    ).toBe('VHP-7');
+    ).toBe('PLA-12');
     expect(
       getTaskCardTicketIdentifier({
         boardConfig: undefined,
         isExternalTask: true,
-        task: { ...task, ticket_prefix: 'EXT' } as Task,
+        task: {
+          ...task,
+          projects: [
+            {
+              id: 'p',
+              name: 'Platform',
+              status: 'active',
+              ticket_key: 'PLA',
+              ticket_number: 12,
+            },
+          ],
+        },
       })
-    ).toBe('EXT-7');
+    ).toBe('PLA-12');
   });
 });

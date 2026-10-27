@@ -1,7 +1,9 @@
 import { CLI_APP_TARGET_APP } from '@tuturuuu/auth/cli-session';
 import { partitionTaskProjectLinks } from '@tuturuuu/internal-api/tasks';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { projectTicketKeySchema } from '@tuturuuu/utils/task-project-ticket-key';
 import {
+  getPermissions,
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
@@ -192,14 +194,20 @@ export const POST = withSessionAuth<RouteParams>(
 
       const sbAdmin = await createAdminClient();
 
+      const permissions = await getPermissions({ user, wsId });
+      if (!permissions?.containsPermission('manage_projects')) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+
       // Parse and validate request body
       const body = await request.json();
-      const { name, description } = z
+      const { name, description, ticket_key } = z
         .object({
           name: z
             .string()
             .min(1, 'Project name is required')
             .max(255, 'Project name too long'),
+          ticket_key: projectTicketKeySchema.optional(),
           description: z.string().max(1000, 'Description too long').optional(),
         })
         .parse(body);
@@ -209,6 +217,7 @@ export const POST = withSessionAuth<RouteParams>(
         .from('task_projects')
         .insert({
           name,
+          ticket_key,
           description: description || null,
           ws_id: wsId,
           creator_id: user.id,
@@ -216,6 +225,12 @@ export const POST = withSessionAuth<RouteParams>(
         .select('*')
         .single();
 
+      if (projectError?.code === '23505') {
+        return NextResponse.json(
+          { error: 'Project key is already used in this workspace' },
+          { status: 409 }
+        );
+      }
       if (projectError || !project) {
         console.error('Error creating project:', projectError);
         return NextResponse.json(
@@ -228,6 +243,8 @@ export const POST = withSessionAuth<RouteParams>(
         {
           id: project.id,
           name: project.name,
+          ticket_key: project.ticket_key,
+          next_ticket_number: project.next_ticket_number,
           description: project.description,
           created_at: project.created_at,
           creator_id: project.creator_id,
