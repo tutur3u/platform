@@ -4,12 +4,19 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import {
+  decideTopicAnnouncementAccessMode,
   getPrivateSchemaClient,
   getPublicSchemaClient,
+  resolveTopicAnnouncementTeacherScope,
+  type TopicAnnouncementAccessOptions,
+  type TopicAnnouncementAccessScope,
   type TopicAnnouncementsAccessContext,
   type TopicAnnouncementsSupabaseClient,
 } from '@tuturuuu/users-core/routes/topic-announcements';
-import { TOPIC_ANNOUNCEMENTS_SECRET } from '@tuturuuu/utils/topic-announcements';
+import {
+  isTopicTeacherAssignmentsEnabled,
+  TOPIC_ANNOUNCEMENTS_SECRET,
+} from '@tuturuuu/utils/topic-announcements';
 import {
   getPermissions,
   getSecret,
@@ -75,16 +82,13 @@ export async function insertTopicAnnouncementAttachmentDrafts({
   if (error) throw error;
 }
 
+const insufficientPermissions = () =>
+  NextResponse.json({ message: 'Insufficient permissions' }, { status: 403 });
+
 export async function resolveTopicAnnouncementsAccess(
   request: Request,
   wsId: string,
-  {
-    requireManage = false,
-    requireSend = false,
-  }: {
-    requireManage?: boolean;
-    requireSend?: boolean;
-  } = {}
+  options: TopicAnnouncementAccessOptions = {}
 ): Promise<
   | { context: TopicAnnouncementsAccessContext; response?: never }
   | { context?: never; response: NextResponse }
@@ -104,6 +108,9 @@ export async function resolveTopicAnnouncementsAccess(
   const secrets = await getSecrets({ forceAdmin: true, wsId: normalizedWsId });
   const enabled =
     getSecret(TOPIC_ANNOUNCEMENTS_SECRET, secrets ?? [])?.value === 'true';
+  const teacherAssignmentsEnabled = isTopicTeacherAssignmentsEnabled(
+    secrets ?? []
+  );
   if (!enabled) {
     return {
       response: NextResponse.json({ message: 'Not found' }, { status: 404 }),
@@ -125,27 +132,15 @@ export async function resolveTopicAnnouncementsAccess(
     };
   }
 
-  if (requireManage && permissions.withoutPermission('manage_users')) {
-    return {
-      response: NextResponse.json(
-        { message: 'Insufficient permissions' },
-        { status: 403 }
+  const mode = decideTopicAnnouncementAccessMode({
+    ...options,
+    hasPermission: (permission) =>
+      !permissions.withoutPermission(
+        permission as Parameters<typeof permissions.withoutPermission>[0]
       ),
-    };
-  }
-
-  if (
-    requireSend &&
-    (permissions.withoutPermission('manage_users') ||
-      permissions.withoutPermission('send_user_group_post_emails'))
-  ) {
-    return {
-      response: NextResponse.json(
-        { message: 'Insufficient permissions' },
-        { status: 403 }
-      ),
-    };
-  }
+    teacherAssignmentsEnabled,
+  });
+  if (mode === 'denied') return { response: insufficientPermissions() };
 
   const { user } = await resolveAuthenticatedSessionUser(supabase);
   if (!user) {
@@ -154,12 +149,32 @@ export async function resolveTopicAnnouncementsAccess(
     };
   }
 
+  let scope: TopicAnnouncementAccessScope = { kind: 'manager' };
+  if (mode === 'teacher') {
+    const { data: link, error: linkError } = await publicAdmin
+      .from('workspace_user_linked_users')
+      .select('virtual_user_id')
+      .eq('platform_user_id', user.id)
+      .eq('ws_id', normalizedWsId)
+      .maybeSingle();
+    if (linkError) throw linkError;
+    if (!link?.virtual_user_id) return { response: insufficientPermissions() };
+
+    scope = await resolveTopicAnnouncementTeacherScope({
+      publicAdmin,
+      workspaceUserId: link.virtual_user_id,
+      wsId: normalizedWsId,
+    });
+  }
+
   return {
     context: {
       actorUserId: user.id,
       normalizedWsId,
       sbAdmin,
+      scope,
       supabase,
+      teacherAssignmentsEnabled,
     },
   };
 }

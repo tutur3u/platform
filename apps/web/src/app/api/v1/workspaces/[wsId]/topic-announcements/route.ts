@@ -1,7 +1,13 @@
-import { createTopicAnnouncementListHandler } from '@tuturuuu/users-core/routes/topic-announcements';
+import {
+  createTopicAnnouncementListHandler,
+  gateTopicAnnouncementTeacherFields,
+  normalizeTopicAnnouncementTopic,
+} from '@tuturuuu/users-core/routes/topic-announcements';
 import { NextResponse } from 'next/server';
 import {
   attachTopicAnnouncementGroups,
+  computeTopicAnnouncementSendDueAt,
+  getWorkspaceSchedulingTimezone,
   insertTopicAnnouncementAttachmentDrafts,
   mapTopicAnnouncementRow,
   resolveTopicAnnouncementsAccess,
@@ -12,6 +18,7 @@ import {
   topicAnnouncementAttachmentValidationResponse,
   validateTopicAnnouncementAttachmentDraftObjects,
   validateTopicAnnouncementGroupId,
+  validateTopicAnnouncementWorkspaceUserId,
 } from '@/legacy-api-routes/v1/workspaces/[wsId]/topic-announcements/shared';
 
 interface Params {
@@ -50,6 +57,7 @@ export const GET = createTopicAnnouncementListHandler(
 
 export async function POST(request: Request, { params }: Params) {
   const { wsId } = await params;
+  // Supervisor only: a teacher creating a topic could pick its recipients.
   const access = await resolveTopicAnnouncementsAccess(request, wsId, {
     requireManage: true,
   });
@@ -70,8 +78,17 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
-  const { actorUserId, normalizedWsId, sbAdmin } = access.context;
-  const payload = parsed.data;
+  const { actorUserId, normalizedWsId, sbAdmin, teacherAssignmentsEnabled } =
+    access.context;
+  const enabled = teacherAssignmentsEnabled === true;
+  const gated = gateTopicAnnouncementTeacherFields(parsed.data, {
+    enabled,
+    topicRequired: true,
+  });
+  if (gated.error) return NextResponse.json(gated.error, { status: 400 });
+  const payload = gated.payload;
+  const teacherWorkspaceUserId = payload.teacherWorkspaceUserId ?? null;
+
   const { data: contacts, error: contactsError } = await sbAdmin
     .from('topic_announcement_contacts')
     .select('id')
@@ -93,6 +110,13 @@ export async function POST(request: Request, { params }: Params) {
   });
   if (invalidGroup) return invalidGroup;
 
+  const invalidTeacher = await validateTopicAnnouncementWorkspaceUserId({
+    normalizedWsId,
+    sbAdmin,
+    workspaceUserId: teacherWorkspaceUserId,
+  });
+  if (invalidTeacher) return invalidTeacher;
+
   const attachmentValidation =
     await validateTopicAnnouncementAttachmentDraftObjects({
       attachmentDrafts: payload.attachmentDrafts,
@@ -102,24 +126,35 @@ export async function POST(request: Request, { params }: Params) {
     return topicAnnouncementAttachmentValidationResponse(attachmentValidation);
   }
 
+  const sendDueAt = enabled
+    ? computeTopicAnnouncementSendDueAt({
+        sessionDate: payload.sessionDate,
+        startTime: payload.startTime,
+        timeZone: await getWorkspaceSchedulingTimezone(sbAdmin, normalizedWsId),
+      })
+    : null;
   const { data: announcement, error } = await sbAdmin
     .from('topic_announcements')
     .insert({
       body: payload.body,
       class_label: payload.classLabel,
+      course_book: payload.courseBook ?? null,
       created_by: actorUserId,
       day_label: payload.dayLabel,
       end_time: payload.endTime ?? null,
       group_id: payload.groupId ?? null,
       place: payload.place,
       room: payload.room,
+      send_due_at: sendDueAt,
       session_date: payload.sessionDate ?? null,
       source_type: payload.sourceType,
       start_time: payload.startTime ?? null,
       status: payload.status ?? 'draft',
+      teacher_workspace_user_id: teacherWorkspaceUserId,
       title: payload.title,
-      topic: payload.topic,
+      topic: normalizeTopicAnnouncementTopic(payload.topic),
       updated_by: actorUserId,
+      video_url: payload.videoUrl ?? null,
       ws_id: normalizedWsId,
     })
     .select('*')
