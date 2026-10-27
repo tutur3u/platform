@@ -6,6 +6,7 @@ on:
       - 'apps/database/supabase/migrations/**'
       - 'apps/database/supabase/seed.sql'
       - 'apps/database/supabase/tests/task-board-*.sql'
+      - 'apps/database/supabase/tests/task-project-ticket-keys.sql'
       - 'apps/database/scripts/verify-task-board-database-contract.mjs'
       - 'apps/database/scripts/run-supabase*.js'
       - '.github/actions/cache-supabase-images/**'
