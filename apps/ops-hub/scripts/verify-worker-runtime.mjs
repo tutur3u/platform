@@ -352,13 +352,26 @@ test('v2 persists only approved decision fields and bounds/downsamples observati
   assert.equal(
     (
       await ingest(
-        envelope(14, { decisions: [normal, security], observability })
+        envelope(14, {
+          decisions: [
+            normal,
+            security,
+            {
+              id: 'z-redacted',
+              at,
+              title: 'Review policy',
+              area: 'security',
+              risk: 'high',
+            },
+          ],
+          observability,
+        })
       )
     ).status,
     200
   );
   const decisions = await (await read('/decisions')).json();
-  assert.equal(decisions.decisions.length, 2);
+  assert.equal(decisions.decisions.length, 3);
   assert.deepEqual(Object.keys(decisions.decisions[1]).sort(), [
     'area',
     'at',
@@ -376,7 +389,7 @@ test('v2 persists only approved decision fields and bounds/downsamples observati
     (await (await read(`/decisions?after=${at}:normal`)).json()).decisions.map(
       (row) => row.id
     ),
-    ['privacy']
+    ['privacy', 'z-redacted']
   );
   const stored = await sql('SELECT data,category FROM decisions WHERE id=?', [
     'privacy',

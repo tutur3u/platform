@@ -21,32 +21,38 @@ const model = z
   .refine((value) => !UNSAFE.test(value));
 const count = z.number().int().min(0).max(1_000_000);
 export const categorySchema = z.enum(['auto', 'delegated', 'user']);
+const decisionFields = {
+  id: stableId,
+  at: timestamp,
+  title: text(120),
+  risk: z.enum(['low', 'med', 'high']),
+};
+const author = z
+  .union([
+    z.literal('mastermind'),
+    z.literal('user'),
+    z.string().regex(/^role:[a-zA-Z0-9 _-]{1,32}$/),
+  ])
+  .refine((value) => !UNSAFE.test(value));
 export const decisionSchema = z
-  .strictObject({
-    id: stableId,
-    at: timestamp,
-    title: text(120),
-    by: z
-      .union([
-        z.literal('mastermind'),
-        z.literal('user'),
-        z.string().regex(/^role:[a-zA-Z0-9 _-]{1,32}$/),
-      ])
-      .refine((value) => !UNSAFE.test(value)),
-    category: categorySchema,
-    area: z.enum([
-      'security',
-      'release',
-      'product',
-      'infra',
-      'org',
-      'quota',
-      'cost',
-    ]),
-    why: text(280),
-    risk: z.enum(['low', 'med', 'high']),
-    reversible: z.boolean(),
-  })
+  .discriminatedUnion('area', [
+    z.strictObject({
+      ...decisionFields,
+      area: z.literal('security'),
+      by: author.optional(),
+      category: categorySchema.optional(),
+      why: text(280).optional(),
+      reversible: z.boolean().optional(),
+    }),
+    z.strictObject({
+      ...decisionFields,
+      area: z.enum(['release', 'product', 'infra', 'org', 'quota', 'cost']),
+      by: author,
+      category: categorySchema,
+      why: text(280),
+      reversible: z.boolean(),
+    }),
+  ])
   .transform((row) =>
     row.area === 'security'
       ? {

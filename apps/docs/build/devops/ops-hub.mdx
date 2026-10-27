@@ -142,7 +142,9 @@ letters/digits/spaces/underscores/hyphens), category (auto/delegated/user), area
 (low/med/high), and reversible (boolean). IDs are stable and immutable: conflicting
 content for an existing ID rejects the ingest. Repeating the same ID/content is
 idempotent. Security-area rows store and return **only id, at, title, area, risk**;
-why, by, category and reversible are discarded before storage. Category-filtered
+why, by, category and reversible are discarded before storage. Those four fields
+are optional for security input, so a publisher may send the five-field projection
+directly. If present, discarded fields still undergo type and length validation. Category-filtered
 reads therefore exclude security rows; unfiltered reads include them.
 
 GET /decisions accepts optional after and category. The response contains decisions

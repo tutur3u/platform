@@ -144,3 +144,34 @@ it('allows only the exact v2 read parameters and bounded export cursors', () => 
   ).toBe(true);
   expect(routeAllowed('GET', '/hub/export?section=flags')).toBe(false);
 });
+
+it('accepts the five-field security projection and validates any optional discarded fields', () => {
+  const security = {
+    id: 'redacted',
+    at,
+    title: 'Review policy',
+    area: 'security',
+    risk: 'high',
+  };
+  expect(
+    ingestSchema.parse({ ...envelope, decisions: [security] }).decisions
+  ).toEqual([security]);
+  expect(
+    ingestSchema.safeParse({
+      ...envelope,
+      decisions: [{ ...security, why: 'x'.repeat(281) }],
+    }).success
+  ).toBe(false);
+  expect(
+    ingestSchema.safeParse({
+      ...envelope,
+      decisions: [{ ...security, raw: 'forbidden' }],
+    }).success
+  ).toBe(false);
+  expect(
+    ingestSchema.safeParse({
+      ...envelope,
+      decisions: [{ ...security, area: 'release' }],
+    }).success
+  ).toBe(false);
+});
