@@ -161,7 +161,7 @@ describe('edit and delete locks', () => {
     expect(row(id).room).toBeNull();
   });
 
-  it('leaves an edit untouched when the session is queued mid-save', async () => {
+  it('reports a GVNN-only change when sending starts before the field write', async () => {
     const id = await create();
     enterDeliveryBeforeWrite(id, 'processing');
     const response = await save([
@@ -169,13 +169,26 @@ describe('edit and delete locks', () => {
     ]);
     expect(response.status).toBe(409);
     await expect(response.json()).resolves.toMatchObject({
-      rowErrors: [{ code: 'locked', sessionId: id }],
+      rowErrors: [
+        { code: 'partially_applied', fields: ['gvnn'], sessionId: id },
+      ],
       saved: { updatedIds: [] },
     });
+    // Fields untouched; the swapped GVNN is left as is, never restored.
     expect(row(id)).toMatchObject({ room: null, status: 'processing' });
     expect(mocks.admin.tables.topic_announcement_recipients).toMatchObject([
-      { announcement_id: id, contact_id: GVNN },
+      { announcement_id: id, contact_id: GVNN_2 },
     ]);
+  });
+
+  it('changes nothing when only fields change and sending starts first', async () => {
+    const id = await create();
+    enterDeliveryBeforeWrite(id, 'processing');
+    const response = await save([session({ id, room: 'P9' })]);
+    await expect(response.json()).resolves.toMatchObject({
+      rowErrors: [{ code: 'locked', sessionId: id }],
+    });
+    expect(row(id).room).toBeNull();
   });
 
   it('does not cancel a session queued mid-save', async () => {

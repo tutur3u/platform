@@ -24,6 +24,7 @@ interface Props {
   month: string;
   onAdd: (date: string) => void;
   onDuplicate: (row: DraftSession, days: number) => void;
+  onMoved: (key: string) => void;
   onRemove: (key: string) => void;
   onUpdate: (key: string, patch: Partial<DraftSession>) => void;
   originalByKey: ReadonlyMap<string, DraftSession>;
@@ -133,6 +134,7 @@ export function ScheduleSessionTable(props: Props) {
                   key={row.key}
                   month={month}
                   onDuplicate={props.onDuplicate}
+                  onMoved={props.onMoved}
                   onRemove={props.onRemove}
                   onUpdate={props.onUpdate}
                   original={props.originalByKey.get(row.key)}

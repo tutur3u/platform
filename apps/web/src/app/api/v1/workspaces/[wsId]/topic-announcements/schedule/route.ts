@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getWorkspaceSchedulingTimezone } from '@/legacy-api-routes/v1/workspaces/[wsId]/topic-announcements/shared';
 import { resolveScheduleAccess } from '@/lib/topic-schedule/access';
 import { loadScheduleMonth } from '@/lib/topic-schedule/schedule-data';
+import { notifyScheduleTeachers } from '@/lib/topic-schedule/schedule-notify';
 import { saveScheduleMonth } from '@/lib/topic-schedule/schedule-save';
 import {
   ScheduleMonthQuerySchema,
@@ -66,6 +67,17 @@ export async function PUT(request: Request, { params }: Params) {
     },
     parsed.data
   );
+  const saved = result.ok ? result : result.conflict ? result.saved : null;
+  const notification = saved
+    ? await notifyScheduleTeachers({
+        actorUserId,
+        announcementIds: saved.assignedIds,
+        enabled: parsed.data.notifyTeachers === true,
+        normalizedWsId,
+        sbAdmin,
+      })
+    : null;
+
   if (!result.ok) {
     // 409: some sessions entered delivery mid-save and were left unchanged;
     // the rest of the save went through (`saved`). 400: nothing was written.
@@ -73,6 +85,7 @@ export async function PUT(request: Request, { params }: Params) {
       result.conflict
         ? {
             message: 'Some sessions changed while saving',
+            notification,
             rowErrors: result.rowErrors,
             saved: result.saved,
           }
@@ -82,5 +95,5 @@ export async function PUT(request: Request, { params }: Params) {
   }
 
   const { ok: _ok, ...data } = result;
-  return NextResponse.json({ data });
+  return NextResponse.json({ data: { ...data, notification } });
 }

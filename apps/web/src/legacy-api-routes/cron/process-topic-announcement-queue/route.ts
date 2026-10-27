@@ -8,6 +8,10 @@ import {
   type TopicAnnouncementsSupabaseClient,
 } from '@/legacy-api-routes/v1/workspaces/[wsId]/topic-announcements/shared';
 import { withCronLogDrain } from '@/lib/infrastructure/log-drain';
+import {
+  failScheduleSendWithoutRecipients,
+  failStaleScheduleClaims,
+} from '@/lib/topic-schedule/send-claim';
 
 const LOG_PREFIX = '[TopicAnnouncementQueueCron]';
 const BATCH_LIMIT = 25;
@@ -199,6 +203,13 @@ async function handler(request: NextRequest) {
       });
 
       if ('error' in result) {
+        if (result.error === 'NO_RECIPIENTS') {
+          await failScheduleSendWithoutRecipients({
+            announcementId: claimedRow.id,
+            sbAdmin,
+            wsId: claimedRow.ws_id,
+          });
+        }
         results.push({
           announcementId: row.id,
           error: result.error,
@@ -232,6 +243,17 @@ async function handler(request: NextRequest) {
         wsId: row.ws_id,
       });
     }
+  }
+
+  try {
+    await failStaleScheduleClaims({
+      cutoff: new Date(nowDate.getTime() - PROCESSING_STALE_MS).toISOString(),
+      sbAdmin,
+    });
+  } catch (cause) {
+    console.error(`${LOG_PREFIX} Failed to fail stale schedule claims`, {
+      error: cause instanceof Error ? cause.message : String(cause),
+    });
   }
 
   return NextResponse.json({

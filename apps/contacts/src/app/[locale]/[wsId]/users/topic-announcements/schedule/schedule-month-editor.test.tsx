@@ -13,7 +13,17 @@ const mocks = vi.hoisted(() => ({
   cloneTopicScheduleMonth: vi.fn(),
   getTopicScheduleMonth: vi.fn(),
   push: vi.fn(),
+  RejectedError: class extends Error {
+    constructor(
+      public readonly rowErrors: unknown[],
+      public readonly conflict: boolean,
+      public readonly notification: unknown = null
+    ) {
+      super('rejected');
+    }
+  },
   saveTopicScheduleMonth: vi.fn(),
+  toast: { error: vi.fn(), success: vi.fn(), warning: vi.fn() },
 }));
 
 vi.mock('next-intl', () => ({
@@ -24,14 +34,12 @@ vi.mock('next-intl', () => ({
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: mocks.push }),
 }));
-vi.mock('@tuturuuu/ui/sonner', () => ({
-  toast: { error: vi.fn(), success: vi.fn() },
-}));
+vi.mock('@tuturuuu/ui/sonner', () => ({ toast: mocks.toast }));
 vi.mock('@tuturuuu/internal-api/topic-announcements', () => ({
   cloneTopicScheduleMonth: mocks.cloneTopicScheduleMonth,
   getTopicScheduleMonth: mocks.getTopicScheduleMonth,
   saveTopicScheduleMonth: mocks.saveTopicScheduleMonth,
-  TopicScheduleSaveRejectedError: class extends Error {},
+  TopicScheduleSaveRejectedError: mocks.RejectedError,
 }));
 
 function session(overrides: Record<string, unknown>) {
@@ -72,6 +80,11 @@ function renderEditor(onMonthChange = vi.fn()) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // An earlier page exists, so the Back guard is armed.
+  Object.defineProperty(window, 'navigation', {
+    configurable: true,
+    value: { currentEntry: { index: 1 } },
+  });
   mocks.getTopicScheduleMonth.mockResolvedValue({
     data: {
       classes: [
@@ -153,10 +166,70 @@ describe('ScheduleMonthEditor', () => {
     expect(mocks.saveTopicScheduleMonth).toHaveBeenCalledWith('ws-1', {
       deleteIds: [],
       month: '2026-11',
+      // A room edit assigns no teacher, so nobody is notified.
+      notifyTeachers: false,
       sessions: [
         expect.objectContaining({ durationMinutes: 30, id: 's1', room: '202' }),
       ],
     });
+  });
+
+  async function saveRoomEdit() {
+    renderEditor();
+    await screen.findByText('schedule_session_count:3');
+    fireEvent.change(screen.getAllByLabelText('schedule_column_room')[0]!, {
+      target: { value: '202' },
+    });
+    fireEvent.click(
+      screen.getByRole('button', { name: 'schedule_save_changes:1' })
+    );
+  }
+
+  it('reports a partial save and the notifications that still went out', async () => {
+    mocks.saveTopicScheduleMonth.mockRejectedValueOnce(
+      new mocks.RejectedError(
+        [
+          {
+            code: 'partially_applied',
+            fields: ['gvnn'],
+            index: 0,
+            sessionId: 's1',
+          },
+        ],
+        true,
+        {
+          failed: false,
+          result: {
+            failedTeachers: 0,
+            notifiedTeachers: 1,
+            skippedUnlinkedTeachers: 0,
+            unassignedAnnouncements: 0,
+          },
+        }
+      )
+    );
+    await saveRoomEdit();
+    await waitFor(() =>
+      expect(mocks.toast.warning).toHaveBeenCalledWith('schedule_save_partial')
+    );
+    expect(mocks.toast.warning).not.toHaveBeenCalledWith(
+      'schedule_save_conflict'
+    );
+    expect(mocks.toast.success).toHaveBeenCalledWith('schedule_notify_sent:1');
+  });
+
+  it('reports a plain conflict without a notification', async () => {
+    mocks.saveTopicScheduleMonth.mockRejectedValueOnce(
+      new mocks.RejectedError(
+        [{ code: 'locked', index: 0, sessionId: 's1' }],
+        true
+      )
+    );
+    await saveRoomEdit();
+    await waitFor(() =>
+      expect(mocks.toast.warning).toHaveBeenCalledWith('schedule_save_conflict')
+    );
+    expect(mocks.toast.success).not.toHaveBeenCalled();
   });
 
   it("shows a new row's problems only after a save attempt", async () => {
@@ -246,7 +319,7 @@ describe('ScheduleMonthEditor', () => {
     fireEvent.click(
       await screen.findByRole('button', { name: 'schedule_discard_confirm' })
     );
-    expect(onMonthChange).toHaveBeenCalledWith('2026-12');
+    await waitFor(() => expect(onMonthChange).toHaveBeenCalledWith('2026-12'));
   });
 
   it('previews the clone before committing it', async () => {
@@ -294,6 +367,8 @@ describe('ScheduleMonthEditor', () => {
       expect(mocks.cloneTopicScheduleMonth).toHaveBeenCalledWith('ws-1', {
         dryRun: false,
         includeRemoved: false,
+        // The cloned session has a GVCN, so its teacher is notified.
+        notifyTeachers: true,
         sourceMonth: '2026-10',
         targetMonth: '2026-11',
       })

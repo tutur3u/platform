@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getWorkspaceSchedulingTimezone } from '@/legacy-api-routes/v1/workspaces/[wsId]/topic-announcements/shared';
 import { resolveScheduleAccess } from '@/lib/topic-schedule/access';
 import { cloneScheduleMonth } from '@/lib/topic-schedule/schedule-clone';
+import { notifyScheduleTeachers } from '@/lib/topic-schedule/schedule-notify';
 import { ScheduleCloneSchema } from '@/lib/topic-schedule/schemas';
 
 interface Params {
@@ -42,5 +43,12 @@ export async function POST(request: Request, { params }: Params) {
     },
     parsed.data
   );
-  return NextResponse.json({ data });
+  const notification = await notifyScheduleTeachers({
+    actorUserId,
+    announcementIds: data.createdIds,
+    enabled: !parsed.data.dryRun && parsed.data.notifyTeachers === true,
+    normalizedWsId,
+    sbAdmin,
+  });
+  return NextResponse.json({ data: { ...data, notification } });
 }

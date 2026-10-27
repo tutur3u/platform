@@ -34,7 +34,12 @@ export function ScheduleMoveDateDialog({
 
   return (
     <Dialog onOpenChange={(open) => (open ? null : onClose())} open>
-      <DialogContent className="sm:max-w-sm">
+      <DialogContent
+        className="sm:max-w-sm"
+        // The editor focuses the moved row; returning focus to the menu
+        // trigger would jump back to where the row used to be.
+        onCloseAutoFocus={(event) => event.preventDefault()}
+      >
         <form
           className="space-y-4"
           onSubmit={(event) => {

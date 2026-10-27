@@ -9152,7 +9152,14 @@
     "schedule_move_date": "Move to date...",
     "schedule_move_date_confirm": "Move",
     "schedule_move_date_title": "Move session to another date",
-    "schedule_save_conflict": "Some sessions were queued for sending while you saved and were left unchanged. The month has been reloaded."
+    "schedule_save_conflict": "Some sessions were queued for sending while you saved and were left unchanged. The month has been reloaded.",
+    "schedule_notify_teachers": "{count, plural, one {Notify teachers (# session)} other {Notify teachers (# sessions)}}",
+    "schedule_notify_sent": "{count, plural, one {Notified # teacher} other {Notified # teachers}}",
+    "schedule_notify_skipped": "{count, plural, one {# teacher has no linked account and was not notified} other {# teachers have no linked account and were not notified}}",
+    "schedule_notify_failed": "Saved, but teachers could not be notified.",
+    "schedule_notify_partial_failed": "{count, plural, one {Could not notify # teacher} other {Could not notify # teachers}}",
+    "schedule_save_partial": "A session started sending while you saved: only its GVNN changed, and the email may have used the previous GVNN. The month has been reloaded.",
+    "schedule_server_partially_applied": "Sending started while saving: only the GVNN changed."
   },
   "ws-topic-announcements-gate": {
     "disabled_description": "Turn topic announcements on to keep a verified contact list and send reusable announcements from this workspace.",
@@ -9170,7 +9177,9 @@
     "no_access_description": "You need permission to manage users to open topic announcements. Ask a workspace admin to grant it.",
     "no_access_title": "You don't have access to topic announcements",
     "unavailable_description": "Your workspace profile could not be resolved. Refresh to try again, or ask an admin to re-invite you.",
-    "unavailable_title": "We couldn't load this workspace"
+    "unavailable_title": "We couldn't load this workspace",
+    "personal_title": "Topic announcements need a team workspace",
+    "personal_description": "Personal workspaces can't send topic announcements. Open a team workspace to schedule GVNN sessions and send topics."
   },
   "ws-transaction-categories": {
     "category_deleted": "Category deleted successfully",
