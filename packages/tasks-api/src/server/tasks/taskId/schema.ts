@@ -91,10 +91,12 @@ type TaskLabelContext = Pick<
   'id' | 'name' | 'color' | 'created_at'
 > | null;
 
-type TaskProjectContext = Pick<
-  Database['public']['Tables']['task_projects']['Row'],
-  'id' | 'name' | 'status'
-> | null;
+type TaskProjectContext =
+  | (Pick<
+      Database['public']['Tables']['task_projects']['Row'],
+      'id' | 'name' | 'status' | 'ticket_key'
+    > & { ticket_number: number; created_at: string })
+  | null;
 
 export type TaskRecord = TaskBaseRow & {
   task_lists: TaskListContext | null;

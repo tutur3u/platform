@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { updateWorkspaceTaskProject } from '@tuturuuu/internal-api/tasks';
 import type { TaskProjectWithRelations } from '@tuturuuu/types';
 import { toast } from '@tuturuuu/ui/sonner';
+import { PROJECT_TICKET_KEY_PATTERN } from '@tuturuuu/utils/task-project-ticket-key';
 import dayjs from 'dayjs';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
@@ -38,6 +39,7 @@ function formatInputToISO(dateString: string): string | null {
 }
 
 interface UpdateProjectData {
+  ticket_key: string;
   name: string;
   description: string | null;
   priority: string | null;
@@ -59,6 +61,8 @@ export function useProjectForm({ wsId, project }: UseProjectFormOptions) {
   const [showLeadSelector, setShowLeadSelector] = useState(false);
   const [showTimelineEditor, setShowTimelineEditor] = useState(false);
   const [showConfiguration, setShowConfiguration] = useState(false);
+
+  const [editedTicketKey, setEditedTicketKey] = useState(project.ticket_key);
 
   // Form values
   const [editedName, setEditedName] = useState(project.name);
@@ -82,6 +86,7 @@ export function useProjectForm({ wsId, project }: UseProjectFormOptions) {
 
   // Helper function to reset form fields from project data
   const resetFormFromProject = useCallback(() => {
+    setEditedTicketKey(project.ticket_key);
     setEditedName(project.name);
     setEditedDescription(project.description || '');
     setEditedPriority(project.priority);
@@ -99,6 +104,7 @@ export function useProjectForm({ wsId, project }: UseProjectFormOptions) {
   }, [resetFormFromProject]);
 
   const hasUnsavedChanges =
+    editedTicketKey !== project.ticket_key ||
     editedName !== project.name ||
     editedDescription !== (project.description || '') ||
     editedPriority !== project.priority ||
@@ -115,6 +121,11 @@ export function useProjectForm({ wsId, project }: UseProjectFormOptions) {
       return updateWorkspaceTaskProject(wsId, project.id, data);
     },
     onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      void queryClient.invalidateQueries({ queryKey: ['task'] });
+      void queryClient.invalidateQueries({ queryKey: ['task-snapshot'] });
+      void queryClient.invalidateQueries({ queryKey: ['tasks-full'] });
+      void queryClient.invalidateQueries({ queryKey: ['task-projects', wsId] });
       toast.success('Project updated successfully');
       setIsEditingName(false);
       setIsEditingDescription(false);
@@ -136,7 +147,9 @@ export function useProjectForm({ wsId, project }: UseProjectFormOptions) {
   });
 
   const saveProject = useCallback(() => {
+    if (!PROJECT_TICKET_KEY_PATTERN.test(editedTicketKey)) return;
     updateProjectMutation.mutate({
+      ticket_key: editedTicketKey,
       name: editedName,
       description: editedDescription || null,
       priority: editedPriority || null,
@@ -149,6 +162,7 @@ export function useProjectForm({ wsId, project }: UseProjectFormOptions) {
     });
   }, [
     updateProjectMutation,
+    editedTicketKey,
     editedName,
     editedDescription,
     editedPriority,
@@ -183,6 +197,8 @@ export function useProjectForm({ wsId, project }: UseProjectFormOptions) {
     setShowConfiguration,
 
     // Form values
+    editedTicketKey,
+    setEditedTicketKey,
     editedName,
     setEditedName,
     editedDescription,

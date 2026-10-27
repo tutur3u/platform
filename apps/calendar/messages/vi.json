@@ -7960,6 +7960,9 @@
       },
       "health_status_label": "Tình trạng sức khỏe",
       "health_status_placeholder": "Chọn tình trạng sức khỏe",
+      "key_invalid": "Dùng 2–10 chữ cái in hoa hoặc chữ số, bắt đầu bằng chữ cái.",
+      "key_label": "Mã",
+      "key_preview": "Xem trước: {identifier}",
       "priority": {
         "critical": "Nghiêm trọng",
         "high": "Cao",

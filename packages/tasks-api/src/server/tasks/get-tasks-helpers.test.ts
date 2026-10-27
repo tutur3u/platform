@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { buildTaskRelationshipSummary } from './get-tasks-helpers';
+import {
+  buildTaskRelationshipSummary,
+  normalizeTask,
+} from './get-tasks-helpers';
 
 function createMockSupabase() {
   const relationshipQueryCalls: Array<{
@@ -288,5 +291,38 @@ describe('buildTaskRelationshipSummary', () => {
       blockingCount: 0,
       relatedCount: 0,
     });
+  });
+});
+
+describe('project ticket metadata hydration', () => {
+  it('preserves the link number and first-join timestamp when flattening projects', () => {
+    const result = normalizeTask({
+      id: 'ticket-task',
+      task_lists: null,
+      assignees: [],
+      labels: [],
+      projects: [
+        {
+          ticket_number: 12,
+          created_at: '2026-01-01T00:00:00Z',
+          project: {
+            id: 'project',
+            name: 'Platform',
+            status: 'active',
+            ticket_key: 'PLA',
+          },
+        },
+      ],
+    });
+    expect(result.projects).toEqual([
+      {
+        id: 'project',
+        name: 'Platform',
+        status: 'active',
+        ticket_key: 'PLA',
+        ticket_number: 12,
+        created_at: '2026-01-01T00:00:00Z',
+      },
+    ]);
   });
 });

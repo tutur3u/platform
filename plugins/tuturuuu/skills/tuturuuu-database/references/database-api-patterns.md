@@ -526,3 +526,16 @@ owns the accepted claim forms and Auth source references; the
 grants. Replay installation and rollback as the non-superuser `postgres` role:
 Auth tables belong to `supabase_auth_admin`, so creating and dropping a trigger
 have different privilege requirements.
+
+
+## Project ticket identity
+
+Project ticket keys use `task_projects.ticket_key` and per-link `ticket_number`;
+retain board display numbers for compatible lookup. Hydration must carry the
+link's `created_at` and number through nested project flattening. Choose the
+first joined project, breaking timestamp ties by project ID, and preserve source
+identity when applying personal project overlays. Relation-replacement RPCs must
+diff project memberships rather than delete and recreate unchanged links, which
+would allocate new numbers and change first-join ordering. Keep ID and count RPC
+predicates aligned before pagination. See the project-ticket section in
+`apps/docs/platform/features/task-board-sprints.mdx` and its regression links.
