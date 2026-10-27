@@ -114,6 +114,12 @@
 set local lock_timeout = '5s';
 set local statement_timeout = '120s';
 
+-- Workspace deletion needs an index on the referencing document column.
+-- Plain CREATE INDEX takes a SHARE lock and blocks writes while it runs. The
+-- document table is small; keep this explicit, bounded non-concurrent operation.
+create index if not exists workspace_documents_ws_id_idx
+  on public.workspace_documents (ws_id);
+
 alter table public.realtime_log_aggregations
   drop constraint realtime_log_aggregations_ws_id_fkey,
   add constraint realtime_log_aggregations_ws_id_fkey
@@ -131,11 +137,5 @@ alter table private.team_members
   add constraint project_members_project_id_fkey
     foreign key (team_id) references public.workspace_teams(id)
     on delete cascade not valid;
-
--- Workspace deletion needs an index on the referencing document column.
--- Plain CREATE INDEX takes a SHARE lock and blocks writes while it runs. The
--- document table is small; keep this explicit, bounded non-concurrent operation.
-create index if not exists workspace_documents_ws_id_idx
-  on public.workspace_documents (ws_id);
 
 notify pgrst, 'reload schema';
