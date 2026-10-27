@@ -21,7 +21,6 @@ import {
 import { hasDraggableData } from '@tuturuuu/utils/task-helpers';
 import { useCallback, useRef, useState } from 'react';
 import { useBoardBroadcast } from '../../../../shared/board-broadcast-context';
-import { invalidateKanbanDeadlineTasks } from '../data/kanban-deadline-query';
 import { MAX_SAFE_INTEGER_SORT } from '../kanban-constants';
 import { getKanbanDragAutoScrollPointerX, useAutoScroll } from './auto-scroll';
 import { getColumnReorderUpdates } from './column-reorder';
@@ -1235,7 +1234,6 @@ export function useKanbanDnd({
                 closed_at: updatedTask.closed_at,
               },
             });
-            void invalidateKanbanDeadlineTasks(queryClient, boardId);
           })
           .catch((error) => {
             console.error('Failed to update personal task placement:', error);
@@ -1453,7 +1451,6 @@ export function useKanbanDnd({
                           closed_at: updatedTask.closed_at,
                         },
                       });
-                      void invalidateKanbanDeadlineTasks(queryClient, boardId);
                     },
                     onSettled: () => {
                       clearPendingTaskIds(pendingTaskIds);
@@ -1506,7 +1503,6 @@ export function useKanbanDnd({
                   closed_at: updatedTask.closed_at,
                 },
               });
-              void invalidateKanbanDeadlineTasks(queryClient, boardId);
             };
 
             if (repairedTaskSortKeys.length > 0) {
@@ -1567,7 +1563,6 @@ export function useKanbanDnd({
                   );
 
                   if (failedResults.length === 0) {
-                    void invalidateKanbanDeadlineTasks(queryClient, boardId);
                     return;
                   }
 
