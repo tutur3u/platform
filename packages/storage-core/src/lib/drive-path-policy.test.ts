@@ -70,3 +70,54 @@ it('keeps mira visible and hides only its private images child', () => {
     ])
   ).toEqual([{ name: 'notes.txt' }]);
 });
+
+describe('private root case normalization', () => {
+  const privatePaths = [
+    'CHAT/x',
+    'Chats/x',
+    'External-Apps/x',
+    'ai agent imports/x',
+    'Mira/Images/x',
+    'RECORDINGS/x',
+    '.TUTURUUU/x',
+    'Topic-Announcements/x',
+  ];
+
+  it.each(
+    privatePaths.flatMap((path) => [
+      path,
+      `/${path}`,
+      `${path}/nested/file.pdf`,
+      `/${path}/nested/file.pdf`,
+      path.replaceAll('/', '\\'),
+      `  /${path}/  `,
+    ])
+  )('excludes %s in every workspace', (path) => {
+    expect(isExcludedDrivePath('ws-1', path)).toBe(true);
+  });
+
+  it.each(privatePaths)('hides the listing entry for %s', (path) => {
+    const parts = path.split('/');
+    parts.pop();
+    const name = parts.pop()!;
+    const parent = parts.join('/');
+    expect(
+      filterDriveEntries('ws-1', parent, [{ name }, { name: 'notes' }])
+    ).toEqual([{ name: 'notes' }]);
+  });
+
+  it.each([
+    'chatter/x',
+    'recordings-public/x',
+    'external-apps-backup/x',
+    '.tuturuuu-public/x',
+    'topic-announcements-public/x',
+    'AI  Agent Imports/x',
+    'AI Agent Imports /x',
+    'Mira/ Images/x',
+    'Mira/Images-public/x',
+    ...privatePaths.map((path) => `documents/${path}`),
+  ])('keeps the ordinary Drive path %s', (path) => {
+    expect(isExcludedDrivePath('ws-1', path)).toBe(false);
+  });
+});

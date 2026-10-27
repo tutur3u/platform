@@ -58,10 +58,15 @@ from `packages/internal-api`, and consume it from `apps/drive`.
 Drive permissions apply to ordinary Drive files. They do not grant access to
 application-owned chat attachments. In every workspace, Drive share, download,
 list, export, upload, rename, and delete boundaries reserve the root names `chat`,
-`chats`, `external-apps`, `AI Agent Imports`, `recordings`, and
-`topic-announcements` for their owning
-applications. Only the two-segment prefix `mira/images` is reserved for Mira image
-results; `mira` itself and ordinary files such as `mira/notes.txt` remain available.
+`chats`, `external-apps`, `AI Agent Imports`, `recordings`, `.tuturuuu`, and
+`topic-announcements` for their owning applications. Root matching is
+case-insensitive, including both segments of `mira/images`, in every workspace.
+The Drive and signing policies share `workspace-storage-roots.ts`, matching
+RLS's lowercase segment comparison without trimming segment whitespace or
+matching name prefixes. Drive keeps its existing relative-path sanitization
+(leading slashes, backslashes, and repeated separators); the signing mirror and
+RLS validate exact full object names and reject empty slash-delimited segments.
+Only the two-segment prefix `mira/images` is reserved for Mira image results; `mira` itself and ordinary files such as `mira/notes.txt` remain available.
 Root/directory listings and Drive analytics omit private objects; quota accounting
 continues to count their bytes. Exports omit private descendants. Recursive Drive
 renames/deletes validate every enumerated object before any mutation, so a parent
