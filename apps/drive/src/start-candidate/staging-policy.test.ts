@@ -41,6 +41,23 @@ describe('Drive staging isolation', () => {
     );
   });
 
+  it('preserves __Host- cookies without a Domain attribute alongside shared sessions', () => {
+    const cookie =
+      '__Host-csrf=token; Path=/; Secure; HttpOnly; SameSite=Strict';
+    const response = new Response(null);
+    response.headers.append('Set-Cookie', cookie);
+    response.headers.append(
+      'Set-Cookie',
+      '__Host-csrf=; Path=/; Secure; Max-Age=0'
+    );
+    response.headers.append('Set-Cookie', 'session=rotated; Path=/; HttpOnly');
+    expect(scopeStagingCookies(response).headers.getSetCookie()).toEqual([
+      cookie,
+      '__Host-csrf=; Path=/; Secure; Max-Age=0',
+      'session=rotated; Path=/; HttpOnly; Domain=.staging.tutur3u.com; Secure',
+    ]);
+  });
+
   it('makes personalized responses private, unframeable and unindexable', async () => {
     const response = await appConfig.wrapResponse?.(
       new Response('private', {
