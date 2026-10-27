@@ -6,6 +6,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/shell/view/shell_title_override.dart';
 
 import 'assistant_settings_repair_harness.dart';
@@ -169,6 +170,40 @@ void main() {
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
     expect(h.chat.state.creationOutcomeUnknown, isTrue);
+  });
+
+  testWidgets('a voice note to a held chat starts with informed recovery', (
+    tester,
+  ) async {
+    final h = RepairHarness();
+    addTearDown(() => h.dispose(tester));
+    await h.mount(tester, initialPreferences: legacy);
+    expect(h.chat.state.creationOutcomeUnknown, isTrue);
+    final microphone = find.descendant(
+      of: find.byKey(const ValueKey('assistant-composer-microphone-slot')),
+      matching: find.byIcon(LucideIcons.mic),
+    );
+    await tester.tap(microphone);
+    await tester.pumpAndSettle();
+    // Recording first would upload into a chat that cannot be created.
+    expect(find.text('Start a new chat'), findsOneWidget);
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(h.chat.state.creationOutcomeUnknown, isTrue);
+    expect(h.chat.state.composerAttachments, isEmpty);
+    expect(h.repository.api.creates, 0);
+
+    await tester.tap(microphone);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Start a new chat'));
+    for (var i = 0; i < 12; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 10)),
+      );
+    }
+    expect(h.chat.state.creationOutcomeUnknown, isFalse);
+    expect(h.repository.api.creates, 0);
   });
 
   testWidgets('remote navbar never advertises a local model during hydration', (

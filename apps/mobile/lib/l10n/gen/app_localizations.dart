@@ -751,6 +751,12 @@ abstract class AppLocalizations {
   /// **'Upload interrupted. Check your connection and tap Retry.'**
   String get assistantAttachmentFailureNetwork;
 
+  /// No description provided for @assistantAttachmentFailureNewChatRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Start a new chat first, then attach the file again.'**
+  String get assistantAttachmentFailureNewChatRequired;
+
   /// No description provided for @assistantAttachmentFailureServer.
   ///
   /// In en, this message translates to:
