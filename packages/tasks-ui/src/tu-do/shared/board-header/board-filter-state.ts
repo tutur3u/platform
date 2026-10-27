@@ -1,5 +1,6 @@
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type {
+  BoardFiltersMetadata,
   SortOption,
   TaskAssignee,
   TaskFilters,
@@ -228,9 +229,28 @@ export function sanitizeListStatusFilter(value: unknown): ListStatusFilter {
   return value === 'open' ? 'open' : 'all';
 }
 
+/** Presence is shared context, not authority to restore retired controls. */
+export function sanitizePresenceBoardView(
+  metadata: BoardFiltersMetadata,
+  currentUserId?: string
+) {
+  const filters = sanitizeSavedBoardFilters(metadata.filters);
+  return {
+    filters: {
+      ...filters,
+      includeMyTasks:
+        filters.assignees.length === 1 &&
+        filters.assignees[0]?.id === currentUserId,
+      includeUnassigned:
+        filters.assignees.length === 0 && filters.includeUnassigned,
+    },
+    listStatusFilter: sanitizeListStatusFilter(metadata.listStatusFilter),
+  };
+}
+
 /**
- * People shown as pills: everyone assigned to a board task, you first, then by
- * how many tasks they own.
+ * People shown as pills: board members and existing task assignees, you first,
+ * then by how many loaded tasks they own.
  */
 type TaskAssigneeLike = {
   id: string;
@@ -241,9 +261,19 @@ type TaskAssigneeLike = {
 
 export function collectBoardPeople(
   tasks: readonly { assignees?: TaskAssigneeLike[] | null }[],
-  currentUserId?: string
+  currentUserId?: string,
+  members: readonly TaskAssigneeLike[] = []
 ): BoardPerson[] {
-  const byId = new Map<string, BoardPerson>();
+  const byId = new Map<string, BoardPerson>(
+    members.map((member) => [
+      member.id,
+      {
+        ...member,
+        display_name: member.display_name ?? null,
+        taskCount: 0,
+      },
+    ])
+  );
   for (const task of tasks) {
     for (const assignee of task.assignees ?? []) {
       if (!assignee?.id) continue;

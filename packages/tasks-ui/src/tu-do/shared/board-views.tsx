@@ -764,13 +764,6 @@ export function BoardViews({
     }));
   };
 
-  const handleUpdate = async () => {
-    // Note: We intentionally do NOT invalidate queries here.
-    // Optimistic updates handle immediate UI feedback, and realtime
-    // subscription handles cross-user sync. Invalidating would cause
-    // all tasks to flicker (disappear then reappear).
-  };
-
   const canCreateTask =
     !readOnly &&
     currentView !== 'drafts' &&
@@ -791,7 +784,14 @@ export function BoardViews({
     if (!targetList) return;
     createTask(board.id, targetList.id, selectableLists, filters);
   };
-  const headerData = useBoardHeaderData(tasks, currentUserId);
+  const headerData = useBoardHeaderData({
+    tasks,
+    lists,
+    currentUserId,
+    workspaceId: effectiveWorkspaceId,
+    boardId: board.id,
+    enabled: !localTaskState,
+  });
 
   useHotkey(HOTKEY_CREATE_TASK, createTaskInBoard, {
     enabled: canCreateTask,
@@ -1047,7 +1047,6 @@ export function BoardViews({
               !localTaskState &&
               (isFullTasksFetching || isFilteredListCountsFetching)
             }
-            onUpdate={handleUpdate}
             isMultiSelectMode={readOnly ? false : isMultiSelectMode}
             setIsMultiSelectMode={readOnly ? () => {} : setIsMultiSelectMode}
             availableViews={enabledViews ?? undefined}
@@ -1058,6 +1057,7 @@ export function BoardViews({
             people={headerData.people}
             unassignedCount={headerData.unassignedCount}
             projectTaskCounts={headerData.projectTaskCounts}
+            countsComplete={headerData.countsComplete}
             onCreateTask={canCreateTask ? createTaskInBoard : undefined}
           />
         }

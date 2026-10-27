@@ -77,6 +77,7 @@ interface Props {
   unassignedCount?: number;
   /** Board task count per project; omitted hides the Project filter. */
   projectTaskCounts?: Map<string, number>;
+  countsComplete?: boolean;
   onCreateTask?: () => void;
 }
 
@@ -116,6 +117,7 @@ export function BoardHeader({
   people,
   unassignedCount = 0,
   projectTaskCounts,
+  countsComplete = true,
   onCreateTask,
 }: Props) {
   const t = useTranslations();
@@ -356,6 +358,7 @@ export function BoardHeader({
             onFiltersChange={onFiltersChange}
             people={people}
             unassignedCount={unassignedCount}
+            countsComplete={countsComplete}
           />
         ) : null}
         {interactiveControlsVisible && projectTaskCounts ? (
@@ -363,6 +366,7 @@ export function BoardHeader({
             filters={filters}
             onFiltersChange={onFiltersChange}
             projectTaskCounts={projectTaskCounts}
+            countsComplete={countsComplete}
             workspaceId={workspaceId}
           />
         ) : null}

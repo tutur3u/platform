@@ -18,11 +18,13 @@ export function BoardProjectFilter({
   onFiltersChange,
   projectTaskCounts,
   workspaceId,
+  countsComplete = true,
 }: {
   filters: TaskFilters;
   onFiltersChange: (filters: TaskFilters) => void;
   projectTaskCounts: Map<string, number>;
   workspaceId: string;
+  countsComplete?: boolean;
 }) {
   const t = useTranslations();
   // Same cache entry the task dialogs use for workspace projects.
@@ -75,9 +77,11 @@ export function BoardProjectFilter({
               onSelect={(event) => event.preventDefault()}
             >
               <span className="min-w-0 flex-1 truncate">{project.name}</span>
-              <span className="text-muted-foreground text-xs">
-                {projectTaskCounts.get(project.id) ?? 0}
-              </span>
+              {countsComplete ? (
+                <span className="text-muted-foreground text-xs">
+                  {projectTaskCounts.get(project.id) ?? 0}
+                </span>
+              ) : null}
             </DropdownMenuCheckboxItem>
           ))
         )}
