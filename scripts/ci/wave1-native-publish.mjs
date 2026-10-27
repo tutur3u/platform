@@ -12,6 +12,7 @@ import {
 } from './wave1-native-artifact.mjs';
 import { attemptLedger } from './wave1-native-attempt.mjs';
 import { profileFor, profiles } from './wave1-native-profile.mjs';
+import { NativeUploadError } from './wave1-native-upload-error.mjs';
 
 export function publicationAdmission({
   environment,
@@ -486,10 +487,8 @@ export async function uploadArtifact({
         maxBuffer: 1024 * 1024,
       }
     );
-  } catch {
-    throw new Error(
-      'Wrangler publication outcome is uncertain; inspect the matching version and retained receipt before any retry'
-    );
+  } catch (error) {
+    throw new NativeUploadError(error, [cfToken]);
   }
   if (dryRun) return;
   const writes = readFileSync(outputFile, 'utf8')
