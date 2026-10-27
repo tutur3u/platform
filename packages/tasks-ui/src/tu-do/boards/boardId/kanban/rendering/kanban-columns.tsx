@@ -22,13 +22,6 @@ import type { DragPreviewPosition } from '../dnd/use-kanban-dnd';
 import { isKanbanColumnCollapsed } from '../kanban-column-collapse';
 import { getKanbanColumnWidth } from './kanban-column-width';
 import {
-  type KanbanDeadlineCollapsedState,
-  type KanbanDeadlineLabels,
-  KanbanDeadlinePanels,
-  type KanbanDeadlineSection,
-} from './kanban-deadline-panels';
-import type { KanbanDeadlineSections } from './kanban-deadline-tasks';
-import {
   readKanbanScrollPosition,
   saveKanbanScrollPosition,
 } from './kanban-scroll-position';
@@ -69,15 +62,6 @@ interface KanbanColumnsProps {
   columnsId: string[];
   onExternalTasksCollapsedChange?: (collapsed: boolean) => void;
   onTaskListCollapsedChange?: (listId: string, collapsed: boolean) => void;
-  deadlineLabels?: KanbanDeadlineLabels;
-  deadlineSections?: KanbanDeadlineSections;
-  deadlineSectionsLoading?: boolean;
-  deadlineSectionsCollapsed?: KanbanDeadlineCollapsedState;
-  deadlineNow?: number;
-  onDeadlineSectionCollapsedChange?: (
-    section: KanbanDeadlineSection,
-    collapsed: boolean
-  ) => void;
   specialTaskListPins?: SpecialTaskListPinState;
   onSpecialTaskListPinnedChange?: (
     pin: SpecialTaskListPin,
@@ -153,12 +137,6 @@ export function KanbanColumns({
   columnsId,
   onExternalTasksCollapsedChange,
   onTaskListCollapsedChange,
-  deadlineLabels,
-  deadlineSections,
-  deadlineSectionsLoading,
-  deadlineSectionsCollapsed,
-  deadlineNow,
-  onDeadlineSectionCollapsedChange,
   specialTaskListPins,
   onSpecialTaskListPinnedChange,
   onHoveredTaskListChange,
@@ -169,45 +147,16 @@ export function KanbanColumns({
   const latestScrollLeftRef = useRef<number | null>(null);
   const saveScrollFrameRef = useRef<number | null>(null);
   const realColumns = columns.filter((column) => !column.is_external_staging);
-  const deadlineSectionOrder: KanbanDeadlineSection[] = ['overdue', 'upcoming'];
-  const deadlinePanelsEnabled =
-    !readOnly && Boolean(boardId && deadlineSections && deadlineLabels);
-  const reservedDeadlineSections = deadlinePanelsEnabled
-    ? deadlineSectionOrder
-    : [];
-  const snapEdgePadding =
-    columns.length > 0 || reservedDeadlineSections.length > 0
-      ? '0.5rem'
-      : '0px';
-  const collapsedColumnCount =
-    columns.filter(isKanbanColumnCollapsed).length +
-    reservedDeadlineSections.filter(
-      (section) => deadlineSectionsCollapsed?.[section] === true
-    ).length;
+  const snapEdgePadding = columns.length > 0 ? '0.5rem' : '0px';
+  const collapsedColumnCount = columns.filter(isKanbanColumnCollapsed).length;
   const dynamicColumnWidth = getKanbanColumnWidth({
-    columnCount: columns.length + reservedDeadlineSections.length,
+    columnCount: columns.length,
     collapsedColumnCount,
     snapEdgePadding,
     fillAvailableWidth: listStatusFilter === 'all',
   });
   const pinnedSpecialListLayout = (() => {
     const entries: { key: string; width: string }[] = [];
-
-    if (deadlinePanelsEnabled && specialTaskListPins?.overdue) {
-      entries.push({
-        key: 'deadline:overdue',
-        width: getSpecialListWidth(deadlineSectionsCollapsed?.overdue === true),
-      });
-    }
-
-    if (deadlinePanelsEnabled && specialTaskListPins?.upcoming) {
-      entries.push({
-        key: 'deadline:upcoming',
-        width: getSpecialListWidth(
-          deadlineSectionsCollapsed?.upcoming === true
-        ),
-      });
-    }
 
     for (const column of columns) {
       const pinned =
@@ -240,15 +189,11 @@ export function KanbanColumns({
       totalWidth: toCalcExpression(parts),
     } satisfies PinnedSpecialListLayout;
   })();
-  const hasLeftSpecialColumns =
-    reservedDeadlineSections.length > 0 ||
-    columns.some((column) => column.is_external_staging);
+  const hasLeftSpecialColumns = columns.some(
+    (column) => column.is_external_staging
+  );
   const scrollLayoutKey = `${boardId}:${columns
     .map((column) => `${column.id}:${isKanbanColumnCollapsed(column)}`)
-    .join('|')}:${reservedDeadlineSections
-    .map(
-      (section) => `${section}:${deadlineSectionsCollapsed?.[section] === true}`
-    )
     .join('|')}`;
 
   useLayoutEffect(() => {
@@ -372,42 +317,6 @@ export function KanbanColumns({
             paddingRight: 'var(--kanban-snap-right-padding)',
           }}
         >
-          {deadlinePanelsEnabled && deadlineSections && deadlineLabels && (
-            <KanbanDeadlinePanels
-              availableLists={realColumns}
-              boardId={boardId}
-              bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
-              isMultiSelectMode={isMultiSelectMode}
-              isPersonalWorkspace={isPersonalWorkspace}
-              canUseBoardAssignees={canUseBoardAssignees}
-              assigneeMemberSource={assigneeMemberSource}
-              labels={deadlineLabels}
-              onClearSelection={onClearSelection}
-              onSectionCollapsedChange={onDeadlineSectionCollapsedChange}
-              onTaskSelect={onTaskSelect}
-              onUpdate={onUpdate}
-              optimisticUpdateInProgress={optimisticUpdateInProgress}
-              sections={deadlineSections}
-              loading={deadlineSectionsLoading}
-              collapsedSections={deadlineSectionsCollapsed}
-              deadlineNow={deadlineNow}
-              pinnedSections={{
-                overdue: specialTaskListPins?.overdue,
-                upcoming: specialTaskListPins?.upcoming,
-              }}
-              stickyOffsets={{
-                overdue: pinnedSpecialListLayout.offsets['deadline:overdue'],
-                upcoming: pinnedSpecialListLayout.offsets['deadline:upcoming'],
-              }}
-              onSectionPinnedChange={(section, pinned) =>
-                onSpecialTaskListPinnedChange?.(section, pinned)
-              }
-              selectedTasks={selectedTasks}
-              taskLists={columns}
-              workspaceId={workspaceId}
-            />
-          )}
-
           {columns.map((list) => {
             // Filter tasks for this list
             let listTasks = tasks.filter((task) => task.list_id === list.id);

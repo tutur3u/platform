@@ -856,42 +856,6 @@ describe('BoardViews', () => {
     });
   });
 
-  it('collapses deadline sections by default and persists per board and section', async () => {
-    window.localStorage.setItem(
-      'task-board-deadline-section-collapsed:board-1:overdue',
-      'false'
-    );
-
-    renderBoardViews();
-
-    await waitFor(() => {
-      expect(kanbanBoardProps?.deadlineSectionsCollapsed).toEqual(
-        expect.objectContaining({
-          overdue: false,
-          upcoming: true,
-        })
-      );
-    });
-
-    act(() => {
-      kanbanBoardProps?.onDeadlineSectionCollapsedChange?.('upcoming', false);
-    });
-
-    await waitFor(() => {
-      expect(
-        window.localStorage.getItem(
-          'task-board-deadline-section-collapsed:board-1:upcoming'
-        )
-      ).toBe('false');
-      expect(kanbanBoardProps?.deadlineSectionsCollapsed).toEqual(
-        expect.objectContaining({
-          overdue: false,
-          upcoming: false,
-        })
-      );
-    });
-  });
-
   it('does not force pinned special task lists to stay expanded', async () => {
     getUserWorkspaceConfigMock.mockImplementation(
       (_workspaceId: string, configId: string) =>
@@ -921,9 +885,10 @@ describe('BoardViews', () => {
         expect.objectContaining({
           closed_tasks: true,
           external_tasks: true,
-          overdue: true,
-          upcoming: true,
         })
+      );
+      expect(kanbanBoardProps?.specialTaskListPins).not.toHaveProperty(
+        'overdue'
       );
       expect(kanbanBoardProps?.lists[0]).toEqual(
         expect.objectContaining({
@@ -939,18 +904,11 @@ describe('BoardViews', () => {
           status: 'closed',
         })
       );
-      expect(kanbanBoardProps?.deadlineSectionsCollapsed).toEqual(
-        expect.objectContaining({
-          overdue: true,
-          upcoming: true,
-        })
-      );
     });
 
     act(() => {
       kanbanBoardProps?.onExternalTasksCollapsedChange?.(false);
       kanbanBoardProps?.onTaskListCollapsedChange?.('list-closed', false);
-      kanbanBoardProps?.onDeadlineSectionCollapsedChange?.('overdue', false);
     });
 
     await waitFor(() => {
@@ -964,12 +922,6 @@ describe('BoardViews', () => {
       ).toEqual(
         expect.objectContaining({
           is_collapsed: false,
-        })
-      );
-      expect(kanbanBoardProps?.deadlineSectionsCollapsed).toEqual(
-        expect.objectContaining({
-          overdue: false,
-          upcoming: true,
         })
       );
     });
@@ -1115,31 +1067,6 @@ describe('BoardViews', () => {
         })
       );
     });
-  });
-
-  it('passes board filter criteria into deadline task query options without global sort', async () => {
-    renderBoardViews();
-
-    act(() => {
-      boardHeaderProps?.onListStatusFilterChange('active');
-      boardHeaderProps?.onFiltersChange({
-        ...boardHeaderProps.filters,
-        labels: [{ color: 'BLUE', id: 'label-1', name: 'Urgent' } as any],
-        searchQuery: 'launch',
-        sortBy: 'name-asc',
-      });
-    });
-
-    await waitFor(() => {
-      expect(kanbanBoardProps?.deadlineTaskQueryOptions).toEqual(
-        expect.objectContaining({
-          labelIds: ['label-1'],
-          listStatuses: ['active'],
-          q: 'launch',
-        })
-      );
-    });
-    expect(kanbanBoardProps?.deadlineTaskQueryOptions?.sortBy).toBeUndefined();
   });
 
   it('uses server-side search counts to hide task lists without matching tasks', async () => {
