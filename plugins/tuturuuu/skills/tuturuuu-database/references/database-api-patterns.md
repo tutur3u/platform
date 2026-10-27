@@ -84,6 +84,13 @@ review prove baseline equivalence. Existing migration history stays immutable.
   `security-definer-policy-callers.sql` to enforce policy-role EXECUTE, including
   PUBLIC policies and its failing privilege control. See the RPC
   hardening section of `apps/docs/build/devops/secrets-and-configuration.mdx`.
+- Catalog-wide anonymous EXECUTE changes must snapshot effective signed-in/service
+  privileges before revocation and restore only previously available access.
+  Preserve exact-signature anonymous exceptions for final policy/view and invoker
+  dependencies. Function defaults need a global revoke as well as the schema
+  revoke; schema ACLs cannot subtract the implicit global PUBLIC grant. Provider
+  defaults require their owner. See the RPC hardening runbook and
+  `20261027151200_anon-definer-execute.sql` for the catalog and privilege snapshot.
 - Views over RLS-protected tables need `security_invoker` before broad grants.
 
 ## Outbound SSO persistence
