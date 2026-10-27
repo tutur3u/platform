@@ -3,7 +3,7 @@ create extension if not exists pgtap with schema extensions;
 set local search_path = public, private, extensions;
 set local role service_role;
 set local request.jwt.claims = '{"role":"service_role"}';
-select plan(25);
+select plan(28);
 insert into public.users (id, display_name) values
   ('00000000-0000-4000-8000-0000000e6001', 'Ticket Owner');
 insert into public.workspaces (id, name, creator_id, personal) values
@@ -88,5 +88,25 @@ select results_eq(
     p_display_number := (select display_number from public.tasks where id = '00000000-0000-4000-8000-0000000e6102'))$$,
   $$values ('00000000-0000-4000-8000-0000000e6102'::uuid)$$, 'legacy lookup still resolves a project-less task'
 );
+-- Choosing a key is project management. End-user sessions have no direct
+-- insert grant; the key trigger also refuses a chosen key without permission.
+insert into public.users (id, display_name) values
+  ('00000000-0000-4000-8000-0000000e6003', 'Outsider');
+set local role authenticated;
+set local request.jwt.claims = '{"role":"authenticated","sub":"00000000-0000-4000-8000-0000000e6003"}';
+select throws_ok($$insert into public.task_projects (ws_id, name, creator_id)
+  values ('00000000-0000-4000-8000-0000000e6010', 'Direct', '00000000-0000-4000-8000-0000000e6003')$$,
+  '42501', null, 'end-user sessions cannot insert projects directly');
+set local role postgres;
+grant insert on public.task_projects to authenticated;
+set local role authenticated;
+select throws_ok($$insert into public.task_projects (ws_id, name, creator_id, ticket_key)
+  values ('00000000-0000-4000-8000-0000000e6010', 'Chosen', '00000000-0000-4000-8000-0000000e6003', 'CHOSEN')$$,
+  '42501', 'PROJECT_TICKET_KEY_MANAGEMENT_DENIED', 'the key trigger refuses a chosen key without manage_projects');
+set local role service_role;
+set local request.jwt.claims = '{"role":"service_role"}';
+select lives_ok($$insert into public.task_projects (ws_id, name, creator_id, ticket_key)
+  values ('00000000-0000-4000-8000-0000000e6010', 'Chosen', '00000000-0000-4000-8000-0000000e6001', 'CHOSEN')$$,
+  'service-role creation keeps a chosen key');
 select * from finish();
 rollback;
