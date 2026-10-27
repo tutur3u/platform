@@ -87,8 +87,25 @@ SELECT ok(has_function_privilege('authenticated', 'public.sb19_default_probe()',
 
 -- Effective privileges captured from the full disposable main migration chain
 -- at cbf4a7c49d9bf4910aaed58cc7607048274298a4 before applying this migration.
--- Approved provider ingestion and B/C service-role restrictions are explicit below.
--- C removes the two broken notification overloads; their absence is asserted.
+-- The provider-ingestion exception intentionally changes only its named roles.
+-- B owns the signed-in/service ACL assertions for these functions. A still
+-- checks their anonymous/PUBLIC access in the catalog loop above.
+CREATE TEMP TABLE definer_b_owned (signature text PRIMARY KEY);
+INSERT INTO definer_b_owned VALUES
+  ('public.get_workspace_overview(text,text,text,text,text,text,text,integer,integer)'),
+  ('public.get_recent_audit_logs(integer)'),
+  ('public.get_power_users(integer)'),
+  ('public.deduct_ai_credits(uuid,text,integer,integer,integer,text,uuid,uuid,jsonb)'),
+  ('public.deduct_ai_credits(uuid,text,integer,integer,integer,text,uuid,uuid,jsonb,uuid,integer,integer)'),
+  ('public.get_or_create_credit_balance(uuid)'),
+  ('public.get_or_create_credit_balance(uuid,uuid)'),
+  ('public.get_ai_credit_usage_summary(uuid,timestamptz)'),
+  ('public.get_ai_credit_usage_summary(uuid,timestamptz,uuid)'),
+  ('public.admin_list_ai_credit_transactions(integer,integer,uuid,uuid,text,text,text,text,timestamptz,timestamptz)'),
+  ('public.cleanup_role_inconsistencies()'),
+  ('public.get_or_create_notification_batch(uuid,uuid,text,integer)'),
+  ('public.get_or_create_notification_batch(uuid,uuid,text,integer,text)'),
+  ('public.normalize_task_sort_keys()');
 CREATE TEMP TABLE definer_execute_expected (
   signature text PRIMARY KEY, authenticated boolean, service_role boolean
 );
@@ -114,7 +131,6 @@ INSERT INTO definer_execute_expected VALUES
   ('public.admin_delete_workspace_user_with_audit_actor(uuid,uuid,uuid)', false, true),
   ('public.admin_get_ai_credit_entity_detail(uuid,uuid)', false, true),
   ('public.admin_get_finance_invoice_history(uuid,uuid,uuid,boolean,integer,integer,text,text,text,timestamp with time zone,timestamp with time zone,text)', false, true),
-  ('public.admin_list_ai_credit_transactions(integer,integer,uuid,uuid,text,text,text,text,timestamp with time zone,timestamp with time zone)', false, true),
   ('public.admin_list_rate_limit_counters(integer,text)', false, true),
   ('public.admin_reset_rate_limits()', false, true),
   ('public.admin_restore_finance_invoice(uuid,uuid,uuid)', false, true),
@@ -166,7 +182,6 @@ INSERT INTO definer_execute_expected VALUES
   ('public.cleanup_old_typing_indicators()', false, true),
   ('public.cleanup_platform_email_roles()', true, true),
   ('public.cleanup_qr_login_challenges()', true, true),
-  ('public.cleanup_role_inconsistencies()', false, true),
   ('public.clear_task_projects_lead_on_member_delete()', true, true),
   ('public.commit_fixed_ai_credit_reservation(uuid,jsonb)', false, true),
   ('public.commit_metered_embedding_credits(uuid,jsonb)', false, true),
@@ -192,8 +207,6 @@ INSERT INTO definer_execute_expected VALUES
   ('public.create_workspace_system_calendars()', true, true),
   ('public.create_workspace_user_linked_user()', false, false),
   ('public.current_user_shares_workspace_with(uuid)', true, true),
-  ('public.deduct_ai_credits(uuid,text,integer,integer,integer,text,uuid,uuid,jsonb)', false, true),
-  ('public.deduct_ai_credits(uuid,text,integer,integer,integer,text,uuid,uuid,jsonb,uuid,integer,integer)', false, true),
   ('public.deduct_fixed_ai_credits(uuid,uuid,numeric,text,text,jsonb)', false, true),
   ('public.delete_drafts_on_member_removal()', true, true),
   ('public.delete_invite_when_accepted()', true, true),
@@ -221,8 +234,6 @@ INSERT INTO definer_execute_expected VALUES
   ('public.get_active_ip_block(text)', false, true),
   ('public.get_active_sessions_count()', true, true),
   ('public.get_activity_heatmap()', true, true),
-  ('public.get_ai_credit_usage_summary(uuid,timestamp with time zone)', false, true),
-  ('public.get_ai_credit_usage_summary(uuid,timestamp with time zone,uuid)', false, true),
   ('public.get_ai_execution_daily_stats_v2(uuid,timestamp with time zone,timestamp with time zone,jsonb)', false, true),
   ('public.get_ai_execution_model_stats_v2(uuid,timestamp with time zone,timestamp with time zone,jsonb)', false, true),
   ('public.get_ai_execution_monthly_cost(uuid,integer,integer,jsonb,numeric)', false, true),
@@ -270,8 +281,6 @@ INSERT INTO definer_execute_expected VALUES
   ('public.get_monthly_income_expense_range(uuid,timestamp with time zone,timestamp with time zone,boolean)', true, true),
   ('public.get_monthly_invoice_totals(uuid,integer,uuid[],uuid[],date,date)', true, true),
   ('public.get_notification_email_config(text)', false, true),
-  ('public.get_or_create_credit_balance(uuid)', false, true),
-  ('public.get_or_create_credit_balance(uuid,uuid)', false, true),
   ('public.get_or_create_external_calendar(uuid,text,text,text,calendar_provider)', true, true),
   ('public.get_or_create_mira_pet(uuid)', false, true),
   ('public.get_or_create_notification_batch(uuid,uuid,text,integer,text,notification_delivery_mode)', false, true),
@@ -284,13 +293,11 @@ INSERT INTO definer_execute_expected VALUES
   ('public.get_period_summary_stats(uuid,text)', true, true),
   ('public.get_personal_task_board_external_counts(uuid,boolean,boolean)', true, true),
   ('public.get_platform_ai_credit_overview()', false, true),
-  ('public.get_power_users(integer)', false, true),
   ('public.get_product_feedback_media_staff(uuid,uuid)', false, true),
   ('public.get_product_feedback_receipt(uuid)', true, false),
   ('public.get_product_feedback_staff(uuid,uuid)', false, true),
   ('public.get_rate_limit_trust_decision(uuid,text,uuid)', false, true),
   ('public.get_recent_actions_summary(integer)', true, true),
-  ('public.get_recent_audit_logs(integer)', false, true),
   ('public.get_related_tasks(uuid)', false, true),
   ('public.get_retention_rate(text)', true, true),
   ('public.get_security_budget_entitlement(uuid,uuid)', false, true),
@@ -346,12 +353,11 @@ INSERT INTO definer_execute_expected VALUES
   ('public.get_workspace_habit_tracker_latest_stats(uuid,uuid,uuid[])', true, true),
   ('public.get_workspace_member_count(uuid)', true, true),
   ('public.get_workspace_member_distribution()', true, true),
-  ('public.get_workspace_overview(text,text,text,text,text,text,text,integer,integer)', false, true),
   ('public.get_workspace_overview_summary()', false, true),
   ('public.get_workspace_statistics()', true, true),
   ('public.get_workspace_storage_limit(uuid)', true, true),
   ('public.get_workspace_task_history(uuid,integer,integer,text,text,uuid,text,timestamp with time zone,timestamp with time zone)', true, true),
-  ('public.get_workspace_time_tracking_stats(uuid,timestamp with time zone)', true, true),
+  ('public.get_workspace_time_tracking_stats(uuid,timestamp with time zone)', false, true),
   ('public.get_workspace_user_audit_view(uuid,timestamp with time zone,timestamp with time zone,text,text,text,text,text,integer,integer)', true, true),
   ('public.get_workspace_user_id(uuid,uuid)', false, true),
   ('public.get_workspace_users_require_attention(uuid,uuid[],uuid)', false, true),
@@ -369,7 +375,7 @@ INSERT INTO definer_execute_expected VALUES
   ('public.insert_ai_chat_message(text,uuid,text)', true, true),
   ('public.insert_task_history(uuid,text,text,jsonb,jsonb,jsonb)', false, true),
   ('public.insert_task_history(uuid,text,text,jsonb,jsonb,jsonb,uuid)', false, true),
-  ('public.insert_time_tracking_session_with_bypass(uuid,uuid,text,text,uuid,uuid,timestamp with time zone,timestamp with time zone,integer,boolean)', true, true),
+  ('public.insert_time_tracking_session_with_bypass(uuid,uuid,text,text,uuid,uuid,timestamp with time zone,timestamp with time zone,integer,boolean)', false, true),
   ('public.inventory_cent_level_prices_ready()', false, true),
   ('public.is_board_template_accessible(uuid)', true, true),
   ('public.is_hive_member(uuid)', true, true),
@@ -407,7 +413,7 @@ INSERT INTO definer_execute_expected VALUES
   ('public.list_workspace_user_audit_records(uuid,timestamp with time zone,timestamp with time zone)', false, true),
   ('public.lose_tulearn_heart(uuid,uuid)', true, true),
   ('public.merge_workspace_users(uuid,uuid,uuid)', true, true),
-  ('public.merge_workspace_users_batch_update(uuid,uuid,uuid,text,text,integer)', true, true),
+  ('public.merge_workspace_users_batch_update(uuid,uuid,uuid,text,text,integer)', false, true),
   ('public.merge_workspace_users_phase1(uuid,uuid,uuid)', true, true),
   ('public.merge_workspace_users_phase1a(uuid,uuid,uuid)', true, true),
   ('public.merge_workspace_users_phase1a_batch(uuid,uuid,uuid,integer)', true, true),
@@ -422,11 +428,10 @@ INSERT INTO definer_execute_expected VALUES
   ('public.merge_workspace_users_phase4(uuid,uuid,uuid)', true, true),
   ('public.merge_workspace_users_phase5(uuid,uuid,uuid)', true, true),
   ('public.merge_workspace_users_phased(uuid,uuid,uuid,integer)', true, true),
-  ('public.merge_workspace_users_table_batch(uuid,uuid,uuid,text,text,integer)', true, true),
+  ('public.merge_workspace_users_table_batch(uuid,uuid,uuid,text,text,integer)', false, true),
   ('public.migrate_email_notifications_on_login()', false, true),
   ('public.migrate_email_notifications_on_signup()', false, true),
   ('public.normalize_related_relationship()', true, true),
-  ('public.normalize_task_sort_keys()', false, true),
   ('public.notify_task_assigned()', true, true),
   ('public.notify_task_assignee_added()', true, true),
   ('public.notify_task_assignee_removed()', true, true),
@@ -439,8 +444,8 @@ INSERT INTO definer_execute_expected VALUES
   ('public.notify_workspace_email_invite()', true, true),
   ('public.notify_workspace_user_invite()', true, true),
   ('public.on_delete_user()', true, true),
-  ('public.pause_session_for_break(uuid,timestamp with time zone,integer)', true, true),
-  ('public.pause_session_for_break(uuid,timestamp with time zone,integer,boolean)', true, true),
+  ('public.pause_session_for_break(uuid,timestamp with time zone,integer)', false, true),
+  ('public.pause_session_for_break(uuid,timestamp with time zone,integer,boolean)', false, true),
   ('public.pending_profile_banner_retirements(uuid)', false, true),
   ('public.prevent_circular_parent_child()', true, true),
   ('public.prevent_personal_workspace_deletion()', true, true),
@@ -513,7 +518,7 @@ INSERT INTO definer_execute_expected VALUES
   ('public.update_platform_entity_creation_limit_tier(text,workspace_product_tier,boolean,integer,integer,integer,integer,integer,uuid)', false, true),
   ('public.update_public_user_profile(uuid,jsonb)', false, true),
   ('public.update_public_user_profile_with_banner_lifecycle(uuid,jsonb,text)', false, true),
-  ('public.update_time_tracking_session_with_bypass(uuid,jsonb)', true, true),
+  ('public.update_time_tracking_session_with_bypass(uuid,jsonb)', false, true),
   ('public.update_time_tracking_threshold_settings(uuid,integer,boolean,integer)', true, true),
   ('public.update_workspace_configs_with_approval_transitions(uuid,jsonb,uuid)', true, true),
   ('public.upsert_course_test_question(uuid,uuid,uuid,jsonb)', false, true),
@@ -536,22 +541,9 @@ INSERT INTO definer_execute_expected VALUES
   ('public.workspace_has_available_seats(uuid)', true, true),
   ('public.workspace_user_audit_feed(uuid,timestamp with time zone,timestamp with time zone)', false, true),
   ('public.workspace_user_audit_filtered_feed(uuid,timestamp with time zone,timestamp with time zone,text,text,text,text)', true, true);
--- Named final intent: B's internal/reporting RPCs and C's administrative
--- summaries admit only service_role, even for an authenticated workspace creator.
+-- C's administrative summaries admit only service_role.
 CREATE TEMP TABLE definer_service_role_only_expected (signature text PRIMARY KEY);
 INSERT INTO definer_service_role_only_expected VALUES
-  ('public.get_workspace_overview(text,text,text,text,text,text,text,integer,integer)'),
-  ('public.get_recent_audit_logs(integer)'),
-  ('public.get_power_users(integer)'),
-  ('public.deduct_ai_credits(uuid,text,integer,integer,integer,text,uuid,uuid,jsonb)'),
-  ('public.deduct_ai_credits(uuid,text,integer,integer,integer,text,uuid,uuid,jsonb,uuid,integer,integer)'),
-  ('public.get_or_create_credit_balance(uuid)'),
-  ('public.get_or_create_credit_balance(uuid,uuid)'),
-  ('public.get_ai_credit_usage_summary(uuid,timestamptz)'),
-  ('public.get_ai_credit_usage_summary(uuid,timestamptz,uuid)'),
-  ('public.admin_list_ai_credit_transactions(integer,integer,uuid,uuid,text,text,text,text,timestamptz,timestamptz)'),
-  ('public.cleanup_role_inconsistencies()'),
-  ('public.normalize_task_sort_keys()'),
   ('public.get_bounce_complaint_stats(timestamptz)'),
   ('public.get_workspace_overview_summary()'),
   ('public.create_missing_personal_workspaces()'),
@@ -560,7 +552,7 @@ INSERT INTO definer_service_role_only_expected VALUES
 SELECT ok(to_regprocedure(signature) IS NOT NULL
   AND NOT has_function_privilege('authenticated', to_regprocedure(signature), 'EXECUTE')
   AND has_function_privilege('service_role', to_regprocedure(signature), 'EXECUTE'),
-  'reviewed B/C service_role-only expectation: ' || signature)
+  'reviewed C service_role-only expectation: ' || signature)
 FROM definer_service_role_only_expected ORDER BY signature;
 SELECT ok(to_regprocedure('public.get_or_create_notification_batch(uuid,uuid,text,integer)') IS NULL,
   'reviewed C expectation: broken four-argument notification batching overload is absent');
@@ -570,17 +562,19 @@ SELECT ok(to_regprocedure('public.get_or_create_notification_batch(uuid,uuid,tex
 SELECT is((SELECT count(*)::integer FROM definer_execute_expected e
   WHERE to_regprocedure(e.signature) IS NULL
     OR e.authenticated IS DISTINCT FROM has_function_privilege('authenticated', to_regprocedure(e.signature), 'EXECUTE')),
-  0, 'authenticated EXECUTE matches the reviewed final A/B/C expectations');
+  0, 'authenticated EXECUTE matches the reviewed A/C expectations outside B');
 SELECT is((SELECT count(*)::integer FROM definer_execute_expected e
   WHERE to_regprocedure(e.signature) IS NULL
     OR e.service_role IS DISTINCT FROM has_function_privilege('service_role', to_regprocedure(e.signature), 'EXECUTE')),
-  0, 'service_role EXECUTE matches the reviewed final A/B/C expectations');
+  0, 'service_role EXECUTE matches the reviewed A/C expectations outside B');
 SELECT is((SELECT count(*)::integer FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
   WHERE n.nspname = 'public' AND p.prosecdef
     AND p.proname NOT IN ('sb19_default_probe')
     AND NOT EXISTS (SELECT 1 FROM definer_execute_expected e
-      WHERE to_regprocedure(e.signature)::oid = p.oid)), 0,
-  'the reviewed final expectations cover every existing public definer');
+      WHERE to_regprocedure(e.signature)::oid = p.oid)
+    AND NOT EXISTS (SELECT 1 FROM definer_b_owned b
+      WHERE to_regprocedure(b.signature)::oid = p.oid)), 0,
+  'the snapshot and B-owned signatures cover every existing public definer');
 SELECT ok(has_schema_privilege('supabase_auth_admin', 'public', 'USAGE')
   AND has_function_privilege('supabase_auth_admin', 'public.hook_mfa_verification_attempt(jsonb)', 'EXECUTE'),
   'Auth MFA hook retains schema USAGE and EXECUTE for supabase_auth_admin');
