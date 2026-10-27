@@ -970,6 +970,9 @@ test('Release Please manifest tracks platform and workspace releases safely', ()
   assert.equal(config.packages['.'].component, 'platform');
   assert.equal(config.packages['.']['release-type'], 'simple');
   assert.equal(config.packages['.']['version-file'], 'platform-version.txt');
+  // Keep platform on 0.x: breaking changes bump the minor, not to 1.0.0.
+  assert.equal(config.packages['.']['bump-minor-pre-major'], true);
+  assert.equal(config.packages['.']['bump-patch-for-minor-pre-major'], false);
   assert.deepEqual(
     config.packages['.']['extra-files'].map((entry) => entry.path).sort(),
     [
