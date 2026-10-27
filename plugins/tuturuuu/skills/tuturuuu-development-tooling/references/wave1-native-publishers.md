@@ -99,5 +99,14 @@ under one deadline, filter attachments to the Worker across all account zones,
 and pass only the CLI environment it needs. Dry-run output belongs outside the
 sealed artifact; preserve archive rejection of hidden output. No canonical
 marker is emitted before the later routing flip and hosted acceptance.
+Native upload configs explicitly disable source maps in both profiles. Before
+uploading, measure actual token-free dry-run output and retain the sanitized
+measurements in the receipt. Enforce documented Paid limits pinned to the checked
+date/URLs in `wave1-native-upload-limits.mjs`; gzip size is informational, and
+startup CPU still needs hosted native acceptance. Keep maps sealed for later
+external tooling. A bootstrap upload never qualifies the native payload.
+Use a backward scan for partial-token removal at line and capture boundaries;
+do not reintroduce an unanchored trailing-run regex. Keep both exact no-write
+resolutions append-only and run all 21 predicate mutations against each entry.
 Run `scripts/ci/wave1-native-production.test.mjs` for counting transport/CLI,
 no-route profile, held-policy, unknown-outcome and workflow-secret regressions.

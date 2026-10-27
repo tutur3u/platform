@@ -61,6 +61,7 @@ jobs:
         run: node scripts/ci/wave1-native-publish.mjs policy "$APP" production "$GITHUB_SHA" "$GITHUB_STEP_SUMMARY"
   build:
     runs-on: ubuntu-latest
+    environment: ${{ matrix.profile == 'staging' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && format('wave1-{0}-staging', inputs.app) || 'wave1-native-source-qualification' }}
     timeout-minutes: 45
     strategy:
       max-parallel: 2
