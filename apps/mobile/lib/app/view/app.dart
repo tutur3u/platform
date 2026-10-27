@@ -53,6 +53,7 @@ import 'package:mobile/features/finance/cubit/finance_cubit.dart';
 import 'package:mobile/features/habits/cubit/habits_access_cubit.dart';
 import 'package:mobile/features/habits/cubit/habits_cubit.dart';
 import 'package:mobile/features/inventory/cubit/inventory_access_cubit.dart';
+import 'package:mobile/features/mastermind/runtime/mastermind_runtime.dart';
 import 'package:mobile/features/notifications/data/archive_opened_notification.dart';
 import 'package:mobile/features/notifications/push/push_notification_service.dart';
 import 'package:mobile/features/profile/cubit/profile_cubit.dart';
@@ -143,6 +144,7 @@ class _AppState extends State<App> {
   late final AppLockCubit _appLockCubit;
   late final HabitsAccessCubit _habitsAccessCubit;
   late final EducationAccessCubit _educationAccessCubit;
+  late final MastermindRuntime _mastermind;
   late final InventoryAccessCubit _inventoryAccessCubit;
   late final AppTabCubit _appTabCubit;
   late final ShellChromeActionsCubit _shellChromeActionsCubit;
@@ -221,6 +223,9 @@ class _AppState extends State<App> {
     _inventoryAccessCubit = InventoryAccessCubit(
       repository: _inventoryAccessRepository,
     );
+    _mastermind = MastermindRuntime.create(
+      userId: () => _authCubit.state.user?.id,
+    );
     _appTabCubit = AppTabCubit(settingsRepository: _settingsRepo);
     _shellChromeActionsCubit = ShellChromeActionsCubit();
     _shellMiniNavCubit = ShellMiniNavCubit();
@@ -246,6 +251,7 @@ class _AppState extends State<App> {
       _educationAccessCubit,
       _inventoryAccessCubit,
       _appTabCubit,
+      mastermindAccessCubit: _mastermind.access,
       initialLocation: widget.initialRoute,
     );
     _unregisterAssistantActions = AssistantClientActions.register(
@@ -428,6 +434,7 @@ class _AppState extends State<App> {
     unawaited(_habitsAccessCubit.close());
     unawaited(_educationAccessCubit.close());
     unawaited(_inventoryAccessCubit.close());
+    unawaited(_mastermind.close());
     _inventoryRepository.dispose();
     unawaited(_appTabCubit.close());
     unawaited(_shellChromeActionsCubit.close());
@@ -455,6 +462,9 @@ class _AppState extends State<App> {
         BlocProvider.value(value: _habitsAccessCubit),
         BlocProvider.value(value: _educationAccessCubit),
         BlocProvider.value(value: _inventoryAccessCubit),
+        BlocProvider.value(value: _mastermind.access),
+        BlocProvider.value(value: _mastermind.snapshot),
+        RepositoryProvider.value(value: _mastermind),
         BlocProvider.value(value: _appTabCubit),
         BlocProvider.value(value: _shellChromeActionsCubit),
         BlocProvider.value(value: _shellMiniNavCubit),
@@ -502,11 +512,35 @@ class _AppState extends State<App> {
                 }
               },
             ),
+            // Logout or account switch: the cached snapshot belongs to the
+            // previous account and must not outlive it.
+            BlocListener<AuthCubit, AuthState>(
+              listenWhen: (prev, curr) =>
+                  (curr.status == AuthStatus.unauthenticated &&
+                      prev.status != AuthStatus.unauthenticated) ||
+                  (prev.user?.id != null &&
+                      curr.user?.id != null &&
+                      prev.user?.id != curr.user?.id),
+              listener: (context, state) => unawaited(
+                _mastermind.reset(
+                  wsId: state.status == AuthStatus.authenticated
+                      ? context
+                            .read<WorkspaceCubit>()
+                            .state
+                            .currentWorkspace
+                            ?.id
+                      : null,
+                ),
+              ),
+            ),
             BlocListener<WorkspaceCubit, WorkspaceState>(
               listenWhen: (previous, current) =>
                   previous.currentWorkspace?.id != current.currentWorkspace?.id,
               listener: (context, state) {
                 _syncOfflinePreparationScope();
+                unawaited(
+                  _mastermind.access.syncWorkspace(state.currentWorkspace?.id),
+                );
                 unawaited(
                   context.read<HabitsAccessCubit>().syncWorkspace(
                     state.currentWorkspace?.id,

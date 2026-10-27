@@ -56,4 +56,18 @@ final class MastermindAccessCubit extends Cubit<MastermindAccessState> {
   }
 
   Future<void> syncWorkspace(String? wsId) => sync(wsId);
+
+  /// The hub said 403: hide the entry until the next [sync].
+  void markForbidden() {
+    if (isClosed || state.status != MastermindAccessStatus.loaded) return;
+    if (state.forbidden) return;
+    emit(
+      MastermindAccessState(
+        status: state.status,
+        enabled: state.enabled,
+        forbidden: true,
+        wsId: state.wsId,
+      ),
+    );
+  }
 }

@@ -252,6 +252,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get appsHubMailDescription => 'Đọc và gửi email, quản lý thư nháp và sắp xếp hộp thư đến.';
 
   @override
+  String get appsHubMastermindDescription => 'Trạng thái đội máy, quyết định, bản phát hành và mức sử dụng từ Mastermind.';
+
+  @override
   String get appsHubMeetDescription => 'Lên lịch họp, xem lịch trình và theo dõi bản ghi.';
 
   @override
@@ -12070,6 +12073,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindAccountFilter => 'Tài khoản';
 
   @override
+  String get mastermindActivityEmpty => 'Chưa có hoạt động gần đây';
+
+  @override
+  String get mastermindActivityTitle => 'Hoạt động';
+
+  @override
   String get mastermindAgeBasis => 'Cơ sở tính tuổi';
 
   @override
@@ -12104,7 +12113,13 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String get mastermindAllCaughtUp => 'Bạn đã xử lý hết';
+
+  @override
   String get mastermindAllFilter => 'Tất cả';
+
+  @override
+  String get mastermindAppName => 'Mastermind';
 
   @override
   String get mastermindAreaCi => 'CI';
@@ -12311,6 +12326,16 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindCommit => 'Commit';
 
   @override
+  String mastermindCouldntReadShowing(String time) {
+    return 'Không đọc được bản cập nhật mới nhất · đang hiển thị $time';
+  }
+
+  @override
+  String mastermindCountState(int count, String state) {
+    return '$count $state';
+  }
+
+  @override
   String get mastermindCoverageComplete => 'Đầy đủ';
 
   @override
@@ -12329,10 +12354,18 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindDecidedBy => 'Người quyết định';
 
   @override
+  String get mastermindDecisionsEmpty => 'Chưa có quyết định nào';
+
+  @override
   String get mastermindDecisionsTitle => 'Quyết định';
 
   @override
   String get mastermindDeploy => 'Triển khai';
+
+  @override
+  String mastermindDeployCiLine(String deploy, String ci) {
+    return 'Triển khai $deploy · CI $ci';
+  }
 
   @override
   String get mastermindDeployError => 'lỗi';
@@ -12421,6 +12454,9 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String get mastermindForbiddenTitle => 'Tài khoản này không được phép xem Mastermind.';
+
+  @override
   String get mastermindFreshCached => 'từ bộ đệm';
 
   @override
@@ -12489,10 +12525,23 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindLaneState => 'Trạng thái';
 
   @override
+  String get mastermindLanesAtAGlance => 'Tổng quan luồng việc';
+
+  @override
   String get mastermindLanesEmpty => 'Không có luồng việc nào trong chế độ xem này';
 
   @override
   String get mastermindLanesLabel => 'Luồng việc';
+
+  @override
+  String mastermindLastPublished(String age, String time) {
+    return 'Mastermind cập nhật lần cuối $age · $time';
+  }
+
+  @override
+  String mastermindLiveAgo(String age) {
+    return 'Đang hoạt động $age';
+  }
 
   @override
   String mastermindLiveFor(String duration) {
@@ -12510,7 +12559,15 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String get mastermindNeedsAttention => 'Cần chú ý';
+
+  @override
   String get mastermindNeedsYouHint => 'Trả lời trong Inbox trên máy Mac.';
+
+  @override
+  String mastermindNeedsYouSeeAll(int count) {
+    return 'Xem tất cả ($count)';
+  }
 
   @override
   String get mastermindNeedsYouTitle => 'Cần bạn';
@@ -12522,6 +12579,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindNoProduct => 'Không có sản phẩm';
 
   @override
+  String get mastermindNoSnapshotTitle => 'Mastermind chưa phát hành dữ liệu nào.';
+
+  @override
+  String get mastermindNotConfiguredMessage => 'Bản dựng này chưa kết nối Mastermind.';
+
+  @override
   String get mastermindNotConnectedMessage => 'Dữ liệu Mastermind chưa được xuất bản cho ứng dụng này.';
 
   @override
@@ -12531,6 +12594,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindNotReversible => 'Không thể hoàn tác';
 
   @override
+  String get mastermindNothingNeedsReply => 'Không có gì cần trả lời';
+
+  @override
   String get mastermindNothingNeedsYou => 'Không có việc cần bạn';
 
   @override
@@ -12538,6 +12604,11 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindObservedAt => 'Thời điểm ghi nhận';
+
+  @override
+  String mastermindOfflineShowing(String time) {
+    return 'Ngoại tuyến · đang hiển thị $time';
+  }
 
   @override
   String get mastermindOriginLabel => 'Nguồn gốc';
@@ -12552,6 +12623,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindProductsLabel => 'Sản phẩm';
 
   @override
+  String get mastermindQuotaEmpty => 'Chưa có dữ liệu hạn mức';
+
+  @override
+  String get mastermindQuotaTitle => 'Hạn mức';
+
+  @override
   String get mastermindRange24h => '24 giờ';
 
   @override
@@ -12559,6 +12636,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindReceiptRecorded => 'Đã ghi nhận biên nhận';
+
+  @override
+  String get mastermindRecentDecisionsTitle => 'Quyết định gần đây';
 
   @override
   String get mastermindRecentEmpty => 'Không có gì mới.';
@@ -12578,10 +12658,16 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindRejectedMessage => 'Ảnh chụp dùng định dạng mà phiên bản ứng dụng này không đọc được. Hãy cập nhật ứng dụng.';
 
   @override
+  String get mastermindRejectedOtherMessage => 'Không đọc được bản cập nhật mới nhất.';
+
+  @override
   String get mastermindRejectedTitle => 'Không thể hiển thị ảnh chụp này';
 
   @override
   String get mastermindReleasesTitle => 'Bản phát hành';
+
+  @override
+  String get mastermindReservePacing => 'Nhịp dự trữ (quy tắc biểu đồ)';
 
   @override
   String mastermindResetsAt(String dateTime) {
@@ -12632,7 +12718,18 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindScopeUsage => 'Sử dụng';
 
   @override
+  String get mastermindSecurityFix => 'Bản vá bảo mật';
+
+  @override
+  String get mastermindSecurityGroup => 'Bảo mật';
+
+  @override
   String get mastermindSecurityIssue => 'Vấn đề bảo mật';
+
+  @override
+  String mastermindSecurityLine(String product) {
+    return '$product · bản vá bảo mật';
+  }
 
   @override
   String mastermindSelectedReadout(String date, String series, String value) {
@@ -12700,7 +12797,21 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindSession => 'Phiên';
 
   @override
+  String mastermindSessionLeft(String value) {
+    return 'Phiên còn $value';
+  }
+
+  @override
+  String get mastermindShipEmpty => 'Chưa có bản phát hành nào';
+
+  @override
   String get mastermindShowAll => 'Xem tất cả';
+
+  @override
+  String get mastermindSignInAction => 'Đăng nhập';
+
+  @override
+  String get mastermindSignInAgainTitle => 'Đăng nhập lại để xem Mastermind';
 
   @override
   String mastermindSnapshotAt(String time) {
@@ -12754,6 +12865,16 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindSourceWorkforce => 'Nhân lực';
+
+  @override
+  String mastermindSourcesDegraded(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count nguồn bị suy giảm',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get mastermindSourcesTitle => 'Nguồn';
@@ -12857,6 +12978,29 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindSummaryWeeklyNotReported => 'Nguồn không báo cáo hạn mức tuần.';
 
   @override
+  String get mastermindTabHome => 'Tổng quan';
+
+  @override
+  String get mastermindTabInbox => 'Hộp thư';
+
+  @override
+  String get mastermindTabInsights => 'Phân tích';
+
+  @override
+  String get mastermindTabShip => 'Phát hành';
+
+  @override
+  String get mastermindTabSoonMessage => 'Phần này của Mastermind sẽ có trong bản cập nhật sắp tới. Tổng quan đã cho thấy việc cần bạn.';
+
+  @override
+  String mastermindTabSoonTitle(String tab) {
+    return '$tab sắp ra mắt';
+  }
+
+  @override
+  String get mastermindTabWork => 'Công việc';
+
+  @override
   String get mastermindTableLink => 'Bảng';
 
   @override
@@ -12915,6 +13059,28 @@ class AppLocalizationsVi extends AppLocalizations {
   String mastermindUnitTokens(String value) {
     return '$value token';
   }
+
+  @override
+  String get mastermindUnknown => 'Không rõ';
+
+  @override
+  String get mastermindUnreachableMessage => 'Mỗi lần thất bại, thời gian chờ thử lại sẽ dài hơn.';
+
+  @override
+  String get mastermindUnreachableTitle => 'Không thể kết nối Mastermind.';
+
+  @override
+  String mastermindUpdateAppShowing(String time) {
+    return 'Hãy cập nhật ứng dụng để đọc dữ liệu Mastermind mới nhất · đang hiển thị $time';
+  }
+
+  @override
+  String mastermindUpdatedAt(String time) {
+    return 'Cập nhật $time';
+  }
+
+  @override
+  String get mastermindUsageLink => 'Mức sử dụng';
 
   @override
   String get mastermindVersion => 'Phiên bản';

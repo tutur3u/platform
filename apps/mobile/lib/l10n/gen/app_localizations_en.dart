@@ -252,6 +252,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appsHubMailDescription => 'Read and send email, manage drafts, and organize your inbox.';
 
   @override
+  String get appsHubMastermindDescription => 'Fleet status, decisions, releases and usage from Mastermind.';
+
+  @override
   String get appsHubMeetDescription => 'Plan meetings, review schedules, and keep recordings visible.';
 
   @override
@@ -12203,6 +12206,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindAccountFilter => 'Account';
 
   @override
+  String get mastermindActivityEmpty => 'No recent activity';
+
+  @override
+  String get mastermindActivityTitle => 'Activity';
+
+  @override
   String get mastermindAgeBasis => 'Age basis';
 
   @override
@@ -12240,7 +12249,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get mastermindAllCaughtUp => 'You\'re all caught up';
+
+  @override
   String get mastermindAllFilter => 'All';
+
+  @override
+  String get mastermindAppName => 'Mastermind';
 
   @override
   String get mastermindAreaCi => 'CI';
@@ -12447,6 +12462,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindCommit => 'Commit';
 
   @override
+  String mastermindCouldntReadShowing(String time) {
+    return 'Couldn\'t read the latest update · showing $time';
+  }
+
+  @override
+  String mastermindCountState(int count, String state) {
+    return '$count $state';
+  }
+
+  @override
   String get mastermindCoverageComplete => 'Complete';
 
   @override
@@ -12465,10 +12490,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindDecidedBy => 'Decided by';
 
   @override
+  String get mastermindDecisionsEmpty => 'No decisions yet';
+
+  @override
   String get mastermindDecisionsTitle => 'Decisions';
 
   @override
   String get mastermindDeploy => 'Deploy';
+
+  @override
+  String mastermindDeployCiLine(String deploy, String ci) {
+    return 'Deploy $deploy · CI $ci';
+  }
 
   @override
   String get mastermindDeployError => 'error';
@@ -12557,6 +12590,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get mastermindForbiddenTitle => 'This account isn\'t allowed to view Mastermind.';
+
+  @override
   String get mastermindFreshCached => 'cached';
 
   @override
@@ -12625,10 +12661,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindLaneState => 'State';
 
   @override
+  String get mastermindLanesAtAGlance => 'Lanes at a glance';
+
+  @override
   String get mastermindLanesEmpty => 'No lanes in this view';
 
   @override
   String get mastermindLanesLabel => 'Lanes';
+
+  @override
+  String mastermindLastPublished(String age, String time) {
+    return 'Mastermind last published $age · $time';
+  }
+
+  @override
+  String mastermindLiveAgo(String age) {
+    return 'Live $age';
+  }
 
   @override
   String mastermindLiveFor(String duration) {
@@ -12647,7 +12696,15 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get mastermindNeedsAttention => 'Needs attention';
+
+  @override
   String get mastermindNeedsYouHint => 'Answer in the Inbox on your Mac.';
+
+  @override
+  String mastermindNeedsYouSeeAll(int count) {
+    return 'See all ($count)';
+  }
 
   @override
   String get mastermindNeedsYouTitle => 'Needs you';
@@ -12659,6 +12716,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindNoProduct => 'No product';
 
   @override
+  String get mastermindNoSnapshotTitle => 'Mastermind hasn\'t published yet.';
+
+  @override
+  String get mastermindNotConfiguredMessage => 'Mastermind isn\'t connected on this build.';
+
+  @override
   String get mastermindNotConnectedMessage => 'Mastermind data isn\'t published to this app yet.';
 
   @override
@@ -12668,6 +12731,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindNotReversible => 'Not reversible';
 
   @override
+  String get mastermindNothingNeedsReply => 'Nothing needs a reply';
+
+  @override
   String get mastermindNothingNeedsYou => 'Nothing needs you';
 
   @override
@@ -12675,6 +12741,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindObservedAt => 'Observed';
+
+  @override
+  String mastermindOfflineShowing(String time) {
+    return 'Offline · showing $time';
+  }
 
   @override
   String get mastermindOriginLabel => 'Origin';
@@ -12689,6 +12760,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindProductsLabel => 'Products';
 
   @override
+  String get mastermindQuotaEmpty => 'No quota data';
+
+  @override
+  String get mastermindQuotaTitle => 'Quota';
+
+  @override
   String get mastermindRange24h => '24 h';
 
   @override
@@ -12696,6 +12773,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindReceiptRecorded => 'Receipt recorded';
+
+  @override
+  String get mastermindRecentDecisionsTitle => 'Recent decisions';
 
   @override
   String get mastermindRecentEmpty => 'Nothing new.';
@@ -12715,10 +12795,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindRejectedMessage => 'It uses a format this app version doesn\'t read. Update the app.';
 
   @override
+  String get mastermindRejectedOtherMessage => 'The latest update couldn\'t be read.';
+
+  @override
   String get mastermindRejectedTitle => 'This snapshot can\'t be shown';
 
   @override
   String get mastermindReleasesTitle => 'Releases';
+
+  @override
+  String get mastermindReservePacing => 'Reserve pacing (chart rule)';
 
   @override
   String mastermindResetsAt(String dateTime) {
@@ -12770,7 +12856,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindScopeUsage => 'Usage';
 
   @override
+  String get mastermindSecurityFix => 'Security fix';
+
+  @override
+  String get mastermindSecurityGroup => 'Security';
+
+  @override
   String get mastermindSecurityIssue => 'Security issue';
+
+  @override
+  String mastermindSecurityLine(String product) {
+    return '$product · security fix';
+  }
 
   @override
   String mastermindSelectedReadout(String date, String series, String value) {
@@ -12838,7 +12935,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindSession => 'Session';
 
   @override
+  String mastermindSessionLeft(String value) {
+    return 'Session $value left';
+  }
+
+  @override
+  String get mastermindShipEmpty => 'No releases reported';
+
+  @override
   String get mastermindShowAll => 'Show all';
+
+  @override
+  String get mastermindSignInAction => 'Sign in';
+
+  @override
+  String get mastermindSignInAgainTitle => 'Sign in again to view Mastermind';
 
   @override
   String mastermindSnapshotAt(String time) {
@@ -12892,6 +13003,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindSourceWorkforce => 'Workforce';
+
+  @override
+  String mastermindSourcesDegraded(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count sources degraded',
+      one: '1 source degraded',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get mastermindSourcesTitle => 'Sources';
@@ -12995,6 +13117,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindSummaryWeeklyNotReported => 'Weekly window not reported.';
 
   @override
+  String get mastermindTabHome => 'Home';
+
+  @override
+  String get mastermindTabInbox => 'Inbox';
+
+  @override
+  String get mastermindTabInsights => 'Insights';
+
+  @override
+  String get mastermindTabShip => 'Ship';
+
+  @override
+  String get mastermindTabSoonMessage => 'This part of Mastermind arrives in an upcoming update. Home already shows what needs you.';
+
+  @override
+  String mastermindTabSoonTitle(String tab) {
+    return '$tab is coming soon';
+  }
+
+  @override
+  String get mastermindTabWork => 'Work';
+
+  @override
   String get mastermindTableLink => 'Table';
 
   @override
@@ -13053,6 +13198,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String mastermindUnitTokens(String value) {
     return '$value tokens';
   }
+
+  @override
+  String get mastermindUnknown => 'Unknown';
+
+  @override
+  String get mastermindUnreachableMessage => 'Retries wait a little longer after each failure.';
+
+  @override
+  String get mastermindUnreachableTitle => 'Can\'t reach Mastermind.';
+
+  @override
+  String mastermindUpdateAppShowing(String time) {
+    return 'Update the app to read the latest Mastermind data · showing $time';
+  }
+
+  @override
+  String mastermindUpdatedAt(String time) {
+    return 'Updated $time';
+  }
+
+  @override
+  String get mastermindUsageLink => 'Usage';
 
   @override
   String get mastermindVersion => 'Version';

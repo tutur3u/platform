@@ -1266,6 +1266,7 @@
   "appsHubInventoryDescription": "Quản lý sản phẩm, tồn kho, bán hàng và vận hành quầy tại một nơi.",
   "appsHubListView": "Danh sách",
   "appsHubMailDescription": "Đọc và gửi email, quản lý thư nháp và sắp xếp hộp thư đến.",
+  "appsHubMastermindDescription": "Trạng thái đội máy, quyết định, bản phát hành và mức sử dụng từ Mastermind.",
   "appsHubMeetDescription": "Lên lịch họp, xem lịch trình và theo dõi bản ghi.",
   "appsHubMoreTools": "Công cụ khác",
   "appsHubNotesDescription": "Ghi lại ý tưởng và liên kết với công việc.",
@@ -5074,6 +5075,33 @@
       }
     }
   },
+  "@mastermindCouldntReadShowing": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindCountState": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "state": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindDeployCiLine": {
+    "placeholders": {
+      "deploy": {
+        "type": "String"
+      },
+      "ci": {
+        "type": "String"
+      }
+    }
+  },
   "@mastermindFloor": {
     "placeholders": {
       "value": {
@@ -5084,6 +5112,23 @@
   "@mastermindLaneEta": {
     "placeholders": {
       "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindLastPublished": {
+    "placeholders": {
+      "age": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindLiveAgo": {
+    "placeholders": {
+      "age": {
         "type": "String"
       }
     }
@@ -5099,6 +5144,20 @@
     "placeholders": {
       "count": {
         "type": "int"
+      }
+    }
+  },
+  "@mastermindNeedsYouSeeAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindOfflineShowing": {
+    "placeholders": {
+      "time": {
+        "type": "String"
       }
     }
   },
@@ -5123,6 +5182,13 @@
       }
     }
   },
+  "@mastermindSecurityLine": {
+    "placeholders": {
+      "product": {
+        "type": "String"
+      }
+    }
+  },
   "@mastermindSelectedReadout": {
     "placeholders": {
       "date": {
@@ -5136,10 +5202,24 @@
       }
     }
   },
+  "@mastermindSessionLeft": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
   "@mastermindSnapshotAt": {
     "placeholders": {
       "time": {
         "type": "String"
+      }
+    }
+  },
+  "@mastermindSourcesDegraded": {
+    "placeholders": {
+      "count": {
+        "type": "int"
       }
     }
   },
@@ -5207,6 +5287,13 @@
       }
     }
   },
+  "@mastermindTabSoonTitle": {
+    "placeholders": {
+      "tab": {
+        "type": "String"
+      }
+    }
+  },
   "@mastermindUnitCredits": {
     "placeholders": {
       "value": {
@@ -5270,12 +5357,30 @@
       }
     }
   },
+  "@mastermindUpdateAppShowing": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindUpdatedAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "mastermindAccountFilter": "Tài khoản",
+  "mastermindActivityEmpty": "Chưa có hoạt động gần đây",
+  "mastermindActivityTitle": "Hoạt động",
   "mastermindAgeBasis": "Cơ sở tính tuổi",
   "mastermindAgeDays": "{count, plural, other{{count} ngày trước}}",
   "mastermindAgeHours": "{count, plural, other{{count} giờ trước}}",
   "mastermindAgeMinutes": "{count, plural, =0{vừa xong} other{{count} phút trước}}",
+  "mastermindAllCaughtUp": "Bạn đã xử lý hết",
   "mastermindAllFilter": "Tất cả",
+  "mastermindAppName": "Mastermind",
   "mastermindAreaCi": "CI",
   "mastermindAreaCost": "Chi phí",
   "mastermindAreaEducation": "Giáo dục",
@@ -5344,14 +5449,18 @@
   "mastermindColumnTopLevel": "Cấp cao nhất",
   "mastermindColumnTotal": "Tổng",
   "mastermindCommit": "Commit",
+  "mastermindCouldntReadShowing": "Không đọc được bản cập nhật mới nhất · đang hiển thị {time}",
+  "mastermindCountState": "{count} {state}",
   "mastermindCoverageComplete": "Đầy đủ",
   "mastermindCoverageMissing": "Không có nguồn",
   "mastermindCoveragePartial": "Dữ liệu một phần",
   "mastermindCoverageStale": "Đã cũ",
   "mastermindDataSourcesAction": "Nguồn dữ liệu",
   "mastermindDecidedBy": "Người quyết định",
+  "mastermindDecisionsEmpty": "Chưa có quyết định nào",
   "mastermindDecisionsTitle": "Quyết định",
   "mastermindDeploy": "Triển khai",
+  "mastermindDeployCiLine": "Triển khai {deploy} · CI {ci}",
   "mastermindDeployError": "lỗi",
   "mastermindDeployFailedFact": "Triển khai thất bại",
   "mastermindDeployFailure": "thất bại",
@@ -5380,6 +5489,7 @@
   "mastermindFilterRunning": "Đang chạy",
   "mastermindFilterWaiting": "Đang chờ",
   "mastermindFloor": "Ngưỡng {value}",
+  "mastermindForbiddenTitle": "Tài khoản này không được phép xem Mastermind.",
   "mastermindFreshCached": "từ bộ đệm",
   "mastermindFreshFresh": "mới",
   "mastermindInsightsLabel": "Chỉ số",
@@ -5402,34 +5512,48 @@
   "mastermindLaneProduct": "Sản phẩm",
   "mastermindLaneRole": "Vai trò",
   "mastermindLaneState": "Trạng thái",
+  "mastermindLanesAtAGlance": "Tổng quan luồng việc",
   "mastermindLanesEmpty": "Không có luồng việc nào trong chế độ xem này",
   "mastermindLanesLabel": "Luồng việc",
+  "mastermindLastPublished": "Mastermind cập nhật lần cuối {age} · {time}",
+  "mastermindLiveAgo": "Đang hoạt động {age}",
   "mastermindLiveFor": "đã chạy {duration}",
   "mastermindMeasuredRuns": "{count, plural, other{{count} lượt chạy có đo}}",
+  "mastermindNeedsAttention": "Cần chú ý",
   "mastermindNeedsYouHint": "Trả lời trong Inbox trên máy Mac.",
+  "mastermindNeedsYouSeeAll": "Xem tất cả ({count})",
   "mastermindNeedsYouTitle": "Cần bạn",
   "mastermindNoDataInPeriod": "Không có dữ liệu trong khoảng này",
   "mastermindNoProduct": "Không có sản phẩm",
+  "mastermindNoSnapshotTitle": "Mastermind chưa phát hành dữ liệu nào.",
+  "mastermindNotConfiguredMessage": "Bản dựng này chưa kết nối Mastermind.",
   "mastermindNotConnectedMessage": "Dữ liệu Mastermind chưa được xuất bản cho ứng dụng này.",
   "mastermindNotConnectedTitle": "Chưa kết nối",
   "mastermindNotReversible": "Không thể hoàn tác",
+  "mastermindNothingNeedsReply": "Không có gì cần trả lời",
   "mastermindNothingNeedsYou": "Không có việc cần bạn",
   "mastermindNowLabel": "Hiện tại",
   "mastermindObservedAt": "Thời điểm ghi nhận",
+  "mastermindOfflineShowing": "Ngoại tuyến · đang hiển thị {time}",
   "mastermindOriginLabel": "Nguồn gốc",
   "mastermindPartialBucket": "khoảng chưa trọn",
   "mastermindProductFilter": "Sản phẩm",
   "mastermindProductsLabel": "Sản phẩm",
+  "mastermindQuotaEmpty": "Chưa có dữ liệu hạn mức",
+  "mastermindQuotaTitle": "Hạn mức",
   "mastermindRange24h": "24 giờ",
   "mastermindRange7d": "7 ngày",
   "mastermindReceiptRecorded": "Đã ghi nhận biên nhận",
+  "mastermindRecentDecisionsTitle": "Quyết định gần đây",
   "mastermindRecentEmpty": "Không có gì mới.",
   "mastermindRecentTitle": "Gần đây",
   "mastermindRecommended": "Đề xuất",
   "mastermindRejectedInline": "Không đọc được ảnh chụp mới nhất. Đang hiển thị bản lúc {time}.",
   "mastermindRejectedMessage": "Ảnh chụp dùng định dạng mà phiên bản ứng dụng này không đọc được. Hãy cập nhật ứng dụng.",
+  "mastermindRejectedOtherMessage": "Không đọc được bản cập nhật mới nhất.",
   "mastermindRejectedTitle": "Không thể hiển thị ảnh chụp này",
   "mastermindReleasesTitle": "Bản phát hành",
+  "mastermindReservePacing": "Nhịp dự trữ (quy tắc biểu đồ)",
   "mastermindResetsAt": "Đặt lại lúc {dateTime}",
   "mastermindReversible": "Có thể hoàn tác",
   "mastermindRiskHigh": "cao",
@@ -5443,7 +5567,10 @@
   "mastermindScopeFleet": "Đội ngũ",
   "mastermindScopeModels": "Mô hình",
   "mastermindScopeUsage": "Sử dụng",
+  "mastermindSecurityFix": "Bản vá bảo mật",
+  "mastermindSecurityGroup": "Bảo mật",
   "mastermindSecurityIssue": "Vấn đề bảo mật",
+  "mastermindSecurityLine": "{product} · bản vá bảo mật",
   "mastermindSelectedReadout": "{date} · {series} · {value}",
   "mastermindSeriesActive": "Đang chạy",
   "mastermindSeriesBalance": "Số dư",
@@ -5465,7 +5592,11 @@
   "mastermindSeriesUsageLimit": "Hết hạn mức",
   "mastermindSeriesWaiting": "đang chờ",
   "mastermindSession": "Phiên",
+  "mastermindSessionLeft": "Phiên còn {value}",
+  "mastermindShipEmpty": "Chưa có bản phát hành nào",
   "mastermindShowAll": "Xem tất cả",
+  "mastermindSignInAction": "Đăng nhập",
+  "mastermindSignInAgainTitle": "Đăng nhập lại để xem Mastermind",
   "mastermindSnapshotAt": "Ảnh chụp lúc {time}",
   "mastermindSnapshotOutOfDate": "Ảnh chụp đã cũ",
   "mastermindSnapshotSectionsTitle": "Các phần",
@@ -5483,6 +5614,7 @@
   "mastermindSourceStateOk": "Ổn",
   "mastermindSourceT3": "T3",
   "mastermindSourceWorkforce": "Nhân lực",
+  "mastermindSourcesDegraded": "{count, plural, other{{count} nguồn bị suy giảm}}",
   "mastermindSourcesTitle": "Nguồn",
   "mastermindStaffGroup": "Nhân sự",
   "mastermindStateAnswered": "đã trả lời",
@@ -5512,6 +5644,13 @@
   "mastermindSummaryUsageLowest": "{account} còn ít nhất: {percent}.",
   "mastermindSummaryUsageShort": "Dự báo SHORT khi đặt lại lúc {time}.",
   "mastermindSummaryWeeklyNotReported": "Nguồn không báo cáo hạn mức tuần.",
+  "mastermindTabHome": "Tổng quan",
+  "mastermindTabInbox": "Hộp thư",
+  "mastermindTabInsights": "Phân tích",
+  "mastermindTabShip": "Phát hành",
+  "mastermindTabSoonMessage": "Phần này của Mastermind sẽ có trong bản cập nhật sắp tới. Tổng quan đã cho thấy việc cần bạn.",
+  "mastermindTabSoonTitle": "{tab} sắp ra mắt",
+  "mastermindTabWork": "Công việc",
   "mastermindTableLink": "Bảng",
   "mastermindTentative": "tạm tính",
   "mastermindTimeZoneCaption": "GMT+7",
@@ -5526,6 +5665,12 @@
   "mastermindUnitPpPerHour": "{value} điểm %/giờ",
   "mastermindUnitSeconds": "{value} giây",
   "mastermindUnitTokens": "{value} token",
+  "mastermindUnknown": "Không rõ",
+  "mastermindUnreachableMessage": "Mỗi lần thất bại, thời gian chờ thử lại sẽ dài hơn.",
+  "mastermindUnreachableTitle": "Không thể kết nối Mastermind.",
+  "mastermindUpdateAppShowing": "Hãy cập nhật ứng dụng để đọc dữ liệu Mastermind mới nhất · đang hiển thị {time}",
+  "mastermindUpdatedAt": "Cập nhật {time}",
+  "mastermindUsageLink": "Mức sử dụng",
   "mastermindVersion": "Phiên bản",
   "mastermindWeekly": "Hằng tuần",
   "mastermindWhy": "Lý do"

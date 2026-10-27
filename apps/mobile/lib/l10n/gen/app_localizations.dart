@@ -577,6 +577,12 @@ abstract class AppLocalizations {
   /// **'Read and send email, manage drafts, and organize your inbox.'**
   String get appsHubMailDescription;
 
+  /// No description provided for @appsHubMastermindDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Fleet status, decisions, releases and usage from Mastermind.'**
+  String get appsHubMastermindDescription;
+
   /// No description provided for @appsHubMeetDescription.
   ///
   /// In en, this message translates to:
@@ -23095,6 +23101,18 @@ abstract class AppLocalizations {
   /// **'Account'**
   String get mastermindAccountFilter;
 
+  /// No description provided for @mastermindActivityEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No recent activity'**
+  String get mastermindActivityEmpty;
+
+  /// No description provided for @mastermindActivityTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity'**
+  String get mastermindActivityTitle;
+
   /// No description provided for @mastermindAgeBasis.
   ///
   /// In en, this message translates to:
@@ -23119,11 +23137,23 @@ abstract class AppLocalizations {
   /// **'{count, plural, =0{just now} =1{1 min ago} other{{count} min ago}}'**
   String mastermindAgeMinutes(int count);
 
+  /// No description provided for @mastermindAllCaughtUp.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re all caught up'**
+  String get mastermindAllCaughtUp;
+
   /// No description provided for @mastermindAllFilter.
   ///
   /// In en, this message translates to:
   /// **'All'**
   String get mastermindAllFilter;
+
+  /// No description provided for @mastermindAppName.
+  ///
+  /// In en, this message translates to:
+  /// **'Mastermind'**
+  String get mastermindAppName;
 
   /// No description provided for @mastermindAreaCi.
   ///
@@ -23533,6 +23563,18 @@ abstract class AppLocalizations {
   /// **'Commit'**
   String get mastermindCommit;
 
+  /// No description provided for @mastermindCouldntReadShowing.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t read the latest update · showing {time}'**
+  String mastermindCouldntReadShowing(String time);
+
+  /// No description provided for @mastermindCountState.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} {state}'**
+  String mastermindCountState(int count, String state);
+
   /// No description provided for @mastermindCoverageComplete.
   ///
   /// In en, this message translates to:
@@ -23569,6 +23611,12 @@ abstract class AppLocalizations {
   /// **'Decided by'**
   String get mastermindDecidedBy;
 
+  /// No description provided for @mastermindDecisionsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No decisions yet'**
+  String get mastermindDecisionsEmpty;
+
   /// No description provided for @mastermindDecisionsTitle.
   ///
   /// In en, this message translates to:
@@ -23580,6 +23628,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Deploy'**
   String get mastermindDeploy;
+
+  /// No description provided for @mastermindDeployCiLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Deploy {deploy} · CI {ci}'**
+  String mastermindDeployCiLine(String deploy, String ci);
 
   /// No description provided for @mastermindDeployError.
   ///
@@ -23749,6 +23803,12 @@ abstract class AppLocalizations {
   /// **'Floor {value}'**
   String mastermindFloor(String value);
 
+  /// No description provided for @mastermindForbiddenTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This account isn\'t allowed to view Mastermind.'**
+  String get mastermindForbiddenTitle;
+
   /// No description provided for @mastermindFreshCached.
   ///
   /// In en, this message translates to:
@@ -23881,6 +23941,12 @@ abstract class AppLocalizations {
   /// **'State'**
   String get mastermindLaneState;
 
+  /// No description provided for @mastermindLanesAtAGlance.
+  ///
+  /// In en, this message translates to:
+  /// **'Lanes at a glance'**
+  String get mastermindLanesAtAGlance;
+
   /// No description provided for @mastermindLanesEmpty.
   ///
   /// In en, this message translates to:
@@ -23892,6 +23958,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Lanes'**
   String get mastermindLanesLabel;
+
+  /// No description provided for @mastermindLastPublished.
+  ///
+  /// In en, this message translates to:
+  /// **'Mastermind last published {age} · {time}'**
+  String mastermindLastPublished(String age, String time);
+
+  /// No description provided for @mastermindLiveAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'Live {age}'**
+  String mastermindLiveAgo(String age);
 
   /// No description provided for @mastermindLiveFor.
   ///
@@ -23905,11 +23983,23 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{1 measured run} other{{count} measured runs}}'**
   String mastermindMeasuredRuns(int count);
 
+  /// No description provided for @mastermindNeedsAttention.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs attention'**
+  String get mastermindNeedsAttention;
+
   /// No description provided for @mastermindNeedsYouHint.
   ///
   /// In en, this message translates to:
   /// **'Answer in the Inbox on your Mac.'**
   String get mastermindNeedsYouHint;
+
+  /// No description provided for @mastermindNeedsYouSeeAll.
+  ///
+  /// In en, this message translates to:
+  /// **'See all ({count})'**
+  String mastermindNeedsYouSeeAll(int count);
 
   /// No description provided for @mastermindNeedsYouTitle.
   ///
@@ -23929,6 +24019,18 @@ abstract class AppLocalizations {
   /// **'No product'**
   String get mastermindNoProduct;
 
+  /// No description provided for @mastermindNoSnapshotTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Mastermind hasn\'t published yet.'**
+  String get mastermindNoSnapshotTitle;
+
+  /// No description provided for @mastermindNotConfiguredMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Mastermind isn\'t connected on this build.'**
+  String get mastermindNotConfiguredMessage;
+
   /// No description provided for @mastermindNotConnectedMessage.
   ///
   /// In en, this message translates to:
@@ -23947,6 +24049,12 @@ abstract class AppLocalizations {
   /// **'Not reversible'**
   String get mastermindNotReversible;
 
+  /// No description provided for @mastermindNothingNeedsReply.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing needs a reply'**
+  String get mastermindNothingNeedsReply;
+
   /// No description provided for @mastermindNothingNeedsYou.
   ///
   /// In en, this message translates to:
@@ -23964,6 +24072,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Observed'**
   String get mastermindObservedAt;
+
+  /// No description provided for @mastermindOfflineShowing.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline · showing {time}'**
+  String mastermindOfflineShowing(String time);
 
   /// No description provided for @mastermindOriginLabel.
   ///
@@ -23989,6 +24103,18 @@ abstract class AppLocalizations {
   /// **'Products'**
   String get mastermindProductsLabel;
 
+  /// No description provided for @mastermindQuotaEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No quota data'**
+  String get mastermindQuotaEmpty;
+
+  /// No description provided for @mastermindQuotaTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Quota'**
+  String get mastermindQuotaTitle;
+
   /// No description provided for @mastermindRange24h.
   ///
   /// In en, this message translates to:
@@ -24006,6 +24132,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Receipt recorded'**
   String get mastermindReceiptRecorded;
+
+  /// No description provided for @mastermindRecentDecisionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent decisions'**
+  String get mastermindRecentDecisionsTitle;
 
   /// No description provided for @mastermindRecentEmpty.
   ///
@@ -24037,6 +24169,12 @@ abstract class AppLocalizations {
   /// **'It uses a format this app version doesn\'t read. Update the app.'**
   String get mastermindRejectedMessage;
 
+  /// No description provided for @mastermindRejectedOtherMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The latest update couldn\'t be read.'**
+  String get mastermindRejectedOtherMessage;
+
   /// No description provided for @mastermindRejectedTitle.
   ///
   /// In en, this message translates to:
@@ -24048,6 +24186,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Releases'**
   String get mastermindReleasesTitle;
+
+  /// No description provided for @mastermindReservePacing.
+  ///
+  /// In en, this message translates to:
+  /// **'Reserve pacing (chart rule)'**
+  String get mastermindReservePacing;
 
   /// No description provided for @mastermindResetsAt.
   ///
@@ -24127,11 +24271,29 @@ abstract class AppLocalizations {
   /// **'Usage'**
   String get mastermindScopeUsage;
 
+  /// No description provided for @mastermindSecurityFix.
+  ///
+  /// In en, this message translates to:
+  /// **'Security fix'**
+  String get mastermindSecurityFix;
+
+  /// No description provided for @mastermindSecurityGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Security'**
+  String get mastermindSecurityGroup;
+
   /// No description provided for @mastermindSecurityIssue.
   ///
   /// In en, this message translates to:
   /// **'Security issue'**
   String get mastermindSecurityIssue;
+
+  /// No description provided for @mastermindSecurityLine.
+  ///
+  /// In en, this message translates to:
+  /// **'{product} · security fix'**
+  String mastermindSecurityLine(String product);
 
   /// No description provided for @mastermindSelectedReadout.
   ///
@@ -24259,11 +24421,35 @@ abstract class AppLocalizations {
   /// **'Session'**
   String get mastermindSession;
 
+  /// No description provided for @mastermindSessionLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Session {value} left'**
+  String mastermindSessionLeft(String value);
+
+  /// No description provided for @mastermindShipEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No releases reported'**
+  String get mastermindShipEmpty;
+
   /// No description provided for @mastermindShowAll.
   ///
   /// In en, this message translates to:
   /// **'Show all'**
   String get mastermindShowAll;
+
+  /// No description provided for @mastermindSignInAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in'**
+  String get mastermindSignInAction;
+
+  /// No description provided for @mastermindSignInAgainTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in again to view Mastermind'**
+  String get mastermindSignInAgainTitle;
 
   /// No description provided for @mastermindSnapshotAt.
   ///
@@ -24366,6 +24552,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Workforce'**
   String get mastermindSourceWorkforce;
+
+  /// No description provided for @mastermindSourcesDegraded.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 source degraded} other{{count} sources degraded}}'**
+  String mastermindSourcesDegraded(int count);
 
   /// No description provided for @mastermindSourcesTitle.
   ///
@@ -24541,6 +24733,48 @@ abstract class AppLocalizations {
   /// **'Weekly window not reported.'**
   String get mastermindSummaryWeeklyNotReported;
 
+  /// No description provided for @mastermindTabHome.
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get mastermindTabHome;
+
+  /// No description provided for @mastermindTabInbox.
+  ///
+  /// In en, this message translates to:
+  /// **'Inbox'**
+  String get mastermindTabInbox;
+
+  /// No description provided for @mastermindTabInsights.
+  ///
+  /// In en, this message translates to:
+  /// **'Insights'**
+  String get mastermindTabInsights;
+
+  /// No description provided for @mastermindTabShip.
+  ///
+  /// In en, this message translates to:
+  /// **'Ship'**
+  String get mastermindTabShip;
+
+  /// No description provided for @mastermindTabSoonMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This part of Mastermind arrives in an upcoming update. Home already shows what needs you.'**
+  String get mastermindTabSoonMessage;
+
+  /// No description provided for @mastermindTabSoonTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{tab} is coming soon'**
+  String mastermindTabSoonTitle(String tab);
+
+  /// No description provided for @mastermindTabWork.
+  ///
+  /// In en, this message translates to:
+  /// **'Work'**
+  String get mastermindTabWork;
+
   /// No description provided for @mastermindTableLink.
   ///
   /// In en, this message translates to:
@@ -24624,6 +24858,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{value} tokens'**
   String mastermindUnitTokens(String value);
+
+  /// No description provided for @mastermindUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get mastermindUnknown;
+
+  /// No description provided for @mastermindUnreachableMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Retries wait a little longer after each failure.'**
+  String get mastermindUnreachableMessage;
+
+  /// No description provided for @mastermindUnreachableTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t reach Mastermind.'**
+  String get mastermindUnreachableTitle;
+
+  /// No description provided for @mastermindUpdateAppShowing.
+  ///
+  /// In en, this message translates to:
+  /// **'Update the app to read the latest Mastermind data · showing {time}'**
+  String mastermindUpdateAppShowing(String time);
+
+  /// No description provided for @mastermindUpdatedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated {time}'**
+  String mastermindUpdatedAt(String time);
+
+  /// No description provided for @mastermindUsageLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Usage'**
+  String get mastermindUsageLink;
 
   /// No description provided for @mastermindVersion.
   ///
