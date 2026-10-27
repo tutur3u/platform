@@ -61,7 +61,6 @@ const TASKS_OWNED_WORKSPACE_ROUTE_PREFIXES = new Set([
   'calendar',
   'cycles',
   'goals',
-  'initiatives',
   'leaderboard',
   'progress',
   'tasks',

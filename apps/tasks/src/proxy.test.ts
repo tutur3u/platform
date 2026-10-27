@@ -301,8 +301,6 @@ describe('Tasks proxy auth mode', () => {
 
   it.each([
     '/personal/tasks',
-    '/personal/initiatives',
-    '/vi/workspace-1/tasks/initiatives',
     '/workspace-1/boards/board-1',
     '/workspace-1/analytics',
     '/vi/workspace-1/progress/overview',

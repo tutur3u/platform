@@ -3,24 +3,12 @@ import { cleanup, render, screen } from '@testing-library/react';
 import type { Workspace } from '@tuturuuu/types';
 import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import Page from '@/app/[locale]/(dashboard)/[wsId]/initiatives/page';
 import { buildNavigationLinks } from '@/app/[locale]/(dashboard)/[wsId]/navigation';
-import LegacyPage from '@/app/[locale]/(dashboard)/[wsId]/tasks/initiatives/page';
 import { SettingsDialog } from '@/components/settings/settings-dialog';
-import { pages } from '@/runtime/page-registry.bridge.gen';
 
 const mocks = vi.hoisted(() => ({
-  session: vi.fn(async () => ({ id: 'actor' })),
-  initiativesPage: vi.fn(),
   shell: vi.fn(),
 }));
-vi.mock('@tuturuuu/satellite/auth', () => ({
-  getSatelliteAppSessionUser: mocks.session,
-}));
-vi.mock('@tuturuuu/tasks-ui/tu-do/initiatives/task-initiatives-page', () => ({
-  default: mocks.initiativesPage,
-}));
-vi.mock('next/server', () => ({ connection: vi.fn() }));
 vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
 vi.mock('next-intl/server', () => ({
   getTranslations: async () => (key: string) => key,
@@ -121,20 +109,5 @@ describe('Hidden Initiatives entry points', () => {
     expect(JSON.stringify(props.navItems)).not.toMatch(/initiative/i);
     expect(props.activeTab).toBe('tasks_general');
     expect(screen.getByText('General task settings')).toBeTruthy();
-  });
-
-  it('keeps both bookmark paths wired to the shared page with the Tasks session', async () => {
-    expect(LegacyPage).toBe(Page);
-    expect(pages.map((page) => page.pattern)).toEqual(
-      expect.arrayContaining([
-        '/[wsId]/initiatives',
-        '/[wsId]/tasks/initiatives',
-      ])
-    );
-    const params = Promise.resolve({ wsId: 'personal' });
-    const result = await Page({ params });
-    expect(mocks.session).toHaveBeenCalledWith('tasks');
-    expect(result.type).toBe(mocks.initiativesPage);
-    expect(result.props).toEqual({ params, sessionUser: { id: 'actor' } });
   });
 });
