@@ -176,7 +176,7 @@ describe('SprintPill', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('offers End for the running sprint and opens past sprints from the list', () => {
+  it('offers End for the running sprint and opens past sprints from the list', async () => {
     const onEndSprint = vi.fn();
     const onSelectSprint = vi.fn();
     render(
@@ -193,12 +193,12 @@ describe('SprintPill', () => {
     fireEvent.click(
       screen.getByRole('button', { name: 'end_sprint:Sprint 14' })
     );
-    expect(onEndSprint).toHaveBeenCalledWith(active);
+    await waitFor(() => expect(onEndSprint).toHaveBeenCalledWith(active));
     expect(
       screen.queryByRole('button', { name: /start:Sprint 15/ })
     ).not.toBeInTheDocument();
 
     fireEvent.click(screen.getAllByRole('menuitem')[0]!);
-    expect(onSelectSprint).toHaveBeenCalledWith(closed);
+    await waitFor(() => expect(onSelectSprint).toHaveBeenCalledWith(closed));
   });
 });
