@@ -1,6 +1,6 @@
--- Rollback proof for 20261027010000_topic_teacher_deadline_notices.sql.
+-- Rollback proof for 20261027060100_topic_teacher_deadline_notices.sql.
 -- Run ONLY against a disposable local stack:
---   psql "$DB_URL" -v ON_ERROR_STOP=1 -f apps/database/rollbacks/20261027010000_topic_teacher_deadline_notices.rollback.sql
+--   psql "$DB_URL" -v ON_ERROR_STOP=1 -f apps/database/rollbacks/20261027060100_topic_teacher_deadline_notices.rollback.sql
 --   psql "$DB_URL" -v ON_ERROR_STOP=1 -f apps/database/verification/topic-teacher-deadline-notices-rollback-roundtrip.sql
 -- then re-apply the forward migration and re-run
 -- supabase/tests/topic-teacher-deadline-notices.sql.
