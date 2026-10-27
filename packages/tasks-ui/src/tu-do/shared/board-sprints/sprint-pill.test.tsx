@@ -1,5 +1,11 @@
 import '@testing-library/jest-dom';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import type { BoardSprint } from '@tuturuuu/internal-api/task-sprints';
 import type React from 'react';
 import { describe, expect, it, vi } from 'vitest';
@@ -131,7 +137,7 @@ describe('SprintPill', () => {
     expect(rows[2]).toHaveTextContent('task_count:2');
   });
 
-  it('offers Start only to managers and only when nothing is running', () => {
+  it('offers Start only to managers and only when nothing is running', async () => {
     const onStartSprint = vi.fn();
     const { rerender } = render(
       <SprintPill
@@ -154,7 +160,7 @@ describe('SprintPill', () => {
       />
     );
     fireEvent.click(screen.getByRole('button', { name: /start:Sprint 15/ }));
-    expect(onStartSprint).toHaveBeenCalledWith(planned);
+    await waitFor(() => expect(onStartSprint).toHaveBeenCalledWith(planned));
 
     rerender(
       <SprintPill
