@@ -517,6 +517,50 @@ describe('BoardHeader', () => {
     );
   });
 
+  it('keeps people, Unassigned and projects usable while hiding partial counts', async () => {
+    const onFiltersChange = vi.fn();
+    renderBoardHeader({
+      onFiltersChange,
+      people: [
+        ...people,
+        ...['An', 'Binh', 'Chi', 'Dung'].map((name) => ({
+          id: name,
+          display_name: name,
+          taskCount: 0,
+        })),
+      ],
+      unassignedCount: 0,
+      projectTaskCounts: new Map([['p-platform', 4]]),
+      countsComplete: false,
+    });
+
+    expect(screen.getByRole('button', { name: /Linh/ })).toHaveAttribute(
+      'title',
+      'ws-task-boards.header.you:Linh'
+    );
+    const unassigned = screen.getByRole('button', {
+      name: 'common.unassigned',
+    });
+    expect(unassigned).toHaveAttribute('title', 'common.unassigned');
+    fireEvent.click(unassigned);
+    expect(onFiltersChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ includeUnassigned: true })
+    );
+    expect(
+      screen.getByRole('menuitemcheckbox', { name: 'Dung' })
+    ).toHaveTextContent(/^Dung$/);
+    const project = await screen.findByRole('menuitemcheckbox', {
+      name: 'Platform',
+    });
+    expect(project).toHaveTextContent(/^Platform$/);
+    fireEvent.click(project);
+    expect(onFiltersChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        projects: [{ id: 'p-platform', name: 'Platform' }],
+      })
+    );
+  });
+
   it('sorts by priority only and switches views with shortcuts shown', () => {
     const onFiltersChange = vi.fn();
     const onViewChange = vi.fn();
