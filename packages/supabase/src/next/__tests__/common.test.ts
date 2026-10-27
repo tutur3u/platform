@@ -150,6 +150,53 @@ describe('common', () => {
       });
     });
 
+    it('scopes cookies to .staging.tutur3u.com on a staging host and leaves production on .tuturuuu.com', () => {
+      process.env.NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN =
+        '.staging.tutur3u.com';
+
+      expect(
+        getSupabaseCookieOptions(supabaseUrl, 'https://web.staging.tutur3u.com')
+      ).toEqual({
+        domain: '.staging.tutur3u.com',
+        name: 'sb-nzamlzqfdwaaxdefwraj-auth-token',
+        path: '/',
+        sameSite: 'lax',
+        secure: true,
+      });
+      expect(
+        getSupabaseCookieOptions(supabaseUrl, 'https://app.tutur3u.com')
+      ).toEqual({
+        name: 'sb-nzamlzqfdwaaxdefwraj-auth-token',
+        path: '/',
+        sameSite: 'lax',
+      });
+
+      delete process.env.NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN;
+
+      expect(
+        getSupabaseCookieOptions(supabaseUrl, 'https://tasks.tuturuuu.com')
+      ).toMatchObject({ domain: '.tuturuuu.com', secure: true });
+      expect(
+        getSupabaseCookieOptions(supabaseUrl, 'https://web.staging.tutur3u.com')
+      ).not.toHaveProperty('domain');
+    });
+
+    it.each([
+      '.tutur3u.com',
+      '.tuturuuu.com',
+      '.foo.tutur3u.com',
+      '.staging.tuturuuu.com',
+    ])('ignores the rejected shared cookie override %s', (value) => {
+      process.env.NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN = value;
+
+      expect(
+        getSupabaseCookieOptions(supabaseUrl, 'https://tasks.tuturuuu.com')
+      ).toMatchObject({ domain: '.tuturuuu.com', secure: true });
+      expect(
+        getSupabaseCookieOptions(supabaseUrl, 'https://web.staging.tutur3u.com')
+      ).not.toHaveProperty('domain');
+    });
+
     it('shares cookies across local Tuturuuu subdomains without secure cookies', () => {
       expect(
         getSupabaseCookieOptions(

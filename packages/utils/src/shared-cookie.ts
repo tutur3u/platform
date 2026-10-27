@@ -45,14 +45,14 @@ export const TUTURUUU_SHARED_COOKIE_DOMAIN_ENV_KEY =
   'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN';
 
 /**
- * Registrable domains an environment-configured shared cookie domain must sit
- * strictly beneath (for example `.staging.tutur3u.com`). The registrable domain
- * itself is never accepted from configuration: `.tutur3u.com` would share
- * staging cookies with every other tutur3u.com host.
+ * Exact allowlist of environment-configured shared cookie domains. Anything
+ * else (a sibling such as `.foo.tutur3u.com`, a registrable domain such as
+ * `.tutur3u.com` or `.tuturuuu.com`, a lookalike on another zone) is ignored,
+ * so a mis-set variable can never widen the cookie scope or move production off
+ * `.tuturuuu.com`.
  */
-const CONFIGURED_SHARED_COOKIE_PARENT_HOSTNAMES = [
-  'tutur3u.com',
-  'tuturuuu.com',
+export const CONFIGURED_SHARED_COOKIE_DOMAINS = [
+  '.staging.tutur3u.com',
 ] as const;
 
 const warnedSharedCookieDomainValues = new Set<string>();
@@ -66,48 +66,40 @@ function warnIgnoredSharedCookieDomain(value: string, reason: string) {
   );
 }
 
-function parseConfiguredSharedCookieDomain(
-  value: string | undefined
-): TuturuuuSharedCookieDomain | null {
-  const normalized = value?.trim().toLowerCase();
+/**
+ * The accepted environment override, or `null` when the variable is unset or
+ * not on the exact allowlist (in which case the production default applies).
+ */
+export function getConfiguredSharedCookieDomainOverride(): TuturuuuSharedCookieDomain | null {
+  const normalized =
+    process.env.NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN?.trim().toLowerCase();
 
   if (!normalized) return null;
 
-  if (!/^\.[a-z0-9-]+(\.[a-z0-9-]+)+$/u.test(normalized)) {
-    warnIgnoredSharedCookieDomain(
-      normalized,
-      'expected a leading-dot hostname such as .staging.tutur3u.com'
-    );
-    return null;
-  }
-
-  const hostname = normalized.slice(1);
-  const isStrictSubdomain = CONFIGURED_SHARED_COOKIE_PARENT_HOSTNAMES.some(
-    (parent) => hostname.endsWith(`.${parent}`)
+  const accepted = CONFIGURED_SHARED_COOKIE_DOMAINS.find(
+    (domain) => domain === normalized
   );
 
-  if (!isStrictSubdomain) {
+  if (!accepted) {
     warnIgnoredSharedCookieDomain(
       normalized,
-      'must be a subdomain of tutur3u.com or tuturuuu.com, never the registrable domain itself'
+      `only ${CONFIGURED_SHARED_COOKIE_DOMAINS.join(', ')} is accepted`
     );
     return null;
   }
 
-  return { cookieDomain: normalized, hostname, secure: true };
+  return { cookieDomain: accepted, hostname: accepted.slice(1), secure: true };
 }
 
 /**
  * Shared cookie domains for this deployment. Production defaults to
- * `.tuturuuu.com`; a deployment that must stay cookie-isolated (staging) sets
- * `NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN` (for example
- * `.staging.tutur3u.com`) which replaces the production domain. The first
- * entry is the primary (managed) domain.
+ * `.tuturuuu.com`; the staging deployment sets
+ * `NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN=.staging.tutur3u.com` (the only
+ * accepted override), which replaces the production domain. The variable must
+ * never be set on production. The first entry is the primary (managed) domain.
  */
 export function getTuturuuuSharedCookieDomains(): readonly TuturuuuSharedCookieDomain[] {
-  const configured = parseConfiguredSharedCookieDomain(
-    process.env.NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN
-  );
+  const configured = getConfiguredSharedCookieDomainOverride();
 
   return configured
     ? [configured, ...TUTURUUU_SHARED_COOKIE_DOMAINS.slice(1)]

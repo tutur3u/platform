@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   APP_DOMAIN_MAP,
   getAppDomainByUrl,
@@ -52,6 +52,11 @@ describe('registered production satellite origins', () => {
 
 describe('configured staging internal app registry', () => {
   const ENV_KEY = 'NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS';
+  const COOKIE_ENV_KEY = 'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN';
+
+  beforeEach(() => {
+    vi.stubEnv(COOKIE_ENV_KEY, '.staging.tutur3u.com');
+  });
 
   afterEach(() => {
     vi.unstubAllEnvs();
@@ -119,22 +124,22 @@ describe('configured staging internal app registry', () => {
         'no-separator',
         ':https://missing-name.staging.tutur3u.com',
         'Bad Name:https://bad-name.staging.tutur3u.com',
-        'http-only:http://insecure-app.staging.tutur3u.com',
-        'ws:wss://socket.staging.tutur3u.com',
-        'wild:https://*.staging.tutur3u.com',
-        'wild2:https://*',
-        'pathy:https://pathy-app.staging.tutur3u.com/some/path',
-        'query:https://query-app.staging.tutur3u.com/?a=1',
-        'creds:https://user:pass@creds-app.staging.tutur3u.com',
-        'garbage:not a url',
-        'ok:https://ok-app.staging.tutur3u.com',
+        'cms:http://insecure-app.staging.tutur3u.com',
+        'cms:wss://socket.staging.tutur3u.com',
+        'cms:https://*.staging.tutur3u.com',
+        'cms:https://*',
+        'cms:https://pathy-app.staging.tutur3u.com/some/path',
+        'cms:https://query-app.staging.tutur3u.com/?a=1',
+        'cms:https://user:pass@creds-app.staging.tutur3u.com',
+        'cms:not a url',
+        'docs:https://ok-app.staging.tutur3u.com',
       ].join(',')
     );
 
     expect(getConfiguredInternalAppDomains()).toEqual([
       {
         kind: 'internal',
-        name: 'ok',
+        name: 'docs',
         requiresExactOrigin: true,
         url: 'https://ok-app.staging.tutur3u.com',
       },
@@ -155,7 +160,76 @@ describe('configured staging internal app registry', () => {
     expect(getConfiguredInternalAppDomains()).toEqual([]);
   });
 
-  it('leaves the production registry and resolution unchanged without the env var', () => {
+  it.each([
+    ['production default', ''],
+    ['rejected .tutur3u.com', '.tutur3u.com'],
+    ['rejected .tuturuuu.com', '.tuturuuu.com'],
+    ['rejected sibling zone', '.foo.tutur3u.com'],
+  ])(
+    'registers nothing unless the shared cookie domain is the accepted override (%s)',
+    (_label, cookieDomain) => {
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
+      vi.stubEnv(COOKIE_ENV_KEY, cookieDomain);
+      vi.stubEnv(
+        ENV_KEY,
+        'tasks:https://tasks.staging.tutur3u.com,platform:https://tuturuuu.com'
+      );
+
+      expect(getConfiguredInternalAppDomains()).toEqual([]);
+      expect(getAppDomainMap()).toHaveLength(
+        APP_DOMAIN_MAP.length + getConfiguredExternalAppDomains().length
+      );
+      expect(
+        getInternalAppDomainByUrl('https://tasks.staging.tutur3u.com/x')
+      ).toBeNull();
+    }
+  );
+
+  it('only accepts hosts equal to or under the override hostname', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    vi.stubEnv(
+      ENV_KEY,
+      [
+        'platform:https://tuturuuu.com',
+        'tasks:https://tasks.tuturuuu.com',
+        'calendar:https://calendar.tutur3u.com',
+        'drive:https://drive.example.com',
+        'chat:https://evil-staging.tutur3u.com',
+        'ai:https://tasks.staging.tutur3u.com.evil.test',
+        'cms:https://cms.staging.tutur3u.com:8443',
+        'docs:https://docs.staging.tutur3u.com:443',
+        'learn:https://learn.staging.tutur3u.com.',
+        'meet:https://meet.staging.tutur3u.com',
+        'platform:https://staging.tutur3u.com',
+      ].join(',')
+    );
+
+    expect(
+      getConfiguredInternalAppDomains().map((entry) => [entry.name, entry.url])
+    ).toEqual([
+      ['meet', 'https://meet.staging.tutur3u.com'],
+      ['platform', 'https://staging.tutur3u.com'],
+    ]);
+    expect(warn).toHaveBeenCalled();
+  });
+
+  it('rejects names that are not existing app names', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    vi.stubEnv(
+      ENV_KEY,
+      'brand-new-app:https://new.staging.tutur3u.com,tasks:https://tasks.staging.tutur3u.com'
+    );
+
+    expect(
+      getConfiguredInternalAppDomains().map((entry) => entry.name)
+    ).toEqual(['tasks']);
+    expect(warn).toHaveBeenCalled();
+  });
+
+  it('leaves the production registry and resolution unchanged without the env vars', () => {
+    vi.stubEnv(COOKIE_ENV_KEY, '');
     vi.stubEnv(ENV_KEY, '');
 
     const productionNames = getAppDomainMap()
@@ -172,7 +246,27 @@ describe('configured staging internal app registry', () => {
     );
   });
 
-  it('does not change how production origins resolve when staging entries are set', () => {
+  it('stops resolving production app origins on the isolated staging deployment', () => {
+    vi.stubEnv(
+      ENV_KEY,
+      'tasks:https://tasks.staging.tutur3u.com,platform:https://web.staging.tutur3u.com'
+    );
+
+    for (const url of [
+      'https://tasks.tuturuuu.com/verify-token',
+      'https://tuturuuu.com/verify-token',
+      'https://rewise.me/verify-token',
+    ]) {
+      expect(getAppDomainByUrl(url), url).toBeNull();
+    }
+    expect(
+      getAppDomainByUrl('https://tasks.staging.tutur3u.com/verify-token')
+    ).toMatchObject({ kind: 'internal', name: 'tasks' });
+  });
+
+  it('does not change how production origins resolve when staging entries are set without the override', () => {
+    vi.stubEnv(COOKIE_ENV_KEY, '');
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
     const before = getAppDomainByUrl('https://tasks.tuturuuu.com/x');
 
     vi.stubEnv(ENV_KEY, 'tasks:https://tasks.staging.tutur3u.com');

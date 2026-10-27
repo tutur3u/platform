@@ -324,7 +324,11 @@ describe('cross-app return route', () => {
     const stagingWebOrigin = 'https://web.staging.tutur3u.com';
     const stagingTasksOrigin = 'https://tasks.staging.tutur3u.com';
 
-    it('hands off a token to a registered staging satellite when no staging cookie domain is configured', async () => {
+    it('hands off a token to a registered staging satellite from the staging web host', async () => {
+      vi.stubEnv(
+        'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN',
+        '.staging.tutur3u.com'
+      );
       vi.stubEnv(
         'NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS',
         `tasks:${stagingTasksOrigin}`
@@ -375,7 +379,7 @@ describe('cross-app return route', () => {
       expect(mocks.rpc).not.toHaveBeenCalled();
     });
 
-    it('does not skip the token for a registered staging satellite from a tuturuuu.com web host', async () => {
+    it('never acts on the staging registry from a production web host', async () => {
       vi.stubEnv(
         'NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS',
         `tasks:${stagingTasksOrigin}`
@@ -390,14 +394,29 @@ describe('cross-app return route', () => {
         )
       );
 
-      expect(response.status).toBe(200);
-      const body = (await response.json()) as { targetApp: string };
-
-      expect(body.targetApp).toBe('tasks');
-      expect(mocks.rpc).toHaveBeenCalledTimes(1);
+      expect(response.status).toBe(400);
+      expect(mocks.createClient).not.toHaveBeenCalled();
+      expect(mocks.rpc).not.toHaveBeenCalled();
     });
 
-    it('does not skip the token for a host outside the shared domain even when staging is configured', async () => {
+    it('rejects a production satellite return from the staging web host', async () => {
+      vi.stubEnv(
+        'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN',
+        '.staging.tutur3u.com'
+      );
+
+      const response = await POST(
+        createRequest('https://tasks.tuturuuu.com/verify-token?nextUrl=%2F', {
+          origin: stagingWebOrigin,
+        })
+      );
+
+      expect(response.status).toBe(400);
+      expect(mocks.rpc).not.toHaveBeenCalled();
+    });
+
+    it('rejects a registry entry outside the staging cookie domain', async () => {
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
       vi.stubEnv(
         'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN',
         '.staging.tutur3u.com'
@@ -414,8 +433,8 @@ describe('cross-app return route', () => {
         )
       );
 
-      expect(response.status).toBe(200);
-      expect(mocks.rpc).toHaveBeenCalledTimes(1);
+      expect(response.status).toBe(400);
+      expect(mocks.rpc).not.toHaveBeenCalled();
     });
 
     it('keeps the tokenless managed path for unregistered hosts inside the configured staging domain', async () => {

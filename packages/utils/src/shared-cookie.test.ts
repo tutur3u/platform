@@ -1,6 +1,8 @@
+import { getSupabaseCookieOptions } from '@tuturuuu/supabase/next/common';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   type CookieOptionsLike,
+  getConfiguredSharedCookieDomainOverride,
   getHostOnlyCookieOptions,
   getSharedAndHostOnlyCookieDeleteOptions,
   getTuturuuuPrimarySharedCookieDomain,
@@ -191,6 +193,10 @@ describe('configurable shared cookie domain', () => {
     '.tutur3u.com',
     'tutur3u.com',
     '.tuturuuu.com',
+    '.foo.tutur3u.com',
+    '.staging.tuturuuu.com',
+    '.web.staging.tutur3u.com',
+    '.staging.tutur3u.com.',
     '.com',
     '.vercel.app',
     '.evil.test',
@@ -213,4 +219,90 @@ describe('configurable shared cookie domain', () => {
     ).toBeNull();
     expect(warn).toHaveBeenCalled();
   });
+});
+
+describe('shared cookie delete options without an accepted override', () => {
+  const ENV_KEY = 'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN';
+  // Serialized key order matches the production output from before the
+  // override existed, so any change to the default path shows up byte-for-byte.
+  const expected =
+    '[{"path":"/","sameSite":"lax","maxAge":0},{"path":"/","sameSite":"lax","maxAge":0,"domain":".tuturuuu.com","secure":true}]';
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
+  });
+
+  it.each([
+    ['unset', ''],
+    ['rejected sibling zone', '.foo.tutur3u.com'],
+    ['rejected registrable domain', '.tutur3u.com'],
+  ])('is byte-identical to production when the override is %s', (_l, value) => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.stubEnv(ENV_KEY, value);
+
+    expect(
+      JSON.stringify(
+        getSharedAndHostOnlyCookieDeleteOptions(
+          { path: '/', sameSite: 'lax' as const },
+          'https://drive.tuturuuu.com'
+        )
+      )
+    ).toBe(expected);
+  });
+
+  it('exposes the accepted override only for the exact staging domain', () => {
+    vi.stubEnv(ENV_KEY, '.STAGING.tutur3u.com ');
+
+    expect(getConfiguredSharedCookieDomainOverride()).toEqual({
+      cookieDomain: '.staging.tutur3u.com',
+      hostname: 'staging.tutur3u.com',
+      secure: true,
+    });
+
+    vi.stubEnv(ENV_KEY, '');
+    expect(getConfiguredSharedCookieDomainOverride()).toBeNull();
+  });
+});
+
+describe('parity with the Supabase cookie helpers', () => {
+  const ENV_KEY = 'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN';
+  const supabaseUrl = 'https://nzamlzqfdwaaxdefwraj.supabase.co';
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
+  });
+
+  it.each([
+    '',
+    '.staging.tutur3u.com',
+    '.tutur3u.com',
+    '.tuturuuu.com',
+    '.foo.tutur3u.com',
+    '.staging.tuturuuu.com',
+  ])(
+    'resolves the same cookie domain for every host with override %j',
+    (value) => {
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
+      vi.stubEnv(ENV_KEY, value);
+
+      for (const url of [
+        'https://tuturuuu.com',
+        'https://tasks.tuturuuu.com',
+        'https://tasks.tuturuuu.localhost',
+        'https://staging.tutur3u.com',
+        'https://web.staging.tutur3u.com',
+        'https://app.tutur3u.com',
+        'https://web.staging.tutur3u.com.evil.test',
+        'http://localhost:7803',
+      ]) {
+        const shared = resolveTuturuuuSharedCookieDomain(url);
+        const supabase = getSupabaseCookieOptions(supabaseUrl, url);
+
+        expect(supabase.domain, url).toBe(shared?.cookieDomain);
+        expect(supabase.secure, url).toBe(shared?.secure);
+      }
+    }
+  );
 });

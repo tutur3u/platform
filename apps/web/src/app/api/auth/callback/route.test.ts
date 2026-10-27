@@ -123,7 +123,30 @@ describe('auth callback route', () => {
     expect(response.headers.get('location')).not.toContain('vc.tuturuuu.com');
   });
 
+  it('never acts on the staging registry when the shared cookie domain is the production default', async () => {
+    vi.stubEnv(
+      'NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS',
+      'tasks:https://tasks.staging.tutur3u.com'
+    );
+    const satelliteReturnUrl = encodeURIComponent(
+      'https://tasks.staging.tutur3u.com/personal'
+    );
+    const response = await GET(
+      new NextRequest(
+        `https://tuturuuu.com/api/auth/callback?returnUrl=${satelliteReturnUrl}`
+      )
+    );
+
+    expect(response.headers.get('location')).toBe(
+      'https://tuturuuu.com/personal'
+    );
+  });
+
   it('routes registered staging satellites through login confirmation for the token handoff', async () => {
+    vi.stubEnv(
+      'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN',
+      '.staging.tutur3u.com'
+    );
     vi.stubEnv(
       'NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS',
       'tasks:https://tasks.staging.tutur3u.com'

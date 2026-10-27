@@ -1,5 +1,6 @@
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { getTuturuuuSharedCookieDomains } from '@tuturuuu/utils/shared-cookie';
 import type { ResponseCookie } from 'next/dist/compiled/@edge-runtime/cookies';
 import { NextResponse } from 'next/server';
 import {
@@ -185,11 +186,12 @@ function getRequestHostnames(request: RequestLike) {
 }
 
 function isSharedSupabaseCookieHostname(hostname: string) {
-  return (
-    hostname === 'tuturuuu.com' ||
-    hostname.endsWith('.tuturuuu.com') ||
-    hostname === 'tuturuuu.localhost' ||
-    hostname.endsWith('.tuturuuu.localhost')
+  const normalizedHostname = hostname.toLowerCase();
+
+  return getTuturuuuSharedCookieDomains().some(
+    (entry) =>
+      normalizedHostname === entry.hostname ||
+      normalizedHostname.endsWith(`.${entry.hostname}`)
   );
 }
 

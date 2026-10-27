@@ -250,13 +250,13 @@ for example `https://web.staging.tutur3u.com` and
 `https://tasks.staging.tutur3u.com`. Its shared cookie domain is exactly
 `.staging.tutur3u.com`, never `.tutur3u.com` and never `.tuturuuu.com`.
 
-Two environment variables describe a non-production host scheme. Both are
+Two environment variables describe the staging host scheme. Both are
 `NEXT_PUBLIC_` values because the login form and the app-domain registry also run
 in the browser.
 
 | Variable | Format | Default |
 | --- | --- | --- |
-| `NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN` | One leading-dot domain, for example `.staging.tutur3u.com` | Unset: production `.tuturuuu.com` |
+| `NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN` | Exactly `.staging.tutur3u.com` | Unset: production `.tuturuuu.com` |
 | `NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS` | Comma or newline separated `name:https://origin` entries | Unset: no extra apps |
 
 ```text
@@ -264,37 +264,81 @@ NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN=.staging.tutur3u.com
 NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS=platform:https://web.staging.tutur3u.com,tasks:https://tasks.staging.tutur3u.com,meet:https://meet.staging.tutur3u.com
 ```
 
+<Warning>
+Neither variable may be set on production. Production deployments, previews that
+serve production data and every `*.tuturuuu.com` host must leave both unset. The
+code ignores a mis-set value (see below) so a mistake cannot move production off
+`.tuturuuu.com`, but the deployment configuration must still never carry them.
+</Warning>
+
 Per-app alias template: `https://<app>.staging.tutur3u.com`, where `<app>` is the
 app name used in `PRODUCTION_INTERNAL_APP_DOMAINS` (the web app is registered as
 `platform`, for example `platform:https://web.staging.tutur3u.com`).
 
 ### Shared cookie domain
 
-`packages/utils/src/shared-cookie.ts` is the single source for the shared cookie
-domain. The override must be a strict subdomain of `tutur3u.com` or
-`tuturuuu.com`; the registrable domain itself (`.tutur3u.com`), a public suffix,
-a wildcard, or a value without a leading dot is ignored with a `console.warn` and
-production behavior stays in force. The override replaces `.tuturuuu.com` for that
-deployment, so a staging host never sets or reads a production cookie.
+`packages/utils/src/shared-cookie.ts` owns the shared cookie domain. The override
+is an exact allowlist containing only `.staging.tutur3u.com`. Anything else
+(`.foo.tutur3u.com`, `.staging.tuturuuu.com`, `.tutur3u.com`, `.tuturuuu.com`, a
+wildcard, a value without a leading dot) is ignored with a `console.warn`, and
+production behavior stays in force. With no accepted override the cookie and
+deletion options are identical to production. The override replaces
+`.tuturuuu.com` for that deployment, so a staging host never sets or reads a
+production cookie; `.tuturuuu.localhost` stays for local development.
+
+`@tuturuuu/utils` depends on `@tuturuuu/supabase`, so the Supabase cookie helpers
+(`packages/supabase/src/next/common.ts`) cannot import it. They read the same
+allowlist from the dependency-free `packages/supabase/src/shared-cookie-domains.ts`,
+and a parity test in `packages/utils/src/shared-cookie.test.ts` fails if the two
+resolve a host differently. `packages/auth/src/app-session.ts` imports
+`getTuturuuuSharedCookieDomains()` directly. Production still resolves to
+`.tuturuuu.com` and `.tuturuuu.localhost` exactly.
 
 ### Managed shortcut versus token handoff
 
 The tokenless "managed" return path (`apps/web/src/lib/auth/managed-tuturuuu-return-url.ts`,
 used by `/api/v1/auth/cross-app-return`, `/api/auth/callback` and the login form)
 applies only when the return host and the current web host both sit under the
-configured shared cookie domain. Any other combination, including a production
-host returning to a staging host or the reverse, goes through the cross-app token
-handoff (`/verify-token`). With neither variable set the behavior is byte-for-byte
-the production behavior.
+configured shared cookie domain. Any other combination is not managed, so
+cross-environment returns (production to staging or staging to production) are
+rejected rather than shortcut. With neither variable set the behavior is
+byte-for-byte the production behavior.
+
+`isRootTuturuuuHostname` keeps its production result (`tuturuuu.com` only). It
+additionally treats a registered `platform` host as the root, which on staging is
+the web host and in local development includes `tuturuuu.localhost`; no
+production hostname changes.
 
 ### Internal app registry
 
 `NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS` registers staging apps as `internal`
 apps so they receive `/verify-token` (unlike
 `NEXT_PUBLIC_TUTURUUU_EXTERNAL_APP_DOMAINS`, which registers `external` apps).
-Entries must be `https`, exact origins with no path, query, credentials or
-wildcards; entries are matched on the exact origin only. Malformed entries are
-ignored with a `console.warn`.
+The registry exists only on a staging deployment:
+
+- It is empty unless the shared cookie domain is the accepted override, so a
+  production deployment never acts on it, even if the variable is set by mistake.
+- Each entry's host must equal `staging.tutur3u.com` or be a subdomain of it, with
+  no explicit port and no trailing dot.
+- Each entry name must be an existing app name from `PRODUCTION_INTERNAL_APP_DOMAINS`;
+  the variable cannot introduce new names.
+- Entries must be `https`, exact origins with no path, query, credentials or
+  wildcards, and are matched on the exact origin only.
+
+Rejected entries are ignored with a `console.warn`.
+
+With the staging override active the built-in production app origins
+(`PRODUCTION_INTERNAL_APP_DOMAINS`) are dropped from the registry, so a staging
+host cannot mint a token for, or redirect to, a production app. Local development
+(Portless and localhost) entries remain.
+
+### DNS requirement for credentialed CORS
+
+Credentialed CORS on staging trusts `*.staging.tutur3u.com`. The staging DNS zone
+must therefore contain no wildcard record and no host delegated to or controlled
+by a third party (for example a hosted-service CNAME that someone else can
+claim); every `*.staging.tutur3u.com` name must be one we operate, because any such
+host can send credentialed requests to staging.
 
 Regression coverage: `packages/utils/src/shared-cookie.test.ts`,
 `packages/utils/src/internal-domains.test.ts`,

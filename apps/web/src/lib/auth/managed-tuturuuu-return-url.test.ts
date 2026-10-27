@@ -21,6 +21,29 @@ describe('managed Tuturuuu return URLs', () => {
       );
     });
 
+    it('resolves the root hostname exactly as the original tuturuuu.com equality did', () => {
+      const legacyIsRoot = (hostname: string) =>
+        hostname.toLowerCase() === 'tuturuuu.com';
+
+      for (const hostname of [
+        'tuturuuu.com',
+        'TUTURUUU.COM',
+        'www.tuturuuu.com',
+        'platform.tuturuuu.com',
+        'tasks.tuturuuu.com',
+        'vc.tuturuuu.com',
+        'tuturuuu.com.evil.test',
+        'tuturuuu.vercel.app',
+        'localhost',
+        'web.staging.tutur3u.com',
+        'staging.tutur3u.com',
+      ]) {
+        expect(isRootTuturuuuHostname(hostname), hostname).toBe(
+          legacyIsRoot(hostname)
+        );
+      }
+    });
+
     it('keeps the tokenless normalization for *.tuturuuu.com return URLs', () => {
       const currentHost = 'https://tuturuuu.com/login';
 

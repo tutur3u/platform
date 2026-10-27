@@ -1,4 +1,8 @@
 import type { AppDomain } from './internal-domains';
+import {
+  getConfiguredSharedCookieDomainOverride,
+  type TuturuuuSharedCookieDomain,
+} from './shared-cookie';
 
 const INTERNAL_APP_DOMAINS_ENV_KEY =
   'NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS';
@@ -16,7 +20,11 @@ function warnIgnoredInternalAppDomainEntry(entry: string, reason: string) {
   );
 }
 
-function parseInternalAppDomainEntry(entry: string): AppDomain | null {
+function parseInternalAppDomainEntry(
+  entry: string,
+  override: TuturuuuSharedCookieDomain,
+  knownAppNames: ReadonlySet<string>
+): AppDomain | null {
   const trimmed = entry.trim();
 
   if (!trimmed) {
@@ -33,6 +41,14 @@ function parseInternalAppDomainEntry(entry: string): AppDomain | null {
 
   if (!/^[a-z0-9_-]{1,64}$/u.test(name) || !rawUrl) {
     warnIgnoredInternalAppDomainEntry(trimmed, 'expected name:https://origin');
+    return null;
+  }
+
+  if (!knownAppNames.has(name)) {
+    warnIgnoredInternalAppDomainEntry(
+      trimmed,
+      'name must be an existing app name'
+    );
     return null;
   }
 
@@ -69,6 +85,26 @@ function parseInternalAppDomainEntry(entry: string): AppDomain | null {
     return null;
   }
 
+  if (url.port || /^https:\/\/[^/?#]*:\d*(?:[/?#]|$)/iu.test(rawUrl)) {
+    warnIgnoredInternalAppDomainEntry(
+      trimmed,
+      'explicit ports are not allowed'
+    );
+    return null;
+  }
+
+  if (
+    url.hostname.endsWith('.') ||
+    (url.hostname !== override.hostname &&
+      !url.hostname.endsWith(`.${override.hostname}`))
+  ) {
+    warnIgnoredInternalAppDomainEntry(
+      trimmed,
+      `host must be ${override.hostname} or a subdomain of it`
+    );
+    return null;
+  }
+
   return {
     kind: 'internal',
     name,
@@ -81,16 +117,34 @@ function parseInternalAppDomainEntry(entry: string): AppDomain | null {
  * Staging apps live on `https://<app>.staging.tutur3u.com`, so they cannot be
  * derived from the production registry. Register them as `internal` apps
  * (token handoff through `/verify-token`) with `name:https://origin` entries.
+ *
+ * The registry only exists on the cookie-isolated staging deployment: it is
+ * empty unless the shared cookie domain is the accepted override, each entry's
+ * host must sit under that override's hostname, and each name must already be a
+ * known app name. A production deployment therefore never acts on it, even if
+ * the variable is set by mistake.
  */
-export function getConfiguredInternalAppDomains(): AppDomain[] {
+export function resolveConfiguredInternalAppDomains(
+  knownAppNames: ReadonlySet<string>
+): AppDomain[] {
   const configured = process.env.NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS;
 
   if (!configured?.trim()) {
     return [];
   }
 
+  const override = getConfiguredSharedCookieDomainOverride();
+
+  if (!override) {
+    warnIgnoredInternalAppDomainEntry(
+      configured.trim(),
+      'requires the staging shared cookie domain override'
+    );
+    return [];
+  }
+
   return configured
     .split(/[,\n]/u)
-    .map(parseInternalAppDomainEntry)
+    .map((entry) => parseInternalAppDomainEntry(entry, override, knownAppNames))
     .filter((entry): entry is AppDomain => Boolean(entry));
 }
