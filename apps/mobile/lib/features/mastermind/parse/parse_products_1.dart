@@ -44,9 +44,12 @@ EnvironmentRow parseEnvironmentRow(JsonReader r) {
     sha: r
         .field('sha')
         .nullable((v) => v.string(pattern: RegExp(r'^[a-f0-9]{7,12}$'))),
-    commitSubject: r
-        .field('commit_subject')
-        .nullable((v) => v.string(maxLength: 120)),
+    commitSubject: r.field('commit_subject').nullable((v) {
+      final subject = v.string(maxLength: 120);
+      // The pre-1.4 redaction marker is never a valid subject.
+      if (subject == 'Security fix') v.fail();
+      return subject;
+    }),
     deployStatus: r
         .field('deploy_status')
         .enumOf<DeployStatus>(DeployStatus.values, (v) => v.wireName),

@@ -15,7 +15,7 @@ import '../../../helpers/mastermind_snapshot_builder.dart';
 typedef Json = Map<String, dynamic>;
 
 Json _feed({
-  int afterSeq = 0,
+  int afterSeq = 1,
   int latestSeq = 1,
   bool cursorGap = false,
   List<Json>? events,
@@ -32,6 +32,26 @@ Json _feed({
 
 EventFeedParseOutcome _parse(Json feed) =>
     parseMastermindEventFeed(Uint8List.fromList(utf8.encode(jsonEncode(feed))));
+
+/// A page shaped like the Worker's `GET /v1/events`: `after_seq` is the cursor
+/// after the page, so it equals the last returned event.
+Json _workerPage(
+  List<int> seqs, {
+  required int afterSeq,
+  required int latestSeq,
+  bool cursorGap = false,
+}) {
+  final now = MastermindSnapshotBuilder.defaults().toJson()['now'] as Json;
+  final template = (now['digest'] as List<dynamic>).first as Json;
+  return _feed(
+    afterSeq: afterSeq,
+    latestSeq: latestSeq,
+    cursorGap: cursorGap,
+    events: [
+      for (final seq in seqs) {...template, 'seq': seq},
+    ],
+  );
+}
 
 Json _event(Json feed, [int index = 0]) =>
     (feed['events'] as List<dynamic>)[index] as Json;
@@ -93,8 +113,35 @@ void main() {
       _expectViolation(_feed()..['unexpected'] = true);
       _expectViolation(_feed()..remove('cursor_gap'));
       _expectViolation(_feed(afterSeq: 5, latestSeq: 4, events: []));
-      _expectViolation(_feed(afterSeq: 1, latestSeq: 3), '/events/0/seq');
-      _expectViolation(_feed(latestSeq: 0), '/events/0/seq');
+      _expectViolation(_feed(afterSeq: 2, latestSeq: 3), '/events/0/seq');
+    });
+
+    group('after_seq is the cursor after the page', () {
+      test('a page ending on after_seq is accepted', () {
+        final feed = _accepted(_feed(latestSeq: 4));
+        expect(feed.afterSeq, 1);
+        expect(feed.events.single.seq, 1);
+      });
+      test('events past after_seq are rejected', () {
+        _expectViolation(_feed(afterSeq: 0), '/events/0/seq');
+      });
+      test('the last event must equal after_seq', () {
+        final feed = _workerPage([1, 2], afterSeq: 3, latestSeq: 4);
+        _expectViolation(feed, '/events/1/seq');
+      });
+      test('events must be strictly increasing', () {
+        _expectViolation(
+          _workerPage([2, 2], afterSeq: 2, latestSeq: 4),
+          '/events/1/seq',
+        );
+        _expectViolation(
+          _workerPage([2, 1], afterSeq: 1, latestSeq: 4),
+          '/events/0/seq',
+        );
+      });
+      test('events may not exceed latest_seq', () {
+        _expectViolation(_workerPage([1, 5], afterSeq: 5, latestSeq: 4));
+      });
     });
 
     group('payload kinds', () {
@@ -145,7 +192,7 @@ void main() {
         final feed = _feed();
         _event(feed)['kind'] = 'quota';
         _event(feed)['payload'] = {
-          'instance': 'codex_ai4ed',
+          'instance': 'codex_fixture',
           'remaining_percent': 40,
           'age_seconds': 3,
         };
@@ -156,7 +203,7 @@ void main() {
     group('cursor reconciliation', () {
       SnapshotEvent at(int seq) {
         final b = MastermindSnapshotBuilder.defaults().toJson();
-        final root = _feed(afterSeq: seq - 1, latestSeq: seq);
+        final root = _feed(afterSeq: seq, latestSeq: seq);
         _event(root)['seq'] = seq;
         _event(root)['ts'] = b['generated_at'];
         return _accepted(root).events.single;
@@ -175,7 +222,7 @@ void main() {
       });
       test('a gap never applies events carried alongside it', () {
         final feed = MastermindEventFeed(
-          afterSeq: 7,
+          afterSeq: 9,
           latestSeq: 9,
           cursorGap: true,
           events: [at(8), at(9)],
@@ -197,7 +244,7 @@ void main() {
       });
       test('contiguous events append and advance the cursor', () {
         final feed = MastermindEventFeed(
-          afterSeq: 7,
+          afterSeq: 9,
           latestSeq: 9,
           cursorGap: false,
           events: [at(8), at(9)],
@@ -207,6 +254,62 @@ void main() {
         expect((step as EventFeedAppend).cursor, 9);
         expect(step.events.map((e) => e.seq), [8, 9]);
         expect(step.events.clear, throwsUnsupportedError);
+      });
+      test('events that skip past cursor + 1 resync', () {
+        final feed = MastermindEventFeed(
+          afterSeq: 9,
+          latestSeq: 9,
+          cursorGap: false,
+          events: [at(9)],
+        );
+        final step = reconcileEventFeed(cursor: 7, feed: feed);
+        expect(step, isA<EventFeedResync>());
+        expect((step as EventFeedResync).cursor, 9);
+      });
+      test('events with a hole inside the page resync', () {
+        final feed = MastermindEventFeed(
+          afterSeq: 10,
+          latestSeq: 10,
+          cursorGap: false,
+          events: [at(8), at(10)],
+        );
+        expect(
+          reconcileEventFeed(cursor: 7, feed: feed),
+          isA<EventFeedResync>(),
+        );
+      });
+      test('an empty page that moved past the cursor resyncs', () {
+        final feed = MastermindEventFeed(
+          afterSeq: 9,
+          latestSeq: 9,
+          cursorGap: false,
+          events: const [],
+        );
+        expect(
+          reconcileEventFeed(cursor: 7, feed: feed),
+          isA<EventFeedResync>(),
+        );
+      });
+      test('a Worker-shaped two-page walk advances to after_seq', () {
+        final pages = [
+          _workerPage([1, 2], afterSeq: 2, latestSeq: 4),
+          _workerPage([3, 4], afterSeq: 4, latestSeq: 4),
+          _workerPage([], afterSeq: 4, latestSeq: 4),
+        ];
+        var cursor = 0;
+        final applied = <int>[];
+        for (final page in pages) {
+          final step = reconcileEventFeed(
+            cursor: cursor,
+            feed: _accepted(page),
+          );
+          expect(step, isA<EventFeedAppend>());
+          final append = step as EventFeedAppend;
+          applied.addAll(append.events.map((e) => e.seq));
+          cursor = append.cursor;
+        }
+        expect(applied, [1, 2, 3, 4]);
+        expect(cursor, 4);
       });
       test('an empty contiguous feed keeps the cursor', () {
         final feed = MastermindEventFeed(

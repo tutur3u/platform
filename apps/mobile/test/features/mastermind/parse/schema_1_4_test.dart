@@ -274,8 +274,8 @@ void main() {
       expectViolation(root);
     });
     for (final handle in [
-      'claude_mira',
-      'codex_ai4ed',
+      'claude_fixture',
+      'codex_fixture',
       'fixture_account',
       'claude pool A',
       'Claude pool F',
@@ -299,7 +299,7 @@ void main() {
     test('display_name is removed from usage rows and credits', () {
       for (final row in [usageRow, credit]) {
         final root = MastermindSnapshotBuilder.defaults().toJson();
-        row(root)['display_name'] = 'soc';
+        row(root)['display_name'] = 'fixture';
         expectViolation(root);
       }
     });
@@ -336,6 +336,11 @@ void main() {
         expect(row.commitSubject, subject);
         expect(row.versionTag, 'v1.2.3');
       }
+    });
+    test('commit_subject rejects the pre-1.4 Security fix marker', () {
+      final root = MastermindSnapshotBuilder.defaults().toJson();
+      environment(root)['commit_subject'] = 'Security fix';
+      expectViolation(root);
     });
     test('commit_subject and version_tag may be null', () {
       final root = MastermindSnapshotBuilder.defaults().toJson();

@@ -63,7 +63,7 @@ void main() {
         map(list(map(r['now'])['needs_you']).first)['version_hash'] = 'x' * 64,
     'bad sha': (r) => map(list(r['environments']).first)['sha'] = 'not-hex',
     'bad actor': (r) => map(list(r['decisions']).first)['by'] = 'someone',
-    'account handle': (r) => usageRow(r)['instance'] = 'claude_mira',
+    'account handle': (r) => usageRow(r)['instance'] = 'claude_fixture',
     'account punctuation': (r) => usageRow(r)['instance'] = 'fixture-account',
     'account empty': (r) => usageRow(r)['instance'] = '',
     'security extra body': (r) => r['lanes'] = [

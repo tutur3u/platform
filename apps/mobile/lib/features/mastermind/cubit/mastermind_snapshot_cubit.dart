@@ -174,6 +174,12 @@ final class MastermindSnapshotCubit extends Cubit<MastermindSnapshotState> {
   /// A gap (the first schema 1.4 feed, retention, or an older export) adopts
   /// the fresh snapshot instead of applying events, which resets the cursor to
   /// that snapshot's `latest_seq`.
+  ///
+  /// Not wired to a poller yet, so the cursor is derived from the held
+  /// snapshot. Once it is, keep the cursor in [MastermindSnapshotReady] beside
+  /// the digest: advance it to [EventFeedAppend.cursor] and reset it to the
+  /// fresh snapshot's `latest_seq` on a resync or
+  /// [EventsFetchUnavailable.needsResync].
   Future<EventFeedStep> applyEventFeed(MastermindEventFeed feed) async {
     final current = state;
     final cursor = current is MastermindSnapshotReady

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/services.dart';
@@ -112,15 +113,32 @@ final class FixtureSnapshotSource implements MastermindSnapshotSource {
         );
       }
       final now = export.snapshot.now;
+      if (afterSeq > now.latestSeq) {
+        return const EventsFetch.unavailable(
+          SnapshotUnavailableKind.cursorAhead,
+        );
+      }
+      // Mirrors the Worker's GET /v1/events: `after_seq` is the cursor after
+      // the page, and a join that is not exactly `cursor + 1` is a gap.
+      var cursor = max(afterSeq, now.afterSeq);
+      final events = now.digest
+          .where((event) => event.seq > cursor)
+          .take(limit)
+          .toList();
+      var gap =
+          afterSeq < now.afterSeq ||
+          (now.cursorGap && afterSeq <= now.afterSeq);
+      for (final event in events) {
+        if (event.seq != cursor + 1) gap = true;
+        cursor = event.seq;
+      }
+      if (events.isEmpty && cursor < now.latestSeq) gap = true;
       return EventsFetch.ok(
         MastermindEventFeed(
-          afterSeq: afterSeq,
+          afterSeq: cursor,
           latestSeq: now.latestSeq,
-          cursorGap: now.cursorGap || afterSeq < now.afterSeq,
-          events: now.digest
-              .where((event) => event.seq > afterSeq)
-              .take(limit)
-              .toList(),
+          cursorGap: gap,
+          events: events,
         ),
         digest,
         _clock().toUtc(),

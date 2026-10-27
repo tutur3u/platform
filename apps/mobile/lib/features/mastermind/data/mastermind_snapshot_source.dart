@@ -25,7 +25,15 @@ abstract interface class MastermindSnapshotSource {
 
 enum SnapshotOrigin { fixture, live, cache }
 
-enum SnapshotUnavailableKind { notConfigured, unavailable, digestNotFound }
+enum SnapshotUnavailableKind {
+  notConfigured,
+  unavailable,
+  digestNotFound,
+
+  /// 409 `cursor_ahead`: the cursor is past the export's `latest_seq`. Adopt a
+  /// fresh snapshot and restart from its cursor, as for [EventFeedResync].
+  cursorAhead,
+}
 
 sealed class SnapshotFetch {
   const SnapshotFetch();
@@ -90,6 +98,8 @@ final class EventsFetchOk extends EventsFetch {
 final class EventsFetchUnavailable extends EventsFetch {
   const EventsFetchUnavailable(this.kind);
   final SnapshotUnavailableKind kind;
+
+  bool get needsResync => kind == SnapshotUnavailableKind.cursorAhead;
 }
 
 /// Header normalization for the future adapter, without retaining raw headers.

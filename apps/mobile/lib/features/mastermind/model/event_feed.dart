@@ -35,13 +35,24 @@ final class EventFeedResync extends EventFeedStep {
   final int cursor;
 }
 
+/// Appends only a page that joins [cursor] with no gap: the first event is
+/// `cursor + 1`, every event follows its predecessor, and the next cursor is
+/// the feed's `after_seq`. An empty page is a no-op only when it holds the
+/// cursor. Anything else resyncs from a fresh snapshot.
 EventFeedStep reconcileEventFeed({
   required int cursor,
   required MastermindEventFeed feed,
 }) {
-  if (feed.cursorGap || feed.latestSeq < cursor) {
-    return EventFeedResync(feed.latestSeq);
+  final resync = EventFeedResync(feed.latestSeq);
+  if (feed.cursorGap || feed.latestSeq < cursor) return resync;
+  final events = feed.events;
+  if (events.isEmpty) {
+    return feed.afterSeq == cursor ? EventFeedAppend(const [], cursor) : resync;
   }
-  final fresh = feed.events.where((event) => event.seq > cursor).toList();
-  return EventFeedAppend(fresh, fresh.isEmpty ? cursor : fresh.last.seq);
+  var expected = cursor + 1;
+  for (final event in events) {
+    if (event.seq != expected++) return resync;
+  }
+  if (feed.afterSeq != events.last.seq) return resync;
+  return EventFeedAppend(events, feed.afterSeq);
 }

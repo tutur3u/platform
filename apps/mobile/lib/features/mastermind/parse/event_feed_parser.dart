@@ -28,9 +28,10 @@ final class EventFeedParseRejected extends EventFeedParseOutcome {
   final String path;
 }
 
-/// Parses a schema 1.4 `GET /v1/events` body. Payload kinds follow the events
-/// schema: `needs_you` and `decision` carry `decision|action|fyi` items and no
-/// payload is ever a security row.
+/// Parses a schema 1.4 `GET /v1/events` body. `after_seq` is the cursor after
+/// the page (the Worker advances it to the last returned event). Payload kinds
+/// follow the events schema: `needs_you` and `decision` carry
+/// `decision|action|fyi` items and no payload is ever a security row.
 EventFeedParseOutcome parseMastermindEventFeed(Uint8List bytes) {
   if (bytes.length > 600000) {
     return const EventFeedParseOutcome.rejected(RejectionReason.tooLarge);
@@ -62,10 +63,16 @@ EventFeedParseOutcome parseMastermindEventFeed(Uint8List bytes) {
     final latestSeq = r.field('latest_seq').integer(min: 0);
     if (latestSeq < afterSeq) r.field('latest_seq').fail();
     final events = r.field('events').list(parseSnapshotEvent, maxItems: 200);
-    var previous = afterSeq;
+    // `after_seq` is the cursor AFTER this page, not the one the client sent:
+    // events ascend strictly and the last one lands exactly on it.
+    var previous = 0;
     for (var i = 0; i < events.length; i++) {
       final seq = events[i].seq;
-      if (seq <= previous || seq > latestSeq) {
+      final isLast = i == events.length - 1;
+      if (seq <= previous ||
+          seq > afterSeq ||
+          seq > latestSeq ||
+          (isLast && seq != afterSeq)) {
         JsonReader(null, '${r.path}/events/$i/seq').fail();
       }
       previous = seq;
