@@ -536,16 +536,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState>
       return;
     }
 
-    // A larger hint grows the page size of later pages (the Timeline asks
-    // for 100 after the List view loaded 15); offsets count tasks, so the
-    // change is safe.
-    final storedPageSize = state.listPageSizeById[listId];
-    final hintedPageSize = _normalizePageSize(pageSizeHint);
-    final pageSize = storedPageSize == null
-        ? hintedPageSize
-        : loadMore && pageSizeHint != null && hintedPageSize > storedPageSize
-        ? hintedPageSize
-        : storedPageSize;
+    final pageSize = _pageSizeFor(listId, loadMore, pageSizeHint);
     final offset = loadMore ? (state.listOffsetsById[listId] ?? 0) : 0;
     final cacheKey = _listTasksCacheKey(
       wsId: wsId,
@@ -1193,8 +1184,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState>
 
     // Ignore list reads started before the optimistic move. A stale cached
     // revalidation can otherwise put the task back in its previous list.
-    // Reject a concurrent move before invalidating in-flight list reads;
-    // otherwise those reads are dropped and their lists stay loading.
+    // Reject a concurrent move first, or dropped reads leave lists loading.
     _ensureNoMutationInProgress();
     _loadRequestToken++;
     _optimisticallyMoveTaskToList(taskId: taskId, listId: listId);
@@ -1792,8 +1782,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState>
     );
   }
 
-  /// The Timeline pages its open lists itself, within a board budget and
-  /// a concurrency cap; see `taskTimelineListsToLoad`.
+  /// The Timeline pages its open lists itself; see `taskTimelineListsToLoad`.
   void setView(TaskBoardDetailView view) {
     emit(state.copyWith(currentView: view));
   }

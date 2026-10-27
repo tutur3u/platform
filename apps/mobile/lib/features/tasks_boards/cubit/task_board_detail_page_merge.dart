@@ -21,6 +21,20 @@ extension _TaskBoardPageMerge on TaskBoardDetailCubit {
     ]);
   }
 
+  /// The page size for [listId]. A larger [pageSizeHint] grows the page size
+  /// of later pages (the Timeline asks for 100 after the List view loaded
+  /// 15); offsets count tasks, so the change is safe.
+  int _pageSizeFor(String listId, bool loadMore, int? pageSizeHint) {
+    final storedPageSize = state.listPageSizeById[listId];
+    final hintedPageSize = TaskBoardDetailCubit._normalizePageSize(
+      pageSizeHint,
+    );
+    if (storedPageSize == null) return hintedPageSize;
+    return loadMore && pageSizeHint != null && hintedPageSize > storedPageSize
+        ? hintedPageSize
+        : storedPageSize;
+  }
+
   /// The description search index with [replaced] tasks dropped and only
   /// [pageTasks] parsed; every other entry is reused as is.
   Map<String, String> _searchIndexWithPage({

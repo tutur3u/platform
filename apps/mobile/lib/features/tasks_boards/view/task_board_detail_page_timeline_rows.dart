@@ -64,11 +64,15 @@ class _TimelineCardSegment extends StatelessWidget {
 class _TimelineTaskRow extends StatelessWidget {
   const _TimelineTaskRow({
     required this.item,
+    required this.today,
     required this.listName,
     required this.onTap,
   });
 
   final _TimelineTaskItem item;
+
+  /// The agenda's today, in the user's timezone setting.
+  final DateTime today;
   final String? listName;
   final VoidCallback onTap;
 
@@ -90,7 +94,7 @@ class _TimelineTaskRow extends StatelessWidget {
               date.format(entry.end),
             ),
             TaskTimelinePlacement.ongoing => l10n.taskTimelineOngoing(
-              taskTimelineDayOfSpan(entry, DateTime.now()),
+              taskTimelineDayOfSpan(entry, today),
               entry.spanDays,
               date.format(entry.end),
             ),

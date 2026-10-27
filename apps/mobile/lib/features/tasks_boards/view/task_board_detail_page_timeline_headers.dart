@@ -53,16 +53,22 @@ class _TimelineToolbar extends StatelessWidget {
 /// Day caption: relative words for today and tomorrow, then the date.
 /// Overdue days add a destructive label instead of a task count.
 class _TimelineDayHeader extends StatelessWidget {
-  const _TimelineDayHeader({required this.day, required this.overdue});
+  const _TimelineDayHeader({
+    required this.day,
+    required this.today,
+    required this.overdue,
+  });
 
   final DateTime day;
+
+  /// The agenda's today, in the user's timezone setting; never the device
+  /// clock, which can be on another calendar day.
+  final DateTime today;
   final bool overdue;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
     final tomorrow = DateTime(today.year, today.month, today.day + 1);
     final date = DateFormat.MMMEd(l10n.localeName).format(day);
     final title = day == today

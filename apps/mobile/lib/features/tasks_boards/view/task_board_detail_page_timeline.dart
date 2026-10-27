@@ -103,7 +103,7 @@ class _TaskBoardTimelineViewState extends State<_TaskBoardTimelineView> {
             ),
             Expanded(
               child: agenda.hasScheduled || agenda.unscheduled.isNotEmpty
-                  ? _scrollView(context, listNames)
+                  ? _scrollView(context, listNames, agenda.today.day)
                   : widget.isLoadingMoreTasks
                   ? const AppLoadingIndicator.page()
                   : AppStateMessage(
@@ -123,9 +123,14 @@ class _TaskBoardTimelineViewState extends State<_TaskBoardTimelineView> {
     );
   }
 
-  Widget _scrollView(BuildContext context, Map<String, String> listNames) {
+  Widget _scrollView(
+    BuildContext context,
+    Map<String, String> listNames,
+    DateTime today,
+  ) {
     Widget item(_TimelineItem item) => _TimelineItemView(
       item: item,
+      today: today,
       listNames: listNames,
       allLoaded: !widget.hasMoreTasks,
       loading: widget.isLoadingMoreTasks,

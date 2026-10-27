@@ -117,6 +117,7 @@ class _TimelineItems {
 class _TimelineItemView extends StatelessWidget {
   const _TimelineItemView({
     required this.item,
+    required this.today,
     required this.listNames,
     required this.allLoaded,
     required this.loading,
@@ -127,6 +128,9 @@ class _TimelineItemView extends StatelessWidget {
   });
 
   final _TimelineItem item;
+
+  /// The agenda's today, in the user's timezone setting.
+  final DateTime today;
   final Map<String, String> listNames;
 
   /// Every page of every open list is loaded.
@@ -143,6 +147,7 @@ class _TimelineItemView extends StatelessWidget {
     return switch (item) {
       _TimelineDayHeaderItem(:final day, :final overdue) => _TimelineDayHeader(
         day: day,
+        today: today,
         overdue: overdue,
       ),
       final _TimelineTaskItem task => _TimelineCardSegment(
@@ -150,6 +155,7 @@ class _TimelineItemView extends StatelessWidget {
         last: task.last,
         child: _TimelineTaskRow(
           item: task,
+          today: today,
           listName: listNames[task.task.listId],
           onTap: () => onTaskTap(task.task),
         ),

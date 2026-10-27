@@ -1,18 +1,24 @@
 import 'dart:async';
 
+import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/intl.dart';
 import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/utils/timezone_location.dart';
 import 'package:mobile/data/models/task_board_detail.dart';
 import 'package:mobile/data/models/task_board_task.dart';
 import 'package:mobile/data/models/task_label.dart';
 import 'package:mobile/data/models/task_project_summary.dart';
 import 'package:mobile/data/models/workspace_user_option.dart';
+import 'package:mobile/features/settings/cubit/timezone_settings_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/tasks_boards/cubit/task_board_detail_cubit.dart';
+import 'package:mobile/features/tasks_boards/utils/task_due_dates.dart';
 import 'package:mobile/features/tasks_boards/view/task_board_detail_page.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
+import 'package:timezone/timezone.dart' as tz;
 
 import '../../../helpers/design_render_harness.dart';
 import '../../../helpers/helpers.dart';
@@ -60,6 +66,32 @@ class _TimelineRepository extends RowActionsRepository {
         .take(limit)
         .toList();
   }
+}
+
+class _Timezone extends MockCubit<TimezoneSettingsState>
+    implements TimezoneSettingsCubit {}
+
+/// A zone whose calendar day differs from the device's right now, so any
+/// device-clock shortcut lands on the wrong day.
+String _zoneOnAnotherDay() {
+  final now = DateTime.now();
+  final device = DateTime(now.year, now.month, now.day);
+  return [
+    'Pacific/Kiritimati',
+    'Pacific/Pago_Pago',
+  ].firstWhere((zone) => taskDay(now, zone) != device);
+}
+
+/// Noon of the day [offset] days from today in [zone].
+DateTime _zoneDayAt(String zone, int offset) {
+  final today = taskDay(DateTime.now(), zone);
+  return tz.TZDateTime(
+    timezoneLocation(zone),
+    today.year,
+    today.month,
+    today.day + offset,
+    12,
+  );
 }
 
 DateTime _day(int offset) {
@@ -252,6 +284,83 @@ void main() {
 
       expect(find.byType(CustomScrollView), findsNothing);
       expect(find.byType(AppStateMessage), findsOneWidget);
+    });
+  });
+
+  group('board timeline in the timezone setting', () {
+    usePhoneSurface();
+
+    testWidgets('labels today and the span day in the setting zone', (
+      tester,
+    ) async {
+      final zone = _zoneOnAnotherDay();
+      final timezone = _Timezone();
+      whenListen(
+        timezone,
+        const Stream<TimezoneSettingsState>.empty(),
+        initialState: TimezoneSettingsState(
+          personal: zone,
+          loading: false,
+          resolved: true,
+        ),
+      );
+      TaskBoardTask task(String id, String name, {int? start, int? end}) =>
+          TaskBoardTask(
+            id: id,
+            listId: 'list-1',
+            name: name,
+            priority: 'high',
+            startDate: start == null ? null : _zoneDayAt(zone, start),
+            endDate: end == null ? null : _zoneDayAt(zone, end),
+          );
+      await tester.pumpApp(
+        MultiBlocProvider(
+          providers: [
+            BlocProvider<WorkspaceCubit>.value(
+              value: rowActionsWorkspaceCubit(),
+            ),
+            BlocProvider<TimezoneSettingsCubit>.value(value: timezone),
+            BlocProvider(create: (_) => ShellChromeActionsCubit()),
+          ],
+          child: TaskBoardDetailPage(
+            boardId: 'board-1',
+            taskRepository: _TimelineRepository([
+              task('task-1', 'Alpha task', end: 0),
+              task('task-ongoing', 'Ongoing task', start: -2, end: 3),
+              task('task-soon', 'Soon task', start: 1),
+            ]),
+          ),
+        ),
+      );
+      for (var i = 0; i < 3; i++) {
+        await tester.pump(const Duration(milliseconds: 350));
+      }
+      await tester.pumpAndSettle();
+      BlocProvider.of<TaskBoardDetailCubit>(
+        tester.element(find.byType(Scrollable).first),
+      ).setView(TaskBoardDetailView.timeline);
+      await tester.pumpAndSettle();
+
+      final zoneToday = taskDay(DateTime.now(), zone);
+      final date = DateFormat.MMMEd('en');
+      final todayHeader = find.text('Today · ${date.format(zoneToday)}');
+      expect(todayHeader, findsOneWidget);
+      expect(find.textContaining('Today ·'), findsOneWidget);
+      final zoneTomorrow = DateTime(
+        zoneToday.year,
+        zoneToday.month,
+        zoneToday.day + 1,
+      );
+      expect(
+        find.text('Tomorrow · ${date.format(zoneTomorrow)}'),
+        findsOneWidget,
+      );
+      // Today's group holds the task due today, below its header.
+      expect(
+        tester.getTopLeft(_key('task-timeline-row-task-1')).dy,
+        greaterThan(tester.getTopLeft(todayHeader).dy),
+      );
+      expect(find.textContaining('Day 3 of 6'), findsOneWidget);
     });
   });
 
