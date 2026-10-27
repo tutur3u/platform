@@ -132,7 +132,8 @@ shows a skeleton while an image downloads, and displays the cached image when
 ready. Back from a peer navigation section exits to
 the root tab that opened that context; back from a detail page returns to its
 parent section. Shell search actions across Apps, Chat, Finance, Habits, Mail,
-Meet, Notes, task boards, and Timer focus the top search input on entry. The
+Meet, Notes, task boards, and Timer share `ShellActionSpec.search` and focus
+the top search input on entry. The
 search icon, input, and close control share one vertical center; submitting an
 empty or whitespace-only query closes search mode except in Apps, which keeps
 its current search. Chat shows message matches
@@ -1988,12 +1989,24 @@ it opens the same notifications inbox. "Notifications" now survives only as
 the item in the shell's overflow menu, which opens that same page. Whether
 Inbox should also lose the bell icon is still an open decision.
 
-Home, Inbox and You show a **Search** dock action that opens Apps with its
-search field focused (`AppTabCubit.openWithSearch`). Apps keeps its own search
-action, and Mira's dock belongs to its composer.
+**Search appears only where it searches the current screen.** Home, Inbox and
+You have no Search dock action: the former shortcut only opened Apps search,
+which long-pressing the Apps tab still does from anywhere. Apps and every
+searchable mini app use the shared `ShellActionSpec.search` action: the same
+search glyph, dock placement, 48dp hit target and highlight, switching to the
+close glyph while the navbar shows the query field. Mira's dock belongs to its
+composer.
+
+**Counts only where they lead somewhere.** Root tabs show no bare count chips
+or badges. Home's at-a-glance metrics open the list they summarise (active and
+overdue tasks open Tasks, upcoming events open Calendar). Inbox offers
+**Archive all** only while the inbox tab has unread notifications, instead of
+a disabled control. You's Workspaces row and Timeline day headers no longer
+repeat item counts.
 
 **Mira** opens on its starter suggestions when no conversation is shown:
-Today's focus, Day plan, Backlog cleanup and Team update. They are one grouped
+Today's focus, Day plan, Backlog cleanup and Team update, under a single
+heading with no subtitle. They are one grouped
 card of icon rows (title and caption, no shadows or gradients), and a tap puts
 the prompt in the composer, as before. A Recent conversations section is
 deferred until the open Mira chat PRs that own the Assistant page land; the
@@ -2003,12 +2016,25 @@ history sheet remains the way to reopen a conversation.
 week and this month, plus the recent-activity chart, counting all tracked
 time linked to a task (`taskLinked`; see the Timer page). Its **See all**
 opens the Timer statistics, which count all tracked time. Below that are
-rows for **Workspaces** (with the workspace count, opening the workspace
-picker), **Timeline** (switching the page to Timeline) and **Settings**.
+rows for **Workspaces** (opening the workspace picker), **Timeline** (switching
+the page to Timeline) and **Settings**. The identity card's labelled **Edit
+profile** button sits centred beside the avatar's lower half, on the card's
+text gutter, clear of the cover edge. When the label does not fit beside the
+avatar (narrow cards or enlarged text), it becomes an outline icon button with
+the same accessible name and target. Home's metrics are screen-reader buttons
+with the same actions as a tap. Tasks has no overdue filter route, so Overdue
+opens Tasks, whose Overdue section is listed first.
+
+The Mira prompt centres its text, Plus and microphone controls on one line;
+extra lines grow the field upward while the controls stay centred on the last
+line (`AppComposerRow`).
 
 Regression coverage: `shell_viewport_checks.dart` (icon-only dock and labels
-across phone, tablet and rail sizes), `apps_search_submit_test.dart` (Home
-search opens Apps search), `assistant_starter_prompts_test.dart` (grouped rows
+across phone, tablet and rail sizes), `apps_search_submit_test.dart` (only
+Apps offers Search; Home has none), `assistant_composer_alignment_test.dart`
+(single-line centring at 1x and 2x text, multi-line growth),
+`profile_identity_card_test.dart` (edit button gutter, band centre and target),
+`assistant_starter_prompts_test.dart` (grouped rows
 at phone and tablet sizes, 2x text, English and Vietnamese),
 `profile_you_rows_test.dart`, `profile_render_cases.dart` and
 `profile_overview_shell_test.dart` (Focus Time beside identity on desktop).

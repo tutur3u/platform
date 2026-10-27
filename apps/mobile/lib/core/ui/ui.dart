@@ -14,6 +14,7 @@ export 'package:mobile/core/ui/components/app_button.dart';
 export 'package:mobile/core/ui/components/app_card.dart';
 export 'package:mobile/core/ui/components/app_checkbox_row.dart';
 export 'package:mobile/core/ui/components/app_chip.dart';
+export 'package:mobile/core/ui/components/app_composer_row.dart';
 export 'package:mobile/core/ui/components/app_controls.dart';
 export 'package:mobile/core/ui/components/app_date_picker.dart';
 export 'package:mobile/core/ui/components/app_disclosure.dart';

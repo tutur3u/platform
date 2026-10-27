@@ -135,7 +135,27 @@ void _notificationsRenderCases() {
           final width = tester.getSize(firstCard).width;
           expect(width, lessThanOrEqualTo(720));
         }
+        // Search belongs to screens that search their own content.
+        expect(find.byIcon(AppIcons.search), findsNothing);
+        final chrome = tester
+            .element(find.byType(NotificationsPage))
+            .read<ShellChromeActionsCubit>();
+        List<String> ids() => chrome.state
+            .resolveForLocation(Routes.notifications)
+            .map((action) => action.id)
+            .toList();
+        // Unread notifications exist, so Archive all is offered.
+        expect(ids(), contains('notifications-archive-all'));
         await _capture(tester, 'notifications-${size.key}-${look.key}');
+        if (size.key == 'phone') {
+          // The Archive tab never offers it.
+          chrome.state
+              .resolveForLocation(Routes.notifications)
+              .firstWhere((action) => action.id == 'notifications-tab-archive')
+              .onPressed!();
+          await settleShell(tester);
+          expect(ids(), isNot(contains('notifications-archive-all')));
+        }
         expect(tester.takeException(), isNull);
       });
     }
@@ -184,6 +204,17 @@ void _notificationsRenderCases() {
         findsOneWidget,
       );
       expect(find.textContaining('synthetic-offline'), findsNothing);
+      // Nothing unread: no Archive all, rather than a disabled control.
+      expect(
+        tester
+            .element(find.byType(NotificationsPage))
+            .read<ShellChromeActionsCubit>()
+            .state
+            .resolveForLocation(Routes.notifications)
+            .map((action) => action.id),
+        isNot(contains('notifications-archive-all')),
+      );
+      expect(find.byIcon(AppIcons.search), findsNothing);
       await _capture(tester, 'notifications-phone-$state');
       expect(tester.takeException(), isNull);
     });

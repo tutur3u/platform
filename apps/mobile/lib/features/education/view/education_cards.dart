@@ -62,24 +62,14 @@ class _CourseCard extends StatelessWidget {
                           ),
                     ),
                   ],
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      _EducationBadge(
-                        icon: Icons.layers_outlined,
-                        label: '${course.modulesCount}',
-                        tint: shad.Theme.of(context).colorScheme.primary,
-                      ),
-                      if (course.certTemplate?.isNotEmpty ?? false)
-                        _EducationBadge(
-                          icon: Icons.verified_outlined,
-                          label: course.certTemplate!,
-                          tint: shad.Theme.of(context).colorScheme.primary,
-                        ),
-                    ],
-                  ),
+                  if (course.certTemplate?.isNotEmpty ?? false) ...[
+                    const SizedBox(height: 10),
+                    _EducationBadge(
+                      icon: Icons.verified_outlined,
+                      label: course.certTemplate!,
+                      tint: shad.Theme.of(context).colorScheme.primary,
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -148,12 +138,6 @@ class _QuizSetCard extends StatelessWidget {
                     style: shad.Theme.of(
                       context,
                     ).typography.large.copyWith(fontWeight: FontWeight.w800),
-                  ),
-                  const SizedBox(height: 8),
-                  _EducationBadge(
-                    icon: Icons.link_outlined,
-                    label: '${quizSet.linkedModulesCount}',
-                    tint: shad.Theme.of(context).colorScheme.primary,
                   ),
                 ],
               ),

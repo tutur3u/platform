@@ -154,6 +154,8 @@ void _profileRenderCases() {
               .height,
           greaterThanOrEqualTo(44),
         );
+        // Search belongs to screens that search their own content.
+        expect(find.byIcon(AppIcons.search), findsNothing);
         await _capture(tester, 'profile-overview-${size.key}-${look.key}');
         expect(tester.takeException(), isNull);
       });

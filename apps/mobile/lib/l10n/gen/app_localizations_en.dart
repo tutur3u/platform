@@ -1092,9 +1092,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantStarterPlan => 'Day plan';
 
   @override
-  String get assistantStarterSubtitle => 'Pick a quick starter or type your own.';
-
-  @override
   String get assistantStarterTitle => 'Need a place to start?';
 
   @override

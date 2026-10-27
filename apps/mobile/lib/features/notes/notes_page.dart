@@ -410,15 +410,11 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
                 locations: const {Routes.notes},
                 actions: [
                   if (_selected == null) ...[
-                    ShellActionSpec(
+                    ShellActionSpec.search(
                       id: 'notes-search',
-                      icon: _searching
-                          ? Icons.search_off_rounded
-                          : Icons.search_rounded,
+                      active: _searching,
                       tooltip: context.l10n.notesSearch,
-                      inDock: true,
-                      callbackToken: _searching,
-                      searchController: _searching ? _search : null,
+                      controller: _search,
                       searchHint: context.l10n.notesSearch,
                       onSearchChanged: (_) => setState(() {}),
                       onCloseSearch: () => setState(() {

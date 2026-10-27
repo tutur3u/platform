@@ -1,6 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 
 class ShellActionSpec extends Equatable {
   const ShellActionSpec({
@@ -21,6 +22,32 @@ class ShellActionSpec extends Equatable {
     this.onSearchSubmitted,
     this.onCloseSearch,
   });
+
+  /// The one Search action every searchable screen uses. It sits in the
+  /// dock with the shared search glyph, switches to the close glyph while the
+  /// shell navbar shows the query field, and stays highlighted while a query
+  /// is applied, so Search looks and hits the same everywhere.
+  const ShellActionSpec.search({
+    required this.id,
+    required bool active,
+    required String this.tooltip,
+    required VoidCallback this.onPressed,
+    required TextEditingController controller,
+    required String this.searchHint,
+    required VoidCallback this.onCloseSearch,
+    bool hasQuery = false,
+    Object? callbackToken,
+    this.enabled = true,
+    this.onSearchChanged,
+    this.onSearchSubmitted,
+  }) : icon = active ? AppIcons.close : AppIcons.search,
+       callbackToken = (active, hasQuery, callbackToken),
+       isLoading = false,
+       highlighted = active || hasQuery,
+       inDock = true,
+       keepVisibleWithKeyboard = active,
+       segmentGroup = null,
+       searchController = active ? controller : null;
 
   final String id;
   final IconData icon;

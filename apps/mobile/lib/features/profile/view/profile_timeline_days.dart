@@ -121,7 +121,6 @@ class ProfileTimelineDays extends StatelessWidget {
           if (showHeader)
             AppSectionHeader(
               title: dayLabel(entry.key),
-              count: entry.value.length,
               padding: EdgeInsets.only(
                 top: firstHeader || showItems ? 0 : AppLayout.sectionGap,
                 bottom: AppSpacing.md,

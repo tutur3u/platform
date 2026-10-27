@@ -191,8 +191,14 @@ localization changes.
   one and stops it before starting; a failed start resumes and re-pauses it
   rather than losing it.
 - Root tabs are Home, Apps, Mira, Inbox and You on an icon-only dock;
-  `shell_viewport_checks.dart` asserts the dock has no text. Root-tab search
-  without its own field goes through `ShellRootSearchAction`.
+  `shell_viewport_checks.dart` asserts the dock has no text. Home, Inbox and
+  You have no Search action; a screen offers Search only for its own content,
+  always through `ShellActionSpec.search` (one glyph, dock slot and target).
+- Do not show bare count chips or badges; a count must open what it counts.
+  Show a control only while it can act rather than registering it disabled.
+- Prompt composers lay out through `AppComposerRow` with
+  `AppComposerRow.fieldPadding`, so one line centres with its controls and
+  extra lines grow upward with controls on the last line.
 - Before editing `assistant_page.dart` or `assistant_page_layout.dart`, check
   the open Mira chat PRs that own them; keep tab polish in owned widgets such
   as `assistant_starter_prompts.dart` until those land.

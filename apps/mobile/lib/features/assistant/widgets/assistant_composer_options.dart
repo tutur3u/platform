@@ -88,12 +88,8 @@ class AssistantComposerOptions extends StatelessWidget {
     return AppIconButton(
       key: const ValueKey('assistant-composer-options'),
       tooltip: context.l10n.assistantSettingsTitle,
-      icon: chatState.composerAttachments.isEmpty
-          ? const Icon(LucideIcons.plus)
-          : AppBadge(
-              leading: const Icon(LucideIcons.paperclip),
-              child: Text(chatState.composerAttachments.length.toString()),
-            ),
+      // Attachments already show above the prompt; the control stays Plus.
+      icon: const Icon(LucideIcons.plus),
       onPressed: () {
         final owningChat = chatCubit ?? context.read<AssistantChatCubit?>();
         onDismissKeyboard?.call();
