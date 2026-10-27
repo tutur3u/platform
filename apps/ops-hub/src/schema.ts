@@ -1,30 +1,7 @@
 import { z } from 'zod';
+import { decisionSchema, observabilitySchema } from './contract-v2';
+import { id, SECURITY, text, timestamp } from './fields';
 
-export const SECURITY =
-  /sec-\d|vuln|idor|cve|rls|leak|breach|exploit|pii|auth(?:entication)? bypass|incident|security/i;
-const UNSAFE =
-  /gh[pousr]_|github_pat_|\bsk-|\bxox|\bAKIA|\beyJ[A-Za-z0-9_-]+\.|-----BEGIN|\bBearer\b|https?:\/\/\S*(?:\?|\/hooks\/)|relay\.t3\.codes|[\w.+-]+@[\w.-]+\.[a-z]{2,}|(?:\+?\d[\s().-]*){9,}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|\bdpl_\w+|\b(?:\d{1,3}\.){3}\d{1,3}\b|(?:[0-9a-f]{0,4}:){2,}[0-9a-f:]+|~\/|\/(?:Users|home)\//i;
-function safe(value: string) {
-  return SECURITY.test(value)
-    ? 'Security issue'
-    : UNSAFE.test(value)
-      ? 'Withheld, open on Mac'
-      : value;
-}
-const text = (max: number) =>
-  z
-    .string()
-    .max(max)
-    .refine((value) =>
-      [...value].every((c) => c.charCodeAt(0) > 31 && c.charCodeAt(0) !== 127)
-    )
-    .transform(safe);
-const id = z
-  .string()
-  .max(80)
-  .regex(/^[a-z][a-z0-9-]*$/)
-  .refine((value) => !UNSAFE.test(value));
-const timestamp = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
 const state = z.enum([
   'queued',
   'running',
@@ -55,6 +32,9 @@ export const itemSchema = z
     status: z.enum(['open', 'answered', 'withdrawn']),
     severity: severity.optional(),
   })
+  .refine(
+    (item) => new TextEncoder().encode(JSON.stringify(item)).byteLength <= 4096
+  )
   .transform((item) => {
     if (item.class !== 'security' && !SECURITY.test(JSON.stringify(item)))
       return item;
@@ -107,31 +87,44 @@ const event = z
       ? { ...row, title: 'Security issue', summary: undefined }
       : row
   );
-export const snapshotSchema = z.strictObject({
-  enabled: z.boolean().optional(),
-  pausedReason: text(100).optional(),
-  needsYou: z.array(itemSchema).max(100),
-  environments: z
-    .array(environment)
-    .max(40)
-    .refine(
-      (rows) =>
-        new Set(rows.map((r) => `${r.product}:${r.environment}`)).size ===
-        rows.length
-    ),
-  lanes: z
-    .array(
-      z.strictObject({ id, title: text(100), state, eta: text(80).optional() })
-    )
-    .max(100),
-  backlog: z
-    .array(z.strictObject({ id, title: text(100), owner: text(80), state }))
-    .max(100),
-});
+export const snapshotSchema = z
+  .strictObject({
+    enabled: z.boolean().optional(),
+    pausedReason: text(100).optional(),
+    needsYou: z.array(itemSchema).max(100),
+    environments: z
+      .array(environment)
+      .max(40)
+      .refine(
+        (rows) =>
+          new Set(rows.map((r) => `${r.product}:${r.environment}`)).size ===
+          rows.length
+      ),
+    lanes: z
+      .array(
+        z.strictObject({
+          id,
+          title: text(100),
+          state,
+          eta: text(80).optional(),
+        })
+      )
+      .max(100),
+    backlog: z
+      .array(z.strictObject({ id, title: text(100), owner: text(80), state }))
+      .max(100),
+  })
+  .refine(
+    (snapshot) =>
+      new TextEncoder().encode(JSON.stringify(snapshot)).byteLength <=
+      128 * 1024
+  );
 export const ingestSchema = z.strictObject({
-  v: z.literal(1),
+  v: z.literal(2),
   seq: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
   sentAt: timestamp,
+  decisions: z.array(decisionSchema).max(50).default([]),
+  observability: observabilitySchema.optional(),
   snapshot: snapshotSchema.optional(),
   events: z.array(event).max(100),
 });

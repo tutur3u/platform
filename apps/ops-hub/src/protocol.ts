@@ -20,6 +20,62 @@ export function routeAllowed(method: string, target: string) {
   const url = new URL(target, 'https://hub.invalid');
   if (method === 'DELETE') return url.pathname === '/hub' && !url.search;
   if (method !== 'GET') return false;
+  if (url.pathname === '/hub/export') {
+    return (
+      [...url.searchParams.keys()].every((key) =>
+        ['section', 'after', 'seq'].includes(key)
+      ) &&
+      ['section', 'after', 'seq'].every(
+        (key) => url.searchParams.getAll(key).length <= 1
+      ) &&
+      [
+        'snapshot',
+        'events',
+        'needs_you',
+        'decisions',
+        'metrics',
+        'observability_snapshot',
+      ].includes(url.searchParams.get('section') ?? 'snapshot') &&
+      ['after', 'seq'].every((key) =>
+        /^(0|[1-9][0-9]{0,14})$/.test(url.searchParams.get(key) ?? '0')
+      )
+    );
+  }
+  if (url.pathname === '/decisions') {
+    const after = url.searchParams.get('after') ?? '0';
+    return (
+      [...url.searchParams.keys()].every((key) =>
+        ['after', 'category'].includes(key)
+      ) &&
+      url.searchParams.getAll('after').length <= 1 &&
+      url.searchParams.getAll('category').length <= 1 &&
+      /^(0|[1-9][0-9]{0,14})(?::[a-zA-Z0-9][a-zA-Z0-9_-]{0,79})?$/.test(
+        after
+      ) &&
+      (!url.searchParams.has('category') ||
+        ['auto', 'delegated', 'user'].includes(
+          url.searchParams.get('category') ?? ''
+        ))
+    );
+  }
+  if (url.pathname === '/observability') {
+    return (
+      [...url.searchParams.keys()].every((key) =>
+        ['since', 'series'].includes(key)
+      ) &&
+      url.searchParams.getAll('since').length <= 1 &&
+      url.searchParams.getAll('series').length <= 1 &&
+      /^(0|[1-9][0-9]{0,14})$/.test(url.searchParams.get('since') ?? '0') &&
+      [
+        'quota_series',
+        'speed_series',
+        'children_series',
+        'staff',
+        'ci',
+        'cadence',
+      ].includes(url.searchParams.get('series') ?? 'quota_series')
+    );
+  }
   if (url.pathname === '/events') {
     return (
       [...url.searchParams.keys()].every((key) => key === 'after') &&
@@ -83,7 +139,7 @@ export function publisherMessage(
   body: Uint8Array
 ): Uint8Array<ArrayBuffer> {
   const prefix = encoder.encode(
-    `ops-hub-publisher-v1\nPOST\n/ingest\n${userId}\n`
+    `ops-hub-publisher-v2\nPOST\n/ingest\n${userId}\n`
   );
   const result = new Uint8Array(prefix.length + body.length);
   result.set(prefix);

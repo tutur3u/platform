@@ -89,6 +89,8 @@ export default {
       '/events',
       '/needs-you',
       '/environments',
+      '/decisions',
+      '/observability',
       '/hub',
       '/hub/export',
     ].includes(path)

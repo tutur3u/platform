@@ -47,7 +47,7 @@ async function ingest(body, id = user, key = keys.privateKey) {
   });
 }
 const envelope = (seq, extra = {}) => ({
-  v: 1,
+  v: 2,
   seq,
   sentAt: Date.now(),
   events: [],
@@ -182,7 +182,10 @@ test('bounds total event rows, hourly ingests and read/export retention', async 
   await sql('UPDATE flags SET ingests=1');
   await sql('UPDATE events SET ts=?', [Date.now() - 31 * 86_400_000]);
   assert.equal((await (await read('/events')).json()).events.length, 0);
-  assert.equal((await (await read('/hub/export')).json()).events.length, 0);
+  assert.equal(
+    (await (await read('/hub/export?section=events')).json()).rows.length,
+    0
+  );
   assert.equal((await ingest(envelope(2))).status, 200);
   assert.deepEqual(await sql('SELECT COUNT(*) AS count FROM events'), [
     { count: 0 },
@@ -216,7 +219,19 @@ test('caps persisted events and accepts only one concurrent copy of a sequence',
     { count: 1000 },
   ]);
   assert.equal((await (await read('/events')).json()).events.length, 200);
-  assert.equal((await (await read('/hub/export')).json()).events.length, 1000);
+  let after = 0;
+  let exported = 0;
+  for (let page = 0; page < 6; page++) {
+    const result = await (
+      await read(`/hub/export?section=events&after=${after}&seq=13`)
+    ).json();
+    assert.ok(result.rows.length <= 200);
+    exported += result.rows.length;
+    if (result.nextAfter === null) break;
+    assert.ok(result.nextAfter > after);
+    after = result.nextAfter;
+  }
+  assert.equal(exported, 1000);
 });
 test('erases isolated data and leaves a durable disabled replay tombstone', async () => {
   assert.equal(
@@ -234,11 +249,167 @@ test('erases isolated data and leaves a durable disabled replay tombstone', asyn
     false
   );
 });
+test('v2 persists only approved decision fields and bounds/downsamples observation reads', async () => {
+  const at = Date.now() - 120_000;
+  const normal = {
+    id: 'normal',
+    at,
+    title: 'Move release',
+    by: 'mastermind',
+    category: 'auto',
+    area: 'release',
+    why: 'Dependency ready',
+    risk: 'low',
+    reversible: true,
+  };
+  const security = {
+    ...normal,
+    id: 'privacy',
+    title: 'Review policy',
+    area: 'security',
+    why: 'Must not survive storage',
+  };
+  const observability = {
+    quota_series: [
+      { instance: 'main', t: at, pct: 80 },
+      { instance: 'main', t: at + 1, pct: 20 },
+    ],
+    speed_series: [{ model: 'gpt-6', t: at, tok_s_p50: 30 }],
+    children_series: ['codex', 'claude'].map((provider) => ({
+      t: at,
+      provider,
+      model: 'shared-model',
+      running: 1,
+      started: 2,
+      finished: 1,
+    })),
+    staff: [
+      {
+        role: 'release-desk',
+        title: 'Release Desk',
+        state: 'waiting',
+        last_active: at,
+        model: 'gpt-6',
+        runs_today: 3,
+      },
+    ],
+    ci: [{ repo: 'tutur3u/platform', t: at, queued: 2, running: 1 }],
+    cadence: [{ product: 'tuturuuu', last_prod_at: at }],
+  };
+  assert.equal(
+    (
+      await ingest(
+        envelope(14, { decisions: [normal, security], observability })
+      )
+    ).status,
+    200
+  );
+  const decisions = await (await read('/decisions')).json();
+  assert.equal(decisions.decisions.length, 2);
+  assert.deepEqual(Object.keys(decisions.decisions[1]).sort(), [
+    'area',
+    'at',
+    'id',
+    'risk',
+    'title',
+  ]);
+  assert.deepEqual(
+    (await (await read('/decisions?category=auto')).json()).decisions.map(
+      (row) => row.id
+    ),
+    ['normal']
+  );
+  assert.deepEqual(
+    (await (await read(`/decisions?after=${at}:normal`)).json()).decisions.map(
+      (row) => row.id
+    ),
+    ['privacy']
+  );
+  const stored = await sql('SELECT data,category FROM decisions WHERE id=?', [
+    'privacy',
+  ]);
+  assert.equal(stored[0].category, null);
+  assert.deepEqual(Object.keys(JSON.parse(stored[0].data)).sort(), [
+    'area',
+    'at',
+    'id',
+    'risk',
+    'title',
+  ]);
+  const quota = await (await read('/observability?series=quota_series')).json();
+  assert.equal(quota.points.length, 1);
+  assert.equal(quota.points[0].pct, 20);
+  assert.equal(quota.points[0].t % 120_000, 0);
+  assert.equal(
+    (await (await read('/observability?series=children_series')).json()).points
+      .length,
+    2
+  );
+  assert.equal(
+    (await (await read('/observability?series=staff')).json()).points[0].role,
+    'release-desk'
+  );
+  assert.equal(
+    (
+      await ingest(
+        envelope(15, { observability: { ...observability, raw: 'no' } })
+      )
+    ).status,
+    400
+  );
+  assert.equal(
+    (
+      await ingest(
+        envelope(15, {
+          observability: {
+            ...observability,
+            quota_series: Array.from({ length: 17 }, (_, i) => ({
+              instance: `pool-${i}`,
+              t: at,
+              pct: 40,
+            })),
+          },
+        })
+      )
+    ).status,
+    400
+  );
+  const now = Date.now();
+  await sql(
+    `WITH RECURSIVE n(x) AS (VALUES(0) UNION ALL SELECT x+1 FROM n WHERE x<5040)
+    INSERT OR REPLACE INTO metrics(series,dimension,t,data)
+    SELECT 'quota_series','history',?-x*120000,json_object('instance','history','t',?-x*120000,'pct',50) FROM n`,
+    [now, now]
+  );
+  await sql(
+    'INSERT INTO metric_dimensions(series,dimension,lastAt) VALUES(?,?,?)',
+    ['quota_series', 'history', now]
+  );
+  const sampled = await (
+    await read('/observability?series=quota_series')
+  ).json();
+  assert.ok(sampled.points.length <= 500 && sampled.points.length < 5040);
+  assert.equal(sampled.pointCap, 500);
+  assert.ok(sampled.points.every((row) => row.t > now - 7 * 86_400_000));
+  await sql('UPDATE metrics SET t=? WHERE dimension=?', [
+    now - 8 * 86_400_000,
+    'main',
+  ]);
+  assert.ok(
+    !(
+      await (await read('/observability?series=quota_series')).json()
+    ).points.some((row) => row.instance === 'main')
+  );
+  const page = await (await read('/hub/export?section=metrics')).json();
+  assert.equal(page.rows.length, 200);
+  assert.ok(page.nextAfter > 0);
+  assert.equal((await read('/hub/export?section=metrics&seq=13')).status, 409);
+});
 test('kill switch survives restart, denies ingest and all reads except status', async () => {
   assert.equal(
     (
       await ingest(
-        envelope(14, { snapshot: { ...snapshot(), enabled: false } })
+        envelope(15, { snapshot: { ...snapshot(), enabled: false } })
       )
     ).status,
     200
@@ -253,9 +424,22 @@ test('kill switch survives restart, denies ingest and all reads except status', 
   ]) {
     assert.equal((await read(target)).status, 503);
   }
-  assert.equal((await ingest(envelope(15))).status, 503);
+  assert.equal((await ingest(envelope(16))).status, 503);
   assert.equal((await (await read('/status')).json()).enabled, false);
+  for (const table of [
+    'snapshot',
+    'events',
+    'needs_you',
+    'decisions',
+    'metrics',
+    'metric_dimensions',
+    'observability_snapshot',
+  ]) {
+    assert.deepEqual(await sql(`SELECT COUNT(*) AS count FROM ${table}`), [
+      { count: 0 },
+    ]);
+  }
   assert.deepEqual(await sql('SELECT seq,enabled FROM flags'), [
-    { seq: 14, enabled: 0 },
+    { seq: 15, enabled: 0 },
   ]);
 });

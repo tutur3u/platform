@@ -69,7 +69,7 @@ describe('gateway assertions', () => {
 });
 describe('strict publisher boundary', () => {
   const snapshot = { needsYou: [], environments: [], lanes: [], backlog: [] };
-  const body = { v: 1, seq: 1, sentAt: now, snapshot, events: [] };
+  const body = { v: 2, seq: 1, sentAt: now, snapshot, events: [] };
   it('rejects unknown fields at every nesting level and excessive batches', () => {
     expect(
       ingestSchema.safeParse({ ...body, token: 'forbidden' }).success

@@ -1,5 +1,19 @@
 import { DurableObject } from 'cloudflare:workers';
-import { DAY, HOUR, maintainHub } from './maintenance';
+import { seriesSchema } from './contract-v2';
+import {
+  initializeDecisions,
+  readDecisions,
+  storeDecisions,
+  validateDecisions,
+} from './decisions';
+import { exportPage } from './export';
+import { DAY, eraseContent, HOUR, maintainHub } from './maintenance';
+import {
+  initializeObservability,
+  readObservability,
+  storeObservability,
+  validateObservability,
+} from './observability';
 import { json } from './protocol';
 import { type HubSnapshot, ingestSchema, snapshotSchema } from './schema';
 
@@ -31,6 +45,8 @@ export class OpsHub extends DurableObject<Env> {
       CREATE INDEX IF NOT EXISTS events_ts ON events(ts);
       CREATE TABLE IF NOT EXISTS needs_you(id TEXT PRIMARY KEY, version INTEGER NOT NULL, data TEXT NOT NULL, completedAt INTEGER);
     `);
+    initializeDecisions(this.ctx.storage.sql);
+    initializeObservability(this.ctx.storage.sql);
   }
   private flags() {
     return this.ctx.storage.sql
@@ -50,12 +66,9 @@ export class OpsHub extends DurableObject<Env> {
     const row = this.ctx.storage.sql
       .exec<Stored>('SELECT data FROM snapshot WHERE id=1')
       .toArray()[0];
-    return row
-      ? snapshotSchema.parse({
-          ...JSON.parse(row.data),
-          needsYou: this.items(now),
-        })
-      : null;
+    if (!row) return null;
+    const stored = snapshotSchema.parse(JSON.parse(row.data));
+    return { ...stored, needsYou: this.items(now) };
   }
   async fetch(request: Request) {
     const url = new URL(request.url);
@@ -63,7 +76,9 @@ export class OpsHub extends DurableObject<Env> {
     let flags = this.flags();
     if (request.method === 'GET' && url.pathname === '/status') {
       return json({
+        v: 2,
         enabled: Boolean(flags.enabled),
+        erased: Boolean(flags.erased),
         seq: flags.seq,
         lastPublisherAt: flags.lastPublisherAt || null,
         publisherStale:
@@ -77,6 +92,13 @@ export class OpsHub extends DurableObject<Env> {
       flags = this.flags();
       if (!flags.enabled) return json({ error: 'Hub paused' }, 503);
       const body = parsed.data;
+      if (
+        !validateDecisions(this.ctx.storage.sql, body.decisions, now) ||
+        (body.observability &&
+          !validateObservability(this.ctx.storage.sql, body.observability, now))
+      ) {
+        return json({ error: 'Invalid decision or observability batch' }, 400);
+      }
       if (Math.abs(now - body.sentAt) > 120_000)
         return json({ error: 'Clock skew' }, 400);
       if (body.seq <= flags.seq) return json({ error: 'Sequence replay' }, 409);
@@ -117,6 +139,9 @@ export class OpsHub extends DurableObject<Env> {
       }
       if (ids.size > 100) return json({ error: 'Item budget reached' }, 409);
       this.ctx.storage.transactionSync(() => {
+        storeDecisions(this.ctx.storage.sql, body.decisions);
+        if (body.observability)
+          storeObservability(this.ctx.storage.sql, body.observability, now);
         this.ctx.storage.sql.exec(
           'DELETE FROM events WHERE ts <= ?',
           now - 30 * DAY
@@ -153,6 +178,8 @@ export class OpsHub extends DurableObject<Env> {
             );
           }
         }
+        if (body.snapshot?.enabled === false)
+          eraseContent(this.ctx.storage.sql);
         this.ctx.storage.sql.exec(
           `UPDATE flags SET enabled=?,seq=?,lastPublisherAt=?,lastEventSeq=?,
           windowStart=?,ingests=?,stale=0 WHERE id=1`,
@@ -164,16 +191,19 @@ export class OpsHub extends DurableObject<Env> {
           ingests
         );
       });
-      if (body.snapshot?.enabled === false)
+      if (body.snapshot?.enabled === false) {
         await this.ctx.storage.deleteAlarm();
-      else await this.ctx.storage.setAlarm(now + HOUR);
-      return json({ seq: body.seq });
+      } else {
+        const scheduled = await this.ctx.storage.getAlarm();
+        if (scheduled === null && this.flags().enabled)
+          await this.ctx.storage.setAlarm(now + HOUR);
+      }
+      return json({ seq: body.seq, v: 2 });
     }
     if (request.method === 'DELETE' && url.pathname === '/hub') {
       // Preserve only a disabled replay tombstone: old signed requests cannot recreate erased data.
       this.ctx.storage.transactionSync(() => {
-        for (const table of ['snapshot', 'events', 'needs_you'])
-          this.ctx.storage.sql.exec(`DELETE FROM ${table}`);
+        eraseContent(this.ctx.storage.sql);
         this.ctx.storage.sql.exec(
           'UPDATE flags SET enabled=0,lastPublisherAt=0,stale=0,erased=1 WHERE id=1'
         );
@@ -182,11 +212,16 @@ export class OpsHub extends DurableObject<Env> {
       return json({ erased: true });
     }
     if (request.method !== 'GET') return json({ error: 'Not found' }, 404);
-    const snapshot = this.snapshot(now);
+    const expired = now - flags.lastPublisherAt >= 30 * DAY;
+    const snapshot =
+      !expired && ['/snapshot', '/environments'].includes(url.pathname)
+        ? this.snapshot(now)
+        : null;
     if (url.pathname === '/snapshot') return json(snapshot);
     if (url.pathname === '/environments')
       return json(snapshot?.environments ?? []);
-    if (url.pathname === '/needs-you') return json(this.items(now));
+    if (url.pathname === '/needs-you')
+      return json(expired ? [] : this.items(now));
     const rows = () =>
       this.ctx.storage.sql
         .exec<Stored>(
@@ -198,15 +233,38 @@ export class OpsHub extends DurableObject<Env> {
         .map((row) => JSON.parse(row.data));
     if (url.pathname === '/events')
       return json({ events: rows(), lastSeq: flags.lastEventSeq });
-    if (url.pathname === '/hub/export') {
-      const events = this.ctx.storage.sql
-        .exec<Stored>(
-          'SELECT data FROM events WHERE ts > ? ORDER BY seq LIMIT 1000',
-          now - 30 * DAY
+    if (url.pathname === '/decisions')
+      return json(
+        readDecisions(
+          this.ctx.storage.sql,
+          url.searchParams.get('after') ?? '0',
+          url.searchParams.get('category'),
+          now
         )
-        .toArray()
-        .map((row) => JSON.parse(row.data));
-      return json({ v: 1, snapshot, events, needsYou: this.items(now), flags });
+      );
+    if (url.pathname === '/observability')
+      return json(
+        readObservability(
+          this.ctx.storage.sql,
+          Number(url.searchParams.get('since') ?? 0),
+          seriesSchema.parse(url.searchParams.get('series') ?? 'quota_series'),
+          now
+        )
+      );
+    if (url.pathname === '/hub/export') {
+      const version = url.searchParams.get('seq');
+      if (version !== null && Number(version) !== flags.seq)
+        return json({ error: 'Export changed; restart' }, 409);
+      return json({
+        v: 2,
+        seq: flags.seq,
+        ...exportPage(
+          this.ctx.storage.sql,
+          url.searchParams.get('section') ?? 'snapshot',
+          Number(url.searchParams.get('after') ?? 0),
+          now
+        ),
+      });
     }
     return json({ error: 'Not found' }, 404);
   }
