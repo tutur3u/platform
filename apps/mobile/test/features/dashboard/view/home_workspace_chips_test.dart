@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -28,6 +30,14 @@ class _Pins extends WorkspacePinsRepository {
   final List<List<String>> saves = [];
   bool failSave = false;
 
+  /// Fails only the saves of lists it matches.
+  bool Function(List<String> workspaceIds)? failFor;
+
+  /// While set, saves wait for it, like a save held by a security check.
+  Completer<void>? gate;
+  int inFlight = 0;
+  int maxInFlight = 0;
+
   /// Loads that fail before one succeeds.
   int failLoads = 0;
   int loads = 0;
@@ -45,8 +55,17 @@ class _Pins extends WorkspacePinsRepository {
   @override
   Future<void> save(List<String> workspaceIds) async {
     saves.add(workspaceIds);
-    if (failSave) throw Exception('offline');
-    stored = workspaceIds;
+    inFlight++;
+    if (inFlight > maxInFlight) maxInFlight = inFlight;
+    try {
+      await gate?.future;
+      if (failSave || (failFor?.call(workspaceIds) ?? false)) {
+        throw Exception('offline');
+      }
+      stored = workspaceIds;
+    } finally {
+      inFlight--;
+    }
   }
 }
 
@@ -256,6 +275,100 @@ void main() {
       expect(pins.saves.single, ['ws-3', 'ws-5']);
       final checkbox = tester.widget<AppCheckboxRow>(row);
       expect(checkbox.value, isFalse);
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+    });
+
+    Future<void> openPinsEditor(WidgetTester tester) async {
+      await tester.tap(chip('more'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Edit pinned workspaces'));
+      await tester.pumpAndSettle();
+    }
+
+    Finder pinRow(String id) => find.byKey(ValueKey('home-workspace-pin-$id'));
+
+    testWidgets('rapid edits save one at a time and only the latest list', (
+      tester,
+    ) async {
+      final pins = _Pins(['ws-3'])..gate = Completer<void>();
+      await pump(tester, _workspaces(6), pins);
+      await openPinsEditor(tester);
+
+      // The first save is held, as by a security check; two more taps land
+      // meanwhile.
+      await tester.tap(pinRow('ws-5'));
+      await tester.pump();
+      await tester.tap(pinRow('ws-1'));
+      await tester.pump();
+      await tester.tap(pinRow('ws-2'));
+      await tester.pump();
+      expect(pins.saves, [
+        ['ws-3', 'ws-5'],
+      ]);
+
+      pins.gate!.complete();
+      await tester.pumpAndSettle();
+
+      // The middle edit is superseded, so it never reaches the server.
+      expect(pins.saves, [
+        ['ws-3', 'ws-5'],
+        ['ws-3', 'ws-5', 'ws-1', 'ws-2'],
+      ]);
+      expect(pins.maxInFlight, 1);
+      expect(pins.stored, ['ws-3', 'ws-5', 'ws-1', 'ws-2']);
+      expect(find.text("Couldn't save pinned workspaces."), findsNothing);
+      for (final id in ['ws-3', 'ws-5', 'ws-1', 'ws-2']) {
+        expect(tester.widget<AppCheckboxRow>(pinRow(id)).value, isTrue);
+      }
+    });
+
+    testWidgets('a superseded failed save stays quiet and the latest wins', (
+      tester,
+    ) async {
+      final pins = _Pins(['ws-3'])
+        ..gate = Completer<void>()
+        ..failFor = (ids) => ids.length == 2;
+      await pump(tester, _workspaces(6), pins);
+      await openPinsEditor(tester);
+
+      await tester.tap(pinRow('ws-5'));
+      await tester.pump();
+      await tester.tap(pinRow('ws-1'));
+      await tester.pump();
+      pins.gate!.complete();
+      await tester.pumpAndSettle();
+
+      expect(pins.saves, [
+        ['ws-3', 'ws-5'],
+        ['ws-3', 'ws-5', 'ws-1'],
+      ]);
+      expect(pins.stored, ['ws-3', 'ws-5', 'ws-1']);
+      expect(find.text("Couldn't save pinned workspaces."), findsNothing);
+      expect(tester.widget<AppCheckboxRow>(pinRow('ws-1')).value, isTrue);
+    });
+
+    testWidgets('when the latest save fails, pins roll back to the server', (
+      tester,
+    ) async {
+      final pins = _Pins(['ws-3'])
+        ..gate = Completer<void>()
+        ..failFor = (ids) => ids.length == 3;
+      await pump(tester, _workspaces(6), pins);
+      await openPinsEditor(tester);
+
+      await tester.tap(pinRow('ws-5'));
+      await tester.pump();
+      await tester.tap(pinRow('ws-1'));
+      await tester.pump();
+      pins.gate!.complete();
+      await tester.pumpAndSettle();
+
+      // The first save landed, so the rollback keeps it.
+      expect(pins.stored, ['ws-3', 'ws-5']);
+      expect(find.text("Couldn't save pinned workspaces."), findsOneWidget);
+      expect(tester.widget<AppCheckboxRow>(pinRow('ws-5')).value, isTrue);
+      expect(tester.widget<AppCheckboxRow>(pinRow('ws-1')).value, isFalse);
       await tester.pump(const Duration(seconds: 5));
       await tester.pumpAndSettle();
     });

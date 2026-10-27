@@ -41,6 +41,14 @@ class _HomeWorkspaceChipsState extends State<HomeWorkspaceChips>
   late final WorkspacePinsRepository _repository =
       widget.pinsRepository ?? WorkspacePinsRepository();
   List<String> _pins = const [];
+
+  /// The pins last confirmed by the server; a failed save rolls back here.
+  List<String> _persisted = const [];
+
+  /// The tail of the save queue. Saves run one at a time so overlapping
+  /// edits never race to the server or hit a security check that another
+  /// save already has open.
+  Future<void> _saving = Future<void>.value();
   int _revision = 0;
   bool _requested = false;
 
@@ -93,6 +101,7 @@ class _HomeWorkspaceChipsState extends State<HomeWorkspaceChips>
       _failures = 0;
       setState(() {
         _pins = pins;
+        _persisted = pins;
         _loaded = true;
       });
     } on Exception {
@@ -108,24 +117,33 @@ class _HomeWorkspaceChipsState extends State<HomeWorkspaceChips>
     }
   }
 
-  /// Saves [pins] optimistically and returns the pins that are persisted
-  /// afterwards: [pins] on success, the previous pins after a rollback.
+  /// Saves [pins] optimistically and returns the pins shown afterwards:
+  /// [pins] on success, the last persisted pins after a rollback.
   Future<List<String>> _savePins(List<String> pins) async {
-    final previous = _pins;
     final revision = ++_revision;
     setState(() => _pins = pins);
+    final write = _saving.then((_) => _write(pins, revision));
+    _saving = write.catchError((Object _) {});
+    await write;
+    return _pins;
+  }
+
+  /// Each save replaces the whole list, so a save superseded while queued is
+  /// skipped and only the latest edit reaches the server.
+  Future<void> _write(List<String> pins, int revision) async {
+    if (!mounted || revision != _revision) return;
     try {
       await _repository.save(pins);
+      _persisted = pins;
     } on Exception {
-      if (!mounted || revision != _revision) return _pins;
-      setState(() => _pins = previous);
+      if (!mounted || revision != _revision) return;
+      setState(() => _pins = _persisted);
       showAppToast(
         context,
         message: context.l10n.homeWorkspacePinsFailed,
         variant: AppAlertVariant.destructive,
       );
     }
-    return _pins;
   }
 
   Future<void> _togglePin(Workspace workspace) async {
@@ -165,6 +183,7 @@ class _HomeWorkspaceChipsState extends State<HomeWorkspaceChips>
             _failures = 0;
             setState(() {
               _pins = const [];
+              _persisted = const [];
               _loaded = false;
               _requested = false;
             });

@@ -25,9 +25,12 @@ with the redesign.
   `MOBILE_PINNED_WORKSPACES` user config through `/api/v1/users/me/configs`.
   They are fetched only from five workspaces, and edits wait until the stored
   pins have loaded, so a failed load never overwrites them. A failed load
-  retries after 2, 8 and 30 seconds and again when the app resumes. A failed
-  save restores the previous pins, and the Edit pinned workspaces checkboxes
-  follow what is stored, not the tap. Chip pills are 44dp tall with 48dp
+  retries after 2, 8 and 30 seconds and again when the app resumes. Saves run
+  one at a time, and an edit made while a save is in flight (for example
+  behind a security check) replaces any queued edit, so only the latest list
+  is written and saves never race. A failed latest save restores the last
+  stored pins, and the Edit pinned workspaces checkboxes follow what is
+  stored, not the tap. Chip pills are 44dp tall with 48dp
   touch targets, and long names ellipsize inside a chip while the row
   scrolls.
 - **Widgets.** The existing widgets keep their order, visibility and
@@ -122,6 +125,7 @@ occurrence projected into a different calendar day.
 - `test/features/dashboard/view/home_workspace_chips_test.dart` covers the
   chip rules (all chips below five workspaces, pins in order led by an
   unpinned current workspace, stale pins skipped), switching, the More menu,
-  pinning per user, failed-save rollback and 2x text at 320dp. The render
+  pinning per user, serialized latest-wins saves, failed-save rollback and
+  2x text at 320dp. The render
   cases above assert the Today, Up next and Calendar sections and screen-reader
   activation of More and See all.
