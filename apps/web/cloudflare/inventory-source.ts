@@ -59,7 +59,9 @@ export function createSourceGraph(repo: string) {
         specifier.startsWith('@tuturuuu/')
       ) {
         // Assets and declarations are not executable source edges.
-        if (!/\.(?:json|css|svg|png|jpg|woff2?|d\.ts)$/u.test(specifier))
+        if (
+          !/\.(?:json|css|svg|png|jpg|woff2?|d\.ts)(?:\?raw)?$/u.test(specifier)
+        )
           unresolved.add(specifier);
       }
     }

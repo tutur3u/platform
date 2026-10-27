@@ -103,7 +103,7 @@ describe('Web route census', () => {
     const { root, write } = fixture();
     write(
       'apps/web/src/page.ts',
-      `import '@/missing'; import '@tuturuuu/missing'; import './image.png';`
+      `import '@/missing'; import '@tuturuuu/missing'; import './image.png'; import './legal.css?raw';`
     );
     const graph = createSourceGraph(`${root}/`);
     graph.boundaries(['apps/web/src/page.ts']);
@@ -118,12 +118,16 @@ describe('Web route census', () => {
     ).toBe('/[locale]/[wsId]/api/[...path]');
     expect(routePattern('(marketing)/page.tsx')).toBe('/');
   });
-  it('keeps every existing route on Next and all five schedules owned by Vercel', () => {
+  it('moves only public legal pages and retains all five Vercel schedules', () => {
     expect(
       manifest.routes
         .filter((route) => route.disposition === 'native-Start')
         .map((route) => route.pattern)
-    ).toEqual(['/__web1']);
+    ).toEqual(['/[locale]/privacy', '/[locale]/terms', '/__web1']);
+    expect(manifest.summary.dispositions).toEqual({
+      'native-Start': 3,
+      'Next-fallback': 835,
+    });
     expect(manifest.crons).toHaveLength(5);
     expect(manifest.crons.every((cron) => cron.owner === 'vercel-web')).toBe(
       true

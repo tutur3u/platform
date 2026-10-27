@@ -27,6 +27,7 @@ test(description, { timeout: 30000 }, async (t) => {
   assert.deepEqual(config.triggers, {});
   assert.equal(config.routes, undefined);
   assert.equal(config.vars.WEB_START_CANDIDATE, 'off');
+  assert.equal(config.vars.WEB_START_NATIVE_LEGAL, 'off');
   const entry = resolve(dirname(configPath), config.main);
   assert.match(await readFile(entry, 'utf8'), /Web candidate disabled/u);
   const modules = [
@@ -87,6 +88,14 @@ test(description, { timeout: 30000 }, async (t) => {
   const enabled = instance({
     ...config.vars,
     WEB_START_CANDIDATE: 'staging',
+    WEB_START_NATIVE_LEGAL: 'on',
+    NEXT_FALLBACK_ORIGIN: upstream,
+    TRUSTED_PROXY_ORIGIN_SECRET: secret,
+  });
+  const rollback = instance({
+    ...config.vars,
+    WEB_START_CANDIDATE: 'staging',
+    WEB_START_NATIVE_LEGAL: 'off',
     NEXT_FALLBACK_ORIGIN: upstream,
     TRUSTED_PROXY_ORIGIN_SECRET: secret,
   });
@@ -102,6 +111,7 @@ test(description, { timeout: 30000 }, async (t) => {
         '/assets/index.js',
         '/api/a',
         '/__web1',
+        '/vi/privacy',
         '/serwist/sw.js',
       ]) {
         const response = await disabled.dispatchFetch(`${base}${path}`, {
@@ -126,6 +136,64 @@ test(description, { timeout: 30000 }, async (t) => {
     });
     assert.deepEqual(egress, []);
   });
+  await t.test(
+    'native legal documents SSR in both languages without egress or session writes',
+    async () => {
+      for (const path of [
+        '/privacy',
+        '/terms',
+        '/en/privacy',
+        '/en/terms',
+        '/vi/privacy',
+        '/vi/terms',
+      ]) {
+        const before = egress.length;
+        const response = await enabled.dispatchFetch(base + path, { headers });
+        assert.equal(response.status, 200);
+        assert.equal(
+          response.headers.get('x-tuturuuu-web-renderer'),
+          'native-Start'
+        );
+        assert.equal(response.headers.get('cache-control'), 'no-store');
+        assert.equal(response.headers.has('set-cookie'), false);
+        assert.match(
+          response.headers.get('content-security-policy'),
+          /frame-ancestors 'none'/u
+        );
+        const html = await response.text();
+        assert.match(
+          html,
+          path.startsWith('/vi/') ? /<html lang="vi"/u : /<html lang="en"/u
+        );
+        assert.match(html, /<h1>/u);
+        assert.match(html, /id="section-1"/u);
+        assert.match(html, /mailto:legal@tuturuuu.com/u);
+        assert.doesNotMatch(html, /<script(?:\s|>)/u);
+        assert.equal(egress.length, before);
+        const head = await enabled.dispatchFetch(base + path, {
+          method: 'HEAD',
+          headers,
+        });
+        assert.equal(head.status, 200);
+        assert.equal(await head.text(), '');
+      }
+    }
+  );
+  await t.test(
+    'route rollback reaches only the attested Next fixture with the original query',
+    async () => {
+      const response = await rollback.dispatchFetch(
+        base + '/vi/privacy?raw=%2f&x=1&x=2',
+        { headers }
+      );
+      assert.equal(response.status, 429);
+      assert.equal(
+        response.headers.get('x-tuturuuu-web-renderer'),
+        'Next-fallback'
+      );
+      assert.equal(egress.at(-1), upstream + '/vi/privacy?raw=%2f&x=1&x=2');
+    }
+  );
   await t.test(
     'Next fallback preserves body, error, cookie and service-worker boundaries',
     async () => {

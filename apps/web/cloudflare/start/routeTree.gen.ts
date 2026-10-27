@@ -4,33 +4,115 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as Char91__web1Char93RouteImport } from './routes/[__web1]'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as TermsRouteImport } from './routes/terms'
+import { Route as EnPrivacyRouteImport } from './routes/en.privacy'
+import { Route as EnTermsRouteImport } from './routes/en.terms'
+import { Route as ViPrivacyRouteImport } from './routes/vi.privacy'
+import { Route as ViTermsRouteImport } from './routes/vi.terms'
 
 const Char91__web1Char93Route = Char91__web1Char93RouteImport.update({
   id: '/__web1',
   path: '/__web1',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EnPrivacyRoute = EnPrivacyRouteImport.update({
+  id: '/en/privacy',
+  path: '/en/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EnTermsRoute = EnTermsRouteImport.update({
+  id: '/en/terms',
+  path: '/en/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ViPrivacyRoute = ViPrivacyRouteImport.update({
+  id: '/vi/privacy',
+  path: '/vi/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ViTermsRoute = ViTermsRouteImport.update({
+  id: '/vi/terms',
+  path: '/vi/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/__web1': typeof Char91__web1Char93Route
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
+  '/en/privacy': typeof EnPrivacyRoute
+  '/en/terms': typeof EnTermsRoute
+  '/vi/privacy': typeof ViPrivacyRoute
+  '/vi/terms': typeof ViTermsRoute
 }
 export interface FileRoutesByTo {
   '/__web1': typeof Char91__web1Char93Route
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
+  '/en/privacy': typeof EnPrivacyRoute
+  '/en/terms': typeof EnTermsRoute
+  '/vi/privacy': typeof ViPrivacyRoute
+  '/vi/terms': typeof ViTermsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/__web1': typeof Char91__web1Char93Route
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
+  '/en/privacy': typeof EnPrivacyRoute
+  '/en/terms': typeof EnTermsRoute
+  '/vi/privacy': typeof ViPrivacyRoute
+  '/vi/terms': typeof ViTermsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/__web1'
+  fullPaths:
+    | '/__web1'
+    | '/privacy'
+    | '/terms'
+    | '/en/privacy'
+    | '/en/terms'
+    | '/vi/privacy'
+    | '/vi/terms'
   fileRoutesByTo: FileRoutesByTo
-  to: '/__web1'
-  id: '__root__' | '/__web1'
+  to:
+    | '/__web1'
+    | '/privacy'
+    | '/terms'
+    | '/en/privacy'
+    | '/en/terms'
+    | '/vi/privacy'
+    | '/vi/terms'
+  id:
+    | '__root__'
+    | '/__web1'
+    | '/privacy'
+    | '/terms'
+    | '/en/privacy'
+    | '/en/terms'
+    | '/vi/privacy'
+    | '/vi/terms'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   Char91__web1Char93Route: typeof Char91__web1Char93Route
+  PrivacyRoute: typeof PrivacyRoute
+  TermsRoute: typeof TermsRoute
+  EnPrivacyRoute: typeof EnPrivacyRoute
+  EnTermsRoute: typeof EnTermsRoute
+  ViPrivacyRoute: typeof ViPrivacyRoute
+  ViTermsRoute: typeof ViTermsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -42,11 +124,59 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Char91__web1Char93RouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/en/privacy': {
+      id: '/en/privacy'
+      path: '/en/privacy'
+      fullPath: '/en/privacy'
+      preLoaderRoute: typeof EnPrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/en/terms': {
+      id: '/en/terms'
+      path: '/en/terms'
+      fullPath: '/en/terms'
+      preLoaderRoute: typeof EnTermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/vi/privacy': {
+      id: '/vi/privacy'
+      path: '/vi/privacy'
+      fullPath: '/vi/privacy'
+      preLoaderRoute: typeof ViPrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/vi/terms': {
+      id: '/vi/terms'
+      path: '/vi/terms'
+      fullPath: '/vi/terms'
+      preLoaderRoute: typeof ViTermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   Char91__web1Char93Route: Char91__web1Char93Route,
+  PrivacyRoute: PrivacyRoute,
+  TermsRoute: TermsRoute,
+  EnPrivacyRoute: EnPrivacyRoute,
+  EnTermsRoute: EnTermsRoute,
+  ViPrivacyRoute: ViPrivacyRoute,
+  ViTermsRoute: ViTermsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

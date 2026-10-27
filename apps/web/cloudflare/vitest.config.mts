@@ -1,6 +1,8 @@
+import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
+  plugins: [react()],
   resolve: {
     conditions: ['bun', 'module', 'browser', 'development|production'],
     alias: {
@@ -12,7 +14,7 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
-    include: ['apps/web/cloudflare/**/*.test.ts'],
+    include: ['apps/web/cloudflare/**/*.test.{ts,tsx}'],
     maxWorkers: 1,
   },
 });
