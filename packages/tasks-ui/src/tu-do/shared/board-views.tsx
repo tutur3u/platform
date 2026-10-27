@@ -57,6 +57,10 @@ import { useBoardHeaderData } from './board-header/use-board-header-data';
 import { BoardSprintPill } from './board-sprints/board-sprint-pill';
 import { BoardPlanView } from './board-sprints/plan/board-plan-view';
 import { BoardPlanTabs, type BoardTab } from './board-sprints/plan/plan-parts';
+import {
+  SprintSummaryDialog,
+  type SprintSummaryTarget,
+} from './board-sprints/summary/sprint-summary-dialog';
 import { useBoardSprints } from './board-sprints/use-board-sprints';
 import {
   sortLocalTasks,
@@ -711,6 +715,11 @@ export function BoardViews({
   });
   const [boardTab, setBoardTab] = useState<BoardTab>('board');
   const planActive = boardSprints.sprintsOn && boardTab === 'plan';
+  const [summary, setSummary] = useState<SprintSummaryTarget | null>(null);
+  const openLiveSummary = () => {
+    const running = boardSprints.sprints.find((s) => s.status === 'active');
+    if (running) setSummary({ mode: 'live', sprintId: running.id });
+  };
 
   // Apply optimistic overrides so views receive up-to-date edits (durations, name, dates) even before refetch.
   const effectiveTasks = useMemo(() => {
@@ -949,9 +958,16 @@ export function BoardViews({
                 <BoardSprintPill
                   boardId={board.id}
                   canManage={canManageBoard && !readOnly}
-                  onSelectSprint={(sprint) =>
-                    setBoardTab(sprint.status === 'planned' ? 'plan' : 'board')
+                  onEndSprint={(sprint) =>
+                    setSummary({ mode: 'live', sprintId: sprint.id })
                   }
+                  onSelectSprint={(sprint) => {
+                    if (sprint.status === 'completed') {
+                      setSummary({ mode: 'report', sprintId: sprint.id });
+                      return;
+                    }
+                    setBoardTab(sprint.status === 'planned' ? 'plan' : 'board');
+                  }}
                   sprints={boardSprints}
                   tasks={tasks}
                   wsId={effectiveWorkspaceId}
@@ -970,6 +986,7 @@ export function BoardViews({
             currentUserId={currentUserId}
             defaultListId={board.default_list_id}
             lists={boardLists}
+            onEndActive={openLiveSummary}
             onStarted={() => setBoardTab('board')}
             sprints={boardSprints}
             ticketPrefix={board.ticket_prefix}
@@ -979,6 +996,22 @@ export function BoardViews({
           renderView()
         )}
       </KanbanPresentation>
+      {boardSprints.sprintsOn ? (
+        <SprintSummaryDialog
+          boardId={board.id}
+          canEnd={canManageBoard && !readOnly}
+          lists={boardLists}
+          nextSprint={boardSprints.planningSprint}
+          onEnded={() => setBoardTab('plan')}
+          onOpenChange={(open) => !open && setSummary(null)}
+          sprint={
+            boardSprints.sprints.find((s) => s.id === summary?.sprintId) ?? null
+          }
+          target={summary}
+          ticketPrefix={board.ticket_prefix}
+          wsId={effectiveWorkspaceId}
+        />
+      ) : null}
       {showIdleBottomIsland ? idleBottomIsland : null}
     </BoardPanelFrame>
   );
