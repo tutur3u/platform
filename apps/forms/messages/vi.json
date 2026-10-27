@@ -8892,6 +8892,20 @@
       },
       "status_label": "Trạng thái"
     },
+    "header": {
+      "focus": "Tập trung",
+      "focus_hint": "Công việc đang mở của tôi, ưu tiên cao trước",
+      "more": "Thêm thao tác bảng",
+      "more_people": "Thêm {count}",
+      "new_task": "Công việc mới",
+      "no_projects": "Chưa có dự án",
+      "project": "Dự án",
+      "projects_selected": "{count} dự án",
+      "share": "Chia sẻ",
+      "shift_click": "Shift-click",
+      "task_count": "{count} công việc",
+      "you": "{name} (bạn)"
+    },
     "icon_label": "Biểu tượng",
     "icon_picker": {
       "clear": "Xóa",
