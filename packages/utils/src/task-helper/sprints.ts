@@ -127,16 +127,18 @@ export function getDaysUntilSprintEnd(
   return Math.round((end.getTime() - start) / 86_400_000);
 }
 
-/** "19 Oct 2026 - 30 Oct 2026", in the viewer's locale. */
+/** "19 Oct 2026 - 30 Oct 2026", in the viewer's locale; English is day first. */
 export function formatSprintDateRange(
   sprint: Pick<BoardSprint, 'start_date' | 'end_date'>,
   locale?: string
 ) {
+  const resolvedLocale =
+    locale === 'en' || locale === 'en-US' ? 'en-GB' : locale;
   const format = (value: string | null) => {
     if (!value) return null;
     const date = parseDateOnly(value);
     if (!date) return null;
-    return new Intl.DateTimeFormat(locale, {
+    return new Intl.DateTimeFormat(resolvedLocale, {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
