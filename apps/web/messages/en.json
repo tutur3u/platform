@@ -8647,6 +8647,12 @@
     "workspaces": "Workspaces"
   },
   "integrations-page": {
+    "discord-disconnect-cancel": "Cancel",
+    "discord-disconnect-confirm": "Disconnect and remove mappings",
+    "discord-disconnect-description": "This removes the connection between your workspace and the Discord server, and permanently deletes every Discord member mapping for this server. Reconnecting does not restore them; members must be mapped again. The bot stays in your Discord server but stops responding to commands.",
+    "discord-disconnect-pending": "Disconnecting...",
+    "discord-disconnect-title": "Disconnect Discord Integration",
+    "discord-disconnect-trigger": "Disconnect Integration",
     "sepay-connected-description": "SePay connected successfully. Bank-account sync and webhook provisioning are ready to verify from this workspace.",
     "sepay-connected-title": "SePay connected",
     "sepay-error-description": "SePay could not finish connecting. Review the integration status and retry the flow from this workspace.",

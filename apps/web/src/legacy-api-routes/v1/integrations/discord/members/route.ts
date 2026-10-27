@@ -27,6 +27,27 @@ const RemoveDiscordMemberSchema = z.object({
   memberId: uuidSchema,
 });
 
+// Mappings let the Discord bot and AI agent runtime act as the mapped user, so
+// writes need the same manage_workspace_integrations check that RLS enforces.
+async function canManageWorkspaceIntegrations(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  wsId: string,
+  userId: string
+) {
+  const { data, error } = await supabase.rpc('has_workspace_permission', {
+    p_ws_id: wsId,
+    p_user_id: userId,
+    p_permission: 'manage_workspace_integrations',
+  });
+
+  if (error) {
+    console.error('Error checking Discord integration permission:', error);
+    return null;
+  }
+
+  return data === true;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser();
@@ -177,6 +198,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const canManage = await canManageWorkspaceIntegrations(
+      supabase,
+      wsId,
+      user.id
+    );
+
+    if (canManage === null) {
+      return NextResponse.json(
+        { message: 'Failed to verify workspace permissions' },
+        { status: 500 }
+      );
+    }
+
+    if (!canManage) {
+      return NextResponse.json(
+        { message: 'Insufficient permissions' },
+        { status: 403 }
+      );
+    }
+
     // Verify the Discord integration belongs to the workspace
     const { data: integration } = await supabase
       .from('discord_integrations')
@@ -261,6 +302,13 @@ export async function POST(request: NextRequest) {
       `)
       .single();
 
+    if (error?.code === '23505') {
+      return NextResponse.json(
+        { message: 'Discord user is already linked to this guild' },
+        { status: 409 }
+      );
+    }
+
     if (error) {
       console.error('Error adding Discord guild member:', error);
       return NextResponse.json(
@@ -322,6 +370,26 @@ export async function DELETE(request: NextRequest) {
     if (!workspaceMember.ok) {
       return NextResponse.json(
         { message: 'Access denied to workspace' },
+        { status: 403 }
+      );
+    }
+
+    const canManage = await canManageWorkspaceIntegrations(
+      supabase,
+      wsId,
+      user.id
+    );
+
+    if (canManage === null) {
+      return NextResponse.json(
+        { message: 'Failed to verify workspace permissions' },
+        { status: 500 }
+      );
+    }
+
+    if (!canManage) {
+      return NextResponse.json(
+        { message: 'Insufficient permissions' },
         { status: 403 }
       );
     }

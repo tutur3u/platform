@@ -8647,6 +8647,12 @@
     "workspaces": "Không gian làm việc"
   },
   "integrations-page": {
+    "discord-disconnect-cancel": "Hủy",
+    "discord-disconnect-confirm": "Ngắt kết nối và xóa liên kết",
+    "discord-disconnect-description": "Thao tác này sẽ gỡ kết nối giữa không gian làm việc và máy chủ Discord, đồng thời xóa vĩnh viễn mọi liên kết thành viên Discord của máy chủ này. Kết nối lại sẽ không khôi phục chúng; bạn cần liên kết lại các thành viên. Bot vẫn ở trong máy chủ Discord nhưng sẽ không phản hồi lệnh.",
+    "discord-disconnect-pending": "Đang ngắt kết nối...",
+    "discord-disconnect-title": "Ngắt kết nối tích hợp Discord",
+    "discord-disconnect-trigger": "Ngắt kết nối tích hợp",
     "sepay-connected-description": "SePay đã được kết nối thành công. Việc đồng bộ tài khoản ngân hàng và cấu hình webhook đã sẵn sàng để kiểm tra trong không gian làm việc này.",
     "sepay-connected-title": "SePay đã được kết nối",
     "sepay-error-description": "SePay chưa thể hoàn tất kết nối. Hãy kiểm tra trạng thái tích hợp và thử lại từ không gian làm việc này.",

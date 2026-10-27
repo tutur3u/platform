@@ -105,8 +105,15 @@ export async function POST(request: NextRequest) {
     // see this workspace. The unique guild index reports a cross-workspace
     // conflict, and RLS rejects actors without manage_workspace_integrations.
     if (error?.code === '23505') {
+      const guildTaken = error.message?.includes(
+        'discord_integrations_discord_guild_id_key'
+      );
       return NextResponse.json(
-        { message: 'Discord server is already connected to another workspace' },
+        {
+          message: guildTaken
+            ? 'Discord server is already connected to another workspace'
+            : 'Discord integration conflicts with an existing integration',
+        },
         { status: 409 }
       );
     }
@@ -208,8 +215,8 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Delete the Discord integration. Guild member mappings have no foreign
-    // key to it and stay in place without a bound integration.
+    // Delete the Discord integration. A database trigger removes the guild's
+    // member mappings in the same transaction.
     const { data: deleted, error } = await supabase
       .from('discord_integrations')
       .delete()

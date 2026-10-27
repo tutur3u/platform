@@ -1,7 +1,10 @@
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-type QueryResult = { data: unknown; error: { code: string } | null };
+type QueryResult = {
+  data: unknown;
+  error: { code: string; message?: string } | null;
+};
 
 const mocks = vi.hoisted(() => ({
   createClient: vi.fn(),
@@ -76,7 +79,14 @@ describe('Discord integration route', () => {
       discord_integrations: [
         empty,
         empty,
-        { data: null, error: { code: '23505' } },
+        {
+          data: null,
+          error: {
+            code: '23505',
+            message:
+              'duplicate key value violates unique constraint "discord_integrations_discord_guild_id_key"',
+          },
+        },
       ],
       platform_user_roles: [allowed],
     });
@@ -86,6 +96,36 @@ describe('Discord integration route', () => {
     );
 
     expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({
+      message: 'Discord server is already connected to another workspace',
+    });
+  });
+
+  it('reports other unique conflicts generically', async () => {
+    mockSupabase({
+      discord_integrations: [
+        empty,
+        empty,
+        {
+          data: null,
+          error: {
+            code: '23505',
+            message:
+              'duplicate key value violates unique constraint "discord_integrations_ws_id_key"',
+          },
+        },
+      ],
+      platform_user_roles: [allowed],
+    });
+
+    const response = await POST(
+      request('POST', { discordGuildId: 'guild-1', wsId: WS_ID })
+    );
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({
+      message: 'Discord integration conflicts with an existing integration',
+    });
   });
 
   it('reports an RLS-rejected connect as forbidden', async () => {
