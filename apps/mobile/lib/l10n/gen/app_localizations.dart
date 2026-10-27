@@ -21139,6 +21139,18 @@ abstract class AppLocalizations {
   /// **'Workspace visibility preferences are unavailable. Saved hidden choices are kept.'**
   String get workspaceHiddenLoadError;
 
+  /// No description provided for @workspaceManageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage workspaces'**
+  String get workspaceManageTitle;
+
+  /// No description provided for @workspaceVisibleTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Visible workspaces'**
+  String get workspaceVisibleTitle;
+
   /// No description provided for @workspaceHiddenTitle.
   ///
   /// In en, this message translates to:

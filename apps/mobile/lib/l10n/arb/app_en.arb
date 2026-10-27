@@ -4785,6 +4785,8 @@
   "workspaceHiddenDescription": "Only you can see this list. Hiding does not change membership or notifications.",
   "workspaceHiddenEmpty": "No Hidden workspaces",
   "workspaceHiddenLoadError": "Workspace visibility preferences are unavailable. Saved hidden choices are kept.",
+  "workspaceManageTitle": "Manage workspaces",
+  "workspaceVisibleTitle": "Visible workspaces",
   "workspaceHiddenTitle": "Hidden workspaces",
   "workspaceHiddenUpdateError": "Unable to save this change. Try again when connected.",
   "workspaceHideAction": "Hide",

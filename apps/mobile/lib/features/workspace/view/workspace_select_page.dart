@@ -70,7 +70,8 @@ class _WorkspaceSelectPageState extends State<WorkspaceSelectPage> {
               state.visibilityStatus != WorkspaceStatus.error) {
             return const AppLoadingIndicator.page();
           }
-          if (state.workspaces.isNotEmpty && state.visibleWorkspaces.isEmpty) {
+          if (state.workspaces.any((workspace) => !workspace.deleted) &&
+              state.visibleWorkspaces.isEmpty) {
             return AppPageBody(
               child: Center(
                 child: Column(
@@ -88,7 +89,7 @@ class _WorkspaceSelectPageState extends State<WorkspaceSelectPage> {
               ),
             );
           }
-          if (state.workspaces.isEmpty) {
+          if (!state.workspaces.any((workspace) => !workspace.deleted)) {
             return _EmptyView(
               onCreateWorkspace: () => showCreateWorkspaceDialog(context),
             );

@@ -145,11 +145,7 @@ List<Widget> buildWorkspacePickerSlivers(
     slivers
       ..add(
         SliverToBoxAdapter(
-          child: AppSectionHeader(
-            title: title,
-            icon: icon,
-            count: workspaces.length,
-          ),
+          child: AppSectionHeader(title: title, icon: icon),
         ),
       )
       ..add(

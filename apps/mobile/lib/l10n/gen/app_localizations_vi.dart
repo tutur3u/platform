@@ -11047,6 +11047,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get workspaceHiddenLoadError => 'Không thể tải tùy chọn hiển thị. Các lựa chọn ẩn đã lưu được giữ lại.';
 
   @override
+  String get workspaceManageTitle => 'Quản lý không gian làm việc';
+
+  @override
+  String get workspaceVisibleTitle => 'Không gian làm việc đang hiện';
+
+  @override
   String get workspaceHiddenTitle => 'Không gian làm việc đã ẩn';
 
   @override

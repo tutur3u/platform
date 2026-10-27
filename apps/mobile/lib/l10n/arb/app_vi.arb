@@ -4714,6 +4714,8 @@
   "workspaceHiddenDescription": "Chỉ bạn thấy danh sách này. Ẩn không thay đổi tư cách thành viên hay thông báo.",
   "workspaceHiddenEmpty": "Không có không gian làm việc đã ẩn",
   "workspaceHiddenLoadError": "Không thể tải tùy chọn hiển thị. Các lựa chọn ẩn đã lưu được giữ lại.",
+  "workspaceManageTitle": "Quản lý không gian làm việc",
+  "workspaceVisibleTitle": "Không gian làm việc đang hiện",
   "workspaceHiddenTitle": "Không gian làm việc đã ẩn",
   "workspaceHiddenUpdateError": "Không thể lưu thay đổi. Hãy thử lại khi có kết nối.",
   "workspaceHideAction": "Ẩn",
