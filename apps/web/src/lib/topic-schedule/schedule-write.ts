@@ -194,7 +194,15 @@ export type ScheduleSessionUpdateResult =
    * GVNN changed, and a send may have used either GVNN. Nothing is restored,
    * because a send may already have read the recipients.
    */
-  | { fields: ScheduleSessionPartialField[]; kind: 'partial' };
+  | { fields: ScheduleSessionPartialField[]; kind: 'partial' }
+  /**
+   * Another request took the class, date and start time this edit moves to
+   * (the slot uniqueness index refused it). Nothing changed: the fields stay
+   * and a swapped GVNN is put back.
+   */
+  | { kind: 'slot_taken' };
+
+type FieldWriteResult = 'locked' | 'slot_taken' | 'updated';
 
 async function updateFieldsIfEditable({
   actorUserId,
@@ -210,7 +218,7 @@ async function updateFieldsIfEditable({
   sbAdmin: TopicAnnouncementsSupabaseClient;
   session: ScheduleSessionWrite;
   timeZone: string | null;
-}) {
+}): Promise<FieldWriteResult> {
   const { data, error } = await sbAdmin
     .from('topic_announcements')
     .update({
@@ -223,8 +231,9 @@ async function updateFieldsIfEditable({
     .eq('source_type', SCHEDULE_SOURCE_TYPE)
     .in('status', [...SCHEDULE_EDITABLE_STATUSES])
     .select('id');
+  if (error?.code === UNIQUE_VIOLATION) return 'slot_taken';
   if (error) throw error;
-  return (data ?? []).length > 0;
+  return (data ?? []).length > 0 ? 'updated' : 'locked';
 }
 
 /**
@@ -239,6 +248,8 @@ async function updateFieldsIfEditable({
  *    never both;
  * 3. write the fields, conditional on the session still being editable.
  *
+ * If step 3 is refused because another request took the slot the edit moves
+ * to, nothing applies: the previous GVNN is put back (`slot_taken`).
  * If step 3 finds the session claimed, a send started during the swap: the
  * fields stay as they were and the result is `partial` (only the GVNN
  * changed). Nothing is restored then, since that send may have read either
@@ -265,9 +276,7 @@ export async function updateScheduleSession({
   const writeFields = () =>
     updateFieldsIfEditable({ ...context, id, sbAdmin, session });
 
-  if (!gvnnChanged) {
-    return (await writeFields()) ? { kind: 'updated' } : { kind: 'locked' };
-  }
+  if (!gvnnChanged) return { kind: await writeFields() };
 
   if (!(await isStillEditableUnsent(sbAdmin, id))) return { kind: 'locked' };
   try {
@@ -279,9 +288,14 @@ export async function updateScheduleSession({
     throw error;
   }
 
-  return (await writeFields())
-    ? { kind: 'updated' }
-    : { fields: ['gvnn'], kind: 'partial' };
+  const written = await writeFields();
+  if (written === 'updated') return { kind: 'updated' };
+  if (written === 'slot_taken' && (await isStillEditableUnsent(sbAdmin, id))) {
+    // The edit did not apply, so neither does its GVNN change.
+    await setRecipient(sbAdmin, id, previousGvnnContactId);
+    return { kind: 'slot_taken' };
+  }
+  return { fields: ['gvnn'], kind: 'partial' };
 }
 
 /**

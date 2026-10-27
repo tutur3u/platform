@@ -294,7 +294,12 @@ export async function saveScheduleMonth(
       if (after && after !== before) reassignedIds.push(update.id);
     } else {
       conflicts.push({
-        code: updated.kind === 'partial' ? 'partially_applied' : 'locked',
+        code:
+          updated.kind === 'partial'
+            ? 'partially_applied'
+            : updated.kind === 'slot_taken'
+              ? 'duplicate_slot'
+              : 'locked',
         ...(updated.kind === 'partial' ? { fields: updated.fields } : {}),
         index: input.sessions.findIndex((row) => row.id === update.id),
         sessionId: update.id,

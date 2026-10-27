@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createScheduleFixture,
   GVNN,
+  GVNN_2,
   K1,
   K2,
   SUPERVISOR,
@@ -136,6 +137,61 @@ function enforceSlotIndex(racing?: Row) {
   };
 }
 
+/**
+ * Enforces the slot index on UPDATE too: an edit that moves a session into a
+ * taken slot is refused (23505). `racing` is inserted, as another request
+ * would, right before this request's first session update.
+ */
+function enforceSlotIndexOnUpdate(racing: Row) {
+  const realFrom = mocks.admin.from.bind(mocks.admin);
+  let raced = false;
+  mocks.admin.from = (table: string) => {
+    const chain = realFrom(table);
+    if (table !== 'topic_announcements') return chain;
+    const realUpdate = chain.update;
+    const realEq = chain.eq;
+    const realSelect = chain.select;
+    let patch: Row | null = null;
+    let targetId: unknown;
+    chain.update = (value: Row) => {
+      if (!raced && 'session_date' in value) {
+        raced = true;
+        mocks.admin.tables.topic_announcements.push({ ...racing });
+      }
+      patch = value;
+      return realUpdate(value);
+    };
+    chain.eq = (key: string, value: unknown) => {
+      if (key === 'id') targetId = value;
+      return realEq(key, value);
+    };
+    chain.select = (...args: unknown[]) => {
+      const existing = mocks.admin.tables.topic_announcements as Row[];
+      const current = existing.find((row) => row.id === targetId);
+      if (patch && current) {
+        const next = { ...current, ...patch };
+        const others = existing.filter((row) => row.id !== targetId);
+        if (slotTaken(next, others)) {
+          const failed = {
+            data: null,
+            error: { code: '23505', message: 'duplicate key value' },
+          };
+          const refused: Record<string, unknown> = {
+            // biome-ignore lint/suspicious/noThenProperty: mimics the awaitable PostgREST builder.
+            then: (
+              resolve: (value: unknown) => unknown,
+              reject: () => unknown
+            ) => Promise.resolve(failed).then(resolve, reject),
+          };
+          return refused;
+        }
+      }
+      return realSelect(...args);
+    };
+    return chain;
+  };
+}
+
 const racingSession = (overrides: Row = {}): Row => ({
   group_id: K1,
   id: '00000000-0000-4000-8000-0000000000aa',
@@ -214,5 +270,36 @@ describe('slot uniqueness index (concurrent requests)', () => {
     expect(
       sessions().filter((row: Row) => row.session_date === '2026-11-10')
     ).toHaveLength(1);
+  });
+
+  it('refuses an edit into a slot another request just took and keeps saving', async () => {
+    const { data } = await (await save([session()])).json();
+    const id = data.createdIds[0];
+    enforceSlotIndexOnUpdate(
+      racingSession({
+        id: '00000000-0000-4000-8000-0000000000cc',
+        session_date: '2026-10-20',
+      })
+    );
+    const response = await save([
+      // Move to 10-20 (now taken) and swap the GVNN.
+      session({ gvnnContactId: GVNN_2, id, sessionDate: '2026-10-20' }),
+      // A later new session in the same save.
+      session({ groupId: K2, sessionDate: '2026-10-14', startTime: '18:00' }),
+    ]);
+    expect(response.status).toBe(409);
+    const body = await response.json();
+    expect(body.rowErrors).toEqual([
+      { code: 'duplicate_slot', index: 0, sessionId: id },
+    ]);
+    expect(body.saved.createdIds).toHaveLength(1);
+    const edited = sessions().find((row: Row) => row.id === id);
+    expect(edited).toMatchObject({ session_date: '2026-10-13' });
+    // The GVNN change did not apply either.
+    expect(
+      mocks.admin.tables.topic_announcement_recipients
+        .filter((row: Row) => row.announcement_id === id)
+        .map((row: Row) => row.contact_id)
+    ).toEqual([GVNN]);
   });
 });
