@@ -13,6 +13,7 @@ import {
   patchTaskInVisibleCaches,
   settleOptimisticTaskPatch,
 } from '../../task-cache-patches';
+import { getSprintTasksQueryKey } from './use-sprint-plan-data';
 
 type TaskAssignee = NonNullable<Task['assignees']>[number];
 
@@ -50,6 +51,10 @@ export function usePlanAssignment({
 
   // The latest move per task; an older failure must not undo a newer move.
   const latestMutationByTask = useRef(new Map<string, string>());
+  // Moves still in flight per task, and whether any of them failed.
+  const inFlightByTask = useRef(
+    new Map<string, { pending: number; failed: boolean }>()
+  );
 
   const mutation = useMutation({
     mutationFn: ({
@@ -84,9 +89,17 @@ export function usePlanAssignment({
         }),
       });
       latestMutationByTask.current.set(taskId, mutationId);
+      const inFlight = inFlightByTask.current.get(taskId) ?? {
+        pending: 0,
+        failed: false,
+      };
+      inFlight.pending += 1;
+      inFlightByTask.current.set(taskId, inFlight);
       return { mutationId };
     },
     onError: (_error, { previousAssignees, taskId }, context) => {
+      const inFlight = inFlightByTask.current.get(taskId);
+      if (inFlight) inFlight.failed = true;
       // Roll back only this task's owners, and only if no newer move replaced them.
       if (
         context &&
@@ -114,6 +127,19 @@ export function usePlanAssignment({
       });
       if (latestMutationByTask.current.get(taskId) === context.mutationId) {
         latestMutationByTask.current.delete(taskId);
+      }
+      const inFlight = inFlightByTask.current.get(taskId);
+      if (!inFlight) return;
+      inFlight.pending -= 1;
+      if (inFlight.pending > 0) return;
+      inFlightByTask.current.delete(taskId);
+      // Overlapping moves that failed can leave a rolled-back guess on screen,
+      // so once the task settles, read its owners from the server again.
+      if (inFlight.failed) {
+        void queryClient.invalidateQueries({
+          queryKey: getSprintTasksQueryKey(boardId),
+        });
+        void queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
       }
     },
   });
