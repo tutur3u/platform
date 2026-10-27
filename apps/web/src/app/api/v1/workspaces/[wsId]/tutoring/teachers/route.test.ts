@@ -42,10 +42,14 @@ const query = {
   })),
 };
 let policyRows: { id: string; value: string }[] = [];
+let policyError: unknown = null;
 const policyQuery = {
   select: vi.fn(() => policyQuery),
   eq: vi.fn(() => policyQuery),
-  like: vi.fn(async () => ({ data: policyRows, error: null as unknown })),
+  like: vi.fn(async () => ({
+    data: policyError ? null : policyRows,
+    error: policyError,
+  })),
 };
 let tutorRows: { user_id: string }[] = [];
 const tutorQuery = {
@@ -59,6 +63,7 @@ const tutorQuery = {
 beforeEach(() => {
   vi.clearAllMocks();
   policyRows = [];
+  policyError = null;
   tutorRows = [];
   mocks.access.mockResolvedValue({
     normalizedWsId: 'verified-center',
@@ -192,6 +197,16 @@ describe('center teacher catalog', () => {
     expect(query.in).toHaveBeenCalledWith('id', []);
     expect(body.data).toEqual([]);
   });
+  it('still lists teachers without tutor labels when the policy fails to load', async () => {
+    policyError = { message: 'boom' };
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const response = await get();
+    expect(response.status).toBe(200);
+    const tutorsOnly = await get('?tutorsOnly=true');
+    expect(tutorsOnly.status).toBe(500);
+    errorSpy.mockRestore();
+  });
+
   it('keeps punctuation and wildcards inside quoted search operands', async () => {
     await get(`?q=${encodeURIComponent('A,B"_%')}`);
     const filter = query.or.mock.calls[0]?.[0];

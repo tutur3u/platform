@@ -8,7 +8,7 @@ import { useDebounce } from '@tuturuuu/ui/hooks/use-debounce';
 import { Label } from '@tuturuuu/ui/label';
 import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 
 /** Searches only verified center teachers, independently of the learner's class. */
 export function TutoringTeacherPicker({
@@ -28,6 +28,8 @@ export function TutoringTeacherPicker({
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<ComboboxOption>();
   const [tutorsOnly, setTutorsOnly] = useState(false);
+  // One picker renders per session slot, so the toggle id must be unique.
+  const tutorsOnlyId = useId();
   const [q] = useDebounce(search, 250);
   const query = useInfiniteQuery({
     enabled: !disabled,
@@ -73,10 +75,10 @@ export function TutoringTeacherPicker({
         <Switch
           checked={tutorsOnly}
           disabled={disabled}
-          id={`tutoring-tutors-only-${wsId}`}
+          id={tutorsOnlyId}
           onCheckedChange={setTutorsOnly}
         />
-        <Label className="text-xs" htmlFor={`tutoring-tutors-only-${wsId}`}>
+        <Label className="text-xs" htmlFor={tutorsOnlyId}>
           {t('tutors_only')}
         </Label>
       </div>

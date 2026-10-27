@@ -56,12 +56,17 @@ export async function GET(
       error: policyError,
       wsId: normalizedWsId,
     });
-    return NextResponse.json(
-      { message: 'Failed to load teachers' },
-      { status: 500 }
-    );
+    // Only a tutors-only listing depends on the policy; the plain catalog
+    // still loads, just without tutor labels.
+    if (tutorsOnly)
+      return NextResponse.json(
+        { message: 'Failed to load teachers' },
+        { status: 500 }
+      );
   }
-  const { tutorGroupIds } = readTutoringPolicyConfigRows(policyRows ?? []);
+  const { tutorGroupIds } = readTutoringPolicyConfigRows(
+    policyError ? [] : (policyRows ?? [])
+  );
   let query = workspaceTeachersQuery(sbAdmin, normalizedWsId);
   if (tutorsOnly) {
     const { tutorIds, error } = await listWorkspaceTutorIds({

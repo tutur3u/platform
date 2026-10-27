@@ -158,4 +158,19 @@ describe('center teacher picker', () => {
       tutorsOnly: true,
     });
   });
+
+  it('keeps each slot picker toggle independent when several render', () => {
+    render(
+      <>
+        <TutoringTeacherPicker onChange={vi.fn()} value="" wsId="center" />
+        <TutoringTeacherPicker onChange={vi.fn()} value="" wsId="center" />
+      </>
+    );
+    const toggles = screen.getAllByRole('switch', { name: 'tutors_only' });
+    expect(toggles).toHaveLength(2);
+    expect(toggles[0]?.id).not.toBe(toggles[1]?.id);
+    fireEvent.click(screen.getAllByText('tutors_only')[1] as HTMLElement);
+    expect(toggles[1]).toBeChecked();
+    expect(toggles[0]).not.toBeChecked();
+  });
 });
