@@ -32,6 +32,16 @@ When validating this integration, check both locales, personal and team workspac
 links, board/task detail return paths, and mobile navigation with the sidebar
 closed. Mutations continue through the existing protected product APIs.
 
+## Recipient identity
+
+Task and board shares match either an explicit recipient user id or the
+recipient's current confirmed Auth email. Shared-task reads and edits use this
+rule, as do shared board navigation and access. Editable contact/profile email
+fields and app-session email claims do not select email shares. Public view links
+and workspace membership retain their existing access rules. Coverage lives in
+`packages/tasks-api/src/server/board-access-identity.test.ts` and the Tasks
+shared-task route tests.
+
 ## Overview
 
 Tasks provides:
