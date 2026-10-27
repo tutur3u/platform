@@ -148,6 +148,9 @@ export function normalizeTask<T extends TaskRecord>(task: T) {
       return [
         {
           id: entry.project.id,
+          ticket_key: entry.project.ticket_key,
+          ticket_number: entry.ticket_number,
+          created_at: entry.created_at,
           name: entry.project.name ?? undefined,
           status: entry.project.status ?? undefined,
         },

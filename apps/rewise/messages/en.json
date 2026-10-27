@@ -7738,6 +7738,9 @@
       },
       "health_status_label": "Health Status",
       "health_status_placeholder": "Select health status",
+      "key_invalid": "Use 2–10 uppercase letters or digits, starting with a letter.",
+      "key_label": "Key",
+      "key_preview": "Preview: {identifier}",
       "priority": {
         "critical": "Critical",
         "high": "High",
