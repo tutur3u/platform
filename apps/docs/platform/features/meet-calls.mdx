@@ -1510,3 +1510,17 @@ Regression evidence: `channel-retry-budget.test.ts` counts operations and tests
 failure/clock/restart/recovery boundaries; `test-fixtures/channel-retry` verifies
 reservation persistence against real local Worker SQLite with controlled callback
 failures. Hosted alarm delivery and actual workspace storage remain separate gates.
+
+## Host identity and transcript reads
+
+A meeting's creator is immutable after insertion, including when a member edits
+other meeting fields. Clients cannot transfer or clear that host identity.
+
+Meet and Parley transcript sessions and chunks are read through the application
+API. Direct anonymous and authenticated Data API reads are denied, including
+for hosts. The API retains its host, workspace, room-sharing, and participant
+checks before service-role reads. All first-party transcript consumers use that
+API; room sharing remains the authority for non-host access.
+
+Database coverage: `meeting-identity-transcript-access.sql` and `meet-ai.sql`.
+Application coverage: `packages/meet-core/src/features/meeting-ai/server/access.test.ts`.
