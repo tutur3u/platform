@@ -24489,6 +24489,10 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: number;
       };
+      require_service_role_for_admin_analytics: {
+        Args: Record<PropertyKey, never>;
+        Returns: undefined;
+      };
       reserve_report_email_reply_identity: {
         Args: {
           p_content_sha256: string;
@@ -44806,10 +44810,10 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: 'public_workspace_role_permissions_role_id_fkey';
-            columns: ['role_id'];
+            columns: ['role_id', 'ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspace_roles';
-            referencedColumns: ['id'];
+            referencedColumns: ['id', 'ws_id'];
           },
           {
             foreignKeyName: 'public_workspace_role_permissions_ws_id_fkey';

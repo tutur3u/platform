@@ -493,3 +493,19 @@ seven-day history batch; unfinished executions remain for recovery. See the
 [Cron Control runbook](../../../../../apps/docs/build/devops/cloudflare-cron-control.mdx#seven-day-database-cron-history)
 and `supabase/tests/cron-history-retention.sql` for the role, budget and replay
 regressions. Never add a cleanup pg_cron job to repair an accumulating history table.
+
+### Role permission forensic backup
+
+For migration `20261027032100`, use the dedicated `private_forensics` backup
+schema. The configured API schema list includes `private`; its name alone does
+not make a forensic table inaccessible to PostgREST. Verify the schema list,
+schema/table grants, RLS, full-row copy and rollback restoration independently.
+Retain the backup for 30 days for forensics. The role cleanup remains held until
+the operator reviews count/exposure and actor-attribution evidence; the migration
+also stops for its protected workspace or a count above 100.
+
+Replace the existing role-permission FK with the composite FK, retaining its
+name, rather than adding a second relationship that makes existing embeddings
+ambiguous. When rolling back qualified enum locals, restore each function's
+original search path before restoring its original body. See the product
+[security architecture](../../../../../apps/docs/platform/architecture/system-design/security-architecture.mdx).

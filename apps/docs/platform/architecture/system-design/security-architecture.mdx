@@ -684,3 +684,28 @@ policy that requires MFA for subsequent sign-ins.
 Before releasing these controls, verify Infrastructure has the same server-only
 coordination credentials as web and test both authorized and denied native
 requests. Never distribute those credentials in mobile configuration.
+
+## Administrative RPC permissions and role workspace binding
+
+AI-credit administration and infrastructure analytics RPCs are service-role
+operations. Analytics routines also check the JWT role before returning data.
+External-project bundle and relation-target RPCs admit either an authenticated
+actor acting as self or the service role acting for an authorized actor; their
+workspace permission checks still apply.
+
+Role permission rows reference the role and workspace together. Replacing the
+single-column foreign key keeps one PostgREST relationship to the role table.
+The migration preserves mismatched rows, including all original columns and
+`moved_at`, in `private_forensics.sec_role_permission_ws_mismatch_backup_20261027`.
+This schema is outside the API schema list and grants no schema or table access
+to API roles. Retain the backup for 30 days for forensics; no automatic deletion
+is scheduled. The rollback restores its rows and retains the forensic copy.
+
+Promotion requires operator review of the read-only mismatch/exposure results
+and writer attribution. Protected-workspace involvement or more than 100 rows
+stops the migration. Permission rows do not record a writer, so missing
+attribution remains unknown and requires review rather than inference from role
+membership. Restore conflicts or missing parents abort rollback atomically.
+
+Regression coverage: `workspace-role-admin-rpc-boundaries.sql`,
+`security-definer-search-paths.sql`, and `external-project-entry-bundles.sql`.
