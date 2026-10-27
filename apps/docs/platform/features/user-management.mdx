@@ -628,3 +628,11 @@ Regression coverage lives in
 traversal, foreign workspaces, invalid resolved IDs, alias resolution, authorization
 and budget ordering with synthetic storage fixtures. Hosted Storage behavior is
 a separate acceptance boundary.
+
+## Workspace user API lifecycle
+
+Web, Contacts, and mobile use the versioned `/api/v1/workspaces/{wsId}/users`
+collection and item contracts. The unused unversioned collection and item
+handlers are retired. The separate indicator migration endpoints retain their
+existing lifecycle. `scripts/retired-workspace-user-routes.test.mjs` checks the
+active route and inventory boundary.
