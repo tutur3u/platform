@@ -131,11 +131,6 @@ and exclude unrelated baseline drift; never hand-edit generated declarations.
   compare in process. `packages/utils/src/oauth-credential-url-filter.test.ts`
   scans every app and package source for this pattern.
 
-- Linked time-request session effects must match the session ID, request
-  workspace and request owner. Check ownership before approving an existing link;
-  scope trigger and rejection writes independently. The full-schema regression
-  packet is `apps/database/supabase/tests/time-task-rpc-scoping.sql`.
-
 ## Storage
 
 - Authenticated storage API routes should authorize with the user-scoped client,
