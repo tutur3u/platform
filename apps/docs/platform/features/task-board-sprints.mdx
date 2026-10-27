@@ -65,6 +65,22 @@ only, and the older task-cycle edit and delete routes refuse board sprints (404)
 Every sprint writer locks the board row before its sprints, so moves, starts,
 ends and task membership changes on one board run one at a time.
 
+## Board header and Board view
+
+With sprints on, the board header shows the current sprint after the board name:
+a progress ring, the sprint dates and its done count. The current sprint is the
+running one, or the sprint being planned when none runs. Its menu lists every
+sprint in order; members who can edit the board also get Start for the planned
+sprint (only while none runs) and a shortcut to the sprint length in Board
+settings. The Board view (Kanban, List, Timeline) shows only the current
+sprint's tasks. My Tasks, Drafts and the Recycle Bin are unchanged and show no
+sprint. With sprints off, or before the migration reaches a database, the header
+and views look exactly as before.
+
+Regression coverage: `packages/tasks-ui/src/tu-do/shared/__tests__/board-views-sprints.test.tsx`,
+`packages/tasks-ui/src/tu-do/shared/board-sprints/sprint-pill.test.tsx` and
+`packages/tasks-ui/src/tu-do/shared/__tests__/board-header.test.tsx`.
+
 ## Exceptions
 
 Workspace-wide cycles without a board keep their existing behavior. The

@@ -61,6 +61,17 @@ vi.mock('../../hooks/useTaskDialog', () => ({
 vi.mock('@tuturuuu/internal-api/tasks', () => ({
   listWorkspaceTasks: listWorkspaceTasksMock,
 }));
+vi.mock('@tuturuuu/internal-api/task-sprints', () => ({
+  listWorkspaceTaskBoardSprints: async () => ({
+    schemaAvailable: true,
+    sprintLengthWeeks: null,
+    sprints: [],
+  }),
+  moveTasksToWorkspaceTaskBoardSprint: vi.fn(),
+  startWorkspaceTaskBoardSprint: vi.fn(),
+  updateWorkspaceTaskBoardSprint: vi.fn(),
+  updateWorkspaceTaskBoardSprintLength: vi.fn(),
+}));
 vi.mock('@tuturuuu/internal-api/users', () => ({
   TASK_BOARD_PINNED_SPECIAL_LISTS_CONFIG_ID: 'TASK_BOARD_PINNED_SPECIAL_LISTS',
   TASK_LAST_BOARD_VIEW_CONFIG_ID: 'TASK_LAST_BOARD_VIEW',
