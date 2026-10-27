@@ -213,6 +213,8 @@ export async function saveScheduleMonth(
 
   const updates: { id: string; write: ScheduleSessionWrite }[] = [];
   const inserts: ScheduleSessionWrite[] = [];
+  /** `input.sessions` index of each insert. */
+  const insertRowIndexes: number[] = [];
   const existingIds: string[] = [];
 
   input.sessions.forEach((row, index) => {
@@ -257,8 +259,10 @@ export async function saveScheduleMonth(
     }
     claimedSlots.add(key);
 
-    if (!current) inserts.push(write);
-    else if (!isUnchanged(current, write))
+    if (!current) {
+      inserts.push(write);
+      insertRowIndexes.push(index);
+    } else if (!isUnchanged(current, write))
       updates.push({ id: current.id, write });
   });
 
@@ -297,10 +301,20 @@ export async function saveScheduleMonth(
       });
     }
   }
-  const createdIds = await insertScheduleSessions({
+  const insertedIds = await insertScheduleSessions({
     ...context,
     sessions: inserts,
     sourceName: `schedule ${month}`,
+  });
+  const createdIds = insertedIds.flatMap((id) => (id ? [id] : []));
+  // A null id: another request took the slot after this save checked it.
+  insertedIds.forEach((id, insertIndex) => {
+    if (id) return;
+    conflicts.push({
+      code: 'duplicate_slot',
+      index: insertRowIndexes[insertIndex] ?? null,
+      sessionId: null,
+    });
   });
 
   const saved = {

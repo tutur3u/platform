@@ -51,7 +51,16 @@ function sessionColumns(
   };
 }
 
-/** Inserts sessions as topic-less drafts in one batch, plus their GVNN. */
+/** Unique violation: here, the topic_announcements_schedule_slot_unique index. */
+const UNIQUE_VIOLATION = '23505';
+
+/**
+ * Inserts sessions as topic-less drafts in one batch, plus their GVNN.
+ * Returns the new ids in input order, with null where the slot was taken:
+ * another save or clone committed the same class, date and start time after
+ * this request checked it, and the slot uniqueness index refused the row.
+ * The other sessions are still inserted (one by one after such a refusal).
+ */
 export async function insertScheduleSessions({
   actorUserId,
   normalizedWsId,
@@ -66,7 +75,7 @@ export async function insertScheduleSessions({
   sessions: readonly ScheduleSessionWrite[];
   sourceName: string;
   timeZone: string | null;
-}): Promise<string[]> {
+}): Promise<(string | null)[]> {
   if (sessions.length === 0) return [];
 
   const { data: batch, error: batchError } = await sbAdmin
@@ -82,31 +91,46 @@ export async function insertScheduleSessions({
     .single();
   if (batchError) throw batchError;
 
+  const rows = sessions.map((session, index) => ({
+    ...sessionColumns(session, timeZone),
+    batch_id: batch.id,
+    body: '',
+    created_by: actorUserId,
+    source_row_number: index + 1,
+    source_type: SCHEDULE_SOURCE_TYPE,
+    status: 'draft',
+    topic: null,
+    updated_by: actorUserId,
+    ws_id: normalizedWsId,
+  }));
+
+  const idByRow = new Map<number, string>();
   const { data: inserted, error } = await sbAdmin
     .from('topic_announcements')
-    .insert(
-      sessions.map((session, index) => ({
-        ...sessionColumns(session, timeZone),
-        batch_id: batch.id,
-        body: '',
-        created_by: actorUserId,
-        source_row_number: index + 1,
-        source_type: SCHEDULE_SOURCE_TYPE,
-        status: 'draft',
-        topic: null,
-        updated_by: actorUserId,
-        ws_id: normalizedWsId,
-      }))
-    )
+    .insert(rows)
     .select('id,source_row_number');
-  if (error) throw error;
+  if (error?.code === UNIQUE_VIOLATION) {
+    for (const row of rows) {
+      const { data: single, error: rowError } = await sbAdmin
+        .from('topic_announcements')
+        .insert(row)
+        .select('id,source_row_number')
+        .single();
+      if (rowError?.code === UNIQUE_VIOLATION) continue;
+      if (rowError) throw rowError;
+      idByRow.set(single.source_row_number, single.id);
+    }
+  } else if (error) {
+    throw error;
+  } else {
+    for (const row of (inserted ?? []) as {
+      id: string;
+      source_row_number: number;
+    }[]) {
+      idByRow.set(row.source_row_number, row.id);
+    }
+  }
 
-  const idByRow = new Map<number, string>(
-    (inserted ?? []).map((row: { id: string; source_row_number: number }) => [
-      row.source_row_number,
-      row.id,
-    ])
-  );
   const recipients = sessions.flatMap((session, index) => {
     const announcementId = idByRow.get(index + 1);
     return announcementId && session.gvnnContactId
@@ -120,7 +144,7 @@ export async function insertScheduleSessions({
     if (recipientsError) throw recipientsError;
   }
 
-  return sessions.flatMap((_, index) => idByRow.get(index + 1) ?? []);
+  return sessions.map((_, index) => idByRow.get(index + 1) ?? null);
 }
 
 async function isStillEditableUnsent(
