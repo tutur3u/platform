@@ -607,6 +607,29 @@ describe('BoardHeader', () => {
     expect(onListStatusFilterChange).toHaveBeenCalledWith('all');
   });
 
+  it('shows the sprint pill after the board in the breadcrumb', () => {
+    const { rerender } = renderBoardHeader({
+      sprintSlot: <span data-testid="sprint-pill">Sprint 14</span>,
+    });
+
+    expect(screen.getByTestId('sprint-pill')).toBeInTheDocument();
+    expect(
+      screen
+        .getByTestId('board-switcher')
+        .compareDocumentPosition(screen.getByTestId('sprint-pill'))
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+
+    rerender(
+      <QueryClientProvider client={new QueryClient()}>
+        {headerElement({
+          currentView: 'my_tasks',
+          sprintSlot: <span data-testid="sprint-pill">Sprint 14</span>,
+        })}
+      </QueryClientProvider>
+    );
+    expect(screen.queryByTestId('sprint-pill')).not.toBeInTheDocument();
+  });
+
   it('shows no Clear button while nothing is filtered', () => {
     renderBoardHeader();
     expect(
