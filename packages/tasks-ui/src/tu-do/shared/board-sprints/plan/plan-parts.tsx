@@ -5,7 +5,7 @@ import type { Task } from '@tuturuuu/types/primitives/Task';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
-import { getTicketIdentifier } from '@tuturuuu/utils/task-helper';
+import { getTaskTicketLabel } from '@tuturuuu/utils/task-helper';
 import { isTaskOverdueByOwnDate } from '@tuturuuu/utils/task-helper/sprints';
 import { useLocale, useTranslations } from 'next-intl';
 import type { BoardMember } from '../../board-members-query';
@@ -38,23 +38,15 @@ export function BoardPlanTabs({
   );
 }
 
-/** "[DEV-248] Title", the ID in the same color as the title. */
+/** "[PLA-12] Title" from the task's first project; no prefix without a project. */
 export function PlanTaskTitle({
   className,
   task,
-  ticketPrefix,
 }: {
   className?: string;
   task: Task;
-  ticketPrefix?: string | null;
 }) {
-  const prefix =
-    (task as Task & { ticket_prefix?: string | null }).ticket_prefix ??
-    ticketPrefix;
-  const id =
-    typeof task.display_number === 'number' && task.display_number > 0
-      ? getTicketIdentifier(prefix, task.display_number)
-      : null;
+  const id = getTaskTicketLabel(task);
   return (
     <span className={cn('min-w-0 break-words', className)}>
       {id ? (
