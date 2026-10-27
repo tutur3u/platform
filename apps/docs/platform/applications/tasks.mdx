@@ -72,6 +72,15 @@ description.
 The Tasks Vercel project schedules `/api/cron/tasks/cleanup-media` at 03:17 UTC;
 the route requires `CRON_SECRET` or `VERCEL_CRON_SECRET`.
 
+## Task read RPC identity
+
+`get_user_accessible_tasks` and `get_user_tasks_with_relations` accept an
+authenticated caller's own user ID or the service role. Anonymous and mismatched
+callers receive SQLSTATE `42501`. Signatures, filtering and successful self
+results remain unchanged across Tasks, Calendar, retained Web planning views
+and AI task tools. The database regression packet is
+`apps/database/supabase/tests/time-task-rpc-scoping.sql`.
+
 ## Board And List Name Uniqueness
 
 - Active and archived task board names are unique per workspace using `lower(btrim(name))`; only trashed boards with `deleted_at` set release the name.
