@@ -1,57 +1,42 @@
 import { useQueryClient } from '@tanstack/react-query';
-import {
-  ArrowDownAZ,
-  ArrowLeft,
-  ArrowUpAZ,
-  Bolt,
-  CalendarDays,
-  Clock,
-  CopyCheck,
-  Flag,
-  Gauge,
-  KanbanSquare,
-  Layers,
-  LayoutDashboard,
-  LayoutGrid,
-  List,
-  Loader2,
-  PanelLeftClose,
-  Pencil,
-  Play,
-  Plus,
-  RefreshCw,
-  Search,
-  Share2,
-  Trash2,
-  UserStar,
-  X,
-  Zap,
-} from '@tuturuuu/icons';
+import { ArrowLeft, Plus, Share2, UserStar, X, Zap } from '@tuturuuu/icons';
 import { getWorkspaceTaskBoard } from '@tuturuuu/internal-api/tasks';
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Button } from '@tuturuuu/ui/button';
-import { Combobox } from '@tuturuuu/ui/custom/combobox';
 import { useOptionalSidebar } from '@tuturuuu/ui/custom/sidebar-context';
-import { Input } from '@tuturuuu/ui/input';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import { BoardShareDialog } from '../boards/board-share-dialog';
 import { KanbanPlannerDialog } from '../boards/boardId/kanban/planner/kanban-planner-dialog';
-import { TaskFilter, type TaskFilters } from '../boards/boardId/task-filter';
+import type { TaskFilters } from '../boards/boardId/task-filter';
 import { CreateBoardAnywhereDialog } from '../boards/create-board-anywhere-dialog';
 import { getActiveBoardRefresh } from './board-broadcast-context';
 import { saveBoardConfig } from './board-config-storage';
-import { BoardHeaderToolbarTooltip as ToolbarTooltip } from './board-header-toolbar-tooltip';
+import {
+  type BoardPerson,
+  clearBoardFilters,
+  hasActiveBoardFilters,
+  isFocusActive,
+  type ListStatusFilter,
+  toggleFocus,
+} from './board-header/board-filter-state';
+import { BoardMoreMenu } from './board-header/board-more-menu';
+import { BoardPeopleFilter } from './board-header/board-people-filter';
+import { BoardProjectFilter } from './board-header/board-project-filter';
+import { BoardSearchInput } from './board-header/board-search-input';
+import { BoardSortMenu } from './board-header/board-sort-menu';
+import { BoardViewMenu } from './board-header/board-view-menu';
+import { ToneButton } from './board-header/tone-button';
 import { BoardSwitcher } from './board-switcher';
 import { BoardUserPresenceAvatarsComponent } from './board-user-presence-avatars';
 import type { ViewType } from './board-views';
 import type { BoardFiltersMetadata } from './task-filter.types';
 
-export type ListStatusFilter = 'all' | 'active' | 'not_started';
+export type { ListStatusFilter } from './board-header/board-filter-state';
 
 interface Props {
   workspaceId: string;
@@ -87,12 +72,14 @@ interface Props {
   readOnly?: boolean;
   titlePrefix?: ReactNode;
   onBoardSettingsIntent?: () => void;
+  /** People pills; omitted hides them (for example on project pages). */
+  people?: BoardPerson[];
+  unassignedCount?: number;
+  /** Board task count per project; omitted hides the Project filter. */
+  projectTaskCounts?: Map<string, number>;
+  onCreateTask?: () => void;
 }
 
-const toolbarButtonClass =
-  'h-7 w-7 px-0 text-muted-foreground transition-colors hover:text-foreground sm:h-8 sm:w-8';
-const toolbarComboboxClass =
-  'w-auto [&_button]:h-7 [&_button]:w-7 [&_button]:min-w-7 [&_button]:text-muted-foreground [&_button]:transition-colors hover:[&_button]:text-foreground [&_button_svg]:text-current sm:[&_button]:h-8 sm:[&_button]:w-8 sm:[&_button]:min-w-8';
 const BOARD_SETTINGS_PRELOAD_EVENT = 'tuturuuu:board-settings-intent';
 const SETTINGS_DIALOG_OPEN_INTENT_EVENT =
   'tuturuuu:settings-dialog-open-intent';
@@ -126,23 +113,21 @@ export function BoardHeader({
   titlePrefix,
   onBoardSettingsIntent,
   onUpdate,
+  people,
+  unassignedCount = 0,
+  projectTaskCounts,
+  onCreateTask,
 }: Props) {
   const t = useTranslations();
   const queryClient = useQueryClient();
-  const [isLoading, setIsLoading] = useState(false);
   const [shareBoardOpen, setShareBoardOpen] = useState(false);
   const [plannerOpen, setPlannerOpen] = useState(false);
+  const [createBoardOpen, setCreateBoardOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [localSearchQuery, setLocalSearchQuery] = useState(
-    filters.searchQuery || ''
-  );
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const enabledViews = availableViews ?? ['kanban', 'list', 'timeline'];
-  const activeView = enabledViews.includes(currentView)
-    ? currentView
-    : (enabledViews[0] ?? 'kanban');
   const interactiveControlsVisible = !readOnly;
   const managerControlsVisible = !hideActions && !readOnly;
   const plannerVisible =
@@ -158,54 +143,19 @@ export function BoardHeader({
   const presenceVisible =
     interactiveControlsVisible &&
     (!isPersonalWorkspace || hasSharedBoardGuests);
-
-  // Stable refs for callbacks and values to avoid effect re-runs
-  const onFiltersChangeRef = useRef(onFiltersChange);
-  const onListStatusFilterChangeRef = useRef(onListStatusFilterChange);
-  const onViewChangeRef = useRef(onViewChange);
-  const filtersRef = useRef(filters);
-
-  // Update refs on each render
-  useEffect(() => {
-    onFiltersChangeRef.current = onFiltersChange;
-    onListStatusFilterChangeRef.current = onListStatusFilterChange;
-    onViewChangeRef.current = onViewChange;
-    filtersRef.current = filters;
-  });
-
-  // Sync local search query with external filter changes
-  useEffect(() => {
-    const newQuery = filters.searchQuery || '';
-    // Use functional updater to compare current state and only update if different
-    // This prevents overwriting in-progress typing
-    setLocalSearchQuery((current) =>
-      current === newQuery ? current : newQuery
-    );
-  }, [filters.searchQuery]);
-
-  // Debounce search query updates
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      const currentFilters = filtersRef.current;
-      if (localSearchQuery !== (currentFilters.searchQuery || '')) {
-        onFiltersChangeRef.current({
-          ...currentFilters,
-          searchQuery: localSearchQuery || undefined,
-        });
-
-        // Auto-switch to List view when searching in Timeline view
-        if (localSearchQuery && currentView === 'timeline') {
-          onViewChangeRef.current('list');
-        }
-      }
-    }, 300); // 300ms debounce delay
-
-    return () => clearTimeout(timeoutId);
-  }, [localSearchQuery, currentView]);
+  const currentUser = currentUserId
+    ? (people?.find((person) => person.id === currentUserId) ?? {
+        id: currentUserId,
+        display_name: null,
+        avatar_url: null,
+        email: null,
+      })
+    : undefined;
+  const focusOn = isFocusActive(filters, listStatusFilter, currentUserId);
+  const filtersActive = hasActiveBoardFilters(filters, listStatusFilter);
 
   // Save board configuration to localStorage when it changes (excluding search)
   useEffect(() => {
-    // Debounce the save operation to avoid excessive writes
     const timeoutId = setTimeout(() => {
       const { searchQuery: _, ...filtersToSave } = filters;
       saveBoardConfig(board.id, {
@@ -213,34 +163,20 @@ export function BoardHeader({
         filters: filtersToSave,
         listStatusFilter,
       });
-    }, 500); // 500ms debounce delay
+    }, 500);
 
     return () => clearTimeout(timeoutId);
   }, [board.id, currentView, filters, listStatusFilter]);
 
-  function handleSortChange(sortBy: TaskFilters['sortBy']) {
-    onFiltersChange({ ...filters, sortBy });
-  }
+  const presenceMetadata: BoardFiltersMetadata = useMemo(() => {
+    const { searchQuery: _, ...filtersWithoutSearch } = filters;
+    return { filters: filtersWithoutSearch, listStatusFilter };
+  }, [filters, listStatusFilter]);
 
-  function openBoardSettings() {
-    prefetchBoardSettings();
-
-    const openIntent = new CustomEvent(SETTINGS_DIALOG_OPEN_INTENT_EVENT, {
-      cancelable: true,
-      detail: {
-        settingsBoardId: board.id,
-        settingsTab: 'task_board',
-      },
-    });
-    window.dispatchEvent(openIntent);
-
-    if (openIntent.defaultPrevented) return;
-
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('settingsDialog', 'open');
-    params.set('settingsTab', 'task_board');
-    params.set('settingsBoardId', board.id);
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  function handleSearchChange(searchQuery: string | undefined) {
+    onFiltersChange({ ...filters, searchQuery });
+    // Timeline cannot show search results, so searching opens List.
+    if (searchQuery && currentView === 'timeline') onViewChange('list');
   }
 
   function prefetchBoardSettings() {
@@ -265,43 +201,22 @@ export function BoardHeader({
     });
   }
 
-  function handleSmartFocus() {
-    setIsLoading(true);
+  function openBoardSettings() {
+    prefetchBoardSettings();
 
-    // Check if currently "focused"
-    const isFocused =
-      listStatusFilter === 'active' &&
-      filters.includeMyTasks &&
-      filters.sortBy === 'priority-high';
+    const openIntent = new CustomEvent(SETTINGS_DIALOG_OPEN_INTENT_EVENT, {
+      cancelable: true,
+      detail: { settingsBoardId: board.id, settingsTab: 'task_board' },
+    });
+    window.dispatchEvent(openIntent);
 
-    if (isFocused) {
-      // Toggle OFF: Reset defaults
-      onListStatusFilterChange('all');
+    if (openIntent.defaultPrevented) return;
 
-      const resetFilters: TaskFilters = {
-        ...filters,
-        includeMyTasks: false,
-        includeUnassigned: false,
-        sortBy: undefined,
-      };
-
-      onFiltersChange(resetFilters);
-    } else {
-      // Toggle ON: Apply focus
-      onListStatusFilterChange('active');
-
-      const newFilters: TaskFilters = {
-        ...filters,
-        includeMyTasks: true,
-        includeUnassigned: false,
-        sortBy: 'priority-high',
-      };
-
-      onFiltersChange(newFilters);
-    }
-
-    // Small delay to show feedback if needed, but mostly instant
-    setTimeout(() => setIsLoading(false), 300);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('settingsDialog', 'open');
+    params.set('settingsTab', 'task_board');
+    params.set('settingsBoardId', board.id);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   }
 
   async function refreshBoard() {
@@ -315,502 +230,176 @@ export function BoardHeader({
     }
   }
 
-  // Derived state for button UI
-  const isSmartFocusActive =
-    listStatusFilter === 'active' &&
-    filters.includeMyTasks &&
-    filters.sortBy === 'priority-high';
+  function handleFocus() {
+    const next = toggleFocus({ currentUser, filters, listStatusFilter });
+    onFiltersChange(next.filters);
+    onListStatusFilterChange(next.listStatusFilter);
+  }
 
-  const viewConfig = {
-    kanban: {
-      icon: KanbanSquare,
-      label: t('ws-task-boards.views.kanban'),
-      description: t('ws-task-boards.views.kanban_description'),
-    },
-    list: {
-      icon: List,
-      label: t('ws-task-boards.views.list'),
-      description: t('ws-task-boards.views.list_description'),
-    },
-    timeline: {
-      icon: CalendarDays,
-      label: t('ws-task-boards.views.timeline'),
-      description: t('ws-task-boards.views.timeline_description'),
-    },
-    my_tasks: {
-      icon: UserStar,
-      label: t('ws-task-boards.views.my_tasks'),
-      description: t('ws-task-boards.views.my_tasks_description'),
-    },
-    drafts: {
-      icon: Pencil,
-      label: t('task-drafts.title'),
-      description: t('task-drafts.board_view_description'),
-    },
-    recycle_bin: {
-      icon: Trash2,
-      label: t('common.recycle_bin'),
-      description: t('common.recycle_bin_board_description'),
-    },
-  };
-  const viewOptions = Object.entries(viewConfig).filter(([view]) =>
-    enabledViews.includes(view as ViewType)
+  function handleClear() {
+    onFiltersChange(clearBoardFilters(filters));
+    onListStatusFilterChange('all');
+  }
+
+  const title = publicView ? (
+    <div className="flex min-w-0 items-center gap-2">
+      {titlePrefix}
+      <h1 className="truncate font-medium text-foreground text-sm">
+        {board.name || t('common.untitled')}
+      </h1>
+    </div>
+  ) : currentView === 'my_tasks' ? (
+    <div className="flex h-8 min-w-0 items-center gap-2 rounded-md px-2 text-foreground">
+      <UserStar className="size-3.5 shrink-0 text-muted-foreground" />
+      <span className="truncate font-medium text-sm">
+        {t('ws-task-boards.views.my_tasks')}
+      </span>
+    </div>
+  ) : (
+    <BoardSwitcher
+      board={{ ...board, ws_id: workspaceId }}
+      className="w-auto max-w-[min(22rem,60vw)] [&_button]:h-8 [&_button]:min-h-8 [&_button]:border-transparent [&_button]:bg-transparent [&_button]:px-2 [&_button]:shadow-none hover:[&_button]:bg-muted"
+      translations={{
+        loadingBoards: t('common.loading'),
+        noOtherBoards: t('common.no_other_boards'),
+        activeBoards: t('common.active_boards'),
+        archivedBoards: t('common.archived_boards'),
+        deletedBoards: t('common.deleted_boards'),
+        untitled: t('common.untitled'),
+        active: t('common.active'),
+        archived: t('common.archived'),
+        deleted: t('common.deleted'),
+        daysLeft: t('common.days_left', { count: '{count}' }),
+        searchBoards: t('common.search_boards'),
+        tasks: t('common.tasks'),
+        createBoard: t('ws-task-boards.create'),
+        creatingBoard: t('common.creating'),
+        createBoardError: t('ws-task-boards.errors.unexpected'),
+      }}
+    />
   );
-  const listStatusOptions = [
-    {
-      value: 'all',
-      label: t('common.all'),
-      icon: <LayoutGrid className="h-3.5 w-3.5" />,
-    },
-    {
-      value: 'active',
-      label: t('common.active'),
-      icon: <Play className="h-3.5 w-3.5" />,
-    },
-    {
-      value: 'not_started',
-      label: t('common.backlog'),
-      icon: <Clock className="h-3.5 w-3.5" />,
-    },
-  ];
-  const viewComboboxOptions = viewOptions.map(([view, config]) => {
-    const Icon = config.icon;
-    const hotkeyLabel = viewHotkeyLabels?.[view as ViewType];
-
-    return {
-      value: view,
-      label: config.label,
-      description: config.description,
-      icon: <Icon className="h-3.5 w-3.5" />,
-      badge: hotkeyLabel ? (
-        <span className="text-muted-foreground text-xs">{hotkeyLabel}</span>
-      ) : undefined,
-    };
-  });
-  const sortOptions = [
-    {
-      value: '__none__',
-      label: t('common.sort'),
-      description: filters.sortBy
-        ? t('ws-task-boards.filters.sort_options.clear_sorting')
-        : undefined,
-      icon: <ArrowUpAZ className="h-3.5 w-3.5" />,
-      muted: !filters.sortBy,
-    },
-    {
-      value: 'name-asc',
-      label: `${t('ws-task-boards.filters.sort.name')} · ${t(
-        'ws-task-boards.filters.sort_order.asc'
-      )}`,
-      icon: <ArrowUpAZ className="h-3.5 w-3.5" />,
-    },
-    {
-      value: 'name-desc',
-      label: `${t('ws-task-boards.filters.sort.name')} · ${t(
-        'ws-task-boards.filters.sort_order.desc'
-      )}`,
-      icon: <ArrowDownAZ className="h-3.5 w-3.5" />,
-    },
-    {
-      value: 'priority-high',
-      label: t('ws-task-boards.filters.sort_options.high_to_low'),
-      description: t('ws-task-boards.filters.sort_options.priority'),
-      icon: <Flag className="h-3.5 w-3.5" />,
-    },
-    {
-      value: 'priority-low',
-      label: t('ws-task-boards.filters.sort_options.low_to_high'),
-      description: t('ws-task-boards.filters.sort_options.priority'),
-      icon: <Flag className="h-3.5 w-3.5" />,
-    },
-    {
-      value: 'due-date-asc',
-      label: t('ws-task-boards.filters.sort_options.soonest_first'),
-      description: t('ws-task-boards.filters.sort_options.due_date'),
-      icon: <CalendarDays className="h-3.5 w-3.5" />,
-    },
-    {
-      value: 'due-date-desc',
-      label: t('ws-task-boards.filters.sort_options.latest_first'),
-      description: t('ws-task-boards.filters.sort_options.due_date'),
-      icon: <CalendarDays className="h-3.5 w-3.5" />,
-    },
-    {
-      value: 'created-date-desc',
-      label: t('ws-task-boards.filters.sort_options.newest_first'),
-      description: t('ws-task-boards.filters.sort.created_at'),
-      icon: <Clock className="h-3.5 w-3.5" />,
-    },
-    {
-      value: 'created-date-asc',
-      label: t('ws-task-boards.filters.sort_options.oldest_first'),
-      description: t('ws-task-boards.filters.sort.created_at'),
-      icon: <Clock className="h-3.5 w-3.5" />,
-    },
-    {
-      value: 'estimation-high',
-      label: t('ws-task-boards.filters.sort_options.highest_first'),
-      description: t('ws-task-boards.filters.sort_options.estimate'),
-      icon: <Gauge className="h-3.5 w-3.5" />,
-    },
-    {
-      value: 'estimation-low',
-      label: t('ws-task-boards.filters.sort_options.lowest_first'),
-      description: t('ws-task-boards.filters.sort_options.estimate'),
-      icon: <Gauge className="h-3.5 w-3.5" />,
-    },
-  ];
-  const selectedListStatusOption =
-    listStatusOptions.find((option) => option.value === listStatusFilter) ??
-    listStatusOptions[0];
-  const selectedViewOption =
-    viewComboboxOptions.find((option) => option.value === activeView) ??
-    viewComboboxOptions[0];
-  const selectedSortOption =
-    sortOptions.find(
-      (option) => option.value === (filters.sortBy ?? '__none__')
-    ) ?? sortOptions[0];
-  // Create metadata for presence tracking (excludes search query for stability)
-  const presenceMetadata: BoardFiltersMetadata = useMemo(() => {
-    const { searchQuery: _, ...filtersWithoutSearch } = filters;
-    return {
-      filters: filtersWithoutSearch,
-      listStatusFilter,
-    };
-  }, [filters, listStatusFilter]);
 
   return (
-    <div className="-mt-2 border-b p-2">
-      <div className="flex flex-wrap items-center justify-between gap-1.5 sm:gap-2">
-        {/* Board Info */}
-        <div className="flex min-w-0 items-center gap-2">
-          {backUrl && (
-            <Link
-              href={backUrl}
-              className="text-muted-foreground transition-colors hover:text-foreground"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Link>
-          )}
-          {publicView ? (
-            <div className="flex min-w-0 items-center gap-2">
-              {titlePrefix}
-              <h1 className="truncate font-semibold text-foreground text-sm">
-                {board.name || t('common.untitled')}
-              </h1>
-            </div>
-          ) : currentView === 'my_tasks' ? (
-            <div className="flex h-7 min-w-0 items-center gap-2 rounded-md border bg-background px-2 text-foreground sm:h-8">
-              <UserStar className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-              <span className="truncate font-semibold text-sm">
-                {t('ws-task-boards.views.my_tasks')}
-              </span>
-            </div>
-          ) : (
-            <div className="flex min-w-0 items-center gap-1">
-              <BoardSwitcher
-                board={{ ...board, ws_id: workspaceId }}
-                translations={{
-                  loadingBoards: t('common.loading'),
-                  noOtherBoards: t('common.no_other_boards'),
-                  activeBoards: t('common.active_boards'),
-                  archivedBoards: t('common.archived_boards'),
-                  deletedBoards: t('common.deleted_boards'),
-                  untitled: t('common.untitled'),
-                  active: t('common.active'),
-                  archived: t('common.archived'),
-                  deleted: t('common.deleted'),
-                  daysLeft: t('common.days_left', { count: '{count}' }),
-                  searchBoards: t('common.search_boards'),
-                  tasks: t('common.tasks'),
-                  createBoard: t('ws-task-boards.create'),
-                  creatingBoard: t('common.creating'),
-                  createBoardError: t('ws-task-boards.errors.unexpected'),
-                }}
-              />
-              <CreateBoardAnywhereDialog currentWorkspaceId={workspaceId}>
-                <Button
-                  aria-label={t('ws-task-boards.create_anywhere.action')}
-                  className="h-7 w-7 shrink-0 p-0 sm:h-8 sm:w-8"
-                  size="icon"
-                  type="button"
-                  variant="outline"
-                >
-                  <Plus className="size-4" />
-                </Button>
-              </CreateBoardAnywhereDialog>
-            </div>
-          )}
-        </div>
-
-        {/* Search Bar */}
-        <div className="relative min-w-0 flex-1 basis-72">
-          {isSearching ? (
-            <Loader2 className="pointer-events-none absolute top-1/2 left-2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
-          ) : (
-            <Search className="pointer-events-none absolute top-1/2 left-2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          )}
-          <Input
-            type="text"
-            placeholder={t('common.search_tasks')}
-            value={localSearchQuery}
-            onChange={(e) => setLocalSearchQuery(e.target.value)}
-            className="placeholder:-translate-0.5 h-6 bg-background pr-8 pl-8 text-xs placeholder:text-xs sm:h-8 sm:text-sm"
+    <div className="-mt-2 flex flex-col gap-2 border-b p-2">
+      <div className="flex flex-wrap items-center gap-2">
+        {backUrl ? (
+          <Link
+            aria-label={t('common.back')}
+            className="text-muted-foreground transition-colors hover:text-foreground"
+            href={backUrl}
+          >
+            <ArrowLeft className="size-5" />
+          </Link>
+        ) : null}
+        {title}
+        <span className="min-w-0 flex-1" />
+        {presenceVisible ? (
+          <BoardUserPresenceAvatarsComponent
+            boardId={board.id}
+            currentMetadata={presenceMetadata}
+            onFiltersChange={onFiltersChange}
+            onListStatusFilterChange={onListStatusFilterChange}
           />
-          {localSearchQuery && !isSearching && (
-            <button
-              type="button"
-              onClick={() => setLocalSearchQuery('')}
-              className="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
-              aria-label={t('common.clear_search')}
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
-        </div>
-
-        {/* Controls - Compact Row */}
-        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-          {/* Online Users */}
-          {presenceVisible && (
-            <BoardUserPresenceAvatarsComponent
-              boardId={board.id}
-              currentMetadata={presenceMetadata}
-              onFiltersChange={onFiltersChange}
-              onListStatusFilterChange={onListStatusFilterChange}
-            />
-          )}
-
-          {hideSidebarVisible && (
-            <ToolbarTooltip label={t('common.hide_sidebar')}>
-              <Button
-                type="button"
-                size="xs"
-                variant="outline"
-                className={toolbarButtonClass}
-                onClick={() => sidebar?.handleBehaviorChange('hidden')}
-                aria-label={t('common.hide_sidebar')}
-              >
-                <PanelLeftClose className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-              </Button>
-            </ToolbarTooltip>
-          )}
-
-          {/* Smart Focus Button */}
-          {interactiveControlsVisible && (
-            <ToolbarTooltip
-              label={
-                isSmartFocusActive
-                  ? t('common.clear_smart_focus')
-                  : t('common.smart_focus')
-              }
-            >
-              <Button
-                variant={isSmartFocusActive ? 'secondary' : 'outline'}
-                size="xs"
-                onClick={handleSmartFocus}
-                disabled={isLoading}
-                className={cn(
-                  toolbarButtonClass,
-                  isSmartFocusActive
-                    ? 'border-primary/50 bg-primary/5 text-foreground hover:bg-primary/10'
-                    : 'hover:bg-accent'
-                )}
-                aria-label={
-                  isSmartFocusActive
-                    ? t('common.clear_smart_focus')
-                    : t('common.smart_focus')
-                }
-              >
-                <Zap
-                  className={cn(
-                    'h-3.5 w-3.5',
-                    isSmartFocusActive && 'fill-current text-foreground'
-                  )}
-                />
-              </Button>
-            </ToolbarTooltip>
-          )}
-
-          {/* Multi-select Toggle */}
-          {interactiveControlsVisible && (
-            <ToolbarTooltip label={t('common.choose_tasks')}>
-              <Button
-                variant={isMultiSelectMode ? 'secondary' : 'outline'}
-                size="xs"
-                onClick={() => setIsMultiSelectMode(!isMultiSelectMode)}
-                className={cn(
-                  toolbarButtonClass,
-                  isMultiSelectMode &&
-                    'border-primary/50 bg-primary/5 text-foreground hover:bg-primary/10'
-                )}
-                aria-label={t('common.choose_tasks')}
-              >
-                <CopyCheck className="h-3.5 w-3.5" />
-              </Button>
-            </ToolbarTooltip>
-          )}
-
-          {/* List Status Filter */}
-          <Combobox
-            mode="single"
-            options={listStatusOptions}
-            selected={listStatusFilter}
-            onChange={(value) =>
-              onListStatusFilterChange(value as ListStatusFilter)
-            }
-            ariaLabel={selectedListStatusOption?.label ?? t('common.all')}
-            contentWidth="sm"
-            hideTriggerLabel
-            placeholder={t('common.all')}
-            searchPlaceholder={t('common.search_tasks')}
-            showChevron={false}
-            triggerMode="compact"
-            triggerTooltip={`${t('common.status')}: ${selectedListStatusOption?.label ?? t('common.all')}`}
-            triggerIcon={<Layers className="h-3.5 w-3.5" />}
-            colorizeTriggerIcon={false}
-            className={cn(
-              toolbarComboboxClass,
-              listStatusFilter !== 'all' &&
-                '[&_button]:border-primary/50 [&_button]:bg-primary/5'
-            )}
+        ) : null}
+        <BoardSearchInput
+          isSearching={isSearching}
+          onSearchChange={handleSearchChange}
+          searchQuery={filters.searchQuery}
+        />
+        {managerControlsVisible ? (
+          <ToneButton onClick={() => setShareBoardOpen(true)} tone="cyan">
+            <Share2 />
+            {t('ws-task-boards.header.share')}
+          </ToneButton>
+        ) : null}
+        {interactiveControlsVisible && onCreateTask ? (
+          <Button className="h-8" onClick={onCreateTask} size="sm">
+            <Plus />
+            {t('ws-task-boards.header.new_task')}
+          </Button>
+        ) : null}
+        <BoardMoreMenu
+          isMultiSelectMode={isMultiSelectMode}
+          isRefreshing={isRefreshing}
+          onCreateBoard={
+            interactiveControlsVisible && !publicView
+              ? () => setCreateBoardOpen(true)
+              : undefined
+          }
+          onHideSidebar={
+            hideSidebarVisible
+              ? () => sidebar?.handleBehaviorChange('hidden')
+              : undefined
+          }
+          onOpenPlanner={
+            plannerVisible ? () => setPlannerOpen(true) : undefined
+          }
+          onOpenSettings={
+            managerControlsVisible ? openBoardSettings : undefined
+          }
+          onPrefetchSettings={prefetchBoardSettings}
+          onRefresh={
+            interactiveControlsVisible ? () => void refreshBoard() : undefined
+          }
+          onToggleSelect={
+            interactiveControlsVisible
+              ? () => setIsMultiSelectMode(!isMultiSelectMode)
+              : undefined
+          }
+        />
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        {interactiveControlsVisible && people ? (
+          <BoardPeopleFilter
+            currentUserId={currentUserId}
+            filters={filters}
+            onFiltersChange={onFiltersChange}
+            people={people}
+            unassignedCount={unassignedCount}
           />
-
-          {/* View Switcher */}
-          <Combobox
-            mode="single"
-            options={viewComboboxOptions}
-            selected={activeView}
-            onChange={(value) => onViewChange(value as ViewType)}
-            ariaLabel={
-              selectedViewOption?.label ?? viewConfig[activeView].label
-            }
-            contentWidth="md"
-            hideTriggerLabel
-            placeholder={viewConfig[activeView].label}
-            searchPlaceholder={t('common.search_tasks')}
-            showChevron={false}
-            triggerMode="compact"
-            triggerTooltip={`${t('common.view')}: ${
-              selectedViewOption?.label ?? viewConfig[activeView].label
-            }`}
-            triggerIcon={<LayoutDashboard className="h-3.5 w-3.5" />}
-            colorizeTriggerIcon={false}
-            className={toolbarComboboxClass}
+        ) : null}
+        {interactiveControlsVisible && projectTaskCounts ? (
+          <BoardProjectFilter
+            filters={filters}
+            onFiltersChange={onFiltersChange}
+            projectTaskCounts={projectTaskCounts}
+            workspaceId={workspaceId}
           />
-
-          {/* Task Filter */}
-          {interactiveControlsVisible && (
-            <TaskFilter
-              wsId={workspaceId}
-              currentUserId={currentUserId}
-              filters={filters}
-              onFiltersChange={onFiltersChange}
-            />
-          )}
-
-          {/* Sort */}
-          <Combobox
-            mode="single"
-            options={sortOptions}
-            selected={filters.sortBy ?? '__none__'}
-            onChange={(value) =>
-              handleSortChange(
-                value === '__none__'
-                  ? undefined
-                  : (value as TaskFilters['sortBy'])
-              )
-            }
-            ariaLabel={selectedSortOption?.label ?? t('common.sort')}
-            contentWidth="md"
-            hideTriggerLabel
-            placeholder={t('common.sort')}
-            searchPlaceholder={t('common.search_tasks')}
-            showChevron={false}
-            triggerMode="compact"
-            triggerTooltip={`${t('common.sort')}: ${
-              selectedSortOption?.value === '__none__'
-                ? t('common.sort')
-                : (selectedSortOption?.label ?? t('common.sort'))
-            }`}
-            colorizeTriggerIcon={false}
-            className={cn(
-              toolbarComboboxClass,
-              filters.sortBy &&
-                '[&_button]:border-primary/50 [&_button]:bg-primary/5'
-            )}
-          />
-
-          {plannerVisible && (
-            <ToolbarTooltip label={t('ws-task-plans.planner')}>
-              <Button
-                type="button"
-                size="xs"
-                variant="outline"
-                className={toolbarButtonClass}
-                onClick={() => setPlannerOpen(true)}
-                aria-label={t('ws-task-plans.planner')}
-              >
-                <CalendarDays className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-              </Button>
-            </ToolbarTooltip>
-          )}
-
-          {interactiveControlsVisible && (
-            <ToolbarTooltip label={t('common.refresh')}>
-              <Button
-                aria-label={t('common.refresh')}
-                className={toolbarButtonClass}
-                disabled={isRefreshing}
-                onClick={() => void refreshBoard()}
-                size="xs"
-                type="button"
-                variant="outline"
-              >
-                <RefreshCw
-                  className={cn(
-                    'h-3 w-3 sm:h-3.5 sm:w-3.5',
-                    isRefreshing && 'animate-spin'
-                  )}
-                />
-              </Button>
-            </ToolbarTooltip>
-          )}
-
-          {managerControlsVisible && (
-            <ToolbarTooltip label={t('ws-task-boards.share.action')}>
-              <Button
-                type="button"
-                size="xs"
-                variant="outline"
-                className={toolbarButtonClass}
-                onClick={() => setShareBoardOpen(true)}
-                aria-label={t('ws-task-boards.share.action')}
-              >
-                <Share2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-              </Button>
-            </ToolbarTooltip>
-          )}
-
-          {/* Board Settings */}
-          {managerControlsVisible && (
-            <ToolbarTooltip label={t('ws-task-boards.actions.board_settings')}>
-              <Button
-                type="button"
-                variant="outline"
-                size="xs"
-                className={toolbarButtonClass}
-                onFocus={prefetchBoardSettings}
-                onMouseEnter={prefetchBoardSettings}
-                onClick={openBoardSettings}
-                onPointerDown={prefetchBoardSettings}
-                aria-label={t('ws-task-boards.actions.board_settings')}
-              >
-                <Bolt className="h-3.5 w-3.5" />
-              </Button>
-            </ToolbarTooltip>
-          )}
-        </div>
+        ) : null}
+        {interactiveControlsVisible && currentUserId ? (
+          <ToneButton
+            active={focusOn}
+            aria-pressed={focusOn}
+            onClick={handleFocus}
+            title={t('ws-task-boards.header.focus_hint')}
+            tone="blue"
+          >
+            <Zap className={cn(focusOn && 'fill-current')} />
+            {t('ws-task-boards.header.focus')}
+          </ToneButton>
+        ) : null}
+        <span className="min-w-0 flex-1" />
+        {filtersActive ? (
+          <Button
+            className="h-8 text-muted-foreground"
+            onClick={handleClear}
+            size="sm"
+            variant="ghost"
+          >
+            <X />
+            {t('common.clear')}
+          </Button>
+        ) : null}
+        <BoardSortMenu
+          onChange={(sortBy) => onFiltersChange({ ...filters, sortBy })}
+          sortBy={filters.sortBy}
+        />
+        <BoardViewMenu
+          availableViews={enabledViews}
+          currentView={currentView}
+          hotkeyLabels={viewHotkeyLabels}
+          onViewChange={onViewChange}
+        />
       </div>
       <BoardShareDialog
         board={{ id: board.id, name: board.name }}
@@ -818,7 +407,14 @@ export function BoardHeader({
         onOpenChange={setShareBoardOpen}
         wsId={workspaceId}
       />
-      {plannerVisible && (
+      {interactiveControlsVisible && !publicView ? (
+        <CreateBoardAnywhereDialog
+          currentWorkspaceId={workspaceId}
+          onOpenChange={setCreateBoardOpen}
+          open={createBoardOpen}
+        />
+      ) : null}
+      {plannerVisible ? (
         <KanbanPlannerDialog
           boardId={board.id}
           isPersonalWorkspace={isPersonalWorkspace}
@@ -826,7 +422,7 @@ export function BoardHeader({
           open={plannerOpen}
           workspaceId={workspaceId}
         />
-      )}
+      ) : null}
     </div>
   );
 }
