@@ -782,8 +782,15 @@ export function BoardViews({
     if (!targetList) return;
     createTask(board.id, targetList.id, selectableLists, filters);
   };
+  // Pills count what the board shows: the current sprint, when sprints are on.
+  const headerTasks = useMemo(() => {
+    const sprintTaskIds = boardSprints.currentSprintTaskIds;
+    return sprintTaskIds
+      ? tasks.filter((task) => sprintTaskIds.has(task.id))
+      : tasks;
+  }, [boardSprints.currentSprintTaskIds, tasks]);
   const headerData = useBoardHeaderData({
-    tasks,
+    tasks: headerTasks,
     lists,
     currentUserId,
     workspaceId: effectiveWorkspaceId,

@@ -219,6 +219,8 @@ describe('BoardViews sprints', () => {
       ]);
     });
     expect(boardHeaderProps?.sprintSlot).toBeTruthy();
+    // Header counts follow the sprint too: one unassigned task, not two.
+    expect(boardHeaderProps?.unassignedCount).toBe(1);
   });
 
   it('keeps every task when the board has sprints off', async () => {
