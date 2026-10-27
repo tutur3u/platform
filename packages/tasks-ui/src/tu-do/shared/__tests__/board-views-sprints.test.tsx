@@ -230,5 +230,7 @@ describe('BoardViews sprints', () => {
       'task-1',
       'task-2',
     ]);
+    // No pill, so the breadcrumb shows no separator after the board.
+    expect(boardHeaderProps?.sprintSlot).toBeUndefined();
   });
 });

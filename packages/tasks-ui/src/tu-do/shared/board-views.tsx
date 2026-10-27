@@ -1015,13 +1015,15 @@ export function BoardViews({
             countsComplete={headerData.countsComplete}
             onCreateTask={canCreateTask ? createTaskInBoard : undefined}
             sprintSlot={
-              <BoardSprintPill
-                boardId={board.id}
-                canManage={canManageBoard && !readOnly}
-                sprints={boardSprints}
-                tasks={tasks}
-                wsId={effectiveWorkspaceId}
-              />
+              boardSprints.currentSprint ? (
+                <BoardSprintPill
+                  boardId={board.id}
+                  canManage={canManageBoard && !readOnly}
+                  sprints={boardSprints}
+                  tasks={tasks}
+                  wsId={effectiveWorkspaceId}
+                />
+              ) : undefined
             }
           />
         }
