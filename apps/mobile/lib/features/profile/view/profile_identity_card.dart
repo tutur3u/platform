@@ -8,7 +8,7 @@ import 'package:mobile/features/profile/view/profile_banner.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// The account's identity at the top of Profile: cover, avatar, name, email,
-/// bio and an icon-only way into the profile editor beside the avatar.
+/// bio and a labelled Edit profile button beside the avatar.
 ///
 /// The shell navbar carries the page title, so the name is content, not a
 /// second title bar. Identity from a previous account is never shown: the
@@ -30,6 +30,11 @@ class ProfileIdentityCard extends StatelessWidget {
   final bool loading;
 
   static const double _avatarSize = 80;
+
+  /// Extra room below the avatar so the edit button's full 48dp target fits
+  /// centred on the avatar's lower half; the text gap shrinks by the same
+  /// amount, so the visual spacing is unchanged.
+  static const double _bandSlack = (kAppMinTapTarget - _avatarSize / 2) / 2;
 
   @override
   Widget build(BuildContext context) {
@@ -60,7 +65,9 @@ class ProfileIdentityCard extends StatelessWidget {
               clipBehavior: Clip.none,
               children: [
                 Padding(
-                  padding: const EdgeInsets.only(bottom: _avatarSize / 2),
+                  padding: const EdgeInsets.only(
+                    bottom: _avatarSize / 2 + _bandSlack,
+                  ),
                   child: hasBanner
                       ? ProfileBanner(
                           profile: profile!,
@@ -70,21 +77,27 @@ class ProfileIdentityCard extends StatelessWidget {
                       : _CoverTint(color: c.primary),
                 ),
                 if (profile != null)
+                  // Centred in the band beside the avatar's lower half, on
+                  // the same trailing gutter as the text below, so it never
+                  // straddles the cover edge.
                   PositionedDirectional(
-                    end: AppSpacing.md,
+                    end: AppSpacing.lg,
                     bottom: 0,
-                    child: AppIconButton(
-                      key: const ValueKey('profile-edit-identity'),
-                      variant: AppButtonVariant.outline,
-                      shape: AppButtonShape.circle,
-                      tooltip: l10n.settingsProfileEdit,
-                      icon: const Icon(LucideIcons.pencil),
-                      onPressed: () => context.push(Routes.settingsProfile),
+                    height: kAppMinTapTarget,
+                    child: Center(
+                      widthFactor: 1,
+                      child: AppButton.outline(
+                        key: const ValueKey('profile-edit-identity'),
+                        size: AppButtonSize.small,
+                        leading: const Icon(LucideIcons.pencil),
+                        onPressed: () => context.push(Routes.settingsProfile),
+                        child: Text(l10n.settingsProfileEdit),
+                      ),
                     ),
                   ),
                 PositionedDirectional(
                   start: AppSpacing.lg,
-                  bottom: 0,
+                  bottom: _bandSlack,
                   child: _Avatar(
                     url: avatarUrl,
                     userId: userId,
@@ -97,7 +110,7 @@ class ProfileIdentityCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.lg,
-                AppSpacing.md,
+                AppSpacing.md - _bandSlack,
                 AppSpacing.lg,
                 AppSpacing.lg,
               ),
