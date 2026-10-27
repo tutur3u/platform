@@ -1,4 +1,24 @@
 -- Rollback for 20261027150800_workspace_user_access.sql.
+-- Restores the previous policies and authenticated-only access the apps use:
+-- SELECT on workspace_users, EXECUTE on the four helpers and SELECT on the six
+-- views. anon/PUBLIC stay revoked, and TRUNCATE/REFERENCES/TRIGGER plus view
+-- DML/MAINTAIN are not restored: no supported caller uses them and restoring
+-- them re-opens cross-workspace reads. Exact previous ACL (approval required):
+--   grant select, truncate, references, trigger on public.workspace_users
+--     to anon, authenticated;
+--   grant truncate, references, trigger on public.user_group_attendance,
+--     public.user_indicators to anon, authenticated;
+--   grant execute on function <signature> to public, anon, authenticated;
+--     (get_featured_group_counts, get_workspace_users,
+--     get_workspace_users_count, is_user_guest)
+--   grant insert, select, update, delete, truncate, references, trigger,
+--     maintain on table <view> to anon, authenticated;
+--     (distinct_invoice_creators, distinct_transaction_creators,
+--     group_user_with_attendance, group_users_with_post_checks,
+--     group_with_attendance, workspace_users_with_groups)
+-- workspace_users_with_groups intentionally stays security_invoker = true so
+-- the restored policies, not the view owner, gate its rows.
+-- Run inside the caller's transaction; this file does not open its own.
 -- Not a migration: apply manually only with release-authority approval.
 set lock_timeout = '5s';
 drop policy workspace_users_read on public.workspace_users;
@@ -17,8 +37,9 @@ drop function private.workspace_user_attendance_scope(uuid, uuid);
 drop function private.workspace_user_permission_workspaces(text[]);
 drop function private.workspace_user_score_scope(uuid, uuid);
 revoke select (id, ws_id) on public.workspace_users from authenticated;
-grant select, truncate, references, trigger on public.workspace_users to anon, authenticated;
-grant truncate, references, trigger on public.user_group_attendance, public.user_indicators to anon, authenticated;
+grant select on public.workspace_users to authenticated;
+revoke select, truncate, references, trigger on public.workspace_users from public, anon;
+revoke truncate, references, trigger on public.user_group_attendance, public.user_indicators from public, anon;
 create policy "Enable all access for workspace members" on public.workspace_users for all to authenticated
 using (public.is_org_member((select auth.uid()), ws_id))
 with check (public.is_org_member((select auth.uid()), ws_id));
@@ -66,121 +87,21 @@ begin
 end;
 $function$;
 
-revoke all on function get_featured_group_counts(uuid,uuid[],uuid[],text,text,text) from public, anon, authenticated;
-grant EXECUTE on function get_featured_group_counts(uuid,uuid[],uuid[],text,text,text) to PUBLIC;
-grant EXECUTE on function get_featured_group_counts(uuid,uuid[],uuid[],text,text,text) to "anon";
-grant EXECUTE on function get_featured_group_counts(uuid,uuid[],uuid[],text,text,text) to "authenticated";
-revoke all on function get_workspace_users(uuid,uuid[],uuid[],text,boolean,text,text) from public, anon, authenticated;
-grant EXECUTE on function get_workspace_users(uuid,uuid[],uuid[],text,boolean,text,text) to PUBLIC;
-grant EXECUTE on function get_workspace_users(uuid,uuid[],uuid[],text,boolean,text,text) to "anon";
-grant EXECUTE on function get_workspace_users(uuid,uuid[],uuid[],text,boolean,text,text) to "authenticated";
-revoke all on function get_workspace_users_count(uuid) from public, anon, authenticated;
-grant EXECUTE on function get_workspace_users_count(uuid) to PUBLIC;
-grant EXECUTE on function get_workspace_users_count(uuid) to "anon";
-grant EXECUTE on function get_workspace_users_count(uuid) to "authenticated";
-revoke all on function is_user_guest(uuid) from public, anon, authenticated;
-grant EXECUTE on function is_user_guest(uuid) to PUBLIC;
-grant EXECUTE on function is_user_guest(uuid) to "anon";
-grant EXECUTE on function is_user_guest(uuid) to "authenticated";
-revoke all on table public.distinct_invoice_creators from public, anon, authenticated;
-grant INSERT on table public.distinct_invoice_creators to "anon";
-grant SELECT on table public.distinct_invoice_creators to "anon";
-grant UPDATE on table public.distinct_invoice_creators to "anon";
-grant DELETE on table public.distinct_invoice_creators to "anon";
-grant TRUNCATE on table public.distinct_invoice_creators to "anon";
-grant REFERENCES on table public.distinct_invoice_creators to "anon";
-grant TRIGGER on table public.distinct_invoice_creators to "anon";
-grant MAINTAIN on table public.distinct_invoice_creators to "anon";
-grant INSERT on table public.distinct_invoice_creators to "authenticated";
-grant SELECT on table public.distinct_invoice_creators to "authenticated";
-grant UPDATE on table public.distinct_invoice_creators to "authenticated";
-grant DELETE on table public.distinct_invoice_creators to "authenticated";
-grant TRUNCATE on table public.distinct_invoice_creators to "authenticated";
-grant REFERENCES on table public.distinct_invoice_creators to "authenticated";
-grant TRIGGER on table public.distinct_invoice_creators to "authenticated";
-grant MAINTAIN on table public.distinct_invoice_creators to "authenticated";
-revoke all on table public.distinct_transaction_creators from public, anon, authenticated;
-grant INSERT on table public.distinct_transaction_creators to "anon";
-grant SELECT on table public.distinct_transaction_creators to "anon";
-grant UPDATE on table public.distinct_transaction_creators to "anon";
-grant DELETE on table public.distinct_transaction_creators to "anon";
-grant TRUNCATE on table public.distinct_transaction_creators to "anon";
-grant REFERENCES on table public.distinct_transaction_creators to "anon";
-grant TRIGGER on table public.distinct_transaction_creators to "anon";
-grant MAINTAIN on table public.distinct_transaction_creators to "anon";
-grant INSERT on table public.distinct_transaction_creators to "authenticated";
-grant SELECT on table public.distinct_transaction_creators to "authenticated";
-grant UPDATE on table public.distinct_transaction_creators to "authenticated";
-grant DELETE on table public.distinct_transaction_creators to "authenticated";
-grant TRUNCATE on table public.distinct_transaction_creators to "authenticated";
-grant REFERENCES on table public.distinct_transaction_creators to "authenticated";
-grant TRIGGER on table public.distinct_transaction_creators to "authenticated";
-grant MAINTAIN on table public.distinct_transaction_creators to "authenticated";
-revoke all on table public.group_user_with_attendance from public, anon, authenticated;
-grant INSERT on table public.group_user_with_attendance to "anon";
-grant SELECT on table public.group_user_with_attendance to "anon";
-grant UPDATE on table public.group_user_with_attendance to "anon";
-grant DELETE on table public.group_user_with_attendance to "anon";
-grant TRUNCATE on table public.group_user_with_attendance to "anon";
-grant REFERENCES on table public.group_user_with_attendance to "anon";
-grant TRIGGER on table public.group_user_with_attendance to "anon";
-grant MAINTAIN on table public.group_user_with_attendance to "anon";
-grant INSERT on table public.group_user_with_attendance to "authenticated";
-grant SELECT on table public.group_user_with_attendance to "authenticated";
-grant UPDATE on table public.group_user_with_attendance to "authenticated";
-grant DELETE on table public.group_user_with_attendance to "authenticated";
-grant TRUNCATE on table public.group_user_with_attendance to "authenticated";
-grant REFERENCES on table public.group_user_with_attendance to "authenticated";
-grant TRIGGER on table public.group_user_with_attendance to "authenticated";
-grant MAINTAIN on table public.group_user_with_attendance to "authenticated";
-revoke all on table public.group_users_with_post_checks from public, anon, authenticated;
-grant INSERT on table public.group_users_with_post_checks to "anon";
-grant SELECT on table public.group_users_with_post_checks to "anon";
-grant UPDATE on table public.group_users_with_post_checks to "anon";
-grant DELETE on table public.group_users_with_post_checks to "anon";
-grant TRUNCATE on table public.group_users_with_post_checks to "anon";
-grant REFERENCES on table public.group_users_with_post_checks to "anon";
-grant TRIGGER on table public.group_users_with_post_checks to "anon";
-grant MAINTAIN on table public.group_users_with_post_checks to "anon";
-grant INSERT on table public.group_users_with_post_checks to "authenticated";
-grant SELECT on table public.group_users_with_post_checks to "authenticated";
-grant UPDATE on table public.group_users_with_post_checks to "authenticated";
-grant DELETE on table public.group_users_with_post_checks to "authenticated";
-grant TRUNCATE on table public.group_users_with_post_checks to "authenticated";
-grant REFERENCES on table public.group_users_with_post_checks to "authenticated";
-grant TRIGGER on table public.group_users_with_post_checks to "authenticated";
-grant MAINTAIN on table public.group_users_with_post_checks to "authenticated";
-revoke all on table public.group_with_attendance from public, anon, authenticated;
-grant INSERT on table public.group_with_attendance to "anon";
-grant SELECT on table public.group_with_attendance to "anon";
-grant UPDATE on table public.group_with_attendance to "anon";
-grant DELETE on table public.group_with_attendance to "anon";
-grant TRUNCATE on table public.group_with_attendance to "anon";
-grant REFERENCES on table public.group_with_attendance to "anon";
-grant TRIGGER on table public.group_with_attendance to "anon";
-grant MAINTAIN on table public.group_with_attendance to "anon";
-grant INSERT on table public.group_with_attendance to "authenticated";
-grant SELECT on table public.group_with_attendance to "authenticated";
-grant UPDATE on table public.group_with_attendance to "authenticated";
-grant DELETE on table public.group_with_attendance to "authenticated";
-grant TRUNCATE on table public.group_with_attendance to "authenticated";
-grant REFERENCES on table public.group_with_attendance to "authenticated";
-grant TRIGGER on table public.group_with_attendance to "authenticated";
-grant MAINTAIN on table public.group_with_attendance to "authenticated";
-revoke all on table public.workspace_users_with_groups from public, anon, authenticated;
-grant INSERT on table public.workspace_users_with_groups to "anon";
-grant SELECT on table public.workspace_users_with_groups to "anon";
-grant UPDATE on table public.workspace_users_with_groups to "anon";
-grant DELETE on table public.workspace_users_with_groups to "anon";
-grant TRUNCATE on table public.workspace_users_with_groups to "anon";
-grant REFERENCES on table public.workspace_users_with_groups to "anon";
-grant TRIGGER on table public.workspace_users_with_groups to "anon";
-grant MAINTAIN on table public.workspace_users_with_groups to "anon";
-grant INSERT on table public.workspace_users_with_groups to "authenticated";
-grant SELECT on table public.workspace_users_with_groups to "authenticated";
-grant UPDATE on table public.workspace_users_with_groups to "authenticated";
-grant DELETE on table public.workspace_users_with_groups to "authenticated";
-grant TRUNCATE on table public.workspace_users_with_groups to "authenticated";
-grant REFERENCES on table public.workspace_users_with_groups to "authenticated";
-grant TRIGGER on table public.workspace_users_with_groups to "authenticated";
-grant MAINTAIN on table public.workspace_users_with_groups to "authenticated";
+do $$
+declare
+  v_target regprocedure;
+begin
+  foreach v_target in array array[
+    'public.get_featured_group_counts(uuid,uuid[],uuid[],text,text,text)',
+    'public.get_workspace_users(uuid,uuid[],uuid[],text,boolean,text,text)',
+    'public.get_workspace_users_count(uuid)',
+    'public.is_user_guest(uuid)'
+  ]::regprocedure[]
+  loop
+    execute format('revoke all on function %s from public, anon', v_target);
+    execute format('grant execute on function %s to authenticated', v_target);
+  end loop;
+end;
+$$;
+revoke all on public.workspace_users_with_groups, public.group_with_attendance, public.group_user_with_attendance, public.group_users_with_post_checks, public.distinct_invoice_creators, public.distinct_transaction_creators from public, anon, authenticated;
+grant select on public.workspace_users_with_groups, public.group_with_attendance, public.group_user_with_attendance, public.group_users_with_post_checks, public.distinct_invoice_creators, public.distinct_transaction_creators to authenticated;

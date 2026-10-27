@@ -1,5 +1,7 @@
 import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
 import { resolveFinanceRouteAuthContext } from '@tuturuuu/finance-core/route-auth';
+import type { Tables } from '@tuturuuu/types';
+import { projectWorkspaceUser } from '@tuturuuu/utils/workspace-user-projection';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -20,12 +22,7 @@ export async function GET(request: Request, { params }: Params) {
     return access.response;
   }
 
-  const {
-    normalizedWsId: wsId,
-    permissions,
-    sbAdmin,
-    supabase,
-  } = access.context;
+  const { normalizedWsId: wsId, permissions, sbAdmin } = access.context;
   if (!permissions || permissions.withoutPermission('view_transactions')) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
   }
@@ -64,7 +61,14 @@ export async function GET(request: Request, { params }: Params) {
     return NextResponse.json({ users: data ?? [] });
   }
 
-  const { data, error } = await supabase
+  const readAccess = {
+    publicInfo: permissions.containsPermission('view_users_public_info'),
+    privateInfo: permissions.containsPermission('view_users_private_info'),
+  };
+  if (!readAccess.publicInfo && !readAccess.privateInfo) {
+    return NextResponse.json({ users: [] });
+  }
+  const { data, error } = await sbAdmin
     .from('workspace_users')
     .select('id, full_name, display_name, email, avatar_url')
     .eq('ws_id', wsId)
@@ -78,5 +82,14 @@ export async function GET(request: Request, { params }: Params) {
     );
   }
 
-  return NextResponse.json({ users: data ?? [] });
+  return NextResponse.json({
+    users: (data ?? []).map(
+      (
+        profile: Pick<
+          Tables<'workspace_users'>,
+          'id' | 'full_name' | 'display_name' | 'email' | 'avatar_url'
+        >
+      ) => projectWorkspaceUser(profile, readAccess)
+    ),
+  });
 }

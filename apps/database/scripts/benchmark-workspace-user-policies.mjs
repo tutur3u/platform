@@ -48,15 +48,20 @@ assert(
 const runs = Number(flags.get('--runs') ?? 5);
 assert(Number.isInteger(runs) && runs >= 1 && runs <= 7);
 const plansEnabled = flags.get('--plans') !== 'no';
+// 17918b61 is reachable only from the superseded PR head, not from main, so
+// `git show` below fails in a fresh clone that has not fetched that commit.
 const baseline = '17918b61dbd4f7dab982c0833a0b3c701cbf43f6';
 const baselineMigration =
-  'apps/database/supabase/migrations/20261027150800_workspace_user_access.sql';
+  'apps/database/supabase/migrations/20261027020000_workspace_user_access.sql';
 const migrationNames = readdirSync(
   path.join(root, 'apps/database/supabase/migrations')
 ).filter((name) => name.endsWith('_workspace_user_access.sql'));
 assert.equal(migrationNames.length, 1);
 const migration = `apps/database/supabase/migrations/${migrationNames[0]}`;
-const rollback = migration.replace('/migrations/', '/rollback/');
+const rollback = `apps/database/rollbacks/${migrationNames[0].replace(
+  /\.sql$/,
+  '.rollback.sql'
+)}`;
 const oldUp = execFileSync(
   'git',
   ['show', `${baseline}:${baselineMigration}`],
