@@ -87,7 +87,7 @@ begin
     v_definition := pg_catalog.pg_get_functiondef(v_item.target);
 
     if pg_catalog.strpos(v_definition, v_marker) = 0 then
-      if pg_catalog.regexp_count(v_definition, v_anchor, 1, 'n') <> 1 then
+      if pg_catalog.regexp_count(v_definition, v_anchor, 1, 'in') <> 1 then
         raise exception 'Unexpected body anchor in %', v_item.target;
       end if;
 
@@ -104,7 +104,7 @@ begin
   -- end caller check
 ';
 
-      execute pg_catalog.regexp_replace(v_definition, v_anchor, v_guard, 'n');
+      execute pg_catalog.regexp_replace(v_definition, v_anchor, v_guard, 'in');
     end if;
 
     execute format(
