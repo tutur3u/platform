@@ -43,12 +43,14 @@ export function BoardPeopleFilter({
   onFiltersChange,
   people,
   unassignedCount,
+  countsComplete = true,
 }: {
   currentUserId?: string;
   filters: TaskFilters;
   onFiltersChange: (filters: TaskFilters) => void;
   people: BoardPerson[];
   unassignedCount: number;
+  countsComplete?: boolean;
 }) {
   const t = useTranslations();
   const selected = getSelectedPersonIds(filters, currentUserId);
@@ -74,12 +76,15 @@ export function BoardPeopleFilter({
       person.id === currentUserId
         ? t('ws-task-boards.header.you', { name: personName(person) })
         : personName(person);
-    return `${name} · ${t('ws-task-boards.header.task_count', {
-      count: person.taskCount,
-    })}`;
+    return countsComplete
+      ? `${name} · ${t('ws-task-boards.header.task_count', {
+          count: person.taskCount,
+        })}`
+      : name;
   };
 
-  if (people.length === 0 && unassignedCount === 0) return null;
+  if (people.length === 0 && unassignedCount === 0 && countsComplete)
+    return null;
 
   return (
     <fieldset
@@ -127,23 +132,29 @@ export function BoardPeopleFilter({
                   <PersonAvatar person={person} />
                   <span className="truncate">{personName(person)}</span>
                 </span>
-                <span className="text-muted-foreground text-xs">
-                  {person.taskCount}
-                </span>
+                {countsComplete ? (
+                  <span className="text-muted-foreground text-xs">
+                    {person.taskCount}
+                  </span>
+                ) : null}
               </DropdownMenuCheckboxItem>
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
       ) : null}
-      {unassignedCount > 0 ? (
+      {unassignedCount > 0 || !countsComplete || filters.includeUnassigned ? (
         <button
           aria-pressed={filters.includeUnassigned}
           className={pillClass(filters.includeUnassigned)}
           onClick={() => onFiltersChange(toggleUnassignedFilter(filters))}
-          title={`${t('common.unassigned')} · ${t(
-            'ws-task-boards.header.task_count',
-            { count: unassignedCount }
-          )}`}
+          title={
+            countsComplete
+              ? `${t('common.unassigned')} · ${t(
+                  'ws-task-boards.header.task_count',
+                  { count: unassignedCount }
+                )}`
+              : t('common.unassigned')
+          }
           type="button"
         >
           <span className="grid size-6 place-items-center rounded-full border border-current border-dashed">
