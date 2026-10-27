@@ -193,6 +193,7 @@ class _Metric extends StatelessWidget {
         button: true,
         label: '$label: $value',
         excludeSemantics: true,
+        onTap: onTap,
         child: InkWell(
           onTap: onTap,
           child: Padding(

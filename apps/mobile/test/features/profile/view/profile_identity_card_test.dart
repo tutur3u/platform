@@ -9,9 +9,14 @@ import 'package:mobile/l10n/l10n.dart';
 
 const ValueKey<String> _edit = ValueKey('profile-edit-identity');
 
-Future<GoRouter> _pump(WidgetTester tester, {Locale? locale}) async {
+Future<GoRouter> _pump(
+  WidgetTester tester, {
+  Locale? locale,
+  Size size = const Size(390, 844),
+  double textScale = 1,
+}) async {
   tester.view
-    ..physicalSize = const Size(390, 844)
+    ..physicalSize = size
     ..devicePixelRatio = 1;
   addTearDown(tester.view.reset);
   final router = GoRouter(
@@ -48,6 +53,12 @@ Future<GoRouter> _pump(WidgetTester tester, {Locale? locale}) async {
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: router,
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(
+          context,
+        ).copyWith(textScaler: TextScaler.linear(textScale)),
+        child: child!,
+      ),
     ),
   );
   await tester.pumpAndSettle();
@@ -93,5 +104,25 @@ void main() {
   testWidgets('the edit label is localized', (tester) async {
     await _pump(tester, locale: const Locale('vi'));
     expect(find.text('Sửa hồ sơ'), findsOneWidget);
+  });
+
+  testWidgets('at 3x text on 320dp the edit action never reaches the avatar', (
+    tester,
+  ) async {
+    await _pump(tester, size: const Size(320, 900), textScale: 3);
+    final avatar = tester.getRect(
+      find.byKey(const ValueKey('profile-identity-avatar')),
+    );
+    final edit = tester.getRect(find.byKey(_edit));
+    expect(edit.left, greaterThan(avatar.right));
+    // Too narrow for the label: the icon form keeps the name and target.
+    expect(find.text('Edit profile'), findsNothing);
+    expect(find.bySemanticsLabel('Edit profile'), findsOneWidget);
+    expect(edit.height, greaterThanOrEqualTo(44));
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.byKey(_edit));
+    await tester.pumpAndSettle();
+    expect(find.text('Profile settings'), findsOneWidget);
   });
 }

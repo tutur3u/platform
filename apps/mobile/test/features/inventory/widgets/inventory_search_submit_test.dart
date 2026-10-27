@@ -72,6 +72,9 @@ void main() {
       );
       await tester.tap(find.byIcon(AppIcons.search));
       await tester.pump();
+      // Open search shows the close glyph, like every shell search action.
+      expect(find.byIcon(AppIcons.close), findsOneWidget);
+      expect(find.byIcon(AppIcons.search), findsNothing);
       final field = find.byType(TextField);
       await tester.enterText(field, query);
       changes.clear();

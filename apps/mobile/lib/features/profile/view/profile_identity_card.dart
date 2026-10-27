@@ -79,20 +79,15 @@ class ProfileIdentityCard extends StatelessWidget {
                 if (profile != null)
                   // Centred in the band beside the avatar's lower half, on
                   // the same trailing gutter as the text below, so it never
-                  // straddles the cover edge.
+                  // straddles the cover edge or reaches the avatar.
                   PositionedDirectional(
+                    start: AppSpacing.lg + _avatarSize + AppSpacing.sm,
                     end: AppSpacing.lg,
                     bottom: 0,
                     height: kAppMinTapTarget,
-                    child: Center(
-                      widthFactor: 1,
-                      child: AppButton.outline(
-                        key: const ValueKey('profile-edit-identity'),
-                        size: AppButtonSize.small,
-                        leading: const Icon(LucideIcons.pencil),
-                        onPressed: () => context.push(Routes.settingsProfile),
-                        child: Text(l10n.settingsProfileEdit),
-                      ),
+                    child: _EditProfileButton(
+                      label: l10n.settingsProfileEdit,
+                      onPressed: () => context.push(Routes.settingsProfile),
                     ),
                   ),
                 PositionedDirectional(
@@ -189,6 +184,65 @@ class _CoverTint extends StatelessWidget {
   }
 }
 
+/// Labelled when the label fits beside the avatar on one line; otherwise
+/// (narrow cards, enlarged text) the same action as an outline icon button
+/// with the label as its accessible name and tooltip.
+class _EditProfileButton extends StatelessWidget {
+  const _EditProfileButton({required this.label, required this.onPressed});
+
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      final style = AppButtonStyle.resolve(
+        AppTokens.of(context),
+        AppButtonVariant.outline,
+        AppButtonSize.small,
+        AppButtonDensity.normal,
+      );
+      final text = TextPainter(
+        text: TextSpan(
+          text: label,
+          style: DefaultTextStyle.of(context).style.merge(style.textStyle),
+        ),
+        textScaler: MediaQuery.textScalerOf(context),
+        textDirection: Directionality.of(context),
+        maxLines: 1,
+      )..layout();
+      // Both padded sides, the icon, its gap and the 1dp outline.
+      final width =
+          style.horizontalPadding * 2 +
+          style.iconSize +
+          style.gap +
+          text.width +
+          2;
+      final fits = width <= constraints.maxWidth && text.height <= style.height;
+      text.dispose();
+      return Align(
+        alignment: AlignmentDirectional.centerEnd,
+        child: fits
+            ? AppButton.outline(
+                key: const ValueKey('profile-edit-identity'),
+                size: AppButtonSize.small,
+                leading: const Icon(LucideIcons.pencil),
+                onPressed: onPressed,
+                child: Text(label, maxLines: 1),
+              )
+            : AppIconButton(
+                key: const ValueKey('profile-edit-identity'),
+                variant: AppButtonVariant.outline,
+                shape: AppButtonShape.circle,
+                tooltip: label,
+                icon: const Icon(LucideIcons.pencil),
+                onPressed: onPressed,
+              ),
+      );
+    },
+  );
+}
+
 class _Avatar extends StatelessWidget {
   const _Avatar({
     required this.url,
@@ -216,6 +270,7 @@ class _Avatar extends StatelessWidget {
     );
     final url = this.url;
     return Container(
+      key: const ValueKey('profile-identity-avatar'),
       width: size,
       height: size,
       padding: const EdgeInsets.all(3),

@@ -136,7 +136,7 @@ class _InventoryFormScaffoldState extends State<InventoryFormScaffold> {
                 tooltip: context.l10n.inventorySearchProducts,
                 onPressed: _toggleSearch,
                 isSelected: _searching,
-                icon: const Icon(AppIcons.search),
+                icon: Icon(_searching ? AppIcons.close : AppIcons.search),
               ),
             IconButton(
               tooltip: context.l10n.commonCancel,

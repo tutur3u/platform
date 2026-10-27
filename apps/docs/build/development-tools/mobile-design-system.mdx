@@ -248,7 +248,10 @@ policy, so sheets look and behave the same in every app.
   `ShellActionSpec.search(...)`: a dock action with `AppIcons.search`, the
   close glyph while active, highlight while a query applies, and the shared
   48dp dock target. Register one only on screens that search their own
-  content; root tabs without content to search show none.
+  content; root tabs without content to search show none. List a screen's
+  primary dock action (create, view) before Search: phones under 400dp keep
+  only the first dock action in the dock (`meet_dock_order_test.dart`,
+  `drive_page_test.dart`).
 - **Dynamic search.** Pass `search: AppSheetSearch(...)` to
   `AppSheetScaffold`. Inside the shell, it registers a dock search action;
   tapping it turns the top navbar into the shell search field bound to the

@@ -412,7 +412,18 @@ class _MeetPageState extends State<MeetPage> {
             ShellChromeActions(
               ownerId: 'meet-root-actions',
               locations: const {Routes.meet},
+              // New meeting precedes Search: phones under 400dp keep only the
+              // first dock action in the dock.
               actions: [
+                ShellActionSpec(
+                  id: 'meet-create',
+                  inDock: true,
+                  icon: Icons.add_rounded,
+                  tooltip: context.l10n.meetNewMeeting,
+                  callbackToken: hasWorkspace,
+                  enabled: hasWorkspace,
+                  onPressed: _showNewMeetingOptions,
+                ),
                 ShellActionSpec.search(
                   id: 'meet-search',
                   active: _showSearch,
@@ -434,15 +445,6 @@ class _MeetPageState extends State<MeetPage> {
                       unawaited(_reload(forceRefresh: false));
                     }
                   },
-                ),
-                ShellActionSpec(
-                  id: 'meet-create',
-                  inDock: true,
-                  icon: Icons.add_rounded,
-                  tooltip: context.l10n.meetNewMeeting,
-                  callbackToken: hasWorkspace,
-                  enabled: hasWorkspace,
-                  onPressed: _showNewMeetingOptions,
                 ),
                 ShellActionSpec(
                   id: 'meet-refresh',
