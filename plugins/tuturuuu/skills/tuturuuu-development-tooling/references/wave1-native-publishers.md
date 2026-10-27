@@ -114,3 +114,14 @@ do not reintroduce an unanchored trailing-run regex. Keep both exact no-write
 resolutions append-only and run all 21 predicate mutations against each entry.
 Run `scripts/ci/wave1-native-production.test.mjs` for counting transport/CLI,
 no-route profile, held-policy, unknown-outcome and workflow-secret regressions.
+
+## Ops Hub (P0, publication held)
+
+Ops Hub uses the cf/Vite native Worker template with a SQLite OpsHub namespace.
+Its dedicated validation workflow has no deploy job or deployment credentials.
+Run source acceptance with apps/ops-hub/scripts/verify-worker-runtime.mjs; it
+uses isolated persistence and disposable fixture keys. The gateway shares only
+the portable protocol export. See the [ops runbook](../../../../../apps/docs/build/devops/ops-hub.mdx)
+for strict signed envelopes, request/storage budgets, retention, tombstone erasure
+and the disabled-state alarm fence. Hosted acceptance and publisher sample approval
+remain independent release gates. Do not infer deployment authority from CI wiring.

@@ -1,0 +1,115 @@
+---
+title: "Mastermind Hub backend"
+description: "Private operations snapshots, gateway authorization, retention, and held Cloudflare publication."
+---
+
+## Scope and release hold
+
+P0 is a private read API for the infrastructure gateway. Environments contain both
+production and staging per product, supplied by the publisher snapshot. The Worker
+never fetches source control, deployment providers, quotas or customer data.
+Security-related subjects become **Security fix**; security items expose generic
+titles, severity and state without bodies, questions or links. The future mobile
+entry belongs in Apps, according to the approved design. No UI, replies, device
+enrollment, push, publisher installation or Supabase migration ships here.
+
+Code is public; allowlists, keys and operational data must stay out of source.
+Publication remains held. The validation workflow has no deploy job, credentials,
+DNS changes or provisioning. Release Desk needs explicit deployment authorization,
+an independent security review, exact-commit CI and an approved sanitized publisher
+sample before the first publish. The only configured hostname is workers.dev.
+
+## Configuration names
+
+| Placement | Name | Purpose |
+| --- | --- | --- |
+| Worker secret | `OPS_HUB_PUBLISHER_PUBLIC_KEY` | Base64 raw 32-byte Ed25519 verification key; never the private key |
+| Worker and infrastructure server secret | `OPS_HUB_GATEWAY_SECRET` | Shared HMAC key, 43–256 characters |
+| Worker and infrastructure server secret | `OPS_HUB_ALLOWED_USER_IDS` | Comma-separated UUIDs, at most ten; invalid configuration denies everyone |
+| Infrastructure server var | `OPS_HUB_WORKER_URL` | HTTPS workers.dev origin without path, credentials, query or fragment |
+| Worker binding (configuration) | `HUB` | SQLite-backed `OpsHub` namespace; object name `hub:<userId>` |
+
+No actual allowlist, key or live origin is committed. There is no publisher
+private-key or push-secret binding in P0. Place the same allowlist in both
+services; removing an identity blocks its routes at the Worker as well.
+
+## Publisher contract
+
+Send POST `/ingest`, Content-Type application/json, with
+`x-ops-hub-publisher-user` set to the allowlisted UUID and
+`x-ops-hub-signature` set to a standard-base64 Ed25519 signature.
+Sign the UTF-8 prefix `ops-hub-publisher-v1\nPOST\n/ingest\n<userId>\n`
+followed by the **exact request body bytes**. Use a lowercase UUID.
+The strict envelope is `{v:1, seq, sentAt, snapshot?, events:[]}`;
+all timestamps are Unix milliseconds. Every successful envelope advances seq.
+A retry with the same sequence gets 409 and never appends duplicate events.
+Reconcile an unknown outcome through authenticated status before advancing seq.
+
+Snapshot fields are `enabled?`, `pausedReason?`, `needsYou`, `environments`,
+`lanes` and `backlog`. The authoritative schemas are
+`apps/ops-hub/src/schema.ts`; unknown fields at any depth reject the entire
+envelope. Each event has its own strictly increasing seq across all batches.
+The signed sentAt must be within 120 seconds. Events cannot be older than 30 days
+or more than 120 seconds in the future. Item edits must advance their version.
+
+Environment rows contain `product`, `environment` (production or staging),
+`lastRelease` (timestamp or null), `version`, `shortSha`, `commitSubject`,
+`deployState` and `ciState`. State values are queued, running, success,
+failed, held or unknown. Product/environment pairs are unique.
+Secret-shaped and personal text is withheld; security text is reduced again at
+ingest. This defense does not replace the Mac publisher's fail-closed sanitizer
+or the required sanitized-sample approval.
+
+## Read and lifecycle contract
+
+GET `/status`, `/snapshot`, `/events?after=<seq>`, `/needs-you`,
+`/environments` and `/hub/export` require a valid gateway assertion.
+The infrastructure gateway exposes these routes plus DELETE `/hub`.
+Gateway assertions use `x-ops-hub-user`, last 60 seconds, and bind the user,
+HTTP method, path and query. Publisher signatures grant ingest only.
+Authentication failures return 404. Responses are private, no-store.
+
+An hourly alarm purges events after 30 days and terminal items 30 days after
+answered/withdrawn, while open items remain. Snapshot is replaced on ingest;
+its needs-you projection comes from the retained item table. Reads independently
+filter expired records. Publisher staleness is computed after 15 minutes on every
+status read, and persisted by maintenance. With no new publisher activity,
+maintenance stops after 30 days once all expirable records have been purged.
+
+A signed snapshot with `enabled:false` durably pauses the hub and cancels
+its alarm. Every route except authenticated status then returns 503, including
+ingest. There is no HTTP resume route in P0: resumption needs an explicitly
+authorized operator action against the DO, beyond this code-only delivery.
+DELETE `/hub` clears snapshot, events and items and leaves only a disabled
+replay tombstone (sequence/counters, no content), preventing a captured signed
+ingest from recreating erased content. Erase before removing the user from both
+allowlists; a de-allowlisted identity cannot reach its object.
+
+## Cost and test evidence
+
+Limits: 256 KiB streamed ingest, 100 events per envelope, 1,000 retained events,
+100 retained items, 100 lanes/backlog entries, 40 environment rows and 120
+successful ingests per object per hour. Reads return at most 200 events; export
+is bounded by stored row caps. There are no outgoing provider requests, queues,
+cron triggers, retries or fan-out. Invalid assertions do not touch the DO.
+An alarm executes three bounded SQL maintenance statements per hour and stops
+on disabled state, including after restart. Stop reduces background work; it
+cannot prevent the billing of an incoming request reaching Cloudflare.
+
+On an admitted host, run from `apps/ops-hub`:
+
+```sh
+ttr resources run -- bun run test
+ttr resources run -- bun run test:runtime
+ttr resources run -- bun run type-check
+ttr resources run -- bun run lint
+```
+
+The runtime suite starts a finite loopback workerd instance through the existing
+cf/Vite harness, with ephemeral fixture keys and isolated SQLite persistence,
+then closes it. It tests forged signatures, replay/skew/size/schema rejection,
+environment redaction, isolation, persistence/restart, retention and kill/erase
+fences. Unit tests exercise real SQLite retention and bounded maintenance work.
+These commands do not run a release build or contact hosted services.
+Compatibility date is pinned to 2026-10-19, supported by the repository's
+pinned workerd. CI owns the separate release-build check.

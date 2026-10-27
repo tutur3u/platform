@@ -84,6 +84,7 @@
 
 # Code-execution infrastructure (devbox and Judge runners)
 /apps/devbox-control/              @vhpx
+/apps/ops-hub/                     @vhpx
 /packages/devbox/                  @vhpx
 
 # Payments
