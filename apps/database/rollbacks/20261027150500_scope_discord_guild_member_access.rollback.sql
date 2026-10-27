@@ -2,11 +2,13 @@
 -- No table grants change in either direction.
 begin;
 
+set local lock_timeout = '5s';
+
 -- Dropped first so no rollback step can cascade-delete more mappings. Mappings
 -- already deleted by disconnects or workspace deletions cannot be restored.
-drop trigger delete_discord_guild_members_on_disconnect
-on public.discord_integrations;
-drop function public.delete_discord_guild_members_on_disconnect();
+-- Dropping the FK, whether NOT VALID or later validated, changes no rows.
+alter table public.discord_guild_members
+drop constraint discord_guild_members_discord_guild_id_fkey;
 
 -- The index exists only when the migration found no duplicate mappings.
 drop index if exists public.discord_guild_members_guild_discord_user_key;

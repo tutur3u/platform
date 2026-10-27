@@ -27970,6 +27970,13 @@ export type Database = {
         };
         Relationships: [
           {
+            foreignKeyName: 'discord_guild_members_discord_guild_id_fkey';
+            columns: ['discord_guild_id'];
+            isOneToOne: false;
+            referencedRelation: 'discord_integrations';
+            referencedColumns: ['discord_guild_id'];
+          },
+          {
             foreignKeyName: 'discord_guild_members_platform_user_id_fkey';
             columns: ['platform_user_id'];
             isOneToOne: false;

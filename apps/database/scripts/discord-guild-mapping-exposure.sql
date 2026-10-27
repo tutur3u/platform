@@ -1,12 +1,19 @@
--- READ ONLY: rollout gate for 20261027150500_scope_discord_guild_member_access.
--- Run as the migration role on staging, then production, BEFORE promotion. It
--- changes no data and returns counts and guild ids only, never Discord or
--- platform user ids. Triage: apps/docs/platform/ai/omni-channel-chat-sdk.mdx.
+-- READ ONLY: pre-merge gate for 20261027150500_scope_discord_guild_member_access.
+-- Run it BEFORE the PR merges, on staging and on production: staging applies
+-- the migration on merge, so a post-merge run is too late. Use psql as the
+-- migration role, not the Supabase SQL editor, which shows only the last result:
+--   psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 \
+--     -f apps/database/scripts/discord-guild-mapping-exposure.sql
+-- The whole run is one read-only transaction that is rolled back, so it is
+-- safe on production. It returns counts and guild ids only, never Discord or
+-- platform user ids. Send every result set from both environments to Security
+-- and Mastermind. Triage: apps/docs/platform/ai/omni-channel-chat-sdk.mdx.
 begin read only;
 
--- 1. GATE: duplicate (discord_guild_id, discord_user_id) mappings. Above 0, the
--- migration skips its unique index; route the remap or purge to Mastermind
--- before apply. These also break the runtime's maybeSingle lookup.
+-- 1. GATE: duplicate (discord_guild_id, discord_user_id) mappings. If either
+-- environment returns above 0, STOP: do not merge until Mastermind approves a
+-- remap or purge. The migration would skip its unique index, and duplicates
+-- also break the runtime's maybeSingle lookup.
 select count(*) as duplicate_discord_identity_groups,
   coalesce(sum(mappings - 1), 0) as excess_duplicate_mappings
 from (
@@ -28,9 +35,14 @@ left join public.discord_integrations di
 left join public.workspace_members wm
   on wm.ws_id = di.ws_id and wm.user_id = dgm.platform_user_id;
 
--- 3. Per-guild triage. A forged legacy mapping usually targets a real MEMBER of
--- the bound workspace, so the membership check alone does not find it; review
--- creator/admin targets, multi-id users, duplicates and creation bursts.
+-- 3. Dangerous-shape gate, per guild. Any nonzero orphaned,
+-- outside_bound_workspace, mapped_non_member_type, maps_to_admin_or_creator,
+-- multi-id or duplicate count goes to Security and Mastermind before merge.
+-- Orphans are tolerated by the NOT VALID guild FK until an approved cleanup;
+-- non-MEMBER targets keep resolving for service_role until remapped or purged.
+-- A forged legacy mapping usually targets a real MEMBER of the bound workspace,
+-- so the membership check alone does not find it; review creator/admin targets,
+-- multi-id users, duplicates and creation bursts.
 -- maps_to_admin_or_creator uses has_workspace_permission(..., 'admin'), which is
 -- true for the creator, role admins and every MEMBER when the default grants it.
 with mapping as (

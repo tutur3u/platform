@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(56);
+select plan(62);
 
 -- Disposable seed identities; these fixtures are never run against a hosted DB.
 -- User 1: flag holder and creator of A and D. User 3: A member without the flag.
@@ -47,6 +47,8 @@ select lives_ok($$insert into public.discord_guild_members(discord_guild_id,disc
 select throws_ok($$insert into public.discord_guild_members(discord_guild_id,discord_user_id,platform_user_id) values ('fixture-guild-a','foreign-member','00000000-0000-0000-0000-000000000002')$$, '42501', null, 'mapped user must belong to guild workspace');
 select throws_ok($$update public.discord_guild_members set platform_user_id='00000000-0000-0000-0000-000000000002' where discord_guild_id='fixture-guild-a'$$, '42501', null, 'cannot retarget mapping to a foreign workspace user');
 select lives_ok($$insert into public.discord_guild_members(discord_guild_id,discord_user_id,platform_user_id) values ('fixture-guild-a','teammate','00000000-0000-0000-0000-000000000003')$$, 'flag holder can map another member of the same workspace');
+select throws_ok($$insert into public.discord_guild_members(discord_guild_id,discord_user_id,platform_user_id) values ('fixture-guild-a','guest-target','00000000-0000-0000-0000-000000000005')$$, '42501', null, 'manager cannot map a GUEST of the workspace');
+select throws_ok($$update public.discord_guild_members set platform_user_id='00000000-0000-0000-0000-000000000005' where id='92000000-0000-4000-8000-000000000001'$$, '42501', null, 'manager cannot retarget a mapping to a GUEST');
 
 -- Integration rows: a flag holder in A cannot see, change or rebind B.
 select is((select count(*) from public.discord_integrations where discord_guild_id = 'fixture-guild-a'), 1::bigint, 'flag holder reads own workspace integration');
@@ -104,13 +106,15 @@ select throws_ok($$insert into public.discord_guild_members(discord_guild_id,dis
 select is((select count(*) from public.discord_integrations where discord_guild_id in ('fixture-guild-a','fixture-guild-b')), 0::bigint, 'anonymous reads see no integrations');
 reset role;
 
--- service_role (bot and agent runtime) keeps full access but cannot rebind.
+-- service_role (bot and agent runtime) keeps full access but cannot rebind or
+-- map a guild that has no integration.
 select set_config('request.jwt.claims', '{"role":"service_role"}', true);
 set local role service_role;
 select is((select count(*) from public.discord_integrations where discord_guild_id in ('fixture-guild-a','fixture-guild-b')), 2::bigint, 'service role reads every integration');
 select is((select count(*) from public.discord_guild_members where discord_guild_id = 'fixture-guild-a'), 3::bigint, 'service role reads every mapping');
 select lives_ok($$insert into public.discord_guild_members(discord_guild_id,discord_user_id,platform_user_id) values ('fixture-guild-b','service-mapped','00000000-0000-0000-0000-000000000002')$$, 'service role can write mappings');
 select throws_ok($$update public.discord_integrations set ws_id='91000000-0000-4000-8000-000000000003' where discord_guild_id='fixture-guild-b'$$, '42501', 'Discord integration guild, workspace and creator are immutable', 'service role cannot rebind an integration');
+select throws_ok($$insert into public.discord_guild_members(discord_guild_id,discord_user_id,platform_user_id) values ('fixture-guild-unconnected','service-orphan','00000000-0000-0000-0000-000000000002')$$, '23503', null, 'mapping a guild without an integration is rejected');
 reset role;
 
 -- Conditional unique index: built when no duplicates exist, skipped otherwise.
@@ -125,8 +129,21 @@ delete from public.discord_guild_members where id = '92000000-0000-4000-8000-000
 select is(public.ensure_discord_guild_member_identity_index(), true, 'index helper builds once duplicates are resolved');
 select ok(exists(select 1 from pg_indexes where schemaname = 'public' and indexname = 'discord_guild_members_guild_discord_user_key'), 'index exists after rerun');
 
--- Deleting a workspace cascades to its integration and then its mappings.
-select lives_ok($$delete from public.workspaces where id = '91000000-0000-4000-8000-000000000002'$$, 'workspace with an integration can be deleted');
-select is((select count(*) from public.discord_guild_members where discord_guild_id = 'fixture-guild-b'), 0::bigint, 'workspace deletion removes the guild mappings');
+-- Deleting a workspace cascades to its integration and then its mappings. A
+-- dedicated non-personal workspace with no other fixtures keeps unrelated
+-- delete guards (personal workspaces, billing, task data) out of this check.
+-- It deletes as the migration role, the cascade the app's workspace delete
+-- triggers once the workspaces RLS check passes.
+insert into public.workspaces(id, name, creator_id, personal) values
+ ('91000000-0000-4000-8000-000000000006', 'Guild boundary F', '00000000-0000-0000-0000-000000000002', false);
+insert into public.discord_integrations(discord_guild_id, ws_id, creator_id) values
+ ('fixture-guild-f', '91000000-0000-4000-8000-000000000006', '00000000-0000-0000-0000-000000000002');
+insert into public.discord_guild_members(discord_guild_id, discord_user_id, platform_user_id) values
+ ('fixture-guild-f', 'discord-f', '00000000-0000-0000-0000-000000000002');
+select is((select count(*) from public.discord_guild_members where discord_guild_id = 'fixture-guild-f'), 1::bigint, 'workspace cascade fixture starts with a mapping');
+select lives_ok($$delete from public.workspaces where id = '91000000-0000-4000-8000-000000000006'$$, 'workspace with an integration can be deleted');
+select is((select count(*) from public.discord_integrations where discord_guild_id = 'fixture-guild-f'), 0::bigint, 'workspace deletion removes the integration');
+select is((select count(*) from public.discord_guild_members where discord_guild_id = 'fixture-guild-f'), 0::bigint, 'workspace deletion removes the guild mappings');
+select ok(exists(select 1 from pg_constraint where conrelid = 'public.discord_guild_members'::regclass and conname = 'discord_guild_members_discord_guild_id_fkey' and contype = 'f' and confrelid = 'public.discord_integrations'::regclass and confdeltype = 'c'), 'mapping guild FK cascades from the integration');
 select * from finish();
 rollback;

@@ -1,10 +1,16 @@
 begin;
 
+-- Fail fast instead of queueing behind a long transaction while holding these
+-- tables' policy and constraint locks; the bot and agent runtime read both.
+set local lock_timeout = '5s';
+
 -- Mapping reads keep the bound-workspace scope. Writes additionally require
 -- manage_workspace_integrations in that workspace: the platform flag alone let
 -- any MEMBER map a coworker, including an admin, to an arbitrary Discord id and
--- impersonate them through the bot and the AI agent runtime. The integration
--- subqueries run under that table's own policy, so the flag is still required.
+-- impersonate them through the bot and the AI agent runtime. The mapped user
+-- must be a MEMBER (not a GUEST) of the bound workspace, matching the members
+-- route. The integration subqueries run under that table's own policy, so the
+-- flag is still required.
 drop policy "Allow users who have access to workspace"
 on public.discord_guild_members;
 
@@ -37,6 +43,7 @@ with check (
     where di.discord_guild_id = discord_guild_members.discord_guild_id
       and actor.user_id = (select auth.uid())
       and mapped.user_id = discord_guild_members.platform_user_id
+      and mapped.type = 'MEMBER'
       and public.has_workspace_permission(
         di.ws_id, (select auth.uid()), 'manage_workspace_integrations'
       ) is true
@@ -69,6 +76,7 @@ with check (
     where di.discord_guild_id = discord_guild_members.discord_guild_id
       and actor.user_id = (select auth.uid())
       and mapped.user_id = discord_guild_members.platform_user_id
+      and mapped.type = 'MEMBER'
       and public.has_workspace_permission(
         di.ws_id, (select auth.uid()), 'manage_workspace_integrations'
       ) is true
@@ -211,30 +219,23 @@ on public.discord_integrations
 for each row execute function public.guard_discord_integration_binding();
 
 -- Disconnecting a guild removes its mappings in the same transaction, so a
--- later connect from another workspace never inherits them. This runs for
--- direct deletes and for the workspace ON DELETE CASCADE. RLS cannot do this
--- from the route: once the integration row is gone, the mapping policies match
--- nothing. It covers future disconnects only; mappings already left behind by
--- earlier disconnects are a separate, approved data cleanup.
-create function public.delete_discord_guild_members_on_disconnect()
-returns trigger
-language plpgsql
-security definer
-set search_path = ''
-as $$
-begin
-  delete from public.discord_guild_members
-  where discord_guild_id = old.discord_guild_id;
-  return old;
-end;
-$$;
-
-revoke all on function public.delete_discord_guild_members_on_disconnect()
-from public, anon, authenticated;
-
-create trigger delete_discord_guild_members_on_disconnect
-after delete on public.discord_integrations
-for each row execute function public.delete_discord_guild_members_on_disconnect();
+-- later connect from another workspace never inherits them. The cascade covers
+-- direct deletes and the workspace ON DELETE CASCADE, and bypasses RLS, which
+-- matches nothing once the integration row is gone. Unlike an AFTER DELETE
+-- trigger, the FK also closes the disconnect race: a concurrent mapping insert
+-- (the bot and agent runtime write as service_role) key-share locks the
+-- integration row, so it either commits first and is cascaded or fails with
+-- 23503 after the disconnect commits. discord_integrations_discord_guild_id_key
+-- is the referenced unique constraint, and the guild id is immutable above.
+-- NOT VALID: new and updated mappings must reference a connected guild, but
+-- mappings already orphaned by earlier disconnects are tolerated. VALIDATE
+-- CONSTRAINT is a later step, after a Mastermind-approved orphan cleanup.
+alter table public.discord_guild_members
+add constraint discord_guild_members_discord_guild_id_fkey
+foreign key (discord_guild_id)
+references public.discord_integrations (discord_guild_id)
+on delete cascade
+not valid;
 
 -- One mapping per Discord user per guild; the runtime resolves it with
 -- maybeSingle. Existing duplicates must not fail this migration, so the index
