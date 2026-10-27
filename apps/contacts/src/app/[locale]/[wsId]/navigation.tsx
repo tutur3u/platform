@@ -150,6 +150,7 @@ export async function getNavigationLinks({
         `/${personalOrWsId}/users/topic-announcements/contacts`,
         `/${personalOrWsId}/users/topic-announcements/delivery`,
         `/${personalOrWsId}/users/topic-announcements/import`,
+        `/${personalOrWsId}/users/topic-announcements/schedule`,
         `/${personalOrWsId}/users/topic-announcements/templates`,
       ],
       icon: <Megaphone className="h-4 w-4" />,

@@ -234,6 +234,83 @@ Topic Announcements live under Users and are gated by the workspace secret `ENAB
 - User group and course storage uploads are quota-sensitive and must use the server-mediated `uploadWorkspaceUserGroupStorageFile` / group storage multipart route. Do not mint signed upload URLs from this route because the app server cannot verify the final object size after a direct provider upload.
 - Attachment rows keep workspace, announcement, storage path, content type, and size metadata. Email delivery downloads the stored files and switches to raw MIME only when attachments exist; regular no-attachment messages should keep the standard SES `SendEmailCommand` path.
 
+### Monthly GVNN schedule
+
+Supervisors enter each month's foreign-teacher (GVNN) schedule directly in the
+system; there is no spreadsheet import. Scope: the contacts app
+**Topic announcements > GVNN schedule** tab and
+`GET`/`PUT /api/v1/workspaces/{wsId}/topic-announcements/schedule` plus
+`POST .../schedule/clone`. **Gate:** supervisor scope (`manage_users`) and only
+with `ENABLE_TOPIC_TEACHER_ASSIGNMENTS=true`; with it off the tab is hidden and
+every schedule route returns `404`, so live workspaces keep the pre-feature
+module unchanged.
+
+- **Session.** A session is a topic-less draft announcement with
+  `source_type = 'schedule'`: class (`group_id` and its name), date, start and
+  end time, room, campus, the GVCN as `teacher_workspace_user_id`, and the GVNN
+  as its one recipient contact. It also stores the 24-hour `send_due_at`
+  deadline described below.
+- **Duration.** A GVNN period defaults to **30 minutes** (end = start + 30); the
+  supervisor can change it per session (5 to 240 minutes, ending before
+  midnight). The duration is stored per session through its end time.
+- **GVCN (homeroom teacher).** Assigned by the server, never by the client: the
+  class's `TEACHER` member in `workspace_user_groups_users`. With several
+  teachers the earliest assigned (membership `created_at`, then id) is used;
+  every teacher of the class still has topic access through the group rule.
+  A class with no teacher is saved without a GVCN and shown as "No homeroom
+  teacher". Editing a session within the same class keeps its assigned
+  teacher; moving it to another class assigns that class's GVCN.
+- **GVNN.** Data only, no role: any active contact tagged `GVNN`
+  (case-insensitive) is offered in the picker. Sessions can be saved without a
+  GVNN and show "Needs GVNN"; the editor shows a count badge, a filter and a
+  per-class list with jump-to-session for the month. Classes later marked as
+  not needing a GVNN are excluded from that list.
+- **Clone from the previous month.** Each session maps to the **same nth
+  weekday** of the target month (the 2nd Tuesday stays the 2nd Tuesday), which
+  keeps a class's two or three monthly GVNN sessions in the same weeks; filling
+  every matching weekday would give four or five. A 5th weekday the target
+  month lacks is shown as "not placed" and skipped, never moved. There is no
+  holiday calendar. The clone copies class, time, duration, room, campus and
+  GVNN (if the contact is still active), re-resolves the GVCN, and never copies
+  topics or attachments. The supervisor sees a preview before committing.
+- **Idempotency.** A class cannot have two sessions with the same date and
+  start time. Re-cloning or committing a stale preview skips slots that already
+  hold a session. A slot whose session was removed this month is skipped too
+  ("removed earlier") unless the supervisor chooses to re-add removed sessions.
+  Retrying a save never duplicates: a new row whose slot already holds an
+  identical session is reported as already saved, while a different session in
+  that slot is a per-row conflict; removing an already removed session
+  succeeds. Two clones committed at exactly the same moment are not protected
+  by a database unique key.
+- **Edit and remove.** Start time, minutes, class, GVNN, room and campus are
+  edited inline; "Move to date..." in a row's menu moves a session within the
+  month. Saves are validated as a whole before anything is written, and each
+  write re-checks that its session is still a draft, failed or skipped one: a
+  session that was queued or started sending in the meantime is left unchanged
+  and the save returns `409` with the sessions that did save, after which the
+  editor reloads the month. Removing a session cancels it
+  (`status = 'cancelled'`) like any announcement, keeping its topic and audit
+  trail. Queued, sending and sent sessions are read-only and labelled as such.
+- **Unsaved changes.** Changing month, following an in-app link, browser Back or
+  Forward, and closing or reloading the tab all ask before discarding edits.
+  Problems on a row are shown once it has been edited or a save was attempted.
+- **Import.** The CSV import is unchanged by this feature; the schedule editor
+  does not use it.
+
+Regression coverage: `packages/utils/src/topic-schedule.test.ts` (nth-weekday
+mapping across month lengths, the 5th-weekday edge, week boundaries, no holiday
+skipping, GVCN choice), `apps/web/src/lib/topic-schedule/clone-plan.test.ts`
+(in-run dedupe, removed classes, removed slots),
+`apps/web/src/lib/topic-schedule/schedule-routes.test.ts` (GVCN auto-assign,
+idempotent save and re-clone, cross-workspace denial, locking),
+`apps/web/src/lib/topic-schedule/schedule-safety.test.ts` (flag off: no
+routes and nothing written; edit and delete locks including mid-save
+conflicts, retried removal, slot conflicts, archived classes and GVNN, same
+class teacher kept, clone revival of removed sessions),
+`apps/contacts/src/app/[locale]/[wsId]/users/topic-announcements/schedule/schedule-draft.test.ts`
+and `schedule-month-editor.test.tsx` (save payload, validation shown after
+touch, missing-GVNN reminder, Back guard, delivery-state labels).
+
 ### Teacher-assigned topics
 
 Supervisors can create a month of sessions before topics exist, assign each
@@ -327,7 +404,8 @@ and the flag-off case in `send-admission.test.ts`.
   rejected with 400 instead of relying on the trigger. A blank topic outside a
   draft returns `TOPIC_REQUIRED` from update, schedule, and send.
 - **Deadline on every write path.** Create, update (when the date or start time
-  changes), and the schedule import store `send_due_at` through
+  changes), the import, and the GVNN schedule editor and clone store
+  `send_due_at` through
   `@tuturuuu/utils/topic-announcement-deadline`, using the workspace's fixed
   calendar timezone. Without a fixed timezone the deadline stays empty.
   `getTopicAnnouncementDeliveryState` derives Sent, Late, and Not sent.
@@ -353,8 +431,8 @@ and the flag-off case in `send-admission.test.ts`.
   attached, so a retried "Save & send" never attaches or emails a file twice.
 - **Teacher picker.** The teacher-in-charge picker searches workspace users on
   the server (name or email) instead of a fixed first page, so any user in a
-  large workspace can be assigned. The schedule import resolves teacher names
-  with the same search.
+  large workspace can be assigned. The GVNN schedule does not use the picker:
+  it assigns the class's GVCN automatically.
 - **Reassignment notifies.** When a supervisor changes `teacherWorkspaceUserId`
   through the update route, the new teacher gets a `topic_assigned`
   notification (a notify failure does not undo the change).
