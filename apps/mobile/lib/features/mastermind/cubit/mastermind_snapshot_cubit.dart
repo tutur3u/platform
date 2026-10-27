@@ -42,10 +42,22 @@ final class MastermindSnapshotCubit extends Cubit<MastermindSnapshotState> {
     return refresh();
   }
 
-  Future<void> refresh() {
+  Future<void> refresh() => _refresh(conditional: true);
+
+  /// Adopts a fresh snapshot with no `If-None-Match`, for when the held export
+  /// no longer matches what the events route knows (409 `cursor_ahead`, or 404
+  /// for a digest the pointer moved past). The cursor then restarts from the
+  /// fresh snapshot's `latest_seq`.
+  Future<void> recoverFromEvents(EventsFetchUnavailable failure) =>
+      failure.needsResync ||
+          failure.kind == SnapshotUnavailableKind.digestNotFound
+      ? _refresh(conditional: false)
+      : Future<void>.value();
+
+  Future<void> _refresh({required bool conditional}) {
     if (_pending != null) return _pending!;
     final generation = _generation;
-    final future = _load(generation);
+    final future = _load(generation, conditional: conditional);
     _pending = future;
     return future.whenComplete(() {
       if (identical(_pending, future)) _pending = null;
@@ -60,7 +72,7 @@ final class MastermindSnapshotCubit extends Cubit<MastermindSnapshotState> {
     return future;
   }
 
-  Future<void> _load(int generation) async {
+  Future<void> _load(int generation, {required bool conditional}) async {
     if (!_source.isConfigured) {
       emit(const MastermindSnapshotNotConfigured());
       return;
@@ -85,6 +97,9 @@ final class MastermindSnapshotCubit extends Cubit<MastermindSnapshotState> {
               receivedAt: cached.receivedAt,
             );
             emit(previous);
+          } else {
+            // A cache from an older schema (or damaged) is never trusted.
+            await _storeOperation(_store.clear);
           }
         }
       } on Object {
@@ -95,25 +110,23 @@ final class MastermindSnapshotCubit extends Cubit<MastermindSnapshotState> {
     try {
       if (!_current(generation)) return;
       fetched = await _source.fetchSnapshot(
-        ifNoneMatch: previous == null ? null : '"${previous.digest}"',
+        ifNoneMatch: previous == null || !conditional
+            ? null
+            : '"${previous.digest}"',
       );
     } on Object {
       if (!_current(generation)) return;
-      emit(
-        previous?.withFailure(
-              const UnavailableRefresh(SnapshotUnavailableKind.unavailable),
-            ) ??
-            const MastermindSnapshotNotConfigured(),
+      await _emitUnavailable(
+        SnapshotUnavailableKind.unavailable,
+        previous,
+        generation,
       );
       return;
     }
     if (!_current(generation)) return;
     switch (fetched) {
       case SnapshotFetchUnavailable(:final kind):
-        emit(
-          previous?.withFailure(UnavailableRefresh(kind)) ??
-              const MastermindSnapshotNotConfigured(),
-        );
+        await _emitUnavailable(kind, previous, generation);
       case SnapshotFetchNotModified(:final digest, :final receivedAt):
         if (previous == null || previous.digest != digest) {
           emit(
@@ -167,6 +180,31 @@ final class MastermindSnapshotCubit extends Cubit<MastermindSnapshotState> {
               /* The accepted snapshot remains available in memory. */
             }
         }
+    }
+  }
+
+  /// 401/403 mean this device may no longer hold the data: drop it from memory
+  /// and disk. Other failures keep whatever was already accepted.
+  Future<void> _emitUnavailable(
+    SnapshotUnavailableKind kind,
+    MastermindSnapshotReady? previous,
+    int generation,
+  ) async {
+    if (kind.isAccessLost) {
+      emit(MastermindSnapshotUnavailable(kind));
+      try {
+        await _storeOperation(_store.clear);
+      } on Object {
+        /* The in-memory state is already cleared. */
+      }
+      return;
+    }
+    if (previous != null) {
+      emit(previous.withFailure(UnavailableRefresh(kind)));
+    } else if (kind == SnapshotUnavailableKind.notConfigured) {
+      emit(const MastermindSnapshotNotConfigured());
+    } else {
+      emit(MastermindSnapshotUnavailable(kind));
     }
   }
 

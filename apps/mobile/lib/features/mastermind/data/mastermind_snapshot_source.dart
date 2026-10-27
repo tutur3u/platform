@@ -2,10 +2,14 @@ import 'dart:typed_data';
 
 import 'package:mobile/features/mastermind/model/event_feed.dart';
 
-/// Inject into a future HTTP adapter; read the current session per request.
+/// Inject into the HTTP adapter; read the current session per request.
 /// Never persist or log the returned token. No publisher/static key is accepted.
 abstract interface class AccessTokenProvider {
   Future<String?> currentAccessToken();
+
+  /// One silent session refresh after a 401. Null when the session cannot be
+  /// renewed, which the adapter reports as lost access.
+  Future<String?> refreshAccessToken();
 }
 
 abstract interface class MastermindSnapshotSource {
@@ -33,6 +37,18 @@ enum SnapshotUnavailableKind {
   /// 409 `cursor_ahead`: the cursor is past the export's `latest_seq`. Adopt a
   /// fresh snapshot and restart from its cursor, as for [EventFeedResync].
   cursorAhead,
+
+  /// 401 after one silent session refresh. Access is lost; clear the cache.
+  unauthorized,
+
+  /// 403: the account is not an allowed reader. Clear the cache.
+  forbidden,
+
+  /// 404 on the snapshot route: nothing has been published yet.
+  noSnapshot;
+
+  /// The reader lost access, so cached data must not stay on the device.
+  bool get isAccessLost => this == unauthorized || this == forbidden;
 }
 
 sealed class SnapshotFetch {
@@ -102,7 +118,7 @@ final class EventsFetchUnavailable extends EventsFetch {
   bool get needsResync => kind == SnapshotUnavailableKind.cursorAhead;
 }
 
-/// Header normalization for the future adapter, without retaining raw headers.
+/// Header normalization for the HTTP adapter, without retaining raw headers.
 String? snapshotDigestFromHeaders({String? hubDigest, String? etag}) {
   final digestPattern = RegExp(r'^[a-f0-9]{64}$');
   bool valid(String value) =>
