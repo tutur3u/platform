@@ -307,3 +307,17 @@ Reservation-expiry policy is a separate, recorded DB-owner dependency:
 `20260803150000_meter_mira_live_sessions.sql`, still refunds expired reserved
 rows regardless of the reconciliation marker. This conversion adds no migration;
 the expiry fence needs a separate migration and Mastermind approval.
+
+## Execution and attachment authorization
+
+Every metered provider execution must acquire a new reservation. Repeating an
+idempotency key for a running or completed reservation returns HTTP 409 before
+provider execution, including ordinary and sponsored AI Studio requests. Clients
+must retain the original operation identity when reconciling an uncertain result.
+
+Mira and Mind attachment preparation verifies that the authenticated actor owns
+the source AI chat before listing or downloading its storage prefix. A Mind
+thread id alone grants no AI-chat attachment access. Workspace admission remains
+required by each route. Missing chats and lookup failures attach no files.
+Regression coverage lives in `metering-execution-claim.test.ts` and
+`message-file-ownership.test.ts` in `packages/ai/src`.

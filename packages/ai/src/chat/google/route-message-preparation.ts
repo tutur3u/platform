@@ -231,6 +231,7 @@ export async function prepareProcessedMessages(
   chatId: string,
   request?: Pick<Request, 'headers'>,
   options?: {
+    actorId?: string;
     attachYoutubeVideoInput?: boolean;
     excludeAudioVideoFiles?: boolean;
   }
@@ -250,7 +251,8 @@ export async function prepareProcessedMessages(
           wsId,
           chatId,
           request,
-          options?.excludeAudioVideoFiles
+          options?.excludeAudioVideoFiles,
+          options?.actorId
         )
       : modelMessages;
 
