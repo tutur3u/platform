@@ -41,6 +41,13 @@ Use the [Track route reference](/reference/repository/routes/track) to locate
 handlers, and [Data fetching](/platform/architecture/data-fetching) to extend a
 shared client contract rather than adding app-local raw browser API calls.
 
+Time-tracking bypass writers, both break-pause overloads and the workspace
+aggregate statistics RPC accept only the service role. Product routes remain
+responsible for actor, workspace and permission checks before calling them.
+Approval validates linked-session ownership, and approval/rejection side effects
+match both the request workspace and its owner. Regression evidence is in
+`apps/database/supabase/tests/time-task-rpc-scoping.sql`.
+
 ## Native Start candidate
 
 Track's retained App Router pages compile through the shared Start bridge RSC

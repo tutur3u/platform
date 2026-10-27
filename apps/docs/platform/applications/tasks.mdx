@@ -62,6 +62,16 @@ description.
 The Tasks Vercel project schedules `/api/cron/tasks/cleanup-media` at 03:17 UTC;
 the route requires `CRON_SECRET` or `VERCEL_CRON_SECRET`.
 
+## Task read RPC identity
+
+`get_user_accessible_tasks` and `get_user_tasks_with_relations` accept an
+authenticated caller's own user ID or the service role. Selecting a personal
+workspace also requires the named user's membership in that workspace, including
+for trusted service calls. This applies to Tasks, Calendar and retained Web
+planning views and AI task tools. Existing team-workspace assignment filtering
+is unchanged. `apps/database/supabase/tests/time-task-rpc-scoping.sql` covers
+self results, other users, personal workspace selection and service calls.
+
 ## Board And List Name Uniqueness
 
 - Active and archived task board names are unique per workspace using `lower(btrim(name))`; only trashed boards with `deleted_at` set release the name.
