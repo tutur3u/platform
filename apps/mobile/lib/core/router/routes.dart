@@ -49,6 +49,12 @@ abstract final class Routes {
   static const mastermindWork = '/mastermind/work';
   static const mastermindShip = '/mastermind/ship';
   static const mastermindInsights = '/mastermind/insights';
+  static const mastermindInboxItem = '/mastermind/inbox/item/:itemId';
+
+  /// Item ids are opaque snapshot ids. They are route parameters only and never
+  /// appear in an external deep link.
+  static String mastermindInboxItemPath(String itemId) =>
+      '$mastermindInbox/item/${Uri.encodeComponent(itemId)}';
   static const timer = '/timer';
   static const settings = '/settings';
   static const settingsProfile = '/settings/profile';

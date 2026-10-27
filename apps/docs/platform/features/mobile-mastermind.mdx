@@ -5,7 +5,7 @@ description: Who sees the Mastermind section in the mobile app, how it behaves b
 
 Mastermind is an internal fleet overview. The mobile section reads one
 sanitized snapshot from the Mastermind hub Worker. This page records the
-product rules of the shell entry and the Home tab; later tabs extend it.
+product rules of the shell entry, the Home tab and the Inbox; later tabs extend it.
 
 ## Who sees it
 
@@ -43,8 +43,8 @@ connectivity.
 
 Home, Inbox, Work, Ship and Insights share one mini-app shell: the top navbar
 shows the destination title and no Back button, and the floating dock owns Back.
-Only Home is implemented; the other tabs show a "coming soon" empty state behind
-the same access gate and freshness strip.
+Home and Inbox are implemented; the other tabs show a "coming soon" empty state
+behind the same access gate and freshness strip.
 
 ## Freshness strip
 
@@ -92,6 +92,70 @@ line in a trailing "Security" group with no count. They have no severity, title
 or detail anywhere, are never counted, and never reorder anything. Event
 summaries apply the same collapse.
 
+## Inbox
+
+The Inbox tab lists the open Needs-you items grouped by kind: "Decisions for
+you", "Actions", then "For your information", each with its count, in publisher
+order. Each card shows the title, the body (three lines until "More"), kind and
+product chips and the options as read-only chips; the recommended option carries
+the word "Recommended" and a star, never colour alone. A search field
+("Search Needs you") and product chips narrow the list. Pull to refresh.
+
+- **Scope:** normal Needs-you items only. The Decisions journal is a later
+  change; this tab has no segmented control until it exists.
+- **Security rows** keep the Home rule: one non-tappable line in a trailing
+  "Security" group with no count, never counted, searched or filtered, with no
+  severity, id or detail.
+- **Detail:** `/mastermind/inbox/item/:itemId` opens one item in full. The id is
+  an opaque snapshot id and only ever a route parameter; deep links carry tab
+  roots only and never ids. An id that is not an open item shows "This item is
+  no longer in Mastermind" (or "This was answered or withdrawn" when it left
+  while open) with a way back, never an error. A changed `version_hash` shows
+  "This question was updated".
+- **The "Reply on Mac" option** is a placeholder the publisher adds when an item
+  has nothing to pick. It is never offered as a choice and the app never sends
+  it.
+
+### Replies
+
+Replies are gated at runtime by `GET /v1/capabilities` (`replies`, with schema
+`1.4`), checked when an Inbox screen opens and at most every five minutes.
+Where replies are off, or the hub cannot be asked, the detail shows the options
+read-only and "Reply on your Mac"; there is no composer. The Worker owns the
+switch, so it flips without a store release.
+
+- **Contract:** `POST /v1/replies` with exactly
+  `{schema_version: "1.4", item_id, version_hash, option_index | text}`: one of
+  an option index (into the item's own `options[]`) or free text of at most 500
+  characters, counted in code points. Choosing an option clears the text and
+  typing clears the option. The text field has a placeholder and a counter. A
+  confirmation asks before anything is sent.
+- **Idempotency:** the `Idempotency-Key` is a random v4 UUID from a secure
+  generator, made once per reply and stored in the outbox before the first send.
+  Every retry reuses it, so an unknown outcome never becomes a second reply. A
+  200 replay is treated exactly like 201. One reply per question version.
+- **Offline outbox:** a reply that cannot be delivered (offline, timeout, 5xx)
+  stays queued on the device, per user, in the snapshot cache directory, and is
+  sent again when an Inbox screen opens, when the app resumes and when the device
+  comes back online. It can be retried or discarded. Entries expire after seven
+  days and are dropped when a live snapshot no longer has the item open. Logout,
+  account switch and lost access erase the outbox with the snapshot cache, behind
+  the same generation fences, so an in-flight send cannot revive it.
+- **409 `stale_item`:** the item is refreshed, the typed words are kept, and the
+  screen says "This question changed or was already answered. Review it again."
+  An option stays selected only if it is still the same option at the same
+  place. `idempotency_conflict` drops the queued entry.
+- **Other answers:** 400 (`unsafe_text` explains the text policy) and 413 keep
+  the words to edit; 429 waits out `Retry-After` and disables the retry until
+  then; 403 `replies_disabled` hides the composer and 403 `forbidden` is lost
+  access.
+- **401:** the reply stays queued. The first failure offers "Try again"; only
+  after a repeat does "Sign out and sign in again" appear, and it asks first,
+  because signing out removes every saved account on the device.
+
+Delivery status beyond "Sent · waiting for Mastermind" (the item leaving the
+next snapshot) is not polled yet.
+
 ## Regression coverage
 
 `apps/mobile/test/features/mastermind/view`: `mastermind_entry_test.dart`
@@ -104,3 +168,13 @@ logout and account-switch listener over a real `AuthCubit`), `mastermind_freshne
 `mastermind_home_page_test.dart` (ordering, security redaction, dock
 clearance, tab links) and `home_model_test.dart`. The registered-destination
 smoke test builds every `/mastermind/**` route through the production router.
+
+`apps/mobile/test/features/mastermind/replies` covers the reply path:
+`reply_models_test.dart` (key format, exact body, strict stored form, limits),
+`reply_outbox_store_test.dart` (per-user persistence, corruption, clear),
+`hub_reply_transport_test.dart` (headers, every status, the 401 retry with the
+same key), `mastermind_replies_cubit_test.dart` (capability gate, persist before
+send, idempotent retry, 409/400/401/403/413/429, logout fencing, snapshot sync)
+and `mastermind_runtime_replies_test.dart` (logout, switch and lost access clear
+the outbox). The screens are in `view/mastermind_inbox_page_test.dart` and
+`view/mastermind_item_page_test.dart`.

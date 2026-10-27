@@ -12167,6 +12167,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindAreaUx => 'Trải nghiệm';
 
   @override
+  String get mastermindBackToInbox => 'Về Hộp thư';
+
+  @override
   String get mastermindBacklogEmptyTitle => 'Không còn việc tồn';
 
   @override
@@ -12471,7 +12474,31 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindFreshFresh => 'mới';
 
   @override
+  String get mastermindGroupActions => 'Hành động';
+
+  @override
+  String get mastermindGroupDecisions => 'Quyết định dành cho bạn';
+
+  @override
+  String get mastermindGroupFyi => 'Để bạn nắm thông tin';
+
+  @override
+  String get mastermindInboxNoMatches => 'Không có mục phù hợp';
+
+  @override
+  String get mastermindInboxSearchPlaceholder => 'Tìm trong Cần bạn';
+
+  @override
   String get mastermindInsightsLabel => 'Chỉ số';
+
+  @override
+  String get mastermindItemAnsweredTitle => 'Mục này đã được trả lời hoặc rút lại';
+
+  @override
+  String get mastermindItemGoneTitle => 'Mục này không còn trong Mastermind';
+
+  @override
+  String get mastermindItemUpdated => 'Câu hỏi này đã được cập nhật';
 
   @override
   String get mastermindKindAction => 'Hành động';
@@ -12547,6 +12574,9 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String get mastermindLess => 'Thu gọn';
+
+  @override
   String mastermindLiveAgo(String age) {
     return 'Đang hoạt động $age';
   }
@@ -12565,6 +12595,9 @@ class AppLocalizationsVi extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get mastermindMore => 'Xem thêm';
 
   @override
   String get mastermindNeedsAttention => 'Cần chú ý';
@@ -12616,6 +12649,11 @@ class AppLocalizationsVi extends AppLocalizations {
   @override
   String mastermindOfflineShowing(String time) {
     return 'Ngoại tuyến · đang hiển thị $time';
+  }
+
+  @override
+  String mastermindOptionRecommended(String option) {
+    return '$option · Đề xuất';
   }
 
   @override
@@ -12673,6 +12711,107 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindReleasesTitle => 'Bản phát hành';
+
+  @override
+  String mastermindRepliesWaiting(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count câu trả lời đang chờ gửi',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mastermindReplyCheckFailed => 'Không kiểm tra được việc trả lời có khả dụng không.';
+
+  @override
+  String get mastermindReplyChecking => 'Đang kiểm tra xem có thể trả lời không…';
+
+  @override
+  String get mastermindReplyChooseOrWrite => 'Chọn một phương án hoặc tự viết câu trả lời.';
+
+  @override
+  String mastermindReplyConfirmMessage(String title, String reply) {
+    return 'Trả lời cho: $title\nCâu trả lời của bạn: $reply';
+  }
+
+  @override
+  String get mastermindReplyConfirmTitle => 'Gửi câu trả lời này?';
+
+  @override
+  String get mastermindReplyConflict => 'Câu trả lời này đã được dùng cho nội dung khác. Hãy xem lại và gửi câu mới.';
+
+  @override
+  String mastermindReplyCounter(int count, int limit) {
+    return '$count/$limit';
+  }
+
+  @override
+  String get mastermindReplyDiscard => 'Bỏ';
+
+  @override
+  String get mastermindReplyForbidden => 'Tài khoản này không thể gửi câu trả lời.';
+
+  @override
+  String get mastermindReplyNotSaved => 'Không lưu được câu trả lời trên thiết bị nên chưa gửi. Hãy thử lại.';
+
+  @override
+  String get mastermindReplyOnMac => 'Trả lời trên máy Mac';
+
+  @override
+  String get mastermindReplyOptionsTitle => 'Câu trả lời của bạn';
+
+  @override
+  String get mastermindReplyQueued => 'Đã lưu trên thiết bị. Sẽ gửi khi kết nối được với Mastermind.';
+
+  @override
+  String mastermindReplyRateLimited(int minutes) {
+    String _temp0 = intl.Intl.pluralLogic(
+      minutes,
+      locale: localeName,
+      other: 'Gửi quá nhiều câu trả lời. Hãy thử lại sau $minutes phút.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mastermindReplyRejected => 'Mastermind không thể nhận câu trả lời này. Hãy kiểm tra và thử lại.';
+
+  @override
+  String get mastermindReplySend => 'Gửi trả lời';
+
+  @override
+  String get mastermindReplySending => 'Đang gửi…';
+
+  @override
+  String get mastermindReplySent => 'Đã gửi · đang chờ Mastermind';
+
+  @override
+  String get mastermindReplyStale => 'Câu hỏi đã thay đổi hoặc đã được trả lời. Hãy xem lại.';
+
+  @override
+  String get mastermindReplyTextPlaceholder => 'Viết câu trả lời cho Mastermind';
+
+  @override
+  String get mastermindReplyTooLarge => 'Câu trả lời quá dài. Hãy rút gọn và thử lại.';
+
+  @override
+  String get mastermindReplyUnauthorized => 'Chúng tôi không xác nhận được phiên đăng nhập của bạn. Hãy thử lại.';
+
+  @override
+  String get mastermindReplyUnauthorizedAgain => 'Phiên đăng nhập của bạn không truy cập được Mastermind. Hãy thử lại hoặc đăng nhập lại.';
+
+  @override
+  String get mastermindReplyUnsafeText => 'Không thể gửi nội dung này. Hãy dùng chữ thường, không kèm liên kết, số dài hay thông tin cá nhân.';
+
+  @override
+  String get mastermindReplyUseRecommended => 'Dùng phương án đề xuất';
+
+  @override
+  String mastermindReplyYourReply(String reply) {
+    return 'Câu trả lời của bạn: $reply';
+  }
 
   @override
   String get mastermindReservePacing => 'Nhịp dự trữ (quy tắc biểu đồ)';

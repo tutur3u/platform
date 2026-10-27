@@ -11,6 +11,7 @@ import 'package:mobile/features/mastermind/cubit/mastermind_snapshot_cubit.dart'
 import 'package:mobile/features/mastermind/data/mastermind_snapshot_source.dart';
 import 'package:mobile/features/mastermind/data/mastermind_snapshot_store.dart';
 import 'package:mobile/features/mastermind/parse/snapshot_parser.dart';
+import 'package:mobile/features/mastermind/replies/mastermind_replies_cubit.dart';
 import 'package:mobile/features/mastermind/runtime/mastermind_runtime.dart';
 import 'package:mobile/features/workspace/workspace_presentation.dart';
 import 'package:mocktail/mocktail.dart';
@@ -80,8 +81,10 @@ final class _ManualTimer implements Timer {
 /// The real cubits, scheduler and runtime over a fake hub, with no real
 /// timers, isolates or disk.
 final class MastermindViewHarness {
-  MastermindViewHarness({FakeHubSource? source})
-    : source = source ?? FakeHubSource() {
+  MastermindViewHarness({
+    FakeHubSource? source,
+    MastermindRepliesCubit? replies,
+  }) : source = source ?? FakeHubSource() {
     access = MastermindAccessCubit(
       repository: permissions,
       source: this.source,
@@ -100,6 +103,7 @@ final class MastermindViewHarness {
       access: access,
       snapshot: snapshot,
       scheduler: scheduler,
+      replies: replies,
     );
   }
 
