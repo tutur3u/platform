@@ -415,7 +415,7 @@ jobs:
             --file-reporter=json:configured-mastermind-fixture.json
           jq -s -e '
             [.[] | select(.type == "testDone" and .hidden == false)] |
-            length == 8 and all(.[]; .result == "success" and .skipped == false)
+            length == 10 and all(.[]; .result == "success" and .skipped == false)
           ' configured-mastermind-fixture.json
 
       - name: Verify Agenda wall time on a non-UTC device
