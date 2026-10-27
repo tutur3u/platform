@@ -1,4 +1,4 @@
--- Rollback for 20261027150800_workspace_user_access.sql.
+-- Rollback for 20261027151540_workspace_user_access.sql.
 -- Restores the previous policies and authenticated-only access the apps use:
 -- SELECT on workspace_users, EXECUTE on the four helpers and SELECT on the six
 -- views. anon/PUBLIC stay revoked, and TRUNCATE/REFERENCES/TRIGGER plus view
