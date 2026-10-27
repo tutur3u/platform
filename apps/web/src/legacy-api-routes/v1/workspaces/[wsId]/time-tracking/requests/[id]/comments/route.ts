@@ -3,7 +3,10 @@ import {
   MAX_LONG_TEXT_LENGTH,
   resolveWorkspaceId,
 } from '@tuturuuu/utils/constants';
-import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -63,7 +66,7 @@ export async function POST(
     const { data: requestExists, error: requestError } = await sbAdmin
       .schema('private')
       .from('time_tracking_requests')
-      .select('id')
+      .select('id, user_id')
       .eq('id', requestId)
       .eq('workspace_id', resolvedWorkspaceId)
       .single();
@@ -77,6 +80,16 @@ export async function POST(
 
     if (!requestExists) {
       return NextResponse.json({ error: 'Request not found' }, { status: 404 });
+    }
+
+    if (requestExists.user_id !== user.id) {
+      const permissions = await getPermissions({
+        user,
+        wsId: resolvedWorkspaceId,
+      });
+      if (!permissions?.containsPermission('manage_time_tracking_requests')) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
     }
 
     // Create comment
@@ -172,7 +185,7 @@ export async function GET(
     const { data: requestExists, error: requestError } = await sbAdmin
       .schema('private')
       .from('time_tracking_requests')
-      .select('id')
+      .select('id, user_id')
       .eq('id', requestId)
       .eq('workspace_id', resolvedWorkspaceId)
       .single();
@@ -186,6 +199,16 @@ export async function GET(
 
     if (!requestExists) {
       return NextResponse.json({ error: 'Request not found' }, { status: 404 });
+    }
+
+    if (requestExists.user_id !== user.id) {
+      const permissions = await getPermissions({
+        user,
+        wsId: resolvedWorkspaceId,
+      });
+      if (!permissions?.containsPermission('manage_time_tracking_requests')) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
     }
 
     // Fetch comments

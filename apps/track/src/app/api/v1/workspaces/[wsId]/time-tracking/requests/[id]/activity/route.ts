@@ -1,6 +1,9 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { MAX_SHORT_TEXT_LENGTH } from '@tuturuuu/utils/constants';
-import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
@@ -58,13 +61,20 @@ export async function GET(
   const { data: request, error: requestError } = await sbAdmin
     .schema('private')
     .from('time_tracking_requests')
-    .select('id')
+    .select('id, user_id')
     .eq('id', requestId)
     .eq('workspace_id', wsId)
     .single();
 
   if (requestError || !request) {
     return NextResponse.json({ error: 'Request not found' }, { status: 404 });
+  }
+
+  if (request.user_id !== user.id) {
+    const permissions = await getPermissions({ user, wsId });
+    if (!permissions?.containsPermission('manage_time_tracking_requests')) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
   }
 
   // Parse pagination parameters

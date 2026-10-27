@@ -1,5 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { MAX_NAME_LENGTH } from '@tuturuuu/utils/constants';
+import { validateTimeTrackingReference } from '@tuturuuu/utils/time-tracking-reference';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -223,6 +224,18 @@ export async function POST(
         { status: 404 }
       );
     }
+
+    const referenceError = await validateTimeTrackingReference({
+      client: sbAdmin,
+      id: break_type_id,
+      table: 'workspace_break_types',
+      wsId: normalizedWsId,
+    });
+    if (referenceError)
+      return NextResponse.json(
+        { error: referenceError.message },
+        { status: referenceError.status }
+      );
 
     // Create the break record
     const { data: breakRecord, error: breakError } = await sbAdmin

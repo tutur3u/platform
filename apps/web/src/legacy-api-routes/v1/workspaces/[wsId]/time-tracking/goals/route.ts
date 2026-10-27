@@ -6,6 +6,7 @@ import {
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
+import { resolveTimeTrackingReadUser } from '@/lib/time-tracking/cross-user-read-authorization';
 
 const GoalBodySchema = z.object({
   categoryId: z.string().nullable().optional(),
@@ -54,30 +55,14 @@ export async function GET(
 
     const url = new URL(request.url);
     const targetUserId = url.searchParams.get('userId');
-    const queryUserId = targetUserId || user.id;
-
-    // If targeting another user, verify they're in the same workspace
-    if (targetUserId && targetUserId !== user.id) {
-      const targetMembership = await verifyWorkspaceMembershipType({
-        wsId: normalizedWsId,
-        userId: targetUserId,
-        supabase,
-      });
-
-      if (targetMembership.error === 'membership_lookup_failed') {
-        return NextResponse.json(
-          { error: 'Failed to verify target user workspace membership' },
-          { status: 500 }
-        );
-      }
-
-      if (!targetMembership.ok) {
-        return NextResponse.json(
-          { error: 'Target user not found in workspace' },
-          { status: 404 }
-        );
-      }
-    }
+    const readUser = await resolveTimeTrackingReadUser({
+      supabase,
+      targetUserId,
+      user,
+      wsId: normalizedWsId,
+    });
+    if (!readUser.ok) return readUser.response;
+    const queryUserId = readUser.userId;
 
     // Fetch goals with category information
     const { data, error } = await sbAdmin

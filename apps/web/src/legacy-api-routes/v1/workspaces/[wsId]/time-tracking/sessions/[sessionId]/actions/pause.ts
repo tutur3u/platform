@@ -1,4 +1,5 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase';
+import { validateTimeTrackingReference } from '@tuturuuu/utils/time-tracking-reference';
 import { NextResponse } from 'next/server';
 
 import type { PauseActionBody, SessionRecord } from '../schemas';
@@ -22,6 +23,18 @@ export async function handlePauseAction({
   requestBody: PauseActionBody;
 }): Promise<NextResponse> {
   const { breakTypeId, breakTypeName, pendingApproval } = requestBody;
+  const referenceError = await validateTimeTrackingReference({
+    client: sbAdmin,
+    id: breakTypeId,
+    table: 'workspace_break_types',
+    wsId: normalizedWsId,
+  });
+  if (referenceError)
+    return NextResponse.json(
+      { error: referenceError.message },
+      { status: referenceError.status }
+    );
+
   const isBreakPause = breakTypeId || breakTypeName;
 
   if (!isBreakPause && !canBypass) {
