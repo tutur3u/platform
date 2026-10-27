@@ -38,6 +38,55 @@ export async function PATCH(req: Request, { params }: Params) {
   }
 
   const sbAdmin = await createAdminClient();
+  const { data: group, error: groupError } = await sbAdmin
+    .from('workspace_user_groups')
+    .select('id')
+    .eq('id', groupId)
+    .eq('ws_id', permissions.wsId)
+    .maybeSingle();
+  if (groupError) {
+    console.error('Error checking user group:', groupError);
+    return NextResponse.json(
+      { message: 'Error checking user group' },
+      { status: 500 }
+    );
+  }
+  if (!group) {
+    return NextResponse.json(
+      { message: 'User group not found' },
+      { status: 404 }
+    );
+  }
+  const [warehouse, unit] = await Promise.all([
+    sbAdmin
+      .from('inventory_warehouses')
+      .select('id')
+      .eq('id', body.warehouseId)
+      .eq('ws_id', permissions.wsId)
+      .maybeSingle(),
+    sbAdmin
+      .from('inventory_units')
+      .select('id')
+      .eq('id', body.unitId)
+      .eq('ws_id', permissions.wsId)
+      .maybeSingle(),
+  ]);
+  if (warehouse.error || unit.error) {
+    console.error(
+      'Error checking inventory references:',
+      warehouse.error || unit.error
+    );
+    return NextResponse.json(
+      { message: 'Error checking inventory references' },
+      { status: 500 }
+    );
+  }
+  if (!warehouse.data || !unit.data) {
+    return NextResponse.json(
+      { message: 'Inventory reference not found' },
+      { status: 404 }
+    );
+  }
   const { error } = await sbAdmin
     .from('user_group_linked_products')
     .update({
@@ -74,6 +123,25 @@ export async function DELETE(req: Request, { params }: Params) {
   }
 
   const sbAdmin = await createAdminClient();
+  const { data: group, error: groupError } = await sbAdmin
+    .from('workspace_user_groups')
+    .select('id')
+    .eq('id', groupId)
+    .eq('ws_id', permissions.wsId)
+    .maybeSingle();
+  if (groupError) {
+    console.error('Error checking user group:', groupError);
+    return NextResponse.json(
+      { message: 'Error checking user group' },
+      { status: 500 }
+    );
+  }
+  if (!group) {
+    return NextResponse.json(
+      { message: 'User group not found' },
+      { status: 404 }
+    );
+  }
   const { error } = await sbAdmin
     .from('user_group_linked_products')
     .delete()
