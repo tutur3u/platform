@@ -2,7 +2,10 @@
 
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceProductTier } from '@tuturuuu/types/db';
-import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import {
+  ROOT_WORKSPACE_ID,
+  resolveWorkspaceId,
+} from '@tuturuuu/utils/constants';
 import { authorizeInfrastructureAdminRequest } from '@/lib/infrastructure-admin-access';
 
 function parseRequiredText(formData: FormData, fieldName: string) {
@@ -64,7 +67,8 @@ export async function addPlatformEntityCreationLimitTable(
   wsId: string,
   formData: FormData
 ): Promise<{ status: 'table-added' }> {
-  if (wsId !== ROOT_WORKSPACE_ID) throw new Error('Forbidden');
+  if (resolveWorkspaceId(wsId) !== ROOT_WORKSPACE_ID)
+    throw new Error('Forbidden');
   const authorization = await authorizeInfrastructureAdminRequest(
     'manage_workspace_roles'
   );
@@ -98,7 +102,8 @@ export async function updatePlatformEntityCreationLimitMetadata(
   targetTable: string,
   formData: FormData
 ): Promise<{ status: 'metadata-saved' }> {
-  if (wsId !== ROOT_WORKSPACE_ID) throw new Error('Forbidden');
+  if (resolveWorkspaceId(wsId) !== ROOT_WORKSPACE_ID)
+    throw new Error('Forbidden');
   const authorization = await authorizeInfrastructureAdminRequest(
     'manage_workspace_roles'
   );
@@ -132,7 +137,8 @@ export async function updatePlatformEntityCreationLimitTier(
   tier: WorkspaceProductTier,
   formData: FormData
 ): Promise<{ status: 'tier-saved' }> {
-  if (wsId !== ROOT_WORKSPACE_ID) throw new Error('Forbidden');
+  if (resolveWorkspaceId(wsId) !== ROOT_WORKSPACE_ID)
+    throw new Error('Forbidden');
   const authorization = await authorizeInfrastructureAdminRequest(
     'manage_workspace_roles'
   );
@@ -168,7 +174,8 @@ export async function reattachPlatformEntityCreationLimitTrigger(
   wsId: string,
   targetTable: string
 ): Promise<{ status: 'trigger-reattached' }> {
-  if (wsId !== ROOT_WORKSPACE_ID) throw new Error('Forbidden');
+  if (resolveWorkspaceId(wsId) !== ROOT_WORKSPACE_ID)
+    throw new Error('Forbidden');
   const authorization = await authorizeInfrastructureAdminRequest(
     'manage_workspace_roles'
   );

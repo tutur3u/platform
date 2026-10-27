@@ -186,3 +186,16 @@ it('SR-225 rejects viewer-triggered queue drains before processing', async () =>
     (await requirePostEmailQueueRootAdmin(req(), 'manage_workspace_roles')).user
   ).toEqual(mocks.actor.user);
 });
+
+it('SR-228 retains root alias admission for authorized entity-limit operators', async () => {
+  mocks.permissions.add('manage_workspace_roles');
+  const { addPlatformEntityCreationLimitTable } = await import(
+    '@/app/[locale]/(dashboard)/[wsId]/entity-creation-limits/actions'
+  );
+  const form = new FormData();
+  form.set('targetTable', 'tasks');
+  await expect(
+    addPlatformEntityCreationLimitTable('internal', form)
+  ).resolves.toEqual({ status: 'table-added' });
+  expect(mocks.admin.rpc).toHaveBeenCalledOnce();
+});
