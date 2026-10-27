@@ -44,7 +44,6 @@ export function BoardPlanView({
   onEndActive,
   onStarted,
   sprints,
-  ticketPrefix,
   wsId,
 }: {
   boardId: string;
@@ -56,7 +55,6 @@ export function BoardPlanView({
   onEndActive?: () => void;
   onStarted?: () => void;
   sprints: ReturnType<typeof useBoardSprints>;
-  ticketPrefix?: string | null;
   wsId: string;
 }) {
   const t = useTranslations('ws-task-boards.sprints');
@@ -187,7 +185,6 @@ export function BoardPlanView({
         onDrop={drop(null)}
         onOpen={openPlanTask}
         tasks={backlog}
-        ticketPrefix={ticketPrefix}
         workspaceId={wsId}
       />
       <div className="flex min-h-0 flex-col gap-3 overflow-y-auto pr-1">
@@ -225,7 +222,6 @@ export function BoardPlanView({
             onDrop={drop(owner.member.id)}
             onOpen={openPlanTask}
             owner={owner}
-            ticketPrefix={ticketPrefix}
           />
         ))}
         {canPlan ? (

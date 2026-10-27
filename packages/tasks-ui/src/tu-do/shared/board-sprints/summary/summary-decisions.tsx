@@ -22,14 +22,12 @@ export function SummaryDecisions({
   listsById,
   nextSprintName,
   onChange,
-  ticketPrefix,
   unfinished,
 }: {
   decisions: SprintEndDecisions;
   listsById: Map<string, TaskList>;
   nextSprintName: string;
   onChange: (decisions: SprintEndDecisions) => void;
-  ticketPrefix?: string | null;
   unfinished: { entry: BoardSprintTask; task: Task }[];
 }) {
   const t = useTranslations('ws-task-boards.sprints');
@@ -109,11 +107,7 @@ export function SummaryDecisions({
             data-decision-task-id={task.id}
             key={task.id}
           >
-            <PlanTaskTitle
-              className="text-sm"
-              task={task}
-              ticketPrefix={ticketPrefix}
-            />
+            <PlanTaskTitle className="text-sm" task={task} />
             <span
               className={cn(
                 'text-muted-foreground text-xs',

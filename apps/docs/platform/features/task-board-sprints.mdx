@@ -150,7 +150,10 @@ fewer than two usable characters use `PRJ`. Collisions append a number beginning
 with 2 (`PLA`, `PLA2`, `PLA3`). Existing projects are assigned deterministically
 by workspace, creation time and project ID. People with `manage_projects` can
 edit the Key in project configuration: 2–10 uppercase ASCII letters/digits,
-starting with a letter. Editing a key relabels its tasks without changing numbers.
+starting with a letter. Editing a key relabels its tasks without changing numbers. Any
+workspace member can create a project and gets the derived key; choosing a key
+at creation needs `manage_projects` too. The Plan tab and the sprint summary show
+the same `[KEY-N]` labels.
 
 Each project allocates task numbers atomically from its own increasing counter.
 Existing links are numbered by link creation time, task creation time, then task

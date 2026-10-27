@@ -128,7 +128,14 @@ describe('project ticket key routes', () => {
       error: 'Project key is already used in this workspace',
     });
   });
-  it('requires project management permission', async () => {
+  it('lets members without project management create projects with a derived key', async () => {
+    mocks.getPermissions.mockResolvedValue({ containsPermission: () => false });
+    const created = await POST(request({ name: 'Platform' }, 'POST'), {
+      params: Promise.resolve({ wsId: 'workspace' }),
+    });
+    expect(created.status).toBe(201);
+  });
+  it('requires project management permission to choose or edit a key', async () => {
     mocks.getPermissions.mockResolvedValue({ containsPermission: () => false });
     expect(
       (
