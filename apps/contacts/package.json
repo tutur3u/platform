@@ -12,7 +12,9 @@
     "dev:app": "node ../../scripts/portless-dev-banner.js -- next dev -p ${PORT:-7827} --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "preview": "next build --turbopack && next start -p 7827 --turbopack"
+    "preview": "next build --turbopack && next start -p 7827 --turbopack",
+    "routes:check": "start-bridge-routes check .",
+    "routes:generate": "start-bridge-routes generate ."
   },
   "packageManager": "bun@1.4.4",
   "dependencies": {
@@ -27,6 +29,7 @@
     "@tuturuuu/icons": "workspace:*",
     "@tuturuuu/internal-api": "workspace:*",
     "@tuturuuu/satellite": "workspace:*",
+    "@tuturuuu/start-bridge": "workspace:*",
     "@tuturuuu/storage-core": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/transactional": "workspace:*",
