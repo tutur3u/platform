@@ -12,6 +12,22 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: async () => ({
+    auth: {
+      admin: {
+        getUserById: async (id: string) => ({
+          data: {
+            user: {
+              id,
+              email: 'agent@example.com',
+              email_confirmed_at: '2026-01-01',
+            },
+          },
+          error: null,
+        }),
+      },
+    },
+  }),
   createClient: (...args: unknown[]) => mocks.createClient(...args),
 }));
 

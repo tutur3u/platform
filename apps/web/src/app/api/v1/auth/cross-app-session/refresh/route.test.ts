@@ -70,6 +70,7 @@ describe('cross-app app-session refresh route', () => {
             data: {
               user: {
                 email: 'agent@example.com',
+                email_confirmed_at: '2026-01-01',
                 id: 'user-1',
               },
             },
@@ -115,6 +116,45 @@ describe('cross-app app-session refresh route', () => {
     expect(body.appSessionToken).toMatch(/^ttr_app_/u);
     expect(body.appSessionRefreshToken).toMatch(/^ttr_app_/u);
   });
+
+  it.each([null, undefined])(
+    'drops old email claims when Auth has no confirmed mailbox',
+    async (email_confirmed_at) => {
+      mocks.createAdminClient.mockResolvedValue({
+        auth: {
+          admin: {
+            getUserById: async () => ({
+              data: {
+                user: {
+                  id: 'user-1',
+                  email: 'pending@tuturuuu.com',
+                  email_confirmed_at,
+                },
+              },
+              error: null,
+            }),
+          },
+        },
+      });
+      const oldSession = createAppSessionTokenPair({
+        targetApp: 'infra',
+        userId: 'user-1',
+        email: 'old@tuturuuu.com',
+      });
+      const response = await POST(
+        request({ refreshToken: oldSession.refresh.token, targetApp: 'infra' })
+      );
+      expect(response.status).toBe(200);
+      const body = await response.json();
+      expect(body.sessionData.email ?? null).toBeNull();
+      const verification = appSession.verifyAppSessionToken(
+        body.appSessionToken,
+        { targetApp: 'infra' }
+      );
+      expect(verification.ok).toBe(true);
+      if (verification.ok) expect(verification.claims.email ?? null).toBeNull();
+    }
+  );
 
   it('rejects invalid bodies and unknown apps', async () => {
     await expect(POST(request({ targetApp: 'learn' }))).resolves.toHaveProperty(

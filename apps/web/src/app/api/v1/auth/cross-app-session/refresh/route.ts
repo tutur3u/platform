@@ -4,6 +4,7 @@ import {
 } from '@tuturuuu/auth/app-session';
 import { resolveInternalAppSessionPolicy } from '@tuturuuu/auth/app-session-policy';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { getConfirmedAuthEmail } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import {
   type AppName,
@@ -197,7 +198,7 @@ async function refreshCrossAppSession(request: NextRequest) {
     verification.claims.sub
   );
 
-  if (error || !data.user) {
+  if (error || !data.user || data.user.id !== verification.claims.sub) {
     return jsonNoStore(
       { error: 'Invalid or expired app session refresh credentials' },
       { status: 401 }
@@ -221,7 +222,7 @@ async function refreshCrossAppSession(request: NextRequest) {
   );
   const session = createAppSessionTokenPair(
     {
-      email: data.user.email ?? verification.claims.email,
+      email: getConfirmedAuthEmail(data.user),
       mfa: verification.claims.mfa,
       targetApp,
       userId: verification.claims.sub,
@@ -240,7 +241,7 @@ async function refreshCrossAppSession(request: NextRequest) {
     appSessionToken: session.access.token,
     internalAppSessionPolicy,
     sessionData: {
-      email: data.user.email ?? verification.claims.email,
+      email: getConfirmedAuthEmail(data.user),
       mfa: verification.claims.mfa,
     },
     userId: verification.claims.sub,

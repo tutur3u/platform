@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   connection: vi.fn(),
+  getUserById: vi.fn(),
+  recipientEmail: null as string | null,
   membership: { ok: false, type: null } as {
     ok: boolean;
     type: string | null;
@@ -99,13 +101,20 @@ const resultsByTable: Record<string, () => unknown> = {
 };
 
 class QueryBuilder implements PromiseLike<{ data: unknown; error: null }> {
+  private filters: Record<string, unknown> = {};
   constructor(private readonly table: string) {}
 
   select() {
     return this;
   }
 
-  eq() {
+  eq(key: string, value: unknown) {
+    this.filters[key] = value;
+    return this;
+  }
+
+  ilike(key: string, value: string) {
+    this.filters[key] = value;
     return this;
   }
 
@@ -113,7 +122,8 @@ class QueryBuilder implements PromiseLike<{ data: unknown; error: null }> {
     return this;
   }
 
-  or() {
+  or(filter: string) {
+    this.filters.or = filter;
     return this;
   }
 
@@ -137,6 +147,12 @@ class QueryBuilder implements PromiseLike<{ data: unknown; error: null }> {
       return Promise.resolve({ data: { email: 'viewer@example.com' } });
     }
     if (this.table === 'task_shares') {
+      if (
+        mocks.recipientEmail &&
+        this.filters.shared_with_email !== mocks.recipientEmail &&
+        !String(this.filters.or ?? '').includes(mocks.recipientEmail)
+      )
+        return Promise.resolve({ data: null });
       return Promise.resolve({
         data: mocks.sharePermission
           ? { permission: mocks.sharePermission }
@@ -168,6 +184,9 @@ class QueryBuilder implements PromiseLike<{ data: unknown; error: null }> {
 }
 
 const adminClient = {
+  auth: {
+    admin: { getUserById: (...args: unknown[]) => mocks.getUserById(...args) },
+  },
   from: vi.fn((table: string) => {
     mocks.queryTables.push(table);
     return new QueryBuilder(table);
@@ -192,7 +211,7 @@ vi.mock('@/lib/app-session-user', () => ({
   ) => mocks.resolveUser(...args),
 }));
 
-import { GET } from './route';
+import { GET, PATCH } from './route';
 
 function request() {
   return new NextRequest(
@@ -214,6 +233,17 @@ describe('shared task GET permission-shaped responses', () => {
     mocks.queryTables.length = 0;
     mocks.membership = { ok: false, type: null };
     mocks.sharePermission = null;
+    mocks.recipientEmail = null;
+    mocks.getUserById.mockResolvedValue({
+      data: {
+        user: {
+          id: 'viewer-id',
+          email: 'viewer@example.com',
+          email_confirmed_at: '2026-01-01',
+        },
+      },
+      error: null,
+    });
     mocks.shareLink = {
       id: 'share-link-id',
       task_id: 'task-id',
@@ -342,6 +372,61 @@ describe('shared task GET permission-shaped responses', () => {
       );
     }
   );
+
+  it.each([GET, PATCH])(
+    'rejects editable-profile recipient matching',
+    async (handler) => {
+      mocks.shareLink.public_access = null;
+      mocks.shareLink.requires_invite = true;
+      mocks.sharePermission = 'edit';
+      mocks.recipientEmail = 'viewer@example.com';
+      mocks.getUserById.mockResolvedValue({
+        data: {
+          user: {
+            id: 'viewer-id',
+            email: 'actual@example.com',
+            email_confirmed_at: '2026-01-01',
+          },
+        },
+        error: null,
+      });
+      const response = await handler(request(), context());
+      expect(response.status).toBe(403);
+      expect(mocks.queryTables).not.toContain('user_private_details');
+      expect(mocks.queryTables).not.toContain('task_assignees');
+    }
+  );
+
+  it('rejects unconfirmed auth email recipients', async () => {
+    mocks.shareLink.public_access = null;
+    mocks.shareLink.requires_invite = true;
+    mocks.sharePermission = 'view';
+    mocks.recipientEmail = 'viewer@example.com';
+    mocks.getUserById.mockResolvedValue({
+      data: {
+        user: {
+          id: 'viewer-id',
+          email: 'viewer@example.com',
+          email_confirmed_at: null,
+        },
+      },
+      error: null,
+    });
+    expect((await GET(request(), context())).status).toBe(403);
+  });
+
+  it('preserves direct user-id shares without a confirmed mailbox', async () => {
+    mocks.shareLink.public_access = null;
+    mocks.shareLink.requires_invite = true;
+    mocks.sharePermission = 'view';
+    mocks.getUserById.mockResolvedValue({
+      data: { user: { id: 'viewer-id', email_confirmed_at: null } },
+      error: null,
+    });
+    const response = await GET(request(), context());
+    expect(response.status).toBe(200);
+    expect((await response.json()).permission).toBe('view');
+  });
 
   it('denies an uninvited caller when the link requires an invite', async () => {
     mocks.shareLink.requires_invite = true;
