@@ -308,7 +308,30 @@ export interface UpdatePlanInput {
   agenda_content?: any;
 }
 
-export async function updatePlan(planId: string, data: UpdatePlanInput) {
+const UPDATABLE_PLAN_FIELDS = [
+  'name',
+  'dates',
+  'start_time',
+  'end_time',
+  'timezone',
+  'duration_minutes',
+  'where_to_meet',
+  'description',
+  'agenda_content',
+] as const satisfies readonly (keyof UpdatePlanInput)[];
+
+// Only editable fields reach the admin client; ws_id, creator_id, is_public and
+// the like must never be writable through a plan update.
+function pickUpdatablePlanFields(data: UpdatePlanInput): UpdatePlanInput {
+  const updates: Record<string, unknown> = {};
+  for (const field of UPDATABLE_PLAN_FIELDS) {
+    if (data[field] !== undefined) updates[field] = data[field];
+  }
+  return updates as UpdatePlanInput;
+}
+
+export async function updatePlan(planId: string, input: UpdatePlanInput) {
+  const data = pickUpdatablePlanFields(input);
   const supabase = await createClient();
   const { user } = await resolveAuthenticatedSessionUser(supabase);
 
