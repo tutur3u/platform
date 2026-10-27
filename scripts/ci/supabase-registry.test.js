@@ -102,7 +102,7 @@ test('every active Supabase-starting job uses ECR Public without GHCR login', ()
       }
     }
   }
-  assert.equal(count, 18);
+  assert.equal(count, 19);
   assert.equal(
     existsSync(new URL('../../.github/actions/login-supabase-registry', base)),
     false

@@ -10,6 +10,7 @@ export const ci = {
   'periodic-report-delivery-contract.yaml': true,
   'security-egress-contract.yaml': true,
   'creator-identity-contract.yaml': true,
+  'task-board-database-contract.yaml': true,
   'connected-mail-accounts-contract.yaml': true,
   'mail-profile-runtime-contract.yaml': true,
   'check-and-bump-versions.yaml': true,
