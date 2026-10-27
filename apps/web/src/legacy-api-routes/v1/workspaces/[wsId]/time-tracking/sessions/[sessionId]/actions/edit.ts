@@ -1,5 +1,6 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase';
 import type { Json } from '@tuturuuu/types';
+import { validateTimeTrackingReference } from '@tuturuuu/utils/time-tracking-reference';
 import { NextResponse } from 'next/server';
 
 import type { EditActionBody, SessionRecord } from '../schemas';
@@ -21,6 +22,18 @@ export async function handleEditAction({
 }): Promise<NextResponse> {
   const { title, description, categoryId, taskId, startTime, endTime } =
     requestBody;
+
+  const referenceError = await validateTimeTrackingReference({
+    client: sbAdmin,
+    id: categoryId,
+    table: 'time_tracking_categories',
+    wsId: normalizedWsId,
+  });
+  if (referenceError)
+    return NextResponse.json(
+      { error: referenceError.message },
+      { status: referenceError.status }
+    );
 
   const now = new Date();
   if (startTime !== undefined) {

@@ -8,6 +8,7 @@ import {
   escapeLikePattern,
   sanitizeSearchQuery,
 } from '@tuturuuu/utils/search-helper';
+import { validateTimeTrackingReference } from '@tuturuuu/utils/time-tracking-reference';
 import {
   getPermissions,
   verifyWorkspaceMembershipType,
@@ -17,6 +18,7 @@ import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
+import { resolveTimeTrackingReadUser } from '@/lib/time-tracking/cross-user-read-authorization';
 import {
   cursorSchema,
   type SessionRequestBody,
@@ -28,15 +30,12 @@ import {
   isPersonalWorkspace,
   normalizeWorkspaceId,
 } from '@/lib/workspace-helper';
+import { validateSessionTaskWorkspace } from './task-validation';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
 type AdminClient = TypedSupabaseClient;
-
-type SessionTaskValidationResult =
-  | { ok: true; errorResponse?: never }
-  | { ok: false; errorResponse: NextResponse };
 
 type TimeTrackingSessionWithTaskSummary = {
   task_id?: string | null;
@@ -54,46 +53,6 @@ type MissedEntryPermissionCheckResult =
       thresholdDays?: never;
       errorResponse: NextResponse;
     };
-
-async function validateSessionTaskWorkspace({
-  sbAdmin,
-  taskId,
-  wsId,
-}: {
-  sbAdmin: AdminClient;
-  taskId: string | null | undefined;
-  wsId: string;
-}): Promise<SessionTaskValidationResult> {
-  if (!taskId) return { ok: true };
-
-  const { data: task, error } = await sbAdmin
-    .from('tasks')
-    .select('id, task_lists!inner(workspace_boards!inner(ws_id))')
-    .eq('id', taskId)
-    .maybeSingle();
-
-  if (error) {
-    return {
-      ok: false,
-      errorResponse: NextResponse.json(
-        { error: 'Failed to validate task' },
-        { status: 500 }
-      ),
-    };
-  }
-
-  if (!task || task.task_lists?.workspace_boards?.ws_id !== wsId) {
-    return {
-      ok: false,
-      errorResponse: NextResponse.json(
-        { error: 'Task not found' },
-        { status: 404 }
-      ),
-    };
-  }
-
-  return { ok: true };
-}
 
 async function attachWorkspaceTaskSummary<
   T extends TimeTrackingSessionWithTaskSummary,
@@ -493,30 +452,14 @@ export const GET = withSessionAuth<{ wsId: string }>(
       const cursor = url.searchParams.get('cursor');
 
       // Determine which user's data to fetch (current user or specified user)
-      const queryUserId = targetUserId || user.id;
-
-      // If targeting another user, verify they're in the same workspace
-      if (targetUserId && targetUserId !== user.id) {
-        const targetMembership = await verifyWorkspaceMembershipType({
-          wsId: normalizedWsId,
-          userId: targetUserId,
-          supabase,
-        });
-
-        if (targetMembership.error === 'membership_lookup_failed') {
-          return NextResponse.json(
-            { error: 'Failed to verify target user access' },
-            { status: 500 }
-          );
-        }
-
-        if (!targetMembership.ok) {
-          return NextResponse.json(
-            { error: 'Target user not found in workspace' },
-            { status: 404 }
-          );
-        }
-      }
+      const readUser = await resolveTimeTrackingReadUser({
+        supabase,
+        targetUserId,
+        user,
+        wsId: normalizedWsId,
+      });
+      if (!readUser.ok) return readUser.response;
+      const queryUserId = readUser.userId;
 
       if (type === 'running') {
         // Get current running session, then resolve task info through a
@@ -856,6 +799,18 @@ export const POST = withSessionAuth<{ wsId: string }>(
 
       // Use service role client for secure operations
       const sbAdmin = await createAdminClient(); // This should use service role
+
+      const referenceError = await validateTimeTrackingReference({
+        client: sbAdmin,
+        id: validatedBody.categoryId,
+        table: 'time_tracking_categories',
+        wsId: normalizedWsId,
+      });
+      if (referenceError)
+        return NextResponse.json(
+          { error: referenceError.message },
+          { status: referenceError.status }
+        );
 
       const taskValidation = await validateSessionTaskWorkspace({
         sbAdmin,

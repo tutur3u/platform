@@ -1,4 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { validateTimeTrackingReference } from '@tuturuuu/utils/time-tracking-reference';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
@@ -108,6 +109,18 @@ export const POST = withSessionAuth<Params>(
     });
     if (!access.ok) return access.response;
     const { categoryId, description, taskId, title } = validation.data;
+
+    const referenceError = await validateTimeTrackingReference({
+      client: sbAdmin,
+      id: categoryId,
+      table: 'time_tracking_categories',
+      wsId: access.normalizedWsId,
+    });
+    if (referenceError)
+      return NextResponse.json(
+        { error: referenceError.message },
+        { status: referenceError.status }
+      );
 
     if (taskId) {
       const { data: task, error: taskError } = await sbAdmin
