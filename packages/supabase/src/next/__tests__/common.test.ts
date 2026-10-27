@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { resetProductionOverrideErrorLogForTests } from '../../shared-cookie-domains';
 import {
   checkEnvVariables,
   getHostOnlyCookieClearHeaders,
@@ -7,7 +8,6 @@ import {
   getSupabaseAuthStorageKey,
   getSupabaseCookieOptions,
 } from '../common';
-import { resetProductionOverrideErrorLogForTests } from '../../shared-cookie-domains';
 
 describe('common', () => {
   const originalEnv = process.env;

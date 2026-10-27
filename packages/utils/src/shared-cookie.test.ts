@@ -1,10 +1,10 @@
 import { getSupabaseCookieOptions } from '@tuturuuu/supabase/next/common';
-import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
-  CONFIGURED_SHARED_COOKIE_DOMAINS as SUPABASE_CONFIGURED_SHARED_COOKIE_DOMAINS,
   resetProductionOverrideErrorLogForTests as resetSupabaseProductionOverrideErrorLogForTests,
+  CONFIGURED_SHARED_COOKIE_DOMAINS as SUPABASE_CONFIGURED_SHARED_COOKIE_DOMAINS,
   TUTURUUU_SHARED_COOKIE_DOMAINS as SUPABASE_TUTURUUU_SHARED_COOKIE_DOMAINS,
-} from '../../supabase/src/shared-cookie-domains';
+} from '@tuturuuu/supabase/shared-cookie-domains';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { getConfiguredInternalAppDomains } from './internal-domains';
 import {
   CONFIGURED_SHARED_COOKIE_DOMAINS,
