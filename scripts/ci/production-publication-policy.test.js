@@ -35,6 +35,7 @@ function fixture(t, policy) {
     'tuturuuu.ci.ts',
     'scripts/ci/production-publication-policy.ts',
     'scripts/ci/wave1-native-publish.mjs',
+    'scripts/ci/wave1-native-upload-error.mjs',
     'scripts/ci/wave1-native-admission.mjs',
     'scripts/ci/wave1-native-attempt.mjs',
     'scripts/ci/wave1-native-profile.mjs',
@@ -228,8 +229,9 @@ for (const app of apps) {
       surfaces: app === 'meet' ? ['frontend', 'realtime-do'] : ['frontend'],
     };
     const workflow = `${app}-cloudflare.yaml`;
-    // Only Meet currently has a native publisher in the production inventory.
-    const target = app === 'meet' ? workflow : `vercel-production-${app}.yaml`;
+    const target = ['meet', 'calendar'].includes(app)
+      ? workflow
+      : `vercel-production-${app}.yaml`;
     const root = fixture(t, policy);
     const [decision] = plan(root, [target]);
     assert.equal(decision.shouldRun, true);
@@ -247,6 +249,32 @@ test('known unrelated publisher retains normal selection even with malformed pro
     runPolicy(root, 'vercel-production-storefront.yaml').output,
     'allowed=true\n'
   );
+});
+
+test('Calendar admission opens only its frontend while other wave-1 apps remain held', (t) => {
+  const root = fixture(t);
+  assert.equal(
+    runPolicy(root, 'calendar-cloudflare.yaml').output,
+    'allowed=true\n'
+  );
+  for (const event of ['push', 'workflow_dispatch']) {
+    const [native, legacy] = plan(
+      root,
+      ['calendar-cloudflare.yaml', 'vercel-production-calendar.yaml'],
+      event
+    );
+    assert.equal(native.shouldRun, true);
+    assert.equal(legacy.shouldRun, false);
+  }
+  for (const app of ['meet', 'mail', 'apps']) {
+    assert.equal(
+      runPolicy(
+        root,
+        app === 'meet' ? 'meet-cloudflare.yaml' : `${app}-cloudflare.yaml`
+      ).output,
+      'allowed=false\n'
+    );
+  }
 });
 
 const publishers = [
@@ -300,7 +328,7 @@ for (const { workflow, job } of publishers) {
       writes.map(([name]) => name),
       [job]
     );
-    const result = runPolicy(fixture(t), workflow, policy.run);
+    const result = runPolicy(fixture(t, heldPolicy), workflow, policy.run);
     assert.equal(result.output, 'allowed=false\n');
     assert.match(result.summary, heldReason);
   });
@@ -329,7 +357,7 @@ test('all unrelated real production targets retain planner selection with invali
 
 for (const app of ['calendar', 'mail', 'apps']) {
   test(`${app}: native staging policy allows trusted staging while shared production policy holds`, (t) => {
-    const directory = fixture(t);
+    const directory = fixture(t, heldPolicy);
     assert.equal(
       runPolicy(directory, `${app}-cloudflare.yaml`).output,
       'allowed=false\n'

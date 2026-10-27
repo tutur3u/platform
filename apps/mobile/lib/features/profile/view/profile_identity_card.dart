@@ -8,7 +8,7 @@ import 'package:mobile/features/profile/view/profile_banner.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// The account's identity at the top of Profile: cover, avatar, name, email,
-/// bio and the way into the profile editor.
+/// bio and a labelled Edit profile button beside the avatar.
 ///
 /// The shell navbar carries the page title, so the name is content, not a
 /// second title bar. Identity from a previous account is never shown: the
@@ -30,6 +30,11 @@ class ProfileIdentityCard extends StatelessWidget {
   final bool loading;
 
   static const double _avatarSize = 80;
+
+  /// Extra room below the avatar so the edit button's full 48dp target fits
+  /// centred on the avatar's lower half; the text gap shrinks by the same
+  /// amount, so the visual spacing is unchanged.
+  static const double _bandSlack = (kAppMinTapTarget - _avatarSize / 2) / 2;
 
   @override
   Widget build(BuildContext context) {
@@ -60,7 +65,9 @@ class ProfileIdentityCard extends StatelessWidget {
               clipBehavior: Clip.none,
               children: [
                 Padding(
-                  padding: const EdgeInsets.only(bottom: _avatarSize / 2),
+                  padding: const EdgeInsets.only(
+                    bottom: _avatarSize / 2 + _bandSlack,
+                  ),
                   child: hasBanner
                       ? ProfileBanner(
                           profile: profile!,
@@ -69,9 +76,23 @@ class ProfileIdentityCard extends StatelessWidget {
                         )
                       : _CoverTint(color: c.primary),
                 ),
+                if (profile != null)
+                  // Centred in the band beside the avatar's lower half, on
+                  // the same trailing gutter as the text below, so it never
+                  // straddles the cover edge or reaches the avatar.
+                  PositionedDirectional(
+                    start: AppSpacing.lg + _avatarSize + AppSpacing.sm,
+                    end: AppSpacing.lg,
+                    bottom: 0,
+                    height: kAppMinTapTarget,
+                    child: _EditProfileButton(
+                      label: l10n.settingsProfileEdit,
+                      onPressed: () => context.push(Routes.settingsProfile),
+                    ),
+                  ),
                 PositionedDirectional(
                   start: AppSpacing.lg,
-                  bottom: 0,
+                  bottom: _bandSlack,
                   child: _Avatar(
                     url: avatarUrl,
                     userId: userId,
@@ -84,7 +105,7 @@ class ProfileIdentityCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.lg,
-                AppSpacing.md,
+                AppSpacing.md - _bandSlack,
                 AppSpacing.lg,
                 AppSpacing.lg,
               ),
@@ -126,16 +147,6 @@ class ProfileIdentityCard extends StatelessWidget {
                       ),
                     ),
                   ],
-                  if (profile != null) ...[
-                    const SizedBox(height: AppSpacing.lg),
-                    AppButton.outline(
-                      key: const ValueKey('profile-edit-identity'),
-                      size: AppButtonSize.small,
-                      leading: const Icon(LucideIcons.userPen),
-                      onPressed: () => context.push(Routes.settingsProfile),
-                      child: Text(l10n.settingsProfileEdit),
-                    ),
-                  ],
                 ],
               ),
             ),
@@ -173,6 +184,65 @@ class _CoverTint extends StatelessWidget {
   }
 }
 
+/// Labelled when the label fits beside the avatar on one line; otherwise
+/// (narrow cards, enlarged text) the same action as an outline icon button
+/// with the label as its accessible name and tooltip.
+class _EditProfileButton extends StatelessWidget {
+  const _EditProfileButton({required this.label, required this.onPressed});
+
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      final style = AppButtonStyle.resolve(
+        AppTokens.of(context),
+        AppButtonVariant.outline,
+        AppButtonSize.small,
+        AppButtonDensity.normal,
+      );
+      final text = TextPainter(
+        text: TextSpan(
+          text: label,
+          style: DefaultTextStyle.of(context).style.merge(style.textStyle),
+        ),
+        textScaler: MediaQuery.textScalerOf(context),
+        textDirection: Directionality.of(context),
+        maxLines: 1,
+      )..layout();
+      // Both padded sides, the icon, its gap and the 1dp outline.
+      final width =
+          style.horizontalPadding * 2 +
+          style.iconSize +
+          style.gap +
+          text.width +
+          2;
+      final fits = width <= constraints.maxWidth && text.height <= style.height;
+      text.dispose();
+      return Align(
+        alignment: AlignmentDirectional.centerEnd,
+        child: fits
+            ? AppButton.outline(
+                key: const ValueKey('profile-edit-identity'),
+                size: AppButtonSize.small,
+                leading: const Icon(LucideIcons.pencil),
+                onPressed: onPressed,
+                child: Text(label, maxLines: 1),
+              )
+            : AppIconButton(
+                key: const ValueKey('profile-edit-identity'),
+                variant: AppButtonVariant.outline,
+                shape: AppButtonShape.circle,
+                tooltip: label,
+                icon: const Icon(LucideIcons.pencil),
+                onPressed: onPressed,
+              ),
+      );
+    },
+  );
+}
+
 class _Avatar extends StatelessWidget {
   const _Avatar({
     required this.url,
@@ -200,6 +270,7 @@ class _Avatar extends StatelessWidget {
     );
     final url = this.url;
     return Container(
+      key: const ValueKey('profile-identity-avatar'),
       width: size,
       height: size,
       padding: const EdgeInsets.all(3),

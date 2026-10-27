@@ -374,6 +374,8 @@
                   "build/devops/log-drain-observability",
                   "build/devops/adaptive-abuse-rate-limits",
                   "build/devops/storage-egress-protection",
+                  "build/devops/storage-signed-url-rekey",
+                  "build/devops/workspace-storage-rls",
                   "build/devops/critical-app-rollout",
                   "build/devops/github-actions-runbook",
                   "build/devops/caching",
@@ -506,7 +508,8 @@
                 "pages": [
                   "reference/database/schema-overview",
                   "reference/database/rls-policies",
-                  "reference/database/migrations-guide"
+                  "reference/database/migrations-guide",
+                  "reference/database/migration-incident-rollbacks"
                 ]
               },
               {

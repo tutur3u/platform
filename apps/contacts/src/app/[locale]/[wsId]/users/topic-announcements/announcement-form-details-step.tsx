@@ -15,6 +15,7 @@ import {
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import type { AnnouncementFormValues } from './announcement-form-state';
+import { AnnouncementPlaceField } from './announcement-place-field';
 import {
   NO_GROUP,
   NO_TEMPLATE,
@@ -29,6 +30,7 @@ interface Props {
     updater: (current: AnnouncementFormValues) => AnnouncementFormValues
   ) => void;
   templates: TopicAnnouncementTemplateRecord[];
+  wsId: string;
 }
 
 export function AnnouncementFormDetailsStep({
@@ -37,6 +39,7 @@ export function AnnouncementFormDetailsStep({
   isDisabled,
   setForm,
   templates,
+  wsId,
 }: Props) {
   const t = useTranslations('ws-topic-announcements');
   const groupOptions = useMemo<ComboboxOption[]>(
@@ -222,19 +225,12 @@ export function AnnouncementFormDetailsStep({
               value={form.room}
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="topic-place">{t('place')}</Label>
-            <Input
-              id="topic-place"
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  place: event.target.value,
-                }))
-              }
-              value={form.place}
-            />
-          </div>
+          <AnnouncementPlaceField
+            disabled={isDisabled}
+            onChange={(place) => setForm((current) => ({ ...current, place }))}
+            value={form.place}
+            wsId={wsId}
+          />
         </div>
       </div>
     </div>

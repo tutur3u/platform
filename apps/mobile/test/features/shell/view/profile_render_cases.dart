@@ -139,12 +139,14 @@ void _profileRenderCases() {
             AppLayout.gutter(DeviceClass.compact),
           );
         } else if (size.key == 'desktop') {
-          // Wide bodies put identity beside activity.
+          // Wide bodies put identity beside the Focus Time column, which
+          // opens with its section header.
           expect(tester.getSize(identity).width, 360);
           expect(
-            tester.getTopLeft(find.byType(ProfileActivitySection)).dy,
+            tester.getTopLeft(find.byKey(const ValueKey('you-focus-time'))).dy,
             tester.getTopLeft(identity).dy,
           );
+          expect(find.byType(ProfileActivitySection), findsOneWidget);
         }
         expect(
           tester
@@ -152,6 +154,8 @@ void _profileRenderCases() {
               .height,
           greaterThanOrEqualTo(44),
         );
+        // Search belongs to screens that search their own content.
+        expect(find.byIcon(AppIcons.search), findsNothing);
         await _capture(tester, 'profile-overview-${size.key}-${look.key}');
         expect(tester.takeException(), isNull);
       });

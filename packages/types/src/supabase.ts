@@ -4159,6 +4159,24 @@ export type Database = {
           },
         ];
       };
+      devbox_control_settings: {
+        Row: {
+          id: boolean;
+          require_reported_execution_mode: boolean;
+          updated_at: string;
+        };
+        Insert: {
+          id?: boolean;
+          require_reported_execution_mode?: boolean;
+          updated_at?: string;
+        };
+        Update: {
+          id?: boolean;
+          require_reported_execution_mode?: boolean;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       devbox_env_revisions: {
         Row: {
           actor_id: string;
@@ -4431,6 +4449,7 @@ export type Database = {
         Row: {
           actor_id: string;
           capabilities: NonNullable<Json>;
+          capabilities_updated_at: string | null;
           created_at: string;
           drain_requested_at: string | null;
           enabled_features: NonNullable<Json>;
@@ -4446,6 +4465,7 @@ export type Database = {
         Insert: {
           actor_id: string;
           capabilities?: NonNullable<Json>;
+          capabilities_updated_at?: string | null;
           created_at?: string;
           drain_requested_at?: string | null;
           enabled_features?: NonNullable<Json>;
@@ -4460,6 +4480,7 @@ export type Database = {
         Update: {
           actor_id?: string;
           capabilities?: NonNullable<Json>;
+          capabilities_updated_at?: string | null;
           created_at?: string;
           drain_requested_at?: string | null;
           enabled_features?: NonNullable<Json>;
@@ -17419,6 +17440,7 @@ export type Database = {
           batch_id: string | null;
           body: string;
           class_label: string | null;
+          course_book: string | null;
           created_at: string;
           created_by: string | null;
           day_label: string | null;
@@ -17430,6 +17452,7 @@ export type Database = {
           place: string | null;
           room: string | null;
           scheduled_send_at: string | null;
+          send_due_at: string | null;
           sent_at: string | null;
           sent_email_audit_id: string | null;
           session_date: string | null;
@@ -17437,10 +17460,12 @@ export type Database = {
           source_type: string;
           start_time: string | null;
           status: string;
+          teacher_workspace_user_id: string | null;
           title: string;
-          topic: string;
+          topic: string | null;
           updated_at: string;
           updated_by: string | null;
+          video_url: string | null;
           ws_id: string;
         };
         ComputedFields: never;
@@ -17448,6 +17473,7 @@ export type Database = {
           batch_id?: string | null;
           body?: string;
           class_label?: string | null;
+          course_book?: string | null;
           created_at?: string;
           created_by?: string | null;
           day_label?: string | null;
@@ -17459,6 +17485,7 @@ export type Database = {
           place?: string | null;
           room?: string | null;
           scheduled_send_at?: string | null;
+          send_due_at?: string | null;
           sent_at?: string | null;
           sent_email_audit_id?: string | null;
           session_date?: string | null;
@@ -17466,16 +17493,19 @@ export type Database = {
           source_type?: string;
           start_time?: string | null;
           status?: string;
+          teacher_workspace_user_id?: string | null;
           title: string;
-          topic: string;
+          topic?: string | null;
           updated_at?: string;
           updated_by?: string | null;
+          video_url?: string | null;
           ws_id: string;
         };
         Update: {
           batch_id?: string | null;
           body?: string;
           class_label?: string | null;
+          course_book?: string | null;
           created_at?: string;
           created_by?: string | null;
           day_label?: string | null;
@@ -17487,6 +17517,7 @@ export type Database = {
           place?: string | null;
           room?: string | null;
           scheduled_send_at?: string | null;
+          send_due_at?: string | null;
           sent_at?: string | null;
           sent_email_audit_id?: string | null;
           session_date?: string | null;
@@ -17494,10 +17525,12 @@ export type Database = {
           source_type?: string;
           start_time?: string | null;
           status?: string;
+          teacher_workspace_user_id?: string | null;
           title?: string;
-          topic?: string;
+          topic?: string | null;
           updated_at?: string;
           updated_by?: string | null;
+          video_url?: string | null;
           ws_id?: string;
         };
         Relationships: [
@@ -17689,6 +17722,99 @@ export type Database = {
           transaction_id?: number;
         };
         Relationships: [];
+      };
+      tutoring_notification_receipts: {
+        Row: {
+          created_at: string;
+          group_id: string | null;
+          id: string;
+          kind: string;
+          notification_id: string | null;
+          recipient_user_id: string;
+          review_cycle_started_at: string | null;
+          student_user_id: string | null;
+          tutoring_session_id: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          group_id?: string | null;
+          id?: string;
+          kind: string;
+          notification_id?: string | null;
+          recipient_user_id: string;
+          review_cycle_started_at?: string | null;
+          student_user_id?: string | null;
+          tutoring_session_id?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          group_id?: string | null;
+          id?: string;
+          kind?: string;
+          notification_id?: string | null;
+          recipient_user_id?: string;
+          review_cycle_started_at?: string | null;
+          student_user_id?: string | null;
+          tutoring_session_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'tutoring_notification_receipts_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts_dashboard_view';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'tutoring_notification_receipts_recipient_user_id_fkey';
+            columns: ['recipient_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'tutoring_notification_receipts_recipient_user_id_fkey';
+            columns: ['recipient_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'tutoring_notification_receipts_tutoring_session_id_fkey';
+            columns: ['tutoring_session_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_tutoring_sessions';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      tutoring_weak_support_reviews: {
+        Row: {
+          group_id: string;
+          last_reviewed_at: string;
+          student_user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          group_id: string;
+          last_reviewed_at?: string;
+          student_user_id: string;
+        };
+        Update: {
+          group_id?: string;
+          last_reviewed_at?: string;
+          student_user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'tutoring_weak_support_reviews_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts_dashboard_view';
+            referencedColumns: ['group_id'];
+          },
+        ];
       };
       unmanaged_internal_profile_operations: {
         Row: {
@@ -19274,6 +19400,7 @@ export type Database = {
           start_time: string;
           student_user_id: string;
           teacher_user_id: string | null;
+          tutor_comment: string | null;
           updated_at: string;
           ws_id: string;
         };
@@ -19295,6 +19422,7 @@ export type Database = {
           start_time: string;
           student_user_id: string;
           teacher_user_id?: string | null;
+          tutor_comment?: string | null;
           updated_at?: string;
           ws_id: string;
         };
@@ -19315,6 +19443,7 @@ export type Database = {
           start_time?: string;
           student_user_id?: string;
           teacher_user_id?: string | null;
+          tutor_comment?: string | null;
           updated_at?: string;
           ws_id?: string;
         };
@@ -21827,6 +21956,11 @@ export type Database = {
         Args: { _actor_id: string; _wallet_id: string; _ws_id: string };
         Returns: Json;
       };
+      devbox_reports_fresh_trusted: {
+        Args: { p_capabilities: Json; p_capabilities_updated_at: string };
+        Returns: boolean;
+      };
+      devbox_require_reported_execution_mode: { Args: never; Returns: boolean };
       devbox_run_idempotency_ready: {
         Args: Record<PropertyKey, never>;
         Returns: boolean;
@@ -21840,6 +21974,14 @@ export type Database = {
           runner_id: string;
           running_runs: number;
         }[];
+      };
+      devbox_runner_mode_admits: {
+        Args: {
+          p_capabilities: Json;
+          p_capabilities_updated_at: string;
+          p_workload: string;
+        };
+        Returns: boolean;
       };
       devbox_runner_supports_commit_run: {
         Args: { p_capabilities: Json; p_features: Json };
@@ -24513,6 +24655,10 @@ export type Database = {
           rejected_count: number;
         }[];
       };
+      set_devbox_require_reported_execution_mode: {
+        Args: { p_enabled: boolean; p_force?: boolean };
+        Returns: Json;
+      };
       set_devbox_runner_drain: {
         Args: { p_draining: boolean; p_runner_id: string };
         Returns: string;
@@ -25182,6 +25328,10 @@ export type Database = {
           p_ws_id: string;
         };
         Returns: Json;
+      };
+      reap_stale_devbox_runs: {
+        Args: { p_limit?: number; p_runner_id?: string };
+        Returns: number;
       };
     };
     Enums: {

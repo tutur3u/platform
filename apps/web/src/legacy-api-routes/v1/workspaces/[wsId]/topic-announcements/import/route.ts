@@ -1,5 +1,8 @@
+import { normalizeTopicAnnouncementTopic } from '@tuturuuu/users-core/routes/topic-announcements';
 import { NextResponse } from 'next/server';
 import {
+  computeTopicAnnouncementSendDueAt,
+  getWorkspaceSchedulingTimezone,
   normalizeEmail,
   resolveTopicAnnouncementsAccess,
   TopicAnnouncementImportSchema,
@@ -56,7 +59,8 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
-  const { actorUserId, normalizedWsId, sbAdmin } = access.context;
+  const { actorUserId, normalizedWsId, sbAdmin, teacherAssignmentsEnabled } =
+    access.context;
   const rowErrors: { message: string; rowNumber: number }[] = [];
   const validRows = parsed.data.rows.flatMap((row, index) => {
     const rowNumber = index + 1;
@@ -148,6 +152,11 @@ export async function POST(request: Request, { params }: Params) {
     .single();
   if (batchError) throw batchError;
 
+  // send_due_at (24h before the session in the workspace timezone) is owned
+  // by the deadline helper; keep it out of the row mapping below.
+  const timezone = teacherAssignmentsEnabled
+    ? await getWorkspaceSchedulingTimezone(sbAdmin, normalizedWsId)
+    : null;
   const { data: announcements, error: announcementError } = await sbAdmin
     .from('topic_announcements')
     .insert(
@@ -160,13 +169,20 @@ export async function POST(request: Request, { params }: Params) {
         end_time: row.endTime,
         place: row.place?.trim() || null,
         room: row.room?.trim() || null,
+        send_due_at: teacherAssignmentsEnabled
+          ? computeTopicAnnouncementSendDueAt({
+              sessionDate: row.sessionDate,
+              startTime: row.startTime,
+              timeZone: timezone,
+            })
+          : null,
         session_date: row.sessionDate ?? null,
         source_row_number: row.rowNumber,
         source_type: parsed.data.sourceType,
         start_time: row.startTime,
         status: 'draft',
         title: row.title,
-        topic: row.topic,
+        topic: normalizeTopicAnnouncementTopic(row.topic),
         updated_by: actorUserId,
         ws_id: normalizedWsId,
       }))

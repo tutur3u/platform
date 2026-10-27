@@ -542,7 +542,8 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   `secrets.RELEASE_PLEASE_TOKEN || github.token`; the bot token is still needed
   for generated PRs and releases to trigger downstream workflows.
 - `RELEASE_PLEASE_TOKEN` must be a PAT (`repo` + `workflow`) owned by an
-  organization admin. Ruleset `Protected branches` covers `main` and
+  organization admin, stored only in the branch-restricted `release-please`
+  environment (`main` + `production`) that both release jobs declare. Ruleset `Protected branches` covers `main` and
   `production` with only `OrganizationAdmin` as a bypass actor, so a run that
   falls back to `github.token` merges fine and then dies on
   `GH013: Changes must be made through a pull request`. Do not "fix" this by
@@ -723,7 +724,48 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   gVisor acceptance retains bounded cleanup. Paused Docker/Rust workflows are
   unchanged, and paused TanStack validation retains its existing policy. New
   validation workflows must coalesce PR revisions, including `pull_request_target`
-  events whose `github.ref` points to the base branch.
+  events whose `github.ref` points to the base branch. Calendar and Mail
+  Cloudflare cancel only PR revisions (main is a main-only exception); their
+  upload lock lives in `wave1-native-publish.yaml`, so never add the parent's
+  group to a called workflow.
+- Reserve hosted runners for main, production and release work. Verify PRs
+  primarily with exact-head local or remote-fleet runs, and batch pushes rather
+  than pushing WIP. Path-filter heavy PR triggers only (append `'!**/*.md'` and
+  `'!**/*.mdx'` to PR `paths`, or use docs-only `paths-ignore`). Leave main push
+  filters unchanged: promotion and CodeQL baselines need complete main runs.
+  Check rulesets first, because a trigger-filtered required check never reports.
+  Required checks need a job-level `check-ci` skip instead. Moving PR CI to
+  self-hosted fleet runners is a follow-up and is not adopted. See the
+  [runbook](../../../../../apps/docs/build/devops/github-actions-runbook.mdx#hosted-runner-reservation-and-pr-queue-pressure).
+- Lanes push once after exact-head local gates pass. Batch review fixes rather
+  than pushing many small commits during review loops. Heavy PR jobs require
+  `ready-for-ci`; add it only after independent review APPROVES and the PR is
+  merge-ready (`gh pr edit <n> --add-label ready-for-ci`). An exact-head local
+  pass still counts as green under the speed grant. A new push to a labelled PR
+  reruns CI and supersedes the old run. Retrigger without a push by removing and
+  re-adding the label; `gh run rerun` replays the original event, so a
+  pre-label run stays skipped. Admission checks only label presence: any later
+  label event on a ready PR is a real admitted run in the same group, so a
+  skipped run can never mask a red one on a labelled PR. Skipped checks are not
+  evidence once the label is removed. The always-on CI Admitted check
+  (`ci-admitted.yaml`) reads current labels from a base-commit script. It is red
+  without the label, and on the push/label race, which it reports with re-add
+  guidance. It is advisory: the base commit protects the script, not the
+  PR-supplied workflow file. A missing base script fails red, never green. A
+  green admission run can coexist with a newer skipped heavy run; confirm the
+  heavy checks are not skipped, or re-add the label. Unadmitted PR runs use
+  `UNADMITTED_GROUP_SUFFIX`, so they never
+  cancel an admitted run. Append that suffix to every new heavy workflow's
+  cancelling group. Do not add per-workflow admission jobs: they would allocate
+  a hosted job on every unlabelled push. Gate every job of a new heavy PR workflow
+  with `PR_LABEL_GATE` from `scripts/ci/pr-label-gate.js`, ANDed at the top
+  level. Add `labeled` to `pull_request.types`, keep label events in the
+  ordinary cancelling PR group, and classify the workflow there. Gate callers, never reusable callees; never use workflow-level
+  filters. Leave paused `if: false` jobs alone. Branch-push validators keep
+  push only for `main`, `production` and `release-please--branches--**`; keep
+  mutating jobs (Biome auto-format) push-only. Cheap script-only and security
+  checks stay ungated. See the
+  [runbook](../../../../../apps/docs/build/devops/github-actions-runbook.mdx#label-gated-heavy-pr-ci-ready-for-ci).
 - Consolidate PR-only release checks into the reusable CI config job with
   `check_pr_release_only: true`. Meet, Lettin and Parley compare the same PR base
   and head as before; production/manual events always return `run_checks=true`.
@@ -1194,6 +1236,12 @@ Never delete consumption history to renew admission or infer retry permission fr
 missing local receipt or inactive version. Reconcile listed versions by detail SHA/tag and retain unresolved attempts.
 The [publisher runbook](../../../../../apps/docs/build/devops/wave1-native-publishers.mdx)
 owns the schema, bounded operation counts, residual account risk and recovery.
+For private production preparation, keep the read token confined to preflight and
+post-upload verification, and the deploy token confined to the upload step. Check
+replay history per app across source SHAs and attempts; an accepted receipt must
+match the current rollback baseline before it closes older history. A skipped
+upload after read-only refusal is retryable; an unknown write is not. Follow the
+runbook's original-run reconciliation procedure rather than clearing history.
 Run `wave1-native-publication.test.js` for the real entrypoint transport tests and
 its final-fence removal negative control, alongside publisher/policy/credential
 and workflow suites. Source-only tests do not establish hosted token permissions

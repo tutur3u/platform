@@ -1,12 +1,12 @@
 ---
 title: "Wave-1 native cutover"
-description: "Publication hold, native staging acceptance, and explicit production cutover gates."
+description: "Per-app admission, private production smoke, route rollback, and production acceptance."
 ---
 
 ## Production hold
 
-`productionPublicationPolicy` in `tuturuuu.ci.ts` holds Meet, Calendar, Mail and
-Apps. A production push reports **held for wave-1 cutover** in the planner log and
+`productionPublicationPolicy` in `tuturuuu.ci.ts` admits Calendar frontend only.
+Meet, Mail and Apps remain held. A production push reports **held for wave-1 cutover** in the planner log and
 summary and selects no publisher for those apps. Manual planner dispatch and
 package recovery honor the same hold. All four direct legacy Vercel publishers and
 Meet's native frontend/realtime publisher check it before any production credential
@@ -28,7 +28,10 @@ record uses `state: 'admitted'` and explicit `surfaces`: `['frontend']` for Cale
 Mail and Apps, or `['frontend', 'realtime-do']` for Meet. Missing/empty/malformed
 records, unexpected fields and unknown workflow names hold publication. Deleting
 a hold never admits publication. Known unrelated publishers keep normal selection,
-and Supabase production migration eligibility keeps its existing gates. Root
+and Supabase production migration eligibility keeps its existing gates. Calendar's legacy
+Vercel production target stays disabled even after native admission. The planner
+selects Calendar's native workflow only; its legacy native-source guard remains
+intact as a final refusal boundary. Root
 `production-publication-policy.test.js` covers policy mutations, planner outcomes,
 CLI outputs and the direct publishers' dependency on the policy job.
 `production-publisher-secrets.test.js` parses all legacy/native workflow jobs and
@@ -39,24 +42,110 @@ The hold applies to runs using this source. Rerunning an older workflow retains
 its original source and cannot acquire a later policy. The release owner retains
 custody of pre-hold runs and their resulting deployment baselines.
 
+## Mail bridge request ordering
+
+Mail checks host/path ownership and rejects mounted session-writing endpoints
+before shared-origin routing, request preparation or bridge dispatch. The mount
+resolver determines mounted versus root requests; session routes use the same
+segment matching as the endpoint dispatcher, including repeated/trailing slashes.
+Root-host session endpoints retain their existing behavior. Shared-origin routing
+keeps its separate mode and readiness gates; bridge adoption does not admit traffic.
+
+Every response retains Mail's response policy, and HTML responses also receive the
+per-app document security headers. The focused
+`apps/mail/src/runtime/mounted-session-endpoints.test.ts` suite checks ordering,
+route variants, root and neighbouring-route controls, routing refusal and document
+headers through the real bridge with fixture application/provider boundaries.
+
 ## Release gates
 
-A later explicit cutover PR must admit each app independently with the required
-surfaces and review rationale, after:
+Each app needs its own reviewed admission PR and exact accepted production SHA.
+Tests, types, lint, a real native build, sealed original/restored runtime acceptance
+and transitive supplier checks qualify that source. Keep the production publisher
+route-free; admission permits upload without moving canonical traffic. Review and
+freeze the exact promotion range before production sync.
 
-1. Exact accepted main SHA passes applicable tests, types, lint, real native builds,
-   sealed original/restored runtime acceptance and transitive supplier checks.
-2. Off-canonical staging uses distinct Worker identities and isolated resources,
-   explicit account, secret names only, no canonical routes, and exact artifact bytes.
-3. Hosted signed-in EN/VI, auth handoff/refresh/no-loop, navigation/RPC/assets and
-   app-specific provider acceptance pass. Mail needs provider/webhook/attachments;
-   Calendar needs provider/offline/Tasks; Meet needs hosted media/reconnect/SFU/TURN;
-   Apps needs redirects and canonical-host fence qualification.
-4. Release owner captures current routing IDs/proxy modes, immutable Vercel fallbacks,
-   old/new Worker versions, secret names, scheduler custody, operator and rollback
-   triggers. Meet rollback captures **both** frontend and realtime versions.
-5. Review and freeze the exact production promotion range. Source sync is not
-   permission to attach canonical routes or activate schedulers.
+The production-first cutover sequence is:
+
+1. Deploy the exact sealed production artifact privately with production runtime
+   configuration. Workers.dev and version previews remain disabled. Smoke the
+   candidate on an explicitly admitted temporary custom host after upload, then
+   remove that domain before the canonical switch. Staging acceptance remains
+   useful evidence but is not a flip prerequisite.
+2. Capture the current DNS record, proxy flag, TTL, every zone route, immutable
+   Vercel fallback and old/new Worker versions. Rehearse the exact rollback and
+   measure route detachment through verified fallback in under two minutes.
+3. Attach the reviewed canonical Worker Route with its scriptless ACME exclusion. Source sync alone never
+   attaches routes or activates schedulers.
+4. Immediately verify signed-in EN/VI, auth handoff, provider connection, one read
+   and one write. The operator's production browser owns signed-in checks.
+5. Watch errors, exceptions, 5xx and auth loops for 30–60 minutes. Any auth or data
+   error triggers immediate routing rollback, followed by a fix and a fresh flip.
+
+Mail additionally needs provider/webhook/attachment checks; Calendar needs
+provider/offline/Tasks checks; Meet needs hosted media/reconnect/SFU/TURN; Apps
+needs redirects and canonical-host fence checks. Meet rollback captures **both**
+frontend and realtime versions. Calendar/Mail/Apps use the
+[private production preparation workflow](/build/devops/wave1-native-publishers#route-free-production-preparation).
+
+### Calendar route and certificate continuity
+
+Calendar temporarily admits exactly `calendar-cutover.tuturuuu.com` alongside
+its canonical and staging root hosts. Unknown hosts remain rejected and one-origin
+mounts stay disabled. Remove this temporary host in an immediate follow-up commit
+or PR after the canonical flip is accepted; include that removal in the review
+brief. Attach the temporary domain only after the private publisher succeeds.
+
+Export the full zone and Vercel fallback before writes. Proxy only Calendar's
+existing CNAME, retaining its Vercel target. Verify HTTPS, legacy smoke, redirects,
+headers, uncached identity and the ACME challenge path through Cloudflare. A
+Vercel bot challenge on Cloudflare egress fails this fallback gate. Retain any
+operator-approved Cloudflare-IP firewall bypass while Vercel is the rollback
+origin, then remove that bypass rule once Calendar leaves Vercel. If this
+baseline fails, restore DNS-only immediately. Do not change zone-wide TLS, cache
+or firewall settings. Measure attach/detach/fallback on a disposable noncanonical
+route, then prepare two explicit routes:
+
+- `calendar.tuturuuu.com/.well-known/acme-challenge/*` with **no script assigned**.
+- `calendar.tuturuuu.com/*` → `tuturuuu-calendar`.
+
+Create the scriptless exclusion first and capture its returned ID immediately
+before the main route flip. Record the main route ID after attachment. The capture
+tool retains every zone route and reports both named Calendar handles, including
+scriptless exclusions. Rehearse rollback using both exact IDs. Delete the main
+route first, confirm the Vercel fallback, then delete the owned ACME exclusion.
+Preserve any exclusion that predates this cutover instead of deleting another
+operator's route. `calendarRollbackRoutes` validates both handles and deletion
+order; its `createdAcmeRouteId` must match the ID returned by this cutover's
+route-creation operation. Record that creation receipt with the capture. Without
+that proof, rollback preserves the existing ACME exclusion. If its captured handle
+is missing during an emergency, rollback may still remove the verified main route
+and preserve all ACME exclusions. API observations must
+confirm the captured pattern and owner before each delete. The accepted proxied
+baseline avoids a DNS propagation wait.
+The rollback target is Vercel serving the same legacy behavior as before cutover.
+The accepted CF baseline has robots 200, login redirects 307, protected requests
+401, uncached Vercel identity and GET/HEAD ACME origin reachability. The legacy
+Next app omits `X-Frame-Options: DENY` and redirects crawler requests instead of
+rendering native SSR. These are pre-existing legacy behavior: Cloudflare passes
+response headers through and the status paths retain the legacy Next responses.
+Record those differences instead of claiming the legacy target passes native
+acceptance. Native smoke and post-flip security expectations remain unchanged.
+
+[Vercel uses HTTP-01 for non-wildcard certificate renewal](https://vercel.com/docs/domains/working-with-ssl).
+The more-specific [scriptless route bypasses Workers](https://developers.cloudflare.com/workers/configuration/routing/routes/#matching-behavior)
+and sends ACME traffic to the retained proxied Vercel origin. There is no Worker
+forwarding path. Keep `global_fetch_strictly_public`: fetching the canonical URL
+inside this Worker would re-enter the public route and could recurse. Route
+exclusions apply to the complete matching path prefix; origin handling still owns
+the HTTP method and challenge response. After the flip, verify GET and HEAD ACME
+requests end to end with uncached Vercel identity and no native Worker execution.
+The production publisher filters attachments by `script === name`, so this
+scriptless exclusion does not attach the Worker or prevent its private upload.
+Regression coverage includes `calendar-routes.test.mjs`, `capture.test.mjs`, the
+cutover-host ACME negative case in `root-cutover.test.ts`, and the publisher's
+scriptless-topology control. A currently valid certificate alone does not prove
+future renewal safety.
 
 For Meet restore the captured frontend version, then realtime if changed; preserve
 Custom Domains. For Calendar/Mail/Apps retain their immutable Vercel deployments.
@@ -68,7 +157,7 @@ DNS TTLs and provider convergence prevent assuming instantaneous rollback.
 ## Subdomain cutover tools
 
 Native apps go live on their own subdomain first (root mode). Two read-only
-scripts support gate 4 and the post-deploy check:
+scripts support rollback capture and post-deploy checks:
 
 - `node scripts/native-cutover/capture.mjs --host <app>.tuturuuu.com --vercel-project <project> [--cf-zone-id <zone>] --out tmp/native-cutover-<app>.json`
   records DNS, the live edge (`server`, `x-vercel-id`, `cf-ray`, runtime
@@ -119,3 +208,62 @@ Observe Apps for at least 14 days and Meet/Mail/provider-critical Calendar flows
 30 days or the relevant business cycle before separately authorized decommissioning.
 No hold removal, resource provisioning, deployment or DNS change is authorized by
 this runbook alone.
+
+## Shared-origin mount flags
+
+Meet and Mail move from their subdomains to `tuturuuu.com/meet` and
+`tuturuuu.com/mail`. Meet's Worker entry and Mail's request handler run
+`decideOneOriginRequest` (`@tuturuuu/utils/one-origin-routing`) before anything
+else. It reads two per-app
+Worker variables:
+
+| Variable | Values | Effect |
+| --- | --- | --- |
+| `TTR_ONE_ORIGIN_MEET` / `TTR_ONE_ORIGIN_MAIL` | `off` (default and any unknown value), `shadow`, `on` | `off`: the shared origin returns 404. `shadow`: both hosts serve; shared-origin responses carry `X-Robots-Tag: noindex`. `on`: subdomain navigations redirect to the shared origin. |
+| `TTR_ONE_ORIGIN_<APP>_REDIRECT_STATUS` | `307` (default), `301` | Use `307` (`Cache-Control: no-store`) through observation: 3 days for Meet, 7 days for Mail. Promote to `301` only after that window, because a cached 301 cannot be revoked by a route rollback. |
+
+Redirects apply only to subdomain GET/HEAD navigations: `Sec-Fetch-Mode: navigate`,
+or an HTML `Accept` header without Fetch Metadata. They keep the raw path and query
+bytes, and the subdomain root maps to the canonical `/<app>/` (the bare `/<app>`
+is canonicalized by a zone redirect, because Worker routes cannot match it once a
+query string is present). Machine traffic is always served on the subdomain and never redirected.
+That covers `/api/*` (webhooks, OAuth callbacks), `/assets/*`, `/.well-known/*`,
+WebSocket upgrades, server functions (`/_serverFn` and the legacy app bases) and
+Meet's `/live-connect`. The decision never rewrites URLs. The Start bridge
+resolves the base per request, serving the subdomain at its root and the shared
+origin under `/<app>` from one artifact.
+
+Each app's `basePathReady` constant (`apps/meet/cloudflare/one-origin.ts`,
+`apps/mail/src/runtime/one-origin.ts`)
+stays `false` until its Start bridge build routes under `/<app>`. While false, the
+shared origin is refused in every mode and the subdomain behaves exactly as before.
+Setting the variables, attaching zone routes and changing the redirect status are
+release actions that need user approval.
+
+### Document security headers
+
+Same-origin apps form one trust domain, so each app carries its own document
+policy (`@tuturuuu/utils/security-headers`). Meet's Worker entry and Mail's
+request handler apply it to `text/html` responses only. They never replace a
+header the route already set.
+
+- **Enforced now:**
+  - `X-Content-Type-Options: nosniff`.
+  - `Referrer-Policy: strict-origin-when-cross-origin`.
+  - An explicit `Permissions-Policy`. Meet allows `camera`, `microphone` and
+    `display-capture` for itself. Mail denies all three, so a camera grant made to
+    Meet on the shared origin cannot be used from a Mail document.
+- **Report-only:** `Content-Security-Policy-Report-Only` sets no `'unsafe-inline'` or
+  `'unsafe-eval'` for scripts, plus `require-trusted-types-for 'script'`,
+  `object-src 'none'`, `base-uri 'none'` and `frame-ancestors 'none'`. On the
+  shared origin, "self" is path-scoped to `https://tuturuuu.com/<app>/` plus
+  `https://tuturuuu.com/api/`, so Meet's policy reports a fetch to `/mail/...`.
+  Violations stay in the browser console unless the Worker variable
+  `TTR_CSP_REPORT_URI` names a report endpoint.
+
+Report-only is burn-in on the subdomain, not admission. Every app shares one
+session on `tuturuuu.com`, so the CSP and Trusted Types must be **enforced** before
+an app is routed onto the shared origin in any mode, `shadow` included.
+Enforcement needs a per-request script nonce passed to the Start router
+(`ssr.nonce`) through the Start bridge request context, and zero remaining
+violations for each app. Inline scripts are expected to report until then.

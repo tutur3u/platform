@@ -178,10 +178,11 @@ void main() {
         ),
       ).thenThrow(failure);
       await cubit.loadWorkspace('ws');
+      final failed = cubit.stream.firstWhere(
+        (state) => state.status == AssistantChatStatus.error,
+      );
       await submit();
-      await cubit.stream
-          .firstWhere((state) => state.status == AssistantChatStatus.error)
-          .timeout(const Duration(seconds: 2));
+      await failed.timeout(const Duration(seconds: 2));
       expect(cubit.state.creationOutcomeUnknown, isTrue);
       await submit();
       verify(

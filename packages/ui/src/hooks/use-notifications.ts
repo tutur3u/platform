@@ -40,7 +40,8 @@ export type NotificationType =
   | 'time_tracking_request_resubmitted'
   | 'time_tracking_request_approved'
   | 'time_tracking_request_rejected'
-  | 'time_tracking_request_needs_info';
+  | 'time_tracking_request_needs_info'
+  | 'topic_assigned';
 export interface NotificationActor {
   id: string;
   display_name: string | null;

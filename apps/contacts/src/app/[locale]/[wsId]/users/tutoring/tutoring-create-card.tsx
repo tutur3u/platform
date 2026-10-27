@@ -8,7 +8,6 @@ import type {
 } from '@tuturuuu/internal-api';
 import { listWorkspaceUserGroupSessions } from '@tuturuuu/internal-api';
 import type { TutoringPolicy } from '@tuturuuu/internal-api/tutoring-policy';
-import { suggestTutoringSlots } from '@tuturuuu/internal-api/tutoring-suggestion';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { Button } from '@tuturuuu/ui/button';
 import { Combobox, type ComboboxOption } from '@tuturuuu/ui/custom/combobox';
@@ -21,6 +20,10 @@ import { TutoringCreateSlots } from './tutoring-create-slots';
 import { TutoringDraftChoices } from './tutoring-draft-choices';
 import { addDaysToIsoDate, toIsoDate } from './tutoring-filters';
 import { WorkspacePersonPicker } from './tutoring-people-picker';
+import {
+  applyTutoringSuggestions,
+  resolveTutoringClassSchedule,
+} from './tutoring-suggestion-apply';
 import {
   findSessionSlotConflicts,
   getConflictingSlotIndexes,
@@ -92,6 +95,18 @@ export function TutoringCreateCard({
     gcTime: 0,
     staleTime: 5 * 60_000,
   });
+
+  const schedule = useMemo(
+    () =>
+      resolveTutoringClassSchedule({
+        calendar: classSchedule.data?.data ?? [],
+        groupId: form.groupId,
+        loaded: classSchedule.isSuccess,
+        policy,
+        today,
+      }),
+    [classSchedule.data, classSchedule.isSuccess, form.groupId, policy, today]
+  );
 
   const groupOptions = useMemo<ComboboxOption[]>(
     () =>
@@ -299,39 +314,18 @@ export function TutoringCreateCard({
                   void classSchedule.refetch();
                   return;
                 }
-                const suggestions = suggestTutoringSlots(
-                  classSchedule.data?.data ?? [],
-                  form.reasonType === 'ABSENT_RECOVERY'
-                    ? missedDate
-                    : addDaysToIsoDate(today, -1),
-                  form.sessionSlots.length,
+                const result = applyTutoringSuggestions({
+                  form,
+                  fromDate:
+                    form.reasonType === 'ABSENT_RECOVERY'
+                      ? missedDate
+                      : addDaysToIsoDate(today, -1),
                   policy,
-                  form.reasonType === 'WEAK_SUPPORT'
-                    ? 'consecutive'
-                    : 'separate'
-                );
-                if (suggestions.length !== form.sessionSlots.length) {
-                  setScheduleMessage(
-                    t('suggestion_unavailable', {
-                      days: policy.schedulingHorizonDays,
-                    })
-                  );
-                  return;
-                }
-                onChange({
-                  ...form,
-                  sessionSlots: form.sessionSlots.map((slot, index) => ({
-                    ...slot,
-                    durationMinutes:
-                      suggestions[index]?.durationMinutes ??
-                      policy.durationMinutes,
-                    sessionDate:
-                      suggestions[index]?.sessionDate ?? slot.sessionDate,
-                    startTime: suggestions[index]?.startTime ?? slot.startTime,
-                  })),
+                  schedule,
                 });
+                if (result.form) onChange(result.form);
                 setScheduleMessage(
-                  t('smart_suggestion_applied', { count: suggestions.length })
+                  t(result.message.key, result.message.values)
                 );
               }}
               type="button"
@@ -362,7 +356,7 @@ export function TutoringCreateCard({
         form={form}
         policy={policy}
         today={today}
-        schedule={classSchedule.data?.data ?? []}
+        schedule={schedule}
         missingCount={classSchedule.data?.missing?.length ?? 0}
         scheduleLoading={classSchedule.isFetching}
         scheduleError={classSchedule.isError}

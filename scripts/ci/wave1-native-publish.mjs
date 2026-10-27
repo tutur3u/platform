@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { stagingAdmission } from './wave1-native-admission.mjs';
 import {
@@ -11,7 +11,8 @@ import {
   verify,
 } from './wave1-native-artifact.mjs';
 import { attemptLedger } from './wave1-native-attempt.mjs';
-import { profiles } from './wave1-native-profile.mjs';
+import { profileFor, profiles } from './wave1-native-profile.mjs';
+import { NativeUploadError } from './wave1-native-upload-error.mjs';
 
 export function publicationAdmission({
   environment,
@@ -145,15 +146,34 @@ export async function main({
 } = {}) {
   const [mode, app, environment, sha] = argv;
   appRoot ??= resolve('apps', app);
+  if (mode === 'dry-run') {
+    assert.ok(
+      !env.CLOUDFLARE_API_TOKEN &&
+        !env.CLOUDFLARE_STAGING_API_TOKEN &&
+        !env.WAVE1_PRODUCTION_CLOUDFLARE_API_TOKEN,
+      'Provider credentials forbidden in dry-run'
+    );
+    const { receipt, config } = verify(appRoot, app, environment, sha);
+    await uploadArtifact({
+      env,
+      app,
+      environment,
+      config,
+      sha,
+      digest: artifactDigest(receipt),
+      p: receipt.profile,
+      exec,
+      dryRun: true,
+    });
+    return;
+  }
   const request = (url, token, body) => boundedJson(url, token, fetcher, body);
   const { productionPublicationHold } = await import(
     './production-publication-policy.ts'
   );
   const admission = publicationAdmission({
     environment,
-    hold:
-      productionPublicationHold(`${app}-cloudflare.yaml`) ??
-      profiles.productionHold,
+    hold: productionPublicationHold(`${app}-cloudflare.yaml`) ?? null,
     ref: env.GITHUB_REF,
     event: env.GITHUB_EVENT_NAME,
     stagingEnabled: env.WAVE1_STAGING_PUBLISH_ENABLED,
@@ -210,7 +230,7 @@ export async function main({
   if (environment === 'staging')
     assert.equal(
       p.host,
-      `${p.name}.${env.CLOUDFLARE_WORKERS_SUBDOMAIN}.workers.dev`
+      profileFor(app, 'staging', env.CLOUDFLARE_WORKERS_SUBDOMAIN).host
     );
   const flag =
     environment === 'staging'
@@ -376,54 +396,18 @@ export async function main({
     await ledger.save('failed');
     throw error;
   }
-  const write = async () => {
-    const outputFile = resolve(
-      env.RUNNER_TEMP,
-      `${app}-${environment}-wrangler.ndjson`
-    );
-    try {
-      exec(
-        'bun',
-        [
-          'x',
-          '--no-install',
-          'wrangler',
-          'deploy',
-          '--config',
-          config,
-          '--message',
-          sha,
-          '--tag',
-          digest,
-        ],
-        {
-          env: {
-            ...env,
-            CLOUDFLARE_API_TOKEN: cfToken,
-            CLOUDFLARE_ACCOUNT_ID: p.accountId,
-            WRANGLER_OUTPUT_FILE_PATH: outputFile,
-            WRANGLER_SEND_METRICS: 'false',
-          },
-          stdio: ['ignore', 'pipe', 'pipe'],
-          timeout: 180000,
-          maxBuffer: 1024 * 1024,
-        }
-      );
-    } catch {
-      throw new Error(
-        'Wrangler publication outcome is uncertain; inspect the matching version and retained receipt before any retry'
-      );
-    }
-    const writes = readFileSync(outputFile, 'utf8')
-      .split('\n')
-      .filter(Boolean)
-      .map((line) => JSON.parse(line))
-      .filter((item) => item.type === 'deploy');
-    assert.equal(writes.length, 1, 'Expected one publication receipt');
-    assert.equal(writes[0].worker_name, p.name);
-    assert.match(writes[0].version_id, /^[a-f0-9-]{36}$/);
-    return writes[0].version_id;
-  };
+  const write = () =>
+    uploadArtifact({
+      env,
+      app,
+      environment,
+      config,
+      sha,
+      digest,
+      cfToken,
+      p,
+      exec,
+    });
   record.versionId = await write();
   record.state = 'uploaded';
   save();
@@ -436,6 +420,88 @@ export async function main({
     `Accepted ${p.name} version ${record.versionId} (private staging; public serving disabled)`
   );
 }
+export async function uploadArtifact({
+  env,
+  app,
+  environment,
+  config,
+  sha,
+  digest,
+  cfToken,
+  p,
+  exec = execFileSync,
+  dryRun = false,
+}) {
+  const outputFile = resolve(
+    env.RUNNER_TEMP,
+    `${app}-${environment}-wrangler.ndjson`
+  );
+  try {
+    exec(
+      'bun',
+      [
+        'x',
+        '--no-install',
+        'wrangler',
+        'deploy',
+        ...(dryRun
+          ? [
+              '--dry-run',
+              '--outdir',
+              resolve(env.RUNNER_TEMP, `${app}-${environment}-dry-run`),
+            ]
+          : []),
+        '--config',
+        config,
+        '--message',
+        sha,
+        '--tag',
+        digest,
+      ],
+      {
+        cwd: resolve(dirname(config), '../..'),
+        env: {
+          ...Object.fromEntries(
+            [
+              'PATH',
+              'HOME',
+              'USER',
+              'TMPDIR',
+              'TMP',
+              'TEMP',
+              'LANG',
+              'LC_ALL',
+            ].flatMap((name) =>
+              env[name] === undefined ? [] : [[name, env[name]]]
+            )
+          ),
+          CI: 'true',
+          ...(cfToken ? { CLOUDFLARE_API_TOKEN: cfToken } : {}),
+          CLOUDFLARE_ACCOUNT_ID: p.accountId,
+          WRANGLER_OUTPUT_FILE_PATH: outputFile,
+          WRANGLER_SEND_METRICS: 'false',
+          WRANGLER_WRITE_LOGS: 'false',
+        },
+        stdio: ['ignore', 'pipe', 'pipe'],
+        timeout: 180000,
+        maxBuffer: 1024 * 1024,
+      }
+    );
+  } catch (error) {
+    throw new NativeUploadError(error, [cfToken]);
+  }
+  if (dryRun) return;
+  const writes = readFileSync(outputFile, 'utf8')
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => JSON.parse(line))
+    .filter((item) => item.type === 'deploy');
+  assert.equal(writes.length, 1, 'Expected one publication receipt');
+  assert.equal(writes[0].worker_name, p.name);
+  assert.match(writes[0].version_id, /^[a-f0-9-]{36}$/);
+  return writes[0].version_id;
+}
+
 if (
   process.argv[1] &&
   import.meta.url === pathToFileURL(resolve(process.argv[1])).href

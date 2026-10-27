@@ -259,7 +259,7 @@ export async function GET(request: Request, { params }: Params) {
       if (new Set(rows.map((row) => row.id)).size !== rows.length) {
         throw new Error('Report scope changed. Refresh reports.');
       }
-      return sortReportList(
+      return sortReportList<(typeof rows)[number], typeof sortColumn>(
         rows,
         sortColumn,
         parsed.data.sortDirection === 'asc'
@@ -365,6 +365,26 @@ export async function POST(request: Request, { params }: Params) {
         { message: 'User not found in workspace' },
         { status: 403 }
       );
+    }
+
+    const [user, group] = await Promise.all([
+      sbAdmin
+        .from('workspace_users')
+        .select('id')
+        .eq('id', parsed.data.user_id)
+        .eq('ws_id', permissions.wsId)
+        .maybeSingle(),
+      sbAdmin
+        .from('workspace_user_groups')
+        .select('id')
+        .eq('id', parsed.data.group_id)
+        .eq('ws_id', permissions.wsId)
+        .maybeSingle(),
+    ]);
+    if (user.error) throw user.error;
+    if (group.error) throw group.error;
+    if (!user.data || !group.data) {
+      return NextResponse.json({ message: 'Not found' }, { status: 404 });
     }
 
     const privateDb = sbAdmin.schema('private');

@@ -191,18 +191,47 @@ brightness. The appearance theme publishes `AppColorTokens` as a Material
 every theme, accent and light/dark mode applies without extra wiring. Role and
 type names match the legacy shadcn names. `AppElevation` and `AppMotion` hold
 shadows and durations. Spacing and radii stay in `AppSpacing` / `AppRadius`.
+`AppTokens.of(context).interface` (`AppInterfaceTokens`) carries the
+Appearance interface choices: `radius(base)` / `borderRadius(base)` for the
+corner style, `rowMinHeight` for density (row height only; gaps do not scale) and `scrollPhysics` for the style.
+Surfaces read radii through it instead of using `AppRadius` directly, and no
+component branches on the platform for these choices. `AppInterfaceTheme`
+installs the extension and page transitions on the Material theme;
+`AppInterfaceScope` applies scroll physics and the device Reduce motion
+choice below it, without changing the subtree shape.
 
 **Components.** `AppButton` (`primary`, `secondary`, `outline`, `ghost`,
 `destructive`; densities, sizes, `loading`), `AppIconButton` (required
 `tooltip`), `AppTextField`, `AppSearchField`, `AppCard`, `AppBadge`, `AppAlert`,
 `AppDivider`, `AppSwitch`, `AppCheckbox`, `AppSelect`, `AppOptionTile`,
-`AppTooltip`, `showAppToast`, `AppGap`, `AppScaffold` and `AppTopBar`. Icons are
+`AppTooltip`, `showAppToast`, `AppGap`, `AppScaffold` and `AppTopBar`. Loading
+states use `AppLoadingIndicator`, which sizes the Nova mark by the space it
+stands in for: `AppLoadingIndicator.page()` (56dp, centred) for pages, panes
+and full-screen gates, the default section size (32dp) for cards and list
+footers, and `.inline()` (20dp) for buttons and row slots. It announces the
+localized "Loading" by default. Icons are
 the generated web-parity `LucideIcons` and `LucideLabIcons` (see
 [Icons](#icons)), with `AppIcons` for semantic aliases and brand fallbacks.
 
 **Sheets and dialogs.** Open every overlay with `showAppSheet` (compact:
 bottom sheet; wider: centered dialog) or `showAppDialog`. Lay out the body with
-`AppSheetScaffold` or `AppDialog`.
+`AppSheetScaffold` or `AppDialog`. Every sheet uses one surface
+(`AppSheetSurface`: popover fill, 24dp top radius, drag handle) and one inset
+policy, so sheets look and behave the same in every app.
+
+- **Menus and pickers.** Use `showAppActionSheet` (`AppSheetAction` rows with a
+  tone icon tile, a value or a callback, `destructive`, `enabled`) for "more",
+  "add" and "attach" menus, and `showAppChoiceSheet` (`AppSheetChoice`,
+  check-marked, lazily built) for single-choice pickers. `AppSelect` opens the
+  same choice sheet. Do not stack `AppListTile`s or `ListTile`s in a bare
+  sheet body: that skips the header, close button and bottom clearance.
+- **Legacy sheets.** The compact `showAdaptiveSheet` path draws the same
+  `AppSheetSurface` and consumes keyboard insets once at the host, so its
+  bodies must not pad for the keyboard again. Bodies that are also shown
+  outside a sheet use `const AppSheetHandle()` instead of a hand-drawn bar; it
+  renders nothing inside a host that already draws the handle. Do not call
+  `showModalBottomSheet` or paint a second rounded sheet background inside a
+  body.
 
 - **Back closes the topmost overlay first.** `AppModalBinding` registers a
   *modal* entry in `ShellChromeActionsCubit`. While it exists,
@@ -215,6 +244,14 @@ bottom sheet; wider: centered dialog) or `showAppDialog`. Lay out the body with
   navigator, below the shell's top navbar and floating dock. While an overlay
   is open, modal registrations replace the page's chrome actions for every
   location.
+- **Search actions.** Every shell Search action is a
+  `ShellActionSpec.search(...)`: a dock action with `AppIcons.search`, the
+  close glyph while active, highlight while a query applies, and the shared
+  48dp dock target. Register one only on screens that search their own
+  content; root tabs without content to search show none. List a screen's
+  primary dock action (create, view) before Search: phones under 400dp keep
+  only the first dock action in the dock (`meet_dock_order_test.dart`,
+  `drive_page_test.dart`).
 - **Dynamic search.** Pass `search: AppSheetSearch(...)` to
   `AppSheetScaffold`. Inside the shell, it registers a dock search action;
   tapping it turns the top navbar into the shell search field bound to the
@@ -231,6 +268,28 @@ bottom sheet; wider: centered dialog) or `showAppDialog`. Lay out the body with
   and never clamp text scaling.
 - Explicit full-screen forms and system-owned flows still open above the shell
   with `useRootNavigator: true` and `AppScaffold(headers: [AppTopBar(...)])`.
+
+**Row swipe actions.** `AppSwipeActions` gives a list row one leading
+full-swipe action (for example Complete) and up to three trailing buttons that
+stay open until one is tapped or the row is tapped. Each `AppSwipeAction` has a
+label, a Lucide icon, an `AppTone` and a callback that runs the feature's
+existing mutation; the widget owns no data. Every action is also a custom
+semantics action, so screen-reader users never need the gesture. Gestures
+mirror in right-to-left layouts, settle without animation under Reduce Motion,
+and play the selection haptic when a leading swipe arms. Buttons widen with
+enlarged text up to 75% of the row width, keep at least 44dp targets, and scale
+their labels down instead of overflowing. Disable the row (`enabled: false`)
+in selection modes. Pair it with a long-press `showAppActionSheet` that lists
+the same actions plus the rest of the row's commands. A fling commits the
+leading action only after the drag covers 15% of the row, so a flick while
+scrolling never completes anything. Fill labels use the tone's paired
+foreground token (`primaryForeground`, `destructiveForeground`) or the page
+foreground or background, whichever contrasts more.
+
+Show `showAppToast` from a context below the root overlay, such as the page's
+own context. `Navigator.of(context, rootNavigator: true).context` is the
+navigator's element, which sits above its overlay, so the toast throws
+"No Overlay widget found".
 
 The Personal and Workspace timezone pickers
 (`features/settings/view/timezone_picker_sheet.dart`) are the reference
@@ -444,6 +503,13 @@ AppSwitch and AppCheckbox draw their own token-based surfaces on every platform.
 Use showAppDatePicker and showAppTimePicker for in-app date/time editing. Both use the modal host so Back dismisses the picker before its parent editor. Date bounds, leap days and 12/24-hour input are preserved; year selection supports the shell search action. Existing framework localizations supply English and Vietnamese picker labels. System-owned permission dialogs remain OS-owned.
 
 Regression coverage: test/core/ui/app_selection_controls_test.dart and test/core/ui/app_date_time_picker_test.dart.
+
+`AppComposerRow` lays out a growing prompt field between icon controls. Pad
+the field with `AppComposerRow.fieldPadding(minHeight:, lineHeight:)` (use
+`AppComposerRow.lineHeightOf` for the scaled line): one line then shares the
+row's centre with every control, and extra lines grow upward while controls
+stay centred on the last line. The Mira composer uses it;
+`assistant_composer_alignment_test.dart` covers 1x and 2x text and growth.
 
 Selection rows respond to taps on their labels as well as the control. Toast
 handles become closed when their overlay is disposed, canceling their dismissal

@@ -333,6 +333,42 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantAttachmentUploadFailed => 'Không tải được tệp đính kèm. Hãy xóa tệp và thử lại trước khi gửi.';
 
   @override
+  String get assistantAttachmentFailureForbidden => 'Cuộc trò chuyện này không nhận tệp đính kèm. Hãy xóa tệp hoặc bắt đầu cuộc trò chuyện mới.';
+
+  @override
+  String get assistantAttachmentFailureNetwork => 'Tải lên bị gián đoạn. Kiểm tra kết nối rồi nhấn Thử lại.';
+
+  @override
+  String get assistantAttachmentFailureServer => 'Tải lên chưa hoàn tất. Nhấn Thử lại.';
+
+  @override
+  String get assistantAttachmentFailureTooLarge => 'Tệp lớn hơn 32 MB. Hãy xóa tệp hoặc đính kèm tệp nhỏ hơn.';
+
+  @override
+  String get assistantAttachmentFailureUnsupported => 'Không hỗ trợ loại tệp này. Hãy xóa tệp để gửi.';
+
+  @override
+  String assistantAttachmentNotSentMany(int count) {
+    return '$count tệp đính kèm chưa tải lên. Thử lại hoặc xóa chúng để gửi.';
+  }
+
+  @override
+  String assistantAttachmentNotSentOne(String name, String reason) {
+    return '$name chưa tải lên. $reason';
+  }
+
+  @override
+  String get assistantAttachmentPreparing => 'Đang chuẩn bị';
+
+  @override
+  String get assistantAttachmentRetry => 'Thử lại';
+
+  @override
+  String assistantAttachmentUploadingPercent(int percent) {
+    return '$percent%';
+  }
+
+  @override
   String get assistantAttachmentUploadPending => 'Hãy đợi tải tệp lên xong rồi gửi.';
 
   @override
@@ -581,9 +617,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantLiveHideCamera => 'Ẩn camera';
 
   @override
-  String get assistantLiveIdleHeading => 'Sẵn sàng trò chuyện';
-
-  @override
   String get assistantLiveInfoAccessHeading => 'Quyền truy cập hiện tại';
 
   @override
@@ -673,6 +706,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantLiveStageYouMuted => 'Chạm vào micro để nói tiếp';
 
   @override
+  String get assistantLiveStartTalking => 'Bắt đầu nói';
+
+  @override
   String get assistantLiveStartupAudio => 'Khởi tạo âm thanh';
 
   @override
@@ -741,13 +777,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantLiveTitle => 'Mira Live';
 
   @override
-  String get assistantLiveTranscriptEmpty => 'Bắt đầu nói hoặc nhập tin nhắn. Cuộc trò chuyện sẽ hiển thị ở đây.';
-
-  @override
   String get assistantLiveTranscriptPending => 'Các thay đổi trong bản ghi chưa được đồng bộ.';
-
-  @override
-  String get assistantLiveTranscriptTitle => 'Bản ghi trực tiếp';
 
   @override
   String get assistantLiveTypeMessage => 'Gõ';
@@ -855,6 +885,9 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String get assistantLocalSourceEmpty => 'Tải một mô hình bên dưới';
+
+  @override
   String get assistantLocalStop => 'Dừng tạo phản hồi cục bộ';
 
   @override
@@ -945,6 +978,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantModelOutputCost => 'Đầu ra';
 
   @override
+  String get assistantModelSourceTitle => 'Nguồn mô hình';
+
+  @override
   String get assistantModelUnfavorite => 'Bỏ khỏi yêu thích';
 
   @override
@@ -996,7 +1032,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantSaveAction => 'Lưu';
 
   @override
-  String get assistantScrollToBottomAction => 'Cuộn xuống cuối';
+  String get assistantScrollToBottomAction => 'Tới tin mới nhất';
 
   @override
   String get assistantSearchModels => 'Tìm mô hình';
@@ -1054,9 +1090,6 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get assistantStarterPlan => 'Kế hoạch hôm nay';
-
-  @override
-  String get assistantStarterSubtitle => 'Chọn một gợi ý nhanh hoặc tự gõ điều bạn cần.';
 
   @override
   String get assistantStarterTitle => 'Chưa biết bắt đầu từ đâu?';
@@ -2091,6 +2124,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get commonLoading => 'Đang tải';
 
   @override
+  String get commonMoreOptions => 'Tùy chọn khác';
+
+  @override
   String get commonNext => 'Tiếp';
 
   @override
@@ -2131,6 +2167,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get commonSave => 'Lưu';
+
+  @override
+  String get commonSearch => 'Tìm kiếm';
 
   @override
   String get commonSelectDate => 'Chọn ngày';
@@ -4244,6 +4283,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get habitsWorkoutWeight => 'Mức tạ';
 
   @override
+  String get homeCalendarEmpty => 'Không có sự kiện trong tuần này.';
+
+  @override
   String get homeCustomize => 'Tùy chỉnh Trang chủ';
 
   @override
@@ -4283,10 +4325,61 @@ class AppLocalizationsVi extends AppLocalizations {
   String get homePersonalAgendaUnavailable => 'Lịch cá nhân hiện không khả dụng.';
 
   @override
+  String get homeSectionCalendar => 'Lịch';
+
+  @override
   String get homeSectionLoadFailed => 'Kéo xuống để thử lại.';
 
   @override
+  String get homeSectionToday => 'Hôm nay';
+
+  @override
+  String get homeSectionUpNext => 'Sắp tới';
+
+  @override
+  String get homeSeeAll => 'Xem tất cả';
+
+  @override
   String get homeShowWidget => 'Hiện tiện ích';
+
+  @override
+  String get homeTodayEmpty => 'Không có việc đến hạn hôm nay.';
+
+  @override
+  String get homeUpNextEmpty => 'Chưa có việc sắp tới.';
+
+  @override
+  String get homeWidgetTasks => 'Hôm nay và Sắp tới';
+
+  @override
+  String get homeWorkspaceChipsLabel => 'Không gian làm việc';
+
+  @override
+  String get homeWorkspaceEditPins => 'Sửa không gian làm việc đã ghim';
+
+  @override
+  String get homeWorkspaceFind => 'Tìm không gian làm việc';
+
+  @override
+  String get homeWorkspaceMore => 'Thêm';
+
+  @override
+  String get homeWorkspaceNew => 'Không gian làm việc mới';
+
+  @override
+  String get homeWorkspacePin => 'Ghim vào Trang chủ';
+
+  @override
+  String get homeWorkspacePinsDescription => 'Không gian làm việc đã ghim hiển thị dạng thẻ trên Trang chủ.';
+
+  @override
+  String get homeWorkspacePinsFailed => 'Không thể lưu không gian làm việc đã ghim.';
+
+  @override
+  String get homeWorkspacePinsTitle => 'Không gian làm việc đã ghim';
+
+  @override
+  String get homeWorkspaceUnpin => 'Bỏ ghim khỏi Trang chủ';
 
   @override
   String get inventoryAddCategory => 'Thêm danh mục';
@@ -6003,6 +6096,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get navHome => 'Trang chủ';
 
   @override
+  String get navInbox => 'Hộp thư';
+
+  @override
+  String get navMira => 'Mira';
+
+  @override
   String get navMore => 'Thêm';
 
   @override
@@ -6013,6 +6112,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get navTimer => 'Bấm giờ';
+
+  @override
+  String get navYou => 'Bạn';
 
   @override
   String get notesArchive => 'Lưu trữ ghi chú';
@@ -6753,6 +6855,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get profileEmailUpdateNote => 'Email xác nhận sẽ được gửi đến cả hai địa chỉ';
 
   @override
+  String get profileFocusTime => 'Thời gian tập trung';
+
+  @override
   String get profileFullName => 'Tên đầy đủ';
 
   @override
@@ -6859,6 +6964,18 @@ class AppLocalizationsVi extends AppLocalizations {
   String get profileTimelineHideDates => 'Đóng thanh ngày và xem dòng hoạt động';
 
   @override
+  String get profileTimelineKindNote => 'Ghi chú';
+
+  @override
+  String get profileTimelineKindTask => 'Công việc';
+
+  @override
+  String get profileTimelineKindTransaction => 'Giao dịch';
+
+  @override
+  String get profileTimelineKindWorkspaceEvent => 'Sự kiện không gian làm việc';
+
+  @override
   String get profileTimelineLimited => 'Chỉ hiển thị hoạt động gần đây. Một số nguồn đã đạt giới hạn hiển thị.';
 
   @override
@@ -6866,11 +6983,6 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get profileTimelineMoreDays => 'Hiện thêm ngày đã tải';
-
-  @override
-  String profileTimelineNotes(int count) {
-    return 'Đã thêm $count ghi chú';
-  }
 
   @override
   String get profileTimelinePartial => 'Một số hoạt động chưa hiển thị.';
@@ -6882,28 +6994,13 @@ class AppLocalizationsVi extends AppLocalizations {
   String get profileTimelineTab => 'Dòng thời gian';
 
   @override
-  String profileTimelineTasks(int count) {
-    return 'Đã tạo $count công việc';
-  }
-
-  @override
   String get profileTimelineTitle => 'Dòng thời gian';
 
   @override
   String get profileTimelineToday => 'Hôm nay';
 
   @override
-  String profileTimelineTransactions(int count) {
-    return 'Đã tạo $count giao dịch';
-  }
-
-  @override
   String get profileTimelineUnavailable => 'Không thể làm mới hoạt động.';
-
-  @override
-  String profileTimelineWorkspaceEvents(int count) {
-    return 'Đã thêm $count sự kiện vào không gian';
-  }
 
   @override
   String get profileTimelineYesterday => 'Hôm qua';
@@ -7266,6 +7363,39 @@ class AppLocalizationsVi extends AppLocalizations {
   String get appearanceBackgroundTitle => 'Nền';
 
   @override
+  String get appearanceCornersRounded => 'Bo tròn';
+
+  @override
+  String get appearanceCornersSoft => 'Bo nhẹ';
+
+  @override
+  String get appearanceCornersSquare => 'Vuông';
+
+  @override
+  String get appearanceCornersTitle => 'Góc bo';
+
+  @override
+  String get appearanceDensityComfortable => 'Thoải mái';
+
+  @override
+  String get appearanceDensityCompact => 'Gọn';
+
+  @override
+  String get appearanceDensityTitle => 'Mật độ';
+
+  @override
+  String get appearanceDeviceOverride => 'Dùng giao diện riêng trên thiết bị này';
+
+  @override
+  String get appearanceDeviceOverrideDescription => 'Thay đổi tại đây chỉ áp dụng cho thiết bị này, không đồng bộ với tài khoản.';
+
+  @override
+  String get appearanceFeedbackTitle => 'Phản hồi và chuyển động';
+
+  @override
+  String get appearanceHapticsDescription => 'Rung nhẹ khi bạn chọn, vuốt hoặc xác nhận.';
+
+  @override
   String get appearanceIntensity => 'Cường độ';
 
   @override
@@ -7278,6 +7408,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get appearancePreviewTitle => 'Xem trước';
 
   @override
+  String get appearanceReduceMotion => 'Giảm chuyển động';
+
+  @override
+  String get appearanceReduceMotionDescription => 'Luôn giảm hiệu ứng chuyển động, kể cả khi cài đặt hệ thống đang tắt.';
+
+  @override
   String get appearanceReset => 'Khôi phục mặc định';
 
   @override
@@ -7285,6 +7421,21 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get appearanceSoftness => 'Độ mềm';
+
+  @override
+  String get appearanceStyleDescription => 'Thay đổi cách trang chuyển và danh sách cuộn. Màu sắc và bố cục giữ nguyên trên mọi thiết bị.';
+
+  @override
+  String get appearanceStyleIos => 'Kiểu iOS';
+
+  @override
+  String get appearanceStyleMaterial => 'Kiểu Material';
+
+  @override
+  String get appearanceStyleTitle => 'Phong cách';
+
+  @override
+  String get appearanceStyleTuturuuu => 'Tuturuuu';
 
   @override
   String get appearanceSurfaceOpacity => 'Độ đục của thẻ';
@@ -8557,6 +8708,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailColorYellow => 'Vàng';
 
   @override
+  String get taskBoardDetailCompleteTask => 'Hoàn thành';
+
+  @override
   String get taskBoardDetailCreateList => 'Tạo danh sách';
 
   @override
@@ -8633,6 +8787,9 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String get taskBoardDetailDueDateUpdated => 'Đã cập nhật hạn chót.';
+
+  @override
   String get taskBoardDetailEditList => 'Chỉnh sửa danh sách';
 
   @override
@@ -8673,6 +8830,36 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get taskBoardDetailFiltersActive => 'Bộ lọc đang bật';
+
+  @override
+  String get taskBoardDetailFocusReplaceConfirm => 'Dừng và bắt đầu';
+
+  @override
+  String get taskBoardDetailFocusReplaceMessage => 'Một bộ bấm giờ đang chạy. Bắt đầu tập trung sẽ dừng nó và bắt đầu một phiên mới cho công việc này.';
+
+  @override
+  String get taskBoardDetailFocusReplacePausedMessage => 'Một bộ bấm giờ đang tạm dừng. Bắt đầu tập trung sẽ kết thúc nó và bắt đầu một phiên mới cho công việc này.';
+
+  @override
+  String get taskBoardDetailFocusReplacePausedTitle => 'Kết thúc bộ bấm giờ đang tạm dừng?';
+
+  @override
+  String get taskBoardDetailFocusReplaceTitle => 'Dừng bộ bấm giờ đang chạy?';
+
+  @override
+  String get taskBoardDetailFocusStartFailedPausedEnded => 'Không thể bắt đầu tập trung và bộ bấm giờ đang tạm dừng đã kết thúc. Mở bộ bấm giờ để tiếp tục.';
+
+  @override
+  String get taskBoardDetailFocusStartFailedRestored => 'Không thể bắt đầu tập trung. Bộ bấm giờ đang tạm dừng đã được giữ nguyên.';
+
+  @override
+  String get taskBoardDetailFocusStartFailedRunning => 'Không thể bắt đầu tập trung. Bộ bấm giờ trước đó đang chạy lại.';
+
+  @override
+  String get taskBoardDetailFocusStartFailedUnknown => 'Không thể bắt đầu tập trung và không xác nhận được trạng thái của bộ bấm giờ trước đó. Mở bộ bấm giờ để kiểm tra.';
+
+  @override
+  String get taskBoardDetailFocusStarted => 'Đã bắt đầu bấm giờ cho công việc này.';
 
   @override
   String taskBoardDetailFromList(String list) {
@@ -8806,6 +8993,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailOpenRelatedTask => 'Mở công việc liên quan';
 
   @override
+  String get taskBoardDetailOpenTimer => 'Mở bộ bấm giờ';
+
+  @override
   String get taskBoardDetailOverdue => 'Quá hạn';
 
   @override
@@ -8880,9 +9070,15 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailRenameList => 'Đổi tên danh sách';
 
   @override
+  String get taskBoardDetailReopenTask => 'Mở lại';
+
+  @override
   String taskBoardDetailRestoreTasks(int count) {
     return 'Khôi phục ($count)';
   }
+
+  @override
+  String get taskBoardDetailScheduleTask => 'Lên lịch';
 
   @override
   String get taskBoardDetailSearchDone => 'Xong';
@@ -8918,6 +9114,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get taskBoardDetailSetEstimation => 'Đặt điểm ước lượng';
+
+  @override
+  String get taskBoardDetailStartFocus => 'Bắt đầu tập trung';
 
   @override
   String taskBoardDetailStartsAt(String date) {
@@ -9075,6 +9274,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get taskBoardDetailTaskLabels => 'Nhãn';
+
+  @override
+  String get taskBoardDetailTaskList => 'Danh sách';
 
   @override
   String get taskBoardDetailTaskListLabel => 'Danh sách';
@@ -10210,6 +10412,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get timerHeatmapViewOriginal => 'Gốc';
 
   @override
+  String get timerHeatmapViewTitle => 'Chế độ xem';
+
+  @override
   String get timerHeatmapWed => 'T4';
 
   @override
@@ -10282,10 +10487,49 @@ class AppLocalizationsVi extends AppLocalizations {
   String get timerPomodoro => 'Pomodoro';
 
   @override
+  String get timerPomodoroBreakDoneBody => 'Sẵn sàng cho lượt tập trung tiếp theo?';
+
+  @override
+  String get timerPomodoroBreakDoneTitle => 'Hết giờ nghỉ';
+
+  @override
+  String timerPomodoroCycle(int current, int total) {
+    return 'Lượt tập trung $current/$total';
+  }
+
+  @override
+  String get timerPomodoroFocusDoneBody => 'Đến giờ nghỉ rồi.';
+
+  @override
+  String get timerPomodoroFocusDoneTitle => 'Đã xong lượt tập trung';
+
+  @override
+  String get timerPomodoroOrphanedSession => 'Không thể bắt đầu tập trung và một bộ bấm giờ vừa tạo có thể vẫn đang chạy. Hãy kiểm tra trang Bấm giờ.';
+
+  @override
+  String get timerPomodoroOtherRunning => 'Một bộ bấm giờ khác đang chạy. Dừng nó ở trang Bấm giờ để tiếp tục lượt tập trung này.';
+
+  @override
+  String timerPomodoroRemaining(String minutes, String seconds) {
+    return 'Còn $minutes:$seconds';
+  }
+
+  @override
   String get timerPomodoroSettings => 'Cài đặt Pomodoro';
 
   @override
   String get timerPomodoroSettingsDescription => 'Điều chỉnh thời gian tập trung, thời gian nghỉ và tự động chuyển giữa các phiên.';
+
+  @override
+  String get timerPomodoroSkip => 'Bỏ qua';
+
+  @override
+  String get timerPomodoroStart => 'Bắt đầu tập trung';
+
+  @override
+  String timerPomodoroSummary(int focus, int rest) {
+    return '$focus phút tập trung · $rest phút nghỉ';
+  }
 
   @override
   String get timerProofOfWorkRequired => 'Cần ít nhất một ảnh minh chứng.';
@@ -11348,6 +11592,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get profileMediaSet => 'Đã đặt';
 
   @override
+  String get profileYouWorkspaces => 'Không gian làm việc';
+
+  @override
   String get assistantSubmitSuccess => 'Đã gửi thành công';
 
   @override
@@ -11818,4 +12065,925 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get workspacePickerTeamBadge => 'Nhóm';
+
+  @override
+  String get mastermindAccountFilter => 'Tài khoản';
+
+  @override
+  String get mastermindAgeBasis => 'Cơ sở tính tuổi';
+
+  @override
+  String mastermindAgeDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ngày trước',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindAgeHours(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count giờ trước',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindAgeMinutes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count phút trước',
+      zero: 'vừa xong',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mastermindAllFilter => 'Tất cả';
+
+  @override
+  String get mastermindAreaCi => 'CI';
+
+  @override
+  String get mastermindAreaCost => 'Chi phí';
+
+  @override
+  String get mastermindAreaEducation => 'Giáo dục';
+
+  @override
+  String get mastermindAreaFinance => 'Tài chính';
+
+  @override
+  String get mastermindAreaHub => 'Hub';
+
+  @override
+  String get mastermindAreaInfra => 'Hạ tầng';
+
+  @override
+  String get mastermindAreaMemory => 'Bộ nhớ';
+
+  @override
+  String get mastermindAreaOrg => 'Tổ chức';
+
+  @override
+  String get mastermindAreaPerf => 'Hiệu năng';
+
+  @override
+  String get mastermindAreaProduct => 'Sản phẩm';
+
+  @override
+  String get mastermindAreaQuota => 'Hạn mức';
+
+  @override
+  String get mastermindAreaRelease => 'Phát hành';
+
+  @override
+  String get mastermindAreaSecurity => 'Bảo mật';
+
+  @override
+  String get mastermindAreaTasks => 'Công việc';
+
+  @override
+  String get mastermindAreaUsers => 'Người dùng';
+
+  @override
+  String get mastermindAreaUx => 'Trải nghiệm';
+
+  @override
+  String get mastermindBacklogEmptyTitle => 'Không còn việc tồn';
+
+  @override
+  String get mastermindBacklogLabel => 'Việc tồn';
+
+  @override
+  String get mastermindBasisCheckinWorkflow => 'Quy trình kiểm tra định kỳ';
+
+  @override
+  String get mastermindBasisGithubDeployment => 'Triển khai GitHub';
+
+  @override
+  String get mastermindBasisVercelDeployment => 'Triển khai Vercel';
+
+  @override
+  String get mastermindCategoryAuto => 'Tự động';
+
+  @override
+  String get mastermindCategoryDelegated => 'Được ủy quyền';
+
+  @override
+  String get mastermindCategoryUser => 'Bạn';
+
+  @override
+  String get mastermindChartBurn => 'Tốc độ tiêu hao';
+
+  @override
+  String get mastermindChartCiJobs => 'Tác vụ CI';
+
+  @override
+  String get mastermindChartCreditsBalance => 'Số dư tín dụng';
+
+  @override
+  String get mastermindChartCreditsBurn => 'Tiêu hao mỗi ngày và mục tiêu';
+
+  @override
+  String get mastermindChartCreditsVsTarget => 'Tiêu hao so với mục tiêu';
+
+  @override
+  String get mastermindChartCriticalTrend => 'Phát hiện nghiêm trọng';
+
+  @override
+  String get mastermindChartDeliveryModes => 'Cách chuyển tin';
+
+  @override
+  String get mastermindChartFailures => 'Lượt chạy lỗi';
+
+  @override
+  String get mastermindChartFleetCounts => 'Luồng theo vai trò';
+
+  @override
+  String get mastermindChartFleetStates => 'Trạng thái luồng';
+
+  @override
+  String get mastermindChartFleetTree => 'Cấu trúc đội ngũ';
+
+  @override
+  String get mastermindChartLatency => 'Thời gian nhận kết quả';
+
+  @override
+  String get mastermindChartMergeToLive => 'Từ merge đến khi chạy';
+
+  @override
+  String get mastermindChartMessageFlow => 'Luồng tin nhắn';
+
+  @override
+  String get mastermindChartMessageHeatmap => 'Tin nhắn theo giờ';
+
+  @override
+  String get mastermindChartModelDuration => 'Thời lượng trung vị';
+
+  @override
+  String get mastermindChartModelRuns => 'Lượt chạy theo mô hình';
+
+  @override
+  String get mastermindChartModelSuccess => 'Thành công và làm lại';
+
+  @override
+  String get mastermindChartOpenPrs => 'Pull request đang mở';
+
+  @override
+  String get mastermindChartPendingRuns => 'Lượt chạy chờ';
+
+  @override
+  String get mastermindChartProjection => 'Dự báo khi đặt lại';
+
+  @override
+  String get mastermindChartQueueDepth => 'Độ sâu hàng đợi';
+
+  @override
+  String get mastermindChartSecurityRegister => 'Phát hiện theo mức độ và trạng thái';
+
+  @override
+  String get mastermindChartSessionPerSuccess => 'Mức dùng phiên mỗi lần thành công';
+
+  @override
+  String get mastermindChartSessionRemaining => 'Hạn mức phiên còn lại';
+
+  @override
+  String get mastermindChartShips => 'Bản phát hành production';
+
+  @override
+  String get mastermindChartTimeToFix => 'Thời gian khắc phục';
+
+  @override
+  String get mastermindChartTokensPerSuccess => 'Token mỗi lần thành công';
+
+  @override
+  String get mastermindChartWeeklyRemaining => 'Hạn mức tuần còn lại';
+
+  @override
+  String get mastermindCi => 'CI';
+
+  @override
+  String get mastermindColumnChange7d => 'Thay đổi 7 ngày';
+
+  @override
+  String get mastermindColumnChildrenPerRoot => 'Luồng con mỗi gốc';
+
+  @override
+  String get mastermindColumnDay => 'Ngày';
+
+  @override
+  String get mastermindColumnDeeperPerRoot => 'Luồng sâu hơn mỗi gốc';
+
+  @override
+  String get mastermindColumnDepth1 => 'Cấp 1';
+
+  @override
+  String get mastermindColumnDepth2Plus => 'Cấp 2 trở lên';
+
+  @override
+  String get mastermindColumnFindings => 'Phát hiện';
+
+  @override
+  String get mastermindColumnHour => 'Giờ';
+
+  @override
+  String get mastermindColumnMedian => 'Trung vị';
+
+  @override
+  String get mastermindColumnMessages => 'Tin nhắn';
+
+  @override
+  String get mastermindColumnReceiver => 'Bên nhận';
+
+  @override
+  String get mastermindColumnRoots => 'Luồng gốc';
+
+  @override
+  String get mastermindColumnSender => 'Bên gửi';
+
+  @override
+  String get mastermindColumnSeverity => 'Mức độ';
+
+  @override
+  String get mastermindColumnStatus => 'Trạng thái';
+
+  @override
+  String get mastermindColumnTime => 'Thời gian';
+
+  @override
+  String get mastermindColumnTopLevel => 'Cấp cao nhất';
+
+  @override
+  String get mastermindColumnTotal => 'Tổng';
+
+  @override
+  String get mastermindCommit => 'Commit';
+
+  @override
+  String get mastermindCoverageComplete => 'Đầy đủ';
+
+  @override
+  String get mastermindCoverageMissing => 'Không có nguồn';
+
+  @override
+  String get mastermindCoveragePartial => 'Dữ liệu một phần';
+
+  @override
+  String get mastermindCoverageStale => 'Đã cũ';
+
+  @override
+  String get mastermindCriticalOpenFact => 'Nghiêm trọng đang mở';
+
+  @override
+  String get mastermindDataSourcesAction => 'Nguồn dữ liệu';
+
+  @override
+  String get mastermindDecidedBy => 'Người quyết định';
+
+  @override
+  String get mastermindDecisionsTitle => 'Quyết định';
+
+  @override
+  String get mastermindDeploy => 'Triển khai';
+
+  @override
+  String get mastermindDeployError => 'lỗi';
+
+  @override
+  String get mastermindDeployFailedFact => 'Triển khai thất bại';
+
+  @override
+  String get mastermindDeployFailure => 'thất bại';
+
+  @override
+  String get mastermindDeployInProgress => 'đang chạy';
+
+  @override
+  String get mastermindDeployInactive => 'không hoạt động';
+
+  @override
+  String get mastermindDeployPending => 'đang chờ';
+
+  @override
+  String get mastermindDeployQueued => 'trong hàng đợi';
+
+  @override
+  String get mastermindDeploySuccess => 'thành công';
+
+  @override
+  String get mastermindDigestGap => 'Một số cập nhật trước đó không có ở đây.';
+
+  @override
+  String get mastermindEffortFilter => 'Mức nỗ lực';
+
+  @override
+  String get mastermindEnvProduction => 'Production';
+
+  @override
+  String get mastermindEnvStaging => 'Staging';
+
+  @override
+  String get mastermindEnvironmentsTitle => 'Môi trường';
+
+  @override
+  String get mastermindEventBacklog => 'Việc tồn';
+
+  @override
+  String get mastermindEventDecision => 'Quyết định';
+
+  @override
+  String get mastermindEventEnvironment => 'Môi trường';
+
+  @override
+  String get mastermindEventLane => 'Luồng việc';
+
+  @override
+  String get mastermindEventNeedsYou => 'Cần bạn';
+
+  @override
+  String get mastermindEventProduct => 'Phát hành';
+
+  @override
+  String get mastermindEventQuota => 'Hạn mức';
+
+  @override
+  String get mastermindEventReceipt => 'Biên nhận';
+
+  @override
+  String get mastermindEvidence => 'Bằng chứng';
+
+  @override
+  String get mastermindFilterAll => 'Tất cả';
+
+  @override
+  String get mastermindFilterButton => 'Bộ lọc';
+
+  @override
+  String get mastermindFilterOther => 'Khác';
+
+  @override
+  String get mastermindFilterRunning => 'Đang chạy';
+
+  @override
+  String get mastermindFilterWaiting => 'Đang chờ';
+
+  @override
+  String mastermindFloor(String value) {
+    return 'Ngưỡng $value';
+  }
+
+  @override
+  String get mastermindFreshCached => 'từ bộ đệm';
+
+  @override
+  String get mastermindFreshFresh => 'mới';
+
+  @override
+  String get mastermindInsightsLabel => 'Chỉ số';
+
+  @override
+  String get mastermindKindAction => 'Hành động';
+
+  @override
+  String get mastermindKindBacklog => 'Việc tồn';
+
+  @override
+  String get mastermindKindDecision => 'Quyết định';
+
+  @override
+  String get mastermindKindDesign => 'Thiết kế';
+
+  @override
+  String get mastermindKindFyi => 'Để biết';
+
+  @override
+  String get mastermindKindImplementation => 'Triển khai';
+
+  @override
+  String get mastermindKindLane => 'Luồng việc';
+
+  @override
+  String get mastermindKindResearch => 'Nghiên cứu';
+
+  @override
+  String get mastermindKindReview => 'Rà soát';
+
+  @override
+  String get mastermindKindStaff => 'Nhân sự';
+
+  @override
+  String get mastermindKindTest => 'Kiểm thử';
+
+  @override
+  String get mastermindLaneAge => 'Thời gian chạy';
+
+  @override
+  String get mastermindLaneArea => 'Lĩnh vực';
+
+  @override
+  String mastermindLaneEta(String duration) {
+    return 'Dự kiến $duration';
+  }
+
+  @override
+  String get mastermindLaneKind => 'Loại';
+
+  @override
+  String get mastermindLaneModel => 'Mô hình';
+
+  @override
+  String get mastermindLaneProduct => 'Sản phẩm';
+
+  @override
+  String get mastermindLaneRole => 'Vai trò';
+
+  @override
+  String get mastermindLaneState => 'Trạng thái';
+
+  @override
+  String get mastermindLanesEmpty => 'Không có luồng việc nào trong chế độ xem này';
+
+  @override
+  String get mastermindLanesLabel => 'Luồng việc';
+
+  @override
+  String get mastermindLastActive => 'Hoạt động gần nhất';
+
+  @override
+  String mastermindLiveFor(String duration) {
+    return 'đã chạy $duration';
+  }
+
+  @override
+  String mastermindMeasuredRuns(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count lượt chạy có đo',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mastermindNeedsYouHint => 'Trả lời trong Inbox trên máy Mac.';
+
+  @override
+  String get mastermindNeedsYouTitle => 'Cần bạn';
+
+  @override
+  String get mastermindNoDataInPeriod => 'Không có dữ liệu trong khoảng này';
+
+  @override
+  String get mastermindNoProduct => 'Không có sản phẩm';
+
+  @override
+  String get mastermindNotConnectedMessage => 'Dữ liệu Mastermind chưa được xuất bản cho ứng dụng này.';
+
+  @override
+  String get mastermindNotConnectedTitle => 'Chưa kết nối';
+
+  @override
+  String get mastermindNotReversible => 'Không thể hoàn tác';
+
+  @override
+  String get mastermindNothingNeedsYou => 'Không có việc cần bạn';
+
+  @override
+  String get mastermindNowLabel => 'Hiện tại';
+
+  @override
+  String get mastermindObservedAt => 'Thời điểm ghi nhận';
+
+  @override
+  String get mastermindOriginLabel => 'Nguồn gốc';
+
+  @override
+  String get mastermindPartialBucket => 'khoảng chưa trọn';
+
+  @override
+  String get mastermindProductFilter => 'Sản phẩm';
+
+  @override
+  String get mastermindProductsLabel => 'Sản phẩm';
+
+  @override
+  String get mastermindRange24h => '24 giờ';
+
+  @override
+  String get mastermindRange7d => '7 ngày';
+
+  @override
+  String get mastermindReceiptRecorded => 'Đã ghi nhận biên nhận';
+
+  @override
+  String get mastermindRecentEmpty => 'Không có gì mới.';
+
+  @override
+  String get mastermindRecentTitle => 'Gần đây';
+
+  @override
+  String get mastermindRecommended => 'Đề xuất';
+
+  @override
+  String mastermindRejectedInline(String time) {
+    return 'Không đọc được ảnh chụp mới nhất. Đang hiển thị bản lúc $time.';
+  }
+
+  @override
+  String get mastermindRejectedMessage => 'Ảnh chụp dùng định dạng mà phiên bản ứng dụng này không đọc được. Hãy cập nhật ứng dụng.';
+
+  @override
+  String get mastermindRejectedTitle => 'Không thể hiển thị ảnh chụp này';
+
+  @override
+  String get mastermindReleasesTitle => 'Bản phát hành';
+
+  @override
+  String mastermindResetsAt(String dateTime) {
+    return 'Đặt lại lúc $dateTime';
+  }
+
+  @override
+  String get mastermindReversible => 'Có thể hoàn tác';
+
+  @override
+  String get mastermindRiskHigh => 'cao';
+
+  @override
+  String get mastermindRiskLow => 'thấp';
+
+  @override
+  String get mastermindRiskMed => 'trung bình';
+
+  @override
+  String get mastermindRoleFilter => 'Vai trò';
+
+  @override
+  String get mastermindRunsToday => 'Lượt chạy hôm nay';
+
+  @override
+  String get mastermindSampleData => 'Dữ liệu mẫu';
+
+  @override
+  String mastermindSamples(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count mẫu',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mastermindScopeCoordination => 'Điều phối';
+
+  @override
+  String get mastermindScopeDelivery => 'Phân phối';
+
+  @override
+  String get mastermindScopeFleet => 'Đội ngũ';
+
+  @override
+  String get mastermindScopeModels => 'Mô hình';
+
+  @override
+  String get mastermindScopeSecurity => 'Bảo mật';
+
+  @override
+  String get mastermindScopeUsage => 'Sử dụng';
+
+  @override
+  String get mastermindSecurityFix => 'Bản sửa bảo mật';
+
+  @override
+  String get mastermindSecurityIssue => 'Vấn đề bảo mật';
+
+  @override
+  String mastermindSelectedReadout(String date, String series, String value) {
+    return '$date · $series · $value';
+  }
+
+  @override
+  String get mastermindSeriesActive => 'Đang chạy';
+
+  @override
+  String get mastermindSeriesBalance => 'Số dư';
+
+  @override
+  String get mastermindSeriesBurn => 'Tiêu hao';
+
+  @override
+  String get mastermindSeriesCapacity => 'Quá tải';
+
+  @override
+  String get mastermindSeriesCompleted => 'Hoàn tất';
+
+  @override
+  String get mastermindSeriesCriticalClosed => 'Nghiêm trọng đã đóng';
+
+  @override
+  String get mastermindSeriesCriticalOpen => 'Nghiêm trọng đang mở';
+
+  @override
+  String get mastermindSeriesIdle => 'nhàn rỗi';
+
+  @override
+  String get mastermindSeriesOtherError => 'Lỗi khác';
+
+  @override
+  String get mastermindSeriesOtherTerminal => 'Kết thúc khác';
+
+  @override
+  String get mastermindSeriesQueue => 'Xếp hàng';
+
+  @override
+  String get mastermindSeriesQueued => 'Trong hàng đợi';
+
+  @override
+  String get mastermindSeriesRework => 'Làm lại';
+
+  @override
+  String get mastermindSeriesRunning => 'đang chạy';
+
+  @override
+  String get mastermindSeriesStart => 'Bắt đầu';
+
+  @override
+  String get mastermindSeriesSteer => 'Điều hướng';
+
+  @override
+  String get mastermindSeriesSuccess => 'Thành công';
+
+  @override
+  String get mastermindSeriesTarget => 'Mục tiêu';
+
+  @override
+  String get mastermindSeriesUnknown => 'không rõ';
+
+  @override
+  String get mastermindSeriesUsageLimit => 'Hết hạn mức';
+
+  @override
+  String get mastermindSeriesWaiting => 'đang chờ';
+
+  @override
+  String get mastermindSession => 'Phiên';
+
+  @override
+  String get mastermindSeverityCritical => 'Nghiêm trọng';
+
+  @override
+  String get mastermindSeverityHigh => 'Cao';
+
+  @override
+  String get mastermindSeverityLow => 'Thấp';
+
+  @override
+  String get mastermindSeverityMedium => 'Trung bình';
+
+  @override
+  String get mastermindSeverityUnknown => 'Không rõ';
+
+  @override
+  String get mastermindShowAll => 'Xem tất cả';
+
+  @override
+  String mastermindSnapshotAt(String time) {
+    return 'Ảnh chụp lúc $time';
+  }
+
+  @override
+  String get mastermindSnapshotOutOfDate => 'Ảnh chụp đã cũ';
+
+  @override
+  String get mastermindSnapshotSectionsTitle => 'Các phần';
+
+  @override
+  String get mastermindSourceCheckin => 'Kiểm tra định kỳ';
+
+  @override
+  String get mastermindSourceCi => 'CI';
+
+  @override
+  String get mastermindSourceDecisions => 'Quyết định';
+
+  @override
+  String get mastermindSourceDirectory => 'Danh bạ vai trò';
+
+  @override
+  String get mastermindSourceGithub => 'GitHub';
+
+  @override
+  String get mastermindSourceInbox => 'Hộp thư';
+
+  @override
+  String get mastermindSourceLedger => 'Sổ cái';
+
+  @override
+  String get mastermindSourceOpenItems => 'Mục đang mở';
+
+  @override
+  String get mastermindSourceQuotaCache => 'Bộ đệm hạn mức';
+
+  @override
+  String get mastermindSourceQuotaWatcher => 'Theo dõi hạn mức';
+
+  @override
+  String get mastermindSourceSpeed => 'Tốc độ';
+
+  @override
+  String get mastermindSourceStateOk => 'Ổn';
+
+  @override
+  String get mastermindSourceT3 => 'T3';
+
+  @override
+  String get mastermindSourceWorkforce => 'Nhân lực';
+
+  @override
+  String get mastermindSourcesTitle => 'Nguồn';
+
+  @override
+  String get mastermindStaffGroup => 'Nhân sự';
+
+  @override
+  String get mastermindStateAnswered => 'đã trả lời';
+
+  @override
+  String get mastermindStateCancelled => 'đã hủy';
+
+  @override
+  String get mastermindStateCompleted => 'hoàn tất';
+
+  @override
+  String get mastermindStateFailed => 'thất bại';
+
+  @override
+  String get mastermindStateIdle => 'nhàn rỗi';
+
+  @override
+  String get mastermindStateOpen => 'đang mở';
+
+  @override
+  String get mastermindStateQueued => 'đang chờ hàng đợi';
+
+  @override
+  String get mastermindStateRunning => 'đang chạy';
+
+  @override
+  String get mastermindStateStale => 'đã cũ';
+
+  @override
+  String get mastermindStateUnknown => 'không rõ';
+
+  @override
+  String get mastermindStateWaiting => 'đang chờ';
+
+  @override
+  String get mastermindStateWithdrawn => 'đã rút';
+
+  @override
+  String mastermindSummaryAsOf(String time) {
+    return 'tính đến $time';
+  }
+
+  @override
+  String mastermindSummaryAtLeast(int count) {
+    return 'ít nhất $count';
+  }
+
+  @override
+  String get mastermindSummaryClosedIsState => 'Số đã đóng phản ánh trạng thái sổ đăng ký, không phải số bản sửa mới.';
+
+  @override
+  String get mastermindSummaryCreditsNeedsTarget => 'Cần có mục tiêu theo ngày.';
+
+  @override
+  String get mastermindSummaryCreditsNote => 'Tín dụng không phải tiền hay token.';
+
+  @override
+  String get mastermindSummaryCreditsTargetMissing => 'Chưa có mục tiêu theo ngày.';
+
+  @override
+  String get mastermindSummaryDeliveryModesUnavailable => 'Không có số liệu cách chuyển tin.';
+
+  @override
+  String get mastermindSummaryEstimateNotCost => 'Ước tính, không phải chi phí.';
+
+  @override
+  String mastermindSummaryFleetNow(String running, String waiting, String idle) {
+    return 'Hiện tại: $running đang chạy, $waiting đang chờ, $idle nhàn rỗi.';
+  }
+
+  @override
+  String get mastermindSummaryLatencyCaveat => 'Đo theo lần chạy cha đã ghi nhận.';
+
+  @override
+  String mastermindSummaryModelsTop(String model, int count, String success) {
+    return '$model chạy nhiều nhất: $count lượt, thành công $success.';
+  }
+
+  @override
+  String get mastermindSummaryNoFixDates => 'Không khả dụng: sổ đăng ký chưa có ngày khắc phục.';
+
+  @override
+  String get mastermindSummaryNoMessageStream => 'Không khả dụng: chưa ghi nhận luồng tin nhắn.';
+
+  @override
+  String mastermindSummarySecurityCell(String product, String severity, String status, int count) {
+    return '$product, $severity, $status: $count';
+  }
+
+  @override
+  String mastermindSummaryShipsLowerBound(int count) {
+    return 'Ghi nhận ít nhất $count bản phát hành production.';
+  }
+
+  @override
+  String mastermindSummaryUsageLowest(String account, String percent) {
+    return '$account còn ít nhất: $percent.';
+  }
+
+  @override
+  String mastermindSummaryUsageShort(String time) {
+    return 'Dự báo SHORT khi đặt lại lúc $time.';
+  }
+
+  @override
+  String get mastermindSummaryWeeklyNotReported => 'Nguồn không báo cáo hạn mức tuần.';
+
+  @override
+  String get mastermindTableLink => 'Bảng';
+
+  @override
+  String get mastermindTentative => 'tạm tính';
+
+  @override
+  String get mastermindTimeZoneCaption => 'GMT+7';
+
+  @override
+  String get mastermindTitle => 'Mastermind';
+
+  @override
+  String get mastermindUnavailable => 'Không khả dụng';
+
+  @override
+  String mastermindUnitCredits(String value) {
+    return '$value tín dụng';
+  }
+
+  @override
+  String mastermindUnitCreditsPerDay(String value) {
+    return '$value tín dụng/ngày';
+  }
+
+  @override
+  String mastermindUnitHours(String value) {
+    return '$value giờ';
+  }
+
+  @override
+  String mastermindUnitMinutes(String value) {
+    return '$value phút';
+  }
+
+  @override
+  String mastermindUnitPercent(String value) {
+    return '$value%';
+  }
+
+  @override
+  String mastermindUnitPp(String value) {
+    return '$value điểm %';
+  }
+
+  @override
+  String mastermindUnitPpPerHour(String value) {
+    return '$value điểm %/giờ';
+  }
+
+  @override
+  String mastermindUnitSeconds(String value) {
+    return '$value giây';
+  }
+
+  @override
+  String mastermindUnitTokens(String value) {
+    return '$value token';
+  }
+
+  @override
+  String get mastermindVersion => 'Phiên bản';
+
+  @override
+  String get mastermindWeekly => 'Hằng tuần';
+
+  @override
+  String get mastermindWhy => 'Lý do';
 }

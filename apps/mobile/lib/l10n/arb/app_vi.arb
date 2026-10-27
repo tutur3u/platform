@@ -718,34 +718,6 @@
       }
     }
   },
-  "@profileTimelineNotes": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "@profileTimelineTasks": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "@profileTimelineTransactions": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "@profileTimelineWorkspaceEvents": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "@profileTrackedMinutes": {
     "placeholders": {
       "minutes": {
@@ -1321,6 +1293,16 @@
   "assistantAttachmentFailedShort": "Tải lên thất bại",
   "assistantAttachmentSheetTitle": "Đính kèm",
   "assistantAttachmentUploadFailed": "Không tải được tệp đính kèm. Hãy xóa tệp và thử lại trước khi gửi.",
+  "assistantAttachmentFailureForbidden": "Cuộc trò chuyện này không nhận tệp đính kèm. Hãy xóa tệp hoặc bắt đầu cuộc trò chuyện mới.",
+  "assistantAttachmentFailureNetwork": "Tải lên bị gián đoạn. Kiểm tra kết nối rồi nhấn Thử lại.",
+  "assistantAttachmentFailureServer": "Tải lên chưa hoàn tất. Nhấn Thử lại.",
+  "assistantAttachmentFailureTooLarge": "Tệp lớn hơn 32 MB. Hãy xóa tệp hoặc đính kèm tệp nhỏ hơn.",
+  "assistantAttachmentFailureUnsupported": "Không hỗ trợ loại tệp này. Hãy xóa tệp để gửi.",
+  "assistantAttachmentNotSentMany": "{count} tệp đính kèm chưa tải lên. Thử lại hoặc xóa chúng để gửi.",
+  "assistantAttachmentNotSentOne": "{name} chưa tải lên. {reason}",
+  "assistantAttachmentPreparing": "Đang chuẩn bị",
+  "assistantAttachmentRetry": "Thử lại",
+  "assistantAttachmentUploadingPercent": "{percent}%",
   "assistantAttachmentUploadPending": "Hãy đợi tải tệp lên xong rồi gửi.",
   "assistantAudioUnavailable": "Âm thanh bị gián đoạn. Hãy kết nối lại để tiếp tục cuộc trò chuyện.",
   "assistantCalendarLabel": "Lịch",
@@ -1406,7 +1388,6 @@
   "assistantLiveDraftAssistant": "Mira đang trả lời",
   "assistantLiveDraftUser": "Bạn đang nói",
   "assistantLiveHideCamera": "Ẩn camera",
-  "assistantLiveIdleHeading": "Sẵn sàng trò chuyện",
   "assistantLiveInfoAccessHeading": "Quyền truy cập hiện tại",
   "assistantLiveInfoDismiss": "Đã hiểu",
   "assistantLiveInfoTitle": "Thông tin Live",
@@ -1436,6 +1417,7 @@
   "assistantLiveStageAssistantSpeaking": "Đang phát phản hồi bằng giọng nói",
   "assistantLiveStageYouListening": "Micro của bạn đang hoạt động",
   "assistantLiveStageYouMuted": "Chạm vào micro để nói tiếp",
+  "assistantLiveStartTalking": "Bắt đầu nói",
   "assistantLiveStartupAudio": "Khởi tạo âm thanh",
   "assistantLiveStartupDuration": "{milliseconds} ms",
   "assistantLiveStartupHistory": "Lịch sử hội thoại",
@@ -1458,9 +1440,7 @@
   "assistantLiveSubtitle": "Gemini 3.1 Flash Live với giọng nói, camera, tệp đính kèm và lịch sử chat thống nhất.",
   "assistantLiveTierRequired": "Giọng nói trực tiếp chỉ có từ gói PLUS trở lên.",
   "assistantLiveTitle": "Mira Live",
-  "assistantLiveTranscriptEmpty": "Bắt đầu nói hoặc nhập tin nhắn. Cuộc trò chuyện sẽ hiển thị ở đây.",
   "assistantLiveTranscriptPending": "Các thay đổi trong bản ghi chưa được đồng bộ.",
-  "assistantLiveTranscriptTitle": "Bản ghi trực tiếp",
   "assistantLiveTypeMessage": "Gõ",
   "assistantLiveWorkspaceTierLabel": "Gói không gian làm việc {tier}",
   "assistantLocalBudget": "Vượt giới hạn lưu trữ mô hình. Hãy xóa một mô hình trước khi cài mô hình khác.",
@@ -1494,6 +1474,7 @@
   "assistantLocalSelected": "Đã chọn cho Mira",
   "assistantLocalSelectionUnknown": "Mô hình cục bộ đã chọn không còn trong danh mục. Hãy chọn mô hình khác hoặc chủ động chọn chế độ từ xa.",
   "assistantLocalSize": "{size} MiB",
+  "assistantLocalSourceEmpty": "Tải một mô hình bên dưới",
   "assistantLocalStop": "Dừng tạo phản hồi cục bộ",
   "assistantLocalStorageError": "Không thể lưu lịch sử hoặc chế độ cục bộ. Hội thoại của bạn không được tải lên.",
   "assistantLocalTextOnly": "Chế độ cục bộ chỉ hỗ trợ văn bản",
@@ -1524,6 +1505,7 @@
   "assistantModelInputCost": "Đầu vào",
   "assistantModelLabel": "Mô hình",
   "assistantModelOutputCost": "Đầu ra",
+  "assistantModelSourceTitle": "Nguồn mô hình",
   "assistantModelUnfavorite": "Bỏ khỏi yêu thích",
   "assistantNewConversation": "Cuộc trò chuyện mới",
   "assistantOutputLabel": "Đầu ra",
@@ -1541,7 +1523,7 @@
   "assistantRenameTitle": "Đổi tên trợ lý",
   "assistantReplyFailed": "Mira chưa trả lời xong. Tin nhắn của bạn vẫn ở đây. Thử lại",
   "assistantSaveAction": "Lưu",
-  "assistantScrollToBottomAction": "Cuộn xuống cuối",
+  "assistantScrollToBottomAction": "Tới tin mới nhất",
   "assistantSearchModels": "Tìm mô hình",
   "assistantSeeLessLabel": "Thu gọn",
   "assistantSeeMoreLabel": "Xem thêm",
@@ -1561,7 +1543,6 @@
   "assistantStarterDraft": "Cập nhật cho nhóm",
   "assistantStarterFocus": "Trọng tâm hôm nay",
   "assistantStarterPlan": "Kế hoạch hôm nay",
-  "assistantStarterSubtitle": "Chọn một gợi ý nhanh hoặc tự gõ điều bạn cần.",
   "assistantStarterTitle": "Chưa biết bắt đầu từ đâu?",
   "assistantTasksLabel": "Công việc",
   "assistantThinkingStatus": "Đang suy nghĩ...",
@@ -1907,6 +1888,7 @@
   "commonLive": "Trực tiếp",
   "commonLoadMore": "Tải thêm",
   "commonLoading": "Đang tải",
+  "commonMoreOptions": "Tùy chọn khác",
   "commonNext": "Tiếp",
   "commonNoSearchResults": "Không có kết quả phù hợp",
   "commonOff": "Tắt",
@@ -1921,6 +1903,7 @@
   "commonRequired": "Cần xử lý",
   "commonRetry": "Thử lại",
   "commonSave": "Lưu",
+  "commonSearch": "Tìm kiếm",
   "commonSelectDate": "Chọn ngày",
   "commonShare": "Chia sẻ",
   "commonShowLess": "Thu gọn",
@@ -2586,6 +2569,7 @@
   "habitsWorkoutTotalSets": "Tổng hiệp",
   "habitsWorkoutTotalVolume": "Tổng khối lượng",
   "habitsWorkoutWeight": "Mức tạ",
+  "homeCalendarEmpty": "Không có sự kiện trong tuần này.",
   "homeCustomize": "Tùy chỉnh Trang chủ",
   "homeGreetingAfternoon": "Chào buổi chiều",
   "homeGreetingAfternoonNamed": "Chào buổi chiều, {name}",
@@ -2597,8 +2581,25 @@
   "homeHideWidget": "Ẩn tiện ích",
   "homePersonalAgenda": "Lịch trình",
   "homePersonalAgendaUnavailable": "Lịch cá nhân hiện không khả dụng.",
+  "homeSectionCalendar": "Lịch",
   "homeSectionLoadFailed": "Kéo xuống để thử lại.",
+  "homeSectionToday": "Hôm nay",
+  "homeSectionUpNext": "Sắp tới",
+  "homeSeeAll": "Xem tất cả",
   "homeShowWidget": "Hiện tiện ích",
+  "homeTodayEmpty": "Không có việc đến hạn hôm nay.",
+  "homeUpNextEmpty": "Chưa có việc sắp tới.",
+  "homeWidgetTasks": "Hôm nay và Sắp tới",
+  "homeWorkspaceChipsLabel": "Không gian làm việc",
+  "homeWorkspaceEditPins": "Sửa không gian làm việc đã ghim",
+  "homeWorkspaceFind": "Tìm không gian làm việc",
+  "homeWorkspaceMore": "Thêm",
+  "homeWorkspaceNew": "Không gian làm việc mới",
+  "homeWorkspacePin": "Ghim vào Trang chủ",
+  "homeWorkspacePinsDescription": "Không gian làm việc đã ghim hiển thị dạng thẻ trên Trang chủ.",
+  "homeWorkspacePinsFailed": "Không thể lưu không gian làm việc đã ghim.",
+  "homeWorkspacePinsTitle": "Không gian làm việc đã ghim",
+  "homeWorkspaceUnpin": "Bỏ ghim khỏi Trang chủ",
   "inventoryAddCategory": "Thêm danh mục",
   "inventoryAddManufacturer": "Thêm nhà sản xuất",
   "inventoryAddOwner": "Thêm chủ sở hữu",
@@ -3150,10 +3151,13 @@
   "navFinance": "Tài chính",
   "navHabits": "Thói quen",
   "navHome": "Trang chủ",
+  "navInbox": "Hộp thư",
+  "navMira": "Mira",
   "navMore": "Thêm",
   "navSettings": "Cài đặt",
   "navTasks": "Công việc",
   "navTimer": "Bấm giờ",
+  "navYou": "Bạn",
   "notesArchive": "Lưu trữ ghi chú",
   "notesArchiveEmpty": "Ghi chú đã lưu trữ sẽ xuất hiện ở đây.",
   "notesArchiveTab": "Lưu trữ",
@@ -3388,6 +3392,7 @@
   "profileEmailHint": "example@tuturuuu.com",
   "profileEmailPendingChange": "Đang chờ đổi sang {email}",
   "profileEmailUpdateNote": "Email xác nhận sẽ được gửi đến cả hai địa chỉ",
+  "profileFocusTime": "Thời gian tập trung",
   "profileFullName": "Tên đầy đủ",
   "profileFullNameDescription": "Dùng tên pháp lý hoặc tên đầy đủ bạn muốn lưu trong hồ sơ tài khoản.",
   "profileFullNameHint": "Tên đầy đủ của bạn",
@@ -3422,19 +3427,19 @@
   "profileTimelineEmpty": "Không có hoạt động gần đây trong không gian này",
   "profileTimelineHasActivity": "Có hoạt động trong dữ liệu đã tải",
   "profileTimelineHideDates": "Đóng thanh ngày và xem dòng hoạt động",
+  "profileTimelineKindNote": "Ghi chú",
+  "profileTimelineKindTask": "Công việc",
+  "profileTimelineKindTransaction": "Giao dịch",
+  "profileTimelineKindWorkspaceEvent": "Sự kiện không gian làm việc",
   "profileTimelineLimited": "Chỉ hiển thị hoạt động gần đây. Một số nguồn đã đạt giới hạn hiển thị.",
   "profileTimelineLoadedEnd": "Đã hiển thị toàn bộ hoạt động đã tải",
   "profileTimelineMoreDays": "Hiện thêm ngày đã tải",
-  "profileTimelineNotes": "Đã thêm {count} ghi chú",
   "profileTimelinePartial": "Một số hoạt động chưa hiển thị.",
   "profileTimelineShowDates": "Hiện thanh chọn ngày",
   "profileTimelineTab": "Dòng thời gian",
-  "profileTimelineTasks": "Đã tạo {count} công việc",
   "profileTimelineTitle": "Dòng thời gian",
   "profileTimelineToday": "Hôm nay",
-  "profileTimelineTransactions": "Đã tạo {count} giao dịch",
   "profileTimelineUnavailable": "Không thể làm mới hoạt động.",
-  "profileTimelineWorkspaceEvents": "Đã thêm {count} sự kiện vào không gian",
   "profileTimelineYesterday": "Hôm qua",
   "profileTitle": "Hồ sơ",
   "profileTrackedMinutes": "Đã theo dõi {minutes} phút",
@@ -3549,13 +3554,31 @@
   "appearanceBackgroundGradient": "Dải màu",
   "appearanceBackgroundSolid": "Trơn",
   "appearanceBackgroundTitle": "Nền",
+  "appearanceCornersRounded": "Bo tròn",
+  "appearanceCornersSoft": "Bo nhẹ",
+  "appearanceCornersSquare": "Vuông",
+  "appearanceCornersTitle": "Góc bo",
+  "appearanceDensityComfortable": "Thoải mái",
+  "appearanceDensityCompact": "Gọn",
+  "appearanceDensityTitle": "Mật độ",
+  "appearanceDeviceOverride": "Dùng giao diện riêng trên thiết bị này",
+  "appearanceDeviceOverrideDescription": "Thay đổi tại đây chỉ áp dụng cho thiết bị này, không đồng bộ với tài khoản.",
+  "appearanceFeedbackTitle": "Phản hồi và chuyển động",
+  "appearanceHapticsDescription": "Rung nhẹ khi bạn chọn, vuốt hoặc xác nhận.",
   "appearanceIntensity": "Cường độ",
   "appearanceModeTitle": "Chế độ",
   "appearanceNew": "Mới",
   "appearancePreviewTitle": "Xem trước",
+  "appearanceReduceMotion": "Giảm chuyển động",
+  "appearanceReduceMotionDescription": "Luôn giảm hiệu ứng chuyển động, kể cả khi cài đặt hệ thống đang tắt.",
   "appearanceReset": "Khôi phục mặc định",
   "appearanceResetDone": "Đã khôi phục giao diện mặc định",
   "appearanceSoftness": "Độ mềm",
+  "appearanceStyleDescription": "Thay đổi cách trang chuyển và danh sách cuộn. Màu sắc và bố cục giữ nguyên trên mọi thiết bị.",
+  "appearanceStyleIos": "Kiểu iOS",
+  "appearanceStyleMaterial": "Kiểu Material",
+  "appearanceStyleTitle": "Phong cách",
+  "appearanceStyleTuturuuu": "Tuturuuu",
   "appearanceSurfaceOpacity": "Độ đục của thẻ",
   "appearanceSurfacesTitle": "Bề mặt",
   "appearanceThemeAurora": "Cực quang",
@@ -3965,6 +3988,7 @@
   "taskBoardDetailColorPurple": "Tím",
   "taskBoardDetailColorRed": "Đỏ",
   "taskBoardDetailColorYellow": "Vàng",
+  "taskBoardDetailCompleteTask": "Hoàn thành",
   "taskBoardDetailCreateList": "Tạo danh sách",
   "taskBoardDetailCreateTask": "Tạo công việc",
   "taskBoardDetailDaysAgo": "{count, plural, one{{count} ngày trước} other{{count} ngày trước}}",
@@ -3985,6 +4009,7 @@
   "taskBoardDetailDeletedAgo": "Đã xóa {time}",
   "taskBoardDetailDeletedTasksCount": "{count} công việc đã xóa",
   "taskBoardDetailDueAt": "Hạn {date}",
+  "taskBoardDetailDueDateUpdated": "Đã cập nhật hạn chót.",
   "taskBoardDetailEditList": "Chỉnh sửa danh sách",
   "taskBoardDetailEditTask": "Chỉnh sửa công việc",
   "taskBoardDetailEditorDetailsTab": "Chi tiết",
@@ -3999,6 +4024,16 @@
   "taskBoardDetailFilterStatuses": "Trạng thái",
   "taskBoardDetailFilters": "Bộ lọc",
   "taskBoardDetailFiltersActive": "Bộ lọc đang bật",
+  "taskBoardDetailFocusReplaceConfirm": "Dừng và bắt đầu",
+  "taskBoardDetailFocusReplaceMessage": "Một bộ bấm giờ đang chạy. Bắt đầu tập trung sẽ dừng nó và bắt đầu một phiên mới cho công việc này.",
+  "taskBoardDetailFocusReplacePausedMessage": "Một bộ bấm giờ đang tạm dừng. Bắt đầu tập trung sẽ kết thúc nó và bắt đầu một phiên mới cho công việc này.",
+  "taskBoardDetailFocusReplacePausedTitle": "Kết thúc bộ bấm giờ đang tạm dừng?",
+  "taskBoardDetailFocusReplaceTitle": "Dừng bộ bấm giờ đang chạy?",
+  "taskBoardDetailFocusStartFailedPausedEnded": "Không thể bắt đầu tập trung và bộ bấm giờ đang tạm dừng đã kết thúc. Mở bộ bấm giờ để tiếp tục.",
+  "taskBoardDetailFocusStartFailedRestored": "Không thể bắt đầu tập trung. Bộ bấm giờ đang tạm dừng đã được giữ nguyên.",
+  "taskBoardDetailFocusStartFailedRunning": "Không thể bắt đầu tập trung. Bộ bấm giờ trước đó đang chạy lại.",
+  "taskBoardDetailFocusStartFailedUnknown": "Không thể bắt đầu tập trung và không xác nhận được trạng thái của bộ bấm giờ trước đó. Mở bộ bấm giờ để kiểm tra.",
+  "taskBoardDetailFocusStarted": "Đã bắt đầu bấm giờ cho công việc này.",
   "taskBoardDetailFromList": "từ: {list}",
   "taskBoardDetailInDays": "{count, plural, one{trong {count} ngày} other{trong {count} ngày}}",
   "taskBoardDetailInformation": "Thông tin",
@@ -4038,6 +4073,7 @@
   "taskBoardDetailNone": "Không có",
   "taskBoardDetailOpenFullDetails": "Mở chi tiết đầy đủ",
   "taskBoardDetailOpenRelatedTask": "Mở công việc liên quan",
+  "taskBoardDetailOpenTimer": "Mở bộ bấm giờ",
   "taskBoardDetailOverdue": "Quá hạn",
   "taskBoardDetailParentTask": "Công việc cha",
   "taskBoardDetailPoints": "{count} điểm",
@@ -4062,7 +4098,9 @@
   "taskBoardDetailRemoveRelationship": "Xóa quan hệ",
   "taskBoardDetailRenameBoard": "Đổi tên bảng",
   "taskBoardDetailRenameList": "Đổi tên danh sách",
+  "taskBoardDetailReopenTask": "Mở lại",
   "taskBoardDetailRestoreTasks": "Khôi phục ({count})",
+  "taskBoardDetailScheduleTask": "Lên lịch",
   "taskBoardDetailSearchDone": "Xong",
   "taskBoardDetailSearchPlaceholder": "Tìm kiếm công việc",
   "taskBoardDetailSearchTasks": "Tìm kiếm công việc",
@@ -4074,6 +4112,7 @@
   "taskBoardDetailSetCustomDate": "Đặt ngày tùy chỉnh",
   "taskBoardDetailSetDueDate": "Đặt ngày hết hạn",
   "taskBoardDetailSetEstimation": "Đặt điểm ước lượng",
+  "taskBoardDetailStartFocus": "Bắt đầu tập trung",
   "taskBoardDetailStartsAt": "Bắt đầu {date}",
   "taskBoardDetailStatusActive": "Đang thực hiện",
   "taskBoardDetailStatusCategoryLabel": "Nhóm trạng thái",
@@ -4123,6 +4162,7 @@
   "taskBoardDetailTaskEstimation": "Ước lượng",
   "taskBoardDetailTaskEstimationNone": "Chưa ước lượng",
   "taskBoardDetailTaskLabels": "Nhãn",
+  "taskBoardDetailTaskList": "Danh sách",
   "taskBoardDetailTaskListLabel": "Danh sách",
   "taskBoardDetailTaskListSelect": "Chọn danh sách",
   "taskBoardDetailTaskMoved": "Đã di chuyển công việc.",
@@ -4475,6 +4515,7 @@
   "timerHeatmapViewCompactCards": "Thẻ",
   "timerHeatmapViewHybrid": "Kết hợp",
   "timerHeatmapViewOriginal": "Gốc",
+  "timerHeatmapViewTitle": "Chế độ xem",
   "timerHeatmapWed": "T4",
   "timerHeatmapYearPattern": "Mẫu hoạt động",
   "timerHistory": "Lịch sử",
@@ -4499,8 +4540,19 @@
   "timerPause": "Tạm dừng",
   "timerPaused": "Tạm dừng",
   "timerPomodoro": "Pomodoro",
+  "timerPomodoroBreakDoneBody": "Sẵn sàng cho lượt tập trung tiếp theo?",
+  "timerPomodoroBreakDoneTitle": "Hết giờ nghỉ",
+  "timerPomodoroCycle": "Lượt tập trung {current}/{total}",
+  "timerPomodoroFocusDoneBody": "Đến giờ nghỉ rồi.",
+  "timerPomodoroFocusDoneTitle": "Đã xong lượt tập trung",
+  "timerPomodoroOrphanedSession": "Không thể bắt đầu tập trung và một bộ bấm giờ vừa tạo có thể vẫn đang chạy. Hãy kiểm tra trang Bấm giờ.",
+  "timerPomodoroOtherRunning": "Một bộ bấm giờ khác đang chạy. Dừng nó ở trang Bấm giờ để tiếp tục lượt tập trung này.",
+  "timerPomodoroRemaining": "Còn {minutes}:{seconds}",
   "timerPomodoroSettings": "Cài đặt Pomodoro",
   "timerPomodoroSettingsDescription": "Điều chỉnh thời gian tập trung, thời gian nghỉ và tự động chuyển giữa các phiên.",
+  "timerPomodoroSkip": "Bỏ qua",
+  "timerPomodoroStart": "Bắt đầu tập trung",
+  "timerPomodoroSummary": "{focus} phút tập trung · {rest} phút nghỉ",
   "timerProofOfWorkRequired": "Cần ít nhất một ảnh minh chứng.",
   "timerReasonOptional": "Lý do (không bắt buộc)",
   "timerRecentSessions": "Phiên gần đây",
@@ -4849,6 +4901,7 @@
   "profilePhoto": "Ảnh đại diện",
   "profileCoverBanner": "Ảnh bìa",
   "profileMediaSet": "Đã đặt",
+  "profileYouWorkspaces": "Không gian làm việc",
   "assistantSubmitSuccess": "Đã gửi thành công",
   "offlineDownloadsPaused": "Đã tạm dừng tải xuống. Bạn vẫn có thể dùng dữ liệu đã lưu. Ứng dụng sẽ thử lại trong nền.",
   "offlineDownloadsRetryLimit": "Hiện vẫn chưa thể tải xuống. Hãy thử lại sau; bạn vẫn có thể dùng dữ liệu đã lưu.",
@@ -4999,5 +5052,517 @@
   "workspacePickerDefaultDescription": "Được mở đầu tiên khi bạn khởi động ứng dụng",
   "workspacePickerEmptyMessage": "Các không gian bạn tạo hoặc được mời tham gia sẽ hiện ở đây.",
   "workspacePickerNoResultsMessage": "Thử tên hoặc gói khác, hoặc xóa nội dung tìm kiếm.",
-  "workspacePickerTeamBadge": "Nhóm"
+  "workspacePickerTeamBadge": "Nhóm",
+  "@mastermindAgeDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindAgeHours": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindAgeMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindFloor": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindLaneEta": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindLiveFor": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindMeasuredRuns": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindRejectedInline": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindResetsAt": {
+    "placeholders": {
+      "dateTime": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindSamples": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindSelectedReadout": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "series": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindSnapshotAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindSummaryAsOf": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindSummaryAtLeast": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindSummaryFleetNow": {
+    "placeholders": {
+      "running": {
+        "type": "String"
+      },
+      "waiting": {
+        "type": "String"
+      },
+      "idle": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindSummaryModelsTop": {
+    "placeholders": {
+      "model": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      },
+      "success": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindSummarySecurityCell": {
+    "placeholders": {
+      "product": {
+        "type": "String"
+      },
+      "severity": {
+        "type": "String"
+      },
+      "status": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindSummaryShipsLowerBound": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindSummaryUsageLowest": {
+    "placeholders": {
+      "account": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindSummaryUsageShort": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindUnitCredits": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindUnitCreditsPerDay": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindUnitHours": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindUnitMinutes": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindUnitPercent": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindUnitPp": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindUnitPpPerHour": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindUnitSeconds": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindUnitTokens": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindAccountFilter": "Tài khoản",
+  "mastermindAgeBasis": "Cơ sở tính tuổi",
+  "mastermindAgeDays": "{count, plural, other{{count} ngày trước}}",
+  "mastermindAgeHours": "{count, plural, other{{count} giờ trước}}",
+  "mastermindAgeMinutes": "{count, plural, =0{vừa xong} other{{count} phút trước}}",
+  "mastermindAllFilter": "Tất cả",
+  "mastermindAreaCi": "CI",
+  "mastermindAreaCost": "Chi phí",
+  "mastermindAreaEducation": "Giáo dục",
+  "mastermindAreaFinance": "Tài chính",
+  "mastermindAreaHub": "Hub",
+  "mastermindAreaInfra": "Hạ tầng",
+  "mastermindAreaMemory": "Bộ nhớ",
+  "mastermindAreaOrg": "Tổ chức",
+  "mastermindAreaPerf": "Hiệu năng",
+  "mastermindAreaProduct": "Sản phẩm",
+  "mastermindAreaQuota": "Hạn mức",
+  "mastermindAreaRelease": "Phát hành",
+  "mastermindAreaSecurity": "Bảo mật",
+  "mastermindAreaTasks": "Công việc",
+  "mastermindAreaUsers": "Người dùng",
+  "mastermindAreaUx": "Trải nghiệm",
+  "mastermindBacklogEmptyTitle": "Không còn việc tồn",
+  "mastermindBacklogLabel": "Việc tồn",
+  "mastermindBasisCheckinWorkflow": "Quy trình kiểm tra định kỳ",
+  "mastermindBasisGithubDeployment": "Triển khai GitHub",
+  "mastermindBasisVercelDeployment": "Triển khai Vercel",
+  "mastermindCategoryAuto": "Tự động",
+  "mastermindCategoryDelegated": "Được ủy quyền",
+  "mastermindCategoryUser": "Bạn",
+  "mastermindChartBurn": "Tốc độ tiêu hao",
+  "mastermindChartCiJobs": "Tác vụ CI",
+  "mastermindChartCreditsBalance": "Số dư tín dụng",
+  "mastermindChartCreditsBurn": "Tiêu hao mỗi ngày và mục tiêu",
+  "mastermindChartCreditsVsTarget": "Tiêu hao so với mục tiêu",
+  "mastermindChartCriticalTrend": "Phát hiện nghiêm trọng",
+  "mastermindChartDeliveryModes": "Cách chuyển tin",
+  "mastermindChartFailures": "Lượt chạy lỗi",
+  "mastermindChartFleetCounts": "Luồng theo vai trò",
+  "mastermindChartFleetStates": "Trạng thái luồng",
+  "mastermindChartFleetTree": "Cấu trúc đội ngũ",
+  "mastermindChartLatency": "Thời gian nhận kết quả",
+  "mastermindChartMergeToLive": "Từ merge đến khi chạy",
+  "mastermindChartMessageFlow": "Luồng tin nhắn",
+  "mastermindChartMessageHeatmap": "Tin nhắn theo giờ",
+  "mastermindChartModelDuration": "Thời lượng trung vị",
+  "mastermindChartModelRuns": "Lượt chạy theo mô hình",
+  "mastermindChartModelSuccess": "Thành công và làm lại",
+  "mastermindChartOpenPrs": "Pull request đang mở",
+  "mastermindChartPendingRuns": "Lượt chạy chờ",
+  "mastermindChartProjection": "Dự báo khi đặt lại",
+  "mastermindChartQueueDepth": "Độ sâu hàng đợi",
+  "mastermindChartSecurityRegister": "Phát hiện theo mức độ và trạng thái",
+  "mastermindChartSessionPerSuccess": "Mức dùng phiên mỗi lần thành công",
+  "mastermindChartSessionRemaining": "Hạn mức phiên còn lại",
+  "mastermindChartShips": "Bản phát hành production",
+  "mastermindChartTimeToFix": "Thời gian khắc phục",
+  "mastermindChartTokensPerSuccess": "Token mỗi lần thành công",
+  "mastermindChartWeeklyRemaining": "Hạn mức tuần còn lại",
+  "mastermindCi": "CI",
+  "mastermindColumnChange7d": "Thay đổi 7 ngày",
+  "mastermindColumnChildrenPerRoot": "Luồng con mỗi gốc",
+  "mastermindColumnDay": "Ngày",
+  "mastermindColumnDeeperPerRoot": "Luồng sâu hơn mỗi gốc",
+  "mastermindColumnDepth1": "Cấp 1",
+  "mastermindColumnDepth2Plus": "Cấp 2 trở lên",
+  "mastermindColumnFindings": "Phát hiện",
+  "mastermindColumnHour": "Giờ",
+  "mastermindColumnMedian": "Trung vị",
+  "mastermindColumnMessages": "Tin nhắn",
+  "mastermindColumnReceiver": "Bên nhận",
+  "mastermindColumnRoots": "Luồng gốc",
+  "mastermindColumnSender": "Bên gửi",
+  "mastermindColumnSeverity": "Mức độ",
+  "mastermindColumnStatus": "Trạng thái",
+  "mastermindColumnTime": "Thời gian",
+  "mastermindColumnTopLevel": "Cấp cao nhất",
+  "mastermindColumnTotal": "Tổng",
+  "mastermindCommit": "Commit",
+  "mastermindCoverageComplete": "Đầy đủ",
+  "mastermindCoverageMissing": "Không có nguồn",
+  "mastermindCoveragePartial": "Dữ liệu một phần",
+  "mastermindCoverageStale": "Đã cũ",
+  "mastermindCriticalOpenFact": "Nghiêm trọng đang mở",
+  "mastermindDataSourcesAction": "Nguồn dữ liệu",
+  "mastermindDecidedBy": "Người quyết định",
+  "mastermindDecisionsTitle": "Quyết định",
+  "mastermindDeploy": "Triển khai",
+  "mastermindDeployError": "lỗi",
+  "mastermindDeployFailedFact": "Triển khai thất bại",
+  "mastermindDeployFailure": "thất bại",
+  "mastermindDeployInProgress": "đang chạy",
+  "mastermindDeployInactive": "không hoạt động",
+  "mastermindDeployPending": "đang chờ",
+  "mastermindDeployQueued": "trong hàng đợi",
+  "mastermindDeploySuccess": "thành công",
+  "mastermindDigestGap": "Một số cập nhật trước đó không có ở đây.",
+  "mastermindEffortFilter": "Mức nỗ lực",
+  "mastermindEnvProduction": "Production",
+  "mastermindEnvStaging": "Staging",
+  "mastermindEnvironmentsTitle": "Môi trường",
+  "mastermindEventBacklog": "Việc tồn",
+  "mastermindEventDecision": "Quyết định",
+  "mastermindEventEnvironment": "Môi trường",
+  "mastermindEventLane": "Luồng việc",
+  "mastermindEventNeedsYou": "Cần bạn",
+  "mastermindEventProduct": "Phát hành",
+  "mastermindEventQuota": "Hạn mức",
+  "mastermindEventReceipt": "Biên nhận",
+  "mastermindEvidence": "Bằng chứng",
+  "mastermindFilterAll": "Tất cả",
+  "mastermindFilterButton": "Bộ lọc",
+  "mastermindFilterOther": "Khác",
+  "mastermindFilterRunning": "Đang chạy",
+  "mastermindFilterWaiting": "Đang chờ",
+  "mastermindFloor": "Ngưỡng {value}",
+  "mastermindFreshCached": "từ bộ đệm",
+  "mastermindFreshFresh": "mới",
+  "mastermindInsightsLabel": "Chỉ số",
+  "mastermindKindAction": "Hành động",
+  "mastermindKindBacklog": "Việc tồn",
+  "mastermindKindDecision": "Quyết định",
+  "mastermindKindDesign": "Thiết kế",
+  "mastermindKindFyi": "Để biết",
+  "mastermindKindImplementation": "Triển khai",
+  "mastermindKindLane": "Luồng việc",
+  "mastermindKindResearch": "Nghiên cứu",
+  "mastermindKindReview": "Rà soát",
+  "mastermindKindStaff": "Nhân sự",
+  "mastermindKindTest": "Kiểm thử",
+  "mastermindLaneAge": "Thời gian chạy",
+  "mastermindLaneArea": "Lĩnh vực",
+  "mastermindLaneEta": "Dự kiến {duration}",
+  "mastermindLaneKind": "Loại",
+  "mastermindLaneModel": "Mô hình",
+  "mastermindLaneProduct": "Sản phẩm",
+  "mastermindLaneRole": "Vai trò",
+  "mastermindLaneState": "Trạng thái",
+  "mastermindLanesEmpty": "Không có luồng việc nào trong chế độ xem này",
+  "mastermindLanesLabel": "Luồng việc",
+  "mastermindLastActive": "Hoạt động gần nhất",
+  "mastermindLiveFor": "đã chạy {duration}",
+  "mastermindMeasuredRuns": "{count, plural, other{{count} lượt chạy có đo}}",
+  "mastermindNeedsYouHint": "Trả lời trong Inbox trên máy Mac.",
+  "mastermindNeedsYouTitle": "Cần bạn",
+  "mastermindNoDataInPeriod": "Không có dữ liệu trong khoảng này",
+  "mastermindNoProduct": "Không có sản phẩm",
+  "mastermindNotConnectedMessage": "Dữ liệu Mastermind chưa được xuất bản cho ứng dụng này.",
+  "mastermindNotConnectedTitle": "Chưa kết nối",
+  "mastermindNotReversible": "Không thể hoàn tác",
+  "mastermindNothingNeedsYou": "Không có việc cần bạn",
+  "mastermindNowLabel": "Hiện tại",
+  "mastermindObservedAt": "Thời điểm ghi nhận",
+  "mastermindOriginLabel": "Nguồn gốc",
+  "mastermindPartialBucket": "khoảng chưa trọn",
+  "mastermindProductFilter": "Sản phẩm",
+  "mastermindProductsLabel": "Sản phẩm",
+  "mastermindRange24h": "24 giờ",
+  "mastermindRange7d": "7 ngày",
+  "mastermindReceiptRecorded": "Đã ghi nhận biên nhận",
+  "mastermindRecentEmpty": "Không có gì mới.",
+  "mastermindRecentTitle": "Gần đây",
+  "mastermindRecommended": "Đề xuất",
+  "mastermindRejectedInline": "Không đọc được ảnh chụp mới nhất. Đang hiển thị bản lúc {time}.",
+  "mastermindRejectedMessage": "Ảnh chụp dùng định dạng mà phiên bản ứng dụng này không đọc được. Hãy cập nhật ứng dụng.",
+  "mastermindRejectedTitle": "Không thể hiển thị ảnh chụp này",
+  "mastermindReleasesTitle": "Bản phát hành",
+  "mastermindResetsAt": "Đặt lại lúc {dateTime}",
+  "mastermindReversible": "Có thể hoàn tác",
+  "mastermindRiskHigh": "cao",
+  "mastermindRiskLow": "thấp",
+  "mastermindRiskMed": "trung bình",
+  "mastermindRoleFilter": "Vai trò",
+  "mastermindRunsToday": "Lượt chạy hôm nay",
+  "mastermindSampleData": "Dữ liệu mẫu",
+  "mastermindSamples": "{count, plural, other{{count} mẫu}}",
+  "mastermindScopeCoordination": "Điều phối",
+  "mastermindScopeDelivery": "Phân phối",
+  "mastermindScopeFleet": "Đội ngũ",
+  "mastermindScopeModels": "Mô hình",
+  "mastermindScopeSecurity": "Bảo mật",
+  "mastermindScopeUsage": "Sử dụng",
+  "mastermindSecurityFix": "Bản sửa bảo mật",
+  "mastermindSecurityIssue": "Vấn đề bảo mật",
+  "mastermindSelectedReadout": "{date} · {series} · {value}",
+  "mastermindSeriesActive": "Đang chạy",
+  "mastermindSeriesBalance": "Số dư",
+  "mastermindSeriesBurn": "Tiêu hao",
+  "mastermindSeriesCapacity": "Quá tải",
+  "mastermindSeriesCompleted": "Hoàn tất",
+  "mastermindSeriesCriticalClosed": "Nghiêm trọng đã đóng",
+  "mastermindSeriesCriticalOpen": "Nghiêm trọng đang mở",
+  "mastermindSeriesIdle": "nhàn rỗi",
+  "mastermindSeriesOtherError": "Lỗi khác",
+  "mastermindSeriesOtherTerminal": "Kết thúc khác",
+  "mastermindSeriesQueue": "Xếp hàng",
+  "mastermindSeriesQueued": "Trong hàng đợi",
+  "mastermindSeriesRework": "Làm lại",
+  "mastermindSeriesRunning": "đang chạy",
+  "mastermindSeriesStart": "Bắt đầu",
+  "mastermindSeriesSteer": "Điều hướng",
+  "mastermindSeriesSuccess": "Thành công",
+  "mastermindSeriesTarget": "Mục tiêu",
+  "mastermindSeriesUnknown": "không rõ",
+  "mastermindSeriesUsageLimit": "Hết hạn mức",
+  "mastermindSeriesWaiting": "đang chờ",
+  "mastermindSession": "Phiên",
+  "mastermindSeverityCritical": "Nghiêm trọng",
+  "mastermindSeverityHigh": "Cao",
+  "mastermindSeverityLow": "Thấp",
+  "mastermindSeverityMedium": "Trung bình",
+  "mastermindSeverityUnknown": "Không rõ",
+  "mastermindShowAll": "Xem tất cả",
+  "mastermindSnapshotAt": "Ảnh chụp lúc {time}",
+  "mastermindSnapshotOutOfDate": "Ảnh chụp đã cũ",
+  "mastermindSnapshotSectionsTitle": "Các phần",
+  "mastermindSourceCheckin": "Kiểm tra định kỳ",
+  "mastermindSourceCi": "CI",
+  "mastermindSourceDecisions": "Quyết định",
+  "mastermindSourceDirectory": "Danh bạ vai trò",
+  "mastermindSourceGithub": "GitHub",
+  "mastermindSourceInbox": "Hộp thư",
+  "mastermindSourceLedger": "Sổ cái",
+  "mastermindSourceOpenItems": "Mục đang mở",
+  "mastermindSourceQuotaCache": "Bộ đệm hạn mức",
+  "mastermindSourceQuotaWatcher": "Theo dõi hạn mức",
+  "mastermindSourceSpeed": "Tốc độ",
+  "mastermindSourceStateOk": "Ổn",
+  "mastermindSourceT3": "T3",
+  "mastermindSourceWorkforce": "Nhân lực",
+  "mastermindSourcesTitle": "Nguồn",
+  "mastermindStaffGroup": "Nhân sự",
+  "mastermindStateAnswered": "đã trả lời",
+  "mastermindStateCancelled": "đã hủy",
+  "mastermindStateCompleted": "hoàn tất",
+  "mastermindStateFailed": "thất bại",
+  "mastermindStateIdle": "nhàn rỗi",
+  "mastermindStateOpen": "đang mở",
+  "mastermindStateQueued": "đang chờ hàng đợi",
+  "mastermindStateRunning": "đang chạy",
+  "mastermindStateStale": "đã cũ",
+  "mastermindStateUnknown": "không rõ",
+  "mastermindStateWaiting": "đang chờ",
+  "mastermindStateWithdrawn": "đã rút",
+  "mastermindSummaryAsOf": "tính đến {time}",
+  "mastermindSummaryAtLeast": "ít nhất {count}",
+  "mastermindSummaryClosedIsState": "Số đã đóng phản ánh trạng thái sổ đăng ký, không phải số bản sửa mới.",
+  "mastermindSummaryCreditsNeedsTarget": "Cần có mục tiêu theo ngày.",
+  "mastermindSummaryCreditsNote": "Tín dụng không phải tiền hay token.",
+  "mastermindSummaryCreditsTargetMissing": "Chưa có mục tiêu theo ngày.",
+  "mastermindSummaryDeliveryModesUnavailable": "Không có số liệu cách chuyển tin.",
+  "mastermindSummaryEstimateNotCost": "Ước tính, không phải chi phí.",
+  "mastermindSummaryFleetNow": "Hiện tại: {running} đang chạy, {waiting} đang chờ, {idle} nhàn rỗi.",
+  "mastermindSummaryLatencyCaveat": "Đo theo lần chạy cha đã ghi nhận.",
+  "mastermindSummaryModelsTop": "{model} chạy nhiều nhất: {count} lượt, thành công {success}.",
+  "mastermindSummaryNoFixDates": "Không khả dụng: sổ đăng ký chưa có ngày khắc phục.",
+  "mastermindSummaryNoMessageStream": "Không khả dụng: chưa ghi nhận luồng tin nhắn.",
+  "mastermindSummarySecurityCell": "{product}, {severity}, {status}: {count}",
+  "mastermindSummaryShipsLowerBound": "Ghi nhận ít nhất {count} bản phát hành production.",
+  "mastermindSummaryUsageLowest": "{account} còn ít nhất: {percent}.",
+  "mastermindSummaryUsageShort": "Dự báo SHORT khi đặt lại lúc {time}.",
+  "mastermindSummaryWeeklyNotReported": "Nguồn không báo cáo hạn mức tuần.",
+  "mastermindTableLink": "Bảng",
+  "mastermindTentative": "tạm tính",
+  "mastermindTimeZoneCaption": "GMT+7",
+  "mastermindTitle": "Mastermind",
+  "mastermindUnavailable": "Không khả dụng",
+  "mastermindUnitCredits": "{value} tín dụng",
+  "mastermindUnitCreditsPerDay": "{value} tín dụng/ngày",
+  "mastermindUnitHours": "{value} giờ",
+  "mastermindUnitMinutes": "{value} phút",
+  "mastermindUnitPercent": "{value}%",
+  "mastermindUnitPp": "{value} điểm %",
+  "mastermindUnitPpPerHour": "{value} điểm %/giờ",
+  "mastermindUnitSeconds": "{value} giây",
+  "mastermindUnitTokens": "{value} token",
+  "mastermindVersion": "Phiên bản",
+  "mastermindWeekly": "Hằng tuần",
+  "mastermindWhy": "Lý do"
 }

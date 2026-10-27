@@ -37,6 +37,10 @@ function createQuery(table: string, result: QueryResult) {
       query.calls.push(['eq', args]);
       return query;
     }),
+    is: vi.fn((...args: unknown[]) => {
+      query.calls.push(['is', args]);
+      return query;
+    }),
     limit: vi.fn((...args: unknown[]) => {
       query.calls.push(['limit', args]);
       return Promise.resolve(result);
@@ -194,6 +198,72 @@ describe('process-topic-announcement-queue cron route', () => {
         resend: false,
       })
     );
+  });
+
+  it('fails a schedule session the queue finds without recipients', async () => {
+    queueResult({ data: null, error: null });
+    queueResult({
+      data: [
+        {
+          created_by: 'creator-user',
+          id: 'announcement-1',
+          updated_by: 'updater-user',
+          ws_id: 'workspace-1',
+        },
+      ],
+      error: null,
+    });
+    queueResult({
+      data: {
+        created_by: 'creator-user',
+        id: 'announcement-1',
+        updated_by: 'updater-user',
+        ws_id: 'workspace-1',
+      },
+      error: null,
+    });
+    mocks.sendTopicAnnouncement.mockResolvedValueOnce({
+      error: 'NO_RECIPIENTS',
+      status: 409,
+    });
+
+    const { GET } = await import('./route');
+    await GET(cronRequest({ authorization: 'Bearer cron-secret' }));
+
+    // Scoped to schedule sessions still processing: other rows keep the
+    // pre-existing behaviour.
+    const failQuery = mocks.queries[3];
+    expect(failQuery?.table).toBe('topic_announcements');
+    expect(failQuery?.calls).toContainEqual([
+      'update',
+      [{ last_error: 'NO_RECIPIENTS', status: 'failed' }],
+    ]);
+    expect(failQuery?.calls).toContainEqual([
+      'eq',
+      ['source_type', 'schedule'],
+    ]);
+    expect(failQuery?.calls).toContainEqual(['eq', ['status', 'processing']]);
+  });
+
+  it('fails schedule sessions left processing by a dead Send now', async () => {
+    queueResult({ data: null, error: null });
+    queueResult({ data: [], error: null });
+
+    const { GET } = await import('./route');
+    const response = await GET(
+      cronRequest({ authorization: 'Bearer cron-secret' })
+    );
+    expect(response.status).toBe(200);
+
+    const sweep = mocks.queries.at(-1);
+    expect(sweep?.table).toBe('topic_announcements');
+    expect(sweep?.calls).toEqual([
+      ['update', [{ last_error: 'PROCESSING_TIMEOUT', status: 'failed' }]],
+      ['eq', ['source_type', 'schedule']],
+      ['eq', ['status', 'processing']],
+      ['is', ['scheduled_send_at', null]],
+      ['lt', ['updated_at', '2026-06-02T11:45:00.000Z']],
+    ]);
   });
 
   it('does not send a row already claimed by another cron invocation', async () => {

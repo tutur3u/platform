@@ -6238,6 +6238,10 @@
       "calendar_reconnect_required": {
         "description": "Đồng bộ lịch đã tạm dừng vì nhà cung cấp không còn chấp nhận quyền truy cập. Hãy kết nối lại tài khoản để tiếp tục.",
         "title": "Kết nối lại lịch của bạn"
+      },
+      "tutoring_session_completed": {
+        "description": "Giáo viên kèm đã đánh dấu hoàn thành một buổi kèm của học viên trong lớp bạn chủ nhiệm.",
+        "title": "Đã hoàn thành buổi kèm"
       }
     },
     "date_earlier": "Trước đó",
@@ -6349,6 +6353,7 @@
         "task_start_date_changed": "Thay đổi ngày bắt đầu",
         "task_title_changed": "Thay đổi tiêu đề",
         "task_updated": "Cập nhật nhiệm vụ",
+        "topic_assigned": "Chủ đề được giao cho bạn",
         "workspace_activity": "Hoạt động không gian làm việc",
         "workspace_invite": "Lời mời không gian làm việc"
       },
@@ -6426,6 +6431,7 @@
       "task_start_date_changed": "Thay đổi ngày bắt đầu",
       "task_title_changed": "Thay đổi tiêu đề",
       "task_updated": "Nhiệm vụ cập nhật",
+      "topic_assigned": "Được giao chủ đề",
       "workspace_invite": "Lời mời không gian làm việc"
     },
     "unified_view": "Gộp",

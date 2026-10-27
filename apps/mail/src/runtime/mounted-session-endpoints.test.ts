@@ -20,6 +20,7 @@ const calls = vi.hoisted(() => {
     start: vi.fn(),
     assets: vi.fn(),
     fetch: vi.fn(),
+    routing: vi.fn(),
   };
 });
 
@@ -44,6 +45,20 @@ vi.mock('@tuturuuu/start-bridge/start/server-entry', () => ({
   createBridgeStartHandler: () => ({ fetch: calls.start }),
 }));
 
+vi.mock('@tuturuuu/utils/one-origin-routing', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('@tuturuuu/utils/one-origin-routing')>();
+  return {
+    ...actual,
+    decideOneOriginRequest: (
+      ...args: Parameters<typeof actual.decideOneOriginRequest>
+    ) => {
+      calls.routing();
+      return actual.decideOneOriginRequest(...args);
+    },
+  };
+});
+
 import { handleMailRequest } from './handler';
 
 const env = { ASSETS: { fetch: calls.assets } };
@@ -67,28 +82,34 @@ beforeEach(() => {
 });
 afterEach(() => vi.unstubAllGlobals());
 
-for (const prefix of variants) {
-  for (const suffix of ['', '/', '///']) {
-    it.each(cases)(
-      `rejects mounted $method $endpoint (${prefix}<endpoint>${suffix}) before dispatch`,
-      async ({ endpoint, method }) => {
-        const response = await handleMailRequest(
-          new Request(
-            `https://tuturuuu.com/mail${prefix}${endpoint}${suffix}`,
-            {
-              method,
-              headers: { cookie: 'sb-fixture-auth-token=shared' },
-            }
-          ),
-          env,
-          ctx
+for (const host of ['tuturuuu.com', 'staging.tuturuuu.com']) {
+  for (const mode of ['off', 'shadow', 'on']) {
+    for (const prefix of variants) {
+      for (const suffix of ['', '/', '///?next=%2Fmail%2Flogin']) {
+        it.each(cases)(
+          `rejects ${host} ${mode} mounted $method $endpoint (${prefix}<endpoint>${suffix}) before routing and dispatch`,
+          async ({ endpoint, method }) => {
+            const runtimeEnv = { ...env, TTR_ONE_ORIGIN_MAIL: mode };
+            const response = await handleMailRequest(
+              new Request(`https://${host}/mail${prefix}${endpoint}${suffix}`, {
+                method,
+                headers: { cookie: 'sb-fixture-auth-token=shared' },
+              }),
+              runtimeEnv,
+              ctx
+            );
+            expect(response.status).toBe(409);
+            expect(await response.json()).toEqual({
+              error: 'The shared session is managed by Web',
+            });
+            expect(response.headers.getSetCookie()).toEqual([]);
+            expect(response.headers.get('x-frame-options')).toBe('DENY');
+            for (const call of Object.values(calls))
+              expect(call).not.toHaveBeenCalled();
+          }
         );
-        expect(response.status).toBe(409);
-        expect(response.headers.getSetCookie()).toEqual([]);
-        for (const call of Object.values(calls))
-          expect(call).not.toHaveBeenCalled();
       }
-    );
+    }
   }
 }
 
@@ -118,6 +139,10 @@ for (const prefix of variants.slice(0, 3)) {
           expect(calls.provider).toHaveBeenCalledTimes(1);
           if (method === 'HEAD') expect(await response.text()).toBe('');
         }
+        expect(calls.routing).toHaveBeenCalledTimes(1);
+        expect(calls.routing.mock.invocationCallOrder[0]).toBeLessThan(
+          calls.proxy.mock.invocationCallOrder[0] ?? 0
+        );
         expect(calls.proxy).toHaveBeenCalledTimes(1);
         expect(calls.start).not.toHaveBeenCalled();
         expect(calls.assets).not.toHaveBeenCalled();
@@ -127,15 +152,88 @@ for (const prefix of variants.slice(0, 3)) {
   }
 }
 
-it('leaves neighbouring mounted routes to their own dispatch policy', async () => {
+it.each([
+  'logout-other',
+  'logout/extra',
+  'logout%2F',
+  '%6cogout',
+  'LOGOUT',
+  'refresh-app-session-other',
+  'verify-app-token-other',
+])('leaves the neighbouring mounted %s route to dispatch', async (endpoint) => {
   const response = await handleMailRequest(
-    new Request('https://tuturuuu.com/mail/api/auth/logout-other'),
+    new Request(`https://staging.tuturuuu.com/mail/api/auth/${endpoint}`),
     env,
     ctx
   );
   expect(response.status).toBe(404);
+  expect(calls.routing).toHaveBeenCalledTimes(1);
   expect(calls.proxy).toHaveBeenCalledTimes(1);
   expect(calls.handler).not.toHaveBeenCalled();
   expect(calls.provider).not.toHaveBeenCalled();
   expect(response.headers.getSetCookie()).toEqual([]);
+});
+
+it.each(['off', 'shadow', 'on'])(
+  'keeps the unqualified shared-origin mount refused in %s mode',
+  async (mode) => {
+    const runtimeEnv = { ...env, TTR_ONE_ORIGIN_MAIL: mode };
+    const response = await handleMailRequest(
+      new Request('https://tuturuuu.com/mail/login'),
+      runtimeEnv,
+      ctx
+    );
+    expect(response.status).toBe(404);
+    expect(calls.routing).toHaveBeenCalledTimes(1);
+    expect(calls.proxy).not.toHaveBeenCalled();
+    expect(calls.start).not.toHaveBeenCalled();
+  }
+);
+
+it.each([
+  'https://tuturuuu.com/api/auth/logout',
+  'https://tuturuuu.com/mailbox/api/auth/logout',
+  'https://staging.tuturuuu.com/calendar/api/auth/logout',
+])('rejects the unowned path %s before routing or dispatch', async (url) => {
+  const response = await handleMailRequest(new Request(url), env, ctx);
+  expect(response.status).toBe(404);
+  for (const call of Object.values(calls)) expect(call).not.toHaveBeenCalled();
+});
+
+it.each(['DELETE', 'PUT', 'PATCH'])(
+  'rejects unsupported mounted session %s before routing',
+  async (method) => {
+    const response = await handleMailRequest(
+      new Request('https://tuturuuu.com/mail/api/auth/logout', { method }),
+      env,
+      ctx
+    );
+    expect(response.status).toBe(409);
+    for (const call of Object.values(calls)) expect(call).not.toHaveBeenCalled();
+  }
+);
+
+it.each([
+  'https://mail.tuturuuu.com/login',
+  'https://staging.tuturuuu.com/mail/login',
+])('keeps document security headers after bridge dispatch on %s', async (url) => {
+  calls.start.mockResolvedValueOnce(
+    new Response('<!doctype html><title>Mail</title>', {
+      headers: { 'content-type': 'text/html; charset=utf-8' },
+    })
+  );
+  const response = await handleMailRequest(new Request(url), env, ctx);
+  expect(response.status).toBe(200);
+  expect(calls.routing).toHaveBeenCalledTimes(1);
+  expect(calls.start).toHaveBeenCalledTimes(1);
+  expect(response.headers.get('x-content-type-options')).toBe('nosniff');
+  expect(response.headers.get('permissions-policy')).toContain('camera=()');
+  expect(response.headers.get('content-security-policy-report-only')).toContain(
+    "default-src 'self'"
+  );
+  expect(response.headers.get('content-security-policy')).toBe(
+    "frame-ancestors 'none'"
+  );
+  expect(response.headers.get('x-frame-options')).toBe('DENY');
+  expect(response.headers.get('cache-control')).toBe('private, no-store');
 });

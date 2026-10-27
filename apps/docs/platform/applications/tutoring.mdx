@@ -1,7 +1,7 @@
 ---
 title: 'Tutoring'
 description: 'Schedule make-up and remedial sessions, work the support queue, and enable the module per workspace.'
-updatedAt: '2026-10-04'
+updatedAt: '2026-10-26'
 ---
 
 Tutoring lives in the Contacts satellite at `/{wsId}/users/tutoring`. It turns
@@ -126,35 +126,73 @@ For an absence, staff enter the missed class date and select **Suggest all
 sessions**. The form scans the selected group's upcoming scheduled classes and
 proposes one slot for each missing session. This naturally handles a
 Monday-to-Wednesday, Saturday-to-Sunday, or Sunday-to-Saturday pattern. For
-weak-support feedback, the English center preset proposes two consecutive
-45-minute sessions before one class. Scheduling from the support queue loads
+weak-support feedback, the English center preset proposes one 45-minute
+session before the next class (**Sessions for weak support** defaults to 1).
+A higher count places that many consecutive sessions before one class. The
+template's **Follow up after (days)** (Nhắc lại sau) defaults to 3; the standard
+preset keeps 7. A saved English center template that still holds the earlier
+defaults (2 sessions, 7 days) reads each as the new default (1 session, 3 days).
+Values staff edited in **Timing and follow-up** are kept: that edit saves the
+policy as custom. Scheduling from the support queue loads
 these suggestions before opening the form. Staff still review the teacher,
 date, and time before creating any session. If too few scheduled classes are
-available, remaining slots stay blank for manual scheduling.
+available, the found slots are applied, the remaining slots stay blank for
+manual scheduling, and the form reports how many were filled. When the group
+calendar has upcoming classes but none match a shift rule, the form says so
+instead of reporting an empty calendar.
+
+### Shift rules and group shifts
+
+Each workspace configures its own shift rules under **Settings → Special class
+times**: a class window (start, optional end) and class days, the tutoring start
+time, tutoring days, and length (45 minutes by default). Tutoring days may be a
+subset of class days. Rules without an assignment match a class by weekday and
+exact local start time.
+
+**Settings → Group shifts** assigns a class group to a named shift. An assigned
+group uses that shift's tutoring time and tutoring days for every class on its
+calendar, whatever clock time the calendar stores. This covers class dates
+imported from the legacy session list, which were stored at a 07:00
+Asia/Ho_Chi_Minh placeholder that matches no shift. When an assigned group has
+no scheduled classes in the look-ahead window, suggestions use the shift's
+days in the workspace default time zone (Asia/Ho_Chi_Minh). These implied
+classes are never stored, and staff still review every slot. Assignments to a
+renamed or deleted shift match nothing. They do not invalidate the policy.
+Applying a preset keeps campus and group shift assignments.
 
 The standard preset places a 45-minute session immediately before class. The
-Easy Center preset includes the seven named weekday and weekend shifts from
+Easy Center preset includes the eight named weekday and weekend shifts from
 the center's schedule. The Monday/Wednesday/Friday 18:00 class uses Wednesday
 and Friday 17:15–18:00 only: Monday is skipped, even when it is the next
 scheduled class. The Tuesday/Thursday class uses 17:15–18:00. The weekend
 08:00–09:30 class uses **09:30–10:30 after class**, an intentional 60-minute
-exception to the usual 45 minutes. Other weekend shifts keep the table below.
+exception to the usual 45 minutes. The weekend 19:00 class (Shift 8) uses
+18:15–19:00. Other weekend shifts keep the table below. An untouched saved
+seven-shift preset gains Shift 8 when read.
 Untouched older Easy Center preset shift rules adopt these corrections when
 read; staff-edited rules and the standard/custom policies keep their saved
 behavior, including generic before-class fallback. The canonical Easy Center
 preset never falls back to an unlisted class day or time.
 
-| Class start | Class days | Tutoring time |
-| --- | --- | --- |
-| 18:00 | Monday/Wednesday/Friday | 17:15–18:00 Wednesday/Friday only |
-| 18:00 | Tuesday/Thursday | 17:15–18:00 |
-| 08:00 | Saturday/Sunday | 09:30–10:30 |
-| 09:30 | Saturday/Sunday | 08:45–09:30 |
-| 16:00 | Saturday/Sunday | 15:15–16:00 |
-| 17:30 | Saturday/Sunday | 16:45–17:30 |
-| 18:00 | Saturday/Sunday | 17:15–18:00 |
+| Shift | Class window | Class days | Tutoring time |
+| --- | --- | --- | --- |
+| Shift 1 | 18:00–19:30 | Monday/Wednesday/Friday | 17:15–18:00 Wednesday/Friday only |
+| Shift 2 | 18:00–19:30 | Tuesday/Thursday | 17:15–18:00 |
+| Shift 3 | 09:30–11:00 | Saturday/Sunday | 08:45–09:30 |
+| Shift 4 | 08:00–09:30 | Saturday/Sunday | 09:30–10:30 |
+| Shift 5 | 16:00–17:30 | Saturday/Sunday | 15:15–16:00 |
+| Shift 6 | 17:30–19:00 | Saturday/Sunday | 16:45–17:30 |
+| Shift 7 | 18:00–19:30 | Saturday/Sunday | 17:15–18:00 |
+| Shift 8 | 19:00 | Saturday/Sunday | 18:15–19:00 |
+
+The preset is a template: applying it fills these rules into the workspace's
+own policy, which the owner can then edit. It contains no learner or group
+data. Untouched saved preset rules gain the display-only class window and
+class days when read.
 
 Regression coverage: `tutoring-policy.test.ts`, `tutoring-suggestion.test.ts`,
+`tutoring-shift-assignment.test.ts`, the Contacts
+`tutoring-suggestion-apply.test.ts` (partial and unmatched results),
 and the Contacts `tutoring-policy-card.test.tsx`, `tutoring-teacher-picker.test.tsx`,
 and `tutoring-create-card.test.tsx` mounted section/teacher controls.
 `tutoring-policy-save.test.tsx` covers refreshed-section isolation and pending/failed saves.
@@ -168,7 +206,20 @@ group; a clear `CS1`, `CS2`, `Cơ sở 1`, or `Cơ sở 2` marker in the group n
 is inferred when no override exists. The existing generic `Lớp học` group tag
 does not identify a campus. Ambiguous groups show no campus on the schedule
 and `Chưa xác định` in the parent draft until staff set an override. The
-Easy Center template uses the resolved label in the parent draft. The
+Easy Center template uses the resolved label in the parent draft.
+
+Each workspace keeps its own campus list (`campusOptions` in the same
+`TUTORING_POLICY` config, default empty). Labels are trimmed, blank entries
+are dropped, duplicates are removed, and a label longer than 80 characters
+fails validation. Policies saved before the list existed read as an empty
+list with every other field unchanged, and saving the Campuses section keeps
+all other policy fields. The class-to-campus editor offers the list plus any
+label already mapped to a class, so earlier free-text mappings stay selectable
+and are never dropped; staff can still type a new label. Topic announcements
+offer the same choices as a **Place** picker (see User Management). No campus
+names are built in or seeded; each center enters its own. Coverage:
+`tutoring-campus-options.test.ts`, the policy `route.test.ts`, and
+`tutoring-policy-save.test.tsx`. The
 center's tuition remains free to
 learners; payroll exports count completed teaching time.
 
@@ -179,12 +230,189 @@ teacher's flagged feedback content. Staff can review and edit either draft
 before saving; content is never invented from a class title or an unrelated
 lesson.
 
+### Weak-support content comes from the homeroom teacher
+
+Decision (applies to `WEAK_SUPPORT` tutoring in Contacts; the restriction is
+off by default):
+
+- The text the homeroom teacher (GVCN) enters when flagging feedback as
+  **Requires Attention** is the learner's tutoring content (Nội dung kèm). The
+  feedback dialogs say so while the flag is on. The support queue labels the
+  column **Tutoring content** and prefills it into weak-support drafts.
+- **Only class managers set tutoring content** is an optional policy switch
+  (`restrictWeakContentEditors`, default off, in the weak-support section of
+  Settings). When on, creating, editing or deleting flagged feedback, or ending
+  weak support, also needs the existing `update_user_groups` class-management
+  permission, on top of the usual `update_user_groups_scores`. Unflagged feedback
+  is unaffected. No role is added. Groups' homeroom teachers are expected to
+  hold that permission through their workspace role. The check runs on the
+  server for every feedback write path: the Contacts feedback API
+  (`apps/contacts/src/lib/user-feedbacks.ts`, used by both its workspace and
+  group-member feedback routes) and the web feedback and tutoring routes.
+- **End tutoring** (Thoát kèm) is an explicit queue action for weak-support and
+  office-review rows, confirmed in an in-app dialog. It calls
+  `POST /api/v1/workspaces/{wsId}/tutoring/weak-support/end`, which clears the
+  attention flag on that learner's feedback for that class. The feedback text
+  stays as history, and sessions already scheduled remain for staff to complete
+  or cancel. Flagging the learner again puts them back on the list.
+
+Group-member feedback uses the authorized workspace for both the learner and
+class. Teachers retain feedback history after a learner leaves the class; current
+class membership is not required. This matches Contacts. The usual view/edit
+permissions and weak-content policy still apply. The web group-member feedback
+`route.test.ts` covers scoping, former-member history and weak-content denial.
+
+Regression coverage:
+[`weak-content-access.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/tutoring/weak-content-access.test.ts),
+[`weak-support/end/route.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/tutoring/weak-support/end/route.test.ts),
+the Contacts route cases in
+[`users/feedbacks/route.test.ts` (Contacts)](https://github.com/tutur3u/platform/blob/main/apps/contacts/src/app/api/v1/workspaces/%5BwsId%5D/users/feedbacks/route.test.ts),
+the weak-support policy cases in
+[`users/feedbacks/route.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/legacy-api-routes/v1/workspaces/%5BwsId%5D/users/feedbacks/route.test.ts),
+and
+[`tutoring-policy.test.ts`](https://github.com/tutur3u/platform/blob/main/packages/internal-api/src/tutoring-policy.test.ts).
+
+### Make-up content follows the missed lesson's notes
+
+Decision (applies to `ABSENT_RECOVERY` sessions in Contacts → Tutoring; default
+on, no setting):
+
+- While a make-up session is **pending**, its content follows the lesson notes
+  recorded for the missed class session. Notes a teacher adds or edits after
+  scheduling appear in the schedule automatically. The schedule marks such
+  sessions with "Follows the missed lesson notes".
+- When the session is **marked done** (row action or session edit), the notes as
+  they stand are stored on the session and are **frozen**. Later edits to the
+  class notes no longer change it.
+- A tutor's **manual edit** of the content stores their own text and stops the
+  updates for that session; a completion never overwrites it. Clearing the
+  content of a pending session links it to the notes again.
+- No-show and cancelled sessions keep whatever content they have.
+- **Which missed class**: each make-up session follows exactly one missed class.
+  Within a learner's class, absences in the lookback window and that learner's
+  pending or done make-up sessions are paired in date order. The oldest
+  absence not yet covered goes to the earliest session dated on or after it.
+  Sessions dated before every open absence follow no class and show no
+  notes. Deleting or rescheduling a session, or editing attendance, can
+  re-pair later pending sessions; completed sessions keep their stored notes.
+- **Content narrows to one date**: the scheduling draft lists notes for every
+  missed date in the queue row (`YYYY-MM-DD: notes`, one line each). Once the
+  session is saved linked, it shows only its own paired date's notes, so a
+  learner with two absences sees one date on each of their two sessions.
+- **Completion stays fast**: storing the notes waits at most three seconds. If
+  the lookup fails or times out, the session is still completed. The response
+  carries `warning: "LINKED_CONTENT_NOT_STORED"`, and the schedule shows a
+  non-blocking warning so staff can check the content. A slow write may still
+  land after the timeout, but only while the content is empty.
+
+Implementation: no schema change. A linked session is one whose stored
+content is blank (empty or whitespace only), so the create form saves an
+unchanged drafted note as empty. The
+sessions list derives the content at read time, pairing each session with its
+missed class through the queue's
+[legacy absence credit matching](#legacy-absence-credit-matching), and reads
+that class session's notes. Completion writes the notes only while the stored
+content is still the blank value it read (a compare-and-set, so a concurrent
+staff edit wins). Completing through the session edit with no content, or with
+blank content, still stores the notes; only real text sent with the completion
+counts as a manual edit. If the lookup fails, the list shows the stored content
+and completion still succeeds. Regression coverage:
+[`linked-content.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/tutoring/linked-content.test.ts)
+(notes filled after scheduling, frozen after completion, manual edit kept,
+lookup failure, whitespace-only content, bounded wait, pairing order),
+[`sessions/[id]/route.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/tutoring/sessions/%5Bid%5D/route.test.ts)
+(completion with absent, empty or blank content, and the completion warning) and
+[`use-tutoring-create.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/contacts/src/app/%5Blocale%5D/%5BwsId%5D/users/tutoring/use-tutoring-create.test.ts).
+
+### Homeroom teachers hear when tutoring is completed
+
+Decision (applies to every tutoring reason; always on, no setting):
+
+- When a tutoring session is marked **done** (row action or session edit), the
+  class's homeroom teachers (GVCN) get an in-app notification. These are group
+  members with role `TEACHER` whose workspace user is linked to a platform
+  account. Teachers without a linked account are skipped. The person who
+  completed the session is not notified of their own action.
+- The notice is sent after the completion is saved and never blocks or fails it.
+  Errors are logged, and a notice slower than three seconds is abandoned.
+- At most one notice per session and recipient. Retries, and re-completing a
+  session after reopening it, do not send another.
+- It uses the existing `create_notification` path with type
+  `system_announcement`, code `tutoring_session_completed` and entity
+  `tutoring_session`, so recipients' notification preferences for system
+  announcements apply. Apps render the code in the viewer's language; the stored
+  English text names the learner, class and date.
+
+Limitation: without a receipts table, de-duplication checks for an existing
+notification before sending. Two completions of the same session at the same
+instant can both send. A unique receipt (the planned tutoring notification
+migration) would make it exact. Regression coverage:
+[`completion-notification.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/tutoring/completion-notification.test.ts)
+and
+[`sessions/[id]/mark/route.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/tutoring/sessions/%5Bid%5D/mark/route.test.ts).
+
 Policies are validated at `GET/PUT /api/v1/workspaces/{wsId}/tutoring/policy`
 and stored under `TUTORING_POLICY` with bounded `TUTORING_POLICY_PART_*` rows in
 `workspace_configs`. The table enforces a 1,000-character limit per value, so
 the policy API writes all chunks in one upsert and readers reconstruct the
 validated policy. Unset or malformed values safely use the standard preset.
 Existing workspaces need no migration.
+
+## Follow-up notifications
+
+Status: database foundation only. No job, route, or screen sends these yet; the
+completion notice and the daily content check ship in later changes.
+
+These rules record Easy Center's answers and apply to any workspace that
+enables them.
+
+- **Recipients.** A class's homeroom teachers (GVCN) are its
+  `workspace_user_groups_users` members with role `TEACHER`; every one of them
+  is notified, never just one. Each is reached through its
+  `workspace_user_linked_users` account. A teacher without a linked account is
+  skipped and reported, not replaced by someone else.
+- **Office.** The office is every workspace member who holds `admin`
+  (administrators, including the creator) or `approve_reports` (supervisors),
+  checked with `has_workspace_permission`. No office role, recipient list, or
+  column exists; grant or revoke those permissions to change who is notified.
+- **Weak-support content alert.** After the configured review period (Easy
+  Center: 14 days) with no homeroom-teacher action, all homeroom teachers of
+  the class and the office are notified together, in one step. There is no
+  separate reminder or later escalation. Each unchanged period alerts each
+  recipient once.
+- **Review clock.** Any homeroom-teacher action resets the clock: keeping the
+  content, changing it, or completing/exiting support (thoát kèm). A change
+  is a new `require_attention` feedback row; exiting clears
+  `require_attention`, which ends the clock. Keeping content writes
+  `private.tutoring_weak_support_reviews.last_reviewed_at`. The clock starts at
+  the later of that value and the latest `require_attention` feedback for the
+  student in the class.
+- **Completion notice.** When the tutor marks a session done (Hoàn thành),
+  every homeroom teacher of the class is notified once per session. They then
+  update the content or exit support, and that action resets the review clock.
+- **Tutor comment.** Sessions have an optional `tutor_comment` (up to 2,000
+  characters, stored as null when empty) that the completion notice shows.
+- **Channels.** Notifications are in-app and email, created with
+  `create_notification` using the types `tutoring_weak_content_review_due` and
+  `tutoring_session_completed`. Email uses the existing notification mail
+  path and recipients' notification preferences; there is no new provider.
+- **Idempotency.** `private.tutoring_notification_receipts` records one row per
+  recipient and alert cycle or session, claimed before notifying. Reruns,
+  repeated marks, and deleted notifications never send twice; delivery is at
+  most once per recipient. Both private tables are service-role only, with RLS
+  enabled and no client policies.
+- **Residual risk (accepted for v1).** `user_feedbacks` is writable by any
+  workspace member over the Data API. A member who adds a new
+  `require_attention` feedback for the student restarts the clock and so
+  postpones the office alert by up to one review period. Each postponement
+  leaves a visible feedback row, and the alert fires one period after the
+  last one, so it cannot be suppressed without repeated inserts. Only the
+  service role can write `last_reviewed_at`.
+
+Regression coverage:
+`apps/database/supabase/tests/tutoring-follow-up-notification-foundation.sql`.
+Rollback:
+`apps/database/rollbacks/20261026191000_tutoring_follow_up_notification_foundation.rollback.sql`.
 
 ## Exports
 
@@ -241,6 +469,35 @@ Regression coverage: `apps/web/src/lib/tutoring/teachers.test.ts`,
 `apps/web/src/lib/tutoring/teacher-assignment-routes.test.ts`, and the tutoring
 teacher catalog's colocated `route.test.ts` cover workspace boundaries, teacher
 eligibility, permission denial, error handling, pagination, and session writes.
+
+### Tutor groups
+
+Tutors are usually students outside the class, so they have no title of their
+own: a tutor is a workspace user with `TEACHER` membership in a group that staff
+mark as a **tutor group**.
+
+- **Scope and default.** The `tutorGroupIds` list in the tutoring policy
+  (Contacts, Tutoring policy, Tutor groups) is workspace-wide and defaults to
+  empty. Policies saved before the setting existed read as no tutor groups, and
+  every policy field round-trips on save. Presets keep the chosen groups.
+- **Roles combine.** The teacher catalog returns `isTutor` (`TEACHER` in any
+  tutor group) and `isClassTeacher` (`TEACHER` in any other group). Both can be
+  true, so a homeroom lecturer who also tutors keeps both. No role or permission
+  is added and tutor-group teachers stay valid tutoring teachers.
+- **Picker.** The tutoring teacher picker shows **Tutor** and **Teacher** labels
+  beside the name, both when both apply, and a **Tutors only** toggle that
+  filters the catalog with `tutorsOnly=true`. Nothing else about the picker
+  changes.
+- **Queues.** Tutor groups have no real students, so they are excluded from the
+  make-up and weak-support queues by group id, in addition to the name-based
+  exclusion rules.
+- **Setup is configuration.** Staff create a group such as "Giáo viên kèm", add
+  each tutor as `TEACHER`, and select it in the policy. Nothing is seeded.
+
+Regression coverage: `tutoring-policy.test.ts` (parser, round trip, exclusion by
+id), the policy, queue and teacher catalog `route.test.ts` files, `teachers.test.ts`
+(tutor-only, class-only, both), and the Contacts `tutoring-teacher-picker.test.tsx`
+and `tutoring-tutor-groups.test.tsx`.
 
 
 ### Queue handoff and missed-date defaults
@@ -307,6 +564,10 @@ counts, duplicate or truncated pages prevent suggestions and expose Retry. Missi
 teachers and schedules have distinct feedback. Configured but unmaterialized class
 occurrences are shown as a schedule-review exception, not confirmed classes.
 The displayed horizon follows the configured policy rather than a fixed four weeks.
+An empty window is complete: the sessions API reports `totalPages: 1` for zero
+rows, and the reader accepts either zero or one page for an empty catalog. Before
+this was accepted, a workspace with no tutoring sessions in the horizon always
+showed the incomplete-data retry state.
 
 Choices exclude recorded learner/teacher tutoring conflicts and other slots in the
 current draft, with half-open intervals and overnight overlap. Cancellation records

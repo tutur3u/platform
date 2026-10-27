@@ -35,6 +35,7 @@ class _ResetRepository extends ReplyRepository {
     required String wsId,
     required AssistantFilePickerResult file,
     String? chatId,
+    void Function(double progress)? onProgress,
   }) async => throw const FormatException('Synthetic upload error retained');
 }
 
@@ -234,7 +235,7 @@ class _ResetHarness {
   }
 
   Future<void> begin(WidgetTester tester) async {
-    await tester.tap(find.byTooltip('New conversation'));
+    await tester.tap(find.byKey(const ValueKey('assistant-history-new')));
     await tester.pumpAndSettle();
   }
 

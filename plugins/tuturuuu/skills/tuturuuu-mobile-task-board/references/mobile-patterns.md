@@ -120,9 +120,13 @@ localization changes.
 ## Overlays And Shell
 
 - Open sheets and dialogs with `showAppSheet` / `showAppDialog` and lay them out
-  with `AppSheetScaffold` / `AppDialog`. Do not call `shad.openDrawer`,
-  `shad.showDialog`, `shad.showDropdown` or raw `showModalBottomSheet`.
-  `showAdaptiveSheet` remains a compatibility path with the same Back binding.
+  with `AppSheetScaffold` / `AppDialog`. Menus use `showAppActionSheet`; single
+  choices use `showAppChoiceSheet` (also behind `AppSelect`). Do not call
+  `shad.openDrawer`, `shad.showDialog`, `shad.showDropdown` or raw
+  `showModalBottomSheet`, and do not hand-draw drag handles or a second sheet
+  background (use `AppSheetHandle`). `showAdaptiveSheet` remains a
+  compatibility path that draws the same `AppSheetSurface`, handle and
+  keyboard inset, with the same Back binding.
 - Dialogs and fit sheets consume keyboard insets at the host boundary. Do not
   add a second IME padding layer in their bodies. Verify phone paths with a
   keyboard open and tap OK/Save; a tablet-only picker test does not cover them.
@@ -141,8 +145,11 @@ localization changes.
   text, and renders through `SETTINGS_RENDER_DIR`.
 - Shell actions should open overlays immediately and let overlay content fetch
   or refresh on mount instead of blocking the tap on pre-open network work.
-- Full-surface loaders should use `NovaLoadingIndicator`; native/spinner
-  variants are for compact inline affordances.
+- Loading states use `AppLoadingIndicator` (`core/ui`), never a bare
+  `NovaLoadingIndicator`: `.page()` for a page, pane or full-screen gate (56dp,
+  centred), the default section size (32dp) for cards and list footers, and
+  `.inline()` (20dp) for buttons and row slots. A full-screen loader must not
+  use a section or inline size. Cold list loads still prefer `AppSkeletonRows`.
 
 - Settings rows use `SettingsRowLayout` and `SettingsTile` (re-exported from
   `settings_widgets.dart`) for consistent heading/icon insets, text slots and
@@ -172,6 +179,33 @@ localization changes.
   full-screen modal content must use the adaptive sheet helpers or
   `AppearanceScope.opaqueScaffolds`. Ambient motion must stay opt-in, timer-driven
   and painter-only, and must stop under reduced motion.
+- Interface style, density and corners are `AppInterfaceTokens` on the
+  Material theme. Read radii and row heights through
+  `AppTokens.of(context).interface`, never by platform checks. The Settings
+  shell harness pumps once, so assert a stored appearance by pumping with it,
+  not by changing it mid-test.
+- Home workspace chips read pins from the `MOBILE_PINNED_WORKSPACES` user
+  config only from five workspaces, and allow edits only after a successful
+  load, retrying a failed load with backoff and on resume. Start focus treats
+  a paused session (stopped with an open break, `type=paused`) like a running
+  one and stops it before starting; a failed start resumes and re-pauses it
+  rather than losing it.
+- Root tabs are Home, Apps, Mira, Inbox and You on an icon-only dock;
+  `shell_viewport_checks.dart` asserts the dock has no text. Home, Inbox and
+  You have no Search action; a screen offers Search only for its own content,
+  always through `ShellActionSpec.search` (one glyph, dock slot and target).
+- Do not show bare count chips or badges; a count must open what it counts.
+  Show a control only while it can act rather than registering it disabled.
+- Prompt composers lay out through `AppComposerRow` with
+  `AppComposerRow.fieldPadding`, so one line centres with its controls and
+  extra lines grow upward with controls on the last line.
+- Before editing `assistant_page.dart` or `assistant_page_layout.dart`, check
+  the open Mira chat PRs that own them; keep tab polish in owned widgets such
+  as `assistant_starter_prompts.dart` until those land.
+- The device Pomodoro is `PomodoroController` (app-level). Focus phases are
+  ordinary tracker sessions; restore catch-up never auto-starts focus and
+  trims late stops to the deadline. In widget tests, close the controller in
+  the test body only; a second close in `tearDown` hangs outside fake time.
 
 ## Task Board
 
@@ -190,6 +224,27 @@ localization changes.
   post-success close/toast path.
 - Assignee avatar stacks should size from actual occupied width so overflow
   badges do not create stray gaps or clipping.
+- List-view task rows use `AppSwipeActions` plus a long-press
+  `showAppActionSheet` menu that reuses the board cubit mutations. Selection
+  mode disables swipes. Board-page tests whose mutations invalidate caches
+  never settle in fake async, so assert on the repository call and the busy
+  dialog instead of `pumpAndSettle` after confirming.
+- Pass the page context, not the root navigator's context, to
+  `showAppToast`; the root navigator's element sits above its overlay. Keep the
+  root-navigator context only for legacy `shad.showToast` callers.
+- Optimistic `TaskBoardDetailCubit.updateTask` restores the pre-edit snapshot
+  on failure before the server refresh; do not rely on the refresh alone.
+
+### Estimation recovery
+
+Validate estimation rows through `TaskEstimateBoard.listFromJson` for both API
+responses and cache decoders. Parsing after `CacheStore.peek/read` escapes its
+corrupt-record recovery boundary. Convert invalid input to `FormatException`
+so the estimation cubit can publish its existing error state; do not catch every
+programming error. Check closed/superseded loads before publishing asynchronous
+results. Keep estimation form actions inside the scrollable content so title and
+actions cannot exhaust a small dialog at enlarged text sizes. The model, cubit,
+and dialog tests under `apps/mobile/test` cover these boundaries.
 
 ## Finance
 

@@ -30,6 +30,15 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createDynamicAdminClient: () => mocks.createDynamicAdminClient(),
 }));
 
+// Stored-object verification has its own tests; these cover routing only.
+vi.mock('@/app/api/ai/chat/_lib/chat-resource-object-guard', () => ({
+  verifyAiChatStoredObjects: async ({
+    objects,
+  }: {
+    objects: { path: string }[];
+  }) => new Map(objects.map(({ path }) => [path, 'valid'])),
+}));
+
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   verifyWorkspaceMembershipType: (
     ...args: Parameters<typeof mocks.verifyWorkspaceMembershipType>
@@ -42,6 +51,16 @@ type ChatFileRoutePost = (
 ) => Promise<Response>;
 
 const chatId = '11111111-1111-4111-8111-111111111111';
+
+function aiChatLookup(creatorId: string | null) {
+  const maybeSingle = vi.fn().mockResolvedValue({
+    data: creatorId ? { creator_id: creatorId } : null,
+    error: null,
+  });
+  return vi.fn(() => ({
+    select: vi.fn(() => ({ eq: vi.fn(() => ({ maybeSingle })) })),
+  }));
+}
 
 function createRouteContext() {
   return {
@@ -72,7 +91,7 @@ describe('Mind chat file routes', () => {
   it.each<[string, () => Promise<unknown>, Record<string, unknown>]>([
     [
       'upload-url',
-      () => import('@/legacy-api-routes/ai/chat/upload-url/route'),
+      () => import('@/app/api/ai/chat/upload-url/route'),
       {
         allowAiTempAuth: true,
         ...appSessionAuthOptions,
@@ -81,7 +100,7 @@ describe('Mind chat file routes', () => {
     ],
     [
       'delete-file',
-      () => import('@/legacy-api-routes/ai/chat/delete-file/route'),
+      () => import('@/app/api/ai/chat/delete-file/route'),
       {
         allowAiTempAuth: true,
         ...appSessionAuthOptions,
@@ -90,7 +109,7 @@ describe('Mind chat file routes', () => {
     ],
     [
       'file-urls',
-      () => import('@/legacy-api-routes/ai/chat/file-urls/route'),
+      () => import('@/app/api/ai/chat/file-urls/route'),
       {
         allowAiTempAuth: true,
         ...appSessionAuthOptions,
@@ -118,6 +137,7 @@ describe('Mind chat file routes', () => {
       error: null,
     });
     mocks.createDynamicAdminClient.mockResolvedValue({
+      from: aiChatLookup('user-1'),
       storage: {
         from: vi.fn(() => ({
           createSignedUploadUrl,
@@ -138,7 +158,7 @@ describe('Mind chat file routes', () => {
     );
     const context = createRouteContext();
     const { POST } = (await import(
-      '@/legacy-api-routes/ai/chat/upload-url/route'
+      '@/app/api/ai/chat/upload-url/route'
     )) as unknown as {
       POST: ChatFileRoutePost;
     };
@@ -162,13 +182,14 @@ describe('Mind chat file routes', () => {
       expect.stringMatching(
         /^ws-1\/chats\/ai\/resources\/11111111-1111-4111-8111-111111111111\/\d+_Tuturuuu_Technical_Planning\.jpg$/u
       ),
-      { upsert: true }
+      { upsert: false }
     );
   });
 
   it('normalizes delete-file workspaces with the authenticated app-session context', async () => {
     const remove = vi.fn().mockResolvedValue({ error: null });
     mocks.createDynamicAdminClient.mockResolvedValue({
+      from: aiChatLookup('user-1'),
       storage: {
         from: vi.fn(() => ({
           remove,
@@ -188,7 +209,7 @@ describe('Mind chat file routes', () => {
     );
     const context = createRouteContext();
     const { POST } = (await import(
-      '@/legacy-api-routes/ai/chat/delete-file/route'
+      '@/app/api/ai/chat/delete-file/route'
     )) as unknown as {
       POST: ChatFileRoutePost;
     };
@@ -204,6 +225,125 @@ describe('Mind chat file routes', () => {
     expect(remove).toHaveBeenCalledWith([
       `ws-1/chats/ai/resources/${chatId}/123_file.jpg`,
     ]);
+  });
+
+  it('rejects upload-url for a chat owned by another user', async () => {
+    const createSignedUploadUrl = vi.fn();
+    mocks.createDynamicAdminClient.mockResolvedValue({
+      from: aiChatLookup('user-2'),
+      storage: { from: vi.fn(() => ({ createSignedUploadUrl })) },
+    });
+    const { POST } = (await import(
+      '@/app/api/ai/chat/upload-url/route'
+    )) as unknown as { POST: ChatFileRoutePost };
+
+    const response = await POST(
+      new Request('https://web.tuturuuu.com/api/ai/chat/upload-url', {
+        body: JSON.stringify({ chatId, filename: 'a.png', wsId: 'ws-1' }),
+        method: 'POST',
+      }),
+      createRouteContext()
+    );
+
+    expect(response.status).toBe(403);
+    expect(createSignedUploadUrl).not.toHaveBeenCalled();
+  });
+
+  it('sends upload-url for a chat id that does not exist yet to temp', async () => {
+    const createSignedUploadUrl = vi.fn().mockResolvedValue({
+      data: { signedUrl: 'https://storage.example.com/upload', token: 't' },
+      error: null,
+    });
+    mocks.createDynamicAdminClient.mockResolvedValue({
+      from: aiChatLookup(null),
+      storage: { from: vi.fn(() => ({ createSignedUploadUrl })) },
+    });
+    const { POST } = (await import(
+      '@/app/api/ai/chat/upload-url/route'
+    )) as unknown as { POST: ChatFileRoutePost };
+
+    const response = await POST(
+      new Request('https://web.tuturuuu.com/api/ai/chat/upload-url', {
+        body: JSON.stringify({ chatId, filename: 'a.png', wsId: 'ws-1' }),
+        method: 'POST',
+      }),
+      createRouteContext()
+    );
+
+    expect(response.status).toBe(200);
+    // No owned ai_chats row yet: the upload goes to the caller's temp folder.
+    expect(createSignedUploadUrl).toHaveBeenCalledTimes(1);
+    expect(createSignedUploadUrl).toHaveBeenCalledWith(
+      expect.stringMatching(
+        /^ws-1\/chats\/ai\/resources\/temp\/user-1\/\d+_a\.png$/
+      ),
+      { upsert: false }
+    );
+  });
+
+  it.each([
+    [
+      'another user temp folder',
+      'ws-1/chats/ai/resources/temp/user-2/1_a.png',
+      null,
+    ],
+    [
+      'a chat owned by another user',
+      `ws-1/chats/ai/resources/${chatId}/1_a.png`,
+      'user-2',
+    ],
+    [
+      'a chat folder with no chat row',
+      `ws-1/chats/ai/resources/${chatId}/1_a.png`,
+      null,
+    ],
+  ])('rejects delete-file for %s', async (_, path, creatorId) => {
+    const remove = vi.fn();
+    mocks.createDynamicAdminClient.mockResolvedValue({
+      from: aiChatLookup(creatorId),
+      storage: { from: vi.fn(() => ({ remove })) },
+    });
+    const { POST } = (await import(
+      '@/app/api/ai/chat/delete-file/route'
+    )) as unknown as { POST: ChatFileRoutePost };
+
+    const response = await POST(
+      new Request('https://web.tuturuuu.com/api/ai/chat/delete-file', {
+        body: JSON.stringify({ path, wsId: 'ws-1' }),
+        method: 'POST',
+      }),
+      createRouteContext()
+    );
+
+    expect(response.status).toBe(403);
+    expect(remove).not.toHaveBeenCalled();
+  });
+
+  it('rejects delete-file for non-chat folders without a lookup', async () => {
+    const remove = vi.fn();
+    const from = aiChatLookup('user-1');
+    mocks.createDynamicAdminClient.mockResolvedValue({
+      from,
+      storage: { from: vi.fn(() => ({ remove })) },
+    });
+    const { POST } = (await import(
+      '@/app/api/ai/chat/delete-file/route'
+    )) as unknown as { POST: ChatFileRoutePost };
+
+    const response = await POST(
+      new Request('https://web.tuturuuu.com/api/ai/chat/delete-file', {
+        body: JSON.stringify({
+          path: 'ws-1/chats/ai/resources/not-a-chat/1_a.png',
+          wsId: 'ws-1',
+        }),
+        method: 'POST',
+      }),
+      createRouteContext()
+    );
+
+    expect(response.status).toBe(400);
+    expect(from).not.toHaveBeenCalled();
+    expect(remove).not.toHaveBeenCalled();
   });
 
   it('normalizes file-urls workspaces with the authenticated app-session context', async () => {
@@ -252,7 +392,7 @@ describe('Mind chat file routes', () => {
     );
     const context = createRouteContext();
     const { POST } = (await import(
-      '@/legacy-api-routes/ai/chat/file-urls/route'
+      '@/app/api/ai/chat/file-urls/route'
     )) as unknown as {
       POST: ChatFileRoutePost;
     };

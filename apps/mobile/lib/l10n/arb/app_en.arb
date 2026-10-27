@@ -718,34 +718,6 @@
       }
     }
   },
-  "@profileTimelineNotes": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "@profileTimelineTasks": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "@profileTimelineTransactions": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "@profileTimelineWorkspaceEvents": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "@profileTrackedMinutes": {
     "placeholders": {
       "minutes": {
@@ -1139,6 +1111,36 @@
       }
     }
   },
+  "@timerPomodoroCycle": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "@timerPomodoroRemaining": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      },
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "@timerPomodoroSummary": {
+    "placeholders": {
+      "focus": {
+        "type": "int"
+      },
+      "rest": {
+        "type": "int"
+      }
+    }
+  },
   "@timerRequestActivityPageInfo": {
     "placeholders": {
       "current": {
@@ -1318,6 +1320,19 @@
   "assistantAttachmentFailedShort": "Upload failed",
   "assistantAttachmentSheetTitle": "Attachments",
   "assistantAttachmentUploadFailed": "An attachment failed to upload. Remove it and try again before sending.",
+  "assistantAttachmentFailureForbidden": "This chat can't accept attachments. Remove it or start a new chat.",
+  "assistantAttachmentFailureNetwork": "Upload interrupted. Check your connection and tap Retry.",
+  "assistantAttachmentFailureServer": "Upload didn't finish. Tap Retry.",
+  "assistantAttachmentFailureTooLarge": "File is larger than 32 MB. Remove it or attach a smaller file.",
+  "assistantAttachmentFailureUnsupported": "This file type isn't supported. Remove it to send.",
+  "assistantAttachmentNotSentMany": "{count} attachments didn't upload. Retry or remove them to send.",
+  "@assistantAttachmentNotSentMany": {"placeholders": {"count": {"type": "int"}}},
+  "assistantAttachmentNotSentOne": "{name} didn't upload. {reason}",
+  "@assistantAttachmentNotSentOne": {"placeholders": {"name": {"type": "String"}, "reason": {"type": "String"}}},
+  "assistantAttachmentPreparing": "Preparing",
+  "assistantAttachmentRetry": "Retry",
+  "assistantAttachmentUploadingPercent": "{percent}%",
+  "@assistantAttachmentUploadingPercent": {"placeholders": {"percent": {"type": "int"}}},
   "assistantAttachmentUploadPending": "Wait for attachment uploads to finish before sending.",
   "assistantAudioUnavailable": "Audio was interrupted. Reconnect to continue this conversation.",
   "assistantCalendarLabel": "Calendar",
@@ -1403,7 +1418,6 @@
   "assistantLiveDraftAssistant": "Mira is replying",
   "assistantLiveDraftUser": "You are speaking",
   "assistantLiveHideCamera": "Hide camera",
-  "assistantLiveIdleHeading": "Ready to talk",
   "assistantLiveInfoAccessHeading": "Current access",
   "assistantLiveInfoDismiss": "Got it",
   "assistantLiveInfoTitle": "Live information",
@@ -1433,6 +1447,7 @@
   "assistantLiveStageAssistantSpeaking": "Voice response is streaming",
   "assistantLiveStageYouListening": "Your microphone is live",
   "assistantLiveStageYouMuted": "Tap the mic to speak again",
+  "assistantLiveStartTalking": "Start talking",
   "assistantLiveStartupAudio": "Audio initialization",
   "assistantLiveStartupDuration": "{milliseconds} ms",
   "assistantLiveStartupHistory": "Conversation history",
@@ -1455,9 +1470,7 @@
   "assistantLiveSubtitle": "Gemini 3.1 Flash Live with voice, camera, attachments, and unified chat history.",
   "assistantLiveTierRequired": "Live voice is available on PLUS and above.",
   "assistantLiveTitle": "Mira Live",
-  "assistantLiveTranscriptEmpty": "Start talking or type a message. Your conversation appears here.",
   "assistantLiveTranscriptPending": "Transcript changes are not yet synchronized.",
-  "assistantLiveTranscriptTitle": "Live transcript",
   "assistantLiveTypeMessage": "Type",
   "assistantLiveWorkspaceTierLabel": "Workspace {tier}",
   "assistantLocalBudget": "Model storage budget exceeded. Remove a model before installing another.",
@@ -1491,6 +1504,7 @@
   "assistantLocalSelected": "Selected for Mira",
   "assistantLocalSelectionUnknown": "A previously selected local model is no longer in the catalogue. Choose a model or explicitly choose remote mode.",
   "assistantLocalSize": "{size} MiB",
+  "assistantLocalSourceEmpty": "Download a model below",
   "assistantLocalStop": "Stop local generation",
   "assistantLocalStorageError": "Could not save local history or mode. Your conversation has not been uploaded.",
   "assistantLocalTextOnly": "Local mode supports text only",
@@ -1521,6 +1535,7 @@
   "assistantModelInputCost": "Input",
   "assistantModelLabel": "Model",
   "assistantModelOutputCost": "Output",
+  "assistantModelSourceTitle": "Model source",
   "assistantModelUnfavorite": "Remove from favorites",
   "assistantNewConversation": "New conversation",
   "assistantOutputLabel": "Output",
@@ -1538,7 +1553,7 @@
   "assistantRenameTitle": "Rename assistant",
   "assistantReplyFailed": "Mira's reply stopped. Your message is still here. Retry",
   "assistantSaveAction": "Save",
-  "assistantScrollToBottomAction": "Scroll to bottom",
+  "assistantScrollToBottomAction": "Jump to latest",
   "assistantSearchModels": "Search models",
   "assistantSeeLessLabel": "See less",
   "assistantSeeMoreLabel": "See more",
@@ -1558,7 +1573,6 @@
   "assistantStarterDraft": "Team update",
   "assistantStarterFocus": "Today's focus",
   "assistantStarterPlan": "Day plan",
-  "assistantStarterSubtitle": "Pick a quick starter or type your own.",
   "assistantStarterTitle": "Need a place to start?",
   "assistantTasksLabel": "Tasks",
   "assistantThinkingStatus": "Thinking...",
@@ -1931,6 +1945,7 @@
   "commonLive": "Live",
   "commonLoadMore": "Load more",
   "commonLoading": "Loading",
+  "commonMoreOptions": "More options",
   "commonNext": "Next",
   "commonNoSearchResults": "No matching results",
   "commonOff": "Off",
@@ -1945,6 +1960,7 @@
   "commonRequired": "Required",
   "commonRetry": "Retry",
   "commonSave": "Save",
+  "commonSearch": "Search",
   "commonSelectDate": "Select a date",
   "commonShare": "Share",
   "commonShowLess": "Show less",
@@ -2610,6 +2626,7 @@
   "habitsWorkoutTotalSets": "Total sets",
   "habitsWorkoutTotalVolume": "Total volume",
   "habitsWorkoutWeight": "Weight",
+  "homeCalendarEmpty": "No events this week.",
   "homeCustomize": "Customize Home",
   "homeGreetingAfternoon": "Good afternoon",
   "homeGreetingAfternoonNamed": "Good afternoon, {name}",
@@ -2621,8 +2638,25 @@
   "homeHideWidget": "Hide widget",
   "homePersonalAgenda": "Agenda",
   "homePersonalAgendaUnavailable": "Personal calendar is unavailable.",
+  "homeSectionCalendar": "Calendar",
   "homeSectionLoadFailed": "Pull down to try again.",
+  "homeSectionToday": "Today",
+  "homeSectionUpNext": "Up next",
+  "homeSeeAll": "See all",
   "homeShowWidget": "Show widget",
+  "homeTodayEmpty": "Nothing due today.",
+  "homeUpNextEmpty": "Nothing coming up.",
+  "homeWidgetTasks": "Today and Up next",
+  "homeWorkspaceChipsLabel": "Workspaces",
+  "homeWorkspaceEditPins": "Edit pinned workspaces",
+  "homeWorkspaceFind": "Find workspace",
+  "homeWorkspaceMore": "More",
+  "homeWorkspaceNew": "New workspace",
+  "homeWorkspacePin": "Pin to Home",
+  "homeWorkspacePinsDescription": "Pinned workspaces appear as chips on Home.",
+  "homeWorkspacePinsFailed": "Couldn't save pinned workspaces.",
+  "homeWorkspacePinsTitle": "Pinned workspaces",
+  "homeWorkspaceUnpin": "Unpin from Home",
   "inventoryAddCategory": "Add category",
   "inventoryAddManufacturer": "Add manufacturer",
   "inventoryAddOwner": "Add owner",
@@ -3174,10 +3208,13 @@
   "navFinance": "Finance",
   "navHabits": "Habits",
   "navHome": "Home",
+  "navInbox": "Inbox",
+  "navMira": "Mira",
   "navMore": "More",
   "navSettings": "Settings",
   "navTasks": "Tasks",
   "navTimer": "Timer",
+  "navYou": "You",
   "notesArchive": "Archive note",
   "notesArchiveEmpty": "Archived notes will appear here.",
   "notesArchiveTab": "Archive",
@@ -3412,6 +3449,7 @@
   "profileEmailHint": "example@tuturuuu.com",
   "profileEmailPendingChange": "Pending change to {email}",
   "profileEmailUpdateNote": "Confirmation emails will be sent to both addresses",
+  "profileFocusTime": "Focus Time",
   "profileFullName": "Full name",
   "profileFullNameDescription": "Use your legal or preferred full name for account records.",
   "profileFullNameHint": "Your full name",
@@ -3446,19 +3484,19 @@
   "profileTimelineEmpty": "No recent activity in this workspace",
   "profileTimelineHasActivity": "Activity in loaded snapshot",
   "profileTimelineHideDates": "Close dates and browse agenda",
+  "profileTimelineKindNote": "Note",
+  "profileTimelineKindTask": "Task",
+  "profileTimelineKindTransaction": "Transaction",
+  "profileTimelineKindWorkspaceEvent": "Workspace event",
   "profileTimelineLimited": "Showing recent activity only. Some sources reached the display limit.",
   "profileTimelineLoadedEnd": "All loaded activity shown",
   "profileTimelineMoreDays": "Show more loaded days",
-  "profileTimelineNotes": "{count, plural, one{Added 1 note} other{Added {count} notes}}",
   "profileTimelinePartial": "Some activity is unavailable.",
   "profileTimelineShowDates": "Show date selector",
   "profileTimelineTab": "Timeline",
-  "profileTimelineTasks": "{count, plural, one{Created 1 task} other{Created {count} tasks}}",
   "profileTimelineTitle": "Timeline",
   "profileTimelineToday": "Today",
-  "profileTimelineTransactions": "{count, plural, one{Created 1 transaction} other{Created {count} transactions}}",
   "profileTimelineUnavailable": "Activity could not be refreshed.",
-  "profileTimelineWorkspaceEvents": "{count, plural, one{1 workspace event added} other{{count} workspace events added}}",
   "profileTimelineYesterday": "Yesterday",
   "profileTitle": "Profile",
   "profileTrackedMinutes": "{minutes} min tracked",
@@ -3573,13 +3611,31 @@
   "appearanceBackgroundGradient": "Gradient",
   "appearanceBackgroundSolid": "Solid",
   "appearanceBackgroundTitle": "Background",
+  "appearanceCornersRounded": "Rounded",
+  "appearanceCornersSoft": "Soft",
+  "appearanceCornersSquare": "Square",
+  "appearanceCornersTitle": "Corners",
+  "appearanceDensityComfortable": "Comfortable",
+  "appearanceDensityCompact": "Compact",
+  "appearanceDensityTitle": "Density",
+  "appearanceDeviceOverride": "Use different appearance on this device",
+  "appearanceDeviceOverrideDescription": "Changes here stay on this device and don't sync to your account.",
+  "appearanceFeedbackTitle": "Feedback and motion",
+  "appearanceHapticsDescription": "Light vibrations when you choose, swipe or confirm.",
   "appearanceIntensity": "Intensity",
   "appearanceModeTitle": "Mode",
   "appearanceNew": "New",
   "appearancePreviewTitle": "Preview",
+  "appearanceReduceMotion": "Reduce motion",
+  "appearanceReduceMotionDescription": "Always reduce animations, even when the system setting is off.",
   "appearanceReset": "Reset to default",
   "appearanceResetDone": "Appearance reset to default",
   "appearanceSoftness": "Softness",
+  "appearanceStyleDescription": "Changes how pages slide and lists scroll. Colors and layout stay the same on every device.",
+  "appearanceStyleIos": "iOS-like",
+  "appearanceStyleMaterial": "Material-like",
+  "appearanceStyleTitle": "Style",
+  "appearanceStyleTuturuuu": "Tuturuuu",
   "appearanceSurfaceOpacity": "Card opacity",
   "appearanceSurfacesTitle": "Surfaces",
   "appearanceThemeAurora": "Aurora",
@@ -4003,6 +4059,7 @@
   "taskBoardDetailColorPurple": "Purple",
   "taskBoardDetailColorRed": "Red",
   "taskBoardDetailColorYellow": "Yellow",
+  "taskBoardDetailCompleteTask": "Complete",
   "taskBoardDetailCreateList": "Create list",
   "taskBoardDetailCreateTask": "Create task",
   "taskBoardDetailDaysAgo": "{count, plural, one{{count} day ago} other{{count} days ago}}",
@@ -4023,6 +4080,7 @@
   "taskBoardDetailDeletedAgo": "Deleted {time}",
   "taskBoardDetailDeletedTasksCount": "{count, plural, one{{count} deleted task} other{{count} deleted tasks}}",
   "taskBoardDetailDueAt": "Due {date}",
+  "taskBoardDetailDueDateUpdated": "Due date updated.",
   "taskBoardDetailEditList": "Edit list",
   "taskBoardDetailEditTask": "Edit task",
   "taskBoardDetailEditorDetailsTab": "Details",
@@ -4037,6 +4095,16 @@
   "taskBoardDetailFilterStatuses": "Statuses",
   "taskBoardDetailFilters": "Filters",
   "taskBoardDetailFiltersActive": "Filters active",
+  "taskBoardDetailFocusReplaceConfirm": "Stop and start",
+  "taskBoardDetailFocusReplaceMessage": "A timer is already running. Starting focus stops it and starts a new session for this task.",
+  "taskBoardDetailFocusReplacePausedMessage": "A paused timer is waiting to resume. Starting focus ends it and starts a new session for this task.",
+  "taskBoardDetailFocusReplacePausedTitle": "End the paused timer?",
+  "taskBoardDetailFocusReplaceTitle": "Stop the running timer?",
+  "taskBoardDetailFocusStartFailedPausedEnded": "Couldn't start focus, and your paused timer was ended. Open the timer to resume it.",
+  "taskBoardDetailFocusStartFailedRestored": "Couldn't start focus. Your paused timer is back as it was.",
+  "taskBoardDetailFocusStartFailedRunning": "Couldn't start focus. Your previous timer is running again.",
+  "taskBoardDetailFocusStartFailedUnknown": "Couldn't start focus, and the previous timer's state couldn't be confirmed. Open the timer to check it.",
+  "taskBoardDetailFocusStarted": "Timer started for this task.",
   "taskBoardDetailFromList": "from: {list}",
   "taskBoardDetailInDays": "{count, plural, one{in {count} day} other{in {count} days}}",
   "taskBoardDetailInformation": "Information",
@@ -4076,6 +4144,7 @@
   "taskBoardDetailNone": "None",
   "taskBoardDetailOpenFullDetails": "Open full details",
   "taskBoardDetailOpenRelatedTask": "Open related task",
+  "taskBoardDetailOpenTimer": "Open timer",
   "taskBoardDetailOverdue": "Overdue",
   "taskBoardDetailParentTask": "Parent task",
   "taskBoardDetailPoints": "{count, plural, one{{count} pt} other{{count} pts}}",
@@ -4100,7 +4169,9 @@
   "taskBoardDetailRemoveRelationship": "Remove relationship",
   "taskBoardDetailRenameBoard": "Rename board",
   "taskBoardDetailRenameList": "Rename list",
+  "taskBoardDetailReopenTask": "Reopen",
   "taskBoardDetailRestoreTasks": "Restore ({count})",
+  "taskBoardDetailScheduleTask": "Schedule",
   "taskBoardDetailSearchDone": "Done",
   "taskBoardDetailSearchPlaceholder": "Search tasks",
   "taskBoardDetailSearchTasks": "Search tasks",
@@ -4112,6 +4183,7 @@
   "taskBoardDetailSetCustomDate": "Set custom date",
   "taskBoardDetailSetDueDate": "Set due date",
   "taskBoardDetailSetEstimation": "Set estimation",
+  "taskBoardDetailStartFocus": "Start focus",
   "taskBoardDetailStartsAt": "Starts {date}",
   "taskBoardDetailStatusActive": "Active",
   "taskBoardDetailStatusCategoryLabel": "Status category",
@@ -4161,6 +4233,7 @@
   "taskBoardDetailTaskEstimation": "Estimation",
   "taskBoardDetailTaskEstimationNone": "No estimate",
   "taskBoardDetailTaskLabels": "Labels",
+  "taskBoardDetailTaskList": "List",
   "taskBoardDetailTaskListLabel": "List",
   "taskBoardDetailTaskListSelect": "Choose list",
   "taskBoardDetailTaskMoved": "Task moved.",
@@ -4513,6 +4586,7 @@
   "timerHeatmapViewCompactCards": "Cards",
   "timerHeatmapViewHybrid": "Hybrid",
   "timerHeatmapViewOriginal": "Original",
+  "timerHeatmapViewTitle": "View",
   "timerHeatmapWed": "We",
   "timerHeatmapYearPattern": "Activity Pattern",
   "timerHistory": "History",
@@ -4537,8 +4611,19 @@
   "timerPause": "Pause",
   "timerPaused": "Paused",
   "timerPomodoro": "Pomodoro",
+  "timerPomodoroBreakDoneBody": "Ready for the next focus?",
+  "timerPomodoroBreakDoneTitle": "Break over",
+  "timerPomodoroCycle": "Focus {current} of {total}",
+  "timerPomodoroFocusDoneBody": "Time for a break.",
+  "timerPomodoroFocusDoneTitle": "Focus done",
+  "timerPomodoroOrphanedSession": "Focus couldn't start, and a timer it created may still be running. Check the Timer page.",
+  "timerPomodoroOtherRunning": "Another timer is running. Stop it on the Timer page to continue this focus.",
+  "timerPomodoroRemaining": "{minutes}:{seconds} left",
   "timerPomodoroSettings": "Pomodoro settings",
   "timerPomodoroSettingsDescription": "Tune focus sessions, breaks, and the automation between them.",
+  "timerPomodoroSkip": "Skip",
+  "timerPomodoroStart": "Start focus",
+  "timerPomodoroSummary": "{focus} min focus · {rest} min break",
   "timerProofOfWorkRequired": "At least one proof image is required.",
   "timerReasonOptional": "Reason (optional)",
   "timerRecentSessions": "Recent sessions",
@@ -4946,6 +5031,7 @@
   "profilePhoto": "Photo",
   "profileCoverBanner": "Cover banner",
   "profileMediaSet": "Set",
+  "profileYouWorkspaces": "Workspaces",
   "assistantSubmitSuccess": "Submitted successfully",
   "offlineDownloadsPaused": "Downloads paused. Saved data is still available. We will retry in the background.",
   "offlineDownloadsRetryLimit": "Downloads are still unavailable. Try again later; saved data is still available.",
@@ -5130,5 +5216,517 @@
   "workspacePickerDefaultDescription": "Opens first when you launch the app",
   "workspacePickerEmptyMessage": "Workspaces you create or are invited to appear here.",
   "workspacePickerNoResultsMessage": "Try another name or plan, or clear the search.",
-  "workspacePickerTeamBadge": "Team"
+  "workspacePickerTeamBadge": "Team",
+  "@mastermindAgeDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindAgeHours": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindAgeMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindFloor": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindLaneEta": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindLiveFor": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindMeasuredRuns": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindRejectedInline": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindResetsAt": {
+    "placeholders": {
+      "dateTime": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindSamples": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindSelectedReadout": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "series": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindSnapshotAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindSummaryAsOf": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindSummaryAtLeast": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindSummaryFleetNow": {
+    "placeholders": {
+      "running": {
+        "type": "String"
+      },
+      "waiting": {
+        "type": "String"
+      },
+      "idle": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindSummaryModelsTop": {
+    "placeholders": {
+      "model": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      },
+      "success": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindSummarySecurityCell": {
+    "placeholders": {
+      "product": {
+        "type": "String"
+      },
+      "severity": {
+        "type": "String"
+      },
+      "status": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindSummaryShipsLowerBound": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindSummaryUsageLowest": {
+    "placeholders": {
+      "account": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindSummaryUsageShort": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindUnitCredits": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindUnitCreditsPerDay": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindUnitHours": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindUnitMinutes": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindUnitPercent": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindUnitPp": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindUnitPpPerHour": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindUnitSeconds": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindUnitTokens": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindAccountFilter": "Account",
+  "mastermindAgeBasis": "Age basis",
+  "mastermindAgeDays": "{count, plural, =1{1 day ago} other{{count} days ago}}",
+  "mastermindAgeHours": "{count, plural, =1{1 h ago} other{{count} h ago}}",
+  "mastermindAgeMinutes": "{count, plural, =0{just now} =1{1 min ago} other{{count} min ago}}",
+  "mastermindAllFilter": "All",
+  "mastermindAreaCi": "CI",
+  "mastermindAreaCost": "Cost",
+  "mastermindAreaEducation": "Education",
+  "mastermindAreaFinance": "Finance",
+  "mastermindAreaHub": "Hub",
+  "mastermindAreaInfra": "Infrastructure",
+  "mastermindAreaMemory": "Memory",
+  "mastermindAreaOrg": "Organization",
+  "mastermindAreaPerf": "Performance",
+  "mastermindAreaProduct": "Product",
+  "mastermindAreaQuota": "Quota",
+  "mastermindAreaRelease": "Release",
+  "mastermindAreaSecurity": "Security",
+  "mastermindAreaTasks": "Tasks",
+  "mastermindAreaUsers": "Users",
+  "mastermindAreaUx": "UX",
+  "mastermindBacklogEmptyTitle": "Backlog is clear",
+  "mastermindBacklogLabel": "Backlog",
+  "mastermindBasisCheckinWorkflow": "Check-in workflow",
+  "mastermindBasisGithubDeployment": "GitHub deployment",
+  "mastermindBasisVercelDeployment": "Vercel deployment",
+  "mastermindCategoryAuto": "Automatic",
+  "mastermindCategoryDelegated": "Delegated",
+  "mastermindCategoryUser": "You",
+  "mastermindChartBurn": "Burn rate",
+  "mastermindChartCiJobs": "CI jobs",
+  "mastermindChartCreditsBalance": "Credit balance",
+  "mastermindChartCreditsBurn": "Daily burn and target",
+  "mastermindChartCreditsVsTarget": "Burn vs target",
+  "mastermindChartCriticalTrend": "Critical findings",
+  "mastermindChartDeliveryModes": "Delivery modes",
+  "mastermindChartFailures": "Run failures",
+  "mastermindChartFleetCounts": "Threads by role",
+  "mastermindChartFleetStates": "Thread states",
+  "mastermindChartFleetTree": "Fleet structure",
+  "mastermindChartLatency": "Result pickup time",
+  "mastermindChartMergeToLive": "Merge to live",
+  "mastermindChartMessageFlow": "Message flow",
+  "mastermindChartMessageHeatmap": "Messages by hour",
+  "mastermindChartModelDuration": "Median duration",
+  "mastermindChartModelRuns": "Runs by model",
+  "mastermindChartModelSuccess": "Success and rework",
+  "mastermindChartOpenPrs": "Open pull requests",
+  "mastermindChartPendingRuns": "Pending runs",
+  "mastermindChartProjection": "Projected at reset",
+  "mastermindChartQueueDepth": "Queue depth",
+  "mastermindChartSecurityRegister": "Findings by severity and status",
+  "mastermindChartSessionPerSuccess": "Session use per success",
+  "mastermindChartSessionRemaining": "Session budget left",
+  "mastermindChartShips": "Production releases",
+  "mastermindChartTimeToFix": "Time to fix",
+  "mastermindChartTokensPerSuccess": "Tokens per success",
+  "mastermindChartWeeklyRemaining": "Weekly budget left",
+  "mastermindCi": "CI",
+  "mastermindColumnChange7d": "Change 7 d",
+  "mastermindColumnChildrenPerRoot": "Children per root",
+  "mastermindColumnDay": "Day",
+  "mastermindColumnDeeperPerRoot": "Deeper per root",
+  "mastermindColumnDepth1": "Depth 1",
+  "mastermindColumnDepth2Plus": "Depth 2+",
+  "mastermindColumnFindings": "Findings",
+  "mastermindColumnHour": "Hour",
+  "mastermindColumnMedian": "Median",
+  "mastermindColumnMessages": "Messages",
+  "mastermindColumnReceiver": "Receiver",
+  "mastermindColumnRoots": "Roots",
+  "mastermindColumnSender": "Sender",
+  "mastermindColumnSeverity": "Severity",
+  "mastermindColumnStatus": "Status",
+  "mastermindColumnTime": "Time",
+  "mastermindColumnTopLevel": "Top level",
+  "mastermindColumnTotal": "Total",
+  "mastermindCommit": "Commit",
+  "mastermindCoverageComplete": "Complete",
+  "mastermindCoverageMissing": "No source",
+  "mastermindCoveragePartial": "Partial data",
+  "mastermindCoverageStale": "Stale",
+  "mastermindCriticalOpenFact": "Critical open",
+  "mastermindDataSourcesAction": "Data sources",
+  "mastermindDecidedBy": "Decided by",
+  "mastermindDecisionsTitle": "Decisions",
+  "mastermindDeploy": "Deploy",
+  "mastermindDeployError": "error",
+  "mastermindDeployFailedFact": "Deploy failed",
+  "mastermindDeployFailure": "failure",
+  "mastermindDeployInProgress": "in progress",
+  "mastermindDeployInactive": "inactive",
+  "mastermindDeployPending": "pending",
+  "mastermindDeployQueued": "queued",
+  "mastermindDeploySuccess": "success",
+  "mastermindDigestGap": "Some earlier updates aren't included.",
+  "mastermindEffortFilter": "Effort",
+  "mastermindEnvProduction": "Production",
+  "mastermindEnvStaging": "Staging",
+  "mastermindEnvironmentsTitle": "Environments",
+  "mastermindEventBacklog": "Backlog",
+  "mastermindEventDecision": "Decision",
+  "mastermindEventEnvironment": "Environment",
+  "mastermindEventLane": "Lane",
+  "mastermindEventNeedsYou": "Needs you",
+  "mastermindEventProduct": "Release",
+  "mastermindEventQuota": "Quota",
+  "mastermindEventReceipt": "Receipt",
+  "mastermindEvidence": "Evidence",
+  "mastermindFilterAll": "All",
+  "mastermindFilterButton": "Filter",
+  "mastermindFilterOther": "Other",
+  "mastermindFilterRunning": "Running",
+  "mastermindFilterWaiting": "Waiting",
+  "mastermindFloor": "Floor {value}",
+  "mastermindFreshCached": "cached",
+  "mastermindFreshFresh": "fresh",
+  "mastermindInsightsLabel": "Insights",
+  "mastermindKindAction": "Action",
+  "mastermindKindBacklog": "Backlog",
+  "mastermindKindDecision": "Decision",
+  "mastermindKindDesign": "Design",
+  "mastermindKindFyi": "FYI",
+  "mastermindKindImplementation": "Implementation",
+  "mastermindKindLane": "Lane",
+  "mastermindKindResearch": "Research",
+  "mastermindKindReview": "Review",
+  "mastermindKindStaff": "Staff",
+  "mastermindKindTest": "Test",
+  "mastermindLaneAge": "Age",
+  "mastermindLaneArea": "Area",
+  "mastermindLaneEta": "ETA {duration}",
+  "mastermindLaneKind": "Kind",
+  "mastermindLaneModel": "Model",
+  "mastermindLaneProduct": "Product",
+  "mastermindLaneRole": "Role",
+  "mastermindLaneState": "State",
+  "mastermindLanesEmpty": "No lanes in this view",
+  "mastermindLanesLabel": "Lanes",
+  "mastermindLastActive": "Last active",
+  "mastermindLiveFor": "live {duration}",
+  "mastermindMeasuredRuns": "{count, plural, =1{1 measured run} other{{count} measured runs}}",
+  "mastermindNeedsYouHint": "Answer in the Inbox on your Mac.",
+  "mastermindNeedsYouTitle": "Needs you",
+  "mastermindNoDataInPeriod": "No data in this period",
+  "mastermindNoProduct": "No product",
+  "mastermindNotConnectedMessage": "Mastermind data isn't published to this app yet.",
+  "mastermindNotConnectedTitle": "Not connected",
+  "mastermindNotReversible": "Not reversible",
+  "mastermindNothingNeedsYou": "Nothing needs you",
+  "mastermindNowLabel": "Now",
+  "mastermindObservedAt": "Observed",
+  "mastermindOriginLabel": "Origin",
+  "mastermindPartialBucket": "partial bucket",
+  "mastermindProductFilter": "Product",
+  "mastermindProductsLabel": "Products",
+  "mastermindRange24h": "24 h",
+  "mastermindRange7d": "7 days",
+  "mastermindReceiptRecorded": "Receipt recorded",
+  "mastermindRecentEmpty": "Nothing new.",
+  "mastermindRecentTitle": "Recent",
+  "mastermindRecommended": "Recommended",
+  "mastermindRejectedInline": "Couldn't read the latest snapshot. Showing {time}.",
+  "mastermindRejectedMessage": "It uses a format this app version doesn't read. Update the app.",
+  "mastermindRejectedTitle": "This snapshot can't be shown",
+  "mastermindReleasesTitle": "Releases",
+  "mastermindResetsAt": "Resets {dateTime}",
+  "mastermindReversible": "Reversible",
+  "mastermindRiskHigh": "high",
+  "mastermindRiskLow": "low",
+  "mastermindRiskMed": "medium",
+  "mastermindRoleFilter": "Role",
+  "mastermindRunsToday": "Runs today",
+  "mastermindSampleData": "Sample data",
+  "mastermindSamples": "{count, plural, =1{1 sample} other{{count} samples}}",
+  "mastermindScopeCoordination": "Coordination",
+  "mastermindScopeDelivery": "Delivery",
+  "mastermindScopeFleet": "Fleet",
+  "mastermindScopeModels": "Models",
+  "mastermindScopeSecurity": "Security",
+  "mastermindScopeUsage": "Usage",
+  "mastermindSecurityFix": "Security fix",
+  "mastermindSecurityIssue": "Security issue",
+  "mastermindSelectedReadout": "{date} · {series} · {value}",
+  "mastermindSeriesActive": "Active",
+  "mastermindSeriesBalance": "Balance",
+  "mastermindSeriesBurn": "Burn",
+  "mastermindSeriesCapacity": "Capacity",
+  "mastermindSeriesCompleted": "Completed",
+  "mastermindSeriesCriticalClosed": "Critical closed",
+  "mastermindSeriesCriticalOpen": "Critical open",
+  "mastermindSeriesIdle": "idle",
+  "mastermindSeriesOtherError": "Other error",
+  "mastermindSeriesOtherTerminal": "Other finished",
+  "mastermindSeriesQueue": "Queue",
+  "mastermindSeriesQueued": "Queued",
+  "mastermindSeriesRework": "Rework",
+  "mastermindSeriesRunning": "running",
+  "mastermindSeriesStart": "Start",
+  "mastermindSeriesSteer": "Steer",
+  "mastermindSeriesSuccess": "Success",
+  "mastermindSeriesTarget": "Target",
+  "mastermindSeriesUnknown": "unknown",
+  "mastermindSeriesUsageLimit": "Usage limit",
+  "mastermindSeriesWaiting": "waiting",
+  "mastermindSession": "Session",
+  "mastermindSeverityCritical": "Critical",
+  "mastermindSeverityHigh": "High",
+  "mastermindSeverityLow": "Low",
+  "mastermindSeverityMedium": "Medium",
+  "mastermindSeverityUnknown": "Unknown",
+  "mastermindShowAll": "Show all",
+  "mastermindSnapshotAt": "Snapshot {time}",
+  "mastermindSnapshotOutOfDate": "Snapshot out of date",
+  "mastermindSnapshotSectionsTitle": "Sections",
+  "mastermindSourceCheckin": "Check-in",
+  "mastermindSourceCi": "CI",
+  "mastermindSourceDecisions": "Decisions",
+  "mastermindSourceDirectory": "Directory",
+  "mastermindSourceGithub": "GitHub",
+  "mastermindSourceInbox": "Inbox",
+  "mastermindSourceLedger": "Ledger",
+  "mastermindSourceOpenItems": "Open items",
+  "mastermindSourceQuotaCache": "Quota cache",
+  "mastermindSourceQuotaWatcher": "Quota watcher",
+  "mastermindSourceSpeed": "Speed",
+  "mastermindSourceStateOk": "OK",
+  "mastermindSourceT3": "T3",
+  "mastermindSourceWorkforce": "Workforce",
+  "mastermindSourcesTitle": "Sources",
+  "mastermindStaffGroup": "Staff",
+  "mastermindStateAnswered": "answered",
+  "mastermindStateCancelled": "cancelled",
+  "mastermindStateCompleted": "completed",
+  "mastermindStateFailed": "failed",
+  "mastermindStateIdle": "idle",
+  "mastermindStateOpen": "open",
+  "mastermindStateQueued": "queued",
+  "mastermindStateRunning": "running",
+  "mastermindStateStale": "stale",
+  "mastermindStateUnknown": "unknown",
+  "mastermindStateWaiting": "waiting",
+  "mastermindStateWithdrawn": "withdrawn",
+  "mastermindSummaryAsOf": "as of {time}",
+  "mastermindSummaryAtLeast": "at least {count}",
+  "mastermindSummaryClosedIsState": "Closed counts show register state, not new fixes.",
+  "mastermindSummaryCreditsNeedsTarget": "Needs a daily target.",
+  "mastermindSummaryCreditsNote": "Credits are not money or tokens.",
+  "mastermindSummaryCreditsTargetMissing": "Daily target unavailable.",
+  "mastermindSummaryDeliveryModesUnavailable": "Delivery mode counts unavailable.",
+  "mastermindSummaryEstimateNotCost": "Estimate, not a cost.",
+  "mastermindSummaryFleetNow": "Now: {running} running, {waiting} waiting, {idle} idle.",
+  "mastermindSummaryLatencyCaveat": "Measures recorded parent starts.",
+  "mastermindSummaryModelsTop": "{model} ran most: {count} runs, {success} success.",
+  "mastermindSummaryNoFixDates": "Unavailable: the register has no fix dates.",
+  "mastermindSummaryNoMessageStream": "Unavailable: no message stream recorded.",
+  "mastermindSummarySecurityCell": "{product}, {severity}, {status}: {count}",
+  "mastermindSummaryShipsLowerBound": "At least {count} production releases observed.",
+  "mastermindSummaryUsageLowest": "{account} has the least left: {percent}.",
+  "mastermindSummaryUsageShort": "Projected SHORT at reset {time}.",
+  "mastermindSummaryWeeklyNotReported": "Weekly window not reported.",
+  "mastermindTableLink": "Table",
+  "mastermindTentative": "tentative",
+  "mastermindTimeZoneCaption": "GMT+7",
+  "mastermindTitle": "Mastermind",
+  "mastermindUnavailable": "Unavailable",
+  "mastermindUnitCredits": "{value} credits",
+  "mastermindUnitCreditsPerDay": "{value} credits/day",
+  "mastermindUnitHours": "{value} h",
+  "mastermindUnitMinutes": "{value} min",
+  "mastermindUnitPercent": "{value}%",
+  "mastermindUnitPp": "{value} pp",
+  "mastermindUnitPpPerHour": "{value} pp/h",
+  "mastermindUnitSeconds": "{value} s",
+  "mastermindUnitTokens": "{value} tokens",
+  "mastermindVersion": "Version",
+  "mastermindWeekly": "Weekly",
+  "mastermindWhy": "Why"
 }

@@ -1,8 +1,9 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:mobile/core/layout/page_insets.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
@@ -50,62 +51,79 @@ class AssistantLiveModeView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasTranscript = _LiveTranscript.hasContent(chatState, liveState);
     return LayoutBuilder(
       // Gutters follow the body width, not the window.
-      builder: (context, constraints) => SingleChildScrollView(
-        key: const ValueKey('live-conversation-scroll'),
-        controller: scrollController,
-        padding:
-            EdgeInsets.symmetric(
-              horizontal: AppPageInsets.gutterOf(
-                context,
-                width: constraints.maxWidth,
+      builder: (context, constraints) {
+        final top = floatingShellHeaderInset(context) + AppSpacing.lg;
+        final bottom = MediaQuery.paddingOf(context).bottom + AppSpacing.xl;
+        final returnToCall =
+            onReturnToCall != null &&
+            (liveState.isBusy ||
+                liveState.status == AssistantLiveConnectionStatus.connected);
+        final stage = _LiveCallStage(
+          key: const ValueKey('live-call-stage'),
+          liveState: liveState,
+          liveUiState: liveUiState,
+          assistantName: assistantName,
+          cameraController: cameraController,
+          onRetry: onRetry,
+          onStart: onToggleMicrophone,
+          compact: constraints.maxHeight < 500 || hasTranscript,
+        );
+        return SingleChildScrollView(
+          key: const ValueKey('live-conversation-scroll'),
+          controller: scrollController,
+          padding: EdgeInsets.fromLTRB(
+            AppPageInsets.gutterOf(context, width: constraints.maxWidth),
+            top,
+            AppPageInsets.gutterOf(context, width: constraints.maxWidth),
+            bottom,
+          ),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: 760,
+                // Without a transcript the stage sits in the middle of the
+                // screen; with one, the stage leads and the turns follow.
+                minHeight: hasTranscript
+                    ? 0
+                    : math.max(0, constraints.maxHeight - top - bottom),
               ),
-            ).copyWith(
-              top: floatingShellHeaderInset(context) + 16,
-              bottom: MediaQuery.paddingOf(context).bottom + 24,
-            ),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 760),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (onReturnToCall != null &&
-                    (liveState.isBusy ||
-                        liveState.status ==
-                            AssistantLiveConnectionStatus.connected)) ...[
-                  AppButton(
-                    key: const ValueKey('live-return-to-call'),
-                    onPressed: () => unawaited(onReturnToCall!()),
-                    leading: const Icon(LucideIcons.phone),
-                    child: Text(context.l10n.assistantLiveCallReturn),
-                  ),
-                  const SizedBox(height: 16),
+              child: Column(
+                mainAxisAlignment: hasTranscript
+                    ? MainAxisAlignment.start
+                    : MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (returnToCall) ...[
+                    AppButton(
+                      key: const ValueKey('live-return-to-call'),
+                      onPressed: () => unawaited(onReturnToCall!()),
+                      leading: const Icon(LucideIcons.phone),
+                      child: Text(context.l10n.assistantLiveCallReturn),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                  ],
+                  stage,
+                  if (liveState.status ==
+                      AssistantLiveConnectionStatus.connected)
+                    AssistantLiveScreenControl(state: liveState),
+                  if (hasTranscript) ...[
+                    const SizedBox(height: AppLayout.sectionGap),
+                    _LiveTranscript(
+                      key: const ValueKey('live-retained-transcript'),
+                      chatState: chatState,
+                      liveState: liveState,
+                      assistantName: assistantName,
+                    ),
+                  ],
                 ],
-                _LiveCallStage(
-                  key: const ValueKey('live-call-stage'),
-                  liveState: liveState,
-                  liveUiState: liveUiState,
-                  assistantName: assistantName,
-                  cameraController: cameraController,
-                  onRetry: onRetry,
-                  compact: constraints.maxHeight < 500,
-                ),
-                if (liveState.status == AssistantLiveConnectionStatus.connected)
-                  AssistantLiveScreenControl(state: liveState),
-                const SizedBox(height: 24),
-                _LiveTranscript(
-                  key: const ValueKey('live-retained-transcript'),
-                  chatState: chatState,
-                  liveState: liveState,
-                  assistantName: assistantName,
-                ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

@@ -10,7 +10,6 @@ import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/sliver_responsive_cards.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/core/theme/appearance/appearance_scope.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/data/models/calendar_event.dart';
@@ -29,6 +28,7 @@ import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
 import 'package:mobile/features/calendar/utils/calendar_description_content.dart';
 import 'package:mobile/features/dashboard/cubit/dashboard_layout_cubit.dart';
+import 'package:mobile/features/dashboard/view/home_workspace_chips.dart';
 import 'package:mobile/features/mail/data/mail_access.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/notes/note_repository.dart';
@@ -41,9 +41,7 @@ import 'package:mobile/features/tasks/cubit/task_list_cubit.dart';
 import 'package:mobile/features/tasks/utils/task_board_navigation.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
-import 'package:mobile/features/workspace/widgets/workspace_avatar.dart';
 import 'package:mobile/features/workspace/widgets/workspace_picker_sheet.dart';
-import 'package:mobile/features/workspace/workspace_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:mobile/widgets/order_editor_sheet.dart';
@@ -237,9 +235,7 @@ class _DashboardViewState extends State<_DashboardView> {
                     workspaceState.status == WorkspaceStatus.initial ||
                     workspaceState.status == WorkspaceStatus.loading;
                 if (isWorkspaceLoading) {
-                  return const shad.Scaffold(
-                    child: Center(child: NovaLoadingIndicator()),
-                  );
+                  return const shad.Scaffold(child: AppLoadingIndicator.page());
                 }
 
                 return _workspaceUnavailableState(context, workspaceState);
@@ -249,7 +245,7 @@ class _DashboardViewState extends State<_DashboardView> {
                 builder: (context, taskState) {
                   return BlocBuilder<CalendarCubit, CalendarState>(
                     builder: (context, calendarState) {
-                      final focusTasks = _focusTasks(taskState);
+                      final homeTasks = _homeTasks(taskState);
                       final upcomingEvents = _upcomingEvents(
                         calendarState.events,
                       );
@@ -285,7 +281,7 @@ class _DashboardViewState extends State<_DashboardView> {
                                         workspace,
                                         taskState,
                                         calendarState,
-                                        focusTasks,
+                                        homeTasks,
                                         upcomingEvents,
                                       ),
                                     ),
@@ -365,19 +361,19 @@ class _DashboardViewState extends State<_DashboardView> {
     );
   }
 
-  List<UserTask> _focusTasks(TaskListState state) {
-    final buckets = [state.overdueTasks, state.todayTasks, state.upcomingTasks];
+  /// Up to three tasks each for Today (overdue first, then due today) and
+  /// Up next (later due dates), without repeats.
+  ({List<UserTask> today, List<UserTask> upNext}) _homeTasks(
+    TaskListState state,
+  ) {
     final seen = <String>{};
-    final tasks = <UserTask>[];
-
-    for (final bucket in buckets) {
-      for (final task in bucket) {
-        if (seen.add(task.id)) tasks.add(task);
-        if (tasks.length == 3) return tasks;
-      }
-    }
-
-    return tasks;
+    List<UserTask> take(List<List<UserTask>> buckets) => [
+      for (final bucket in buckets)
+        for (final task in bucket)
+          if (seen.add(task.id)) task,
+    ].take(3).toList(growable: false);
+    final today = take([state.overdueTasks, state.todayTasks]);
+    return (today: today, upNext: take([state.upcomingTasks]));
   }
 
   List<CalendarEvent> _upcomingEvents(List<CalendarEvent> events) {

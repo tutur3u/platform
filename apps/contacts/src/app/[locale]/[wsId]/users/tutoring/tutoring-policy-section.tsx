@@ -12,15 +12,19 @@ export type PolicySectionId =
   | 'presets'
   | 'timing'
   | 'exceptions'
+  | 'groupShifts'
   | 'weak'
   | 'campuses'
+  | 'tutors'
   | 'message';
 const TITLES = {
   presets: 'policy_presets',
   timing: 'policy_timing',
   exceptions: 'policy_exceptions',
+  groupShifts: 'policy_group_shifts',
   weak: 'policy_weak_rules',
   campuses: 'policy_campuses',
+  tutors: 'policy_tutor_groups',
   message: 'policy_parent_template',
 } as const;
 const NUMERIC = [
@@ -65,8 +69,13 @@ function PolicySummary({
             <div>
               <p className="font-medium">
                 {rule.label || t('policy_class_time')}: {rule.classStartTime}
+                {rule.classEndTime ? `–${rule.classEndTime}` : ''}
+                {rule.classWeekdays
+                  ? ` · ${rule.classWeekdays.map((day) => t(`policy_weekday_${day}`)).join(', ')}`
+                  : ''}
               </p>
               <p className="text-muted-foreground text-sm">
+                {t('policy_tutoring_days')}:{' '}
                 {rule.weekdays
                   .map((day) => t(`policy_weekday_${day}`))
                   .join(', ')}
@@ -92,6 +101,12 @@ function PolicySummary({
         <p>
           {t('policy_weakContentReviewDays')}: {policy.weakContentReviewDays}
         </p>
+        <p>
+          {t('policy_restrict_weak_content')}:{' '}
+          {policy.restrictWeakContentEditors
+            ? t('policy_restrict_weak_content_on')
+            : t('policy_restrict_weak_content_off')}
+        </p>
         {policy.groupExclusions.length ? (
           <ul className="space-y-1 text-sm">
             {policy.groupExclusions.map((rule, index) => (
@@ -108,9 +123,33 @@ function PolicySummary({
         )}
       </div>
     );
-  if (id === 'campuses')
-    return Object.entries(policy.campusByGroupId).length ? (
+  if (id === 'groupShifts')
+    return Object.entries(policy.shiftByGroupId).length ? (
       <dl className="space-y-2">
+        {Object.entries(policy.shiftByGroupId).map(([groupId, label]) => (
+          <div className="flex justify-between gap-3" key={groupId}>
+            <dt>
+              {groups.find((group) => group.id === groupId)?.name || groupId}
+            </dt>
+            <dd>{label}</dd>
+          </div>
+        ))}
+      </dl>
+    ) : (
+      <p className="text-muted-foreground text-sm">
+        {t('policy_no_group_shifts')}
+      </p>
+    );
+  if (id === 'campuses')
+    return Object.entries(policy.campusByGroupId).length ||
+      policy.campusOptions.length ? (
+      <dl className="space-y-2">
+        {policy.campusOptions.length ? (
+          <div className="flex justify-between gap-3">
+            <dt>{t('policy_campus_options')}</dt>
+            <dd>{policy.campusOptions.join(', ')}</dd>
+          </div>
+        ) : null}
         {Object.entries(policy.campusByGroupId).map(([groupId, name]) => (
           <div className="flex justify-between gap-3" key={groupId}>
             <dt>
@@ -123,6 +162,20 @@ function PolicySummary({
     ) : (
       <p className="text-muted-foreground text-sm">
         {t('policy_campuses_description')}
+      </p>
+    );
+  if (id === 'tutors')
+    return policy.tutorGroupIds.length ? (
+      <ul className="space-y-1 text-sm">
+        {policy.tutorGroupIds.map((groupId) => (
+          <li key={groupId}>
+            {groups.find((group) => group.id === groupId)?.name || groupId}
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <p className="text-muted-foreground text-sm">
+        {t('policy_tutor_groups_description')}
       </p>
     );
   return (

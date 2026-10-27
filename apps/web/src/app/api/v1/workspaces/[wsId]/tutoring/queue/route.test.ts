@@ -341,6 +341,46 @@ describe('tutoring support queue', () => {
     expect(body.summary).toMatchObject({ absent: 1, weak: 0 });
   });
 
+  it('leaves tutor groups out of the make-up and weak-support queues', async () => {
+    const tutorGroupId = '22222222-2222-4222-8222-222222222222';
+    const today = new Date().toISOString().slice(0, 10);
+    const rowsFor = (groupId: string) => {
+      attendanceRows = [
+        {
+          group_id: groupId,
+          user_id: 'student',
+          date: today,
+          group: { name: 'Giáo viên kèm' },
+          user: { full_name: 'Lan' },
+        },
+      ];
+      feedbackRows = [
+        {
+          id: 'feedback',
+          group_id: groupId,
+          user_id: 'student',
+          content: 'Needs practice',
+          created_at: new Date().toISOString(),
+          group: { name: 'Giáo viên kèm' },
+          user: { full_name: 'Lan' },
+        },
+      ];
+    };
+    configRows = serializeTutoringPolicyConfigRows({
+      ...EASY_CENTER_TUTORING_POLICY,
+      tutorGroupIds: [tutorGroupId],
+    });
+    rowsFor(tutorGroupId);
+    const excluded = await (await listQueue()).json();
+    expect(excluded.count).toBe(0);
+    expect(excluded.summary).toMatchObject({ absent: 0, weak: 0 });
+    // The same name in a group that is not marked stays in both queues.
+    rowsFor('33333333-3333-4333-8333-333333333333');
+    expect((await (await listQueue()).json()).data).toMatchObject([
+      { reason_type: 'BOTH', absence_deficit: 1 },
+    ]);
+  });
+
   it('raises an office review when weak content is unchanged for two weeks', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-09-27T12:00:00Z'));

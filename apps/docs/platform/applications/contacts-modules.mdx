@@ -89,12 +89,25 @@ workspace, and `manage_users`. The module remains off by default; listing or
 previewing does not enable it or send email. Preview uses only contacts in the
 requested workspace that are not archived.
 
-Web retains its Supabase-session admission. Both apps use the same users-core
+Web accepts its normal Supabase sessions and verified Contacts app sessions,
+then checks workspace membership using that verified actor. App-session tokens
+for other satellites or the CLI are rejected before workspace lookup; real-verifier
+coverage lives in `apps/web/src/lib/topic-announcements-audience.test.ts`.
+The topic master flag remains an exact `true` check in the API. Both apps use the same users-core
 query, payload validation, recipient verification status, attachment filename
 normalization, and preview renderer. Contacts forwards collection mutations to
-Web after its existing session and API edge guards; other topic mutation routes
-and the delivery worker retain their current ownership. This read/preview repair
-does not establish satellite mutation or provider-delivery readiness.
+Web after its existing session and API edge guards. All nested topic API paths
+also forward explicitly to Web, except the local preview POST. Contacts, templates,
+create and send retain their existing manager permissions when teacher assignments
+are off. Schedule APIs and the sidebar schedule child require
+`ENABLE_TOPIC_TEACHER_ASSIGNMENTS=true`; the flag defaults off. Personal workspaces
+remain denied by the API. Teacher access still requires the per-route capability
+and assignment scope. Synthetic route regressions cover Contacts and Templates
+GET, Add Contact POST, the enabled monthly schedule with GVCN, and denied
+identity, membership, permissions, flags and personal workspaces in
+`apps/web/src/lib/topic-announcements-satellite.test.ts`. Proxy and sidebar
+regressions live in Contacts. These checks do not establish live deployment or
+provider-delivery readiness.
 
 Regression coverage exercises the local Contacts routes with the actual workspace
 access helper, denied sessions and membership/capabilities, shared recipient
@@ -110,6 +123,20 @@ not silently send to fewer recipients. Database read errors remain failures.
 This prerequisite does not change announcement history, statuses, or queue leases.
 Provider acceptance, durable receipt publication, and safe recovery from ambiguous
 processing remain separate delivery requirements.
+
+### Reusing an existing topic contact
+
+The Add Contact dialog in Contacts can search this workspace's existing topic
+announcement contacts by name or email through the manager-only contacts lookup,
+which excludes archived contacts. Options show the name with the email, so
+repeated names stay distinguishable. Picking one fills its stored email, tags and
+linked user read-only and keeps its exact contact ID; confirming closes the dialog
+without a create request. The default stays "Create a new contact", and manual
+entry is unchanged. A choice outside the current workspace results, an archived
+contact, or one without an email is rejected with an inline message. Reuse never
+creates, links or assigns a teacher, and it does not change verification status or
+the send gates above. Regression coverage lives in Contacts `contact-form.test.tsx`
+and `existing-contact-selection.test.ts`.
 
 ### Inert topic delivery ledger
 

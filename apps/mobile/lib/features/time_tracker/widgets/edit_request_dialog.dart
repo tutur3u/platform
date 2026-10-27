@@ -5,6 +5,8 @@ import 'package:flutter/material.dart'
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
+import 'package:mobile/core/ui/overlays/show_app_sheet.dart'
+    show AppSheetHandle;
 import 'package:mobile/data/models/time_tracking/request.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/time_tracker/widgets/request_image_editor.dart';
@@ -58,12 +60,6 @@ class _EditRequestDialogState extends State<EditRequestDialog> {
     return Container(
       width: double.maxFinite,
       constraints: const BoxConstraints(maxWidth: 560),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.background,
-        borderRadius: context.isCompact
-            ? const BorderRadius.vertical(top: Radius.circular(16))
-            : BorderRadius.circular(12),
-      ),
       child: SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(24, 16, 24, bottomInset + 24),
         child: Column(
@@ -71,18 +67,7 @@ class _EditRequestDialogState extends State<EditRequestDialog> {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (context.isCompact) ...[
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.mutedForeground.withValues(
-                      alpha: 0.4,
-                    ),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
+              const AppSheetHandle(),
               const shad.Gap(16),
             ],
             Text(

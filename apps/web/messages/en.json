@@ -6780,14 +6780,28 @@
     "yesterday": "Yesterday"
   },
   "desktop_download": {
+    "android": {
+      "beta_action": "Join on Google Play",
+      "beta_meta": "Google Play beta",
+      "name": "Android",
+      "store_action": "Get it on Google Play",
+      "store_meta": "Google Play"
+    },
     "badge": "Tuturuuu early access",
-    "beta": "Beta",
-    "beta_notice": "All downloads are early-access beta versions. Features may change, and these builds may not be ready for production use.",
     "checksum": "SHA-256 checksum",
     "coming_soon": "Coming soon",
-    "description": "Your connected workspace on iPhone, iPad, Android, Windows, macOS, and Linux.",
-    "desktop_title": "On your computer",
+    "description": "Beta apps for your phone, tablet, and computer. Your workspace stays in sync everywhere.",
+    "details": "Install details",
+    "download": "Download",
     "download_for": "Download for {platform}",
+    "invite_only": "Invitation only",
+    "ios": {
+      "beta_action": "Join on TestFlight",
+      "beta_meta": "TestFlight beta",
+      "name": "iPhone and iPad",
+      "store_action": "Download on the App Store",
+      "store_meta": "App Store"
+    },
     "linux": {
       "name": "Linux",
       "requirements": "Ubuntu 24.04 or later · Intel / AMD 64-bit · .deb"
@@ -6796,28 +6810,29 @@
       "name": "macOS",
       "requirements": "macOS 12 or later · Apple silicon and Intel"
     },
-    "mobile": {
-      "android": {
-        "action": "Join Android beta",
-        "instructions": "Join the Google Play testing program with your invited Google account, then install the beta. If the testing page is unavailable, request an invitation first.",
-        "name": "Android"
-      },
-      "invitation": "Mobile beta access may require an invitation. Use the Apple or Google account you provided for early access. Installing TestFlight alone does not grant access to the Tuturuuu beta.",
-      "ios": {
-        "action": "Get TestFlight",
-        "instructions": "Install TestFlight, then open your invitation email to accept the invitation and install Tuturuuu. Beta availability and testing slots may be limited.",
-        "name": "iPhone and iPad"
-      },
-      "request_invitation": "Request early access",
-      "title": "On your phone or tablet"
-    },
+    "mobile_invite": "The beta may require an invitation. Use the Apple or Google account you gave us for early access.",
     "navigation_description": "Windows, macOS, and Linux apps",
-    "open_web": "Continue in your browser",
-    "package_size": "{size} MB · Beta",
-    "release_notes": "Release notes · {version}",
+    "opens_new_tab": "(opens in a new tab)",
+    "other_title": "Other platforms",
+    "primary_title": "Tuturuuu for {platform}",
+    "qr": {
+      "description": "Scan with your camera to open this page on your phone.",
+      "label": "QR code for the Tuturuuu download page",
+      "title": "Get it on your phone"
+    },
+    "recommended": "Recommended for this device",
+    "release_notes": "Release notes",
+    "request_access": "Request early access",
     "security": "Downloads are hosted on GitHub. Check the release notes and SHA-256 checksum before installing. Desktop builds are currently in beta.",
-    "title": "Your workspace, right at home.",
-    "unavailable": "Desktop beta is being prepared. You can use the web app now.",
+    "size": "{size} MB",
+    "title": "Download Tuturuuu",
+    "version": "Version {version}",
+    "web": {
+      "action": "Open in browser",
+      "meta": "Nothing to install",
+      "name": "Web",
+      "title": "Use Tuturuuu in your browser"
+    },
     "windows": {
       "installation": "Windows beta installers may be unsigned. Check the release notes and SHA-256 checksum. If SmartScreen warns, choose More info, then Run anyway only if you trust the download and Windows offers that option. If your device blocks it, use the web app.",
       "name": "Windows",
@@ -11406,6 +11421,10 @@
       "calendar_reconnect_required": {
         "description": "Calendar sync paused because the provider stopped accepting access. Reconnect the account to resume.",
         "title": "Reconnect your calendar"
+      },
+      "tutoring_session_completed": {
+        "description": "A tutor marked a tutoring session for a learner in your class as complete.",
+        "title": "Tutoring session completed"
       }
     },
     "date_earlier": "Earlier",
@@ -11522,6 +11541,7 @@
         "time_tracking_request_rejected": "Time tracking request rejections",
         "time_tracking_request_resubmitted": "Time tracking request resubmissions",
         "time_tracking_request_submitted": "Time tracking requests awaiting approval",
+        "topic_assigned": "Topics assigned to you",
         "workspace_activity": "Workspace activity",
         "workspace_invite": "Workspace invitations"
       },
@@ -11607,6 +11627,7 @@
       "time_tracking_request_rejected": "Time Tracking Request Rejected",
       "time_tracking_request_resubmitted": "Time Tracking Request Resubmitted",
       "time_tracking_request_submitted": "Time Tracking Request Submitted",
+      "topic_assigned": "Topic assigned",
       "workspace_invite": "Workspace Invite"
     },
     "unified_view": "Unified",

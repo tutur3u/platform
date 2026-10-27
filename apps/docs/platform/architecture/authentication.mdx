@@ -864,6 +864,17 @@ WEB_APP_URL })` so the handoff also stores the Web-issued app-session cookie.
 - Keep `generate_cross_app_token(...)` bound to the authenticated caller
   (`p_user_id = auth.uid()`) so verify endpoints cannot mint sessions for
   arbitrary users.
+- Cross-app tokens are short-lived handoffs. `generate_cross_app_token(...)`
+  clamps the requested lifetime to 60 s, or 300 s for the `cli` origin, where
+  a person copies the token into a terminal. It rejects a `NULL` or sub-second
+  expiry with `22023`. Redeem the token in the same redirect; never store it.
+- The target must be an internal app or an enabled external app registered in
+  the root workspace (`EXTERNAL_APP_REGISTRY:<id>:*` secrets); the origin must
+  be `web`, `cli` or an internal app. Anything else is rejected with `22023`.
+  The internal list lives in `private.cross_app_internal_app_names()`; when you
+  add an app to `packages/utils/src/internal-domains.ts`, add it there in a new
+  migration (`packages/utils/src/cross-app-token-apps.test.ts` fails until
+  you do).
 - Do not call `supabase.auth.setSession()` in registered internal apps. The
   verifier route sets the HttpOnly app-session cookie, and satellite UI should
   fetch user/profile data by forwarding that cookie to central internal APIs.
@@ -918,12 +929,12 @@ import { createClient } from "@tuturuuu/supabase/next/server";
 export async function createShortenerLink() {
   const supabase = await createClient();
 
-  // Generate a token the shortener app can verify (default expiry: 300s).
+  // Generate a token the shortener app can verify. The database clamps the
+  // lifetime to 60 s for every origin except `cli` (300 s).
   const token = await generateCrossAppToken(
     supabase,
     "shortener", // targetApp
     "web", // originApp
-    3600, // expirySeconds (optional)
   );
 
   if (!token) {

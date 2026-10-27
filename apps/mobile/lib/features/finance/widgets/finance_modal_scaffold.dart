@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart' hide Scaffold;
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
+import 'package:mobile/core/ui/overlays/show_app_sheet.dart'
+    show AppSheetHandle;
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
@@ -127,30 +129,12 @@ class FinanceModalScaffold extends StatelessWidget {
         top: false,
         child: FractionallySizedBox(
           heightFactor: 0.94,
-          child: Container(
-            decoration: BoxDecoration(
-              color: palette.panel,
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(28),
-              ),
-            ),
-            child: Column(
-              children: [
-                const shad.Gap(10),
-                Container(
-                  width: 48,
-                  height: 5,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.mutedForeground.withValues(
-                      alpha: 0.28,
-                    ),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                ),
-                const shad.Gap(4),
-                Expanded(child: body),
-              ],
-            ),
+          // The shared sheet host draws the surface and handle.
+          child: Column(
+            children: [
+              const AppSheetHandle(),
+              Expanded(child: body),
+            ],
           ),
         ),
       );

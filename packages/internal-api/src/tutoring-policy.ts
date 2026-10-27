@@ -1,11 +1,27 @@
+import {
+  getTutoringCampusChoices,
+  parseTutoringCampusOptions,
+  TUTORING_CAMPUS_LABEL_MAX_LENGTH,
+} from './tutoring-campus-options';
+
+export {
+  getTutoringCampusChoices,
+  parseTutoringCampusOptions,
+  TUTORING_CAMPUS_LABEL_MAX_LENGTH,
+};
+
 export const TUTORING_POLICY_CONFIG_ID = 'TUTORING_POLICY';
 export const TUTORING_POLICY_PART_PREFIX = 'TUTORING_POLICY_PART_';
 const CONFIG_VALUE_LIMIT = 900;
 
 export interface TutoringTimeRule {
-  /** JavaScript weekday: Sunday is 0. */
+  /** Class days that receive tutoring (JavaScript weekday: Sunday is 0). */
   weekdays: number[];
   classStartTime: string;
+  /** Display-only class window end; matching uses the start time. */
+  classEndTime?: string;
+  /** Display-only: every day the class meets, which may include days without tutoring. */
+  classWeekdays?: number[];
   tutoringStartTime: string;
   durationMinutes: number;
   label?: string;
@@ -26,10 +42,24 @@ export interface TutoringPolicy {
   reassessmentDays: number;
   followUpDays: number;
   weakContentReviewDays: number;
+  /**
+   * When true, only members with class-management permission
+   * (`update_user_groups`) set, edit or end weak-support tutoring content.
+   */
+  restrictWeakContentEditors: boolean;
   schedulingHorizonDays: number;
   timeRules: TutoringTimeRule[];
   groupExclusions: TutoringGroupExclusion[];
   campusByGroupId: Record<string, string>;
+  /** Workspace campus labels offered to class mappings and announcement places. */
+  campusOptions: string[];
+  /**
+   * Groups whose TEACHER members are tutors. These groups hold no real
+   * students, so queues skip them and teachers in them are labelled as tutors.
+   */
+  tutorGroupIds: string[];
+  /** Class group id to the label of the shift rule its classes follow. */
+  shiftByGroupId: Record<string, string>;
   parentMessageTemplate: string;
 }
 
@@ -48,17 +78,22 @@ export const STANDARD_TUTORING_POLICY: TutoringPolicy = {
   reassessmentDays: 14,
   followUpDays: 7,
   weakContentReviewDays: 0,
+  restrictWeakContentEditors: false,
   schedulingHorizonDays: 56,
   timeRules: [],
   groupExclusions: [],
   campusByGroupId: {},
+  campusOptions: [],
+  tutorGroupIds: [],
+  shiftByGroupId: {},
   parentMessageTemplate: DEFAULT_PARENT_MESSAGE_TEMPLATE,
 };
 
 export const EASY_CENTER_TUTORING_POLICY: TutoringPolicy = {
   ...STANDARD_TUTORING_POLICY,
   preset: 'easy_center',
-  weakSupportSessions: 2,
+  weakSupportSessions: 1,
+  followUpDays: 3,
   absenceLookbackDays: 21,
   weakContentReviewDays: 14,
   groupExclusions: [
@@ -67,12 +102,15 @@ export const EASY_CENTER_TUTORING_POLICY: TutoringPolicy = {
     { scope: 'all', match: 'contains', value: 'Kindergarten' },
   ],
   parentMessageTemplate: EASY_CENTER_PARENT_MESSAGE_TEMPLATE,
-  // The seven class shifts supplied by Easy Center. Shift 4 is after class.
+  // The eight class shifts supplied by Easy Center. Shift 4 is after class.
+  // Shift 1 classes meet Monday/Wednesday/Friday but tutor Wednesday/Friday.
   timeRules: [
     {
       label: 'Shift 1',
       weekdays: [3, 5],
       classStartTime: '18:00',
+      classEndTime: '19:30',
+      classWeekdays: [1, 3, 5],
       tutoringStartTime: '17:15',
       durationMinutes: 45,
     },
@@ -80,6 +118,8 @@ export const EASY_CENTER_TUTORING_POLICY: TutoringPolicy = {
       label: 'Shift 2',
       weekdays: [2, 4],
       classStartTime: '18:00',
+      classEndTime: '19:30',
+      classWeekdays: [2, 4],
       tutoringStartTime: '17:15',
       durationMinutes: 45,
     },
@@ -87,6 +127,8 @@ export const EASY_CENTER_TUTORING_POLICY: TutoringPolicy = {
       label: 'Shift 4',
       weekdays: [0, 6],
       classStartTime: '08:00',
+      classEndTime: '09:30',
+      classWeekdays: [0, 6],
       tutoringStartTime: '09:30',
       durationMinutes: 60,
     },
@@ -94,6 +136,8 @@ export const EASY_CENTER_TUTORING_POLICY: TutoringPolicy = {
       label: 'Shift 3',
       weekdays: [0, 6],
       classStartTime: '09:30',
+      classEndTime: '11:00',
+      classWeekdays: [0, 6],
       tutoringStartTime: '08:45',
       durationMinutes: 45,
     },
@@ -101,6 +145,8 @@ export const EASY_CENTER_TUTORING_POLICY: TutoringPolicy = {
       label: 'Shift 5',
       weekdays: [0, 6],
       classStartTime: '16:00',
+      classEndTime: '17:30',
+      classWeekdays: [0, 6],
       tutoringStartTime: '15:15',
       durationMinutes: 45,
     },
@@ -108,6 +154,8 @@ export const EASY_CENTER_TUTORING_POLICY: TutoringPolicy = {
       label: 'Shift 6',
       weekdays: [0, 6],
       classStartTime: '17:30',
+      classEndTime: '19:00',
+      classWeekdays: [0, 6],
       tutoringStartTime: '16:45',
       durationMinutes: 45,
     },
@@ -115,7 +163,17 @@ export const EASY_CENTER_TUTORING_POLICY: TutoringPolicy = {
       label: 'Shift 7',
       weekdays: [0, 6],
       classStartTime: '18:00',
+      classEndTime: '19:30',
+      classWeekdays: [0, 6],
       tutoringStartTime: '17:15',
+      durationMinutes: 45,
+    },
+    {
+      label: 'Shift 8',
+      weekdays: [0, 6],
+      classStartTime: '19:00',
+      classWeekdays: [0, 6],
+      tutoringStartTime: '18:15',
       durationMinutes: 45,
     },
   ],
@@ -146,13 +204,21 @@ function matchesTimeRules(value: unknown, expected: TutoringTimeRule[]) {
   );
 }
 
-const LEGACY_EASY_CENTER_TIME_RULES = EASY_CENTER_TUTORING_POLICY.timeRules.map(
-  (rule) => ({
+/** Untouched saved presets from before Shift 8 was added. */
+const SEVEN_SHIFT_EASY_CENTER_TIME_RULES =
+  EASY_CENTER_TUTORING_POLICY.timeRules.filter(
+    (rule) => rule.label !== 'Shift 8'
+  );
+
+const LEGACY_EASY_CENTER_TIME_RULE_SETS = [
+  // First release: Monday tutoring for Shift 1 and a 50-minute Shift 4.
+  SEVEN_SHIFT_EASY_CENTER_TIME_RULES.map((rule) => ({
     ...rule,
     ...(rule.label === 'Shift 1' ? { weekdays: [1, 3, 5] } : {}),
     ...(rule.label === 'Shift 4' ? { durationMinutes: 50 } : {}),
-  })
-);
+  })),
+  SEVEN_SHIFT_EASY_CENTER_TIME_RULES,
+];
 
 /** The canonical preset must not fall back to Monday or an unlisted shift. */
 export function usesEasyCenterPresetShifts(policy: TutoringPolicy) {
@@ -161,6 +227,12 @@ export function usesEasyCenterPresetShifts(policy: TutoringPolicy) {
     matchesTimeRules(policy.timeRules, EASY_CENTER_TUTORING_POLICY.timeRules)
   );
 }
+
+/** English center template defaults that changed on 2026-10-26. */
+const EARLIER_EASY_CENTER_DEFAULTS = [
+  ['weakSupportSessions', 2],
+  ['followUpDays', 7],
+] as const;
 
 const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
 const FIELDS = [
@@ -180,6 +252,42 @@ function isIntegerInRange(value: unknown, min: number, max: number) {
   );
 }
 
+function isWeekdayList(value: unknown) {
+  return (
+    Array.isArray(value) &&
+    value.length >= 1 &&
+    value.length <= 7 &&
+    value.every((day) => isIntegerInRange(day, 0, 6))
+  );
+}
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function isGroupLabelMap(entries: [string, unknown][], maxLength: number) {
+  return (
+    entries.length <= 500 &&
+    entries.every(
+      ([groupId, name]) =>
+        UUID.test(groupId) &&
+        typeof name === 'string' &&
+        name.trim().length >= 1 &&
+        name.length <= maxLength
+    )
+  );
+}
+
+export const TUTORING_TUTOR_GROUP_LIMIT = 100;
+
+/** Group UUIDs, lowercased and deduplicated; null when any entry is invalid. */
+function parseTutorGroupIds(value: unknown) {
+  if (!Array.isArray(value) || value.length > TUTORING_TUTOR_GROUP_LIMIT * 2)
+    return null;
+  if (!value.every((id) => typeof id === 'string' && UUID.test(id)))
+    return null;
+  const ids = [...new Set(value.map((id: string) => id.toLowerCase()))];
+  return ids.length <= TUTORING_TUTOR_GROUP_LIMIT ? ids : null;
+}
+
 /** Strict validation is shared by settings UI and the API write boundary. */
 export function parseTutoringPolicy(value: unknown): TutoringPolicy | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
@@ -190,12 +298,18 @@ export function parseTutoringPolicy(value: unknown): TutoringPolicy | null {
       : STANDARD_TUTORING_POLICY;
   const candidate: Record<string, unknown> = {
     weakContentReviewDays: defaults.weakContentReviewDays,
+    restrictWeakContentEditors: defaults.restrictWeakContentEditors,
     groupExclusions: defaults.groupExclusions,
+    tutorGroupIds: [],
+    shiftByGroupId: {},
     ...saved,
   };
   if (
     saved.preset === 'easy_center' &&
-    matchesTimeRules(saved.timeRules, LEGACY_EASY_CENTER_TIME_RULES)
+    (LEGACY_EASY_CENTER_TIME_RULE_SETS.some((rules) =>
+      matchesTimeRules(saved.timeRules, rules)
+    ) ||
+      matchesTimeRules(saved.timeRules, EASY_CENTER_TUTORING_POLICY.timeRules))
   ) {
     candidate.timeRules = EASY_CENTER_TUTORING_POLICY.timeRules;
   }
@@ -210,6 +324,15 @@ export function parseTutoringPolicy(value: unknown): TutoringPolicy | null {
     saved.groupExclusions[0]?.value === 'DDT'
   ) {
     candidate.groupExclusions = EASY_CENTER_TUTORING_POLICY.groupExclusions;
+  }
+  // Any section edit saves the policy as custom, so an easy_center policy
+  // still holding an earlier template default is untouched and adopts the
+  // current default.
+  if (saved.preset === 'easy_center') {
+    for (const [field, earlier] of EARLIER_EASY_CENTER_DEFAULTS) {
+      if (saved[field] === earlier)
+        candidate[field] = EASY_CENTER_TUTORING_POLICY[field];
+    }
   }
   if (!['standard', 'easy_center', 'custom'].includes(String(candidate.preset)))
     return null;
@@ -231,6 +354,7 @@ export function parseTutoringPolicy(value: unknown): TutoringPolicy | null {
     if (!isIntegerInRange(candidate[field], min, max)) return null;
   }
   if (
+    typeof candidate.restrictWeakContentEditors !== 'boolean' ||
     typeof candidate.parentMessageTemplate !== 'string' ||
     candidate.parentMessageTemplate.trim().length < 1 ||
     candidate.parentMessageTemplate.length > 2000 ||
@@ -240,9 +364,14 @@ export function parseTutoringPolicy(value: unknown): TutoringPolicy | null {
     candidate.groupExclusions.length > 30 ||
     !candidate.campusByGroupId ||
     typeof candidate.campusByGroupId !== 'object' ||
-    Array.isArray(candidate.campusByGroupId)
+    Array.isArray(candidate.campusByGroupId) ||
+    !candidate.shiftByGroupId ||
+    typeof candidate.shiftByGroupId !== 'object' ||
+    Array.isArray(candidate.shiftByGroupId)
   )
     return null;
+  const tutorGroupIds = parseTutorGroupIds(candidate.tutorGroupIds);
+  if (!tutorGroupIds) return null;
 
   const groupExclusions: TutoringGroupExclusion[] = [];
   for (const raw of candidate.groupExclusions) {
@@ -266,19 +395,14 @@ export function parseTutoringPolicy(value: unknown): TutoringPolicy | null {
   }
 
   const campusEntries = Object.entries(candidate.campusByGroupId);
-  if (
-    campusEntries.length > 500 ||
-    campusEntries.some(
-      ([groupId, name]) =>
-        !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-          groupId
-        ) ||
-        typeof name !== 'string' ||
-        name.trim().length < 1 ||
-        name.length > 80
-    )
-  )
+  if (!isGroupLabelMap(campusEntries, TUTORING_CAMPUS_LABEL_MAX_LENGTH))
     return null;
+  const campusOptions = parseTutoringCampusOptions(candidate.campusOptions);
+  if (!campusOptions) return null;
+  // Assignments may name a since-renamed shift; they then match nothing
+  // rather than invalidating the whole policy.
+  const shiftEntries = Object.entries(candidate.shiftByGroupId);
+  if (!isGroupLabelMap(shiftEntries, 50)) return null;
 
   const rules: TutoringTimeRule[] = [];
   const occupiedClassTimes = new Set<string>();
@@ -286,12 +410,14 @@ export function parseTutoringPolicy(value: unknown): TutoringPolicy | null {
     if (!raw || typeof raw !== 'object') return null;
     const rule = raw as Record<string, unknown>;
     if (
-      !Array.isArray(rule.weekdays) ||
-      rule.weekdays.length < 1 ||
-      rule.weekdays.length > 7 ||
-      !rule.weekdays.every((day) => isIntegerInRange(day, 0, 6)) ||
+      !isWeekdayList(rule.weekdays) ||
+      (rule.classWeekdays !== undefined &&
+        !isWeekdayList(rule.classWeekdays)) ||
       typeof rule.classStartTime !== 'string' ||
       !TIME.test(rule.classStartTime) ||
+      (rule.classEndTime !== undefined &&
+        (typeof rule.classEndTime !== 'string' ||
+          !TIME.test(rule.classEndTime))) ||
       typeof rule.tutoringStartTime !== 'string' ||
       !TIME.test(rule.tutoringStartTime) ||
       !isIntegerInRange(rule.durationMinutes, 1, 480) ||
@@ -307,6 +433,12 @@ export function parseTutoringPolicy(value: unknown): TutoringPolicy | null {
     rules.push({
       weekdays: [...new Set(rule.weekdays as number[])],
       classStartTime: rule.classStartTime,
+      ...(typeof rule.classEndTime === 'string'
+        ? { classEndTime: rule.classEndTime }
+        : {}),
+      ...(Array.isArray(rule.classWeekdays)
+        ? { classWeekdays: [...new Set(rule.classWeekdays as number[])] }
+        : {}),
       tutoringStartTime: rule.tutoringStartTime,
       durationMinutes: rule.durationMinutes as number,
       ...(typeof rule.label === 'string' && rule.label.trim()
@@ -324,22 +456,34 @@ export function parseTutoringPolicy(value: unknown): TutoringPolicy | null {
     reassessmentDays: candidate.reassessmentDays as number,
     followUpDays: candidate.followUpDays as number,
     weakContentReviewDays: candidate.weakContentReviewDays as number,
+    restrictWeakContentEditors: candidate.restrictWeakContentEditors,
     schedulingHorizonDays: candidate.schedulingHorizonDays as number,
     timeRules: rules,
     groupExclusions,
     campusByGroupId: Object.fromEntries(
       campusEntries.map(([groupId, name]) => [groupId, String(name).trim()])
     ),
+    campusOptions,
+    tutorGroupIds,
+    shiftByGroupId: Object.fromEntries(
+      shiftEntries.map(([groupId, label]) => [groupId, String(label).trim()])
+    ),
     parentMessageTemplate: candidate.parentMessageTemplate,
   };
 }
 
-/** Match group names using the workspace's editable eligibility rules. */
+/**
+ * Match groups using the workspace's editable eligibility rules. Tutor groups
+ * hold no real students, so they are excluded whatever their name is.
+ */
 export function isTutoringGroupExcluded(
   policy: TutoringPolicy,
   groupName: string,
-  reason: 'make_up' | 'weak_support'
+  reason: 'make_up' | 'weak_support',
+  groupId?: string | null
 ) {
+  if (groupId && policy.tutorGroupIds.includes(groupId.toLowerCase()))
+    return true;
   const name = groupName.trim().toLocaleLowerCase();
   return policy.groupExclusions.some((rule) => {
     if (rule.scope !== 'all' && rule.scope !== reason) return false;
@@ -366,6 +510,49 @@ export function getTutoringShiftLabel(
         rule.tutoringStartTime === startTime.slice(0, 5)
     )?.label ?? null
   );
+}
+
+/** The shift rule a class group was assigned to in settings, if it still exists. */
+export function getAssignedTutoringShift(
+  policy: TutoringPolicy,
+  groupId: string | null | undefined
+) {
+  const label = groupId ? policy.shiftByGroupId[groupId] : undefined;
+  if (!label) return null;
+  return policy.timeRules.find((rule) => rule.label === label) ?? null;
+}
+
+/**
+ * Carry group assignments across shift renames made in one edit. Labels are
+ * matched by rule position against the labels the edit started with. Only a
+ * brand-new label counts as a rename, so a deleted or reordered shift never
+ * hands its groups to another existing shift; they stay unmatched instead.
+ */
+export function carryTutoringShiftAssignments(
+  assignments: Record<string, string>,
+  originalLabels: (string | undefined)[],
+  rules: TutoringTimeRule[]
+) {
+  const live = new Set(
+    rules.map((rule) => rule.label?.trim()).filter((label) => label)
+  );
+  const original = new Set(originalLabels.filter((label) => label));
+  const renames = new Map<string, string>();
+  originalLabels.forEach((from, index) => {
+    const to = rules[index]?.label?.trim();
+    if (from && to && !original.has(to) && !live.has(from))
+      renames.set(from, to);
+  });
+  const next = Object.fromEntries(
+    Object.entries(assignments).map(([groupId, label]) => [
+      groupId,
+      renames.get(label) ?? label,
+    ])
+  );
+  const orphaned = Object.values(next).filter(
+    (label) => !live.has(label)
+  ).length;
+  return { assignments: next, orphaned };
 }
 
 export function getTutoringCampus(

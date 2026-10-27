@@ -123,22 +123,23 @@ class _NotificationsPageState extends State<NotificationsPage> {
                       Routes.notificationsArchive,
                     },
                     actions: [
-                      ShellActionSpec(
-                        id: 'notifications-archive-all',
-                        inDock: true,
-                        icon: LucideIcons.archive,
-                        callbackToken:
-                            'notifications-archive-all:'
-                            '${state.unreadCount}:'
-                            '${state.isArchivingAll}',
-                        tooltip: context.l10n.notificationsArchiveAll,
-                        isLoading: state.isArchivingAll,
-                        enabled:
-                            _selectedTab == NotificationsTab.inbox &&
-                            state.unreadCount > 0 &&
-                            !state.isArchivingAll,
-                        onPressed: () => unawaited(_archiveAll(context)),
-                      ),
+                      // Only offered when it can act: never a disabled
+                      // control on an empty inbox or on the Archive tab.
+                      if (_selectedTab == NotificationsTab.inbox &&
+                          (state.unreadCount > 0 || state.isArchivingAll))
+                        ShellActionSpec(
+                          id: 'notifications-archive-all',
+                          inDock: true,
+                          icon: LucideIcons.archive,
+                          callbackToken:
+                              'notifications-archive-all:'
+                              '${state.unreadCount}:'
+                              '${state.isArchivingAll}',
+                          tooltip: context.l10n.notificationsArchiveAll,
+                          isLoading: state.isArchivingAll,
+                          enabled: !state.isArchivingAll,
+                          onPressed: () => unawaited(_archiveAll(context)),
+                        ),
                       for (final tab in NotificationsTab.values)
                         ShellActionSpec(
                           id: 'notifications-tab-${tab.name}',

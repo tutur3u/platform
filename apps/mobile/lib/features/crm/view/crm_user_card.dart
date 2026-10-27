@@ -107,43 +107,37 @@ class _CrmUserCard extends StatelessWidget {
                         ),
                       ),
                     ],
-                    const SizedBox(height: 10),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        if (user.requireAttention)
-                          _CrmPill(
-                            icon: Icons.priority_high_rounded,
-                            label: context.l10n.crmRequireAttention,
-                            tint: theme.colorScheme.destructive,
-                          ),
-                        if (user.archived)
-                          _CrmPill(
-                            icon: Icons.archive_outlined,
-                            label: context.l10n.crmArchived,
-                            tint: theme.colorScheme.mutedForeground,
-                          ),
-                        if (user.isGuest)
-                          _CrmPill(
-                            icon: Icons.person_outline_rounded,
-                            label: context.l10n.crmGuestUser,
-                            tint: accent,
-                          ),
-                        if (user.groupCount > 0)
-                          _CrmPill(
-                            icon: Icons.groups_2_outlined,
-                            label: '${user.groupCount}',
-                            tint: accent,
-                          ),
-                        if (user.linkedPromotionsCount > 0)
-                          _CrmPill(
-                            icon: Icons.local_offer_outlined,
-                            label: '${user.linkedPromotionsCount}',
-                            tint: accent,
-                          ),
-                      ],
-                    ),
+                    // State pills only; bare group and promotion counts
+                    // drive nothing, so the card does not show them.
+                    if (user.requireAttention ||
+                        user.archived ||
+                        user.isGuest) ...[
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          if (user.requireAttention)
+                            _CrmPill(
+                              icon: Icons.priority_high_rounded,
+                              label: context.l10n.crmRequireAttention,
+                              tint: theme.colorScheme.destructive,
+                            ),
+                          if (user.archived)
+                            _CrmPill(
+                              icon: Icons.archive_outlined,
+                              label: context.l10n.crmArchived,
+                              tint: theme.colorScheme.mutedForeground,
+                            ),
+                          if (user.isGuest)
+                            _CrmPill(
+                              icon: Icons.person_outline_rounded,
+                              label: context.l10n.crmGuestUser,
+                              tint: accent,
+                            ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),

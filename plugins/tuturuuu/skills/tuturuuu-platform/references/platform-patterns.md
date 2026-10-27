@@ -6,6 +6,12 @@ shared-package changes.
 
 ## Web And Shared UI
 
+- Workspace user reads share the users-core field projection and effective
+  public/private permissions. Attendance and score adapters verify every requested
+  user/class against the permission workspace. Preserve app-session actors and
+  authorized response shapes; see [user read permissions](../../../../../apps/docs/platform/features/user-management.mdx#workspace-user-read-permissions)
+  and the linked route regressions.
+
 Shared middleware rejections use `@tuturuuu/utils/guard-rejection` to attach a
 fixed scalar reason and a generated correlation ID, expose them alongside
 existing CORS headers, and emit one warning with a fixed route template. Keep
@@ -271,6 +277,10 @@ protocol and its explicitly in-memory regression boundary.
   do not refresh them until explicitly resumed. Validators that scan web
   API routes must cover **both** trees — `check-workspace-member-type-guard`
   scanned only the legacy tree, so a moved route would have escaped it.
+- AI chat attachment read/list verification is side-effect free: reject serving
+  failed checks while preserving stored objects. Cover historical UTF-16 BOM text
+  and files above new upload limits. Follow the lifecycle and regression policy in
+  [Mind attachments](../../../../../apps/docs/platform/applications/mind.mdx).
 - When using admin clients after access checks, re-apply explicit workspace,
   owner, or resource predicates before reading or mutating protected rows.
 - Admin-backed lookup/status routes must not return workspace, user, invite, or

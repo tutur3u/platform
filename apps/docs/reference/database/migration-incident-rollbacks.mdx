@@ -1,0 +1,145 @@
+---
+title: Migration Incident Rollbacks
+description: Manual rollback inventory and forward-only token containment
+updatedAt: 2026-10-26
+---
+
+## Manual batch rollback inventory
+
+These files are manual incident artifacts under `apps/database/rollbacks/`, not
+forward migrations. They are never automatically applied by the migration gate.
+Take release-authority approval, stop affected writers/callers, retain the exact
+source and catalog receipt, and run one file at a time with `psql -X -v
+ON_ERROR_STOP=1 -f FILE` against the explicitly approved database. Do not change
+hosted migration ledgers to replay history. Recovery uses an approved forward
+repair; local rehearsal alone may use `supabase migration repair --local`.
+
+For a whole batch, use reverse apply order:
+
+| Order | Migration / PR | Manual artifact | Restores / limits |
+| --- | --- | --- | --- |
+| 1 | `20261026192000` / #6920 | `20261026192000_topic_announcements_private_storage_root.rollback.sql` | Restores the `20261026170000` `object_access` body; `topic-announcements/**` returns to Drive permissions and reopens that finding. Run before either `20261026170000` file. |
+| 2 | `20261026173000` / #6840 | `20261026173000_bound_cross_app_token_minting.containment.sql` | Forward-only containment; retains bounded minting DDL and revoked tokens. |
+| 3 | `20261026172000` / #6880 | `20261026172000_pending_tuition_legacy_floor_before_first_explicit_month.rollback.sql` | Previous pending-tuition calculation; no invoice data rewrite. |
+| 4 | `20261026170000` / #6879 | `20261026170000_least_privilege_workspace_storage_rls.incident-rollback.sql` | Prefer this incident variant. The sibling `.rollback.sql` restores broader legacy access and reopens the reviewed finding; use only with explicit risk acceptance. |
+| 5 | `20261026145300` / #6460 | `20261026145300_reap_stale_devbox_runs.rollback.sql` | Previous S4 claim body; removes reaper/lease guard. Does not resurrect reaped runs or released leases. |
+| 6 | `20261026145200` / #6460 | `20261026145200_guard_active_devbox_runs_index.rollback.sql` | No persistent object to undo; records the deliberate no-op. |
+| 7 | `20261026145100` / #6460 | `20261026145100_index_active_devbox_runs.rollback.sql` | Concurrent index drop; no table data loss. |
+| 8 | `20261026145000` / #6457 | `20261026145000_devbox_claim_mode_admission.rollback.sql` | Previous drain-aware claim body; drops S4 settings/freshness timestamps, preserving the earlier drain column and operational history. |
+
+Devbox rollback removes admission/lease protections. Drain and stop all claim,
+enqueue and control callers, deploy a compatible caller before resuming, and do
+not run #6457's rollback while #6460 still depends on S4. The historical function
+bodies are pinned in the files; compare them with the intended pre-migration
+version before use. There is no `CASCADE` fallback for unexpected dependencies.
+Every transactional file bounds locks to five seconds and statements to thirty
+seconds; a busy database aborts the transaction for diagnosis and a fresh retry.
+
+The index file sets session timeouts (five-second locks, five-minute statement)
+and uses `DROP INDEX CONCURRENTLY`. Run it alone in autocommit: never use `BEGIN`,
+`psql -1`/`--single-transaction`, or a runner that wraps/batches the file. Long
+transactions can delay a concurrent drop. On timeout/cancellation, inspect
+`pg_stat_activity`, `pg_stat_progress_create_index` and the exact index catalog
+before retrying; do not start another build/drop blindly. Close the dedicated
+session or reset both timeouts if execution stopped before the file's resets.
+
+## Topic teacher assignment rollback
+
+`20261026193000_topic_announcement_teacher_assignment.rollback.sql` (#6924) is
+a manual artifact like the batch above. Run these steps in order, in one
+approved `psql -X` session against the approved database.
+
+1. **Remove the callers first.** Revert or disable the teacher-assignment app
+   code from #6928 (and the UI and import built on it) and deploy that, then
+   stop the queue cron. Code from #6928 reads and writes the columns this
+   rollback drops, so rolling back the schema under it breaks every topic
+   write.
+2. **Export what will be lost.** The rollback drops
+   `teacher_workspace_user_id`, `course_book`, `video_url`, and `send_due_at`,
+   and step 3 may delete drafts. Export both before changing anything:
+
+   ```sql
+   \copy (select id, ws_id, teacher_workspace_user_id, course_book, video_url, send_due_at from private.topic_announcements where teacher_workspace_user_id is not null or course_book is not null or video_url is not null or send_due_at is not null) to 'topic-teacher-columns.csv' with csv header
+   \copy (select * from private.topic_announcements where status = 'draft' and (topic is null or btrim(topic) = '')) to 'topic-drafts-without-topic.csv' with csv header
+   \copy (select r.* from private.topic_announcement_recipients r join private.topic_announcements a on a.id = r.announcement_id where a.status = 'draft' and (a.topic is null or btrim(a.topic) = '')) to 'topic-drafts-without-topic-recipients.csv' with csv header
+   \copy (select t.* from private.topic_announcement_attachments t join private.topic_announcements a on a.id = t.announcement_id where a.status = 'draft' and (a.topic is null or btrim(a.topic) = '')) to 'topic-drafts-without-topic-attachments.csv' with csv header
+   ```
+
+   These files hold confidential customer data: lesson content, teacher
+   assignments, and contact links. Write them only to storage approved for
+   incident data, never to a ticket, chat, repository, or shared drive. Record
+   where they are, and delete them once the incident is closed and nothing
+   needs to be restored from them.
+3. **Clear topic-less drafts, NULL and blank.** The migration lets a draft
+   have no topic, stored as `NULL` or (from writes before the app normalized
+   it) a blank string. The rollback's guard refuses only `NULL` topics: it
+   raises `topic announcements without a topic exist` and changes nothing.
+   A blank `''` topic passes that guard, but the restored `NOT VALID`
+   `topic_announcements_topic_not_blank` check then rejects every later update
+   of that row, including cancelling it. So clear both, with the same
+   `topic is null or btrim(topic) = ''` filter as the export. Only drafts can
+   lack a topic. Do **one** of these:
+   - Keep the drafts with a bilingual placeholder topic:
+
+     ```sql
+     update private.topic_announcements set topic = 'Topic pending / Chưa có chủ đề' where status = 'draft' and (topic is null or btrim(topic) = '');
+     ```
+
+     The drafts keep their recipients, attachments, and schedule. The
+     placeholder is real topic text: it shows in the UI and is emailed if
+     someone sends the draft unchanged, so tell supervisors to replace it
+     before sending. Covering blank topics as well keeps those rows editable
+     under the restored non-blank rule.
+   - Delete the drafts (step 2 exported them):
+
+     ```sql
+     delete from private.topic_announcements where status = 'draft' and (topic is null or btrim(topic) = '');
+     ```
+
+     Their recipient and attachment rows are deleted with them (`on delete
+     cascade`), but the uploaded files stay in storage as orphans. Delivery
+     attempt rows block the delete (`on delete restrict`). Drafts are never
+     dispatched, so a block means the row is not what you expect: stop and
+     inspect it.
+4. **Run the rollback file.** The restored `topic_announcements_topic_not_blank`
+   and `notifications_type_check` (without `topic_assigned`) are added `NOT
+   VALID`, so nothing is validated under the lock, and new and updated rows are
+   still checked. `set not null` on `topic` scans the table once. Existing
+   `topic_assigned` notifications are kept.
+
+The disposable proof is
+`apps/database/verification/topic-announcement-teacher-assignment-rollback-roundtrip.sql`.
+
+## Cross-app token containment is forward-only
+
+The `20261026173000` migration bounds both minting overloads and marks overlong
+unused tokens revoked. It leaves their expiry and other evidence intact, but
+stores neither the previous revocation bit nor migration-specific provenance.
+Never un-revoke rows or restore the vulnerable generator bodies. Rolling back
+an application deployment does not restore these handoff credentials: users must
+start a new bounded handoff after recovery.
+
+1. Stop cross-app handoff routes and privileged minting callers. Keep server-side
+   lifetime/audience validation in place.
+2. Run the containment file. It revokes client `EXECUTE` for both minting
+   overloads and marks at most 1,000 unused, unrevoked rows per invocation. It
+   never changes used tokens, expiry fields or other audit data. Existing
+   service/admin privileges remain; those callers must stay stopped separately.
+3. Read `revoked_now` and `remaining`. Repeat bounded invocations after writers
+   stop until `remaining = 0`; locked rows skipped by `SKIP LOCKED` still count
+   as remaining. A nonzero count is incomplete containment. Stop and diagnose
+   timeout/contention rather than retrying indefinitely.
+4. Review a forward repair, prove both overloads' bounds and denial tests, then
+   explicitly restore `authenticated` execution on the two signatures listed in
+   the file. Do not broadly grant privileges. The original forward migration
+   restates those grants; replay it only in a disposable rehearsal, not by
+   changing a hosted ledger. Existing revocations remain permanent.
+
+The disposable proof applies the complete batch with the real Supabase CLI,
+compares Devbox function bodies/owners/ACLs, columns, indexes, triggers and
+constraints with snapshots taken before each step, rolls back in reverse order,
+and re-applies. Containment is checked separately for bounded progress,
+idempotency, preserved expiry/used rows, denied client minting and permanent
+revocation after re-apply. It intentionally cannot reproduce #6840's old catalog
+or credential validity; no reversible rollback is claimed for that security fix.
+
