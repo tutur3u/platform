@@ -551,3 +551,27 @@ The first-message rollback restores main's prior chat_create_conversation body
 and service-only ACL. Refuse retained creation receipts: removing retry identities
 can resurrect deleted conversations. Verify actual apply/rollback/reapply and
 prior catalog equality with apps/database/verification/chat-first-message-rollback-*.sql.
+### Workspace delete foreign-key audit
+
+Audit the full migrated local catalog before replacing a delete action. Follow
+referencing tables recursively with `pg_constraint` and join `pg_attribute` for
+nullability. For PostgreSQL column-specific SET NULL actions, inspect
+`confdelsetcols`: a different NOT NULL column in the composite key does not make
+the SET NULL action invalid. A NO ACTION/RESTRICT candidate may already resolve
+through another ownership cascade; reproduce with populated rows before changing
+it. Inspect DELETE triggers and policy functions as well as FKs.
+
+Use `apps/database/verification/workspace-delete-catalog-audit.sql` for the query.
+The D regression is `supabase/tests/workspace-delete-fk-cascade.sql`. Its companion
+`workspace-delete-fk-roundtrip.py` takes an isolated workspace-delete Docker DB
+container and a private output directory, compares complete schema dump bytes
+with a fixed pg_dump restrict key, tests NOT VALID and validated behavior, and
+restores main's schema. Run it under `ttr resources run --` before applying D with
+`bun sb:up --workdir <isolated-root>` from `apps/database`.
+
+Preserve immutable delivery, billing, provider-operation and cross-workspace
+history until an explicit retention decision. FK CASCADE cannot bypass an
+immutable DELETE trigger. Keep the NOT VALID swap and validation in separate
+migration files; promoting both files applies both, so separate deployment needs
+separate promotion. Rollbacks must restore original update/delete actions and
+validation state; restoring a previously validated FK entails a validation scan.
