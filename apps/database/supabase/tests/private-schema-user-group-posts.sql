@@ -377,9 +377,12 @@ select ok(
         or (
           coalesce(proc_row.proconfig, '{}') @> array['search_path=pg_catalog, pg_temp']
           and (
-            (proc_row.proname = 'merge_workspace_users_phase1d'
+            (proc_row.proname in ('merge_workspace_users', 'merge_workspace_users_phase1', 'merge_workspace_users_phase1d')
               and proc_row.prosrc like '%private.user_group_posts%'
               and proc_row.prosrc like '%private.user_group_post_logs%')
+            -- Batch wrappers delegate to the helper that keeps the private path.
+            or (proc_row.proname = 'merge_workspace_users_phase1d_batch'
+              and proc_row.prosrc like '%public.merge_workspace_users_batch_update(%')
             or (proc_row.proname = 'merge_workspace_users_phase2'
               and proc_row.prosrc like '%private.user_group_post_checks%')
           )

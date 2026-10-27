@@ -30,6 +30,10 @@ select ok(not exists (
 select ok((select 'search_path=pg_catalog, pg_temp' = any(p.proconfig)
   from pg_proc p where p.oid = format('public.merge_workspace_users_phase%s(uuid,uuid,uuid)', phase)::regprocedure),
   phase || ': search path is pinned') from pg_temp.merge_phases() phase;
+select ok(pg_get_functiondef('public.merge_workspace_users_phase5(uuid,uuid,uuid)'::regprocedure) ~* 'for update',
+  '5: locks the merge rows before checking them');
+select ok(pg_get_functiondef('public.merge_workspace_users_phase4(uuid,uuid,uuid)'::regprocedure) ~* 'for update',
+  '4: locks the link rows before transferring them');
 
 insert into auth.users(id) values
   ('00000000-0000-4000-8000-00000000a001'),
@@ -45,7 +49,12 @@ delete from public.workspace_default_permissions where ws_id = '00000000-0000-40
 insert into public.workspace_users(id, ws_id, full_name) values
   ('00000000-0000-4000-8000-00000000a101', '00000000-0000-4000-8000-00000000a100', 'Source'),
   ('00000000-0000-4000-8000-00000000a102', '00000000-0000-4000-8000-00000000a100', null),
+  ('00000000-0000-4000-8000-00000000a103', '00000000-0000-4000-8000-00000000a100', 'Swap left'),
+  ('00000000-0000-4000-8000-00000000a104', '00000000-0000-4000-8000-00000000a100', 'Swap right'),
+  ('00000000-0000-4000-8000-00000000b101', '00000000-0000-4000-8000-00000000b100', 'Foreign source'),
   ('00000000-0000-4000-8000-00000000b102', '00000000-0000-4000-8000-00000000b100', 'Foreign');
+insert into public.user_feedbacks(user_id, content) values
+  ('00000000-0000-4000-8000-00000000b101', 'Foreign source feedback');
 
 set local role anon;
 select set_config('request.jwt.claims', '{"role":"anon"}', true);
@@ -110,6 +119,31 @@ reset role;
 select is((select count(*) from public.workspace_users where id = '00000000-0000-4000-8000-00000000a101'), 0::bigint, 'final phase deletes source');
 select is((select full_name from public.workspace_users where id = '00000000-0000-4000-8000-00000000a102'), 'Source', 'final phase preserves source data on target');
 select is((select full_name from public.workspace_users where id = '00000000-0000-4000-8000-00000000b102'), 'Foreign', 'foreign target remains unchanged');
+-- A source from another workspace is never read, moved or deleted.
+set local role authenticated;
+select lives_ok(format('select pg_temp.run_merge_phase(%L, %L, %L, %L)', phase,
+  '00000000-0000-4000-8000-00000000b101', '00000000-0000-4000-8000-00000000a102', '00000000-0000-4000-8000-00000000a100'),
+  phase || ': foreign source is treated as absent') from pg_temp.merge_phases() phase;
+reset role;
+select is((select ws_id || ':' || full_name from public.workspace_users where id = '00000000-0000-4000-8000-00000000b101'),
+  '00000000-0000-4000-8000-00000000b100:Foreign source', 'foreign source row is untouched');
+select is((select count(*) from public.user_feedbacks where user_id = '00000000-0000-4000-8000-00000000b101'),
+  1::bigint, 'foreign source data stays on the foreign source');
+select is((select full_name from public.workspace_users where id = '00000000-0000-4000-8000-00000000a102'), 'Source',
+  'foreign source data is not merged into the target');
+-- A swapped merge cannot delete both users once the first one has completed.
+set local role authenticated;
+select is((public.merge_workspace_users_phase5('00000000-0000-4000-8000-00000000a103',
+  '00000000-0000-4000-8000-00000000a104', '00000000-0000-4000-8000-00000000a100')->>'source_deleted')::boolean,
+  true, 'first merge of a swapped pair completes');
+select throws_ok(format('select public.merge_workspace_users_phase5(%L, %L, %L)',
+  '00000000-0000-4000-8000-00000000a104', '00000000-0000-4000-8000-00000000a103', '00000000-0000-4000-8000-00000000a100'),
+  '42501', null, 'reverse merge into the deleted user is refused');
+reset role;
+select is((select full_name from public.workspace_users where id = '00000000-0000-4000-8000-00000000a104'), 'Swap right',
+  'reverse merge keeps the surviving user');
+select is((select count(*) from public.workspace_users where id in ('00000000-0000-4000-8000-00000000a103', '00000000-0000-4000-8000-00000000a104')),
+  1::bigint, 'swapped merges leave exactly one user');
 select set_config('request.jwt.claims', '{"role":"authenticated","sub":"00000000-0000-4000-8000-00000000a002"}', true);
 set local role authenticated;
 select is((pg_temp.run_merge_phase(phase, '00000000-0000-4000-8000-00000000a101', '00000000-0000-4000-8000-00000000a102', '00000000-0000-4000-8000-00000000a100')->>'success')::boolean,

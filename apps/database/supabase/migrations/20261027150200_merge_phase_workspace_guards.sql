@@ -397,6 +397,11 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM public.workspace_users WHERE id = _source_id AND ws_id = _ws_id) THEN
     RETURN jsonb_build_object('success', true, 'phase', 4, 'message', 'Source user already deleted (merge complete)', 'link_transferred', false);
   END IF;
+  -- Hold both link rows so the link check and transfer see one snapshot.
+  PERFORM 1 FROM public.workspace_user_linked_users
+  WHERE ws_id = _ws_id AND virtual_user_id IN (_source_id, _target_id)
+  ORDER BY virtual_user_id
+  FOR UPDATE;
   SELECT
     platform_user_id IS NOT NULL,
     platform_user_id
@@ -450,6 +455,7 @@ AS $function$
 DECLARE
   v_user_id UUID;
   v_source_record public.workspace_users%ROWTYPE;
+  v_deleted INTEGER;
 BEGIN
   v_user_id := auth.uid();
   IF v_user_id IS NULL
@@ -457,18 +463,22 @@ BEGIN
     OR public.has_workspace_permission(_ws_id, v_user_id, 'update_users') IS DISTINCT FROM TRUE THEN
     RAISE EXCEPTION 'Insufficient permissions to merge workspace users' USING ERRCODE = '42501';
   END IF;
+  -- Lock both rows in id order so concurrent or swapped merges serialize
+  -- before the existence checks and cannot delete both users.
+  PERFORM 1 FROM public.workspace_users
+  WHERE ws_id = _ws_id AND id IN (_source_id, _target_id)
+  ORDER BY id
+  FOR UPDATE;
   IF NOT EXISTS (SELECT 1 FROM public.workspace_users WHERE id = _target_id AND ws_id = _ws_id)
     OR _source_id IS NOT DISTINCT FROM _target_id THEN
     RAISE EXCEPTION 'Invalid merge target' USING ERRCODE = '42501';
   END IF;
   SELECT * INTO v_source_record
   FROM public.workspace_users
-  WHERE id = _source_id AND ws_id = _ws_id;
+  WHERE id = _source_id AND ws_id = _ws_id
+  FOR UPDATE;
   IF NOT FOUND THEN
     RETURN jsonb_build_object('success', true, 'phase', 5, 'message', 'Source user already deleted (merge complete)');
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM public.workspace_users WHERE id = _target_id AND ws_id = _ws_id) THEN
-    RETURN jsonb_build_object('success', false, 'error', 'Target user not found in workspace', 'phase', 5);
   END IF;
   UPDATE public.workspace_users
   SET
@@ -490,9 +500,16 @@ BEGIN
       ELSE note
     END,
       balance = GREATEST(COALESCE(balance, 0), COALESCE(v_source_record.balance, 0))
-  WHERE id = _target_id;
+  WHERE id = _target_id AND ws_id = _ws_id;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Merge target changed during merge' USING ERRCODE = '40001';
+  END IF;
   DELETE FROM public.workspace_users
   WHERE id = _source_id AND ws_id = _ws_id;
+  GET DIAGNOSTICS v_deleted = ROW_COUNT;
+  IF v_deleted <> 1 THEN
+    RAISE EXCEPTION 'Merge source changed during merge' USING ERRCODE = '40001';
+  END IF;
   RETURN jsonb_build_object(
     'success', true,
     'phase', 5,

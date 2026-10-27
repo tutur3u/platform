@@ -1,4 +1,7 @@
--- Manual rollback only; restores the prior full-chain definitions and grants.
+-- Manual rollback only; restores the prior full-chain definitions.
+-- WARNING: a rollback removes the merge permission guards and the phase 4/5
+-- row locks, reopening SR-108 for authenticated callers. Anonymous and PUBLIC
+-- execute stay revoked; only authenticated and service_role keep execute.
 
 BEGIN;
 
@@ -62,7 +65,9 @@ BEGIN
 END;
 $function$;
 
-GRANT EXECUTE ON FUNCTION public.merge_workspace_users_phase1b(uuid, uuid, uuid) TO PUBLIC, anon, authenticated, service_role;
+REVOKE EXECUTE ON FUNCTION public.merge_workspace_users_phase1b(uuid, uuid, uuid) FROM PUBLIC, anon;
+
+GRANT EXECUTE ON FUNCTION public.merge_workspace_users_phase1b(uuid, uuid, uuid) TO authenticated, service_role;
 
 CREATE OR REPLACE FUNCTION public.merge_workspace_users_phase1c(_source_id uuid, _target_id uuid, _ws_id uuid)
  RETURNS jsonb
@@ -120,7 +125,9 @@ BEGIN
 END;
 $function$;
 
-GRANT EXECUTE ON FUNCTION public.merge_workspace_users_phase1c(uuid, uuid, uuid) TO PUBLIC, anon, authenticated, service_role;
+REVOKE EXECUTE ON FUNCTION public.merge_workspace_users_phase1c(uuid, uuid, uuid) FROM PUBLIC, anon;
+
+GRANT EXECUTE ON FUNCTION public.merge_workspace_users_phase1c(uuid, uuid, uuid) TO authenticated, service_role;
 
 CREATE OR REPLACE FUNCTION public.merge_workspace_users_phase1d(_source_id uuid, _target_id uuid, _ws_id uuid)
  RETURNS jsonb
@@ -178,7 +185,9 @@ BEGIN
 END;
 $function$;
 
-GRANT EXECUTE ON FUNCTION public.merge_workspace_users_phase1d(uuid, uuid, uuid) TO PUBLIC, anon, authenticated, service_role;
+REVOKE EXECUTE ON FUNCTION public.merge_workspace_users_phase1d(uuid, uuid, uuid) FROM PUBLIC, anon;
+
+GRANT EXECUTE ON FUNCTION public.merge_workspace_users_phase1d(uuid, uuid, uuid) TO authenticated, service_role;
 
 CREATE OR REPLACE FUNCTION public.merge_workspace_users_phase2(_source_id uuid, _target_id uuid, _ws_id uuid)
  RETURNS jsonb
@@ -362,7 +371,9 @@ BEGIN
 END;
 $function$;
 
-GRANT EXECUTE ON FUNCTION public.merge_workspace_users_phase2(uuid, uuid, uuid) TO PUBLIC, anon, authenticated, service_role;
+REVOKE EXECUTE ON FUNCTION public.merge_workspace_users_phase2(uuid, uuid, uuid) FROM PUBLIC, anon;
+
+GRANT EXECUTE ON FUNCTION public.merge_workspace_users_phase2(uuid, uuid, uuid) TO authenticated, service_role;
 
 CREATE OR REPLACE FUNCTION public.merge_workspace_users_phase3(_source_id uuid, _target_id uuid, _ws_id uuid)
  RETURNS jsonb
@@ -417,7 +428,9 @@ BEGIN
 END;
 $function$;
 
-GRANT EXECUTE ON FUNCTION public.merge_workspace_users_phase3(uuid, uuid, uuid) TO PUBLIC, anon, authenticated, service_role;
+REVOKE EXECUTE ON FUNCTION public.merge_workspace_users_phase3(uuid, uuid, uuid) FROM PUBLIC, anon;
+
+GRANT EXECUTE ON FUNCTION public.merge_workspace_users_phase3(uuid, uuid, uuid) TO authenticated, service_role;
 
 CREATE OR REPLACE FUNCTION public.merge_workspace_users_phase4(_source_id uuid, _target_id uuid, _ws_id uuid)
  RETURNS jsonb
@@ -493,7 +506,9 @@ BEGIN
 END;
 $function$;
 
-GRANT EXECUTE ON FUNCTION public.merge_workspace_users_phase4(uuid, uuid, uuid) TO PUBLIC, anon, authenticated, service_role;
+REVOKE EXECUTE ON FUNCTION public.merge_workspace_users_phase4(uuid, uuid, uuid) FROM PUBLIC, anon;
+
+GRANT EXECUTE ON FUNCTION public.merge_workspace_users_phase4(uuid, uuid, uuid) TO authenticated, service_role;
 
 CREATE OR REPLACE FUNCTION public.merge_workspace_users_phase5(_source_id uuid, _target_id uuid, _ws_id uuid)
  RETURNS jsonb
@@ -562,6 +577,8 @@ BEGIN
 END;
 $function$;
 
-GRANT EXECUTE ON FUNCTION public.merge_workspace_users_phase5(uuid, uuid, uuid) TO PUBLIC, anon, authenticated, service_role;
+REVOKE EXECUTE ON FUNCTION public.merge_workspace_users_phase5(uuid, uuid, uuid) FROM PUBLIC, anon;
+
+GRANT EXECUTE ON FUNCTION public.merge_workspace_users_phase5(uuid, uuid, uuid) TO authenticated, service_role;
 
 COMMIT;

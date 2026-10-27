@@ -23,9 +23,18 @@ merge remains resumable for an authorized caller. The web and Contacts shared
 merge route uses the request-scoped user client for these RPCs; privileged clients
 without an authenticated subject do not bypass the actor check.
 
-Regression coverage: `apps/database/supabase/tests/merge-phase-workspace-guards.sql`.
-Manual reversal of the function definitions and grants is in
-`apps/database/rollbacks/20261027150200_merge_phase_workspace_guards.rollback.sql`.
+The same rule covers the single-call merge, phase 1/1a, the phased orchestrator
+and the batched phase 1 helpers: a missing actor or a permission result that is
+not `TRUE` (including `NULL`) returns the existing `success: false` denial.
+Phase 5 locks the source and target rows in id order before merging, so a
+concurrent or swapped merge cannot delete both profiles. Phase 4 locks both
+platform-link rows before transferring a link.
+
+Regression coverage: `apps/database/supabase/tests/merge-phase-workspace-guards.sql`
+and `apps/database/supabase/tests/merge-workspace-users-null-guards.sql`.
+Manual reversal is in the matching `apps/database/rollbacks/20261027150200`–`150203`
+rollback files. A rollback removes these guards and reopens SR-108 for
+authenticated callers; it never re-grants `PUBLIC` or `anon`.
 
 ## Mental Model
 

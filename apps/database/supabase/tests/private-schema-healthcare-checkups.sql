@@ -226,7 +226,9 @@ select ok(
     select bool_and(
       coalesce(proconfig, '{}') @> array['search_path=public, private, pg_temp']
       or (coalesce(proconfig, '{}') @> array['search_path=pg_catalog, pg_temp']
-        and prosrc like '%private.healthcare_checkups%')
+        and (prosrc like '%private.healthcare_checkups%'
+          -- Batch wrappers delegate to the helper that keeps the private path.
+          or prosrc like '%public.merge_workspace_users_batch_update(%'))
     )
     from (
       select proconfig, prosrc

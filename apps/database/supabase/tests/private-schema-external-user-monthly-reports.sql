@@ -476,8 +476,12 @@ select ok(
         coalesce(proc_row.proconfig, '{}') @> array['search_path=public, private, pg_temp']
         or (
           coalesce(proc_row.proconfig, '{}') @> array['search_path=pg_catalog, pg_temp']
-          and proc_row.prosrc like '%private.external_user_monthly_reports%'
-          and proc_row.prosrc like '%private.external_user_monthly_report_logs%'
+          and (
+            (proc_row.prosrc like '%private.external_user_monthly_reports%'
+              and proc_row.prosrc like '%private.external_user_monthly_report_logs%')
+            -- Batch wrappers delegate to the helper that keeps the private path.
+            or (proc_row.proname like '%\_batch' and proc_row.prosrc like '%public.merge_workspace_users_batch_update(%')
+          )
         )
       )
   ),
