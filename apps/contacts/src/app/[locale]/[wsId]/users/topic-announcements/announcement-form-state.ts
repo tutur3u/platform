@@ -27,20 +27,33 @@ export const ANNOUNCEMENT_STEPS = [
 
 export const DELIVERY_MODES = ['draft', 'send', 'schedule'] as const;
 
+export const NO_TEACHER = '__none__';
+const VIDEO_URL_PATTERN = /^https:\/\/\S+$/u;
+
+/** Mirrors the server and database rule: empty, or an https:// URL. */
+export function isTopicVideoUrlValid(value: string) {
+  const trimmed = value.trim();
+  return !trimmed || VIDEO_URL_PATTERN.test(trimmed);
+}
+
 export const INITIAL_ANNOUNCEMENT_FORM = {
   attachmentDrafts: [] as PreviewableTopicAnnouncementAttachment[],
   classLabel: '',
   contactIds: [] as string[],
+  courseBook: '',
   dayLabel: '',
   endTime: '',
   groupId: NO_GROUP,
+  notifyTeacher: true,
   place: '',
   room: '',
   selectedTemplateId: NO_TEMPLATE,
   sessionDate: '',
   startTime: '',
+  teacherWorkspaceUserId: NO_TEACHER,
   title: '',
   topic: '',
+  videoUrl: '',
 };
 
 export type AnnouncementDeliveryMode = (typeof DELIVERY_MODES)[number];
@@ -48,14 +61,16 @@ export type AnnouncementFormValues = typeof INITIAL_ANNOUNCEMENT_FORM;
 export type AnnouncementStep = (typeof ANNOUNCEMENT_STEPS)[number];
 
 export function buildTopicAnnouncementPayload(
-  form: AnnouncementFormValues
+  form: AnnouncementFormValues,
+  { teacherAssignments = true }: { teacherAssignments?: boolean } = {}
 ): TopicAnnouncementPayload {
-  return {
+  const payload: TopicAnnouncementPayload = {
     attachmentDrafts: form.attachmentDrafts.map(
       toTopicAnnouncementAttachmentDraft
     ),
     classLabel: form.classLabel || null,
     contactIds: form.contactIds,
+    courseBook: form.courseBook.trim() || null,
     dayLabel: form.dayLabel || null,
     endTime: form.endTime || null,
     groupId: form.groupId === NO_GROUP ? null : form.groupId,
@@ -64,9 +79,23 @@ export function buildTopicAnnouncementPayload(
     sessionDate: form.sessionDate || null,
     sourceType: 'manual',
     startTime: form.startTime || null,
+    teacherWorkspaceUserId:
+      form.teacherWorkspaceUserId === NO_TEACHER
+        ? null
+        : form.teacherWorkspaceUserId,
     title: form.title.trim(),
     topic: form.topic.trim(),
+    videoUrl: form.videoUrl.trim() || null,
   };
+  if (teacherAssignments) return payload;
+  // Without teacher assignments, send the pre-feature payload shape.
+  const {
+    courseBook: _courseBook,
+    teacherWorkspaceUserId: _teacherWorkspaceUserId,
+    videoUrl: _videoUrl,
+    ...legacy
+  } = payload;
+  return legacy;
 }
 
 function normalizeTime(value: string | null) {
@@ -91,16 +120,21 @@ export function createAnnouncementFormFromRecord(
     })),
     classLabel: announcement.class_label ?? '',
     contactIds: announcement.contacts.map((contact) => contact.id),
+    courseBook: announcement.course_book ?? '',
     dayLabel: announcement.day_label ?? '',
     endTime: normalizeTime(announcement.end_time),
     groupId: announcement.group_id ?? NO_GROUP,
+    notifyTeacher: true,
     place: announcement.place ?? '',
     room: announcement.room ?? '',
     selectedTemplateId: NO_TEMPLATE,
     sessionDate: announcement.session_date ?? '',
     startTime: normalizeTime(announcement.start_time),
+    teacherWorkspaceUserId:
+      announcement.teacher_workspace_user_id ?? NO_TEACHER,
     title: announcement.title,
     topic: announcement.topic,
+    videoUrl: announcement.video_url ?? '',
   };
 }
 
@@ -112,7 +146,12 @@ export function createDefaultScheduledDate() {
 
 export function getAnnouncementStepValidity(form: AnnouncementFormValues) {
   const details = form.title.trim().length > 0;
-  const message = form.topic.trim().length > 0;
+  // An assigned teacher writes the topic later, so the supervisor may save a
+  // draft session without one; sending still requires a topic.
+  const message =
+    (form.topic.trim().length > 0 ||
+      form.teacherWorkspaceUserId !== NO_TEACHER) &&
+    isTopicVideoUrlValid(form.videoUrl);
   const recipients = form.contactIds.length > 0;
 
   return {

@@ -28,6 +28,7 @@ export default defineConfig({
         'client',
         'user-group-attendance',
         'posts',
+        'topic-announcements',
       ].map((entry) => ({
         find: `@tuturuuu/internal-api/${entry}`,
         replacement: resolve(
