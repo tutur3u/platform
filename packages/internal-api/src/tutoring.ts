@@ -58,6 +58,14 @@ export interface TutoringQueueItem {
   feedback_content: string;
   feedback_created_at: string | null;
   source_feedback_id: string | null;
+  /** The flagged feedback `feedback_content` was read from (the triggering one). */
+  content_feedback_id?: string | null;
+  /** Class notes (`YYYY-MM-DD: notes`) on the missed dates; empty when none. */
+  missed_lesson_content?: string;
+  /** Class posts (`YYYY-MM-DD: title` and body) created on the missed dates. */
+  missed_post_content?: string;
+  /** Missed dates with neither class session notes nor a class post. */
+  missing_lesson_dates?: string[];
   content_review_due: boolean;
   content_unchanged_since: string | null;
   review_only: boolean;
