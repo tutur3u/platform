@@ -186,14 +186,33 @@ and [MSAL v7 migration guide](https://github.com/AzureAD/microsoft-authenticatio
 
 ## Discord mapping scope
 
+A Discord integration binds one guild to one workspace. Reading an integration
+requires the `allow_discord_integrations` platform flag and MEMBER access to its
+workspace. Connecting, changing or disconnecting one also requires
+`manage_workspace_integrations` in that workspace, the same permission that
+gates the integrations pages, and a connect must record the actor as creator.
+The guild and workspace of an existing integration are immutable for every
+role, including `service_role`; rebinding means disconnecting and connecting
+again. The connect handler reports a guild already bound elsewhere as `409`,
+because the actor can no longer see other workspaces' integrations.
+
 Discord mapping reads and mutations require membership in the workspace linked
 to that mapping's guild. Inserts and updates also require the mapped platform
-user to belong to the same workspace. Moving an existing mapping to another
-guild rechecks the destination workspace. Existing platform integration
-permissions remain required through the integration table's policy. Anonymous
-clients cannot read or change mappings. These rules apply to direct Data API
-access as well as the web integration handlers.
+user to belong to the same workspace; an actor may map any such member, not only
+themselves. Moving an existing mapping to another guild rechecks the
+destination workspace. Because the mapping policy reads the integration under
+its own policy, the platform flag remains required. Anonymous clients cannot
+read or change integrations or mappings. These rules apply to direct Data API
+access as well as the web integration handlers. The Discord bot and the AI agent
+runtime read as `service_role`; the agent runtime resolves a Discord user only
+when the channel's configured guild is the one bound to the channel's workspace.
 
-Coverage: `apps/database/supabase/tests/discord-guild-mapping-boundary.sql`.
-The migration changes no existing mapping data; rollout owners must inspect
-unbound guilds and mapped users outside the linked workspace before acceptance.
+Coverage: `apps/database/supabase/tests/discord-guild-mapping-boundary.sql`,
+`apps/web/src/__tests__/discord-integration-route.test.ts` and
+`src/lib/ai-agents/discord-user-mapping.test.ts` in web and infrastructure.
+The migration changes no existing mapping data. Disconnecting does not delete a
+guild's mappings, so they become visible to whichever workspace connects that
+guild next. Before acceptance, rollout owners run the read-only
+`apps/database/scripts/discord-guild-mapping-exposure.sql` on staging, then
+production, and review mapped users outside the bound workspace, mappings for
+unbound guilds and per-guild totals.

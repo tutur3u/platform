@@ -101,6 +101,23 @@ export async function POST(request: NextRequest) {
       .select()
       .single();
 
+    // RLS hides other workspaces' integrations, so the pre-checks above only
+    // see this workspace. The unique guild index reports a cross-workspace
+    // conflict, and RLS rejects actors without manage_workspace_integrations.
+    if (error?.code === '23505') {
+      return NextResponse.json(
+        { message: 'Discord server is already connected to another workspace' },
+        { status: 409 }
+      );
+    }
+
+    if (error?.code === '42501') {
+      return NextResponse.json(
+        { message: 'Insufficient permissions' },
+        { status: 403 }
+      );
+    }
+
     if (error) {
       console.error('Error creating Discord integration:', error);
       return NextResponse.json(
@@ -191,17 +208,29 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Delete the Discord integration (this will cascade delete guild members)
-    const { error } = await supabase
+    // Delete the Discord integration. Guild member mappings have no foreign
+    // key to it and stay in place without a bound integration.
+    const { data: deleted, error } = await supabase
       .from('discord_integrations')
       .delete()
-      .eq('id', integrationId);
+      .eq('id', integrationId)
+      .eq('ws_id', wsId)
+      .select('id');
 
     if (error) {
       console.error('Error deleting Discord integration:', error);
       return NextResponse.json(
         { message: 'Failed to delete Discord integration' },
         { status: 500 }
+      );
+    }
+
+    // RLS filters the delete silently when the actor can read the integration
+    // but lacks manage_workspace_integrations.
+    if (!deleted?.length) {
+      return NextResponse.json(
+        { message: 'Insufficient permissions' },
+        { status: 403 }
       );
     }
 
