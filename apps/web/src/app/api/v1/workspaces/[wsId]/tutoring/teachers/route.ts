@@ -1,4 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { buildPostgrestIlikeOrFilter } from '@tuturuuu/utils/postgrest-filter';
 import { connection, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveTutoringRouteAccess } from '@/lib/tutoring/route-access';
@@ -37,10 +38,8 @@ export async function GET(
   let query = workspaceTeachersQuery(sbAdmin, normalizedWsId);
   if (q) {
     // Quoted PostgREST literals keep punctuation inside the search operand.
-    const pattern = `%${q.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_')}%`;
-    const literal = `"${pattern.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
     query = query.or(
-      `full_name.ilike.${literal},display_name.ilike.${literal}`
+      buildPostgrestIlikeOrFilter(['full_name', 'display_name'], q)
     );
   }
   const { data, error, count } = await query

@@ -1,3 +1,4 @@
+import { quotePostgrestValue } from '@tuturuuu/utils/postgrest-filter';
 import { NextResponse } from 'next/server';
 import type { TopicAnnouncementsSupabaseClient } from './read-helpers';
 
@@ -93,11 +94,6 @@ export function buildTopicAnnouncementTeacherFilter(
     );
   }
   return filters.join(',');
-}
-
-/** Quotes a value for a PostgREST logic-tree filter so `,()` stay literal. */
-function quotePostgrestValue(value: string) {
-  return `"${value.replaceAll('\\', '\\\\').replaceAll('"', '\\"')}"`;
 }
 
 /** PostgREST `or` filter body for the list search box. */
