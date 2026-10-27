@@ -199,7 +199,10 @@ export function SprintPill({
             <DropdownMenuSeparator />
             <div className="flex items-center gap-2 p-1">
               {endable && onEndSprint ? (
-                <ToneButton onClick={() => onEndSprint(endable)} tone="green">
+                <ToneButton
+                  onClick={closeThen(() => onEndSprint(endable))}
+                  tone="green"
+                >
                   <Flag />
                   {t('end_sprint', { name: endable.name })}
                 </ToneButton>
