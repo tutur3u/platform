@@ -5532,7 +5532,6 @@
       "errors": {
         "convert_to_project": "Failed to convert to project",
         "convert_to_task": "Failed to convert to task",
-        "create_initiative": "Failed to create initiative",
         "create_note": "Failed to create note",
         "create_project": "Failed to create project",
         "delete_initiative": "Failed to delete initiative",
@@ -5573,7 +5572,6 @@
       "success": {
         "converted_to_project": "Note converted to project successfully",
         "converted_to_task": "Note converted to task successfully",
-        "initiative_created": "Initiative created successfully",
         "initiative_deleted": "Initiative deleted successfully",
         "initiative_updated": "Initiative updated successfully",
         "note_created": "Note added successfully",
@@ -13567,8 +13565,6 @@
       "force_default_workspace_redirect_description": "When enabled, visiting the tasks app will redirect to your default workspace instead of your personal workspace",
       "general": "General",
       "general_description": "Task creation and management preferences",
-      "initiatives": "Initiatives",
-      "initiatives_description": "Create and manage strategic task initiatives",
       "labels": "Labels",
       "labels_description": "Create and manage task labels",
       "navigation_goals": "Show Goals in task navigation",

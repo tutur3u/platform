@@ -6,7 +6,6 @@ import {
   getWorkspaceTaskBoard,
   listWorkspaceLabels,
   listWorkspaceTaskBoards,
-  listWorkspaceTaskInitiatives,
   listWorkspaceTaskProjectDetails,
   updateWorkspaceTaskBoard,
   type WorkspaceTaskBoardDetail,
@@ -17,7 +16,6 @@ import { CapacityRulesSettings } from '@tuturuuu/tasks-ui/tu-do/boards/capacity-
 import { DraftsPage } from '@tuturuuu/tasks-ui/tu-do/drafts/drafts-page';
 import TaskEstimatesClient from '@tuturuuu/tasks-ui/tu-do/estimates/client';
 import HabitsClientPage from '@tuturuuu/tasks-ui/tu-do/habits/client';
-import { TaskInitiativesClient } from '@tuturuuu/tasks-ui/tu-do/initiatives/task-initiatives-client';
 import TaskLabelsClient from '@tuturuuu/tasks-ui/tu-do/labels/client';
 import type { TaskLabel } from '@tuturuuu/tasks-ui/tu-do/labels/types';
 import LogsClient from '@tuturuuu/tasks-ui/tu-do/logs/logs-client';
@@ -468,19 +466,6 @@ export function TaskProjectsSettings({
       wsId={wsId}
     />
   );
-}
-
-export function TaskInitiativesSettings({ wsId }: { wsId: string }) {
-  const { data: initiatives = [], isLoading } = useQuery({
-    queryKey: ['task-initiatives-settings', wsId],
-    queryFn: () =>
-      listWorkspaceTaskInitiatives(wsId, getBrowserInternalApiOptions()),
-    enabled: !!wsId,
-  });
-
-  if (isLoading) return <LoadingPanel />;
-
-  return <TaskInitiativesClient initialInitiatives={initiatives} wsId={wsId} />;
 }
 
 export function TaskTemplatesSettings({ wsId }: { wsId: string }) {

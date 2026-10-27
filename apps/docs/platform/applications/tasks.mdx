@@ -295,52 +295,23 @@ const { data: workspace } = await supabase
 
 ### 2. Task Initiatives
 
-Strategic initiatives grouping related projects.
+Initiatives retirement, step 1, applies to the Tasks app. Initiatives are hidden
+from navigation, settings and settings search by default. New/Create Initiative
+controls are removed, including on bookmarked pages. Old `task_initiatives`
+settings links open general Tasks settings instead.
 
-```sql
-CREATE TABLE task_initiatives (
-  id text PRIMARY KEY,
-  ws_id text REFERENCES workspaces(id) ON DELETE CASCADE,
-  name text NOT NULL,
-  description text,
-  start_date date,
-  end_date date,
-  created_at timestamptz DEFAULT now()
-);
-```
+Existing `/{wsId}/initiatives` and `/{wsId}/tasks/initiatives` links remain
+readable under the existing workspace and `manage_projects` checks, including
+linked project names. Editing existing initiatives and project associations
+remains available. No initiative data, tables, relationships or APIs are deleted
+or migrated. The create API is intentionally unchanged in this UI retirement
+step; API/data removal belongs to step 2 and requires explicit approval.
 
-**Usage:**
+Regression coverage:
 
-```typescript
-"use server";
-
-import { createClient } from "@tuturuuu/supabase/next/server";
-
-export async function createInitiative(data: {
-  wsId: string;
-  name: string;
-  description?: string;
-  startDate?: Date;
-  endDate?: Date;
-}) {
-  const supabase = await createClient();
-
-  const { data: initiative, error } = await supabase
-    .from("task_initiatives")
-    .insert({
-      ws_id: data.wsId,
-      name: data.name,
-      description: data.description,
-      start_date: data.startDate?.toISOString().split("T")[0],
-      end_date: data.endDate?.toISOString().split("T")[0],
-    })
-    .select()
-    .single();
-
-  if (error) throw error;
-  return initiative;
-}
-```
+- [Navigation and settings](https://github.com/tutur3u/platform/blob/main/apps/tasks/src/__tests__/initiatives-retirement.test.tsx)
+- [Existing initiative rendering and absent create controls](https://github.com/tutur3u/platform/blob/main/packages/tasks-ui/src/tu-do/initiatives/task-initiatives-client.test.tsx)
+- [Compatibility page access and linked projects](https://github.com/tutur3u/platform/blob/main/packages/tasks-ui/src/tu-do/initiatives/task-initiatives-page.test.tsx)
 
 ### 3. Task Projects
 

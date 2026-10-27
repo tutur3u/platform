@@ -24,6 +24,13 @@ export default defineConfig({
           '../../packages/internal-api/src/index.ts'
         ),
       },
+      {
+        find: '@tuturuuu/internal-api/workspaces',
+        replacement: resolve(
+          __dirname,
+          '../../packages/internal-api/src/workspaces.ts'
+        ),
+      },
       { find: '@', replacement: resolve(__dirname, './src') },
       {
         find: 'server-only',
