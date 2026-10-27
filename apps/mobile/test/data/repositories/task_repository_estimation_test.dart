@@ -22,7 +22,7 @@ void main() {
               'id': 'board-1',
               'name': 'Product',
               'created_at': '2026-09-29T00:00:00Z',
-              'estimation_type': 'points',
+              'estimation_type': 'fibonacci',
               'extended_estimation': false,
             },
           ],
@@ -38,7 +38,7 @@ void main() {
           userId: 'user-1',
           workspaceId: 'ws-1',
           payload: const {
-            'estimation_type': 't_shirt',
+            'estimation_type': 't-shirt',
             'extended_estimation': true,
             'allow_zero_estimates': false,
             'count_unestimated_issues': true,
@@ -49,11 +49,11 @@ void main() {
 
       final board = (await repository.getTaskEstimateBoards('ws-1')).single;
       expect(board.name, 'Product');
-      expect(board.estimationType, 't_shirt');
+      expect(board.estimationType, 't-shirt');
       expect(board.extendedEstimation, isTrue);
       expect(
         (await repository.getTaskEstimateBoards('ws-2')).single.estimationType,
-        'points',
+        'fibonacci',
       );
       OfflineMutationQueue.instance.pending.value = [];
     },
