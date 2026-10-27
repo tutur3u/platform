@@ -17378,11 +17378,11 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: 'topic_announcement_teacher_notices_announcement_id_fkey';
-            columns: ['announcement_id'];
+            foreignKeyName: 'topic_announcement_teacher_notices_announcement_scope';
+            columns: ['announcement_id', 'ws_id'];
             isOneToOne: false;
             referencedRelation: 'topic_announcements';
-            referencedColumns: ['id'];
+            referencedColumns: ['id', 'ws_id'];
           },
           {
             foreignKeyName: 'topic_announcement_teacher_notices_recipient_user_id_fkey';

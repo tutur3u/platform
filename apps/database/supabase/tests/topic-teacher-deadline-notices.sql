@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, private, extensions;
 
-select plan(30);
+select plan(32);
 
 insert into auth.users (id, aud, role, email, email_confirmed_at, created_at, updated_at)
 values (
@@ -21,6 +21,10 @@ on conflict (user_id) do update set email = excluded.email;
 
 insert into public.workspaces (id, name, personal, creator_id) values (
   '7a5d0000-0000-4000-8000-000000000011', 'Deadline notices', false,
+  '7a5d0000-0000-4000-8000-000000000001'
+);
+insert into public.workspaces (id, name, personal, creator_id) values (
+  '7a5d0000-0000-4000-8000-000000000012', 'Other workspace', false,
   '7a5d0000-0000-4000-8000-000000000001'
 );
 insert into public.workspace_members (ws_id, user_id) values (
@@ -43,6 +47,10 @@ select col_is_pk('private', 'topic_announcement_teacher_notices',
   'one receipt per announcement, kind and send_due_at');
 select col_type_is('private', 'topic_announcement_teacher_notices',
   'send_due_at', 'timestamp with time zone', 'send_due_at is timestamptz');
+select fk_ok('private', 'topic_announcement_teacher_notices',
+  array['announcement_id', 'ws_id'],
+  'private', 'topic_announcements', array['id', 'ws_id'],
+  'a receipt is scoped to its announcement''s workspace');
 select ok(
   (select relrowsecurity from pg_class
     where oid = 'private.topic_announcement_teacher_notices'::regclass),
@@ -213,6 +221,13 @@ select lives_ok(
       '7a5d0000-0000-4000-8000-000000000011', 'due_soon',
       '2026-11-09 10:30:00+00', '7a5d0000-0000-4000-8000-000000000001')$$,
   'the due-soon notice is independent of the late one');
+select throws_ok(
+  $$insert into private.topic_announcement_teacher_notices
+      (announcement_id, ws_id, kind, send_due_at, recipient_user_id)
+    values ('7a5d0000-0000-4000-8000-000000000031',
+      '7a5d0000-0000-4000-8000-000000000012', 'late',
+      '2026-11-23 10:30:00+00', '7a5d0000-0000-4000-8000-000000000001')$$,
+  '23503', null, 'a receipt cannot name another workspace than its announcement');
 select throws_ok(
   $$insert into private.topic_announcement_teacher_notices
       (announcement_id, ws_id, kind, send_due_at, recipient_user_id)

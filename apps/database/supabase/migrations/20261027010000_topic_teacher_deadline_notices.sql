@@ -141,8 +141,7 @@ grant execute on function public.should_send_notification(uuid, text, text, publ
   to service_role;
 
 create table private.topic_announcement_teacher_notices (
-  announcement_id uuid not null
-    references private.topic_announcements(id) on update cascade on delete cascade,
+  announcement_id uuid not null,
   ws_id uuid not null
     references public.workspaces(id) on update cascade on delete cascade,
   kind text not null,
@@ -159,6 +158,12 @@ create table private.topic_announcement_teacher_notices (
   last_error text,
   constraint topic_announcement_teacher_notices_pkey
     primary key (announcement_id, kind, send_due_at),
+  -- A receipt belongs to its announcement's workspace (same scope pattern as
+  -- topic_announcement_delivery_attempts, via topic_announcements_delivery_scope_unique).
+  constraint topic_announcement_teacher_notices_announcement_scope
+    foreign key (announcement_id, ws_id)
+    references private.topic_announcements(id, ws_id)
+    on update cascade on delete cascade,
   constraint topic_announcement_teacher_notices_kind_check
     check (kind in ('due_soon', 'late')),
   constraint topic_announcement_teacher_notices_attempts_check

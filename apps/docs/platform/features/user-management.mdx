@@ -597,7 +597,8 @@ deadline notices; no sender is wired yet, so nothing changes for users.
   `insert ... on conflict do nothing` before notifying. A rerun, restart or
   overlapping run never notifies twice, deleting the notification keeps the
   receipt, and a new `send_due_at` (the session moved) re-arms both notices.
-  Receipts are service-role only and cascade with the announcement.
+  Receipts are service-role only, belong to their announcement's workspace
+  (composite foreign key on announcement and workspace) and cascade with it.
 - **Rollback.** `apps/database/rollbacks/20261027010000_topic_teacher_deadline_notices.rollback.sql`,
   proved by `apps/database/verification/topic-teacher-deadline-notices-rollback-roundtrip.sql`.
 
