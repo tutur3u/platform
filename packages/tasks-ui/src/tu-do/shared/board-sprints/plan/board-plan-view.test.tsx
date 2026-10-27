@@ -254,6 +254,37 @@ describe('BoardPlanView', () => {
     );
   });
 
+  it('keeps a successful assignment when another one fails', async () => {
+    let failFirst: (error: Error) => void = () => undefined;
+    api.listBoardTasksForSearch.mockResolvedValue([task('t1'), task('t5')]);
+    api.update.mockImplementation((_ws: string, id: string) =>
+      id === 't1'
+        ? new Promise((_resolve, reject) => {
+            failFirst = reject;
+          })
+        : Promise.resolve({})
+    );
+    renderPlan({ sprints: [sprint(15, 'planned', ['t1', 't5'])] });
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'assign:Task t1' })
+    );
+    fireEvent.click(screen.getAllByRole('menuitem', { name: /Binh/ })[0]!);
+    fireEvent.click(screen.getByRole('button', { name: 'assign:Task t5' }));
+    fireEvent.click(screen.getAllByRole('menuitem', { name: /Ana/ }).at(-1)!);
+    await waitFor(() => expect(api.update).toHaveBeenCalledTimes(2));
+
+    failFirst(new Error('network'));
+
+    const backlog = screen.getByRole('region', { name: 'backlog' });
+    await waitFor(() =>
+      expect(within(backlog).getByText('Task t1')).toBeInTheDocument()
+    );
+    expect(
+      within(screen.getByRole('region', { name: 'Ana' })).getByText('Task t5')
+    ).toBeInTheDocument();
+  });
+
   it('unassigns a task dropped back on the backlog', async () => {
     renderPlan({ sprints: [planned] });
     const row = (await screen.findByText('Task t2')).closest('[draggable]')!;
