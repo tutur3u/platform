@@ -162,7 +162,13 @@ extension _TaskRowActions on _TaskBoardDetailPageViewState {
     }
   }
 
-  Future<void> _scheduleTask(BuildContext context, TaskBoardTask task) async {
+  /// [announce] false skips the success toast, for surfaces that already
+  /// show the saved value, such as the quick sheet.
+  Future<void> _scheduleTask(
+    BuildContext context,
+    TaskBoardTask task, {
+    bool announce = true,
+  }) async {
     final now = DateTime.now();
     final current = task.endDate?.toLocal();
     final picked = await showAppDatePicker(
@@ -179,7 +185,9 @@ extension _TaskRowActions on _TaskBoardDetailPageViewState {
     await _runTaskRowUpdate(
       context,
       task,
-      successMessage: context.l10n.taskBoardDetailDueDateUpdated,
+      successMessage: announce
+          ? context.l10n.taskBoardDetailDueDateUpdated
+          : null,
       endDate: endDate,
     );
   }
@@ -212,8 +220,9 @@ extension _TaskRowActions on _TaskBoardDetailPageViewState {
   Future<void> _changeTaskPriority(
     BuildContext context,
     TaskBoardTask task,
-    String priority,
-  ) async {
+    String priority, {
+    bool announce = true,
+  }) async {
     final normalizedPriority = _normalizeTaskPriority(
       priority,
       _taskQuickActionPriorityOptions,
@@ -222,19 +231,24 @@ extension _TaskRowActions on _TaskBoardDetailPageViewState {
     await _runTaskRowUpdate(
       context,
       task,
-      successMessage: context.l10n.taskBoardDetailPriorityUpdated,
+      successMessage: announce
+          ? context.l10n.taskBoardDetailPriorityUpdated
+          : null,
       priority: normalizedPriority,
     );
   }
 
   /// Saves one field change through [TaskBoardDetailCubit.updateTask],
-  /// carrying every other editable field over unchanged.
+  /// carrying every other editable field over unchanged. A null
+  /// [successMessage] saves quietly; failures always show a toast.
   Future<void> _runTaskRowUpdate(
     BuildContext context,
     TaskBoardTask task, {
-    required String successMessage,
+    required String? successMessage,
     String? priority,
     DateTime? endDate,
+    bool clearEndDate = false,
+    List<String>? labelIds,
     List<String>? assigneeIds,
   }) async {
     final cubit = context.read<TaskBoardDetailCubit>();
@@ -251,14 +265,17 @@ extension _TaskRowActions on _TaskBoardDetailPageViewState {
             : context.l10n.taskBoardDetailUntitledTask,
         priority: priority ?? task.priority,
         startDate: task.startDate,
-        endDate: endDate ?? task.endDate,
+        endDate: clearEndDate ? null : endDate ?? task.endDate,
+        clearEndDate: clearEndDate,
         estimationPoints: task.estimationPoints,
-        labelIds: task.labelIds,
+        labelIds: labelIds ?? task.labelIds,
         projectIds: task.projectIds,
         assigneeIds: assigneeIds ?? task.assigneeIds,
       );
       if (!toastContext.mounted) return;
-      showAppToast(toastContext, message: successMessage);
+      if (successMessage != null) {
+        showAppToast(toastContext, message: successMessage);
+      }
     } on ApiException catch (error) {
       if (!toastContext.mounted) return;
       showAppToast(

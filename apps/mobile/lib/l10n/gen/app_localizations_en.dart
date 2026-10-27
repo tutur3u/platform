@@ -9140,9 +9140,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardDetailProperties => 'Properties';
 
   @override
-  String get taskBoardDetailQuickActions => 'Quick actions';
-
-  @override
   String get taskBoardDetailRecycleBin => 'Recycle Bin';
 
   @override
@@ -10144,6 +10141,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get taskPortfolioUpdateSaved => 'Update saved.';
+
+  @override
+  String get taskQuickActionsDueDate => 'Due date';
+
+  @override
+  String get taskQuickActionsNoDueDate => 'No due date';
+
+  @override
+  String get taskQuickActionsNoLabels => 'No labels';
+
+  @override
+  String get taskQuickActionsStatus => 'Status';
+
+  @override
+  String get taskQuickActionsUnassigned => 'Unassigned';
 
   @override
   String get tasksAllCaughtUp => 'You\'re all caught up!';

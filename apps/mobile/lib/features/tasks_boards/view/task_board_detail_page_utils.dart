@@ -360,15 +360,6 @@ StatusBadgeColors _taskBoardListStatusBadgeColors(
   };
 }
 
-String _taskPriorityLabel(BuildContext context, String? priority) {
-  return switch (priority) {
-    'critical' => context.l10n.tasksPriorityCritical,
-    'high' => context.l10n.tasksPriorityHigh,
-    'low' => context.l10n.tasksPriorityLow,
-    _ => context.l10n.tasksPriorityNormal,
-  };
-}
-
 class _TaskPriorityStyle {
   const _TaskPriorityStyle({
     required this.label,
@@ -478,47 +469,20 @@ List<_TaskRelationshipIndicator> _taskRelationshipIndicators(
   ];
 }
 
+/// Web-parity priority visuals; see [TaskPriorityLevel]. Unknown or missing
+/// priorities render as normal.
 _TaskPriorityStyle _taskPriorityStyle(BuildContext context, String? priority) {
-  final normalized = (priority ?? 'normal').trim().toLowerCase();
-  final label = _taskPriorityLabel(context, normalized);
-  final palette = context.dynamicColors;
-  final accent = switch (normalized) {
-    'critical' => palette.red,
-    'high' => palette.orange,
-    'low' => palette.gray,
-    _ => palette.blue,
-  };
-
-  return switch (normalized) {
-    'critical' => _TaskPriorityStyle(
-      label: label,
-      icon: Icons.priority_high_rounded,
-      foreground: accent,
-      background: accent.withValues(alpha: 0.12),
-      border: accent.withValues(alpha: 0.34),
-    ),
-    'high' => _TaskPriorityStyle(
-      label: label,
-      icon: Icons.keyboard_double_arrow_up_rounded,
-      foreground: accent,
-      background: accent.withValues(alpha: 0.12),
-      border: accent.withValues(alpha: 0.32),
-    ),
-    'low' => _TaskPriorityStyle(
-      label: label,
-      icon: Icons.keyboard_double_arrow_down_rounded,
-      foreground: accent,
-      background: accent.withValues(alpha: 0.1),
-      border: accent.withValues(alpha: 0.26),
-    ),
-    _ => _TaskPriorityStyle(
-      label: label,
-      icon: Icons.remove_rounded,
-      foreground: accent,
-      background: accent.withValues(alpha: 0.1),
-      border: accent.withValues(alpha: 0.28),
-    ),
-  };
+  final level =
+      TaskPriorityLevel.tryParse(priority) ?? TaskPriorityLevel.normal;
+  final accent = level.color(context.dynamicColors);
+  final emphasis = level == TaskPriorityLevel.critical;
+  return _TaskPriorityStyle(
+    label: level.label(context.l10n),
+    icon: level.icon,
+    foreground: accent,
+    background: accent.withValues(alpha: emphasis ? 0.18 : 0.1),
+    border: accent.withValues(alpha: emphasis ? 0.5 : 0.3),
+  );
 }
 
 ParsedTipTapDescription? _taskDescriptionParsed(String? rawDescription) {

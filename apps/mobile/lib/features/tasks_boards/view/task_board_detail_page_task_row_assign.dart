@@ -16,8 +16,9 @@ extension _TaskRowAssign on _TaskBoardDetailPageViewState {
   Future<void> _pickTaskAssignees(
     BuildContext context,
     TaskBoardTask task,
-    TaskBoardDetail board,
-  ) async {
+    TaskBoardDetail board, {
+    bool announce = true,
+  }) async {
     final current = task.assigneeIds.toSet();
     final selected = await showAdaptiveSheet<Set<String>>(
       context: context,
@@ -43,7 +44,7 @@ extension _TaskRowAssign on _TaskBoardDetailPageViewState {
     await _runTaskRowUpdate(
       context,
       task,
-      successMessage: context.l10n.taskBoardDetailTaskSaved,
+      successMessage: announce ? context.l10n.taskBoardDetailTaskSaved : null,
       assigneeIds: selected.toList(growable: false),
     );
   }

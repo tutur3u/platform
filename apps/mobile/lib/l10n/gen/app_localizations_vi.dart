@@ -9034,9 +9034,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailProperties => 'Thuộc tính';
 
   @override
-  String get taskBoardDetailQuickActions => 'Thao tác nhanh';
-
-  @override
   String get taskBoardDetailRecycleBin => 'Thùng rác';
 
   @override
@@ -10040,6 +10037,21 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskPortfolioUpdateSaved => 'Đã lưu cập nhật.';
 
   @override
+  String get taskQuickActionsDueDate => 'Hạn chót';
+
+  @override
+  String get taskQuickActionsNoDueDate => 'Chưa đặt hạn';
+
+  @override
+  String get taskQuickActionsNoLabels => 'Chưa có nhãn';
+
+  @override
+  String get taskQuickActionsStatus => 'Trạng thái';
+
+  @override
+  String get taskQuickActionsUnassigned => 'Chưa giao cho ai';
+
+  @override
   String get tasksAllCaughtUp => 'Đã hoàn thành tất cả!';
 
   @override
@@ -10087,7 +10099,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get tasksPlanAhead => 'Lên kế hoạch sớm';
 
   @override
-  String get tasksPriorityCritical => 'Nghiêm trọng';
+  String get tasksPriorityCritical => 'Khẩn cấp';
 
   @override
   String get tasksPriorityHigh => 'Cao';

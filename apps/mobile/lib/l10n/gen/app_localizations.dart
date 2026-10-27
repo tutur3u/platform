@@ -17371,12 +17371,6 @@ abstract class AppLocalizations {
   /// **'Properties'**
   String get taskBoardDetailProperties;
 
-  /// No description provided for @taskBoardDetailQuickActions.
-  ///
-  /// In en, this message translates to:
-  /// **'Quick actions'**
-  String get taskBoardDetailQuickActions;
-
   /// No description provided for @taskBoardDetailRecycleBin.
   ///
   /// In en, this message translates to:
@@ -19302,6 +19296,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Update saved.'**
   String get taskPortfolioUpdateSaved;
+
+  /// No description provided for @taskQuickActionsDueDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Due date'**
+  String get taskQuickActionsDueDate;
+
+  /// No description provided for @taskQuickActionsNoDueDate.
+  ///
+  /// In en, this message translates to:
+  /// **'No due date'**
+  String get taskQuickActionsNoDueDate;
+
+  /// No description provided for @taskQuickActionsNoLabels.
+  ///
+  /// In en, this message translates to:
+  /// **'No labels'**
+  String get taskQuickActionsNoLabels;
+
+  /// No description provided for @taskQuickActionsStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get taskQuickActionsStatus;
+
+  /// No description provided for @taskQuickActionsUnassigned.
+  ///
+  /// In en, this message translates to:
+  /// **'Unassigned'**
+  String get taskQuickActionsUnassigned;
 
   /// No description provided for @tasksAllCaughtUp.
   ///

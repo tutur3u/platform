@@ -1963,7 +1963,8 @@ gestures. The same behavior applies on Android and iOS.
   **Select task** enters bulk selection. Earlier, a long press entered bulk
   selection directly. In bulk selection, swipes are off and a long press
   toggles the row, as before.
-- Tapping a row still opens its quick actions. Every swipe action is also
+- Tapping a row opens the [quick actions sheet](#task-quick-actions-sheet).
+  Every swipe action is also
   exposed as a screen-reader action.
 
 Kanban cards keep their earlier long-press selection behavior; this decision
@@ -1974,6 +1975,39 @@ toasts, the Schedule picker, Start focus), `task_board_bulk_selection_test.dart`
 and `app_swipe_actions_test.dart` (thresholds, the fling minimum, reveal,
 right-to-left, semantics, enlarged text). Widget tests do
 not establish gesture feel on devices.
+
+### Task quick actions sheet
+
+Tapping a task on a board (List, Kanban or Timeline) opens the quick actions
+sheet. It replaces the earlier button grid; the long-press menu is unchanged.
+
+- **Status**: one large tile per status that has a list on the board (Not
+  started, Active, Review, Done, Closed; Documents lists are not a target).
+  The current status is selected. Another status moves the task to that
+  status's list, asking which list when there are several, and closes the
+  sheet.
+- **Priority**: Critical, High, Normal and Low with the web's icons and
+  colours: unicorn head (red), horse head (orange), rabbit (yellow) and
+  turtle (blue), from Lucide and Lucide Lab. The same icons mark priority
+  everywhere on the mobile board. The Vietnamese Critical label matches the
+  web (Khẩn cấp).
+- **Fields**: Assignees (team workspaces with members), Due date (with a clear
+  button), Labels (boards with labels) and Move task. Each row shows its
+  current value and opens its picker.
+- **Open full details** closes the sheet and opens the task.
+- Priority and field edits keep the sheet open and update it in place, so
+  several can be made in a row. They save without a success toast because the
+  sheet shows the saved value; failures still roll back and show the error.
+  While one edit saves, the sheet disables its controls and ignores taps,
+  because the board runs one mutation at a time.
+- No count chips: assignee and label names replace overflow counts.
+
+Regression coverage: `task_priority_visuals_test.dart` (web order, icons,
+colours, English and Vietnamese labels), `task_board_quick_actions_test.dart`
+(icons and order, selected semantics, statuses offered, dropped concurrent
+edit, status move, due-date clear, 320dp at 2x text, light/dark/blob renders)
+and `task_board_quick_actions_edits_test.dart` (consecutive edits save from
+the live task). Widget tests do not establish touch feel on devices.
 
 ### Root tabs and dock search
 
