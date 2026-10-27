@@ -408,9 +408,7 @@ export async function POST(
       projects?: Array<{
         ticket_number?: number;
         created_at?: string;
-        task_projects?: TaskMoveRow['projects'] extends Array<infer U>
-          ? U
-          : never;
+        task_projects?: NonNullable<TaskMoveRow['projects']>[number];
       }>;
     } & Omit<TaskMoveRow, 'assignees' | 'labels' | 'projects'>;
 

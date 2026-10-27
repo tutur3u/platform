@@ -708,7 +708,7 @@ export function TaskEditDialog({
     [currentList?.status, draftId, mode, panelSurface, presentationPreferences]
   );
 
-  useTaskDocumentTitle(isOpen && !isCreateMode ? task : null);
+  useTaskDocumentTitle(isOpen && !isCreateMode ? (task ?? null) : null);
 
   // Labels state
   const [availableLabels, setAvailableLabels] = useState<WorkspaceTaskLabel[]>(
