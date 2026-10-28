@@ -73,6 +73,7 @@ export function setUpPushEventsFixture() {
   vi.stubEnv('MASTERMIND_PUSH_HMAC_SECRET_NEXT', '');
   vi.stubEnv('MASTERMIND_PUSH_OWNER_IDS', `${OWNER}, ${SECOND_OWNER}`);
   vi.stubEnv('MASTERMIND_PUSH_LOCALE', '');
+  vi.stubEnv('MASTERMIND_REQUIRE_EXPLICIT_GRANT', '');
 
   store.clear();
   redis.set.mockImplementation(

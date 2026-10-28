@@ -2,6 +2,7 @@ import 'server-only';
 
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import type { UpstashRestRedisClient } from '@tuturuuu/utils/upstash-rest';
+import { mastermindRequiresExplicitGrant } from '@/lib/mastermind/access';
 import {
   type CustomPushMessageInput,
   sendCustomPushMessageBatch,
@@ -127,9 +128,9 @@ async function allowsPush(admin: MastermindPushAdminClient, userId: string) {
 }
 
 /**
- * The env allowlist names who may receive pushes; the owner must also hold
- * manage_mastermind in the root workspace (an explicit, audited grant). An
- * unreadable answer denies.
+ * The env allowlist names who may receive pushes; once the explicit-grant
+ * rollout flag is on, the owner must also hold manage_mastermind in the root
+ * workspace (an explicit, audited grant). An unreadable answer denies.
  */
 async function holdsMastermindPermission(
   admin: MastermindPushAdminClient,
@@ -203,7 +204,10 @@ export async function deliverMastermindPushEvent({
       const userDevices = tokensByUser.get(userId);
       if (
         !userDevices?.length ||
-        !(await deadline.run(() => holdsMastermindPermission(admin, userId))) ||
+        (mastermindRequiresExplicitGrant() &&
+          !(await deadline.run(() =>
+            holdsMastermindPermission(admin, userId)
+          ))) ||
         !(await deadline.run(() => allowsPush(admin, userId)))
       ) {
         result.skipped += 1;

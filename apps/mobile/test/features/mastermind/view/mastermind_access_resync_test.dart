@@ -4,7 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
-import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/apps/view/apps_hub_page.dart';
 import 'package:mobile/features/mastermind/access/mastermind_access_cubit.dart';
@@ -27,14 +26,7 @@ void main() {
   // The access check is the only thing that can hide the entry for good, so a
   // failed check has to heal without waiting for a workspace change.
   void grantAccess(MastermindViewHarness harness) =>
-      when(
-        () => harness.permissions.getPermissions(wsId: rootWorkspaceId),
-      ).thenAnswer(
-        (_) async => const WorkspacePermissions(
-          permissions: {manageMastermindPermission},
-          isCreator: false,
-        ),
-      );
+      when(harness.accessRepository.isEnabled).thenAnswer((_) async => true);
 
   group('access error recovery', () {
     testWidgets('app resume retries a failed access check', (tester) async {
@@ -61,9 +53,7 @@ void main() {
       await harness.runtime.retryAccessAfterError(rootWorkspaceId);
 
       expect(seen, isEmpty);
-      verify(
-        () => harness.permissions.getPermissions(wsId: rootWorkspaceId),
-      ).called(1);
+      verify(harness.accessRepository.isEnabled).called(1);
     });
 
     testWidgets('a quiet sync keeps the entry visible while it checks', (
@@ -83,9 +73,7 @@ void main() {
       expect(harness.access.state.visible, isTrue);
 
       // A failed quiet check does not take away what was already known.
-      when(
-        () => harness.permissions.getPermissions(wsId: rootWorkspaceId),
-      ).thenThrow(Exception('offline'));
+      when(harness.accessRepository.isEnabled).thenThrow(Exception('offline'));
       await harness.access.sync(rootWorkspaceId, quiet: true);
       expect(harness.access.state.status, MastermindAccessStatus.loaded);
       expect(harness.access.state.visible, isTrue);

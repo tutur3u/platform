@@ -4,8 +4,8 @@ import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/features/mastermind/access/mastermind_access_cubit.dart';
+import 'package:mobile/features/mastermind/access/mastermind_access_repository.dart';
 import 'package:mobile/features/mastermind/cubit/mastermind_refresh_scheduler.dart';
 import 'package:mobile/features/mastermind/cubit/mastermind_snapshot_cubit.dart';
 import 'package:mobile/features/mastermind/data/mastermind_snapshot_source.dart';
@@ -24,7 +24,7 @@ const testDigest =
 /// Two minutes after the synthetic snapshot's `generated_at`.
 final testNow = DateTime.utc(2026, 1, 31, 17, 32);
 
-class _Permissions extends Mock implements WorkspacePermissionsRepository {}
+class _Access extends Mock implements MastermindAccessRepository {}
 
 Uint8List snapshotBytes(Map<String, dynamic> json) =>
     Uint8List.fromList(utf8.encode(jsonEncode(json)));
@@ -87,7 +87,7 @@ final class MastermindViewHarness {
     Stream<bool>? onlineChanges,
   }) : source = source ?? FakeHubSource() {
     access = MastermindAccessCubit(
-      repository: permissions,
+      repository: accessRepository,
       source: this.source,
     );
     snapshot = MastermindSnapshotCubit(
@@ -110,7 +110,7 @@ final class MastermindViewHarness {
   }
 
   final FakeHubSource source;
-  final permissions = _Permissions();
+  final accessRepository = _Access();
   final store = MemorySnapshotStore();
   late final MastermindAccessCubit access;
   late final MastermindSnapshotCubit snapshot;
@@ -119,24 +119,18 @@ final class MastermindViewHarness {
 
   /// Drives the real access cubit into one of its observable states.
   Future<void> setAccess(TestAccess mode) async {
-    When<Future<WorkspacePermissions>> stub() =>
-        when(() => permissions.getPermissions(wsId: rootWorkspaceId));
+    When<Future<bool>> stub() => when(accessRepository.isEnabled);
     switch (mode) {
       case TestAccess.enabled:
-        stub().thenAnswer(
-          (_) async => const WorkspacePermissions(
-            permissions: {manageMastermindPermission},
-            isCreator: false,
-          ),
-        );
+        stub().thenAnswer((_) async => true);
         await access.sync(rootWorkspaceId);
       case TestAccess.disabled:
         await access.sync('other-workspace');
       case TestAccess.loading:
-        stub().thenAnswer((_) => Completer<WorkspacePermissions>().future);
+        stub().thenAnswer((_) => Completer<bool>().future);
         unawaited(access.sync(rootWorkspaceId));
       case TestAccess.error:
-        stub().thenThrow(Exception('permissions unavailable'));
+        stub().thenThrow(Exception('access unavailable'));
         await access.sync(rootWorkspaceId);
     }
   }

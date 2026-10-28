@@ -68,8 +68,9 @@ the cap whatever `Content-Length` says, including chunked bodies without one.
 
 - **Recipients:** user ids in `MASTERMIND_PUSH_OWNER_IDS` (comma or whitespace
   separated UUIDs, at most 50) that have rows in `notification_push_devices`
-  and hold `manage_mastermind` in the root workspace
-  (`has_workspace_permission`; an error or false skips the owner). The env
+  and, once `MASTERMIND_REQUIRE_EXPLICIT_GRANT=true`, hold `manage_mastermind`
+  in the root workspace (`has_workspace_permission`; an error or false skips
+  the owner; see [rollout](/platform/features/mobile-mastermind#rollout)). The env
   allowlist stays as defence in depth; see the
   [access rule](/platform/features/mobile-mastermind#access-rule). Anyone else
   is never queried or sent to.

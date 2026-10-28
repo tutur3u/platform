@@ -1,5 +1,5 @@
 import 'package:bloc/bloc.dart';
-import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
+import 'package:mobile/features/mastermind/access/mastermind_access_repository.dart';
 import 'package:mobile/features/mastermind/access/mastermind_access_state.dart';
 import 'package:mobile/features/mastermind/data/mastermind_snapshot_source.dart';
 import 'package:mobile/features/workspace/workspace_presentation.dart';
@@ -9,11 +9,11 @@ export 'mastermind_access_state.dart';
 /// Cosmetic discovery gate. This does not grant server authorization.
 ///
 /// Mastermind shows in the root workspace and in the user's personal
-/// workspace, and only when the user holds `manage_mastermind` in root (an
-/// explicit grant; creator and admin access never imply it).
+/// workspace, and only when Web's access answer allows it. Web applies the
+/// current rollout rule, so this build never picks the rule itself.
 final class MastermindAccessCubit extends Cubit<MastermindAccessState> {
   MastermindAccessCubit({
-    required WorkspacePermissionsRepository repository,
+    required MastermindAccessRepository repository,
     required MastermindSnapshotSource source,
     bool Function(String wsId)? isPersonalWorkspace,
   }) : _repository = repository,
@@ -21,7 +21,7 @@ final class MastermindAccessCubit extends Cubit<MastermindAccessState> {
        _isPersonalWorkspace = isPersonalWorkspace ?? _never,
        super(const MastermindAccessState());
 
-  final WorkspacePermissionsRepository _repository;
+  final MastermindAccessRepository _repository;
   final MastermindSnapshotSource _source;
   final bool Function(String wsId) _isPersonalWorkspace;
 
@@ -57,17 +57,13 @@ final class MastermindAccessCubit extends Cubit<MastermindAccessState> {
       );
     }
     try {
-      final permissions = await _repository.getPermissions(
-        wsId: rootWorkspaceId,
-      );
+      final enabled = await _repository.isEnabled();
       if (isClosed || generation != _generation) return;
       emit(
         MastermindAccessState(
           status: MastermindAccessStatus.loaded,
           wsId: wsId,
-          enabled:
-              permissions.containsPermission(manageMastermindPermission) &&
-              _source.isConfigured,
+          enabled: enabled && _source.isConfigured,
         ),
       );
     } on Object {

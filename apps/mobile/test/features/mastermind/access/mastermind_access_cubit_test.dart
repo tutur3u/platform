@@ -4,36 +4,41 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/features/mastermind/access/mastermind_access_cubit.dart';
+import 'package:mobile/features/mastermind/access/mastermind_access_repository.dart';
 import 'package:mobile/features/mastermind/data/mastermind_snapshot_source.dart';
 import 'package:mobile/features/workspace/workspace_presentation.dart';
 import 'package:mocktail/mocktail.dart';
 
-class _Permissions extends Mock implements WorkspacePermissionsRepository {}
+class _Access extends Mock implements MastermindAccessRepository {}
 
 class _Source extends Mock implements MastermindSnapshotSource {}
 
+MastermindAccessCubit _cubit({
+  required _Access repository,
+  bool configured = true,
+  bool Function(String wsId)? isPersonalWorkspace,
+}) {
+  final source = _Source();
+  when(() => source.isConfigured).thenReturn(configured);
+  return MastermindAccessCubit(
+    repository: repository,
+    source: source,
+    isPersonalWorkspace: isPersonalWorkspace,
+  );
+}
+
 void main() {
+  // Product rule: apps/docs/platform/features/mobile-mastermind.mdx#rollout
+  // The entry follows Web's answer; this build never picks the rule.
   for (final root in [false, true]) {
-    for (final permission in [false, true]) {
+    for (final allowed in [false, true]) {
       for (final configured in [false, true]) {
         blocTest<MastermindAccessCubit, MastermindAccessState>(
-          'root=$root permission=$permission configured=$configured',
+          'root=$root server=$allowed configured=$configured',
           build: () {
-            final repository = _Permissions();
-            final source = _Source();
-            when(() => source.isConfigured).thenReturn(configured);
-            when(
-              () => repository.getPermissions(wsId: rootWorkspaceId),
-            ).thenAnswer(
-              (_) async => WorkspacePermissions(
-                permissions: {if (permission) manageMastermindPermission},
-                isCreator: false,
-              ),
-            );
-            return MastermindAccessCubit(
-              repository: repository,
-              source: source,
-            );
+            final repository = _Access();
+            when(repository.isEnabled).thenAnswer((_) async => allowed);
+            return _cubit(repository: repository, configured: configured);
           },
           act: (cubit) => cubit.sync(root ? rootWorkspaceId : 'other'),
           expect: () => [
@@ -54,105 +59,50 @@ void main() {
                 .having(
                   (s) => s.enabled,
                   'enabled',
-                  root && permission && configured,
+                  root && allowed && configured,
                 ),
           ],
         );
       }
     }
   }
-  for (final grant in {
-    'unrelated permissions': (
-      const WorkspacePermissions(
-        permissions: {'manage_workspace_roles', 'view_users_private_info'},
-        isCreator: false,
-      ),
-      false,
-    ),
-    'no permissions': (
-      const WorkspacePermissions(permissions: {}, isCreator: false),
-      false,
-    ),
-    'view_infrastructure only': (
-      const WorkspacePermissions(
-        permissions: {'view_infrastructure'},
-        isCreator: false,
-      ),
-      false,
-    ),
-    // Product rule: apps/docs/platform/features/mobile-mastermind.mdx#access-rule
-    'the root admin permission': (
-      const WorkspacePermissions(permissions: {'admin'}, isCreator: false),
-      false,
-    ),
-    'root workspace creator': (
-      const WorkspacePermissions(permissions: {}, isCreator: true),
-      false,
-    ),
-    'an explicit manage_mastermind grant': (
-      const WorkspacePermissions(
-        permissions: {manageMastermindPermission},
-        isCreator: false,
-      ),
-      true,
-    ),
-  }.entries) {
-    test('configured hub, ${grant.key}: enabled=${grant.value.$2}', () async {
-      final repository = _Permissions();
-      final source = _Source();
-      when(() => source.isConfigured).thenReturn(true);
-      when(
-        () => repository.getPermissions(wsId: rootWorkspaceId),
-      ).thenAnswer((_) async => grant.value.$1);
-      final cubit = MastermindAccessCubit(
-        repository: repository,
-        source: source,
-      );
-      await cubit.sync(rootWorkspaceId);
-      expect(cubit.state.enabled, grant.value.$2);
-      await cubit.close();
-    });
-  }
 
   group('personal workspace', () {
     const personalId = 'personal-ws';
-    MastermindAccessCubit build({required bool granted}) {
-      final repository = _Permissions();
-      final source = _Source();
-      when(() => source.isConfigured).thenReturn(true);
-      when(() => repository.getPermissions(wsId: rootWorkspaceId)).thenAnswer(
-        (_) async => WorkspacePermissions(
-          permissions: {if (granted) manageMastermindPermission},
-          isCreator: false,
-        ),
-      );
-      return MastermindAccessCubit(
+    MastermindAccessCubit build({required bool allowed}) {
+      final repository = _Access();
+      when(repository.isEnabled).thenAnswer((_) async => allowed);
+      return _cubit(
         repository: repository,
-        source: source,
         isPersonalWorkspace: (wsId) => wsId == personalId,
       );
     }
 
-    test('shows Mastermind with the root grant', () async {
-      final cubit = build(granted: true);
+    test('shows Mastermind when the server allows it', () async {
+      final cubit = build(allowed: true);
       await cubit.sync(personalId);
       expect(cubit.state.visible, isTrue);
       expect(cubit.state.wsId, personalId);
       await cubit.close();
     });
 
-    test('hides Mastermind without the root grant', () async {
-      final cubit = build(granted: false);
+    test('hides Mastermind when the server denies it', () async {
+      final cubit = build(allowed: false);
       await cubit.sync(personalId);
       expect(cubit.state.visible, isFalse);
       await cubit.close();
     });
 
     test('other workspaces never offer Mastermind', () async {
-      final cubit = build(granted: true);
+      final repository = _Access();
+      final cubit = _cubit(
+        repository: repository,
+        isPersonalWorkspace: (wsId) => wsId == personalId,
+      );
       await cubit.sync('team-ws');
       expect(cubit.state.status, MastermindAccessStatus.loaded);
       expect(cubit.state.visible, isFalse);
+      verifyNever(repository.isEnabled);
       await cubit.close();
     });
   });
@@ -168,46 +118,30 @@ void main() {
     expect(admin.containsPermission('view_infrastructure'), isTrue);
   });
 
-  test('workspace ABA cannot resurrect an older permission grant', () async {
-    final repository = _Permissions();
-    final source = _Source();
-    when(() => source.isConfigured).thenReturn(true);
-    final pending = Completer<WorkspacePermissions>();
+  test('workspace ABA cannot resurrect an older answer', () async {
+    final repository = _Access();
+    final pending = Completer<bool>();
     var calls = 0;
-    when(() => repository.getPermissions(wsId: rootWorkspaceId)).thenAnswer((
-      _,
-    ) {
+    when(repository.isEnabled).thenAnswer((_) {
       calls++;
-      return calls == 1
-          ? pending.future
-          : Future.value(
-              const WorkspacePermissions(permissions: {}, isCreator: false),
-            );
+      return calls == 1 ? pending.future : Future.value(false);
     });
-    final cubit = MastermindAccessCubit(repository: repository, source: source);
+    final cubit = _cubit(repository: repository);
     final old = cubit.sync(rootWorkspaceId);
     await cubit.sync(null);
     await cubit.sync(rootWorkspaceId);
-    pending.complete(
-      const WorkspacePermissions(
-        permissions: {manageMastermindPermission},
-        isCreator: false,
-      ),
-    );
+    pending.complete(true);
     await old;
     expect(cubit.state.enabled, isFalse);
     await cubit.close();
   });
+
   blocTest<MastermindAccessCubit, MastermindAccessState>(
-    'permission errors fail closed',
+    'access errors fail closed',
     build: () {
-      final repository = _Permissions();
-      final source = _Source();
-      when(() => source.isConfigured).thenReturn(true);
-      when(
-        () => repository.getPermissions(wsId: rootWorkspaceId),
-      ).thenThrow(StateError('synthetic'));
-      return MastermindAccessCubit(repository: repository, source: source);
+      final repository = _Access();
+      when(repository.isEnabled).thenThrow(StateError('synthetic'));
+      return _cubit(repository: repository);
     },
     act: (c) => c.sync(rootWorkspaceId),
     expect: () => [

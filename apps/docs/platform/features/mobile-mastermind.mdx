@@ -10,18 +10,19 @@ product rules of the shell entry, the Home tab and the Inbox; later tabs extend 
 ## Who sees it
 
 - **Scope:** the Apps hub offers Mastermind when the active workspace is the
-  root workspace or the user's personal workspace, the user holds
-  `manage_mastermind` in the root workspace (see Access rule), and the build has
-  a hub source configured. Production, staging and any build with
+  root workspace or the user's personal workspace, Web's
+  `GET /api/v1/mastermind/access` answers `enabled: true` (root
+  `manage_mastermind` once the rollout flag is on; see Access rule and
+  Rollout), and the build has a hub source configured. Production, staging and any build with
   `MASTERMIND_HUB_URL` have one; see Data source. The personal workspace shows
   the same fleet data; nothing in Mastermind is workspace-scoped.
 - **Default:** hidden. It is not an experimental module and cannot be enabled
-  from Settings. A user without root `manage_mastermind`, in any other
-  workspace, or while access is loading or failed never sees the entry.
+  from Settings. A user the access answer denies, in any other workspace, or
+  while access is loading or failed never sees the entry.
 - **Authority:** this check is cosmetic. The server-side gates in Access rule
   decide, and a 403 from the hub hides the entry until the next access sync.
 - **Production beta:** the production app reads the hub for the beta behind
-  these gates: root or personal workspace plus root `manage_mastermind`, a
+  these gates: root or personal workspace plus the access answer, a
   configured source, and the hub's owner allowlist. Replies stay off until the
   hub's `GET /v1/capabilities` reports `replies: true`. Production reports
   `replies: false` today, so the Inbox is read-only there and the reply composer
@@ -47,7 +48,8 @@ dedicated workspace permission `manage_mastermind`.
   sends replies to the external hub Worker (`mastermind-hub.tutur3u.com`)
   directly; Tuturuuu serves no other Mastermind API.
 - **Default:** deny. Migration `20261028092600_manage_mastermind_permission`
-  adds the permission with no grants. Unlike every other permission it is never
+  adds the permission with no grants; `20261028092700_grant_mastermind_owner`
+  then grants it to the owner only (see Rollout). Unlike every other permission it is never
   implied by being the workspace creator, by `admin`, or by a default
   permission, and it counts only as a role grant in the root workspace. Database
   triggers reject enabling it as a default permission, enabling it in any other
@@ -56,12 +58,14 @@ dedicated workspace permission `manage_mastermind`.
   and disabling or deleting grants stay allowed. The role editors on web and
   mobile show it read-only.
 - **Granting:** only `private.grant_mastermind_access(user_id, reason)`, which
-  the database owner alone may execute. It is idempotent (one `Mastermind` role
+  the database owner alone may execute, or its wrapper
+  `private.grant_mastermind_access_by_email(email, reason)` (see Rollout). It is idempotent (one `Mastermind` role
   in root, one membership) and writes every call to
   `private.mastermind_access_audit`. `private.revoke_mastermind_access` removes
   it the same way. Running a grant in production is a production write that
   needs an explicit GO.
-- **Enforcement points:**
+- **Enforcement points** (Web, push and mobile apply these only once
+  `MASTERMIND_REQUIRE_EXPLICIT_GRANT` is on; see Rollout):
   - Database: `public.has_workspace_permission(ws, user, 'manage_mastermind')`
     is true only for an explicit root role grant.
   - Web helpers: `getPermissions().containsPermission('manage_mastermind')`
@@ -69,48 +73,30 @@ dedicated workspace permission `manage_mastermind`.
     default permissions for explicit-grant permissions
     (`packages/utils/src/explicit-grant-permissions.ts`).
   - Push events: each recipient must be in `MASTERMIND_PUSH_OWNER_IDS` (kept as
-    defence in depth) and hold root `manage_mastermind`; an unreadable answer
-    skips the owner.
+    defence in depth) and, with the flag on, hold root `manage_mastermind`; an
+    unreadable answer skips the owner.
   - Hub: the external hub Worker enforces its own one-UUID owner allowlist on
     the requests the app sends it. That allowlist lives in the hub repository,
     is not changed here, and must name the same account.
-  - Mobile: the access cubit requires root `manage_mastermind`
-    (`WorkspacePermissions.containsPermission` never lets creator or admin
-    imply it). This hides the entry only; it is not authorization.
+  - Mobile: the access cubit shows the entry only when
+    `GET /api/v1/mastermind/access` answers `enabled: true`; Web picks the
+    rule, so a store build never decides it. Offline, the cubit reuses that
+    user's last server answer. This hides the entry only; it is not
+    authorization.
 - **Exceptions:** none. Provisioning the recipient in the push allowlist and
   the hub allowlist is separate from the grant and must name the same user.
 
-Grant snippet (production only after an explicit GO; run as the database owner,
+Migration `20261028092700` makes the owner grant (see Rollout). To re-grant
+after a skip (production only after an explicit GO; run as the database owner,
 for example in the Supabase SQL editor):
 
 ```sql
 begin;
-do $$
-declare
-  v_count integer;
-  v_user uuid;
-begin
-  select count(*), min(id::text)::uuid
-  into v_count, v_user
-  from auth.users
-  where lower(email) = 'phucvo@tuturuuu.com';
-  if v_count <> 1 then
-    raise exception 'expected exactly one account, found %', v_count;
-  end if;
-  perform private.grant_mastermind_access(
-    v_user,
-    'GO <reference>: Mastermind access for phucvo@tuturuuu.com'
-  );
-end $$;
-
--- Exactly one holder, and the audit row just written.
-select u.email, wrm.role_id
-from public.workspace_role_permissions wrp
-join public.workspace_role_members wrm on wrm.role_id = wrp.role_id
-join auth.users u on u.id = wrm.user_id
-where wrp.ws_id = '00000000-0000-0000-0000-000000000000'
-  and wrp.permission = 'manage_mastermind'
-  and wrp.enabled;
+-- NOTICEs report a skip and the holder count; returns the holder count.
+select private.grant_mastermind_access_by_email(
+  'phucvo@tuturuuu.com',
+  'GO <reference>: Mastermind access for phucvo@tuturuuu.com'
+);
 select action, target_user_id, changed, reason, performed_by, created_at
 from private.mastermind_access_audit
 order by id desc
@@ -125,16 +111,81 @@ and records `changed = false`.
   (no role, default permission, member or creator holds it after the
   migration; creator and admin do not imply it; every guard; the audited,
   idempotent grant and revoke),
+  `manage-mastermind-owner-grant.sql` (the email grant: no match and a
+  non-member skip, one member is granted idempotently, duplicates abort),
   `packages/utils/src/__tests__/workspace-helper-explicit-grants.test.ts`,
-  `route.delivery.test.ts` (an allowlisted owner without the permission and a
-  failed lookup are skipped) and `mastermind_access_cubit_test.dart` (root and
-  personal workspace, creator and admin denied).
+  `api/v1/mastermind/access/route.test.ts` (flag off and on),
+  `route.delivery.test.ts` (flag off keeps the allowlist-only rule; flag on
+  skips an owner without the permission and a failed lookup),
+  `mastermind_access_cubit_test.dart` (root and personal workspace follow the
+  server answer) and `mastermind_access_repository_test.dart` (offline reuse
+  of the same user's last answer only).
 
 Deleting the Mastermind role or its member removes access immediately (fail
 closed). Restoring access requires the database owner to call
 `private.grant_mastermind_access(user_id, reason)` again; ordinary role edits
 cannot re-grant it. Role saves from web and mobile write permissions before the
 name, so a rejected permission save leaves the name unchanged.
+
+## Rollout
+
+Production applies migrations only after the deployment marker, so Web and a
+store build can be live before `manage_mastermind` exists there. Enforcement
+therefore waits for a server-side switch that defaults to the earlier rule.
+
+- **Scope:** `MASTERMIND_REQUIRE_EXPLICIT_GRANT` on Web, read by
+  `apps/web/src/lib/mastermind/access.ts`. It drives
+  `GET /api/v1/mastermind/access` (the mobile entry) and the push-events
+  permission check.
+- **Default:** off (unset or anything but `true`). The access answer is root
+  `view_infrastructure` (creator and admin imply it), and push events go to
+  every `MASTERMIND_PUSH_OWNER_IDS` owner without a permission lookup: the
+  behaviour before `manage_mastermind`. On, the answer is root
+  `manage_mastermind` and push recipients need it too.
+- **Owner grant:** migration `20261028092700_grant_mastermind_owner` runs
+  `private.grant_mastermind_access_by_email('phucvo@tuturuuu.com', reason)`.
+  It is separate from `20261028092600` because Postgres refuses to store an
+  enum value added in the same transaction. Accounts are matched with
+  `lower(email)`:
+  - 0 matches: NOTICE and skip, so local resets, CI pgTAP and staging apply.
+  - 1 match: the audited, idempotent grant in the root workspace. The account
+    must already be a root workspace member; otherwise it is a NOTICE and skip.
+    The migration never adds memberships.
+  - More than 1: EXCEPTION, which aborts the migration (fail closed).
+
+  Every run ends with `NOTICE: manage_mastermind holders in the root
+  workspace: N`. A local `supabase db reset` does not print NOTICEs, so if the
+  production log omits it too, use the read-only query below. A skipped grant
+  locks nobody out because the flag is still off.
+- **Exceptions:** none. The hub Worker's owner allowlist is separate and does
+  not read the flag.
+
+Flip procedure:
+
+1. Merge and let the gated production migration workflow apply
+   `20261028092600` and `20261028092700` for the exact SHA.
+2. Read back exactly one holder, the owner: the holder NOTICE in the workflow
+   log, or this read-only query as the database owner. Any other result, a skip
+   NOTICE or a failed run means do not flip; fix the cause and grant with
+   `private.grant_mastermind_access_by_email` after an explicit GO.
+
+   ```sql
+   select u.email, a.changed, a.created_at
+   from public.workspace_role_permissions wrp
+   join public.workspace_role_members wrm on wrm.role_id = wrp.role_id
+   join auth.users u on u.id = wrm.user_id
+   left join private.mastermind_access_audit a
+     on a.target_user_id = wrm.user_id and a.action = 'grant'
+   where wrp.ws_id = '00000000-0000-0000-0000-000000000000'
+     and wrp.permission::text = 'manage_mastermind'
+     and wrp.enabled;
+   ```
+
+3. Set `MASTERMIND_REQUIRE_EXPLICIT_GRANT=true` for Web production and
+   redeploy. The owner keeps access; everyone else loses the entry on the next
+   access sync.
+
+Rolling back is unsetting the flag (earlier rule again); the grant can stay.
 
 ## Data source
 
@@ -521,8 +572,8 @@ signed hub events and sends a mobile push to Mastermind owners.
 
 - **Scope:** `needs_you.new`, `decision.awaiting` and `pin_batch.new` only.
   Recipients are the owners in `MASTERMIND_PUSH_OWNER_IDS` who hold root
-  `manage_mastermind`, with a registered device and the account push preference
-  on.
+  `manage_mastermind` (once the rollout flag is on), with a registered device
+  and the account push preference on.
 - **Copy:** always "Open Mastermind" (vi "Mở Mastermind") under the title
   "Mastermind". The event carries no title, product or text, so no item content,
   including security items, can reach a lock screen.
@@ -616,10 +667,12 @@ chart-spec gaps are deferred to PR8 with the remaining chart sections:
   real tabs. `presentation/ship_usage_model_test.dart`: the Ship and Usage
   models and chart ids.
 - `apps/mobile/test/features/mastermind/access/mastermind_access_cubit_test.dart`:
-  the root workspace, permission and configured-source matrix (the entry is off
-  without root `manage_mastermind`), the personal workspace, unrelated
-  permissions, `view_infrastructure` alone, the `admin` permission and the root
-  creator (both denied), workspace ABA and error fail-closed.
+  the root workspace, server answer and configured-source matrix (the entry
+  follows `GET /api/v1/mastermind/access`), the personal workspace, creator and
+  `admin` never implying `manage_mastermind`, workspace ABA and error
+  fail-closed. `mastermind_access_repository_test.dart`: the server answer, a
+  malformed answer, signed out, and offline reuse of the same user's last
+  answer only.
 - `apps/mobile/test/features/mastermind/data/hub_http_snapshot_source_test.dart`:
   base URL by flavor and override (production, staging, development, a bad
   override never falling back) and the bare-HTTPS-origin rules: non-HTTPS,
