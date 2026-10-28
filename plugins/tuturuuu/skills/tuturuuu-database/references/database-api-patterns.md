@@ -514,3 +514,15 @@ Use `task-list-assignee-authorization.sql` for behavioral regression coverage.
 For rollback rehearsals, compare the observed hosted ACLs with replay first:
 historical GRANT ALL can include MAINTAIN on PostgreSQL 17 even when the hosted
 ACL excludes it. Record that fixture difference separately from migration proof.
+### Azure identity-link verification
+
+For Azure account linking, require the explicit provider claim at
+`identity_data.custom_claims.xms_edov`; GoTrue's `email_verified` also accepts a
+missing claim and cannot stand in for explicit proof. Preserve new-user and
+existing-identity update behavior. The
+[authentication decision](../../../../../apps/docs/platform/architecture/authentication.mdx#oauth-sign-in)
+owns the accepted claim forms and Auth source references; the
+`azure-identity-link-verification*.sql` pgTAP suites cover behavior and helper
+grants. Replay installation and rollback as the non-superuser `postgres` role:
+Auth tables belong to `supabase_auth_admin`, so creating and dropping a trigger
+have different privilege requirements.
