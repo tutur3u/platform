@@ -197,7 +197,12 @@ void main() {
 
   group('4. staff', () {
     Json staff(Json root) => map(list(observability(root)['staff']).first);
-    test('accepts role, title, state and model only', () {
+    test('rejects malformed known staff state', () {
+      final root = MastermindSnapshotBuilder.defaults().toJson();
+      staff(root)['state'] = 'NEW';
+      expectViolation(root);
+    });
+    test('accepts legacy role, title, state and model', () {
       final root = MastermindSnapshotBuilder.defaults().toJson();
       expect(staff(root).keys, ['role', 'title', 'state', 'model']);
       expect(accepted(root).observability.staff.single.model, isNotEmpty);
@@ -206,10 +211,10 @@ void main() {
       'last_active': '2026-01-31T17:30:00+00:00',
       'runs_today': 1,
     }.entries) {
-      test('rejects staff.${entry.key}', () {
+      test('ignores additive staff.${entry.key}', () {
         final root = MastermindSnapshotBuilder.defaults().toJson();
         staff(root)[entry.key] = entry.value;
-        expectViolation(root);
+        expect(accepted(root).observability.staff.single.model, isNotEmpty);
       });
     }
   });

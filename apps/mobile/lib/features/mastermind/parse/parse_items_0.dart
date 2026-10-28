@@ -65,13 +65,24 @@ NeedsYou parseNeedsYou(JsonReader input) {
 
 Lane parseLane(JsonReader input) {
   var r = input;
-  final adapted = Map<String, dynamic>.from(r.object());
-  final status = adapted.remove('status');
-  adapted.remove('name');
-  if (const {'running', 'waiting', 'idle'}.contains(status)) {
-    adapted['state'] = status;
-  }
-  r = JsonReader(adapted, r.path);
+  r = JsonReader(
+    adaptThread(
+      r.object(),
+      fields: const {
+        'id',
+        'title',
+        'role',
+        'state',
+        'provider_model',
+        'age_seconds',
+        'eta_seconds',
+        'product',
+        'area',
+        'kind',
+      },
+    ),
+    r.path,
+  );
   final fields = {
     for (final e in r.object().entries) e.key: HubField.parse(e.value),
   };

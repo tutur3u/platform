@@ -6,6 +6,7 @@ import 'package:mobile/core/ui/overlays/app_sheet_scaffold.dart';
 import 'package:mobile/core/ui/overlays/show_app_sheet.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
+import 'package:mobile/features/mastermind/view/mastermind_scroll_clearance.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// The data sources behind the snapshot, degraded ones first, each as a word
@@ -13,11 +14,22 @@ import 'package:mobile/l10n/l10n.dart';
 Future<void> showMastermindSourcesSheet(
   BuildContext context, {
   required List<Source> sources,
-}) => showAppSheet<void>(
-  context: context,
-  size: AppSheetSize.medium,
-  builder: (context) => _SourcesSheet(sources: sources),
-);
+}) {
+  final clearance = MastermindScrollClearance.of(context);
+  return showAppSheet<void>(
+    context: context,
+    size: AppSheetSize.medium,
+    builder: (context) {
+      final media = MediaQuery.of(context);
+      return MediaQuery(
+        data: media.copyWith(
+          padding: media.padding.copyWith(bottom: clearance),
+        ),
+        child: _SourcesSheet(sources: sources),
+      );
+    },
+  );
+}
 
 class _SourcesSheet extends StatelessWidget {
   const _SourcesSheet({required this.sources});

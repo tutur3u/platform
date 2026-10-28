@@ -6211,5 +6211,27 @@
   "mastermindGapAccountSwitch": "Account switched",
   "mastermindGapReset": "Quota reset",
   "mastermindAskMissing": "Full ask not published yet",
-  "mastermindRecentlyResolved": "Recently resolved"
+  "mastermindRecentlyResolved": "Recently resolved",
+  "mastermindLastChecked": "Last checked {time}",
+  "@mastermindLastChecked": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindGapSummary": "Gap {start}–{end}: {reason}",
+  "@mastermindGapSummary": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      },
+      "reason": {
+        "type": "String"
+      }
+    }
+  }
 }

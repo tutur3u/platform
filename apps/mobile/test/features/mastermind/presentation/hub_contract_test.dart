@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/parse/snapshot_parser.dart';
 import 'package:mobile/features/mastermind/presentation/hub_contract_adapter.dart';
@@ -11,6 +12,7 @@ import 'package:mobile/l10n/gen/app_localizations_en.dart';
 import '../../../helpers/mastermind_snapshot_builder.dart';
 
 void main() {
+  setUpAll(initializeDateFormatting);
   final l10n = AppLocalizationsEn();
   test('v1 resolved collections remove open duplicate by stable item ID', () {
     final root = MastermindSnapshotBuilder.defaults().toJson();
@@ -68,7 +70,7 @@ void main() {
       'status': 'source_down',
       'checked_at': '2026-10-28T05:45:00Z',
     });
-    expect(field.reason(l10n), 'Source down');
+    expect(field.reason(l10n), 'Source down · Last checked 12:45');
     expect(field.checkedAt, DateTime.utc(2026, 10, 28, 5, 45));
     expect(HubField.text(l10n, 'unknown'), 'Not published yet');
     expect(HubField.text(l10n, 'running'), 'running');

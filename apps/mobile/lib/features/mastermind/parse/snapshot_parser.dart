@@ -8,6 +8,7 @@ import 'package:mobile/features/mastermind/presentation/hub_field.dart';
 import 'package:mobile/features/mastermind/presentation/usage_gaps.dart';
 
 part 'parse_items_0.dart';
+part 'parse_resolved_history.dart';
 part 'parse_items_1.dart';
 part 'parse_observability_delivery_0.dart';
 part 'parse_observability_delivery_1.dart';

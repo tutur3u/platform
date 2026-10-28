@@ -6,6 +6,7 @@ import 'package:mobile/features/mastermind/access/mastermind_access_cubit.dart';
 import 'package:mobile/features/mastermind/cubit/mastermind_snapshot_cubit.dart';
 import 'package:mobile/features/mastermind/presentation/freshness.dart';
 import 'package:mobile/features/mastermind/runtime/mastermind_runtime.dart';
+import 'package:mobile/features/mastermind/view/mastermind_scroll_clearance.dart';
 import 'package:mobile/features/mastermind/view/mastermind_states.dart';
 
 typedef MastermindContentBuilder =
@@ -27,18 +28,19 @@ class MastermindSection extends StatelessWidget {
   final MastermindContentBuilder builder;
 
   @override
-  Widget build(BuildContext context) =>
-      BlocBuilder<MastermindAccessCubit, MastermindAccessState>(
-        buildWhen: (previous, current) =>
-            (previous.status == MastermindAccessStatus.loaded &&
-                previous.enabled) !=
-            (current.status == MastermindAccessStatus.loaded &&
-                current.enabled),
-        builder: (context, access) =>
-            access.status == MastermindAccessStatus.loaded && access.enabled
-            ? _AttachedSection(builder: builder)
-            : const MastermindSkeleton(),
-      );
+  Widget build(BuildContext context) => MastermindScrollClearance(
+    bottom: MediaQuery.paddingOf(context).bottom,
+    child: BlocBuilder<MastermindAccessCubit, MastermindAccessState>(
+      buildWhen: (previous, current) =>
+          (previous.status == MastermindAccessStatus.loaded &&
+              previous.enabled) !=
+          (current.status == MastermindAccessStatus.loaded && current.enabled),
+      builder: (context, access) =>
+          access.status == MastermindAccessStatus.loaded && access.enabled
+          ? _AttachedSection(builder: builder)
+          : const MastermindSkeleton(),
+    ),
+  );
 }
 
 class _AttachedSection extends StatefulWidget {

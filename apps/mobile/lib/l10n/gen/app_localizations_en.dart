@@ -13735,4 +13735,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindRecentlyResolved => 'Recently resolved';
+
+  @override
+  String mastermindLastChecked(String time) {
+    return 'Last checked $time';
+  }
+
+  @override
+  String mastermindGapSummary(String start, String end, String reason) {
+    return 'Gap $start–$end: $reason';
+  }
 }

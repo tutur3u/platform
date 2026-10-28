@@ -16,7 +16,10 @@ Map<String, dynamic> adaptDecision(Map<String, dynamic> row) {
 }
 
 /// V1 decision rows share the reply item's stable `item-*` identity.
-Map<String, dynamic> adaptDecisionCollections(Map<String, dynamic> raw) {
+Map<String, dynamic> adaptDecisionCollections(
+  Map<String, dynamic> raw, {
+  bool Function(Map<String, dynamic>)? acceptsItem,
+}) {
   final root = Map<String, dynamic>.from(raw);
   final decisions = root['decisions'];
   if (decisions is! List) return root;
@@ -24,7 +27,9 @@ Map<String, dynamic> adaptDecisionCollections(Map<String, dynamic> raw) {
   final journal = <Object?>[];
   for (final row in decisions) {
     if (row is Map<String, dynamic> && '${row['id']}'.startsWith('item-')) {
-      items['${row['id']}'] = adaptDecision(row);
+      if (acceptsItem == null || acceptsItem(row)) {
+        items['${row['id']}'] = adaptDecision(row);
+      }
     } else {
       journal.add(row);
     }
@@ -50,7 +55,7 @@ Map<String, dynamic> adaptDecisionCollections(Map<String, dynamic> raw) {
           [
                 for (final row in existing)
                   if (row is Map<String, dynamic>)
-                    items.remove('${row['id']}') ?? row
+                    items.remove('${row['id']}') ?? adaptDecision(row)
                   else
                     row,
                 ...items.values,
@@ -68,12 +73,18 @@ Map<String, dynamic> adaptDecisionCollections(Map<String, dynamic> raw) {
   return root;
 }
 
-Map<String, dynamic> adaptThread(Map<String, dynamic> row) {
+Map<String, dynamic> adaptThread(
+  Map<String, dynamic> row, {
+  Set<String> fields = const {'role', 'title', 'state', 'model'},
+}) {
   final result = Map<String, dynamic>.from(row);
   final status = result.remove('status');
   result.remove('name');
   if (const {'running', 'waiting', 'idle'}.contains(status)) {
     result['state'] = status;
   }
-  return result;
+  return {
+    for (final entry in result.entries)
+      if (fields.contains(entry.key)) entry.key: entry.value,
+  };
 }

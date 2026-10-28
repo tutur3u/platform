@@ -5921,5 +5921,27 @@
   "mastermindGapAccountSwitch": "Đã đổi tài khoản",
   "mastermindGapReset": "Đặt lại hạn mức",
   "mastermindAskMissing": "Chưa công bố nội dung yêu cầu đầy đủ",
-  "mastermindRecentlyResolved": "Đã giải quyết gần đây"
+  "mastermindRecentlyResolved": "Đã giải quyết gần đây",
+  "mastermindLastChecked": "Kiểm tra lần cuối {time}",
+  "@mastermindLastChecked": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindGapSummary": "Khoảng trống {start}–{end}: {reason}",
+  "@mastermindGapSummary": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      },
+      "reason": {
+        "type": "String"
+      }
+    }
+  }
 }

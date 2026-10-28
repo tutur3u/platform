@@ -96,6 +96,7 @@ UsageChartSpec? usageChartSpec(
       final first = pool.series.isEmpty ? null : pool.series.first.t;
       final last = pool.series.isEmpty ? null : pool.series.last.t;
       final resets = latest.session.resetsAt;
+      final gaps = usageGaps(pool.series, model.gaps);
       return UsageChartSpec(
         id: id,
         label: pool.label,
@@ -111,6 +112,12 @@ UsageChartSpec? usageChartSpec(
             else
               l10n.mastermindWeeklyLeft(
                 _percent(l10n, latest.weekly.remainingPercent),
+              ),
+            for (final gap in gaps)
+              l10n.mastermindGapSummary(
+                Gmt7.time(gap.start, l10n.localeName),
+                Gmt7.time(gap.end, l10n.localeName),
+                gap.label(l10n),
               ),
           ].join(' · '),
         ),
@@ -141,7 +148,7 @@ UsageChartSpec? usageChartSpec(
         ],
         // The reset marker only helps when it falls inside what is drawn.
         bands: [
-          for (final gap in usageGaps(pool.series, model.gaps))
+          for (final gap in gaps)
             ChartBand(label: gap.label(l10n), t: gap.start, end: gap.end),
           if (resets != null &&
               first != null &&

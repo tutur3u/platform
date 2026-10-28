@@ -566,3 +566,17 @@ account switch or quota reset). Without metadata they say “No samples publishe
 A reset timestamp within an inferred gap supplies the reset reason. Pools remain
 separate. Adapter and classification regressions live in
 `apps/mobile/test/features/mastermind/presentation/hub_contract_test.dart`.
+
+Optional resolved history is parsed row by row: invalid entries are skipped,
+repeated IDs use their latest resolved entry, and the last 20 valid entries are
+shown. Additive lane and staff metadata does not invalidate the snapshot; known
+fields still receive strict validation. Native open items may supply `status`
+without the legacy `state`. Checked field timestamps and spoken chart gap bounds
+use the same GMT+7 wall time as the rest of Mastermind.
+
+Pages consume the shell's published bottom clearance through `AppPageScrollView`.
+The Sources sheet retains that clearance before the page scrollable consumes it,
+then carries it across the modal navigator boundary. It uses the shared sheet
+scaffold's trailing space; the feature does not estimate dock dimensions. The
+source-sheet regression verifies that its last row stays above the dock and can
+be hit-tested after scrolling to the end.

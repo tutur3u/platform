@@ -13592,4 +13592,14 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindRecentlyResolved => 'Đã giải quyết gần đây';
+
+  @override
+  String mastermindLastChecked(String time) {
+    return 'Kiểm tra lần cuối $time';
+  }
+
+  @override
+  String mastermindGapSummary(String start, String end, String reason) {
+    return 'Khoảng trống $start–$end: $reason';
+  }
 }
