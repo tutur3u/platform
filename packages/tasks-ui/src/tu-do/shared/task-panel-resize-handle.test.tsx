@@ -1,4 +1,10 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TaskPanelResizeHandle } from './task-panel-resize-handle';
 import {
@@ -70,5 +76,32 @@ describe('task panel width without storage', () => {
       getItem.mockRestore();
       setItem.mockRestore();
     }
+  });
+});
+
+describe('TaskPanelResizeHandle unmounting mid-drag', () => {
+  it('restores the board transition and keeps the dragged width', async () => {
+    window.innerWidth = 2000;
+    HTMLElement.prototype.setPointerCapture = () => undefined;
+    const { unmount } = render(<TaskPanelResizeHandle />);
+    const handle = screen.getByRole('separator', { name: 'resize_panel' });
+    fireEvent.pointerDown(handle, { clientX: 1000, pointerId: 1 });
+    expect(
+      document.documentElement.style.getPropertyValue(
+        '--task-board-panel-transition'
+      )
+    ).toBe('0ms');
+    fireEvent.pointerMove(handle, { clientX: 900, pointerId: 1 });
+    unmount();
+    await waitFor(() =>
+      expect(
+        document.documentElement.style.getPropertyValue(
+          '--task-board-panel-transition'
+        )
+      ).toBe('')
+    );
+    expect(window.localStorage.getItem('tasks.task-panel-width')).toBe(
+      String(TASK_PANEL_DEFAULT_WIDTH + 100)
+    );
   });
 });
