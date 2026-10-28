@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   session: vi.fn(),
+  authUser: vi.fn(),
   permissions: vi.fn(),
   admin: vi.fn(),
   from: vi.fn(),
@@ -21,6 +22,9 @@ vi.mock('@tuturuuu/satellite/auth', () => ({
 }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: mocks.admin,
+}));
+vi.mock('@tuturuuu/supabase/next/user', () => ({
+  getVerifiedAuthUser: mocks.authUser,
 }));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getPermissions: mocks.permissions,
@@ -101,6 +105,7 @@ describe('Infrastructure workspace secrets permission boundary', () => {
     mocks.insert.mockResolvedValue({ error: null });
     mocks.update.mockReturnValue(query);
     mocks.delete.mockReturnValue(query);
+    mocks.authUser.mockResolvedValue(null);
     grant();
   });
 
@@ -144,15 +149,42 @@ describe('Infrastructure workspace secrets permission boundary', () => {
       'owner@tuturuuu.com.evil.test',
     ])(`requires an employee for managed cron: ${method} %s`, async (email) => {
       grant('manage_workspace_secrets', email);
+      mocks.authUser.mockResolvedValue({
+        email,
+        email_confirmed_at: '2026-10-28T00:00:00Z',
+        identities: [{ provider: 'email' }],
+      });
       expect((await mutate(method, ' managed_cron_enabled ')).status).toBe(403);
       expect(mocks.insert).not.toHaveBeenCalled();
       expect(mocks.update).not.toHaveBeenCalled();
       expect(mocks.delete).not.toHaveBeenCalled();
     });
 
-    it(`allows an employee root admin to write managed cron: ${method}`, async () => {
-      grant('manage_workspace_roles', 'Operator@TUTURUUU.COM');
+    it(`allows a verified staff root admin to write managed cron: ${method}`, async () => {
+      grant('manage_workspace_roles', 'operator@tuturuuu.com');
+      mocks.authUser.mockResolvedValue({
+        email: 'operator@tuturuuu.com',
+        email_confirmed_at: '2026-10-28T00:00:00Z',
+        identities: [{ provider: 'email' }],
+      });
       expect((await mutate(method, 'MANAGED_CRON_ENABLED')).status).toBe(200);
+    });
+
+    it.each([
+      { email: 'operator@tuturuuu.com' },
+      { email: 'operator@tuturuuu.com', identities: [{ provider: 'email' }] },
+      {
+        email: 'operator@tuturuuu.com',
+        email_confirmed_at: '2026-10-28T00:00:00Z',
+      },
+      null,
+    ])(`denies unverified staff root admins: ${method} %j`, async (user) => {
+      grant('manage_workspace_secrets', 'operator@tuturuuu.com');
+      mocks.authUser.mockResolvedValue(user);
+      expect((await mutate(method, 'MANAGED_CRON_ENABLED')).status).toBe(403);
+      expect(mocks.insert).not.toHaveBeenCalled();
+      expect(mocks.update).not.toHaveBeenCalled();
+      expect(mocks.delete).not.toHaveBeenCalled();
     });
 
     it(`still denies an employee workspace creator: ${method}`, async () => {
