@@ -21,8 +21,16 @@ vi.mock('@tuturuuu/ui/dropdown-menu', () => ({
   DropdownMenuContent: ({ children }: { children: React.ReactNode }) => (
     <div role="menu">{children}</div>
   ),
-  DropdownMenuCheckboxItem: ({ children }: { children: React.ReactNode }) => (
-    <div role="menuitemcheckbox">{children}</div>
+  DropdownMenuCheckboxItem: ({
+    checked,
+    children,
+  }: {
+    checked?: boolean;
+    children: React.ReactNode;
+  }) => (
+    <button aria-checked={checked} role="menuitemcheckbox" type="button">
+      {children}
+    </button>
   ),
 }));
 
