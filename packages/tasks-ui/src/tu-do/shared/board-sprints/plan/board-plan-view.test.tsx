@@ -484,4 +484,17 @@ describe('BoardPlanView', () => {
     expect(api.moveTasks).toHaveBeenCalledTimes(2);
     await waitFor(() => expect(input).toHaveValue('Write release notes'));
   });
+
+  it('loads tasks in Review lists too, so the plan and summary see them', async () => {
+    api.listBoardTasksForSearch.mockResolvedValue([]);
+    renderPlan({ sprints: [planned] });
+    await waitFor(() =>
+      expect(api.listBoardTasksForSearch).toHaveBeenCalledWith(
+        'ws-1',
+        expect.objectContaining({
+          listStatuses: expect.arrayContaining(['review']),
+        })
+      )
+    );
+  });
 });
