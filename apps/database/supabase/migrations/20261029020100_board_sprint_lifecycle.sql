@@ -1,6 +1,6 @@
 -- Board sprints, part two: ending a sprint, moving tasks between open sprints
 -- and keeping new tasks in the board's current sprint. Builds on
--- 20261029000000_board_sprints.sql.
+-- 20261029020000_board_sprints.sql.
 
 -- 1. Ending the active sprint. Atomic and idempotent: a second call returns
 -- the stored report. Every open task gets a decision; missing ones carry.
