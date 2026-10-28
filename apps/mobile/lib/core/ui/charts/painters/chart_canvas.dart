@@ -20,6 +20,7 @@ class ChartCanvas {
     this.axes = true,
     this.axis = ChartValueAxis.percent,
     this.horizontal = false,
+    this.timeLabel,
   });
   final Size size;
   final AppChartPalette palette;
@@ -27,6 +28,9 @@ class ChartCanvas {
   final bool axes;
   final ChartValueAxis axis;
   final bool horizontal;
+
+  /// Formats the x-axis ticks; null keeps [chartTimeLabel].
+  final ChartTimeLabeler? timeLabel;
   late final valueLayout = ChartValueLayout(
     size: size,
     axis: axis,
@@ -111,6 +115,7 @@ class ChartCanvas {
       plot.width,
       style: TextStyle(fontSize: 10, color: palette.mutedText),
       textScaler: textScaler,
+      labeler: timeLabel,
     );
     for (final tick in ticks) {
       label(

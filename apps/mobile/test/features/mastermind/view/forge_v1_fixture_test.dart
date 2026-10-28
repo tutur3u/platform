@@ -71,6 +71,7 @@ void main() {
       LaneState.running: 8,
       LaneState.waiting: 3,
       LaneState.idle: 2,
+      LaneState.queued: 0,
     });
   });
 
@@ -140,6 +141,10 @@ void main() {
         case 'Work':
           expect(find.text('[Atlas] Mastermind'), findsOneWidget);
         case 'Ship':
+          // Nothing observed yet: one row, the reasons one tap away.
+          expect(find.text('Not tracked yet'), findsOneWidget);
+          await tester.tap(find.text('Not tracked yet'));
+          await tester.pumpAndSettle();
           expect(find.textContaining('Not connected'), findsWidgets);
         case 'Insights':
           expect(find.textContaining('Not connected'), findsWidgets);

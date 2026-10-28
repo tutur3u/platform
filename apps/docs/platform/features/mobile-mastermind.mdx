@@ -314,22 +314,35 @@ and product, area and kind chips. State is always a glyph and a word.
 `/mastermind/ship` is read-only. It lists, under the freshness strip:
 
 - **Environments by product.** A product with a failing environment (deploy or
-  CI `failure` or `error`) comes first, then the rest by name. A group opens with
-  the product's release line ("Live 2 d ago" and its age basis, "Unknown" when
-  the age is null), then production before staging. An environment shows deploy
-  and CI as a glyph and a word, its own `freshness` chip (it never follows the
-  snapshot's age), the version, the commit id (monospace, with a copy button; it
-  is a public commit id), the commit subject, the release time in GMT+7 with its
-  age, the evidence label and "Checked" time. The publisher's stand-in subject
-  for a commit it will not send is shown as the localized label "Withheld, open
-  on Mac", muted with an info glyph and the tooltip "Details stay on the Mac". A
-  null version, commit id or subject hides its line. A failing environment on
-  Home opens Ship on its product, and its row carries a chevron like the
-  release rows.
+  CI `failure` or `error`) comes first, then the rest by most recent release,
+  then by name. Each product is one compact card. Its header row carries the
+  name, "Live 2 h ago" with the age basis (left out when the age is null, never
+  "Unknown" or 0) and, when failing, a destructive glyph and a "Failing" badge.
+  Production comes before staging. An environment row shows deploy and CI as a
+  glyph and a word, and its own `freshness` as a chip only when it is not fresh
+  (it never follows the snapshot's age). Then come the version and the commit id
+  (monospace, with a 44-pt copy button; it is a public commit id), and one muted
+  line with the subject, "Released 2 h ago" and "Checked 30 min ago" measured
+  from the snapshot time. The absolute GMT+7 release and check times and the
+  evidence label are in the row's semantics label. A reading the hub did not
+  publish is left out, while one it could not read keeps its reason, for
+  example "Deploy Not connected · Last checked 19:22". The publisher's stand-in
+  subject for a commit it will not send is shown as the localized label
+  "Withheld, open on Mac", muted with an info glyph and the tooltip "Details
+  stay on the Mac". A failing environment on Home opens Ship on its product, and
+  its row carries a chevron like the release rows.
+- **Not tracked yet.** A product with no release age whose every environment has
+  deploy, CI, freshness and evidence `unknown` and no release time, version or
+  commit id gets no card. All such products share one final "Not tracked yet"
+  row that names them ("MasteryAI, PKTM"). Tapping it lists each with the hub's
+  reason ("Not connected · Last checked 19:22") or "No deployments observed".
+  The row is hidden while a product filter is on, and these products get no
+  filter pill.
 - **CI now.** `observability.ci[]`, queued and running per repository. A null
   count reads "Unavailable", never 0.
 - **Release cadence.** Most recent production release first; a product with none
-  reads "No production release observed" and sits last.
+  reads "No production release observed" and sits last. The caption carries the
+  row count, and the list shows five rows with "Show all N" for the rest.
 - **Pull requests and merges.** From `observability.delivery`: the latest open
   pull request count and merge-to-live median per product, and "At least N
   production releases observed" (a lower bound). A null count reads
@@ -337,8 +350,10 @@ and product, area and kind chips. State is always a glyph and a word.
   numbers. Nothing on this tab opens a pull request, merges or syncs anything.
   The schema carries no separate sync record, so production sync is only
   visible as the release age and cadence above.
-- **Product filter in the URL.** Chips appear while two or more products are
-  present and write `?product=<product>` with `go`. A product the snapshot lacks
+- **Product filter in the URL.** One horizontally scrolling pill bar (All, then
+  the tracked products in list order, failing ones marked with a warning glyph)
+  appears while two or more tracked products are present. It never wraps and
+  writes `?product=<product>` with `go`. A product the snapshot lacks
   is shown unfiltered at once and removed from the URL after the frame, but
   only while Ship is the top route: a rewrite is a `go`, so one that fired under
   an open route would drop it. External deep links open the tab root.
@@ -353,25 +368,47 @@ Delivery sections arrive later and reuse the table route below).
 - **Pools** come from `observability.usage.instances[]`, most urgent first:
   SHORT, then unknown pacing, then OK, then SURPLUS, then the least session
   budget left, then label. A pool's pacing is the worse of its session and
-  weekly windows, so a weekly SHORT outranks a session that is fine. Pool labels are opaque display strings, shown
-  verbatim and never summed or stacked. Each pool shows session and weekly
-  budget left ("Unavailable" when null, never 0), the reset time in GMT+7, the
-  burn in pp/h, the signed projection at reset, and pacing as a word and a
-  shape (unknown is a dashed outline). Pacing is labelled "Reserve pacing (chart
-  rule)" with the note that it is not the routing decision.
+  weekly windows, so a weekly SHORT outranks a session that is fine. Pool labels
+  are opaque display strings, shown verbatim and never summed or stacked.
+- **Pool card.** One pacing verdict per pool, as a shape and a word: "Running
+  short", "On pace", "Surplus", or "No pacing data" (a static hollow square, not
+  the dashed outline that read as a spinner). The verdict is the worse of the
+  windows that report pacing, so a window without pacing does not hide the
+  other's. Under it, one muted line gives the burn and the signed projection at
+  reset for the window the verdict comes from. An info button opens the
+  "Reserve pacing (chart rule)" note saying it is not the routing decision.
+  Then "Session left" and "Weekly left" each show a meter toned by that
+  window's pacing, the percent and the reset ("Resets 17:10", with the day when
+  it differs from the reading's). A window the hub did not read shows a dash
+  and its reason ("Not connected · Last checked 19:22"), never 0.
+- **Contradiction guard.** Scope: the pool card's burn line. Default: when the
+  verdict window is SHORT and its burn is 0 pp/h or less, the line reads "Burn
+  not measured yet" instead of "0 pp/h", because a pool that burns nothing
+  cannot run short and the hub reading is partial. Exceptions: a zero burn on an
+  OK or SURPLUS window is shown as measured. Coverage:
+  `presentation/ship_usage_model_test.dart` ("a zero burn next to SHORT") and
+  `mastermind_insights_compact_test.dart`.
 - **Charts** use the shared chart kit: one panel per pool (session solid,
   weekly dashed, a fixed 0 to 100 percent axis, a reset marker when it falls in
   range), and for each Codex pool in `usage.credits[]` a balance panel and a
   burn-against-target panel. "Credits" is a unit of its own, never money or
-  tokens; a null daily target reads "Target unavailable". Each panel leads with
-  its text summary, carries a shape legend and a live readout, and has a Table
-  action. With `usage.coverage` of `missing` or `unavailable` the plot is left
-  out and the coverage note stands in; with `partial` or `stale` the summary is
-  prefixed with the coverage word. A pool with no series shows the summary only.
+  tokens; a null daily target reads "Target unavailable". Each panel's header
+  holds its title and the Table action (a ghost button with an icon and a 44-pt
+  target), so the action is never at the bottom of the card under the floating
+  dock. A muted caption says what the plot leaves out ("Partial data: Weekly
+  window not reported.", the gaps and their reasons). The plot's semantics label
+  is the full text summary. The legend names only series with at least one
+  reading, and a live readout follows. X-axis ticks show the GMT+7 time alone
+  ("20:30"), adding the day ("Oct 28 05:45") only where the day changes and
+  never on a chart within one day. With `usage.coverage` of `missing` or
+  `unavailable` the plot is left out and the summary and coverage note stand
+  in. With `partial` or `stale`, the caption and summary lead with the coverage
+  word. A pool with no series shows the summary only.
 - **Quota table** (`products.quotas[]`, including `Unknown account`), least left
-  first and unknown last, with "as of N min ago". **Forecasts**
-  (`quota_forecasts[]`): "Projected empty `<time>` GMT+7" soonest first, or "Not
-  projected to run out before reset".
+  first and unknown last, with "as of N min ago" (left out when the read age is
+  null). **Forecasts** (`quota_forecasts[]`): "Projected empty `<time>` GMT+7"
+  soonest first, or "Not projected to run out before reset". Both captions carry
+  the row count and show five rows with "Show all N" for the rest.
 - **Chart table route.** `/mastermind/insights/:section/table/:chartId` is
   pushed over Insights and shows the same series rows the panel draws (a null
   cell reads "Unavailable"). The section is `usage` and the chart id is
@@ -506,10 +543,18 @@ chart-spec gaps are deferred to PR8 with the remaining chart sections:
   snapshot, "Unavailable" instead of 0, cadence order, pull requests and merges,
   redaction, whole-section states, the product filter in the URL, dock
   clearance.
-- `mastermind_insights_page_test.dart`: pool urgency order, pacing word plus
-  shape, null readings, GMT+7 resets, credits copy, quota and forecasts,
-  coverage handling, the chart table route (same series, gone chart, Back),
-  whole-section states, dock clearance.
+- `mastermind_insights_page_test.dart`: pool urgency order, one verdict per
+  pool, the reserve note behind its info button, unread windows as a dash, GMT+7
+  resets, credits copy, quota and forecasts, coverage handling, the chart table
+  route (same series, gone chart, Back), whole-section states, dock clearance.
+  `mastermind_insights_compact_test.dart`: the burn guard, the static
+  no-pacing shape, the Table action above the plot with a 44-pt target, the
+  legend of drawn series, the plot's summary label, the quota cap and the Forge
+  v1 fixture (a reason per window, no bare "unknown").
+- `mastermind_ship_compact_test.dart`: the "Not tracked yet" row (collapse,
+  order, expansion), the filter bar (tracked products only, failing marked, one
+  row), the cadence cap and the Forge v1 fixture (every product untracked,
+  reasons on expand).
 - `mastermind_home_links_test.dart`: Home Ship rows and the Usage link open the
   real tabs. `presentation/ship_usage_model_test.dart`: the Ship and Usage
   models and chart ids.
@@ -591,7 +636,53 @@ running, waiting, and idle counts. Unknown root keys, `asks_source`, and
 covered by `test/features/mastermind/view/forge_v1_fixture_test.dart`; it verifies
 all five tabs, open asks, resolved history, source reasons, gaps, and counts.
 
+Optional companions are validated field by field. Ship observations apply only to
+production; null companions retain a published legacy value. Unknown enums,
+invalid numeric values and unparseable timestamps retain the legacy value with
+`not_published` status and an “Unrecognised value” reason. ISO timestamps with
+`Z` or an explicit offset normalize to UTC. These rules apply to Ship, weekly
+Insights and Work age/ETA fields. A malformed lane or unknown decision status
+is skipped without hiding the remaining snapshot. Decisions marked resolved in
+`decisions[]` also populate Recently resolved. Home keeps a queued chip when
+`work.counts` is published, deriving queued from lanes when absent.
+Regression coverage: `test/features/mastermind/presentation/companion_hardening_test.dart`.
+
 An unreported pacing value retains its dashed status glyph beside the explicit
 reason. The label wraps within the row's content area so checked timestamps do
 not overflow narrow screens. `mastermind_insights_page_test.dart` preserves the
 one-glyph-per-window assertion for reported and unreported values.
+
+## Read-only Threads preview
+
+`MASTERMIND_THREADS` is a Dart define, default `false`. With it off, Work, Ship
+and Insights retain their existing navigation. When enabled, Threads replaces
+Work in the dock; Backlog and Staff remain segments, and Ship and Insights stay
+separate. The flag is read through `mastermindThreadsEnabled`, which tests can
+override with `debugOverrideMastermindThreads`, so the default `flutter test` run
+covers both the flag-off and flag-on paths without a `--dart-define`.
+
+P1a is Work's own page with a Threads segment control: it reads the same
+accepted snapshot as Home and Work through the shared snapshot cubit and the
+tolerant v1 parser, and never parses the hub payload on its own. The grouped
+lane list, search, state, product and area filters, "Clear filters", Backlog and
+Staff are Work's own components, so a Work or Home link keeps `?state=`,
+`?product=` and `?area=` when it redirects to `/mastermind/threads`. The one
+difference is the group and chip order: Waiting, Failed, Running (queued
+follows), then Idle, each oldest first. The segment switch uses the compact
+32 pt track with 44 pt hit areas. A row opens the existing lane detail under
+`/mastermind/work/lane/:id`; the dock keeps Threads selected while it is open,
+and a missing lane offers "Back to Threads". There is no send UI and no row
+opens history. Loading, access loss, rate limits (the last snapshot stays) and a
+404 with nothing published use the shared Mastermind section states.
+
+Thread history is a separate P1b change, built to the design's mobile conditions
+(app lock, screenshot protection, closed parsers, localized state words and
+times). It is not part of P1a and has no flag here.
+
+Regression coverage lives in `apps/mobile/test/features/mastermind/threads/`:
+`threads_list_test.dart` covers the group order, filters, "Clear filters",
+Backlog/Staff segments, 44 pt targets, dock clearance, rate-limit retention and
+the 404 state with the flag on; `threads_flag_test.dart` keeps the flag-off
+navigation unchanged and checks the flag-on dock selection, redirects with
+filters kept, and the lane-gone copy. Enablement remains held for exact-commit
+mobile CI and product acceptance.

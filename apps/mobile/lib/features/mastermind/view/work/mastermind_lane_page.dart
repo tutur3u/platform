@@ -8,6 +8,7 @@ import 'package:mobile/features/mastermind/presentation/age_text.dart';
 import 'package:mobile/features/mastermind/presentation/hub_field.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
 import 'package:mobile/features/mastermind/presentation/work_model.dart';
+import 'package:mobile/features/mastermind/threads/threads_flag.dart';
 import 'package:mobile/features/mastermind/view/mastermind_freshness_strip.dart';
 import 'package:mobile/features/mastermind/view/mastermind_section.dart';
 import 'package:mobile/features/mastermind/view/work/lane_state_badge.dart';
@@ -64,15 +65,19 @@ class _Gone extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final threads = mastermindThreadsEnabled;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxxl),
       child: AppStateMessage(
-        icon: LucideIcons.briefcase,
+        icon: threads ? LucideIcons.messagesSquare : LucideIcons.briefcase,
         title: wasShown
             ? l10n.mastermindLaneFinishedTitle
             : l10n.mastermindLaneGoneTitle,
-        actionLabel: l10n.mastermindBackToWork,
-        onAction: () => context.go(Routes.mastermindWork),
+        actionLabel: threads
+            ? l10n.mastermindBackToThreads
+            : l10n.mastermindBackToWork,
+        onAction: () =>
+            context.go(threads ? '/mastermind/threads' : Routes.mastermindWork),
       ),
     );
   }

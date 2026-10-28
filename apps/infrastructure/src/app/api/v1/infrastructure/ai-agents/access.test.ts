@@ -59,6 +59,26 @@ describe('requireAiAgentAdmin', () => {
     expect(mocks.createAdminClient).toHaveBeenCalledWith({ noCookie: true });
   });
 
+  it.each(['manage_workspace_secrets', 'manage_workspace_roles'])(
+    'accepts root %s permission',
+    async (allowed) => {
+      mocks.getPermissions.mockResolvedValue({
+        withoutPermission: (permission: string) => permission !== allowed,
+      });
+      expect((await requireAiAgentAdmin(request())).ok).toBe(true);
+    }
+  );
+
+  it('rejects a workspace creator without root permissions', async () => {
+    mocks.getPermissions.mockImplementation(async ({ wsId }) => ({
+      withoutPermission: () => wsId === ROOT_WORKSPACE_ID,
+    }));
+    const result = await requireAiAgentAdmin(request());
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.response.status).toBe(403);
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
+  });
+
   it('rejects authenticated users without root secret-management permission', async () => {
     mocks.getPermissions.mockResolvedValue({
       withoutPermission: vi.fn().mockReturnValue(true),

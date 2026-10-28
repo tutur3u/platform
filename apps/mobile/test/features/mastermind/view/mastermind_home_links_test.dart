@@ -59,7 +59,7 @@ void main() {
       await tester.tap(find.text('Usage'));
       await tester.pumpAndSettle();
       expect(workUri(router).path, Routes.mastermindInsights);
-      expect(find.text('Session budget left'), findsOneWidget);
+      expect(find.text('Session left'), findsOneWidget);
     });
   });
 }

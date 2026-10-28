@@ -49,10 +49,13 @@ class ShipDeliverySection extends StatelessWidget {
               leading: const AppIconTile(icon: LucideIcons.gitPullRequest),
               title: Text(MastermindLabels.product(pr.product)),
               subtitle: Text(l10n.mastermindChartOpenPrs),
-              trailing: Text(
-                pr.count == null
-                    ? l10n.mastermindUnavailable
-                    : l10n.mastermindShipOpenCount(pr.count!),
+              trailing: SizedBox(
+                width: 120,
+                child: Text(
+                  pr.count == null
+                      ? l10n.mastermindUnavailable
+                      : l10n.mastermindShipOpenCount(pr.count!),
+                ),
               ),
             ),
           for (final merge in delivery.mergeToLive)
@@ -63,12 +66,15 @@ class ShipDeliverySection extends StatelessWidget {
                 '${l10n.mastermindChartMergeToLive} · '
                 '${l10n.mastermindSamples(merge.samples)}',
               ),
-              trailing: Text(
-                merge.medianMinutes == null
-                    ? l10n.mastermindUnavailable
-                    : l10n.mastermindUnitMinutes(
-                        merge.medianMinutes!.round().toString(),
-                      ),
+              trailing: SizedBox(
+                width: 120,
+                child: Text(
+                  merge.medianMinutes == null
+                      ? l10n.mastermindUnavailable
+                      : l10n.mastermindUnitMinutes(
+                          merge.medianMinutes!.round().toString(),
+                        ),
+                ),
               ),
             ),
         ],

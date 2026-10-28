@@ -1,4 +1,5 @@
 {
+  "mastermindUnrecognisedValue": "Unrecognised value",
   "assistantDownloadPhasePending": "Pending",
   "assistantDownloadPhaseQueued": "Queued",
   "assistantDownloadPhaseTransferring": "Downloading",
@@ -5384,6 +5385,13 @@
       }
     }
   },
+  "@mastermindListShowAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "@mastermindLiveAgo": {
     "placeholders": {
       "age": {
@@ -5532,6 +5540,13 @@
       }
     }
   },
+  "@mastermindShipCheckedAgo": {
+    "placeholders": {
+      "age": {
+        "type": "String"
+      }
+    }
+  },
   "@mastermindShipCiBadge": {
     "placeholders": {
       "status": {
@@ -5570,6 +5585,13 @@
   "@mastermindShipReleased": {
     "placeholders": {
       "dateTime": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindShipReleasedAgo": {
+    "placeholders": {
+      "age": {
         "type": "String"
       }
     }
@@ -5735,6 +5757,13 @@
   "@mastermindUpdatedAt": {
     "placeholders": {
       "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindUsageTableFor": {
+    "placeholders": {
+      "chart": {
         "type": "String"
       }
     }
@@ -5932,6 +5961,8 @@
   "mastermindLaneUpdated": "This lane was updated",
   "mastermindLastPublished": "Mastermind last published {age} · {time}",
   "mastermindLess": "Less",
+  "mastermindListShowAll": "Show all {count}",
+  "mastermindListShowFewer": "Show fewer",
   "mastermindLiveAgo": "Live {age}",
   "mastermindLiveFor": "live {duration}",
   "mastermindMeasuredRuns": "{count, plural, =1{1 measured run} other{{count} measured runs}}",
@@ -6044,8 +6075,10 @@
   "mastermindSessionLeft": "Session {value} left",
   "mastermindSessionRejectedMessage": "Try again. If it keeps happening, sign out and sign in again.",
   "mastermindSessionRejectedTitle": "Mastermind couldn't verify your session",
+  "mastermindShipAllProducts": "All",
   "mastermindShipCadenceTitle": "Release cadence",
   "mastermindShipChecked": "Checked {dateTime}",
+  "mastermindShipCheckedAgo": "Checked {age}",
   "mastermindShipCiBadge": "CI {status}",
   "mastermindShipCiNow": "CI now",
   "mastermindShipCiQueued": "Queued {value}",
@@ -6053,14 +6086,18 @@
   "mastermindShipCopySha": "Copy commit id",
   "mastermindShipDeployBadge": "Deploy {status}",
   "mastermindShipEmpty": "No releases reported",
+  "mastermindShipFailing": "Failing",
   "mastermindShipNoCadence": "No release cadence reported",
+  "mastermindShipNoDeployments": "No deployments observed",
   "mastermindShipNoEnvironments": "No environments reported.",
   "mastermindShipNoProdRelease": "No production release observed",
   "mastermindShipNoPullRequests": "No pull request data reported.",
   "mastermindShipOpenCount": "{count} open",
   "mastermindShipPullRequestsTitle": "Pull requests and merges",
   "mastermindShipReleased": "Released {dateTime}",
+  "mastermindShipReleasedAgo": "Released {age}",
   "mastermindShipShaCopied": "Commit id copied",
+  "mastermindShipUntracked": "Not tracked yet",
   "mastermindShipWithheld": "Withheld, open on Mac",
   "mastermindShipWithheldTooltip": "Details stay on the Mac",
   "mastermindSignOutAction": "Sign out and sign in again",
@@ -6143,12 +6180,20 @@
   "mastermindUpdateAppShowing": "Update the app to read the latest Mastermind data · showing {time}",
   "mastermindUpdatedAt": "Updated {time}",
   "mastermindUsageBudgetLeft": "Budget left",
+  "mastermindUsageBurnNotMeasured": "Burn not measured yet",
   "mastermindUsageCreditsTitle": "Codex credits",
   "mastermindUsageEmpty": "No usage data reported.",
   "mastermindUsageForecastsTitle": "Forecasts",
   "mastermindUsageLink": "Usage",
   "mastermindUsagePacing": "Pacing",
+  "mastermindUsageSessionLeft": "Session left",
+  "mastermindUsageTableFor": "{chart} table",
   "mastermindUsageTargetUnavailable": "Target unavailable",
+  "mastermindUsageVerdictNone": "No pacing data",
+  "mastermindUsageVerdictOk": "On pace",
+  "mastermindUsageVerdictShort": "Running short",
+  "mastermindUsageVerdictSurplus": "Surplus",
+  "mastermindUsageWeeklyLeft": "Weekly left",
   "mastermindVersion": "Version",
   "mastermindWeekly": "Weekly",
   "mastermindWeeklyLeft": "Weekly {value} left",
@@ -6233,5 +6278,7 @@
         "type": "String"
       }
     }
-  }
+  },
+  "mastermindThreadsTitle": "Threads",
+  "mastermindBackToThreads": "Back to Threads"
 }

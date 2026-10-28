@@ -27,7 +27,9 @@ Map<String, dynamic> adaptDecisionCollections(
   final journal = <Object?>[];
   for (final row in decisions) {
     if (row is Map<String, dynamic> && '${row['id']}'.startsWith('item-')) {
-      if (acceptsItem == null || acceptsItem(row)) {
+      if ((row['status'] == null ||
+              const {'open', 'resolved'}.contains(row['status'])) &&
+          (acceptsItem == null || acceptsItem(row))) {
         items['${row['id']}'] = adaptDecision(row);
       }
     } else {

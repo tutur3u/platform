@@ -37,6 +37,24 @@ final class ShipProductGroup {
   final ProductRelease? release;
 
   bool get failing => environments.any(environmentIsFailing);
+
+  /// Nothing about this product was observed: no release age, and every
+  /// environment's deploy, CI, freshness and evidence are unknown, with no
+  /// release time, version or commit id either. Ship lists these once,
+  /// together, instead of a card of empty readings each.
+  bool get untracked =>
+      release?.prodAgeSeconds == null &&
+      environments.every(
+        (row) =>
+            row.deployStatus == DeployStatus.unknown &&
+            row.ciState == CiState.unknown &&
+            row.freshness == Freshness.unknown &&
+            row.evidence == Evidence.unknown &&
+            row.releasedAt == null &&
+            row.ageSeconds == null &&
+            row.versionTag == null &&
+            row.sha == null,
+      );
 }
 
 typedef OpenPrs = ({Product product, int? count});
@@ -65,13 +83,16 @@ final class ShipDelivery {
 
 /// What the Ship tab renders, derived once from one accepted snapshot.
 ///
-/// Products with a failing environment come first, then the rest by name.
-/// Nothing here reads the snapshot's own age: each environment keeps the
-/// freshness the hub published for it.
+/// Products with a failing environment come first, then the rest by most
+/// recent release, then by name. Products with nothing observed are kept
+/// apart in [untracked]. Nothing here reads the snapshot's own age: each
+/// environment keeps the freshness the hub published for it.
 final class MastermindShipModel {
   const MastermindShipModel._({
     required this.groups,
+    required this.untracked,
     required this.products,
+    required this.failing,
     required this.ci,
     required this.cadence,
     required this.delivery,
@@ -92,9 +113,17 @@ final class MastermindShipModel {
           environments: _environmentsOf(snapshot.environments, name),
           release: _releaseOf(snapshot.products.releases, name),
         ),
-    ]..sort(_byFailureThenName);
-    final shown = [
+    ]..sort(_byFailureThenRecency);
+    final tracked = [
       for (final group in all)
+        if (!group.untracked) group,
+    ];
+    final untracked = [
+      for (final group in all)
+        if (group.untracked) group,
+    ]..sort(_byName);
+    final shown = [
+      for (final group in tracked)
         if (product == null || group.product == product) group,
     ];
     final cadence = [
@@ -103,7 +132,12 @@ final class MastermindShipModel {
     ]..sort(_byMostRecentProd);
     return MastermindShipModel._(
       groups: shown,
-      products: [for (final group in all) group.product],
+      untracked: product != null ? const [] : untracked,
+      products: [for (final group in tracked) group.product],
+      failing: {
+        for (final group in tracked)
+          if (group.failing) group.product,
+      },
       ci: _latestCi(snapshot.observability.ci),
       cadence: cadence,
       delivery: _delivery(snapshot.observability.delivery),
@@ -112,13 +146,19 @@ final class MastermindShipModel {
 
   final List<ShipProductGroup> groups;
 
-  /// Every product present, before the filter, for the filter chips.
+  /// Products with nothing observed, by name. Empty while a product filter is
+  /// on: they are not something to filter to.
+  final List<ShipProductGroup> untracked;
+
+  /// Every tracked product, before the filter and in list order, for the
+  /// filter bar.
   final List<ReleaseProduct> products;
+
+  /// The [products] with a failing environment, marked in the filter bar.
+  final Set<ReleaseProduct> failing;
   final List<Ci> ci;
   final List<Cadence> cadence;
   final ShipDelivery delivery;
-
-  bool get hasEnvironments => groups.any((g) => g.environments.isNotEmpty);
 }
 
 List<EnvironmentRow> _environmentsOf(
@@ -151,12 +191,21 @@ ProductRelease? _releaseOf(
   return null;
 }
 
-int _byFailureThenName(ShipProductGroup a, ShipProductGroup b) {
+int _byFailureThenRecency(ShipProductGroup a, ShipProductGroup b) {
   if (a.failing != b.failing) return a.failing ? -1 : 1;
-  return a.product.wireName.toLowerCase().compareTo(
-    b.product.wireName.toLowerCase(),
-  );
+  final left = a.release?.prodAgeSeconds;
+  final right = b.release?.prodAgeSeconds;
+  if (left != right) {
+    if (left == null) return 1;
+    if (right == null) return -1;
+    return left.compareTo(right);
+  }
+  return _byName(a, b);
 }
+
+int _byName(ShipProductGroup a, ShipProductGroup b) => a.product.wireName
+    .toLowerCase()
+    .compareTo(b.product.wireName.toLowerCase());
 
 int _byMostRecentProd(Cadence a, Cadence b) {
   final left = a.lastProdAt;

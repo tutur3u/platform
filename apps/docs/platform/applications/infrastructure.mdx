@@ -9,6 +9,24 @@ privileged operational console. It exposes workspace/account controls,
 monitoring, configuration, and selected provider gateways. The existence of a
 console route never bypasses its operator eligibility and permission checks.
 
+## Workspace secret permissions
+
+Infrastructure workspace-secret reads and writes require either
+`manage_workspace_secrets` or `manage_workspace_roles` in the root workspace,
+checked server-side. This includes rate-limit secrets, AI-agent secret operations
+and external-app registry secrets. Workspace ownership alone does not grant
+this access.
+
+Creating, updating, renaming or deleting `MANAGED_CRON_ENABLED` also requires
+the authenticated operator's exact `@tuturuuu.com` email, matching Web.
+Updates check both the existing and proposed secret names. Other secret names
+retain the root permission requirement without this additional email restriction.
+Workspace role catalogs do not expand based on email domain.
+
+Regression coverage lives in Infrastructure's `workspace-secrets.test.ts`,
+`infrastructure-admin-access.test.ts`, AI-agent and external-app access tests,
+and Utils' `permissions.test.tsx`.
+
 ## Operational areas
 
 - Workspace/user administration, internal accounts, external-app registration,

@@ -26,7 +26,10 @@ export async function requireAiAgentAdmin(request: NextRequest) {
     };
   }
 
-  if (permissions.withoutPermission('manage_workspace_secrets')) {
+  if (
+    permissions.withoutPermission('manage_workspace_secrets') &&
+    permissions.withoutPermission('manage_workspace_roles')
+  ) {
     return {
       ok: false as const,
       response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }),

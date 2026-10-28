@@ -14,6 +14,40 @@ final class UsagePool {
   final List<UsagePoint> series;
 
   String get label => latest.instance;
+
+  /// The pool's one pacing verdict: the worse of the windows that report
+  /// one, or null when neither does.
+  Pacing? get verdict => usageVerdict(latest);
+
+  /// The window the verdict comes from (session on a tie), so the burn line
+  /// under the verdict explains that verdict. Null with no verdict.
+  UsageWindow? get verdictWindow {
+    final verdict = this.verdict;
+    if (verdict == null) return null;
+    return latest.session.pacing == verdict ? latest.session : latest.weekly;
+  }
+}
+
+/// The worse of the two windows' pacing, ignoring a window that reports
+/// none: SHORT, then OK, then SURPLUS. Null only when neither reports.
+Pacing? usageVerdict(UsagePoint latest) {
+  final known = [
+    for (final pacing in [latest.session.pacing, latest.weekly.pacing])
+      if (pacing != null) pacing,
+  ];
+  if (known.isEmpty) return null;
+  return known.reduce((a, b) => _pacingRank(a) <= _pacingRank(b) ? a : b);
+}
+
+/// The burn rate worth showing for [window], or null when it is missing or
+/// cannot be trusted. A zero burn next to SHORT is a partial hub reading (a
+/// pool that burns nothing cannot run short), so it reads as not measured
+/// rather than "0 pp/h".
+double? usageBurnShown(UsageWindow window) {
+  final burn = window.burnPercentPerHour;
+  if (burn == null) return null;
+  if (window.pacing == Pacing.short && burn <= 0) return null;
+  return burn;
 }
 
 /// A Codex pool's credit readings, oldest first.

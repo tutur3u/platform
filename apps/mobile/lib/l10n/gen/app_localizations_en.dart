@@ -12,6 +12,9 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get mastermindUnrecognisedValue => 'Unrecognised value';
+
+  @override
   String get assistantDownloadPhasePending => 'Pending';
 
   @override
@@ -12824,6 +12827,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindLess => 'Less';
 
   @override
+  String mastermindListShowAll(int count) {
+    return 'Show all $count';
+  }
+
+  @override
+  String get mastermindListShowFewer => 'Show fewer';
+
+  @override
   String mastermindLiveAgo(String age) {
     return 'Live $age';
   }
@@ -13220,11 +13231,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindSessionRejectedTitle => 'Mastermind couldn\'t verify your session';
 
   @override
+  String get mastermindShipAllProducts => 'All';
+
+  @override
   String get mastermindShipCadenceTitle => 'Release cadence';
 
   @override
   String mastermindShipChecked(String dateTime) {
     return 'Checked $dateTime';
+  }
+
+  @override
+  String mastermindShipCheckedAgo(String age) {
+    return 'Checked $age';
   }
 
   @override
@@ -13257,7 +13276,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindShipEmpty => 'No releases reported';
 
   @override
+  String get mastermindShipFailing => 'Failing';
+
+  @override
   String get mastermindShipNoCadence => 'No release cadence reported';
+
+  @override
+  String get mastermindShipNoDeployments => 'No deployments observed';
 
   @override
   String get mastermindShipNoEnvironments => 'No environments reported.';
@@ -13282,7 +13307,15 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String mastermindShipReleasedAgo(String age) {
+    return 'Released $age';
+  }
+
+  @override
   String get mastermindShipShaCopied => 'Commit id copied';
+
+  @override
+  String get mastermindShipUntracked => 'Not tracked yet';
 
   @override
   String get mastermindShipWithheld => 'Withheld, open on Mac';
@@ -13585,6 +13618,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindUsageBudgetLeft => 'Budget left';
 
   @override
+  String get mastermindUsageBurnNotMeasured => 'Burn not measured yet';
+
+  @override
   String get mastermindUsageCreditsTitle => 'Codex credits';
 
   @override
@@ -13600,7 +13636,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindUsagePacing => 'Pacing';
 
   @override
+  String get mastermindUsageSessionLeft => 'Session left';
+
+  @override
+  String mastermindUsageTableFor(String chart) {
+    return '$chart table';
+  }
+
+  @override
   String get mastermindUsageTargetUnavailable => 'Target unavailable';
+
+  @override
+  String get mastermindUsageVerdictNone => 'No pacing data';
+
+  @override
+  String get mastermindUsageVerdictOk => 'On pace';
+
+  @override
+  String get mastermindUsageVerdictShort => 'Running short';
+
+  @override
+  String get mastermindUsageVerdictSurplus => 'Surplus';
+
+  @override
+  String get mastermindUsageWeeklyLeft => 'Weekly left';
 
   @override
   String get mastermindVersion => 'Version';
@@ -13745,4 +13804,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String mastermindGapSummary(String start, String end, String reason) {
     return 'Gap $start–$end: $reason';
   }
+
+  @override
+  String get mastermindThreadsTitle => 'Threads';
+
+  @override
+  String get mastermindBackToThreads => 'Back to Threads';
 }

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/ship_model.dart';
 import 'package:mobile/features/mastermind/presentation/usage_charts.dart';
@@ -10,6 +11,7 @@ import '../../../helpers/mastermind_ship_fixture.dart';
 import '../../../helpers/mastermind_usage_fixture.dart';
 
 void main() {
+  setUpAll(initializeDateFormatting);
   group('MastermindShipModel', () {
     final snapshot = parsedSnapshot(
       shipJson(
@@ -70,6 +72,78 @@ void main() {
       expect(model.groups, hasLength(1));
       expect(model.cadence, hasLength(1));
       expect(model.products, hasLength(4));
+    });
+
+    test('a product with nothing observed is untracked, kept apart', () {
+      Map<String, dynamic> blank(String product) =>
+          shipEnv(
+            product,
+            deploy: 'unknown',
+            ci: 'unknown',
+            freshness: 'unknown',
+            evidence: 'unknown',
+            versionTag: null,
+            sha: null,
+          )..addAll({
+            'released_at': null,
+            'age_seconds': null,
+            'observed_at': null,
+          });
+      final model = MastermindShipModel.from(
+        parsedSnapshot(
+          shipJson(
+            environments: [
+              blank('PKTM'),
+              blank('MasteryAI'),
+              // A reading in one environment is enough to track a product.
+              blank('Upskii'),
+              shipEnv('Upskii', environment: 'staging'),
+            ],
+            // A release age is enough too.
+            releases: [
+              shipRelease('MasteryAI'),
+              shipRelease('PKTM', ageSeconds: null),
+            ],
+          ),
+        ),
+      );
+      expect(model.untracked.map((g) => g.product.wireName), ['PKTM']);
+      expect(model.groups.map((g) => g.product.wireName), [
+        'MasteryAI',
+        'Upskii',
+      ]);
+      expect(model.products, isNot(contains(ReleaseProduct.pktm)));
+      expect(
+        MastermindShipModel.from(
+          parsedSnapshot(shipJson(environments: [blank('PKTM')])),
+          product: ReleaseProduct.pktm,
+        ).untracked,
+        isEmpty,
+      );
+    });
+
+    test('healthy products by most recent release, failing ones marked', () {
+      final model = MastermindShipModel.from(
+        parsedSnapshot(
+          shipJson(
+            environments: [
+              shipEnv('Upskii'),
+              shipEnv('PKTM'),
+              shipEnv('Tuturuuu web', deploy: 'error'),
+            ],
+            releases: [
+              shipRelease('Upskii', ageSeconds: 3600),
+              shipRelease('PKTM', ageSeconds: 600),
+            ],
+          ),
+        ),
+      );
+      expect(model.products.map((p) => p.wireName), [
+        'Tuturuuu web',
+        'PKTM',
+        'Upskii',
+      ]);
+      expect(model.failing, {ReleaseProduct.tuturuuuWeb});
     });
 
     test('shipLocation and the query round-trip', () {
@@ -172,6 +246,88 @@ void main() {
         expect(parseUsageChartId(bad), isNull, reason: bad);
       }
     });
+
+    UsagePoint point({
+      String? session = 'OK',
+      String? weekly = 'OK',
+      double? burn = 4.2,
+    }) => MastermindUsageModel.from(
+      parsedSnapshot(
+        usageJson(
+          instances: [
+            usagePoint(
+              'Claude pool A',
+              sessionPacing: session,
+              weeklyPacing: weekly,
+              burn: burn,
+            ),
+          ],
+        ),
+      ),
+    ).pools.single.latest;
+
+    test('one verdict: the worse window that reports, null when none', () {
+      expect(usageVerdict(point(session: 'SURPLUS')), Pacing.ok);
+      expect(usageVerdict(point(weekly: 'SHORT')), Pacing.short);
+      expect(usageVerdict(point(session: null)), Pacing.ok);
+      expect(
+        usageVerdict(point(session: 'SURPLUS', weekly: 'SURPLUS')),
+        Pacing.surplus,
+      );
+      expect(usageVerdict(point(session: null, weekly: null)), isNull);
+    });
+
+    test('a zero burn next to SHORT is not shown as a burn rate', () {
+      expect(usageBurnShown(point(session: 'SHORT', burn: 0).session), isNull);
+      expect(usageBurnShown(point(session: 'SHORT', burn: 3).session), 3);
+      // Zero is a real reading when the window is not short.
+      expect(usageBurnShown(point(burn: 0).session), 0);
+      expect(usageBurnShown(point(burn: null).session), isNull);
+    });
+
+    test('x-axis ticks: the time, the day only where it changes', () {
+      final l10n = AppLocalizationsEn();
+      final sameDay = [
+        DateTime.utc(2026, 10, 28, 1),
+        DateTime.utc(2026, 10, 28, 5),
+      ];
+      final label = usageTimeLabel(l10n, sameDay);
+      expect(label(sameDay.first, date: true), '08:00');
+      final spanning = [
+        DateTime.utc(2026, 10, 27, 13, 30),
+        DateTime.utc(2026, 10, 27, 22, 45),
+      ];
+      final across = usageTimeLabel(l10n, spanning);
+      expect(across(spanning.first, date: true), 'Oct 27 20:30');
+      expect(across(spanning.last, date: true), 'Oct 28 05:45');
+      expect(across(spanning.last, date: false), '05:45');
+    });
+
+    test(
+      'budget chart: caption says what is missing, legend what is drawn',
+      () {
+        final series = usageSeries(
+          'Claude pool B',
+          weekly: const [null, null, null],
+        );
+        final root = usageJson(
+          coverage: 'partial',
+          instances: [
+            usagePoint('Claude pool B', weekly: null, weeklyPacing: null),
+          ],
+          series: series,
+        );
+        final spec = usageChartSpec(
+          AppLocalizationsEn(),
+          MastermindUsageModel.from(parsedSnapshot(root)),
+          usageChartId(UsageChartKind.budget, 'Claude pool B'),
+        )!;
+        expect(spec.caption, 'Partial data: Weekly window not reported.');
+        expect(spec.summary, startsWith('Partial data: Claude pool B'));
+        expect(spec.series.map((s) => s.id), ['session', 'weekly']);
+        expect(spec.drawnSeries.map((s) => s.id), ['session']);
+      },
+    );
 
     test('a chart for an absent pool is null', () {
       final model = MastermindUsageModel.from(snapshot);
