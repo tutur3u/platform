@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/features/mastermind/presentation/work_model.dart';
+import 'package:mobile/features/mastermind/threads/threads_models.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// Lanes, Backlog and Staff: three views of the same Work tab.
@@ -26,7 +27,9 @@ class WorkSegmentBar extends StatelessWidget {
         segments: [
           AppSegment(
             value: WorkSegment.lanes,
-            label: l10n.mastermindLanesLabel,
+            label: mastermindThreadsEnabled
+                ? l10n.mastermindThreadsTitle
+                : l10n.mastermindLanesLabel,
           ),
           AppSegment(
             value: WorkSegment.backlog,

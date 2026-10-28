@@ -4,6 +4,7 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/apps/models/app_module.dart';
 import 'package:mobile/features/mastermind/access/mastermind_access_cubit.dart';
+import 'package:mobile/features/mastermind/threads/threads_models.dart';
 import 'package:mobile/features/mastermind/view/mastermind_home_page.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -32,8 +33,12 @@ const mastermindModule = AppModule(
     ),
     MiniAppNavItem(
       id: 'mastermind_work',
-      route: Routes.mastermindWork,
-      icon: LucideIcons.briefcase,
+      route: mastermindThreadsEnabled
+          ? '/mastermind/threads'
+          : Routes.mastermindWork,
+      icon: mastermindThreadsEnabled
+          ? LucideIcons.messagesSquare
+          : LucideIcons.briefcase,
       labelBuilder: _labelWork,
     ),
     MiniAppNavItem(
@@ -54,7 +59,9 @@ const mastermindModule = AppModule(
 String _label(AppLocalizations l10n) => l10n.mastermindAppName;
 String _labelHome(AppLocalizations l10n) => l10n.mastermindTabHome;
 String _labelInbox(AppLocalizations l10n) => l10n.mastermindTabInbox;
-String _labelWork(AppLocalizations l10n) => l10n.mastermindTabWork;
+String _labelWork(AppLocalizations l10n) => mastermindThreadsEnabled
+    ? l10n.mastermindThreadsTitle
+    : l10n.mastermindTabWork;
 String _labelShip(AppLocalizations l10n) => l10n.mastermindTabShip;
 String _labelInsights(AppLocalizations l10n) => l10n.mastermindTabInsights;
 Widget _page(BuildContext context) => const MastermindHomePage();

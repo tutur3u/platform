@@ -595,3 +595,29 @@ An unreported pacing value retains its dashed status glyph beside the explicit
 reason. The label wraps within the row's content area so checked timestamps do
 not overflow narrow screens. `mastermind_insights_page_test.dart` preserves the
 one-glyph-per-window assertion for reported and unreported values.
+
+## Read-only Threads preview
+
+`MASTERMIND_THREADS` is a compile-time Dart define, default `false`. With it off,
+Work, Ship and Insights retain their existing navigation. When enabled, Threads
+replaces Work; Backlog and Staff remain segments, and Ship and Insights stay
+separate. Only `/v1/threads/capabilities` discovers thread support. A missing
+capability route or `read: false` displays the existing snapshot lane list.
+
+The preview reads the index and 30-message history pages. Each history request
+pins the index digest and uses the opaque `before` cursor. An expired digest
+reloads the index; the user can refresh the updated history. Messages render as
+plain text, including neutral redaction placeholders, with no link activation,
+Markdown, reply box, device enrollment or model selection.
+
+Index and last-page data remain in session memory scoped to the signed-in user
+and workspace. Account changes, lost access and screen disposal remove that
+content. No history is written to disk. Rate limits preserve the last successful
+content and show the retry time when supplied; there is no polling or automatic
+rate-limit retry. Hidden history returns “Not available on mobile”.
+
+Regression coverage: `apps/mobile/test/features/mastermind/threads/threads_test.dart`
+checks capability fallback, default-off behavior, filtering, digest/cursor request
+parameters, memory caching and safe HTTP failure states. Enablement remains held
+for security acceptance and exact-commit mobile CI; this preview does not authorize
+hub deployment or canonical traffic changes.

@@ -6233,5 +6233,24 @@
         "type": "String"
       }
     }
-  }
+  },
+  "mastermindThreadsTitle": "Threads",
+  "mastermindThreadsSearch": "Search threads",
+  "mastermindThreadsUnavailable": "Not available on mobile",
+  "mastermindThreadsUpdated": "This thread was updated. Select it again to reload.",
+  "mastermindThreadsLimit": "Limit reached, try again later",
+  "mastermindThreadsAccess": "Access expired or unavailable. Sign in and check access.",
+  "mastermindThreadsError": "Could not load threads. Check your connection and refresh.",
+  "mastermindThreadsRunning": "Running",
+  "mastermindThreadsWaiting": "Waiting",
+  "mastermindThreadsIdle": "Idle",
+  "mastermindThreadsFailed": "Failed",
+  "mastermindThreadsAll": "All",
+  "mastermindThreadsRefresh": "Refresh",
+  "mastermindThreadsEmpty": "No matching threads",
+  "mastermindThreadsRedactions": "Neutral placeholders mark content withheld for privacy.",
+  "mastermindThreadsEarlier": "Load earlier",
+  "mastermindThreadsNoMessages": "No messages published yet",
+  "mastermindThreadsWithheld": "Message withheld — open on Mac",
+  "mastermindThreadsRest": "Open on Mac for the rest"
 }

@@ -5943,5 +5943,24 @@
         "type": "String"
       }
     }
-  }
+  },
+  "mastermindThreadsTitle": "Hội thoại",
+  "mastermindThreadsSearch": "Tìm hội thoại",
+  "mastermindThreadsUnavailable": "Không có trên điện thoại",
+  "mastermindThreadsUpdated": "Hội thoại đã cập nhật. Chọn lại để tải.",
+  "mastermindThreadsLimit": "Đã đạt giới hạn, hãy thử lại sau",
+  "mastermindThreadsAccess": "Quyền truy cập hết hạn hoặc không khả dụng. Đăng nhập và kiểm tra quyền.",
+  "mastermindThreadsError": "Không tải được hội thoại. Kiểm tra kết nối và tải lại.",
+  "mastermindThreadsRunning": "Đang chạy",
+  "mastermindThreadsWaiting": "Đang chờ",
+  "mastermindThreadsIdle": "Đang nghỉ",
+  "mastermindThreadsFailed": "Thất bại",
+  "mastermindThreadsAll": "Tất cả",
+  "mastermindThreadsRefresh": "Tải lại",
+  "mastermindThreadsEmpty": "Không có hội thoại phù hợp",
+  "mastermindThreadsRedactions": "Nội dung ẩn để bảo vệ riêng tư được đánh dấu bằng ký hiệu trung tính.",
+  "mastermindThreadsEarlier": "Tải tin trước",
+  "mastermindThreadsNoMessages": "Chưa có tin nhắn được công bố",
+  "mastermindThreadsWithheld": "Tin nhắn đã ẩn — mở trên Mac",
+  "mastermindThreadsRest": "Mở trên Mac để xem phần còn lại"
 }
