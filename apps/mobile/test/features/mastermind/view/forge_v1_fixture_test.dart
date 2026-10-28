@@ -71,7 +71,10 @@ void main() {
         parseMastermindSnapshot(snapshotBytes(changed)) as ParseAccepted;
     final lanes = MastermindHomeModel.from(adapted.snapshot).lanes;
     expect(lanes.source, ActivitySource.hub);
-    expect((lanes.running, lanes.waiting, lanes.idle, lanes.queued), (8, 3, 2, 0));
+    expect(
+      (lanes.running, lanes.waiting, lanes.idle, lanes.queued),
+      (8, 3, 2, 0),
+    );
   });
 
   for (final (name, page) in <(String, Widget)>[
