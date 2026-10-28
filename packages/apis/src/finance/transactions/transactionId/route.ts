@@ -338,7 +338,7 @@ export async function PUT(
 
   // Verify new wallet belongs to workspace if being changed
   if (newData.wallet_id) {
-    const { data: walletCheck } = await sbAdmin
+    const { data: walletCheck, error: walletError } = await sbAdmin
       .schema('private')
       .from('workspace_wallets')
       .select('id, currency')
@@ -346,8 +346,14 @@ export async function PUT(
       .eq('ws_id', normalizedWsId)
       .maybeSingle();
 
+    if (walletError) {
+      return NextResponse.json(
+        { message: 'Error checking wallet' },
+        { status: 500 }
+      );
+    }
     if (!walletCheck) {
-      return NextResponse.json({ message: 'Invalid wallet' }, { status: 400 });
+      return NextResponse.json({ message: 'Invalid wallet' }, { status: 403 });
     }
     if (
       source &&
@@ -374,6 +380,28 @@ export async function PUT(
       },
       { status: 403 }
     );
+  }
+
+  if (newData.category_id) {
+    const { data: category, error: categoryError } = await sbAdmin
+      .from('transaction_categories')
+      .select('id')
+      .eq('id', newData.category_id)
+      .eq('ws_id', normalizedWsId)
+      .maybeSingle();
+
+    if (categoryError) {
+      return NextResponse.json(
+        { message: 'Error checking transaction category' },
+        { status: 500 }
+      );
+    }
+    if (!category) {
+      return NextResponse.json(
+        { message: 'Invalid category' },
+        { status: 403 }
+      );
+    }
   }
 
   const tagValidation = await validateTransactionTagIdsForWorkspace(
