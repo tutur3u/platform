@@ -7,6 +7,7 @@ import 'package:mobile/core/ui/components/app_button.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/overlays/app_dialog.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/mastermind/presentation/gmt7.dart';
 import 'package:mobile/features/mastermind/replies/mastermind_replies_cubit.dart';
 import 'package:mobile/features/mastermind/replies/reply_models.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -133,6 +134,13 @@ class _ReplyEntryPanelState extends State<ReplyEntryPanel> {
           // limited and sent as they change.
           title: Semantics(liveRegion: true, child: Text(title)),
           subtitle: Text(l10n.mastermindReplyYourReply(reply)),
+          // When it left this device (GMT+7), so "waiting" has a start.
+          trailing: Text(
+            Gmt7.time(
+              entry.createdAt,
+              Localizations.localeOf(context).toString(),
+            ),
+          ),
         ),
         if (!sent && !status.sending) _actions(context),
       ],

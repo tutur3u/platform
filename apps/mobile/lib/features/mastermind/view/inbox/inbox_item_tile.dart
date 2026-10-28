@@ -1,116 +1,124 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/components/app_badge.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
-import 'package:mobile/core/ui/tokens/app_interface_tokens.dart';
-import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
+import 'package:mobile/features/mastermind/presentation/age_text.dart';
+import 'package:mobile/features/mastermind/presentation/display_names.dart';
 import 'package:mobile/features/mastermind/presentation/inbox_model.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
+import 'package:mobile/features/mastermind/replies/mastermind_replies_cubit.dart';
+import 'package:mobile/features/mastermind/replies/reply_models.dart';
+import 'package:mobile/features/mastermind/view/inbox/mastermind_replies_watcher.dart';
+import 'package:mobile/features/mastermind/view/widgets/large_text.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-/// One open Needs-you item in the Inbox list: title, body (three lines until
-/// "More"), kind and product chips, and the options as read-only chips.
+/// One ask in the Inbox list, in two lines: the friendly title, then the kind
+/// badge with the ask's state and age.
 ///
-/// Tapping the row opens the detail, where a reply can be composed.
-class InboxItemTile extends StatefulWidget {
-  const InboxItemTile({required this.item, super.key});
+/// The state line is the hub's word first (Resolved), then this device's
+/// reply (Sent · waiting for Mastermind), then a one-line preview of the ask.
+/// The full ask, its options and the composer live on the detail page, which
+/// a tap pushes so Back returns to this list with its filters intact.
+class InboxItemTile extends StatelessWidget {
+  const InboxItemTile({required this.item, this.now, super.key});
 
   final NeedsYou item;
 
-  @override
-  State<InboxItemTile> createState() => _InboxItemTileState();
-}
-
-class _InboxItemTileState extends State<InboxItemTile> {
-  static const _collapsedLines = 3;
-  bool _expanded = false;
+  /// The section clock, for "5 min ago". Without it no age is shown.
+  final DateTime? now;
 
   @override
   Widget build(BuildContext context) {
-    final item = widget.item;
+    final replies = MastermindRepliesWatcher.cubitOf(context);
+    return BlocSelector<
+      MastermindRepliesCubit,
+      MastermindRepliesState,
+      OutboxEntry?
+    >(
+      bloc: replies,
+      selector: (state) => state.entryFor(item.id, item.versionHash),
+      builder: _row,
+    );
+  }
+
+  Widget _row(BuildContext context, OutboxEntry? entry) {
     final l10n = context.l10n;
-    final options = selectableOptions(item);
-    return AppGroupedRow(
-      title: Text(item.title),
-      showChevron: true,
-      // Pushed, so Back returns to this list with its search and chips intact.
-      onTap: () => context.push(Routes.mastermindInboxItemPath(item.id)),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (item.body.isNotEmpty) _body(context, item.body),
-          const SizedBox(height: AppSpacing.xs),
-          Wrap(
-            spacing: AppSpacing.xs,
-            runSpacing: AppSpacing.xs,
-            children: [
-              if (item.kind case final kind?)
-                AppBadge(child: Text(MastermindLabels.itemKind(l10n, kind))),
-              if (item.product case final product?)
-                AppBadge.outline(
-                  child: Text(MastermindLabels.product(product)),
-                ),
-              for (final (_, option) in options)
-                OptionChip(
-                  option: option,
-                  recommended: option == item.recommendedOption,
-                ),
+    final title = itemDisplayTitle(l10n, item);
+    final kind = item.kind;
+    final kindLabel = kind == null
+        ? null
+        : MastermindLabels.itemKind(l10n, kind);
+    final detail = [?_state(l10n, entry), ?_age(l10n)].join(' · ');
+    void open() => context.push(Routes.mastermindInboxItemPath(item.id));
+    final large = mastermindLargeText(context);
+    return Semantics(
+      button: true,
+      label: [?kindLabel, title, if (detail.isNotEmpty) detail].join('. '),
+      hint: l10n.mastermindOpensItem,
+      onTap: open,
+      excludeSemantics: true,
+      child: AppGroupedRow(
+        title: Text(
+          title,
+          maxLines: large ? 2 : 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        subtitle: Row(
+          children: [
+            if (kindLabel != null) ...[
+              AppBadge(
+                variant: item.state == ItemState.answered
+                    ? AppBadgeVariant.outline
+                    : AppBadgeVariant.secondary,
+                leading: item.state == ItemState.answered
+                    ? const Icon(AppIcons.check, size: 12)
+                    : null,
+                child: Text(kindLabel),
+              ),
+              const SizedBox(width: AppSpacing.xs),
             ],
-          ),
-        ],
+            if (detail.isNotEmpty)
+              Expanded(
+                child: Text(
+                  detail,
+                  maxLines: large ? 2 : 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+          ],
+        ),
+        showChevron: true,
+        onTap: open,
       ),
     );
   }
 
-  Widget _body(BuildContext context, String body) {
-    final l10n = context.l10n;
-    final style = Theme.of(context).textTheme.bodySmall;
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final painter = TextPainter(
-          text: TextSpan(text: body, style: style),
-          maxLines: _collapsedLines,
-          textDirection: Directionality.of(context),
-          textScaler: MediaQuery.textScalerOf(context),
-        )..layout(maxWidth: constraints.maxWidth);
-        final overflows = painter.didExceedMaxLines;
-        painter.dispose();
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              body,
-              style: style,
-              maxLines: _expanded ? null : _collapsedLines,
-              overflow: _expanded ? null : TextOverflow.ellipsis,
-            ),
-            if (overflows || _expanded)
-              InkWell(
-                onTap: () => setState(() => _expanded = !_expanded),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    minWidth: AppInterfaceTokens.minTouchTarget,
-                    minHeight: AppInterfaceTokens.minTouchTarget,
-                  ),
-                  child: Align(
-                    alignment: AlignmentDirectional.centerStart,
-                    widthFactor: 1,
-                    child: Text(
-                      _expanded ? l10n.mastermindLess : l10n.mastermindMore,
-                      style: style?.copyWith(
-                        color: AppTokens.of(context).colorScheme.primary,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        );
-      },
-    );
+  String? _state(AppLocalizations l10n, OutboxEntry? entry) {
+    if (item.state == ItemState.answered) {
+      return switch (item.resolution) {
+        final answer? => l10n.mastermindResolvedWith(answer),
+        null => l10n.mastermindResolvedState,
+      };
+    }
+    if (entry != null) {
+      return entry.status == OutboxStatus.sent
+          ? l10n.mastermindReplySent
+          : l10n.mastermindReplyPendingShort;
+    }
+    final body = item.body.trim();
+    if (isOpenOnMacStandIn(body) || body == item.title.trim()) return null;
+    return body.replaceAll(RegExp(r'\s+'), ' ');
+  }
+
+  String? _age(AppLocalizations l10n) {
+    final at = item.resolvedAt;
+    final clock = now;
+    if (at == null || clock == null) return null;
+    return mastermindAgeText(l10n, clock.difference(at));
   }
 }
 

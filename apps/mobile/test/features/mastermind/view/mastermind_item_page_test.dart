@@ -113,8 +113,10 @@ void main() {
         tester
             .widget<ShellTitleOverride>(find.byType(ShellTitleOverride))
             .title,
-        'Pick one',
+        // The kind names the page; the heading carries the title.
+        'Decision',
       );
+      expect(find.text('Pick one'), findsOneWidget);
       expect(find.text(body), findsOneWidget);
       final text = tester.widget<Text>(find.text(body));
       expect(text.maxLines, isNull);
@@ -485,8 +487,9 @@ void main() {
         tester
             .widget<ShellTitleOverride>(find.byType(ShellTitleOverride))
             .title,
-        'Refreshed',
+        'Decision',
       );
+      expect(find.text('Refreshed'), findsOneWidget);
       expect(find.text('my draft'), findsOneWidget);
       expect(find.text('This question was updated'), findsOneWidget);
     });

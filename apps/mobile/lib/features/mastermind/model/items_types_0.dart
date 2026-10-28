@@ -20,6 +20,8 @@ final class NeedsYou implements NeedsYouItem {
     required this.versionHash,
     this.kind,
     this.product,
+    this.resolvedAt,
+    this.resolution,
   }) : options = List.unmodifiable(options);
 
   final String id;
@@ -32,6 +34,12 @@ final class NeedsYou implements NeedsYouItem {
   final String versionHash;
   final ItemKind? kind;
   final Product? product;
+
+  /// When the hub closed the item; only on `decisions_resolved` history rows.
+  final DateTime? resolvedAt;
+
+  /// The answer the hub recorded ("Yes"); only on history rows.
+  final String? resolution;
 }
 
 final class Lane implements LaneItem {

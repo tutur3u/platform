@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/core/ui/components/app_badge.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
-import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/inbox_model.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
+import 'package:mobile/features/mastermind/view/inbox/item_question_card.dart';
 import 'package:mobile/features/mastermind/view/inbox/item_reply_section.dart';
 import 'package:mobile/features/mastermind/view/inbox/mastermind_replies_watcher.dart';
 import 'package:mobile/features/mastermind/view/mastermind_freshness_strip.dart';
@@ -15,12 +14,12 @@ import 'package:mobile/features/mastermind/view/mastermind_section.dart';
 import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-/// `/mastermind/inbox/item/:itemId`: one Needs-you item in full, with the
-/// reply composer when the hub accepts replies.
+/// `/mastermind/inbox/item/:itemId`: one ask in full, with the reply composer
+/// when the hub accepts replies, or its outcome once the hub resolved it.
 ///
-/// The id is an opaque snapshot id used only to look the item up. If it is not
-/// an open item any more the page says so and offers the way back; it is never
-/// an error.
+/// The id is an opaque snapshot id used only to look the item up, first among
+/// the open asks, then in the resolved history. If it is in neither the page
+/// says so and offers the way back; it is never an error.
 class MastermindItemPage extends StatefulWidget {
   const MastermindItemPage({required this.itemId, super.key});
 
@@ -37,7 +36,11 @@ class _MastermindItemPageState extends State<MastermindItemPage> {
   @override
   Widget build(BuildContext context) => MastermindSection(
     builder: (context, ready, freshness) {
-      final item = openNeedsYouById(ready.snapshot, widget.itemId);
+      final snapshot = ready.snapshot;
+      final item = openNeedsYouById(snapshot, widget.itemId);
+      final resolved = item == null
+          ? resolvedNeedsYouById(snapshot, widget.itemId)
+          : null;
       if (item != null) _openedVersion ??= item.versionHash;
       return MastermindRepliesWatcher(
         child: AppPageScrollView(
@@ -47,12 +50,14 @@ class _MastermindItemPageState extends State<MastermindItemPage> {
               child: MastermindFreshnessStrip(freshness: freshness),
             ),
             SliverToBoxAdapter(
-              child: item == null
-                  ? _Gone(answered: _openedVersion != null)
-                  : _Detail(
-                      item: item,
-                      updated: item.versionHash != _openedVersion,
-                    ),
+              child: switch ((item, resolved)) {
+                (final item?, _) => _Detail(
+                  item: item,
+                  updated: item.versionHash != _openedVersion,
+                ),
+                (_, final resolved?) => _Detail(item: resolved),
+                _ => _Gone(answered: _openedVersion != null),
+              },
             ),
           ],
         ),
@@ -84,70 +89,8 @@ class _Gone extends StatelessWidget {
   }
 }
 
-class _Question extends StatelessWidget {
-  const _Question({required this.item});
-
-  final NeedsYou item;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = AppTokens.of(context);
-    final l10n = context.l10n;
-    return AppGroupedSection.spaced(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(AppLayout.rowHorizontalPadding),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Semantics(
-                header: true,
-                child: Text(
-                  item.title,
-                  style: tokens.typography.h4.copyWith(
-                    color: tokens.colorScheme.foreground,
-                  ),
-                ),
-              ),
-              if (item.kind != null || item.product != null) ...[
-                const SizedBox(height: AppSpacing.sm),
-                Wrap(
-                  spacing: AppSpacing.xs,
-                  runSpacing: AppSpacing.xs,
-                  children: [
-                    if (item.kind case final kind?)
-                      AppBadge(
-                        child: Text(MastermindLabels.itemKind(l10n, kind)),
-                      ),
-                    if (item.product case final product?)
-                      AppBadge.outline(
-                        child: Text(MastermindLabels.product(product)),
-                      ),
-                  ],
-                ),
-              ],
-              if (item.body.isNotEmpty) ...[
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  item.body.startsWith('Open on Mac') || item.body.isEmpty
-                      ? l10n.mastermindAskMissing
-                      : item.body,
-                  style: tokens.typography.base.copyWith(
-                    color: tokens.colorScheme.foreground,
-                    height: 1.4,
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 class _Detail extends StatelessWidget {
-  const _Detail({required this.item, required this.updated});
+  const _Detail({required this.item, this.updated = false});
 
   final NeedsYou item;
   final bool updated;
@@ -161,7 +104,12 @@ class _Detail extends StatelessWidget {
         ShellTitleOverride(
           ownerId: 'mastermind-item',
           locations: {Routes.mastermindInboxItemPath(item.id)},
-          title: item.title,
+          // The kind, not the title: the heading below carries the full
+          // title, so the navbar never repeats it.
+          title: switch (item.kind) {
+            final kind? => MastermindLabels.itemKind(l10n, kind),
+            null => l10n.mastermindAskTitle,
+          },
           showLeadingBrand: false,
         ),
         if (updated)
@@ -176,11 +124,15 @@ class _Detail extends StatelessWidget {
               ),
             ],
           ),
-        // The shell title above truncates a long question, so the full title
-        // heads the body, and the body is plain text: a grouped row would cap
-        // it at two lines.
-        _Question(item: item),
-        ItemReplySection(item: item),
+        // The full title heads the body, and the ask is plain text: a grouped
+        // row would cap it at two lines.
+        ItemQuestionCard(item: item),
+        // Resolved is the hub's word only; until then the reply section shows
+        // this device's reply (Sent · waiting for Mastermind) or the composer.
+        if (item.state == ItemState.answered)
+          ItemResolvedPanel(item: item)
+        else
+          ItemReplySection(item: item),
       ],
     );
   }

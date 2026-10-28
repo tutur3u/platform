@@ -1,29 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout.dart';
-import 'package:mobile/core/ui/components/app_badge.dart';
-import 'package:mobile/core/ui/icons/app_icons.dart';
+import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/decisions_model.dart';
 import 'package:mobile/features/mastermind/presentation/inbox_model.dart';
 import 'package:mobile/features/mastermind/presentation/inbox_segment.dart';
-import 'package:mobile/features/mastermind/presentation/labels.dart';
-import 'package:mobile/features/mastermind/view/home_needs_you_card.dart';
 import 'package:mobile/features/mastermind/view/inbox/decisions_body.dart';
 import 'package:mobile/features/mastermind/view/inbox/inbox_filters.dart';
-import 'package:mobile/features/mastermind/view/inbox/inbox_item_tile.dart';
+import 'package:mobile/features/mastermind/view/inbox/inbox_list_body.dart';
 import 'package:mobile/features/mastermind/view/inbox/inbox_segment_bar.dart';
 import 'package:mobile/features/mastermind/view/inbox/mastermind_replies_watcher.dart';
 import 'package:mobile/features/mastermind/view/inbox/pending_replies_section.dart';
 import 'package:mobile/features/mastermind/view/mastermind_freshness_strip.dart';
 import 'package:mobile/features/mastermind/view/mastermind_section.dart';
+import 'package:mobile/features/mastermind/view/widgets/collapsible_search.dart';
+import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-/// `/mastermind/inbox`: the Needs-you list, grouped by kind, with the
-/// Decisions journal beside it.
+/// `/mastermind/inbox`: the asks (Needs you, Resolved, All) and the Decisions
+/// journal beside them.
 ///
 /// [initialSegment] is the `?segment=` the location carries (a Home link opens
 /// Decisions with it). The segment control changes it and [onSegment] reports
 /// each change so the route can keep it in the URL.
+///
+/// Search starts hidden: the navbar search icon or a pull-down at the top of
+/// the list reveals it, and it applies to every ask segment.
 class MastermindInboxPage extends StatefulWidget {
   const MastermindInboxPage({
     this.initialSegment = InboxSegment.needsYou,
@@ -39,10 +41,11 @@ class MastermindInboxPage extends StatefulWidget {
 }
 
 class _MastermindInboxPageState extends State<MastermindInboxPage> {
-  final _search = TextEditingController();
+  final _search = MastermindSearchController();
   String _query = '';
   Product? _product;
   late InboxSegment _segment = widget.initialSegment;
+  final Set<String> _expanded = {};
   Product? _decisionProduct;
   bool? _decisionReversible;
 
@@ -67,10 +70,19 @@ class _MastermindInboxPageState extends State<MastermindInboxPage> {
     widget.onSegment?.call(value);
   }
 
+  void _clearFilters() {
+    _search.collapse();
+    setState(() {
+      _query = '';
+      _product = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) => MastermindSection(
-    builder: (context, ready, freshness) => MastermindRepliesWatcher(
-      child: AppPageScrollView(
+    builder: (context, ready, freshness) {
+      final asks = _segment.listsAsks;
+      Widget list = AppPageScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
           SliverToBoxAdapter(
@@ -78,17 +90,70 @@ class _MastermindInboxPageState extends State<MastermindInboxPage> {
           ),
           SliverList.list(
             children: [
+              if (asks)
+                MastermindCollapsibleSearch(
+                  controller: _search,
+                  placeholder: context.l10n.mastermindInboxSearchPlaceholder,
+                  onChanged: (value) => setState(() => _query = value),
+                ),
               InboxSegmentBar(selected: _segment, onChanged: _selectSegment),
-              ...switch (_segment) {
-                InboxSegment.needsYou => _needsYou(context, ready.snapshot),
-                InboxSegment.decisions => [_decisions(ready.snapshot)],
-              },
+              if (asks)
+                ..._asks(ready.snapshot, freshness.time.add(freshness.age))
+              else
+                _decisions(ready.snapshot),
             ],
           ),
         ],
-      ),
-    ),
+      );
+      if (asks) list = MastermindPullToSearch(controller: _search, child: list);
+      return MastermindRepliesWatcher(
+        // The navbar action sits outside the scroll view: a lazy sliver child
+        // is disposed once it scrolls away, which would unregister it.
+        child: Column(
+          children: [
+            Expanded(child: list),
+            if (asks) _SearchAction(controller: _search),
+          ],
+        ),
+      );
+    },
   );
+
+  List<Widget> _asks(MastermindSnapshot snapshot, DateTime now) {
+    var model = MastermindInboxModel.from(
+      snapshot,
+      segment: _segment,
+      query: _query,
+      product: _product,
+    );
+    // The chips only exist while two products are present: a filter whose
+    // chip is gone could never be cleared and would strand the list.
+    if (_product != null &&
+        (model.products.length < 2 || !model.products.contains(_product))) {
+      _product = null;
+      model = MastermindInboxModel.from(
+        snapshot,
+        segment: _segment,
+        query: _query,
+      );
+    }
+    return [
+      if (_segment != InboxSegment.resolved) const PendingRepliesSection(),
+      if (model.products.length > 1)
+        InboxFilters(
+          products: model.products,
+          selected: _product,
+          onProduct: (value) => setState(() => _product = value),
+        ),
+      InboxListBody(
+        model: model,
+        expanded: _expanded,
+        onExpand: (key) => setState(() => _expanded.add(key)),
+        onClearFilters: _clearFilters,
+        now: now,
+      ),
+    ];
+  }
 
   Widget _decisions(MastermindSnapshot snapshot) {
     var model = MastermindDecisionsModel.from(
@@ -121,96 +186,27 @@ class _MastermindInboxPageState extends State<MastermindInboxPage> {
       onReversible: (value) => setState(() => _decisionReversible = value),
     );
   }
+}
 
-  List<Widget> _needsYou(BuildContext context, MastermindSnapshot snapshot) {
-    var model = MastermindInboxModel.from(
-      snapshot,
-      query: _query,
-      product: _product,
-    );
-    // The chips only exist while two products are present: a filter whose
-    // chip is gone could never be cleared and would strand the list.
-    if (_product != null &&
-        (model.products.length < 2 || !model.products.contains(_product))) {
-      _product = null;
-      model = MastermindInboxModel.from(snapshot, query: _query);
-    }
-    return [
-      const PendingRepliesSection(),
-      if (!model.isEmpty)
-        InboxFilters(
-          controller: _search,
-          products: model.products,
-          selected: _product,
-          onQuery: (value) => setState(() => _query = value),
-          onProduct: (value) => setState(() => _product = value),
-        ),
-      ..._body(context, model),
-      if (snapshot.resolvedItems.isNotEmpty)
-        ExpansionTile(
-          title: Text(context.l10n.mastermindRecentlyResolved),
-          children: [
-            for (final item in snapshot.resolvedItems)
-              ListTile(title: Text(item.title), subtitle: Text(item.body)),
-          ],
-        ),
-    ];
-  }
+/// The navbar search icon: opens and focuses the field, or clears and
+/// closes it.
+class _SearchAction extends StatelessWidget {
+  const _SearchAction({required this.controller});
 
-  List<Widget> _body(BuildContext context, MastermindInboxModel model) {
-    final l10n = context.l10n;
-    return [
-      if (model.isEmpty)
-        AppGroupedSection.spaced(
-          caption: l10n.mastermindNeedsYouTitle,
-          children: [
-            AppGroupedRow(
-              leading: const AppIconTile(icon: AppIcons.check),
-              title: Text(
-                model.security.isEmpty
-                    ? l10n.mastermindNothingNeedsYou
-                    : l10n.mastermindNothingNeedsReply,
-              ),
-            ),
-          ],
-        )
-      else if (model.hasNoMatches)
-        AppGroupedSection.spaced(
-          children: [
-            AppGroupedRow(
-              leading: const AppIconTile(icon: LucideIcons.searchX),
-              title: Text(l10n.mastermindInboxNoMatches),
-            ),
-          ],
-        ),
-      for (final group in model.groups)
-        AppGroupedSection.spaced(
-          caption: _groupTitle(l10n, group.kind),
-          captionTrailing: Text('${group.items.length}'),
-          children: [for (final item in group.items) InboxItemTile(item: item)],
-        ),
-      if (model.security.isNotEmpty)
-        AppGroupedSection.spaced(
-          caption: l10n.mastermindSecurityGroup,
-          children: [
-            for (final item in model.security)
-              AppGroupedRow(
-                leading: const AppIconTile(icon: LucideIcons.shield),
-                title: Text(securityLine(l10n, item)),
-                trailing: AppBadge.outline(
-                  child: Text(MastermindLabels.laneState(l10n, item.state)),
-                ),
-              ),
-          ],
-        ),
-    ];
-  }
+  final MastermindSearchController controller;
 
-  static String _groupTitle(AppLocalizations l10n, ItemKind? kind) =>
-      switch (kind) {
-        ItemKind.decision => l10n.mastermindGroupDecisions,
-        ItemKind.action => l10n.mastermindGroupActions,
-        ItemKind.fyi => l10n.mastermindGroupFyi,
-        null => l10n.mastermindNeedsYouTitle,
-      };
+  @override
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: controller,
+    builder: (context, _) => ShellChromeActions(
+      ownerId: 'mastermind-inbox',
+      locations: const {Routes.mastermindInbox},
+      actions: [
+        controller.searchActionSpec(
+          id: 'mastermind-inbox-search',
+          tooltip: context.l10n.mastermindInboxSearchAction,
+        ),
+      ],
+    ),
+  );
 }

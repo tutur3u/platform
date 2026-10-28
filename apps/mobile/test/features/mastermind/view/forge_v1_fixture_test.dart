@@ -135,9 +135,13 @@ void main() {
         case 'Inbox':
           expect(find.byType(InboxItemTile), findsNWidgets(2));
           expect(find.text('Review the plan'), findsNWidgets(2));
-          await tester.tap(find.text('Recently resolved'));
+          await tester.tap(find.text('Resolved'));
           await tester.pumpAndSettle();
-          expect(find.text('Review the plan'), findsNWidgets(4));
+          expect(find.byType(InboxItemTile), findsNWidgets(2));
+          expect(find.textContaining('Resolved · Yes'), findsNWidgets(2));
+          await tester.tap(find.text('All'));
+          await tester.pumpAndSettle();
+          expect(find.byType(InboxItemTile), findsNWidgets(4));
         case 'Ask detail':
           expect(find.text('Review the plan'), findsOneWidget);
         case 'Lane detail':

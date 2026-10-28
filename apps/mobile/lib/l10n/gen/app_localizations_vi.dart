@@ -12590,7 +12590,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindInboxNoMatches => 'Không có mục phù hợp';
 
   @override
-  String get mastermindInboxSearchPlaceholder => 'Tìm trong Cần bạn';
+  String get mastermindInboxSearchPlaceholder => 'Tìm yêu cầu';
 
   @override
   String get mastermindInsightsLabel => 'Phân tích';
@@ -13718,6 +13718,67 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindRecentlyResolved => 'Đã giải quyết gần đây';
+
+  @override
+  String get mastermindReplyPendingShort => 'Đang chờ gửi';
+
+  @override
+  String get mastermindAskTitle => 'Yêu cầu';
+
+  @override
+  String get mastermindOpensItem => 'Mở yêu cầu';
+
+  @override
+  String get mastermindItemOpenOnMacReason => 'Mastermind chưa công bố đầy đủ yêu cầu này. Hãy đọc trong Hộp thư trên máy Mac.';
+
+  @override
+  String get mastermindItemOpenOnMac => 'Chi tiết đầy đủ trên máy Mac';
+
+  @override
+  String get mastermindResolvedOutcome => 'Kết quả';
+
+  @override
+  String get mastermindResolvedNoAnswer => 'Mastermind đã đóng yêu cầu này mà không ghi lại câu trả lời.';
+
+  @override
+  String mastermindResolvedAnswer(String answer) {
+    return 'Câu trả lời: $answer';
+  }
+
+  @override
+  String mastermindResolvedWith(String answer) {
+    return 'Đã xử lý · $answer';
+  }
+
+  @override
+  String get mastermindResolvedState => 'Đã xử lý';
+
+  @override
+  String get mastermindInboxEmptyAllReason => 'Các yêu cầu đang mở và vừa xử lý từ Mastermind sẽ hiện ở đây.';
+
+  @override
+  String get mastermindInboxEmptyAll => 'Hộp thư trống';
+
+  @override
+  String get mastermindNothingResolvedReason => 'Yêu cầu sẽ hiện ở đây khi Mastermind ghi nhận câu trả lời.';
+
+  @override
+  String get mastermindNothingResolved => 'Chưa có yêu cầu nào được xử lý gần đây';
+
+  @override
+  String get mastermindNothingNeedsYouReason => 'Mastermind sẽ hiện yêu cầu ở đây khi một luồng cần bạn trả lời.';
+
+  @override
+  String get mastermindInboxNoMatchesReason => 'Không có mục nào trong chế độ xem này khớp với tìm kiếm hoặc bộ lọc.';
+
+  @override
+  String get mastermindInboxClearFilters => 'Xóa tìm kiếm và bộ lọc';
+
+  @override
+  String get mastermindInboxSearchAction => 'Tìm trong Hộp thư';
+
+  @override
+  String get mastermindInboxResolvedSegment => 'Đã xử lý';
 
   @override
   String mastermindLastChecked(String time) {

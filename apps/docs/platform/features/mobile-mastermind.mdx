@@ -145,37 +145,55 @@ summaries apply the same collapse.
 
 ## Inbox
 
-The Inbox tab lists the open Needs-you items grouped by kind: "Decisions for
-you", "Actions", then "For your information", each with its count, in publisher
-order. Each card shows the title, the body (three lines until "More", a 44 dp target),
-kind and product chips and the options as read-only chips; the recommended option carries
-the word "Recommended" and a star, never colour alone. A search field
-("Search Needs you") and product chips narrow the list. Pull to refresh.
+The Inbox tab opens on one compact segmented control: **Needs you · Resolved ·
+All · Decisions**. Needs you lists the open asks grouped by kind ("Decisions for
+you", "Actions", then "For your information"), each with its count, in publisher
+order. Resolved lists the hub's `decisions_resolved` history ("Recently
+resolved", newest first); All shows both. Pull to refresh.
 
-- **Scope:** the Needs you segment lists normal Needs-you items only; the
-  Decisions segment is the journal (below).
+- **Rows** are two lines: the friendly title (`itemDisplayTitle`, so a redacted
+  `Product · area · kind` title reads "Decision for Mastermind hub"), then the
+  kind badge with the state and age: "Resolved · Yes · 2 h ago" for a resolved
+  ask, "Sent · waiting for Mastermind" or "Waiting to send" for this device's
+  reply, else a one-line preview of the ask. No age is shown where the hub
+  publishes none (open asks). Options, "More" and the full ask live on the
+  detail. A row is one screen-reader node ("Decision. Review plan. Review the
+  plan", hint "Opens the ask").
+- **Caps:** each group shows five rows, then "Show all N" expands it in place.
+- **Search** is hidden until the navbar search icon or a pull-down at the top
+  of the list reveals it ("Search asks"); it covers every ask segment, including
+  the resolved answer. Product chips (one row, 44 pt targets) appear only while
+  two or more products are present.
+- **Empty and no-match states say why:** "Nothing needs you" (Mastermind lists
+  an ask here when a lane needs your answer), "Nothing resolved recently" (asks
+  appear once Mastermind records an answer), "The Inbox is empty" on All, and
+  "No matching items" with a "Clear search and filters" row.
 - **Security rows** keep the Home rule: one non-tappable line in a trailing
   "Security" group with no count, never counted, searched or filtered, with no
-  severity, id or detail.
-- **Detail:** `/mastermind/inbox/item/:itemId` opens one item in full, pushed
+  severity, id or detail. Resolved does not show them.
+- **Detail:** `/mastermind/inbox/item/:itemId` opens one ask in full, pushed
   from the Inbox and from Home, so Back returns to whichever opened it, with
   the same search text and product chips (the shell pops an item location
-  instead of falling back to the Inbox). The page leads with the full title as a heading and shows the
-  full question as plain text, never clamped. The id is
-  an opaque snapshot id and only ever a route parameter; deep links carry tab
-  roots only and never ids. An id that is not an open item shows "This item is
-  no longer in Mastermind" (or "This was answered or withdrawn" when it left
-  while open) with a way back, never an error. A changed `version_hash` shows
-  "This question was updated".
+  instead of falling back to the Inbox). The navbar title is the kind
+  ("Decision"), so the title is not repeated; the page leads with the display
+  title as a heading and shows the full `ask_text` as plain text, never clamped.
+  When the hub published only its "Open on Mac" stand-in, an info alert reads
+  "Full details are on the Mac" instead. The id is looked up among the open
+  asks, then the resolved history, and is only ever a route parameter; deep
+  links carry tab roots only and never ids. A resolved ask shows an "Outcome"
+  panel (Resolved, "Answer: Yes", GMT+7 time) and no composer. An id in neither
+  list shows "This item is no longer in Mastermind" (or "This was answered or
+  withdrawn" when it left while open) with a way back, never an error. A changed
+  `version_hash` shows "This question was updated".
 - **The "Reply on Mac" option** is a placeholder the publisher adds when an item
   has nothing to pick. It is never offered as a choice and the app never sends
   it.
 
 ### Decisions
 
-The Inbox opens on a "Needs you / Decisions" segmented control. The segment
-lives in the URL: Needs you is the bare `/mastermind/inbox` and Decisions is
-`/mastermind/inbox?segment=decisions` (an unknown value is Needs you).
+The segment lives in the URL: Needs you is the bare `/mastermind/inbox`, and
+Resolved, All and Decisions are `?segment=resolved|all|decisions` (an unknown
+value is Needs you).
 Switching is a `go`, never a push, so Back does not walk the segments. Home
 links straight to the Decisions segment.
 
@@ -465,9 +483,17 @@ Delivery sections arrive later and reuse the table route below).
   stands alone. Coverage: `view/mastermind_home_v1_test.dart`,
   `view/forge_v1_fixture_test.dart`.
 
+- **Resolved is the hub's word.** Scope: Inbox rows, the item detail, the
+  Resolved and All segments. Default: an ask reads "Resolved" only once the hub
+  lists it in `decisions_resolved`; a reply this device sent reads "Sent ·
+  waiting for Mastermind" (with its GMT+7 send time on the detail) until then,
+  never Resolved. Exceptions: an ask that leaves the snapshot without a history
+  row reads "This was answered or withdrawn". Coverage:
+  `view/mastermind_inbox_v1_test.dart` ("a sent reply reads Sent · waiting until
+  the hub resolves", "a resolved ask shows the hub outcome").
 - **Decisions journal.** Scope: the Inbox Decisions segment, the decision
-  detail and Home's recent-decisions card. Default: the Inbox has a Needs you /
-  Decisions segmented control with the segment in the URL; Home rows open the
+  detail and Home's recent-decisions card. Default: the Inbox segmented control
+  ends with Decisions, its segment in the URL; Home rows open the
   detail and "See all decisions" opens the segment. Exceptions: the journal is
   history and is not answerable; search and risk/area filters are not offered
   yet. Coverage: `mastermind_decisions_test.dart`,
@@ -644,6 +670,10 @@ shared capability request, a send waiting on the first check) and
 the outbox). `runtime/mastermind_runtime_online_test.dart` covers the
 connectivity stream (reaches the scheduler, de-duplicated, cancelled on close).
 The screens are in `view/mastermind_inbox_page_test.dart`,
+`view/mastermind_inbox_v1_test.dart` (the Forge v1 fixture: Needs you /
+Resolved / All, pull-down and navbar search, caps, row semantics, the full ask,
+the Open on Mac alert, resolved history, Sent then Resolved, 44 pt targets and
+last-row dock clearance at 1.0 and 2.0 text),
 `view/mastermind_item_page_test.dart` and
 `view/reply_line_limit_formatter_test.dart` (the 10-line cap and its refusals).
 

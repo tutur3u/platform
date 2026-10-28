@@ -5996,7 +5996,7 @@
   "mastermindGroupDecisions": "Decisions for you",
   "mastermindGroupFyi": "For your information",
   "mastermindInboxNoMatches": "No matching items",
-  "mastermindInboxSearchPlaceholder": "Search Needs you",
+  "mastermindInboxSearchPlaceholder": "Search asks",
   "mastermindInsightsLabel": "Insights",
   "mastermindItemAnsweredTitle": "This was answered or withdrawn",
   "mastermindItemFor": "{kind} for {subject}",
@@ -6339,6 +6339,25 @@
   "mastermindGapReset": "Quota reset",
   "mastermindAskMissing": "Full ask not published yet",
   "mastermindRecentlyResolved": "Recently resolved",
+  "mastermindReplyPendingShort": "Waiting to send",
+  "mastermindAskTitle": "Ask",
+  "mastermindOpensItem": "Opens the ask",
+  "mastermindItemOpenOnMacReason": "Mastermind didn't publish the full ask for this item. Read it in the Inbox on your Mac.",
+  "mastermindItemOpenOnMac": "Full details are on the Mac",
+  "mastermindResolvedOutcome": "Outcome",
+  "mastermindResolvedNoAnswer": "Mastermind closed this ask without recording an answer.",
+  "mastermindResolvedAnswer": "Answer: {answer}",
+  "mastermindResolvedWith": "Resolved · {answer}",
+  "mastermindResolvedState": "Resolved",
+  "mastermindInboxEmptyAllReason": "Open and recently resolved asks from Mastermind appear here.",
+  "mastermindInboxEmptyAll": "The Inbox is empty",
+  "mastermindNothingResolvedReason": "Asks appear here once Mastermind records an answer.",
+  "mastermindNothingResolved": "Nothing resolved recently",
+  "mastermindNothingNeedsYouReason": "Mastermind lists an ask here when a lane needs your answer.",
+  "mastermindInboxNoMatchesReason": "Nothing in this view matches your search or filter.",
+  "mastermindInboxClearFilters": "Clear search and filters",
+  "mastermindInboxSearchAction": "Search Inbox",
+  "mastermindInboxResolvedSegment": "Resolved",
   "mastermindLastChecked": "Last checked {time}",
   "@mastermindLastChecked": {
     "placeholders": {
@@ -6362,5 +6381,19 @@
     }
   },
   "mastermindThreadsTitle": "Threads",
-  "mastermindBackToThreads": "Back to Threads"
+  "mastermindBackToThreads": "Back to Threads",
+  "@mastermindResolvedWith": {
+    "placeholders": {
+      "answer": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindResolvedAnswer": {
+    "placeholders": {
+      "answer": {
+        "type": "String"
+      }
+    }
+  }
 }

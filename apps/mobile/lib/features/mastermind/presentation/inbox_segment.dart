@@ -1,14 +1,22 @@
 import 'package:mobile/core/router/routes.dart';
 
 /// The Inbox segments. Needs you is the default and is never written to the
-/// URL; Decisions rides in `?segment=`.
+/// URL; the others ride in `?segment=`.
+///
+/// Needs you, Resolved and All filter the same asks; Decisions is the journal
+/// of what Mastermind decided on its own.
 enum InboxSegment {
   needsYou('needs-you'),
+  resolved('resolved'),
+  all('all'),
   decisions('decisions');
 
   const InboxSegment(this.queryValue);
 
   final String queryValue;
+
+  /// Lists asks (open or resolved), so search and the product filter apply.
+  bool get listsAsks => this != decisions;
 }
 
 /// The segment a `?segment=` query names; anything else is Needs you.

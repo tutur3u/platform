@@ -12727,7 +12727,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindInboxNoMatches => 'No matching items';
 
   @override
-  String get mastermindInboxSearchPlaceholder => 'Search Needs you';
+  String get mastermindInboxSearchPlaceholder => 'Search asks';
 
   @override
   String get mastermindInsightsLabel => 'Insights';
@@ -13861,6 +13861,67 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindRecentlyResolved => 'Recently resolved';
+
+  @override
+  String get mastermindReplyPendingShort => 'Waiting to send';
+
+  @override
+  String get mastermindAskTitle => 'Ask';
+
+  @override
+  String get mastermindOpensItem => 'Opens the ask';
+
+  @override
+  String get mastermindItemOpenOnMacReason => 'Mastermind didn\'t publish the full ask for this item. Read it in the Inbox on your Mac.';
+
+  @override
+  String get mastermindItemOpenOnMac => 'Full details are on the Mac';
+
+  @override
+  String get mastermindResolvedOutcome => 'Outcome';
+
+  @override
+  String get mastermindResolvedNoAnswer => 'Mastermind closed this ask without recording an answer.';
+
+  @override
+  String mastermindResolvedAnswer(String answer) {
+    return 'Answer: $answer';
+  }
+
+  @override
+  String mastermindResolvedWith(String answer) {
+    return 'Resolved · $answer';
+  }
+
+  @override
+  String get mastermindResolvedState => 'Resolved';
+
+  @override
+  String get mastermindInboxEmptyAllReason => 'Open and recently resolved asks from Mastermind appear here.';
+
+  @override
+  String get mastermindInboxEmptyAll => 'The Inbox is empty';
+
+  @override
+  String get mastermindNothingResolvedReason => 'Asks appear here once Mastermind records an answer.';
+
+  @override
+  String get mastermindNothingResolved => 'Nothing resolved recently';
+
+  @override
+  String get mastermindNothingNeedsYouReason => 'Mastermind lists an ask here when a lane needs your answer.';
+
+  @override
+  String get mastermindInboxNoMatchesReason => 'Nothing in this view matches your search or filter.';
+
+  @override
+  String get mastermindInboxClearFilters => 'Clear search and filters';
+
+  @override
+  String get mastermindInboxSearchAction => 'Search Inbox';
+
+  @override
+  String get mastermindInboxResolvedSegment => 'Resolved';
 
   @override
   String mastermindLastChecked(String time) {
