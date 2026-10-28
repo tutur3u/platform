@@ -11,29 +11,27 @@ import 'package:mobile/l10n/l10n.dart';
 
 /// The Backlog segment: items grouped by product, open first, with a search
 /// field. Rows are read-only: no tap target and no id on screen.
-class WorkBacklogSection extends StatefulWidget {
-  const WorkBacklogSection({required this.snapshot, super.key});
+///
+/// The search lives with the page, like the Lanes one, so it survives a switch
+/// to another segment.
+class WorkBacklogSection extends StatelessWidget {
+  const WorkBacklogSection({
+    required this.snapshot,
+    required this.controller,
+    required this.query,
+    required this.onQuery,
+    super.key,
+  });
 
   final MastermindSnapshot snapshot;
-
-  @override
-  State<WorkBacklogSection> createState() => _WorkBacklogSectionState();
-}
-
-class _WorkBacklogSectionState extends State<WorkBacklogSection> {
-  final _search = TextEditingController();
-  String _query = '';
-
-  @override
-  void dispose() {
-    _search.dispose();
-    super.dispose();
-  }
+  final TextEditingController controller;
+  final String query;
+  final ValueChanged<String> onQuery;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final model = MastermindBacklogModel.from(widget.snapshot, query: _query);
+    final model = MastermindBacklogModel.from(snapshot, query: query);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -41,9 +39,9 @@ class _WorkBacklogSectionState extends State<WorkBacklogSection> {
           Padding(
             padding: const EdgeInsets.only(bottom: AppLayout.sectionGap),
             child: AppSearchField(
-              controller: _search,
+              controller: controller,
               placeholder: l10n.mastermindBacklogSearchPlaceholder,
-              onChanged: (value) => setState(() => _query = value),
+              onChanged: onQuery,
             ),
           ),
         if (model.isEmpty)

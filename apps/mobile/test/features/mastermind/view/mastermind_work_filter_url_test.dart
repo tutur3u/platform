@@ -60,6 +60,35 @@ void main() {
       expect(workUri(router).toString(), Routes.mastermindWork);
     });
 
+    testWidgets('waits for a lane open over the page, then rewrites', (
+      tester,
+    ) async {
+      final router = workRouter(Routes.mastermindWork);
+      final harness = await pumpWork(
+        tester,
+        workJson(_products),
+        router: router,
+      );
+      await tester.tap(find.widgetWithText(AppChip, 'Mastermind'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Mastermind run'));
+      await tester.pumpAndSettle();
+      final lane = workUri(router).toString();
+      expect(lane, startsWith('${Routes.mastermindWork}/lane/'));
+
+      // The refresh leaves only that lane, so the Mastermind chip goes while
+      // the lane is still open.
+      harness.source.bytes = snapshotBytes(workJson(_products.sublist(1, 2)));
+      await harness.snapshot.refresh();
+      await tester.pumpAndSettle();
+      expect(workUri(router).toString(), lane);
+
+      router.pop();
+      await tester.pumpAndSettle();
+      expect(workUri(router).toString(), Routes.mastermindWork);
+      expect(find.text('Mastermind run'), findsOneWidget);
+    });
+
     testWidgets('keeps the filters that are still valid', (tester) async {
       final router = workRouter(Routes.mastermindWork);
       final harness = await pumpWork(

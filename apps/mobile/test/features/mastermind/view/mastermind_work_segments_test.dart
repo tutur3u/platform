@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/deep_links.dart';
@@ -130,6 +131,39 @@ void main() {
       expect(find.text('Old running'), findsOneWidget);
     });
 
+    testWidgets('system Back after several switches leaves Work', (
+      tester,
+    ) async {
+      final router = workRouter(Routes.mastermindWork);
+      await pumpWork(tester, _json(), router: router);
+      final platformCalls = <String>[];
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async {
+          platformCalls.add(call.method);
+          return null;
+        },
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
+      );
+      await _segment(tester, 'Backlog');
+      await _segment(tester, 'Staff');
+      await _segment(tester, 'Lanes');
+      await _segment(tester, 'Backlog');
+
+      // A segment switch replaces the location, so Work holds no history of
+      // them: Back leaves Work (here, the app) and does not step to Lanes.
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(platformCalls, contains('SystemNavigator.pop'));
+      expect(workUri(router).queryParameters['segment'], 'backlog');
+      expect(find.text('Old running'), findsNothing);
+    });
+
     testWidgets('a lane pushed over the Lanes segment pops back to it', (
       tester,
     ) async {
@@ -212,6 +246,19 @@ void main() {
       await tester.enterText(find.byType(TextField), 'zzz');
       await tester.pumpAndSettle();
       expect(find.text('No matching backlog items'), findsOneWidget);
+    });
+
+    testWidgets('keeps its search across a switch, like Lanes does', (
+      tester,
+    ) async {
+      await pumpWork(tester, _json(), segment: WorkSegment.backlog);
+      await tester.enterText(find.byType(TextField), 'loose');
+      await tester.pumpAndSettle();
+      await _segment(tester, 'Staff');
+      await _segment(tester, 'Backlog');
+      expect(find.text('loose'), findsOneWidget);
+      expect(find.text('Loose item'), findsOneWidget);
+      expect(find.text('Open tuturuuu item'), findsNothing);
     });
 
     testWidgets('is clear when there are no items', (tester) async {
