@@ -4538,6 +4538,7 @@ export type Database = {
           id: string;
           last_heartbeat_at: string | null;
           name: string;
+          pool: string;
           resource_limits: NonNullable<Json>;
           status: string;
           updated_at: string;
@@ -4554,6 +4555,7 @@ export type Database = {
           id?: string;
           last_heartbeat_at?: string | null;
           name: string;
+          pool?: string;
           resource_limits?: NonNullable<Json>;
           status?: string;
           updated_at?: string;
@@ -4569,6 +4571,7 @@ export type Database = {
           id?: string;
           last_heartbeat_at?: string | null;
           name?: string;
+          pool?: string;
           resource_limits?: NonNullable<Json>;
           status?: string;
           updated_at?: string;
@@ -21583,9 +21586,17 @@ export type Database = {
         Args: { p_request_id: string; p_user_id: string };
         Returns: boolean;
       };
+      cancel_devbox_actor_queued_runs: {
+        Args: { p_actor_id: string };
+        Returns: undefined;
+      };
       cancel_pending_post_email_queue_for_recipient_email: {
         Args: { p_email: string; p_reason?: string };
         Returns: number;
+      };
+      cancel_unauthorized_devbox_runs: {
+        Args: { p_limit?: number };
+        Returns: undefined;
       };
       chat_actor_can_access_conversation: {
         Args: { p_actor_user_id: string; p_conversation_id: string };
@@ -21935,6 +21946,15 @@ export type Database = {
       chat_users_share_workspace: {
         Args: { p_actor_user_id: string; p_target_user_id: string };
         Returns: boolean;
+      };
+      check_devbox_write_ownership: {
+        Args: {
+          p_actor_id: string;
+          p_lease_id?: string;
+          p_runner_id?: string;
+          p_workload?: string;
+        };
+        Returns: undefined;
       };
       checkpoint_meeting_document: {
         Args: {
@@ -22536,6 +22556,14 @@ export type Database = {
       detect_wallet_interest_transactions: {
         Args: { _actor_id: string; _wallet_id: string; _ws_id: string };
         Returns: Json;
+      };
+      devbox_actor_has_active_personal_grant: {
+        Args: { p_actor_id: string };
+        Returns: boolean;
+      };
+      devbox_actor_is_root_member: {
+        Args: { p_actor_id: string };
+        Returns: boolean;
       };
       devbox_identity_grant_active: {
         Args: { p_user_id: string };

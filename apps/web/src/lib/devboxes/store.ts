@@ -5,6 +5,7 @@ import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { notifyDevboxRun } from '@tuturuuu/utils/devbox-control';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { assertDevboxCommitRunRunner } from './commit-run-guard';
+import { assertDevboxWriteOwnership } from './ownership-guard';
 import { assertDevboxRunnerAcceptsRun } from './runner-drain-guard';
 import {
   assertDevboxIdempotencyReady,
@@ -209,6 +210,7 @@ export async function createDevboxRun(input: CreateDevboxRunInput) {
     if (existing) return replayKeyedDevboxRun(existing, input.command);
   }
 
+  await assertDevboxWriteOwnership(privateClient, input);
   await assertDevboxCommitRunRunner(privateClient, input);
   await assertDevboxRunnerAcceptsRun(privateClient, {
     leaseId: input.leaseId,
@@ -314,6 +316,7 @@ export async function createDevboxLease(input: CreateDevboxLeaseInput) {
   const privateClient = getPrivateSchemaClient(
     await createPrivateDevboxClient()
   );
+  await assertDevboxWriteOwnership(privateClient, input);
   const now = new Date().toISOString();
   const leaseId = randomUUID();
   const { error } = await getPrivateTable(
@@ -500,6 +503,7 @@ export async function registerDevboxAgent(input: {
     created_at: now,
     id: runnerId,
     name: input.name,
+    pool: 'fleet',
     status: 'registered',
     updated_at: now,
   });
@@ -540,6 +544,7 @@ export async function updateDevboxEnv(input: {
   const privateClient = getPrivateSchemaClient(
     await createPrivateDevboxClient()
   );
+  await assertDevboxWriteOwnership(privateClient, input);
   const { error } = await getPrivateTable(
     privateClient,
     'devbox_env_revisions'

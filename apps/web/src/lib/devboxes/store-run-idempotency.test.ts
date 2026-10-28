@@ -114,6 +114,8 @@ function createSchema(options: SchemaOptions = {}) {
     return builder;
   };
   const rpc = vi.fn(async (fn: string) => {
+    if (fn === 'check_devbox_write_ownership')
+      return { data: null, error: null };
     if (fn !== 'devbox_run_idempotency_ready')
       return { data: null, error: { message: `unexpected rpc ${fn}` } };
     const ready = options.ready ?? true;
@@ -229,7 +231,9 @@ describe('devbox run creation idempotency', () => {
     await expect(
       create({ command: ['echo', 'hi'], idempotencyKey: undefined })
     ).resolves.toMatchObject({ run: { status: 'queued' } });
-    expect(rpc).not.toHaveBeenCalled();
+    expect(
+      rpc.mock.calls.filter(([fn]) => fn === 'devbox_run_idempotency_ready')
+    ).toHaveLength(0);
     expect(tables.devbox_runs).toHaveLength(1);
   });
 
@@ -237,7 +241,9 @@ describe('devbox run creation idempotency', () => {
     const { rpc } = createSchema();
     await create();
     await create({ idempotencyKey: `${key}-2` });
-    expect(rpc).toHaveBeenCalledOnce();
+    expect(
+      rpc.mock.calls.filter(([fn]) => fn === 'devbox_run_idempotency_ready')
+    ).toHaveLength(1);
   });
 
   it('stops only the caller run created with the key', async () => {

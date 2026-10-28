@@ -6,6 +6,9 @@ select plan(25);
 
 insert into public.users (id)
 values ('00000000-0000-4000-8000-00000000d001');
+insert into public.workspace_members(ws_id,user_id,type) values
+    ('00000000-0000-0000-0000-000000000000',
+        '00000000-0000-4000-8000-00000000d001','MEMBER');
 
 -- Runner A is healthy; runner B stopped heartbeating 30 minutes ago.
 insert into private.devbox_runners (

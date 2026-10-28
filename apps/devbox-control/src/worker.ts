@@ -347,6 +347,8 @@ async function poll(env: Env, runner: Runner) {
   const row = rows[0];
   if (!row) return json({ jobs: [] });
   if (
+    typeof row.actor_id !== 'string' ||
+    !UUID.test(row.actor_id) ||
     typeof row.id !== 'string' ||
     typeof row.lease_id !== 'string' ||
     !Array.isArray(row.command)

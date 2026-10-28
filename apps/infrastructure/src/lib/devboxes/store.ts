@@ -3,6 +3,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
+import { assertDevboxWriteOwnership } from './ownership-guard';
 import {
   createPrivateDevboxClient,
   type DevboxPrivateSchemaClient,
@@ -146,6 +147,8 @@ export async function createDevboxRun(input: CreateDevboxRunInput) {
   const runId = randomUUID();
   const leaseMode = input.leaseId ? 'existing' : (input.leaseMode ?? 'auto');
 
+  await assertDevboxWriteOwnership(privateClient, input);
+
   if (leaseMode === 'auto') {
     const { error } = await getPrivateTable(
       privateClient,
@@ -205,6 +208,7 @@ export async function createDevboxLease(input: CreateDevboxLeaseInput) {
   const privateClient = getPrivateSchemaClient(
     await createPrivateDevboxClient()
   );
+  await assertDevboxWriteOwnership(privateClient, input);
   const now = new Date().toISOString();
   const leaseId = randomUUID();
   const { error } = await getPrivateTable(
@@ -394,6 +398,7 @@ export async function registerDevboxAgent(input: {
     created_at: now,
     id: runnerId,
     name: input.name,
+    pool: 'fleet',
     status: 'registered',
     updated_at: now,
   });
@@ -434,6 +439,7 @@ export async function updateDevboxEnv(input: {
   const privateClient = getPrivateSchemaClient(
     await createPrivateDevboxClient()
   );
+  await assertDevboxWriteOwnership(privateClient, input);
   const { error } = await getPrivateTable(
     privateClient,
     'devbox_env_revisions'
