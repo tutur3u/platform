@@ -33,6 +33,7 @@ const complete = {
 };
 
 function setup({
+  boardLists = lists,
   pagination = {},
   tasks = [task],
   enabled = true,
@@ -40,6 +41,7 @@ function setup({
     defaultOptions: { queries: { retry: false } },
   }),
 }: {
+  boardLists?: TaskList[];
   pagination?: ProgressiveLoaderValue['pagination'];
   tasks?: Task[];
   enabled?: boolean;
@@ -55,7 +57,7 @@ function setup({
       loader.pagination = pagination;
       return useBoardHeaderData({
         tasks,
-        lists,
+        lists: boardLists,
         currentUserId: 'me',
         workspaceId: 'ws-1',
         boardId: 'board-1',
@@ -125,6 +127,14 @@ describe('useBoardHeaderData', () => {
       pagination: { 'list-2': complete, ...pagination },
     });
     expect(result.current.countsComplete).toBe(false);
+  });
+
+  it('ignores deleted lists, which never load, when checking counts', () => {
+    const { result } = setup({
+      boardLists: [...lists, { id: 'gone', deleted: true } as TaskList],
+      pagination: { 'list-1': complete, 'list-2': complete },
+    });
+    expect(result.current.countsComplete).toBe(true);
   });
 
   it('reuses the assignee picker normalized member cache', () => {
