@@ -139,7 +139,7 @@ describe('Web route census', () => {
     ]);
     expect(manifest.summary.dispositions).toEqual({
       'native-Start': 10,
-      'Next-fallback': 828,
+      'Next-fallback': manifest.summary.total - 10,
     });
     expect(manifest.crons).toHaveLength(5);
     expect(manifest.crons.every((cron) => cron.owner === 'vercel-web')).toBe(

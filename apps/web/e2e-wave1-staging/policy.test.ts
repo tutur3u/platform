@@ -185,7 +185,7 @@ test('Meet pre-join token issuance is scoped to the staging Meet endpoint', () =
     allowedRequest({
       ...cfg,
       method: 'POST',
-      url: 'https://meet.tuturuuu.com' + path,
+      url: `https://meet.tuturuuu.com${path}`,
     }),
     false
   );
