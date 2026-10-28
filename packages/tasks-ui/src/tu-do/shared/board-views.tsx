@@ -725,7 +725,6 @@ export function BoardViews({
   const boardSprints = useBoardSprints({
     boardId: board.id,
     enabled: !localTaskState,
-    tasks,
     wsId: effectiveWorkspaceId,
   });
 
@@ -743,13 +742,12 @@ export function BoardViews({
 
     tasks = tasks.filter((task) => !task.deleted_at);
     // Sprint boards show the running sprint, else the one being planned.
-    const sprintTaskIds = boardSprints.currentSprintTaskIds;
-    if (sprintTaskIds)
-      tasks = tasks.filter((task) => sprintTaskIds.has(task.id));
+    const showsOnBoard = boardSprints.showsOnBoard;
+    if (showsOnBoard) tasks = tasks.filter(showsOnBoard);
 
     return sortLocalTasks(tasks, filters.sortBy, unprioritizedPosition);
   }, [
-    boardSprints.currentSprintTaskIds,
+    boardSprints.showsOnBoard,
     filteredTasks,
     filters.sortBy,
     taskOverrides,
@@ -785,11 +783,9 @@ export function BoardViews({
   };
   // Pills count what the board shows: the current sprint, when sprints are on.
   const headerTasks = useMemo(() => {
-    const sprintTaskIds = boardSprints.currentSprintTaskIds;
-    return sprintTaskIds
-      ? tasks.filter((task) => sprintTaskIds.has(task.id))
-      : tasks;
-  }, [boardSprints.currentSprintTaskIds, tasks]);
+    const showsOnBoard = boardSprints.showsOnBoard;
+    return showsOnBoard ? tasks.filter(showsOnBoard) : tasks;
+  }, [boardSprints.showsOnBoard, tasks]);
   const headerData = useBoardHeaderData({
     tasks: headerTasks,
     lists,
