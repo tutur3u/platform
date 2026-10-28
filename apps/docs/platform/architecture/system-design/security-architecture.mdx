@@ -36,10 +36,17 @@ Changing the destination requires a reviewed migration.
 The bearer comes exclusively from the Supabase Vault secret named
 `notification_immediate_bearer` through `vault.decrypted_secrets`. Provision it
 out of band through the approved secret-management process, using a bearer that
-the Web endpoint accepts. Prefer the existing `CRON_SECRET` delivery credential
-over a Supabase service-role credential; the endpoint also accepts
-`CRON_CONTROL_DELIVERY_TOKEN`. This migration does not create, copy or activate
-any credential. Never store secret values in migrations, GUCs, docs or logs.
+the Web endpoint accepts. Prefer `CRON_CONTROL_DELIVERY_TOKEN`, which only this
+endpoint accepts, or a new dedicated token added to the route. Do not use
+`CRON_SECRET`, which also unlocks other cron routes, or the Supabase service-role
+key. Create the Vault secret only after this migration applies, following
+`20261027151600`; until then, the trigger is a no-op and cron-control delivers
+pending batches. The legacy GUCs can then be cleared. This migration does not
+create, copy or activate any credential. Never store secret values in migrations,
+GUCs, docs or logs.
+
+pg_net follows redirects. The destination is our own apex, and libcurl drops the
+Authorization header on a cross-host redirect.
 
 Missing, empty or whitespace-only Vault credentials suppress the HTTP request
 and leave the batch pending. Vault or transport errors also preserve the insert
@@ -48,6 +55,13 @@ Immediate batches retain one queued POST per batch; batched delivery does not
 use this trigger. This rule covers immediate email and push batches created by
 chat, inbound mail and other notification producers. The separate exchange-rate
 cron and the Web endpoint's accepted authorization methods are outside SR-327.
+
+The manual containment rollback
+`apps/database/rollbacks/20261027151700_pin_notification_trigger_vault.rollback.sql`
+disables all trigger HTTP calls while retaining the definer, trusted search path
+and service-role-only execution. cron-control recovers pending batches; it never
+restores the legacy GUC destination or bearer. Its disposable regression is
+`apps/database/verification/notification-trigger-vault-containment.sql`.
 
 Regression coverage lives in
 `apps/database/supabase/tests/notification-trigger-vault.sql`: it inserts real

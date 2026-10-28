@@ -43,6 +43,23 @@ transactions can delay a concurrent drop. On timeout/cancellation, inspect
 before retrying; do not start another build/drop blindly. Close the dedicated
 session or reset both timeouts if execution stopped before the file's resets.
 
+## Immediate notification containment
+
+| Migration / PR | Manual artifact | Restores / limits |
+| --- | --- | --- |
+| `20261027151700` / #7113 | `20261027151700_pin_notification_trigger_vault.rollback.sql` | Containment only: disables all trigger HTTP calls, retaining the security definer, trusted search path and service-role-only execution. cron-control recovers pending batches. Never restores the legacy GUC destination or bearer. |
+
+Run with release-authority approval using the manual procedure above. The file
+uses a transaction with five-second lock and thirty-second statement timeouts.
+It preserves the trigger and pending batch data. Replay the forward SQL only in
+a disposable forward → containment → forward rehearsal; hosted recovery requires
+an approved forward repair. Apply the forward migration after `20261027151600`
+and provision `notification_immediate_bearer` separately after application.
+The rollback regression is
+`apps/database/verification/notification-trigger-vault-containment.sql`; run it
+after containment, then rerun `notification-trigger-vault.sql` after re-apply.
+Run `security-definer-search-paths.sql` in every phase.
+
 ## Topic teacher assignment rollback
 
 `20261026193000_topic_announcement_teacher_assignment.rollback.sql` (#6924) is
