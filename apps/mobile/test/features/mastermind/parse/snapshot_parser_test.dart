@@ -97,11 +97,13 @@ void main() {
   });
   test('byte cap enforced before decoding', () {
     expect(
-      (parseMastermindSnapshot(Uint8List(600001)) as ParseRejected).reason,
+      (parseMastermindSnapshot(Uint8List(mastermindSnapshotMaxBytes + 1))
+              as ParseRejected)
+          .reason,
       RejectionReason.tooLarge,
     );
     final b = MastermindSnapshotBuilder.defaults()..nearCap = true;
-    expect(b.bytes().length, 599999);
+    expect(b.bytes().length, mastermindSnapshotMaxBytes - 1);
     expect(parseMastermindSnapshot(b.bytes()), isA<ParseAccepted>());
   });
   for (final bytes in [
