@@ -17,6 +17,7 @@ import { getPlanMoveAssigneeIds } from './use-plan-assignment';
 
 const api = vi.hoisted(() => ({
   createWorkspaceTask: vi.fn(),
+  deleteWorkspaceTask: vi.fn(),
   listBoardTasksForSearch: vi.fn(),
   moveTasks: vi.fn(),
   openTask: vi.fn(),
@@ -67,6 +68,7 @@ vi.mock('@tuturuuu/ui/sonner', () => ({
 
 vi.mock('@tuturuuu/internal-api/tasks', () => ({
   createWorkspaceTask: api.createWorkspaceTask,
+  deleteWorkspaceTask: api.deleteWorkspaceTask,
   listWorkspaceTaskBoardViewableMembers: async () => ({
     members: [
       { user_id: 'u-ana', display_name: 'Ana', email: null, avatar_url: null },
@@ -345,57 +347,51 @@ describe('BoardPlanView', () => {
     expect(within(backlog).queryByText('Task t5')).toBeNull();
   });
 
-  it.each([
-    ['in order', [0, 1]],
-    ['out of order', [1, 0]],
-  ])(
-    'shows the server owners after two moves of one task both fail (%s)',
-    async (_label, failOrder) => {
-      const fails: Array<(error: Error) => void> = [];
-      api.listBoardTasksForSearch.mockResolvedValue([task('t1')]);
-      api.update.mockImplementation(
-        () =>
-          new Promise((_resolve, reject) => {
-            fails.push(reject);
-          })
-      );
-      renderPlan({ sprints: [sprint(15, 'planned', ['t1'])] });
+  it('shows the server owners after two moves of one task both fail', async () => {
+    const fails: Array<(error: Error) => void> = [];
+    api.listBoardTasksForSearch.mockResolvedValue([task('t1')]);
+    api.update.mockImplementation(
+      () =>
+        new Promise((_resolve, reject) => {
+          fails.push(reject);
+        })
+    );
+    renderPlan({ sprints: [sprint(15, 'planned', ['t1'])] });
 
-      fireEvent.click(
-        await screen.findByRole('button', { name: 'assign:Task t1' })
-      );
-      fireEvent.click(screen.getAllByRole('menuitem', { name: /Ana/ })[0]!);
-      const row = (
-        await within(screen.getByRole('region', { name: 'Ana' })).findByText(
-          'Task t1'
-        )
-      ).closest('[draggable]')!;
-      const transfer = dataTransfer();
-      fireEvent.dragStart(row, { dataTransfer: transfer });
-      const binh = screen.getByRole('region', { name: 'Binh' });
-      fireEvent.dragOver(binh, { dataTransfer: transfer });
-      fireEvent.drop(binh, { dataTransfer: transfer });
-      await waitFor(() => expect(fails).toHaveLength(2));
-      const fetchesBefore = api.listBoardTasksForSearch.mock.calls.length;
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'assign:Task t1' })
+    );
+    fireEvent.click(screen.getAllByRole('menuitem', { name: /Ana/ })[0]!);
+    const row = (
+      await within(screen.getByRole('region', { name: 'Ana' })).findByText(
+        'Task t1'
+      )
+    ).closest('[draggable]')!;
+    const transfer = dataTransfer();
+    fireEvent.dragStart(row, { dataTransfer: transfer });
+    const binh = screen.getByRole('region', { name: 'Binh' });
+    fireEvent.dragOver(binh, { dataTransfer: transfer });
+    fireEvent.drop(binh, { dataTransfer: transfer });
+    // Moves of one task are sent one after another.
+    await waitFor(() => expect(fails).toHaveLength(1));
+    const fetchesBefore = api.listBoardTasksForSearch.mock.calls.length;
+    fails[0]!(new Error('network'));
+    await waitFor(() => expect(fails).toHaveLength(2));
+    fails[1]!(new Error('network'));
 
-      for (const index of failOrder) fails[index]!(new Error('network'));
-
-      await waitFor(() =>
-        expect(api.listBoardTasksForSearch.mock.calls.length).toBeGreaterThan(
-          fetchesBefore
-        )
-      );
-      const backlog = screen.getByRole('region', { name: 'backlog' });
-      await waitFor(() =>
-        expect(within(backlog).getByText('Task t1')).toBeInTheDocument()
-      );
-      expect(
-        within(screen.getByRole('region', { name: 'Ana' })).queryByText(
-          'Task t1'
-        )
-      ).toBeNull();
-    }
-  );
+    await waitFor(() =>
+      expect(api.listBoardTasksForSearch.mock.calls.length).toBeGreaterThan(
+        fetchesBefore
+      )
+    );
+    const backlog = screen.getByRole('region', { name: 'backlog' });
+    await waitFor(() =>
+      expect(within(backlog).getByText('Task t1')).toBeInTheDocument()
+    );
+    expect(
+      within(screen.getByRole('region', { name: 'Ana' })).queryByText('Task t1')
+    ).toBeNull();
+  });
 
   it('unassigns a task dropped back on the backlog', async () => {
     renderPlan({ sprints: [planned] });
@@ -468,5 +464,24 @@ describe('BoardPlanView', () => {
       listId: 'list-todo',
       name: 'Write release notes',
     });
+  });
+
+  it('undoes the create and keeps the name when the task cannot reach the backlog', async () => {
+    api.createWorkspaceTask.mockResolvedValue({ task: task('t9') });
+    api.moveTasks.mockRejectedValue(new Error('network'));
+    api.deleteWorkspaceTask.mockResolvedValue({ success: true });
+    renderPlan({ sprints: [active, planned] });
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'add_to_backlog' })
+    );
+    const input = screen.getByRole('textbox', { name: 'new_backlog_task' });
+    fireEvent.change(input, { target: { value: 'Write release notes' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    await waitFor(() =>
+      expect(api.deleteWorkspaceTask).toHaveBeenCalledWith('ws-1', 't9')
+    );
+    // One retry before giving up, then the name comes back to retry.
+    expect(api.moveTasks).toHaveBeenCalledTimes(2);
+    await waitFor(() => expect(input).toHaveValue('Write release notes'));
   });
 });

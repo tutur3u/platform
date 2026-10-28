@@ -2,7 +2,10 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { moveTasksToWorkspaceTaskBoardSprint } from '@tuturuuu/internal-api/task-sprints';
-import { createWorkspaceTask } from '@tuturuuu/internal-api/tasks';
+import {
+  createWorkspaceTask,
+  deleteWorkspaceTask,
+} from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -103,9 +106,18 @@ export function BoardPlanView({
       });
       // While a sprint runs, new tasks join it; the backlog is the next one.
       if (active) {
-        await moveTasksToWorkspaceTaskBoardSprint(wsId, boardId, planning.id, [
-          task.id,
-        ]);
+        const toBacklog = () =>
+          moveTasksToWorkspaceTaskBoardSprint(wsId, boardId, planning.id, [
+            task.id,
+          ]);
+        try {
+          await toBacklog().catch(toBacklog);
+        } catch (error) {
+          // Never leave it in the running sprint: undo the create, and the
+          // composer keeps the name so retrying cannot add a duplicate.
+          await deleteWorkspaceTask(wsId, task.id).catch(() => undefined);
+          throw error;
+        }
       }
       return task as Task;
     },
@@ -152,7 +164,7 @@ export function BoardPlanView({
         onAssign={(task, memberId) => move(task, { from: null, to: memberId })}
         onCreate={
           canPlan && createListId
-            ? (name) => create.mutateAsync(name).catch(() => undefined)
+            ? (name) => create.mutateAsync(name)
             : undefined
         }
         onDragEnd={dragEnd}

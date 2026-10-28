@@ -90,7 +90,12 @@ export function PlanBacklog({
     const name = draft.trim();
     if (!name || !onCreate) return;
     setDraft('');
-    await onCreate(name);
+    try {
+      await onCreate(name);
+    } catch {
+      // Creating failed (and was reported); keep the name to retry.
+      setDraft(name);
+    }
   }
 
   return (
