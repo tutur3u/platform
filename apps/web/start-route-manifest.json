@@ -42,9 +42,9 @@
     }
   ],
   "summary": {
-    "total": 838,
+    "total": 839,
     "categories": {
-      "api": 646,
+      "api": 647,
       "api-rewrite": 4,
       "candidate-probe": 1,
       "metadata": 9,
@@ -53,7 +53,7 @@
       "satellite-bridge": 12,
       "service-worker": 1
     },
-    "dispositions": { "native-Start": 10, "Next-fallback": 828 }
+    "dispositions": { "native-Start": 10, "Next-fallback": 829 }
   },
   "routes": [
     {
@@ -2684,6 +2684,14 @@
     {
       "pattern": "/api/v1/live/usage",
       "source": "apps/web/src/app/api/v1/live/usage/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/mastermind/push-events",
+      "source": "apps/web/src/app/api/v1/mastermind/push-events/route.ts",
       "category": "api",
       "owner": "web-next",
       "disposition": "Next-fallback",
