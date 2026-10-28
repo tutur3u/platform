@@ -337,11 +337,9 @@ export async function signIn(formData: FormData) {
 
 ### OAuth Sign In
 
-The providers offered on the login page and in account linking come from
-`AUTH_OAUTH_PROVIDERS` in `apps/web/src/lib/auth/oauth-providers.ts` — one list
-drives the buttons, the `/api/v1/users/me/identities/link/[provider]` route, and
-the settings linked-accounts card. Adding a provider anywhere means adding it
-there.
+Customer OAuth providers are listed in `AUTH_OAUTH_PROVIDERS` in
+`apps/web/src/lib/auth/oauth-providers.ts`; this list drives automatic login and
+account linking. The web form separately offers the staff-only Azure entry.
 
 <Warning>
   Configure Microsoft's optional `xms_edov` ID-token claim as described in [Supabase's Azure guidance](https://supabase.com/docs/guides/auth/social-login/auth-azure#guarding-against-unverified-email-domains). GoTrue's `email_verified` alone also accepts an absent claim and cannot prove explicit verification.
@@ -349,7 +347,7 @@ there.
 
 Before inserting an `azure` identity for an existing account, including one whose only sign-in is another Microsoft identity, the database requires `identity_data.custom_claims.xms_edov` to be JSON `true`, `"true"`, or `"1"`. Missing, false, or malformed claims roll back the link with a generic permission error. This applies to web, linked-account settings, mobile, and other clients of the same Auth database.
 
-New Azure-only signups and updates to existing Azure identities remain allowed. A user row created more than five minutes before the link transaction counts as existing even without an identity, which absorbs Auth and database clock skew; other providers are unaffected. The multi-tenant `common` endpoint can serve organizational and personal accounts. A tenant URL override can narrow access when required by the deployment's account policy.
+Existing Azure identities remain available for display and unlinking. A user row created more than five minutes before the link transaction counts as existing even without an identity, which absorbs Auth and database clock skew; other providers are unaffected. Microsoft sign-in is restricted to the approved Tuturuuu staff tenant; the hosted Azure authority must be pinned to that tenant. The generic `common` authority is not permitted.
 
 GoTrue v2.197.0 preserves the [raw provider claims](https://github.com/supabase/auth/blob/v2.197.0/internal/api/provider/oidc.go#L329) and [updates existing identities](https://github.com/supabase/auth/blob/v2.197.0/internal/api/external.go#L388). Recheck these mappings when upgrading Auth. Coverage: `apps/database/supabase/tests/azure-identity-link-verification*.sql`; the matching `20261027151480` rollback removes the trigger and private helper without restoring client grants.
 
@@ -1347,3 +1345,33 @@ the first value. Storefront, Inventory, Chat, Mind and Nova share this rule;
 Nova retains its central-only handoff and each app retains its existing landing
 path. Their colocated `redirect-security.test.ts` suites execute the real pages
 and shared normalizer for signed-in and central handoff paths.
+
+
+### Staff-only Microsoft sign-in (SR-382)
+
+Microsoft (`azure`) is no longer a customer sign-in or account-linking option.
+Central web login retains one bilingual “Tuturuuu staff (Microsoft)” entry;
+provider-hint auto-login does not accept Azure. Mobile login, signup, and account
+security do not offer Microsoft. Both web and mobile linking refuse Azure;
+existing identities can still be displayed and unlinked under the usual safeguards.
+Calendar and mail integration consent flows are unaffected.
+
+Customers who previously used Microsoft should sign in with the same email using
+the existing email OTP flow. No account migration or
+identity deletion is performed. Web OTP availability remains governed by the
+existing platform OTP settings.
+
+The hosted Supabase tenant pin is the primary control and is configured separately.
+The web callback additionally rejects Azure OAuth sessions with a missing,
+conflicting, or foreign tenant, or an unset `TUTURUUU_AZURE_TENANT_ID`, signs out
+locally, and directs the user to email sign-in with a localized error. Supabase
+resolves identity linking before this callback; rejection cannot undo an upstream
+link. Tenant membership is not staff authorization, including for tenant guests.
+Email recovery is allowed even when the account retains an Azure identity.
+
+Regression coverage:
+[login entry points](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/%5Blocale%5D/(auth)/login/form-return-url.test.tsx),
+[link route](https://github.com/tutur3u/platform/blob/main/apps/web/src/__tests__/settings-auth-routes.test.ts),
+[callback tenant guard](https://github.com/tutur3u/platform/blob/main/apps/web/src/__tests__/auth-callback-route.test.ts),
+[mobile login](https://github.com/tutur3u/platform/blob/main/apps/mobile/test/features/auth/view/login_page_test.dart), and
+[mobile signup](https://github.com/tutur3u/platform/blob/main/apps/mobile/test/features/auth/view/signup_page_test.dart).

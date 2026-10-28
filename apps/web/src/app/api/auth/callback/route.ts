@@ -6,6 +6,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveAuthRedirectOrigin } from '@/app/[locale]/(auth)/login/auth-redirect-origin';
 import { getExternalAppByReturnUrl } from '@/lib/app-coordination/external-apps';
+import { isAzureSessionTenantAllowed } from '@/lib/auth/azure-tenant';
 import {
   createAuthDiagnosticCode,
   getReturnUrlKind,
@@ -172,6 +173,17 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       const exchangeResult = await supabase.auth.exchangeCodeForSession(_code);
       if (exchangeResult?.error) {
         throw exchangeResult.error;
+      }
+      if (
+        !isAzureSessionTenantAllowed(
+          exchangeResult?.data?.session,
+          process.env.TUTURUUU_AZURE_TENANT_ID
+        )
+      ) {
+        await supabase.auth.signOut({ scope: 'local' });
+        const loginUrl = new URL('/login', redirectOrigin);
+        loginUrl.searchParams.set('error', 'azure_tenant_restricted');
+        return NextResponse.redirect(loginUrl);
       }
     } catch (error) {
       const diagnosticCode = createAuthDiagnosticCode(
