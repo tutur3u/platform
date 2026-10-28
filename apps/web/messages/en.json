@@ -21261,6 +21261,16 @@
     "ytd_interest": "Year to Date",
     "zalopay_tier": "ZaloPay Tier"
   },
+  "web_start_legal": {
+    "community_guidelines": "Community Guidelines",
+    "contact": "Contact legal",
+    "contents": "Contents",
+    "effective_date": "Effective",
+    "language": "Tiếng Việt",
+    "navigation": "Legal documents",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service"
+  },
   "workflow": {
     "afternoons": "Afternoons",
     "ai_analysis": "AI Analysis",

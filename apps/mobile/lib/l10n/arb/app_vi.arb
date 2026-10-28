@@ -1266,6 +1266,7 @@
   "appsHubInventoryDescription": "Quản lý sản phẩm, tồn kho, bán hàng và vận hành quầy tại một nơi.",
   "appsHubListView": "Danh sách",
   "appsHubMailDescription": "Đọc và gửi email, quản lý thư nháp và sắp xếp hộp thư đến.",
+  "appsHubMastermindDescription": "Trạng thái đội máy, quyết định, bản phát hành và mức sử dụng từ Mastermind.",
   "appsHubMeetDescription": "Lên lịch họp, xem lịch trình và theo dõi bản ghi.",
   "appsHubMoreTools": "Công cụ khác",
   "appsHubNotesDescription": "Ghi lại ý tưởng và liên kết với công việc.",
@@ -5074,6 +5075,61 @@
       }
     }
   },
+  "@mastermindCouldntReadShowing": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindCouldntRefreshShowing": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindCountState": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "state": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindDeployCiLine": {
+    "placeholders": {
+      "deploy": {
+        "type": "String"
+      },
+      "ci": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindDurationDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindDurationHours": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindDurationMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "@mastermindFloor": {
     "placeholders": {
       "value": {
@@ -5081,9 +5137,50 @@
       }
     }
   },
+  "@mastermindLaneAgeLine": {
+    "placeholders": {
+      "state": {
+        "type": "String"
+      },
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindLaneAgeUnknown": {
+    "placeholders": {
+      "state": {
+        "type": "String"
+      }
+    }
+  },
   "@mastermindLaneEta": {
     "placeholders": {
       "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindLaneEtaAbout": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindLastPublished": {
+    "placeholders": {
+      "age": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindLiveAgo": {
+    "placeholders": {
+      "age": {
         "type": "String"
       }
     }
@@ -5102,9 +5199,74 @@
       }
     }
   },
-  "@mastermindRejectedInline": {
+  "@mastermindNeedsYouSeeAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindOfflineShowing": {
     "placeholders": {
       "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindOptionRecommended": {
+    "placeholders": {
+      "option": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindRepliesWaiting": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindReplyConfirmMessage": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "reply": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindReplyCounter": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindReplyCounterSemantics": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindReplyRateLimited": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindReplyYourReply": {
+    "placeholders": {
+      "reply": {
         "type": "String"
       }
     }
@@ -5123,6 +5285,13 @@
       }
     }
   },
+  "@mastermindSecurityLine": {
+    "placeholders": {
+      "product": {
+        "type": "String"
+      }
+    }
+  },
   "@mastermindSelectedReadout": {
     "placeholders": {
       "date": {
@@ -5136,10 +5305,34 @@
       }
     }
   },
+  "@mastermindSessionLeft": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
   "@mastermindSnapshotAt": {
     "placeholders": {
       "time": {
         "type": "String"
+      }
+    }
+  },
+  "@mastermindSourcesDegraded": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindStaffSummary": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "running": {
+        "type": "int"
       }
     }
   },
@@ -5270,18 +5463,37 @@
       }
     }
   },
+  "@mastermindUpdateAppShowing": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindUpdatedAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "mastermindAccountFilter": "Tài khoản",
+  "mastermindActivityEmpty": "Chưa có hoạt động gần đây",
+  "mastermindActivityTitle": "Hoạt động",
   "mastermindAgeBasis": "Cơ sở tính tuổi",
   "mastermindAgeDays": "{count, plural, other{{count} ngày trước}}",
   "mastermindAgeHours": "{count, plural, other{{count} giờ trước}}",
   "mastermindAgeMinutes": "{count, plural, =0{vừa xong} other{{count} phút trước}}",
+  "mastermindAllCaughtUp": "Bạn đã xử lý hết",
   "mastermindAllFilter": "Tất cả",
+  "mastermindAppName": "Mastermind",
   "mastermindAreaCi": "CI",
   "mastermindAreaCost": "Chi phí",
   "mastermindAreaEducation": "Giáo dục",
   "mastermindAreaFinance": "Tài chính",
   "mastermindAreaHub": "Hub",
   "mastermindAreaInfra": "Hạ tầng",
+  "mastermindAreaLabel": "Lĩnh vực",
   "mastermindAreaMemory": "Bộ nhớ",
   "mastermindAreaOrg": "Tổ chức",
   "mastermindAreaPerf": "Hiệu năng",
@@ -5291,13 +5503,20 @@
   "mastermindAreaTasks": "Công việc",
   "mastermindAreaUsers": "Người dùng",
   "mastermindAreaUx": "Trải nghiệm",
+  "mastermindBackToDecisions": "Về Quyết định",
+  "mastermindBackToInbox": "Về Hộp thư",
+  "mastermindBackToInsights": "Về Phân tích",
   "mastermindBacklogEmptyTitle": "Không còn việc tồn",
   "mastermindBacklogLabel": "Việc tồn",
+  "mastermindBacklogNoMatches": "Không có việc tồn phù hợp",
+  "mastermindBacklogSearchPlaceholder": "Tìm việc tồn",
+  "mastermindBackToWork": "Về Công việc",
   "mastermindBasisCheckinWorkflow": "Quy trình kiểm tra định kỳ",
   "mastermindBasisGithubDeployment": "Triển khai GitHub",
   "mastermindBasisVercelDeployment": "Triển khai Vercel",
   "mastermindCategoryAuto": "Tự động",
   "mastermindCategoryDelegated": "Được ủy quyền",
+  "mastermindCategoryLabel": "Phân loại",
   "mastermindCategoryUser": "Bạn",
   "mastermindChartBurn": "Tốc độ tiêu hao",
   "mastermindChartCiJobs": "Tác vụ CI",
@@ -5309,6 +5528,7 @@
   "mastermindChartFleetCounts": "Luồng theo vai trò",
   "mastermindChartFleetStates": "Trạng thái luồng",
   "mastermindChartFleetTree": "Cấu trúc đội ngũ",
+  "mastermindChartGoneTitle": "Biểu đồ này không còn trong Mastermind",
   "mastermindChartLatency": "Thời gian nhận kết quả",
   "mastermindChartMergeToLive": "Từ merge đến khi chạy",
   "mastermindChartMessageFlow": "Luồng tin nhắn",
@@ -5317,7 +5537,7 @@
   "mastermindChartModelRuns": "Lượt chạy theo mô hình",
   "mastermindChartModelSuccess": "Thành công và làm lại",
   "mastermindChartOpenPrs": "Pull request đang mở",
-  "mastermindChartPendingRuns": "Lượt chạy chờ",
+  "mastermindChartPendingRuns": "Lượt chạy chờ xử lý",
   "mastermindChartProjection": "Dự báo khi đặt lại",
   "mastermindChartQueueDepth": "Độ sâu hàng đợi",
   "mastermindChartSessionPerSuccess": "Mức dùng phiên mỗi lần thành công",
@@ -5344,23 +5564,40 @@
   "mastermindColumnTopLevel": "Cấp cao nhất",
   "mastermindColumnTotal": "Tổng",
   "mastermindCommit": "Commit",
+  "mastermindCouldntReadShowing": "Không đọc được bản cập nhật mới nhất · đang hiển thị {time}",
+  "mastermindCouldntRefreshShowing": "Không làm mới được · đang hiển thị {time}",
+  "mastermindCountState": "{count} {state}",
   "mastermindCoverageComplete": "Đầy đủ",
   "mastermindCoverageMissing": "Không có nguồn",
   "mastermindCoveragePartial": "Dữ liệu một phần",
   "mastermindCoverageStale": "Đã cũ",
   "mastermindDataSourcesAction": "Nguồn dữ liệu",
   "mastermindDecidedBy": "Người quyết định",
-  "mastermindDecisionsTitle": "Quyết định",
+  "mastermindDecidedByMastermind": "Mastermind",
+  "mastermindDecidedByRole": "Vai trò: {role}",
+  "mastermindDecidedByUser": "Bạn",
+  "mastermindDecidedOnLabel": "Quyết định lúc",
+  "mastermindDecisionGoneTitle": "Quyết định này không còn trong Mastermind",
+  "mastermindDecisionUpdated": "Quyết định này đã được cập nhật",
+  "mastermindDecisionsEmpty": "Không có quyết định gần đây",
+  "mastermindDecisionsJournalEmpty": "Chưa có quyết định nào được ghi lại.",
+  "mastermindDecisionsNoMatches": "Không có quyết định phù hợp",
+  "mastermindDecisionsSeeAll": "Xem tất cả quyết định",
+  "mastermindDecisionsSegment": "Quyết định",
+  "mastermindDecisionsSkipped": "{count, plural, other{{count} quyết định cũ hơn không có trong bản chụp này.}}",
   "mastermindDeploy": "Triển khai",
+  "mastermindDeployCiLine": "Triển khai {deploy} · CI {ci}",
   "mastermindDeployError": "lỗi",
   "mastermindDeployFailedFact": "Triển khai thất bại",
   "mastermindDeployFailure": "thất bại",
   "mastermindDeployInProgress": "đang chạy",
   "mastermindDeployInactive": "không hoạt động",
-  "mastermindDeployPending": "đang chờ",
+  "mastermindDeployPending": "chờ xử lý",
   "mastermindDeployQueued": "trong hàng đợi",
   "mastermindDeploySuccess": "thành công",
-  "mastermindDigestGap": "Một số cập nhật trước đó không có ở đây.",
+  "mastermindDurationDays": "{count} ngày",
+  "mastermindDurationHours": "{count} giờ",
+  "mastermindDurationMinutes": "{count} phút",
   "mastermindEffortFilter": "Mức nỗ lực",
   "mastermindEnvProduction": "Production",
   "mastermindEnvStaging": "Staging",
@@ -5380,9 +5617,21 @@
   "mastermindFilterRunning": "Đang chạy",
   "mastermindFilterWaiting": "Đang chờ",
   "mastermindFloor": "Ngưỡng {value}",
+  "mastermindForbiddenMessage": "Hãy nhờ chủ sở hữu Mastermind cấp quyền truy cập.",
+  "mastermindForbiddenTitle": "Tài khoản này không được phép xem Mastermind",
+  "mastermindForecastEmptyAt": "Dự kiến hết lúc {dateTime}",
+  "mastermindForecastNone": "Không dự kiến hết trước khi đặt lại",
   "mastermindFreshCached": "từ bộ đệm",
   "mastermindFreshFresh": "mới",
-  "mastermindInsightsLabel": "Chỉ số",
+  "mastermindGroupActions": "Hành động",
+  "mastermindGroupDecisions": "Quyết định dành cho bạn",
+  "mastermindGroupFyi": "Để bạn nắm thông tin",
+  "mastermindInboxNoMatches": "Không có mục phù hợp",
+  "mastermindInboxSearchPlaceholder": "Tìm trong Cần bạn",
+  "mastermindInsightsLabel": "Phân tích",
+  "mastermindItemAnsweredTitle": "Mục này đã được trả lời hoặc rút lại",
+  "mastermindItemGoneTitle": "Mục này không còn trong Mastermind",
+  "mastermindItemUpdated": "Câu hỏi này đã được cập nhật",
   "mastermindKindAction": "Hành động",
   "mastermindKindBacklog": "Việc tồn",
   "mastermindKindDecision": "Quyết định",
@@ -5395,44 +5644,99 @@
   "mastermindKindStaff": "Nhân sự",
   "mastermindKindTest": "Kiểm thử",
   "mastermindLaneAge": "Thời gian chạy",
+  "mastermindLaneAgeLine": "{state} · {duration}",
+  "mastermindLaneAgeUnknown": "{state} · chưa rõ thời lượng",
   "mastermindLaneArea": "Lĩnh vực",
   "mastermindLaneEta": "Dự kiến {duration}",
+  "mastermindLaneEtaAbout": "Còn khoảng {duration}",
+  "mastermindLaneEtaLabel": "Thời gian còn lại dự kiến",
+  "mastermindLaneFinishedTitle": "Luồng việc này đã kết thúc hoặc bị gỡ",
+  "mastermindLaneGoneTitle": "Luồng việc này không còn trong Mastermind",
   "mastermindLaneKind": "Loại",
   "mastermindLaneModel": "Mô hình",
   "mastermindLaneProduct": "Sản phẩm",
   "mastermindLaneRole": "Vai trò",
   "mastermindLaneState": "Trạng thái",
+  "mastermindLanesAtAGlance": "Tổng quan luồng việc",
   "mastermindLanesEmpty": "Không có luồng việc nào trong chế độ xem này",
   "mastermindLanesLabel": "Luồng việc",
+  "mastermindLaneUpdated": "Luồng việc này đã được cập nhật",
+  "mastermindLastPublished": "Mastermind cập nhật lần cuối {age} · {time}",
+  "mastermindLess": "Thu gọn",
+  "mastermindLiveAgo": "Lên production {age}",
   "mastermindLiveFor": "đã chạy {duration}",
   "mastermindMeasuredRuns": "{count, plural, other{{count} lượt chạy có đo}}",
+  "mastermindMore": "Xem thêm",
+  "mastermindNeedsAttention": "Cần chú ý",
   "mastermindNeedsYouHint": "Trả lời trong Inbox trên máy Mac.",
+  "mastermindNeedsYouSeeAll": "Xem tất cả ({count})",
   "mastermindNeedsYouTitle": "Cần bạn",
   "mastermindNoDataInPeriod": "Không có dữ liệu trong khoảng này",
   "mastermindNoProduct": "Không có sản phẩm",
-  "mastermindNotConnectedMessage": "Dữ liệu Mastermind chưa được xuất bản cho ứng dụng này.",
+  "mastermindNoSnapshotTitle": "Mastermind chưa phát hành dữ liệu nào",
+  "mastermindNotConfiguredMessage": "Bản dựng này chưa kết nối Mastermind.",
   "mastermindNotConnectedTitle": "Chưa kết nối",
   "mastermindNotReversible": "Không thể hoàn tác",
+  "mastermindNothingNeedsReply": "Không có gì cần trả lời",
   "mastermindNothingNeedsYou": "Không có việc cần bạn",
   "mastermindNowLabel": "Hiện tại",
   "mastermindObservedAt": "Thời điểm ghi nhận",
+  "mastermindOfflineShowing": "Ngoại tuyến · đang hiển thị {time}",
+  "mastermindOptionRecommended": "{option} · Đề xuất",
   "mastermindOriginLabel": "Nguồn gốc",
   "mastermindPartialBucket": "khoảng chưa trọn",
   "mastermindProductFilter": "Sản phẩm",
   "mastermindProductsLabel": "Sản phẩm",
+  "mastermindQuotaEmpty": "Chưa có dữ liệu hạn mức",
+  "mastermindQuotaTitle": "Hạn mức",
   "mastermindRange24h": "24 giờ",
   "mastermindRange7d": "7 ngày",
   "mastermindReceiptRecorded": "Đã ghi nhận biên nhận",
+  "mastermindRecentDecisionsTitle": "Quyết định gần đây",
   "mastermindRecentEmpty": "Không có gì mới.",
-  "mastermindRecentTitle": "Gần đây",
   "mastermindRecommended": "Đề xuất",
-  "mastermindRejectedInline": "Không đọc được ảnh chụp mới nhất. Đang hiển thị bản lúc {time}.",
   "mastermindRejectedMessage": "Ảnh chụp dùng định dạng mà phiên bản ứng dụng này không đọc được. Hãy cập nhật ứng dụng.",
+  "mastermindRejectedOtherMessage": "Không đọc được bản cập nhật mới nhất.",
   "mastermindRejectedTitle": "Không thể hiển thị ảnh chụp này",
   "mastermindReleasesTitle": "Bản phát hành",
+  "mastermindRepliesWaiting": "{count, plural, other{{count} câu trả lời đang chờ gửi}}",
+  "mastermindReplyCheckFailed": "Không kiểm tra được việc trả lời có khả dụng không.",
+  "mastermindReplyChecking": "Đang kiểm tra xem có thể trả lời không…",
+  "mastermindReplyChooseOrWrite": "Chọn một phương án hoặc tự viết câu trả lời (tối đa 500 ký tự và 10 dòng).",
+  "mastermindReplyConfirmMessage": "Trả lời cho: {title}\nCâu trả lời của bạn: {reply}",
+  "mastermindReplyConfirmTitle": "Gửi câu trả lời này?",
+  "mastermindReplyConflict": "Đã xảy ra sự cố với câu trả lời này. Hãy xem lại và gửi lại.",
+  "mastermindReplyCounter": "{count}/{limit}",
+  "mastermindReplyCounterSemantics": "Đã dùng {count} trên {limit} ký tự",
+  "mastermindReplyDiscard": "Bỏ câu trả lời",
+  "mastermindReplyForbidden": "Tài khoản này không thể gửi câu trả lời.",
+  "mastermindReplyNotSaved": "Không lưu được câu trả lời trên thiết bị nên chưa gửi. Hãy thử lại.",
+  "mastermindReplyOnMac": "Trả lời trên máy Mac",
+  "mastermindReplyOptionsTitle": "Câu trả lời của bạn",
+  "mastermindReplyQueued": "Đã lưu trên thiết bị. Sẽ gửi khi kết nối được với Mastermind.",
+  "mastermindReplyRateLimited": "{minutes, plural, other{Gửi quá nhiều câu trả lời. Hãy thử lại sau {minutes} phút.}}",
+  "mastermindReplyRejected": "Mastermind không thể nhận câu trả lời này. Hãy kiểm tra và thử lại.",
+  "mastermindReplySend": "Gửi trả lời",
+  "mastermindReplySending": "Đang gửi…",
+  "mastermindReplySent": "Đã gửi · đang chờ Mastermind",
+  "mastermindReplyStale": "Câu hỏi đã thay đổi hoặc đã được trả lời. Hãy xem lại.",
+  "mastermindReplyTextPlaceholder": "Viết câu trả lời cho Mastermind",
+  "mastermindReplyTooLarge": "Câu trả lời quá dài. Hãy giữ trong 500 ký tự và 10 dòng rồi thử lại.",
+  "mastermindReplyUnauthorized": "Chúng tôi không xác nhận được phiên đăng nhập của bạn. Hãy thử lại.",
+  "mastermindReplyUnauthorizedAgain": "Phiên đăng nhập của bạn không truy cập được Mastermind. Hãy thử lại hoặc đăng xuất rồi đăng nhập lại.",
+  "mastermindReplyUnsafeText": "Không thể gửi nội dung này. Hãy chỉ dùng chữ và dấu câu thông thường, không kèm liên kết, dãy số dài hay thông tin cá nhân. Tối đa 10 dòng.",
+  "mastermindReplyUseRecommended": "Dùng phương án đề xuất",
+  "mastermindReplyYourReply": "Câu trả lời của bạn: {reply}",
+  "mastermindReservePacing": "Nhịp dự trữ (quy tắc biểu đồ)",
+  "mastermindReservePacingInfo": "Đây là phép kiểm tra dự trữ của biểu đồ, không phải quyết định định tuyến.",
   "mastermindResetsAt": "Đặt lại lúc {dateTime}",
+  "mastermindReversibilityLabel": "Khả năng hoàn tác",
   "mastermindReversible": "Có thể hoàn tác",
+  "mastermindReversibleNo": "Không thể hoàn tác",
+  "mastermindReversibleYes": "Có thể hoàn tác",
   "mastermindRiskHigh": "cao",
+  "mastermindRiskLabel": "Rủi ro",
+  "mastermindRiskLine": "Rủi ro: {level}",
   "mastermindRiskLow": "thấp",
   "mastermindRiskMed": "trung bình",
   "mastermindRoleFilter": "Vai trò",
@@ -5442,8 +5746,11 @@
   "mastermindScopeDelivery": "Phân phối",
   "mastermindScopeFleet": "Đội ngũ",
   "mastermindScopeModels": "Mô hình",
-  "mastermindScopeUsage": "Sử dụng",
+  "mastermindScopeUsage": "Mức sử dụng",
+  "mastermindSecurityFix": "Bản vá bảo mật",
+  "mastermindSecurityGroup": "Bảo mật",
   "mastermindSecurityIssue": "Vấn đề bảo mật",
+  "mastermindSecurityLine": "{product} · bản vá bảo mật",
   "mastermindSelectedReadout": "{date} · {series} · {value}",
   "mastermindSeriesActive": "Đang chạy",
   "mastermindSeriesBalance": "Số dư",
@@ -5465,7 +5772,32 @@
   "mastermindSeriesUsageLimit": "Hết hạn mức",
   "mastermindSeriesWaiting": "đang chờ",
   "mastermindSession": "Phiên",
-  "mastermindShowAll": "Xem tất cả",
+  "mastermindSessionLeft": "Phiên còn {value}",
+  "mastermindSessionRejectedMessage": "Hãy thử lại. Nếu vẫn lỗi, hãy đăng xuất rồi đăng nhập lại.",
+  "mastermindSessionRejectedTitle": "Mastermind không xác minh được phiên của bạn",
+  "mastermindShipCadenceTitle": "Nhịp phát hành",
+  "mastermindShipChecked": "Kiểm tra lúc {dateTime}",
+  "mastermindShipCiBadge": "CI {status}",
+  "mastermindShipCiNow": "CI hiện tại",
+  "mastermindShipCiQueued": "Trong hàng đợi {value}",
+  "mastermindShipCiRunning": "Đang chạy {value}",
+  "mastermindShipCopySha": "Sao chép mã commit",
+  "mastermindShipDeployBadge": "Triển khai {status}",
+  "mastermindShipEmpty": "Chưa có bản phát hành nào",
+  "mastermindShipNoCadence": "Chưa có nhịp phát hành nào được báo cáo",
+  "mastermindShipNoEnvironments": "Chưa có môi trường nào được báo cáo.",
+  "mastermindShipNoProdRelease": "Chưa ghi nhận bản phát hành production nào",
+  "mastermindShipNoPullRequests": "Chưa có dữ liệu pull request.",
+  "mastermindShipOpenCount": "{count} đang mở",
+  "mastermindShipPullRequestsTitle": "Pull request và merge",
+  "mastermindShipReleased": "Phát hành {dateTime}",
+  "mastermindShipShaCopied": "Đã sao chép mã commit",
+  "mastermindShipWithheld": "Đã ẩn, xem trên máy Mac",
+  "mastermindShipWithheldTooltip": "Chi tiết chỉ có trên máy Mac",
+  "mastermindSignOutAction": "Đăng xuất và đăng nhập lại",
+  "mastermindSignOutConfirmAction": "Đăng xuất",
+  "mastermindSignOutConfirmMessage": "Thao tác này đăng xuất bạn khỏi Tuturuuu trên thiết bị này, gồm mọi tài khoản đã lưu. Bạn sẽ cần đăng nhập lại.",
+  "mastermindSignOutConfirmTitle": "Đăng xuất khỏi Tuturuuu?",
   "mastermindSnapshotAt": "Ảnh chụp lúc {time}",
   "mastermindSnapshotOutOfDate": "Ảnh chụp đã cũ",
   "mastermindSnapshotSectionsTitle": "Các phần",
@@ -5483,15 +5815,19 @@
   "mastermindSourceStateOk": "Ổn",
   "mastermindSourceT3": "T3",
   "mastermindSourceWorkforce": "Nhân lực",
+  "mastermindSourcesDegraded": "{count, plural, other{{count} nguồn bị suy giảm}}",
   "mastermindSourcesTitle": "Nguồn",
+  "mastermindStaffEmpty": "Chưa có vai trò nhân sự nào được báo cáo.",
   "mastermindStaffGroup": "Nhân sự",
+  "mastermindStaffSummary": "{count, plural, other{{count} vai trò}} · {running} đang chạy",
+  "mastermindStaffUnknownModel": "Mô hình không xác định",
   "mastermindStateAnswered": "đã trả lời",
   "mastermindStateCancelled": "đã hủy",
   "mastermindStateCompleted": "hoàn tất",
   "mastermindStateFailed": "thất bại",
   "mastermindStateIdle": "nhàn rỗi",
   "mastermindStateOpen": "đang mở",
-  "mastermindStateQueued": "đang chờ hàng đợi",
+  "mastermindStateQueued": "trong hàng đợi",
   "mastermindStateRunning": "đang chạy",
   "mastermindStateStale": "đã cũ",
   "mastermindStateUnknown": "không rõ",
@@ -5512,10 +5848,16 @@
   "mastermindSummaryUsageLowest": "{account} còn ít nhất: {percent}.",
   "mastermindSummaryUsageShort": "Dự báo SHORT khi đặt lại lúc {time}.",
   "mastermindSummaryWeeklyNotReported": "Nguồn không báo cáo hạn mức tuần.",
+  "mastermindTabHome": "Tổng quan",
+  "mastermindTabInbox": "Hộp thư",
+  "mastermindTabInsights": "Phân tích",
+  "mastermindTabShip": "Phát hành",
+  "mastermindTabWork": "Công việc",
   "mastermindTableLink": "Bảng",
   "mastermindTentative": "tạm tính",
   "mastermindTimeZoneCaption": "GMT+7",
   "mastermindTitle": "Mastermind",
+  "mastermindTryAgain": "Thử lại",
   "mastermindUnavailable": "Không khả dụng",
   "mastermindUnitCredits": "{value} tín dụng",
   "mastermindUnitCreditsPerDay": "{value} tín dụng/ngày",
@@ -5526,7 +5868,50 @@
   "mastermindUnitPpPerHour": "{value} điểm %/giờ",
   "mastermindUnitSeconds": "{value} giây",
   "mastermindUnitTokens": "{value} token",
+  "mastermindUnknown": "Không rõ",
+  "mastermindUnreachableMessage": "Mỗi lần thất bại, thời gian chờ thử lại sẽ dài hơn.",
+  "mastermindUnreachableTitle": "Không thể kết nối Mastermind",
+  "mastermindUpdateAppShowing": "Hãy cập nhật ứng dụng để đọc dữ liệu Mastermind mới nhất · đang hiển thị {time}",
+  "mastermindUpdatedAt": "Cập nhật {time}",
+  "mastermindUsageBudgetLeft": "Hạn mức còn lại",
+  "mastermindUsageCreditsTitle": "Tín dụng Codex",
+  "mastermindUsageEmpty": "Chưa có dữ liệu mức sử dụng.",
+  "mastermindUsageForecastsTitle": "Dự báo",
+  "mastermindUsageLink": "Mức sử dụng",
+  "mastermindUsagePacing": "Nhịp sử dụng",
+  "mastermindUsageTargetUnavailable": "Chưa có mục tiêu",
   "mastermindVersion": "Phiên bản",
   "mastermindWeekly": "Hằng tuần",
-  "mastermindWhy": "Lý do"
+  "mastermindWeeklyLeft": "Tuần còn {value}",
+  "mastermindWhy": "Lý do",
+  "mastermindWhyMissing": "Chưa ghi lý do",
+  "mastermindWorkClearFilters": "Xóa bộ lọc",
+  "mastermindWorkEmpty": "Hiện chưa có luồng việc nào",
+  "mastermindWorkNoMatches": "Không có luồng việc phù hợp",
+  "mastermindWorkSearchPlaceholder": "Tìm luồng việc",
+  "audienceModeGeneral": "Chung",
+  "audienceModeEducation": "Giáo dục",
+  "audienceModeGeneralDescription": "Ưu tiên công việc, lịch và tài chính",
+  "audienceModeEducationDescription": "Ưu tiên lớp học, điểm danh và báo cáo",
+  "settingsModeTitle": "Chế độ",
+  "settingsModeDescription": "Thay đổi nội dung ứng dụng hiển thị trước. Không thay đổi quyền truy cập của bạn.",
+  "settingsModeMine": "Chế độ của bạn tại đây",
+  "settingsModeWorkspaceDefault": "Mặc định của không gian làm việc ({mode})",
+  "settingsModeAccountDefault": "Mặc định của bạn ({mode})",
+  "settingsModeWorkspaceDefaultTitle": "Mặc định cho thành viên",
+  "settingsModeWorkspaceDefaultSubtitle": "Thành viên vẫn có thể tự chọn",
+  "settingsModeNotSet": "Chưa đặt",
+  "settingsModeSaveFailed": "Không thể lưu chế độ. Vui lòng thử lại.",
+  "onboardingModeTitle": "Bạn sẽ dùng Tuturuuu như thế nào?",
+  "onboardingModeSubtitle": "Lựa chọn này quyết định Trang chủ hiển thị gì trước. Bạn có thể đổi cho từng không gian làm việc trong Cài đặt.",
+  "classesTodayTitle": "Lớp học hôm nay",
+  "classesTodayAllTitle": "Tất cả lớp học hôm nay",
+  "classesTodayShowAll": "Hiện tất cả",
+  "classesTodayShowMine": "Lớp của tôi",
+  "classesTodayEmpty": "Hôm nay không có lớp",
+  "classesUntitled": "Lớp chưa đặt tên",
+  "classesInProgress": "Đang diễn ra",
+  "classesDone": "Đã xong",
+  "settingsModeFallbackDefault": "Mặc định ({mode})",
+  "classesTodayStale": "Không thể làm mới. Đang hiển thị danh sách lớp đã lưu gần nhất."
 }

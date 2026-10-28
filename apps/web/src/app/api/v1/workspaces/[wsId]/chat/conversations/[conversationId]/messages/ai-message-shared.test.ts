@@ -1,8 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
+vi.mock('@tuturuuu/ai/chat/google/route', () => ({
+  createPOST: (...args: unknown[]) => mocks.createAiChatPost(...args),
+}));
 
 const mocks = vi.hoisted(() => ({
+  createAiChatPost: vi.fn(),
   membership: vi.fn(),
   permissions: vi.fn(),
   finance: vi.fn(),
@@ -40,6 +44,7 @@ vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({
 }));
 
 import {
+  callAiChatRoute,
   consumeAiResponseTextDeltas,
   copyAiChatAttachmentInputsToResources,
   copyChatAttachmentsToAiResources,
@@ -466,6 +471,63 @@ describe('AI response SSE parsing', () => {
 
     await expect(consumeAiResponseTextDeltas(response)).resolves.toBe(
       'hello world'
+    );
+  });
+});
+
+describe('server-owned chat instructions', () => {
+  it('passes persisted system instructions through handler options, never the request body', async () => {
+    let sentBody: unknown;
+    mocks.createAiChatPost.mockImplementation(
+      () => async (request: Request) => {
+        sentBody = await request.json();
+        return new Response('stream');
+      }
+    );
+    const response = await callAiChatRoute({
+      chatId: 'chat-1',
+      creditSource: 'personal',
+      miraMode: true,
+      model: 'google/gemini-3-flash',
+      thinkingMode: 'fast',
+      wsId: 'workspace-1',
+      request: new Request('http://localhost/messages') as never,
+      supabase: {} as never,
+      user: { id: 'actor-a' } as never,
+      messages: [
+        {
+          id: 'system-1',
+          role: 'system',
+          parts: [{ type: 'text', text: 'Server split instruction' }],
+        },
+        {
+          id: 'system-2',
+          role: 'system',
+          parts: [{ type: 'text', text: 'Saved conversation prompt' }],
+        },
+        {
+          id: 'user-1',
+          role: 'user',
+          parts: [{ type: 'text', text: 'Hello' }],
+        },
+      ],
+    });
+    expect(response.status).toBe(200);
+    expect(sentBody).toMatchObject({
+      messages: [
+        {
+          id: 'user-1',
+          role: 'user',
+          parts: [{ type: 'text', text: 'Hello' }],
+        },
+      ],
+    });
+    expect(sentBody).not.toHaveProperty('serverSystemInstructions');
+    expect(mocks.createAiChatPost).toHaveBeenCalledWith(
+      expect.objectContaining({
+        serverSystemInstructions:
+          'Server split instruction\n\nSaved conversation prompt',
+      })
     );
   });
 });

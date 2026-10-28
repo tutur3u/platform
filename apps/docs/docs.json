@@ -62,6 +62,7 @@
                   "platform/features/mira-health-planning-tools",
                   "platform/features/task-reminder-delivery",
                   "platform/features/mobile-chat",
+                  "platform/features/mobile-mastermind",
                   "platform/features/mira-client-actions",
                   "platform/features/colab",
                   "platform/features/lettin",
@@ -356,8 +357,10 @@
                   "build/devops/standalone-api",
                   "build/devops/wave1-native-cutover",
                   "build/devops/native-start-migration",
+                  "build/devops/contacts-start-candidate",
                   "build/devops/apps-viteplus-cloudflare",
                   "build/devops/start-bridge",
+                  "build/devops/web-start-candidate",
                   "build/devops/tasks-viteplus-cloudflare",
                   "build/devops/start-bridge-codemod",
                   "build/devops/finance-pay-start",
@@ -528,6 +531,7 @@
                 "pages": [
                   "reference/api-reference/introduction",
                   "reference/api-reference/ai-studio",
+                  "reference/api-reference/mastermind-push-events",
                   "reference/api-reference/endpoint/generate"
                 ]
               },

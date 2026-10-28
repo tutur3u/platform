@@ -106,6 +106,14 @@ export async function listMailThreads({
   const access = await requireMailboxAccess(ctx, mailboxId);
   if (!access) return null;
   const { page, pageSize } = normalizeThreadPagination(params);
+  // Preferences only depend on the mailbox and user; load them alongside.
+  const preferencesPromise = loadThreadPreferences(
+    access.admin,
+    mailboxId,
+    ctx.user.id
+  );
+  // Settle the early read so an empty page cannot leave it unhandled.
+  preferencesPromise.catch(() => undefined);
   const {
     hasMore = false,
     rows,
@@ -241,11 +249,7 @@ export async function listMailThreads({
     (threads ?? []).map((thread: AnyRecord) => [thread.id as string, thread])
   );
   const unreadByThread = getThreadUnreadCounts(visibleMessageRows, states);
-  const preferences = await loadThreadPreferences(
-    access.admin,
-    mailboxId,
-    ctx.user.id
-  );
+  const preferences = await preferencesPromise;
   const summaries: MailThreadSummary[] = threadIds.flatMap((threadId) => {
     const thread = threadById.get(threadId);
     const message = latestByThread.get(threadId);

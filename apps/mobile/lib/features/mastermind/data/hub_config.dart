@@ -1,19 +1,19 @@
 /// Where the Mastermind hub Worker lives for this build.
 ///
-/// An explicit `MASTERMIND_HUB_URL` define wins, otherwise the native flavor
-/// picks the hosted Worker. Anything else is unconfigured, and the source
-/// fails closed rather than guessing a host.
+/// An explicit `MASTERMIND_HUB_URL` define wins, otherwise the staging and
+/// production flavors pick their hosted Worker. Anything else is unconfigured,
+/// and the source fails closed rather than guessing a host.
 abstract final class MastermindHubConfig {
-  static const productionUrl = 'https://mastermind-hub.tutur3u.com';
   static const stagingUrl = 'https://mastermind-hub-staging.tutur3u.com';
+  static const productionUrl = 'https://mastermind-hub.tutur3u.com';
   static const _override = String.fromEnvironment('MASTERMIND_HUB_URL');
 
   static Uri? resolve({String? flavor, String? override}) {
     final explicit = override ?? _override;
     if (explicit.isNotEmpty) return parseBaseUrl(explicit);
     return switch (flavor) {
-      'production' => parseBaseUrl(productionUrl),
       'staging' => parseBaseUrl(stagingUrl),
+      'production' => parseBaseUrl(productionUrl),
       _ => null,
     };
   }

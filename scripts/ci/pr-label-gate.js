@@ -41,6 +41,7 @@ const HEAVY_PR_WORKFLOWS = [
   'codeql.yml',
   'colab-cloudflare.yaml',
   'connected-mail-accounts-contract.yaml',
+  'contacts-start-candidate.yaml',
   'coordination-cloudflare.yaml',
   'creator-identity-contract.yaml',
   'cron-control-cloudflare.yaml',
@@ -88,6 +89,7 @@ const HEAVY_PR_WORKFLOWS = [
   'tutoring-absence-credit-contract.yaml',
   'tutoring-teacher-hours-contract.yaml',
   'type-check.yaml',
+  'web-start-candidate.yaml',
 ];
 
 // Sub-minute, script-only or security checks that stay on for every PR push.

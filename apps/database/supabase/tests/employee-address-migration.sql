@@ -10,6 +10,10 @@ insert into auth.users(id,email,email_confirmed_at,email_change,raw_app_meta_dat
 insert into auth.identities(id,provider_id,user_id,provider,identity_data) values
 ('00000000-0000-4000-8000-000000009962','00000000-0000-4000-8000-000000009961',
  '00000000-0000-4000-8000-000000009961','email','{"email":"migration-target-fixture@xwf.tuturuuu.com","email_verified":true}');
+-- Real Auth users carry a provider identity; verified staff checks require one.
+insert into auth.identities(id,provider_id,user_id,identity_data,provider)
+select gen_random_uuid(),u.id::text,u.id,jsonb_build_object('sub',u.id::text,'email',u.email),'email'
+from auth.users u where not exists(select 1 from auth.identities i where i.user_id=u.id);
 insert into public.workspaces(id,name,creator_id,personal) values
 ('00000000-0000-0000-0000-000000000000','Migration fixture root','00000000-0000-4000-8000-000000009960',false)
 on conflict(id) do update set creator_id=excluded.creator_id;

@@ -49889,37 +49889,17 @@ export type Database = {
           isSetofReturn: false;
         };
       };
-      get_or_create_notification_batch:
-        | {
-            Args: {
-              p_channel: string;
-              p_user_id: string;
-              p_window_minutes?: number;
-              p_ws_id: string;
-            };
-            Returns: string;
-          }
-        | {
-            Args: {
-              p_channel: string;
-              p_email?: string;
-              p_user_id: string;
-              p_window_minutes?: number;
-              p_ws_id: string;
-            };
-            Returns: string;
-          }
-        | {
-            Args: {
-              p_channel: string;
-              p_delivery_mode?: Database['public']['Enums']['notification_delivery_mode'];
-              p_email?: string;
-              p_user_id: string;
-              p_window_minutes?: number;
-              p_ws_id: string;
-            };
-            Returns: string;
-          };
+      get_or_create_notification_batch: {
+        Args: {
+          p_channel: string;
+          p_delivery_mode?: Database['public']['Enums']['notification_delivery_mode'];
+          p_email?: string;
+          p_user_id: string;
+          p_window_minutes?: number;
+          p_ws_id: string;
+        };
+        Returns: string;
+      };
       get_pending_event_participants: {
         Args: { _event_id: string };
         Returns: number;

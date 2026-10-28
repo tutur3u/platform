@@ -37,6 +37,33 @@ Tuturuuu's AI features follow this high-level architecture:
 3. **AI SDK** - Vercel AI SDK that manages model providers and generates structured data
 4. **Supabase** - Backend database for authentication, authorization, and storing AI-generated content
 
+### Chat request trust boundary
+
+The shared Google chat handler accepts only `user` and `assistant` message
+roles from request JSON, after trimming and case normalization. Other roles,
+including `system` and `tool`, return 400 before authentication or model work.
+This applies to web Mira, web AI Chat, Rewise, Learn, mobile legacy chat and
+the subscription route that reuses the handler.
+
+Client histories remain accepted for compatibility, but assistant parts are
+text only. Client `dynamic-tool` and `tool-*` call/result parts are dropped
+from both roles rather than rejecting a normal send that echoes rendered tool
+history. Other non-text assistant parts, including sources and reasoning, are
+also dropped. User text and existing user source URL mapping remain supported;
+chat attachments continue through the server storage path below. Tool results
+in the current generation come from server tool execution; echoed results are
+never reconstructed as model context. This does not authenticate client-supplied
+assistant text as a persisted server response.
+
+Native conversations load persisted history on the server. Their adapter passes
+server-created split instructions and saved conversation prompts through the
+in-process `createPOST({ serverSystemInstructions })` option, outside JSON.
+An identically named request-body field grants no instruction authority.
+
+Regression coverage: `packages/ai/src/chat/google/chat-request-schema.test.ts`,
+`subscription-route.test.ts`, and the native conversation adapter's
+`ai-message-shared.test.ts`.
+
 ### Mira Chat Attachments
 
 Dashboard chat attachments are uploaded to Supabase Storage before the user

@@ -122,21 +122,29 @@ final class EventsFetchUnavailable extends EventsFetch {
 }
 
 /// Header normalization for the HTTP adapter, without retaining raw headers.
+///
+/// `X-Hub-Digest` is the hub's own header and wins when it is valid; an absent
+/// or malformed ETag never invalidates it (a CDN may rewrite or weaken the
+/// ETag when it compresses). A malformed `X-Hub-Digest`, or two valid headers
+/// that disagree, is refused.
 String? snapshotDigestFromHeaders({String? hubDigest, String? etag}) {
-  final digestPattern = RegExp(r'^[a-f0-9]{64}$');
-  bool valid(String value) =>
-      digestPattern.matchAsPrefix(value)?.end == value.length;
-  final fromEtag =
-      etag != null &&
-          etag.length == 66 &&
-          etag.startsWith('"') &&
-          etag.endsWith('"')
-      ? etag.substring(1, 65)
-      : null;
-  if (hubDigest != null && !valid(hubDigest)) return null;
-  if (etag != null && (fromEtag == null || !valid(fromEtag))) return null;
-  if (hubDigest != null && fromEtag != null && hubDigest != fromEtag) {
+  final fromEtag = etag == null ? null : snapshotDigestFromEtag(etag);
+  if (hubDigest == null) return fromEtag;
+  if (!_isDigest(hubDigest)) return null;
+  if (fromEtag != null && fromEtag != hubDigest) return null;
+  return hubDigest;
+}
+
+/// The digest inside a strong `"<64 hex>"` or weak `W/"<64 hex>"` entity tag.
+String? snapshotDigestFromEtag(String etag) {
+  final opaque = etag.startsWith('W/') ? etag.substring(2) : etag;
+  if (opaque.length != 66 || !opaque.startsWith('"') || !opaque.endsWith('"')) {
     return null;
   }
-  return hubDigest ?? fromEtag;
+  final digest = opaque.substring(1, 65);
+  return _isDigest(digest) ? digest : null;
 }
+
+final _digestPattern = RegExp(r'^[a-f0-9]{64}$');
+bool _isDigest(String value) =>
+    _digestPattern.matchAsPrefix(value)?.end == value.length;

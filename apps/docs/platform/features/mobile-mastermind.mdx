@@ -1,0 +1,553 @@
+---
+title: Mobile Mastermind
+description: Who sees the Mastermind section in the mobile app, how it behaves before data arrives, and what it never shows.
+---
+
+Mastermind is an internal fleet overview. The mobile section reads one
+sanitized snapshot from the Mastermind hub Worker. This page records the
+product rules of the shell entry, the Home tab and the Inbox; later tabs extend it.
+
+## Who sees it
+
+- **Scope:** the Apps hub offers Mastermind only when the active workspace is
+  the root workspace, the root permission set contains `view_infrastructure`
+  (the root workspace creator and `admin` count, as for every permission), and
+  the build has a hub source configured. Production, staging and any build with
+  `MASTERMIND_HUB_URL` have one; see Data source.
+- **Default:** hidden. It is not an experimental module and cannot be enabled
+  from Settings. A user without root `view_infrastructure`, outside the root
+  workspace, or while access is loading or failed never sees the entry.
+- **Authority:** this check is cosmetic. The hub Worker's owner allowlist is the
+  real gate, and a 403 from the hub hides the entry until the next access sync.
+- **Production beta:** the production app reads the hub for the beta behind
+  these gates: root workspace plus `view_infrastructure`, a configured source,
+  and the hub's owner allowlist. Replies stay off until the hub's
+  `GET /v1/capabilities` reports `replies: true`. Production reports
+  `replies: false` today, so the Inbox is read-only there and the reply composer
+  stays hidden; turning replies on needs no store release.
+- **Deep links and push taps:** any `/mastermind/**` location is held on a
+  neutral skeleton while the access check runs, then redirected to the Apps hub
+  unless access is loaded and enabled. A 403 keeps the user on the screen so it
+  can explain itself; the entry disappears from the Apps hub.
+- **Account changes:** logout and account switch erase the cached snapshot,
+  memory and disk, and re-check access for the selected workspace.
+- **Access errors:** a failed access check hides the entry, so it is re-run when
+  the app resumes and when the Apps hub is pulled to refresh; neither blinks a
+  healthy entry while it checks.
+
+## Data source
+
+Fixture builds (development flavor with `MASTERMIND_FIXTURE`) read the bundled
+synthetic sample. Staging reads `mastermind-hub-staging.tutur3u.com`, production
+reads `mastermind-hub.tutur3u.com`, and any build reads `MASTERMIND_HUB_URL`
+when it is set; an explicit value always wins over the flavor host, and a bad
+one never falls back to it. A build with neither (development without a
+fixture, an unknown flavor) stays disconnected, as does any value that is not
+a bare HTTPS origin: no credentials, path, query or fragment, so the bearer
+token never leaves over cleartext or to a lookalike host. The app-level runtime owns
+the source, the cache and the refresh scheduler and closes them with the app.
+Each Mastermind screen only attaches to and detaches from the scheduler, so
+refresh runs only while a screen is open and the app is in the foreground. It
+also runs at once when the app returns from the background (`hidden` or
+`paused`); a brief `inactive` blip such as Control Centre or a biometric prompt
+is not a resume and fetches nothing. The scheduler follows device connectivity,
+and the freshness line (Offline versus Couldn't refresh) updates when
+connectivity alone changes.
+
+## Tabs
+
+Home, Inbox, Work, Ship and Insights share one mini-app shell: the top navbar
+shows the destination title and no Back button, and the floating dock owns Back.
+Every tab sits behind the same access gate and freshness strip.
+
+## Freshness strip
+
+Every tab starts with one line, inside the scroll view. Data age is
+informational because publishing is manual at first; only a failed refresh or a
+degraded source is a warning. Times are absolute GMT+7.
+
+| Condition | Strip |
+|---|---|
+| Published within 5 minutes | Updated `<time>` |
+| Older | Mastermind last published `<age>` · `<time>` |
+| Refresh failed and the device has no connection | Offline · showing `<time>` |
+| Refresh failed while the device is online | Couldn't refresh · showing `<time>` |
+| Hub schema newer than the app | Update the app to read the latest Mastermind data · showing `<time>` |
+| Hub answered something unreadable | Couldn't read the latest update · showing `<time>` |
+| Any source not ok | appended: `<n>` sources degraded |
+
+The line is a live region, so a refresh that turns it into a warning is
+announced. With degraded sources it is tappable (44 dp tall) and opens the
+"Sources" bottom sheet: every source the snapshot reports, degraded ones first,
+each as a glyph, a name and a state word. Home also has a "Data sources" navbar
+action that opens the same sheet, whether or not a source is degraded.
+
+## Before data arrives
+
+| State | Shown |
+|---|---|
+| Loading, nothing held | Skeleton cards, never a spinner alone |
+| Not configured | "Mastermind isn't connected on this build." No retry |
+| 401 after a session refresh | "Mastermind couldn't verify your session." Try again, plus a secondary "Sign out and sign in again" that asks first |
+| 403 | "This account isn't allowed to view Mastermind." and "Ask a Mastermind owner for access." No retry |
+| 404 no snapshot | "Mastermind hasn't published yet." Retry |
+| Network or 5xx | "Can't reach Mastermind." Retry |
+| Rejected snapshot | A fixed category message, never the parser path. Retry |
+
+A 401 can come from the Worker (audience or clock skew) rather than the
+session, and signing out removes every saved account on the device, so it is
+never the primary action and only runs after the user confirms.
+
+## Home
+
+Needs you comes first, then lanes at a glance, ship, quota, activity and, last,
+recent decisions. Needs you lists up to three normal items (decision, then
+action, then FYI, then publisher order); "See all (N)" counts normal items
+only. Each Needs-you row opens its item detail with a push, so Back returns to
+Home. Replies queued on the device show as "N replies waiting to send"
+directly under Needs you, the same row as in the Inbox.
+
+Each recent-decision row opens its decision detail with a push, so Back returns
+to Home, and "See all decisions" opens the Decisions segment of the Inbox.
+"See all", the lane chips, the Ship rows and "Usage" link to their tabs: a lane
+chip opens Work already filtered to that state, and a Ship row (a failing
+environment or a release) opens `/mastermind/ship?product=<product>`. A lane
+state with no lanes ("0 failed") uses the neutral list glyph; only a non-zero
+failed count carries the warning glyph.
+
+**Security rows** render as a single non-tappable "`<Product>` · security fix"
+line in a trailing "Security" group with no count. They have no severity, title
+or detail anywhere, are never counted, and never reorder anything. Event
+summaries apply the same collapse.
+
+## Inbox
+
+The Inbox tab lists the open Needs-you items grouped by kind: "Decisions for
+you", "Actions", then "For your information", each with its count, in publisher
+order. Each card shows the title, the body (three lines until "More", a 44 dp target),
+kind and product chips and the options as read-only chips; the recommended option carries
+the word "Recommended" and a star, never colour alone. A search field
+("Search Needs you") and product chips narrow the list. Pull to refresh.
+
+- **Scope:** the Needs you segment lists normal Needs-you items only; the
+  Decisions segment is the journal (below).
+- **Security rows** keep the Home rule: one non-tappable line in a trailing
+  "Security" group with no count, never counted, searched or filtered, with no
+  severity, id or detail.
+- **Detail:** `/mastermind/inbox/item/:itemId` opens one item in full, pushed
+  from the Inbox and from Home, so Back returns to whichever opened it, with
+  the same search text and product chips (the shell pops an item location
+  instead of falling back to the Inbox). The page leads with the full title as a heading and shows the
+  full question as plain text, never clamped. The id is
+  an opaque snapshot id and only ever a route parameter; deep links carry tab
+  roots only and never ids. An id that is not an open item shows "This item is
+  no longer in Mastermind" (or "This was answered or withdrawn" when it left
+  while open) with a way back, never an error. A changed `version_hash` shows
+  "This question was updated".
+- **The "Reply on Mac" option** is a placeholder the publisher adds when an item
+  has nothing to pick. It is never offered as a choice and the app never sends
+  it.
+
+### Decisions
+
+The Inbox opens on a "Needs you / Decisions" segmented control. The segment
+lives in the URL: Needs you is the bare `/mastermind/inbox` and Decisions is
+`/mastermind/inbox?segment=decisions` (an unknown value is Needs you).
+Switching is a `go`, never a push, so Back does not walk the segments. Home
+links straight to the Decisions segment.
+
+The Decisions segment lists the journal (`decisions[]`) newest first, grouped by
+GMT+7 calendar day (a decision at 17:30 UTC belongs to the next GMT+7 day), each
+day with a count. A row shows the title, the GMT+7 time, category, risk as the
+words "Risk: low / medium / high" plus a signal glyph, and the product. Chips
+filter by product and by reversible / not reversible; a chip only exists while it
+can split the journal, and a filter whose chip left the data is dropped. The
+filters survive opening a decision and coming back. When `decisions_skipped` is
+above zero the list ends with "N older decisions aren't included in this
+snapshot." An empty journal says "No decisions recorded yet."
+
+`/mastermind/inbox/decision/:decisionId` opens one decision in full: why ("No
+reason recorded" when absent), decided by (Mastermind, You, or "Role: `<slug>`"
+with the slug verbatim), reversible ("Can be reversed" / "Not reversible"),
+risk, category, area, product and the absolute GMT+7 time. It is pushed from the
+Decisions list and from Home, and the shell pops it on Back like an item or
+lane. The id is an opaque snapshot id and a route parameter only. An id the
+snapshot no longer holds shows "This decision is no longer in Mastermind" with a
+way back to the Decisions segment; a decision whose fields changed while open
+shows "This decision was updated". The journal is history: there is no reply
+control. Security decisions do not exist in schema 1.4 and are never rendered;
+the Needs-you "Security" group never appears on this segment.
+
+### Replies
+
+Replies are gated at runtime by `GET /v1/capabilities` (`replies`, with schema
+`1.4`), checked when an Inbox screen opens and at most every five minutes.
+Where replies are off, or the hub cannot be asked, the detail shows the options
+read-only and "Reply on your Mac"; there is no composer. The Worker owns the
+switch, so it flips without a store release.
+
+- **Gate in code:** submit, retry and flush all refuse to send unless the hub
+  says replies are on, not only the composer's visibility. Entries queued while
+  replies are off stay queued: neither sent nor dropped, until capabilities say
+  `replies: true` again. Coming back online re-asks the hub before flushing.
+- **Known answer kept offline:** a known "supported" answer survives a failed
+  re-check. Going offline never flips it, so the outbox keeps working with no
+  connection; only an answer from the hub turns replies off: `replies: false`
+  from the capabilities check, or a 403 `replies_disabled` on a send (any other
+  403 is a lost-access refusal, handled like a 403 on the snapshot).
+- **One check at a time:** overlapping capability checks, forced or not, share a
+  single request, and a reply sent during the first-ever check waits for its
+  answer instead of being refused. Connectivity changes are de-duplicated, so
+  several interfaces flipping together cause one re-check and flush.
+
+- **Contract:** `POST /v1/replies` with exactly
+  `{schema_version: "1.4", item_id, version_hash, option_index | text}`: one of
+  an option index (into the item's own `options[]`) or free text of at most 500
+  characters, counted in code points, and at most 10 lines (the hub's limit; the
+  composer caps both as you type). Choosing an option clears the text and
+  typing clears the option. The text field has a placeholder and a counter. A
+  confirmation asks before anything is sent.
+- **Idempotency:** the `Idempotency-Key` is a random v4 UUID from a secure
+  generator, made once per reply and stored in the outbox before the first send.
+  Every retry reuses it, so an unknown outcome never becomes a second reply. A
+  200 replay is treated exactly like 201. One reply per question version.
+- **Offline outbox:** a reply that cannot be delivered (offline, timeout, 5xx)
+  stays queued on the device, per user, in the snapshot cache directory, and is
+  sent again when an Inbox screen opens, when the app resumes and when the device
+  comes back online. It can be retried or discarded. Entries expire after seven
+  days and are dropped when a live snapshot no longer has the item open. Queued
+  replies live in the OS cache directory, not the documents directory: that
+  keeps them out of device backups, at the cost that the OS may purge the cache
+  under storage pressure and silently lose a queued reply. We accept that
+  trade-off, because a reply is short-lived and a lost one is re-asked; a reply
+  already accepted by the hub is unaffected. Logout,
+  account switch and lost access erase the outbox with the snapshot cache, behind
+  the same generation fences, so an in-flight send cannot revive it.
+- **409 `stale_item`:** the item is refreshed, the typed words are kept, and the
+  screen says "This question changed or was already answered. Review it again."
+  An option stays selected only if it is still the same option at the same
+  place. `idempotency_conflict` drops the queued entry with "Something went
+  wrong with this reply. Review it and send it again."
+- **Other answers:** 400 (`unsafe_text` explains the text policy) and 413 keep
+  the words to edit; 429 waits out `Retry-After` and disables the retry until
+  then; 403 `replies_disabled` hides the composer and 403 `forbidden` is lost
+  access.
+- **401:** the reply stays queued. The first failure offers "Try again"; only
+  after a repeat does "Sign out and sign in again" appear, and it asks first,
+  because signing out removes every saved account on the device.
+- **Waiting rows:** the Inbox shows "N replies waiting to send" while replies
+  are queued; with exactly one, the row opens that item. A queued reply binds to
+  its item id and `version_hash`, so a reply to an older version of a question is
+  never shown as the answer to the current one. A 429 counts down on its own and
+  re-enables "Try again" when `Retry-After` has passed.
+- **Search:** it never matches the "Reply on Mac" placeholder option.
+- **Accessibility:** the reply status line is a live region, and the character
+  counter has a spoken label ("12 of 500 characters used").
+
+Delivery status beyond "Sent · waiting for Mastermind" (the item leaving the
+next snapshot) is not polled yet.
+
+## Work
+
+The Work tab has three segments, a segmented control under the freshness
+strip: **Lanes** (the default), **Backlog** and **Staff**. Lanes lists lanes
+grouped by state, the one that needs attention first:
+failed, waiting, running, queued, idle, stale, completed, cancelled, then the
+rare open, answered, withdrawn and unknown. Each group shows its count and is
+ordered oldest first, a lane with no age last. A row shows the title, role and
+provider/model (display text, shown verbatim), "Running for 2 h" (or
+"Running · age unknown"), "About 20 min left" only when there is an estimate,
+and product, area and kind chips. State is always a glyph and a word.
+
+- **Filters:** a search field ("Search lanes"), one chip per state, and product
+  and area chips while two or more of each are present. A state chip's count
+  follows the product, area and search filters, so it always matches its group
+  header. A product or area filter resets when its value leaves the snapshot,
+  because its chip would be gone.
+- **Segment and filters in the URL:** the segment lives in the location as
+  `?segment=backlog` or `?segment=staff` (Lanes is the bare tab, and an unknown
+  value reads as Lanes), beside the lane filters `?state=`, `?product=` and
+  `?area=`. Every segment or chip change rewrites the location with `go`, so
+  Back never walks through segments. The lane filters stay in the URL on the
+  other segments, so switching back to Lanes finds them. The Home lane chips
+  open `/mastermind/work?state=<state>`. An unknown value is ignored and "All"
+  clears the state. A lane opens by push, so Back from it (the dock included)
+  pops to the same filtered list, search text and all; the shell pops a lane
+  location instead of falling back to the bare tab root. External deep links
+  open the tab root and never carry a segment, filter or lane id.
+- **A filter that leaves the snapshot leaves the URL too:** when a product or
+  area filter resets because its value is gone, the location is rewritten
+  without it once the frame is built, so a later visit to that location does
+  not bring a stale filter back. Filters that are still valid stay.
+- **No matches:** a filter combination with no lanes (including a state with
+  none) shows "No matching lanes" with a "Clear filters" row that resets state,
+  product, area and search.
+- **Backlog:** `backlog[]` grouped by product (the item count in each group's
+  header), open before answered before withdrawn, in the publisher's order
+  within a state. An item with no product sits last under "No product". Each row
+  is a title and a state glyph and word; it has no tap target, and its opaque id
+  is never shown. The search field ("Search backlog") matches the title and
+  product and is local to the segment. An empty backlog reads "Backlog is
+  clear" and hides the search; no match reads "No matching backlog items".
+- **Staff:** `observability.staff[]`, which is `{role, title, state, model}`
+  and nothing else. Rows sort by the Lanes state priority and then by role,
+  case-insensitively, never by activity. A row shows the title, the role and
+  model (display text; the literal `unknown` reads "Unknown model") and a state
+  glyph and word. A summary caption reads "11 roles · 4 running". Staff has no
+  search, filters or sort control. **Privacy rule:** the screen never shows or
+  derives a last-active time, a runs-today count, an "active today" label or
+  any activity ordering; the hub does not publish them, and a change that adds
+  one must be reviewed as a privacy change. An empty list reads "No staff roles
+  reported."
+- **Security rows** keep the Home rule on Lanes and Backlog: one non-tappable
+  line in a trailing "Security" group with no count, never counted, searched or
+  filtered. Staff has none, because the hub omits security roles.
+- **Detail:** `/mastermind/work/lane/:laneId` shows the same fields in full and
+  has no action. The id is an opaque snapshot id and only ever a route
+  parameter. An id that is not in the snapshot shows "This lane is no longer in
+  Mastermind" (or "This lane finished or was removed" when it left while open)
+  with a way back, never an error. A lane whose state changed while open shows
+  "This lane was updated".
+
+## Ship
+
+`/mastermind/ship` is read-only. It lists, under the freshness strip:
+
+- **Environments by product.** A product with a failing environment (deploy or
+  CI `failure` or `error`) comes first, then the rest by name. A group opens with
+  the product's release line ("Live 2 d ago" and its age basis, "Unknown" when
+  the age is null), then production before staging. An environment shows deploy
+  and CI as a glyph and a word, its own `freshness` chip (it never follows the
+  snapshot's age), the version, the commit id (monospace, with a copy button; it
+  is a public commit id), the commit subject, the release time in GMT+7 with its
+  age, the evidence label and "Checked" time. The publisher's stand-in subject
+  for a commit it will not send is shown as the localized label "Withheld, open
+  on Mac", muted with an info glyph and the tooltip "Details stay on the Mac". A
+  null version, commit id or subject hides its line. A failing environment on
+  Home opens Ship on its product, and its row carries a chevron like the
+  release rows.
+- **CI now.** `observability.ci[]`, queued and running per repository. A null
+  count reads "Unavailable", never 0.
+- **Release cadence.** Most recent production release first; a product with none
+  reads "No production release observed" and sits last.
+- **Pull requests and merges.** From `observability.delivery`: the latest open
+  pull request count and merge-to-live median per product, and "At least N
+  production releases observed" (a lower bound). A null count reads
+  "Unavailable"; a delivery source with no coverage says so once and shows no
+  numbers. Nothing on this tab opens a pull request, merges or syncs anything.
+  The schema carries no separate sync record, so production sync is only
+  visible as the release age and cadence above.
+- **Product filter in the URL.** Chips appear while two or more products are
+  present and write `?product=<product>` with `go`. A product the snapshot lacks
+  is shown unfiltered at once and removed from the URL after the frame, but
+  only while Ship is the top route: a rewrite is a `go`, so one that fired under
+  an open route would drop it. External deep links open the tab root.
+
+Ship shows no security rows, ids or digests.
+
+## Insights
+
+`/mastermind/insights` is the Usage view (the Fleet, Models, Coordination and
+Delivery sections arrive later and reuse the table route below).
+
+- **Pools** come from `observability.usage.instances[]`, most urgent first:
+  SHORT, then unknown pacing, then OK, then SURPLUS, then the least session
+  budget left, then label. A pool's pacing is the worse of its session and
+  weekly windows, so a weekly SHORT outranks a session that is fine. Pool labels are opaque display strings, shown
+  verbatim and never summed or stacked. Each pool shows session and weekly
+  budget left ("Unavailable" when null, never 0), the reset time in GMT+7, the
+  burn in pp/h, the signed projection at reset, and pacing as a word and a
+  shape (unknown is a dashed outline). Pacing is labelled "Reserve pacing (chart
+  rule)" with the note that it is not the routing decision.
+- **Charts** use the shared chart kit: one panel per pool (session solid,
+  weekly dashed, a fixed 0 to 100 percent axis, a reset marker when it falls in
+  range), and for each Codex pool in `usage.credits[]` a balance panel and a
+  burn-against-target panel. "Credits" is a unit of its own, never money or
+  tokens; a null daily target reads "Target unavailable". Each panel leads with
+  its text summary, carries a shape legend and a live readout, and has a Table
+  action. With `usage.coverage` of `missing` or `unavailable` the plot is left
+  out and the coverage note stands in; with `partial` or `stale` the summary is
+  prefixed with the coverage word. A pool with no series shows the summary only.
+- **Quota table** (`products.quotas[]`, including `Unknown account`), least left
+  first and unknown last, with "as of N min ago". **Forecasts**
+  (`quota_forecasts[]`): "Projected empty <time> GMT+7" soonest first, or "Not
+  projected to run out before reset".
+- **Chart table route.** `/mastermind/insights/:section/table/:chartId` is
+  pushed over Insights and shows the same series rows the panel draws (a null
+  cell reads "Unavailable"). The section is `usage` and the chart id is
+  `budget:<pool>`, `credits:<pool>` or `burn:<pool>`; both are route parameters
+  only. A chart the snapshot no longer has shows "This chart is no longer in
+  Mastermind" with a way back, never an error. The shell pops this location on
+  Back instead of falling back to the tab root.
+
+## Product decisions
+
+- **Decisions journal.** Scope: the Inbox Decisions segment, the decision
+  detail and Home's recent-decisions card. Default: the Inbox has a Needs you /
+  Decisions segmented control with the segment in the URL; Home rows open the
+  detail and "See all decisions" opens the segment. Exceptions: the journal is
+  history and is not answerable; search and risk/area filters are not offered
+  yet. Coverage: `mastermind_decisions_test.dart`,
+  `mastermind_decision_page_test.dart`, the "Back from a decision" cases in
+  `shell_peer_section_checks.dart`.
+- **Offline reply queuing.** Scope: replies from the item detail, on every app
+  surface that shows the "N replies waiting to send" row (Home and Inbox).
+  Default: a reply that cannot be delivered stays queued on the device and is
+  sent later instead of being refused. This is safe because each queued reply is
+  bound to its item id and `version_hash`, and carries one `Idempotency-Key`
+  reused on every retry: if the question changed meanwhile the hub answers 409
+  `stale_item`, the item is refreshed, the typed words are kept and the user
+  reviews it again, so a stale answer is never accepted as the answer to a newer
+  question. Exceptions: replies off at the hub keep entries queued without
+  sending, an entry expires after seven days or when the item leaves the open
+  list, and logout, account switch and lost access erase the outbox. Coverage:
+  `mastermind_replies_cubit_test.dart`, `mastermind_replies_gate_test.dart`,
+  `reply_outbox_store_test.dart`.
+
+## Vietnamese state wording
+
+One Vietnamese word per state: "queued" is "trong hàng đợi", "pending" is "chờ
+xử lý" and "waiting" stays "đang chờ", across lane, deploy and CI labels. One
+term per destination: the Home "Usage" link and the Insights page caption are
+both "Mức sử dụng", and the Insights tab and its label are both "Phân tích".
+Whole-section state titles carry no trailing period; their messages do.
+
+## Push notifications
+
+The web route `POST /api/v1/mastermind/push-events` (see the
+[API reference](/reference/api-reference/mastermind-push-events)) receives
+signed hub events and sends a mobile push to Mastermind owners.
+
+- **Scope:** `needs_you.new`, `decision.awaiting` and `pin_batch.new` only.
+  Recipients are the owners in `MASTERMIND_PUSH_OWNER_IDS` with a registered
+  device and the account push preference on.
+- **Copy:** always "Open Mastermind" (vi "Mở Mastermind") under the title
+  "Mastermind". The event carries no title, product or text, so no item content,
+  including security items, can reach a lock screen.
+- **Tap:** `openTarget: mastermind` with the tab root (`/mastermind/inbox`, or
+  `/mastermind` for pins), held by the same access gate as any deep link. The
+  app navigates only when `route` exactly matches one of those two roots; any
+  other or missing route opens the notifications screen, and a route from the
+  payload is never followed otherwise. An item id is never in the push.
+- **Rate:** at most one push per type per owner per minute; a burst inside the
+  window is dropped, not queued, because the next snapshot shows it.
+- **Retries:** successful owners are skipped for 24 hours per event, including
+  partial retries after the coalescing window. Token-owned claims prevent stale
+  requests from releasing newer claims. Fan-out stops after 60 seconds and
+  returns 502 for unreached owners. Observed FCM success gets a bounded,
+  best-effort receipt write before the deadline is honoured; receipt failure
+  warns and still counts as sent. A retry inside a pending coalescing window
+  remains failed and retryable until the outcome is confirmed or the window
+  expires, rather than completing the event. Unstored receipts can allow
+  duplicates after the window expires if another owner failed. These rules
+  apply to the web push endpoint; mobile tap behavior is unchanged.
+- **Default:** off until Release Desk provisions `MASTERMIND_PUSH_HMAC_SECRET`
+  and `MASTERMIND_PUSH_OWNER_IDS`; without the secret the route sends nothing.
+- **Regression coverage:**
+  `apps/web/src/app/api/v1/mastermind/push-events/route.test.ts`,
+  `apps/web/src/app/api/v1/mastermind/push-events/route.race.test.ts`,
+  `route.delivery.test.ts` and, for the tap,
+  `apps/mobile/test/features/notifications/push/mastermind_push_destination_test.dart`.
+
+## Deferred to PR8
+
+- **Activity cursor (spec 2.10).** Home shows the latest five events from
+  `now.digest` as display only. The "new since you last looked" cursor and the
+  full Activity feed arrive with PR8.
+
+The Insights charts ship as one session-and-weekly panel per pool. These
+chart-spec gaps are deferred to PR8 with the remaining chart sections:
+
+- separate session and weekly small multiples instead of one shared panel;
+- a signed projection axis;
+- a pp/h axis for burn;
+- diverging credit bars for `burn_vs_target`;
+- a light and dark golden image for the chart panels.
+
+## Regression coverage
+
+`apps/mobile/test/features/mastermind/view`:
+
+- `mastermind_entry_test.dart`: entry gating, route gate, mini-app shell,
+  runtime reset, the flavor host (production, staging, unknown).
+- `mastermind_section_test.dart`: access gate, scheduler lifetime, resume
+  refresh gated on a real background (including a section mounted while the app
+  is backgrounded), connectivity-driven freshness strip, whole-section states,
+  the sign-out confirmation.
+- `mastermind_access_resync_test.dart`: access recovery on resume and Apps hub
+  pull-to-refresh.
+- `runtime/mastermind_auth_reset_test.dart`: the app-level logout and
+  account-switch listener over a real `AuthCubit`.
+- `mastermind_decisions_test.dart`: journal order and GMT+7 day grouping,
+  product and reversible chips, the segment in the URL (no Back walk), Home
+  links, redaction.
+- `mastermind_decision_page_test.dart`: decision fields, the gone and updated
+  states, no reply controls.
+- `mastermind_freshness_test.dart`: strip states, the live region and the
+  sources sheet opened from the strip.
+- `mastermind_sources_sheet_test.dart`: the Home navbar action opens the same
+  sheet, degraded sources first.
+- `mastermind_home_page_test.dart` and `home_model_test.dart`: ordering,
+  security redaction, dock clearance, tab links.
+- `mastermind_work_page_test.dart`: grouping, the state, product and area
+  filters and their URL, chip counts following the filters, Clear filters,
+  Back from a lane keeping the Home chip filter, security redaction,
+  whole-section states, dock clearance, deep links to the tab root.
+- `mastermind_work_segments_test.dart`: the segment control and its URL, the
+  Backlog grouping, search, empty and security rows, the Staff sort, summary,
+  privacy rule (no activity text, no sort or filter control) and unknown model,
+  dock clearance on every segment.
+- `mastermind_work_filter_url_test.dart`: a product or area filter that leaves
+  the snapshot is removed from the URL too, and valid filters are kept.
+- `mastermind_lane_page_test.dart` (detail, gone, updated) and
+  `work_model_test.dart`.
+- `mastermind_ship_page_test.dart`: failure-first grouping, production before
+  staging, withheld subject, per-environment freshness independent of the
+  snapshot, "Unavailable" instead of 0, cadence order, pull requests and merges,
+  redaction, whole-section states, the product filter in the URL, dock
+  clearance.
+- `mastermind_insights_page_test.dart`: pool urgency order, pacing word plus
+  shape, null readings, GMT+7 resets, credits copy, quota and forecasts,
+  coverage handling, the chart table route (same series, gone chart, Back),
+  whole-section states, dock clearance.
+- `mastermind_home_links_test.dart`: Home Ship rows and the Usage link open the
+  real tabs. `presentation/ship_usage_model_test.dart`: the Ship and Usage
+  models and chart ids.
+- `apps/mobile/test/features/mastermind/access/mastermind_access_cubit_test.dart`:
+  the root workspace, permission and configured-source matrix (the entry is off
+  without root `view_infrastructure`), unrelated permissions, the `admin`
+  permission, workspace ABA and error fail-closed.
+- `apps/mobile/test/features/mastermind/data/hub_http_snapshot_source_test.dart`:
+  base URL by flavor and override (production, staging, development, a bad
+  override never falling back) and the bare-HTTPS-origin rules: non-HTTPS,
+  credentials, path, query, fragment, and lookalike shapes such as the hub host
+  hidden behind userinfo or a fragment are refused.
+- `apps/mobile/test/features/shell/view/shell_back_navigation_test.dart`:
+  system Back from a lane over a filtered Work location returns to that
+  location with its query (it fails without the shell's lane-pop rule). System
+  and dock Back from a chart table, pushed over Insights over Work, pop back to
+  the same Insights (one state created, Work still beneath it); both fail
+  without the shell's chart-table pop rule, because the mini-app parent
+  fallback's `go` rebuilds Insights and flattens the stack.
+  `mastermind_ship_url_test.dart`: a product filter with no chip shows the whole
+  list and rewrites the URL once, and not while another route is on top.
+
+The registered-destination smoke test builds every `/mastermind/**` route
+through the production router.
+
+`apps/mobile/test/features/mastermind/replies` covers the reply path:
+`reply_models_test.dart` (key format, exact body, strict stored form, limits),
+`reply_outbox_store_test.dart` (per-user persistence, corruption, clear),
+`hub_reply_transport_test.dart` (headers, every status, the 401 retry with the
+same key), `mastermind_replies_cubit_test.dart` (capability gate, persist before
+send, idempotent retry, 409/400/401/403/413/429, logout fencing, snapshot sync),
+`mastermind_replies_gate_test.dart` (nothing is sent while replies are off,
+including a reconnect flush; a logout racing a refused or stale reply; entries
+bound to item id and version), `mastermind_capability_load_test.dart` (one
+shared capability request, a send waiting on the first check) and
+`mastermind_runtime_replies_test.dart` (logout, switch and lost access clear
+the outbox). `runtime/mastermind_runtime_online_test.dart` covers the
+connectivity stream (reaches the scheduler, de-duplicated, cancelled on close).
+The screens are in `view/mastermind_inbox_page_test.dart`,
+`view/mastermind_item_page_test.dart` and
+`view/reply_line_limit_formatter_test.dart` (the 10-line cap and its refusals).

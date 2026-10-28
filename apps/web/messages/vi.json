@@ -21268,6 +21268,16 @@
     "ytd_interest": "Từ đầu năm",
     "zalopay_tier": "Hạng ZaloPay"
   },
+  "web_start_legal": {
+    "community_guidelines": "Nguyên tắc cộng đồng",
+    "contact": "Liên hệ pháp lý",
+    "contents": "Mục lục",
+    "effective_date": "Có hiệu lực từ",
+    "language": "English",
+    "navigation": "Tài liệu pháp lý",
+    "privacy": "Chính sách bảo mật",
+    "terms": "Điều khoản dịch vụ"
+  },
   "workflow": {
     "afternoons": "Buổi chiều",
     "ai_analysis": "Phân tích AI",

@@ -255,6 +255,30 @@ admin writes while authenticated table grants remain revoked; and
 - Treat `admin` as a permission that short-circuits checks, not as a separate role system.
 - When adding new privileged features, update both the permission catalog and the UI/routes that consume it.
 
+## Database staff identity checks
+
+SQL policies and definer functions never treat a Tuturuuu-domain email as proof
+of staff identity. They call `private.is_verified_tuturuuu_staff(user, allow_xwf)`
+(policies use the caller-bound `public.is_verified_tuturuuu_staff`, which only
+answers for `auth.uid()` unless the caller is `service_role`). It requires the
+`auth.users` email to match the gate's original domain set, a confirmed email,
+at least one provider identity, and every `azure` identity's `tid` (or issuer
+directory) to equal `private.security_config.azure_staff_tenant_id`. A missing
+or empty tenant pin denies Azure-linked users; non-Azure staff are unaffected.
+
+Domains are never widened: gates default to exact `@tuturuuu.com`; only the
+workspace-creation quota bypass (formerly `public.is_tuturuuu_email`) admits
+`xwf.tuturuuu.com`. Mail push keeps its own `*.tuturuuu.com` mailbox rule and
+adds the identity check through `private.staff_identity_verified`. Covered gates:
+`shortened_links` team policies, the workspace quota bypass, online meeting
+creation, mail push recipients, meeting programming elevation, AI memory
+backfill, employee administrator and product-feedback staff assertions.
+
+Regression evidence: `apps/database/supabase/tests/20261027151470_verified-staff-domain-gates.sql`
+runs foreign-tenant, home-tenant, no-Azure, unconfirmed, external, xwf and
+zero-identity users through each gate. SQL fixtures that insert `auth.users`
+directly must also insert an `auth.identities` row, as GoTrue does.
+
 ## Notification email recipient eligibility
 
 The Web immediate and batched notification dispatchers admit confirmed external

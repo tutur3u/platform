@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(122);
+select plan(116);
 
 create function pg_temp.adb_id(n integer) returns uuid
 language sql immutable
@@ -36,8 +36,6 @@ insert into adb_execute_expected values
   ('public.get_ai_credit_usage_summary(uuid,timestamptz,uuid)'),
   ('public.admin_list_ai_credit_transactions(integer,integer,uuid,uuid,text,text,text,text,timestamptz,timestamptz)'),
   ('public.cleanup_role_inconsistencies()'),
-  ('public.get_or_create_notification_batch(uuid,uuid,text,integer)'),
-  ('public.get_or_create_notification_batch(uuid,uuid,text,integer,text)'),
   ('public.normalize_task_sort_keys()');
 select ok(to_regprocedure(signature) is not null
   and not has_function_privilege('authenticated', to_regprocedure(signature), 'execute')
@@ -71,12 +69,18 @@ from (values
   ('public.admin_list_ai_credit_transactions(integer,integer,uuid,uuid,text,text,text,text,timestamptz,timestamptz)',
    'select * from public.admin_list_ai_credit_transactions(1, 10, null::uuid, null::uuid, null::text, null::text, null::text, null::text, null::timestamptz, null::timestamptz)'),
   ('public.cleanup_role_inconsistencies()', 'select public.cleanup_role_inconsistencies()'),
-  ('public.get_or_create_notification_batch(uuid,uuid,text,integer)',
-   format('select public.adb_notification_batch_4(%L::uuid, %L::uuid, ''email'', 5)', pg_temp.adb_id(10), pg_temp.adb_id(1))),
-  ('public.get_or_create_notification_batch(uuid,uuid,text,integer,text)',
-   format('select public.adb_notification_batch_5(%L::uuid, %L::uuid, ''email'', 5, ''synthetic@example.invalid'')', pg_temp.adb_id(10), pg_temp.adb_id(1))),
   ('public.normalize_task_sort_keys()', 'select public.normalize_task_sort_keys()')
 ) as t(sig, call_sql);
+
+-- C retires the broken legacy overloads; the working six-argument body remains.
+select ok(
+  to_regprocedure('public.get_or_create_notification_batch(uuid,uuid,text,integer)') is null,
+  'C removes the broken four-argument notification batching overload'
+);
+select ok(
+  to_regprocedure('public.get_or_create_notification_batch(uuid,uuid,text,integer,text)') is null,
+  'C removes the broken five-argument notification batching overload'
+);
 
 -- guarded = false: the SQL wrapper relies on the get_category_breakdown
 -- overload it calls (its by-name call is itself ambiguous today).
@@ -108,8 +112,6 @@ grant select on adb_service_only, adb_finance to anon, authenticated, service_ro
 alter function public.deduct_ai_credits(uuid,text,integer,integer,integer,text,uuid,uuid,jsonb) rename to adb_deduct_ai_credits_9;
 alter function public.get_or_create_credit_balance(uuid) rename to adb_credit_balance_1;
 alter function public.get_ai_credit_usage_summary(uuid,timestamptz) rename to adb_usage_summary_2;
-alter function public.get_or_create_notification_batch(uuid,uuid,text,integer) rename to adb_notification_batch_4;
-alter function public.get_or_create_notification_batch(uuid,uuid,text,integer,text) rename to adb_notification_batch_5;
 alter function public.get_weekly_invoice_totals(uuid,integer,uuid[],uuid[],date,date) rename to adb_weekly_invoice_totals_6;
 alter function public.get_category_breakdown(uuid,timestamptz,timestamptz,boolean,text,text) rename to adb_category_breakdown_6;
 alter function public.get_category_breakdown(uuid,timestamptz,timestamptz,boolean,text,text,boolean) rename to adb_category_breakdown_7;
@@ -164,7 +166,7 @@ values (pg_temp.adb_id(20), pg_temp.adb_id(2));
 insert into public.workspace_role_wallet_whitelist (role_id, wallet_id)
 values (pg_temp.adb_id(20), pg_temp.adb_id(40));
 
--- Grants (14 + 9)
+-- Grants (12 + 9)
 select ok(
   not has_function_privilege('anon', target, 'execute')
     and not has_function_privilege('authenticated', target, 'execute')
@@ -183,14 +185,14 @@ select ok(
 )
 from adb_finance;
 
--- anon (14 + 9)
+-- anon (12 + 9)
 set local role anon;
 select set_config('request.jwt.claims', '{"role":"anon"}', true);
 select throws_ok(call_sql, '42501', null, 'anon denied: ' || label) from adb_service_only;
 select throws_ok(call_sql, '42501', null, 'anon denied: ' || label) from adb_finance;
 reset role;
 
--- An authenticated workspace creator cannot reach the service-role set (14)
+-- An authenticated workspace creator cannot reach the service-role set (12)
 set local role authenticated;
 select set_config('request.jwt.claims', format('{"role":"authenticated","sub":"%s"}', pg_temp.adb_id(1)), true);
 select throws_ok(call_sql, '42501', null, 'authenticated denied: ' || label) from adb_service_only;

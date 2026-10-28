@@ -1,0 +1,59 @@
+name: Contacts Start Candidate
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
+    paths:
+      - 'apps/contacts/**'
+      - 'packages/start-bridge/**'
+      - 'packages/utils/src/abuse-protection/**'
+      - 'packages/utils/package.json'
+      - 'bun.lock'
+      - '.github/workflows/contacts-start-candidate.yaml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
+  cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
+jobs:
+  check-ci:
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
+    uses: ./.github/workflows/ci-check.yml
+    permissions:
+      contents: read
+      deployments: read
+    with:
+      workflow_name: contacts-start-candidate.yaml
+  candidate:
+    needs: check-ci
+    if: (needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.22.0
+      - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile --ignore-scripts
+      - run: bun apps/contacts/cloudflare/generate-inventory.ts --check --artifact ${{ runner.temp }}/contacts-start-census.json
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: contacts-start-census
+          path: ${{ runner.temp }}/contacts-start-census.json
+          retention-days: 7
+          if-no-files-found: error
+      - run: bun run --cwd apps/contacts test:candidate
+      - run: bun run --cwd apps/contacts test:staging:policy
+      - run: bun run --cwd apps/contacts test:candidate:controls
+      - run: bun run --cwd apps/contacts build:candidate
+      - run: bun run --cwd apps/contacts test:candidate:runtime
+      - run: bun run --cwd apps/contacts type-check:candidate
+      - run: bun x --no-install biome check apps/contacts/cloudflare apps/contacts/vite.config.mts apps/contacts/tsconfig.candidate.json

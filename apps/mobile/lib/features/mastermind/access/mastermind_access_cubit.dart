@@ -19,8 +19,14 @@ final class MastermindAccessCubit extends Cubit<MastermindAccessState> {
   final MastermindSnapshotSource _source;
   int _generation = 0;
 
-  Future<void> sync(String? wsId) async {
+  /// Re-checks access for [wsId]. A [quiet] sync keeps the current answer on
+  /// screen while it runs, so a pull-to-refresh never makes the entry blink.
+  Future<void> sync(String? wsId, {bool quiet = false}) async {
     final generation = ++_generation;
+    final keep =
+        quiet &&
+        state.status == MastermindAccessStatus.loaded &&
+        state.wsId == wsId;
     if (wsId == null || !isSystemWorkspaceId(wsId) || !_source.isConfigured) {
       emit(
         MastermindAccessState(
@@ -30,9 +36,14 @@ final class MastermindAccessCubit extends Cubit<MastermindAccessState> {
       );
       return;
     }
-    emit(
-      MastermindAccessState(status: MastermindAccessStatus.loading, wsId: wsId),
-    );
+    if (!keep) {
+      emit(
+        MastermindAccessState(
+          status: MastermindAccessStatus.loading,
+          wsId: wsId,
+        ),
+      );
+    }
     try {
       final permissions = await _repository.getPermissions(
         wsId: rootWorkspaceId,
@@ -48,7 +59,7 @@ final class MastermindAccessCubit extends Cubit<MastermindAccessState> {
         ),
       );
     } on Object {
-      if (isClosed || generation != _generation) return;
+      if (isClosed || generation != _generation || keep) return;
       emit(
         MastermindAccessState(status: MastermindAccessStatus.error, wsId: wsId),
       );
@@ -56,4 +67,18 @@ final class MastermindAccessCubit extends Cubit<MastermindAccessState> {
   }
 
   Future<void> syncWorkspace(String? wsId) => sync(wsId);
+
+  /// The hub said 403: hide the entry until the next [sync].
+  void markForbidden() {
+    if (isClosed || state.status != MastermindAccessStatus.loaded) return;
+    if (state.forbidden) return;
+    emit(
+      MastermindAccessState(
+        status: state.status,
+        enabled: state.enabled,
+        forbidden: true,
+        wsId: state.wsId,
+      ),
+    );
+  }
 }
