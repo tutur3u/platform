@@ -2,6 +2,7 @@ import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { describe, expect, it } from 'vitest';
 import {
+  getShownTicketIdentifier,
   getTaskCardBadgeProjects,
   getTaskCardHydratingOpenOptions,
   getTaskCardTicketIdentifier,
@@ -265,5 +266,12 @@ describe('getTaskCardBadgeProjects', () => {
 
   it('shows nothing for a task without projects', () => {
     expect(getTaskCardBadgeProjects(card([]), null)).toEqual([]);
+  });
+});
+
+describe('getShownTicketIdentifier', () => {
+  it('shows no ticket ID in Documents lists, so their project badge stays', () => {
+    expect(getShownTicketIdentifier('PLA-2', 'documents')).toBeNull();
+    expect(getShownTicketIdentifier('PLA-2', 'active')).toBe('PLA-2');
   });
 });
