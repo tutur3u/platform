@@ -82,6 +82,30 @@ Workspace members can have workspace-specific display names, similar to server p
 - Auto-linking runs on `workspace_members` insert. If a virtual profile is created or its email is corrected after membership already exists, use the database-page repair action to reconcile the link.
 - Repair is conservative: a link is inserted only when one unlinked workspace profile and one existing member platform account share the same normalized email. Missing emails, no member match, duplicate workspace profiles, duplicate platform matches, and platform accounts already linked elsewhere are reported as skipped cases.
 
+### Workspace invitations
+
+An invitation admits its recipient to the workspace that issued it, and only
+with the membership type the invitation grants.
+
+- Scope: workspace membership created from a direct (user) invite or an email
+  invite, through the web `accept-invite` route or a direct Data API insert.
+- Matching: an email invite is redeemed only by the account whose confirmed
+  Supabase Auth email equals the invited email. The editable profile email in
+  `user_private_details` and an unconfirmed Auth email never redeem an invite.
+- Type: the joined membership type comes from the invite. A client cannot
+  request a higher type; when both a direct and an email invite exist, the
+  direct invite wins.
+- Creating email invites requires workspace membership plus
+  `manage_workspace_members` in that workspace (and `manage_workspace_roles`
+  with a role from the same workspace when a role is attached). Nobody can
+  invite their own email, and seat-based workspaces reject invites without a
+  free seat.
+- Exception: the creator of a workspace with no members can add themselves
+  (workspace bootstrap). Invite links (`/invite/[code]`) and guest self-join
+  keep their own server-side checks.
+- Regression coverage: `apps/database/supabase/tests/workspace-invite-scope.sql`
+  and `apps/web/src/__tests__/workspace-accept-invite-route.test.ts`.
+
 ### Workspace user read permissions
 
 Session-based user lists and web user detail reads require
