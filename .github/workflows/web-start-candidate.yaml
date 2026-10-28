@@ -5,6 +5,7 @@ on:
     paths:
       - 'apps/web/**'
       - 'packages/start-bridge/**'
+      - 'packages/legal/**'
       - 'packages/utils/src/abuse-protection/**'
       - 'packages/utils/package.json'
       - 'bun.lock'
@@ -50,6 +51,8 @@ jobs:
           path: ${{ runner.temp }}/web-start-census.json
           retention-days: 7
       - run: bun run --cwd apps/web test:candidate
+      - run: node --experimental-strip-types --test apps/web/e2e-wave1-staging/policy.test.ts
+      - run: bun x --no-install tsc --noEmit -p apps/web/tsconfig.wave1-staging.json
       - run: bun run --cwd apps/web build:candidate
       - run: bun run --cwd apps/web test:candidate:runtime
       - run: bun run --cwd apps/web type-check:candidate

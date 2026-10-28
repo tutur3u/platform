@@ -1,5 +1,6 @@
-import { createBridgeStartHandler } from '@tuturuuu/start-bridge/start/server-entry';
 import { createWebCandidateHandler } from './handler';
+import { staticStartHandler } from './start/static-handler';
 
-const start = createBridgeStartHandler();
-export default { fetch: createWebCandidateHandler({ start: start.fetch }) };
+export default {
+  fetch: createWebCandidateHandler({ start: staticStartHandler }),
+};

@@ -8,6 +8,7 @@ description: "Implement Tuturuuu web routes and shared UI, including translation
 Use for web/API/shared UI implementation. Apply the root and nearest app rules;
 load only the reference section needed by the affected surface.
 
+- `references/web-start-candidate.md`: default-off native Web slices, static HTML, staging acceptance and rollback.
 - `references/platform-patterns.md`: Cache Components, satellite actors, shared API
   boundaries, dashboard interaction, translations, and navigation.
 - `references/repository-workflows.md`: app ownership, settings shells, package

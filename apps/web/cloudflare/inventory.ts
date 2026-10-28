@@ -2,6 +2,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, relative, resolve } from 'node:path';
 import { createSatelliteApiRewrites } from '../src/lib/satellite-api-rewrites';
 import { createSourceGraph } from './inventory-source';
+import { nativeLegalPages } from './native-legal';
 
 export function filesUnder(root: string): string[] {
   return readdirSync(root, { withFileTypes: true })
@@ -81,9 +82,23 @@ export function generateInventory(repo: string) {
               : isMetadata
                 ? 'metadata'
                 : 'route',
-        owner: 'web-next',
-        disposition: 'Next-fallback',
+        owner: nativeLegalPages.some((page) => page.source === source)
+          ? 'web-start'
+          : 'web-next',
+        disposition: nativeLegalPages.some((page) => page.source === source)
+          ? 'native-Start'
+          : 'Next-fallback',
         cacheComponents: true,
+        ...(nativeLegalPages.some((page) => page.source === source)
+          ? {
+              nativeSource: 'apps/web/cloudflare/start/legal-page.tsx',
+              nativeBoundaries: graph.boundaries([
+                'apps/web/cloudflare/start/legal-page.tsx',
+                'apps/web/cloudflare/start/routes/__root.tsx',
+                'apps/web/cloudflare/start/static-handler.tsx',
+              ]),
+            }
+          : {}),
         roots,
         boundaries: /\.[cm]?[jt]sx?$/u.test(name)
           ? graph.boundaries(roots)
@@ -210,15 +225,14 @@ export function routeManifest(inventory: ReturnType<typeof generateInventory>) {
     serviceWorker: inventory.serviceWorker,
     crons: inventory.crons,
     summary: inventory.summary,
-    routes: inventory.routes.map(
-      ({ pattern, source, category, owner, disposition, cronOwner }) => ({
-        pattern,
-        source,
-        category,
-        owner,
-        disposition,
-        cronOwner,
-      })
-    ),
+    routes: inventory.routes.map((route) => ({
+      pattern: route.pattern,
+      source: route.source,
+      category: route.category,
+      owner: route.owner,
+      disposition: route.disposition,
+      cronOwner: route.cronOwner,
+      ...('nativeSource' in route ? { nativeSource: route.nativeSource } : {}),
+    })),
   };
 }

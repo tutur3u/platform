@@ -10,6 +10,7 @@ export const stagingProfile = {
 
 export interface WebCandidateEnv {
   WEB_START_CANDIDATE?: string;
+  WEB_START_NATIVE_LEGAL?: string;
   NEXT_FALLBACK_ORIGIN?: string;
   NEXT_PUBLIC_SUPABASE_URL?: string;
   AUTH_COOKIE_DOMAIN?: string;

@@ -53,7 +53,7 @@
       "satellite-bridge": 12,
       "service-worker": 1
     },
-    "dispositions": { "native-Start": 1, "Next-fallback": 837 }
+    "dispositions": { "native-Start": 3, "Next-fallback": 835 }
   },
   "routes": [
     {
@@ -988,9 +988,10 @@
       "pattern": "/[locale]/privacy",
       "source": "apps/web/src/app/[locale]/(marketing)/privacy/page.tsx",
       "category": "page",
-      "owner": "web-next",
-      "disposition": "Next-fallback",
-      "cronOwner": null
+      "owner": "web-start",
+      "disposition": "native-Start",
+      "cronOwner": null,
+      "nativeSource": "apps/web/cloudflare/start/legal-page.tsx"
     },
     {
       "pattern": "/[locale]/products/ai",
@@ -1268,9 +1269,10 @@
       "pattern": "/[locale]/terms",
       "source": "apps/web/src/app/[locale]/(marketing)/terms/page.tsx",
       "category": "page",
-      "owner": "web-next",
-      "disposition": "Next-fallback",
-      "cronOwner": null
+      "owner": "web-start",
+      "disposition": "native-Start",
+      "cronOwner": null,
+      "nativeSource": "apps/web/cloudflare/start/legal-page.tsx"
     },
     {
       "pattern": "/[locale]/u/[username]",
