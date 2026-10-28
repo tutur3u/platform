@@ -12626,7 +12626,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String mastermindLaneAgeUnknown(String state) {
-    return '$state · chưa rõ thời lượng';
+    return '$state · chưa công bố thời gian';
   }
 
   @override
@@ -13056,7 +13056,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindSeriesTarget => 'Mục tiêu';
 
   @override
-  String get mastermindSeriesUnknown => 'không rõ';
+  String get mastermindSeriesUnknown => 'Chưa được công bố';
 
   @override
   String get mastermindSeriesUsageLimit => 'Hết hạn mức';
@@ -13244,7 +13244,7 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String get mastermindStaffUnknownModel => 'Mô hình không xác định';
+  String get mastermindStaffUnknownModel => 'Chưa được công bố';
 
   @override
   String get mastermindStateAnswered => 'đã trả lời';
@@ -13274,7 +13274,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindStateStale => 'đã cũ';
 
   @override
-  String get mastermindStateUnknown => 'không rõ';
+  String get mastermindStateUnknown => 'Chưa được công bố';
 
   @override
   String get mastermindStateWaiting => 'đang chờ';
@@ -13420,7 +13420,7 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String get mastermindUnknown => 'Không rõ';
+  String get mastermindUnknown => 'Chưa được công bố';
 
   @override
   String get mastermindUnreachableMessage => 'Mỗi lần thất bại, thời gian chờ thử lại sẽ dài hơn.';
@@ -13568,4 +13568,28 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get classesTodayStale => 'Không thể làm mới. Đang hiển thị danh sách lớp đã lưu gần nhất.';
+
+  @override
+  String get mastermindNotPublished => 'Chưa được công bố';
+
+  @override
+  String get mastermindNotConnected => 'Chưa kết nối';
+
+  @override
+  String get mastermindSourceDown => 'Nguồn không hoạt động';
+
+  @override
+  String get mastermindGapNoSamples => 'Chưa công bố mẫu dữ liệu';
+
+  @override
+  String get mastermindGapAccountSwitch => 'Đã đổi tài khoản';
+
+  @override
+  String get mastermindGapReset => 'Đặt lại hạn mức';
+
+  @override
+  String get mastermindAskMissing => 'Chưa công bố nội dung yêu cầu đầy đủ';
+
+  @override
+  String get mastermindRecentlyResolved => 'Đã giải quyết gần đây';
 }

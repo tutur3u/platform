@@ -70,7 +70,8 @@ class UsagePoolCard extends StatelessWidget {
         // A null reading is "Unavailable", never a zero.
         trailing: Text(
           remaining == null
-              ? l10n.mastermindUnavailable
+              ? window.fields['remaining_percent']?.reason(l10n) ??
+                    l10n.mastermindNotPublished
               : l10n.mastermindUnitPercent(usageNumber(remaining)),
           style: Theme.of(context).textTheme.titleMedium,
         ),

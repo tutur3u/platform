@@ -2,10 +2,16 @@ part of 'snapshot_parser.dart';
 
 Usage parseUsage(JsonReader r) {
   r.keys(
-    ['coverage', 'instances', 'series', 'credits'],
+    ['coverage', 'instances', 'series', 'credits', 'gaps'],
     ['coverage', 'instances', 'series', 'credits'],
   );
   return Usage(
+    gaps: r.has('gaps')
+        ? [
+            for (final raw in r.field('gaps').value! as List)
+              if (UsageGap.parse(raw) case final gap?) gap,
+          ]
+        : const [],
     coverage: r
         .field('coverage')
         .enumOf<Coverage>(Coverage.values, (v) => v.wireName),
@@ -28,7 +34,14 @@ UsagePoint parseUsagePoint(JsonReader r) {
   );
 }
 
-UsageWindow parseUsageWindow(JsonReader r) {
+UsageWindow parseUsageWindow(JsonReader input) {
+  var r = input;
+  final fields = {
+    for (final e in r.object().entries) e.key: HubField.parse(e.value),
+  };
+  r = JsonReader({
+    for (final e in fields.entries) e.key: e.value.value,
+  }, r.path);
   r.keys(
     [
       'remaining_percent',
@@ -46,6 +59,7 @@ UsageWindow parseUsageWindow(JsonReader r) {
     ],
   );
   return UsageWindow(
+    fields: fields,
     remainingPercent: r
         .field('remaining_percent')
         .nullable((v) => v.number(min: 0, max: 100)),

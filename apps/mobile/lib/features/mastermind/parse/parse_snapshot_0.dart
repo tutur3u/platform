@@ -1,8 +1,11 @@
 part of 'snapshot_parser.dart';
 
-MastermindSnapshot parseRootSnapshot(JsonReader r) {
+MastermindSnapshot parseRootSnapshot(JsonReader input) {
+  var r = input;
+  r = JsonReader(adaptDecisionCollections(r.object()), r.path);
   r.keys(
     [
+      'decisions_resolved',
       'schema_version',
       'generated_at',
       'now',
@@ -30,6 +33,9 @@ MastermindSnapshot parseRootSnapshot(JsonReader r) {
     ],
   );
   return MastermindSnapshot(
+    resolvedItems: r.has('decisions_resolved')
+        ? r.field('decisions_resolved').list(parseNeedsYou, maxItems: 20)
+        : const [],
     schemaVersion: r.field('schema_version').string(constant: '1.4'),
     generatedAt: r.field('generated_at').utcTimestamp(),
     now: parseSnapshotNow(r.field('now')),

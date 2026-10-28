@@ -3,6 +3,9 @@ import 'dart:typed_data';
 
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/parse/strict_json.dart';
+import 'package:mobile/features/mastermind/presentation/hub_contract_adapter.dart';
+import 'package:mobile/features/mastermind/presentation/hub_field.dart';
+import 'package:mobile/features/mastermind/presentation/usage_gaps.dart';
 
 part 'parse_items_0.dart';
 part 'parse_items_1.dart';

@@ -13,7 +13,9 @@ SecurityItem parseSecurityItem(JsonReader r) {
   );
 }
 
-NeedsYou parseNeedsYou(JsonReader r) {
+NeedsYou parseNeedsYou(JsonReader input) {
+  var r = input;
+  r = JsonReader(adaptDecision(r.object()), r.path);
   r.keys(
     [
       'id',
@@ -39,7 +41,7 @@ NeedsYou parseNeedsYou(JsonReader r) {
   return NeedsYou(
     id: r.field('id').string(pattern: RegExp(r'^item-[a-f0-9]{20}$')),
     title: r.field('title').string(maxLength: 100),
-    body: r.field('body').string(maxLength: 280),
+    body: r.field('body').string(maxLength: 2000),
     options: r
         .field('options')
         .list((v) => v.string(maxLength: 80), maxItems: 8, unique: true),
@@ -61,7 +63,22 @@ NeedsYou parseNeedsYou(JsonReader r) {
   );
 }
 
-Lane parseLane(JsonReader r) {
+Lane parseLane(JsonReader input) {
+  var r = input;
+  final adapted = Map<String, dynamic>.from(r.object());
+  final status = adapted.remove('status');
+  adapted.remove('name');
+  if (const {'running', 'waiting', 'idle'}.contains(status)) {
+    adapted['state'] = status;
+  }
+  r = JsonReader(adapted, r.path);
+  final fields = {
+    for (final e in r.object().entries) e.key: HubField.parse(e.value),
+  };
+  r = JsonReader({
+    for (final e in fields.entries)
+      e.key: e.value.value ?? (e.key == 'state' ? 'unknown' : null),
+  }, r.path);
   r.keys(
     [
       'id',
@@ -86,6 +103,7 @@ Lane parseLane(JsonReader r) {
     ],
   );
   return Lane(
+    fields: fields,
     id: r.field('id').string(pattern: RegExp(r'^item-[a-f0-9]{20}$')),
     title: r.field('title').string(maxLength: 100),
     role: r.field('role').string(maxLength: 60),

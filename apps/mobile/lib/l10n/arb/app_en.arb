@@ -1327,13 +1327,34 @@
   "assistantAttachmentFailureTooLarge": "File is larger than 32 MB. Remove it or attach a smaller file.",
   "assistantAttachmentFailureUnsupported": "This file type isn't supported. Remove it to send.",
   "assistantAttachmentNotSentMany": "{count} attachments didn't upload. Retry or remove them to send.",
-  "@assistantAttachmentNotSentMany": {"placeholders": {"count": {"type": "int"}}},
+  "@assistantAttachmentNotSentMany": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "assistantAttachmentNotSentOne": "{name} didn't upload. {reason}",
-  "@assistantAttachmentNotSentOne": {"placeholders": {"name": {"type": "String"}, "reason": {"type": "String"}}},
+  "@assistantAttachmentNotSentOne": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
   "assistantAttachmentPreparing": "Preparing",
   "assistantAttachmentRetry": "Retry",
   "assistantAttachmentUploadingPercent": "{percent}%",
-  "@assistantAttachmentUploadingPercent": {"placeholders": {"percent": {"type": "int"}}},
+  "@assistantAttachmentUploadingPercent": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
   "assistantAttachmentUploadPending": "Wait for attachment uploads to finish before sending.",
   "assistantAudioUnavailable": "Audio was interrupted. Reconnect to continue this conversation.",
   "assistantCalendarLabel": "Calendar",
@@ -5893,7 +5914,7 @@
   "mastermindKindTest": "Test",
   "mastermindLaneAge": "Age",
   "mastermindLaneAgeLine": "{state} for {duration}",
-  "mastermindLaneAgeUnknown": "{state} · age unknown",
+  "mastermindLaneAgeUnknown": "{state} · age not published",
   "mastermindLaneArea": "Area",
   "mastermindLaneEta": "ETA {duration}",
   "mastermindLaneEtaAbout": "About {duration} left",
@@ -6016,7 +6037,7 @@
   "mastermindSeriesSteer": "Steer",
   "mastermindSeriesSuccess": "Success",
   "mastermindSeriesTarget": "Target",
-  "mastermindSeriesUnknown": "unknown",
+  "mastermindSeriesUnknown": "Not published yet",
   "mastermindSeriesUsageLimit": "Usage limit",
   "mastermindSeriesWaiting": "waiting",
   "mastermindSession": "Session",
@@ -6068,7 +6089,7 @@
   "mastermindStaffEmpty": "No staff roles reported.",
   "mastermindStaffGroup": "Staff",
   "mastermindStaffSummary": "{count, plural, =1{1 role} other{{count} roles}} · {running} running",
-  "mastermindStaffUnknownModel": "Unknown model",
+  "mastermindStaffUnknownModel": "Not published yet",
   "mastermindStateAnswered": "answered",
   "mastermindStateCancelled": "cancelled",
   "mastermindStateCompleted": "completed",
@@ -6078,7 +6099,7 @@
   "mastermindStateQueued": "queued",
   "mastermindStateRunning": "running",
   "mastermindStateStale": "stale",
-  "mastermindStateUnknown": "unknown",
+  "mastermindStateUnknown": "Not published yet",
   "mastermindStateWaiting": "waiting",
   "mastermindStateWithdrawn": "withdrawn",
   "mastermindSummaryAsOf": "as of {time}",
@@ -6116,7 +6137,7 @@
   "mastermindUnitPpPerHour": "{value} pp/h",
   "mastermindUnitSeconds": "{value} s",
   "mastermindUnitTokens": "{value} tokens",
-  "mastermindUnknown": "Unknown",
+  "mastermindUnknown": "Not published yet",
   "mastermindUnreachableMessage": "Retries wait a little longer after each failure.",
   "mastermindUnreachableTitle": "Can't reach Mastermind",
   "mastermindUpdateAppShowing": "Update the app to read the latest Mastermind data · showing {time}",
@@ -6182,5 +6203,13 @@
         "type": "String"
       }
     }
-  }
+  },
+  "mastermindNotPublished": "Not published yet",
+  "mastermindNotConnected": "Not connected",
+  "mastermindSourceDown": "Source down",
+  "mastermindGapNoSamples": "No samples published",
+  "mastermindGapAccountSwitch": "Account switched",
+  "mastermindGapReset": "Quota reset",
+  "mastermindAskMissing": "Full ask not published yet",
+  "mastermindRecentlyResolved": "Recently resolved"
 }

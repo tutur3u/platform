@@ -551,3 +551,18 @@ connectivity stream (reaches the scheduler, de-duplicated, cancelled on close).
 The screens are in `view/mastermind_inbox_page_test.dart`,
 `view/mastermind_item_page_test.dart` and
 `view/reply_line_limit_formatter_test.dart` (the 10-line cap and its refusals).
+
+## Decision and usage metadata
+
+Mobile accepts legacy scalar fields alongside Forge v1 field envelopes. Missing
+values display “Not published yet”; connection and source failures retain their
+explicit status. An accepted reply remains sent until a live snapshot closes its
+stable item ID. Resolved items leave Needs you and can appear in Recently resolved.
+Full asks use `ask_text` (up to 2000 characters); an absent full ask is stated on
+the detail page. No mobile action can infer that the hub processed a reply.
+
+Usage charts annotate timestamp gaps with published reasons (source failure,
+account switch or quota reset). Without metadata they say “No samples published”.
+A reset timestamp within an inferred gap supplies the reset reason. Pools remain
+separate. Adapter and classification regressions live in
+`apps/mobile/test/features/mastermind/presentation/hub_contract_test.dart`.

@@ -2,6 +2,7 @@ import 'package:mobile/core/ui/charts/charts.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/gmt7.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
+import 'package:mobile/features/mastermind/presentation/usage_gaps.dart';
 import 'package:mobile/features/mastermind/presentation/usage_model.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -140,6 +141,8 @@ UsageChartSpec? usageChartSpec(
         ],
         // The reset marker only helps when it falls inside what is drawn.
         bands: [
+          for (final gap in usageGaps(pool.series, model.gaps))
+            ChartBand(label: gap.label(l10n), t: gap.start),
           if (resets != null &&
               first != null &&
               !resets.isBefore(first) &&
