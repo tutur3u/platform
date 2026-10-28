@@ -2,10 +2,19 @@ import 'dart:developer' as developer;
 import 'dart:io' show Platform;
 
 import 'package:mobile/core/config/env.dart';
+import 'package:mobile/data/sources/keychain_accessibility_migration.dart';
+import 'package:mobile/data/sources/secure_pkce_storage.dart';
 import 'package:mobile/data/sources/secure_storage.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 var _supabaseInitialized = false;
+
+/// Auth options that keep both the session and the PKCE verifier out of
+/// plaintext SharedPreferences.
+FlutterAuthClientOptions buildAuthClientOptions() => FlutterAuthClientOptions(
+  localStorage: SupabaseSecureStorage(),
+  pkceAsyncStorage: SecurePkceStorage(),
+);
 
 /// Initializes the Supabase client with secure token storage.
 ///
@@ -28,12 +37,13 @@ Future<void> initSupabase() async {
     },
   );
 
+  // Must run before the session is read so existing iOS installs keep it.
+  await migrateAuthKeychainAccessibility();
+
   await Supabase.initialize(
     url: url,
     publishableKey: Env.supabaseAnonKey,
-    authOptions: FlutterAuthClientOptions(
-      localStorage: SupabaseSecureStorage(),
-    ),
+    authOptions: buildAuthClientOptions(),
   );
   _supabaseInitialized = true;
 }

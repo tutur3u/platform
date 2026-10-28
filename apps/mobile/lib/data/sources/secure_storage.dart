@@ -1,13 +1,30 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+/// Keychain class for auth secrets (refresh tokens, PKCE verifier).
+///
+/// `first_unlock_this_device` stays readable by background refresh and push
+/// after the first unlock, but is excluded from iTunes/Finder and iCloud
+/// backups and never restored onto another device.
+const authKeychainOptions = IOSOptions(
+  accessibility: KeychainAccessibility.first_unlock_this_device,
+);
+
+/// Shared secure storage for every auth secret in the app.
+const authSecureStorage = FlutterSecureStorage(iOptions: authKeychainOptions);
+
+/// Pre-hardening storage using the plugin's default (`unlocked`, backed up)
+/// keychain class. Only `migrateAuthKeychainAccessibility` should touch it.
+const legacyAuthSecureStorage = FlutterSecureStorage();
+
 /// Secure storage adapter that bridges [FlutterSecureStorage] with
 /// Supabase's [LocalStorage] interface for persisting auth tokens.
 ///
 /// iOS: Keychain Services
 /// Android: Keystore (encrypted shared preferences)
 class SupabaseSecureStorage extends LocalStorage {
-  SupabaseSecureStorage() : _storage = const FlutterSecureStorage();
+  SupabaseSecureStorage({FlutterSecureStorage? storage})
+    : _storage = storage ?? authSecureStorage;
 
   final FlutterSecureStorage _storage;
 

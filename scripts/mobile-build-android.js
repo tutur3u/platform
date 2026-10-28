@@ -4,6 +4,9 @@ const { spawnSync } = require('node:child_process');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const {
+  assertSecureDartDefines,
+} = require('./mobile-validate-dart-defines.js');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
 const MOBILE_ROOT = path.join(ROOT_DIR, 'apps/mobile');
@@ -151,6 +154,11 @@ function main(argv = process.argv.slice(2)) {
   const dartDefineFile =
     process.env.MOBILE_DART_DEFINE_FILE || '.env.production';
   const buildArgs = resolveFlutterBuildArgs(argv);
+
+  assertSecureDartDefines({
+    file: path.resolve(MOBILE_ROOT, dartDefineFile),
+    args: buildArgs,
+  });
 
   console.log(
     `Building Android production release with ${signing.source} signing.`

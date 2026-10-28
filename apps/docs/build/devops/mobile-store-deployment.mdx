@@ -234,6 +234,21 @@ have no built-in guidance.
 | `MOBILE_TASK_DESCRIPTION_EDITING_ENABLED` | Feature flag for rich task-description editing (`true`/`false`). | Set manually (internal). |
 | `MOBILE_CALENDAR_INTEGRATIONS_ENABLED` | Feature flag for calendar integrations (`true`/`false`). | Set manually (internal). |
 
+### Release builds require https backends
+
+`NEXT_PUBLIC_SUPABASE_URL` and `API_BASE_URL` must be `https://` URLs in every
+release build, and any `*_API_BASE_URL` service override must be `https://` when
+set. Release builds carry credentials and bearer tokens, so there is no
+cleartext localhost fallback. This is enforced in three places:
+
+- `scripts/mobile-validate-dart-defines.js` fails the Android build
+  (`bun build:android`) and the iOS job before `flutter build` when a define is
+  missing or not https.
+- Release builds compile the URL defaults to an empty string instead of
+  `http://localhost`.
+- `bootstrap()` calls `Env.assertSecureForRelease()` and throws at startup in
+  release. Debug and profile builds keep localhost http for local development.
+
 ## CI Tokens
 
 | Field | What it is | Where to get it |
