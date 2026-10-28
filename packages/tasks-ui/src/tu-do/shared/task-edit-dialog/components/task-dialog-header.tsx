@@ -17,7 +17,7 @@ import { Switch } from '@tuturuuu/ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useMemo, useState } from 'react';
 import type { TaskDialogPresentation } from '../../task-dialog-presentation';
 import { TaskViewerAvatarsComponent } from '../../user-presence-avatars';
 import { TaskDialogActions } from '../task-dialog-actions';
@@ -91,6 +91,41 @@ const getRelationshipHeaderConfig = (t: any) => ({
 /**
  * Helper to generate dialog header info based on task context
  */
+/** Header info memoized on its inputs, for the task dialog. */
+export function useTaskDialogHeaderInfo(
+  options: Parameters<typeof getTaskDialogHeaderInfo>[0],
+  t: Parameters<typeof getTaskDialogHeaderInfo>[1]
+): DialogHeaderInfo {
+  const {
+    isCreateMode,
+    parentTaskId,
+    parentTaskName,
+    pendingRelationship,
+    draftId,
+  } = options;
+  return useMemo(
+    () =>
+      getTaskDialogHeaderInfo(
+        {
+          isCreateMode,
+          parentTaskId,
+          parentTaskName,
+          pendingRelationship,
+          draftId,
+        },
+        t
+      ),
+    [
+      isCreateMode,
+      parentTaskId,
+      parentTaskName,
+      pendingRelationship,
+      draftId,
+      t,
+    ]
+  );
+}
+
 export function getTaskDialogHeaderInfo(
   options: {
     isCreateMode: boolean;

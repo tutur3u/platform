@@ -3174,7 +3174,14 @@
       "unknown_estimate": "unknown estimate",
       "loading_tasks": "Loading the sprint's tasks…",
       "retry": "Retry",
-      "tasks_failed": "Couldn't load the sprint's tasks"
+      "tasks_failed": "Couldn't load the sprint's tasks",
+      "due_with_sprint": "Due with the sprint · {date}",
+      "move_failed": "Couldn't move the task",
+      "move_to_sprint": "Move to {name}",
+      "moved_to_sprint": "Moved to {name}",
+      "not_in_sprint": "Not in a sprint",
+      "sprint_field": "Sprint",
+      "sprint_history": "Sprints {list}"
     }
   },
   "satellite-account-settings": {
