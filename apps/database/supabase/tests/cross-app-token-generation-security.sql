@@ -6,6 +6,8 @@ set local search_path = public, extensions;
 
 select plan(10);
 
+insert into auth.users (id) values ('00000000-0000-0000-0000-00000000ca11'),('00000000-0000-0000-0000-00000000b0b0') on conflict do nothing;
+
 insert into public.users (id)
 values
   ('00000000-0000-0000-0000-00000000ca11'),

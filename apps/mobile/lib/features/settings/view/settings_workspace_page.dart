@@ -15,6 +15,7 @@ import 'package:mobile/data/repositories/workspace_permissions_repository.dart'
         manageWorkspaceSettingsPermission;
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
+import 'package:mobile/features/settings/view/settings_audience_mode_section.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/features/settings/view/workspace_properties_dialog.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -107,6 +108,18 @@ class _SettingsWorkspacePageState extends State<SettingsWorkspacePage> {
                           .currentWorkspace
                           ?.personal ??
                       false),
+            ),
+            const SizedBox(height: 18),
+            SettingsAudienceModeSection(
+              canManageWorkspaceSettings:
+                  _canManageWorkspaceSettings && !_isWorkspacePermissionLoading,
+              isPersonalWorkspace:
+                  context
+                      .read<WorkspaceCubit>()
+                      .state
+                      .currentWorkspace
+                      ?.personal ??
+                  false,
             ),
           ],
         ),

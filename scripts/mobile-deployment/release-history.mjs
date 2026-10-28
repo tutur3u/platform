@@ -60,6 +60,18 @@ function historyBaseTag(version, sha, git) {
   }
 }
 
+function isAncestor(ancestor, descendant, git) {
+  try {
+    git('git', ['merge-base', '--is-ancestor', ancestor, descendant], {
+      cwd: repoRoot,
+      encoding: 'utf8',
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function changesBetween(fromSha, toSha, git = execFileSync) {
   const lines = git(
     'git',
@@ -173,6 +185,14 @@ export async function releaseHistory({
       if (!item.sha) {
         console.warn(
           `No source workflow for TestFlight ${item.version} (build ${item.buildNumber}); keeping the version without inferred changes.`
+        );
+        return { version: item.version, date: item.date, changes: [] };
+      }
+      if (item.sha !== sha && !isAncestor(item.sha, sha, git)) {
+        // Rewritten history leaves older TestFlight sources unreachable; keep
+        // the version and diff the next build from the last reachable base.
+        console.warn(
+          `TestFlight ${item.version} source ${item.sha} is not in the current history; keeping the version without inferred changes.`
         );
         return { version: item.version, date: item.date, changes: [] };
       }

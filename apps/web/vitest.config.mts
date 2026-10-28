@@ -12,7 +12,12 @@ export default defineConfig({
         inline: ['next-intl'],
       },
     },
-    exclude: ['**/.next/**', '**/e2e/**', '**/node_modules/**'],
+    exclude: [
+      '**/.next/**',
+      '**/e2e/**',
+      '**/e2e-wave1-staging/**',
+      '**/node_modules/**',
+    ],
     environment: 'jsdom',
     setupFiles: ['./vitest.setup.ts'],
     testTimeout: 30_000,
@@ -25,6 +30,13 @@ export default defineConfig({
   },
   resolve: {
     alias: [
+      {
+        find: '@tuturuuu/supabase/next/user',
+        replacement: resolve(
+          __dirname,
+          '../../packages/supabase/src/next/user.ts'
+        ),
+      },
       {
         find: '@tuturuuu/supabase/next/proxy',
         replacement: resolve(

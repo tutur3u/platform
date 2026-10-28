@@ -1,3 +1,12 @@
+vi.mock('@tuturuuu/supabase/next/user', () => ({
+  getVerifiedAuthUser: async () => ({
+    id: 'user-1',
+    email: 'member@tuturuuu.com',
+    email_confirmed_at: '2026-01-01',
+    identities: [{ provider: 'email', identity_data: {} }],
+  }),
+}));
+
 /** @vitest-environment jsdom */
 
 import { render, screen } from '@testing-library/react';

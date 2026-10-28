@@ -145,8 +145,9 @@ select ok(
         'healthcare_checkup_vital_groups'
       )
       and roles && array['anon', 'authenticated']::name[]
+      and permissive = 'PERMISSIVE'
   ),
-  'private healthcare checkup tables have no client-role RLS policies'
+  'private healthcare checkup tables have no permissive client-role RLS policies'
 );
 
 select ok(

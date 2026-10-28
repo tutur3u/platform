@@ -1,4 +1,5 @@
 import 'package:mobile/features/mastermind/model/enums.dart';
+import 'package:mobile/features/mastermind/presentation/hub_field.dart';
 import 'package:mobile/l10n/gen/app_localizations.dart';
 
 abstract final class MastermindLabels {
@@ -19,7 +20,7 @@ abstract final class MastermindLabels {
         AgeBasis.githubDeployment => l10n.mastermindBasisGithubDeployment,
         AgeBasis.vercelDeployment => l10n.mastermindBasisVercelDeployment,
         AgeBasis.checkinWorkflow => l10n.mastermindBasisCheckinWorkflow,
-        AgeBasis.unknown => l10n.mastermindStateUnknown,
+        AgeBasis.unknown => HubField.text(l10n, null),
       };
   static String environment(AppLocalizations l10n, Environment value) =>
       switch (value) {
@@ -35,7 +36,7 @@ abstract final class MastermindLabels {
         DeployStatus.queued => l10n.mastermindDeployQueued,
         DeployStatus.inProgress => l10n.mastermindDeployInProgress,
         DeployStatus.inactive => l10n.mastermindDeployInactive,
-        DeployStatus.unknown => l10n.mastermindStateUnknown,
+        DeployStatus.unknown => HubField.text(l10n, null),
       };
   static String ciState(AppLocalizations l10n, CiState value) =>
       switch (value) {
@@ -43,20 +44,20 @@ abstract final class MastermindLabels {
         CiState.failure => l10n.mastermindDeployFailure,
         CiState.pending => l10n.mastermindDeployPending,
         CiState.error => l10n.mastermindDeployError,
-        CiState.unknown => l10n.mastermindStateUnknown,
+        CiState.unknown => HubField.text(l10n, null),
       };
   static String freshness(AppLocalizations l10n, Freshness value) =>
       switch (value) {
         Freshness.fresh => l10n.mastermindFreshFresh,
         Freshness.cached => l10n.mastermindFreshCached,
         Freshness.stale => l10n.mastermindCoverageStale,
-        Freshness.unknown => l10n.mastermindStateUnknown,
+        Freshness.unknown => HubField.text(l10n, null),
       };
   static String evidence(AppLocalizations l10n, Evidence value) =>
       switch (value) {
         Evidence.githubDeployment => l10n.mastermindBasisGithubDeployment,
         Evidence.vercelDeployment => l10n.mastermindBasisVercelDeployment,
-        Evidence.unknown => l10n.mastermindStateUnknown,
+        Evidence.unknown => HubField.text(l10n, null),
       };
   static String laneState(AppLocalizations l10n, LaneState value) =>
       switch (value) {
@@ -71,7 +72,7 @@ abstract final class MastermindLabels {
         LaneState.completed => l10n.mastermindStateCompleted,
         LaneState.failed => l10n.mastermindStateFailed,
         LaneState.cancelled => l10n.mastermindStateCancelled,
-        LaneState.unknown => l10n.mastermindStateUnknown,
+        LaneState.unknown => HubField.text(l10n, null),
       };
   static String repositoryName(RepositoryName value) => value.wireName;
   static String coverage(AppLocalizations l10n, Coverage value) =>
@@ -82,9 +83,7 @@ abstract final class MastermindLabels {
         Coverage.unavailable => l10n.mastermindUnavailable,
         Coverage.stale => l10n.mastermindCoverageStale,
       };
-  static String accountDisplayName(AccountDisplayName value) => value.wireName;
   static String pacing(Pacing value) => value.wireName;
-  static String creditDisplayName(CreditDisplayName value) => value.wireName;
   static String modelFamily(ModelFamily value) => value.wireName;
   static String runRole(RunRole value) => value.wireName;
   static String effort(Effort value) => value.wireName;
@@ -96,15 +95,6 @@ abstract final class MastermindLabels {
         FailureCause.capacity => l10n.mastermindSeriesCapacity,
         FailureCause.error => l10n.mastermindSeriesOtherError,
       };
-  static String severity(AppLocalizations l10n, Severity value) =>
-      switch (value) {
-        Severity.critical => l10n.mastermindSeverityCritical,
-        Severity.high => l10n.mastermindSeverityHigh,
-        Severity.medium => l10n.mastermindSeverityMedium,
-        Severity.low => l10n.mastermindSeverityLow,
-        Severity.unknown => l10n.mastermindSeverityUnknown,
-      };
-  static String registerStatus(RegisterStatus value) => value.wireName;
   static String sourceName(AppLocalizations l10n, SourceName value) =>
       switch (value) {
         SourceName.inbox => l10n.mastermindSourceInbox,
@@ -139,7 +129,6 @@ abstract final class MastermindLabels {
         ItemKind.decision => l10n.mastermindKindDecision,
         ItemKind.action => l10n.mastermindKindAction,
         ItemKind.fyi => l10n.mastermindKindFyi,
-        ItemKind.security => l10n.mastermindScopeSecurity,
       };
   static String area(AppLocalizations l10n, Area value) => switch (value) {
     Area.finance => l10n.mastermindAreaFinance,

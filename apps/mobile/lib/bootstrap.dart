@@ -12,6 +12,7 @@ import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/core/config/app_flavor.dart';
+import 'package:mobile/core/config/env.dart';
 import 'package:mobile/core/config/firebase_options_selector.dart';
 import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/core/observability/mobile_observability.dart';
@@ -58,6 +59,8 @@ Future<void> bootstrap(
   builder,
 ) async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Release builds must never fall back to cleartext localhost backends.
+  Env.assertSecureForRelease();
   registerLucideLicenses();
   ApiConfig.configure(appFlavor);
   if (Platform.isAndroid || Platform.isIOS) {

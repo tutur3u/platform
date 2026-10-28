@@ -6,6 +6,28 @@ shared-package changes.
 
 ## Web And Shared UI
 
+- Drive export links use versioned, expiring tokens plus a service-only folder
+  revocation marker in the Supabase `.tuturuuu/drive-export-revocations` namespace.
+  Read markers uncached on every fetch and fail closed on missing markers or
+  storage errors. Initialize with insert-only writes; never reset a version during
+  issuance or provider migration. Require `manage_drive` before rotating it.
+  See [Drive export lifetime and revocation](../../../../../apps/docs/platform/applications/drive.mdx#export-link-lifetime-and-revocation)
+  for the seven-day default, override cap, legacy-token cutover, existing private-root
+  RLS prerequisite, and already-issued read URL limitation.
+- Shared JSON content validation bounds streamed bytes and structural complexity
+  before constructing and scanning leaf paths. Keep skipped emoji fields inside
+  structural bounds except for explicit machine-state exemptions. Whiteboard
+  PATCH saves strip the top-level snapshot and use an 8 MiB streamed cap; other
+  fields retain generic checks. Preserve route-specific body limits and test adversarial
+  structure with small deterministic fixtures. See [request validation bounds](../../../../../apps/docs/platform/features/mobile-workspace-tools.mdx#request-content-validation-bounds).
+- Provider execution requires a newly acquired metered reservation; an existing
+  idempotent reservation returns 409 before invoking a provider. AI-chat attachment
+  reads require the authenticated source-chat owner even when a different product
+  uses the same UUID. Prompt preparation and conversion tools share the owner
+  and workspace-membership fence before storage reads/signing; AI chats have no
+  workspace column. Keep workspace admission in each route. See [AI Studio](../../../../../apps/docs/platform/ai/ai-studio.mdx#execution-and-attachment-authorization).
+
+
 - Workspace user reads share the users-core field projection and effective
   public/private permissions. Attendance and score adapters verify every requested
   user/class against the permission workspace. Preserve app-session actors and
@@ -1332,3 +1354,29 @@ provider whose entire nonempty sample failed transiently. Keep the bounded
 reader and durable ledger. Degraded runs reset the fatal streak without
 advancing the last productive completion; holds and revocations remain nonfatal.
 See `apps/docs/platform/applications/calendar.mdx` and the scheduler contract tests.
+
+
+### Verified mailbox identity
+
+Use `getVerifiedAuthEmail(admin, userId)` from `@tuturuuu/supabase/next/user`
+for recipient-email authorization. It reads Auth by the authenticated subject,
+requires a matching id, and returns no mailbox unless `email_confirmed_at` is set.
+If Auth was already fetched and subject-bound, use `getConfirmedAuthEmail(user)`.
+Keep editable profile/contact emails and supplied session emails for display only.
+Direct recipient ids remain valid without a confirmed mailbox. Cross-app SQL must
+canonicalize at both minting and redemption so outstanding handoffs follow the
+same rule; preserve the signed MFA transfer and existing bearer-redemption ACL.
+
+
+### Staff-session authorization
+
+Use `@tuturuuu/utils/email/staff-session` only with a current subject-bound Auth
+user containing provider identities. App-session and profile projections require
+`getVerifiedAuthUser` first. Preserve independent workspace/role and feature gates;
+an address syntax predicate or UI visibility flag never grants staff authority.
+See the staff-session decision in `apps/docs/platform/architecture/authorization.mdx`
+and the shared helper's identity matrix and route denial regressions.
+
+For AI memory or billing attribution, resolve the request scope with
+`authorizeAiWorkspace` before provider or memory work. Temporary authentication
+does not grant workspace membership; retain a canonical authorized workspace id.

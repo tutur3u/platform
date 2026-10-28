@@ -629,7 +629,20 @@ local profile/session behavior, not Worker/provider/production/customer delivery
 
 Mail owns one settings entry in its sidebar. Its shell disables the shared
 settings utility with `showSettingsButton={false}`; other satellite apps keep
-the default. Mail settings continue using the `mailSettings` URL state.
+the default. Mail settings continue using the `mailSettings` URL state, and keep
+their tab in `mailSettingsTab`; the shared `settingsTab` parameter belongs to the
+account settings dialog, which would otherwise open on top of Mail settings.
+
+Settings → Mail source switches between managed mailboxes and connected Gmail
+or Outlook accounts; the inbox has no source tab bar. The `connected=1` URL
+parameter still selects connected accounts, and non-`@tuturuuu.com` accounts
+still default to them.
+
+The inbox sync icon is tied to the refresh request, not a timer. Refresh
+refetches the list, mailboxes and unread counts together; the icon spins until
+all of them settle, including background revalidation (but not loading an older
+page), then eases back to rest. With reduced motion it stays still and dims.
+`use-mail-refresh.test.ts` and `use-settling-spin.test.ts` cover this.
 
 Unread and attachment quick filters compose with the search query. The selection
 checkbox selects loaded conversations, and selection resets when the mailbox,
@@ -637,9 +650,27 @@ folder, label, or search changes. Message loading failures show an explicit retr
 state instead of appearing as an empty mailbox. Sending, draft autosave, protected
 attachments, and delivery settings remain behind the existing Mail APIs.
 
+Thread rows mark unread conversations with weight and a dot rather than a filled
+card. Their dates show the time for today, the day for this year and the full
+date otherwise, with the exact timestamp on hover (`mail-thread-date.test.ts`).
+
 The conversation pane constrains message width and keeps message details and
 attachments available without expanding them by default. Small screens show one
 pane at a time, with a back action returning to the message list.
+
+### Web inbox load path
+
+The thread list does not wait for bootstrap when the mailbox is already known:
+the `mailbox` URL parameter, or the default mailbox remembered from the
+previous bootstrap in this browser, starts the list request in parallel. After
+bootstrap, only returned mailboxes are used, and the server authorizes every
+mailbox ID. Per-mailbox unread counts wait while a first thread page is loading;
+on a first visit with no remembered mailbox they can start alongside it.
+
+Bootstrap is read-only in the common case. It reads the personal mailbox,
+memberships and display name in one parallel stage, and writes only to repair a
+stale identity, a missing owner membership, or missing or renamed system labels.
+`bootstrap-personal.test.ts` and `use-mail-bootstrap.test.ts` cover these rules.
 
 ## Distribution groups
 

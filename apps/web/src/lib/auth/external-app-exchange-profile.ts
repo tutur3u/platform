@@ -1,3 +1,4 @@
+import { getConfirmedAuthEmail } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { ExchangeUserProfile } from './external-app-exchange-response';
 
@@ -75,7 +76,7 @@ export async function getAuthUserIdentity({
   }
 
   return {
-    email: cleanString(data.user.email),
+    email: getConfirmedAuthEmail(data.user),
     metadata: isRecord(data.user?.user_metadata)
       ? data.user.user_metadata
       : null,

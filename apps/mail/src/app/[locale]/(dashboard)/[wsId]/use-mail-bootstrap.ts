@@ -1,18 +1,31 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useIsFetching, useQuery } from '@tanstack/react-query';
 import { getMailBootstrap, getMailUnreadCounts } from '@tuturuuu/internal-api';
+import { rememberDefaultMailbox } from './mail-mailbox-hint';
 
 export function useMailBootstrap(workspaceId: string) {
   const bootstrap = useQuery({
     queryKey: ['mail', workspaceId, 'bootstrap'],
-    queryFn: () => getMailBootstrap(workspaceId, undefined, false),
+    queryFn: async () => {
+      const data = await getMailBootstrap(workspaceId, undefined, false);
+      rememberDefaultMailbox(workspaceId, data.mailboxes[0]?.id);
+      return data;
+    },
     staleTime: 30_000,
+  });
+  // Unread counts fan out per mailbox, so they wait while a first thread page
+  // is loading. On a first visit with no remembered mailbox, the list starts
+  // in the same render as the counts, so the two can overlap.
+  const loadingFirstThreadPage = useIsFetching({
+    queryKey: ['mail', workspaceId],
+    predicate: (query) =>
+      query.queryKey[3] === 'threads' && query.state.data === undefined,
   });
   const counts = useQuery({
     queryKey: ['mail', workspaceId, 'bootstrap-counts'],
     queryFn: () => getMailUnreadCounts(workspaceId),
-    enabled: Boolean(bootstrap.data),
+    enabled: Boolean(bootstrap.data) && loadingFirstThreadPage === 0,
     staleTime: 30_000,
   });
   return {

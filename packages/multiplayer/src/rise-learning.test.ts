@@ -13,6 +13,7 @@ const now = Date.now();
 const host = {
   id: 'host',
   email: 'host@tuturuuu.com',
+  staffVerified: true,
   name: 'Host',
   expires: now + 3600000,
 };

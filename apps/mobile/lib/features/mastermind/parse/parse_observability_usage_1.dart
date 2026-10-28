@@ -4,7 +4,6 @@ CreditPoint parseCreditPoint(JsonReader r) {
   r.keys(
     [
       'instance',
-      'display_name',
       't',
       'remaining',
       'daily_burn',
@@ -13,7 +12,6 @@ CreditPoint parseCreditPoint(JsonReader r) {
     ],
     [
       'instance',
-      'display_name',
       't',
       'remaining',
       'daily_burn',
@@ -22,12 +20,7 @@ CreditPoint parseCreditPoint(JsonReader r) {
     ],
   );
   return CreditPoint(
-    instance: r
-        .field('instance')
-        .string(maxLength: 60, pattern: RegExp(r'^[A-Za-z0-9_]+$')),
-    displayName: r
-        .field('display_name')
-        .enumOf<CreditDisplayName>(CreditDisplayName.values, (v) => v.wireName),
+    instance: r.field('instance').stringIn(PoolLabels.credits),
     t: r.field('t').utcTimestamp(),
     remaining: r.field('remaining').nullable((v) => v.number(min: 0)),
     dailyBurn: r.field('daily_burn').nullable((v) => v.number(min: 0)),

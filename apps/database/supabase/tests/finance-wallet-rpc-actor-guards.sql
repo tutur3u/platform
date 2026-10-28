@@ -8,6 +8,8 @@ select plan(41);
 create function pg_temp.fwag_id(n integer) returns uuid
 language sql immutable
 as $$ select ('00009032-0000-4000-8000-' || lpad(n::text, 12, '0'))::uuid $$;
+-- Anonymous assertions must reach the RPC rather than fail in the ID fixture.
+grant execute on function pg_temp.fwag_id(integer) to anon;
 
 -- User 1 creates workspace A; user 4 creates workspace B.
 insert into auth.users (id) values (pg_temp.fwag_id(1)), (pg_temp.fwag_id(4))

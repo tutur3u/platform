@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/mastermind/data/fixture_snapshot_source.dart';
 import 'package:mobile/features/mastermind/data/mastermind_snapshot_source.dart';
+import 'package:mobile/features/mastermind/model/event_feed.dart';
 
 import '../../../helpers/mastermind_snapshot_builder.dart';
 
@@ -74,7 +75,7 @@ void main() {
                 as EventsFetchOk;
         expect(result.digest, snapshot.digest);
         expect(result.receivedAt, receivedAt);
-        expect(result.feed.afterSeq, 10);
+        expect(result.feed.afterSeq, 110);
         expect(result.feed.latestSeq, 260);
         expect(result.feed.cursorGap, isTrue);
         expect(result.feed.events.length, 100);
@@ -97,13 +98,54 @@ void main() {
         expect(result.feed.events.length, 200);
         expect(result.feed.events.first.seq, 61);
         expect(result.feed.events.last.seq, 260);
+        expect(result.feed.afterSeq, 260);
         final end =
             await source.fetchEvents(digest: snapshot.digest, afterSeq: 260)
                 as EventsFetchOk;
         expect(end.feed.events, isEmpty);
-        expect(end.feed.cursorGap, isTrue);
+        expect(end.feed.afterSeq, 260);
+        expect(end.feed.cursorGap, isFalse);
       },
     );
+    test('a cursor past latest_seq is cursor_ahead', () async {
+      final snapshot = await source.fetchSnapshot() as SnapshotFetchOk;
+      final result = await source.fetchEvents(
+        digest: snapshot.digest,
+        afterSeq: 261,
+      );
+      expect(result, isA<EventsFetchUnavailable>());
+      expect(
+        (result as EventsFetchUnavailable).kind,
+        SnapshotUnavailableKind.cursorAhead,
+      );
+      expect(result.needsResync, isTrue);
+    });
+    test('pages are Worker-shaped and walk without a gap', () async {
+      final root =
+          jsonDecode(utf8.decode(bundle.bytes)) as Map<String, dynamic>;
+      (root['now'] as Map<String, dynamic>)['cursor_gap'] = false;
+      bundle.bytes = Uint8List.fromList(utf8.encode(jsonEncode(root)));
+      final snapshot = await source.fetchSnapshot() as SnapshotFetchOk;
+      var cursor = 10;
+      final applied = <int>[];
+      for (var page = 0; page < 4; page++) {
+        final fetched =
+            await source.fetchEvents(digest: snapshot.digest, afterSeq: cursor)
+                as EventsFetchOk;
+        final feed = fetched.feed;
+        expect(feed.cursorGap, isFalse);
+        expect(
+          feed.events.isEmpty || feed.events.last.seq == feed.afterSeq,
+          isTrue,
+        );
+        final step = reconcileEventFeed(cursor: cursor, feed: feed);
+        expect(step, isA<EventFeedAppend>());
+        applied.addAll((step as EventFeedAppend).events.map((e) => e.seq));
+        cursor = step.cursor;
+      }
+      expect(cursor, 260);
+      expect(applied, [for (var seq = 11; seq <= 260; seq++) seq]);
+    });
     test(
       'older cursor makes retention gap explicit even if flag is false',
       () async {
@@ -157,7 +199,8 @@ void main() {
       snapshotDigestFromHeaders(hubDigest: a, etag: '"${'b' * 64}"'),
       isNull,
     );
-    expect(snapshotDigestFromHeaders(etag: 'W/"$a"'), isNull);
+    expect(snapshotDigestFromHeaders(etag: 'W/"$a"'), a);
+    expect(snapshotDigestFromHeaders(etag: 'W/"x"'), isNull);
     expect(snapshotDigestFromHeaders(hubDigest: '$a\n'), isNull);
     expect(snapshotDigestFromHeaders(hubDigest: 'not a digest'), isNull);
   });

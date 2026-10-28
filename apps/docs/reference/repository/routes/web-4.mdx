@@ -11,6 +11,7 @@ This inventory lists concrete Next page and handler files, including generated w
 
 | URL pattern | Page or HTTP methods | Source |
 | --- | --- | --- |
+| `/api/v1/workspaces/[wsId]/external-projects/storage-analytics` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/storage-analytics/route.ts) |
 | `/api/v1/workspaces/[wsId]/external-projects/submissions/[entryId]` | PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/submissions/%5BentryId%5D/route.ts) |
 | `/api/v1/workspaces/[wsId]/external-projects/submissions` | GET, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/submissions/route.ts) |
 | `/api/v1/workspaces/[wsId]/external-projects/summary` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/summary/route.ts) |
@@ -104,8 +105,8 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/workspaces/[wsId]/sso/clients` | GET, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/sso/clients/route.ts) |
 | `/api/v1/workspaces/[wsId]/storage/analytics` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/storage/analytics/route.ts) |
 | `/api/v1/workspaces/[wsId]/storage/auto-extract` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/storage/auto-extract/route.ts) |
-| `/api/v1/workspaces/[wsId]/storage/export/[token]/[...assetPath]` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/storage/export/%5Btoken%5D/%5B...assetPath%5D/route.ts) |
-| `/api/v1/workspaces/[wsId]/storage/export-links` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/storage/export-links/route.ts) |
+| `/api/v1/workspaces/[wsId]/storage/export/[token]/[...assetPath]` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/storage/export/%5Btoken%5D/%5B...assetPath%5D/route.ts) |
+| `/api/v1/workspaces/[wsId]/storage/export-links` | DELETE, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/storage/export-links/route.ts) |
 | `/api/v1/workspaces/[wsId]/storage/finalize-upload` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/storage/finalize-upload/route.ts) |
 | `/api/v1/workspaces/[wsId]/storage/folders` | DELETE, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/storage/folders/route.ts) |
 | `/api/v1/workspaces/[wsId]/storage/list` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/storage/list/route.ts) |
@@ -190,6 +191,5 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/workspaces/[wsId]/user-groups/[groupId]/indicators` | GET, HEAD, PATCH, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/user-groups/%5BgroupId%5D/indicators/route.ts) |
 | `/api/v1/workspaces/[wsId]/user-groups/[groupId]/managers` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/user-groups/%5BgroupId%5D/managers/route.ts) |
 | `/api/v1/workspaces/[wsId]/user-groups/[groupId]/members/[userId]/feedbacks` | DELETE, GET, HEAD, POST, PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/user-groups/%5BgroupId%5D/members/%5BuserId%5D/feedbacks/route.ts) |
-| `/api/v1/workspaces/[wsId]/user-groups/[groupId]/members/[userId]` | DELETE | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/user-groups/%5BgroupId%5D/members/%5BuserId%5D/route.ts) |
 
 [All apps and services](/reference/repository/catalog). [Versions](/reference/repository/versions).

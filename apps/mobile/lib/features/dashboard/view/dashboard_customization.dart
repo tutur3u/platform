@@ -1,10 +1,24 @@
 part of 'dashboard_page.dart';
 
 extension _DashboardCustomization on _DashboardViewState {
+  /// Build-time only: module visibility and the mode gate use `select`.
   List<String> _availableHomeWidgetIds(BuildContext context) {
     final modules = AppRegistry.modules(context);
     final user = context.read<AuthCubit>().state.user;
+    final mode = context.select<AudienceModeCubit?, AudienceMode>(
+      (cubit) => cubit?.state.mode ?? AudienceMode.general,
+    );
+    // Offered only once access is confirmed, so a member without
+    // view_user_groups never sees a placeholder for it.
+    final classesAccess = context
+        .select<ClassesTodayCubit?, ClassesTodayAccess?>(
+          (cubit) => cubit?.state.access,
+        );
     return [
+      for (final id in mode.profile.homeWidgets)
+        if (id != classesTodayHomeWidgetId ||
+            classesAccess == ClassesTodayAccess.granted)
+          id,
       'tasks',
       'calendar',
       if (modules.any((module) => module.id == 'mail') &&
@@ -27,8 +41,13 @@ extension _DashboardCustomization on _DashboardViewState {
   ) {
     final user = context.read<AuthCubit>().state.user;
     final available = _availableHomeWidgetIds(context);
+    _availableIds = available;
     final layout = context.watch<DashboardLayoutCubit>().state;
     final cards = <String, Widget>{
+      classesTodayHomeWidgetId: StaggeredEntrance(
+        replayKey: widget.replayToken,
+        child: const ClassesTodayCard(),
+      ),
       'tasks': StaggeredEntrance(
         replayKey: widget.replayToken,
         child: _TaskSectionsBlock(
@@ -83,7 +102,8 @@ extension _DashboardCustomization on _DashboardViewState {
 
   void _showHomeCustomization(BuildContext context) {
     final layoutCubit = context.read<DashboardLayoutCubit>();
-    final available = _availableHomeWidgetIds(context);
+    // The sheet opens from a tap, outside build: reuse the built list.
+    final available = _availableIds;
     unawaited(
       showOrderEditorSheet(
         context,
@@ -184,6 +204,10 @@ class _HomeWidgetEditor extends StatelessWidget {
     return (module.label(context.l10n), module.icon);
   }
   return switch (id) {
+    classesTodayHomeWidgetId => (
+      context.l10n.classesTodayTitle,
+      LucideIcons.graduationCap,
+    ),
     'tasks' => (context.l10n.homeWidgetTasks, Icons.checklist_rounded),
     'calendar' => (context.l10n.homeSectionCalendar, Icons.event_rounded),
     _ => (context.l10n.dashboardTodayTitle, Icons.auto_graph_rounded),

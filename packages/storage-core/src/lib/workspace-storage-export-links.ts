@@ -5,21 +5,34 @@ import { posix } from 'node:path';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { getLocalInternalAppUrl } from '@tuturuuu/utils/internal-domains';
 import { sanitizePath } from '@tuturuuu/utils/storage-path';
+import { WorkspaceStorageError } from './storage-download-error';
 import type { WorkspaceStorageProvider } from './workspace-storage-config';
-import { WorkspaceStorageError } from './workspace-storage-provider';
+import {
+  getOrCreateExportRevocationVersion,
+  readExportRevocationVersion,
+  revokeExportFolder,
+} from './workspace-storage-export-revocation';
 
-const EXPORT_LINK_VERSION = 1;
-const EXPORT_LINK_TTL_SECONDS = Number(
-  process.env.DRIVE_EXPORT_LINK_TTL_SECONDS || 0
-);
+const EXPORT_LINK_VERSION = 2;
+const DEFAULT_EXPORT_LINK_TTL_SECONDS = 7 * 24 * 60 * 60;
+const MAX_EXPORT_LINK_TTL_SECONDS = 30 * 24 * 60 * 60;
 
-interface WorkspaceStorageExportTokenPayload {
-  v: number;
+function exportLinkTtlSeconds() {
+  const configured = Number(process.env.DRIVE_EXPORT_LINK_TTL_SECONDS);
+  return Number.isFinite(configured) && configured >= 1
+    ? Math.min(Math.floor(configured), MAX_EXPORT_LINK_TTL_SECONDS)
+    : DEFAULT_EXPORT_LINK_TTL_SECONDS;
+}
+
+export async function revokeWorkspaceStorageExportLinks(input: {
   wsId: string;
-  provider: WorkspaceStorageProvider;
   folderPath: string;
-  iat: number;
-  nonce: string;
+}) {
+  const folderPath = sanitizePath(input.folderPath);
+  if (!folderPath) {
+    throw new WorkspaceStorageError('Invalid export folder path.', 400);
+  }
+  await revokeExportFolder(input.wsId, folderPath);
 }
 
 function encodeBase64Url(value: string) {
@@ -97,7 +110,7 @@ export function resolveWorkspaceStorageExportOrigin() {
   return origin;
 }
 
-export function createWorkspaceStorageExportToken(input: {
+export async function createWorkspaceStorageExportToken(input: {
   wsId: string;
   provider: WorkspaceStorageProvider;
   folderPath: string;
@@ -108,12 +121,19 @@ export function createWorkspaceStorageExportToken(input: {
     throw new WorkspaceStorageError('Invalid export folder path.', 400);
   }
 
-  const payload: WorkspaceStorageExportTokenPayload = {
+  const revocationVersion = await getOrCreateExportRevocationVersion(
+    input.wsId,
+    sanitizedFolderPath
+  );
+  const issuedAt = Math.floor(Date.now() / 1000);
+  const payload = {
     v: EXPORT_LINK_VERSION,
     wsId: input.wsId,
     provider: input.provider,
     folderPath: sanitizedFolderPath,
-    iat: Math.floor(Date.now() / 1000),
+    iat: issuedAt,
+    exp: issuedAt + exportLinkTtlSeconds(),
+    revocationVersion,
     nonce: randomUUID(),
   };
   const encodedPayload = encodeBase64Url(JSON.stringify(payload));
@@ -122,11 +142,18 @@ export function createWorkspaceStorageExportToken(input: {
   return `${encodedPayload}.${signature}`;
 }
 
-export function verifyWorkspaceStorageExportToken(token: string) {
-  const [encodedPayload, signature] = token.split('.');
+export async function verifyWorkspaceStorageExportToken(
+  token: string
+): Promise<{
+  expiresAt: number;
+  wsId: string;
+  provider: WorkspaceStorageProvider;
+  folderPath: string;
+}> {
+  const [encodedPayload, signature, extra] = token.split('.');
 
-  if (!encodedPayload || !signature) {
-    throw new WorkspaceStorageError('Invalid export token.', 401);
+  if (!encodedPayload || !signature || extra !== undefined) {
+    throw new WorkspaceStorageError('Invalid export token.', 404);
   }
 
   const expectedSignature = signPayload(encodedPayload);
@@ -137,44 +164,67 @@ export function verifyWorkspaceStorageExportToken(token: string) {
     actualBuffer.length !== expectedBuffer.length ||
     !timingSafeEqual(actualBuffer, expectedBuffer)
   ) {
-    throw new WorkspaceStorageError('Invalid export token.', 401);
+    throw new WorkspaceStorageError('Invalid export token.', 404);
   }
 
-  let parsed: WorkspaceStorageExportTokenPayload;
+  let parsed: unknown;
 
   try {
-    parsed = JSON.parse(
-      decodeBase64Url(encodedPayload)
-    ) as WorkspaceStorageExportTokenPayload;
+    parsed = JSON.parse(decodeBase64Url(encodedPayload));
   } catch {
-    throw new WorkspaceStorageError('Invalid export token.', 401);
+    throw new WorkspaceStorageError('Invalid export token.', 404);
   }
 
   if (
+    typeof parsed !== 'object' ||
+    parsed === null ||
+    !('v' in parsed) ||
     parsed.v !== EXPORT_LINK_VERSION ||
+    !('wsId' in parsed) ||
     typeof parsed.wsId !== 'string' ||
+    !('provider' in parsed) ||
     (parsed.provider !== 'supabase' && parsed.provider !== 'r2') ||
+    !('folderPath' in parsed) ||
     typeof parsed.folderPath !== 'string' ||
+    !('iat' in parsed) ||
     typeof parsed.iat !== 'number' ||
-    typeof parsed.nonce !== 'string'
+    !('nonce' in parsed) ||
+    typeof parsed.nonce !== 'string' ||
+    !('exp' in parsed) ||
+    typeof parsed.exp !== 'number' ||
+    !Number.isSafeInteger(parsed.iat) ||
+    !Number.isSafeInteger(parsed.exp) ||
+    parsed.exp <= parsed.iat ||
+    parsed.exp - parsed.iat > MAX_EXPORT_LINK_TTL_SECONDS ||
+    !('revocationVersion' in parsed) ||
+    typeof parsed.revocationVersion !== 'string'
   ) {
-    throw new WorkspaceStorageError('Invalid export token.', 401);
+    throw new WorkspaceStorageError('Invalid export token.', 404);
   }
 
-  if (EXPORT_LINK_TTL_SECONDS > 0) {
-    const now = Math.floor(Date.now() / 1000);
-    if (now - parsed.iat > EXPORT_LINK_TTL_SECONDS) {
-      throw new WorkspaceStorageError('Export link expired.', 401);
-    }
+  const now = Math.floor(Date.now() / 1000);
+  if (parsed.iat > now) {
+    throw new WorkspaceStorageError('Invalid export token.', 404);
+  }
+  if (now >= parsed.exp) {
+    throw new WorkspaceStorageError('Export link expired.', 410);
   }
 
   const sanitizedFolderPath = sanitizePath(parsed.folderPath);
 
   if (!sanitizedFolderPath) {
-    throw new WorkspaceStorageError('Invalid export folder path.', 401);
+    throw new WorkspaceStorageError('Invalid export folder path.', 404);
+  }
+
+  if (
+    parsed.revocationVersion !==
+    (await readExportRevocationVersion(parsed.wsId, sanitizedFolderPath))
+  ) {
+    throw new WorkspaceStorageError('Export link revoked.', 410);
   }
 
   return {
+    expiresAt: parsed.exp,
     wsId: parsed.wsId,
     provider: parsed.provider,
     folderPath: sanitizedFolderPath,

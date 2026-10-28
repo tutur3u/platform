@@ -2,10 +2,16 @@ part of 'snapshot_parser.dart';
 
 Usage parseUsage(JsonReader r) {
   r.keys(
-    ['coverage', 'instances', 'series', 'credits'],
+    ['coverage', 'instances', 'series', 'credits', 'gaps'],
     ['coverage', 'instances', 'series', 'credits'],
   );
   return Usage(
+    gaps: r.has('gaps')
+        ? [
+            for (final raw in r.field('gaps').value! as List)
+              if (UsageGap.parse(raw) case final gap?) gap,
+          ]
+        : const [],
     coverage: r
         .field('coverage')
         .enumOf<Coverage>(Coverage.values, (v) => v.wireName),
@@ -17,26 +23,25 @@ Usage parseUsage(JsonReader r) {
 
 UsagePoint parseUsagePoint(JsonReader r) {
   r.keys(
-    ['instance', 'display_name', 't', 'session', 'weekly'],
-    ['instance', 'display_name', 't', 'session', 'weekly'],
+    ['instance', 't', 'session', 'weekly'],
+    ['instance', 't', 'session', 'weekly'],
   );
   return UsagePoint(
-    instance: r
-        .field('instance')
-        .string(maxLength: 60, pattern: RegExp(r'^[A-Za-z0-9_]+$')),
-    displayName: r
-        .field('display_name')
-        .enumOf<AccountDisplayName>(
-          AccountDisplayName.values,
-          (v) => v.wireName,
-        ),
+    instance: r.field('instance').stringIn(PoolLabels.usage),
     t: r.field('t').utcTimestamp(),
     session: parseUsageWindow(r.field('session')),
     weekly: parseUsageWindow(r.field('weekly')),
   );
 }
 
-UsageWindow parseUsageWindow(JsonReader r) {
+UsageWindow parseUsageWindow(JsonReader input) {
+  var r = input;
+  final fields = {
+    for (final e in r.object().entries) e.key: HubField.parse(e.value),
+  };
+  r = JsonReader({
+    for (final e in fields.entries) e.key: e.value.value,
+  }, r.path);
   r.keys(
     [
       'remaining_percent',
@@ -54,6 +59,7 @@ UsageWindow parseUsageWindow(JsonReader r) {
     ],
   );
   return UsageWindow(
+    fields: fields,
     remainingPercent: r
         .field('remaining_percent')
         .nullable((v) => v.number(min: 0, max: 100)),

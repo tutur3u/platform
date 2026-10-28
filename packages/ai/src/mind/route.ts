@@ -208,13 +208,14 @@ async function buildCompactMindContext({
       .filter(Boolean)
       .join('\n');
   }
-
   const degree = new Map<string, number>();
   for (const edge of snapshot.edges) {
     degree.set(edge.sourceNodeId, (degree.get(edge.sourceNodeId) ?? 0) + 1);
     degree.set(edge.targetNodeId, (degree.get(edge.targetNodeId) ?? 0) + 1);
   }
-  const nodeById = new Map(snapshot.nodes.map((node) => [node.id, node]));
+  const nodeById = new Map<string, (typeof snapshot.nodes)[number]>(
+    snapshot.nodes.map((node) => [node.id, node])
+  );
   const highDegreeNodes = [...snapshot.nodes]
     .sort((a, b) => (degree.get(b.id) ?? 0) - (degree.get(a.id) ?? 0))
     .slice(0, 10)
@@ -251,7 +252,6 @@ async function buildCompactMindContext({
       target?.title ?? edge.targetNodeId
     }`;
   });
-
   return [
     `Workspace boards: ${boards.length}`,
     boardLines.length ? `Boards:\n${boardLines.join('\n')}` : 'No boards yet.',
@@ -585,7 +585,7 @@ export function createPOST(callbacks: MindRouteCallbacks) {
         access.wsId,
         threadId,
         request,
-        { attachYoutubeVideoInput: useGoogleNativeModel }
+        { actorId: auth.user.id, attachYoutubeVideoInput: useGoogleNativeModel }
       );
       if ('error' in preparedMessages) return preparedMessages.error;
 

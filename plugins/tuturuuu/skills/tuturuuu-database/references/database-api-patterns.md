@@ -84,6 +84,14 @@ review prove baseline equivalence. Existing migration history stays immutable.
   `security-definer-policy-callers.sql` to enforce policy-role EXECUTE, including
   PUBLIC policies and its failing privilege control. See the RPC
   hardening section of `apps/docs/build/devops/secrets-and-configuration.mdx`.
+- Catalog-wide anonymous EXECUTE changes must snapshot effective signed-in/service
+  privileges before revocation and restore only previously available access.
+  Preserve exact-signature anonymous exceptions for final policy/view and invoker
+  dependencies. Function defaults need a global revoke as well as the schema
+  revoke; schema ACLs cannot subtract the implicit global PUBLIC grant. Provider
+  defaults require their owner. See the RPC hardening runbook and
+  `20261027151200_anon-definer-execute.sql` for the catalog and privilege snapshot.
+- Admin-only report RPCs can retain an internal workspace-permission guard without granting authenticated EXECUTE. Test ACLs first, then grant authenticated only inside the rolled-back pgTAP transaction to prove both denial and permitted-member behavior. Before removing an obsolete overload, inspect `pg_get_functiondef` and final SQL/trigger callers on a fresh full replay; historical callers may have been replaced. See the RPC hardening runbook and `anon-definer-migration-c.sql`.
 - Views over RLS-protected tables need `security_invoker` before broad grants.
 
 ## Outbound SSO persistence
@@ -493,3 +501,28 @@ seven-day history batch; unfinished executions remain for recovery. See the
 [Cron Control runbook](../../../../../apps/docs/build/devops/cloudflare-cron-control.mdx#seven-day-database-cron-history)
 and `supabase/tests/cron-history-retention.sql` for the role, budget and replay
 regressions. Never add a cleanup pg_cron job to repair an accumulating history table.
+
+### Task list and assignment policies
+
+Before revoking task-list writes, audit direct user-client callers as well as
+service-role APIs: the shared list form, board copy/template paths and AI tools
+can use RLS. Keep read membership separate from write permission; list writes
+require MEMBER plus manage_projects or an edit board share, and assignment
+writes also accept an edit task share. Resolve email recipients from confirmed
+Auth email. Preserve the restrictive MFA policy and check both boards on moves.
+Use `task-list-assignee-authorization.sql` for behavioral regression coverage.
+For rollback rehearsals, compare the observed hosted ACLs with replay first:
+historical GRANT ALL can include MAINTAIN on PostgreSQL 17 even when the hosted
+ACL excludes it. Record that fixture difference separately from migration proof.
+### Azure identity-link verification
+
+For Azure account linking, require the explicit provider claim at
+`identity_data.custom_claims.xms_edov`; GoTrue's `email_verified` also accepts a
+missing claim and cannot stand in for explicit proof. Preserve new-user and
+existing-identity update behavior. The
+[authentication decision](../../../../../apps/docs/platform/architecture/authentication.mdx#oauth-sign-in)
+owns the accepted claim forms and Auth source references; the
+`azure-identity-link-verification*.sql` pgTAP suites cover behavior and helper
+grants. Replay installation and rollback as the non-superuser `postgres` role:
+Auth tables belong to `supabase_auth_admin`, so creating and dropping a trigger
+have different privilege requirements.

@@ -53,15 +53,70 @@ Protected storage APIs remain centralized in `apps/web`:
 When adding new Drive behavior, add the protected route in `apps/web`, expose it
 from `packages/internal-api`, and consume it from `apps/drive`.
 
+## Export link lifetime and revocation
+
+Folder export links are bearer credentials: anyone holding one can read ordinary
+Drive files under that exact folder, including files added after issuance. This
+applies to exports created through Web and the Drive satellite, with either
+Supabase or R2 as the file provider. Private application roots remain excluded.
+
+New exports expire seven days after issuance. `DRIVE_EXPORT_LINK_TTL_SECONDS`
+can select a lifetime of at least one second, capped at 30 days. Unset, zero,
+negative, non-finite, and invalid values use seven days; zero never means
+unlimited. The signed token fixes the expiration at issuance, so increasing the
+environment value cannot extend existing links. Legacy version-one tokens are
+refused; regenerate existing exports after deploying this change.
+
+A current workspace folder manager (`manage_drive`, including owners with that
+permission) can revoke all existing exports for one folder with authenticated
+`DELETE /api/v1/workspaces/{wsId}/storage/export-links`, JSON body
+`{"path":"exports/site"}`. The Drive export dialog offers **Revoke and replace
+links**, which revokes the old links and requests a new export. New exports
+created after revocation work normally.
+Revocation covers that exact folder, not independently exported parent or child
+folders. Removing a member does not automatically revoke their exports; a manager
+must revoke the affected folders. Copies already downloaded cannot be withdrawn.
+
+Each folder has a random revocation version stored in the existing private
+`workspaces` Supabase bucket at
+`{wsId}/.tuturuuu/drive-export-revocations/{sha256(folderPath)}`. The control
+registry uses Supabase even when exported assets use R2. Issuance creates a missing
+marker with insert-only semantics. Revocation replaces the marker. Every
+issuance and asset fetch reads the marker without caching. Missing markers at fetch time and all other
+read failures fail closed. Marker writes are service-only, behind the
+authenticated permission check. Retain these small control objects during storage cleanup and provider
+migration: deleting a marker invalidates existing links; subsequent exports
+initialize a different version.
+The existing private-root Storage RLS migration
+`20261026170000_least_privilege_workspace_storage_rls.sql` must be applied before
+release so direct member Storage access cannot modify these markers. No new
+schema migration or signing-secret rotation is required for folder revocation.
+
+Expired or revoked links return HTTP 410 with no asset URL or file data. Invalid
+or legacy tokens return 404. Asset redirects and rejection responses are not
+cached. Each underlying signed read lasts at most 15 minutes. A signed read
+issued before revocation remains usable until its own deadline; revocation prevents subsequent signed reads.
+
+Regression coverage: storage-core `workspace-storage-export-links.test.ts` and
+Web's active `storage/export-links/route.test.ts` and
+`storage/export/[token]/[...assetPath]/route.test.ts`. Tests exercise the real HMAC
+and clock rules, with isolated Storage adapters; hosted Storage/RLS and browser
+acceptance remain release checks.
+
 ## Private attachment boundaries
 
 Drive permissions apply to ordinary Drive files. They do not grant access to
 application-owned chat attachments. In every workspace, Drive share, download,
 list, export, upload, rename, and delete boundaries reserve the root names `chat`,
-`chats`, `external-apps`, `AI Agent Imports`, `recordings`, and
-`topic-announcements` for their owning
-applications. Only the two-segment prefix `mira/images` is reserved for Mira image
-results; `mira` itself and ordinary files such as `mira/notes.txt` remain available.
+`chats`, `external-apps`, `AI Agent Imports`, `recordings`, `.tuturuuu`, and
+`topic-announcements` for their owning applications. Root matching is
+case-insensitive, including both segments of `mira/images`, in every workspace.
+The Drive and signing policies share `workspace-storage-roots.ts`, matching
+RLS's lowercase segment comparison without trimming segment whitespace or
+matching name prefixes. Drive keeps its existing relative-path sanitization
+(leading slashes, backslashes, and repeated separators); the signing mirror and
+RLS validate exact full object names and reject empty slash-delimited segments.
+Only the two-segment prefix `mira/images` is reserved for Mira image results; `mira` itself and ordinary files such as `mira/notes.txt` remain available.
 Root/directory listings and Drive analytics omit private objects; quota accounting
 continues to count their bytes. Exports omit private descendants. Recursive Drive
 renames/deletes validate every enumerated object before any mutation, so a parent

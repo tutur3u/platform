@@ -6,11 +6,13 @@ final class Usage {
     required List<UsagePoint> instances,
     required List<UsagePoint> series,
     required List<CreditPoint> credits,
+    this.gaps = const [],
   }) : instances = List.unmodifiable(instances),
        series = List.unmodifiable(series),
        credits = List.unmodifiable(credits);
 
   final Coverage coverage;
+  final List<UsageGap> gaps;
   final List<UsagePoint> instances;
   final List<UsagePoint> series;
   final List<CreditPoint> credits;
@@ -19,14 +21,12 @@ final class Usage {
 final class UsagePoint {
   const UsagePoint({
     required this.instance,
-    required this.displayName,
     required this.t,
     required this.session,
     required this.weekly,
   });
 
   final String instance;
-  final AccountDisplayName displayName;
   final DateTime t;
   final UsageWindow session;
   final UsageWindow weekly;
@@ -39,7 +39,10 @@ final class UsageWindow {
     required this.burnPercentPerHour,
     required this.projectedRemainingAtReset,
     required this.pacing,
+    this.fields = const {},
   });
+
+  final Map<String, HubField> fields;
 
   final double? remainingPercent;
   final DateTime? resetsAt;

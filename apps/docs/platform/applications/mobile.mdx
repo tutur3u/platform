@@ -1,7 +1,7 @@
 ---
 title: "Mobile"
 description: "Native workspace products, defaults, account controls, and offline behavior."
-updatedAt: '2026-10-23'
+updatedAt: '2026-10-27'
 ---
 
 The Flutter app (`apps/mobile`) brings eligible Tuturuuu workspace tools into a
@@ -25,6 +25,49 @@ Tasks, Calendar, and Finance are default launcher modules. Meet, Mail, Chat,
 and Notes are opt-in experiments documented in the workspace-tools guide.
 Turning a module on exposes its eligible launch surfaces; it does not grant
 workspace or account privileges. Mail keeps its exact-domain eligibility rule.
+
+## Modes (General and Education)
+
+A mode is a display preference for one account in one workspace. It changes
+what the app puts first and never grants anything: every surface keeps its own
+permission check, workspace-hidden modules stay hidden, and guests see only
+what they could already open.
+
+- **Default:** General. Home is unchanged in General mode.
+- **Resolution, first stored value wins:**
+  1. the member's own choice for this workspace (`user_workspace_configs`
+     `MOBILE_AUDIENCE_MODE`);
+  2. the workspace default an admin with `manage_workspace_settings` sets
+     (`workspace_configs` `MOBILE_DEFAULT_AUDIENCE_MODE`), so a centre can open
+     every member's phone in Education while members can still opt out;
+  3. the account preference chosen in onboarding (`user_configs`
+     `MOBILE_AUDIENCE_MODE`).
+- **Where to change it:** Settings → Workspace → Mode. Admins also see
+  "Default for members"; personal workspaces have no member default.
+- **Education Home:** a "Today's classes" card leads Home (hideable and
+  reorderable like other Home widgets). The server decides access: the card is
+  offered on Home and in the customization sheet only after the sessions read
+  succeeds, which requires `view_user_groups`. A denial removes the card and
+  its stored copy; any other failure keeps the last classes with an inline
+  notice. In General mode the card's data is never requested. Finished
+  sessions sink below current and upcoming ones, phases update at each start
+  and end, the list reloads after midnight, and states are words, never count
+  chips.
+- **Teacher scope:** teachers see only the classes they teach by default, with
+  a "Show all" switch. This is a presentation filter, not a security boundary.
+  Until the consolidated Today endpoint can tell which classes a teacher
+  teaches, the card lists all of the day's classes and says so ("All classes
+  today") instead of claiming a filter.
+- **Offline:** the last resolved mode is cached per account and workspace, so
+  the first frame is correct offline. A member's own choice is queued and
+  replayed (the config write is idempotent); the admin default is online only.
+
+Regression coverage: `test/features/audience_mode/`, `test/features/classes/`,
+`test/features/dashboard/view/home_mode_gate_test.dart` (General never fetches;
+no access means absent from Home and the customization sheet),
+`test/features/settings/view/settings_audience_mode_section_test.dart`, the
+onboarding mode-slide cases in `test/features/onboarding/onboarding_page_test.dart`,
+and the Home order case in `dashboard_layout_cubit_test.dart`.
 
 ## Shell and offline expectations
 

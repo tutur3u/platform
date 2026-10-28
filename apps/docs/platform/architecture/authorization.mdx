@@ -255,6 +255,30 @@ admin writes while authenticated table grants remain revoked; and
 - Treat `admin` as a permission that short-circuits checks, not as a separate role system.
 - When adding new privileged features, update both the permission catalog and the UI/routes that consume it.
 
+## Database staff identity checks
+
+SQL policies and definer functions never treat a Tuturuuu-domain email as proof
+of staff identity. They call `private.is_verified_tuturuuu_staff(user, allow_xwf)`
+(policies use the caller-bound `public.is_verified_tuturuuu_staff`, which only
+answers for `auth.uid()` unless the caller is `service_role`). It requires the
+`auth.users` email to match the gate's original domain set, a confirmed email,
+at least one provider identity, and every `azure` identity's `tid` (or issuer
+directory) to equal `private.security_config.azure_staff_tenant_id`. A missing
+or empty tenant pin denies Azure-linked users; non-Azure staff are unaffected.
+
+Domains are never widened: gates default to exact `@tuturuuu.com`; only the
+workspace-creation quota bypass (formerly `public.is_tuturuuu_email`) admits
+`xwf.tuturuuu.com`. Mail push keeps its own `*.tuturuuu.com` mailbox rule and
+adds the identity check through `private.staff_identity_verified`. Covered gates:
+`shortened_links` team policies, the workspace quota bypass, online meeting
+creation, mail push recipients, meeting programming elevation, AI memory
+backfill, employee administrator and product-feedback staff assertions.
+
+Regression evidence: `apps/database/supabase/tests/20261027151470_verified-staff-domain-gates.sql`
+runs foreign-tenant, home-tenant, no-Azure, unconfirmed, external, xwf and
+zero-identity users through each gate. SQL fixtures that insert `auth.users`
+directly must also insert an `auth.identities` row, as GoTrue does.
+
 ## Notification email recipient eligibility
 
 The Web immediate and batched notification dispatchers admit confirmed external
@@ -290,3 +314,32 @@ Regression coverage: `apps/web/src/lib/notifications/email-eligibility.test.ts`,
 cover confirmed and unconfirmed external destinations, identity mismatch,
 account/workspace/event/channel opt-outs, suppression and transactional/security
 distinctions. These fixtures prove source behavior, not production delivery.
+
+
+## Staff-session verification
+
+Staff-only server operations use `isVerifiedTuturuuuStaffSession` from
+`@tuturuuu/utils/email/staff-session` after a current, subject-bound Auth lookup.
+A staff address alone is insufficient: email confirmation and complete provider
+identity evidence are required. `TUTURUUU_AZURE_TENANT_ID` is server-only
+configuration; leaving it unset denies Azure-linked staff sessions. Confirmed
+staff accounts using other providers retain access. Existing workspace roles,
+mailbox membership, consent and feature gates continue to apply independently.
+
+This containment covers internal Mail sending and drafting, inquiries, task
+embedding administration, Mira tools and backfill, Infrastructure controls,
+staff pages, import access, meeting exemptions and signed Colab staff assertions.
+Address syntax validation and UI visibility checks do not grant server access.
+The long-term authorization model is a server-verified staff role.
+
+Regression evidence lives in `packages/utils/src/email/__tests__/staff-session.test.ts`
+and the affected routes' `staff-session.test.ts` suites. These fixtures verify
+denials before protected reads, writes, sends or generation; hosted deployment
+configuration and production acceptance require separate operator verification.
+
+
+AI calendar generation and temporary-auth Mail drafting resolve the requested
+workspace and require MEMBER membership before memory or provider work. Memory
+attribution uses the canonical authorized workspace id, including default scopes;
+membership lookup failures stop the operation. The route scope regressions cover
+nonmembers, guests, lookup failures and canonical workspace attribution.

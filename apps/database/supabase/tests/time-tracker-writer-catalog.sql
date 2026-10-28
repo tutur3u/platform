@@ -136,8 +136,8 @@ select ok(not has_function_privilege('anon','private.replace_running_time_tracke
 select ok(not has_function_privilege('authenticated','private.replace_running_time_tracker_session(uuid,uuid,bigint,uuid,uuid,text,text,uuid,uuid)','EXECUTE'),'new function inherits no public browser grant');
 select throws_ok($q$set local role authenticated; select * from private.time_tracker_operation_receipts$q$,'42501',null,'actual browser role cannot read receipts');
 select throws_ok($q$set local role service_role; insert into private.time_tracker_operation_scopes(ws_id,actor_id) values(gen_random_uuid(),gen_random_uuid())$q$,'42501',null,'actual service role cannot bypass function with DML');
-select ok(has_function_privilege('authenticated','public.pause_session_for_break(uuid,timestamptz,integer,boolean)','EXECUTE'),'legacy public pause reachability is explicit; closure OPEN');
-select ok(has_function_privilege('authenticated','public.update_time_tracking_session_with_bypass(uuid,jsonb)','EXECUTE'),'legacy public update bypass reachability is explicit; closure OPEN');
+select ok(not has_function_privilege('authenticated','public.pause_session_for_break(uuid,timestamptz,integer,boolean)','EXECUTE'),'pause writer is service-only');
+select ok(not has_function_privilege('authenticated','public.update_time_tracking_session_with_bypass(uuid,jsonb)','EXECUTE'),'update bypass writer is service-only');
 select ok((select bool_and(not has_table_privilege(browser_role,'public.time_tracking_sessions',privilege))
  from unnest(array['anon','authenticated']) browser_role
  cross join unnest(array['SELECT','INSERT','UPDATE','DELETE','TRUNCATE','REFERENCES','TRIGGER']) privilege),

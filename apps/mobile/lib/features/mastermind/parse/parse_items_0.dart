@@ -1,15 +1,9 @@
 part of 'snapshot_parser.dart';
 
 SecurityItem parseSecurityItem(JsonReader r) {
-  r.keys(
-    ['title', 'severity', 'state', 'product'],
-    ['title', 'severity', 'state'],
-  );
+  r.keys(['title', 'state', 'product'], ['title', 'state']);
   return SecurityItem(
     title: r.field('title').string(constant: 'Security issue'),
-    severity: r
-        .field('severity')
-        .enumOf<Severity>(Severity.values, (v) => v.wireName),
     state: r
         .field('state')
         .enumOf<LaneState>(LaneState.values, (v) => v.wireName),
@@ -19,7 +13,9 @@ SecurityItem parseSecurityItem(JsonReader r) {
   );
 }
 
-NeedsYou parseNeedsYou(JsonReader r) {
+NeedsYou parseNeedsYou(JsonReader input) {
+  var r = input;
+  r = JsonReader(adaptDecision(r.object()), r.path);
   r.keys(
     [
       'id',
@@ -30,7 +26,6 @@ NeedsYou parseNeedsYou(JsonReader r) {
       'state',
       'version_hash',
       'kind',
-      'severity',
       'product',
     ],
     [
@@ -46,7 +41,7 @@ NeedsYou parseNeedsYou(JsonReader r) {
   return NeedsYou(
     id: r.field('id').string(pattern: RegExp(r'^item-[a-f0-9]{20}$')),
     title: r.field('title').string(maxLength: 100),
-    body: r.field('body').string(maxLength: 280),
+    body: r.field('body').string(maxLength: 2000),
     options: r
         .field('options')
         .list((v) => v.string(maxLength: 80), maxItems: 8, unique: true),
@@ -62,18 +57,39 @@ NeedsYou parseNeedsYou(JsonReader r) {
     kind: r.has('kind')
         ? r.field('kind').enumOf<ItemKind>(ItemKind.values, (v) => v.wireName)
         : null,
-    severity: r.has('severity')
-        ? r
-              .field('severity')
-              .enumOf<Severity>(Severity.values, (v) => v.wireName)
-        : null,
     product: r.has('product')
         ? r.field('product').enumOf<Product>(Product.values, (v) => v.wireName)
         : null,
   );
 }
 
-Lane parseLane(JsonReader r) {
+Lane parseLane(JsonReader input) {
+  var r = input;
+  r = JsonReader(
+    adaptThread(
+      r.object(),
+      fields: const {
+        'id',
+        'title',
+        'role',
+        'state',
+        'provider_model',
+        'age_seconds',
+        'eta_seconds',
+        'product',
+        'area',
+        'kind',
+      },
+    ),
+    r.path,
+  );
+  final fields = {
+    for (final e in r.object().entries) e.key: HubField.parse(e.value),
+  };
+  r = JsonReader({
+    for (final e in fields.entries)
+      e.key: e.value.value ?? (e.key == 'state' ? 'unknown' : null),
+  }, r.path);
   r.keys(
     [
       'id',
@@ -98,6 +114,7 @@ Lane parseLane(JsonReader r) {
     ],
   );
   return Lane(
+    fields: fields,
     id: r.field('id').string(pattern: RegExp(r'^item-[a-f0-9]{20}$')),
     title: r.field('title').string(maxLength: 100),
     role: r.field('role').string(maxLength: 60),

@@ -58,7 +58,6 @@ void main() {
       ).thenAnswer((_) async => true);
       when(() => authCubit.signInWithApple()).thenAnswer((_) async {});
       when(() => authCubit.signInWithGoogle()).thenAnswer((_) async {});
-      when(() => authCubit.signInWithMicrosoft()).thenAnswer((_) async {});
       when(() => authCubit.signInWithGithub()).thenAnswer((_) async {});
 
       when(() => appVersionCubit.state).thenReturn(const AppVersionState());
@@ -97,7 +96,7 @@ void main() {
       await tester.pump();
 
       expect(find.text('Continue with Google'), findsOneWidget);
-      expect(find.text('Continue with Microsoft'), findsOneWidget);
+      expect(find.text('Continue with Microsoft'), findsNothing);
       expect(find.text('Continue with Apple'), findsOneWidget);
       expect(find.text('Continue with GitHub'), findsOneWidget);
       expect(find.text('Sign in with mobile QR'), findsOneWidget);
@@ -198,16 +197,15 @@ void main() {
       expect(find.text('Continue with Microsoft'), findsNothing);
       expect(find.text('Continue with GitHub'), findsNothing);
       expect(find.text('Sign in with mobile QR'), findsNothing);
-      expect(find.byType(shad.OutlineButton), findsNWidgets(5));
+      expect(find.byType(shad.OutlineButton), findsNWidgets(4));
 
-      for (var index = 0; index < 5; index++) {
+      for (var index = 0; index < 4; index++) {
         final button = find.byType(shad.OutlineButton).at(index);
         await tester.ensureVisible(button);
         await tester.tap(button, warnIfMissed: false);
       }
       verifyNever(() => authCubit.signInWithApple());
       verifyNever(() => authCubit.signInWithGoogle());
-      verifyNever(() => authCubit.signInWithMicrosoft());
       verifyNever(() => authCubit.signInWithGithub());
     });
 

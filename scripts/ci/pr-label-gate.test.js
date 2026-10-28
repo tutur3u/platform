@@ -33,6 +33,7 @@ const PROTECTED_TRIGGERS = {
   'codeql.yml': '4a4a1b519370f1bc',
   'colab-cloudflare.yaml': 'dce28d216351f5af',
   'connected-mail-accounts-contract.yaml': '36344b32dd7e88da',
+  'contacts-start-candidate.yaml': '0a3cc2c97958f5cd',
   'coordination-cloudflare.yaml': '5d9dda0ceaa00a84',
   'creator-identity-contract.yaml': '0a3cc2c97958f5cd',
   'cron-control-cloudflare.yaml': 'f9a9bce5ac1972dd',
@@ -42,7 +43,7 @@ const PROTECTED_TRIGGERS = {
   'docs-seo-check.yaml': '6305e545b85b27e8',
   'external-internal-packages.yaml': '4d532cf88497bbd2',
   'external-project-storage-analytics-contract.yaml': '02e3e1d0d939ac56',
-  'finance-cloudflare.yaml': '892ac95ed04e14f7',
+  'finance-cloudflare.yaml': 'd5dc7fa96048fd6b',
   'forms-cloudflare.yaml': '4c98fb3cb1df4d96',
   'i18n-check.yaml': '6305e545b85b27e8',
   'inventory-cloudflare.yaml': '4558d318d6aaaba3',
@@ -81,6 +82,7 @@ const PROTECTED_TRIGGERS = {
   'tutoring-absence-credit-contract.yaml': 'f0f9259c069d33ec',
   'tutoring-teacher-hours-contract.yaml': 'cb666f22d4bbdc8f',
   'type-check.yaml': '47acd08d33c6cf4c',
+  'web-start-candidate.yaml': '0a3cc2c97958f5cd',
 };
 
 function events(workflow) {

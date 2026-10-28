@@ -1,11 +1,15 @@
 import 'package:bloc/bloc.dart';
 import 'package:flutter/foundation.dart';
 import 'package:mobile/features/mastermind/cubit/mastermind_snapshot_state.dart';
+import 'package:mobile/features/mastermind/data/hub_capabilities.dart';
 import 'package:mobile/features/mastermind/data/mastermind_snapshot_source.dart';
 import 'package:mobile/features/mastermind/data/mastermind_snapshot_store.dart';
+import 'package:mobile/features/mastermind/model/event_feed.dart';
 import 'package:mobile/features/mastermind/parse/snapshot_parser.dart';
 import 'package:mobile/features/mastermind/presentation/snapshot_age.dart';
 
+export 'package:mobile/features/mastermind/model/event_feed.dart'
+    show EventFeedAppend, EventFeedResync, EventFeedStep;
 export 'mastermind_snapshot_state.dart';
 
 typedef SnapshotParser = Future<ParseOutcome> Function(Uint8List bytes);
@@ -39,10 +43,52 @@ final class MastermindSnapshotCubit extends Cubit<MastermindSnapshotState> {
     return refresh();
   }
 
-  Future<void> refresh() {
+  Future<void> refresh() => _refresh(conditional: true);
+
+  /// Adopts a fresh snapshot with no `If-None-Match`, for when the held export
+  /// no longer matches what the events route knows (409 `cursor_ahead`, or 404
+  /// for a digest the pointer moved past). The cursor then restarts from the
+  /// fresh snapshot's `latest_seq`.
+  ///
+  /// A 401/403 on the events route means access is lost, exactly as on the
+  /// snapshot route: memory and disk are erased instead.
+  Future<void> recoverFromEvents(EventsFetchUnavailable failure) {
+    if (failure.kind.isAccessLost) return _revokeAccess(failure.kind);
+    return failure.needsResync ||
+            failure.kind == SnapshotUnavailableKind.digestNotFound
+        ? _refresh(conditional: false)
+        : Future<void>.value();
+  }
+
+  /// A 401/403 on GET /v1/capabilities is access lost as well. Any other
+  /// capabilities failure is left to the caller and keeps the held snapshot.
+  Future<void> handleCapabilitiesUnavailable(
+    CapabilitiesFetchUnavailable failure,
+  ) => failure.kind.isAccessLost
+      ? _revokeAccess(failure.kind)
+      : Future<void>.value();
+
+  /// Invalidates in-flight reads, then drops the held snapshot from memory and
+  /// disk so a late response cannot restore it.
+  Future<void> _revokeAccess(SnapshotUnavailableKind kind) {
+    ++_generation;
+    _pending = null;
+    return _eraseAfterAccessLost(kind);
+  }
+
+  Future<void> _eraseAfterAccessLost(SnapshotUnavailableKind kind) async {
+    emit(MastermindSnapshotUnavailable(kind));
+    try {
+      await _storeOperation(_store.clear);
+    } on Object {
+      /* The in-memory state is already cleared. */
+    }
+  }
+
+  Future<void> _refresh({required bool conditional}) {
     if (_pending != null) return _pending!;
     final generation = _generation;
-    final future = _load(generation);
+    final future = _load(generation, conditional: conditional);
     _pending = future;
     return future.whenComplete(() {
       if (identical(_pending, future)) _pending = null;
@@ -57,7 +103,7 @@ final class MastermindSnapshotCubit extends Cubit<MastermindSnapshotState> {
     return future;
   }
 
-  Future<void> _load(int generation) async {
+  Future<void> _load(int generation, {required bool conditional}) async {
     if (!_source.isConfigured) {
       emit(const MastermindSnapshotNotConfigured());
       return;
@@ -82,6 +128,9 @@ final class MastermindSnapshotCubit extends Cubit<MastermindSnapshotState> {
               receivedAt: cached.receivedAt,
             );
             emit(previous);
+          } else {
+            // A cache from an older schema (or damaged) is never trusted.
+            await _storeOperation(_store.clear);
           }
         }
       } on Object {
@@ -92,25 +141,23 @@ final class MastermindSnapshotCubit extends Cubit<MastermindSnapshotState> {
     try {
       if (!_current(generation)) return;
       fetched = await _source.fetchSnapshot(
-        ifNoneMatch: previous == null ? null : '"${previous.digest}"',
+        ifNoneMatch: previous == null || !conditional
+            ? null
+            : '"${previous.digest}"',
       );
     } on Object {
       if (!_current(generation)) return;
-      emit(
-        previous?.withFailure(
-              const UnavailableRefresh(SnapshotUnavailableKind.unavailable),
-            ) ??
-            const MastermindSnapshotNotConfigured(),
+      await _emitUnavailable(
+        SnapshotUnavailableKind.unavailable,
+        previous,
+        generation,
       );
       return;
     }
     if (!_current(generation)) return;
     switch (fetched) {
       case SnapshotFetchUnavailable(:final kind):
-        emit(
-          previous?.withFailure(UnavailableRefresh(kind)) ??
-              const MastermindSnapshotNotConfigured(),
-        );
+        await _emitUnavailable(kind, previous, generation);
       case SnapshotFetchNotModified(:final digest, :final receivedAt):
         if (previous == null || previous.digest != digest) {
           emit(
@@ -165,6 +212,46 @@ final class MastermindSnapshotCubit extends Cubit<MastermindSnapshotState> {
             }
         }
     }
+  }
+
+  /// 401/403 mean this device may no longer hold the data: drop it from memory
+  /// and disk. Other failures keep whatever was already accepted.
+  Future<void> _emitUnavailable(
+    SnapshotUnavailableKind kind,
+    MastermindSnapshotReady? previous,
+    int generation,
+  ) async {
+    if (kind.isAccessLost) {
+      await _eraseAfterAccessLost(kind);
+      return;
+    }
+    if (previous != null) {
+      emit(previous.withFailure(UnavailableRefresh(kind)));
+    } else if (kind == SnapshotUnavailableKind.notConfigured) {
+      emit(const MastermindSnapshotNotConfigured());
+    } else {
+      emit(MastermindSnapshotUnavailable(kind));
+    }
+  }
+
+  /// Applies one events page against the cursor implied by the held snapshot.
+  /// A gap (the first schema 1.4 feed, retention, or an older export) adopts
+  /// the fresh snapshot instead of applying events, which resets the cursor to
+  /// that snapshot's `latest_seq`.
+  ///
+  /// Not wired to a poller yet, so the cursor is derived from the held
+  /// snapshot. Once it is, keep the cursor in [MastermindSnapshotReady] beside
+  /// the digest: advance it to [EventFeedAppend.cursor] and reset it to the
+  /// fresh snapshot's `latest_seq` on a resync or
+  /// [EventsFetchUnavailable.needsResync].
+  Future<EventFeedStep> applyEventFeed(MastermindEventFeed feed) async {
+    final current = state;
+    final cursor = current is MastermindSnapshotReady
+        ? current.snapshot.now.latestSeq
+        : 0;
+    final step = reconcileEventFeed(cursor: cursor, feed: feed);
+    if (step is EventFeedResync) await refresh();
+    return step;
   }
 
   /// Invalidates in-flight reads; erasure follows any admitted write.

@@ -51,7 +51,6 @@ void main() {
     expect(MastermindLabels.laneState(vi, LaneState.running), 'đang chạy');
     expect(MastermindLabels.coverage(vi, Coverage.partial), 'Dữ liệu một phần');
     expect(MastermindLabels.modelFamily(ModelFamily.opus), 'Opus');
-    expect(MastermindLabels.registerStatus(RegisterStatus.inFix), 'IN-FIX');
     expect(MastermindLabels.pacing(Pacing.short), 'SHORT');
   });
 }

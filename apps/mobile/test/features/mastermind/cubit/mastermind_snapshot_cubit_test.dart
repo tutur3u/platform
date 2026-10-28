@@ -115,7 +115,7 @@ void main() {
   test('cold rejection is categorized', () async {
     final source = _Source()
       ..fetcher = () async => SnapshotFetch.ok(
-        Uint8List(600001),
+        Uint8List(mastermindSnapshotMaxBytes + 1),
         DateTime.utc(2026),
         digest: _digest,
       );
@@ -140,7 +140,11 @@ void main() {
     await c.ensureLoaded();
     final latest = c.state;
     pending.complete(
-      SnapshotFetch.ok(Uint8List(600001), DateTime.utc(2026), digest: _digest),
+      SnapshotFetch.ok(
+        Uint8List(mastermindSnapshotMaxBytes + 1),
+        DateTime.utc(2026),
+        digest: _digest,
+      ),
     );
     await first;
     expect(identical(c.state, latest), isTrue);
@@ -183,7 +187,7 @@ void main() {
       );
       final source = _Source()
         ..fetcher = () async => SnapshotFetch.ok(
-          Uint8List(600001),
+          Uint8List(mastermindSnapshotMaxBytes + 1),
           DateTime.utc(2026),
           digest: _digest,
         );
