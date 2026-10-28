@@ -197,11 +197,14 @@ The creator fallback prevents the creator from locking themselves out. The dashb
 
 ### Ownership and personal status
 
-`workspaces.creator_id` and `workspaces.personal` are protected columns. Settings managers (including `admin`) keep table-level `UPDATE` for ordinary settings such as name, handle and avatar, but a `BEFORE UPDATE` trigger applies these rules to signed-in and anonymous callers:
+`workspaces.creator_id` and `workspaces.personal` are protected columns. Settings managers (including `admin`) keep table-level `UPDATE` for ordinary settings such as name, handle and avatar, but a `BEFORE UPDATE` trigger applies these rules:
 
-- `creator_id` changes only through `public.transfer_workspace_ownership(ws_id, new_owner_id)`. The caller must be the current creator, the new owner must already be a `MEMBER`, personal and root workspaces cannot be transferred, and each transfer is recorded in `public.workspace_ownership_transfers` (readable by the service role only).
-- `personal` changes only when the caller is the workspace's current creator. The `/api/v1/workspaces/personal` route keeps its single-member and one-personal-workspace checks on top of this.
-- The trigger checks the role that issued the statement (`current_user`), not JWT claims or session settings. Service-role and migration contexts, `SECURITY DEFINER` functions and the `workspaces_creator_id_fkey` `ON UPDATE CASCADE` action are unaffected, and workspace creation still records the caller as `creator_id`.
+- `creator_id` never changes for `anon` or `authenticated` statements, including upserts. Ownership moves only through `public.transfer_workspace_ownership(ws_id, new_owner_id)`: the caller must be the current creator, the new owner must already be a `MEMBER` (not a `GUEST`), personal, root and deleted workspaces cannot be transferred, and the function is not executable by `service_role` (it has no end user to authorize).
+- Other roles may change `creator_id` only in these cases: the transaction has no end-user identity (migrations, cron and admin SQL, or `service_role`); `transfer_workspace_ownership()` set its transaction-local flag for that workspace id; or the change is the `workspaces_creator_id_fkey` `ON UPDATE CASCADE` follow-up of a `users.id` change. A `SECURITY DEFINER` function running under a user JWT is rejected unless it is the transfer function, so a future helper cannot reintroduce an ownership claim path.
+- Every `creator_id` change, whatever issued it, is recorded in `public.workspace_ownership_transfers` (readable by the service role only) with the actor, role and source. Audit rows keep the workspace id without a foreign key, so they survive workspace deletion.
+- `personal` changes only when the caller is the workspace's current creator, and marking a workspace personal also requires exactly one member (the same rule the `/api/v1/workspaces/personal` route applies, now enforced for direct data-API updates too). Turning `personal` off is not subject to the member count. The route keeps its one-personal-workspace check on top of this.
+
+Not yet covered: the new owner does not accept a transfer, and the transfer function does not check the new owner's account status.
 
 Regression coverage: `apps/database/supabase/tests/workspace-ownership-protection.sql`.
 
