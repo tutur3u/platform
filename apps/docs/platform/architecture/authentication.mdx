@@ -347,11 +347,11 @@ there.
   Configure Microsoft's optional `xms_edov` ID-token claim as described in [Supabase's Azure guidance](https://supabase.com/docs/guides/auth/social-login/auth-azure#guarding-against-unverified-email-domains). GoTrue's `email_verified` alone also accepts an absent claim and cannot prove explicit verification.
 </Warning>
 
-Before inserting an `azure` identity for a user with another provider, the database requires `identity_data.custom_claims.xms_edov` to be JSON `true`, `"true"`, or `"1"`. Missing, false, or malformed claims roll back the link with a generic permission error. This applies to web, linked-account settings, mobile, and other clients of the same Auth database.
+Before inserting an `azure` identity for an existing account, including one whose only sign-in is another Microsoft identity, the database requires `identity_data.custom_claims.xms_edov` to be JSON `true`, `"true"`, or `"1"`. Missing, false, or malformed claims roll back the link with a generic permission error. This applies to web, linked-account settings, mobile, and other clients of the same Auth database.
 
-New Azure-only signups and updates to existing Azure identities remain allowed; other providers are unaffected. The multi-tenant `common` endpoint can serve organizational and personal accounts. A tenant URL override can narrow access when required by the deployment's account policy.
+New Azure-only signups and updates to existing Azure identities remain allowed. A user row created more than five minutes before the link transaction counts as existing even without an identity, which absorbs Auth and database clock skew; other providers are unaffected. The multi-tenant `common` endpoint can serve organizational and personal accounts. A tenant URL override can narrow access when required by the deployment's account policy.
 
-GoTrue v2.197.0 preserves the [raw provider claims](https://github.com/supabase/auth/blob/v2.197.0/internal/api/provider/oidc.go#L329) and [updates existing identities](https://github.com/supabase/auth/blob/v2.197.0/internal/api/external.go#L383). Recheck these mappings when upgrading Auth. Coverage: `apps/database/supabase/tests/azure-identity-link-verification*.sql`; the matching `20261027152600` rollback removes the trigger and private helper without restoring client grants.
+GoTrue v2.197.0 preserves the [raw provider claims](https://github.com/supabase/auth/blob/v2.197.0/internal/api/provider/oidc.go#L329) and [updates existing identities](https://github.com/supabase/auth/blob/v2.197.0/internal/api/external.go#L388). Recheck these mappings when upgrading Auth. Coverage: `apps/database/supabase/tests/azure-identity-link-verification*.sql`; the matching `20261027151480` rollback removes the trigger and private helper without restoring client grants.
 
 ```typescript
 "use server";

@@ -2,7 +2,10 @@
 -- GoTrue v2.197.0 azure.go:156 delegates to oidc.go:329; the raw xms_edov
 -- claim survives in identity_data.custom_claims (provider.go:115,
 -- external.go:310). oidc.go:279 treats an absent claim as email_verified,
--- so email_verified alone is not proof. Existing signins UPDATE (external.go:383).
+-- so email_verified alone is not proof. Existing signins UPDATE (external.go:388).
+-- linking.go:123-159 also links to Azure-only and identity-less users, so any
+-- existing identity, or a user row older than this signup, requires proof.
+-- GoTrue stamps users.created_at with its own clock; the window absorbs skew.
 begin;
 
 create function private.enforce_azure_identity_link_verification()
@@ -12,11 +15,18 @@ security definer
 set search_path = pg_catalog, pg_temp
 as $function$
 begin
-    if exists (
-        select 1
-        from auth.identities as existing
-        where existing.user_id = new.user_id
-            and existing.provider <> 'azure'
+    if (
+        exists (
+            select 1
+            from auth.identities as existing
+            where existing.user_id = new.user_id
+        )
+        or not exists (
+            select 1
+            from auth.users as target
+            where target.id = new.user_id
+                and target.created_at >= transaction_timestamp() - interval '5 minutes'
+        )
     ) and not coalesce(
         (new.identity_data #> '{custom_claims,xms_edov}') in (
             'true'::jsonb, '"true"'::jsonb, '"1"'::jsonb
