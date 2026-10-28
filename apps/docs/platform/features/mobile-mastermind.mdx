@@ -64,6 +64,12 @@ degraded source is a warning. Times are absolute GMT+7.
 | Hub answered something unreadable | Couldn't read the latest update · showing `<time>` |
 | Any source not ok | appended: `<n>` sources degraded |
 
+The line is a live region, so a refresh that turns it into a warning is
+announced. With degraded sources it is tappable (44 dp tall) and opens the
+"Sources" bottom sheet: every source the snapshot reports, degraded ones first,
+each as a glyph, a name and a state word. Home also has a "Data sources" navbar
+action that opens the same sheet, whether or not a source is degraded.
+
 ## Before data arrives
 
 | State | Shown |
@@ -82,14 +88,20 @@ never the primary action and only runs after the user confirms.
 
 ## Home
 
-Needs you comes first, then lanes at a glance, ship, quota, recent decisions and
-activity. Needs you lists up to three normal items (decision, then action, then
-FYI, then publisher order); "See all (N)" counts normal items only.
+Needs you comes first, then lanes at a glance, ship, quota, activity and, last,
+recent decisions. Needs you lists up to three normal items (decision, then
+action, then FYI, then publisher order); "See all (N)" counts normal items
+only. Each Needs-you row opens its item detail with a push, so Back returns to
+Home. Replies queued on the device show as "N replies waiting to send"
+directly under Needs you, the same row as in the Inbox.
 
-Recent-decision rows are not tappable until they have a detail screen. "See
-all", the lane chips, the Ship rows and "Usage" link to their tabs: a lane chip
-opens Work already filtered to that state, and a Ship row (a failing environment
-or a release) opens `/mastermind/ship?product=<product>`.
+Recent-decision rows are display only: the Decisions journal is deferred (see
+Product decisions), so they have no tap target, no chevron and no promise text.
+"See all", the lane chips, the Ship rows and "Usage" link to their tabs: a lane
+chip opens Work already filtered to that state, and a Ship row (a failing
+environment or a release) opens `/mastermind/ship?product=<product>`. A lane
+state with no lanes ("0 failed") uses the neutral list glyph; only a non-zero
+failed count carries the warning glyph.
 
 **Security rows** render as a single non-tappable "`<Product>` · security fix"
 line in a trailing "Security" group with no count. They have no severity, title
@@ -100,8 +112,8 @@ summaries apply the same collapse.
 
 The Inbox tab lists the open Needs-you items grouped by kind: "Decisions for
 you", "Actions", then "For your information", each with its count, in publisher
-order. Each card shows the title, the body (three lines until "More"), kind and
-product chips and the options as read-only chips; the recommended option carries
+order. Each card shows the title, the body (three lines until "More", a 44 dp target),
+kind and product chips and the options as read-only chips; the recommended option carries
 the word "Recommended" and a star, never colour alone. A search field
 ("Search Needs you") and product chips narrow the list. Pull to refresh.
 
@@ -110,7 +122,11 @@ the word "Recommended" and a star, never colour alone. A search field
 - **Security rows** keep the Home rule: one non-tappable line in a trailing
   "Security" group with no count, never counted, searched or filtered, with no
   severity, id or detail.
-- **Detail:** `/mastermind/inbox/item/:itemId` opens one item in full. The id is
+- **Detail:** `/mastermind/inbox/item/:itemId` opens one item in full, pushed
+  from the Inbox and from Home, so Back returns to whichever opened it, with
+  the same search text and product chips (the shell pops an item location
+  instead of falling back to the Inbox). The page leads with the full title as a heading and shows the
+  full question as plain text, never clamped. The id is
   an opaque snapshot id and only ever a route parameter; deep links carry tab
   roots only and never ids. An id that is not an open item shows "This item is
   no longer in Mastermind" (or "This was answered or withdrawn" when it left
@@ -322,7 +338,41 @@ Delivery sections arrive later and reuse the table route below).
   Mastermind" with a way back, never an error. The shell pops this location on
   Back instead of falling back to the tab root.
 
+## Product decisions
+
+- **Decisions journal deferred.** Scope: the Inbox tab, Home and the item
+  detail. Default: Home shows the latest three decisions in the last card,
+  display only, with no link, chevron or "coming soon" copy; the Inbox has no
+  segmented control. Exception: none until a later change adds the journal and
+  its detail screen. Coverage: `mastermind_home_page_test.dart` (card last, no
+  tap target).
+- **Offline reply queuing.** Scope: replies from the item detail, on every app
+  surface that shows the "N replies waiting to send" row (Home and Inbox).
+  Default: a reply that cannot be delivered stays queued on the device and is
+  sent later instead of being refused. This is safe because each queued reply is
+  bound to its item id and `version_hash`, and carries one `Idempotency-Key`
+  reused on every retry: if the question changed meanwhile the hub answers 409
+  `stale_item`, the item is refreshed, the typed words are kept and the user
+  reviews it again, so a stale answer is never accepted as the answer to a newer
+  question. Exceptions: replies off at the hub keep entries queued without
+  sending, an entry expires after seven days or when the item leaves the open
+  list, and logout, account switch and lost access erase the outbox. Coverage:
+  `mastermind_replies_cubit_test.dart`, `mastermind_replies_gate_test.dart`,
+  `reply_outbox_store_test.dart`.
+
+## Vietnamese state wording
+
+One Vietnamese word per state: "queued" is "trong hàng đợi", "pending" is "chờ
+xử lý" and "waiting" stays "đang chờ", across lane, deploy and CI labels. One
+term per destination: the Home "Usage" link and the Insights page caption are
+both "Mức sử dụng", and the Insights tab and its label are both "Phân tích".
+Whole-section state titles carry no trailing period; their messages do.
+
 ## Deferred to PR8
+
+- **Activity cursor (spec 2.10).** Home shows the latest five events from
+  `now.digest` as display only. The "new since you last looked" cursor and the
+  full Activity feed arrive with PR8.
 
 The Insights charts ship as one session-and-weekly panel per pool. These
 chart-spec gaps are deferred to PR8 with the remaining chart sections:
@@ -347,7 +397,10 @@ chart-spec gaps are deferred to PR8 with the remaining chart sections:
   pull-to-refresh.
 - `runtime/mastermind_auth_reset_test.dart`: the app-level logout and
   account-switch listener over a real `AuthCubit`.
-- `mastermind_freshness_test.dart`: strip states.
+- `mastermind_freshness_test.dart`: strip states, the live region and the
+  sources sheet opened from the strip.
+- `mastermind_sources_sheet_test.dart`: the Home navbar action opens the same
+  sheet, degraded sources first.
 - `mastermind_home_page_test.dart` and `home_model_test.dart`: ordering,
   security redaction, dock clearance, tab links.
 - `mastermind_work_page_test.dart`: grouping, the state, product and area

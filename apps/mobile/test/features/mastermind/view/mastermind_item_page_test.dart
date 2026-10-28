@@ -1,5 +1,6 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/ui/components/app_button.dart';
@@ -97,15 +98,17 @@ bool _enabled(WidgetTester tester, Finder finder) =>
 
 void main() {
   group('detail', () {
-    testWidgets('shows the full question', (tester) async {
+    testWidgets('shows the full question, not an ellipsized paragraph', (
+      tester,
+    ) async {
+      // The longest body the schema allows (280 characters): many lines at
+      // this width.
       final body = List.filled(30, 'sentence').join(' ');
       await _pump(
         tester,
         items: [inboxItem(1, body: body, title: 'Pick one')],
         replies: false,
       );
-      // The title is the shell title, not repeated in the body.
-      expect(find.text('Pick one'), findsNothing);
       expect(
         tester
             .widget<ShellTitleOverride>(find.byType(ShellTitleOverride))
@@ -113,8 +116,29 @@ void main() {
         'Pick one',
       );
       expect(find.text(body), findsOneWidget);
+      final text = tester.widget<Text>(find.text(body));
+      expect(text.maxLines, isNull);
+      expect(text.overflow, isNull);
+      final paragraph = tester.renderObject<RenderParagraph>(
+        find.descendant(of: find.text(body), matching: find.byType(RichText)),
+      );
+      expect(paragraph.didExceedMaxLines, isFalse);
+      // More than the two lines a grouped row would allow.
+      expect(paragraph.size.height, greaterThan(60));
       expect(find.text('Decision'), findsOneWidget);
       expect(find.text('Tuturuuu'), findsOneWidget);
+    });
+
+    testWidgets('leads with the full title as a heading', (tester) async {
+      final title = List.filled(20, 'Long').join(' ');
+      await _pump(tester, items: [inboxItem(1, title: title)], replies: false);
+      expect(find.text(title), findsOneWidget);
+      final paragraph = tester.renderObject<RenderParagraph>(
+        find.descendant(of: find.text(title), matching: find.byType(RichText)),
+      );
+      expect(paragraph.didExceedMaxLines, isFalse);
+      final heading = tester.getTopLeft(find.text(title)).dy;
+      expect(heading, lessThan(tester.getTopLeft(find.text('Decision')).dy));
     });
 
     testWidgets('never shows ids, hashes or severity', (tester) async {

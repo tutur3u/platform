@@ -1,10 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
+import 'package:mobile/core/ui/tokens/app_interface_tokens.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/features/mastermind/presentation/age_text.dart';
 import 'package:mobile/features/mastermind/presentation/freshness.dart';
 import 'package:mobile/features/mastermind/presentation/gmt7.dart';
+import 'package:mobile/features/mastermind/view/mastermind_sources_sheet.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// One line under the navbar, inside the scroll view so it scrolls away.
@@ -52,33 +56,56 @@ class MastermindFreshnessStrip extends StatelessWidget {
     final color = warning
         ? AppTone.warning.foreground(colors)
         : colors.mutedForeground;
+    // Only the degraded-sources case has somewhere to go.
+    final onTap = freshness.degradedSources == 0
+        ? null
+        : () => unawaited(
+            showMastermindSourcesSheet(context, sources: freshness.sources),
+          );
+    final line = Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 1),
+            child: Icon(
+              warning ? AppIcons.warning : LucideIcons.clock,
+              size: 14,
+              color: color,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.xs + AppSpacing.xxs),
+          Expanded(
+            child: Text(
+              text,
+              style: tokens.typography.small.copyWith(color: color),
+            ),
+          ),
+        ],
+      ),
+    );
+    // A live region only while it is a warning, so a refresh that turns the
+    // line into one is announced without the reader moving focus, but the
+    // routine age ticks of a healthy "Updated" line are not.
     return Semantics(
       container: true,
+      liveRegion: warning,
       label: text,
+      button: onTap != null,
+      onTap: onTap,
       child: ExcludeSemantics(
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: AppSpacing.md),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(top: 1),
-                child: Icon(
-                  warning ? AppIcons.warning : LucideIcons.clock,
-                  size: 14,
-                  color: color,
+        child: onTap == null
+            ? line
+            : InkWell(
+                onTap: onTap,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    minHeight: AppInterfaceTokens.minTouchTarget,
+                  ),
+                  child: Align(alignment: Alignment.centerLeft, child: line),
                 ),
               ),
-              const SizedBox(width: AppSpacing.xs + AppSpacing.xxs),
-              Expanded(
-                child: Text(
-                  text,
-                  style: tokens.typography.small.copyWith(color: color),
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

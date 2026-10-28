@@ -112,6 +112,21 @@ void main() {
       expect(find.text('More'), findsNothing);
     });
 
+    testWidgets('More and Less are 44 dp hit areas', (tester) async {
+      final body = List.filled(30, 'word').join(' ');
+      await _pump(tester, inboxJson([inboxItem(1, body: body)]));
+      Size target(String label) => tester.getSize(
+        find
+            .ancestor(of: find.text(label), matching: find.byType(InkWell))
+            .first,
+      );
+      expect(target('More').height, greaterThanOrEqualTo(44));
+      expect(target('More').width, greaterThanOrEqualTo(44));
+      await tester.tap(find.text('More'));
+      await tester.pumpAndSettle();
+      expect(target('Less').height, greaterThanOrEqualTo(44));
+    });
+
     testWidgets('a short body has no More', (tester) async {
       await _pump(tester, inboxJson([inboxItem(1)]));
       expect(find.text('More'), findsNothing);
@@ -332,6 +347,46 @@ void main() {
       await tester.tap(find.text('Choose a plan'));
       await tester.pumpAndSettle();
       expect(find.text('detail ${inboxItemId(7)}'), findsOneWidget);
+    });
+  });
+
+  group('Back from an item', () {
+    testWidgets('keeps the search text and product chip', (tester) async {
+      final router = GoRouter(
+        initialLocation: Routes.mastermindInbox,
+        routes: [
+          GoRoute(
+            path: Routes.mastermindInbox,
+            builder: (_, _) => const MastermindInboxPage(),
+          ),
+          GoRoute(
+            path: Routes.mastermindInboxItem,
+            builder: (_, state) =>
+                Text('detail ${state.pathParameters['itemId']}'),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+      await _pump(tester, inboxJson(_mixed), router: router);
+      await tester.tap(find.widgetWithText(AppChip, 'Mastermind'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'second');
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Second decision'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('detail'), findsOneWidget);
+      // Pushed, not replaced, so the Inbox is still beneath the detail.
+      expect(router.canPop(), isTrue);
+
+      router.pop();
+      await tester.pumpAndSettle();
+      expect(find.text('Second decision'), findsOneWidget);
+      expect(find.text('First decision'), findsNothing);
+      expect(
+        tester.widget<TextField>(find.byType(TextField)).controller?.text,
+        'second',
+      );
     });
   });
 

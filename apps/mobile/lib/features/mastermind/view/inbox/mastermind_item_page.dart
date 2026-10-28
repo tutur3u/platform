@@ -4,6 +4,7 @@ import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/components/app_badge.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
+import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/inbox_model.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
@@ -83,6 +84,66 @@ class _Gone extends StatelessWidget {
   }
 }
 
+class _Question extends StatelessWidget {
+  const _Question({required this.item});
+
+  final NeedsYou item;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = AppTokens.of(context);
+    final l10n = context.l10n;
+    return AppGroupedSection.spaced(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(AppLayout.rowHorizontalPadding),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Semantics(
+                header: true,
+                child: Text(
+                  item.title,
+                  style: tokens.typography.h4.copyWith(
+                    color: tokens.colorScheme.foreground,
+                  ),
+                ),
+              ),
+              if (item.kind != null || item.product != null) ...[
+                const SizedBox(height: AppSpacing.sm),
+                Wrap(
+                  spacing: AppSpacing.xs,
+                  runSpacing: AppSpacing.xs,
+                  children: [
+                    if (item.kind case final kind?)
+                      AppBadge(
+                        child: Text(MastermindLabels.itemKind(l10n, kind)),
+                      ),
+                    if (item.product case final product?)
+                      AppBadge.outline(
+                        child: Text(MastermindLabels.product(product)),
+                      ),
+                  ],
+                ),
+              ],
+              if (item.body.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  item.body,
+                  style: tokens.typography.base.copyWith(
+                    color: tokens.colorScheme.foreground,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _Detail extends StatelessWidget {
   const _Detail({required this.item, required this.updated});
 
@@ -113,29 +174,10 @@ class _Detail extends StatelessWidget {
               ),
             ],
           ),
-        // The title is the shell's title override above; the body repeats none.
-        AppGroupedSection.spaced(
-          children: [
-            if (item.kind != null || item.product != null)
-              AppGroupedRow(
-                title: Wrap(
-                  spacing: AppSpacing.xs,
-                  runSpacing: AppSpacing.xs,
-                  children: [
-                    if (item.kind case final kind?)
-                      AppBadge(
-                        child: Text(MastermindLabels.itemKind(l10n, kind)),
-                      ),
-                    if (item.product case final product?)
-                      AppBadge.outline(
-                        child: Text(MastermindLabels.product(product)),
-                      ),
-                  ],
-                ),
-              ),
-            if (item.body.isNotEmpty) AppGroupedRow(title: Text(item.body)),
-          ],
-        ),
+        // The shell title above truncates a long question, so the full title
+        // heads the body, and the body is plain text: a grouped row would cap
+        // it at two lines.
+        _Question(item: item),
         ItemReplySection(item: item),
       ],
     );

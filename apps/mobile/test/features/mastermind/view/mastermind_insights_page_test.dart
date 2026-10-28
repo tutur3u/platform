@@ -230,7 +230,7 @@ void main() {
             const SnapshotFetch.unavailable(SnapshotUnavailableKind.forbidden);
       await pumpInsights(tester, _usage, source: source);
       expect(
-        find.text("This account isn't allowed to view Mastermind."),
+        find.text("This account isn't allowed to view Mastermind"),
         findsOneWidget,
       );
       expect(find.text('Claude pool B'), findsNothing);
@@ -262,6 +262,8 @@ void main() {
       expect(find.text('Session: 60%'), findsOneWidget);
       expect(find.text('Weekly: 40%'), findsOneWidget);
       expect(find.byType(AppBar), findsNothing);
+      // The chart's title is in the body too, not only the shell title.
+      expect(find.textContaining(' · Budget left'), findsOneWidget);
 
       expect(router.canPop(), isTrue);
       router.pop();

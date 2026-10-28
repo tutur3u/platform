@@ -12513,10 +12513,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindDecidedBy => 'Decided by';
 
   @override
-  String get mastermindDecisionsEmpty => 'No decisions yet';
-
-  @override
-  String get mastermindDecisionsTitle => 'Decisions';
+  String get mastermindDecisionsEmpty => 'No recent decisions';
 
   @override
   String get mastermindDeploy => 'Deploy';
@@ -12549,9 +12546,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindDeploySuccess => 'success';
-
-  @override
-  String get mastermindDigestGap => 'Some earlier updates aren\'t included.';
 
   @override
   String mastermindDurationDays(int count) {
@@ -12631,7 +12625,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindForbiddenMessage => 'Ask a Mastermind owner for access.';
 
   @override
-  String get mastermindForbiddenTitle => 'This account isn\'t allowed to view Mastermind.';
+  String get mastermindForbiddenTitle => 'This account isn\'t allowed to view Mastermind';
 
   @override
   String mastermindForecastEmptyAt(String dateTime) {
@@ -12822,13 +12816,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindNoProduct => 'No product';
 
   @override
-  String get mastermindNoSnapshotTitle => 'Mastermind hasn\'t published yet.';
+  String get mastermindNoSnapshotTitle => 'Mastermind hasn\'t published yet';
 
   @override
   String get mastermindNotConfiguredMessage => 'Mastermind isn\'t connected on this build.';
-
-  @override
-  String get mastermindNotConnectedMessage => 'Mastermind data isn\'t published to this app yet.';
 
   @override
   String get mastermindNotConnectedTitle => 'Not connected';
@@ -12892,15 +12883,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindRecentEmpty => 'Nothing new.';
 
   @override
-  String get mastermindRecentTitle => 'Recent';
-
-  @override
   String get mastermindRecommended => 'Recommended';
-
-  @override
-  String mastermindRejectedInline(String time) {
-    return 'Couldn\'t read the latest snapshot. Showing $time.';
-  }
 
   @override
   String get mastermindRejectedMessage => 'It uses a format this app version doesn\'t read. Update the app.';
@@ -13165,7 +13148,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindSessionRejectedMessage => 'Try again. If it keeps happening, sign out and sign in again.';
 
   @override
-  String get mastermindSessionRejectedTitle => 'Mastermind couldn\'t verify your session.';
+  String get mastermindSessionRejectedTitle => 'Mastermind couldn\'t verify your session';
 
   @override
   String get mastermindShipCadenceTitle => 'Release cadence';
@@ -13237,9 +13220,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindShipWithheldTooltip => 'Details stay on the Mac';
-
-  @override
-  String get mastermindShowAll => 'Show all';
 
   @override
   String get mastermindSignOutAction => 'Sign out and sign in again';
@@ -13448,14 +13428,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindTabShip => 'Ship';
 
   @override
-  String get mastermindTabSoonMessage => 'This part of Mastermind arrives in an upcoming update. Home already shows what needs you.';
-
-  @override
-  String mastermindTabSoonTitle(String tab) {
-    return '$tab is coming soon';
-  }
-
-  @override
   String get mastermindTabWork => 'Work';
 
   @override
@@ -13528,7 +13500,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindUnreachableMessage => 'Retries wait a little longer after each failure.';
 
   @override
-  String get mastermindUnreachableTitle => 'Can\'t reach Mastermind.';
+  String get mastermindUnreachableTitle => 'Can\'t reach Mastermind';
 
   @override
   String mastermindUpdateAppShowing(String time) {

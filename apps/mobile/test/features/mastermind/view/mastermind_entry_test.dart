@@ -9,7 +9,6 @@ import 'package:mobile/features/mastermind/cubit/mastermind_snapshot_cubit.dart'
 import 'package:mobile/features/mastermind/data/hub_config.dart';
 import 'package:mobile/features/mastermind/data/snapshot_source_factory.dart';
 import 'package:mobile/features/mastermind/mastermind_module.dart';
-import 'package:mobile/features/mastermind/view/mastermind_placeholder_page.dart';
 
 import 'package:mobile/features/workspace/workspace_presentation.dart';
 
@@ -107,30 +106,6 @@ void main() {
         Routes.mastermind,
       );
     });
-
-    for (final tab in MastermindTab.values) {
-      testWidgets('${tab.name} placeholder has an empty state, no chrome', (
-        tester,
-      ) async {
-        final harness = MastermindViewHarness();
-        addTearDown(harness.dispose);
-        await harness.setAccess(TestAccess.enabled);
-        await tester.pumpApp(harness.wrap(MastermindPlaceholderPage(tab: tab)));
-        await tester.pumpAndSettle();
-
-        final name = switch (tab) {
-          MastermindTab.inbox => 'Inbox',
-          MastermindTab.work => 'Work',
-        };
-        expect(find.text('$name is coming soon'), findsOneWidget);
-        expect(
-          find.textContaining('Updated Feb 1, 2026 00:30 GMT+7'),
-          findsOneWidget,
-        );
-        expect(find.byType(AppBar), findsNothing);
-        expect(find.byIcon(Icons.arrow_back), findsNothing);
-      });
-    }
   });
 
   group('route gate (deep links and push taps)', () {

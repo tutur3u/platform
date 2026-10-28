@@ -5391,13 +5391,6 @@
       }
     }
   },
-  "@mastermindRejectedInline": {
-    "placeholders": {
-      "time": {
-        "type": "String"
-      }
-    }
-  },
   "@mastermindRepliesWaiting": {
     "placeholders": {
       "count": {
@@ -5627,13 +5620,6 @@
       }
     }
   },
-  "@mastermindTabSoonTitle": {
-    "placeholders": {
-      "tab": {
-        "type": "String"
-      }
-    }
-  },
   "@mastermindUnitCredits": {
     "placeholders": {
       "value": {
@@ -5811,8 +5797,7 @@
   "mastermindCoverageStale": "Stale",
   "mastermindDataSourcesAction": "Data sources",
   "mastermindDecidedBy": "Decided by",
-  "mastermindDecisionsEmpty": "No decisions yet",
-  "mastermindDecisionsTitle": "Decisions",
+  "mastermindDecisionsEmpty": "No recent decisions",
   "mastermindDeploy": "Deploy",
   "mastermindDeployCiLine": "Deploy {deploy} · CI {ci}",
   "mastermindDeployError": "error",
@@ -5823,7 +5808,6 @@
   "mastermindDeployPending": "pending",
   "mastermindDeployQueued": "queued",
   "mastermindDeploySuccess": "success",
-  "mastermindDigestGap": "Some earlier updates aren't included.",
   "mastermindDurationDays": "{count} d",
   "mastermindDurationHours": "{count} h",
   "mastermindDurationMinutes": "{count} min",
@@ -5847,7 +5831,7 @@
   "mastermindFilterWaiting": "Waiting",
   "mastermindFloor": "Floor {value}",
   "mastermindForbiddenMessage": "Ask a Mastermind owner for access.",
-  "mastermindForbiddenTitle": "This account isn't allowed to view Mastermind.",
+  "mastermindForbiddenTitle": "This account isn't allowed to view Mastermind",
   "mastermindForecastEmptyAt": "Projected empty {dateTime}",
   "mastermindForecastNone": "Not projected to run out before reset",
   "mastermindFreshCached": "cached",
@@ -5902,9 +5886,8 @@
   "mastermindNeedsYouTitle": "Needs you",
   "mastermindNoDataInPeriod": "No data in this period",
   "mastermindNoProduct": "No product",
-  "mastermindNoSnapshotTitle": "Mastermind hasn't published yet.",
+  "mastermindNoSnapshotTitle": "Mastermind hasn't published yet",
   "mastermindNotConfiguredMessage": "Mastermind isn't connected on this build.",
-  "mastermindNotConnectedMessage": "Mastermind data isn't published to this app yet.",
   "mastermindNotConnectedTitle": "Not connected",
   "mastermindNotReversible": "Not reversible",
   "mastermindNothingNeedsReply": "Nothing needs a reply",
@@ -5924,9 +5907,7 @@
   "mastermindReceiptRecorded": "Receipt recorded",
   "mastermindRecentDecisionsTitle": "Recent decisions",
   "mastermindRecentEmpty": "Nothing new.",
-  "mastermindRecentTitle": "Recent",
   "mastermindRecommended": "Recommended",
-  "mastermindRejectedInline": "Couldn't read the latest snapshot. Showing {time}.",
   "mastermindRejectedMessage": "It uses a format this app version doesn't read. Update the app.",
   "mastermindRejectedOtherMessage": "The latest update couldn't be read.",
   "mastermindRejectedTitle": "This snapshot can't be shown",
@@ -6001,7 +5982,7 @@
   "mastermindSession": "Session",
   "mastermindSessionLeft": "Session {value} left",
   "mastermindSessionRejectedMessage": "Try again. If it keeps happening, sign out and sign in again.",
-  "mastermindSessionRejectedTitle": "Mastermind couldn't verify your session.",
+  "mastermindSessionRejectedTitle": "Mastermind couldn't verify your session",
   "mastermindShipCadenceTitle": "Release cadence",
   "mastermindShipChecked": "Checked {dateTime}",
   "mastermindShipCiBadge": "CI {status}",
@@ -6021,7 +6002,6 @@
   "mastermindShipShaCopied": "Commit id copied",
   "mastermindShipWithheld": "Withheld, open on Mac",
   "mastermindShipWithheldTooltip": "Details stay on the Mac",
-  "mastermindShowAll": "Show all",
   "mastermindSignOutAction": "Sign out and sign in again",
   "mastermindSignOutConfirmAction": "Sign out",
   "mastermindSignOutConfirmMessage": "This signs you out of Tuturuuu on this device, including every saved account. You'll need to sign in again.",
@@ -6080,8 +6060,6 @@
   "mastermindTabInbox": "Inbox",
   "mastermindTabInsights": "Insights",
   "mastermindTabShip": "Ship",
-  "mastermindTabSoonMessage": "This part of Mastermind arrives in an upcoming update. Home already shows what needs you.",
-  "mastermindTabSoonTitle": "{tab} is coming soon",
   "mastermindTabWork": "Work",
   "mastermindTableLink": "Table",
   "mastermindTentative": "tentative",
@@ -6100,7 +6078,7 @@
   "mastermindUnitTokens": "{value} tokens",
   "mastermindUnknown": "Unknown",
   "mastermindUnreachableMessage": "Retries wait a little longer after each failure.",
-  "mastermindUnreachableTitle": "Can't reach Mastermind.",
+  "mastermindUnreachableTitle": "Can't reach Mastermind",
   "mastermindUpdateAppShowing": "Update the app to read the latest Mastermind data · showing {time}",
   "mastermindUpdatedAt": "Updated {time}",
   "mastermindUsageBudgetLeft": "Budget left",

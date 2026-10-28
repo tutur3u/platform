@@ -4,6 +4,7 @@ import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/charts/charts.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
+import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/features/mastermind/presentation/usage_charts.dart';
 import 'package:mobile/features/mastermind/presentation/usage_model.dart';
 import 'package:mobile/features/mastermind/view/insights/usage_chart_panel.dart';
@@ -30,6 +31,7 @@ class MastermindChartTablePage extends StatelessWidget {
   Widget build(BuildContext context) => MastermindSection(
     builder: (context, ready, freshness) {
       final l10n = context.l10n;
+      final tokens = AppTokens.of(context);
       final spec = section == usageSection
           ? usageChartSpec(
               l10n,
@@ -68,6 +70,20 @@ class MastermindChartTablePage extends StatelessWidget {
                     },
                     title: '${spec.label} · ${spec.title}',
                     showLeadingBrand: false,
+                  ),
+                  // The shell title truncates, so the full chart title heads
+                  // the body too.
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                    child: Semantics(
+                      header: true,
+                      child: Text(
+                        '${spec.label} · ${spec.title}',
+                        style: tokens.typography.h4.copyWith(
+                          color: tokens.colorScheme.foreground,
+                        ),
+                      ),
+                    ),
                   ),
                   Padding(
                     padding: const EdgeInsets.only(bottom: AppSpacing.md),

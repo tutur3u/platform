@@ -55,7 +55,6 @@ class HomeLanesCard extends StatelessWidget {
 
   static IconData _icon(LaneState state, int count) => switch (state) {
     LaneState.failed when count > 0 => AppIcons.warning,
-    LaneState.failed => LucideIcons.circleX,
     LaneState.running => LucideIcons.play,
     LaneState.waiting => LucideIcons.hourglass,
     _ => LucideIcons.list,

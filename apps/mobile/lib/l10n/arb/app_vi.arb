@@ -5220,13 +5220,6 @@
       }
     }
   },
-  "@mastermindRejectedInline": {
-    "placeholders": {
-      "time": {
-        "type": "String"
-      }
-    }
-  },
   "@mastermindRepliesWaiting": {
     "placeholders": {
       "count": {
@@ -5407,13 +5400,6 @@
       }
     }
   },
-  "@mastermindTabSoonTitle": {
-    "placeholders": {
-      "tab": {
-        "type": "String"
-      }
-    }
-  },
   "@mastermindUnitCredits": {
     "placeholders": {
       "value": {
@@ -5548,7 +5534,7 @@
   "mastermindChartModelRuns": "Lượt chạy theo mô hình",
   "mastermindChartModelSuccess": "Thành công và làm lại",
   "mastermindChartOpenPrs": "Pull request đang mở",
-  "mastermindChartPendingRuns": "Lượt chạy chờ",
+  "mastermindChartPendingRuns": "Lượt chạy chờ xử lý",
   "mastermindChartProjection": "Dự báo khi đặt lại",
   "mastermindChartQueueDepth": "Độ sâu hàng đợi",
   "mastermindChartSessionPerSuccess": "Mức dùng phiên mỗi lần thành công",
@@ -5584,8 +5570,7 @@
   "mastermindCoverageStale": "Đã cũ",
   "mastermindDataSourcesAction": "Nguồn dữ liệu",
   "mastermindDecidedBy": "Người quyết định",
-  "mastermindDecisionsEmpty": "Chưa có quyết định nào",
-  "mastermindDecisionsTitle": "Quyết định",
+  "mastermindDecisionsEmpty": "Không có quyết định gần đây",
   "mastermindDeploy": "Triển khai",
   "mastermindDeployCiLine": "Triển khai {deploy} · CI {ci}",
   "mastermindDeployError": "lỗi",
@@ -5593,10 +5578,9 @@
   "mastermindDeployFailure": "thất bại",
   "mastermindDeployInProgress": "đang chạy",
   "mastermindDeployInactive": "không hoạt động",
-  "mastermindDeployPending": "đang chờ",
+  "mastermindDeployPending": "chờ xử lý",
   "mastermindDeployQueued": "trong hàng đợi",
   "mastermindDeploySuccess": "thành công",
-  "mastermindDigestGap": "Một số cập nhật trước đó không có ở đây.",
   "mastermindDurationDays": "{count} ngày",
   "mastermindDurationHours": "{count} giờ",
   "mastermindDurationMinutes": "{count} phút",
@@ -5620,7 +5604,7 @@
   "mastermindFilterWaiting": "Đang chờ",
   "mastermindFloor": "Ngưỡng {value}",
   "mastermindForbiddenMessage": "Hãy nhờ chủ sở hữu Mastermind cấp quyền truy cập.",
-  "mastermindForbiddenTitle": "Tài khoản này không được phép xem Mastermind.",
+  "mastermindForbiddenTitle": "Tài khoản này không được phép xem Mastermind",
   "mastermindForecastEmptyAt": "Dự kiến hết lúc {dateTime}",
   "mastermindForecastNone": "Không dự kiến hết trước khi đặt lại",
   "mastermindFreshCached": "từ bộ đệm",
@@ -5630,7 +5614,7 @@
   "mastermindGroupFyi": "Để bạn nắm thông tin",
   "mastermindInboxNoMatches": "Không có mục phù hợp",
   "mastermindInboxSearchPlaceholder": "Tìm trong Cần bạn",
-  "mastermindInsightsLabel": "Chỉ số",
+  "mastermindInsightsLabel": "Phân tích",
   "mastermindItemAnsweredTitle": "Mục này đã được trả lời hoặc rút lại",
   "mastermindItemGoneTitle": "Mục này không còn trong Mastermind",
   "mastermindItemUpdated": "Câu hỏi này đã được cập nhật",
@@ -5665,7 +5649,7 @@
   "mastermindLaneUpdated": "Luồng việc này đã được cập nhật",
   "mastermindLastPublished": "Mastermind cập nhật lần cuối {age} · {time}",
   "mastermindLess": "Thu gọn",
-  "mastermindLiveAgo": "Đang hoạt động {age}",
+  "mastermindLiveAgo": "Lên production {age}",
   "mastermindLiveFor": "đã chạy {duration}",
   "mastermindMeasuredRuns": "{count, plural, other{{count} lượt chạy có đo}}",
   "mastermindMore": "Xem thêm",
@@ -5675,9 +5659,8 @@
   "mastermindNeedsYouTitle": "Cần bạn",
   "mastermindNoDataInPeriod": "Không có dữ liệu trong khoảng này",
   "mastermindNoProduct": "Không có sản phẩm",
-  "mastermindNoSnapshotTitle": "Mastermind chưa phát hành dữ liệu nào.",
+  "mastermindNoSnapshotTitle": "Mastermind chưa phát hành dữ liệu nào",
   "mastermindNotConfiguredMessage": "Bản dựng này chưa kết nối Mastermind.",
-  "mastermindNotConnectedMessage": "Dữ liệu Mastermind chưa được xuất bản cho ứng dụng này.",
   "mastermindNotConnectedTitle": "Chưa kết nối",
   "mastermindNotReversible": "Không thể hoàn tác",
   "mastermindNothingNeedsReply": "Không có gì cần trả lời",
@@ -5697,9 +5680,7 @@
   "mastermindReceiptRecorded": "Đã ghi nhận biên nhận",
   "mastermindRecentDecisionsTitle": "Quyết định gần đây",
   "mastermindRecentEmpty": "Không có gì mới.",
-  "mastermindRecentTitle": "Gần đây",
   "mastermindRecommended": "Đề xuất",
-  "mastermindRejectedInline": "Không đọc được ảnh chụp mới nhất. Đang hiển thị bản lúc {time}.",
   "mastermindRejectedMessage": "Ảnh chụp dùng định dạng mà phiên bản ứng dụng này không đọc được. Hãy cập nhật ứng dụng.",
   "mastermindRejectedOtherMessage": "Không đọc được bản cập nhật mới nhất.",
   "mastermindRejectedTitle": "Không thể hiển thị ảnh chụp này",
@@ -5746,7 +5727,7 @@
   "mastermindScopeDelivery": "Phân phối",
   "mastermindScopeFleet": "Đội ngũ",
   "mastermindScopeModels": "Mô hình",
-  "mastermindScopeUsage": "Sử dụng",
+  "mastermindScopeUsage": "Mức sử dụng",
   "mastermindSecurityFix": "Bản vá bảo mật",
   "mastermindSecurityGroup": "Bảo mật",
   "mastermindSecurityIssue": "Vấn đề bảo mật",
@@ -5774,12 +5755,12 @@
   "mastermindSession": "Phiên",
   "mastermindSessionLeft": "Phiên còn {value}",
   "mastermindSessionRejectedMessage": "Hãy thử lại. Nếu vẫn lỗi, hãy đăng xuất rồi đăng nhập lại.",
-  "mastermindSessionRejectedTitle": "Mastermind không xác minh được phiên của bạn.",
+  "mastermindSessionRejectedTitle": "Mastermind không xác minh được phiên của bạn",
   "mastermindShipCadenceTitle": "Nhịp phát hành",
   "mastermindShipChecked": "Kiểm tra lúc {dateTime}",
   "mastermindShipCiBadge": "CI {status}",
   "mastermindShipCiNow": "CI hiện tại",
-  "mastermindShipCiQueued": "Đang chờ {value}",
+  "mastermindShipCiQueued": "Trong hàng đợi {value}",
   "mastermindShipCiRunning": "Đang chạy {value}",
   "mastermindShipCopySha": "Sao chép mã commit",
   "mastermindShipDeployBadge": "Triển khai {status}",
@@ -5794,7 +5775,6 @@
   "mastermindShipShaCopied": "Đã sao chép mã commit",
   "mastermindShipWithheld": "Đã ẩn, xem trên máy Mac",
   "mastermindShipWithheldTooltip": "Chi tiết chỉ có trên máy Mac",
-  "mastermindShowAll": "Xem tất cả",
   "mastermindSignOutAction": "Đăng xuất và đăng nhập lại",
   "mastermindSignOutConfirmAction": "Đăng xuất",
   "mastermindSignOutConfirmMessage": "Thao tác này đăng xuất bạn khỏi Tuturuuu trên thiết bị này, gồm mọi tài khoản đã lưu. Bạn sẽ cần đăng nhập lại.",
@@ -5828,7 +5808,7 @@
   "mastermindStateFailed": "thất bại",
   "mastermindStateIdle": "nhàn rỗi",
   "mastermindStateOpen": "đang mở",
-  "mastermindStateQueued": "đang chờ hàng đợi",
+  "mastermindStateQueued": "trong hàng đợi",
   "mastermindStateRunning": "đang chạy",
   "mastermindStateStale": "đã cũ",
   "mastermindStateUnknown": "không rõ",
@@ -5853,8 +5833,6 @@
   "mastermindTabInbox": "Hộp thư",
   "mastermindTabInsights": "Phân tích",
   "mastermindTabShip": "Phát hành",
-  "mastermindTabSoonMessage": "Phần này của Mastermind sẽ có trong bản cập nhật sắp tới. Tổng quan đã cho thấy việc cần bạn.",
-  "mastermindTabSoonTitle": "{tab} sắp ra mắt",
   "mastermindTabWork": "Công việc",
   "mastermindTableLink": "Bảng",
   "mastermindTentative": "tạm tính",
@@ -5873,7 +5851,7 @@
   "mastermindUnitTokens": "{value} token",
   "mastermindUnknown": "Không rõ",
   "mastermindUnreachableMessage": "Mỗi lần thất bại, thời gian chờ thử lại sẽ dài hơn.",
-  "mastermindUnreachableTitle": "Không thể kết nối Mastermind.",
+  "mastermindUnreachableTitle": "Không thể kết nối Mastermind",
   "mastermindUpdateAppShowing": "Hãy cập nhật ứng dụng để đọc dữ liệu Mastermind mới nhất · đang hiển thị {time}",
   "mastermindUpdatedAt": "Cập nhật {time}",
   "mastermindUsageBudgetLeft": "Hạn mức còn lại",
