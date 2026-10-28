@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(22);
+select plan(40);
 
 -- Fixtures: a creator-owned workspace, an admin member, two invitees, a
 -- billing role holding manage_subscription and an ordinary staff role.
@@ -218,6 +218,21 @@ select is(
   true,
   'the billing role is detected as a creator-grant role'
 );
+
+-- 5. Privileged helpers are not callable by client roles or PUBLIC.
+select ok(
+  not has_function_privilege(r.grantee, f.sig::regprocedure, 'EXECUTE'),
+  r.grantee || ' cannot execute ' || f.sig
+)
+from (values
+  ('private.create_workspace_email_invitation_with_roles(uuid,text,uuid,public.workspace_member_type,uuid[])'),
+  ('private.create_inventory_pos_operator_invite(uuid,uuid,text)'),
+  ('private.finalize_workspace_invitation_membership_v2(uuid,uuid,public.workspace_member_type,uuid[])'),
+  ('private.finalize_workspace_invitation_membership(uuid,uuid,public.workspace_member_type,uuid)'),
+  ('private.set_workspace_invitation_roles(uuid,uuid[],uuid,text,uuid)'),
+  ('private.workspace_role_has_creator_grant(uuid)')
+) as f(sig)
+cross join (values ('anon'), ('authenticated'), ('public')) as r(grantee);
 
 select * from finish();
 rollback;
