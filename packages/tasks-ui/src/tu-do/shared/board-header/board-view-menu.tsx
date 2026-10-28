@@ -85,11 +85,13 @@ export function BoardViewMenu({
         <ToneButton
           active={activeView !== 'kanban'}
           aria-label={`${t('common.view')}: ${copy[activeView].label}`}
-          tone="purple"
+          tone="neutral"
         >
           <ActiveIcon />
-          {copy[activeView].label}
-          <ChevronDown className="opacity-60" />
+          <span className="@lg/board-header:inline hidden">
+            {copy[activeView].label}
+          </span>
+          <ChevronDown className="@sm/board-header:block hidden opacity-60" />
         </ToneButton>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-72">

@@ -12,16 +12,28 @@ and no explicit sort. Saved board view, people, project and priority-sort choice
 can restore on return; search is not saved. Removed label, priority-value, date,
 estimate and source filters do not restore from saved settings or another viewer.
 
-## Two rows
+## Three rows
 
-The first row contains the board breadcrumb/picker, search, Share, New task and
-More, in that order. Presence avatars sit before search when collaboration is
-available. Searching from Timeline switches to List so results can be shown.
+The first row has the board breadcrumb/picker (and the sprint, when the board
+has sprints) on the left; presence avatars, Share, New task and More on the
+right.
 
-The second row contains people pills, Project and Focus on the left, then Clear
-when filters are active, priority Sort and View on the right. View offers the
-views available on that surface: Kanban, List, Timeline, My Tasks, Drafts and
-Recycle bin. Controls wrap on smaller screens while keeping their order.
+The second row has Plan | Board (sprint boards only) and search on the left,
+then priority Sort and View on the right. Searching from Timeline switches to
+List so results can be shown. View offers the views available on that surface:
+Kanban, List, Timeline, My Tasks, Drafts and Recycle bin.
+
+The third row has the people pills, Project and Focus, then Clear when filters
+are active.
+
+The rows never wrap, so nothing moves up or down as the header narrows (for
+example when the side panel opens or is resized). Lower-priority parts hide or
+drop to icons instead, in this order: sprint dates, presence, the Share, Sort
+and View labels, the Project and Focus labels, people names (the avatar stays,
+with the name on hover), every person after the first two (moved into the
+"+N" menu), the Plan, Board and sprint-progress text, dropdown chevrons, and
+last the New task label. Every control keeps its accessible name when its label
+hides.
 
 ## People and projects
 
@@ -57,18 +69,18 @@ Sort offers only highest priority first, lowest priority first, and clearing the
 sort to return to the board's normal order. It does not offer due-date, name,
 creation-date or estimate sorting.
 
-## More and button tones
+## More and button styles
 
 More contains Choose tasks, Board settings, Refresh, Hide sidebar, Create board
 and the personal Planner, when each action is available. Board settings uses the
 existing contextual settings dialog. Hide sidebar appears only when the sidebar
 is available and visible. Planner appears only on personal Kanban boards.
 
-Tone buttons use blue for filters and Focus, purple for Sort and View, and cyan
-for Share. Changed controls fill with their tone: a selected project, active
-Focus, explicit priority sort or a view other than the default Kanban. Idle
-controls retain a light tint and border. People pills highlight selected people
-and dim unselected people while a selection is active.
+Share, Project, Focus, Sort and View are the neutral outline buttons the board
+header has always used. A control that is not on its default (a selected
+project, active Focus, an explicit priority sort or a view other than Kanban)
+gets the primary tint, as Smart Focus did before. People pills highlight
+selected people and dim unselected people while a selection is active.
 
 ## Exceptions
 

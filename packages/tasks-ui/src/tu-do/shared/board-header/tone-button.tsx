@@ -2,13 +2,24 @@ import { cn } from '@tuturuuu/utils/format';
 import { type ComponentProps, forwardRef } from 'react';
 
 /**
- * Toolbar color groups: blue filters, purple view and sort, cyan sharing,
- * orange selection, green sprint actions. A button fills when it is not on its
- * default, so a changed view reads at a glance.
+ * Neutral is the board toolbar: outline controls, tinted when not on their
+ * default, as the board header always drew them. Colors mark sprint actions
+ * and summary figures. A colored button fills when it is not on its default.
  */
-export type ToolbarTone = 'blue' | 'purple' | 'cyan' | 'orange' | 'green';
+export type ToolbarTone =
+  | 'neutral'
+  | 'blue'
+  | 'purple'
+  | 'cyan'
+  | 'orange'
+  | 'green';
 
 const TONE_CLASSES: Record<ToolbarTone, { idle: string; active: string }> = {
+  neutral: {
+    idle: 'border-input bg-background text-foreground hover:bg-accent',
+    active:
+      'border-primary/50 bg-primary/5 text-foreground hover:bg-primary/10',
+  },
   blue: {
     idle: 'border-dynamic-blue/30 bg-dynamic-blue/5 text-dynamic-blue hover:bg-dynamic-blue/15',
     active:

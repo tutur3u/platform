@@ -41,7 +41,7 @@ export function BoardSearchInput({
   }, [localQuery]);
 
   return (
-    <div className="relative min-w-36 flex-1 basis-60 sm:max-w-60">
+    <div className="relative min-w-20 flex-1 basis-60 sm:max-w-60">
       {isSearching ? (
         <Loader2 className="pointer-events-none absolute top-1/2 left-2 size-4 -translate-y-1/2 animate-spin text-muted-foreground" />
       ) : (
