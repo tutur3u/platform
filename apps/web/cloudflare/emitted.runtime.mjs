@@ -374,18 +374,18 @@ test(description, { timeout: 30000 }, async (t) => {
             assert.equal(head.status, 200);
             assert.equal(await head.text(), '');
             const fallback = await securityRollback.dispatchFetch(
-              base + path + '?keep=%2f',
+              `${base}${path}?keep=%2f`,
               { headers }
             );
             assert.equal(
               fallback.headers.get('x-tuturuuu-web-renderer'),
               'Next-fallback'
             );
-            assert.equal(egress.at(-1), upstream + path + '?keep=%2f');
+            assert.equal(egress.at(-1), `${upstream}${path}?keep=%2f`);
           }
         }
       }
-      const legal = await securityRollback.dispatchFetch(base + '/privacy', {
+      const legal = await securityRollback.dispatchFetch(`${base}/privacy`, {
         headers,
       });
       assert.equal(
@@ -395,7 +395,7 @@ test(description, { timeout: 30000 }, async (t) => {
       const before = egress.length;
       for (const path of ['/security/policy', '/vi/security/bug-bounty']) {
         const rejected = await securityOnly.dispatchFetch(
-          'https://tuturuuu.com' + path,
+          `https://tuturuuu.com${path}`,
           { headers }
         );
         assert.equal(rejected.status, 503);

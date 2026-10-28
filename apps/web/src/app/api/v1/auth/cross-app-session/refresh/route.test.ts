@@ -81,6 +81,7 @@ describe('cross-app app-session refresh route', () => {
     });
     vi.mocked(getUpstashRestRedisClient).mockResolvedValue({
       del: vi.fn(),
+      eval: vi.fn(),
       decr: vi.fn(),
       expire: vi.fn(),
       get: vi.fn().mockResolvedValue(null),
