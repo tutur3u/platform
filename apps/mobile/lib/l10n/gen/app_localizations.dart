@@ -24211,6 +24211,18 @@ abstract class AppLocalizations {
   /// **'Less'**
   String get mastermindLess;
 
+  /// No description provided for @mastermindListShowAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Show all {count}'**
+  String mastermindListShowAll(int count);
+
+  /// No description provided for @mastermindListShowFewer.
+  ///
+  /// In en, this message translates to:
+  /// **'Show fewer'**
+  String get mastermindListShowFewer;
+
   /// No description provided for @mastermindLiveAgo.
   ///
   /// In en, this message translates to:
@@ -24883,6 +24895,12 @@ abstract class AppLocalizations {
   /// **'Mastermind couldn\'t verify your session'**
   String get mastermindSessionRejectedTitle;
 
+  /// No description provided for @mastermindShipAllProducts.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get mastermindShipAllProducts;
+
   /// No description provided for @mastermindShipCadenceTitle.
   ///
   /// In en, this message translates to:
@@ -24894,6 +24912,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Checked {dateTime}'**
   String mastermindShipChecked(String dateTime);
+
+  /// No description provided for @mastermindShipCheckedAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked {age}'**
+  String mastermindShipCheckedAgo(String age);
 
   /// No description provided for @mastermindShipCiBadge.
   ///
@@ -24937,11 +24961,23 @@ abstract class AppLocalizations {
   /// **'No releases reported'**
   String get mastermindShipEmpty;
 
+  /// No description provided for @mastermindShipFailing.
+  ///
+  /// In en, this message translates to:
+  /// **'Failing'**
+  String get mastermindShipFailing;
+
   /// No description provided for @mastermindShipNoCadence.
   ///
   /// In en, this message translates to:
   /// **'No release cadence reported'**
   String get mastermindShipNoCadence;
+
+  /// No description provided for @mastermindShipNoDeployments.
+  ///
+  /// In en, this message translates to:
+  /// **'No deployments observed'**
+  String get mastermindShipNoDeployments;
 
   /// No description provided for @mastermindShipNoEnvironments.
   ///
@@ -24979,11 +25015,23 @@ abstract class AppLocalizations {
   /// **'Released {dateTime}'**
   String mastermindShipReleased(String dateTime);
 
+  /// No description provided for @mastermindShipReleasedAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'Released {age}'**
+  String mastermindShipReleasedAgo(String age);
+
   /// No description provided for @mastermindShipShaCopied.
   ///
   /// In en, this message translates to:
   /// **'Commit id copied'**
   String get mastermindShipShaCopied;
+
+  /// No description provided for @mastermindShipUntracked.
+  ///
+  /// In en, this message translates to:
+  /// **'Not tracked yet'**
+  String get mastermindShipUntracked;
 
   /// No description provided for @mastermindShipWithheld.
   ///
@@ -25477,6 +25525,12 @@ abstract class AppLocalizations {
   /// **'Budget left'**
   String get mastermindUsageBudgetLeft;
 
+  /// No description provided for @mastermindUsageBurnNotMeasured.
+  ///
+  /// In en, this message translates to:
+  /// **'Burn not measured yet'**
+  String get mastermindUsageBurnNotMeasured;
+
   /// No description provided for @mastermindUsageCreditsTitle.
   ///
   /// In en, this message translates to:
@@ -25507,11 +25561,53 @@ abstract class AppLocalizations {
   /// **'Pacing'**
   String get mastermindUsagePacing;
 
+  /// No description provided for @mastermindUsageSessionLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Session left'**
+  String get mastermindUsageSessionLeft;
+
+  /// No description provided for @mastermindUsageTableFor.
+  ///
+  /// In en, this message translates to:
+  /// **'{chart} table'**
+  String mastermindUsageTableFor(String chart);
+
   /// No description provided for @mastermindUsageTargetUnavailable.
   ///
   /// In en, this message translates to:
   /// **'Target unavailable'**
   String get mastermindUsageTargetUnavailable;
+
+  /// No description provided for @mastermindUsageVerdictNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No pacing data'**
+  String get mastermindUsageVerdictNone;
+
+  /// No description provided for @mastermindUsageVerdictOk.
+  ///
+  /// In en, this message translates to:
+  /// **'On pace'**
+  String get mastermindUsageVerdictOk;
+
+  /// No description provided for @mastermindUsageVerdictShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Running short'**
+  String get mastermindUsageVerdictShort;
+
+  /// No description provided for @mastermindUsageVerdictSurplus.
+  ///
+  /// In en, this message translates to:
+  /// **'Surplus'**
+  String get mastermindUsageVerdictSurplus;
+
+  /// No description provided for @mastermindUsageWeeklyLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly left'**
+  String get mastermindUsageWeeklyLeft;
 
   /// No description provided for @mastermindVersion.
   ///

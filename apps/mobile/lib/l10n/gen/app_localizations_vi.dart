@@ -12687,6 +12687,14 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindLess => 'Thu gọn';
 
   @override
+  String mastermindListShowAll(int count) {
+    return 'Xem tất cả $count';
+  }
+
+  @override
+  String get mastermindListShowFewer => 'Thu gọn';
+
+  @override
   String mastermindLiveAgo(String age) {
     return 'Lên production $age';
   }
@@ -13079,11 +13087,19 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindSessionRejectedTitle => 'Mastermind không xác minh được phiên của bạn';
 
   @override
+  String get mastermindShipAllProducts => 'Tất cả';
+
+  @override
   String get mastermindShipCadenceTitle => 'Nhịp phát hành';
 
   @override
   String mastermindShipChecked(String dateTime) {
     return 'Kiểm tra lúc $dateTime';
+  }
+
+  @override
+  String mastermindShipCheckedAgo(String age) {
+    return 'Kiểm tra $age';
   }
 
   @override
@@ -13116,7 +13132,13 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindShipEmpty => 'Chưa có bản phát hành nào';
 
   @override
+  String get mastermindShipFailing => 'Đang lỗi';
+
+  @override
   String get mastermindShipNoCadence => 'Chưa có nhịp phát hành nào được báo cáo';
+
+  @override
+  String get mastermindShipNoDeployments => 'Chưa ghi nhận lần triển khai nào';
 
   @override
   String get mastermindShipNoEnvironments => 'Chưa có môi trường nào được báo cáo.';
@@ -13141,7 +13163,15 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String mastermindShipReleasedAgo(String age) {
+    return 'Phát hành $age';
+  }
+
+  @override
   String get mastermindShipShaCopied => 'Đã sao chép mã commit';
+
+  @override
+  String get mastermindShipUntracked => 'Chưa theo dõi';
 
   @override
   String get mastermindShipWithheld => 'Đã ẩn, xem trên máy Mac';
@@ -13442,6 +13472,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindUsageBudgetLeft => 'Hạn mức còn lại';
 
   @override
+  String get mastermindUsageBurnNotMeasured => 'Chưa đo được tốc độ tiêu hao';
+
+  @override
   String get mastermindUsageCreditsTitle => 'Tín dụng Codex';
 
   @override
@@ -13457,7 +13490,30 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindUsagePacing => 'Nhịp sử dụng';
 
   @override
+  String get mastermindUsageSessionLeft => 'Phiên còn lại';
+
+  @override
+  String mastermindUsageTableFor(String chart) {
+    return 'Bảng $chart';
+  }
+
+  @override
   String get mastermindUsageTargetUnavailable => 'Chưa có mục tiêu';
+
+  @override
+  String get mastermindUsageVerdictNone => 'Chưa có dữ liệu nhịp';
+
+  @override
+  String get mastermindUsageVerdictOk => 'Đúng nhịp';
+
+  @override
+  String get mastermindUsageVerdictShort => 'Sắp thiếu';
+
+  @override
+  String get mastermindUsageVerdictSurplus => 'Dư';
+
+  @override
+  String get mastermindUsageWeeklyLeft => 'Tuần còn lại';
 
   @override
   String get mastermindVersion => 'Phiên bản';

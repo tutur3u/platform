@@ -7,10 +7,13 @@ import 'package:mobile/features/mastermind/view/mastermind_section.dart';
 import 'package:mobile/features/mastermind/view/ship/ship_ci_cadence_sections.dart';
 import 'package:mobile/features/mastermind/view/ship/ship_delivery_section.dart';
 import 'package:mobile/features/mastermind/view/ship/ship_product_group.dart';
+import 'package:mobile/features/mastermind/view/ship/ship_untracked_row.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-/// `/mastermind/ship`: environments by product (failing ones first), CI now,
-/// release cadence, and pull requests and merges. Read-only.
+/// `/mastermind/ship`: environments by product (failing ones first, then the
+/// most recent release), one "Not tracked yet" row for products with nothing
+/// observed, CI now, release cadence, and pull requests and merges.
+/// Read-only.
 ///
 /// [initialProduct] is the `?product=` the location carries (a Home row links
 /// with it). The chips change it, and [onProduct] reports each change so the
@@ -65,10 +68,10 @@ class _MastermindShipPageState extends State<MastermindShipPage> {
       final snapshot = ready.snapshot;
       var product = _product;
       var model = MastermindShipModel.from(snapshot, product: product);
-      // The chips only exist while there is a choice: a filter whose chip is
-      // gone could never be cleared and would strand the list. This frame
-      // shows the unfiltered list; the state and the URL that still name it
-      // are cleared after the frame, not during it.
+      // The filter bar only exists while there is a choice: a filter whose
+      // pill is gone could never be cleared and would strand the list. This
+      // frame shows the unfiltered list; the state and the URL that still
+      // name it are cleared after the frame, not during it.
       if (product != null &&
           (model.products.length < 2 || !model.products.contains(product))) {
         product = null;
@@ -87,10 +90,11 @@ class _MastermindShipPageState extends State<MastermindShipPage> {
               if (model.products.length > 1)
                 ShipProductFilter(
                   products: model.products,
+                  failing: model.failing,
                   selected: product,
                   onSelected: _select,
                 ),
-              if (!model.hasEnvironments && model.groups.isEmpty)
+              if (model.groups.isEmpty && model.untracked.isEmpty)
                 AppGroupedSection.spaced(
                   caption: context.l10n.mastermindEnvironmentsTitle,
                   children: [
@@ -100,7 +104,12 @@ class _MastermindShipPageState extends State<MastermindShipPage> {
                   ],
                 ),
               for (final group in model.groups)
-                ShipProductGroupSection(group: group),
+                ShipProductGroupSection(
+                  group: group,
+                  asOf: snapshot.generatedAt,
+                ),
+              if (model.untracked.isNotEmpty)
+                ShipUntrackedRow(groups: model.untracked),
               ShipCiSection(ci: model.ci),
               ShipCadenceSection(
                 cadence: model.cadence,

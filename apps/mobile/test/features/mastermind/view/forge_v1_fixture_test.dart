@@ -140,6 +140,10 @@ void main() {
         case 'Work':
           expect(find.text('[Atlas] Mastermind'), findsOneWidget);
         case 'Ship':
+          // Nothing observed yet: one row, the reasons one tap away.
+          expect(find.text('Not tracked yet'), findsOneWidget);
+          await tester.tap(find.text('Not tracked yet'));
+          await tester.pumpAndSettle();
           expect(find.textContaining('Not connected'), findsWidgets);
         case 'Insights':
           expect(find.textContaining('Not connected'), findsWidgets);

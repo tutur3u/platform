@@ -12,10 +12,11 @@ import 'package:mobile/features/mastermind/view/mastermind_freshness_strip.dart'
 import 'package:mobile/features/mastermind/view/mastermind_section.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-/// `/mastermind/insights`: usage and quota. Each pool keeps its own budget and
-/// chart, the Codex pools add their credits, and the quota table and forecasts
-/// close the page. Read-only. The other Insights sections arrive later and
-/// share the chart Table route this page already uses.
+/// `/mastermind/insights`: usage and quota. Each pool keeps its own verdict,
+/// budget meters and chart (the reserve pacing note sits behind the verdict's
+/// info button), the Codex pools add their credits, and the quota table and
+/// forecasts close the page. Read-only. The other Insights sections arrive
+/// later and share the chart Table route this page already uses.
 class MastermindInsightsPage extends StatelessWidget {
   const MastermindInsightsPage({super.key});
 
@@ -86,7 +87,6 @@ class MastermindInsightsPage extends StatelessWidget {
                   ),
                 UsageQuotaSection(quotas: model.quotas),
                 UsageForecastsSection(forecasts: model.forecasts),
-                const _ReservePacingNote(),
               ],
             ],
           ),
@@ -94,25 +94,4 @@ class MastermindInsightsPage extends StatelessWidget {
       );
     },
   );
-}
-
-/// Pacing is the chart's reserve check, not the routing decision.
-class _ReservePacingNote extends StatelessWidget {
-  const _ReservePacingNote();
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final style = Theme.of(context).textTheme.bodySmall;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppLayout.sectionGap),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(l10n.mastermindReservePacing, style: style),
-          Text(l10n.mastermindReservePacingInfo, style: style),
-        ],
-      ),
-    );
-  }
 }
