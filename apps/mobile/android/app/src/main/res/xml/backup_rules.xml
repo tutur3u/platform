@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android 11 and older (`allowBackup="false"` already opts out; kept explicit
+  for tools that read this file). Android 12+ ignores it and uses
+  data_extraction_rules.xml.
+-->
+<full-backup-content>
+    <exclude domain="sharedpref" path="." />
+    <exclude domain="database" path="." />
+    <exclude domain="file" path="." />
+    <exclude domain="root" path="." />
+    <exclude domain="external" path="." />
+    <exclude domain="sharedpref" path="FlutterSecureStorage.xml" />
+</full-backup-content>
