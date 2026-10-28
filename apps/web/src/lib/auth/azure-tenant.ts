@@ -18,9 +18,11 @@ export function isAzureSessionTenantAllowed(
 ): boolean {
   if (!session) return true;
   const claims = decodeJwt(session.access_token);
-  const methods = z
+  const parsedMethods = z
     .array(z.object({ method: z.string(), provider: z.string().optional() }))
-    .parse(claims.amr ?? []);
+    .safeParse(claims.amr ?? []);
+  if (!parsedMethods.success) return false;
+  const methods = parsedMethods.data;
   const identities =
     session.user.identities?.filter(
       (identity) => identity.provider === 'azure'
