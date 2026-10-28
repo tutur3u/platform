@@ -86,15 +86,26 @@ class UsagePoolCard extends StatelessWidget {
         title: Text(l10n.mastermindUsagePacing),
         subtitle: window.pacing != null && burn == null && projected == null
             ? null
-            : Text(
-                [
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   if (window.pacing == null)
-                    window.fields['pacing']?.reason(l10n) ??
-                        l10n.mastermindNotPublished,
-                  if (burn != null) _line(l10n.mastermindChartBurn, perHour),
-                  if (projected != null)
-                    _line(l10n.mastermindChartProjection, pp),
-                ].join(' · '),
+                    PacingGlyph(
+                      pacing: null,
+                      missingReason:
+                          window.fields['pacing']?.reason(l10n) ??
+                          l10n.mastermindNotPublished,
+                    ),
+                  if (burn != null || projected != null)
+                    Text(
+                      [
+                        if (burn != null)
+                          _line(l10n.mastermindChartBurn, perHour),
+                        if (projected != null)
+                          _line(l10n.mastermindChartProjection, pp),
+                      ].join(' · '),
+                    ),
+                ],
               ),
         trailing: window.pacing == null
             ? null

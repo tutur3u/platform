@@ -123,9 +123,11 @@ void main() {
       expect(find.text('fresh'), findsNWidgets(4));
     });
 
-    testWidgets('a release with no age says unknown, not zero', (tester) async {
+    testWidgets('a release with no age gives a publication reason, not zero', (
+      tester,
+    ) async {
       await pumpShip(tester, _mixed);
-      expect(find.text('Unknown'), findsOneWidget);
+      expect(find.text('Not published yet'), findsOneWidget);
       expect(find.text('Live 1 day ago'), findsOneWidget);
     });
 
