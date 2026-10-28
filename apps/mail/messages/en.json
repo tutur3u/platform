@@ -584,7 +584,6 @@
     "select_loaded": "Select all loaded conversations",
     "select_mailbox": "Select a mailbox",
     "select_message": "Select a message",
-    "select_message_description": "Choose a message from the list to read it here.",
     "select_thread": "Select conversation",
     "selected_count": "{count} selected",
     "send": "Send",

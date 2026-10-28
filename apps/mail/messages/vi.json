@@ -584,7 +584,6 @@
     "select_loaded": "Chọn tất cả cuộc hội thoại đã tải",
     "select_mailbox": "Chọn một hộp thư",
     "select_message": "Chọn một thư",
-    "select_message_description": "Chọn một thư trong danh sách để đọc tại đây.",
     "select_thread": "Chọn cuộc hội thoại",
     "selected_count": "Đã chọn {count}",
     "send": "Gửi",

@@ -650,6 +650,10 @@ folder, label, or search changes. Message loading failures show an explicit retr
 state instead of appearing as an empty mailbox. Sending, draft autosave, protected
 attachments, and delivery settings remain behind the existing Mail APIs.
 
+Thread rows mark unread conversations with weight and a dot rather than a filled
+card. Their dates show the time for today, the day for this year and the full
+date otherwise, with the exact timestamp on hover (`mail-thread-date.test.ts`).
+
 The conversation pane constrains message width and keeps message details and
 attachments available without expanding them by default. Small screens show one
 pane at a time, with a back action returning to the message list.
