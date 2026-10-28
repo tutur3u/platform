@@ -85,6 +85,9 @@ export async function PUT(
       })
       .eq('id', cycleId)
       .eq('ws_id', wsId)
+      // Board sprints change only through the sprint routes, which check
+      // board access and keep start/end consistent.
+      .is('board_id', null)
       .select(
         `
           *,
@@ -98,7 +101,11 @@ export async function PUT(
           )
         `
       )
-      .single();
+      .maybeSingle();
+
+    if (!error && !updatedCycle) {
+      return NextResponse.json({ error: 'Cycle not found' }, { status: 404 });
+    }
 
     if (error || !updatedCycle) {
       console.error('Error updating cycle:', error);
@@ -164,11 +171,18 @@ export async function DELETE(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const { error } = await supabase
+    const { data: deleted, error } = await supabase
       .from('task_cycles')
       .delete()
       .eq('id', cycleId)
-      .eq('ws_id', wsId);
+      .eq('ws_id', wsId)
+      // Board sprints are never deleted here; see the sprint routes.
+      .is('board_id', null)
+      .select('id');
+
+    if (!error && !deleted?.length) {
+      return NextResponse.json({ error: 'Cycle not found' }, { status: 404 });
+    }
 
     if (error) {
       console.error('Error deleting cycle:', error);
