@@ -58,8 +58,8 @@ jobs:
 
   root-script-tests:
     name: Root script tests (24)
-    needs: [changes, check-ci]
-    if: (needs.changes.outputs.code == 'true' && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    needs: [check-ci]
+    if: (needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -395,16 +395,18 @@ jobs:
       - name: Documentation-only change; no test execution needed
         if: needs.changes.outputs.code == 'false'
         run: echo "Documentation-only PR; heavy Test jobs were not allocated."
+      - name: Require root script tests
+        env:
+          ROOT_SCRIPT_RESULT: ${{ needs.root-script-tests.result }}
+        run: test "$ROOT_SCRIPT_RESULT" = success
       - name: Require every unit-test shard
         if: needs.changes.outputs.code != 'false'
         env:
           TEST_RESULT: ${{ needs.test-shards-pr.result == 'skipped' && needs.test-shards.result || needs.test-shards.result == 'skipped' && needs.test-shards-pr.result || 'invalid' }}
-          ROOT_SCRIPT_RESULT: ${{ needs.root-script-tests.result }}
           RUST_RESULT: ${{ needs.backend-source-qualification.result }}
           RUST_QUALIFICATION_REQUIRED: ${{ (github.ref == 'refs/heads/fix/release-5795-reconciliation' || github.ref == 'refs/heads/fix/main-production-reconciliation-20261012') }}
         run: |
           test "$TEST_RESULT" = success
-          test "$ROOT_SCRIPT_RESULT" = success
           if [ "$RUST_QUALIFICATION_REQUIRED" = true ]; then
             test "$RUST_RESULT" = success
           fi

@@ -10,6 +10,9 @@ const { evaluateExpression } = require('./github-expression-test-helper');
 
 const docs = [
   'README.md',
+  'AGENTS.md',
+  'apps/docs/platform/overview.mdx',
+  'apps/docs/build/development-tools/oxc-cloudflare-adoption.mdx',
   'docs/guide.mdx',
   'apps/docs/page.mdx',
   'plugins/tuturuuu/skills/example/SKILL.md',
@@ -28,7 +31,7 @@ const code = [
   'docs/UPPERCASE.MD',
 ];
 
-test('only explicitly inert prose is documentation', () => {
+test('documentation paths may skip shards but still require root script tests', () => {
   for (const file of docs) assert.equal(isDocumentation(file), true, file);
   for (const file of code) assert.equal(isDocumentation(file), false, file);
 });
@@ -145,6 +148,42 @@ const scope = (codeOutput, results = {}) => ({
   cancelled: () => false,
 });
 
+test('root script tests run for every admitted diff and their failures reach the unit summary', () => {
+  const root = workflow.jobs['root-script-tests'];
+  assert.deepEqual(root.needs, ['check-ci']);
+  const summary = workflow.jobs.build;
+  assert.ok(summary.needs.includes('root-script-tests'));
+  const required = summary.steps.find((step) => step.env?.ROOT_SCRIPT_RESULT);
+  assert.equal(
+    required.if,
+    undefined,
+    'root script success is always required'
+  );
+  for (const codeOutput of ['false', 'true', '', 'garbage']) {
+    const admitted = scope(codeOutput);
+    assert.equal(evaluateExpression(root.if, admitted), true, codeOutput);
+    admitted.github.event.pull_request.labels = [];
+    assert.equal(evaluateExpression(root.if, admitted), false, codeOutput);
+    admitted.github.event_name = 'push';
+    assert.equal(evaluateExpression(root.if, admitted), true, codeOutput);
+  }
+  assert.equal(
+    spawnSync('bash', ['-e', '-c', required.run], {
+      env: { ...process.env, ROOT_SCRIPT_RESULT: 'success' },
+    }).status,
+    0
+  );
+  for (const state of ['failure', 'cancelled', 'skipped', '']) {
+    assert.notEqual(
+      spawnSync('bash', ['-e', '-c', required.run], {
+        env: { ...process.env, ROOT_SCRIPT_RESULT: state },
+      }).status,
+      0,
+      state
+    );
+  }
+});
+
 test('heavy jobs skip docs-only PRs while code, admission and summary contexts stay intact', () => {
   assert.equal(workflow.on.pull_request.paths, undefined);
   assert.equal(workflow.on.pull_request['paths-ignore'], undefined);
@@ -153,12 +192,7 @@ test('heavy jobs skip docs-only PRs while code, admission and summary contexts s
     'production',
     'release-please--branches--**',
   ]);
-  for (const id of [
-    'root-script-tests',
-    'test-shards',
-    'coverage-shards',
-    'coverage-upload',
-  ]) {
+  for (const id of ['test-shards', 'coverage-shards', 'coverage-upload']) {
     const job = workflow.jobs[id];
     assert.ok(job.needs.includes('changes'));
     assert.equal(evaluateExpression(job.if, scope('false')), false, id);
@@ -196,7 +230,7 @@ test('heavy jobs skip docs-only PRs while code, admission and summary contexts s
       0
     );
     for (const key of id === 'build'
-      ? ['TEST_RESULT', 'ROOT_SCRIPT_RESULT']
+      ? ['TEST_RESULT']
       : ['TEST_RESULT', 'UPLOAD_RESULT', 'COVERAGE_RESULT']) {
       for (const state of ['failure', 'cancelled', 'skipped', '']) {
         assert.notEqual(

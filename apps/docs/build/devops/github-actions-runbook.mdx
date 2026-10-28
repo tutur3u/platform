@@ -217,10 +217,16 @@ when updating the installer; do not enable caching explicitly for `workflow_run`
 `ci-check.yml` reads `tuturuuu.ts` and emits `should_run` before real work.
 `Test` additionally classifies the complete PR merge-base diff in a `changes` job.
 Only Markdown/MDX under `apps/docs` or outside `apps/` and `packages/` can skip
-root script tests, unit/coverage shards and upload. Executable docs tooling,
+unit/coverage shards and upload. Root script tests run for every admitted PR
+and their success is always required by the unit summary, because they validate
+documentation links, content and the `AGENTS.md` allocation marker. Executable docs tooling,
 assets, workflows, manifests, lockfiles, source, mixed or unknown/empty diffs run; both rename endpoints participate. Push validation and ready-for-ci admission stay intact.
-`Unit Tests (24)` and `Run tests and collect coverage` report a successful no-op
-for docs-only PRs; code changes retain every original failure assertion.
+`Unit Tests (24)` and `Run tests and collect coverage` retain successful summaries
+for docs-only PRs after their applicable assertions pass; code changes retain every
+original failure assertion. Only these two summary contexts may ever be made
+required in branch protection or rulesets. A skipped matrix job reports its
+unexpanded `(${{ matrix.shard }})` name, so expanded shard contexts must never be
+required.
 Never use workflow-level path filters for required checks: they can remain pending.
 Security, CodeQL, secret scanning, i18n and deployment/release gates are unchanged.
 Regression coverage: `node --test scripts/ci/test-docs-only-gate.test.js`.

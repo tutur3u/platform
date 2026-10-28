@@ -253,7 +253,11 @@ Separate scheduling, prerequisites, execution, archive restores and Turbo task h
 Replay historical ranges; final PR files may differ. Keep projected and observed savings separate.
 For required checks use job-level gates, never workflow paths/paths-ignore. Test's
 `test-docs-only-gate.js` defaults to code on unknown ranges and every push; docs-only
-PRs retain successful unit/coverage summaries. Preserve security, admission and concurrency.
+PRs skip only test/coverage shards and coverage upload. Root script tests remain
+ungated by the classifier and their failures always fail the unit summary, including
+for docs-only diffs. Only the unit/coverage summary contexts may become required;
+skipped matrix jobs report unexpanded matrix names. Preserve security, admission
+and concurrency.
 
 Self-hosted PR routing is default-off and limited to same-repository, non-bot `pull_request` jobs without secrets, installing with a frozen lockfile and no lifecycle scripts, with isolated state and an always-run workspace wipe. The variable values, canary and kill switch live in the [CI runbook](../../../../apps/docs/build/devops/github-actions-runbook.mdx#pr-runner-pool-variable-canary-and-kill-switch). When inventorying action steps, JavaScript actions have no `runs.steps`.
 
