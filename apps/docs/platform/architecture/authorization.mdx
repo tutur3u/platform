@@ -290,3 +290,44 @@ Regression coverage: `apps/web/src/lib/notifications/email-eligibility.test.ts`,
 cover confirmed and unconfirmed external destinations, identity mismatch,
 account/workspace/event/channel opt-outs, suppression and transactional/security
 distinctions. These fixtures prove source behavior, not production delivery.
+
+## Workspace resource access
+
+### Time tracking
+
+Track and Web require workspace membership for time request activity and comments.
+A request owner can read activity and read or create comments on their own request.
+Other members need `manage_time_tracking_requests`. The same permission governs
+reading another member's session history and goals in Web and Track. Managers
+can only select a target user who belongs to the workspace.
+
+Session categories must belong to the session workspace in Web, Track, and Tasks.
+Web and Track apply the same rule to break types when creating breaks or pausing
+sessions. Omitted or cleared optional references remain supported. A failed
+reference lookup stops the operation before session writes.
+
+Regression coverage: `request-access.test.ts` and `session-boundaries.test.ts`
+in the Web and Track time-tracking routes, and the Tasks session boundary test.
+
+### Boards
+
+Configuring capacity rules requires `manage_projects` in the URL workspace and
+edit access to a board in that workspace. Existing board-view access still permits
+reading capacity rules. Board member directories and share lists require workspace
+membership; a guest share alone does not grant either directory.
+
+Regression coverage: the Tasks board `capacity-rules/access.test.ts` and
+`directory-access.test.ts`.
+
+### Calendar and mail
+
+Mira calendar reads use the Calendar event management authorization helper,
+including its workspace normalization, membership, and `manage_calendar` checks.
+A calendar event's optional linked task must belong to the event workspace before
+source resolution or provider writes. Events without a linked task remain supported.
+
+Mail state updates require mailbox access and an existing message in that mailbox
+before writing the caller's state. Thread actions keep their thread-specific checks.
+
+Regression coverage: Mira Calendar `route.test.ts`, calendar event
+`task-scope.test.ts`, and Mail repository `state-mailbox.test.ts`.

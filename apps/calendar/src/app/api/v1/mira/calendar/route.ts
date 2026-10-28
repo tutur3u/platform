@@ -3,11 +3,9 @@
  * GET /api/v1/mira/calendar - Get user's upcoming calendar events
  */
 
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { isAllDayEvent } from '@tuturuuu/utils/calendar-utils';
-import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { connection, NextResponse } from 'next/server';
-import { resolveSessionAuthContext } from '@/lib/api-auth';
+import { authorizeCalendarEventManagement } from '@/lib/calendar-event-permission';
 import { decryptEventsFromStorage } from '@/lib/workspace-encryption';
 
 export async function GET(request: Request) {
@@ -24,26 +22,9 @@ export async function GET(request: Request) {
       );
     }
 
-    const auth = await resolveSessionAuthContext(request, {
-      allowAppSessionAuth: true,
-    });
-
-    if (!auth.ok) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const sbAdmin = await createAdminClient();
-    const { supabase, user } = auth;
-
-    const membership = await verifyWorkspaceMembershipType({
-      wsId: wsId,
-      userId: user.id,
-      supabase: supabase,
-    });
-
-    if (membership.error || !membership) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
+    const access = await authorizeCalendarEventManagement(request, wsId);
+    if ('error' in access) return access.error;
+    const { sbAdmin, wsId: resolvedWsId } = access;
 
     const now = new Date();
     const sevenDaysFromNow = new Date();
@@ -52,7 +33,7 @@ export async function GET(request: Request) {
     const { data: allEvents, error } = await sbAdmin
       .from('workspace_calendar_events')
       .select('*')
-      .eq('ws_id', wsId)
+      .eq('ws_id', resolvedWsId)
       .gte('start_at', now.toISOString())
       .lte('start_at', sevenDaysFromNow.toISOString())
       .order('start_at', { ascending: true })
@@ -69,7 +50,7 @@ export async function GET(request: Request) {
     // Decrypt events
     const decryptedEvents = await decryptEventsFromStorage(
       allEvents || [],
-      wsId
+      resolvedWsId
     );
 
     // Check for encrypted events that couldn't be decrypted

@@ -21,9 +21,10 @@ export async function updateMailMessageState({
 }) {
   const access = await requireMailboxAccess(ctx, mailboxId);
   if (!access) return null;
+  const message = await getMailMessage({ ctx, mailboxId, messageId });
+  if (!message) return null;
 
   if (isThreadPreferenceAction(payload.action)) {
-    const message = await getMailMessage({ ctx, mailboxId, messageId });
     if (!message?.threadId) return null;
     await updateThreadPreferences({
       admin: access.admin,
