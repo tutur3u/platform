@@ -15,6 +15,34 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindUnrecognisedValue => 'Giá trị không được nhận diện';
 
   @override
+  String get mastermindAskTruncated => 'Yêu cầu bị rút gọn; xem toàn văn trên máy Mac';
+
+  @override
+  String get mastermindReplyFailedShort => 'Chưa gửi · chạm để thử lại';
+
+  @override
+  String mastermindReplySendingOption(String option) {
+    return 'Đang gửi “$option”';
+  }
+
+  @override
+  String get mastermindReplyUndo => 'Hoàn tác';
+
+  @override
+  String get mastermindReplyNotSentReview => 'Không gửi được · mở để xem lại';
+
+  @override
+  String get mastermindAnswerExpand => 'Xem toàn bộ câu trả lời';
+
+  @override
+  String get mastermindAnswerCollapse => 'Thu gọn';
+
+  @override
+  String mastermindReplyQueuedAt(String time) {
+    return 'Đã xếp hàng $time';
+  }
+
+  @override
   String get assistantDownloadPhasePending => 'Đang chờ';
 
   @override
@@ -12590,7 +12618,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindInboxNoMatches => 'Không có mục phù hợp';
 
   @override
-  String get mastermindInboxSearchPlaceholder => 'Tìm trong Cần bạn';
+  String get mastermindInboxSearchPlaceholder => 'Tìm yêu cầu';
 
   @override
   String get mastermindInsightsLabel => 'Phân tích';
@@ -13714,10 +13742,62 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindGapReset => 'Đặt lại hạn mức';
 
   @override
-  String get mastermindAskMissing => 'Chưa công bố nội dung yêu cầu đầy đủ';
+  String get mastermindRecentlyResolved => 'Đã xử lý gần đây';
 
   @override
-  String get mastermindRecentlyResolved => 'Đã giải quyết gần đây';
+  String get mastermindReplyPendingShort => 'Đang chờ gửi';
+
+  @override
+  String get mastermindAskTitle => 'Yêu cầu';
+
+  @override
+  String get mastermindOpensItem => 'Mở yêu cầu';
+
+  @override
+  String get mastermindItemOpenOnMacReason => 'Mastermind chưa công bố đầy đủ yêu cầu này. Hãy đọc trong Hộp thư trên máy Mac.';
+
+  @override
+  String get mastermindItemOpenOnMac => 'Chi tiết đầy đủ trên máy Mac';
+
+  @override
+  String get mastermindResolvedOutcome => 'Kết quả';
+
+  @override
+  String get mastermindResolvedNoAnswer => 'Mastermind đã đóng yêu cầu này mà không ghi lại câu trả lời.';
+
+  @override
+  String mastermindResolvedAnswer(String answer) {
+    return 'Câu trả lời: $answer';
+  }
+
+  @override
+  String mastermindResolvedWith(String answer) {
+    return 'Đã xử lý · $answer';
+  }
+
+  @override
+  String get mastermindResolvedState => 'Đã xử lý';
+
+  @override
+  String get mastermindNothingResolvedReason => 'Yêu cầu sẽ hiện ở đây khi Mastermind ghi nhận câu trả lời.';
+
+  @override
+  String get mastermindNothingResolved => 'Chưa có yêu cầu nào được xử lý gần đây';
+
+  @override
+  String get mastermindNothingNeedsYouReason => 'Mastermind sẽ hiện yêu cầu ở đây khi một luồng cần bạn trả lời.';
+
+  @override
+  String get mastermindInboxNoMatchesReason => 'Không có mục nào trong chế độ xem này khớp với tìm kiếm hoặc bộ lọc.';
+
+  @override
+  String get mastermindInboxClearFilters => 'Xóa tìm kiếm và bộ lọc';
+
+  @override
+  String get mastermindInboxSearchAction => 'Tìm trong Hộp thư';
+
+  @override
+  String get mastermindInboxResolvedSegment => 'Đã xử lý';
 
   @override
   String mastermindLastChecked(String time) {

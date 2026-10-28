@@ -145,37 +145,55 @@ summaries apply the same collapse.
 
 ## Inbox
 
-The Inbox tab lists the open Needs-you items grouped by kind: "Decisions for
-you", "Actions", then "For your information", each with its count, in publisher
-order. Each card shows the title, the body (three lines until "More", a 44 dp target),
-kind and product chips and the options as read-only chips; the recommended option carries
-the word "Recommended" and a star, never colour alone. A search field
-("Search Needs you") and product chips narrow the list. Pull to refresh.
+The Inbox tab opens on one compact segmented control: **Needs you · Resolved ·
+Decisions**. Needs you lists the open asks grouped by kind ("Decisions for
+you", "Actions", then "For your information"), each with its count, in publisher
+order. Resolved lists the hub's `decisions_resolved` history ("Recently
+resolved", newest first). Pull to refresh.
 
-- **Scope:** the Needs you segment lists normal Needs-you items only; the
-  Decisions segment is the journal (below).
+- **Rows** are two lines: the friendly title (`itemDisplayTitle`, so a redacted
+  `Product · area · kind` title uses the first ask line), then the
+  kind badge with the state and age: "Resolved · Yes · 2 h ago" for a resolved
+  ask, "Sent · waiting for Mastermind" or "Waiting to send" for this device's
+  reply. A separate two-line preview retains the ask. No age is shown where the hub
+  publishes none (open asks). Options, "More" and the full ask live on the
+  detail. A row is one screen-reader node ("Decision. Review plan. Review the
+  plan", hint "Opens the ask").
+- **Caps:** each group shows five rows, then "Show all N" expands it in place.
+- **Search** is hidden until the navbar search icon
+  of the list reveals it ("Search asks"); it covers every ask segment, including
+  the resolved answer. Product chips (one row, 44 pt targets) appear only while
+  two or more products are present.
+- **Empty and no-match states say why:** "Nothing needs you" (Mastermind lists
+  an ask here when a lane needs your answer), "Nothing resolved recently" (asks
+  appear once Mastermind records an answer), and
+  "No matching items" with a "Clear search and filters" row.
 - **Security rows** keep the Home rule: one non-tappable line in a trailing
   "Security" group with no count, never counted, searched or filtered, with no
-  severity, id or detail.
-- **Detail:** `/mastermind/inbox/item/:itemId` opens one item in full, pushed
+  severity, id or detail. Resolved does not show them.
+- **Detail:** `/mastermind/inbox/item/:itemId` opens one ask in full, pushed
   from the Inbox and from Home, so Back returns to whichever opened it, with
   the same search text and product chips (the shell pops an item location
-  instead of falling back to the Inbox). The page leads with the full title as a heading and shows the
-  full question as plain text, never clamped. The id is
-  an opaque snapshot id and only ever a route parameter; deep links carry tab
-  roots only and never ids. An id that is not an open item shows "This item is
-  no longer in Mastermind" (or "This was answered or withdrawn" when it left
-  while open) with a way back, never an error. A changed `version_hash` shows
-  "This question was updated".
+  instead of falling back to the Inbox). The navbar title is the kind
+  ("Decision"), so the title is not repeated; the page leads with the display
+  title as a heading and shows the full `ask_text` as plain text, never clamped.
+  When the hub published only its "Open on Mac" stand-in, an info alert reads
+  "Full details are on the Mac" instead. The id is looked up among the open
+  asks, then the resolved history, and is only ever a route parameter; deep
+  links carry tab roots only and never ids. A resolved ask shows an "Outcome"
+  panel (Resolved, "Answer: Yes", GMT+7 time) and no composer. An id in neither
+  list shows "This item is no longer in Mastermind" (or "This was answered or
+  withdrawn" when it left while open) with a way back, never an error. A changed
+  `version_hash` shows "This question was updated".
 - **The "Reply on Mac" option** is a placeholder the publisher adds when an item
   has nothing to pick. It is never offered as a choice and the app never sends
   it.
 
 ### Decisions
 
-The Inbox opens on a "Needs you / Decisions" segmented control. The segment
-lives in the URL: Needs you is the bare `/mastermind/inbox` and Decisions is
-`/mastermind/inbox?segment=decisions` (an unknown value is Needs you).
+The segment lives in the URL: Needs you is the bare `/mastermind/inbox`, and
+Resolved and Decisions are `?segment=resolved|decisions`; old `all` maps to Needs you (an unknown
+value is Needs you).
 Switching is a `go`, never a push, so Back does not walk the segments. Home
 links straight to the Decisions segment.
 
@@ -227,9 +245,10 @@ switch, so it flips without a store release.
   `{schema_version: "1.4", item_id, version_hash, option_index | text}`: one of
   an option index (into the item's own `options[]`) or free text of at most 500
   characters, counted in code points, and at most 10 lines (the hub's limit; the
-  composer caps both as you type). Choosing an option clears the text and
-  typing clears the option. The text field has a placeholder and a counter. A
-  confirmation asks before anything is sent.
+  composer caps both as you type). An option button sends its index after a
+  five-second undo window (see Undo window below).
+  The text field has a placeholder and a counter; free-text sending requires
+  confirmation.
 - **Idempotency:** the `Idempotency-Key` is a random v4 UUID from a secure
   generator, made once per reply and stored in the outbox before the first send.
   Every retry reuses it, so an unknown outcome never becomes a second reply. A
@@ -248,8 +267,7 @@ switch, so it flips without a store release.
   the same generation fences, so an in-flight send cannot revive it.
 - **409 `stale_item`:** the item is refreshed, the typed words are kept, and the
   screen says "This question changed or was already answered. Review it again."
-  An option stays selected only if it is still the same option at the same
-  place. `idempotency_conflict` drops the queued entry with "Something went
+  Option buttons always use the current question version. `idempotency_conflict` drops the queued entry with "Something went
   wrong with this reply. Review it and send it again."
 - **Other answers:** 400 (`unsafe_text` explains the text policy) and 413 keep
   the words to edit; 429 waits out `Retry-After` and disables the retry until
@@ -456,7 +474,7 @@ Delivery sections arrive later and reuse the table route below).
 - **Friendly names.** Scope: every row and detail title. Default: the hub's
   `[Name] Role` title shows verbatim; a redacted `Product · area · kind` title
   is never shown: a lane uses its standing role, or "`<Product>` `<area>`" for
-  a child lane, and an item reads "Decision for Mastermind hub". Models shorten
+  a child lane; an item uses its real title or first ask line. Models shorten
   to "Sonnet 5.5" or "GPT-6.1 sol"; an unknown model reads "Model not
   reported". Coverage: `presentation/display_names_test.dart`.
 - **No bare unknown.** Scope: Home now, Ship and Insights next. Default: a
@@ -465,9 +483,17 @@ Delivery sections arrive later and reuse the table route below).
   stands alone. Coverage: `view/mastermind_home_v1_test.dart`,
   `view/forge_v1_fixture_test.dart`.
 
+- **Resolved is the hub's word.** Scope: Inbox rows, the item detail, the
+  Resolved segment. Default: an ask reads "Resolved" only once the hub
+  lists it in `decisions_resolved`; a reply this device sent reads "Sent ·
+  waiting for Mastermind" (with its GMT+7 queued time on the detail) until then,
+  never Resolved. Exceptions: an ask that leaves the snapshot without a history
+  row reads "This was answered or withdrawn". Coverage:
+  `view/mastermind_inbox_v1_test.dart` ("a sent reply reads Sent · waiting until
+  the hub resolves", "a resolved ask shows the hub outcome").
 - **Decisions journal.** Scope: the Inbox Decisions segment, the decision
-  detail and Home's recent-decisions card. Default: the Inbox has a Needs you /
-  Decisions segmented control with the segment in the URL; Home rows open the
+  detail and Home's recent-decisions card. Default: the Inbox segmented control
+  ends with Decisions, its segment in the URL; Home rows open the
   detail and "See all decisions" opens the segment. Exceptions: the journal is
   history and is not answerable; search and risk/area filters are not offered
   yet. Coverage: `mastermind_decisions_test.dart`,
@@ -644,6 +670,10 @@ shared capability request, a send waiting on the first check) and
 the outbox). `runtime/mastermind_runtime_online_test.dart` covers the
 connectivity stream (reaches the scheduler, de-duplicated, cancelled on close).
 The screens are in `view/mastermind_inbox_page_test.dart`,
+`view/mastermind_inbox_v1_test.dart` (the Forge v1 fixture: Needs you /
+Resolved, navbar search, caps, row semantics, the full ask,
+the Open on Mac alert, resolved history, Sent then Resolved, 44 pt targets and
+last-row dock clearance at 1.0 and 2.0 text),
 `view/mastermind_item_page_test.dart` and
 `view/reply_line_limit_formatter_test.dart` (the 10-line cap and its refusals).
 
@@ -698,6 +728,30 @@ An unreported pacing value retains its dashed status glyph beside the explicit
 reason. The label wraps within the row's content area so checked timestamps do
 not overflow narrow screens. `mastermind_insights_page_test.dart` preserves the
 one-glyph-per-window assertion for reported and unreported values.
+
+Truncated asks carry a visible Mac continuation notice. Recorded answers remain
+available regardless of length, with an expandable preview. Failed replies say
+"Not sent · tap to retry" while the reply is still queued and a retry can go
+out (offline); tapping retries the existing reply and opens its recovery
+details. A 429, a 401/403 (behind the auth-failure guard) or a dropped reply
+reads "Couldn't send · open to review" and a tap only opens the details. Grouped open rows omit the repeated kind badge. Coverage:
+`mastermind_inbox_v1_test.dart` (truncation, long answers, failed sends).
+
+Ask cards on Home and Inbox share the same row. The publisher title wins;
+a redacted title falls back to the first ask line. Cards preview two lines,
+project, status and created-at age; detail keeps the full published ask. Only
+unique open ids appear in Needs you; a hub-answered id always wins. Home's
+See-all link opens Needs you. A redacted title is the first ask line, so the
+preview starts on the second line; screen readers hear at most 200 characters
+of the ask on a row. The recorded answer shows "Show full answer" whenever it
+overflows four lines at the current width and text size.
+
+**Undo window (Theo, 2026-10-28).** Option replies stay one tap. The tap shows
+"Sending “option” · Undo" for 5 seconds on the item detail; the reply enters the outbox only then, through the same
+`submit` and Idempotency-Key. One window per item; the other options lock
+meanwhile. Leaving the screen inside the window still sends; logout or an
+account switch cancels it, and so does a live snapshot where the ask changed or
+left. Coverage: `mastermind_replies_undo_test.dart`, `mastermind_option_undo_test.dart`.
 
 ## Read-only Threads preview
 

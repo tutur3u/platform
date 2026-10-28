@@ -1,4 +1,5 @@
 import 'package:mobile/features/mastermind/model/snapshot.dart';
+import 'package:mobile/features/mastermind/presentation/open_asks.dart';
 
 /// Where the running, waiting and idle counts came from.
 enum ActivitySource {
@@ -37,8 +38,7 @@ final class MastermindActivity {
     int tally(Set<LaneState> states) =>
         lanes.where((lane) => states.contains(lane.state)).length;
     final silentLanes = tally(const {LaneState.unknown, LaneState.stale});
-    final waitingOnYou = snapshot.now.needsYou
-        .whereType<NeedsYou>()
+    final waitingOnYou = openAsks(snapshot)
         .where(
           (item) =>
               item.state == ItemState.open &&

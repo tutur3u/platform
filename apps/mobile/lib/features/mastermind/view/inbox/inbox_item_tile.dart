@@ -1,116 +1,184 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/components/app_badge.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
-import 'package:mobile/core/ui/tokens/app_interface_tokens.dart';
-import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
-import 'package:mobile/features/mastermind/presentation/inbox_model.dart';
+import 'package:mobile/features/mastermind/presentation/age_text.dart';
+import 'package:mobile/features/mastermind/presentation/display_names.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
+import 'package:mobile/features/mastermind/replies/mastermind_replies_cubit.dart';
+import 'package:mobile/features/mastermind/replies/reply_models.dart';
+import 'package:mobile/features/mastermind/view/inbox/mastermind_replies_watcher.dart';
+import 'package:mobile/features/mastermind/view/widgets/large_text.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-/// One open Needs-you item in the Inbox list: title, body (three lines until
-/// "More"), kind and product chips, and the options as read-only chips.
+/// One ask with a meaningful title, metadata and a two-line ask preview.
 ///
-/// Tapping the row opens the detail, where a reply can be composed.
-class InboxItemTile extends StatefulWidget {
-  const InboxItemTile({required this.item, super.key});
+/// The state line is the hub's word first (Resolved), then this device's
+/// reply (Sent · waiting for Mastermind). The preview stays visible separately.
+/// The full ask, its options and the composer live on the detail page, which
+/// a tap pushes so Back returns to this list with its filters intact.
+class InboxItemTile extends StatelessWidget {
+  const InboxItemTile({
+    required this.item,
+    this.now,
+    this.showKind = false,
+    this.showKindIcon = false,
+    super.key,
+  });
 
   final NeedsYou item;
+  final bool showKind;
+  final bool showKindIcon;
 
-  @override
-  State<InboxItemTile> createState() => _InboxItemTileState();
-}
-
-class _InboxItemTileState extends State<InboxItemTile> {
-  static const _collapsedLines = 3;
-  bool _expanded = false;
+  /// The section clock, for "5 min ago". Without it no age is shown.
+  final DateTime? now;
 
   @override
   Widget build(BuildContext context) {
-    final item = widget.item;
+    final replies = MastermindRepliesWatcher.cubitOf(context);
+    return BlocSelector<
+      MastermindRepliesCubit,
+      MastermindRepliesState,
+      (OutboxEntry?, ReplyItemStatus)
+    >(
+      bloc: replies,
+      selector: (state) =>
+          (state.entryFor(item.id, item.versionHash), state.statusFor(item.id)),
+      builder: (context, value) => _row(context, value.$1, value.$2),
+    );
+  }
+
+  Widget _row(
+    BuildContext context,
+    OutboxEntry? entry,
+    ReplyItemStatus status,
+  ) {
     final l10n = context.l10n;
-    final options = selectableOptions(item);
-    return AppGroupedRow(
-      title: Text(item.title),
-      showChevron: true,
-      // Pushed, so Back returns to this list with its search and chips intact.
-      onTap: () => context.push(Routes.mastermindInboxItemPath(item.id)),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (item.body.isNotEmpty) _body(context, item.body),
-          const SizedBox(height: AppSpacing.xs),
-          Wrap(
-            spacing: AppSpacing.xs,
-            runSpacing: AppSpacing.xs,
-            children: [
-              if (item.kind case final kind?)
-                AppBadge(child: Text(MastermindLabels.itemKind(l10n, kind))),
-              if (item.product case final product?)
-                AppBadge.outline(
-                  child: Text(MastermindLabels.product(product)),
-                ),
-              for (final (_, option) in options)
-                OptionChip(
-                  option: option,
-                  recommended: option == item.recommendedOption,
-                ),
-            ],
-          ),
-        ],
+    final title = itemDisplayTitle(l10n, item);
+    final kind = item.kind;
+    final kindLabel = kind == null
+        ? null
+        : MastermindLabels.itemKind(l10n, kind);
+    final detail = [?_state(l10n, entry, status), ?_age(l10n)].join(' · ');
+    final preview = askPreviewText(item);
+    void open() {
+      if (_canRetry(status, entry)) {
+        unawaited(
+          MastermindRepliesWatcher.cubitOf(
+            context,
+          ).retry(item.id, item.versionHash),
+        );
+      }
+      unawaited(context.push<void>(Routes.mastermindInboxItemPath(item.id)));
+    }
+
+    final large = mastermindLargeText(context);
+    return Semantics(
+      button: true,
+      label: [
+        ?kindLabel,
+        title,
+        if (detail.isNotEmpty) detail,
+        if (preview.isNotEmpty) spokenAskSummary(preview),
+      ].join('. '),
+      hint: l10n.mastermindOpensItem,
+      onTap: open,
+      excludeSemantics: true,
+      child: AppGroupedRow(
+        leading: showKindIcon
+            ? AppIconTile(
+                icon: switch (item.kind) {
+                  ItemKind.decision => LucideIcons.diamond,
+                  ItemKind.action => LucideIcons.zap,
+                  ItemKind.fyi => LucideIcons.info,
+                  null => LucideIcons.messageSquareMore,
+                },
+                tone: item.kind == ItemKind.fyi
+                    ? AppTone.neutral
+                    : AppTone.warning,
+              )
+            : null,
+        title: Text(
+          title,
+          key: ValueKey('ask-title-${item.id}'),
+          maxLines: large ? 2 : 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Wrap(
+              spacing: AppSpacing.xs,
+              runSpacing: AppSpacing.xs,
+              children: [
+                if (showKind && kindLabel != null)
+                  AppBadge(child: Text(kindLabel)),
+                if (item.product case final product?)
+                  AppBadge.outline(
+                    child: Text(MastermindLabels.product(product)),
+                  ),
+                Text(detail, maxLines: 2, overflow: TextOverflow.ellipsis),
+              ],
+            ),
+            if (preview.isNotEmpty)
+              Text(
+                preview,
+                key: ValueKey('ask-preview-${item.id}'),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+          ],
+        ),
+        showChevron: true,
+        onTap: open,
       ),
     );
   }
 
-  Widget _body(BuildContext context, String body) {
-    final l10n = context.l10n;
-    final style = Theme.of(context).textTheme.bodySmall;
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final painter = TextPainter(
-          text: TextSpan(text: body, style: style),
-          maxLines: _collapsedLines,
-          textDirection: Directionality.of(context),
-          textScaler: MediaQuery.textScalerOf(context),
-        )..layout(maxWidth: constraints.maxWidth);
-        final overflows = painter.didExceedMaxLines;
-        painter.dispose();
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              body,
-              style: style,
-              maxLines: _expanded ? null : _collapsedLines,
-              overflow: _expanded ? null : TextOverflow.ellipsis,
-            ),
-            if (overflows || _expanded)
-              InkWell(
-                onTap: () => setState(() => _expanded = !_expanded),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    minWidth: AppInterfaceTokens.minTouchTarget,
-                    minHeight: AppInterfaceTokens.minTouchTarget,
-                  ),
-                  child: Align(
-                    alignment: AlignmentDirectional.centerStart,
-                    widthFactor: 1,
-                    child: Text(
-                      _expanded ? l10n.mastermindLess : l10n.mastermindMore,
-                      style: style?.copyWith(
-                        color: AppTokens.of(context).colorScheme.primary,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        );
-      },
-    );
+  String? _state(
+    AppLocalizations l10n,
+    OutboxEntry? entry,
+    ReplyItemStatus status,
+  ) {
+    if (item.state == ItemState.answered) {
+      return switch (item.resolution) {
+        final answer? => l10n.mastermindResolvedWith(answer),
+        null => l10n.mastermindResolvedState,
+      };
+    }
+    if (status.issue != null) {
+      return _canRetry(status, entry)
+          ? l10n.mastermindReplyFailedShort
+          : l10n.mastermindReplyNotSentReview;
+    }
+    if (entry != null) {
+      return entry.status == OutboxStatus.sent
+          ? l10n.mastermindReplySent
+          : l10n.mastermindReplyPendingShort;
+    }
+    return MastermindLabels.itemState(l10n, item.state);
+  }
+
+  /// A tap retries only when the reply is still queued and nothing blocks it:
+  /// the device was offline. A 429 waits out its time, a 401 or 403 stays
+  /// behind the auth-failure guard, and the other issues dropped the entry, so
+  /// for those a tap just opens the detail page.
+  bool _canRetry(ReplyItemStatus status, OutboxEntry? entry) =>
+      entry != null &&
+      entry.status == OutboxStatus.pending &&
+      status.issue == ReplyIssue.offline;
+
+  String? _age(AppLocalizations l10n) {
+    final at = item.createdAt ?? item.resolvedAt;
+    final clock = now;
+    if (at == null || clock == null) return null;
+    return mastermindAgeText(l10n, clock.difference(at));
   }
 }
 

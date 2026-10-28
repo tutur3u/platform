@@ -113,8 +113,10 @@ void main() {
         tester
             .widget<ShellTitleOverride>(find.byType(ShellTitleOverride))
             .title,
-        'Pick one',
+        // The kind names the page; the heading carries the title.
+        'Decision',
       );
+      expect(find.text('Pick one'), findsOneWidget);
       expect(find.text(body), findsOneWidget);
       final text = tester.widget<Text>(find.text(body));
       expect(text.maxLines, isNull);
@@ -188,22 +190,24 @@ void main() {
       expect(find.text('my own words'), findsOneWidget);
     });
 
-    testWidgets('a changed version resets an option that moved', (
-      tester,
-    ) async {
-      final page = await _pump(tester);
-      await tester.tap(find.text('Defer'));
-      await tester.pump();
-      expect(_enabled(tester, _send), isTrue);
-      page.publish(
-        inboxJson([
-          inboxItem(1, hash: 'b', options: ['Approve', 'Hold']),
-        ]),
-      );
-      await page.harness.snapshot.refresh();
-      await tester.pumpAndSettle();
-      expect(_enabled(tester, _send), isFalse);
-    });
+    testWidgets(
+      'a sent option for an old version does not answer the new ask',
+      (tester) async {
+        final page = await _pump(tester);
+        await tester.tap(find.text('Defer'));
+        await tester.pump(MastermindRepliesCubit.defaultOptionUndoWindow);
+        await tester.pumpAndSettle();
+        expect(page.transport.sent.single.versionHash, inboxHash('a'));
+        page.publish(
+          inboxJson([
+            inboxItem(1, hash: 'b', options: ['Approve', 'Hold']),
+          ]),
+        );
+        await page.harness.snapshot.refresh();
+        await tester.pumpAndSettle();
+        expect(_enabled(tester, _send), isFalse);
+      },
+    );
   });
 
   group('capabilities gate', () {
@@ -294,34 +298,34 @@ void main() {
       expect(find.text('500/500'), findsOneWidget);
     });
 
-    testWidgets('Send needs an option or text', (tester) async {
-      await _pump(tester);
-      expect(_enabled(tester, _send), isFalse);
-      await tester.tap(find.text('Defer'));
-      await tester.pump();
-      expect(_enabled(tester, _send), isTrue);
-    });
-
-    testWidgets('an option and text exclude each other', (tester) async {
-      await _pump(tester);
-      await tester.tap(find.text('Defer'));
-      await tester.pump();
-      await tester.enterText(find.byType(TextField), 'something else');
-      await tester.pump();
-      await tester.tap(find.text('Approve'));
-      await tester.pump();
-      expect(find.text('something else'), findsNothing);
-    });
-
-    testWidgets('Use recommended picks it without preselecting', (
+    testWidgets('Send needs text; option buttons send directly', (
       tester,
     ) async {
       final page = await _pump(tester);
       expect(_enabled(tester, _send), isFalse);
-      await tester.tap(find.text('Use recommended'));
-      await tester.pump();
-      expect(find.text('Use recommended'), findsNothing);
-      await _confirm(tester);
+      await tester.tap(find.text('Defer'));
+      await tester.pump(MastermindRepliesCubit.defaultOptionUndoWindow);
+      await tester.pumpAndSettle();
+      expect(page.transport.sent.single.optionIndex, 1);
+      expect(find.byType(TextField), findsNothing);
+    });
+
+    testWidgets('an option sends no free text', (tester) async {
+      final page = await _pump(tester);
+      await tester.enterText(find.byType(TextField), 'something else');
+      await tester.tap(find.text('Approve'));
+      await tester.pump(MastermindRepliesCubit.defaultOptionUndoWindow);
+      await tester.pumpAndSettle();
+      expect(page.transport.sent.single.optionIndex, 0);
+      expect(page.transport.sent.single.text, isNull);
+    });
+
+    testWidgets('recommended is a badge on its option button', (tester) async {
+      final page = await _pump(tester);
+      expect(find.text('Recommended'), findsOneWidget);
+      await tester.tap(find.text('Approve'));
+      await tester.pump(MastermindRepliesCubit.defaultOptionUndoWindow);
+      await tester.pumpAndSettle();
       expect(page.transport.sent.single.optionIndex, 0);
     });
 
@@ -338,13 +342,11 @@ void main() {
   });
 
   group('sending', () {
-    testWidgets('an option is confirmed, then sent as option_index', (
-      tester,
-    ) async {
+    testWidgets('an option button sends option_index', (tester) async {
       final page = await _pump(tester);
       await tester.tap(find.text('Defer'));
-      await tester.pump();
-      await _confirm(tester);
+      await tester.pump(MastermindRepliesCubit.defaultOptionUndoWindow);
+      await tester.pumpAndSettle();
       expect(page.transport.sent.single.toRequestJson(), {
         'schema_version': '1.4',
         'item_id': inboxItemId(1),
@@ -357,7 +359,7 @@ void main() {
 
     testWidgets('cancelling the confirmation sends nothing', (tester) async {
       final page = await _pump(tester);
-      await tester.tap(find.text('Defer'));
+      await tester.enterText(find.byType(TextField), 'Please hold');
       await tester.pump();
       await tester.tap(_send);
       await tester.pumpAndSettle();
@@ -383,8 +385,8 @@ void main() {
     testWidgets('a 200 replay reads exactly like a 201', (tester) async {
       await _pump(tester, outcomes: const [ReplyAccepted(replayed: true)]);
       await tester.tap(find.text('Defer'));
-      await tester.pump();
-      await _confirm(tester);
+      await tester.pump(MastermindRepliesCubit.defaultOptionUndoWindow);
+      await tester.pumpAndSettle();
       expect(find.text('Sent · waiting for Mastermind'), findsOneWidget);
     });
   });
@@ -398,8 +400,8 @@ void main() {
         outcomes: const [ReplyUnavailable(), ReplyAccepted(replayed: true)],
       );
       await tester.tap(find.text('Defer'));
-      await tester.pump();
-      await _confirm(tester);
+      await tester.pump(MastermindRepliesCubit.defaultOptionUndoWindow);
+      await tester.pumpAndSettle();
       expect(
         find.text(
           'Saved on this device. It will be sent when Mastermind is reachable.',
@@ -485,8 +487,9 @@ void main() {
         tester
             .widget<ShellTitleOverride>(find.byType(ShellTitleOverride))
             .title,
-        'Refreshed',
+        'Decision',
       );
+      expect(find.text('Refreshed'), findsOneWidget);
       expect(find.text('my draft'), findsOneWidget);
       expect(find.text('This question was updated'), findsOneWidget);
     });

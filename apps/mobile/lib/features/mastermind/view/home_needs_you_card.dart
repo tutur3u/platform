@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/layout/layout.dart';
-import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/components/app_badge.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
-import 'package:mobile/features/mastermind/presentation/display_names.dart';
 import 'package:mobile/features/mastermind/presentation/home_model.dart';
+import 'package:mobile/features/mastermind/presentation/inbox_segment.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
+import 'package:mobile/features/mastermind/view/inbox/inbox_item_tile.dart';
 import 'package:mobile/features/mastermind/view/widgets/show_all_row.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -41,11 +41,16 @@ class HomeNeedsYouCard extends StatelessWidget {
                       : l10n.mastermindNothingNeedsReply,
                 ),
               ),
-            for (final item in model.needsYouShown) _NeedsYouRow(item: item),
+            for (final item in model.needsYouShown)
+              InboxItemTile(
+                item: item,
+                now: model.generatedAt,
+                showKindIcon: true,
+              ),
             if (model.needsYouCount > MastermindHomeModel.needsYouPreview)
               MastermindShowAllRow(
                 count: model.needsYouCount,
-                onTap: () => context.go(Routes.mastermindInbox),
+                onTap: () => context.go(inboxLocation()),
               ),
           ],
         ),
@@ -73,44 +78,3 @@ String securityLine(AppLocalizations l10n, SecurityItem item) =>
     item.product == null
     ? l10n.mastermindSecurityFix
     : l10n.mastermindSecurityLine(MastermindLabels.product(item.product!));
-
-/// One item: its kind as a leading glyph, its display title, and the product
-/// on the second line unless the title already names it.
-class _NeedsYouRow extends StatelessWidget {
-  const _NeedsYouRow({required this.item});
-
-  final NeedsYou item;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final title = itemDisplayTitle(l10n, item);
-    final kind = item.kind;
-    final product = switch (item.product) {
-      final product? when !title.contains(product.wireName) =>
-        MastermindLabels.product(product),
-      _ => null,
-    };
-    return AppGroupedRow(
-      leading: AppIconTile(
-        icon: switch (kind) {
-          ItemKind.decision => LucideIcons.diamond,
-          ItemKind.action => LucideIcons.zap,
-          ItemKind.fyi => LucideIcons.info,
-          null => LucideIcons.messageSquareMore,
-        },
-        tone: kind == ItemKind.fyi ? AppTone.neutral : AppTone.warning,
-      ),
-      title: Text(title),
-      subtitle: product == null ? null : Text(product),
-      semanticLabel: [
-        if (kind != null) MastermindLabels.itemKind(l10n, kind),
-        title,
-        ?product,
-      ].join('. '),
-      showChevron: true,
-      // Pushed, so Back returns to Home.
-      onTap: () => context.push(Routes.mastermindInboxItemPath(item.id)),
-    );
-  }
-}

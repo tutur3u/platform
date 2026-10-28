@@ -1,5 +1,6 @@
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/activity_model.dart';
+import 'package:mobile/features/mastermind/presentation/open_asks.dart';
 import 'package:mobile/features/mastermind/presentation/ship_model.dart';
 import 'package:mobile/features/mastermind/presentation/usage_model.dart';
 
@@ -13,6 +14,7 @@ import 'package:mobile/features/mastermind/presentation/usage_model.dart';
 final class MastermindHomeModel {
   const MastermindHomeModel._({
     required this.needsYou,
+    required this.generatedAt,
     required this.security,
     required this.lanes,
     required this.failingEnvironments,
@@ -25,10 +27,7 @@ final class MastermindHomeModel {
   });
 
   factory MastermindHomeModel.from(MastermindSnapshot snapshot) {
-    final needsYou = <NeedsYou>[
-      for (final item in snapshot.now.needsYou)
-        if (item is NeedsYou) item,
-    ];
+    final needsYou = openAsks(snapshot);
     final decisions = [...snapshot.decisions]
       ..sort((a, b) => b.at.compareTo(a.at));
     final activity = [...snapshot.now.digest]
@@ -39,6 +38,7 @@ final class MastermindHomeModel {
     final pools = MastermindUsageModel.from(snapshot).pools;
     return MastermindHomeModel._(
       needsYou: _orderNeedsYou(needsYou),
+      generatedAt: snapshot.generatedAt,
       security: _onePerProduct(snapshot.now.needsYou),
       lanes: MastermindActivity.from(snapshot),
       failingEnvironments: [
@@ -64,6 +64,7 @@ final class MastermindHomeModel {
 
   /// Normal items only, decision then action then fyi, then publisher order.
   final List<NeedsYou> needsYou;
+  final DateTime generatedAt;
 
   /// At most one per product, never counted.
   final List<SecurityItem> security;

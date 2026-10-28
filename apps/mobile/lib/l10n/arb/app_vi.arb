@@ -1,5 +1,15 @@
 {
   "mastermindUnrecognisedValue": "Giá trị không được nhận diện",
+  "mastermindAskTruncated": "Yêu cầu bị rút gọn; xem toàn văn trên máy Mac",
+  "mastermindReplyFailedShort": "Chưa gửi · chạm để thử lại",
+  "mastermindReplySendingOption": "Đang gửi “{option}”",
+  "@mastermindReplySendingOption": {"placeholders": {"option": {"type": "String"}}},
+  "mastermindReplyUndo": "Hoàn tác",
+  "mastermindReplyNotSentReview": "Không gửi được · mở để xem lại",
+  "mastermindAnswerExpand": "Xem toàn bộ câu trả lời",
+  "mastermindAnswerCollapse": "Thu gọn",
+  "mastermindReplyQueuedAt": "Đã xếp hàng {time}",
+  "@mastermindReplyQueuedAt": {"placeholders": {"time": {"type": "String"}}},
   "assistantDownloadPhasePending": "Đang chờ",
   "assistantDownloadPhaseQueued": "Trong hàng đợi",
   "assistantDownloadPhaseTransferring": "Đang tải xuống",
@@ -5692,7 +5702,7 @@
   "mastermindGroupDecisions": "Quyết định dành cho bạn",
   "mastermindGroupFyi": "Để bạn nắm thông tin",
   "mastermindInboxNoMatches": "Không có mục phù hợp",
-  "mastermindInboxSearchPlaceholder": "Tìm trong Cần bạn",
+  "mastermindInboxSearchPlaceholder": "Tìm yêu cầu",
   "mastermindInsightsLabel": "Phân tích",
   "mastermindItemAnsweredTitle": "Mục này đã được trả lời hoặc rút lại",
   "mastermindItemFor": "{kind} cho {subject}",
@@ -6012,8 +6022,24 @@
   "mastermindGapNoSamples": "Chưa công bố mẫu dữ liệu",
   "mastermindGapAccountSwitch": "Đã đổi tài khoản",
   "mastermindGapReset": "Đặt lại hạn mức",
-  "mastermindAskMissing": "Chưa công bố nội dung yêu cầu đầy đủ",
-  "mastermindRecentlyResolved": "Đã giải quyết gần đây",
+  "mastermindRecentlyResolved": "Đã xử lý gần đây",
+  "mastermindReplyPendingShort": "Đang chờ gửi",
+  "mastermindAskTitle": "Yêu cầu",
+  "mastermindOpensItem": "Mở yêu cầu",
+  "mastermindItemOpenOnMacReason": "Mastermind chưa công bố đầy đủ yêu cầu này. Hãy đọc trong Hộp thư trên máy Mac.",
+  "mastermindItemOpenOnMac": "Chi tiết đầy đủ trên máy Mac",
+  "mastermindResolvedOutcome": "Kết quả",
+  "mastermindResolvedNoAnswer": "Mastermind đã đóng yêu cầu này mà không ghi lại câu trả lời.",
+  "mastermindResolvedAnswer": "Câu trả lời: {answer}",
+  "mastermindResolvedWith": "Đã xử lý · {answer}",
+  "mastermindResolvedState": "Đã xử lý",
+  "mastermindNothingResolvedReason": "Yêu cầu sẽ hiện ở đây khi Mastermind ghi nhận câu trả lời.",
+  "mastermindNothingResolved": "Chưa có yêu cầu nào được xử lý gần đây",
+  "mastermindNothingNeedsYouReason": "Mastermind sẽ hiện yêu cầu ở đây khi một luồng cần bạn trả lời.",
+  "mastermindInboxNoMatchesReason": "Không có mục nào trong chế độ xem này khớp với tìm kiếm hoặc bộ lọc.",
+  "mastermindInboxClearFilters": "Xóa tìm kiếm và bộ lọc",
+  "mastermindInboxSearchAction": "Tìm trong Hộp thư",
+  "mastermindInboxResolvedSegment": "Đã xử lý",
   "mastermindLastChecked": "Kiểm tra lần cuối {time}",
   "@mastermindLastChecked": {
     "placeholders": {
@@ -6042,6 +6068,20 @@
     "placeholders": {
       "count": {
         "type": "int"
+      }
+    }
+  },
+  "@mastermindResolvedWith": {
+    "placeholders": {
+      "answer": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindResolvedAnswer": {
+    "placeholders": {
+      "answer": {
+        "type": "String"
       }
     }
   }

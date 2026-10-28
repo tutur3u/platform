@@ -20,7 +20,7 @@ bool acceptsDecisionItem(Map<String, dynamic> row) {
       if (row is! Map<String, dynamic>) continue;
       final resolved = {...row, 'status': 'resolved'};
       try {
-        final item = parseNeedsYou(JsonReader(resolved));
+        final item = _withResolution(parseNeedsYou(JsonReader(resolved)), row);
         // The latest occurrence owns both ordering and content.
         items.remove(item.id);
         rows.remove(item.id);
@@ -35,5 +35,29 @@ bool acceptsDecisionItem(Map<String, dynamic> row) {
   return (
     items: items.values.skip(skip).toList(growable: false),
     rows: rows.values.toList(growable: false),
+  );
+}
+
+/// The strict item parser drops `resolved_at` and `resolution`; history rows
+/// keep them so the Inbox can say when and how an ask was closed. A malformed
+/// value is left out rather than rejecting the row.
+NeedsYou _withResolution(NeedsYou item, Map<String, dynamic> row) {
+  final at = row['resolved_at'];
+  final answer = row['resolution'];
+  final resolution = answer is String ? answer.trim() : '';
+  return NeedsYou(
+    id: item.id,
+    title: item.title,
+    body: item.body,
+    askTruncated: item.askTruncated,
+    createdAt: item.createdAt,
+    options: item.options,
+    recommendedOption: item.recommendedOption,
+    state: item.state,
+    versionHash: item.versionHash,
+    kind: item.kind,
+    product: item.product,
+    resolvedAt: at is String ? DateTime.tryParse(at)?.toUtc() : null,
+    resolution: resolution.isEmpty ? null : resolution,
   );
 }

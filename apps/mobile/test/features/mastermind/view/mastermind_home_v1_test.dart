@@ -113,7 +113,13 @@ void main() {
             'Mastermind · hub · decision';
       }
       await _pumpHome(tester, json);
-      expect(find.text('Decision for Mastermind hub'), findsOneWidget);
+      final first = ((json['now'] as Map)['needs_you'] as List).first as Map;
+      expect(
+        tester
+            .widget<Text>(find.byKey(ValueKey('ask-title-${first['id']}')))
+            .data,
+        'Review the plan',
+      );
       expect(find.textContaining('Mastermind · hub ·'), findsNothing);
       expect(find.text('Review plan'), findsOneWidget);
     });

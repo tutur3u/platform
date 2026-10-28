@@ -5,7 +5,8 @@ import 'package:mobile/features/mastermind/presentation/inbox_segment.dart';
 import 'package:mobile/features/mastermind/view/widgets/mastermind_segmented_control.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-/// Needs you and Decisions: two views of the same Inbox tab.
+/// Needs you and Resolved filter the asks; Decisions is the journal.
+/// Four views of the same Inbox tab in one compact control.
 class InboxSegmentBar extends StatelessWidget {
   const InboxSegmentBar({
     required this.selected,
@@ -28,6 +29,10 @@ class InboxSegmentBar extends StatelessWidget {
           AppSegment(
             value: InboxSegment.needsYou,
             label: l10n.mastermindNeedsYouTitle,
+          ),
+          AppSegment(
+            value: InboxSegment.resolved,
+            label: l10n.mastermindInboxResolvedSegment,
           ),
           AppSegment(
             value: InboxSegment.decisions,

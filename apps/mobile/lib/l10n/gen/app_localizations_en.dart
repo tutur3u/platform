@@ -15,6 +15,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindUnrecognisedValue => 'Unrecognised value';
 
   @override
+  String get mastermindAskTruncated => 'Ask truncated; full text on the Mac';
+
+  @override
+  String get mastermindReplyFailedShort => 'Not sent · tap to retry';
+
+  @override
+  String mastermindReplySendingOption(String option) {
+    return 'Sending “$option”';
+  }
+
+  @override
+  String get mastermindReplyUndo => 'Undo';
+
+  @override
+  String get mastermindReplyNotSentReview => 'Couldn\'t send · open to review';
+
+  @override
+  String get mastermindAnswerExpand => 'Show full answer';
+
+  @override
+  String get mastermindAnswerCollapse => 'Show less';
+
+  @override
+  String mastermindReplyQueuedAt(String time) {
+    return 'Queued $time';
+  }
+
+  @override
   String get assistantDownloadPhasePending => 'Pending';
 
   @override
@@ -12727,7 +12755,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindInboxNoMatches => 'No matching items';
 
   @override
-  String get mastermindInboxSearchPlaceholder => 'Search Needs you';
+  String get mastermindInboxSearchPlaceholder => 'Search asks';
 
   @override
   String get mastermindInsightsLabel => 'Insights';
@@ -13857,10 +13885,62 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindGapReset => 'Quota reset';
 
   @override
-  String get mastermindAskMissing => 'Full ask not published yet';
+  String get mastermindRecentlyResolved => 'Recently resolved';
 
   @override
-  String get mastermindRecentlyResolved => 'Recently resolved';
+  String get mastermindReplyPendingShort => 'Waiting to send';
+
+  @override
+  String get mastermindAskTitle => 'Ask';
+
+  @override
+  String get mastermindOpensItem => 'Opens the ask';
+
+  @override
+  String get mastermindItemOpenOnMacReason => 'Mastermind didn\'t publish the full ask for this item. Read it in the Inbox on your Mac.';
+
+  @override
+  String get mastermindItemOpenOnMac => 'Full details are on the Mac';
+
+  @override
+  String get mastermindResolvedOutcome => 'Outcome';
+
+  @override
+  String get mastermindResolvedNoAnswer => 'Mastermind closed this ask without recording an answer.';
+
+  @override
+  String mastermindResolvedAnswer(String answer) {
+    return 'Answer: $answer';
+  }
+
+  @override
+  String mastermindResolvedWith(String answer) {
+    return 'Resolved · $answer';
+  }
+
+  @override
+  String get mastermindResolvedState => 'Resolved';
+
+  @override
+  String get mastermindNothingResolvedReason => 'Asks appear here once Mastermind records an answer.';
+
+  @override
+  String get mastermindNothingResolved => 'Nothing resolved recently';
+
+  @override
+  String get mastermindNothingNeedsYouReason => 'Mastermind lists an ask here when a lane needs your answer.';
+
+  @override
+  String get mastermindInboxNoMatchesReason => 'Nothing in this view matches your search or filter.';
+
+  @override
+  String get mastermindInboxClearFilters => 'Clear search and filters';
+
+  @override
+  String get mastermindInboxSearchAction => 'Search Inbox';
+
+  @override
+  String get mastermindInboxResolvedSegment => 'Resolved';
 
   @override
   String mastermindLastChecked(String time) {

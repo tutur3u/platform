@@ -103,6 +103,54 @@ abstract class AppLocalizations {
   /// **'Unrecognised value'**
   String get mastermindUnrecognisedValue;
 
+  /// No description provided for @mastermindAskTruncated.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask truncated; full text on the Mac'**
+  String get mastermindAskTruncated;
+
+  /// No description provided for @mastermindReplyFailedShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Not sent · tap to retry'**
+  String get mastermindReplyFailedShort;
+
+  /// No description provided for @mastermindReplySendingOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending “{option}”'**
+  String mastermindReplySendingOption(String option);
+
+  /// No description provided for @mastermindReplyUndo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get mastermindReplyUndo;
+
+  /// No description provided for @mastermindReplyNotSentReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t send · open to review'**
+  String get mastermindReplyNotSentReview;
+
+  /// No description provided for @mastermindAnswerExpand.
+  ///
+  /// In en, this message translates to:
+  /// **'Show full answer'**
+  String get mastermindAnswerExpand;
+
+  /// No description provided for @mastermindAnswerCollapse.
+  ///
+  /// In en, this message translates to:
+  /// **'Show less'**
+  String get mastermindAnswerCollapse;
+
+  /// No description provided for @mastermindReplyQueuedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Queued {time}'**
+  String mastermindReplyQueuedAt(String time);
+
   /// No description provided for @assistantDownloadPhasePending.
   ///
   /// In en, this message translates to:
@@ -24040,7 +24088,7 @@ abstract class AppLocalizations {
   /// No description provided for @mastermindInboxSearchPlaceholder.
   ///
   /// In en, this message translates to:
-  /// **'Search Needs you'**
+  /// **'Search asks'**
   String get mastermindInboxSearchPlaceholder;
 
   /// No description provided for @mastermindInsightsLabel.
@@ -25957,17 +26005,113 @@ abstract class AppLocalizations {
   /// **'Quota reset'**
   String get mastermindGapReset;
 
-  /// No description provided for @mastermindAskMissing.
-  ///
-  /// In en, this message translates to:
-  /// **'Full ask not published yet'**
-  String get mastermindAskMissing;
-
   /// No description provided for @mastermindRecentlyResolved.
   ///
   /// In en, this message translates to:
   /// **'Recently resolved'**
   String get mastermindRecentlyResolved;
+
+  /// No description provided for @mastermindReplyPendingShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting to send'**
+  String get mastermindReplyPendingShort;
+
+  /// No description provided for @mastermindAskTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask'**
+  String get mastermindAskTitle;
+
+  /// No description provided for @mastermindOpensItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Opens the ask'**
+  String get mastermindOpensItem;
+
+  /// No description provided for @mastermindItemOpenOnMacReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Mastermind didn\'t publish the full ask for this item. Read it in the Inbox on your Mac.'**
+  String get mastermindItemOpenOnMacReason;
+
+  /// No description provided for @mastermindItemOpenOnMac.
+  ///
+  /// In en, this message translates to:
+  /// **'Full details are on the Mac'**
+  String get mastermindItemOpenOnMac;
+
+  /// No description provided for @mastermindResolvedOutcome.
+  ///
+  /// In en, this message translates to:
+  /// **'Outcome'**
+  String get mastermindResolvedOutcome;
+
+  /// No description provided for @mastermindResolvedNoAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Mastermind closed this ask without recording an answer.'**
+  String get mastermindResolvedNoAnswer;
+
+  /// No description provided for @mastermindResolvedAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Answer: {answer}'**
+  String mastermindResolvedAnswer(String answer);
+
+  /// No description provided for @mastermindResolvedWith.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolved · {answer}'**
+  String mastermindResolvedWith(String answer);
+
+  /// No description provided for @mastermindResolvedState.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolved'**
+  String get mastermindResolvedState;
+
+  /// No description provided for @mastermindNothingResolvedReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Asks appear here once Mastermind records an answer.'**
+  String get mastermindNothingResolvedReason;
+
+  /// No description provided for @mastermindNothingResolved.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing resolved recently'**
+  String get mastermindNothingResolved;
+
+  /// No description provided for @mastermindNothingNeedsYouReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Mastermind lists an ask here when a lane needs your answer.'**
+  String get mastermindNothingNeedsYouReason;
+
+  /// No description provided for @mastermindInboxNoMatchesReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing in this view matches your search or filter.'**
+  String get mastermindInboxNoMatchesReason;
+
+  /// No description provided for @mastermindInboxClearFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear search and filters'**
+  String get mastermindInboxClearFilters;
+
+  /// No description provided for @mastermindInboxSearchAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Search Inbox'**
+  String get mastermindInboxSearchAction;
+
+  /// No description provided for @mastermindInboxResolvedSegment.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolved'**
+  String get mastermindInboxResolvedSegment;
 
   /// No description provided for @mastermindLastChecked.
   ///

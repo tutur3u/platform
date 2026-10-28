@@ -348,3 +348,16 @@ secrets on `unlocked_this_device`. Exercise class-filtered reads, duplicate writ
 locked reads and interruption recovery with
 `test/data/sources/keychain_accessibility_migration_test.dart`; a plain map fake
 cannot reproduce the native accessibility conflict.
+
+### Mastermind ask context and option replies
+
+Keep Home and Inbox on the shared `InboxItemTile` and `openAsks` projection so
+resolved identities and duplicate ids cannot reappear on Home. Preserve optional
+`created_at` when adapting v1 asks and copying resolved history. Display real
+titles or the first ask line through `itemDisplayTitle`; do not invent content
+when the hub only publishes a Mac pointer. Option buttons call the existing
+reply cubit's `submit` with the original option index; retry the stored entry
+rather than creating a new key. Keep capability and actor fences intact.
+`mastermind_ask_context_test.dart` covers the v1 fixture, real options, retries,
+metadata, previews, open-only deduplication and Needs-you navigation. See the
+[Mastermind product rules](../../../../../apps/docs/platform/features/mobile-mastermind.mdx).
