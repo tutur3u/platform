@@ -16,6 +16,7 @@ import 'package:mobile/core/config/env.dart';
 import 'package:mobile/core/config/firebase_options_selector.dart';
 import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/core/observability/mobile_observability.dart';
+import 'package:mobile/core/startup/optional_startup.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
 import 'package:mobile/core/ui/icons/lucide_licenses.dart';
@@ -63,13 +64,6 @@ Future<void> bootstrap(
   Env.assertSecureForRelease();
   registerLucideLicenses();
   ApiConfig.configure(appFlavor);
-  if (Platform.isAndroid || Platform.isIOS) {
-    // Restore public model jobs without blocking authenticated app startup.
-    // Settings exposes initialization failures and permits a fresh retry.
-    unawaited(
-      AssistantModelDownloads.instance.initialize().catchError((Object _) {}),
-    );
-  }
   await AppHaptics.initialize();
 
   final settingsRepository = SettingsRepository();
@@ -156,6 +150,11 @@ Future<void> bootstrap(
       initialAppearance: initialAppearance,
     ),
   );
+  if (Platform.isAndroid || Platform.isIOS) {
+    // Keep native transfer recovery and disk checks after first paint.
+    // Settings still exposes failures and permits a fresh initialization retry.
+    scheduleOptionalStartup(AssistantModelDownloads.instance.initialize);
+  }
 }
 
 shad.ThemeMode _parseThemeMode(String mode) {
