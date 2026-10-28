@@ -148,6 +148,7 @@ function sprintsState(sprints: BoardSprint[]) {
   return {
     currentSprint: current,
     currentSprintTaskIds: new Set(current?.tasks.map((t) => t.task_id)),
+    showsOnBoard: null,
     isError: false,
     isLoading: false,
     openSprintByTaskId: new Map(),
