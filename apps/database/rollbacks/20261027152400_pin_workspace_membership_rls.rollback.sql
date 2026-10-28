@@ -2,10 +2,14 @@
 -- Restores the exact pre-migration policy expressions. This migration revokes three direct privileges; rollback restores those exact privileges.
 BEGIN;
 
-ALTER POLICY "Users can update their own notes" ON public.notes
+DROP POLICY "Users can update their own notes" ON public.notes;
+CREATE POLICY "Users can update their own notes" ON public.notes
+  AS PERMISSIVE FOR UPDATE TO public
   USING (creator_id = (SELECT auth.uid()));
 
-ALTER POLICY "Users can manage their own sessions" ON public.live_api_sessions
+DROP POLICY "Users can manage their own sessions" ON public.live_api_sessions;
+CREATE POLICY "Users can manage their own sessions" ON public.live_api_sessions
+  AS PERMISSIVE FOR ALL TO public
   USING ((SELECT auth.uid()) = user_id);
 
 ALTER POLICY "Allow all for workspace members" ON public.aurora_ml_forecast
