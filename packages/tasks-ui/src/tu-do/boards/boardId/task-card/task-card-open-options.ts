@@ -4,6 +4,7 @@ import { isPersonalExternalOverlayTask } from '@tuturuuu/ui/lib/task-personal-ex
 import {
   type BoardConfig,
   getTaskTicketLabel,
+  getTaskTicketProject,
 } from '@tuturuuu/utils/task-helper';
 import type { SharedTaskContext } from '../../../shared/task-edit-dialog/hooks/use-task-data';
 
@@ -60,15 +61,18 @@ export function getTaskCardTicketIdentifier({
 }
 
 /**
- * Projects to show as a card badge. The `[KEY-N]` prefix already names a
- * lone project, so its badge would repeat it; several projects keep theirs.
+ * Projects to show as a card badge. The `[KEY-N]` prefix already names the
+ * project it comes from, so a card whose only project is that one drops the
+ * badge; several projects, or a prefix from another project (a personal
+ * overlay keeps the source ticket), keep theirs.
  */
-export function getTaskCardBadgeProjects<T>(
-  projects: T[] | null | undefined,
+export function getTaskCardBadgeProjects(
+  task: Pick<Task, 'projects'> & { ticket_projects?: Task['projects'] },
   ticketIdentifier: string | null
-): T[] {
-  if (!projects?.length) return [];
-  return ticketIdentifier && projects.length === 1 ? [] : projects;
+): NonNullable<Task['projects']> {
+  const projects = task.projects ?? [];
+  if (!ticketIdentifier || projects.length !== 1) return projects;
+  return getTaskTicketProject(task)?.id === projects[0]?.id ? [] : projects;
 }
 
 function buildInitialSourceList(
