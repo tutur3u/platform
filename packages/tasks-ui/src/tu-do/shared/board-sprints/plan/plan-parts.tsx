@@ -3,11 +3,11 @@
 import { CalendarDays, KanbanSquare, ListChecks } from '@tuturuuu/icons';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
 import { getTicketIdentifier } from '@tuturuuu/utils/task-helper';
 import { isTaskOverdueByOwnDate } from '@tuturuuu/utils/task-helper/sprints';
 import { useLocale, useTranslations } from 'next-intl';
-import { ToneButton } from '../../board-header/tone-button';
 import type { BoardMember } from '../../board-members-query';
 
 export type BoardTab = 'plan' | 'board';
@@ -21,33 +21,20 @@ export function BoardPlanTabs({
   tab: BoardTab;
 }) {
   const t = useTranslations('ws-task-boards.sprints');
+  // The shared Tabs, sized to the header's h-8 controls.
   return (
-    <div
-      aria-label={t('tabs_label')}
-      className="inline-flex items-center gap-1"
-      role="tablist"
-    >
-      <ToneButton
-        active={tab === 'plan'}
-        aria-selected={tab === 'plan'}
-        onClick={() => onTabChange('plan')}
-        role="tab"
-        tone="green"
-      >
-        <ListChecks />
-        {t('plan_tab')}
-      </ToneButton>
-      <ToneButton
-        active={tab === 'board'}
-        aria-selected={tab === 'board'}
-        onClick={() => onTabChange('board')}
-        role="tab"
-        tone="blue"
-      >
-        <KanbanSquare />
-        {t('board_tab')}
-      </ToneButton>
-    </div>
+    <Tabs onValueChange={(value) => onTabChange(value as BoardTab)} value={tab}>
+      <TabsList aria-label={t('tabs_label')} className="h-8 p-0.5">
+        <TabsTrigger className="h-7 px-2.5 text-xs" value="plan">
+          <ListChecks className="size-3.5" />
+          {t('plan_tab')}
+        </TabsTrigger>
+        <TabsTrigger className="h-7 px-2.5 text-xs" value="board">
+          <KanbanSquare className="size-3.5" />
+          {t('board_tab')}
+        </TabsTrigger>
+      </TabsList>
+    </Tabs>
   );
 }
 

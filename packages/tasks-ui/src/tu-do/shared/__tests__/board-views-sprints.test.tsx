@@ -247,7 +247,8 @@ describe('BoardViews sprints', () => {
     listBoardSprintsMock.mockResolvedValue(runningAndPlanned);
     renderBoardViews({ tasks: mockTasks });
 
-    fireEvent.click(await screen.findByRole('tab', { name: 'plan_tab' }));
+    // Radix tabs switch on mouse down.
+    fireEvent.mouseDown(await screen.findByRole('tab', { name: 'plan_tab' }));
 
     expect(await screen.findByTestId('plan-view')).toHaveTextContent(
       'Sprint 15'
@@ -255,7 +256,7 @@ describe('BoardViews sprints', () => {
     expect(screen.queryByTestId('kanban-view')).not.toBeInTheDocument();
     expect(boardHeaderProps?.planActive).toBe(true);
 
-    fireEvent.click(screen.getByRole('tab', { name: 'board_tab' }));
+    fireEvent.mouseDown(screen.getByRole('tab', { name: 'board_tab' }));
     expect(await screen.findByTestId('kanban-view')).toBeInTheDocument();
   });
 
