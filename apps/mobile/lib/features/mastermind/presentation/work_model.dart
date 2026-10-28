@@ -17,6 +17,26 @@ const List<LaneState> laneStatePriority = [
   LaneState.unknown,
 ];
 
+/// The Work tab segments. Lanes is the default and is never written to the
+/// URL; the other two ride in `?segment=`.
+enum WorkSegment {
+  lanes('lanes'),
+  backlog('backlog'),
+  staff('staff');
+
+  const WorkSegment(this.queryValue);
+
+  final String queryValue;
+}
+
+/// The segment a `?segment=` query names; anything else is Lanes.
+WorkSegment workSegmentFromQuery(String? value) {
+  for (final segment in WorkSegment.values) {
+    if (segment.queryValue == value) return segment;
+  }
+  return WorkSegment.lanes;
+}
+
 /// The lane state a `?state=` query names, or null for anything else.
 LaneState? laneStateFromQuery(String? value) {
   for (final state in LaneState.values) {
@@ -41,10 +61,18 @@ Area? areaFromQuery(String? value) {
   return null;
 }
 
-/// The Work location for a filter selection: the query keeps the filters in
-/// the URL, so a lane opened from the list returns to the same filtered view.
-String workLocation({LaneState? state, Product? product, Area? area}) {
+/// The Work location for a segment and filter selection: the query keeps both
+/// in the URL, so a lane opened from the list returns to the same filtered
+/// view. The lane filters stay in the URL on the other segments, so switching
+/// back to Lanes finds them again.
+String workLocation({
+  WorkSegment segment = WorkSegment.lanes,
+  LaneState? state,
+  Product? product,
+  Area? area,
+}) {
   final query = {
+    if (segment != WorkSegment.lanes) 'segment': segment.queryValue,
     'state': ?state?.wireName,
     'product': ?product?.wireName,
     'area': ?area?.wireName,

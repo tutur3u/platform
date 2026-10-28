@@ -12312,6 +12312,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindBacklogLabel => 'Backlog';
 
   @override
+  String get mastermindBacklogNoMatches => 'No matching backlog items';
+
+  @override
+  String get mastermindBacklogSearchPlaceholder => 'Search backlog';
+
+  @override
   String get mastermindBackToWork => 'Back to Work';
 
   @override
@@ -13230,7 +13236,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindSourcesTitle => 'Sources';
 
   @override
+  String get mastermindStaffEmpty => 'No staff roles reported.';
+
+  @override
   String get mastermindStaffGroup => 'Staff';
+
+  @override
+  String mastermindStaffSummary(int count, int running) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count roles',
+      one: '1 role',
+    );
+    return '$_temp0 · $running running';
+  }
+
+  @override
+  String get mastermindStaffUnknownModel => 'Unknown model';
 
   @override
   String get mastermindStateAnswered => 'answered';

@@ -23263,6 +23263,18 @@ abstract class AppLocalizations {
   /// **'Backlog'**
   String get mastermindBacklogLabel;
 
+  /// No description provided for @mastermindBacklogNoMatches.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching backlog items'**
+  String get mastermindBacklogNoMatches;
+
+  /// No description provided for @mastermindBacklogSearchPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Search backlog'**
+  String get mastermindBacklogSearchPlaceholder;
+
   /// No description provided for @mastermindBackToWork.
   ///
   /// In en, this message translates to:
@@ -24907,11 +24919,29 @@ abstract class AppLocalizations {
   /// **'Sources'**
   String get mastermindSourcesTitle;
 
+  /// No description provided for @mastermindStaffEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No staff roles reported.'**
+  String get mastermindStaffEmpty;
+
   /// No description provided for @mastermindStaffGroup.
   ///
   /// In en, this message translates to:
   /// **'Staff'**
   String get mastermindStaffGroup;
+
+  /// No description provided for @mastermindStaffSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 role} other{{count} roles}} · {running} running'**
+  String mastermindStaffSummary(int count, int running);
+
+  /// No description provided for @mastermindStaffUnknownModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown model'**
+  String get mastermindStaffUnknownModel;
 
   /// No description provided for @mastermindStateAnswered.
   ///

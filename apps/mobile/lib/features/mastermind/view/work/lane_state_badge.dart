@@ -18,7 +18,9 @@ class LaneStateBadge extends StatelessWidget {
     LaneState.waiting => LucideIcons.hourglass,
     LaneState.queued => LucideIcons.list,
     LaneState.completed => AppIcons.check,
-    LaneState.cancelled => LucideIcons.circleX,
+    LaneState.cancelled || LaneState.withdrawn => LucideIcons.circleX,
+    LaneState.answered => AppIcons.check,
+    LaneState.open => LucideIcons.circleDot,
     _ => AppIcons.info,
   };
 
