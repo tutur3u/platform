@@ -16,10 +16,15 @@ import {
   toggleUnassignedFilter,
 } from './board-filter-state';
 
+// Five people show; a narrow header shows two, the rest go to More.
 const VISIBLE_PEOPLE = 5;
+const NARROW_VISIBLE_PEOPLE = 2;
+const WIDE_ONLY_CLASS = 'hidden @sm/board-header:inline-flex';
 
 const PILL_CLASS =
-  'inline-flex h-8 shrink-0 items-center gap-2 whitespace-nowrap rounded-full border py-0 pr-3 pl-1 font-medium text-xs transition-[background-color,color,opacity]';
+  'inline-flex h-8 shrink-0 items-center gap-2 whitespace-nowrap rounded-full border py-0 pr-1 pl-1 font-medium text-xs transition-[background-color,color,opacity] @xl/board-header:pr-3';
+// Names drop first when the header narrows; the avatar and hover name stay.
+const NAME_CLASS = 'hidden @xl/board-header:inline';
 
 function personName(person: BoardPerson) {
   return person.display_name || person.email || '?';
@@ -56,7 +61,8 @@ export function BoardPeopleFilter({
   const selected = getSelectedPersonIds(filters, currentUserId);
   const anySelected = selected.size > 0 || filters.includeUnassigned;
   const visible = people.slice(0, VISIBLE_PEOPLE);
-  const overflow = people.slice(VISIBLE_PEOPLE);
+  const overflow = people.slice(NARROW_VISIBLE_PEOPLE);
+  const wideOverflowCount = Math.max(0, people.length - VISIBLE_PEOPLE);
   const overflowSelected = overflow.filter((person) => selected.has(person.id));
 
   const pillClass = (on: boolean) =>
@@ -91,19 +97,23 @@ export function BoardPeopleFilter({
       aria-label={t('common.people')}
       className="flex min-w-0 items-center gap-1"
     >
-      {visible.map((person) => {
+      {visible.map((person, index) => {
         const on = selected.has(person.id);
         return (
           <button
             key={person.id}
+            aria-label={personName(person)}
             aria-pressed={on}
-            className={pillClass(on)}
+            className={cn(
+              pillClass(on),
+              index >= NARROW_VISIBLE_PEOPLE && WIDE_ONLY_CLASS
+            )}
             onClick={() => togglePerson(person.id)}
             title={title(person)}
             type="button"
           >
             <PersonAvatar person={person} />
-            {personName(person)}
+            <span className={NAME_CLASS}>{personName(person)}</span>
           </button>
         );
       })}
@@ -111,19 +121,35 @@ export function BoardPeopleFilter({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
-              className={cn(pillClass(overflowSelected.length > 0), 'pl-3')}
+              className={cn(
+                pillClass(overflowSelected.length > 0),
+                'pl-3',
+                wideOverflowCount === 0 && '@sm/board-header:hidden'
+              )}
               type="button"
             >
-              {t('ws-task-boards.header.more_people', {
-                count: overflow.length,
-              })}
+              <span className="@sm/board-header:hidden">
+                +{overflow.length}
+              </span>
+              {wideOverflowCount > 0 ? (
+                <span className="@sm/board-header:inline hidden">
+                  {t('ws-task-boards.header.more_people', {
+                    count: wideOverflowCount,
+                  })}
+                </span>
+              ) : null}
               <ChevronDown className="size-3.5 opacity-60" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-56">
-            {overflow.map((person) => (
+            {overflow.map((person, index) => (
               <DropdownMenuCheckboxItem
                 key={person.id}
+                // These also get a pill once the header is wide enough.
+                className={cn(
+                  index < VISIBLE_PEOPLE - NARROW_VISIBLE_PEOPLE &&
+                    '@sm/board-header:hidden'
+                )}
                 checked={selected.has(person.id)}
                 onCheckedChange={() => togglePerson(person.id)}
                 onSelect={(event) => event.preventDefault()}
@@ -144,6 +170,7 @@ export function BoardPeopleFilter({
       ) : null}
       {unassignedCount > 0 || !countsComplete || filters.includeUnassigned ? (
         <button
+          aria-label={t('common.unassigned')}
           aria-pressed={filters.includeUnassigned}
           className={pillClass(filters.includeUnassigned)}
           onClick={() => onFiltersChange(toggleUnassignedFilter(filters))}
@@ -160,7 +187,7 @@ export function BoardPeopleFilter({
           <span className="grid size-6 place-items-center rounded-full border border-current border-dashed">
             <UserX className="size-3.5" />
           </span>
-          {t('common.unassigned')}
+          <span className={NAME_CLASS}>{t('common.unassigned')}</span>
         </button>
       ) : null}
     </fieldset>
