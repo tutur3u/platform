@@ -487,7 +487,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
         ) : !activeMailboxId ? (
           <MailContentState kind="no_mailbox" />
         ) : threads.length ? (
-          <div className="space-y-1 p-2">
+          <div className="space-y-0.5 p-1.5">
             <MailDeliveryList
               threads={threads}
               mailboxAddress={activeMailbox?.address}
