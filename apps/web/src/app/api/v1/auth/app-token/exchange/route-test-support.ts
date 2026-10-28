@@ -388,6 +388,7 @@ export function registerExchangeTestSetup() {
     mocks.redisSet.mockResolvedValue('OK');
     vi.mocked(getUpstashRestRedisClient).mockResolvedValue({
       del: vi.fn(),
+      eval: vi.fn(),
       decr: vi.fn(),
       expire: vi.fn(),
       get: mocks.redisGet,
