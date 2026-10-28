@@ -15,6 +15,7 @@ import { SatelliteFooterActions } from './satellite-footer-actions';
 import { SidebarNavigation } from './satellite-navigation';
 import { SatelliteShell } from './satellite-shell';
 import { SatelliteUserMenu } from './satellite-user-menu';
+import { Structure } from './structure';
 import { useSatelliteShell } from './use-satellite-shell';
 
 const emptyLinks: NavLink[] = [];
@@ -86,6 +87,36 @@ describe('framework-independent satellite shell', () => {
     expect(screen.getByText('Account settings')).toBeTruthy();
     fireEvent.click(screen.getAllByRole('button', { name: 'Apps' })[0]!);
     expect(openApps).toHaveBeenCalledOnce();
+  });
+
+  it('releases the mobile body scroll lock when resized to desktop', () => {
+    mobile = true;
+    vi.stubGlobal('innerWidth', 390);
+    vi.stubGlobal('scrollY', 120);
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
+    const props = {
+      isCollapsed: false,
+      setIsCollapsed: vi.fn(),
+      children: 'Page content',
+    };
+    const { rerender } = render(
+      <Structure {...props} mobileSidebarOpen={false} />
+    );
+    expect(document.body.style.position).toBe('');
+    rerender(<Structure {...props} mobileSidebarOpen />);
+    expect(document.body.style.position).toBe('fixed');
+    expect(document.body.style.top).toBe('-120px');
+    expect(document.body.style.width).toBe('100%');
+    act(() => {
+      mobile = false;
+      vi.stubGlobal('innerWidth', 768);
+      notifyResize();
+    });
+    expect(document.body.style.position).toBe('');
+    expect(document.body.style.top).toBe('');
+    expect(document.body.style.width).toBe('');
+    expect(scrollTo).toHaveBeenCalledWith(0, 120);
+    vi.restoreAllMocks();
   });
 
   it.each([false, true])(

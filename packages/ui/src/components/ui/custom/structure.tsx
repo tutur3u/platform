@@ -2,6 +2,7 @@
 
 import { ChevronLeft, ChevronRight, Menu, X } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
+import { useIsMobile } from '@tuturuuu/ui/hooks/use-mobile';
 import { TooltipProvider } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import {
@@ -66,6 +67,7 @@ export function Structure({
   sidebarHeaderClassName,
   sidebarHeaderHeight,
 }: StructureProps) {
+  const isMobile = useIsMobile();
   const mobileNavRef = useRef<HTMLElement>(null);
   const mainRef = useRef<HTMLElement>(null);
   useLayoutEffect(() => {
@@ -87,7 +89,6 @@ export function Structure({
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const isMobile = window.innerWidth < 768; // md breakpoint
     if (isMobile && !sidebarHidden && (mobileSidebarOpen ?? !isCollapsed)) {
       const scrollY = window.scrollY;
       document.body.style.position = 'fixed';
@@ -101,7 +102,7 @@ export function Structure({
         window.scrollTo(0, scrollY);
       };
     }
-  }, [isCollapsed, mobileSidebarOpen, sidebarHidden]);
+  }, [isCollapsed, isMobile, mobileSidebarOpen, sidebarHidden]);
 
   return (
     <>
