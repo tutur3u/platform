@@ -14,6 +14,13 @@ import {
 } from './run-supabase-isolated.js';
 
 const repositoryRoot = process.cwd();
+const config = readFileSync('apps/database/supabase/config.toml', 'utf8');
+const api = config.split(/^\[api\]\s*$/m)[1]?.split(/^\[/m)[0];
+const schemas = JSON.parse(api?.match(/^schemas\s*=\s*(\[[^\]]*\])/m)?.[1] ?? 'null');
+if (!Array.isArray(schemas) || !schemas.length ||
+    schemas.some((schema) => !/^[a-z_][a-z0-9_]*$/.test(schema))) {
+  throw new Error('Cannot derive API exposed schemas');
+}
 const headSha = execFileSync('git', ['rev-parse', 'HEAD'], {
   encoding: 'utf8',
 }).trim();
@@ -95,6 +102,8 @@ const runner = async (command, args, cwd) => {
           '-t',
           '-v',
           'ON_ERROR_STOP=1',
+          '-c',
+          `set test.mfa_schemas = '${schemas.join(',')}'`,
           '-U',
           'supabase_admin',
           '--dbname',

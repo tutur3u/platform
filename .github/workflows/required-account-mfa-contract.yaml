@@ -11,6 +11,9 @@ on:
       - '.github/actions/cache-supabase-images/**'
       - 'scripts/ci/supabase-image-cache*'
       - '.github/workflows/required-account-mfa-contract.yaml'
+  push:
+    branches: [main]
+  merge_group:
   workflow_dispatch:
 permissions:
   contents: read

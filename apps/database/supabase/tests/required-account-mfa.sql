@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(35);
+select plan(39);
 insert into auth.users (id, aud, role, email, raw_app_meta_data, created_at, updated_at)
 values ('00000000-0000-4000-8000-000000009901', 'authenticated', 'authenticated', 'mfa-policy-test@tuturuuu.com', '{}', now(), now());
 insert into public.users (id) values ('00000000-0000-4000-8000-000000009901') on conflict do nothing;
@@ -47,12 +47,47 @@ update auth.users set raw_app_meta_data = '{"tuturuuu_required_mfa":{"required":
 select ok(public.account_required_mfa_satisfied(), 'Explicitly disabled policy is honored');
 select ok(not has_function_privilege('authenticated', 'public.required_mfa_enforcement_version()', 'EXECUTE'), 'Readiness probe is admin-only');
 select ok(has_function_privilege('service_role', 'public.required_mfa_enforcement_version()', 'EXECUTE'), 'Service role can probe enforcement readiness');
-select ok(not exists (
-  select 1 from pg_class c join pg_namespace n on n.oid = c.relnamespace
-  where (n.nspname in ('public', 'private') or (n.nspname = 'storage' and c.relname in ('objects', 'buckets'))
-    or (n.nspname = 'realtime' and c.relname = 'messages')) and c.relkind in ('r', 'p') and c.relrowsecurity
-  and not exists (select 1 from pg_policy p where p.polrelid = c.oid and p.polname = 'account_required_mfa' and not p.polpermissive)
-), 'Every existing application RLS table has restrictive MFA enforcement');
+-- Scope is supplied from config.toml by the contract runner.
+create temporary view mfa_coverage_violations as
+select n.nspname, c.relname from pg_class c
+join pg_namespace n on n.oid = c.relnamespace
+where n.nspname = any(string_to_array(current_setting('test.mfa_schemas'), ','))
+and c.relkind in ('r','p','v','m')
+and not (
+  -- TEMPORARY SR-386: owner-read table predates complete MFA coverage.
+  n.nspname = 'private' and c.relname = 'note_voice_jobs'
+)
+and (
+  c.relkind = 'm'
+  or (c.relkind = 'v' and not coalesce(c.reloptions @> array['security_invoker=true'], false))
+  or (c.relkind in ('r','p') and (
+    not c.relrowsecurity or not exists (
+      select 1 from pg_policy p where p.polrelid = c.oid
+      and p.polname = 'account_required_mfa' and not p.polpermissive
+      and p.polcmd = '*'
+      and (0::oid = any(p.polroles) or 'authenticated'::regrole::oid = any(p.polroles))
+      and pg_get_expr(p.polqual,p.polrelid) ~ 'account_required_mfa_satisfied\(\)'
+      and pg_get_expr(p.polwithcheck,p.polrelid) ~ 'account_required_mfa_satisfied\(\)'
+    )
+  ))
+);
+select is((select string_agg(nspname || '.' || relname, ', ' order by nspname,relname)
+ from mfa_coverage_violations), null::text,
+ 'All exposed relations enforce MFA, including partitions and invoker views');
+
+savepoint broken_coverage;
+create table public.mfa_contract_probe(id int);
+select ok(exists(select 1 from mfa_coverage_violations where relname='mfa_contract_probe'), 'Detect RLS off');
+alter table public.mfa_contract_probe enable row level security;
+create policy account_required_mfa on public.mfa_contract_probe as restrictive for select to authenticated using(public.account_required_mfa_satisfied());
+select ok(exists(select 1 from mfa_coverage_violations where relname='mfa_contract_probe'), 'Detect SELECT-only policy');
+drop policy account_required_mfa on public.mfa_contract_probe;
+create policy account_required_mfa on public.mfa_contract_probe as restrictive for all to anon using(public.account_required_mfa_satisfied()) with check(public.account_required_mfa_satisfied());
+select ok(exists(select 1 from mfa_coverage_violations where relname='mfa_contract_probe'), 'Detect anon-only policy');
+drop policy account_required_mfa on public.mfa_contract_probe;
+create policy account_required_mfa on public.mfa_contract_probe as restrictive for all to authenticated using(true) with check(public.account_required_mfa_satisfied());
+select ok(exists(select 1 from mfa_coverage_violations where relname='mfa_contract_probe'), 'Detect USING true');
+rollback to broken_coverage;
 select is((select count(*) from pg_policies where schemaname = 'storage' and tablename = 'objects' and policyname = 'account_required_mfa'), 1::bigint, 'Storage access receives the same policy');
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-000000009999","role":"authenticated","aal":"aal2"}', true);
 select ok(not public.account_required_mfa_satisfied(), 'Deleted or missing auth account cannot retain database access');

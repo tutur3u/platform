@@ -66,7 +66,7 @@ const PROTECTED_TRIGGERS = {
   'programming-app-builds.yaml': '0a3cc2c97958f5cd',
   'programming-database-contract.yaml': '0a3cc2c97958f5cd',
   'report-review-receipts-contract.yaml': '433352a4fb0e56e6',
-  'required-account-mfa-contract.yaml': '0a3cc2c97958f5cd',
+  'required-account-mfa-contract.yaml': 'f803778bc2859492',
   'sdk-package-qualification.yaml': '0a3cc2c97958f5cd',
   'security-egress-contract.yaml': '0a3cc2c97958f5cd',
   'shortener-cloudflare.yaml': '95e0a84a4fdf354e',
