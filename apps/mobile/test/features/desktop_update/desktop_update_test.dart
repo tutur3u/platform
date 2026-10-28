@@ -39,6 +39,22 @@ void main() {
       expect(release.newerThan('0.10.1', ''), isFalse);
     });
 
+    test('run-free tags order by version only', () {
+      final release = DesktopRelease.parse(
+        fixture(tag: 'desktop-v0.10.2'),
+        'macos',
+      )!;
+      expect(release.run, isNull);
+      expect(release.version, '0.10.2');
+      expect(release.newerThan('0.10.1', '200'), isTrue);
+      expect(release.newerThan('0.10.2', '100'), isFalse);
+      expect(release.newerThan('0.10.3', '100'), isFalse);
+      expect(
+        DesktopRelease.parse(fixture(tag: 'desktop-v0.10.2-rc1'), 'macos'),
+        isNull,
+      );
+    });
+
     test(
       'accepts independently published platforms without inventing others',
       () {
@@ -132,11 +148,14 @@ void main() {
         addTearDown(repository.close);
         final old = Directory('${directory.path}/desktop-v0.10.1-100');
         await old.create();
+        final runFree = Directory('${directory.path}/desktop-v0.10.0');
+        await runFree.create();
         final unrelated = File('${directory.path}/notes.txt');
         await unrelated.writeAsString('keep');
         final release = DesktopRelease.parse(fixture(), 'linux')!;
         await repository.download(release);
         expect(old.existsSync(), isFalse);
+        expect(runFree.existsSync(), isFalse);
         expect(unrelated.existsSync(), isTrue);
         expect(repository.package(release).existsSync(), isTrue);
       },

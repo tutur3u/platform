@@ -195,7 +195,7 @@ Public downloads use persistent GitHub Release assets, which do not require a
 repository token in the browser. The workflow attests the packages and verifies
 each signed attestation against the exact source SHA, protected `production` ref,
 desktop workflow identity, and GitHub-hosted runner policy before it uploads a
-draft `desktop-v<version>-<run-id>` prerelease, then makes the complete selected-platform prerelease
+draft `desktop-v<version>` prerelease, then makes the complete selected-platform prerelease
 visible. It never marks the desktop beta as the repository's latest stable
 release or overwrites an existing release tag. A failed draft needs inspection
 before rerunning; do not replace assets of a published tag.
@@ -251,8 +251,44 @@ same commit. The post-job cache upload is not evidence that the build failed.
 
 Published desktop builds include `DESKTOP_RELEASE_RUN_ID`, supplied directly by
 `desktop-beta.yaml`. Development builds and mobile store builds do not run the
-desktop updater. The version and run ID together distinguish successive beta
-builds without manually changing Release Please versions.
+desktop updater. Successive betas differ by version (see
+[Versions and release notes](#versions-and-release-notes)); the updater compares
+versions, and the run ID only orders legacy run-suffixed tags.
+
+## Versions and release notes
+
+Desktop and mobile use one scheme without manual version bumps. Release Please
+owns `major.minor` (and a patch floor) in `apps/mobile/pubspec.yaml`; CI
+publishes the next unused patch from each channel's own history through the
+shared `nextBuildName` rule. Mobile reads App Store Connect TestFlight versions;
+desktop reads `desktop-v*` GitHub releases, including drafts.
+
+- The `release-status` job runs `scripts/desktop-deployment/release-version.mjs`
+  and every platform builds with `--build-name=<version>`, so the installed app,
+  the Windows installer and the Linux package report the published version.
+- The tag is `desktop-v<version>` with no run ID. Legacy
+  `desktop-v<version>-<run-id>` tags still count as used, so the first release
+  after them takes the next patch (for example `0.26.0-<run>` -> `0.26.1`).
+- `publish.mjs` recomputes the version with draft visibility and refuses to
+  publish when the build version is no longer next. A draft left by a failed
+  run reserves its version: inspect it before rerunning.
+- The run ID, source commit and previous beta appear in the release body's
+  Build details table and in a `tuturuuu-desktop-release` HTML comment. The
+  Debian package revision also keeps the run ID.
+
+`scripts/desktop-deployment/release-notes.mjs` renders the body: Highlights
+(`feat`) and Fixes (other product changes) from `apps/mobile` commits since the
+previous desktop beta, using the mobile store-notes normalizer; Known issues
+derived from package verification; a Downloads table (platform, file, size,
+SHA-256) computed from the verified packages, with the platform names, size unit
+and rounding used by `tuturuuu.com/download`; and checksum plus provenance
+verification commands. Release Please uses the same Highlights/Fixes headings for
+the mobile changelog.
+
+Desktop builds published before run-free tags only recognize
+`desktop-v<version>-<run-id>`, so they cannot see newer betas in the in-app
+updater. The first run-free release notes say so; affected users reinstall once
+from `/download`. The download page and Infrastructure status accept both forms.
 
 On startup and every six hours, the app checks the public GitHub release list and
 automatically downloads a newer desktop beta for its platform. Downloads use no account

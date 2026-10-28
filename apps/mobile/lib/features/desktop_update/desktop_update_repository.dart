@@ -139,7 +139,7 @@ class DesktopUpdateRepository {
           .last;
       if (entity is Directory &&
           name != keep.tag &&
-          RegExp(r'^desktop-v\d+\.\d+\.\d+-\d+$').hasMatch(name)) {
+          desktopReleaseTag.hasMatch(name)) {
         try {
           await entity.delete(recursive: true);
         } on FileSystemException {

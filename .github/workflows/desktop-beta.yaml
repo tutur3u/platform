@@ -13,6 +13,8 @@ on:
     types: [opened, synchronize, reopened, ready_for_review, labeled]
     paths:
       - "scripts/desktop-deployment/**"
+      - "scripts/mobile-deployment/build-name.mjs"
+      - "scripts/ci/normalize-release-notes.js"
       - ".github/workflows/desktop-beta.yaml"
       - ".github/actions/setup-flutter-with-cache/**"
   workflow_dispatch:
@@ -118,6 +120,7 @@ jobs:
       enabled: ${{ steps.status.outputs.enabled }}
       platforms: ${{ steps.platforms.outputs.platforms }}
       matrix: ${{ steps.platforms.outputs.matrix }}
+      version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -135,6 +138,12 @@ jobs:
           if [ "$ENABLED" != true ]; then
             echo 'Desktop downloads are coming soon. Signing setup and platform verification are deferred; no desktop release was published.' >> "$GITHUB_STEP_SUMMARY"
           fi
+      - name: Derive next desktop version
+        id: version
+        if: steps.status.outputs.enabled == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/desktop-deployment/release-version.mjs
 
   build:
     name: Desktop beta (${{ matrix.platform }})
@@ -150,6 +159,8 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJSON(needs.release-status.outputs.matrix) }}
     runs-on: ${{ matrix.runner }}
+    env:
+      DESKTOP_VERSION: ${{ needs.release-status.outputs.version }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -194,7 +205,7 @@ jobs:
       - name: Build Windows beta
         if: matrix.platform == 'windows'
         working-directory: apps/mobile
-        run: flutter build windows --release --target lib/main_production.dart --dart-define=DESKTOP_RELEASE_RUN_ID=${{ github.run_id }} --dart-define-from-file="$env:RUNNER_TEMP/desktop-public.json"
+        run: flutter build windows --release --target lib/main_production.dart --build-name="$env:DESKTOP_VERSION" --dart-define=DESKTOP_RELEASE_RUN_ID=${{ github.run_id }} --dart-define-from-file="$env:RUNNER_TEMP/desktop-public.json"
       - name: Select Windows signing mode
         id: windows-signing
         if: matrix.platform == 'windows'
@@ -207,11 +218,11 @@ jobs:
       - name: Build macOS beta
         if: matrix.platform == 'macos'
         working-directory: apps/mobile
-        run: flutter build macos --release --flavor production --target lib/main_production.dart --dart-define=DESKTOP_RELEASE_RUN_ID=${{ github.run_id }} --dart-define-from-file="$RUNNER_TEMP/desktop-public.json"
+        run: flutter build macos --release --flavor production --target lib/main_production.dart --build-name="$DESKTOP_VERSION" --dart-define=DESKTOP_RELEASE_RUN_ID=${{ github.run_id }} --dart-define-from-file="$RUNNER_TEMP/desktop-public.json"
       - name: Build Linux beta
         if: matrix.platform == 'linux'
         working-directory: apps/mobile
-        run: flutter build linux --release --target lib/main_production.dart --dart-define=DESKTOP_RELEASE_RUN_ID=${{ github.run_id }} --dart-define-from-file="$RUNNER_TEMP/desktop-public.json"
+        run: flutter build linux --release --target lib/main_production.dart --build-name="$DESKTOP_VERSION" --dart-define=DESKTOP_RELEASE_RUN_ID=${{ github.run_id }} --dart-define-from-file="$RUNNER_TEMP/desktop-public.json"
       - name: Audit and package beta
         if: matrix.platform == 'linux'
         shell: bash
@@ -286,6 +297,7 @@ jobs:
     needs: [build, release-status]
     env:
       DESKTOP_BETA_PLATFORMS: ${{ needs.release-status.outputs.platforms }}
+      DESKTOP_VERSION: ${{ needs.release-status.outputs.version }}
     if: (always() && !cancelled() && needs.release-status.outputs.enabled == 'true' && github.ref == 'refs/heads/production' && (needs.build.result == 'success' || needs.build.result == 'failure')) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     environment: desktop-beta
     runs-on: macos-latest
@@ -297,6 +309,8 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          # Release notes list app changes since the previous desktop beta.
+          fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:

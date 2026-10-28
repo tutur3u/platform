@@ -1,4 +1,8 @@
 const desktopReleaseRepository = 'tutur3u/platform';
+
+/// Current tags are `desktop-v<version>`; legacy betas appended the CI run ID.
+final desktopReleaseTag = RegExp(r'^desktop-v(\d+\.\d+\.\d+)(?:-(\d+))?$');
+
 const desktopAssets = {
   'windows': 'Tuturuuu-windows-x64-setup.exe',
   'macos': 'Tuturuuu-macos-universal.dmg',
@@ -20,7 +24,9 @@ class DesktopRelease {
 
   final String tag;
   final String version;
-  final BigInt run;
+
+  /// Legacy run-suffixed tags only; current releases differ by version.
+  final BigInt? run;
   final String name;
   final Uri url;
   final int size;
@@ -34,7 +40,8 @@ class DesktopRelease {
       if (next[i] != current[i]) return next[i] > current[i]!;
     }
     final previousRun = BigInt.tryParse(installedRun);
-    return previousRun != null && run > previousRun;
+    final run = this.run;
+    return run != null && previousRun != null && run > previousRun;
   }
 
   static DesktopRelease? parse(Object? value, String platform) {
@@ -45,7 +52,7 @@ class DesktopRelease {
     }
     final tag = value['tag_name'];
     if (tag is! String || tag.length > 100) return null;
-    final match = RegExp(r'^desktop-v(\d+\.\d+\.\d+)-(\d+)$').firstMatch(tag);
+    final match = desktopReleaseTag.firstMatch(tag);
     if (match == null) return null;
     const base = 'https://github.com/$desktopReleaseRepository/releases';
     if (value['html_url'] != '$base/tag/$tag') return null;
@@ -78,7 +85,7 @@ class DesktopRelease {
         selected = DesktopRelease(
           tag: tag,
           version: match[1]!,
-          run: BigInt.parse(match[2]!),
+          run: match[2] == null ? null : BigInt.parse(match[2]!),
           name: entry.value,
           url: Uri.parse(url),
           size: size,
