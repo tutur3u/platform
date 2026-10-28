@@ -17,13 +17,14 @@ const fixtureNames = [
 test('unavailable dblink skips locally and fails when required by contract runners', () => {
   assert.match(include, /\\if :\{\?require_dblink\}/u);
   assert.match(include, /select fail\('dblink setup unavailable in CI'\)/u);
+  assert.match(include, /1\.\.0 # SKIP/u);
   for (const fixtureName of fixtureNames) {
     const fixture = readFileSync(
       new URL(`../supabase/tests/${fixtureName}`, import.meta.url),
       'utf8'
     );
-    assert.match(fixture, /1\.\.0 # SKIP/u, fixtureName);
     assert.match(fixture, /\\ir helpers\/local-dblink\.inc/u, fixtureName);
+    assert.doesNotMatch(fixture, /\\else[\s\S]*# SKIP/u, fixtureName);
   }
 
   const calendarRunner = readFileSync(

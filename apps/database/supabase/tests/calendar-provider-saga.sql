@@ -1,5 +1,4 @@
 \ir helpers/local-dblink.inc
-\if :fixture_dblink_available
 begin;
 create extension if not exists pgtap with schema extensions;
 create extension if not exists dblink with schema extensions;
@@ -224,6 +223,3 @@ delete from auth.users where id='00000000-0000-4000-8000-000000008701';
 delete from public.workspaces where personal and creator_id='00000000-0000-4000-8000-000000008701';
 delete from public.users where id='00000000-0000-4000-8000-000000008701';
 
-\else
-select '1..0 # SKIP Independent SQL sessions unavailable: use the stock local Supabase network or set test.dblink_connstr to a password-authenticated connection to this disposable database; loopback trust is insufficient.';
-\endif

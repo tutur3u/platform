@@ -1,5 +1,4 @@
 \ir helpers/local-dblink.inc
-\if :fixture_dblink_available
 -- Rollback-only actual SQL. Provider effects below are simulations, not GoTrue.
 begin;
 create extension if not exists pgtap with schema extensions;
@@ -196,6 +195,3 @@ select is((select count(*) from private.mail_mailbox_members where mailbox_id='0
 select * from finish();
 rollback;
 
-\else
-select '1..0 # SKIP Independent SQL sessions unavailable: use the stock local Supabase network or set test.dblink_connstr to a password-authenticated connection to this disposable database; loopback trust is insufficient.';
-\endif

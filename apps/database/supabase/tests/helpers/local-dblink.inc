@@ -27,5 +27,8 @@ select pg_temp.fixture_dblink_available() as fixture_dblink_available \gset
     select fail('dblink setup unavailable in CI');
     select * from finish();
     \quit 1
+  \else
+    select '1..0 # SKIP Independent SQL sessions unavailable: use the stock local Supabase network or set test.dblink_connstr to a password-authenticated connection to this disposable database; loopback trust is insufficient.';
+    \quit
   \endif
 \endif

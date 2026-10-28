@@ -1,5 +1,4 @@
 \ir helpers/local-dblink.inc
-\if :fixture_dblink_available
 -- Independent committed sessions exist only inside the owned disposable database.
 -- The canonical lifecycle destroys that entire database after this rollback packet.
 begin;
@@ -112,6 +111,3 @@ select dblink_disconnect('profile_b');
 select * from finish();
 rollback;
 
-\else
-select '1..0 # SKIP Independent SQL sessions unavailable: use the stock local Supabase network or set test.dblink_connstr to a password-authenticated connection to this disposable database; loopback trust is insufficient.';
-\endif
