@@ -655,7 +655,11 @@
     "warning_empty_subject": "Tiêu đề đang để trống.",
     "warning_missing_attachment": "Nội dung có nhắc đến tệp đính kèm nhưng chưa có tệp nào được thêm.",
     "write_message": "Viết nội dung thư…",
-    "write_with_ai": "Viết bằng AI"
+    "write_with_ai": "Viết bằng AI",
+    "source": "Nguồn thư",
+    "source_description": "Chọn thư hiển thị trong hộp thư đến",
+    "source_managed_description": "Các hộp thư Tuturuuu bạn sở hữu hoặc dùng chung với nhóm.",
+    "source_connected_description": "Tài khoản Gmail hoặc Outlook của bạn, đọc và gửi qua nhà cung cấp."
   },
   "nav-upgrade-dialog": {
     "contact_support": "Nếu bạn cần truy cập ngay vào tính năng này, vui lòng liên hệ với đội ngũ hỗ trợ của chúng tôi.",

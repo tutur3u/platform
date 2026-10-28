@@ -655,7 +655,11 @@
     "warning_empty_subject": "The subject is empty.",
     "warning_missing_attachment": "The message mentions an attachment, but no file is attached.",
     "write_message": "Write your message…",
-    "write_with_ai": "Write with AI"
+    "write_with_ai": "Write with AI",
+    "source": "Mail source",
+    "source_description": "Choose which mail appears in the inbox",
+    "source_managed_description": "Tuturuuu mailboxes you own or share with your team.",
+    "source_connected_description": "Your Gmail or Outlook accounts, read and sent through their provider."
   },
   "nav-upgrade-dialog": {
     "contact_support": "If you require immediate access to this feature, please contact our support team.",
