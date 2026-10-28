@@ -129,7 +129,9 @@ class _Question extends StatelessWidget {
               if (item.body.isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.sm),
                 Text(
-                  item.body,
+                  item.body.startsWith('Open on Mac') || item.body.isEmpty
+                      ? l10n.mastermindAskMissing
+                      : item.body,
                   style: tokens.typography.base.copyWith(
                     color: tokens.colorScheme.foreground,
                     height: 1.4,

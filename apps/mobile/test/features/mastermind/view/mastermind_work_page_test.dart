@@ -88,11 +88,11 @@ void main() {
       expect(find.text('Implementation'), findsOneWidget);
     });
 
-    testWidgets('an unknown age says so and no ETA hides the line', (
+    testWidgets('an unpublished age gives a reason and no ETA hides the line', (
       tester,
     ) async {
       await pumpWork(tester, workJson([workLane(1, ageSeconds: null)]));
-      expect(find.text('Running · age unknown'), findsOneWidget);
+      expect(find.text('Running · age not published'), findsOneWidget);
       expect(find.textContaining('left'), findsNothing);
       expect(find.textContaining('null'), findsNothing);
     });

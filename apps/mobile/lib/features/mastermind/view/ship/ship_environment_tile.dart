@@ -54,20 +54,30 @@ class ShipEnvironmentTile extends StatelessWidget {
                   ),
                 _StatusBadge(
                   label: l10n.mastermindShipDeployBadge(
-                    MastermindLabels.deployStatus(l10n, row.deployStatus),
+                    row.fields['deploy_status']?.status != null &&
+                            row.fields['deploy_status']!.status != 'ok'
+                        ? row.fields['deploy_status']!.reason(l10n)
+                        : MastermindLabels.deployStatus(l10n, row.deployStatus),
                   ),
                   style: _deployStyle(row.deployStatus),
                 ),
                 _StatusBadge(
                   label: l10n.mastermindShipCiBadge(
-                    MastermindLabels.ciState(l10n, row.ciState),
+                    row.fields['ci_state']?.status != null &&
+                            row.fields['ci_state']!.status != 'ok'
+                        ? row.fields['ci_state']!.reason(l10n)
+                        : MastermindLabels.ciState(l10n, row.ciState),
                   ),
                   style: _ciStyle(row.ciState),
                 ),
                 // Each environment keeps the freshness the hub published for
                 // it, whatever the age of the snapshot around it.
                 _StatusBadge(
-                  label: MastermindLabels.freshness(l10n, row.freshness),
+                  label:
+                      (row.fields['freshness']?.status != null &&
+                          row.fields['freshness']!.status != 'ok'
+                      ? row.fields['freshness']!.reason(l10n)
+                      : MastermindLabels.freshness(l10n, row.freshness)),
                   style: (AppIcons.info, AppBadgeVariant.outline),
                 ),
               ],
@@ -104,7 +114,11 @@ class ShipEnvironmentTile extends StatelessWidget {
             ),
           Text(
             [
-              MastermindLabels.evidence(l10n, row.evidence),
+              if (row.fields['evidence']?.status != null &&
+                  row.fields['evidence']!.status != 'ok')
+                row.fields['evidence']!.reason(l10n)
+              else
+                MastermindLabels.evidence(l10n, row.evidence),
               if (observed != null)
                 l10n.mastermindShipChecked(
                   Gmt7.dateTime(observed, l10n.localeName),

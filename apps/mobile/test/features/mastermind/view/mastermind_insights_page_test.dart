@@ -67,7 +67,7 @@ void main() {
 
     testWidgets('pacing is always a word with a shape', (tester) async {
       await pumpInsights(tester, _usage);
-      for (final word in ['SHORT', 'OK', 'SURPLUS', 'unknown']) {
+      for (final word in ['SHORT', 'OK', 'SURPLUS', 'Not published yet']) {
         expect(find.text(word), findsWidgets, reason: word);
       }
       // One glyph per window of every pool, whatever the word.

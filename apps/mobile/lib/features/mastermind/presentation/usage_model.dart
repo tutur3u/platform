@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:mobile/features/mastermind/model/snapshot.dart';
+import 'package:mobile/features/mastermind/presentation/usage_gaps.dart';
 
 /// One account pool: its latest reading and the series behind its charts.
 /// The label is an opaque display string, never mapped to anything.
@@ -30,6 +31,7 @@ final class CreditPool {
 final class MastermindUsageModel {
   const MastermindUsageModel._({
     required this.coverage,
+    required this.gaps,
     required this.pools,
     required this.credits,
     required this.quotas,
@@ -65,6 +67,7 @@ final class MastermindUsageModel {
     ];
     return MastermindUsageModel._(
       coverage: usage.coverage,
+      gaps: usage.gaps,
       pools: pools,
       credits: credits,
       quotas: _sorted(snapshot.products.quotas, _byRemaining),
@@ -76,6 +79,7 @@ final class MastermindUsageModel {
   }
 
   final Coverage coverage;
+  final List<UsageGap> gaps;
 
   /// Most urgent first: SHORT, then unknown pacing, then OK, then SURPLUS,
   /// then the least left, then by label.

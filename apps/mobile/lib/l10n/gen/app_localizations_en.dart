@@ -12763,7 +12763,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String mastermindLaneAgeUnknown(String state) {
-    return '$state · age unknown';
+    return '$state · age not published';
   }
 
   @override
@@ -13197,7 +13197,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindSeriesTarget => 'Target';
 
   @override
-  String get mastermindSeriesUnknown => 'unknown';
+  String get mastermindSeriesUnknown => 'Not published yet';
 
   @override
   String get mastermindSeriesUsageLimit => 'Usage limit';
@@ -13387,7 +13387,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get mastermindStaffUnknownModel => 'Unknown model';
+  String get mastermindStaffUnknownModel => 'Not published yet';
 
   @override
   String get mastermindStateAnswered => 'answered';
@@ -13417,7 +13417,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindStateStale => 'stale';
 
   @override
-  String get mastermindStateUnknown => 'unknown';
+  String get mastermindStateUnknown => 'Not published yet';
 
   @override
   String get mastermindStateWaiting => 'waiting';
@@ -13563,7 +13563,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get mastermindUnknown => 'Unknown';
+  String get mastermindUnknown => 'Not published yet';
 
   @override
   String get mastermindUnreachableMessage => 'Retries wait a little longer after each failure.';
@@ -13711,4 +13711,38 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get classesTodayStale => 'Couldn\'t refresh. Showing the last saved classes.';
+
+  @override
+  String get mastermindNotPublished => 'Not published yet';
+
+  @override
+  String get mastermindNotConnected => 'Not connected';
+
+  @override
+  String get mastermindSourceDown => 'Source down';
+
+  @override
+  String get mastermindGapNoSamples => 'No samples published';
+
+  @override
+  String get mastermindGapAccountSwitch => 'Account switched';
+
+  @override
+  String get mastermindGapReset => 'Quota reset';
+
+  @override
+  String get mastermindAskMissing => 'Full ask not published yet';
+
+  @override
+  String get mastermindRecentlyResolved => 'Recently resolved';
+
+  @override
+  String mastermindLastChecked(String time) {
+    return 'Last checked $time';
+  }
+
+  @override
+  String mastermindGapSummary(String start, String end, String reason) {
+    return 'Gap $start–$end: $reason';
+  }
 }

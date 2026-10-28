@@ -1,35 +1,35 @@
 part of 'snapshot_parser.dart';
 
-MastermindSnapshot parseRootSnapshot(JsonReader r) {
-  r.keys(
-    [
-      'schema_version',
-      'generated_at',
-      'now',
-      'lanes',
-      'backlog',
-      'products',
-      'environments',
-      'decisions',
-      'decisions_skipped',
-      'observability',
-      'sources',
-    ],
-    [
-      'schema_version',
-      'generated_at',
-      'now',
-      'lanes',
-      'backlog',
-      'products',
-      'environments',
-      'decisions',
-      'decisions_skipped',
-      'observability',
-      'sources',
-    ],
-  );
+MastermindSnapshot parseRootSnapshot(JsonReader input) {
+  final history = parseResolvedHistory(input.object()['decisions_resolved']);
+  final r =
+      JsonReader(
+        adaptHubCompanions(
+          adaptDecisionCollections({
+            ...input.object(),
+            'decisions_resolved': history.rows,
+          }, acceptsItem: acceptsDecisionItem),
+        ),
+        input.path,
+      )..keys(
+        [...input.object().keys, 'decisions_resolved'],
+        [
+          'schema_version',
+          'generated_at',
+          'now',
+          'lanes',
+          'backlog',
+          'products',
+          'environments',
+          'decisions',
+          'decisions_skipped',
+          'observability',
+          'sources',
+        ],
+      );
   return MastermindSnapshot(
+    workCounts: hubWorkCounts(input.object()['work']),
+    resolvedItems: history.items,
     schemaVersion: r.field('schema_version').string(constant: '1.4'),
     generatedAt: r.field('generated_at').utcTimestamp(),
     now: parseSnapshotNow(r.field('now')),

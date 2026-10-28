@@ -75,6 +75,13 @@ class LinePainter extends ChartPainter implements ChartBucketGeometry {
       final path = Path();
       if (band.t != null) {
         final x = c.x(band.t!, times.first, times.last);
+        if (band.end case final end?) {
+          final right = c.x(end, times.first, times.last);
+          canvas.drawRect(
+            Rect.fromLTRB(x, c.plot.top, right, c.plot.bottom),
+            Paint()..color = palette.neutral.withValues(alpha: 0.08),
+          );
+        }
         path
           ..moveTo(x, c.plot.top)
           ..lineTo(x, c.plot.bottom);

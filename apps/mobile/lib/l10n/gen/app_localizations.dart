@@ -24106,7 +24106,7 @@ abstract class AppLocalizations {
   /// No description provided for @mastermindLaneAgeUnknown.
   ///
   /// In en, this message translates to:
-  /// **'{state} · age unknown'**
+  /// **'{state} · age not published'**
   String mastermindLaneAgeUnknown(String state);
 
   /// No description provided for @mastermindLaneArea.
@@ -24844,7 +24844,7 @@ abstract class AppLocalizations {
   /// No description provided for @mastermindSeriesUnknown.
   ///
   /// In en, this message translates to:
-  /// **'unknown'**
+  /// **'Not published yet'**
   String get mastermindSeriesUnknown;
 
   /// No description provided for @mastermindSeriesUsageLimit.
@@ -25156,7 +25156,7 @@ abstract class AppLocalizations {
   /// No description provided for @mastermindStaffUnknownModel.
   ///
   /// In en, this message translates to:
-  /// **'Unknown model'**
+  /// **'Not published yet'**
   String get mastermindStaffUnknownModel;
 
   /// No description provided for @mastermindStateAnswered.
@@ -25216,7 +25216,7 @@ abstract class AppLocalizations {
   /// No description provided for @mastermindStateUnknown.
   ///
   /// In en, this message translates to:
-  /// **'unknown'**
+  /// **'Not published yet'**
   String get mastermindStateUnknown;
 
   /// No description provided for @mastermindStateWaiting.
@@ -25444,7 +25444,7 @@ abstract class AppLocalizations {
   /// No description provided for @mastermindUnknown.
   ///
   /// In en, this message translates to:
-  /// **'Unknown'**
+  /// **'Not published yet'**
   String get mastermindUnknown;
 
   /// No description provided for @mastermindUnreachableMessage.
@@ -25716,6 +25716,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t refresh. Showing the last saved classes.'**
   String get classesTodayStale;
+
+  /// No description provided for @mastermindNotPublished.
+  ///
+  /// In en, this message translates to:
+  /// **'Not published yet'**
+  String get mastermindNotPublished;
+
+  /// No description provided for @mastermindNotConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Not connected'**
+  String get mastermindNotConnected;
+
+  /// No description provided for @mastermindSourceDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Source down'**
+  String get mastermindSourceDown;
+
+  /// No description provided for @mastermindGapNoSamples.
+  ///
+  /// In en, this message translates to:
+  /// **'No samples published'**
+  String get mastermindGapNoSamples;
+
+  /// No description provided for @mastermindGapAccountSwitch.
+  ///
+  /// In en, this message translates to:
+  /// **'Account switched'**
+  String get mastermindGapAccountSwitch;
+
+  /// No description provided for @mastermindGapReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Quota reset'**
+  String get mastermindGapReset;
+
+  /// No description provided for @mastermindAskMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Full ask not published yet'**
+  String get mastermindAskMissing;
+
+  /// No description provided for @mastermindRecentlyResolved.
+  ///
+  /// In en, this message translates to:
+  /// **'Recently resolved'**
+  String get mastermindRecentlyResolved;
+
+  /// No description provided for @mastermindLastChecked.
+  ///
+  /// In en, this message translates to:
+  /// **'Last checked {time}'**
+  String mastermindLastChecked(String time);
+
+  /// No description provided for @mastermindGapSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Gap {start}–{end}: {reason}'**
+  String mastermindGapSummary(String start, String end, String reason);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

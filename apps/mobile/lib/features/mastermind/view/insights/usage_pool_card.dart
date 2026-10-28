@@ -62,31 +62,54 @@ class UsagePoolCard extends StatelessWidget {
     return [
       AppGroupedRow(
         title: Text(title),
-        subtitle: resets == null
+        subtitle: remaining == null || resets != null
+            ? Text(
+                [
+                  if (remaining == null)
+                    window.fields['remaining_percent']?.reason(l10n) ??
+                        l10n.mastermindNotPublished,
+                  if (resets != null)
+                    l10n.mastermindResetsAt(
+                      Gmt7.dateTime(resets, l10n.localeName),
+                    ),
+                ].join(' · '),
+              )
+            : null,
+        trailing: remaining == null
             ? null
             : Text(
-                l10n.mastermindResetsAt(Gmt7.dateTime(resets, l10n.localeName)),
+                l10n.mastermindUnitPercent(usageNumber(remaining)),
+                style: Theme.of(context).textTheme.titleMedium,
               ),
-        // A null reading is "Unavailable", never a zero.
-        trailing: Text(
-          remaining == null
-              ? l10n.mastermindUnavailable
-              : l10n.mastermindUnitPercent(usageNumber(remaining)),
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
       ),
       AppGroupedRow(
         title: Text(l10n.mastermindUsagePacing),
-        subtitle: burn == null && projected == null
+        subtitle: window.pacing != null && burn == null && projected == null
             ? null
-            : Text(
-                [
-                  if (burn != null) _line(l10n.mastermindChartBurn, perHour),
-                  if (projected != null)
-                    _line(l10n.mastermindChartProjection, pp),
-                ].join(' · '),
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (window.pacing == null)
+                    PacingGlyph(
+                      pacing: null,
+                      missingReason:
+                          window.fields['pacing']?.reason(l10n) ??
+                          l10n.mastermindNotPublished,
+                    ),
+                  if (burn != null || projected != null)
+                    Text(
+                      [
+                        if (burn != null)
+                          _line(l10n.mastermindChartBurn, perHour),
+                        if (projected != null)
+                          _line(l10n.mastermindChartProjection, pp),
+                      ].join(' · '),
+                    ),
+                ],
               ),
-        trailing: PacingGlyph(pacing: window.pacing),
+        trailing: window.pacing == null
+            ? null
+            : PacingGlyph(pacing: window.pacing),
       ),
     ];
   }

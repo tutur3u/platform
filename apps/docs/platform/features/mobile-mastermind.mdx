@@ -551,3 +551,47 @@ connectivity stream (reaches the scheduler, de-duplicated, cancelled on close).
 The screens are in `view/mastermind_inbox_page_test.dart`,
 `view/mastermind_item_page_test.dart` and
 `view/reply_line_limit_formatter_test.dart` (the 10-line cap and its refusals).
+
+## Decision and usage metadata
+
+Mobile accepts legacy scalar fields alongside Forge v1 field envelopes. Missing
+values display “Not published yet”; connection and source failures retain their
+explicit status. An accepted reply remains sent until a live snapshot closes its
+stable item ID. Resolved items leave Needs you and can appear in Recently resolved.
+Full asks use `ask_text` (up to 2000 characters); an absent full ask is stated on
+the detail page. No mobile action can infer that the hub processed a reply.
+
+Usage charts annotate timestamp gaps with published reasons (source failure,
+account switch or quota reset). Without metadata they say “No samples published”.
+A reset timestamp within an inferred gap supplies the reset reason. Pools remain
+separate. Adapter and classification regressions live in
+`apps/mobile/test/features/mastermind/presentation/hub_contract_test.dart`.
+
+Optional resolved history is parsed row by row: invalid entries are skipped,
+repeated IDs use their latest resolved entry, and the last 20 valid entries are
+shown. Additive lane and staff metadata does not invalidate the snapshot; known
+fields still receive strict validation. Native open items may supply `status`
+without the legacy `state`. Checked field timestamps and spoken chart gap bounds
+use the same GMT+7 wall time as the rest of Mastermind.
+
+Pages consume the shell's published bottom clearance through `AppPageScrollView`.
+The Sources sheet retains that clearance before the page scrollable consumes it,
+then carries it across the modal navigator boundary. It uses the shared sheet
+scaffold's trailing space; the feature does not estimate dock dimensions. The
+source-sheet regression verifies that its last row stays above the dock and can
+be hit-tested after scrolling to the end.
+
+Forge v1 publishes field health beside the legacy arrays: `ship[]` supplies
+`deploy`, `ci`, and `released_at`; `work.lanes[]` supplies age/ETA observations;
+`insights[].weekly` supplies weekly budget and pacing observations. Mobile adapts
+these companion paths and can show their reasons even when legacy environment
+and usage-instance lists are empty. `work.counts` supplies Home's top-level
+running, waiting, and idle counts. Unknown root keys, `asks_source`, and
+`decisions_unknown` are safe to ignore. The exact redacted publisher fixture is
+covered by `test/features/mastermind/view/forge_v1_fixture_test.dart`; it verifies
+all five tabs, open asks, resolved history, source reasons, gaps, and counts.
+
+An unreported pacing value retains its dashed status glyph beside the explicit
+reason. The label wraps within the row's content area so checked timestamps do
+not overflow narrow screens. `mastermind_insights_page_test.dart` preserves the
+one-glyph-per-window assertion for reported and unreported values.

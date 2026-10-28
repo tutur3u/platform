@@ -146,6 +146,14 @@ class _MastermindInboxPageState extends State<MastermindInboxPage> {
           onProduct: (value) => setState(() => _product = value),
         ),
       ..._body(context, model),
+      if (snapshot.resolvedItems.isNotEmpty)
+        ExpansionTile(
+          title: Text(context.l10n.mastermindRecentlyResolved),
+          children: [
+            for (final item in snapshot.resolvedItems)
+              ListTile(title: Text(item.title), subtitle: Text(item.body)),
+          ],
+        ),
     ];
   }
 

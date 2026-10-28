@@ -4,6 +4,7 @@ import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/components/app_badge.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
+import 'package:mobile/features/mastermind/presentation/hub_field.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
 import 'package:mobile/features/mastermind/presentation/lane_text.dart';
 import 'package:mobile/features/mastermind/view/work/lane_state_badge.dart';
@@ -27,12 +28,19 @@ class LaneTile extends StatelessWidget {
     return AppGroupedRow(
       title: Text(lane.title),
       showChevron: true,
-      trailing: LaneStateBadge(state: lane.state),
+      trailing: LaneStateBadge(
+        state: lane.state,
+        reason: lane.fields['state']?.reason(l10n),
+      ),
       onTap: () => context.push(Routes.mastermindWorkLanePath(lane.id)),
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('${lane.role} · ${lane.providerModel}', style: style),
+          Text(
+            '${HubField.text(context.l10n, lane.role)} · '
+            '${HubField.text(context.l10n, lane.providerModel)}',
+            style: style,
+          ),
           Text(
             eta == null
                 ? laneAgeLine(l10n, lane)

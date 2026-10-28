@@ -46,7 +46,10 @@ final class Lane implements LaneItem {
     this.product,
     this.area,
     this.kind,
+    this.fields = const {},
   });
+
+  final Map<String, HubField> fields;
 
   final String id;
   @override

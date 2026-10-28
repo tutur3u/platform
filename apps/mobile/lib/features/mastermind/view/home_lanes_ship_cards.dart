@@ -30,7 +30,7 @@ class HomeLanesCard extends StatelessWidget {
             spacing: AppSpacing.sm,
             runSpacing: AppSpacing.sm,
             children: [
-              for (final state in MastermindHomeModel.laneStatesAtAGlance)
+              for (final state in model.visibleLaneStates)
                 AppChip(
                   avatar: Icon(_icon(state, model.laneCounts[state] ?? 0)),
                   label: Text(

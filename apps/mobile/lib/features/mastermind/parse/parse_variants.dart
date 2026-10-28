@@ -12,7 +12,8 @@ bool _security(JsonReader r) =>
 NeedsYouItem parseNeedsYouItem(JsonReader r) =>
     _security(r) ? parseSecurityItem(r) : parseNeedsYou(r);
 
-NeedsYouItem parseOpenNeedsYou(JsonReader r) {
+NeedsYouItem parseOpenNeedsYou(JsonReader input) {
+  final r = JsonReader(adaptDecision(input.object()), input.path);
   if (r.field('state').value != 'open') r.field('state').fail();
   return parseNeedsYouItem(r);
 }

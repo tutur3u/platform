@@ -28,6 +28,11 @@ final class MastermindHomeModel {
         counts[lane.state] = counts[lane.state]! + 1;
       }
     }
+    if (snapshot.workCounts case final published?) {
+      counts
+        ..clear()
+        ..addAll(published);
+    }
     final decisions = [...snapshot.decisions]
       ..sort((a, b) => b.at.compareTo(a.at));
     final activity = [...snapshot.now.digest]
@@ -66,6 +71,7 @@ final class MastermindHomeModel {
   /// At most one per product, never counted.
   final List<SecurityItem> security;
   final Map<LaneState, int> laneCounts;
+  Iterable<LaneState> get visibleLaneStates => laneCounts.keys;
   final List<EnvironmentRow> failingEnvironments;
   final List<ProductRelease> releases;
   final List<QuotaPool> quotaPools;
