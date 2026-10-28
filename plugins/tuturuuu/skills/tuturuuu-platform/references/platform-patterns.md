@@ -6,6 +6,15 @@ shared-package changes.
 
 ## Web And Shared UI
 
+- Drive export links use versioned, expiring tokens plus a service-only folder
+  revocation marker in the Supabase `.tuturuuu/drive-export-revocations` namespace.
+  Read markers uncached on every fetch and fail closed on missing markers or
+  storage errors. Initialize with insert-only writes; never reset a version during
+  issuance or provider migration. Require `manage_drive` before rotating it.
+  See [Drive export lifetime and revocation](../../../../../apps/docs/platform/applications/drive.mdx#export-link-lifetime-and-revocation)
+  for the seven-day default, override cap, legacy-token cutover, existing private-root
+  RLS prerequisite, and already-issued read URL limitation.
+
 - Workspace user reads share the users-core field projection and effective
   public/private permissions. Attendance and score adapters verify every requested
   user/class against the permission workspace. Preserve app-session actors and

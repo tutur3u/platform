@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
       `https://exports.example.com/${relativePath}`
   ),
   createWorkspaceStorageExportToken: vi.fn(() => 'export-token'),
+  revokeWorkspaceStorageExportLinks: vi.fn(),
   listWorkspaceStorageRawObjectsForProvider: vi.fn(),
   logWorkspaceStorageRouteError: vi.fn(),
   resolveWorkspaceStorageProvider: vi.fn(),
@@ -14,6 +15,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@tuturuuu/storage-core/workspace-storage-export-links', () => ({
+  revokeWorkspaceStorageExportLinks: mocks.revokeWorkspaceStorageExportLinks,
   createWorkspaceStorageExportAssetUrl: (
     ...args: Parameters<typeof mocks.createWorkspaceStorageExportAssetUrl>
   ) => mocks.createWorkspaceStorageExportAssetUrl(...args),
@@ -39,7 +41,7 @@ vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({
   },
 }));
 
-vi.mock('../route-auth', () => ({
+vi.mock('@/legacy-api-routes/v1/workspaces/[wsId]/storage/route-auth', () => ({
   logWorkspaceStorageRouteError: mocks.logWorkspaceStorageRouteError,
   resolveWorkspaceStorageRouteAuth: (
     ...args: Parameters<typeof mocks.resolveWorkspaceStorageRouteAuth>
@@ -100,6 +102,7 @@ describe('workspace storage export-links route', () => {
     mocks.resolveWorkspaceStorageProvider.mockReset();
     mocks.resolveWorkspaceStorageRouteAuth.mockReset();
 
+    mocks.revokeWorkspaceStorageExportLinks.mockReset();
     setupAuth();
     mocks.resolveWorkspaceStorageProvider.mockResolvedValue({
       misconfigured: false,
@@ -212,5 +215,70 @@ describe('workspace storage export-links route', () => {
       files: [{ path: 'mira/notes.txt' }],
     });
     expect(mocks.createWorkspaceStorageExportAssetUrl).toHaveBeenCalledTimes(1);
+  });
+});
+
+async function revokeExportLinks(path = 'exports/site') {
+  const { DELETE } = await import('./route');
+  return DELETE(
+    new Request(
+      'http://localhost/api/v1/workspaces/workspace-1/storage/export-links',
+      {
+        method: 'DELETE',
+        body: JSON.stringify({ path }),
+      }
+    ),
+    { params: Promise.resolve({ wsId: 'workspace-1' }) }
+  );
+}
+
+describe('folder export link revocation', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.revokeWorkspaceStorageExportLinks
+      .mockReset()
+      .mockResolvedValue(undefined);
+    setupAuth();
+  });
+  it('allows a folder manager to revoke the normalized folder', async () => {
+    const response = await revokeExportLinks();
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ revoked: true });
+    expect(
+      mocks.revokeWorkspaceStorageExportLinks
+    ).toHaveBeenCalledExactlyOnceWith({
+      wsId: 'workspace-1',
+      folderPath: 'exports/site',
+    });
+  });
+  it('refuses a member without manage_drive before writing a marker', async () => {
+    setupAuth({ manageDrive: false });
+    expect((await revokeExportLinks()).status).toBe(403);
+    expect(mocks.revokeWorkspaceStorageExportLinks).not.toHaveBeenCalled();
+  });
+  it('preserves an authentication rejection', async () => {
+    mocks.resolveWorkspaceStorageRouteAuth.mockResolvedValue({
+      ok: false,
+      response: new Response(null, { status: 401 }),
+    });
+    expect((await revokeExportLinks()).status).toBe(401);
+    expect(mocks.revokeWorkspaceStorageExportLinks).not.toHaveBeenCalled();
+  });
+  it.each([
+    '../other',
+    'chats/ai/resources/private',
+    '.tuturuuu/export-revocations',
+  ])('refuses invalid or private folder %s', async (path) => {
+    expect([400, 403]).toContain((await revokeExportLinks(path)).status);
+    expect(mocks.revokeWorkspaceStorageExportLinks).not.toHaveBeenCalled();
+  });
+  it('does not report success when a marker write fails', async () => {
+    const { WorkspaceStorageError } = await import(
+      '@tuturuuu/storage-core/workspace-storage-provider'
+    );
+    mocks.revokeWorkspaceStorageExportLinks.mockRejectedValue(
+      new WorkspaceStorageError('Unavailable', 503)
+    );
+    expect((await revokeExportLinks()).status).toBe(503);
   });
 });
