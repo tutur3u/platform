@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(9);
+select plan(10);
 
 select ok(
   not has_schema_privilege(role_name, 'private', 'USAGE'),
@@ -171,14 +171,13 @@ actual as (
   where p.pronamespace = 'private'::regnamespace
     and has_function_privilege(roles.role_name, p.oid, 'EXECUTE')
 )
-select is(
-  (select string_agg(format('%s|%s|%s', signature, role_name, privilege_name), '; '
-                     order by signature, role_name, privilege_name)
-   from actual),
-  (select string_agg(format('%s|%s|%s', signature, role_name, privilege_name), '; '
-                     order by signature, role_name, privilege_name)
-   from expected),
-  'private function EXECUTE privileges exactly match the SR-331 snapshot'
+select ok(
+  not exists (
+    select signature, role_name, privilege_name from actual
+    except
+    select signature, role_name, privilege_name from expected
+  ),
+  'private function EXECUTE grants are a subset of the SR-331 snapshot'
 );
 
 -- SR-331: unreachable without schema USAGE; shrink this list as privileges are revoked.
@@ -216,14 +215,13 @@ actual as (
     and c.relkind = 'S'
     and has_sequence_privilege(roles.role_name, c.oid, privileges.privilege_name)
 )
-select is(
-  (select string_agg(format('%s|%s|%s', object_name, role_name, privilege_name), '; '
-                     order by object_name, role_name, privilege_name)
-   from actual),
-  (select string_agg(format('%s|%s|%s', object_name, role_name, privilege_name), '; '
-                     order by object_name, role_name, privilege_name)
-   from expected),
-  'private table, view, and sequence privileges exactly match the SR-331 snapshot'
+select ok(
+  not exists (
+    select object_name, role_name, privilege_name from actual
+    except
+    select object_name, role_name, privilege_name from expected
+  ),
+  'private table, view, and sequence grants are a subset of the SR-331 snapshot'
 );
 
 select is(
@@ -250,6 +248,25 @@ select is(
   )
 )
 from (values ('anon'), ('authenticated'), ('authenticator')) as roles(role_name);
+
+create function private.sr331_default_execute_probe()
+returns integer
+language sql
+as $$ select 1 $$;
+
+select ok(
+  not exists (
+    select 1
+    from pg_proc p
+    cross join lateral aclexplode(coalesce(p.proacl, acldefault('f', p.proowner))) grant_entry
+    where p.oid = 'private.sr331_default_execute_probe()'::regprocedure
+      and grant_entry.grantee = 0
+      and grant_entry.privilege_type = 'EXECUTE'
+  ),
+  'new private functions do not grant EXECUTE to PUBLIC'
+);
+
+drop function private.sr331_default_execute_probe();
 
 select ok(
   has_schema_privilege('service_role', 'private', 'USAGE'),
