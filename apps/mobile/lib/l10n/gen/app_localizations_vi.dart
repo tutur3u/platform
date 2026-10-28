@@ -13607,56 +13607,5 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindThreadsTitle => 'Hội thoại';
 
   @override
-  String get mastermindThreadsSearch => 'Tìm hội thoại';
-
-  @override
-  String get mastermindThreadsUnavailable => 'Không có trên điện thoại';
-
-  @override
-  String get mastermindThreadsUpdated => 'Hội thoại đã cập nhật. Chọn lại để tải.';
-
-  @override
-  String get mastermindThreadsLimit => 'Đã đạt giới hạn, hãy thử lại sau';
-
-  @override
-  String get mastermindThreadsAccess => 'Quyền truy cập hết hạn hoặc không khả dụng. Đăng nhập và kiểm tra quyền.';
-
-  @override
-  String get mastermindThreadsError => 'Không tải được hội thoại. Kiểm tra kết nối và tải lại.';
-
-  @override
-  String get mastermindThreadsRunning => 'Đang chạy';
-
-  @override
-  String get mastermindThreadsWaiting => 'Đang chờ';
-
-  @override
-  String get mastermindThreadsIdle => 'Đang nghỉ';
-
-  @override
-  String get mastermindThreadsFailed => 'Thất bại';
-
-  @override
-  String get mastermindThreadsAll => 'Tất cả';
-
-  @override
-  String get mastermindThreadsRefresh => 'Tải lại';
-
-  @override
-  String get mastermindThreadsEmpty => 'Không có hội thoại phù hợp';
-
-  @override
-  String get mastermindThreadsRedactions => 'Nội dung ẩn để bảo vệ riêng tư được đánh dấu bằng ký hiệu trung tính.';
-
-  @override
-  String get mastermindThreadsEarlier => 'Tải tin trước';
-
-  @override
-  String get mastermindThreadsNoMessages => 'Chưa có tin nhắn được công bố';
-
-  @override
-  String get mastermindThreadsWithheld => 'Tin nhắn đã ẩn — mở trên Mac';
-
-  @override
-  String get mastermindThreadsRest => 'Mở trên Mac để xem phần còn lại';
+  String get mastermindBackToThreads => 'Về Hội thoại';
 }

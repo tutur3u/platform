@@ -1,13 +1,11 @@
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/mastermind/presentation/inbox_segment.dart';
 import 'package:mobile/features/mastermind/presentation/ship_model.dart';
 import 'package:mobile/features/mastermind/presentation/work_model.dart';
 import 'package:mobile/features/mastermind/threads/mastermind_threads_page.dart';
-import 'package:mobile/features/mastermind/threads/threads_list_model.dart';
-import 'package:mobile/features/mastermind/threads/threads_models.dart';
-import 'package:mobile/features/mastermind/threads/threads_view.dart';
+import 'package:mobile/features/mastermind/threads/threads_flag.dart';
+import 'package:mobile/features/mastermind/threads/threads_location.dart';
 import 'package:mobile/features/mastermind/view/inbox/mastermind_decision_page.dart';
 import 'package:mobile/features/mastermind/view/inbox/mastermind_inbox_page.dart';
 import 'package:mobile/features/mastermind/view/inbox/mastermind_item_page.dart';
@@ -16,7 +14,6 @@ import 'package:mobile/features/mastermind/view/insights/mastermind_insights_pag
 import 'package:mobile/features/mastermind/view/ship/mastermind_ship_page.dart';
 import 'package:mobile/features/mastermind/view/work/mastermind_lane_page.dart';
 import 'package:mobile/features/mastermind/view/work/mastermind_work_page.dart';
-import 'package:mobile/l10n/l10n.dart';
 
 /// Tab routes other than Home, which the app registry owns at
 /// [Routes.mastermind], plus the pushed Needs-you, decision, lane and chart
@@ -31,24 +28,19 @@ final List<GoRoute> mastermindTabRoutes = [
       final router = GoRouter.of(context);
       return MastermindThreadsPage(
         initialSegment: workSegmentFromQuery(query['segment']),
-        initialStatus: threadStatusFromQuery(query['state']),
+        initialState: laneStateFromQuery(query['state']),
+        initialProduct: productFromQuery(query['product']),
+        initialArea: areaFromQuery(query['area']),
         onSelection: (selection) => router.go(
-          threadsLocation(segment: selection.segment, status: selection.status),
+          threadsLocation(
+            segment: selection.segment,
+            state: selection.state,
+            product: selection.product,
+            area: selection.area,
+          ),
         ),
       );
     },
-  ),
-  GoRoute(
-    path: '/mastermind/threads/:threadRef',
-    redirect: (context, state) => mastermindThreadHistoryEnabled
-        ? null
-        : mastermindThreadsEnabled
-        ? '/mastermind/threads'
-        : Routes.mastermindWork,
-    builder: (context, state) => ThreadsView(
-      threadRef: state.pathParameters['threadRef'],
-      fallback: Text(context.l10n.mastermindThreadsUnavailable),
-    ),
   ),
   GoRoute(
     path: Routes.mastermindInbox,

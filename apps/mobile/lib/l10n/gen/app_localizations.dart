@@ -25783,113 +25783,11 @@ abstract class AppLocalizations {
   /// **'Threads'**
   String get mastermindThreadsTitle;
 
-  /// No description provided for @mastermindThreadsSearch.
+  /// No description provided for @mastermindBackToThreads.
   ///
   /// In en, this message translates to:
-  /// **'Search threads'**
-  String get mastermindThreadsSearch;
-
-  /// No description provided for @mastermindThreadsUnavailable.
-  ///
-  /// In en, this message translates to:
-  /// **'Not available on mobile'**
-  String get mastermindThreadsUnavailable;
-
-  /// No description provided for @mastermindThreadsUpdated.
-  ///
-  /// In en, this message translates to:
-  /// **'This thread was updated. Select it again to reload.'**
-  String get mastermindThreadsUpdated;
-
-  /// No description provided for @mastermindThreadsLimit.
-  ///
-  /// In en, this message translates to:
-  /// **'Limit reached, try again later'**
-  String get mastermindThreadsLimit;
-
-  /// No description provided for @mastermindThreadsAccess.
-  ///
-  /// In en, this message translates to:
-  /// **'Access expired or unavailable. Sign in and check access.'**
-  String get mastermindThreadsAccess;
-
-  /// No description provided for @mastermindThreadsError.
-  ///
-  /// In en, this message translates to:
-  /// **'Could not load threads. Check your connection and refresh.'**
-  String get mastermindThreadsError;
-
-  /// No description provided for @mastermindThreadsRunning.
-  ///
-  /// In en, this message translates to:
-  /// **'Running'**
-  String get mastermindThreadsRunning;
-
-  /// No description provided for @mastermindThreadsWaiting.
-  ///
-  /// In en, this message translates to:
-  /// **'Waiting'**
-  String get mastermindThreadsWaiting;
-
-  /// No description provided for @mastermindThreadsIdle.
-  ///
-  /// In en, this message translates to:
-  /// **'Idle'**
-  String get mastermindThreadsIdle;
-
-  /// No description provided for @mastermindThreadsFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Failed'**
-  String get mastermindThreadsFailed;
-
-  /// No description provided for @mastermindThreadsAll.
-  ///
-  /// In en, this message translates to:
-  /// **'All'**
-  String get mastermindThreadsAll;
-
-  /// No description provided for @mastermindThreadsRefresh.
-  ///
-  /// In en, this message translates to:
-  /// **'Refresh'**
-  String get mastermindThreadsRefresh;
-
-  /// No description provided for @mastermindThreadsEmpty.
-  ///
-  /// In en, this message translates to:
-  /// **'No matching threads'**
-  String get mastermindThreadsEmpty;
-
-  /// No description provided for @mastermindThreadsRedactions.
-  ///
-  /// In en, this message translates to:
-  /// **'Neutral placeholders mark content withheld for privacy.'**
-  String get mastermindThreadsRedactions;
-
-  /// No description provided for @mastermindThreadsEarlier.
-  ///
-  /// In en, this message translates to:
-  /// **'Load earlier'**
-  String get mastermindThreadsEarlier;
-
-  /// No description provided for @mastermindThreadsNoMessages.
-  ///
-  /// In en, this message translates to:
-  /// **'No messages published yet'**
-  String get mastermindThreadsNoMessages;
-
-  /// No description provided for @mastermindThreadsWithheld.
-  ///
-  /// In en, this message translates to:
-  /// **'Message withheld — open on Mac'**
-  String get mastermindThreadsWithheld;
-
-  /// No description provided for @mastermindThreadsRest.
-  ///
-  /// In en, this message translates to:
-  /// **'Open on Mac for the rest'**
-  String get mastermindThreadsRest;
+  /// **'Back to Threads'**
+  String get mastermindBackToThreads;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

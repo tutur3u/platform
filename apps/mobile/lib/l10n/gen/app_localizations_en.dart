@@ -13750,56 +13750,5 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindThreadsTitle => 'Threads';
 
   @override
-  String get mastermindThreadsSearch => 'Search threads';
-
-  @override
-  String get mastermindThreadsUnavailable => 'Not available on mobile';
-
-  @override
-  String get mastermindThreadsUpdated => 'This thread was updated. Select it again to reload.';
-
-  @override
-  String get mastermindThreadsLimit => 'Limit reached, try again later';
-
-  @override
-  String get mastermindThreadsAccess => 'Access expired or unavailable. Sign in and check access.';
-
-  @override
-  String get mastermindThreadsError => 'Could not load threads. Check your connection and refresh.';
-
-  @override
-  String get mastermindThreadsRunning => 'Running';
-
-  @override
-  String get mastermindThreadsWaiting => 'Waiting';
-
-  @override
-  String get mastermindThreadsIdle => 'Idle';
-
-  @override
-  String get mastermindThreadsFailed => 'Failed';
-
-  @override
-  String get mastermindThreadsAll => 'All';
-
-  @override
-  String get mastermindThreadsRefresh => 'Refresh';
-
-  @override
-  String get mastermindThreadsEmpty => 'No matching threads';
-
-  @override
-  String get mastermindThreadsRedactions => 'Neutral placeholders mark content withheld for privacy.';
-
-  @override
-  String get mastermindThreadsEarlier => 'Load earlier';
-
-  @override
-  String get mastermindThreadsNoMessages => 'No messages published yet';
-
-  @override
-  String get mastermindThreadsWithheld => 'Message withheld — open on Mac';
-
-  @override
-  String get mastermindThreadsRest => 'Open on Mac for the rest';
+  String get mastermindBackToThreads => 'Back to Threads';
 }

@@ -598,47 +598,35 @@ one-glyph-per-window assertion for reported and unreported values.
 
 ## Read-only Threads preview
 
-`MASTERMIND_THREADS` is a compile-time Dart define, default `false`. With it off,
-Work, Ship and Insights retain their existing navigation. When enabled, Threads
-replaces Work; Backlog and Staff remain segments, and Ship and Insights stay
-separate.
+`MASTERMIND_THREADS` is a Dart define, default `false`. With it off, Work, Ship
+and Insights retain their existing navigation. When enabled, Threads replaces
+Work in the dock; Backlog and Staff remain segments, and Ship and Insights stay
+separate. The flag is read through `mastermindThreadsEnabled`, which tests can
+override with `debugOverrideMastermindThreads`, so the default `flutter test` run
+covers both the flag-off and flag-on paths without a `--dart-define`.
 
-P1a reads the same accepted snapshot as Home and Work, through the shared
-snapshot cubit and the tolerant v1 parser; it never parses the hub payload on its
-own. Rows are the parsed `lanes[]`, keyed by lane `id`, showing the friendly
-`[Name] Role` title, role, model and age. `work.lanes[]` supplies companion
-status and `work.counts` supplies the running, waiting and idle chip counts;
-failed is derived from the listed lanes and offered only when present. Queued
-lanes filter as running, and a `?state=` link from Home or Work maps to its
-group. Search (title and role) and status filters are local; the segment and
-status stay in the URL. Backlog and Staff are the existing Work sections over the
-same snapshot. The segment switch uses the compact 32 pt track with 44 pt hit
-areas. A row opens the existing lane detail; there is no send UI and no row opens
-history. Loading, access loss, rate limits (the last snapshot stays) and a 404
-with nothing published use the shared Mastermind section states.
+P1a is Work's own page with a Threads segment control: it reads the same
+accepted snapshot as Home and Work through the shared snapshot cubit and the
+tolerant v1 parser, and never parses the hub payload on its own. The grouped
+lane list, search, state, product and area filters, "Clear filters", Backlog and
+Staff are Work's own components, so a Work or Home link keeps `?state=`,
+`?product=` and `?area=` when it redirects to `/mastermind/threads`. The one
+difference is the group and chip order: Waiting, Failed, Running (queued
+follows), then Idle, each oldest first. The segment switch uses the compact
+32 pt track with 44 pt hit areas. A row opens the existing lane detail under
+`/mastermind/work/lane/:id`; the dock keeps Threads selected while it is open,
+and a missing lane offers "Back to Threads". There is no send UI and no row
+opens history. Loading, access loss, rate limits (the last snapshot stays) and a
+404 with nothing published use the shared Mastermind section states.
 
-P1b history sits behind its own `MASTERMIND_THREAD_HISTORY` define, which only
-applies when `MASTERMIND_THREADS` is also on. It is keyed on a future v2
-`thread_ref`, never on a v1 lane id; with it off the detail route redirects to
-the list. Only `/v1/threads/capabilities` discovers history support;
-`/v1/capabilities` is unchanged. Detail resolves the `thread_ref` from
-`/v1/threads`, then reads 30-message pages with a pinned digest and opaque
-`before` cursor. An expired digest reloads the index. Messages render as plain
-text, including neutral redaction placeholders, without link activation,
-Markdown, reply UI or model selection. Hidden history (404) shows “Not available
-on mobile”. Rate-limited history (429) retains the last successful content and
-shows a retry time when supplied, without automatic retries.
-
-History data stays in session memory scoped to the signed-in user and workspace;
-account/access changes and screen disposal remove it. No history is written to
-disk.
+Thread history is a separate P1b change, built to the design's mobile conditions
+(app lock, screenshot protection, closed parsers, localized state words and
+times). It is not part of P1a and has no flag here.
 
 Regression coverage lives in `apps/mobile/test/features/mastermind/threads/`:
-`threads_list_test.dart` uses the redacted Forge v1 fixture for titles, status
-filters, search, `work.counts`, Backlog/Staff segments, 44 pt targets, dock
-clearance, rate-limit retention and the 404 state; `threads_flag_test.dart`
-keeps the flag-off navigation unchanged; `threads_test.dart` covers history
-capabilities, digest/cursor parameters, caching and safe failures. Enablement
-remains held for security acceptance and exact-commit mobile CI. App-lock and
-screenshot protections from the broader design still require acceptance before
-history enablement.
+`threads_list_test.dart` covers the group order, filters, "Clear filters",
+Backlog/Staff segments, 44 pt targets, dock clearance, rate-limit retention and
+the 404 state with the flag on; `threads_flag_test.dart` keeps the flag-off
+navigation unchanged and checks the flag-on dock selection, redirects with
+filters kept, and the lane-gone copy. Enablement remains held for exact-commit
+mobile CI and product acceptance.

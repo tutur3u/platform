@@ -112,6 +112,7 @@ final class MastermindWorkModel {
     LaneState? state,
     Product? product,
     Area? area,
+    List<LaneState> statePriority = laneStatePriority,
   }) {
     final normal = [
       for (final item in snapshot.lanes)
@@ -137,7 +138,7 @@ final class MastermindWorkModel {
     }
     return MastermindWorkModel._(
       groups: [
-        for (final group in laneStatePriority)
+        for (final group in statePriority)
           if (_oldestFirst([
                 for (final lane in shown)
                   if (lane.state == group) lane,
