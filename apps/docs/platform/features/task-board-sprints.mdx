@@ -52,7 +52,10 @@ totals. Ending twice returns the stored report.
 Board sprints change only through the service-role RPCs
 `set_board_sprint_length`, `start_board_sprint`, `end_board_sprint` and
 `move_tasks_to_board_sprint`, called by the tasks API after its board-access
-checks. Direct row writes stay available for workspace-wide cycles only.
+checks. Anonymous and signed-in sessions cannot execute them; the catalog check
+in `apps/database/supabase/tests/20261027151200_anon-definer-execute.sql` lists
+them as service-only. Direct row writes stay available for workspace-wide cycles
+only.
 
 ## Exceptions
 
