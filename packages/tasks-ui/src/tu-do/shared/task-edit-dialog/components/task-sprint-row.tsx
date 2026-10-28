@@ -25,16 +25,19 @@ import {
 /**
  * The task's sprint in the task panel: which open sprint it is in, the sprint
  * end as its due date when it has none of its own, its sprint history, and a
- * menu to move it to the running or planned sprint. Hidden with sprints off.
+ * menu to move it to the running or planned sprint. Hidden with sprints off
+ * and for tasks not saved yet. `endDate` is the due date being edited.
  */
 export function TaskSprintRow({
   boardId,
   canEdit,
+  endDate,
   task,
   wsId,
 }: {
   boardId: string;
   canEdit: boolean;
+  endDate: Date | undefined;
   task?: Task;
   wsId: string;
 }) {
@@ -51,7 +54,10 @@ export function TaskSprintRow({
   if (!task?.id || !sprints.sprintsOn) return null;
 
   const current = sprints.openSprintByTaskId.get(task.id) ?? null;
-  const due = getTaskEffectiveDueDate(task, current);
+  const due = getTaskEffectiveDueDate(
+    { end_date: endDate?.toISOString() ?? null },
+    current
+  );
   const history = getTaskSprintHistory(sprints.sprints, task.id);
   const targets = sprints.sprints.filter(
     (sprint) => isBoardSprintOpen(sprint) && sprint.id !== current?.id
@@ -82,7 +88,9 @@ export function TaskSprintRow({
           <DropdownMenu onOpenChange={setMenuOpen} open={menuOpen}>
             <DropdownMenuTrigger asChild>
               <button
-                className="inline-flex min-w-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-left hover:bg-muted"
+                className="inline-flex min-w-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-left hover:bg-muted disabled:pointer-events-none disabled:opacity-60"
+                // One move at a time, so a later pick cannot finish first.
+                disabled={moveTasks.isPending}
                 type="button"
               >
                 <span className="truncate">{label}</span>
