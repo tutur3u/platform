@@ -26,15 +26,36 @@ export function signMastermindPushEvent(
     .digest('hex');
 }
 
+function matchesSecret(
+  secret: string,
+  timestamp: string,
+  rawBody: string,
+  actual: Buffer
+) {
+  const expected = Buffer.from(
+    signMastermindPushEvent(secret, timestamp, rawBody),
+    'hex'
+  );
+  return actual.length === expected.length && timingSafeEqual(actual, expected);
+}
+
+/**
+ * Secrets are trimmed. `nextSecret` is the rotation slot: while it is set, a
+ * signature from either secret is accepted, and both must meet the minimum.
+ */
 export function verifyMastermindPushSignature(input: {
   secret: string | undefined;
+  nextSecret?: string | undefined;
   signature: string | null;
   timestamp: string | null;
   rawBody: string;
   nowMs?: number;
 }): MastermindPushSignatureResult {
   const secret = input.secret?.trim();
+  const nextSecret = input.nextSecret?.trim();
   if (!secret || secret.length < MASTERMIND_PUSH_MIN_SECRET_LENGTH)
+    return 'unconfigured';
+  if (nextSecret && nextSecret.length < MASTERMIND_PUSH_MIN_SECRET_LENGTH)
     return 'unconfigured';
   if (!input.signature || !input.timestamp) return 'missing';
 
@@ -49,12 +70,11 @@ export function verifyMastermindPushSignature(input: {
   )
     return 'stale';
 
-  const expected = Buffer.from(
-    signMastermindPushEvent(secret, timestamp, input.rawBody),
-    'hex'
-  );
   const actual = Buffer.from(signature, 'hex');
-  return actual.length === expected.length && timingSafeEqual(actual, expected)
-    ? 'ok'
-    : 'invalid';
+  // Both secrets are always checked so timing does not reveal which matched.
+  const primaryOk = matchesSecret(secret, timestamp, input.rawBody, actual);
+  const nextOk = nextSecret
+    ? matchesSecret(nextSecret, timestamp, input.rawBody, actual)
+    : false;
+  return primaryOk || nextOk ? 'ok' : 'invalid';
 }

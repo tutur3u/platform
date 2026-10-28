@@ -110,6 +110,9 @@ async function allowsPush(admin: MastermindPushAdminClient, userId: string) {
 /**
  * Synchronous fan-out only: no scheduling, retries or deferred work here.
  * Coalescing drops repeats inside the window; the snapshot carries the rest.
+ * An owner counts as sent only when FCM reports at least one delivery; a
+ * failed owner's window is released and successful owners keep theirs, so a
+ * retried event reaches only the owners that missed it.
  */
 export async function deliverMastermindPushEvent({
   admin,
@@ -164,19 +167,23 @@ export async function deliverMastermindPushEvent({
       continue;
     }
 
-    let invalidTokens: string[];
+    let deliveredCount = 0;
+    let invalidTokens: string[] = [];
     try {
-      ({ invalidTokens } = await sendCustomPushMessageBatch({
+      ({ deliveredCount, invalidTokens } = await sendCustomPushMessageBatch({
         devices: userDevices,
         message,
       }));
     } catch {
-      // Free the window so a retried event can still reach this owner.
+      deliveredCount = 0;
+    }
+    if (deliveredCount > 0) {
+      result.sent += 1;
+    } else {
+      // Nothing reached this owner: free the window so a retry can.
       await Promise.resolve(redis.del(coalesceKey)).catch(() => undefined);
       result.failed += 1;
-      continue;
     }
-    result.sent += 1;
     if (invalidTokens.length) {
       await Promise.resolve(
         admin

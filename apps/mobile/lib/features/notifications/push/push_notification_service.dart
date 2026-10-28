@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io' show Platform;
 
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -10,11 +9,13 @@ import 'package:mobile/core/utils/timezone.dart';
 import 'package:mobile/core/utils/timezone_location.dart';
 import 'package:mobile/data/repositories/notification_push_repository.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
-import 'package:mobile/features/mail/data/mail_push_destination.dart';
 import 'package:mobile/features/notifications/push/delivered_inbox_notifications.dart';
 import 'package:mobile/features/notifications/push/inbox_push_identity.dart';
 import 'package:mobile/features/notifications/push/login_notification_actions.dart';
+import 'package:mobile/features/notifications/push/push_navigation_request.dart';
 import 'package:timezone/timezone.dart' as timezone;
+
+export 'package:mobile/features/notifications/push/push_navigation_request.dart';
 
 enum PushNotificationEventType { received, opened, archived }
 
@@ -23,68 +24,6 @@ const _pushNotificationChannelName = 'Notifications';
 const _pushNotificationChannelDescription =
     'Push notifications for the Tuturuuu inbox';
 const _androidNotificationIcon = 'ic_notification';
-
-class PushNavigationRequest {
-  const PushNavigationRequest({
-    required this.notificationId,
-    required this.openTarget,
-    this.wsId,
-    this.entityId,
-    this.boardId,
-    this.conversationId,
-    this.messageId,
-    this.mailboxId,
-    this.threadId,
-    this.userId,
-    this.expiresAt,
-    this.inboxIdentity,
-  });
-
-  final String notificationId;
-  final String openTarget;
-  final String? wsId;
-  final String? entityId;
-  final String? boardId;
-  final String? conversationId;
-  final String? messageId;
-  final String? mailboxId;
-  final String? threadId;
-  final String? userId;
-  final DateTime? expiresAt;
-  final String? inboxIdentity;
-
-  MailPushDestination? get mailDestination => openTarget == 'mail'
-      ? MailPushDestination.parse({
-          'userId': userId,
-          'mailboxId': mailboxId,
-          'threadId': threadId,
-          'notificationId': notificationId,
-        })
-      : null;
-
-  bool get opensMfaApproval =>
-      openTarget == 'mfa_approval' && entityId != null && userId != null;
-
-  bool get opensTask =>
-      openTarget == 'task' &&
-      entityId != null &&
-      entityId!.isNotEmpty &&
-      boardId != null &&
-      boardId!.isNotEmpty;
-
-  bool get opensChat =>
-      openTarget == 'chat' &&
-      conversationId != null &&
-      conversationId!.isNotEmpty;
-
-  bool get hasNavigationMetadata =>
-      notificationId.isNotEmpty ||
-      (wsId != null && wsId!.isNotEmpty) ||
-      (entityId != null && entityId!.isNotEmpty) ||
-      (boardId != null && boardId!.isNotEmpty) ||
-      (conversationId != null && conversationId!.isNotEmpty) ||
-      (messageId != null && messageId!.isNotEmpty);
-}
 
 class PushNotificationEvent {
   const PushNotificationEvent({required this.type, required this.request});
@@ -95,72 +34,6 @@ class PushNotificationEvent {
 
 typedef PushNavigationHandler =
     Future<void> Function(PushNavigationRequest request);
-
-String? _stringFromPushData(Map<String, dynamic> data, String key) {
-  final value = data[key];
-  return value is String ? value : null;
-}
-
-PushNavigationRequest requestFromPushData(Map<String, dynamic> data) {
-  final openTarget = _stringFromPushData(data, 'openTarget') ?? 'inbox';
-  final entityId = _stringFromPushData(data, 'entityId');
-
-  return PushNavigationRequest(
-    notificationId: _stringFromPushData(data, 'notificationId') ?? '',
-    openTarget: openTarget,
-    wsId: _stringFromPushData(data, 'wsId'),
-    entityId: entityId,
-    boardId: _stringFromPushData(data, 'boardId'),
-    conversationId:
-        _stringFromPushData(data, 'conversationId') ??
-        (openTarget == 'chat' ? entityId : null),
-    messageId: _stringFromPushData(data, 'messageId'),
-    mailboxId: _stringFromPushData(data, 'mailboxId'),
-    threadId: _stringFromPushData(data, 'threadId'),
-    userId: _stringFromPushData(data, 'userId'),
-    expiresAt: DateTime.tryParse(_stringFromPushData(data, 'expiresAt') ?? ''),
-    inboxIdentity: InboxPushIdentity.parse(data['inboxIdentity'])?.capsule,
-  );
-}
-
-PushNavigationRequest? requestFromLocalNotificationPayload(String payload) {
-  final Object? decoded;
-  try {
-    decoded = jsonDecode(payload);
-  } on FormatException {
-    return null;
-  }
-
-  if (decoded is! Map<String, dynamic>) {
-    return null;
-  }
-
-  final request = requestFromPushData(decoded);
-  return request.hasNavigationMetadata ? request : null;
-}
-
-String? payloadFromPushRequest(PushNavigationRequest request) {
-  if (!request.hasNavigationMetadata) {
-    return null;
-  }
-
-  return jsonEncode({
-    'notificationId': request.notificationId,
-    'openTarget': request.openTarget,
-    'wsId': request.wsId,
-    'entityId': request.entityId,
-    'boardId': request.boardId,
-    'conversationId': request.conversationId,
-    'messageId': request.messageId,
-    if (InboxPushIdentity.parse(request.inboxIdentity) != null)
-      'inboxIdentity': request.inboxIdentity,
-    if (request.mailboxId != null) 'mailboxId': request.mailboxId,
-    if (request.threadId != null) 'threadId': request.threadId,
-    if (request.userId != null) 'userId': request.userId,
-    if (request.expiresAt != null)
-      'expiresAt': request.expiresAt!.toIso8601String(),
-  });
-}
 
 class PushNotificationService {
   PushNotificationService({

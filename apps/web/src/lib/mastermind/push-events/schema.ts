@@ -18,7 +18,7 @@ export type MastermindPushEventType =
 export const mastermindPushEventSchema = z.strictObject({
   v: z.literal(MASTERMIND_PUSH_EVENT_VERSION),
   type: z.enum(MASTERMIND_PUSH_EVENT_TYPES),
-  item_id: z.string().regex(/^item-[A-Za-z0-9_-]{1,64}$/),
+  item_id: z.string().regex(/^item-[0-9a-f]{20}$/),
   seq: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
   ts: z.iso.datetime(),
 });

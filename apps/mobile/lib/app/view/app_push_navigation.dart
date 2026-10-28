@@ -66,6 +66,12 @@ extension _AppPushNavigation on _AppState {
       }
       return;
     }
+    final mastermindLocation = request.mastermindLocation;
+    if (mastermindLocation != null) {
+      // The router's Mastermind access gate still holds the tab roots.
+      _router.go(mastermindLocation);
+      return;
+    }
     if (request.openTarget == 'mail') {
       final destination = request.mailDestination;
       if (destination != null &&

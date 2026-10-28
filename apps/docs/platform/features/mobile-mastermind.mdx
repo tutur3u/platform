@@ -393,14 +393,18 @@ signed hub events and sends a mobile push to Mastermind owners.
   "Mastermind". The event carries no title, product or text, so no item content,
   including security items, can reach a lock screen.
 - **Tap:** `openTarget: mastermind` with the tab root (`/mastermind/inbox`, or
-  `/mastermind` for pins), held by the same access gate as any deep link. An
-  item id is never in the push.
+  `/mastermind` for pins), held by the same access gate as any deep link. The
+  app navigates only when `route` exactly matches one of those two roots; any
+  other or missing route opens the notifications screen, and a route from the
+  payload is never followed otherwise. An item id is never in the push.
 - **Rate:** at most one push per type per owner per minute; a burst inside the
   window is dropped, not queued, because the next snapshot shows it.
 - **Default:** off until Release Desk provisions `MASTERMIND_PUSH_HMAC_SECRET`
   and `MASTERMIND_PUSH_OWNER_IDS`; without the secret the route sends nothing.
 - **Regression coverage:**
-  `apps/web/src/app/api/v1/mastermind/push-events/route.test.ts`.
+  `apps/web/src/app/api/v1/mastermind/push-events/route.test.ts`,
+  `route.delivery.test.ts` and, for the tap,
+  `apps/mobile/test/features/notifications/push/mastermind_push_destination_test.dart`.
 
 ## Deferred to PR8
 
