@@ -50,9 +50,18 @@ final class ParseRejected extends ParseOutcome {
   final String path;
 }
 
+/// Largest snapshot accepted on the wire, in the cache and by this parser.
+///
+/// Schema 1.4 carries a 7-day observability window at 15-minute resolution
+/// (673 points per series). Usage points alone run about 360 bytes, so seven
+/// instances need about 1.7 MB before models, fleet and delivery series; the
+/// former 600 KB cap refused real exports. The HTTP drain stops at this cap
+/// before anything is decoded, and decoding runs off the UI isolate.
+const mastermindSnapshotMaxBytes = 4000000;
+
 /// Isolate entrypoint returning categories without external input on failure.
 ParseOutcome parseMastermindSnapshot(Uint8List bytes) {
-  if (bytes.length > 600000) {
+  if (bytes.length > mastermindSnapshotMaxBytes) {
     return const ParseOutcome.rejected(RejectionReason.tooLarge);
   }
   final Object? decoded;

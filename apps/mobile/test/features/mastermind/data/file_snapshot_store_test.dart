@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/mastermind/data/file_snapshot_store.dart';
+import 'package:mobile/features/mastermind/parse/snapshot_parser.dart';
 
 import '../../../helpers/mastermind_hub_harness.dart';
 
@@ -65,7 +66,11 @@ void main() {
 
   test('an invalid digest or an oversize body is not stored', () async {
     await store.write(_bytes('{}'), receivedAt, digest: 'nope');
-    await store.write(Uint8List(600001), receivedAt, digest: hubDigest);
+    await store.write(
+      Uint8List(mastermindSnapshotMaxBytes + 1),
+      receivedAt,
+      digest: hubDigest,
+    );
     expect(await store.read(), isNull);
   });
 
@@ -199,7 +204,9 @@ void main() {
   test('a snapshot file that outgrew its meta is discarded', () async {
     await store.write(_bytes('{}'), receivedAt, digest: hubDigest);
     final dir = userDirectories().single as Directory;
-    File('${dir.path}/snapshot.json').writeAsBytesSync(Uint8List(600001));
+    File(
+      '${dir.path}/snapshot.json',
+    ).writeAsBytesSync(Uint8List(mastermindSnapshotMaxBytes + 1));
     expect(await store.read(), isNull);
     expect(dir.existsSync(), isFalse);
   });
