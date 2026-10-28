@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(39);
+select plan(50);
 insert into auth.users (id, aud, role, email, raw_app_meta_data, created_at, updated_at)
 values ('00000000-0000-4000-8000-000000009901', 'authenticated', 'authenticated', 'mfa-policy-test@tuturuuu.com', '{}', now(), now());
 insert into public.users (id) values ('00000000-0000-4000-8000-000000009901') on conflict do nothing;
@@ -47,27 +47,58 @@ update auth.users set raw_app_meta_data = '{"tuturuuu_required_mfa":{"required":
 select ok(public.account_required_mfa_satisfied(), 'Explicitly disabled policy is honored');
 select ok(not has_function_privilege('authenticated', 'public.required_mfa_enforcement_version()', 'EXECUTE'), 'Readiness probe is admin-only');
 select ok(has_function_privilege('service_role', 'public.required_mfa_enforcement_version()', 'EXECUTE'), 'Service role can probe enforcement readiness');
+-- Deparse the exact expression used by the enforcement migration on this server.
+-- Both qualified/unqualified input resolve to public under this fixed search_path.
+create temporary table mfa_canonical(id int);
+create policy canonical on mfa_canonical
+using ((select public.account_required_mfa_satisfied()))
+with check ((select public.account_required_mfa_satisfied()));
+create temporary table mfa_expected as
+select pg_get_expr(polqual, polrelid) as expression from pg_policy
+where polrelid = (select oid from pg_class where relname = 'mfa_canonical'
+ and relnamespace = pg_my_temp_schema()) and polname = 'canonical';
+
+-- Exact names only: Supabase-owned implementation tables, never objects/buckets.
+create temporary table mfa_storage_exemptions(nspname text, relname text);
+insert into mfa_storage_exemptions values
+ ('storage','migrations'), -- Supabase internal migration ledger.
+ ('storage','s3_multipart_uploads'), -- Supabase internal multipart state.
+ ('storage','s3_multipart_uploads_parts'), -- Supabase internal multipart parts.
+ ('storage','prefixes'), -- Supabase internal object prefix index.
+ ('storage','buckets_analytics'), -- Supabase internal analytics buckets.
+ ('storage','buckets_vectors'), -- Supabase internal vector buckets.
+ ('storage','vector_indexes'); -- Supabase internal vector indexes.
+select ok(not exists (
+ select 1 from mfa_storage_exemptions e join pg_namespace n on n.nspname=e.nspname
+ join pg_class c on c.relnamespace=n.oid and c.relname=e.relname
+ where has_table_privilege('anon',c.oid,'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER')
+ or has_table_privilege('authenticated',c.oid,'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER')
+), 'Exempt storage internals have no client table privileges');
+
 -- Scope is supplied from config.toml by the contract runner.
 create temporary view mfa_coverage_violations as
 select n.nspname, c.relname from pg_class c
 join pg_namespace n on n.oid = c.relnamespace
 where n.nspname = any(string_to_array(current_setting('test.mfa_schemas'), ','))
 and c.relkind in ('r','p','v','m')
+and not exists (select 1 from mfa_storage_exemptions e
+ where e.nspname=n.nspname and e.relname=c.relname)
 and not (
   -- TEMPORARY SR-386: owner-read table predates complete MFA coverage.
   n.nspname = 'private' and c.relname = 'note_voice_jobs'
 )
 and (
   c.relkind = 'm'
+  -- Invoker views read through their base tables' RLS.
   or (c.relkind = 'v' and not coalesce(c.reloptions @> array['security_invoker=true'], false))
   or (c.relkind in ('r','p') and (
     not c.relrowsecurity or not exists (
       select 1 from pg_policy p where p.polrelid = c.oid
       and p.polname = 'account_required_mfa' and not p.polpermissive
       and p.polcmd = '*'
-      and (0::oid = any(p.polroles) or 'authenticated'::regrole::oid = any(p.polroles))
-      and pg_get_expr(p.polqual,p.polrelid) ~ 'account_required_mfa_satisfied\(\)'
-      and pg_get_expr(p.polwithcheck,p.polrelid) ~ 'account_required_mfa_satisfied\(\)'
+      and (0::oid = any(p.polroles) or (select oid from pg_roles where rolname = 'authenticated') = any(p.polroles))
+      and pg_get_expr(p.polqual,p.polrelid) = (select expression from mfa_expected)
+      and pg_get_expr(p.polwithcheck,p.polrelid) = (select expression from mfa_expected)
     )
   ))
 );
@@ -87,6 +118,35 @@ select ok(exists(select 1 from mfa_coverage_violations where relname='mfa_contra
 drop policy account_required_mfa on public.mfa_contract_probe;
 create policy account_required_mfa on public.mfa_contract_probe as restrictive for all to authenticated using(true) with check(public.account_required_mfa_satisfied());
 select ok(exists(select 1 from mfa_coverage_violations where relname='mfa_contract_probe'), 'Detect USING true');
+drop policy account_required_mfa on public.mfa_contract_probe;
+create policy account_required_mfa on public.mfa_contract_probe as restrictive for all to authenticated using(true OR public.account_required_mfa_satisfied()) with check((select public.account_required_mfa_satisfied()));
+select ok(exists(select 1 from mfa_coverage_violations where relname='mfa_contract_probe'), 'Detect OR true');
+drop policy account_required_mfa on public.mfa_contract_probe;
+create policy account_required_mfa on public.mfa_contract_probe as restrictive for all to authenticated using((select public.account_required_mfa_satisfied())) with check(true);
+select ok(exists(select 1 from mfa_coverage_violations where relname='mfa_contract_probe'), 'Detect WITH CHECK true');
+drop policy account_required_mfa on public.mfa_contract_probe;
+create policy account_required_mfa on public.mfa_contract_probe as permissive for all to authenticated using((select public.account_required_mfa_satisfied())) with check((select public.account_required_mfa_satisfied()));
+select ok(exists(select 1 from mfa_coverage_violations where relname='mfa_contract_probe'), 'Detect PERMISSIVE only');
+create schema evil_probe;
+create function evil_probe.account_required_mfa_satisfied() returns boolean language sql as 'select true';
+drop policy account_required_mfa on public.mfa_contract_probe;
+create policy account_required_mfa on public.mfa_contract_probe as restrictive for all to authenticated
+using((select evil_probe.account_required_mfa_satisfied())) with check((select evil_probe.account_required_mfa_satisfied()));
+select ok(exists(select 1 from mfa_coverage_violations where relname='mfa_contract_probe'), 'Detect look-alike function');
+create view public.mfa_view_probe as select 1 as id;
+select ok(exists(select 1 from mfa_coverage_violations where relname='mfa_view_probe'), 'Detect mfa_view_probe');
+create materialized view public.mfa_matview_probe as select 1 as id;
+select ok(exists(select 1 from mfa_coverage_violations where relname='mfa_matview_probe'), 'Detect mfa_matview_probe');
+create table public.mfa_parent_probe(id int) partition by range(id); create table public.mfa_partition_probe partition of public.mfa_parent_probe for values from (0) to (10);
+select ok(exists(select 1 from mfa_coverage_violations where relname='mfa_partition_probe'), 'Detect mfa_partition_probe');
+create table graphql_public.mfa_graphql_probe(id int);
+select ok(exists(select 1 from mfa_coverage_violations where relname='mfa_graphql_probe'), 'Detect mfa_graphql_probe');
+create table storage.mfa_storage_probe(id int);
+select ok(exists(select 1 from mfa_coverage_violations where relname='mfa_storage_probe'), 'Detect mfa_storage_probe');
+drop policy account_required_mfa on public.mfa_contract_probe;
+create policy account_required_mfa on public.mfa_contract_probe as restrictive for all to authenticated
+using((select public.account_required_mfa_satisfied())) with check((select public.account_required_mfa_satisfied()));
+select ok(not exists(select 1 from mfa_coverage_violations where relname='mfa_contract_probe'), 'Accept canonical policy');
 rollback to broken_coverage;
 select is((select count(*) from pg_policies where schemaname = 'storage' and tablename = 'objects' and policyname = 'account_required_mfa'), 1::bigint, 'Storage access receives the same policy');
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-000000009999","role":"authenticated","aal":"aal2"}', true);
