@@ -90,13 +90,16 @@ export async function POST(req: Request) {
 
   const { user } = await resolveAuthenticatedSessionUser(supabase);
 
+  if (!user) {
+    return NextResponse.json({ message: 'Not authenticated' }, { status: 401 });
+  }
+
   if (
     !isVerifiedTuturuuuStaffSession(
-      user &&
-        (await getVerifiedAuthUser(
-          await createAdminClient({ noCookie: true }),
-          user.id
-        ))
+      await getVerifiedAuthUser(
+        await createAdminClient({ noCookie: true }),
+        user.id
+      )
     )
   ) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
