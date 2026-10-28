@@ -54,6 +54,9 @@ export function usePlanAssignment({
   // Moves still in flight on any task, and whether any of them failed. A
   // reread overwrites every pending optimistic owner, so it waits for all.
   const inFlight = useRef({ pending: 0, failed: false });
+  // Each request replaces the task's whole owner set, so moves of one task
+  // are sent one after another: the user's last move is the last write.
+  const requestChain = useRef(new Map<string, Promise<unknown>>());
 
   const mutation = useMutation({
     mutationFn: ({
@@ -63,7 +66,19 @@ export function usePlanAssignment({
       assigneeIds: string[];
       previousAssignees: TaskAssignee[];
       taskId: string;
-    }) => updateWorkspaceTask(wsId, taskId, { assignee_ids: assigneeIds }),
+    }) => {
+      const previous = requestChain.current.get(taskId) ?? Promise.resolve();
+      const request = previous
+        .catch(() => undefined)
+        .then(() =>
+          updateWorkspaceTask(wsId, taskId, { assignee_ids: assigneeIds })
+        );
+      requestChain.current.set(taskId, request);
+      return request.finally(() => {
+        if (requestChain.current.get(taskId) === request)
+          requestChain.current.delete(taskId);
+      });
+    },
     onMutate: ({ assigneeIds, taskId }) => {
       const mutationId = applyOptimisticTaskPatch({
         queryClient,
