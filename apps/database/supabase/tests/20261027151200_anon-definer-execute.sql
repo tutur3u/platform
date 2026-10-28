@@ -587,10 +587,10 @@ SELECT is((SELECT count(*)::integer FROM definer_execute_expected e
 -- owning migration lists its signatures here.
 CREATE TEMP TABLE definer_added_later (signature text PRIMARY KEY);
 INSERT INTO definer_added_later VALUES
-  -- apps/database/supabase/migrations/20261029000000_board_sprints.sql
+  -- apps/database/supabase/migrations/20261029020000_board_sprints.sql
   ('public.set_board_sprint_length(uuid,smallint,uuid)'),
   ('public.start_board_sprint(uuid,uuid)'),
-  -- apps/database/supabase/migrations/20261029000100_board_sprint_lifecycle.sql
+  -- apps/database/supabase/migrations/20261029020100_board_sprint_lifecycle.sql
   ('public.end_board_sprint(uuid,uuid,jsonb,text)'),
   ('public.move_tasks_to_board_sprint(uuid,uuid[],uuid)');
 SELECT is((SELECT count(*)::integer FROM definer_added_later l
