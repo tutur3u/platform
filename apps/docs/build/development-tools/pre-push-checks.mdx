@@ -160,3 +160,14 @@ programs retain runtime and test files. This prevents host tooling such as
 ordinary request wrappers. Keep the configuration check in the package gate
 when moving config roots. `scripts/ci/vite-config-type-boundary.test.js` verifies
 the compiler's resolved app/config roots and the package command wiring.
+
+## Web browser and fixture test discovery
+
+Playwright's authenticated project collects only `*.spec.ts`; its setup project
+owns `auth.setup.ts`. Keep Vitest fixture tests out of browser collection.
+Check discovery without starting services with
+`bun run --cwd apps/web test:e2e -- --list` and require a nonzero test count.
+The root Vitest project `web-e2e-fixtures` runs the employee fixture unit tests:
+`bun x vitest run --project web-e2e-fixtures --maxWorkers=1`.
+The chat bridge fixture remains an explicit SQL qualification target requiring
+its envelope; it is not an ordinary unit test.
