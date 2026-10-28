@@ -12140,6 +12140,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindAreaInfra => 'Hạ tầng';
 
   @override
+  String get mastermindAreaLabel => 'Lĩnh vực';
+
+  @override
   String get mastermindAreaMemory => 'Bộ nhớ';
 
   @override
@@ -12165,6 +12168,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindAreaUx => 'Trải nghiệm';
+
+  @override
+  String get mastermindBackToDecisions => 'Về Quyết định';
 
   @override
   String get mastermindBackToInbox => 'Về Hộp thư';
@@ -12201,6 +12207,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindCategoryDelegated => 'Được ủy quyền';
+
+  @override
+  String get mastermindCategoryLabel => 'Phân loại';
 
   @override
   String get mastermindCategoryUser => 'Bạn';
@@ -12377,7 +12386,49 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindDecidedBy => 'Người quyết định';
 
   @override
+  String get mastermindDecidedByMastermind => 'Mastermind';
+
+  @override
+  String mastermindDecidedByRole(String role) {
+    return 'Vai trò: $role';
+  }
+
+  @override
+  String get mastermindDecidedByUser => 'Bạn';
+
+  @override
+  String get mastermindDecidedOnLabel => 'Quyết định lúc';
+
+  @override
+  String get mastermindDecisionGoneTitle => 'Quyết định này không còn trong Mastermind';
+
+  @override
+  String get mastermindDecisionUpdated => 'Quyết định này đã được cập nhật';
+
+  @override
   String get mastermindDecisionsEmpty => 'Không có quyết định gần đây';
+
+  @override
+  String get mastermindDecisionsJournalEmpty => 'Chưa có quyết định nào được ghi lại.';
+
+  @override
+  String get mastermindDecisionsNoMatches => 'Không có quyết định phù hợp';
+
+  @override
+  String get mastermindDecisionsSeeAll => 'Xem tất cả quyết định';
+
+  @override
+  String get mastermindDecisionsSegment => 'Quyết định';
+
+  @override
+  String mastermindDecisionsSkipped(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count quyết định cũ hơn không có trong bản chụp này.',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get mastermindDeploy => 'Triển khai';
@@ -12878,10 +12929,27 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String get mastermindReversibilityLabel => 'Khả năng hoàn tác';
+
+  @override
   String get mastermindReversible => 'Có thể hoàn tác';
 
   @override
+  String get mastermindReversibleNo => 'Không thể hoàn tác';
+
+  @override
+  String get mastermindReversibleYes => 'Có thể hoàn tác';
+
+  @override
   String get mastermindRiskHigh => 'cao';
+
+  @override
+  String get mastermindRiskLabel => 'Rủi ro';
+
+  @override
+  String mastermindRiskLine(String level) {
+    return 'Rủi ro: $level';
+  }
 
   @override
   String get mastermindRiskLow => 'thấp';
@@ -13404,6 +13472,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindWhy => 'Lý do';
+
+  @override
+  String get mastermindWhyMissing => 'Chưa ghi lý do';
 
   @override
   String get mastermindWorkClearFilters => 'Xóa bộ lọc';

@@ -12276,6 +12276,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindAreaInfra => 'Infrastructure';
 
   @override
+  String get mastermindAreaLabel => 'Area';
+
+  @override
   String get mastermindAreaMemory => 'Memory';
 
   @override
@@ -12301,6 +12304,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindAreaUx => 'UX';
+
+  @override
+  String get mastermindBackToDecisions => 'Back to Decisions';
 
   @override
   String get mastermindBackToInbox => 'Back to Inbox';
@@ -12337,6 +12343,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindCategoryDelegated => 'Delegated';
+
+  @override
+  String get mastermindCategoryLabel => 'Category';
 
   @override
   String get mastermindCategoryUser => 'You';
@@ -12513,7 +12522,50 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindDecidedBy => 'Decided by';
 
   @override
+  String get mastermindDecidedByMastermind => 'Mastermind';
+
+  @override
+  String mastermindDecidedByRole(String role) {
+    return 'Role: $role';
+  }
+
+  @override
+  String get mastermindDecidedByUser => 'You';
+
+  @override
+  String get mastermindDecidedOnLabel => 'Decided on';
+
+  @override
+  String get mastermindDecisionGoneTitle => 'This decision is no longer in Mastermind';
+
+  @override
+  String get mastermindDecisionUpdated => 'This decision was updated';
+
+  @override
   String get mastermindDecisionsEmpty => 'No recent decisions';
+
+  @override
+  String get mastermindDecisionsJournalEmpty => 'No decisions recorded yet.';
+
+  @override
+  String get mastermindDecisionsNoMatches => 'No matching decisions';
+
+  @override
+  String get mastermindDecisionsSeeAll => 'See all decisions';
+
+  @override
+  String get mastermindDecisionsSegment => 'Decisions';
+
+  @override
+  String mastermindDecisionsSkipped(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count older decisions aren\'t included in this snapshot.',
+      one: '1 older decision isn\'t included in this snapshot.',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get mastermindDeploy => 'Deploy';
@@ -13017,10 +13069,27 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get mastermindReversibilityLabel => 'Reversibility';
+
+  @override
   String get mastermindReversible => 'Reversible';
 
   @override
+  String get mastermindReversibleNo => 'Not reversible';
+
+  @override
+  String get mastermindReversibleYes => 'Can be reversed';
+
+  @override
   String get mastermindRiskHigh => 'high';
+
+  @override
+  String get mastermindRiskLabel => 'Risk';
+
+  @override
+  String mastermindRiskLine(String level) {
+    return 'Risk: $level';
+  }
 
   @override
   String get mastermindRiskLow => 'low';
@@ -13546,6 +13615,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindWhy => 'Why';
+
+  @override
+  String get mastermindWhyMissing => 'No reason recorded';
 
   @override
   String get mastermindWorkClearFilters => 'Clear filters';

@@ -51,6 +51,8 @@ abstract final class Routes {
   static const mastermindInsights = '/mastermind/insights';
   static const mastermindWorkLane = '/mastermind/work/lane/:laneId';
   static const mastermindInboxItem = '/mastermind/inbox/item/:itemId';
+  static const mastermindInboxDecision =
+      '/mastermind/inbox/decision/:decisionId';
   static const mastermindInsightsTable =
       '/mastermind/insights/:section/table/:chartId';
 
@@ -64,6 +66,16 @@ abstract final class Routes {
   /// opened it rather than falling back to the Inbox.
   static bool isMastermindInboxItemLocation(String location) =>
       normalizeLocation(location).startsWith('$mastermindInbox/item/');
+
+  /// Decision ids are opaque snapshot ids (`d_<12hex>`). Like item ids they are
+  /// route parameters only and never appear in an external deep link.
+  static String mastermindInboxDecisionPath(String decisionId) =>
+      '$mastermindInbox/decision/${Uri.encodeComponent(decisionId)}';
+
+  /// A decision detail is pushed over the Decisions segment or Home, so Back
+  /// pops to whichever opened it, segment and filters intact.
+  static bool isMastermindInboxDecisionLocation(String location) =>
+      normalizeLocation(location).startsWith('$mastermindInbox/decision/');
 
   /// A chart table is pushed over Insights, so Back pops to where it was.
   static bool isMastermindInsightsTableLocation(String location) {

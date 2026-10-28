@@ -391,6 +391,7 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
     if ((currentLocation.startsWith('${Routes.settings}/') ||
             Routes.isMastermindLaneLocation(currentLocation) ||
             Routes.isMastermindInboxItemLocation(currentLocation) ||
+            Routes.isMastermindInboxDecisionLocation(currentLocation) ||
             Routes.isMastermindInsightsTableLocation(currentLocation)) &&
         context.canPop()) {
       _isHandlingBackNavigation = true;

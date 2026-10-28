@@ -6,6 +6,7 @@ import 'package:mobile/core/ui/charts/charts.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/gmt7.dart';
 import 'package:mobile/features/mastermind/presentation/home_model.dart';
+import 'package:mobile/features/mastermind/presentation/inbox_segment.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -97,8 +98,9 @@ class _QuotaRow extends StatelessWidget {
   }
 }
 
-/// The latest three journal decisions, newest first. Display only: the full
-/// journal is deferred, so there is no row action and no promise of one.
+/// The latest three journal decisions, newest first. A row opens its detail,
+/// pushed over Home so Back returns here; "See all decisions" opens the
+/// Decisions segment of the Inbox.
 class HomeDecisionsCard extends StatelessWidget {
   const HomeDecisionsCard({required this.model, super.key});
 
@@ -123,6 +125,16 @@ class HomeDecisionsCard extends StatelessWidget {
                 Gmt7.dateTime(decision.at, locale),
               ].join(' · '),
             ),
+            showChevron: true,
+            onTap: () =>
+                context.push(Routes.mastermindInboxDecisionPath(decision.id)),
+          ),
+        if (model.decisions.isNotEmpty)
+          AppGroupedRow(
+            title: Text(l10n.mastermindDecisionsSeeAll),
+            showChevron: true,
+            onTap: () =>
+                context.go(inboxLocation(segment: InboxSegment.decisions)),
           ),
       ],
     );

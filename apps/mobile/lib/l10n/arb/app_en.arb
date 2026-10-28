@@ -5263,6 +5263,20 @@
       }
     }
   },
+  "@mastermindDecidedByRole": {
+    "placeholders": {
+      "role": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindDecisionsSkipped": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "@mastermindDeployCiLine": {
     "placeholders": {
       "deploy": {
@@ -5445,6 +5459,13 @@
   "@mastermindResetsAt": {
     "placeholders": {
       "dateTime": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindRiskLine": {
+    "placeholders": {
+      "level": {
         "type": "String"
       }
     }
@@ -5720,6 +5741,7 @@
   "mastermindAreaFinance": "Finance",
   "mastermindAreaHub": "Hub",
   "mastermindAreaInfra": "Infrastructure",
+  "mastermindAreaLabel": "Area",
   "mastermindAreaMemory": "Memory",
   "mastermindAreaOrg": "Organization",
   "mastermindAreaPerf": "Performance",
@@ -5729,6 +5751,7 @@
   "mastermindAreaTasks": "Tasks",
   "mastermindAreaUsers": "Users",
   "mastermindAreaUx": "UX",
+  "mastermindBackToDecisions": "Back to Decisions",
   "mastermindBackToInbox": "Back to Inbox",
   "mastermindBackToInsights": "Back to Insights",
   "mastermindBacklogEmptyTitle": "Backlog is clear",
@@ -5741,6 +5764,7 @@
   "mastermindBasisVercelDeployment": "Vercel deployment",
   "mastermindCategoryAuto": "Automatic",
   "mastermindCategoryDelegated": "Delegated",
+  "mastermindCategoryLabel": "Category",
   "mastermindCategoryUser": "You",
   "mastermindChartBurn": "Burn rate",
   "mastermindChartCiJobs": "CI jobs",
@@ -5797,7 +5821,18 @@
   "mastermindCoverageStale": "Stale",
   "mastermindDataSourcesAction": "Data sources",
   "mastermindDecidedBy": "Decided by",
+  "mastermindDecidedByMastermind": "Mastermind",
+  "mastermindDecidedByRole": "Role: {role}",
+  "mastermindDecidedByUser": "You",
+  "mastermindDecidedOnLabel": "Decided on",
+  "mastermindDecisionGoneTitle": "This decision is no longer in Mastermind",
+  "mastermindDecisionUpdated": "This decision was updated",
   "mastermindDecisionsEmpty": "No recent decisions",
+  "mastermindDecisionsJournalEmpty": "No decisions recorded yet.",
+  "mastermindDecisionsNoMatches": "No matching decisions",
+  "mastermindDecisionsSeeAll": "See all decisions",
+  "mastermindDecisionsSegment": "Decisions",
+  "mastermindDecisionsSkipped": "{count, plural, =1{1 older decision isn't included in this snapshot.} other{{count} older decisions aren't included in this snapshot.}}",
   "mastermindDeploy": "Deploy",
   "mastermindDeployCiLine": "Deploy {deploy} · CI {ci}",
   "mastermindDeployError": "error",
@@ -5943,8 +5978,13 @@
   "mastermindReservePacing": "Reserve pacing (chart rule)",
   "mastermindReservePacingInfo": "This is the chart reserve check, not the routing decision.",
   "mastermindResetsAt": "Resets {dateTime}",
+  "mastermindReversibilityLabel": "Reversibility",
   "mastermindReversible": "Reversible",
+  "mastermindReversibleNo": "Not reversible",
+  "mastermindReversibleYes": "Can be reversed",
   "mastermindRiskHigh": "high",
+  "mastermindRiskLabel": "Risk",
+  "mastermindRiskLine": "Risk: {level}",
   "mastermindRiskLow": "low",
   "mastermindRiskMed": "medium",
   "mastermindRoleFilter": "Role",
@@ -6092,6 +6132,7 @@
   "mastermindWeekly": "Weekly",
   "mastermindWeeklyLeft": "Weekly {value} left",
   "mastermindWhy": "Why",
+  "mastermindWhyMissing": "No reason recorded",
   "mastermindWorkClearFilters": "Clear filters",
   "mastermindWorkEmpty": "No lanes right now",
   "mastermindWorkNoMatches": "No matching lanes",

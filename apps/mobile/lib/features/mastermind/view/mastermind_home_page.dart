@@ -47,8 +47,7 @@ class MastermindHomePage extends StatelessWidget {
                       HomeShipCard(model: model),
                       HomeQuotaCard(model: model),
                       HomeActivityCard(model: model),
-                      // Last: the Decisions journal is deferred, so this is
-                      // only the latest few, with no link to a fuller view.
+                      // Last: only the latest few, with a link to the journal.
                       HomeDecisionsCard(model: model),
                     ],
                   ),

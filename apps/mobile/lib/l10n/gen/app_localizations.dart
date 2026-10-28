@@ -23191,6 +23191,12 @@ abstract class AppLocalizations {
   /// **'Infrastructure'**
   String get mastermindAreaInfra;
 
+  /// No description provided for @mastermindAreaLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Area'**
+  String get mastermindAreaLabel;
+
   /// No description provided for @mastermindAreaMemory.
   ///
   /// In en, this message translates to:
@@ -23244,6 +23250,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'UX'**
   String get mastermindAreaUx;
+
+  /// No description provided for @mastermindBackToDecisions.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to Decisions'**
+  String get mastermindBackToDecisions;
 
   /// No description provided for @mastermindBackToInbox.
   ///
@@ -23316,6 +23328,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delegated'**
   String get mastermindCategoryDelegated;
+
+  /// No description provided for @mastermindCategoryLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get mastermindCategoryLabel;
 
   /// No description provided for @mastermindCategoryUser.
   ///
@@ -23653,11 +23671,77 @@ abstract class AppLocalizations {
   /// **'Decided by'**
   String get mastermindDecidedBy;
 
+  /// No description provided for @mastermindDecidedByMastermind.
+  ///
+  /// In en, this message translates to:
+  /// **'Mastermind'**
+  String get mastermindDecidedByMastermind;
+
+  /// No description provided for @mastermindDecidedByRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Role: {role}'**
+  String mastermindDecidedByRole(String role);
+
+  /// No description provided for @mastermindDecidedByUser.
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get mastermindDecidedByUser;
+
+  /// No description provided for @mastermindDecidedOnLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Decided on'**
+  String get mastermindDecidedOnLabel;
+
+  /// No description provided for @mastermindDecisionGoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This decision is no longer in Mastermind'**
+  String get mastermindDecisionGoneTitle;
+
+  /// No description provided for @mastermindDecisionUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'This decision was updated'**
+  String get mastermindDecisionUpdated;
+
   /// No description provided for @mastermindDecisionsEmpty.
   ///
   /// In en, this message translates to:
   /// **'No recent decisions'**
   String get mastermindDecisionsEmpty;
+
+  /// No description provided for @mastermindDecisionsJournalEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No decisions recorded yet.'**
+  String get mastermindDecisionsJournalEmpty;
+
+  /// No description provided for @mastermindDecisionsNoMatches.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching decisions'**
+  String get mastermindDecisionsNoMatches;
+
+  /// No description provided for @mastermindDecisionsSeeAll.
+  ///
+  /// In en, this message translates to:
+  /// **'See all decisions'**
+  String get mastermindDecisionsSeeAll;
+
+  /// No description provided for @mastermindDecisionsSegment.
+  ///
+  /// In en, this message translates to:
+  /// **'Decisions'**
+  String get mastermindDecisionsSegment;
+
+  /// No description provided for @mastermindDecisionsSkipped.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 older decision isn\'t included in this snapshot.} other{{count} older decisions aren\'t included in this snapshot.}}'**
+  String mastermindDecisionsSkipped(int count);
 
   /// No description provided for @mastermindDeploy.
   ///
@@ -24529,17 +24613,47 @@ abstract class AppLocalizations {
   /// **'Resets {dateTime}'**
   String mastermindResetsAt(String dateTime);
 
+  /// No description provided for @mastermindReversibilityLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Reversibility'**
+  String get mastermindReversibilityLabel;
+
   /// No description provided for @mastermindReversible.
   ///
   /// In en, this message translates to:
   /// **'Reversible'**
   String get mastermindReversible;
 
+  /// No description provided for @mastermindReversibleNo.
+  ///
+  /// In en, this message translates to:
+  /// **'Not reversible'**
+  String get mastermindReversibleNo;
+
+  /// No description provided for @mastermindReversibleYes.
+  ///
+  /// In en, this message translates to:
+  /// **'Can be reversed'**
+  String get mastermindReversibleYes;
+
   /// No description provided for @mastermindRiskHigh.
   ///
   /// In en, this message translates to:
   /// **'high'**
   String get mastermindRiskHigh;
+
+  /// No description provided for @mastermindRiskLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Risk'**
+  String get mastermindRiskLabel;
+
+  /// No description provided for @mastermindRiskLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Risk: {level}'**
+  String mastermindRiskLine(String level);
 
   /// No description provided for @mastermindRiskLow.
   ///
@@ -25422,6 +25536,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Why'**
   String get mastermindWhy;
+
+  /// No description provided for @mastermindWhyMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'No reason recorded'**
+  String get mastermindWhyMissing;
 
   /// No description provided for @mastermindWorkClearFilters.
   ///
