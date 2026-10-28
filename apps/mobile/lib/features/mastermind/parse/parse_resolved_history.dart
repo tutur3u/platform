@@ -50,6 +50,7 @@ NeedsYou _withResolution(NeedsYou item, Map<String, dynamic> row) {
     title: item.title,
     body: item.body,
     askTruncated: item.askTruncated,
+    createdAt: item.createdAt,
     options: item.options,
     recommendedOption: item.recommendedOption,
     state: item.state,

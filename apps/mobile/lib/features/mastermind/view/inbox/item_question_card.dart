@@ -5,6 +5,7 @@ import 'package:mobile/core/ui/components/app_badge.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
+import 'package:mobile/features/mastermind/presentation/age_text.dart';
 import 'package:mobile/features/mastermind/presentation/display_names.dart';
 import 'package:mobile/features/mastermind/presentation/gmt7.dart';
 import 'package:mobile/features/mastermind/presentation/inbox_model.dart';
@@ -18,9 +19,10 @@ import 'package:mobile/l10n/l10n.dart';
 /// When the hub published only its "Open on Mac" stand-in, an info alert says
 /// the details are on the Mac instead of leaving the pointer as body text.
 class ItemQuestionCard extends StatelessWidget {
-  const ItemQuestionCard({required this.item, super.key});
+  const ItemQuestionCard({required this.item, this.now, super.key});
 
   final NeedsYou item;
+  final DateTime? now;
 
   @override
   Widget build(BuildContext context) {
@@ -43,12 +45,21 @@ class ItemQuestionCard extends StatelessWidget {
                   ),
                 ),
               ),
-              if (item.kind != null || item.product != null) ...[
+              ...[
                 const SizedBox(height: AppSpacing.sm),
                 Wrap(
                   spacing: AppSpacing.xs,
                   runSpacing: AppSpacing.xs,
                   children: [
+                    if (item.state != ItemState.answered)
+                      Text(MastermindLabels.itemState(l10n, item.state)),
+                    if (item.createdAt != null && now != null)
+                      Text(
+                        mastermindAgeText(
+                          l10n,
+                          now!.difference(item.createdAt!),
+                        ),
+                      ),
                     if (item.kind case final kind?)
                       AppBadge(
                         child: Text(MastermindLabels.itemKind(l10n, kind)),

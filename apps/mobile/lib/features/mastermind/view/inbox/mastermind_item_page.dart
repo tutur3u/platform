@@ -54,8 +54,12 @@ class _MastermindItemPageState extends State<MastermindItemPage> {
                 (final item?, _) => _Detail(
                   item: item,
                   updated: item.versionHash != _openedVersion,
+                  now: snapshot.generatedAt,
                 ),
-                (_, final resolved?) => _Detail(item: resolved),
+                (_, final resolved?) => _Detail(
+                  item: resolved,
+                  now: snapshot.generatedAt,
+                ),
                 _ => _Gone(answered: _openedVersion != null),
               },
             ),
@@ -90,10 +94,11 @@ class _Gone extends StatelessWidget {
 }
 
 class _Detail extends StatelessWidget {
-  const _Detail({required this.item, this.updated = false});
+  const _Detail({required this.item, required this.now, this.updated = false});
 
   final NeedsYou item;
   final bool updated;
+  final DateTime now;
 
   @override
   Widget build(BuildContext context) {
@@ -126,7 +131,7 @@ class _Detail extends StatelessWidget {
           ),
         // The full title heads the body, and the ask is plain text: a grouped
         // row would cap it at two lines.
-        ItemQuestionCard(item: item),
+        ItemQuestionCard(item: item, now: now),
         // Resolved is the hub's word only; until then the reply section shows
         // this device's reply (Sent · waiting for Mastermind) or the composer.
         if (item.state == ItemState.answered)

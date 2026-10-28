@@ -152,10 +152,10 @@ order. Resolved lists the hub's `decisions_resolved` history ("Recently
 resolved", newest first). Pull to refresh.
 
 - **Rows** are two lines: the friendly title (`itemDisplayTitle`, so a redacted
-  `Product · area · kind` title reads "Decision for Mastermind hub"), then the
+  `Product · area · kind` title uses the first ask line), then the
   kind badge with the state and age: "Resolved · Yes · 2 h ago" for a resolved
   ask, "Sent · waiting for Mastermind" or "Waiting to send" for this device's
-  reply, else a one-line preview of the ask. No age is shown where the hub
+  reply. A separate two-line preview retains the ask. No age is shown where the hub
   publishes none (open asks). Options, "More" and the full ask live on the
   detail. A row is one screen-reader node ("Decision. Review plan. Review the
   plan", hint "Opens the ask").
@@ -245,9 +245,9 @@ switch, so it flips without a store release.
   `{schema_version: "1.4", item_id, version_hash, option_index | text}`: one of
   an option index (into the item's own `options[]`) or free text of at most 500
   characters, counted in code points, and at most 10 lines (the hub's limit; the
-  composer caps both as you type). Choosing an option clears the text and
-  typing clears the option. The text field has a placeholder and a counter. A
-  confirmation asks before anything is sent.
+  composer caps both as you type). An option button sends its index directly.
+  The text field has a placeholder and a counter; free-text sending requires
+  confirmation.
 - **Idempotency:** the `Idempotency-Key` is a random v4 UUID from a secure
   generator, made once per reply and stored in the outbox before the first send.
   Every retry reuses it, so an unknown outcome never becomes a second reply. A
@@ -266,8 +266,7 @@ switch, so it flips without a store release.
   the same generation fences, so an in-flight send cannot revive it.
 - **409 `stale_item`:** the item is refreshed, the typed words are kept, and the
   screen says "This question changed or was already answered. Review it again."
-  An option stays selected only if it is still the same option at the same
-  place. `idempotency_conflict` drops the queued entry with "Something went
+  Option buttons always use the current question version. `idempotency_conflict` drops the queued entry with "Something went
   wrong with this reply. Review it and send it again."
 - **Other answers:** 400 (`unsafe_text` explains the text policy) and 413 keep
   the words to edit; 429 waits out `Retry-After` and disables the retry until
@@ -474,7 +473,7 @@ Delivery sections arrive later and reuse the table route below).
 - **Friendly names.** Scope: every row and detail title. Default: the hub's
   `[Name] Role` title shows verbatim; a redacted `Product · area · kind` title
   is never shown: a lane uses its standing role, or "`<Product>` `<area>`" for
-  a child lane, and an item reads "Decision for Mastermind hub". Models shorten
+  a child lane; an item uses its real title or first ask line. Models shorten
   to "Sonnet 5.5" or "GPT-6.1 sol"; an unknown model reads "Model not
   reported". Coverage: `presentation/display_names_test.dart`.
 - **No bare unknown.** Scope: Home now, Ship and Insights next. Default: a
@@ -734,6 +733,14 @@ available regardless of length, with an expandable preview. Failed replies say
 "Not sent · tap to retry"; tapping retries the existing reply and opens its
 recovery details. Grouped open rows omit the repeated kind badge. Coverage:
 `mastermind_inbox_v1_test.dart` (truncation, long answers, failed sends).
+
+Ask cards on Home and Inbox share the same row. The publisher title wins;
+a redacted title falls back to the first ask line. Cards preview two lines,
+project, status and created-at age; detail keeps the full published ask. Only
+unique open ids appear in Needs you; a hub-answered id always wins. Home's
+See-all link opens Needs you. Real option buttons send immediately through the
+existing outbox and retain its retry key; empty/Mac-placeholder options leave
+the free-text composer. `mastermind_ask_context_test.dart` covers these rules.
 
 ## Read-only Threads preview
 

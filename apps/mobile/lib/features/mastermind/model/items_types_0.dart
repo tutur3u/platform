@@ -23,6 +23,7 @@ final class NeedsYou implements NeedsYouItem {
     this.resolvedAt,
     this.resolution,
     this.askTruncated = false,
+    this.createdAt,
   }) : options = List.unmodifiable(options);
 
   final String id;
@@ -42,6 +43,7 @@ final class NeedsYou implements NeedsYouItem {
   /// The answer the hub recorded ("Yes"); only on history rows.
   final String? resolution;
   final bool askTruncated;
+  final DateTime? createdAt;
 }
 
 final class Lane implements LaneItem {

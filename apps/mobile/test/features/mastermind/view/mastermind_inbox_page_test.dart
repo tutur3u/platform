@@ -119,13 +119,13 @@ void main() {
       expect(find.text('1'), findsNWidgets(2)); // one action, one fyi
     });
 
-    testWidgets('a long body is a one-line preview, with no More', (
+    testWidgets('a long body is a two-line preview, with no More', (
       tester,
     ) async {
       final body = List.filled(30, 'word').join(' ');
       await _pump(tester, inboxJson([inboxItem(1, body: body)]));
       final preview = tester.widget<Text>(find.text(body));
-      expect(preview.maxLines, 1);
+      expect(preview.maxLines, 2);
       expect(preview.overflow, TextOverflow.ellipsis);
       // The full ask lives on the detail page.
       expect(find.text('More'), findsNothing);

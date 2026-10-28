@@ -281,13 +281,13 @@ void main() {
       await _pump(tester, const MastermindInboxPage(), json);
       expect(
         find.bySemanticsLabel(
-          'Decision. Decision for Mastermind hub. Review the plan',
+          'Decision. Review the plan. open. Review the plan',
         ),
         findsOneWidget,
       );
       expect(find.textContaining('Mastermind · hub ·'), findsNothing);
       final node = tester.getSemantics(
-        find.bySemanticsLabel(RegExp('^Decision. Decision for')),
+        find.bySemanticsLabel(RegExp('^Decision. Review the plan')),
       );
       expect(node.hint, 'Opens the ask');
       handle.dispose();

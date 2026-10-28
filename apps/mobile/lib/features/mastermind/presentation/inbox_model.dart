@@ -1,5 +1,6 @@
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/inbox_segment.dart';
+import 'package:mobile/features/mastermind/presentation/open_asks.dart';
 import 'package:mobile/features/mastermind/replies/reply_models.dart';
 
 /// One run of asks: open items of the same kind in publisher order, or the
@@ -25,7 +26,7 @@ final class InboxGroup {
 /// What the Inbox ask segments render, derived from one accepted snapshot.
 ///
 /// Needs you lists open items grouped by kind; Resolved lists the hub's
-/// `decisions_resolved` history; All lists both. Whether an ask is resolved is
+/// `decisions_resolved` history. Whether an ask is resolved is
 /// the hub's word only: a reply this device sent never moves an item.
 ///
 /// Security rows never mix with normal items: they have no id, count, order or
@@ -48,10 +49,7 @@ final class MastermindInboxModel {
   }) {
     final open = segment == InboxSegment.resolved
         ? const <NeedsYou>[]
-        : [
-            for (final item in snapshot.now.needsYou)
-              if (item is NeedsYou && item.state == ItemState.open) item,
-          ];
+        : openAsks(snapshot);
     final resolved = segment == InboxSegment.needsYou
         ? const <NeedsYou>[]
         : _newestFirst(snapshot.resolvedItems);
@@ -146,8 +144,8 @@ List<(int, String)> selectableOptions(NeedsYou item) => [
 
 /// The item with [id] if it is still an open normal Needs-you row.
 NeedsYou? openNeedsYouById(MastermindSnapshot snapshot, String id) {
-  for (final item in snapshot.now.needsYou) {
-    if (item is NeedsYou && item.id == id && item.state == ItemState.open) {
+  for (final item in openAsks(snapshot)) {
+    if (item.id == id) {
       return item;
     }
   }

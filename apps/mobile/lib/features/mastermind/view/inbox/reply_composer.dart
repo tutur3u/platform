@@ -3,12 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/ui/components/app_badge.dart';
 import 'package:mobile/core/ui/components/app_button.dart';
-import 'package:mobile/core/ui/components/app_option_tile.dart';
 import 'package:mobile/core/ui/components/app_text_field.dart';
-import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/overlays/app_dialog.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
+import 'package:mobile/features/mastermind/presentation/display_names.dart';
 import 'package:mobile/features/mastermind/presentation/inbox_model.dart';
 import 'package:mobile/features/mastermind/replies/mastermind_replies_cubit.dart';
 import 'package:mobile/features/mastermind/replies/reply_models.dart';
@@ -58,12 +58,7 @@ class LineLimitFormatter extends TextInputFormatter {
   }
 }
 
-/// Option tiles and a free-text reply for one open question.
-///
-/// A reply is one thing or the other, as the hub's contract says: picking an
-/// option clears the text, typing clears the option. What is composed is kept
-/// in the replies cubit, so it survives the question being refreshed under it
-/// (a 409) and the page being rebuilt.
+/// Option buttons submit through the outbox; free text remains a saved draft.
 class ReplyComposer extends StatefulWidget {
   const ReplyComposer({required this.item, required this.replies, super.key});
 
@@ -76,27 +71,13 @@ class ReplyComposer extends StatefulWidget {
 
 class _ReplyComposerState extends State<ReplyComposer> {
   final _text = TextEditingController();
-  int? _option;
+  bool _sendingOption = false;
 
   @override
   void initState() {
     super.initState();
     final draft = widget.replies.draftFor(widget.item.id);
     _text.text = draft.text;
-    _option = _stillValid(widget.item, draft.optionIndex, draft.optionLabel)
-        ? draft.optionIndex
-        : null;
-  }
-
-  @override
-  void didUpdateWidget(covariant ReplyComposer oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.item.versionHash == widget.item.versionHash) return;
-    // The question changed: keep the words, keep the option only if it is
-    // still the same option at the same place.
-    final label = _option == null ? null : oldWidget.item.options[_option!];
-    if (!_stillValid(widget.item, _option, label)) _option = null;
-    _save();
   }
 
   @override
@@ -105,55 +86,37 @@ class _ReplyComposerState extends State<ReplyComposer> {
     super.dispose();
   }
 
-  static bool _stillValid(NeedsYou item, int? index, String? label) =>
-      index != null &&
-      index < item.options.length &&
-      item.options[index] == label &&
-      label != mastermindReplyPlaceholderOption;
+  void _save() =>
+      widget.replies.saveDraft(widget.item.id, ReplyDraft(text: _text.text));
+  void _typed(String value) => setState(_save);
+  bool get _canSend => isValidReplyText(_text.text);
 
-  void _save() => widget.replies.saveDraft(
-    widget.item.id,
-    ReplyDraft(
-      optionIndex: _option,
-      optionLabel: _option == null ? null : widget.item.options[_option!],
-      text: _text.text,
-    ),
-  );
-
-  void _pick(int index) => setState(() {
-    _option = index;
-    _text.clear();
-    _save();
-  });
-
-  void _typed(String value) => setState(() {
-    if (value.isNotEmpty) _option = null;
-    _save();
-  });
-
-  bool get _canSend => _option != null || isValidReplyText(_text.text);
+  Future<void> _sendOption(int index) async {
+    if (_sendingOption) return;
+    setState(() => _sendingOption = true);
+    try {
+      await widget.replies.submit(item: widget.item, optionIndex: index);
+    } finally {
+      if (mounted) setState(() => _sendingOption = false);
+    }
+  }
 
   Future<void> _send() async {
     final l10n = context.l10n;
     final item = widget.item;
-    final index = _option;
     final text = _text.text.trim();
     final confirmed = await showAppConfirmDialog(
       context: context,
       title: l10n.mastermindReplyConfirmTitle,
       message: l10n.mastermindReplyConfirmMessage(
-        item.title,
-        index == null ? text : item.options[index],
+        itemDisplayTitle(l10n, item),
+        text,
       ),
       confirmLabel: l10n.mastermindReplySend,
       cancelLabel: l10n.commonCancel,
     );
     if (!confirmed || !mounted) return;
-    await widget.replies.submit(
-      item: item,
-      optionIndex: index,
-      text: index == null ? text : null,
-    );
+    await widget.replies.submit(item: item, text: text);
   }
 
   @override
@@ -161,9 +124,6 @@ class _ReplyComposerState extends State<ReplyComposer> {
     final l10n = context.l10n;
     final item = widget.item;
     final options = selectableOptions(item);
-    final recommended = options
-        .where((entry) => entry.$2 == item.recommendedOption)
-        .firstOrNull;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -172,26 +132,25 @@ class _ReplyComposerState extends State<ReplyComposer> {
             caption: l10n.mastermindReplyOptionsTitle,
             children: [
               for (final (index, option) in options)
-                AppOptionTile(
-                  title: option,
-                  subtitle: option == item.recommendedOption
-                      ? l10n.mastermindRecommended
-                      : null,
-                  leading: option == item.recommendedOption
-                      ? const Icon(LucideIcons.star)
-                      : null,
-                  selected: _option == index,
-                  onTap: () => _pick(index),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+                  child: AppButton.outline(
+                    onPressed: _sendingOption
+                        ? null
+                        : () => unawaited(_sendOption(index)),
+                    child: Wrap(
+                      spacing: AppSpacing.sm,
+                      runSpacing: AppSpacing.xs,
+                      alignment: WrapAlignment.center,
+                      children: [
+                        Text(option),
+                        if (option == item.recommendedOption)
+                          AppBadge(child: Text(l10n.mastermindRecommended)),
+                      ],
+                    ),
+                  ),
                 ),
             ],
-          ),
-        if (recommended != null && _option != recommended.$1)
-          Align(
-            alignment: AlignmentDirectional.centerStart,
-            child: AppButton.ghost(
-              onPressed: () => _pick(recommended.$1),
-              child: Text(l10n.mastermindReplyUseRecommended),
-            ),
           ),
         AppTextField(
           controller: _text,
@@ -229,7 +188,9 @@ class _ReplyComposerState extends State<ReplyComposer> {
         ),
         const SizedBox(height: AppSpacing.md),
         AppButton.primary(
-          onPressed: _canSend ? () => unawaited(_send()) : null,
+          onPressed: !_sendingOption && _canSend
+              ? () => unawaited(_send())
+              : null,
           child: Text(l10n.mastermindReplySend),
         ),
         const SizedBox(height: AppSpacing.lg),

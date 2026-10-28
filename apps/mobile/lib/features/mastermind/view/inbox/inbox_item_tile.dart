@@ -18,11 +18,10 @@ import 'package:mobile/features/mastermind/view/inbox/mastermind_replies_watcher
 import 'package:mobile/features/mastermind/view/widgets/large_text.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-/// One ask in the Inbox list, in two lines: the friendly title, then the kind
-/// badge with the ask's state and age.
+/// One ask with a meaningful title, metadata and a two-line ask preview.
 ///
 /// The state line is the hub's word first (Resolved), then this device's
-/// reply (Sent · waiting for Mastermind), then a one-line preview of the ask.
+/// reply (Sent · waiting for Mastermind). The preview stays visible separately.
 /// The full ask, its options and the composer live on the detail page, which
 /// a tap pushes so Back returns to this list with its filters intact.
 class InboxItemTile extends StatelessWidget {
@@ -30,11 +29,13 @@ class InboxItemTile extends StatelessWidget {
     required this.item,
     this.now,
     this.showKind = false,
+    this.showKindIcon = false,
     super.key,
   });
 
   final NeedsYou item;
   final bool showKind;
+  final bool showKindIcon;
 
   /// The section clock, for "5 min ago". Without it no age is shown.
   final DateTime? now;
@@ -80,37 +81,57 @@ class InboxItemTile extends StatelessWidget {
     final large = mastermindLargeText(context);
     return Semantics(
       button: true,
-      label: [?kindLabel, title, if (detail.isNotEmpty) detail].join('. '),
+      label: [
+        ?kindLabel,
+        title,
+        if (detail.isNotEmpty) detail,
+        if (!isOpenOnMacStandIn(item.body)) item.body,
+      ].join('. '),
       hint: l10n.mastermindOpensItem,
       onTap: open,
       excludeSemantics: true,
       child: AppGroupedRow(
+        leading: showKindIcon
+            ? AppIconTile(
+                icon: switch (item.kind) {
+                  ItemKind.decision => LucideIcons.diamond,
+                  ItemKind.action => LucideIcons.zap,
+                  ItemKind.fyi => LucideIcons.info,
+                  null => LucideIcons.messageSquareMore,
+                },
+                tone: item.kind == ItemKind.fyi
+                    ? AppTone.neutral
+                    : AppTone.warning,
+              )
+            : null,
         title: Text(
           title,
+          key: ValueKey('ask-title-${item.id}'),
           maxLines: large ? 2 : 1,
           overflow: TextOverflow.ellipsis,
         ),
-        subtitle: Row(
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (showKind && kindLabel != null) ...[
-              AppBadge(
-                variant: item.state == ItemState.answered
-                    ? AppBadgeVariant.outline
-                    : AppBadgeVariant.secondary,
-                leading: item.state == ItemState.answered
-                    ? const Icon(AppIcons.check, size: 12)
-                    : null,
-                child: Text(kindLabel),
-              ),
-              const SizedBox(width: AppSpacing.xs),
-            ],
-            if (detail.isNotEmpty)
-              Expanded(
-                child: Text(
-                  detail,
-                  maxLines: large ? 2 : 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+            Wrap(
+              spacing: AppSpacing.xs,
+              runSpacing: AppSpacing.xs,
+              children: [
+                if (showKind && kindLabel != null)
+                  AppBadge(child: Text(kindLabel)),
+                if (item.product case final product?)
+                  AppBadge.outline(
+                    child: Text(MastermindLabels.product(product)),
+                  ),
+                Text(detail, maxLines: 2, overflow: TextOverflow.ellipsis),
+              ],
+            ),
+            if (!isOpenOnMacStandIn(item.body))
+              Text(
+                item.body,
+                key: ValueKey('ask-preview-${item.id}'),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
           ],
         ),
@@ -137,13 +158,11 @@ class InboxItemTile extends StatelessWidget {
           ? l10n.mastermindReplySent
           : l10n.mastermindReplyPendingShort;
     }
-    final body = item.body.trim();
-    if (isOpenOnMacStandIn(body) || body == item.title.trim()) return null;
-    return body.replaceAll(RegExp(r'\s+'), ' ');
+    return MastermindLabels.itemState(l10n, item.state);
   }
 
   String? _age(AppLocalizations l10n) {
-    final at = item.resolvedAt;
+    final at = item.createdAt ?? item.resolvedAt;
     final clock = now;
     if (at == null || clock == null) return null;
     return mastermindAgeText(l10n, clock.difference(at));

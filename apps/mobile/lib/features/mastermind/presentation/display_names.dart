@@ -60,11 +60,13 @@ bool _isNamedRole(String role) {
       lower != 'unknown';
 }
 
-/// An item's display title: "Decision for Mastermind hub" for a redacted
-/// triple, otherwise the publisher's title.
+/// Keep real titles; redacted titles use the first published ask line.
 String itemDisplayTitle(AppLocalizations l10n, NeedsYou item) {
   final parts = redactedTitleParts(item.title);
-  if (parts == null) return item.title;
+  if (parts == null && item.title.trim().isNotEmpty) return item.title;
+  final firstLine = item.body.trim().split(RegExp(r'\r?\n')).first.trim();
+  if (firstLine.isNotEmpty) return firstLine;
+  if (parts == null) return l10n.mastermindAskTitle;
   final kind =
       item.kind ??
       ItemKind.values
