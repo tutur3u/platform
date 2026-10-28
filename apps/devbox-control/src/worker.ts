@@ -419,7 +419,11 @@ async function internalTokenMatches(request: Request, env: Env) {
 
 export default {
   async scheduled(_controller: ScheduledController, env: Env): Promise<void> {
-    await reapQuotaRuns(env, _controller.scheduledTime);
+    try {
+      await reapQuotaRuns(env, _controller.scheduledTime);
+    } catch (error) {
+      console.error('Devbox quota reaper failed', error);
+    }
     if (env.TUTURUUU_DEVBOX_EXPIRY_SWEEP_ENABLED !== 'true') return;
     if (!env.SUPABASE_URL || !env.SUPABASE_SECRET_KEY) return;
     // One transaction, at most 25 grants; the next schedule resumes remaining work.

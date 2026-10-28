@@ -8,6 +8,5 @@ drop function private.reap_devbox_quota_runs(timestamptz,integer);
 drop function private.devbox_quota_request_stop(uuid,text);
 drop function private.decide_devbox_quota_raise(uuid,uuid,boolean);
 drop function private.request_devbox_quota_raise(uuid,text,bigint,text,timestamptz);
-drop function private.devbox_quota_limit(uuid,text);
-drop table private.devbox_quota_raise_requests;
+drop function private.reinstate_devbox_quota_grant(uuid,uuid);
 commit;

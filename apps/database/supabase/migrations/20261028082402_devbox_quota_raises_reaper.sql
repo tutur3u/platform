@@ -1,25 +1,4 @@
 begin;
-create table private.devbox_quota_raise_requests (
- id uuid primary key default gen_random_uuid(),
- user_id uuid not null references private.devbox_personal_pool_grants(user_id),
- limit_name text not null check(limit_name in ('cpu_minutes_daily','max_concurrent_boxes','max_concurrent_runs','egress_bytes_daily','memory_mib','disk_gib')),
- requested_max bigint not null check(requested_max>0),
- reason text not null check(length(reason) between 1 and 1000),
- expires_at timestamptz not null,
- status text not null default 'pending' check(status in ('pending','approved','denied')),
- decided_by uuid references public.users(id),
- decided_at timestamptz,
- created_at timestamptz not null default clock_timestamp(),
- check(expires_at>created_at and expires_at<=created_at+interval '7 days')
-);
-alter table private.devbox_quota_raise_requests enable row level security;
-revoke all on private.devbox_quota_raise_requests from public,anon,authenticated;
-create function private.devbox_quota_limit(p_user_id uuid,p_limit text)
-returns numeric language sql stable security definer set search_path=pg_catalog,pg_temp as $$
- select greatest((to_jsonb(g)->>p_limit)::numeric,coalesce((select max(requested_max) from private.devbox_quota_raise_requests
- where user_id=p_user_id and limit_name=p_limit and status='approved' and expires_at>now()),0))
- from private.devbox_personal_pool_grants g where user_id=p_user_id;
-$$;
 create function private.request_devbox_quota_raise(p_user_id uuid,p_limit text,p_max bigint,p_reason text,p_expires_at timestamptz)
 returns uuid language plpgsql security definer set search_path=pg_catalog,pg_temp as $$
 declare result uuid; ceiling bigint; g private.devbox_personal_pool_grants;
@@ -44,6 +23,7 @@ begin
  if not private.devbox_identity_is_root_member(p_admin_id) then raise exception 'Root admin required' using errcode='42501'; end if;
  select * into q from private.devbox_quota_raise_requests where id=p_id;
  if not found then return false; end if;
+ if q.user_id=p_admin_id then raise exception 'Self decision refused' using errcode='42501'; end if;
  perform 1 from private.devbox_personal_pool_grants where user_id=q.user_id for update;
  update private.devbox_quota_raise_requests set status=case when p_approve then 'approved' else 'denied' end,
  decided_by=p_admin_id,decided_at=clock_timestamp() where id=p_id and status='pending' and expires_at>clock_timestamp();
@@ -56,6 +36,7 @@ create function private.devbox_quota_guard_capacity()
 returns trigger language plpgsql security definer set search_path=pg_catalog,pg_temp as $$
 declare g private.devbox_personal_pool_grants; n integer;
 begin
+ if tg_op='UPDATE' and old.status<>'revoked' then return new; end if;
  select * into g from private.devbox_personal_pool_grants where user_id=new.actor_id for update;
  if not found or new.status='revoked' or private.devbox_identity_is_root_member(new.actor_id) then return new; end if;
  if not private.devbox_identity_grant_active(new.actor_id) then raise exception 'Inactive grant' using errcode='42501'; end if;
@@ -92,25 +73,44 @@ begin
  if not found or not progress.enabled or not coalesce((select personal_pools_enabled from private.devbox_control_settings where id),false)
  or p_tick is null or p_tick>clock_timestamp()+interval '1 minute' or p_tick<clock_timestamp()-interval '5 minutes'
  or progress.last_tick>=date_trunc('minute',p_tick) then return 0; end if;
+ perform private.expire_devbox_personal_grants(25);
  -- Grant-first lock order matches admission, revocation and metering. Fixed batch.
  for g in select user_id from private.devbox_personal_pool_grants where status='active'
  and (progress.cursor_user_id is null or user_id>progress.cursor_user_id)
  order by user_id limit least(greatest(coalesce(p_limit,25),1),25) for update skip locked loop
   cursor_id:=g.user_id;
-  for r in select id from private.devbox_runs where actor_id=g.user_id and workload in ('run','build') and status in ('running','cancel_requested')
-   and started_at+make_interval(secs=>timeout_seconds)<=clock_timestamp() order by started_at,id limit 4 for update skip locked loop
+  for r in select id from private.devbox_runs where actor_id=g.user_id and workload not in ('judge','playground') and status in ('running','cancel_requested')
+   and started_at+make_interval(secs=>timeout_seconds)+interval '5 minutes'<=clock_timestamp() order by started_at,id limit 4 for update skip locked loop
    update private.devbox_runs set status='failed',completed_at=clock_timestamp(),updated_at=clock_timestamp() where id=r.id;
    n:=n+1;
-   perform private.devbox_quota_request_stop(g.user_id,'max_runtime');
   end loop;
-  if exists(select 1 from private.devbox_personal_pool_grants where user_id=g.user_id and expires_at<=clock_timestamp()) then
-   update private.devbox_personal_pool_grants set status='expired' where user_id=g.user_id;
-  elsif exists(select 1 from private.devbox_personal_pool_grants where user_id=g.user_id and (last_collected_at is null or last_collected_at<clock_timestamp()-interval '10 minutes')) then
+  if exists(select 1 from private.devbox_host_collectors c
+   where c.user_id=g.user_id and c.revoked_at is null and c.expires_at>clock_timestamp()
+   and exists(select 1 from private.devbox_host_samples s where s.collector_id=c.id))
+   and exists(select 1 from private.devbox_personal_pool_grants where user_id=g.user_id
+    and last_collected_at is not null and last_collected_at<clock_timestamp()-interval '10 minutes') then
    perform private.devbox_quota_request_stop(g.user_id,'collector_silent');
   end if;
  end loop;
  update private.devbox_quota_reaper_progress set last_tick=date_trunc('minute',p_tick),cursor_user_id=cursor_id,runs_reaped=runs_reaped+n where id;
  return n;
+end $$;
+create function private.reinstate_devbox_quota_grant(p_user_id uuid,p_admin_id uuid)
+returns boolean language plpgsql security definer set search_path=pg_catalog,pg_temp as $$
+begin
+ -- The HTTP adapter also requires the root administrator permission.
+ if not private.devbox_identity_is_root_member(p_admin_id) or p_user_id=p_admin_id then
+  raise exception 'Root admin required' using errcode='42501'; end if;
+ perform 1 from private.devbox_personal_pool_grants where user_id=p_user_id for update;
+ if not found then return false; end if;
+ update private.devbox_personal_pool_grants set status='pending',suspended=false,
+  suspended_at=null,accepted_at=null,sessions_not_before=greatest(sessions_not_before,now())
+  where user_id=p_user_id and expires_at>now();
+ if not found then return false; end if;
+ insert into private.devbox_grant_events(user_id,event_type,acting_user_id)
+  values(p_user_id,'quota_stop:admin_cleared',p_admin_id);
+ delete from private.devbox_quota_stops where user_id=p_user_id;
+ return true;
 end $$;
 create function private.authenticate_devbox_host_collector(p_hash text)
 returns boolean language sql stable security definer set search_path=pg_catalog,pg_temp as $$
@@ -120,7 +120,7 @@ revoke all on function private.authenticate_devbox_host_collector(text) from pub
 grant execute on function private.authenticate_devbox_host_collector(text) to service_role;
 do $$ declare f record; begin
  for f in select oid::regprocedure signature from pg_proc where pronamespace='private'::regnamespace and proname in
- ('devbox_quota_guard_token','devbox_quota_limit','request_devbox_quota_raise','decide_devbox_quota_raise','devbox_quota_guard_capacity','devbox_quota_request_stop','reap_devbox_quota_runs') loop
+ ('reinstate_devbox_quota_grant','devbox_quota_guard_token','devbox_quota_limit','request_devbox_quota_raise','decide_devbox_quota_raise','devbox_quota_guard_capacity','devbox_quota_request_stop','reap_devbox_quota_runs') loop
  execute format('revoke all on function %s from public,anon,authenticated',f.signature);
  execute format('grant execute on function %s to service_role',f.signature);
  end loop;

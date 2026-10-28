@@ -251,11 +251,15 @@ Daily boundaries use `Asia/Ho_Chi_Minh`, including runs spanning midnight.
 Do not use heartbeat resources as billing or authorization inputs.
 
 The collector ingest route is an authenticated 501 stub, and both the quota
-reaper environment gate and database progress row default off. A cron trigger
-is not installed. Do not enable these independently of the Security Desk gates.
+reaper environment gate and database progress row default off. The existing Worker cron runs every five minutes; activation is fenced by
+the environment flag, durable progress row and global personal-pool switch. Do not enable these independently of the Security Desk gates.
 Server cancellation or a persistent stop request does not prove the VM stopped;
 host acknowledgements, alerts, tombstones, idle burn detection and tunnel cutoffs
-remain host-stage acceptance requirements. Never automatically clear a stop row.
+remain host-stage acceptance requirements. Only the root-admin reinstatement
+route may audit and clear a stop, returning the grant to pending acceptance.
+Collector silence requires a live enrolled collector with samples; the 501 stub
+cannot establish this. Overdue runs have five minutes of grace and fail individually.
+Keep quota limit dependencies until admission triggers are removed on rollback.
 
 Use the isolated Supabase lifecycle for the paired migration roundtrip.
 `apps/database/scripts/verify-devbox-quota-race.mjs <isolated-container>` runs ten

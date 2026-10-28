@@ -63,6 +63,7 @@ export interface VerifiedDevboxRunner {
 export interface CreateDevboxRunInput {
   actorId: string;
   accessTokenId?: string;
+  personalActor?: boolean;
   command: string[];
   env?: Record<string, string>;
   envFiles?: string[];
@@ -80,6 +81,7 @@ export interface CreateDevboxRunInput {
 export interface CreateDevboxLeaseInput {
   actorId: string;
   accessTokenId?: string;
+  personalActor?: boolean;
   profile?: string;
   runnerId?: string;
   ttlSeconds?: number;
@@ -224,12 +226,12 @@ export async function createDevboxRun(input: CreateDevboxRunInput) {
     workload: input.workload,
   });
 
-  if (input.accessTokenId) {
+  if (input.accessTokenId || input.personalActor) {
     const { data, error } = await privateClient.rpc(
       'create_personal_devbox_run',
       {
         p_actor_id: input.actorId,
-        p_token_id: input.accessTokenId,
+        p_token_id: input.accessTokenId ?? null,
         p_input: input,
       }
     );

@@ -1,8 +1,11 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import en from '../../../messages/en.json';
+import vi from '../../../messages/vi.json';
 
 export type DevboxStorageErrorLike = {
+  code?: string;
   message?: string;
   details?: string;
 } | null;
@@ -86,12 +89,32 @@ export function getDevboxStorageError(error: DevboxStorageErrorLike) {
         {
           ...parsed.data,
           messages: {
-            en: 'Devbox limit reached. Wait until the reset or ask an administrator.',
-            vi: 'Đã đạt giới hạn devbox. Hãy chờ đặt lại hoặc liên hệ quản trị viên.',
+            en: en['devbox-quota'].errors[
+              message === 'DEVBOX_LIMIT_REACHED'
+                ? 'limit_reached'
+                : 'limit_exceeds_grant'
+            ],
+            vi: vi['devbox-quota'].errors[
+              message === 'DEVBOX_LIMIT_REACHED'
+                ? 'limit_reached'
+                : 'limit_exceeds_grant'
+            ],
           },
         }
       );
   }
+  if (error?.code === '42501')
+    return new DevboxStoreError(
+      en['devbox-quota'].errors.grant_refused,
+      403,
+      'DEVBOX_GRANT_REFUSED'
+    );
+  if (error?.code === '22023')
+    return new DevboxStoreError(
+      en['devbox-quota'].errors.limit_exceeds_grant,
+      422,
+      'DEVBOX_LIMIT_EXCEEDS_GRANT'
+    );
   if (isDevboxReadinessError(message)) {
     return new DevboxStoreError(DEVBOX_READINESS_MESSAGE, 503);
   }

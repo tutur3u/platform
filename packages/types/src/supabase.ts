@@ -25076,6 +25076,10 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: undefined;
       };
+      reinstate_devbox_quota_grant: {
+        Args: { p_admin_id: string; p_user_id: string };
+        Returns: boolean;
+      };
       release_discord_interaction: {
         Args: {
           p_claim_token: string;

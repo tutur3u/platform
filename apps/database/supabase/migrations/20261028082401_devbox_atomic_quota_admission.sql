@@ -3,13 +3,15 @@ create function private.devbox_quota_guard_run()
 returns trigger language plpgsql security definer set search_path=pg_catalog,pg_temp as $$
 declare g private.devbox_personal_pool_grants; used_minutes numeric; active_count integer;
 begin
+ if tg_op='UPDATE' and (new.actor_id is distinct from old.actor_id
+   or new.timeout_seconds is distinct from old.timeout_seconds
+   or new.access_token_id is distinct from old.access_token_id
+   or new.workload is distinct from old.workload or new.lease_id is distinct from old.lease_id) then
+   raise exception 'Personal run allocation is immutable' using errcode='42501';
+ end if;
  select * into g from private.devbox_personal_pool_grants where user_id=new.actor_id for update;
  if not found or new.workload in ('judge','playground') then return new; end if;
  if tg_op='UPDATE' then
-  if new.actor_id<>old.actor_id or new.timeout_seconds is distinct from old.timeout_seconds
-   or new.access_token_id is distinct from old.access_token_id then
-   raise exception 'Personal run allocation is immutable' using errcode='42501';
-  end if;
   new.created_at:=old.created_at;
   new.started_at:=old.started_at;
   if old.status='queued' and new.status='running' then
@@ -33,7 +35,7 @@ begin
  new.timeout_seconds:=coalesce(new.timeout_seconds,g.default_run_seconds);
  if new.timeout_seconds<1 or new.timeout_seconds>g.max_run_seconds then
   perform private.devbox_quota_error('max_run_seconds',new.timeout_seconds,g.max_run_seconds,true); end if;
- select count(*) into active_count from private.devbox_runs where actor_id=new.actor_id and workload in ('run','build') and status in ('queued','running','cancel_requested');
+ select count(*) into active_count from private.devbox_runs where actor_id=new.actor_id and workload not in ('judge','playground') and status in ('queued','running','cancel_requested');
  if active_count>=private.devbox_quota_limit(new.actor_id,'max_concurrent_runs') then perform private.devbox_quota_error('concurrent_runs',active_count,private.devbox_quota_limit(new.actor_id,'max_concurrent_runs')); end if;
  select coalesce(sum(cpu_minutes),0) into used_minutes from private.devbox_usage_ledger
   where user_id=new.actor_id and usage_day=private.devbox_quota_day(clock_timestamp());
@@ -89,7 +91,7 @@ begin
  if lease_id is null then
   lease_id:=gen_random_uuid();
   insert into private.devbox_leases(id,actor_id,access_token_id,runner_id,expires_at,keep)
-   values(lease_id,p_actor_id,p_token_id,nullif(p_input->>'runnerId','')::uuid,clock_timestamp()+interval '1 hour',coalesce((p_input->>'keep')::boolean,false));
+   values(lease_id,p_actor_id,p_token_id,nullif(p_input->>'runnerId','')::uuid,clock_timestamp()+case when coalesce((p_input->>'keep')::boolean,false) then interval '1 hour' else interval '10 minutes' end,coalesce((p_input->>'keep')::boolean,false));
  elsif not exists(select 1 from private.devbox_leases where id=lease_id and actor_id=p_actor_id and status='active' and expires_at>clock_timestamp()) then
   raise exception 'Lease not found' using errcode='42501';
  end if;

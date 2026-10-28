@@ -91,6 +91,28 @@ begin
 end;
 $$;
 
+create table private.devbox_quota_raise_requests (
+ id uuid primary key default gen_random_uuid(),
+ user_id uuid not null references private.devbox_personal_pool_grants(user_id),
+ limit_name text not null check(limit_name in ('cpu_minutes_daily','max_concurrent_boxes','max_concurrent_runs','egress_bytes_daily','memory_mib','disk_gib')),
+ requested_max bigint not null check(requested_max>0),
+ reason text not null check(length(reason) between 1 and 1000),
+ expires_at timestamptz not null,
+ status text not null default 'pending' check(status in ('pending','approved','denied')),
+ decided_by uuid references public.users(id),
+ decided_at timestamptz,
+ created_at timestamptz not null default clock_timestamp(),
+ check(expires_at>created_at and expires_at<=created_at+interval '7 days')
+);
+alter table private.devbox_quota_raise_requests enable row level security;
+revoke all on private.devbox_quota_raise_requests from public,anon,authenticated;
+create function private.devbox_quota_limit(p_user_id uuid,p_limit text)
+returns numeric language sql stable security definer set search_path=pg_catalog,pg_temp as $$
+ select greatest((to_jsonb(g)->>p_limit)::numeric,coalesce((select max(requested_max) from private.devbox_quota_raise_requests
+ where user_id=p_user_id and limit_name=p_limit and status='approved' and expires_at>now()),0))
+ from private.devbox_personal_pool_grants g where user_id=p_user_id;
+$$;
+
 do $$ declare t text; f record; begin
  foreach t in array array['devbox_quota_reservations','devbox_usage_ledger','devbox_host_collectors',
  'devbox_host_samples','devbox_quota_stops','devbox_quota_reaper_progress'] loop

@@ -6960,7 +6960,8 @@
   },
   "devbox-quota": {
     "errors": {
-      "limit_exceeds_grant": "Devbox limit reached. Wait until the reset or ask an administrator.",
+      "grant_refused": "Devbox grant refused this operation.",
+      "limit_exceeds_grant": "Requested value exceeds your devbox grant. Lower it or request a quota raise.",
       "limit_reached": "Devbox limit reached. Wait until the reset or ask an administrator."
     }
   },

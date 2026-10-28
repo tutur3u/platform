@@ -1,4 +1,6 @@
 begin;
+drop function private.devbox_quota_limit(uuid,text);
+drop table private.devbox_quota_raise_requests;
 alter table private.devbox_personal_pool_grants alter column expires_at drop default;
 drop function private.devbox_quota_error(text,numeric,numeric,boolean);
 drop function private.devbox_quota_reset(timestamptz);

@@ -55,5 +55,72 @@ update private.devbox_personal_pool_grants set cpu_minutes_daily=480,egress_bloc
 select throws_ok($q$select private.create_personal_devbox_run('00000000-0000-4000-8000-00000000f001',(select id from s2_token),jsonb_build_object('command',array['true'],'timeoutSeconds',60))$q$,'P0001','DEVBOX_LIMIT_REACHED','daily egress block enforced');
 update private.devbox_leases set status='released',released_at=now() where id=(select lease_id from private.devbox_runs where idempotency_key='quota-test-first');
 select is(private.create_personal_devbox_run('00000000-0000-4000-8000-00000000f001',(select id from s2_token),jsonb_build_object('command',array['true'],'idempotencyKey','quota-test-first'))#>>'{lease,status}','released','retry reports persisted lease state');
+
+select throws_ok($q$update private.devbox_runs set workload='playground' where workload='judge'$q$,
+ '42501','Personal run allocation is immutable','judge workload immutable');
+select throws_ok($q$update private.devbox_runs set lease_id=gen_random_uuid() where workload='judge'$q$,
+ '42501','Personal run allocation is immutable','judge lease immutable');
+select is((select extract(epoch from expires_at-created_at)::integer/60 from private.devbox_leases limit 1),
+ 10,'keep false lease lasts ten minutes');
+insert into public.workspace_members(ws_id,user_id,type)
+ values('00000000-0000-0000-0000-000000000000','00000000-0000-4000-8000-00000000f001','MEMBER');
+select throws_ok($q$select private.decide_devbox_quota_raise((select id from private.devbox_quota_raise_requests limit 1),
+ '00000000-0000-4000-8000-00000000f001',true)$q$,
+ '42501','Self decision refused','even root members cannot decide own raise');
+delete from public.workspace_members where user_id='00000000-0000-4000-8000-00000000f001';
+insert into private.devbox_quota_stops(user_id,reason) values('00000000-0000-4000-8000-00000000f001','hard_cpu');
+select ok(private.reinstate_devbox_quota_grant('00000000-0000-4000-8000-00000000f001',
+ '00000000-0000-4000-8000-00000000f002'),'admin reinstates');
+select is((select count(*) from private.devbox_quota_stops),0::bigint,'admin clears stop');
+select ok(exists(select 1 from private.devbox_grant_events where event_type='quota_stop:admin_cleared'),'clear audited');
+select is((select status from private.devbox_personal_pool_grants),'pending','fresh acceptance required');
+select ok(private.accept_devbox_personal_grant('00000000-0000-4000-8000-00000000f001'),'accept reinstatement');
+update private.devbox_quota_reaper_progress set enabled=true;
+update private.devbox_personal_pool_grants set last_collected_at=null;
+select is(private.reap_devbox_quota_runs(now(),25),0,'no collector means no silent stop');
+select is((select status from private.devbox_personal_pool_grants),'active','unregistered collector cannot suspend');
+
+update private.devbox_personal_pool_grants set last_collected_at=now(),egress_blocked_until=null,max_concurrent_runs=1;
+
+select throws_ok($q$select private.create_personal_devbox_run('00000000-0000-4000-8000-00000000f001',null,
+ jsonb_build_object('command',array['true'],'timeoutSeconds',60))$q$,'42501','Devbox access token required','tokenless session refusal is atomic');
+select is((select count(*) from private.devbox_leases),2::bigint,'session refusal creates no orphan lease');
+create temp table fresh_token as select private.issue_devbox_access_token('00000000-0000-4000-8000-00000000f001',now(),'fresh-test',repeat('d',64),'tdba_dddddddd',array['devbox:run'],now()+interval '1 day') id;
+select private.create_personal_devbox_run('00000000-0000-4000-8000-00000000f001',(select id from fresh_token),
+ jsonb_build_object('command',array['true'],'timeoutSeconds',60,'idempotencyKey','quota-future-workload'));
+-- Simulate a future non-judge workload admitted through another trusted path.
+alter table private.devbox_runs disable trigger devbox_identity_guard_run;
+alter table private.devbox_runs disable trigger devbox_quota_guard_run;
+update private.devbox_runs set workload='serve' where idempotency_key='quota-future-workload';
+alter table private.devbox_runs enable trigger devbox_quota_guard_run;
+alter table private.devbox_runs enable trigger devbox_identity_guard_run;
+select throws_ok($q$select private.create_personal_devbox_run('00000000-0000-4000-8000-00000000f001',(select id from fresh_token),
+ jsonb_build_object('command',array['true'],'timeoutSeconds',60))$q$,'P0001','DEVBOX_LIMIT_REACHED','serve consumes concurrency');
+alter table private.devbox_runs disable trigger devbox_quota_guard_run;
+update private.devbox_runs set status='running',started_at=clock_timestamp()-interval '2 minutes' where workload='serve';
+alter table private.devbox_runs enable trigger devbox_quota_guard_run;
+update private.devbox_quota_reaper_progress set last_tick=null,cursor_user_id=null;
+select is(private.reap_devbox_quota_runs(now(),25),0,'runtime grace preserves run');
+alter table private.devbox_runs disable trigger devbox_quota_guard_run;
+update private.devbox_runs set started_at=clock_timestamp()-interval '7 minutes' where workload='serve';
+alter table private.devbox_runs enable trigger devbox_quota_guard_run;
+update private.devbox_quota_reaper_progress set last_tick=null,cursor_user_id=null;
+select is(private.reap_devbox_quota_runs(now(),25),1,'non-judge overrun reaped after grace');
+select is((select status from private.devbox_personal_pool_grants),'active','one overrun preserves grant');
+select is((select count(*) from private.devbox_quota_stops),0::bigint,'one overrun creates no permanent stop');
+select lives_ok($q$select private.create_personal_devbox_run('00000000-0000-4000-8000-00000000f001',(select id from fresh_token),
+ jsonb_build_object('command',array['true'],'timeoutSeconds',60))$q$,'admission after scoped failure');
+select private.issue_devbox_access_token('00000000-0000-4000-8000-00000000f001',now(),'expiry-test',repeat('e',64),'tdba_eeeeeeee',array['devbox:run'],now()+interval '1 day');
+alter table private.devbox_personal_pool_grants disable trigger devbox_identity_cascade_grant;
+alter table private.devbox_personal_pool_grants disable trigger devbox_identity_guard_grant;
+update private.devbox_personal_pool_grants set created_at=now()-interval '1 day',expires_at=now()-interval '1 second';
+alter table private.devbox_personal_pool_grants enable trigger devbox_identity_guard_grant;
+alter table private.devbox_personal_pool_grants enable trigger devbox_identity_cascade_grant;
+update private.devbox_quota_reaper_progress set last_tick=null,cursor_user_id=null;
+select is(private.reap_devbox_quota_runs(now(),25),0,'reaper delegates expiry lifecycle');
+select is((select status from private.devbox_personal_pool_grants),'expired','grant expired through lifecycle');
+select is((select count(*) from private.devbox_runs where status='queued'),0::bigint,'expiry cancels queued runs');
+select is((select count(*) from private.devbox_leases where status='active'),0::bigint,'expiry releases leases');
+select is((select count(*) from private.devbox_access_tokens where revoked_at is null),0::bigint,'expiry revokes tokens');
 select * from finish();
 rollback;

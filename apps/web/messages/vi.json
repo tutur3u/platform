@@ -6960,7 +6960,8 @@
   },
   "devbox-quota": {
     "errors": {
-      "limit_exceeds_grant": "Đã đạt giới hạn devbox. Hãy chờ đặt lại hoặc liên hệ quản trị viên.",
+      "grant_refused": "Quyền sử dụng devbox không cho phép thao tác này.",
+      "limit_exceeds_grant": "Giá trị yêu cầu vượt hạn mức devbox. Hãy giảm giá trị hoặc yêu cầu tăng hạn mức.",
       "limit_reached": "Đã đạt giới hạn devbox. Hãy chờ đặt lại hoặc liên hệ quản trị viên."
     }
   },
