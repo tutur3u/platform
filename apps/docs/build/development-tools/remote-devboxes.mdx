@@ -1204,10 +1204,16 @@ Service-only Judge/playground enqueue paths may create learner leases on dedicat
 untrusted runners; ordinary commands cannot use that exception. Neither SDK input
 nor runner self-reports confer fleet authority.
 
+Deploy migration `20261027152100_devbox_run_ownership.sql` before the Web,
+Infrastructure and control Worker changes. Web and Infrastructure fail closed
+with HTTP 503 if the ownership RPC is missing. A database rollback requires an
+app rollback as well, because dropping the RPC makes these writes return 503.
+
 Migration `20261027152100_devbox_run_ownership.sql` composes the live
 `20261026145300` claim body. The claim-body changes are ownership and maintenance
 predicates, a bounded sweep that cancels unauthorized queued work with a reason,
-and a `pg_catalog, pg_temp` search path. The rollback under
+a linked-submission check on the Judge envelope, and a `pg_catalog, pg_temp` search
+path. The rollback under
 `apps/database/rollbacks` restores the exact 145300 body and service-role-only ACL,
 and retains the additive pool column. Apply rollback only under release authority;
 it removes these ownership fences. Test rollback and re-apply on an isolated stack.
