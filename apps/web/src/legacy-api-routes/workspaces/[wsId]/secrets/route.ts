@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import {
   canMutateManagedCronEnableSecret,
+  createManagedCronSecretAdminClient,
   isManagedCronEnableSecretName,
 } from '@/lib/workspace-secrets/managed-cron';
 import { getWorkspaceSecretsAccess } from './access';
@@ -61,17 +62,18 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  if (
-    isManagedCronEnableSecretName(data.name) &&
-    !(await canMutateManagedCronEnableSecret(req))
-  ) {
+  const touchesManagedCron = isManagedCronEnableSecretName(data.name);
+  if (touchesManagedCron && !(await canMutateManagedCronEnableSecret(req))) {
     return NextResponse.json(
       { message: 'Only Tuturuuu employees can enable managed cron jobs.' },
       { status: 403 }
     );
   }
 
-  const { error } = await access.db.from('workspace_secrets').insert({
+  const db = touchesManagedCron
+    ? await createManagedCronSecretAdminClient()
+    : access.db;
+  const { error } = await db.from('workspace_secrets').insert({
     ...data,
     ws_id: access.resolvedWsId,
   });

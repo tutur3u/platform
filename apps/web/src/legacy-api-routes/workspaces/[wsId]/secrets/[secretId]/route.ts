@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import {
   canMutateManagedCronEnableSecret,
+  createManagedCronSecretAdminClient,
   isManagedCronEnableSecretName,
 } from '@/lib/workspace-secrets/managed-cron';
 import { getWorkspaceSecretsAccess } from '../access';
@@ -59,18 +60,20 @@ export async function PUT(req: Request, { params }: Params) {
     );
   }
 
-  if (
-    (isManagedCronEnableSecretName(existingSecret.name) ||
-      isManagedCronEnableSecretName(data.name)) &&
-    !(await canMutateManagedCronEnableSecret(req))
-  ) {
+  const touchesManagedCron =
+    isManagedCronEnableSecretName(existingSecret.name) ||
+    isManagedCronEnableSecretName(data.name);
+  if (touchesManagedCron && !(await canMutateManagedCronEnableSecret(req))) {
     return NextResponse.json(
       { message: 'Only Tuturuuu employees can enable managed cron jobs.' },
       { status: 403 }
     );
   }
 
-  const { error } = await access.db
+  const db = touchesManagedCron
+    ? await createManagedCronSecretAdminClient()
+    : access.db;
+  const { error } = await db
     .from('workspace_secrets')
     .update(data)
     .eq('id', secretId)
@@ -123,8 +126,9 @@ export async function DELETE(request: Request, { params }: Params) {
     );
   }
 
+  const touchesManagedCron = isManagedCronEnableSecretName(existingSecret.name);
   if (
-    isManagedCronEnableSecretName(existingSecret.name) &&
+    touchesManagedCron &&
     !(await canMutateManagedCronEnableSecret(request))
   ) {
     return NextResponse.json(
@@ -133,7 +137,10 @@ export async function DELETE(request: Request, { params }: Params) {
     );
   }
 
-  const { error } = await access.db
+  const db = touchesManagedCron
+    ? await createManagedCronSecretAdminClient()
+    : access.db;
+  const { error } = await db
     .from('workspace_secrets')
     .delete()
     .eq('id', secretId)

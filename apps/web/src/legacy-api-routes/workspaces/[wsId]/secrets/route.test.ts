@@ -1,10 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { canMutateManagedCronEnableSecretMock, getWorkspaceSecretsAccessMock } =
-  vi.hoisted(() => ({
-    canMutateManagedCronEnableSecretMock: vi.fn(),
-    getWorkspaceSecretsAccessMock: vi.fn(),
-  }));
+const {
+  canMutateManagedCronEnableSecretMock,
+  createManagedCronSecretAdminClientMock,
+  getWorkspaceSecretsAccessMock,
+} = vi.hoisted(() => ({
+  canMutateManagedCronEnableSecretMock: vi.fn(),
+  createManagedCronSecretAdminClientMock: vi.fn(),
+  getWorkspaceSecretsAccessMock: vi.fn(),
+}));
 
 vi.mock('./access', () => ({
   getWorkspaceSecretsAccess: getWorkspaceSecretsAccessMock,
@@ -12,6 +16,7 @@ vi.mock('./access', () => ({
 
 vi.mock('@/lib/workspace-secrets/managed-cron', () => ({
   canMutateManagedCronEnableSecret: canMutateManagedCronEnableSecretMock,
+  createManagedCronSecretAdminClient: createManagedCronSecretAdminClientMock,
   isManagedCronEnableSecretName: (name?: string | null) =>
     name?.trim().toUpperCase() === 'MANAGED_CRON_ENABLED',
   MANAGED_CRON_ENABLED_SECRET: 'MANAGED_CRON_ENABLED',
@@ -88,6 +93,7 @@ describe('workspace secrets collection route', () => {
       value: '100',
       ws_id: 'resolved-ws',
     });
+    expect(createManagedCronSecretAdminClientMock).not.toHaveBeenCalled();
     expect(response.status).toBe(200);
   });
 
@@ -122,6 +128,50 @@ describe('workspace secrets collection route', () => {
     expect(canMutateManagedCronEnableSecretMock).toHaveBeenCalledOnce();
     expect(insertMock).not.toHaveBeenCalled();
     expect(response.status).toBe(403);
+  });
+
+  it('writes verified-staff managed cron enablement with the service role', async () => {
+    canMutateManagedCronEnableSecretMock.mockResolvedValue(true);
+    const userInsertMock = vi.fn();
+    const adminInsertMock = vi.fn().mockResolvedValue({ error: null });
+    const adminFromMock = vi.fn(() => ({
+      insert: adminInsertMock,
+    }));
+    createManagedCronSecretAdminClientMock.mockResolvedValue({
+      from: adminFromMock,
+    });
+
+    getWorkspaceSecretsAccessMock.mockResolvedValue({
+      allowed: true,
+      db: { from: vi.fn(() => ({ insert: userInsertMock })) },
+      resolvedWsId: 'resolved-ws',
+    });
+
+    const response = await POST(
+      new Request('http://localhost', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: 'MANAGED_CRON_ENABLED',
+          value: 'true',
+        }),
+      }),
+      {
+        params: Promise.resolve({ wsId: 'friendly-ws' }),
+      }
+    );
+
+    expect(canMutateManagedCronEnableSecretMock).toHaveBeenCalledOnce();
+    expect(adminFromMock).toHaveBeenCalledWith('workspace_secrets');
+    expect(adminInsertMock).toHaveBeenCalledWith({
+      name: 'MANAGED_CRON_ENABLED',
+      value: 'true',
+      ws_id: 'resolved-ws',
+    });
+    expect(userInsertMock).not.toHaveBeenCalled();
+    expect(response.status).toBe(200);
   });
 
   it('returns the access helper status when authorization fails', async () => {

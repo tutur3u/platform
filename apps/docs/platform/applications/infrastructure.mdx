@@ -18,14 +18,19 @@ and external-app registry secrets. Workspace ownership alone does not grant
 this access.
 
 Creating, updating, renaming or deleting `MANAGED_CRON_ENABLED` also requires
-the authenticated operator's exact `@tuturuuu.com` email, matching Web.
-Updates check both the existing and proposed secret names. Other secret names
-retain the root permission requirement without this additional email restriction.
-Workspace role catalogs do not expand based on email domain.
+a verified Tuturuuu staff identity, checked against current Auth state, matching
+Web. Updates check both the existing and proposed secret names, and the route
+then writes the secret with the service role. The database enforces the same
+boundary: a `workspace_secrets` trigger rejects direct `anon`/`authenticated`
+writes whose old or new name is `MANAGED_CRON_ENABLED`, so root permissions
+alone cannot change it over PostgREST. Other secret names retain the root
+permission requirement without this additional restriction. Workspace role
+catalogs do not expand based on email domain.
 
 Regression coverage lives in Infrastructure's `workspace-secrets.test.ts`,
 `infrastructure-admin-access.test.ts`, AI-agent and external-app access tests,
-and Utils' `permissions.test.tsx`.
+Web's workspace-secrets route tests, Utils' `permissions.test.tsx`, and the
+`workspace-reserved-secrets-guard.sql` pgTAP suite.
 
 ## Operational areas
 
