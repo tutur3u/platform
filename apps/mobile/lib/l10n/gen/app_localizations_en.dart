@@ -13445,6 +13445,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindWhy => 'Why';
 
   @override
+  String get mastermindWorkClearFilters => 'Clear filters';
+
+  @override
   String get mastermindWorkEmpty => 'No lanes right now';
 
   @override

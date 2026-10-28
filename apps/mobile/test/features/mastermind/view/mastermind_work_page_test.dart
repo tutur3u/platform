@@ -85,6 +85,16 @@ GoRouter _router(String initial) {
   return router;
 }
 
+// The route information provider's URI does not follow a pushed route; the
+// pushed match carries its own location.
+Uri _uri(GoRouter router) {
+  final configuration = router.routerDelegate.currentConfiguration;
+  return switch (configuration.last) {
+    final ImperativeRouteMatch pushed => pushed.matches.uri,
+    _ => configuration.uri,
+  };
+}
+
 double _top(WidgetTester tester, String text) =>
     tester.getTopLeft(find.text(text)).dy;
 
@@ -292,6 +302,120 @@ void main() {
     });
   });
 
+  group('area filter', () {
+    final areas = [
+      workLane(1, title: 'Billing lane', area: 'finance'),
+      workLane(2, title: 'Infra lane', area: 'infra'),
+      workLane(3, title: 'Other infra lane', area: 'infra', state: 'failed'),
+    ];
+
+    testWidgets('area chips filter the lanes', (tester) async {
+      await _pump(tester, workJson(areas));
+      await tester.tap(find.widgetWithText(AppChip, 'Finance'));
+      await tester.pumpAndSettle();
+      expect(find.text('Billing lane'), findsOneWidget);
+      expect(find.text('Infra lane'), findsNothing);
+      await tester.tap(find.widgetWithText(AppChip, 'Finance'));
+      await tester.pumpAndSettle();
+      expect(find.text('Infra lane'), findsOneWidget);
+    });
+
+    testWidgets('no area chips when there is one area', (tester) async {
+      await _pump(
+        tester,
+        workJson([workLane(1, area: 'infra'), workLane(2, area: 'infra')]),
+      );
+      expect(find.widgetWithText(AppChip, 'Infrastructure'), findsNothing);
+    });
+
+    testWidgets('an area filter is reset when its area leaves', (tester) async {
+      final harness = await _pump(tester, workJson(areas));
+      await tester.tap(find.widgetWithText(AppChip, 'Finance'));
+      await tester.pumpAndSettle();
+      expect(find.text('Infra lane'), findsNothing);
+
+      // The refresh drops the only finance lane, and with it the chips.
+      harness.source.bytes = snapshotBytes(workJson(areas.sublist(1)));
+      await harness.snapshot.refresh();
+      await tester.pumpAndSettle();
+      expect(find.widgetWithText(AppChip, 'Finance'), findsNothing);
+      expect(find.text('Infra lane'), findsOneWidget);
+      expect(find.text('No matching lanes'), findsNothing);
+    });
+
+    testWidgets('comes from the query', (tester) async {
+      final router = _router('${Routes.mastermindWork}?area=finance');
+      await _pump(tester, workJson(areas), router: router);
+      expect(find.text('Billing lane'), findsOneWidget);
+      expect(find.text('Infra lane'), findsNothing);
+    });
+  });
+
+  group('state chip counts', () {
+    testWidgets('follow the product filter, like the group headers', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        workJson([
+          workLane(1),
+          workLane(2),
+          workLane(3),
+          workLane(4, product: 'Mastermind'),
+          workLane(5, state: 'failed'),
+        ]),
+      );
+      expect(find.widgetWithText(AppChip, '4 running'), findsOneWidget);
+      await tester.tap(find.widgetWithText(AppChip, 'Mastermind'));
+      await tester.pumpAndSettle();
+      expect(find.widgetWithText(AppChip, '1 running'), findsOneWidget);
+      expect(find.widgetWithText(AppChip, '4 running'), findsNothing);
+      expect(find.widgetWithText(AppChip, '1 failed'), findsNothing);
+    });
+
+    testWidgets('follow the search', (tester) async {
+      await _pump(tester, workJson(_mixed));
+      await tester.enterText(find.byType(TextField), 'running');
+      await tester.pumpAndSettle();
+      expect(find.widgetWithText(AppChip, '3 running'), findsOneWidget);
+      expect(find.widgetWithText(AppChip, '1 failed'), findsNothing);
+    });
+  });
+
+  group('clear filters', () {
+    testWidgets('resets state, product, area and search', (tester) async {
+      final router = _router(Routes.mastermindWork);
+      await _pump(
+        tester,
+        workJson([
+          workLane(1, area: 'infra'),
+          workLane(2, area: 'finance', product: 'Mastermind'),
+        ]),
+        router: router,
+      );
+      await tester.tap(find.widgetWithText(AppChip, 'Mastermind'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(AppChip, 'Infrastructure'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'zzz');
+      await tester.pumpAndSettle();
+      expect(find.text('No matching lanes'), findsOneWidget);
+
+      await tester.tap(find.text('Clear filters'));
+      await tester.pumpAndSettle();
+      expect(find.text('No matching lanes'), findsNothing);
+      expect(find.text('Lane 1'), findsOneWidget);
+      expect(find.text('Lane 2'), findsOneWidget);
+      expect(find.text('zzz'), findsNothing);
+      expect(_uri(router).toString(), Routes.mastermindWork);
+    });
+
+    testWidgets('is only offered when nothing matches', (tester) async {
+      await _pump(tester, workJson(_mixed));
+      expect(find.text('Clear filters'), findsNothing);
+    });
+  });
+
   group('security rows', () {
     testWidgets('render as one redacted line in a trailing group', (
       tester,
@@ -413,11 +537,91 @@ void main() {
       await _pump(tester, workJson(_mixed), router: router);
       await tester.tap(find.text('Broken lane'));
       await tester.pumpAndSettle();
-      expect(
-        router.routeInformationProvider.value.uri.path,
-        Routes.mastermindWorkLanePath(laneId(4)),
-      );
+      expect(_uri(router).path, Routes.mastermindWorkLanePath(laneId(4)));
       expect(find.text('Role'), findsOneWidget);
+    });
+
+    testWidgets('a chip keeps its filter in the URL', (tester) async {
+      final router = _router(Routes.mastermindWork);
+      await _pump(tester, workJson(_mixed), router: router);
+      String location() => _uri(router).toString();
+
+      await tester.tap(find.widgetWithText(AppChip, '3 running'));
+      await tester.pumpAndSettle();
+      expect(location(), '${Routes.mastermindWork}?state=running');
+      await tester.tap(find.widgetWithText(AppChip, 'Mastermind'));
+      await tester.pumpAndSettle();
+      expect(
+        location(),
+        '${Routes.mastermindWork}?state=running&product=Mastermind',
+      );
+      await tester.tap(find.widgetWithText(AppChip, 'All'));
+      await tester.pumpAndSettle();
+      expect(location(), '${Routes.mastermindWork}?product=Mastermind');
+    });
+
+    testWidgets('Back from a lane keeps the Home failed-chip filter', (
+      tester,
+    ) async {
+      final router = _router(Routes.mastermind);
+      await _pump(tester, workJson(_mixed), router: router);
+      await tester.tap(find.widgetWithText(AppChip, '1 failed'));
+      await tester.pumpAndSettle();
+      expect(find.text('Old running'), findsNothing);
+
+      await tester.tap(find.text('Broken lane'));
+      await tester.pumpAndSettle();
+      expect(find.text('Role'), findsOneWidget);
+
+      // What the dock Back does for a lane: pop to the list that opened it.
+      expect(Routes.isMastermindLaneLocation(_uri(router).path), isTrue);
+      expect(router.canPop(), isTrue);
+      router.pop();
+      await tester.pumpAndSettle();
+      expect(_uri(router).queryParameters['state'], 'failed');
+      expect(find.text('Broken lane'), findsOneWidget);
+      expect(find.text('Old running'), findsNothing);
+      expect(
+        tester
+            .widget<AppChip>(find.widgetWithText(AppChip, '1 failed'))
+            .selected,
+        isTrue,
+      );
+    });
+
+    testWidgets('Back from a lane keeps the product and search too', (
+      tester,
+    ) async {
+      final router = _router(Routes.mastermindWork);
+      await _pump(tester, workJson(_mixed), router: router);
+      await tester.tap(find.widgetWithText(AppChip, 'Tuturuuu'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'running');
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Old running'));
+      await tester.pumpAndSettle();
+
+      router.pop();
+      await tester.pumpAndSettle();
+      expect(find.text('Old running'), findsOneWidget);
+      expect(find.text('Waiting lane'), findsNothing);
+      expect(
+        tester.widget<TextField>(find.byType(TextField)).controller?.text,
+        'running',
+      );
+      expect(_uri(router).queryParameters['product'], 'Tuturuuu');
+    });
+
+    test('only a lane detail pops back to its list', () {
+      expect(Routes.isMastermindLaneLocation(Routes.mastermindWork), isFalse);
+      expect(
+        Routes.isMastermindLaneLocation(Routes.mastermindWorkLanePath('a')),
+        isTrue,
+      );
+      expect(
+        Routes.isMastermindLaneLocation(Routes.mastermindInboxItemPath('a')),
+        isFalse,
+      );
     });
   });
 

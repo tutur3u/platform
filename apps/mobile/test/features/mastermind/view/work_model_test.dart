@@ -11,11 +11,13 @@ MastermindWorkModel _model(
   String query = '',
   LaneState? state,
   Product? product,
+  Area? area,
 }) => MastermindWorkModel.from(
   parsedSnapshot(workJson(lanes)),
   query: query,
   state: state,
   product: product,
+  area: area,
 );
 
 void main() {
@@ -105,6 +107,36 @@ void main() {
       expect(_model(lanes, query: 'zzz').hasNoMatches, isTrue);
     });
 
+    test('chip counts follow the product, area and search filters', () {
+      final scoped = [
+        workLane(1, product: 'Mastermind', area: 'infra'),
+        workLane(2, area: 'finance'),
+        workLane(3, state: 'failed', area: 'infra'),
+        workLane(4, state: 'failed', product: 'Mastermind', area: 'finance'),
+      ];
+      expect(_model(scoped).stateCounts, {
+        LaneState.running: 2,
+        LaneState.failed: 2,
+      });
+      expect(_model(scoped, product: Product.mastermind).stateCounts, {
+        LaneState.running: 1,
+        LaneState.failed: 1,
+      });
+      expect(_model(scoped, area: Area.infra).stateCounts, {
+        LaneState.running: 1,
+        LaneState.failed: 1,
+      });
+      final model = _model(
+        scoped,
+        state: LaneState.failed,
+        product: Product.mastermind,
+        area: Area.finance,
+      );
+      expect(model.shownCount, 1);
+      expect(model.stateCounts, {LaneState.failed: 1});
+      expect(model.areas, [Area.infra, Area.finance]);
+    });
+
     test('a state with no lanes shows nothing but is not empty', () {
       final model = _model(lanes, state: LaneState.idle);
       expect(model.shownCount, 0);
@@ -123,6 +155,26 @@ void main() {
       expect(laneStateFromQuery('Failed'), isNull);
       expect(laneStateFromQuery('bogus'), isNull);
       expect(laneStateFromQuery(null), isNull);
+    });
+
+    test('?product= and ?area= name a wire value or are ignored', () {
+      expect(productFromQuery('Mastermind'), Product.mastermind);
+      expect(productFromQuery('mastermind'), isNull);
+      expect(areaFromQuery('infra'), Area.infra);
+      expect(areaFromQuery('Infra'), isNull);
+      expect(areaFromQuery(null), isNull);
+    });
+
+    test('the Work location keeps only the filters that are set', () {
+      expect(workLocation(), '/mastermind/work');
+      expect(
+        workLocation(
+          state: LaneState.failed,
+          product: Product.mastermind,
+          area: Area.ci,
+        ),
+        '/mastermind/work?state=failed&product=Mastermind&area=ci',
+      );
     });
 
     test('laneById finds a normal lane and never a security row', () {

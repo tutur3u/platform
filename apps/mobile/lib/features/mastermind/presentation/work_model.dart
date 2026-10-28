@@ -1,3 +1,4 @@
+import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 
 /// Lane states in the order Work lists them: what needs attention first.
@@ -24,6 +25,36 @@ LaneState? laneStateFromQuery(String? value) {
   return null;
 }
 
+/// The product a `?product=` query names, or null for anything else.
+Product? productFromQuery(String? value) {
+  for (final product in Product.values) {
+    if (product.wireName == value) return product;
+  }
+  return null;
+}
+
+/// The area an `?area=` query names, or null for anything else.
+Area? areaFromQuery(String? value) {
+  for (final area in Area.values) {
+    if (area.wireName == value) return area;
+  }
+  return null;
+}
+
+/// The Work location for a filter selection: the query keeps the filters in
+/// the URL, so a lane opened from the list returns to the same filtered view.
+String workLocation({LaneState? state, Product? product, Area? area}) {
+  final query = {
+    'state': ?state?.wireName,
+    'product': ?product?.wireName,
+    'area': ?area?.wireName,
+  };
+  return Uri(
+    path: Routes.mastermindWork,
+    queryParameters: query.isEmpty ? null : query,
+  ).toString();
+}
+
 /// One state's lanes, oldest first.
 final class LaneGroup {
   const LaneGroup({required this.state, required this.lanes});
@@ -44,6 +75,7 @@ final class MastermindWorkModel {
     required this.total,
     required this.stateCounts,
     required this.products,
+    required this.areas,
   });
 
   factory MastermindWorkModel.from(
@@ -51,21 +83,28 @@ final class MastermindWorkModel {
     String query = '',
     LaneState? state,
     Product? product,
+    Area? area,
   }) {
     final normal = [
       for (final item in snapshot.lanes)
         if (item is Lane) item,
     ];
     final needle = query.trim().toLowerCase();
-    final shown = [
+    // The state counts follow the other filters, so a chip always agrees with
+    // the group header it would show.
+    final inScope = [
       for (final lane in normal)
-        if ((state == null || lane.state == state) &&
-            (product == null || lane.product == product) &&
+        if ((product == null || lane.product == product) &&
+            (area == null || lane.area == area) &&
             (needle.isEmpty || _matches(lane, needle)))
           lane,
     ];
+    final shown = [
+      for (final lane in inScope)
+        if (state == null || lane.state == state) lane,
+    ];
     final counts = <LaneState, int>{};
-    for (final lane in normal) {
+    for (final lane in inScope) {
       counts[lane.state] = (counts[lane.state] ?? 0) + 1;
     }
     return MastermindWorkModel._(
@@ -85,6 +124,10 @@ final class MastermindWorkModel {
         for (final lane in normal)
           if (lane.product != null) lane.product!,
       }.toList(growable: false),
+      areas: {
+        for (final lane in normal)
+          if (lane.area != null) lane.area!,
+      }.toList(growable: false),
     );
   }
 
@@ -96,11 +139,15 @@ final class MastermindWorkModel {
   /// Normal lanes before any filter.
   final int total;
 
-  /// Normal lanes per state before any filter, for the state chips.
+  /// Normal lanes per state after the product, area and search filters, for
+  /// the state chips.
   final Map<LaneState, int> stateCounts;
 
   /// Products present among the normal lanes, for the filter chips.
   final List<Product> products;
+
+  /// Areas present among the normal lanes, for the filter chips.
+  final List<Area> areas;
 
   /// States that have lanes, in list order.
   List<LaneState> get presentStates => [

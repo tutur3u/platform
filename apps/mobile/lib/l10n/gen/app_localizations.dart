@@ -25261,6 +25261,12 @@ abstract class AppLocalizations {
   /// **'Why'**
   String get mastermindWhy;
 
+  /// No description provided for @mastermindWorkClearFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear filters'**
+  String get mastermindWorkClearFilters;
+
   /// No description provided for @mastermindWorkEmpty.
   ///
   /// In en, this message translates to:

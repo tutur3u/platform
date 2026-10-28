@@ -6006,6 +6006,7 @@
   "mastermindVersion": "Version",
   "mastermindWeekly": "Weekly",
   "mastermindWhy": "Why",
+  "mastermindWorkClearFilters": "Clear filters",
   "mastermindWorkEmpty": "No lanes right now",
   "mastermindWorkNoMatches": "No matching lanes",
   "mastermindWorkSearchPlaceholder": "Search lanes"

@@ -12556,7 +12556,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String mastermindLaneAgeLine(String state, String duration) {
-    return '$state trong $duration';
+    return '$state · $duration';
   }
 
   @override
@@ -13302,6 +13302,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindWhy => 'Lý do';
+
+  @override
+  String get mastermindWorkClearFilters => 'Xóa bộ lọc';
 
   @override
   String get mastermindWorkEmpty => 'Hiện chưa có luồng việc nào';

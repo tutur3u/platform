@@ -5630,7 +5630,7 @@
   "mastermindKindStaff": "Nhân sự",
   "mastermindKindTest": "Kiểm thử",
   "mastermindLaneAge": "Thời gian chạy",
-  "mastermindLaneAgeLine": "{state} trong {duration}",
+  "mastermindLaneAgeLine": "{state} · {duration}",
   "mastermindLaneAgeUnknown": "{state} · chưa rõ thời lượng",
   "mastermindLaneArea": "Lĩnh vực",
   "mastermindLaneEta": "Dự kiến {duration}",
@@ -5842,6 +5842,7 @@
   "mastermindVersion": "Phiên bản",
   "mastermindWeekly": "Hằng tuần",
   "mastermindWhy": "Lý do",
+  "mastermindWorkClearFilters": "Xóa bộ lọc",
   "mastermindWorkEmpty": "Hiện chưa có luồng việc nào",
   "mastermindWorkNoMatches": "Không có luồng việc phù hợp",
   "mastermindWorkSearchPlaceholder": "Tìm luồng việc"

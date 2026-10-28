@@ -12,7 +12,8 @@ import 'package:mobile/l10n/l10n.dart';
 /// One lane in the Work list: title, role and model, how long it has been in
 /// its state, an ETA when there is one, and product, area and kind chips.
 ///
-/// Tapping the row opens the detail by the lane's opaque id.
+/// Tapping the row pushes the detail by the lane's opaque id, so Back returns
+/// to the same filtered list.
 class LaneTile extends StatelessWidget {
   const LaneTile({required this.lane, super.key});
 
@@ -27,7 +28,7 @@ class LaneTile extends StatelessWidget {
       title: Text(lane.title),
       showChevron: true,
       trailing: LaneStateBadge(state: lane.state),
-      onTap: () => context.go(Routes.mastermindWorkLanePath(lane.id)),
+      onTap: () => context.push(Routes.mastermindWorkLanePath(lane.id)),
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

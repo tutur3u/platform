@@ -114,6 +114,35 @@ void main() {
       expect(harness.source.calls, 2);
     });
 
+    testWidgets('mounted while backgrounded, refreshes on the first resume', (
+      tester,
+    ) async {
+      final harness = await _pump(tester);
+      await tester.pumpWidget(const SizedBox.shrink());
+
+      // The app is already paused when the screen mounts again, so no paused
+      // event reaches the observer: it has to read the lifecycle it starts in.
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      addTearDown(
+        () => tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        ),
+      );
+      await tester.pumpApp(
+        harness.wrap(
+          MastermindSection(
+            builder: (context, ready, freshness) => const Text('content'),
+          ),
+        ),
+      );
+      await tester.pump();
+      final before = harness.source.calls;
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+      expect(harness.source.calls, before + 1);
+    });
+
     testWidgets('an inactive blip (Control Centre, Face ID) is not a resume', (
       tester,
     ) async {

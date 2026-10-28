@@ -22,9 +22,24 @@ final List<GoRoute> mastermindTabRoutes = [
   ),
   GoRoute(
     path: Routes.mastermindWork,
-    builder: (context, state) => MastermindWorkPage(
-      initialState: laneStateFromQuery(state.uri.queryParameters['state']),
-    ),
+    builder: (context, state) {
+      final query = state.uri.queryParameters;
+      final router = GoRouter.of(context);
+      return MastermindWorkPage(
+        initialState: laneStateFromQuery(query['state']),
+        initialProduct: productFromQuery(query['product']),
+        initialArea: areaFromQuery(query['area']),
+        // The filters live in the URL, so a lane pushed from the list pops
+        // back to the same filtered location.
+        onSelection: (selection) => router.go(
+          workLocation(
+            state: selection.state,
+            product: selection.product,
+            area: selection.area,
+          ),
+        ),
+      );
+    },
   ),
   GoRoute(
     path: Routes.mastermindWorkLane,

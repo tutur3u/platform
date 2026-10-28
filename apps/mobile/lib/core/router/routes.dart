@@ -61,6 +61,11 @@ abstract final class Routes {
   /// only and never appear in an external deep link.
   static String mastermindWorkLanePath(String laneId) =>
       '$mastermindWork/lane/${Uri.encodeComponent(laneId)}';
+
+  /// A lane detail is pushed over the filtered Work list, so Back pops to it
+  /// rather than going to the unfiltered tab root.
+  static bool isMastermindLaneLocation(String location) =>
+      normalizeLocation(location).startsWith('$mastermindWork/lane/');
   static const timer = '/timer';
   static const settings = '/settings';
   static const settingsProfile = '/settings/profile';

@@ -55,9 +55,17 @@ class _AttachedSectionState extends State<_AttachedSection>
   late final MastermindRuntime _runtime = context.read<MastermindRuntime>();
   bool _backgrounded = false;
 
+  // Only `hidden`/`paused` mean the app left the screen: `inactive` alone is
+  // what Control Centre, a biometric prompt or a system sheet cause.
+  static bool _isBackgrounded(AppLifecycleState? state) =>
+      state == AppLifecycleState.hidden || state == AppLifecycleState.paused;
+
   @override
   void initState() {
     super.initState();
+    // A screen can mount while the app is already hidden or paused, and no
+    // such event reaches the observer then: start from the lifecycle as it is.
+    _backgrounded = _isBackgrounded(WidgetsBinding.instance.lifecycleState);
     WidgetsBinding.instance.addObserver(this);
     _runtime.scheduler.attach();
     unawaited(_runtime.snapshot.ensureLoaded());
@@ -67,12 +75,7 @@ class _AttachedSectionState extends State<_AttachedSection>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     final resumed = state == AppLifecycleState.resumed;
     _runtime.scheduler.setForeground(foreground: resumed);
-    // Only `hidden`/`paused` mean the app left the screen: `inactive` alone is
-    // what Control Centre, a biometric prompt or a system sheet cause.
-    if (state == AppLifecycleState.hidden ||
-        state == AppLifecycleState.paused) {
-      _backgrounded = true;
-    }
+    if (_isBackgrounded(state)) _backgrounded = true;
     // Coming back from the background is a refresh trigger of its own: the
     // held snapshot may be hours old, and a backoff that grew while asleep
     // should not delay it. Returning from a mere `inactive` is not.

@@ -7,8 +7,8 @@ import 'package:mobile/features/mastermind/presentation/labels.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// Search field, one chip per lane state with its count, and one chip per
-/// product present among the normal lanes. Security rows are never searched or
-/// filtered.
+/// product and per area present among the normal lanes. Security rows are
+/// never searched or filtered.
 class WorkFilters extends StatelessWidget {
   const WorkFilters({
     required this.controller,
@@ -17,9 +17,12 @@ class WorkFilters extends StatelessWidget {
     required this.selectedState,
     required this.products,
     required this.selectedProduct,
+    required this.areas,
+    required this.selectedArea,
     required this.onQuery,
     required this.onState,
     required this.onProduct,
+    required this.onArea,
     super.key,
   });
 
@@ -32,9 +35,12 @@ class WorkFilters extends StatelessWidget {
   final LaneState? selectedState;
   final List<Product> products;
   final Product? selectedProduct;
+  final List<Area> areas;
+  final Area? selectedArea;
   final ValueChanged<String> onQuery;
   final ValueChanged<LaneState?> onState;
   final ValueChanged<Product?> onProduct;
+  final ValueChanged<Area?> onArea;
 
   @override
   Widget build(BuildContext context) {
@@ -87,6 +93,22 @@ class WorkFilters extends StatelessWidget {
                     selected: selectedProduct == product,
                     onSelected: (_) =>
                         onProduct(selectedProduct == product ? null : product),
+                  ),
+              ],
+            ),
+          ],
+          if (areas.length > 1) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
+              children: [
+                for (final area in areas)
+                  AppChip(
+                    label: Text(MastermindLabels.area(l10n, area)),
+                    selected: selectedArea == area,
+                    onSelected: (_) =>
+                        onArea(selectedArea == area ? null : area),
                   ),
               ],
             ),
