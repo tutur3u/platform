@@ -526,3 +526,14 @@ owns the accepted claim forms and Auth source references; the
 grants. Replay installation and rollback as the non-superuser `postgres` role:
 Auth tables belong to `supabase_auth_admin`, so creating and dropping a trigger
 have different privilege requirements.
+
+### Local independent-session pgTAP fixtures
+
+Use `tests/helpers/local-dblink.inc` before transactions and fixture writes.
+Stock Supabase uses SCRAM on `db.supabase.internal:5432`, while loopback trust
+does not satisfy non-superuser dblink authentication even when a password is
+supplied. Preserve `test.dblink_connstr` for other disposable runners and treat
+the helper's connection-unavailable TAP skip as missing concurrency evidence,
+not a passing assertion. Verify both the default connection and unavailable-port
+skip path; keep later SQL errors fatal. See the local Supabase development
+runbook for setup and owned-stack cleanup.
