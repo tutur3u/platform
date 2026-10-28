@@ -17,6 +17,7 @@ import 'package:mobile/core/config/firebase_options_selector.dart';
 import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/core/observability/mobile_observability.dart';
 import 'package:mobile/core/startup/optional_startup.dart';
+import 'package:mobile/core/startup/startup_state.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
 import 'package:mobile/core/ui/icons/lucide_licenses.dart';
@@ -114,24 +115,30 @@ Future<void> bootstrap(
     log('Failed to initialize Supabase: $e', stackTrace: st);
   }
 
-  // Resolved after Supabase so the first frame shows the account's look.
-  AppearanceSettings initialAppearance;
-  try {
-    initialAppearance = (await StoredAppearance.read(
-      settingsRepository,
-      userId: _currentUserIdOrNull(),
-    )).resolved;
-  } on Object catch (e, st) {
-    log('Failed to load appearance, using default: $e', stackTrace: st);
-    initialAppearance = const AppearanceSettings();
-  }
-
-  try {
-    await CacheStore.instance.init();
-    await OfflineMutationQueue.instance.init();
-  } on Object catch (e, st) {
-    log('Failed to initialize offline cache: $e', stackTrace: st);
-  }
+  // Identity and error handlers are ready. Appearance reads do not depend on
+  // the offline store; queue restoration still requires that store to be ready.
+  final initialAppearance = await initializeStartupState(
+    loadAppearance: () async {
+      try {
+        return (await StoredAppearance.read(
+          settingsRepository,
+          userId: _currentUserIdOrNull(),
+        )).resolved;
+      } on Object catch (e, st) {
+        log('Failed to load appearance, using default: $e', stackTrace: st);
+        return const AppearanceSettings();
+      }
+    },
+    initializeCache: () async {
+      await CacheStore.instance.init();
+    },
+    restoreMutations: () async {
+      await OfflineMutationQueue.instance.init();
+    },
+    onCacheError: (e, st) {
+      log('Failed to initialize offline cache: $e', stackTrace: st);
+    },
+  );
 
   // Pre-load the user's last routes so the router starts there directly.
   // Prefer the more specific tab route if it's a sub-route of a mini-app,

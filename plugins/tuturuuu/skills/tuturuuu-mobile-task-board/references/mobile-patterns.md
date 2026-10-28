@@ -364,6 +364,7 @@ containment; run `test/core` and `test/features/shell` for bootstrap-adjacent
 regressions. Asset bytes/dependency lists are static candidates, not release
 bundle or device startup measurements. See the Mobile application guide's
 startup recovery section for the default and platform scope.
+
 ### Mastermind inline answers
 
 Home/Inbox cards and item detail must share `MastermindRepliesCubit.queueOption`
@@ -373,3 +374,12 @@ label. Fall back to canonical options when short-label counts differ. Never
 infer hub resolution from a local tap or accepted reply. Exercise the real
 reply cubit with fake transport in `decision_cards_test.dart`; English/Vietnamese
 at 320px and 2x text catch wrapping regressions without a device build.
+
+### Independent startup state restoration
+
+Use `initializeStartupState` only after Firebase/observability and Supabase settle.
+Appearance may overlap offline restoration; keep CacheStore before the queue and
+skip the queue on cache failure. Preserve branch fallbacks, error/stack reporting
+and the pre-`runApp` join. Completion-barrier tests live in
+`test/core/startup/startup_state_test.dart`. See the Mobile application guide's
+[ordering contract](../../../../../apps/docs/platform/applications/mobile.mdx#independent-startup-state-restoration).
