@@ -49,7 +49,7 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  if (!canMutateInfrastructureSecret(auth.user.email, parsed.data.name)) {
+  if (!(await canMutateInfrastructureSecret(auth, parsed.data.name))) {
     return NextResponse.json(
       { message: 'Only Tuturuuu employees can enable managed cron jobs.' },
       { status: 403 }
