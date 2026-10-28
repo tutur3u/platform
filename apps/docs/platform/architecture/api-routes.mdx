@@ -721,12 +721,12 @@ and chat checks.
 
 `get_user_workspace_subscription_info` is a service-role operation used by the
 Web account deletion pre-check. It is unavailable to anonymous and authenticated
-client roles, and also checks the service role inside its body. The retained
-inactive backend caller does not change that contract.
+client roles, and also checks the service-role JWT claim inside its body. The
+retained inactive backend caller does not change that contract.
 
 Both functions pin their search path and have explicit execute grants. Regression
-coverage is in `ai-chat-subscription-rpc-access.sql` and the existing AI chat
-content-limit test. The paired rollback restores the prior definitions and
-execute grants; it is an operator-controlled recovery action. Local fixture
-checks do not replace full-schema staging anon/authenticated denial and service
-account deletion checks.
+coverage is in `ai-chat-subscription-rpc-access.sql` and the AI chat content-limit
+test, which calls the RPC as the authenticated owner. Anonymous calls fail at
+EXECUTE. The paired rollback restores the prior definitions and execute grants;
+it is an operator-controlled recovery action. Local fixture checks do not replace
+full-schema staging denial and service account deletion checks.

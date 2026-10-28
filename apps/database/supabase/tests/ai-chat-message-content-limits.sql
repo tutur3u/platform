@@ -66,6 +66,7 @@ select throws_ok(
 
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000010', true);
 select set_config('request.jwt.claim.role', 'authenticated', true);
+set local role authenticated;
 
 select lives_ok(
   $$select public.insert_ai_chat_message(
@@ -86,6 +87,8 @@ select throws_ok(
   'ai_chat_message_content_too_large',
   'public AI chat message RPC rejects oversized content before insert'
 );
+
+reset role;
 
 select is(
   (

@@ -91,6 +91,4 @@ $function$;
 
 revoke all on function public.insert_ai_chat_message(text, uuid, text) from public, anon;
 grant execute on function public.insert_ai_chat_message(text, uuid, text) to authenticated, service_role;
-revoke all on function public.get_user_workspace_subscription_info(uuid) from public, anon, authenticated;
-grant execute on function public.get_user_workspace_subscription_info(uuid) to service_role;
 commit;

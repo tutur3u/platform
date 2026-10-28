@@ -9,7 +9,7 @@ create or replace function public.insert_ai_chat_message(
 returns void
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, pg_temp
 as $$
 declare
   v_content text := message;
