@@ -16,6 +16,7 @@ import { observeMobileHeaderHeight } from './mobile-header-height';
 interface StructureProps {
   sidebarLabels?: { open: string; close: string };
   isCollapsed: boolean;
+  mobileSidebarOpen?: boolean;
   setIsCollapsed: (isCollapsed: boolean) => void;
   hideSizeToggle?: boolean;
   overlayOnExpand?: boolean;
@@ -41,6 +42,7 @@ interface StructureProps {
 
 export function Structure({
   isCollapsed,
+  mobileSidebarOpen,
   setIsCollapsed,
   sidebarLabels,
   hideSizeToggle = false,
@@ -86,7 +88,7 @@ export function Structure({
     if (typeof window === 'undefined') return;
 
     const isMobile = window.innerWidth < 768; // md breakpoint
-    if (isMobile && !sidebarHidden && !isCollapsed) {
+    if (isMobile && !sidebarHidden && (mobileSidebarOpen ?? !isCollapsed)) {
       const scrollY = window.scrollY;
       document.body.style.position = 'fixed';
       document.body.style.top = `-${scrollY}px`;
@@ -99,7 +101,7 @@ export function Structure({
         window.scrollTo(0, scrollY);
       };
     }
-  }, [isCollapsed, sidebarHidden]);
+  }, [isCollapsed, mobileSidebarOpen, sidebarHidden]);
 
   return (
     <>
@@ -133,7 +135,7 @@ export function Structure({
       )}
 
       <TooltipProvider delayDuration={0}>
-        {!sidebarHidden && !isCollapsed && (
+        {!sidebarHidden && (mobileSidebarOpen ?? !isCollapsed) && (
           <button
             type="button"
             className="fixed inset-0 z-40 bg-black/20 backdrop-blur-lg md:hidden"
@@ -150,6 +152,7 @@ export function Structure({
                   ? 'w-[var(--sidebar-collapsed-width)] bg-background/50 max-md:w-0'
                   : 'w-[var(--sidebar-expanded-width)] bg-background max-sm:w-full',
                 isCollapsed && 'max-md:translate-x-full',
+                mobileSidebarOpen === false && 'max-md:hidden',
                 overlayOnExpand && !isCollapsed && 'md:z-40'
               )}
               onMouseEnter={onMouseEnter}
