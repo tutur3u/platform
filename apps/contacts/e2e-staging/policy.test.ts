@@ -97,7 +97,7 @@ test('only staging login and app-session refresh may write', () => {
   assert.equal(
     allowedRequest({
       ...config,
-      url: config.baseURL + '/api/auth/refresh-app-session',
+      url: `${config.baseURL}/api/auth/refresh-app-session`,
       method: 'POST',
     }),
     true
@@ -105,7 +105,7 @@ test('only staging login and app-session refresh may write', () => {
   assert.equal(
     allowedRequest({
       ...config,
-      url: config.supabaseOrigin + '/auth/v1/token',
+      url: `${config.supabaseOrigin}/auth/v1/token`,
       method: 'POST',
     }),
     true
@@ -113,7 +113,7 @@ test('only staging login and app-session refresh may write', () => {
   assert.equal(
     allowedRequest({
       ...config,
-      url: config.supabaseOrigin + '/rest/v1/users',
+      url: `${config.supabaseOrigin}/rest/v1/users`,
       method: 'POST',
     }),
     false
