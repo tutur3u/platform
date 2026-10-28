@@ -53,7 +53,7 @@
       "satellite-bridge": 12,
       "service-worker": 1
     },
-    "dispositions": { "native-Start": 8, "Next-fallback": 830 }
+    "dispositions": { "native-Start": 10, "Next-fallback": 828 }
   },
   "routes": [
     {
@@ -1162,9 +1162,10 @@
       "pattern": "/[locale]/security/bug-bounty",
       "source": "apps/web/src/app/[locale]/(marketing)/security/bug-bounty/page.tsx",
       "category": "page",
-      "owner": "web-next",
-      "disposition": "Next-fallback",
-      "cronOwner": null
+      "owner": "web-start",
+      "disposition": "native-Start",
+      "cronOwner": null,
+      "nativeSource": "apps/web/cloudflare/start/security-page.tsx"
     },
     {
       "pattern": "/[locale]/security",
@@ -1178,9 +1179,10 @@
       "pattern": "/[locale]/security/policy",
       "source": "apps/web/src/app/[locale]/(marketing)/security/policy/page.tsx",
       "category": "page",
-      "owner": "web-next",
-      "disposition": "Next-fallback",
-      "cronOwner": null
+      "owner": "web-start",
+      "disposition": "native-Start",
+      "cronOwner": null,
+      "nativeSource": "apps/web/cloudflare/start/security-page.tsx"
     },
     {
       "pattern": "/[locale]/share/[type]/[resourceId]/modules/[moduleId]",

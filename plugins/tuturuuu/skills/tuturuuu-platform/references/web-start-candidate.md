@@ -12,7 +12,7 @@ and review notice in EN and VI. Keep localized SEO copy sourced from the
 canonical `marketingSeo` message bundles and reuse the framework-free
 `@tuturuuu/utils/common/page-metadata` helper for locale URLs and social fields;
 retain the existing Next metadata import path. Compare actual native heads
-against the Next legal metadata generators for all six URLs, then assert the
+against the Next legal metadata generators for all seven legal documents, then assert the
 emitted HTML contains canonical/hreflang/Open Graph/Twitter tags and staging
 noindex. A legal body's heading and summary are not its SEO title and description.
 
@@ -36,3 +36,19 @@ Keep hosted Playwright cases out of the ordinary Web Vitest discovery; run
 their host policy under Node and their browser cases through the staging-only
 Playwright config. Resolve test fixture paths with node:path and fileURLToPath,
 so Vite does not rewrite new URL asset expressions to an HTTP URL under jsdom.
+
+
+Security document slices use `WEB_START_NATIVE_SECURITY`, default off and
+independent of `WEB_START_NATIVE_LEGAL`. Preserve current EN/VI Next page
+content, including researcher credits and report instructions, without motion
+wrappers. Compare the real rendered Next bodies (mock only motion) and actual
+Start route heads; page-level metadata overrides layout metadata, so use the
+security namespaces' `meta` copy through the shared framework-free builder.
+Keep a content-removal without-fix control. Document styling needs Product
+acceptance before cutover.
+
+Extend emitted tests with security-only rendering and security-off/legal-on
+rollback. Add native and rollback hosted cases under the existing prod-host and
+egress fences; `WAVE1_STAGING_SECURITY_ROLLBACK=confirmed` selects the separate
+rollback pass after the owner disables only the security flag. No artifact from
+an older slice proves current-source runtime acceptance.

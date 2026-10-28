@@ -6,11 +6,15 @@ import { admittedOrigin, stagingProfile } from './profile';
 import config from './void.config';
 
 describe('dormant web staging configuration', () => {
-  it('has no public ingress, schedules or external bindings and defaults both gates off', () => {
+  it('has no public ingress, schedules or external bindings and defaults all gates off', () => {
     expect(config.cloudflare).toMatchObject({
       workers_dev: false,
       preview_urls: false,
-      vars: { WEB_START_CANDIDATE: 'off', WEB_START_NATIVE_LEGAL: 'off' },
+      vars: {
+        WEB_START_CANDIDATE: 'off',
+        WEB_START_NATIVE_LEGAL: 'off',
+        WEB_START_NATIVE_SECURITY: 'off',
+      },
     });
     expect(config.cloudflare).not.toHaveProperty('routes');
     expect(config.cloudflare).not.toHaveProperty('triggers');
@@ -23,6 +27,7 @@ describe('dormant web staging configuration', () => {
     );
     expect(template).toContain('WEB_START_CANDIDATE=off');
     expect(template).toContain('WEB_START_NATIVE_LEGAL=off');
+    expect(template).toContain('WEB_START_NATIVE_SECURITY=off');
     expect(
       admittedOrigin(
         new Request('https://' + stagingProfile.host + '/privacy'),

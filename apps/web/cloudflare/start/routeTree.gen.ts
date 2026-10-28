@@ -15,6 +15,8 @@ import { Route as EnTermsRouteImport } from './routes/en.terms'
 import { Route as LegalDpaRouteImport } from './routes/legal.dpa'
 import { Route as LegalSlaRouteImport } from './routes/legal.sla'
 import { Route as LegalSubprocessorsRouteImport } from './routes/legal.subprocessors'
+import { Route as SecurityBugBountyRouteImport } from './routes/security.bug-bounty'
+import { Route as SecurityPolicyRouteImport } from './routes/security.policy'
 import { Route as ViAcceptableUseRouteImport } from './routes/vi.acceptable-use'
 import { Route as ViCommunityGuidelinesRouteImport } from './routes/vi.community-guidelines'
 import { Route as ViPrivacyRouteImport } from './routes/vi.privacy'
@@ -22,9 +24,13 @@ import { Route as ViTermsRouteImport } from './routes/vi.terms'
 import { Route as EnLegalDpaRouteImport } from './routes/en.legal.dpa'
 import { Route as EnLegalSlaRouteImport } from './routes/en.legal.sla'
 import { Route as EnLegalSubprocessorsRouteImport } from './routes/en.legal.subprocessors'
+import { Route as EnSecurityBugBountyRouteImport } from './routes/en.security.bug-bounty'
+import { Route as EnSecurityPolicyRouteImport } from './routes/en.security.policy'
 import { Route as ViLegalDpaRouteImport } from './routes/vi.legal.dpa'
 import { Route as ViLegalSlaRouteImport } from './routes/vi.legal.sla'
 import { Route as ViLegalSubprocessorsRouteImport } from './routes/vi.legal.subprocessors'
+import { Route as ViSecurityBugBountyRouteImport } from './routes/vi.security.bug-bounty'
+import { Route as ViSecurityPolicyRouteImport } from './routes/vi.security.policy'
 
 const Char91__web1Char93Route = Char91__web1Char93RouteImport.update({
   id: '/__web1',
@@ -86,6 +92,16 @@ const LegalSubprocessorsRoute = LegalSubprocessorsRouteImport.update({
   path: '/legal/subprocessors',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SecurityBugBountyRoute = SecurityBugBountyRouteImport.update({
+  id: '/security/bug-bounty',
+  path: '/security/bug-bounty',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SecurityPolicyRoute = SecurityPolicyRouteImport.update({
+  id: '/security/policy',
+  path: '/security/policy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ViAcceptableUseRoute = ViAcceptableUseRouteImport.update({
   id: '/vi/acceptable-use',
   path: '/vi/acceptable-use',
@@ -121,6 +137,16 @@ const EnLegalSubprocessorsRoute = EnLegalSubprocessorsRouteImport.update({
   path: '/en/legal/subprocessors',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EnSecurityBugBountyRoute = EnSecurityBugBountyRouteImport.update({
+  id: '/en/security/bug-bounty',
+  path: '/en/security/bug-bounty',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EnSecurityPolicyRoute = EnSecurityPolicyRouteImport.update({
+  id: '/en/security/policy',
+  path: '/en/security/policy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ViLegalDpaRoute = ViLegalDpaRouteImport.update({
   id: '/vi/legal/dpa',
   path: '/vi/legal/dpa',
@@ -134,6 +160,16 @@ const ViLegalSlaRoute = ViLegalSlaRouteImport.update({
 const ViLegalSubprocessorsRoute = ViLegalSubprocessorsRouteImport.update({
   id: '/vi/legal/subprocessors',
   path: '/vi/legal/subprocessors',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ViSecurityBugBountyRoute = ViSecurityBugBountyRouteImport.update({
+  id: '/vi/security/bug-bounty',
+  path: '/vi/security/bug-bounty',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ViSecurityPolicyRoute = ViSecurityPolicyRouteImport.update({
+  id: '/vi/security/policy',
+  path: '/vi/security/policy',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -150,6 +186,8 @@ export interface FileRoutesByFullPath {
   '/legal/dpa': typeof LegalDpaRoute
   '/legal/sla': typeof LegalSlaRoute
   '/legal/subprocessors': typeof LegalSubprocessorsRoute
+  '/security/bug-bounty': typeof SecurityBugBountyRoute
+  '/security/policy': typeof SecurityPolicyRoute
   '/vi/acceptable-use': typeof ViAcceptableUseRoute
   '/vi/community-guidelines': typeof ViCommunityGuidelinesRoute
   '/vi/privacy': typeof ViPrivacyRoute
@@ -157,9 +195,13 @@ export interface FileRoutesByFullPath {
   '/en/legal/dpa': typeof EnLegalDpaRoute
   '/en/legal/sla': typeof EnLegalSlaRoute
   '/en/legal/subprocessors': typeof EnLegalSubprocessorsRoute
+  '/en/security/bug-bounty': typeof EnSecurityBugBountyRoute
+  '/en/security/policy': typeof EnSecurityPolicyRoute
   '/vi/legal/dpa': typeof ViLegalDpaRoute
   '/vi/legal/sla': typeof ViLegalSlaRoute
   '/vi/legal/subprocessors': typeof ViLegalSubprocessorsRoute
+  '/vi/security/bug-bounty': typeof ViSecurityBugBountyRoute
+  '/vi/security/policy': typeof ViSecurityPolicyRoute
 }
 export interface FileRoutesByTo {
   '/__web1': typeof Char91__web1Char93Route
@@ -174,6 +216,8 @@ export interface FileRoutesByTo {
   '/legal/dpa': typeof LegalDpaRoute
   '/legal/sla': typeof LegalSlaRoute
   '/legal/subprocessors': typeof LegalSubprocessorsRoute
+  '/security/bug-bounty': typeof SecurityBugBountyRoute
+  '/security/policy': typeof SecurityPolicyRoute
   '/vi/acceptable-use': typeof ViAcceptableUseRoute
   '/vi/community-guidelines': typeof ViCommunityGuidelinesRoute
   '/vi/privacy': typeof ViPrivacyRoute
@@ -181,9 +225,13 @@ export interface FileRoutesByTo {
   '/en/legal/dpa': typeof EnLegalDpaRoute
   '/en/legal/sla': typeof EnLegalSlaRoute
   '/en/legal/subprocessors': typeof EnLegalSubprocessorsRoute
+  '/en/security/bug-bounty': typeof EnSecurityBugBountyRoute
+  '/en/security/policy': typeof EnSecurityPolicyRoute
   '/vi/legal/dpa': typeof ViLegalDpaRoute
   '/vi/legal/sla': typeof ViLegalSlaRoute
   '/vi/legal/subprocessors': typeof ViLegalSubprocessorsRoute
+  '/vi/security/bug-bounty': typeof ViSecurityBugBountyRoute
+  '/vi/security/policy': typeof ViSecurityPolicyRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -199,6 +247,8 @@ export interface FileRoutesById {
   '/legal/dpa': typeof LegalDpaRoute
   '/legal/sla': typeof LegalSlaRoute
   '/legal/subprocessors': typeof LegalSubprocessorsRoute
+  '/security/bug-bounty': typeof SecurityBugBountyRoute
+  '/security/policy': typeof SecurityPolicyRoute
   '/vi/acceptable-use': typeof ViAcceptableUseRoute
   '/vi/community-guidelines': typeof ViCommunityGuidelinesRoute
   '/vi/privacy': typeof ViPrivacyRoute
@@ -206,9 +256,13 @@ export interface FileRoutesById {
   '/en/legal/dpa': typeof EnLegalDpaRoute
   '/en/legal/sla': typeof EnLegalSlaRoute
   '/en/legal/subprocessors': typeof EnLegalSubprocessorsRoute
+  '/en/security/bug-bounty': typeof EnSecurityBugBountyRoute
+  '/en/security/policy': typeof EnSecurityPolicyRoute
   '/vi/legal/dpa': typeof ViLegalDpaRoute
   '/vi/legal/sla': typeof ViLegalSlaRoute
   '/vi/legal/subprocessors': typeof ViLegalSubprocessorsRoute
+  '/vi/security/bug-bounty': typeof ViSecurityBugBountyRoute
+  '/vi/security/policy': typeof ViSecurityPolicyRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -225,6 +279,8 @@ export interface FileRouteTypes {
     | '/legal/dpa'
     | '/legal/sla'
     | '/legal/subprocessors'
+    | '/security/bug-bounty'
+    | '/security/policy'
     | '/vi/acceptable-use'
     | '/vi/community-guidelines'
     | '/vi/privacy'
@@ -232,9 +288,13 @@ export interface FileRouteTypes {
     | '/en/legal/dpa'
     | '/en/legal/sla'
     | '/en/legal/subprocessors'
+    | '/en/security/bug-bounty'
+    | '/en/security/policy'
     | '/vi/legal/dpa'
     | '/vi/legal/sla'
     | '/vi/legal/subprocessors'
+    | '/vi/security/bug-bounty'
+    | '/vi/security/policy'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/__web1'
@@ -249,6 +309,8 @@ export interface FileRouteTypes {
     | '/legal/dpa'
     | '/legal/sla'
     | '/legal/subprocessors'
+    | '/security/bug-bounty'
+    | '/security/policy'
     | '/vi/acceptable-use'
     | '/vi/community-guidelines'
     | '/vi/privacy'
@@ -256,9 +318,13 @@ export interface FileRouteTypes {
     | '/en/legal/dpa'
     | '/en/legal/sla'
     | '/en/legal/subprocessors'
+    | '/en/security/bug-bounty'
+    | '/en/security/policy'
     | '/vi/legal/dpa'
     | '/vi/legal/sla'
     | '/vi/legal/subprocessors'
+    | '/vi/security/bug-bounty'
+    | '/vi/security/policy'
   id:
     | '__root__'
     | '/__web1'
@@ -273,6 +339,8 @@ export interface FileRouteTypes {
     | '/legal/dpa'
     | '/legal/sla'
     | '/legal/subprocessors'
+    | '/security/bug-bounty'
+    | '/security/policy'
     | '/vi/acceptable-use'
     | '/vi/community-guidelines'
     | '/vi/privacy'
@@ -280,9 +348,13 @@ export interface FileRouteTypes {
     | '/en/legal/dpa'
     | '/en/legal/sla'
     | '/en/legal/subprocessors'
+    | '/en/security/bug-bounty'
+    | '/en/security/policy'
     | '/vi/legal/dpa'
     | '/vi/legal/sla'
     | '/vi/legal/subprocessors'
+    | '/vi/security/bug-bounty'
+    | '/vi/security/policy'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -298,6 +370,8 @@ export interface RootRouteChildren {
   LegalDpaRoute: typeof LegalDpaRoute
   LegalSlaRoute: typeof LegalSlaRoute
   LegalSubprocessorsRoute: typeof LegalSubprocessorsRoute
+  SecurityBugBountyRoute: typeof SecurityBugBountyRoute
+  SecurityPolicyRoute: typeof SecurityPolicyRoute
   ViAcceptableUseRoute: typeof ViAcceptableUseRoute
   ViCommunityGuidelinesRoute: typeof ViCommunityGuidelinesRoute
   ViPrivacyRoute: typeof ViPrivacyRoute
@@ -305,9 +379,13 @@ export interface RootRouteChildren {
   EnLegalDpaRoute: typeof EnLegalDpaRoute
   EnLegalSlaRoute: typeof EnLegalSlaRoute
   EnLegalSubprocessorsRoute: typeof EnLegalSubprocessorsRoute
+  EnSecurityBugBountyRoute: typeof EnSecurityBugBountyRoute
+  EnSecurityPolicyRoute: typeof EnSecurityPolicyRoute
   ViLegalDpaRoute: typeof ViLegalDpaRoute
   ViLegalSlaRoute: typeof ViLegalSlaRoute
   ViLegalSubprocessorsRoute: typeof ViLegalSubprocessorsRoute
+  ViSecurityBugBountyRoute: typeof ViSecurityBugBountyRoute
+  ViSecurityPolicyRoute: typeof ViSecurityPolicyRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -396,6 +474,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LegalSubprocessorsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/security/bug-bounty': {
+      id: '/security/bug-bounty'
+      path: '/security/bug-bounty'
+      fullPath: '/security/bug-bounty'
+      preLoaderRoute: typeof SecurityBugBountyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/security/policy': {
+      id: '/security/policy'
+      path: '/security/policy'
+      fullPath: '/security/policy'
+      preLoaderRoute: typeof SecurityPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/vi/acceptable-use': {
       id: '/vi/acceptable-use'
       path: '/vi/acceptable-use'
@@ -445,6 +537,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EnLegalSubprocessorsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/en/security/bug-bounty': {
+      id: '/en/security/bug-bounty'
+      path: '/en/security/bug-bounty'
+      fullPath: '/en/security/bug-bounty'
+      preLoaderRoute: typeof EnSecurityBugBountyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/en/security/policy': {
+      id: '/en/security/policy'
+      path: '/en/security/policy'
+      fullPath: '/en/security/policy'
+      preLoaderRoute: typeof EnSecurityPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/vi/legal/dpa': {
       id: '/vi/legal/dpa'
       path: '/vi/legal/dpa'
@@ -466,6 +572,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ViLegalSubprocessorsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/vi/security/bug-bounty': {
+      id: '/vi/security/bug-bounty'
+      path: '/vi/security/bug-bounty'
+      fullPath: '/vi/security/bug-bounty'
+      preLoaderRoute: typeof ViSecurityBugBountyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/vi/security/policy': {
+      id: '/vi/security/policy'
+      path: '/vi/security/policy'
+      fullPath: '/vi/security/policy'
+      preLoaderRoute: typeof ViSecurityPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -482,6 +602,8 @@ const rootRouteChildren: RootRouteChildren = {
   LegalDpaRoute: LegalDpaRoute,
   LegalSlaRoute: LegalSlaRoute,
   LegalSubprocessorsRoute: LegalSubprocessorsRoute,
+  SecurityBugBountyRoute: SecurityBugBountyRoute,
+  SecurityPolicyRoute: SecurityPolicyRoute,
   ViAcceptableUseRoute: ViAcceptableUseRoute,
   ViCommunityGuidelinesRoute: ViCommunityGuidelinesRoute,
   ViPrivacyRoute: ViPrivacyRoute,
@@ -489,20 +611,14 @@ const rootRouteChildren: RootRouteChildren = {
   EnLegalDpaRoute: EnLegalDpaRoute,
   EnLegalSlaRoute: EnLegalSlaRoute,
   EnLegalSubprocessorsRoute: EnLegalSubprocessorsRoute,
+  EnSecurityBugBountyRoute: EnSecurityBugBountyRoute,
+  EnSecurityPolicyRoute: EnSecurityPolicyRoute,
   ViLegalDpaRoute: ViLegalDpaRoute,
   ViLegalSlaRoute: ViLegalSlaRoute,
   ViLegalSubprocessorsRoute: ViLegalSubprocessorsRoute,
+  ViSecurityBugBountyRoute: ViSecurityBugBountyRoute,
+  ViSecurityPolicyRoute: ViSecurityPolicyRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

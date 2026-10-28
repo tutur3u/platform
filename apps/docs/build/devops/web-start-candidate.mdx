@@ -8,7 +8,7 @@ Web 1 adds an unprovisioned TanStack Start / Vite+ / Void Worker candidate in
 `prepare-build.mjs` mirrors the owning package manifest there for Void framework
 detection without loading or renaming Next environment files. Next retains API,
 satellite URL bridge and service-worker ownership. The seven static public
-legal documents have a default-off native rendering slice alongside the
+legal documents and two security documents have independently default-off native rendering slices alongside the
 native `GET /__web1` probe. `build` still builds Next; `build:candidate` builds the
 candidate. The retired `apps/tanstack-web` app remains paused.
 
@@ -37,7 +37,7 @@ third-party internals, aliases reexporting framework functions, and runtime
 reachability need slice-specific review before migration. Proxy-only satellite
 patterns are explicit census entries; review them whenever `src/proxy.ts` changes.
 
-Except for explicitly enabled native legal document GET/HEAD requests, the Worker forwards every URL and method to the admitted Next origin,
+Except for explicitly enabled native legal or security document GET/HEAD requests, the Worker forwards every URL and method to the admitted Next origin,
 including all `/api/*`, server-action POSTs, RSC requests, `_next` assets and
 `/serwist/sw.js`. Calendar and Infrastructure API rewrites execute in Next;
 they are not reimplemented in the candidate. Satellite redirects retain their
@@ -61,19 +61,16 @@ with document navigation and language links. The default streaming transformer
 injects serialization scripts even without a Scripts component; this static
 callback intentionally omits that hydration payload and cleans up the SSR state. It deliberately has no hydrated marketing shell or session UI.
 
-The manifest remains **838 entries: 8 native-Start and 830 Next-fallback**.
-The existing Community Guidelines route is reclassified as native-Start; the
-total census stays constant. The route still imports the canonical
-`@tuturuuu/legal` policy document, with matching Next metadata and immediate
-fallback when the slice flag is disabled.
+The manifest remains **838 entries: 10 native-Start and 828 Next-fallback**.
+The two existing security routes are reclassified; the total census stays constant.
 Native entries retain their original Next source for migration provenance and
 record `nativeSource` for the Start adapter. The full census separately records
-its `nativeBoundaries`. Seven `/[locale]` entries count the native documents;
-the eighth native entry is the probe. English unprefixed aliases do not add
+its `nativeBoundaries`. Nine `/[locale]` entries count the native documents;
+the tenth native entry is the probe. English unprefixed aliases do not add
 census entries.
 
 `WEB_START_NATIVE_LEGAL` defaults to `off`, independently of candidate
-admission. Only `on` enables the 18 exact localized and unprefixed paths.
+admission. Only `on` enables the 21 exact localized and unprefixed paths.
 Unset, unknown and off values forward them to the attested Next deployment,
 preserving path and query.
 This is the immediate **route rollback**; disabling `WEB_START_CANDIDATE`
@@ -85,7 +82,7 @@ Native documents are no-store/noindex, use a script-free CSP and expose
 `x-tuturuuu-web-renderer: native-Start`; fallback requests expose
 `Next-fallback`. The marker is routing evidence, not source identity.
 
-The native heads read the canonical `marketingSeo` copy for all six legal
+The native heads read the canonical `marketingSeo` copy for all seven legal
 documents. Next and Start share the framework-free
 `@tuturuuu/utils/common/page-metadata` URL and social metadata helper; the
 existing Next metadata import stays compatible. English aliases canonicalize to
@@ -94,8 +91,8 @@ alternates. Canonical and social URLs remain on `https://tuturuuu.com` while
 staging retains `noindex, nofollow`. The document title applies the shared site
 title template; social titles use the localized page title.
 
-`legal-metadata.test.ts` compares all 18 actual Start route heads against the
-six Next legal layouts' metadata generators, including title, description,
+`legal-metadata.test.ts` compares all 21 actual Start route heads against the
+seven Next legal layouts' metadata generators, including title, description,
 canonical, hreflang, every Open Graph field and Twitter metadata. The emitted Worker suite
 checks those tags in actual HTML against the canonical message bundles and URL
 rules, alongside the existing no-egress and cookie-neutrality assertions.
@@ -109,6 +106,46 @@ reads of all seven public legal documents, robots noindex checks and a signed-in
 workspace fallback round trip.
 Shared suite infrastructure is seeded from #7093; reconcile those shared files
 with that PR when integrating. Other app cases remain owned by #7093.
+
+## Native security documents (slice 4)
+
+Scope: `/security/policy` and `/security/bug-bounty`, plus their `/en/`
+and `/vi/` aliases. `WEB_START_NATIVE_SECURITY=off` is a separate default-off
+flag. Only `on` admits their six exact GET/HEAD paths; unset, unknown and off
+values immediately restore attested Next fallback with the original query.
+Legal rendering continues to follow `WEB_START_NATIVE_LEGAL` independently.
+Candidate admission and all RSC/action/router-header, method, host and cookie
+boundaries remain the same.
+
+The static adapter reads the existing `security-policy` and `bug-bounty`
+EN/VI namespaces. It preserves every current Next heading, report instruction,
+scope rule, response commitment, metric, researcher credit and action link.
+Vietnamese internal links retain `/vi/`. No Reveal/motion, hydration, session
+refresh or database access is included. Content is immediately visible under the
+existing document stylesheet and script-free CSP, with noindex and no-store.
+This is document styling: Product acceptance of that presentation remains a
+cutover prerequisite; it does not claim parity with the Next marketing shell.
+
+Both page-level Next metadata generators override inherited metadata. The security
+adapter therefore uses each namespace's `meta` copy rather than the bounty
+layout's `marketingSeo` copy. The shared `publicHead` adapter calls the
+framework-free page-metadata builder for canonical, hreflang and every social
+field. `security-parity.test.tsx` compares actual native route heads with those
+Next generators and compares the complete rendered text, headings, lists and
+links with the current Next pages in EN and VI. Only the Next motion wrappers
+are replaced in the body fixture. A without-fix control must fail when a policy
+instruction is removed, then pass when restored.
+
+`native-security.test.ts` covers both independent flags, GET/HEAD, every alias,
+rollback, production-host refusal, candidate admission, cookie neutrality and
+non-document request fallback. `emitted.runtime.mjs` extends the actual workerd
+suite with security-only rendering and security-off/legal-on rollback.
+`e2e-wave1-staging/web.spec.ts` adds EN/VI native reads and anonymous reloads.
+For the second hosted pass, the release owner disables only the security flag
+and runs the same suite with `WAVE1_STAGING_SECURITY_ROLLBACK=confirmed`;
+the rollback case requires both security documents on Next while Privacy remains
+native. These cases inherit the existing exact-host, distinct-Supabase and egress
+guards. Listing them or passing policy unit tests is not hosted acceptance.
 
 ## Staging profile
 
@@ -201,7 +238,7 @@ Release owner must provide and verify these before hosted acceptance:
 
 Run the #7093 Playwright config with `WAVE1_STAGING_APP=web`,
 `WAVE1_STAGING_BASE_URL=https://web.staging.tutur3u.com` and its required
-private inputs. Enable the legal flag only for an accepted staging deployment.
+private inputs. Enable each slice flag only for an accepted staging deployment.
 The central issuer remains `https://staging.tutur3u.com` for the existing
 satellite suites; the Web suite signs in through its own candidate origin.
 Production/canonical hosts still fail before Chromium launches; request and
@@ -264,7 +301,7 @@ immediate rollback to the immutable Next deployment are required. The source
 compatibility tests use injected Next/Start fixtures. The emitted runtime suite
 uses the exact built Worker on workerd through Wrangler's pinned Miniflare supplier,
 with outbound requests restricted to a synthetic Next fixture. It exercises the
-actual native Start probe, legal document rendering, rollback and fallback boundaries; it does not prove hosted
+actual native Start probe, legal and security document rendering, rollback and fallback boundaries; it does not prove hosted
 authentication, provider staging or sealed restore acceptance. Missing checks remain prerequisites,
 not inferred passes. Production traffic, DNS and provisioning remain held for this implementation PR.
 The release owner holds the recorded automatic production cutover authority,

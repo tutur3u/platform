@@ -1,5 +1,6 @@
 import { type Fetcher, proxyNext } from './fallback';
 import { shouldRenderNativeLegal } from './native-legal';
+import { shouldRenderNativeSecurity } from './native-security';
 import {
   admittedOrigin,
   stagingProfile,
@@ -22,13 +23,18 @@ export function createWebCandidateHandler({
       request,
       env.WEB_START_NATIVE_LEGAL
     );
+    const nativeSecurity = shouldRenderNativeSecurity(
+      request,
+      env.WEB_START_NATIVE_SECURITY
+    );
+    const nativeDocument = nativeLegal || nativeSecurity;
     let response: Response;
     if (!origin || !env.TRUSTED_PROXY_ORIGIN_SECRET) {
       response = new Response('Web candidate disabled', { status: 503 });
     } else {
       try {
         response =
-          nativeProbe || nativeLegal
+          nativeProbe || nativeDocument
             ? await start(request)
             : await proxyNext(
                 request,
@@ -47,10 +53,10 @@ export function createWebCandidateHandler({
     if (origin) {
       headers.set(
         'x-tuturuuu-web-renderer',
-        nativeProbe || nativeLegal ? 'native-Start' : 'Next-fallback'
+        nativeProbe || nativeDocument ? 'native-Start' : 'Next-fallback'
       );
     }
-    if (nativeLegal && origin) {
+    if (nativeDocument && origin) {
       headers.set('cache-control', 'no-store');
       headers.set(
         'content-security-policy',

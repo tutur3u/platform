@@ -11,7 +11,7 @@ const require = createRequire(new URL('../package.json', import.meta.url));
 const wranglerRequire = createRequire(require.resolve('wrangler'));
 const { Miniflare, convertV4MiniflareOptions } = wranglerRequire('miniflare');
 const { JSDOM } = require('jsdom');
-const seoCopy = Object.fromEntries(
+const messageCopy = Object.fromEntries(
   await Promise.all(
     ['en', 'vi'].map(async (locale) => [
       locale,
@@ -20,7 +20,7 @@ const seoCopy = Object.fromEntries(
           new URL(`../messages/${locale}.json`, import.meta.url),
           'utf8'
         )
-      ).marketingSeo,
+      ),
     ])
   )
 );
@@ -39,12 +39,22 @@ const legalPages = [
   { slug: 'community-guidelines', seoKey: 'community_guidelines' },
 ];
 
+const securityPages = [
+  { slug: 'security/policy', kind: 'security-policy' },
+  { slug: 'security/bug-bounty', kind: 'bug-bounty' },
+];
+
 function assertLegalMetadata(html, path) {
   const document = new JSDOM(html).window.document;
   const locale = path.startsWith('/vi/') ? 'vi' : 'en';
-  const page = legalPages.find(({ slug }) => path.endsWith(`/${slug}`));
+  const page = [...legalPages, ...securityPages].find(({ slug }) =>
+    path.endsWith(`/${slug}`)
+  );
   assert.ok(page, `no canonical metadata fixture for ${path}`);
-  const copy = seoCopy[locale][page.seoKey];
+  const copy =
+    'kind' in page
+      ? messageCopy[locale][page.kind].meta
+      : messageCopy[locale].marketingSeo[page.seoKey];
   const english = `https://tuturuuu.com/${page.slug}`;
   const vietnamese = `https://tuturuuu.com/vi/${page.slug}`;
   const canonical = locale === 'vi' ? vietnamese : english;
@@ -122,6 +132,7 @@ test(description, { timeout: 30000 }, async (t) => {
   assert.equal(config.routes, undefined);
   assert.equal(config.vars.WEB_START_CANDIDATE, 'off');
   assert.equal(config.vars.WEB_START_NATIVE_LEGAL, 'off');
+  assert.equal(config.vars.WEB_START_NATIVE_SECURITY, 'off');
   const entry = resolve(dirname(configPath), config.main);
   assert.match(await readFile(entry, 'utf8'), /Web candidate disabled/u);
   const modules = [
@@ -183,6 +194,7 @@ test(description, { timeout: 30000 }, async (t) => {
     ...config.vars,
     WEB_START_CANDIDATE: 'staging',
     WEB_START_NATIVE_LEGAL: 'on',
+    WEB_START_NATIVE_SECURITY: 'on',
     NEXT_FALLBACK_ORIGIN: upstream,
     TRUSTED_PROXY_ORIGIN_SECRET: secret,
   });
@@ -190,6 +202,23 @@ test(description, { timeout: 30000 }, async (t) => {
     ...config.vars,
     WEB_START_CANDIDATE: 'staging',
     WEB_START_NATIVE_LEGAL: 'off',
+    WEB_START_NATIVE_SECURITY: 'off',
+    NEXT_FALLBACK_ORIGIN: upstream,
+    TRUSTED_PROXY_ORIGIN_SECRET: secret,
+  });
+  const securityRollback = instance({
+    ...config.vars,
+    WEB_START_CANDIDATE: 'staging',
+    WEB_START_NATIVE_LEGAL: 'on',
+    WEB_START_NATIVE_SECURITY: 'off',
+    NEXT_FALLBACK_ORIGIN: upstream,
+    TRUSTED_PROXY_ORIGIN_SECRET: secret,
+  });
+  const securityOnly = instance({
+    ...config.vars,
+    WEB_START_CANDIDATE: 'staging',
+    WEB_START_NATIVE_LEGAL: 'off',
+    WEB_START_NATIVE_SECURITY: 'on',
     NEXT_FALLBACK_ORIGIN: upstream,
     TRUSTED_PROXY_ORIGIN_SECRET: secret,
   });
@@ -208,6 +237,8 @@ test(description, { timeout: 30000 }, async (t) => {
         '/vi/privacy',
         '/vi/legal/dpa',
         '/community-guidelines',
+        '/security/policy',
+        '/vi/security/bug-bounty',
         '/serwist/sw.js',
       ]) {
         const response = await disabled.dispatchFetch(`${base}${path}`, {
@@ -285,6 +316,91 @@ test(description, { timeout: 30000 }, async (t) => {
         'Next-fallback'
       );
       assert.equal(egress.at(-1), `${upstream}/vi/legal/dpa?raw=%2f&x=1&x=2`);
+    }
+  );
+
+  await t.test(
+    'security documents render script-free with independent rollback',
+    async () => {
+      for (const locale of ['en', 'vi']) {
+        for (const { kind, slug } of securityPages) {
+          const copy = messageCopy[locale][kind];
+          for (const prefix of locale === 'vi' ? ['/vi'] : ['', '/en']) {
+            const path = `${prefix}/${slug}`;
+            const before = egress.length;
+            const response = await securityOnly.dispatchFetch(base + path, {
+              headers,
+            });
+            assert.equal(response.status, 200);
+            assert.equal(
+              response.headers.get('x-tuturuuu-web-renderer'),
+              'native-Start'
+            );
+            assert.equal(response.headers.get('cache-control'), 'no-store');
+            assert.equal(
+              response.headers.get('x-robots-tag'),
+              'noindex, nofollow'
+            );
+            assert.equal(response.headers.has('set-cookie'), false);
+            assert.match(
+              response.headers.get('content-security-policy'),
+              /default-src 'none'/u
+            );
+            const html = await response.text();
+            assertLegalMetadata(html, path);
+            const document = new JSDOM(html).window.document;
+            assert.equal(document.documentElement.lang, locale);
+            assert.equal(
+              document.querySelector('h1').textContent,
+              `${copy.hero.title_prefix} ${copy.hero.title_highlight}`
+            );
+            assert.ok(
+              document.body.textContent.includes(
+                kind === 'security-policy'
+                  ? copy.rules.items.no_data_access
+                  : copy.researchers.vapour.note
+              )
+            );
+            assert.equal(
+              document.querySelectorAll('script, [style]').length,
+              0
+            );
+            document.defaultView.close();
+            assert.equal(egress.length, before);
+            const head = await securityOnly.dispatchFetch(base + path, {
+              method: 'HEAD',
+              headers,
+            });
+            assert.equal(head.status, 200);
+            assert.equal(await head.text(), '');
+            const fallback = await securityRollback.dispatchFetch(
+              base + path + '?keep=%2f',
+              { headers }
+            );
+            assert.equal(
+              fallback.headers.get('x-tuturuuu-web-renderer'),
+              'Next-fallback'
+            );
+            assert.equal(egress.at(-1), upstream + path + '?keep=%2f');
+          }
+        }
+      }
+      const legal = await securityRollback.dispatchFetch(base + '/privacy', {
+        headers,
+      });
+      assert.equal(
+        legal.headers.get('x-tuturuuu-web-renderer'),
+        'native-Start'
+      );
+      const before = egress.length;
+      for (const path of ['/security/policy', '/vi/security/bug-bounty']) {
+        const rejected = await securityOnly.dispatchFetch(
+          'https://tuturuuu.com' + path,
+          { headers }
+        );
+        assert.equal(rejected.status, 503);
+      }
+      assert.equal(egress.length, before);
     }
   );
   await t.test(
