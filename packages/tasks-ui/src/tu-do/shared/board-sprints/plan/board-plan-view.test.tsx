@@ -17,7 +17,6 @@ import { getPlanMoveAssigneeIds } from './use-plan-assignment';
 
 const api = vi.hoisted(() => ({
   createWorkspaceTask: vi.fn(),
-  deleteWorkspaceTask: vi.fn(),
   listBoardTasksForSearch: vi.fn(),
   moveTasks: vi.fn(),
   openTask: vi.fn(),
@@ -68,7 +67,6 @@ vi.mock('@tuturuuu/ui/sonner', () => ({
 
 vi.mock('@tuturuuu/internal-api/tasks', () => ({
   createWorkspaceTask: api.createWorkspaceTask,
-  deleteWorkspaceTask: api.deleteWorkspaceTask,
   listWorkspaceTaskBoardViewableMembers: async () => ({
     members: [
       { user_id: 'u-ana', display_name: 'Ana', email: null, avatar_url: null },
@@ -466,24 +464,37 @@ describe('BoardPlanView', () => {
     });
   });
 
-  it('undoes the create and keeps the name when the task cannot reach the backlog', async () => {
-    api.createWorkspaceTask.mockResolvedValue({ task: task('t9') });
-    api.moveTasks.mockRejectedValue(new Error('network'));
-    api.deleteWorkspaceTask.mockResolvedValue({ success: true });
-    renderPlan({ sprints: [active, planned] });
-    fireEvent.click(
-      await screen.findByRole('button', { name: 'add_to_backlog' })
-    );
-    const input = screen.getByRole('textbox', { name: 'new_backlog_task' });
-    fireEvent.change(input, { target: { value: 'Write release notes' } });
-    fireEvent.keyDown(input, { key: 'Enter' });
-    await waitFor(() =>
-      expect(api.deleteWorkspaceTask).toHaveBeenCalledWith('ws-1', 't9')
-    );
-    // One retry before giving up, then the name comes back to retry.
-    expect(api.moveTasks).toHaveBeenCalledTimes(2);
-    await waitFor(() => expect(input).toHaveValue('Write release notes'));
-  });
+  it.each([
+    ['moves it to the trash and keeps the name', true],
+    ['reports it and clears the name when the trash fails too', false],
+  ])(
+    'when a new task cannot reach the backlog, %s',
+    async (_label, trashWorks) => {
+      api.createWorkspaceTask.mockResolvedValue({ task: task('t9') });
+      api.moveTasks.mockRejectedValue(new Error('network'));
+      api.update.mockImplementation(async () => {
+        if (!trashWorks) throw new Error('network');
+        return {};
+      });
+      renderPlan({ sprints: [active, planned] });
+      fireEvent.click(
+        await screen.findByRole('button', { name: 'add_to_backlog' })
+      );
+      const input = screen.getByRole('textbox', { name: 'new_backlog_task' });
+      fireEvent.change(input, { target: { value: 'Write release notes' } });
+      fireEvent.keyDown(input, { key: 'Enter' });
+      await waitFor(() =>
+        expect(api.update).toHaveBeenCalledWith('ws-1', 't9', {
+          deleted: true,
+        })
+      );
+      // One retry before giving up.
+      expect(api.moveTasks).toHaveBeenCalledTimes(2);
+      await waitFor(() =>
+        expect(input).toHaveValue(trashWorks ? 'Write release notes' : '')
+      );
+    }
+  );
 
   it('loads tasks in Review lists too, so the plan and summary see them', async () => {
     api.listBoardTasksForSearch.mockResolvedValue([]);

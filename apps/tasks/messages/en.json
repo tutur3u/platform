@@ -14665,6 +14665,7 @@
       "assign_to": "Assign to",
       "backlog": "Backlog",
       "backlog_empty": "Everyone has their tasks.",
+      "backlog_move_failed": "Added to the running sprint: couldn't move it to the backlog",
       "board_tab": "Board",
       "create_failed": "Couldn't create the task",
       "done_count": "{done}/{total} done",

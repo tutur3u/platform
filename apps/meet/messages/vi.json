@@ -8766,6 +8766,7 @@
       "assign_to": "Giao cho",
       "backlog": "Backlog",
       "backlog_empty": "Mọi người đều đã có việc.",
+      "backlog_move_failed": "Đã thêm vào sprint đang chạy: không thể chuyển vào backlog",
       "board_tab": "Bảng",
       "create_failed": "Không thể tạo công việc",
       "done_count": "{done}/{total} xong",
