@@ -5,6 +5,7 @@ import type {
   TablesUpdate,
   WorkspaceRole,
 } from '@tuturuuu/types';
+import { isExplicitGrantPermission } from '@tuturuuu/utils/explicit-grant-permissions';
 import { NextResponse } from 'next/server';
 import { resolveWorkspaceRouteAccess } from '@/lib/workspace-route-access';
 
@@ -114,14 +115,16 @@ export async function PUT(req: Request, { params }: Params) {
   const permissionsRes = await supabase
     .from('workspace_role_permissions')
     .upsert(
-      permissions.map(
-        (permission): TablesInsert<'workspace_role_permissions'> => ({
-          ws_id: resolvedWsId,
-          role_id: updatedRoleId,
-          permission: permission.id as WorkspaceRolePermissionValue,
-          enabled: permission.enabled,
-        })
-      )
+      permissions
+        .filter((permission) => !isExplicitGrantPermission(permission.id))
+        .map(
+          (permission): TablesInsert<'workspace_role_permissions'> => ({
+            ws_id: resolvedWsId,
+            role_id: updatedRoleId,
+            permission: permission.id as WorkspaceRolePermissionValue,
+            enabled: permission.enabled,
+          })
+        )
     );
 
   if (permissionsRes.error) {

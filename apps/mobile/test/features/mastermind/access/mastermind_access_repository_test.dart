@@ -68,4 +68,18 @@ void main() {
     ).thenThrow(const ApiException(message: 'Unauthorized', statusCode: 401));
     await expectLater(repository().isEnabled(), throwsA(isA<ApiException>()));
   });
+  for (final status in [401, 403]) {
+    test('$status clears the cached enabled answer', () async {
+      answer({'enabled': true});
+      await repository().isEnabled();
+      when(
+        () => api.getJson(MastermindAccessRepository.accessPath),
+      ).thenThrow(ApiException(message: 'Denied', statusCode: status));
+      await expectLater(repository().isEnabled(), throwsA(isA<ApiException>()));
+      when(
+        () => api.getJson(MastermindAccessRepository.accessPath),
+      ).thenThrow(const ApiException.transport(message: 'offline'));
+      await expectLater(repository().isEnabled(), throwsA(isA<ApiException>()));
+    });
+  }
 }

@@ -44,7 +44,10 @@ function putRole(roleId: string) {
     new Request('http://localhost/roles', {
       body: JSON.stringify({
         name: 'Role',
-        permissions: [{ enabled: true, id: 'admin' }],
+        permissions: [
+          { enabled: true, id: 'admin' },
+          { enabled: false, id: 'manage_mastermind' },
+        ],
       }),
       method: 'PUT',
     }),

@@ -3,8 +3,7 @@ title: Mobile Mastermind
 description: Who sees the Mastermind section in the mobile app, how it behaves before data arrives, and what it never shows.
 ---
 
-Mastermind is an internal fleet overview. The mobile section reads one
-sanitized snapshot from the Mastermind hub Worker. This page records the
+Mastermind is an internal fleet overview. The mobile section reads one sanitized snapshot from the Mastermind hub Worker. This page records the
 product rules of the shell entry, the Home tab and the Inbox; later tabs extend it.
 
 ## Who sees it
@@ -39,8 +38,7 @@ product rules of the shell entry, the Home tab and the Inbox; later tabs extend 
 
 ## Access rule
 
-Mastermind is restricted to one person, `phucvo@tuturuuu.com`, through the
-dedicated workspace permission `manage_mastermind`.
+Mastermind is restricted to one person, `phucvo@tuturuuu.com`, through the dedicated workspace permission `manage_mastermind`.
 
 - **Scope:** every Tuturuuu-owned surface that serves Mastermind data or
   actions: the mobile entry and its `/mastermind/**` routes, and
@@ -64,8 +62,8 @@ dedicated workspace permission `manage_mastermind`.
   `private.mastermind_access_audit`. `private.revoke_mastermind_access` removes
   it the same way. Running a grant in production is a production write that
   needs an explicit GO.
-- **Enforcement points** (Web, push and mobile apply these only once
-  `MASTERMIND_REQUIRE_EXPLICIT_GRANT` is on; see Rollout):
+- **Enforcement points:** the flag switches the Web, push and mobile
+  Mastermind gates. Database and Web-helper explicit-grant semantics always apply:
   - Database: `public.has_workspace_permission(ws, user, 'manage_mastermind')`
     is true only for an explicit root role grant.
   - Web helpers: `getPermissions().containsPermission('manage_mastermind')`
@@ -86,8 +84,7 @@ dedicated workspace permission `manage_mastermind`.
 - **Exceptions:** none. Provisioning the recipient in the push allowlist and
   the hub allowlist is separate from the grant and must name the same user.
 
-Migration `20261028092700` makes the owner grant (see Rollout). To re-grant
-after a skip (production only after an explicit GO; run as the database owner,
+Migration `20261028092700` makes the owner grant (see Rollout). To re-grant after a skip (production only after an explicit GO; run as the database owner,
 for example in the Supabase SQL editor):
 
 ```sql
@@ -97,10 +94,7 @@ select private.grant_mastermind_access_by_email(
   'phucvo@tuturuuu.com',
   'GO <reference>: Mastermind access for phucvo@tuturuuu.com'
 );
-select action, target_user_id, changed, reason, performed_by, created_at
-from private.mastermind_access_audit
-order by id desc
-limit 5;
+select action, target_user_id, changed, reason, performed_by, created_at from private.mastermind_access_audit order by id desc limit 5;
 commit;
 ```
 
@@ -170,23 +164,20 @@ Flip procedure:
    `private.grant_mastermind_access_by_email` after an explicit GO.
 
    ```sql
-   select u.email, a.changed, a.created_at
+   select count(distinct wrm.user_id) as holders, array_agg(distinct u.email) as emails
    from public.workspace_role_permissions wrp
    join public.workspace_role_members wrm on wrm.role_id = wrp.role_id
    join auth.users u on u.id = wrm.user_id
-   left join private.mastermind_access_audit a
-     on a.target_user_id = wrm.user_id and a.action = 'grant'
    where wrp.ws_id = '00000000-0000-0000-0000-000000000000'
      and wrp.permission::text = 'manage_mastermind'
      and wrp.enabled;
    ```
 
-3. Set `MASTERMIND_REQUIRE_EXPLICIT_GRANT=true` for Web production and
-   redeploy. The owner keeps access; everyone else loses the entry on the next
-   access sync.
+3. Set `MASTERMIND_REQUIRE_EXPLICIT_GRANT=true` on every runtime serving Web
+   and redeploy. In new app builds, everyone else loses the entry on the next
+   access sync. Older builds rely on the hub allowlist denial.
 
 Rolling back is unsetting the flag (earlier rule again); the grant can stay.
-
 ## Data source
 
 Fixture builds (development flavor with `MASTERMIND_FIXTURE`) read the bundled
@@ -522,7 +513,7 @@ Delivery sections arrive later and reuse the table route below).
   prefixed with the coverage word. A pool with no series shows the summary only.
 - **Quota table** (`products.quotas[]`, including `Unknown account`), least left
   first and unknown last, with "as of N min ago". **Forecasts**
-  (`quota_forecasts[]`): "Projected empty <time> GMT+7" soonest first, or "Not
+  (`quota_forecasts[]`): "Projected empty `<time>` GMT+7" soonest first, or "Not
   projected to run out before reset".
 - **Chart table route.** `/mastermind/insights/:section/table/:chartId` is
   pushed over Insights and shows the same series rows the panel draws (a null

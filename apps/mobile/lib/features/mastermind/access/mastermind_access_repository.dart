@@ -50,6 +50,10 @@ class MastermindAccessRepository {
       }
       return enabled;
     } on Object catch (error) {
+      if (error is ApiException &&
+          (error.statusCode == 401 || error.statusCode == 403)) {
+        await CacheStore.instance.remove(key);
+      }
       if (!isOfflineTransportFailure(error)) rethrow;
       final cached = await CacheStore.instance.read<bool>(
         key: key,
