@@ -3,6 +3,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
+import type { BoardMember } from '../../board-members-query';
 import { usePlanAssignment } from './use-plan-assignment';
 
 const updateTask = vi.hoisted(() => vi.fn());
@@ -15,10 +16,9 @@ vi.mock('../../board-broadcast-context', () => ({
   useBoardBroadcast: () => undefined,
 }));
 
-const members = ['ana', 'binh', 'chi'].map((id) => ({
+const members: BoardMember[] = ['ana', 'binh', 'chi'].map((id) => ({
   id,
   display_name: id,
-  avatar_url: null,
 }));
 
 describe('usePlanAssignment', () => {
@@ -36,14 +36,17 @@ describe('usePlanAssignment', () => {
         ),
       }
     );
-    const task = { id: 't', assignees: [members[0]] } as Task;
+    const task = { id: 't', assignees: [members[0]] } as unknown as Task;
 
     act(() => result.current.move(task, { from: 'ana', to: 'binh' }));
     act(() =>
-      result.current.move({ ...task, assignees: [members[1]] } as Task, {
-        from: 'binh',
-        to: 'chi',
-      })
+      result.current.move(
+        { ...task, assignees: [members[1]] } as unknown as Task,
+        {
+          from: 'binh',
+          to: 'chi',
+        }
+      )
     );
 
     await waitFor(() => expect(updateTask).toHaveBeenCalledTimes(1));
