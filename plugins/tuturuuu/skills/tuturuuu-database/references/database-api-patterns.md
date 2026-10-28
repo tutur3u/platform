@@ -501,3 +501,16 @@ seven-day history batch; unfinished executions remain for recovery. See the
 [Cron Control runbook](../../../../../apps/docs/build/devops/cloudflare-cron-control.mdx#seven-day-database-cron-history)
 and `supabase/tests/cron-history-retention.sql` for the role, budget and replay
 regressions. Never add a cleanup pg_cron job to repair an accumulating history table.
+
+### Task list and assignment policies
+
+Before revoking task-list writes, audit direct user-client callers as well as
+service-role APIs: the shared list form, board copy/template paths and AI tools
+can use RLS. Keep read membership separate from write permission; list writes
+require MEMBER plus manage_projects or an edit board share, and assignment
+writes also accept an edit task share. Resolve email recipients from confirmed
+Auth email. Preserve the restrictive MFA policy and check both boards on moves.
+Use `task-list-assignee-authorization.sql` for behavioral regression coverage.
+For rollback rehearsals, compare the observed hosted ACLs with replay first:
+historical GRANT ALL can include MAINTAIN on PostgreSQL 17 even when the hosted
+ACL excludes it. Record that fixture difference separately from migration proof.

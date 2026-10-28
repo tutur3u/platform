@@ -157,7 +157,10 @@ INSERT INTO definer_execute_expected VALUES
   ('public.calendar_provider_series_reconcile(uuid,uuid,uuid,text,jsonb)', false, true),
   ('public.calendar_retained_generation(uuid,uuid,uuid)', false, true),
   ('public.calendar_series_operation(uuid,text,jsonb,uuid)', true, true),
+  -- SR-337/SR-338 policy helpers are caller-bound, with signed-in/service access.
+  ('public.can_access_task_list_board(uuid,boolean)', true, true),
   ('public.can_access_task_plan(uuid,text,uuid)', true, true),
+  ('public.can_edit_task_assignees(uuid)', true, true),
   ('public.can_create_workspace(uuid)', true, true),
   ('public.can_manage_indicator(uuid)', true, true),
   ('public.can_manage_workspace_external_projects(uuid,uuid)', true, true),
