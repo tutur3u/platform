@@ -5944,5 +5944,7 @@
         "type": "String"
       }
     }
-  }
+  },
+  "mastermindThreadsTitle": "Hội thoại",
+  "mastermindBackToThreads": "Về Hội thoại"
 }

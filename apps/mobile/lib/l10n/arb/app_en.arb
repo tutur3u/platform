@@ -6234,5 +6234,7 @@
         "type": "String"
       }
     }
-  }
+  },
+  "mastermindThreadsTitle": "Threads",
+  "mastermindBackToThreads": "Back to Threads"
 }

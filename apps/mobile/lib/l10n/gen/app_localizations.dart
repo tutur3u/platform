@@ -25782,6 +25782,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Gap {start}–{end}: {reason}'**
   String mastermindGapSummary(String start, String end, String reason);
+
+  /// No description provided for @mastermindThreadsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Threads'**
+  String get mastermindThreadsTitle;
+
+  /// No description provided for @mastermindBackToThreads.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to Threads'**
+  String get mastermindBackToThreads;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

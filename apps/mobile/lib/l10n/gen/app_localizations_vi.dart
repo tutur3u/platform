@@ -13605,4 +13605,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String mastermindGapSummary(String start, String end, String reason) {
     return 'Khoảng trống $start–$end: $reason';
   }
+
+  @override
+  String get mastermindThreadsTitle => 'Hội thoại';
+
+  @override
+  String get mastermindBackToThreads => 'Về Hội thoại';
 }

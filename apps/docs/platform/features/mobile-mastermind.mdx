@@ -606,3 +606,38 @@ An unreported pacing value retains its dashed status glyph beside the explicit
 reason. The label wraps within the row's content area so checked timestamps do
 not overflow narrow screens. `mastermind_insights_page_test.dart` preserves the
 one-glyph-per-window assertion for reported and unreported values.
+
+## Read-only Threads preview
+
+`MASTERMIND_THREADS` is a Dart define, default `false`. With it off, Work, Ship
+and Insights retain their existing navigation. When enabled, Threads replaces
+Work in the dock; Backlog and Staff remain segments, and Ship and Insights stay
+separate. The flag is read through `mastermindThreadsEnabled`, which tests can
+override with `debugOverrideMastermindThreads`, so the default `flutter test` run
+covers both the flag-off and flag-on paths without a `--dart-define`.
+
+P1a is Work's own page with a Threads segment control: it reads the same
+accepted snapshot as Home and Work through the shared snapshot cubit and the
+tolerant v1 parser, and never parses the hub payload on its own. The grouped
+lane list, search, state, product and area filters, "Clear filters", Backlog and
+Staff are Work's own components, so a Work or Home link keeps `?state=`,
+`?product=` and `?area=` when it redirects to `/mastermind/threads`. The one
+difference is the group and chip order: Waiting, Failed, Running (queued
+follows), then Idle, each oldest first. The segment switch uses the compact
+32 pt track with 44 pt hit areas. A row opens the existing lane detail under
+`/mastermind/work/lane/:id`; the dock keeps Threads selected while it is open,
+and a missing lane offers "Back to Threads". There is no send UI and no row
+opens history. Loading, access loss, rate limits (the last snapshot stays) and a
+404 with nothing published use the shared Mastermind section states.
+
+Thread history is a separate P1b change, built to the design's mobile conditions
+(app lock, screenshot protection, closed parsers, localized state words and
+times). It is not part of P1a and has no flag here.
+
+Regression coverage lives in `apps/mobile/test/features/mastermind/threads/`:
+`threads_list_test.dart` covers the group order, filters, "Clear filters",
+Backlog/Staff segments, 44 pt targets, dock clearance, rate-limit retention and
+the 404 state with the flag on; `threads_flag_test.dart` keeps the flag-off
+navigation unchanged and checks the flag-on dock selection, redirects with
+filters kept, and the lane-gone copy. Enablement remains held for exact-commit
+mobile CI and product acceptance.

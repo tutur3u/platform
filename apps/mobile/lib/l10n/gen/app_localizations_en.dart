@@ -13748,4 +13748,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String mastermindGapSummary(String start, String end, String reason) {
     return 'Gap $start–$end: $reason';
   }
+
+  @override
+  String get mastermindThreadsTitle => 'Threads';
+
+  @override
+  String get mastermindBackToThreads => 'Back to Threads';
 }
