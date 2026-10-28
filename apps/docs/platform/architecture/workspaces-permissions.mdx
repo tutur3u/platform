@@ -195,6 +195,16 @@ A newly created workspace may exist before any roles or defaults are configured.
 
 The creator fallback prevents the creator from locking themselves out. The dashboard permission-setup banner exists because everyone else would otherwise have no effective permissions until defaults or roles are configured.
 
+### Ownership and personal status
+
+`workspaces.creator_id` and `workspaces.personal` are protected columns. Settings managers (including `admin`) keep table-level `UPDATE` for ordinary settings such as name, handle and avatar, but a `BEFORE UPDATE` trigger applies these rules to signed-in and anonymous callers:
+
+- `creator_id` changes only through `public.transfer_workspace_ownership(ws_id, new_owner_id)`. The caller must be the current creator, the new owner must already be a `MEMBER`, personal and root workspaces cannot be transferred, and each transfer is recorded in `public.workspace_ownership_transfers` (readable by the service role only).
+- `personal` changes only when the caller is the workspace's current creator. The `/api/v1/workspaces/personal` route keeps its single-member and one-personal-workspace checks on top of this.
+- Service-role and migration contexts are unaffected, and workspace creation still records the caller as `creator_id`.
+
+Regression coverage: `apps/database/supabase/tests/workspace-ownership-protection.sql`.
+
 ## `workspace_members.role` Is Not The Current Permission Source
 
 This is the most important corrective note for anyone reading older docs or legacy schema assumptions.
