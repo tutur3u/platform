@@ -259,6 +259,13 @@ non-creator payloads and keep their stored state; the role members route returns
 403. Database triggers apply the same rule to direct API writes. Disabling a
 grant stays open to role managers.
 
+Re-saving an enabled grant through `INSERT ... ON CONFLICT DO UPDATE` preserves
+that grant. Invitation finalization and POS role preparation are service-only
+functions; API roles cannot execute them. Workspace creation seeds a fixed list
+of default permissions that excludes `manage_subscription`. A member joining
+through the service invitation flow inherits defaults explicitly enabled by the
+creator, including `manage_subscription`.
+
 Billing records (`workspace_subscriptions`, `workspace_orders`) are read-only for
 API users: `manage_subscription` holders can read them, and only the service role
 (Polar webhooks, sync jobs and server routes using the admin client) writes them.

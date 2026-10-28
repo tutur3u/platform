@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(30);
+select plan(50);
 
 -- Fixtures: a creator-owned workspace with an admin member (admin role) and a
 -- billing role that already holds manage_subscription.
@@ -370,6 +370,106 @@ select is(
   'ok',
   'service role can grant manage_subscription on a role'
 );
+
+select is(pg_temp.as_user('5ab00000-0000-4000-8000-000000000001', $q$
+    insert into public.workspace_default_permissions (ws_id, permission, member_type, enabled)
+    values ('5ab00000-0000-4000-8000-0000000000a1', 'manage_subscription', 'MEMBER', true)
+    on conflict (ws_id, permission, member_type) do update set enabled = excluded.enabled
+  $q$), 'ok', 'creator can enable the billing default');
+
+select is(pg_temp.as_user('5ab00000-0000-4000-8000-000000000002', $q$
+    insert into public.workspace_default_permissions (ws_id, permission, member_type, enabled)
+    values ('5ab00000-0000-4000-8000-0000000000a1', 'manage_subscription', 'MEMBER', true)
+    on conflict (ws_id, permission, member_type) do update set enabled = excluded.enabled
+  $q$), 'ok', 'admin can re-save an existing billing default via upsert');
+
+select is(pg_temp.as_user('5ab00000-0000-4000-8000-000000000002', $q$
+    insert into public.workspace_role_permissions (ws_id, role_id, permission, enabled)
+    values ('5ab00000-0000-4000-8000-0000000000a1', '5ab00000-0000-4000-8000-0000000000b2', 'manage_subscription', true)
+    on conflict (ws_id, permission, role_id) do update set enabled = excluded.enabled
+  $q$), 'ok', 'admin upsert re-save works for workspace_role_permissions');
+
+select is(pg_temp.as_user('5ab00000-0000-4000-8000-000000000002', $q$
+    insert into public.workspace_default_permissions (ws_id, member_type, permission, enabled)
+    values ('5ab00000-0000-4000-8000-0000000000a1', 'MEMBER', 'manage_users', true)
+    on conflict (ws_id, permission, member_type) do update set enabled = excluded.enabled
+  $q$), 'ok', 'admin upsert re-save works for workspace_default_permissions');
+
+select is(pg_temp.as_user('5ab00000-0000-4000-8000-000000000002', $q$
+    insert into public.workspace_role_permissions (ws_id, role_id, permission, enabled)
+    values ('5ab00000-0000-4000-8000-0000000000a1', '5ab00000-0000-4000-8000-0000000000b2', 'manage_users', true)
+    on conflict (ws_id, permission, role_id) do update set enabled = excluded.enabled
+  $q$), 'ok', 'admin can upsert unrelated role permissions');
+
+select is(pg_temp.as_user('5ab00000-0000-4000-8000-000000000002', $q$
+  insert into public.workspace_role_permissions (ws_id, role_id, permission, enabled)
+  values ('5ab00000-0000-4000-8000-0000000000a1', '5ab00000-0000-4000-8000-0000000000b2', 'manage_users', true)
+  on conflict (ws_id, permission, role_id) do update set enabled = excluded.enabled
+$q$), 'ok', 'admin can re-save an unrelated permission via upsert');
+
+select ok((select enabled from public.workspace_role_permissions where role_id = '5ab00000-0000-4000-8000-0000000000b2' and permission = 'manage_subscription'), 'role upsert preserves the existing billing grant');
+
+select ok((select enabled from public.workspace_default_permissions where ws_id = '5ab00000-0000-4000-8000-0000000000a1' and member_type = 'MEMBER' and permission = 'manage_subscription'), 'default upsert preserves the existing billing grant');
+
+update public.workspace_default_permissions set enabled = false where ws_id = '5ab00000-0000-4000-8000-0000000000a1' and permission = 'manage_subscription';
+
+select is(pg_temp.as_user('5ab00000-0000-4000-8000-000000000002', $q$
+    insert into public.workspace_default_permissions (ws_id, permission, member_type, enabled)
+    values ('5ab00000-0000-4000-8000-0000000000a1', 'manage_subscription', 'MEMBER', true)
+    on conflict (ws_id, permission, member_type) do update set enabled = excluded.enabled
+  $q$), '42501', 'admin cannot enable a disabled default with upsert');
+
+select is(pg_temp.as_user('5ab00000-0000-4000-8000-000000000001', $q$
+    insert into public.workspace_default_permissions (ws_id, permission, member_type, enabled)
+    values ('5ab00000-0000-4000-8000-0000000000a1', 'manage_subscription', 'MEMBER', true)
+    on conflict (ws_id, permission, member_type) do update set enabled = excluded.enabled
+  $q$), 'ok', 'creator can re-enable a default with upsert');
+
+select ok(not has_function_privilege('authenticated', 'private.prepare_inventory_pos_operator_access(uuid,uuid)', 'EXECUTE')
+  and not has_function_privilege('anon', 'private.prepare_inventory_pos_operator_access(uuid,uuid)', 'EXECUTE')
+  and has_function_privilege('service_role', 'private.prepare_inventory_pos_operator_access(uuid,uuid)', 'EXECUTE'), 'prepare_inventory_pos_operator_access is callable only through the service boundary');
+
+select ok(not has_function_privilege('authenticated', 'private.finalize_workspace_invitation_membership(uuid,uuid,public.workspace_member_type,uuid)', 'EXECUTE')
+  and not has_function_privilege('anon', 'private.finalize_workspace_invitation_membership(uuid,uuid,public.workspace_member_type,uuid)', 'EXECUTE')
+  and has_function_privilege('service_role', 'private.finalize_workspace_invitation_membership(uuid,uuid,public.workspace_member_type,uuid)', 'EXECUTE'), 'finalize_workspace_invitation_membership is callable only through the service boundary');
+
+select ok(not has_function_privilege('authenticated', 'private.finalize_workspace_invitation_membership_v2(uuid,uuid,public.workspace_member_type,uuid[])', 'EXECUTE')
+  and not has_function_privilege('anon', 'private.finalize_workspace_invitation_membership_v2(uuid,uuid,public.workspace_member_type,uuid[])', 'EXECUTE')
+  and has_function_privilege('service_role', 'private.finalize_workspace_invitation_membership_v2(uuid,uuid,public.workspace_member_type,uuid[])', 'EXECUTE'), 'finalize_workspace_invitation_membership_v2 is callable only through the service boundary');
+
+select is(pg_temp.as_user('5ab00000-0000-4000-8000-000000000002', $q$
+    select private.prepare_inventory_pos_operator_access('5ab00000-0000-4000-8000-0000000000a1', '5ab00000-0000-4000-8000-000000000002')::text
+  $q$), '42501', 'API admin cannot invoke prepare_inventory_pos_operator_access');
+
+select is(pg_temp.as_user('5ab00000-0000-4000-8000-000000000002', $q$
+    select private.finalize_workspace_invitation_membership('5ab00000-0000-4000-8000-0000000000a1', '5ab00000-0000-4000-8000-000000000002', 'MEMBER', '5ab00000-0000-4000-8000-0000000000b2')::text
+  $q$), '42501', 'API admin cannot invoke finalize_workspace_invitation_membership');
+
+select is(pg_temp.as_user('5ab00000-0000-4000-8000-000000000002', $q$
+    select private.finalize_workspace_invitation_membership_v2('5ab00000-0000-4000-8000-0000000000a1', '5ab00000-0000-4000-8000-000000000002', 'MEMBER', ARRAY['5ab00000-0000-4000-8000-0000000000b2'::uuid])::text
+  $q$), '42501', 'API admin cannot invoke finalize_workspace_invitation_membership_v2');
+
+delete from public.workspace_members where ws_id = '5ab00000-0000-4000-8000-0000000000a1' and user_id = '5ab00000-0000-4000-8000-000000000003';
+
+select is(pg_temp.as_service($q$
+    select private.finalize_workspace_invitation_membership('5ab00000-0000-4000-8000-0000000000a1', '5ab00000-0000-4000-8000-000000000003', 'MEMBER', null)::text
+  $q$), 'true', 'finalize_workspace_invitation_membership completes membership with billing defaults');
+
+select ok(public.has_workspace_permission('5ab00000-0000-4000-8000-0000000000a1', '5ab00000-0000-4000-8000-000000000003', 'manage_subscription'), 'accepted member inherits the creator-enabled default');
+
+select is(pg_temp.as_service($q$
+    select private.finalize_workspace_invitation_membership_v2('5ab00000-0000-4000-8000-0000000000a1', '5ab00000-0000-4000-8000-000000000003', 'MEMBER', ARRAY['5ab00000-0000-4000-8000-0000000000b2'::uuid])::text
+  $q$), 'false', 'finalize_workspace_invitation_membership_v2 completes membership with billing defaults');
+
+
+insert into public.workspaces (id, name, personal, creator_id)
+values ('5ab00000-0000-4000-8000-0000000000a2', 'Default seed coverage', false,
+  '5ab00000-0000-4000-8000-000000000001');
+select ok(not exists (
+  select 1 from public.workspace_default_permissions
+  where ws_id = '5ab00000-0000-4000-8000-0000000000a2'
+    and permission = 'manage_subscription' and enabled
+), 'workspace creation definer seeds no billing grant');
 
 select * from finish();
 
