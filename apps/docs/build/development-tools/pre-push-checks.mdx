@@ -9,7 +9,7 @@ updatedAt: "2026-10-23"
 Most avoidable CI failures come from cheap checks skipped before pushing: Biome
 formatting, `flutter analyze` infos (fatal in CI), TypeScript errors such as
 `TS6059` (a package importing app source outside its `rootDir`), stale generated
-inventories and branch names the checker rejects. `bun validate` is too heavy for
+inventories, and branch names the checker rejects. `bun validate` is too heavy for
 agent machines because its Turbo graph can build workspace dependencies, so it
 is not run locally. `bun check:changed` is the replacement before every push.
 
