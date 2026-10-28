@@ -23113,11 +23113,35 @@ abstract class AppLocalizations {
   /// **'No recent activity'**
   String get mastermindActivityEmpty;
 
+  /// No description provided for @mastermindActivityFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed'**
+  String get mastermindActivityFailed;
+
+  /// No description provided for @mastermindActivityIdle.
+  ///
+  /// In en, this message translates to:
+  /// **'Idle'**
+  String get mastermindActivityIdle;
+
+  /// No description provided for @mastermindActivityRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Running'**
+  String get mastermindActivityRunning;
+
   /// No description provided for @mastermindActivityTitle.
   ///
   /// In en, this message translates to:
   /// **'Activity'**
   String get mastermindActivityTitle;
+
+  /// No description provided for @mastermindActivityWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting'**
+  String get mastermindActivityWaiting;
 
   /// No description provided for @mastermindAgeBasis.
   ///
@@ -23977,6 +24001,18 @@ abstract class AppLocalizations {
   /// **'fresh'**
   String get mastermindFreshFresh;
 
+  /// No description provided for @mastermindFromFleet.
+  ///
+  /// In en, this message translates to:
+  /// **'From fleet reports'**
+  String get mastermindFromFleet;
+
+  /// No description provided for @mastermindFromLanes.
+  ///
+  /// In en, this message translates to:
+  /// **'From lane reports'**
+  String get mastermindFromLanes;
+
   /// No description provided for @mastermindGroupActions.
   ///
   /// In en, this message translates to:
@@ -24018,6 +24054,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This was answered or withdrawn'**
   String get mastermindItemAnsweredTitle;
+
+  /// No description provided for @mastermindItemFor.
+  ///
+  /// In en, this message translates to:
+  /// **'{kind} for {subject}'**
+  String mastermindItemFor(String kind, String subject);
 
   /// No description provided for @mastermindItemGoneTitle.
   ///
@@ -24247,11 +24289,23 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{1 measured run} other{{count} measured runs}}'**
   String mastermindMeasuredRuns(int count);
 
+  /// No description provided for @mastermindModelNotReported.
+  ///
+  /// In en, this message translates to:
+  /// **'Model not reported'**
+  String get mastermindModelNotReported;
+
   /// No description provided for @mastermindMore.
   ///
   /// In en, this message translates to:
   /// **'More'**
   String get mastermindMore;
+
+  /// No description provided for @mastermindNameProductArea.
+  ///
+  /// In en, this message translates to:
+  /// **'{product} {area}'**
+  String mastermindNameProductArea(String product, String area);
 
   /// No description provided for @mastermindNeedsAttention.
   ///
@@ -24307,6 +24361,18 @@ abstract class AppLocalizations {
   /// **'Not connected'**
   String get mastermindNotConnectedTitle;
 
+  /// No description provided for @mastermindNotReported.
+  ///
+  /// In en, this message translates to:
+  /// **'Not reported'**
+  String get mastermindNotReported;
+
+  /// No description provided for @mastermindNotReportingCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} not reporting'**
+  String mastermindNotReportingCount(int count);
+
   /// No description provided for @mastermindNotReversible.
   ///
   /// In en, this message translates to:
@@ -24343,6 +24409,12 @@ abstract class AppLocalizations {
   /// **'Offline · showing {time}'**
   String mastermindOfflineShowing(String time);
 
+  /// No description provided for @mastermindOpensLanes.
+  ///
+  /// In en, this message translates to:
+  /// **'Opens the lane list'**
+  String get mastermindOpensLanes;
+
   /// No description provided for @mastermindOptionRecommended.
   ///
   /// In en, this message translates to:
@@ -24373,10 +24445,22 @@ abstract class AppLocalizations {
   /// **'Products'**
   String get mastermindProductsLabel;
 
+  /// No description provided for @mastermindPublishedAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'Published {age}'**
+  String mastermindPublishedAgo(String age);
+
+  /// No description provided for @mastermindQueuedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} queued'**
+  String mastermindQueuedCount(int count);
+
   /// No description provided for @mastermindQuotaEmpty.
   ///
   /// In en, this message translates to:
-  /// **'No quota data'**
+  /// **'Quota not reported'**
   String get mastermindQuotaEmpty;
 
   /// No description provided for @mastermindQuotaTitle.
@@ -24733,6 +24817,12 @@ abstract class AppLocalizations {
   /// **'Usage'**
   String get mastermindScopeUsage;
 
+  /// No description provided for @mastermindSectionWithBasis.
+  ///
+  /// In en, this message translates to:
+  /// **'{section} · {basis}'**
+  String mastermindSectionWithBasis(String section, String basis);
+
   /// No description provided for @mastermindSecurityFix.
   ///
   /// In en, this message translates to:
@@ -25050,6 +25140,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Details stay on the Mac'**
   String get mastermindShipWithheldTooltip;
+
+  /// No description provided for @mastermindShowAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Show all {count}'**
+  String mastermindShowAll(int count);
 
   /// No description provided for @mastermindSignOutAction.
   ///
@@ -25620,6 +25716,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Version'**
   String get mastermindVersion;
+
+  /// No description provided for @mastermindWaitingOnYou.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} on you'**
+  String mastermindWaitingOnYou(int count);
 
   /// No description provided for @mastermindWeekly.
   ///

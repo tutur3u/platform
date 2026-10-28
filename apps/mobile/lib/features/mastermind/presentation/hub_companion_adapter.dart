@@ -135,7 +135,19 @@ Map<String, dynamic> _shipFields(
         ),
 };
 
-Map<LaneState, int>? hubWorkCounts(Object? raw) {
+/// How far ahead of the snapshot time a hub-reported count may be stamped
+/// before it is treated as unusable rather than as clock skew.
+const _hubClockSkew = Duration(seconds: 60);
+
+Map<LaneState, int>? hubWorkCounts(Object? raw, DateTime generatedAt) {
+  final work = _object(raw);
+  final checked = DateTime.tryParse(work['checked_at']?.toString() ?? '');
+  if (work['status'] != 'ok' ||
+      checked == null ||
+      generatedAt.difference(checked) > const Duration(minutes: 15) ||
+      checked.isAfter(generatedAt.add(_hubClockSkew))) {
+    return null;
+  }
   final counts = _object(_object(raw)['counts']);
   if (counts.isEmpty) return null;
   final result = <LaneState, int>{};

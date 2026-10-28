@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/features/mastermind/model/enums.dart';
 import 'package:mobile/features/mastermind/parse/snapshot_parser.dart';
 import 'package:mobile/features/mastermind/presentation/home_model.dart';
 import 'package:mobile/features/mastermind/presentation/hub_companion_adapter.dart';
@@ -140,9 +139,9 @@ void main() {
     first(raw['lanes']).remove('status');
     object(raw['work'])['lanes'] = <Object?>[];
     var model = MastermindHomeModel.from(accepted(raw).snapshot);
-    expect(model.laneCounts[LaneState.queued], 1);
+    expect(model.lanes.queued, 1);
     object(object(raw['work'])['counts'])['queued'] = 4;
     model = MastermindHomeModel.from(accepted(raw).snapshot);
-    expect(model.laneCounts[LaneState.queued], 4);
+    expect(model.lanes.queued, 4);
   });
 }

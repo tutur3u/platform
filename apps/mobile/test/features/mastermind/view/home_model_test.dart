@@ -25,13 +25,14 @@ void main() {
       expect(model.security.single.product, Product.mastermind);
     });
 
-    test('tallies lanes by state and ignores security lanes', () {
-      expect(model.laneCounts, {
-        LaneState.running: 2,
-        LaneState.waiting: 1,
-        LaneState.queued: 1,
-        LaneState.failed: 1,
-      });
+    test('reads activity from the fleet point and ignores security lanes', () {
+      final lanes = model.lanes;
+      expect(
+        (lanes.running, lanes.waiting, lanes.idle, lanes.queued, lanes.failed),
+        (1, 1, 1, 1, 1),
+      );
+      expect(lanes.notReporting, 1);
+      expect(lanes.waitingOnYou, 3);
     });
 
     test('lists failing environments separately from releases', () {
@@ -40,13 +41,13 @@ void main() {
       expect(model.releases, hasLength(1));
     });
 
-    test('takes the newest three decisions and five events', () {
+    test('takes the newest three decisions and three events', () {
       expect(model.decisions.map((d) => d.title), [
         'Decision log 3',
         'Decision log 2',
         'Decision log 1',
       ]);
-      expect(model.activity, hasLength(5));
+      expect(model.activity, hasLength(3));
       expect(model.activity.first.seq, 8);
       final times = model.activity.map((event) => event.ts).toList();
       expect([...times]..sort((a, b) => b.compareTo(a)), times);

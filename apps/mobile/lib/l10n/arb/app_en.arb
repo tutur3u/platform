@@ -5344,6 +5344,16 @@
       }
     }
   },
+  "@mastermindItemFor": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      },
+      "subject": {
+        "type": "String"
+      }
+    }
+  },
   "@mastermindLaneAgeLine": {
     "placeholders": {
       "state": {
@@ -5413,7 +5423,24 @@
       }
     }
   },
+  "@mastermindNameProductArea": {
+    "placeholders": {
+      "product": {
+        "type": "String"
+      },
+      "area": {
+        "type": "String"
+      }
+    }
+  },
   "@mastermindNeedsYouSeeAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindNotReportingCount": {
     "placeholders": {
       "count": {
         "type": "int"
@@ -5431,6 +5458,20 @@
     "placeholders": {
       "option": {
         "type": "String"
+      }
+    }
+  },
+  "@mastermindPublishedAgo": {
+    "placeholders": {
+      "age": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindQueuedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
       }
     }
   },
@@ -5503,6 +5544,16 @@
     "placeholders": {
       "count": {
         "type": "int"
+      }
+    }
+  },
+  "@mastermindSectionWithBasis": {
+    "placeholders": {
+      "section": {
+        "type": "String"
+      },
+      "basis": {
+        "type": "String"
       }
     }
   },
@@ -5593,6 +5644,13 @@
     "placeholders": {
       "age": {
         "type": "String"
+        }
+      }
+    },
+  "@mastermindShowAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
       }
     }
   },
@@ -5765,6 +5823,13 @@
     "placeholders": {
       "chart": {
         "type": "String"
+        }
+      }
+    },
+  "@mastermindWaitingOnYou": {
+    "placeholders": {
+      "count": {
+        "type": "int"
       }
     }
   },
@@ -5777,7 +5842,11 @@
   },
   "mastermindAccountFilter": "Account",
   "mastermindActivityEmpty": "No recent activity",
+  "mastermindActivityFailed": "Failed",
+  "mastermindActivityIdle": "Idle",
+  "mastermindActivityRunning": "Running",
   "mastermindActivityTitle": "Activity",
+  "mastermindActivityWaiting": "Waiting",
   "mastermindAgeBasis": "Age basis",
   "mastermindAgeDays": "{count, plural, =1{1 day ago} other{{count} days ago}}",
   "mastermindAgeHours": "{count, plural, =1{1 h ago} other{{count} h ago}}",
@@ -5921,6 +5990,8 @@
   "mastermindForecastNone": "Not projected to run out before reset",
   "mastermindFreshCached": "cached",
   "mastermindFreshFresh": "fresh",
+  "mastermindFromFleet": "From fleet reports",
+  "mastermindFromLanes": "From lane reports",
   "mastermindGroupActions": "Actions",
   "mastermindGroupDecisions": "Decisions for you",
   "mastermindGroupFyi": "For your information",
@@ -5928,6 +5999,7 @@
   "mastermindInboxSearchPlaceholder": "Search Needs you",
   "mastermindInsightsLabel": "Insights",
   "mastermindItemAnsweredTitle": "This was answered or withdrawn",
+  "mastermindItemFor": "{kind} for {subject}",
   "mastermindItemGoneTitle": "This item is no longer in Mastermind",
   "mastermindItemUpdated": "This question was updated",
   "mastermindKindAction": "Action",
@@ -5966,7 +6038,9 @@
   "mastermindLiveAgo": "Live {age}",
   "mastermindLiveFor": "live {duration}",
   "mastermindMeasuredRuns": "{count, plural, =1{1 measured run} other{{count} measured runs}}",
+  "mastermindModelNotReported": "Model not reported",
   "mastermindMore": "More",
+  "mastermindNameProductArea": "{product} {area}",
   "mastermindNeedsAttention": "Needs attention",
   "mastermindNeedsYouHint": "Answer in the Inbox on your Mac.",
   "mastermindNeedsYouSeeAll": "See all ({count})",
@@ -5976,18 +6050,23 @@
   "mastermindNoSnapshotTitle": "Mastermind hasn't published yet",
   "mastermindNotConfiguredMessage": "Mastermind isn't connected on this build.",
   "mastermindNotConnectedTitle": "Not connected",
+  "mastermindNotReported": "Not reported",
+  "mastermindNotReportingCount": "{count} not reporting",
   "mastermindNotReversible": "Not reversible",
   "mastermindNothingNeedsReply": "Nothing needs a reply",
   "mastermindNothingNeedsYou": "Nothing needs you",
   "mastermindNowLabel": "Now",
   "mastermindObservedAt": "Observed",
   "mastermindOfflineShowing": "Offline · showing {time}",
+  "mastermindOpensLanes": "Opens the lane list",
   "mastermindOptionRecommended": "{option} · Recommended",
   "mastermindOriginLabel": "Origin",
   "mastermindPartialBucket": "partial bucket",
   "mastermindProductFilter": "Product",
   "mastermindProductsLabel": "Products",
-  "mastermindQuotaEmpty": "No quota data",
+  "mastermindPublishedAgo": "Published {age}",
+  "mastermindQueuedCount": "{count} queued",
+  "mastermindQuotaEmpty": "Quota not reported",
   "mastermindQuotaTitle": "Quota",
   "mastermindRange24h": "24 h",
   "mastermindRange7d": "7 days",
@@ -6047,6 +6126,7 @@
   "mastermindScopeFleet": "Fleet",
   "mastermindScopeModels": "Models",
   "mastermindScopeUsage": "Usage",
+  "mastermindSectionWithBasis": "{section} · {basis}",
   "mastermindSecurityFix": "Security fix",
   "mastermindSecurityGroup": "Security",
   "mastermindSecurityIssue": "Security issue",
@@ -6100,6 +6180,7 @@
   "mastermindShipUntracked": "Not tracked yet",
   "mastermindShipWithheld": "Withheld, open on Mac",
   "mastermindShipWithheldTooltip": "Details stay on the Mac",
+  "mastermindShowAll": "Show all {count}",
   "mastermindSignOutAction": "Sign out and sign in again",
   "mastermindSignOutConfirmAction": "Sign out",
   "mastermindSignOutConfirmMessage": "This signs you out of Tuturuuu on this device, including every saved account. You'll need to sign in again.",
@@ -6195,6 +6276,7 @@
   "mastermindUsageVerdictSurplus": "Surplus",
   "mastermindUsageWeeklyLeft": "Weekly left",
   "mastermindVersion": "Version",
+  "mastermindWaitingOnYou": "{count} on you",
   "mastermindWeekly": "Weekly",
   "mastermindWeeklyLeft": "Weekly {value} left",
   "mastermindWhy": "Why",

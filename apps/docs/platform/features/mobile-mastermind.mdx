@@ -58,29 +58,45 @@ connectivity alone changes.
 
 Home, Inbox, Work, Ship and Insights share one mini-app shell: the top navbar
 shows the destination title and no Back button, and the floating dock owns Back.
-Every tab sits behind the same access gate and freshness strip.
+Every tab sits behind the same access gate and freshness strip. Work is planned
+to become Threads (Home · Inbox · Threads · Ship · Insights); until the hub
+serves threads it shows today's lane list.
+
+In-screen views (Needs you | Decisions, Lanes | Backlog | Staff) use the compact
+`MastermindSegmentedControl`: a 32 pt track whose segments each own a 44 pt hit
+area, instead of the tall pill. When the segments cannot fit across at the
+current text size they stack into full-width 44 pt rows with a check on the
+selected one; the control never becomes a hidden horizontal scroller and labels
+are never truncated. List search uses `MastermindCollapsibleSearch`:
+hidden until the navbar search icon is tapped, kept
+open while a query is applied, folded away once cleared and unfocused. Every
+sheet opens on the root navigator so the floating dock never covers it.
 
 ## Freshness strip
 
-Every tab starts with one line, inside the scroll view. Data age is
+Each tab starts with one short line inside the scroll view. Data age is
 informational because publishing is manual at first; only a failed refresh or a
-degraded source is a warning. Times are absolute GMT+7.
+degraded source is a warning. The visible line carries an age or a short GMT+7
+time (with the day once the data is 20 hours old); screen readers hear the full
+sentence with the absolute GMT+7 date and time.
 
-| Condition | Strip |
+| Condition | Visible line |
 |---|---|
-| Published within 5 minutes | Updated `<time>` |
-| Older | Mastermind last published `<age>` · `<time>` |
+| Published within 5 minutes | Updated `<HH:mm>`, on Home only |
+| Older | Published `<age>` |
 | Refresh failed and the device has no connection | Offline · showing `<time>` |
 | Refresh failed while the device is online | Couldn't refresh · showing `<time>` |
 | Hub schema newer than the app | Update the app to read the latest Mastermind data · showing `<time>` |
 | Hub answered something unreadable | Couldn't read the latest update · showing `<time>` |
 | Any source not ok | appended: `<n>` sources degraded |
 
-The line is a live region, so a refresh that turns it into a warning is
-announced. With degraded sources it is tappable (44 dp tall) and opens the
-"Sources" bottom sheet: every source the snapshot reports, degraded ones first,
-each as a glyph, a name and a state word. Home also has a "Data sources" navbar
-action that opens the same sheet, whether or not a source is degraded.
+Healthy, fresh data hides the strip on every tab but Home. A warning tints only
+the glyph and a 3 pt leading bar; the text stays foreground so it keeps 4.5:1
+contrast in light mode. The line ellipsizes at normal text sizes and wraps past
+130%. It is a live region only while it is a warning. With degraded sources it
+is a 44 dp row with a chevron that opens the "Sources" sheet: every source the
+snapshot reports, degraded first, each as a glyph, a name and a state word.
+Home also has a "Data sources" navbar action that opens the same sheet.
 
 ## Before data arrives
 
@@ -100,20 +116,27 @@ never the primary action and only runs after the user confirms.
 
 ## Home
 
-Needs you comes first, then lanes at a glance, ship, quota, activity and, last,
-recent decisions. Needs you lists up to three normal items (decision, then
-action, then FYI, then publisher order); "See all (N)" counts normal items
-only. Each Needs-you row opens its item detail with a push, so Back returns to
-Home. Replies queued on the device show as "N replies waiting to send"
-directly under Needs you, the same row as in the Inbox.
+Order: freshness strip, activity tiles, Needs you, replies waiting to send,
+Ship, Quota, Activity and, last, recent decisions. Every list is capped and
+ends in "Show all N" only when it holds more than the cap.
 
-Each recent-decision row opens its decision detail with a push, so Back returns
-to Home, and "See all decisions" opens the Decisions segment of the Inbox.
-"See all", the lane chips, the Ship rows and "Usage" link to their tabs: a lane
-chip opens Work already filtered to that state, and a Ship row (a failing
-environment or a release) opens `/mastermind/ship?product=<product>`. A lane
-state with no lanes ("0 failed") uses the neutral list glyph; only a non-zero
-failed count carries the warning glyph.
+- **Activity tiles.** Running, Waiting, Idle and Failed, four across (two by
+  two past 130% text), each at least 44 × 72 and opening Work filtered to that
+  state. Waiting shows "`<n>` on you" when open decisions or actions wait on
+  the owner. A muted footnote reads "`<n>` queued · `<n>` not reporting" and
+  opens Work on queued lanes. Failed > 0 tints its glyph destructive; "0
+  failed" keeps a neutral glyph.
+- **Needs you.** Up to three normal items (decision, then action, then FYI,
+  then publisher order) with the count in the caption. The kind is a leading
+  glyph, the title is the display title, and the product is the second line
+  unless the title names it. Rows push the item detail, so Back returns Home.
+- **Ship.** Failing environments first, then the three most recent releases;
+  a release with no age reads `—` and sorts last. A basis shared by every row
+  moves into the caption ("Ship · GitHub deployment").
+- **Quota.** The three most urgent pools (the Insights order) with a sparkline;
+  a missing session budget or pacing reads `—`.
+- **Activity** and **recent decisions** show three each; decision rows push
+  their detail and "See all decisions" opens the Decisions segment.
 
 **Security rows** render as a single non-tappable "`<Product>` · security fix"
 line in a trailing "Security" group with no count. They have no severity, title
@@ -419,6 +442,29 @@ Delivery sections arrive later and reuse the table route below).
 
 ## Product decisions
 
+- **True activity counts.** Scope: Home tiles now; the lane list header and a
+  Threads badge read the same `MastermindActivity` model. Default: running,
+  waiting and idle come from the hub's `work.counts` only when its status is
+  `ok` and `checked_at` is within 15 minutes of the snapshot; stale/down
+  readings fall back to the latest `observability.fleet.series` point when
+  coverage is ok or partial and it is at most 15 minutes older than
+  `generated_at`, else from lane states, captioned "From lane reports". Queued
+  and failed always come from lanes; unknown or stale lanes are a "not
+  reporting" footnote, never a headline. "On you" counts open decisions and
+  actions, never FYI. Coverage: `presentation/activity_model_test.dart`,
+  `view/mastermind_home_v1_test.dart`.
+- **Friendly names.** Scope: every row and detail title. Default: the hub's
+  `[Name] Role` title shows verbatim; a redacted `Product · area · kind` title
+  is never shown: a lane uses its standing role, or "`<Product>` `<area>`" for
+  a child lane, and an item reads "Decision for Mastermind hub". Models shorten
+  to "Sonnet 5.5" or "GPT-6.1 sol"; an unknown model reads "Model not
+  reported". Coverage: `presentation/display_names_test.dart`.
+- **No bare unknown.** Scope: Home now, Ship and Insights next. Default: a
+  missing, blank or "unknown" reading renders a muted `—` (`ReportedText`)
+  announced as "Not reported" plus the hub's reason; the word "unknown" never
+  stands alone. Coverage: `view/mastermind_home_v1_test.dart`,
+  `view/forge_v1_fixture_test.dart`.
+
 - **Decisions journal.** Scope: the Inbox Decisions segment, the decision
   detail and Home's recent-decisions card. Default: the Inbox has a Needs you /
   Decisions segmented control with the segment in the URL; Home rows open the
@@ -488,7 +534,7 @@ signed hub events and sends a mobile push to Mastermind owners.
 
 ## Deferred to PR8
 
-- **Activity cursor (spec 2.10).** Home shows the latest five events from
+- **Activity cursor (spec 2.10).** Home shows the latest three events from
   `now.digest` as display only. The "new since you last looked" cursor and the
   full Activity feed arrive with PR8.
 
@@ -520,12 +566,16 @@ chart-spec gaps are deferred to PR8 with the remaining chart sections:
   links, redaction.
 - `mastermind_decision_page_test.dart`: decision fields, the gone and updated
   states, no reply controls.
-- `mastermind_freshness_test.dart`: strip states, the live region and the
-  sources sheet opened from the strip.
-- `mastermind_sources_sheet_test.dart`: the Home navbar action opens the same
-  sheet, degraded sources first.
-- `mastermind_home_page_test.dart` and `home_model_test.dart`: ordering,
-  security redaction, dock clearance, tab links.
+- `mastermind_freshness_test.dart`: short line and full spoken sentence,
+  hidden-when-healthy off Home, glyph-only tint, the live region, the sheet.
+- `mastermind_sources_sheet_test.dart` and
+  `mastermind_sources_root_overlay_test.dart`: the Home action opens the sheet,
+  degraded first, on the root navigator above the dock.
+- `mastermind_home_page_test.dart`, `home_model_test.dart` and
+  `mastermind_home_v1_test.dart`: order, tiles and links, caps, names, `—`,
+  security redaction, last-row dock clearance at 1.0 and 2.0 text.
+- `widgets/mastermind_segmented_control_test.dart` (44 pt targets, semantics)
+  and `widgets/collapsible_search_test.dart` (icon, refresh isolation, fold-away).
 - `mastermind_work_page_test.dart`: grouping, the state, product and area
   filters and their URL, chip counts following the filters, Clear filters,
   Back from a lane keeping the Home chip filter, security redaction,
@@ -620,11 +670,8 @@ without the legacy `state`. Checked field timestamps and spoken chart gap bounds
 use the same GMT+7 wall time as the rest of Mastermind.
 
 Pages consume the shell's published bottom clearance through `AppPageScrollView`.
-The Sources sheet retains that clearance before the page scrollable consumes it,
-then carries it across the modal navigator boundary. It uses the shared sheet
-scaffold's trailing space; the feature does not estimate dock dimensions. The
-source-sheet regression verifies that its last row stays above the dock and can
-be hit-tested after scrolling to the end.
+The Sources sheet opens on the root navigator, above the floating dock, so the
+system safe area pads its end and no dock estimate is needed.
 
 Forge v1 publishes field health beside the legacy arrays: `ship[]` supplies
 `deploy`, `ci`, and `released_at`; `work.lanes[]` supplies age/ETA observations;

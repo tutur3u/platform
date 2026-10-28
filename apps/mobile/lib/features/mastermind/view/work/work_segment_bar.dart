@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/features/mastermind/presentation/work_model.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_segmented_control.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// Lanes, Backlog and Staff: three views of the same Work tab.
@@ -19,8 +20,8 @@ class WorkSegmentBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppLayout.sectionGap),
-      child: AppSegmentedControl<WorkSegment>(
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: MastermindSegmentedControl<WorkSegment>(
         selected: selected,
         onChanged: onChanged,
         segments: [

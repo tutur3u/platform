@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/features/mastermind/presentation/inbox_segment.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_segmented_control.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// Needs you and Decisions: two views of the same Inbox tab.
@@ -19,8 +20,8 @@ class InboxSegmentBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppLayout.sectionGap),
-      child: AppSegmentedControl<InboxSegment>(
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: MastermindSegmentedControl<InboxSegment>(
         selected: selected,
         onChanged: onChanged,
         segments: [

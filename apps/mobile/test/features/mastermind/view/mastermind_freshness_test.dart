@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
+import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/features/mastermind/cubit/mastermind_snapshot_cubit.dart';
 import 'package:mobile/features/mastermind/data/mastermind_snapshot_source.dart';
 import 'package:mobile/features/mastermind/parse/snapshot_parser.dart';
@@ -11,8 +13,10 @@ import '../../../helpers/helpers.dart';
 import '../../../helpers/mastermind_home_fixture.dart';
 import '../../../helpers/mastermind_snapshot_builder.dart';
 
-// generated_at is 2026-01-31T17:30Z, which is 00:30 on 1 Feb in GMT+7.
+// generated_at is 2026-01-31T17:30Z, which is 00:30 on 1 Feb in GMT+7. The
+// visible line shows the short time; the full date is in the semantics.
 const _time = 'Feb 1, 2026 00:30 GMT+7';
+const _short = '00:30';
 
 MastermindSnapshotReady _ready({
   SnapshotRefreshFailure? failure,
@@ -123,10 +127,12 @@ void main() {
       MastermindSnapshotReady ready,
       Duration age, {
       bool online = true,
+      bool showWhenHealthy = true,
     }) => tester.pumpApp(
       Align(
         alignment: Alignment.topLeft,
         child: MastermindFreshnessStrip(
+          showWhenHealthy: showWhenHealthy,
           freshness: MastermindFreshness.of(
             ready,
             clock: () => generatedAt.add(age),
@@ -137,18 +143,75 @@ void main() {
     );
 
     testWidgets('fresh data reads Updated with the GMT+7 time', (tester) async {
+      final handle = tester.ensureSemantics();
       await pumpStrip(tester, _ready(), const Duration(minutes: 2));
-      expect(find.text('Updated $_time'), findsOneWidget);
+      expect(find.text('Updated $_short'), findsOneWidget);
+      expect(find.bySemanticsLabel('Updated $_time'), findsOneWidget);
+      handle.dispose();
+    });
+
+    testWidgets('healthy and fresh data hides the strip off Home', (
+      tester,
+    ) async {
+      await pumpStrip(
+        tester,
+        _ready(),
+        const Duration(minutes: 2),
+        showWhenHealthy: false,
+      );
+      expect(find.textContaining('Updated'), findsNothing);
+    });
+
+    testWidgets('a warning shows on every tab', (tester) async {
+      await pumpStrip(
+        tester,
+        _ready(
+          sources: [
+            {'source': 'ci', 'state': 'stale'},
+          ],
+        ),
+        const Duration(minutes: 2),
+        showWhenHealthy: false,
+      );
+      expect(find.textContaining('1 source degraded'), findsOneWidget);
+    });
+
+    testWidgets('old data shows on every tab too', (tester) async {
+      await pumpStrip(
+        tester,
+        _ready(),
+        const Duration(hours: 3),
+        showWhenHealthy: false,
+      );
+      expect(find.text('Published 3 h ago'), findsOneWidget);
+    });
+
+    testWidgets('a warning tints the glyph and bar, never the text', (
+      tester,
+    ) async {
+      await pumpStrip(
+        tester,
+        _ready(
+          sources: [
+            {'source': 'ci', 'state': 'stale'},
+          ],
+        ),
+        const Duration(minutes: 2),
+      );
+      final context = tester.element(find.byType(MastermindFreshnessStrip));
+      final colors = AppTokens.of(context).colorScheme;
+      final text = tester.widget<Text>(find.textContaining('degraded'));
+      expect(text.style?.color, colors.foreground);
+      final glyph = tester.widget<Icon>(find.byIcon(AppIcons.warning));
+      expect(glyph.color, AppTone.warning.foreground(colors));
+      expect(text.maxLines, 1);
     });
 
     testWidgets('old data reads as last published, not as an error', (
       tester,
     ) async {
       await pumpStrip(tester, _ready(), const Duration(hours: 3));
-      expect(
-        find.text('Mastermind last published 3 h ago · $_time'),
-        findsOneWidget,
-      );
+      expect(find.text('Published 3 h ago'), findsOneWidget);
       expect(find.byIcon(AppIcons.warning), findsNothing);
     });
 
@@ -163,7 +226,7 @@ void main() {
         const Duration(hours: 3),
         online: false,
       );
-      expect(find.text('Offline · showing $_time'), findsOneWidget);
+      expect(find.text('Offline · showing $_short'), findsOneWidget);
       expect(find.byIcon(AppIcons.warning), findsOneWidget);
     });
 
@@ -179,7 +242,7 @@ void main() {
         ),
         const Duration(hours: 3),
       );
-      expect(find.text("Couldn't refresh · showing $_time"), findsOneWidget);
+      expect(find.text("Couldn't refresh · showing $_short"), findsOneWidget);
       expect(find.textContaining('Offline'), findsNothing);
       expect(find.byIcon(AppIcons.warning), findsOneWidget);
     });
@@ -194,7 +257,7 @@ void main() {
       );
       expect(
         find.text(
-          'Update the app to read the latest Mastermind data · showing $_time',
+          'Update the app to read the latest Mastermind data · showing $_short',
         ),
         findsOneWidget,
       );
@@ -207,7 +270,7 @@ void main() {
         const Duration(minutes: 1),
       );
       expect(
-        find.text("Couldn't read the latest update · showing $_time"),
+        find.text("Couldn't read the latest update · showing $_short"),
         findsOneWidget,
       );
     });
@@ -224,9 +287,11 @@ void main() {
         ),
         const Duration(minutes: 1),
       );
-      const sentence = 'Updated $_time · 2 sources degraded';
-      expect(find.text(sentence), findsOneWidget);
-      expect(find.bySemanticsLabel(sentence), findsOneWidget);
+      expect(find.text('Updated $_short · 2 sources degraded'), findsOneWidget);
+      expect(
+        find.bySemanticsLabel('Updated $_time · 2 sources degraded'),
+        findsOneWidget,
+      );
       handle.dispose();
     });
 
@@ -288,7 +353,7 @@ void main() {
 
     testWidgets('a healthy strip has nothing to open', (tester) async {
       await pumpStrip(tester, _ready(), const Duration(minutes: 1));
-      await tester.tap(find.text('Updated $_time'));
+      await tester.tap(find.text('Updated $_short'));
       await tester.pumpAndSettle();
       expect(find.text('Sources'), findsNothing);
     });
