@@ -222,6 +222,10 @@ export async function createWorkspaceFromOnboarding(
       };
     }
 
+    // Create the service-role client before the workspace exists so a missing
+    // configuration cannot leave a half-created workspace behind.
+    const sbAdmin = await createAdminClient();
+
     // First, create the workspace
     const { data: workspace, error: workspaceError } = await supabase
       .from('workspaces')
@@ -237,23 +241,32 @@ export async function createWorkspaceFromOnboarding(
       return { success: false, error: 'Failed to create workspace' };
     }
 
-    // Add the user as a workspace member. `add_ws_creator()` has already done
-    // this for the creator, so a plain insert collides on the primary key and
-    // the cleanup below would delete the workspace that was just created.
-    const { error: memberError } = await supabase
+    // `add_ws_creator()` normally adds the creator as a member. Every
+    // authenticated INSERT into workspace_members is rejected by RLS, even with
+    // ON CONFLICT DO NOTHING, so confirm the creator row with the service role
+    // and add it only when the trigger did not.
+    const { data: existingMember, error: memberLookupError } = await sbAdmin
       .from('workspace_members')
-      .upsert(
-        {
-          ws_id: workspace.id,
-          user_id: userId,
-        },
-        { ignoreDuplicates: true, onConflict: 'ws_id,user_id' }
-      );
+      .select('user_id')
+      .eq('ws_id', workspace.id)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    let memberError = memberLookupError;
+
+    if (!memberError && !existingMember) {
+      const { error: insertError } = await sbAdmin
+        .from('workspace_members')
+        .insert({ ws_id: workspace.id, user_id: user.id });
+
+      // A concurrent insert of the same creator row still leaves a member.
+      memberError = insertError?.code === '23505' ? null : insertError;
+    }
 
     if (memberError) {
       console.error('Error adding user as workspace member:', memberError);
       // Try to clean up the workspace if adding member failed
-      await supabase.from('workspaces').delete().eq('id', workspace.id);
+      await sbAdmin.from('workspaces').delete().eq('id', workspace.id);
       return { success: false, error: 'Failed to add user to workspace' };
     }
 
@@ -271,7 +284,6 @@ export async function createWorkspaceFromOnboarding(
     // Create Polar customer and free subscription for the new workspace
     try {
       const polar = createPolarClient();
-      const sbAdmin = await createAdminClient();
 
       // Get or create Polar customer
       await getOrCreatePolarCustomer({
