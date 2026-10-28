@@ -29,6 +29,18 @@ export function TaskPanelResizeHandle() {
     window.addEventListener('resize', sync);
     return () => window.removeEventListener('resize', sync);
   }, []);
+  // Closing the panel mid-drag (Escape) unmounts the handle without a
+  // pointerup: finish the drag so the board's transition comes back and the
+  // width is kept.
+  useEffect(
+    () => () => {
+      const current = drag.current;
+      if (!current) return;
+      drag.current = null;
+      endTaskPanelResize(current.width);
+    },
+    []
+  );
 
   const save = (next: number) => setWidth(saveTaskPanelWidth(next));
   const stop = () => {
