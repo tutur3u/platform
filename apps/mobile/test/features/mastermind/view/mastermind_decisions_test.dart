@@ -78,6 +78,26 @@ void main() {
       expect(tops.toSet(), hasLength(order.length));
     });
 
+    testWidgets('17:00:00Z is the first instant of the next GMT+7 day', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        decisionsJson([
+          decisionRow(1, title: 'Last second', at: '2026-01-31T16:59:59+00:00'),
+          decisionRow(2, title: 'Midnight', at: '2026-01-31T17:00:00+00:00'),
+        ]),
+      );
+      expect(find.text('Jan 31, 2026'), findsOneWidget);
+      expect(find.text('Feb 1, 2026'), findsOneWidget);
+      expect(find.text('23:59'), findsOneWidget);
+      expect(find.text('00:00'), findsOneWidget);
+      final order = ['Feb 1, 2026', 'Midnight', 'Jan 31, 2026', 'Last second'];
+      final tops = [for (final label in order) _top(tester, label)];
+      expect([...tops]..sort(), tops, reason: order.join(' < '));
+      expect(tops.toSet(), hasLength(order.length));
+    });
+
     testWidgets('shows the GMT+7 time of each decision', (tester) async {
       await _pump(tester, decisionsJson(_rows));
       expect(find.text('01:30'), findsOneWidget); // 18:30 UTC
@@ -447,12 +467,13 @@ void main() {
       expect(find.text('Security'), findsNothing);
     });
 
-    testWidgets('the security rows stay out of the Decisions counts', (
+    testWidgets('each GMT+7 day header counts only its own decisions', (
       tester,
     ) async {
       final json = homeJson()..['decisions'] = _rows;
       await _pump(tester, json);
-      // Day counts only: 2, 1 and 1 decisions.
+      // Feb 1 holds 2 decisions, Jan 31 and Jan 30 one each; the security rows
+      // of the full fixture add no count to any day.
       expect(find.text('2'), findsOneWidget);
       expect(find.text('1'), findsNWidgets(2));
     });

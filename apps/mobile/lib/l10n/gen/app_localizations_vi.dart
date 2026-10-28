@@ -12929,6 +12929,9 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String get mastermindReversibilityLabel => 'Khả năng hoàn tác';
+
+  @override
   String get mastermindReversible => 'Có thể hoàn tác';
 
   @override

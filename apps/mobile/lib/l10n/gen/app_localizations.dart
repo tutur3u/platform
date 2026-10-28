@@ -24613,6 +24613,12 @@ abstract class AppLocalizations {
   /// **'Resets {dateTime}'**
   String mastermindResetsAt(String dateTime);
 
+  /// No description provided for @mastermindReversibilityLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Reversibility'**
+  String get mastermindReversibilityLabel;
+
   /// No description provided for @mastermindReversible.
   ///
   /// In en, this message translates to:

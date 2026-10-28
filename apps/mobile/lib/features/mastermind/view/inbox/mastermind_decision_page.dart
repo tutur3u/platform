@@ -109,16 +109,22 @@ class _Detail extends StatelessWidget {
           showLeadingBrand: false,
         ),
         if (updated)
-          AppGroupedSection.spaced(
-            children: [
-              AppGroupedRow(
-                leading: const AppIconTile(
-                  icon: AppIcons.info,
-                  tone: AppTone.warning,
+          // A live region, so a screen reader announces the change when the
+          // snapshot republishes while the page is open.
+          Semantics(
+            container: true,
+            liveRegion: true,
+            child: AppGroupedSection.spaced(
+              children: [
+                AppGroupedRow(
+                  leading: const AppIconTile(
+                    icon: AppIcons.info,
+                    tone: AppTone.warning,
+                  ),
+                  title: Text(l10n.mastermindDecisionUpdated),
                 ),
-                title: Text(l10n.mastermindDecisionUpdated),
-              ),
-            ],
+              ],
+            ),
           ),
         // The title is the shell's title override above; the body repeats none.
         AppGroupedSection.spaced(
@@ -140,7 +146,7 @@ class _Detail extends StatelessWidget {
               value: _decidedBy(l10n, DecidedBy.parse(decision.by)),
             ),
             _Fact(
-              label: l10n.mastermindReversible,
+              label: l10n.mastermindReversibilityLabel,
               value: decision.reversible
                   ? l10n.mastermindReversibleYes
                   : l10n.mastermindReversibleNo,

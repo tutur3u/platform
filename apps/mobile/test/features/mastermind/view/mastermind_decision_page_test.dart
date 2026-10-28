@@ -10,10 +10,10 @@ import '../../../helpers/helpers.dart';
 import '../../../helpers/mastermind_decisions_fixture.dart';
 import '../../../helpers/mastermind_view_harness.dart';
 
-void _surface(WidgetTester tester) {
+void _surface(WidgetTester tester, {double width = 430}) {
   tester.view
     ..devicePixelRatio = 1
-    ..physicalSize = const Size(430, 3000);
+    ..physicalSize = Size(width, 3000);
   addTearDown(() {
     tester.view.resetPhysicalSize();
     tester.view.resetDevicePixelRatio();
@@ -25,8 +25,9 @@ Future<MastermindViewHarness> _pump(
   Map<String, dynamic> json, {
   int id = 1,
   GoRouter? router,
+  double width = 430,
 }) async {
-  _surface(tester);
+  _surface(tester, width: width);
   final harness = MastermindViewHarness(
     source: FakeHubSource(bytes: snapshotBytes(json)),
   );
@@ -91,7 +92,7 @@ void main() {
       expect(find.text('Decided by'), findsOneWidget);
       // The role slug is shown verbatim.
       expect(find.text('Role: architect'), findsOneWidget);
-      expect(find.text('Reversible'), findsOneWidget);
+      expect(find.text('Reversibility'), findsOneWidget);
       expect(find.text('Not reversible'), findsOneWidget);
       expect(find.text('Risk: high'), findsOneWidget);
       expect(find.text('Delegated'), findsOneWidget);
@@ -128,6 +129,20 @@ void main() {
       await _pump(tester, decisionsJson([decisionRow(1)]));
       expect(find.byType(TextField), findsNothing);
       expect(find.text('Send reply'), findsNothing);
+    });
+  });
+
+  group('detail in Vietnamese', () {
+    testWidgets('the reversibility label is not its own value', (tester) async {
+      tester.platformDispatcher.localesTestValue = const [Locale('vi')];
+      addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+      // The test font is as wide as it is tall, so Vietnamese needs room.
+      await _pump(tester, decisionsJson([decisionRow(1)]), width: 900);
+      const label = 'Khả năng hoàn tác';
+      const value = 'Có thể hoàn tác';
+      expect(label, isNot(value));
+      expect(find.text(label), findsOneWidget);
+      expect(find.text(value), findsOneWidget);
     });
   });
 
@@ -199,6 +214,7 @@ void main() {
 
   group('updated', () {
     testWidgets('a changed decision shows the banner', (tester) async {
+      final handle = tester.ensureSemantics();
       final harness = await _pump(tester, decisionsJson([decisionRow(1)]));
       expect(find.text('This decision was updated'), findsNothing);
       await _publish(
@@ -208,6 +224,16 @@ void main() {
       );
       expect(find.text('This decision was updated'), findsOneWidget);
       expect(find.text('A different reason.'), findsOneWidget);
+      // The banner is announced, not just shown.
+      expect(
+        tester
+            .getSemantics(find.text('This decision was updated'))
+            .getSemanticsData()
+            .flagsCollection
+            .isLiveRegion,
+        isTrue,
+      );
+      handle.dispose();
     });
 
     testWidgets('an unchanged republish shows no banner', (tester) async {

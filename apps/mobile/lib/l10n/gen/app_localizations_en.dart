@@ -13069,6 +13069,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get mastermindReversibilityLabel => 'Reversibility';
+
+  @override
   String get mastermindReversible => 'Reversible';
 
   @override

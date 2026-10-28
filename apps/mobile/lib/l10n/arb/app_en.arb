@@ -5978,6 +5978,7 @@
   "mastermindReservePacing": "Reserve pacing (chart rule)",
   "mastermindReservePacingInfo": "This is the chart reserve check, not the routing decision.",
   "mastermindResetsAt": "Resets {dateTime}",
+  "mastermindReversibilityLabel": "Reversibility",
   "mastermindReversible": "Reversible",
   "mastermindReversibleNo": "Not reversible",
   "mastermindReversibleYes": "Can be reversed",

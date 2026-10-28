@@ -5730,6 +5730,7 @@
   "mastermindReservePacing": "Nhịp dự trữ (quy tắc biểu đồ)",
   "mastermindReservePacingInfo": "Đây là phép kiểm tra dự trữ của biểu đồ, không phải quyết định định tuyến.",
   "mastermindResetsAt": "Đặt lại lúc {dateTime}",
+  "mastermindReversibilityLabel": "Khả năng hoàn tác",
   "mastermindReversible": "Có thể hoàn tác",
   "mastermindReversibleNo": "Không thể hoàn tác",
   "mastermindReversibleYes": "Có thể hoàn tác",
