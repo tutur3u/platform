@@ -249,25 +249,6 @@ and sibling planning tabs are unchanged. Regression coverage lives in
 - The filter sheet must disclose that default exclusion and indicate when a selected list/status filter overrides it, because those filters intentionally reveal otherwise hidden list categories.
 - Moving a task between lists, including marking it done or closed, should refresh the affected source and destination lists instead of relying on a full board reload.
 
-## Task Side Panel On Boards
-
-On a board, opening an existing task shows it in a panel docked to the right
-edge instead of a centered dialog. The board leaves room for the panel and stays
-usable: clicking another card swaps the panel's task, X or Escape closes it, and
-Expand switches to the focused dialog. The panel reuses the task dialog content
-(header, title, details tabs, description); its header actions wrap under the
-title instead of clipping at the panel's width.
-
-Scope and exceptions: only task edits opened while a board view is mounted use
-the panel (read-only and public boards excluded). Creating a task keeps its
-create presentation, documents keep their document presentation, and drafts stay
-fullscreen. The panel is not a saved presentation preference.
-
-Regression coverage: `packages/tasks-ui/src/tu-do/shared/task-dialog-presentation.test.ts`,
-`packages/tasks-ui/src/tu-do/shared/task-panel-surface.test.ts`,
-`packages/tasks-ui/src/tu-do/shared/kanban-presentation.test.tsx` and
-`packages/ui/src/components/ui/dialog.test.tsx`.
-
 ## Task Board Realtime And Cache Notes
 
 - Successful task mutations must update visible TanStack Query caches in place before broadcasting. Patch all visible task shapes that can render the same card: `['tasks', boardId]`, every `['tasks-full', boardId, ...]` query, `['task', taskId]`, matching `['workspaceTask', wsId, taskId]`, and personal task buckets when present.
