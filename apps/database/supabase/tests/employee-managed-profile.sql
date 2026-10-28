@@ -61,7 +61,7 @@ select throws_ok($$select pg_temp.profile_update('Duyên Dương','foreignprofil
 select throws_ok($$select pg_temp.profile_update('Duyên Dương','nullprofile')$$,'23505','Username is unavailable','NULL owner not adopted');
 select throws_ok($$select pg_temp.profile_update('Duyên Dương','admin')$$,'22023','Invalid username','reserved handle denied');
 select is((select managed_name from private.infrastructure_employees where user_id='00000000-0000-4000-8000-000000012002'),'Original Name','failed updates rollback registry');
-select is((select count(*) from private.employee_profile_renames),0::bigint,'failure leaves no provenance');
+select is((select count(*) from private.employee_profile_renames where user_id='00000000-0000-4000-8000-000000012002'),0::bigint,'failure leaves no provenance');
 select is((select count(*) from private.user_profile_change_events where user_id='00000000-0000-4000-8000-000000012002' and field='handle'),0::bigint,'failure leaves no quota event');
 select is(pg_temp.profile_update('Duyên Dương','duyenduong')->>'revision','1','Unicode and handle atomic rename');
 select is((select display_name from public.users where id='00000000-0000-4000-8000-000000012002'),'Duyên Dương','public name agrees');
@@ -71,7 +71,7 @@ select is(pg_temp.observe()->'account'->>'displayName','Duyên Dương','CREATE 
 select is(pg_temp.observe()->'account'->>'creationDisplayName','Original Name','CREATE observation binds immutable intent');
 select is(pg_temp.observe()->'operation'->>'displayName','Original Name','original operation name preserved');
 select is(pg_temp.profile_update('Duyên Dương','duyenduong')->>'revision','1','exact replay returns original receipt');
-select is((select count(*) from private.employee_profile_renames),1::bigint,'replay does not append');
+select is((select count(*) from private.employee_profile_renames where user_id='00000000-0000-4000-8000-000000012002'),1::bigint,'replay does not append');
 select throws_ok($$select pg_temp.profile_update('Other','duyenduong')$$,'23505','Employee profile operation payload conflict','operation payload bound');
 select throws_ok($$select pg_temp.profile_update('Other','duyenduong',0,gen_random_uuid())$$,'23514','Employee profile preimage conflict','stale revision rejected');
 select throws_ok($$select pg_temp.profile_update('Other','anotherprofile',1,gen_random_uuid())$$,'PT429','Username can be changed every 14 days','cooldown retained');

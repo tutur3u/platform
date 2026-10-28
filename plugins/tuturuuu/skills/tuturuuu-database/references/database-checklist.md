@@ -61,3 +61,13 @@ and verify partial bytes, the last complete record and identical retry behavior.
 Run the retained proposal metadata suite explicitly from the repo root using the
 [local recovery command](../../../../../apps/docs/build/development-tools/local-supabase-development.mdx#validating-an-exact-worktree-in-isolation).
 It is outside active CI and root script discovery; database scripts globs do not cover it.
+
+### Full pgTAP baseline
+
+Reset the isolated database before each full run: independent-session concurrency
+fixtures commit data. Scope counts to fixture IDs. On non-superuser local images,
+configure `test.dblink_connstr` after reset with a password-authenticated connection
+to the same disposable database; loopback trust fails dblink authentication.
+See the local Supabase development runbook. Preserve security negatives, distinguish
+restrictive MFA policies from access-granting policies, and seed provider identities
+for verified staff. Report runtime/schema regressions instead of weakening assertions.
