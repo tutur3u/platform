@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { BoardSprint } from '@tuturuuu/internal-api/task-sprints';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type React from 'react';
@@ -19,9 +19,13 @@ vi.mock('next-intl', () => ({
 }));
 
 vi.mock('@tuturuuu/ui/dropdown-menu', () => ({
-  DropdownMenu: ({ children }: { children: React.ReactNode }) => (
-    <div>{children}</div>
-  ),
+  DropdownMenu: ({
+    children,
+    open,
+  }: {
+    children: React.ReactNode;
+    open?: boolean;
+  }) => <div data-open={String(open)}>{children}</div>,
   DropdownMenuContent: ({ children }: { children: React.ReactNode }) => (
     <div role="menu">{children}</div>
   ),
@@ -125,14 +129,23 @@ describe('TaskSprintRow', () => {
     expect(screen.queryByText(/due_with_sprint/)).not.toBeInTheDocument();
   });
 
-  it('moves the task to another open sprint', () => {
-    render(<TaskSprintRow boardId="b" canEdit task={task()} wsId="w" />);
+  it('closes the menu, then moves the task to another open sprint', async () => {
+    const { container } = render(
+      <TaskSprintRow boardId="b" canEdit task={task()} wsId="w" />
+    );
     fireEvent.click(
       screen.getByRole('menuitem', { name: 'move_to_sprint:Sprint 3' })
     );
-    expect(state.mutate).toHaveBeenCalledWith(
-      { sprintId: 'sprint-3', taskIds: ['t1'] },
-      expect.any(Object)
+    expect(container.querySelector('[data-open]')).toHaveAttribute(
+      'data-open',
+      'false'
+    );
+    expect(state.mutate).not.toHaveBeenCalled();
+    await waitFor(() =>
+      expect(state.mutate).toHaveBeenCalledWith(
+        { sprintId: 'sprint-3', taskIds: ['t1'] },
+        expect.any(Object)
+      )
     );
   });
 
