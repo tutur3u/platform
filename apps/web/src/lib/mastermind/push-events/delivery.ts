@@ -6,6 +6,7 @@ import {
   sendCustomPushMessageBatch,
 } from '@/lib/notifications/push-delivery';
 import {
+  completeMastermindPushClaim,
   MASTERMIND_PUSH_REPLAY_SECONDS,
   releaseMastermindPushClaim,
 } from './claims';
@@ -21,6 +22,7 @@ import {
 
 export const MASTERMIND_PUSH_COALESCE_SECONDS = 60;
 export const MASTERMIND_PUSH_TTL_MS = 6 * 60 * 60 * 1000;
+const SENT_MARKER_BUDGET_MS = 1_000;
 const MAX_OWNERS = 50;
 const MAX_DEVICES = 500;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -187,6 +189,8 @@ export async function deliverMastermindPushEvent({
 
       const coalesceKey = `mastermind:push:coalesce:${userId}:${event.type}`;
       const coalesceToken = `pending:${crypto.randomUUID()}`;
+      const coalesceExpiresAt =
+        Date.now() + MASTERMIND_PUSH_COALESCE_SECONDS * 1000;
       const claimed = await deadline.run(() =>
         redis.set(coalesceKey, coalesceToken, {
           ex: MASTERMIND_PUSH_COALESCE_SECONDS,
@@ -194,28 +198,52 @@ export async function deliverMastermindPushEvent({
         })
       );
       if (claimed !== 'OK') {
-        result.coalesced += 1;
+        if ((await deadline.run(() => redis.get(coalesceKey))) === 'done') {
+          result.coalesced += 1;
+        } else {
+          result.failed += 1;
+        }
         return;
       }
 
       let deliveredCount = 0;
       let invalidTokens: string[] = [];
       try {
-        ({ deliveredCount, invalidTokens } = await deadline.run(() =>
-          sendCustomPushMessageBatch({
-            devices: userDevices,
-            message,
-          })
+        ({ deliveredCount, invalidTokens } = await deadline.run(
+          () =>
+            sendCustomPushMessageBatch({
+              devices: userDevices,
+              message,
+            }),
+          { checkAfter: false }
         ));
       } catch (error) {
         if (error instanceof MastermindPushDeadlineExceeded) throw error;
         deliveredCount = 0;
       }
       if (deliveredCount > 0) {
-        await deadline.run(() =>
-          redis.set(sentKey, '1', { ex: MASTERMIND_PUSH_REPLAY_SECONDS })
-        );
+        await writeSentMarker(sentKey);
         result.sent += 1;
+        deadline.check();
+        const remainingSeconds = Math.ceil(
+          (coalesceExpiresAt - Date.now()) / 1000
+        );
+        if (remainingSeconds > 0) {
+          await deadline.run(() =>
+            Promise.resolve(
+              completeMastermindPushClaim(
+                redis,
+                coalesceKey,
+                coalesceToken,
+                remainingSeconds
+              )
+            ).catch(() =>
+              console.warn('Failed to complete Mastermind push window', {
+                eventKey: mastermindPushEventKey(event),
+              })
+            )
+          );
+        }
       } else {
         // A stale attempt must never delete a newer owner window.
         await deadline.run(() =>
@@ -238,6 +266,28 @@ export async function deliverMastermindPushEvent({
       }
     }
     return result;
+
+    async function writeSentMarker(sentKey: string) {
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      try {
+        await Promise.race([
+          redis.set(sentKey, '1', { ex: MASTERMIND_PUSH_REPLAY_SECONDS }),
+          new Promise<never>((_resolve, reject) => {
+            timer = setTimeout(
+              () =>
+                reject(new Error('Mastermind push receipt deadline exceeded')),
+              SENT_MARKER_BUDGET_MS
+            );
+          }),
+        ]);
+      } catch {
+        console.warn('Failed to mark Mastermind push owner as delivered', {
+          eventKey: mastermindPushEventKey(event),
+        });
+      } finally {
+        clearTimeout(timer);
+      }
+    }
   } catch (error) {
     if (!(error instanceof MastermindPushDeadlineExceeded)) throw error;
     result.failed +=

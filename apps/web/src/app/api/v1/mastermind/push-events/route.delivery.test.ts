@@ -182,7 +182,7 @@ describe('POST /api/v1/mastermind/push-events delivery', () => {
 
     const partial = await POST(signedRequest(baseEvent));
     expect(partial.status).toBe(502);
-    expect(liveValue(coalesceKey(OWNER))).toMatch(/^pending:[0-9a-f-]{36}$/);
+    expect(liveValue(coalesceKey(OWNER))).toBe('done');
     expect(liveValue(coalesceKey(SECOND_OWNER))).toBeNull();
     expect(liveValue(replayKey(baseEvent))).toBeNull();
 

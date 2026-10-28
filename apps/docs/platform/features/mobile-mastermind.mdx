@@ -434,8 +434,13 @@ signed hub events and sends a mobile push to Mastermind owners.
 - **Retries:** successful owners are skipped for 24 hours per event, including
   partial retries after the coalescing window. Token-owned claims prevent stale
   requests from releasing newer claims. Fan-out stops after 60 seconds and
-  returns 502 for unreached owners. This applies to the web push endpoint;
-  mobile tap behavior is unchanged.
+  returns 502 for unreached owners. Observed FCM success gets a bounded,
+  best-effort receipt write before the deadline is honoured; receipt failure
+  warns and still counts as sent. A retry inside a pending coalescing window
+  remains failed and retryable until the outcome is confirmed or the window
+  expires, rather than completing the event. Unstored receipts can allow
+  duplicates after the window expires if another owner failed. These rules
+  apply to the web push endpoint; mobile tap behavior is unchanged.
 - **Default:** off until Release Desk provisions `MASTERMIND_PUSH_HMAC_SECRET`
   and `MASTERMIND_PUSH_OWNER_IDS`; without the secret the route sends nothing.
 - **Regression coverage:**

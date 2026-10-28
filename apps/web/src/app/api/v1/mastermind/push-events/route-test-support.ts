@@ -59,7 +59,10 @@ export const fixture = {
 
 export function setUpPushEventsFixture() {
   vi.clearAllMocks();
-  vi.useFakeTimers({ now: NOW, toFake: ['Date'] });
+  vi.useFakeTimers({
+    now: NOW,
+    toFake: ['Date', 'setTimeout', 'clearTimeout'],
+  });
   vi.spyOn(console, 'warn').mockImplementation(() => {});
   vi.spyOn(console, 'info').mockImplementation(() => {});
   vi.stubEnv('MASTERMIND_PUSH_HMAC_SECRET', SECRET);

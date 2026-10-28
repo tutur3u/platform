@@ -82,20 +82,37 @@ the cap whatever `Content-Length` says, including chunked bodies without one.
   events in the window are dropped (the snapshot carries them). An owner counts
   as sent only when FCM reports at least one successful delivery; a send that
   throws or delivers to zero devices is a failure. Coalescing claims also use
-  random tokens and compare-and-delete, allowing immediate retries without
-  releasing a newer request's window.
+  `pending:<UUID>` tokens and compare-and-delete, allowing immediate retries
+  without releasing a newer request's window. Only confirmed FCM success
+  atomically changes its matching window to `done`, retaining the remainder of
+  the 60-second window (rounded up to a whole second). A held window that is
+  still pending, or disappears before it can be read, counts as failed rather
+  than coalesced. The event therefore stays retryable while any owner outcome
+  is unknown or failed, including a retry immediately after a deadline 502.
+  Once that window expires, the sender can retry the owner.
 - **Partial retries:** successful owners receive
   `mastermind:push:event:<eventKey>:sent:<owner>` receipts with a 24-hour TTL.
   Every attempt skips those owners, including retries after the 60-second
   coalescing window expires. Receipts are never deleted by failed requests.
+  A receipt write has a separate one-second bound. A Redis error or timeout is
+  warned with the event key only; the known delivery still counts as sent and
+  later owners continue while the fan-out budget remains. If a receipt cannot
+  be stored and the event later fails for another owner, a retry after the
+  coalescing window can duplicate that successful push.
 - **Deadline:** the whole fan-out has a 60-second budget, below the 2-minute
   pending TTL. A stalled lookup or FCM call ends the fan-out; unreached owners
-  count as failed and the route returns 502. Late results cannot resume it.
-  The race bounds server waiting; it cannot cancel an FCM request already
-  submitted or guarantee exactly-once delivery after an unknown FCM outcome.
+  count as failed and the route returns 502. If FCM success wins the race,
+  including exactly at the deadline or when a suspended request resumes late,
+  its receipt is attempted before honouring the deadline. This may add up to
+  one second of receipt waiting after the fan-out budget; it never starts
+  another owner after the deadline. If the timeout wins first, a later FCM
+  result cannot resume the fan-out or write a receipt. The race cannot cancel
+  an FCM request already submitted or guarantee exactly-once delivery after an
+  unknown FCM outcome.
 - **Invalid tokens** reported by FCM are deleted for that owner.
-- **Logs:** native `console.*` with the reject reason or the event type and
-  counts only, never payload content.
+- **Logs:** native `console.*` with the reject reason, event type and counts,
+  or event key for receipt/window-write warnings. Never owner/device ids,
+  device tokens, claim tokens, raw backend errors or secrets.
 
 ## Responses
 
@@ -123,7 +140,10 @@ Admin and Upstash Redis variables.
 
 ## Regression coverage
 
-The route tests cover immediate and +61-second partial retries, a suspended
-request failing after a successor completes at +121 seconds, claim ownership,
-and the 60-second fan-out deadline with late FCM completion. See
+The route tests cover immediate and +61-second partial retries, observed FCM
+success at +60 and +61 seconds, rejected and hung receipt writes, retries while
+an owner remains unresolved, a suspended request failing after a successor
+completes at +121 seconds, and a stale route executing compare-and-delete
+against a successor's pending coalescing token before the deadline. They also
+cover the fan-out deadline when FCM finishes only after timeout wins. See
 `route.delivery.test.ts` and `route.race.test.ts` beside the route.
