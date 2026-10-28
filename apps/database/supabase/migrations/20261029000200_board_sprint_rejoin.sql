@@ -12,6 +12,7 @@ SET search_path = public, pg_temp
 AS $$
 DECLARE
   v_cycle RECORD;
+  v_reopened BOOLEAN := FALSE;
 BEGIN
   IF TG_OP = 'UPDATE' THEN
     IF OLD.board_id IS DISTINCT FROM NEW.board_id THEN
@@ -24,18 +25,21 @@ BEGIN
           AND c.board_id = OLD.board_id
           AND c.status IN ('planned', 'active');
       END IF;
-    ELSIF NOT (
-      NEW.deleted_at IS NULL
-      AND NEW.completed_at IS NULL
-      AND NEW.closed_at IS NULL
-      AND (
-        OLD.deleted_at IS NOT NULL
-        OR OLD.completed_at IS NOT NULL
-        OR OLD.closed_at IS NOT NULL
-      )
-    ) THEN
-      -- Same board and not reopened or restored: membership stays as it is.
-      RETURN NEW;
+    ELSE
+      -- Same board: only a task that is open again (reopened, un-closed or
+      -- restored) needs a sprint; otherwise membership stays as it is.
+      v_reopened :=
+        NEW.deleted_at IS NULL
+        AND NEW.completed_at IS NULL
+        AND NEW.closed_at IS NULL
+        AND (
+          OLD.deleted_at IS NOT NULL
+          OR OLD.completed_at IS NOT NULL
+          OR OLD.closed_at IS NOT NULL
+        );
+      IF NOT v_reopened THEN
+        RETURN NEW;
+      END IF;
     END IF;
   END IF;
 
