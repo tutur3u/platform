@@ -254,14 +254,24 @@ route guards and API-key permission checks. The list lives in
 
 Only the workspace creator (or the service role) can enable a creator-grant
 permission on a role or as a default permission, or add members to a role that
-holds one. Role and default-permission routes drop these entries from
-non-creator payloads and keep their stored state; the role members route returns
-403. Database triggers apply the same rule to direct API writes. Disabling a
-grant stays open to role managers.
+holds one. Role and default-permission routes (including the external-project
+team routes) drop these entries from non-creator payloads and keep their stored
+state; the role members routes return 403. Database triggers apply the same rule
+to direct API writes. Disabling a grant stays open to role managers.
+
+Invitations follow the same rule. Only the creator can put a role holding a
+creator-grant permission on a pending invitation; the invite routes return 403
+for anyone else. A manager editing an invitation may keep such a role when the
+invitation already has it. Pending invitation roles record who assigned them
+(`assigned_by`), and both `private.set_workspace_invitation_roles` and the
+invitation finalizers reject a creator-grant role the creator did not assign, so
+service callers cannot bypass the routes. Accepting fails with `42501` in that
+case rather than silently dropping the role.
 
 Re-saving an enabled grant through `INSERT ... ON CONFLICT DO UPDATE` preserves
 that grant. Invitation finalization and POS role preparation are service-only
-functions; API roles cannot execute them. Workspace creation seeds a fixed list
+functions; API roles cannot execute them, and finalization applies the
+invitation rule above. Workspace creation seeds a fixed list
 of default permissions that excludes `manage_subscription`. A member joining
 through the service invitation flow inherits defaults explicitly enabled by the
 creator, including `manage_subscription`.
@@ -271,8 +281,11 @@ API users: `manage_subscription` holders can read them, and only the service rol
 (Polar webhooks, sync jobs and server routes using the admin client) writes them.
 
 Regression coverage: `apps/database/supabase/tests/subscription-write-scope.sql`,
-`packages/utils/src/__tests__/workspace-helper-admin-subscription.test.ts` and the
-role route tests under `apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/roles/`.
+`apps/database/supabase/tests/subscription-invite-scope.sql`,
+`packages/utils/src/__tests__/workspace-helper-admin-subscription.test.ts`, the
+role route tests under `apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/roles/`,
+`apps/web/src/app/api/workspaces/[wsId]/members/invite/route.creator-grant.test.ts`
+and `apps/web/src/lib/external-projects/team-creator-grant.test.ts`.
 
 ## Where Permissions Affect The UI
 

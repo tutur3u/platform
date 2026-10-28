@@ -24692,6 +24692,7 @@ export type Database = {
       };
       set_workspace_invitation_roles: {
         Args: {
+          p_actor_id?: string;
           p_email?: string;
           p_role_ids?: string[];
           p_user_id?: string;
@@ -25282,6 +25283,10 @@ export type Database = {
           _start_date: string;
         };
         Returns: Json;
+      };
+      workspace_role_has_creator_grant: {
+        Args: { p_role_id: string };
+        Returns: boolean;
       };
       workspace_user_groups: {
         Args: { '': Database['private']['Tables']['user_group_posts']['Row'] };
@@ -41307,6 +41312,7 @@ export type Database = {
       };
       workspace_email_invite_roles: {
         Row: {
+          assigned_by: string | null;
           created_at: string;
           email: string;
           role_id: string;
@@ -41314,12 +41320,14 @@ export type Database = {
         };
         ComputedFields: never;
         Insert: {
+          assigned_by?: string | null;
           created_at?: string;
           email: string;
           role_id: string;
           ws_id: string;
         };
         Update: {
+          assigned_by?: string | null;
           created_at?: string;
           email?: string;
           role_id?: string;
@@ -44025,6 +44033,7 @@ export type Database = {
       };
       workspace_invite_roles: {
         Row: {
+          assigned_by: string | null;
           created_at: string;
           role_id: string;
           user_id: string;
@@ -44032,12 +44041,14 @@ export type Database = {
         };
         ComputedFields: never;
         Insert: {
+          assigned_by?: string | null;
           created_at?: string;
           role_id: string;
           user_id: string;
           ws_id: string;
         };
         Update: {
+          assigned_by?: string | null;
           created_at?: string;
           role_id?: string;
           user_id?: string;
