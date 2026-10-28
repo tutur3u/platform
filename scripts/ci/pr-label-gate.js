@@ -74,6 +74,7 @@ const HEAVY_PR_WORKFLOWS = [
   'programming-app-builds.yaml',
   'programming-database-contract.yaml',
   'report-review-receipts-contract.yaml',
+  'required-account-mfa-contract.yaml',
   'sdk-package-qualification.yaml',
   'security-egress-contract.yaml',
   'shortener-cloudflare.yaml',

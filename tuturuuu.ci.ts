@@ -50,6 +50,7 @@ export const ci = {
   'tanstack-route-manifest.yaml': false,
   'i18n-check.yaml': true,
   'inventory-offline-contract.yaml': true,
+  'required-account-mfa-contract.yaml': true,
   'lettin-cloudflare.yaml': true,
   'meet-cloudflare.yaml': true,
   'parley-cloudflare.yaml': true,
