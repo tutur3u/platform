@@ -97,11 +97,11 @@ export function TaskPropertyRow({
 export function TaskPropertyNameRow({
   children,
   popoverId,
-  variant = 'embedded',
+  variant,
 }: {
   children: ReactNode;
   popoverId: TaskPropertyPopoverId;
-  variant?: 'compact' | 'default' | 'embedded';
+  variant: 'compact' | 'default' | 'embedded';
 }) {
   const t = useTranslations();
   if (variant !== 'embedded') return children;
@@ -117,16 +117,17 @@ export function TaskPropertyNameRow({
   );
 }
 
+/** A property's popover trigger, with a tooltip naming it when compact. */
 export function TaskPropertyPopoverTrigger({
   children,
+  compact,
   label,
   popoverId,
-  variant,
 }: {
   children: ReactNode;
+  compact: boolean;
   label: ReactNode;
   popoverId: TaskPropertyPopoverId;
-  variant: 'compact' | 'default' | 'embedded';
 }) {
   const trigger = isValidElement(children)
     ? cloneElement(children as ReactElement<Record<string, unknown>>, {
@@ -134,15 +135,7 @@ export function TaskPropertyPopoverTrigger({
       })
     : children;
 
-  if (variant === 'embedded') {
-    return (
-      <TaskPropertyNameRow popoverId={popoverId}>
-        <PopoverTrigger asChild>{trigger}</PopoverTrigger>
-      </TaskPropertyNameRow>
-    );
-  }
-
-  if (variant === 'default') {
+  if (!compact) {
     return <PopoverTrigger asChild>{trigger}</PopoverTrigger>;
   }
 
