@@ -33,20 +33,15 @@ import { Button } from '@tuturuuu/ui/button';
 import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
 import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
 import { Label } from '@tuturuuu/ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
+import { Popover, PopoverContent } from '@tuturuuu/ui/popover';
 import { Progress } from '@tuturuuu/ui/progress';
 import { Switch } from '@tuturuuu/ui/switch';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { computeAccessibleLabelStyles } from '@tuturuuu/utils/label-colors';
 import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
 import {
   type ComponentProps,
-  cloneElement,
-  isValidElement,
-  type ReactElement,
-  type ReactNode,
   useCallback,
   useEffect,
   useMemo,
@@ -77,6 +72,12 @@ import {
   getTaskListTriggerIcon,
   getTaskListTriggerSurfaceClass,
 } from './components/task-list-trigger-styles';
+import {
+  TASK_PROPERTY_POPOVER_TRIGGER_ATTRIBUTE,
+  TaskPropertyNameRow,
+  type TaskPropertyPopoverId,
+  TaskPropertyPopoverTrigger,
+} from './task-property-row';
 
 // Scheduled calendar event type
 export interface ScheduledCalendarEvent {
@@ -156,19 +157,6 @@ interface TaskPropertiesSectionProps {
   variant?: 'compact' | 'default' | 'embedded';
 }
 
-type TaskPropertyPopoverId =
-  | 'priority'
-  | 'list'
-  | 'dates'
-  | 'estimation'
-  | 'labels'
-  | 'projects'
-  | 'assignees'
-  | 'scheduling';
-
-const TASK_PROPERTY_POPOVER_TRIGGER_ATTRIBUTE =
-  'data-task-property-popover-trigger';
-
 const taskPropertyPopoverIds = new Set<TaskPropertyPopoverId>([
   'priority',
   'list',
@@ -200,37 +188,6 @@ function getTaskPropertyPopoverIdFromTarget(
     trigger?.getAttribute(TASK_PROPERTY_POPOVER_TRIGGER_ATTRIBUTE) ?? null;
 
   return isTaskPropertyPopoverId(popoverId) ? popoverId : null;
-}
-
-function TaskPropertyPopoverTrigger({
-  children,
-  compact,
-  label,
-  popoverId,
-}: {
-  children: ReactNode;
-  compact: boolean;
-  label: ReactNode;
-  popoverId: TaskPropertyPopoverId;
-}) {
-  const trigger = isValidElement(children)
-    ? cloneElement(children as ReactElement<Record<string, unknown>>, {
-        [TASK_PROPERTY_POPOVER_TRIGGER_ATTRIBUTE]: popoverId,
-      })
-    : children;
-
-  if (!compact) {
-    return <PopoverTrigger asChild>{trigger}</PopoverTrigger>;
-  }
-
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <PopoverTrigger asChild>{trigger}</PopoverTrigger>
-      </TooltipTrigger>
-      <TooltipContent side="bottom">{label}</TooltipContent>
-    </Tooltip>
-  );
 }
 
 type TaskPropertyPopoverContentProps = ComponentProps<typeof PopoverContent>;
@@ -1018,8 +975,9 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
         >
           <div
             className={cn(
-              'flex flex-wrap items-center',
-              isCompact ? 'gap-1.5' : 'gap-2'
+              'flex',
+              isEmbedded ? 'flex-col gap-1' : 'flex-wrap items-center gap-2',
+              isCompact && 'gap-1.5'
             )}
           >
             {/* Priority Badge */}
@@ -1028,7 +986,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
               onOpenChange={(open) => setPopoverOpen('priority', open)}
             >
               <TaskPropertyPopoverTrigger
-                compact={isCompact}
+                variant={variant}
                 label={
                   priority
                     ? t(`tasks.priority_${priority}`)
@@ -1127,20 +1085,22 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
               </PopoverContent>
             </Popover>
 
-            <TaskListSelector
-              wsId={wsId}
-              boardId={boardId}
-              selectedListId={selectedListId}
-              availableLists={availableLists}
-              disabled={disabled}
-              compact={isCompact}
-              open={isPopoverOpen('list')}
-              onOpenChange={(open) => setPopoverOpen('list', open)}
-              onPopoverCloseAutoFocus={handlePropertyPopoverCloseAutoFocus}
-              onPopoverInteractOutside={handlePropertyPopoverInteractOutside}
-              onListChange={onListChange}
-              propertyPopoverId="list"
-            />
+            <TaskPropertyNameRow popoverId="list" variant={variant}>
+              <TaskListSelector
+                wsId={wsId}
+                boardId={boardId}
+                selectedListId={selectedListId}
+                availableLists={availableLists}
+                disabled={disabled}
+                compact={isCompact}
+                open={isPopoverOpen('list')}
+                onOpenChange={(open) => setPopoverOpen('list', open)}
+                onPopoverCloseAutoFocus={handlePropertyPopoverCloseAutoFocus}
+                onPopoverInteractOutside={handlePropertyPopoverInteractOutside}
+                onListChange={onListChange}
+                propertyPopoverId="list"
+              />
+            </TaskPropertyNameRow>
 
             {/* Dates Badge */}
             <Popover
@@ -1148,7 +1108,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
               onOpenChange={(open) => setPopoverOpen('dates', open)}
             >
               <TaskPropertyPopoverTrigger
-                compact={isCompact}
+                variant={variant}
                 label={
                   startDate || endDate
                     ? `${startDate ? new Date(startDate).toLocaleDateString(t('common.locale', { defaultValue: 'en-US' }), { month: 'short', day: 'numeric' }) : t('ws-task-boards.dialog.no_start_date')} → ${endDate ? new Date(endDate).toLocaleDateString(t('common.locale', { defaultValue: 'en-US' }), { month: 'short', day: 'numeric' }) : t('ws-task-boards.dialog.no_due_date')}`
@@ -1300,7 +1260,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
               onOpenChange={(open) => setPopoverOpen('estimation', open)}
             >
               <TaskPropertyPopoverTrigger
-                compact={isCompact}
+                variant={variant}
                 label={
                   boardConfig?.estimation_type && estimationPoints != null
                     ? mapEstimationPoints(
@@ -1404,7 +1364,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
               }}
             >
               <TaskPropertyPopoverTrigger
-                compact={isCompact}
+                variant={variant}
                 label={
                   selectedLabels.length === 0
                     ? t('common.labels')
@@ -1559,7 +1519,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                 }}
               >
                 <TaskPropertyPopoverTrigger
-                  compact={isCompact}
+                  variant={variant}
                   label={
                     selectedProjects.length === 0
                       ? t('common.projects')
@@ -1704,7 +1664,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                 }}
               >
                 <TaskPropertyPopoverTrigger
-                  compact={isCompact}
+                  variant={variant}
                   label={
                     selectedAssignees.length === 0
                       ? t('common.assignees')
@@ -1837,7 +1797,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                 onOpenChange={(open) => setPopoverOpen('scheduling', open)}
               >
                 <TaskPropertyPopoverTrigger
-                  compact={isCompact}
+                  variant={variant}
                   label={
                     totalMinutes > 0
                       ? formatDuration(totalMinutes, t)

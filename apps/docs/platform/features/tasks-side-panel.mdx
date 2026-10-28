@@ -9,8 +9,19 @@ On a board, opening an existing task shows it in a panel docked to the right
 edge instead of a centered dialog. The board leaves room for the panel and stays
 usable: clicking another card swaps the panel's task, X or Escape closes it, and
 Expand switches to the focused dialog. The panel reuses the task dialog content
-(header, title, details tabs, description); its header actions wrap under the
-title instead of clipping at the panel's width.
+(header, title, details tabs, description).
+
+The panel opens 576 px wide and can be resized by dragging its left edge or with
+the arrow keys on that edge; double-clicking it restores the default. It stays
+between 360 px and two fifths of the window, and the chosen width is remembered
+in the browser. The board follows the edge while dragging, so the two never
+leave a gap. The panel header stays on one line: the title truncates, and the
+sync label and viewer avatars drop out as the panel narrows.
+
+In the panel, Details > Properties is a two-column list: each property's name
+(with its icon, except Priority, whose level icon stays on the value) on the
+left and its value on the right as colored text. The Sprint row heads the list
+on boards with sprints.
 
 This applies to the shared board UI used by Web and Tasks.
 
@@ -26,4 +37,6 @@ Regression coverage:
 - `packages/tasks-ui/src/tu-do/shared/task-dialog-presentation.test.ts`
 - `packages/tasks-ui/src/tu-do/shared/task-panel-surface.test.ts`
 - `packages/tasks-ui/src/tu-do/shared/kanban-presentation.test.tsx`
+- `packages/tasks-ui/src/tu-do/shared/task-panel-resize-handle.test.tsx`
+- `packages/tasks-ui/src/tu-do/shared/task-edit-dialog/task-property-row.test.tsx`
 - `packages/ui/src/components/ui/dialog.test.tsx`
