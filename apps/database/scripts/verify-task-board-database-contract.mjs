@@ -34,8 +34,12 @@ const trackedFiles = execFileSync(
 )
   .split('\0')
   .filter(Boolean);
-// Task board SQL fixtures: board sprints and their RPCs.
-const fixtures = ['task-board-sprints.sql'];
+// Task board SQL fixtures: board sprints, their RPCs and every membership
+// transition.
+const fixtures = [
+  'task-board-sprints.sql',
+  'task-board-sprint-transitions.sql',
+];
 const ports = await chooseAvailablePortBlock(identity);
 const metadata = await stageDisposableProject({
   repositoryRoot,

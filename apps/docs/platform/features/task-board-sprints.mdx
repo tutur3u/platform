@@ -22,7 +22,13 @@ being planned. After that, a new task, or a task moved onto the board, joins the
 running sprint (marked as added mid-sprint) or, when none is running, the sprint
 being planned. A task sits in one open sprint per board; moving a task to
 another board drops its open sprint. Done tasks stay in the sprint they
-finished in.
+finished in. A task that becomes open again after its sprint ended (moved back
+out of Done, un-closed, or restored from the recycle bin) rejoins the board's
+current sprint the same way, so no open task drops out of the Board view or
+Plan.
+
+Regression coverage: `apps/database/supabase/tests/task-board-sprint-transitions.sql`
+walks every way a task enters, leaves or returns to a board's sprints.
 
 The backlog is not a separate list. It is the unassigned tasks of the sprint
 being planned.
