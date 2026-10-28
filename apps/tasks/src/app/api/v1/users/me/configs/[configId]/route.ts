@@ -47,7 +47,7 @@ export const GET = withSessionAuth<{ configId: string }>(
             ))
         ))
     ) {
-      return NextResponse.json({ value: null });
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 
     const { data, error } = await supabase

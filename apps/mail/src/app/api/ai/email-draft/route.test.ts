@@ -1,3 +1,9 @@
+vi.mock('@tuturuuu/utils/workspace-helper', () => ({
+  normalizeWorkspaceId: vi.fn(async (wsId: string) => wsId),
+  verifyWorkspaceMembershipType: vi.fn(async () => ({ ok: true })),
+  WorkspaceAuthError: class extends Error {},
+  WorkspaceNotFoundError: class extends Error {},
+}));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: async () => ({
     auth: {
@@ -83,7 +89,7 @@ describe('email draft route auth', () => {
       'personal'
     );
     expect(mocks.withAiMemory).toHaveBeenCalledWith(
-      expect.objectContaining({ userId: 'user-1', wsId: 'personal' })
+      expect.objectContaining({ userId: 'user-1', wsId: 'workspace-1' })
     );
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({

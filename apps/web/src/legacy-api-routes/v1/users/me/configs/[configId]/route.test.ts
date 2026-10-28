@@ -139,8 +139,8 @@ describe('user config route payload protection', () => {
       { configId: SHOW_VERSION_BADGE_CONFIG_ID }
     );
 
-    expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({ value: null });
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({ message: 'Forbidden' });
     expect(from).not.toHaveBeenCalled();
   });
 

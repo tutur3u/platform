@@ -312,3 +312,10 @@ Regression evidence lives in `packages/utils/src/email/__tests__/staff-session.t
 and the affected routes' `staff-session.test.ts` suites. These fixtures verify
 denials before protected reads, writes, sends or generation; hosted deployment
 configuration and production acceptance require separate operator verification.
+
+
+AI calendar generation and temporary-auth Mail drafting resolve the requested
+workspace and require MEMBER membership before memory or provider work. Memory
+attribution uses the canonical authorized workspace id, including default scopes;
+membership lookup failures stop the operation. The route scope regressions cover
+nonmembers, guests, lookup failures and canonical workspace attribution.

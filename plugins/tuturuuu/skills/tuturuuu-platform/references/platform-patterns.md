@@ -1354,3 +1354,7 @@ user containing provider identities. App-session and profile projections require
 an address syntax predicate or UI visibility flag never grants staff authority.
 See the staff-session decision in `apps/docs/platform/architecture/authorization.mdx`
 and the shared helper's identity matrix and route denial regressions.
+
+For AI memory or billing attribution, resolve the request scope with
+`authorizeAiWorkspace` before provider or memory work. Temporary authentication
+does not grant workspace membership; retain a canonical authorized workspace id.

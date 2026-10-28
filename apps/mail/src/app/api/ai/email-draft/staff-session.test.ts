@@ -1,3 +1,10 @@
+vi.mock('@tuturuuu/utils/workspace-helper', () => ({
+  normalizeWorkspaceId: vi.fn(async (wsId: string) => wsId),
+  verifyWorkspaceMembershipType: vi.fn(async () => ({ ok: true })),
+  WorkspaceAuthError: class extends Error {},
+  WorkspaceNotFoundError: class extends Error {},
+}));
+
 import { NextRequest } from 'next/server';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 

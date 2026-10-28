@@ -27,12 +27,16 @@ vi.mock('@/lib/postgrest-rate-limit', () => ({
 }));
 
 import { PATCH } from '@/app/api/v1/user/onboarding-progress/route';
-import { PUT } from '@/legacy-api-routes/v1/users/me/configs/[configId]/route';
+import {
+  GET,
+  PUT,
+} from '@/legacy-api-routes/v1/users/me/configs/[configId]/route';
 
 beforeEach(() => vi.clearAllMocks());
 afterEach(() => vi.unstubAllEnvs());
 for (const [name, handler, body] of [
   ['onboarding', PATCH, { guidance_mode: 'employee_test' }],
+  ['staff config read', GET, {}],
   ['staff config write', PUT, { value: 'true' }],
 ] as const)
   describe(name, () => {
