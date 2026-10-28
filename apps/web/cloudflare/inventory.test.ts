@@ -118,7 +118,7 @@ describe('Web route census', () => {
     ).toBe('/[locale]/[wsId]/api/[...path]');
     expect(routePattern('(marketing)/page.tsx')).toBe('/');
   });
-  it('moves only the seven static legal documents and retains all five Vercel schedules', () => {
+  it('moves only the nine static public documents and retains all five Vercel schedules', () => {
     expect(
       manifest.routes
         .filter(
@@ -133,11 +133,13 @@ describe('Web route census', () => {
       '/[locale]/legal/sla',
       '/[locale]/legal/subprocessors',
       '/[locale]/privacy',
+      '/[locale]/security/bug-bounty',
+      '/[locale]/security/policy',
       '/[locale]/terms',
     ]);
     expect(manifest.summary.dispositions).toEqual({
-      'native-Start': 8,
-      'Next-fallback': 830,
+      'native-Start': 10,
+      'Next-fallback': 828,
     });
     expect(manifest.crons).toHaveLength(5);
     expect(manifest.crons.every((cron) => cron.owner === 'vercel-web')).toBe(
