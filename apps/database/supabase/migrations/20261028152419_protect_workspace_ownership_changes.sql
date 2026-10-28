@@ -3,10 +3,15 @@
 -- * Table-level UPDATE stays granted to authenticated so settings updates
 --   (name, handle, avatar, ...) and future columns keep working without
 --   per-column grants.
--- * A BEFORE UPDATE trigger rejects API-role (anon/authenticated) changes to
---   creator_id unless they run inside transfer_workspace_ownership(), and
---   allows personal changes only by the workspace's current creator.
--- * Service-role and migration contexts are unaffected.
+-- * A BEFORE UPDATE trigger rejects creator_id changes issued directly by an
+--   API role (current_user anon/authenticated) and allows their personal
+--   changes only by the workspace's current creator. API callers change
+--   ownership through transfer_workspace_ownership().
+-- * The guard keys on current_user alone, so statements that run as another
+--   role pass: service-role and migration contexts, SECURITY DEFINER
+--   functions (even under a user JWT), and the workspaces_creator_id_fkey
+--   ON UPDATE CASCADE action, which runs as the table owner. API roles cannot
+--   switch current_user, and no session setting relaxes the check.
 
 GRANT UPDATE ON public.workspaces TO authenticated;
 
@@ -39,24 +44,12 @@ RETURNS trigger
 LANGUAGE plpgsql
 SET search_path = pg_catalog, pg_temp
 AS $$
-DECLARE
-  v_api_caller boolean :=
-    current_user IN ('anon', 'authenticated')
-    OR coalesce(auth.role(), '') IN ('anon', 'authenticated');
 BEGIN
-  IF NOT v_api_caller THEN
+  IF current_user NOT IN ('anon', 'authenticated') THEN
     RETURN NEW;
   END IF;
 
-  IF NEW.creator_id IS DISTINCT FROM OLD.creator_id
-    AND (
-      current_user IN ('anon', 'authenticated')
-      OR coalesce(
-        current_setting('tuturuuu.workspace_ownership_transfer', true),
-        ''
-      ) IS DISTINCT FROM OLD.id::text
-    )
-  THEN
+  IF NEW.creator_id IS DISTINCT FROM OLD.creator_id THEN
     RAISE EXCEPTION 'Workspace ownership can only change through an ownership transfer'
       USING ERRCODE = '42501';
   END IF;
@@ -143,17 +136,9 @@ BEGIN
       USING ERRCODE = '22023';
   END IF;
 
-  PERFORM set_config(
-    'tuturuuu.workspace_ownership_transfer',
-    p_ws_id::text,
-    true
-  );
-
   UPDATE public.workspaces
   SET creator_id = p_new_owner_id
   WHERE id = p_ws_id;
-
-  PERFORM set_config('tuturuuu.workspace_ownership_transfer', '', true);
 
   INSERT INTO public.workspace_ownership_transfers (
     ws_id,

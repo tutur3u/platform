@@ -12,7 +12,8 @@ insert into wop_users values
   ('creator', '38800000-0000-4000-8000-000000000001'),
   ('admin', '38800000-0000-4000-8000-000000000002'),
   ('member', '38800000-0000-4000-8000-000000000003'),
-  ('outsider', '38800000-0000-4000-8000-000000000004');
+  ('outsider', '38800000-0000-4000-8000-000000000004'),
+  ('joiner', '38800000-0000-4000-8000-000000000005');
 grant select on wop_users to authenticated, service_role;
 
 insert into auth.users (id, email, email_confirmed_at, raw_app_meta_data, raw_user_meta_data)
@@ -105,7 +106,7 @@ select set_config('tuturuuu.workspace_ownership_transfer',
 select is(pg_temp.as_role(pg_temp.uid('admin'), format(
   'update public.workspaces set creator_id = %L where id = %L',
   pg_temp.uid('admin'), '38800000-0000-4000-8000-0000000000a1')), '42501',
-  'a transfer flag does not admit a direct API-role update');
+  'a session setting does not admit a direct API-role update');
 select set_config('tuturuuu.workspace_ownership_transfer', '', true);
 select is(pg_temp.creator_of('38800000-0000-4000-8000-0000000000a1'), pg_temp.uid('creator'),
   'creator_id is unchanged after rejected updates');
@@ -170,8 +171,6 @@ select is((select count(*)::integer from public.workspace_ownership_transfers
     and new_creator_id = pg_temp.uid('member')
     and actor_id = pg_temp.uid('creator')), 1,
   'the RPC transfer writes one audit row');
-select is(current_setting('tuturuuu.workspace_ownership_transfer', true), '',
-  'the transfer flag is cleared after the RPC');
 select is(pg_temp.as_role(pg_temp.uid('creator'), format(
   'select public.transfer_workspace_ownership(%L, %L)',
   '38800000-0000-4000-8000-0000000000a1', pg_temp.uid('creator'))), '42501',
@@ -184,6 +183,126 @@ select is(pg_temp.as_role(null, format(
   'service_role can change creator_id directly');
 select is(pg_temp.creator_of('38800000-0000-4000-8000-0000000000a1'), pg_temp.uid('creator'),
   'service_role creator change is persisted');
+
+-- Writer inventory: only the transfer RPC updates creator_id or personal in
+-- SQL. The former membership-insert claim path stays removed.
+select ok(to_regprocedure('public.claim_workspace_creator_when_missing()') is null,
+  'the removed membership-insert creator claim path is still absent');
+select is((select coalesce(array_agg(n.nspname || '.' || p.proname order by 1), '{}')
+  from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+  where n.nspname in ('public', 'private')
+    and p.prosrc ~* 'update\s+(public\.)?"?workspaces"?\y\s+set\s+((?!\ywhere\y)[^;])*?\y(creator_id|personal)\y\s*='),
+  array['public.transfer_workspace_ownership']::text[],
+  'only the transfer RPC updates workspaces.creator_id or personal');
+
+-- No caller-set session setting admits a direct API-role update.
+select is(pg_temp.as_role(pg_temp.uid('creator'), format(
+  $q$select set_config('tuturuuu.workspace_ownership_transfer', %L, true)$q$,
+  '38800000-0000-4000-8000-0000000000a1')), '38800000-0000-4000-8000-0000000000a1',
+  'an API caller can set a session setting');
+select is(current_setting('tuturuuu.workspace_ownership_transfer', true),
+  '38800000-0000-4000-8000-0000000000a1', 'the caller-set setting is still active');
+select is(pg_temp.as_role(pg_temp.uid('creator'), format(
+  'update public.workspaces set creator_id = %L where id = %L',
+  pg_temp.uid('creator'), '38800000-0000-4000-8000-0000000000a1')), 'ok',
+  'resending the current creator_id under the setting is a no-op');
+select is(pg_temp.as_role(pg_temp.uid('creator'), format(
+  'update public.workspaces set creator_id = %L where id = %L',
+  pg_temp.uid('member'), '38800000-0000-4000-8000-0000000000a1')), '42501',
+  'creator cannot change creator_id directly even with a self-set setting');
+select is(pg_temp.as_role(pg_temp.uid('admin'), format(
+  'update public.workspaces set creator_id = %L where id = %L',
+  pg_temp.uid('admin'), '38800000-0000-4000-8000-0000000000a1')), '42501',
+  'admin cannot take ownership directly even with a self-set setting');
+select set_config('tuturuuu.workspace_ownership_transfer', '', true);
+select is(pg_temp.creator_of('38800000-0000-4000-8000-0000000000a1'), pg_temp.uid('creator'),
+  'creator_id is unchanged after setting-spoofing attempts');
+
+-- Invite acceptance into a workspace whose creator is not a member: the
+-- joiner becomes the sole member and ownership does not move.
+insert into public.workspaces (id, name, personal, creator_id) values
+  ('38800000-0000-4000-8000-0000000000a4', 'WOP creatorless', false, pg_temp.uid('creator'));
+delete from public.workspace_members where ws_id = '38800000-0000-4000-8000-0000000000a4';
+insert into public.workspace_invites (ws_id, user_id, type)
+values ('38800000-0000-4000-8000-0000000000a4', pg_temp.uid('joiner'), 'MEMBER');
+select is(pg_temp.as_role(pg_temp.uid('joiner'), format(
+  $q$insert into public.workspace_members (ws_id, user_id, type) values (%L, %L, 'MEMBER')$q$,
+  '38800000-0000-4000-8000-0000000000a4', pg_temp.uid('joiner'))), 'ok',
+  'invited user can accept into a workspace whose creator is not a member');
+select is((select array_agg(user_id) from public.workspace_members
+  where ws_id = '38800000-0000-4000-8000-0000000000a4'), array[pg_temp.uid('joiner')],
+  'the joiner is the sole member after accepting');
+select ok(not exists(select 1 from public.workspace_invites
+  where ws_id = '38800000-0000-4000-8000-0000000000a4' and user_id = pg_temp.uid('joiner')),
+  'the accepted invite is consumed');
+select is(pg_temp.creator_of('38800000-0000-4000-8000-0000000000a4'), pg_temp.uid('creator'),
+  'joining does not change creator_id');
+
+-- A SECURITY DEFINER path running under a user JWT (current_user is the
+-- definer, auth.role() is 'authenticated') may still change creator_id. This
+-- reproduces the removed membership-insert claim trigger on one fixture.
+create function pg_temp.wop_definer_claim() returns trigger
+language plpgsql security definer set search_path = pg_catalog, pg_temp as $$
+begin
+  update public.workspaces w set creator_id = new.user_id
+  where w.id = new.ws_id and w.creator_id <> new.user_id
+    and not exists (select 1 from public.workspace_members m
+      where m.ws_id = new.ws_id and m.user_id <> new.user_id);
+  return new;
+end $$;
+insert into public.workspaces (id, name, personal, creator_id) values
+  ('38800000-0000-4000-8000-0000000000a6', 'WOP definer claim', false, pg_temp.uid('creator'));
+delete from public.workspace_members where ws_id = '38800000-0000-4000-8000-0000000000a6';
+create trigger wop_definer_claim_tr after insert on public.workspace_members
+for each row when (new.ws_id = '38800000-0000-4000-8000-0000000000a6')
+execute function pg_temp.wop_definer_claim();
+insert into public.workspace_invites (ws_id, user_id, type)
+values ('38800000-0000-4000-8000-0000000000a6', pg_temp.uid('joiner'), 'MEMBER');
+select is(pg_temp.as_role(pg_temp.uid('joiner'), format(
+  $q$insert into public.workspace_members (ws_id, user_id, type) values (%L, %L, 'MEMBER')$q$,
+  '38800000-0000-4000-8000-0000000000a6', pg_temp.uid('joiner'))), 'ok',
+  'invite acceptance succeeds when a definer trigger claims creator_id under the JWT');
+select is(pg_temp.creator_of('38800000-0000-4000-8000-0000000000a6'), pg_temp.uid('joiner'),
+  'the definer path changed creator_id under an authenticated JWT');
+drop trigger wop_definer_claim_tr on public.workspace_members;
+
+-- workspaces_creator_id_fkey ON UPDATE CASCADE still follows a user-id change.
+insert into public.users (id, display_name) values ('38800000-0000-4000-8000-0000000000f1', 'WOP fk');
+insert into public.workspaces (id, name, personal, creator_id) values
+  ('38800000-0000-4000-8000-0000000000a5', 'WOP fk team', false, '38800000-0000-4000-8000-0000000000f1');
+delete from public.workspace_members where user_id = '38800000-0000-4000-8000-0000000000f1';
+select ok(pg_temp.as_role('38800000-0000-4000-8000-0000000000f1',
+  $q$update public.users set id = '38800000-0000-4000-8000-0000000000f2'
+  where id = '38800000-0000-4000-8000-0000000000f1'$q$) is not null,
+  'a self users.id change attempt runs under the user JWT');
+select ok(exists(select 1 from public.users where id = '38800000-0000-4000-8000-0000000000f1'),
+  'a user cannot change their own users.id');
+select is(pg_temp.creator_of('38800000-0000-4000-8000-0000000000a5'),
+  '38800000-0000-4000-8000-0000000000f1'::uuid, 'creator_id is unchanged after the rejected self change');
+select is(pg_temp.as_role(null,
+  $q$update public.users set id = '38800000-0000-4000-8000-0000000000f2'
+  where id = '38800000-0000-4000-8000-0000000000f1'$q$, 'service_role'), 'ok',
+  'service_role user-id change succeeds');
+select is(pg_temp.creator_of('38800000-0000-4000-8000-0000000000a5'),
+  '38800000-0000-4000-8000-0000000000f2'::uuid,
+  'the FK cascade moves creator_id under service_role');
+delete from public.workspace_members where user_id = '38800000-0000-4000-8000-0000000000f2';
+update public.users set id = '38800000-0000-4000-8000-0000000000f3'
+where id = '38800000-0000-4000-8000-0000000000f2';
+select is(pg_temp.creator_of('38800000-0000-4000-8000-0000000000a5'),
+  '38800000-0000-4000-8000-0000000000f3'::uuid,
+  'the FK cascade moves creator_id in a migration context');
+-- The cascade also succeeds when the user-id change runs on a definer path
+-- under an authenticated JWT: the RI action runs as the table owner.
+delete from public.workspace_members where user_id = '38800000-0000-4000-8000-0000000000f3';
+select set_config('request.jwt.claims', json_build_object('sub',
+  pg_temp.uid('outsider'), 'role', 'authenticated')::text, true);
+update public.users set id = '38800000-0000-4000-8000-0000000000f4'
+where id = '38800000-0000-4000-8000-0000000000f3';
+select set_config('request.jwt.claims', '', true);
+select is(pg_temp.creator_of('38800000-0000-4000-8000-0000000000a5'),
+  '38800000-0000-4000-8000-0000000000f4'::uuid,
+  'the FK cascade moves creator_id on a definer path under an authenticated JWT');
 
 select * from finish();
 rollback;

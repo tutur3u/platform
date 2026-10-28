@@ -201,7 +201,7 @@ The creator fallback prevents the creator from locking themselves out. The dashb
 
 - `creator_id` changes only through `public.transfer_workspace_ownership(ws_id, new_owner_id)`. The caller must be the current creator, the new owner must already be a `MEMBER`, personal and root workspaces cannot be transferred, and each transfer is recorded in `public.workspace_ownership_transfers` (readable by the service role only).
 - `personal` changes only when the caller is the workspace's current creator. The `/api/v1/workspaces/personal` route keeps its single-member and one-personal-workspace checks on top of this.
-- Service-role and migration contexts are unaffected, and workspace creation still records the caller as `creator_id`.
+- The trigger checks the role that issued the statement (`current_user`), not JWT claims or session settings. Service-role and migration contexts, `SECURITY DEFINER` functions and the `workspaces_creator_id_fkey` `ON UPDATE CASCADE` action are unaffected, and workspace creation still records the caller as `creator_id`.
 
 Regression coverage: `apps/database/supabase/tests/workspace-ownership-protection.sql`.
 
