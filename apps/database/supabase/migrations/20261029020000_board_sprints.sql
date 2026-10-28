@@ -113,6 +113,13 @@ CREATE POLICY "Workspace members can view sprint reports"
     )
   );
 
+-- Client-reachable, so it follows the required-account-MFA rule like every
+-- other exposed relation (see 20260923130000 and required-account-mfa.sql).
+CREATE POLICY account_required_mfa ON public.task_sprint_reports
+  AS RESTRICTIVE FOR ALL TO authenticated
+  USING ((SELECT public.account_required_mfa_satisfied()))
+  WITH CHECK ((SELECT public.account_required_mfa_satisfied()));
+
 REVOKE ALL ON public.task_sprint_reports FROM anon, authenticated;
 GRANT SELECT ON public.task_sprint_reports TO authenticated;
 GRANT ALL ON public.task_sprint_reports TO service_role;
