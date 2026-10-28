@@ -2450,6 +2450,85 @@ PR/main must not skip validation; a failed or held production policy must block 
 Credential regressions live in `scripts/ci/production-publisher-secrets.test.js`.
 
 
+### PR runner pool: variable, canary and kill switch
+
+Selected PR checks can run on a dedicated self-hosted macOS pool. Routing is off
+unless the repository Actions variable `PR_SELF_HOSTED_RUNNERS` is set:
+
+| Value | Effect |
+| --- | --- |
+| unset, empty or `false` | Off (kill switch): every job uses `ubuntu-latest`. |
+| `pr:<number>` | Canary: only pull request `<number>` routes to the pool. |
+| `true` | On: every eligible pull request routes to the pool. |
+
+A job routes only for a `pull_request` event whose head branch is in this
+repository (no forks), with a non-Dependabot author, actor and triggering actor,
+on the single label `tuturuuu-pr-ephemeral` (`self-hosted, macOS, ARM64`). The
+label `tuturuuu-mac-studio` is never selected. Push, dispatch,
+`pull_request_target` and reusable-workflow contexts stay on `ubuntu-latest`.
+Routing never replaces the `ready-for-ci` gate.
+
+Routed jobs: `docs-seo-check.yaml` `validate`; `i18n-check.yaml`
+`i18n-sort-check`, `i18n-translation-check`, `i18n-key-parity-check` and
+`i18n-namespace-check`; `mobile-api-mappings.yaml` `verify`; `type-check.yaml`
+`type-check-pr`; `biome-check.yaml` `check-ci` (through the `pr_runner` input of
+`ci-check.yml`), `duplicate-validation`, `format` and `lint`;
+`turbo-unit-tests.yaml` `test-shards-pr`. Jobs with write tokens (Biome apply,
+close and comment jobs, the i18n comment job), the Codecov upload and every
+secret-bearing, deploy, release, migration or security job stay on
+`ubuntu-latest`. Pool jobs get no secrets, and the pool has no ambient
+credentials. GitHub ships every secret a job names to its runner even when a
+guard such as `github.event_name != 'pull_request'` evaluates to an empty
+string, so a pool-eligible job must not contain the substring `secrets.` at all
+(no guarded credential expressions), and a reusable workflow it calls receives no
+secrets.
+
+Type Check and the unit-test shards still need Turbo and Supabase credentials on
+push and dispatch, so each is split into two jobs that share one `name` and
+therefore one required check context: `type-check-pr` and `test-shards-pr` run
+only for `pull_request` events, may route to the pool and use fixtures or empty
+values; `type-check` and `test-shards` run only for other events on
+`ubuntu-latest` and keep their secrets. Exactly one of each pair runs, the other
+reports as skipped. Dependents of `test-shards` (`coverage-shards`,
+`coverage-upload`, `coverage-result`, `Unit Tests (24)`) need both variants and
+read the result of whichever one ran (the other is skipped), so a skipped variant
+never masks a failed one.
+`scripts/ci/workflow-pr-self-hosted.test.js` asserts that the raw text of every
+job able to select the pool has no `secrets.` substring and that the reusable
+workflows such jobs call take no secrets.
+
+Each routed job checks out without persisted credentials, runs
+`./.github/actions/pr-runner-hygiene` (disposable `HOME`, Git, Bun, npm and XDG
+state, `npm_config_ignore_scripts=true`) and installs with
+`bun install --frozen-lockfile --ignore-scripts`. Build and generation steps run
+explicitly from repository scripts, never from dependency lifecycle scripts. The
+action's post step (`post-if: always()`) empties the workspace and removes the
+job state. Caches are restored on pull requests and saved only by trusted
+non-PR runs.
+
+Canary procedure:
+
+1. Confirm the pool runners exist and carry only the `tuturuuu-pr-ephemeral`
+   label.
+2. Run `gh variable set PR_SELF_HOSTED_RUNNERS --repo tutur3u/platform --body 'pr:<number>'`.
+3. Push a commit to that pull request (new assignments only) and inspect the
+   exact-head jobs with `gh api repos/tutur3u/platform/actions/runs/<run-id>/jobs`:
+   runner labels, queue and execution time, conclusions.
+4. Widen to `true` only after the canary is clean.
+
+Kill switch: `gh variable delete PR_SELF_HOSTED_RUNNERS --repo tutur3u/platform`
+(or set `false`). New assignments fall back to hosted immediately; jobs already
+assigned keep running and need to be cancelled by run.
+
+The label-only pool split is an interim control. Allow at most 72 hours from the
+time the variable is first set to a value other than off: if a separate macOS
+user for the runners is not in place by then, unset the variable. Cleanup is not
+a sandbox; it does not stop malicious same-repository code from affecting the
+runner's service user.
+
+Regression coverage: `scripts/ci/workflow-pr-self-hosted.test.js` and
+`.github/actions/pr-runner-hygiene/index.test.js`.
+
 ### Calendar scheduling startup requests
 
 The Calendar priority panel reads per-user scheduling summaries through the Tasks
