@@ -5138,6 +5138,16 @@
       }
     }
   },
+  "@mastermindItemFor": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      },
+      "subject": {
+        "type": "String"
+      }
+    }
+  },
   "@mastermindLaneAgeLine": {
     "placeholders": {
       "state": {
@@ -5200,7 +5210,24 @@
       }
     }
   },
+  "@mastermindNameProductArea": {
+    "placeholders": {
+      "product": {
+        "type": "String"
+      },
+      "area": {
+        "type": "String"
+      }
+    }
+  },
   "@mastermindNeedsYouSeeAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindNotReportingCount": {
     "placeholders": {
       "count": {
         "type": "int"
@@ -5218,6 +5245,20 @@
     "placeholders": {
       "option": {
         "type": "String"
+      }
+    }
+  },
+  "@mastermindPublishedAgo": {
+    "placeholders": {
+      "age": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindQueuedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
       }
     }
   },
@@ -5286,6 +5327,16 @@
       }
     }
   },
+  "@mastermindSectionWithBasis": {
+    "placeholders": {
+      "section": {
+        "type": "String"
+      },
+      "basis": {
+        "type": "String"
+      }
+    }
+  },
   "@mastermindSecurityLine": {
     "placeholders": {
       "product": {
@@ -5310,6 +5361,13 @@
     "placeholders": {
       "value": {
         "type": "String"
+      }
+    }
+  },
+  "@mastermindShowAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
       }
     }
   },
@@ -5480,7 +5538,11 @@
   },
   "mastermindAccountFilter": "Tài khoản",
   "mastermindActivityEmpty": "Chưa có hoạt động gần đây",
+  "mastermindActivityFailed": "Lỗi",
+  "mastermindActivityIdle": "Nhàn rỗi",
+  "mastermindActivityRunning": "Đang chạy",
   "mastermindActivityTitle": "Hoạt động",
+  "mastermindActivityWaiting": "Đang chờ",
   "mastermindAgeBasis": "Cơ sở tính tuổi",
   "mastermindAgeDays": "{count, plural, other{{count} ngày trước}}",
   "mastermindAgeHours": "{count, plural, other{{count} giờ trước}}",
@@ -5624,6 +5686,7 @@
   "mastermindForecastNone": "Không dự kiến hết trước khi đặt lại",
   "mastermindFreshCached": "từ bộ đệm",
   "mastermindFreshFresh": "mới",
+  "mastermindFromLanes": "Theo báo cáo của luồng việc",
   "mastermindGroupActions": "Hành động",
   "mastermindGroupDecisions": "Quyết định dành cho bạn",
   "mastermindGroupFyi": "Để bạn nắm thông tin",
@@ -5631,6 +5694,7 @@
   "mastermindInboxSearchPlaceholder": "Tìm trong Cần bạn",
   "mastermindInsightsLabel": "Phân tích",
   "mastermindItemAnsweredTitle": "Mục này đã được trả lời hoặc rút lại",
+  "mastermindItemFor": "{kind} cho {subject}",
   "mastermindItemGoneTitle": "Mục này không còn trong Mastermind",
   "mastermindItemUpdated": "Câu hỏi này đã được cập nhật",
   "mastermindKindAction": "Hành động",
@@ -5669,7 +5733,9 @@
   "mastermindLiveAgo": "Lên production {age}",
   "mastermindLiveFor": "đã chạy {duration}",
   "mastermindMeasuredRuns": "{count, plural, other{{count} lượt chạy có đo}}",
+  "mastermindModelNotReported": "Chưa có thông tin mô hình",
   "mastermindMore": "Xem thêm",
+  "mastermindNameProductArea": "{product} {area}",
   "mastermindNeedsAttention": "Cần chú ý",
   "mastermindNeedsYouHint": "Trả lời trong Inbox trên máy Mac.",
   "mastermindNeedsYouSeeAll": "Xem tất cả ({count})",
@@ -5679,17 +5745,22 @@
   "mastermindNoSnapshotTitle": "Mastermind chưa phát hành dữ liệu nào",
   "mastermindNotConfiguredMessage": "Bản dựng này chưa kết nối Mastermind.",
   "mastermindNotConnectedTitle": "Chưa kết nối",
+  "mastermindNotReported": "Chưa có dữ liệu",
+  "mastermindNotReportingCount": "{count} chưa báo cáo",
   "mastermindNotReversible": "Không thể hoàn tác",
   "mastermindNothingNeedsReply": "Không có gì cần trả lời",
   "mastermindNothingNeedsYou": "Không có việc cần bạn",
   "mastermindNowLabel": "Hiện tại",
   "mastermindObservedAt": "Thời điểm ghi nhận",
   "mastermindOfflineShowing": "Ngoại tuyến · đang hiển thị {time}",
+  "mastermindOpensLanes": "Mở danh sách luồng việc",
   "mastermindOptionRecommended": "{option} · Đề xuất",
   "mastermindOriginLabel": "Nguồn gốc",
   "mastermindPartialBucket": "khoảng chưa trọn",
   "mastermindProductFilter": "Sản phẩm",
   "mastermindProductsLabel": "Sản phẩm",
+  "mastermindPublishedAgo": "Cập nhật {age}",
+  "mastermindQueuedCount": "{count} trong hàng đợi",
   "mastermindQuotaEmpty": "Chưa có dữ liệu hạn mức",
   "mastermindQuotaTitle": "Hạn mức",
   "mastermindRange24h": "24 giờ",
@@ -5750,6 +5821,7 @@
   "mastermindScopeFleet": "Đội ngũ",
   "mastermindScopeModels": "Mô hình",
   "mastermindScopeUsage": "Mức sử dụng",
+  "mastermindSectionWithBasis": "{section} · {basis}",
   "mastermindSecurityFix": "Bản vá bảo mật",
   "mastermindSecurityGroup": "Bảo mật",
   "mastermindSecurityIssue": "Vấn đề bảo mật",
@@ -5803,6 +5875,7 @@
   "mastermindShipUntracked": "Chưa theo dõi",
   "mastermindShipWithheld": "Đã ẩn, xem trên máy Mac",
   "mastermindShipWithheldTooltip": "Chi tiết chỉ có trên máy Mac",
+  "mastermindShowAll": "Xem tất cả {count}",
   "mastermindSignOutAction": "Đăng xuất và đăng nhập lại",
   "mastermindSignOutConfirmAction": "Đăng xuất",
   "mastermindSignOutConfirmMessage": "Thao tác này đăng xuất bạn khỏi Tuturuuu trên thiết bị này, gồm mọi tài khoản đã lưu. Bạn sẽ cần đăng nhập lại.",
@@ -5898,6 +5971,7 @@
   "mastermindUsageVerdictSurplus": "Dư",
   "mastermindUsageWeeklyLeft": "Tuần còn lại",
   "mastermindVersion": "Phiên bản",
+  "mastermindWaitingOnYou": "{count} chờ bạn",
   "mastermindWeekly": "Hằng tuần",
   "mastermindWeeklyLeft": "Tuần còn {value}",
   "mastermindWhy": "Lý do",
@@ -5962,5 +6036,12 @@
     }
   },
   "mastermindThreadsTitle": "Hội thoại",
-  "mastermindBackToThreads": "Về Hội thoại"
+  "mastermindBackToThreads": "Về Hội thoại",
+  "@mastermindWaitingOnYou": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

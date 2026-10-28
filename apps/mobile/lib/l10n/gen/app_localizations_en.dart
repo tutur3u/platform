@@ -12212,7 +12212,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindActivityEmpty => 'No recent activity';
 
   @override
+  String get mastermindActivityFailed => 'Failed';
+
+  @override
+  String get mastermindActivityIdle => 'Idle';
+
+  @override
+  String get mastermindActivityRunning => 'Running';
+
+  @override
   String get mastermindActivityTitle => 'Activity';
+
+  @override
+  String get mastermindActivityWaiting => 'Waiting';
 
   @override
   String get mastermindAgeBasis => 'Age basis';
@@ -12697,6 +12709,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindFreshFresh => 'fresh';
 
   @override
+  String get mastermindFromLanes => 'From lane reports';
+
+  @override
   String get mastermindGroupActions => 'Actions';
 
   @override
@@ -12716,6 +12731,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindItemAnsweredTitle => 'This was answered or withdrawn';
+
+  @override
+  String mastermindItemFor(String kind, String subject) {
+    return '$kind for $subject';
+  }
 
   @override
   String get mastermindItemGoneTitle => 'This item is no longer in Mastermind';
@@ -12856,7 +12876,15 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get mastermindModelNotReported => 'Model not reported';
+
+  @override
   String get mastermindMore => 'More';
+
+  @override
+  String mastermindNameProductArea(String product, String area) {
+    return '$product $area';
+  }
 
   @override
   String get mastermindNeedsAttention => 'Needs attention';
@@ -12888,6 +12916,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindNotConnectedTitle => 'Not connected';
 
   @override
+  String get mastermindNotReported => 'Not reported';
+
+  @override
+  String mastermindNotReportingCount(int count) {
+    return '$count not reporting';
+  }
+
+  @override
   String get mastermindNotReversible => 'Not reversible';
 
   @override
@@ -12908,6 +12944,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get mastermindOpensLanes => 'Opens the lane list';
+
+  @override
   String mastermindOptionRecommended(String option) {
     return '$option · Recommended';
   }
@@ -12923,6 +12962,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindProductsLabel => 'Products';
+
+  @override
+  String mastermindPublishedAgo(String age) {
+    return 'Published $age';
+  }
+
+  @override
+  String mastermindQueuedCount(int count) {
+    return '$count queued';
+  }
 
   @override
   String get mastermindQuotaEmpty => 'No quota data';
@@ -13141,6 +13190,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindScopeUsage => 'Usage';
 
   @override
+  String mastermindSectionWithBasis(String section, String basis) {
+    return '$section · $basis';
+  }
+
+  @override
   String get mastermindSecurityFix => 'Security fix';
 
   @override
@@ -13322,6 +13376,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindShipWithheldTooltip => 'Details stay on the Mac';
+
+  @override
+  String mastermindShowAll(int count) {
+    return 'Show all $count';
+  }
 
   @override
   String get mastermindSignOutAction => 'Sign out and sign in again';
@@ -13663,6 +13722,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindVersion => 'Version';
+
+  @override
+  String mastermindWaitingOnYou(int count) {
+    return '$count on you';
+  }
 
   @override
   String get mastermindWeekly => 'Weekly';

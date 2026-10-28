@@ -6,30 +6,22 @@ import 'package:mobile/core/ui/overlays/app_sheet_scaffold.dart';
 import 'package:mobile/core/ui/overlays/show_app_sheet.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
-import 'package:mobile/features/mastermind/view/mastermind_scroll_clearance.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// The data sources behind the snapshot, degraded ones first, each as a word
 /// plus a glyph. Opened from the "N sources degraded" strip and from Home.
+///
+/// It opens on the root navigator, above the shell's floating dock, so the
+/// dock can never cover its last rows; the system safe area pads its end.
 Future<void> showMastermindSourcesSheet(
   BuildContext context, {
   required List<Source> sources,
-}) {
-  final clearance = MastermindScrollClearance.of(context);
-  return showAppSheet<void>(
-    context: context,
-    size: AppSheetSize.medium,
-    builder: (context) {
-      final media = MediaQuery.of(context);
-      return MediaQuery(
-        data: media.copyWith(
-          padding: media.padding.copyWith(bottom: clearance),
-        ),
-        child: _SourcesSheet(sources: sources),
-      );
-    },
-  );
-}
+}) => showAppSheet<void>(
+  context: context,
+  size: AppSheetSize.medium,
+  useRootNavigator: true,
+  builder: (context) => _SourcesSheet(sources: sources),
+);
 
 class _SourcesSheet extends StatelessWidget {
   const _SourcesSheet({required this.sources});

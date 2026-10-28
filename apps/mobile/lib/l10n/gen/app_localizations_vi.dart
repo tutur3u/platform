@@ -12079,7 +12079,19 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindActivityEmpty => 'Chưa có hoạt động gần đây';
 
   @override
+  String get mastermindActivityFailed => 'Lỗi';
+
+  @override
+  String get mastermindActivityIdle => 'Nhàn rỗi';
+
+  @override
+  String get mastermindActivityRunning => 'Đang chạy';
+
+  @override
   String get mastermindActivityTitle => 'Hoạt động';
+
+  @override
+  String get mastermindActivityWaiting => 'Đang chờ';
 
   @override
   String get mastermindAgeBasis => 'Cơ sở tính tuổi';
@@ -12560,6 +12572,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindFreshFresh => 'mới';
 
   @override
+  String get mastermindFromLanes => 'Theo báo cáo của luồng việc';
+
+  @override
   String get mastermindGroupActions => 'Hành động';
 
   @override
@@ -12579,6 +12594,11 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindItemAnsweredTitle => 'Mục này đã được trả lời hoặc rút lại';
+
+  @override
+  String mastermindItemFor(String kind, String subject) {
+    return '$kind cho $subject';
+  }
 
   @override
   String get mastermindItemGoneTitle => 'Mục này không còn trong Mastermind';
@@ -12718,7 +12738,15 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String get mastermindModelNotReported => 'Chưa có thông tin mô hình';
+
+  @override
   String get mastermindMore => 'Xem thêm';
+
+  @override
+  String mastermindNameProductArea(String product, String area) {
+    return '$product $area';
+  }
 
   @override
   String get mastermindNeedsAttention => 'Cần chú ý';
@@ -12750,6 +12778,14 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindNotConnectedTitle => 'Chưa kết nối';
 
   @override
+  String get mastermindNotReported => 'Chưa có dữ liệu';
+
+  @override
+  String mastermindNotReportingCount(int count) {
+    return '$count chưa báo cáo';
+  }
+
+  @override
   String get mastermindNotReversible => 'Không thể hoàn tác';
 
   @override
@@ -12770,6 +12806,9 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String get mastermindOpensLanes => 'Mở danh sách luồng việc';
+
+  @override
   String mastermindOptionRecommended(String option) {
     return '$option · Đề xuất';
   }
@@ -12785,6 +12824,16 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindProductsLabel => 'Sản phẩm';
+
+  @override
+  String mastermindPublishedAgo(String age) {
+    return 'Cập nhật $age';
+  }
+
+  @override
+  String mastermindQueuedCount(int count) {
+    return '$count trong hàng đợi';
+  }
 
   @override
   String get mastermindQuotaEmpty => 'Chưa có dữ liệu hạn mức';
@@ -13000,6 +13049,11 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindScopeUsage => 'Mức sử dụng';
 
   @override
+  String mastermindSectionWithBasis(String section, String basis) {
+    return '$section · $basis';
+  }
+
+  @override
   String get mastermindSecurityFix => 'Bản vá bảo mật';
 
   @override
@@ -13181,6 +13235,11 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindShipWithheldTooltip => 'Chi tiết chỉ có trên máy Mac';
+
+  @override
+  String mastermindShowAll(int count) {
+    return 'Xem tất cả $count';
+  }
 
   @override
   String get mastermindSignOutAction => 'Đăng xuất và đăng nhập lại';
@@ -13520,6 +13579,11 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindVersion => 'Phiên bản';
+
+  @override
+  String mastermindWaitingOnYou(int count) {
+    return '$count chờ bạn';
+  }
 
   @override
   String get mastermindWeekly => 'Hằng tuần';

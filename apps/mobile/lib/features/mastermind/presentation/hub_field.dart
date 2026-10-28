@@ -44,8 +44,12 @@ final class HubField {
     return status == 'stale' || status == 'ok' ? time : '$label · $time';
   }
 
+  /// False for a missing, blank or literal "unknown" reading.
+  static bool isReported(String? value) =>
+      value != null &&
+      value.trim().isNotEmpty &&
+      value.trim().toLowerCase() != 'unknown';
+
   static String text(AppLocalizations l10n, String? value) =>
-      value == null || value.trim().isEmpty || value.toLowerCase() == 'unknown'
-      ? l10n.mastermindNotPublished
-      : value;
+      isReported(value) ? value! : l10n.mastermindNotPublished;
 }

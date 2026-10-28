@@ -7,7 +7,7 @@ import 'package:mobile/features/mastermind/presentation/labels.dart';
 import 'package:mobile/features/mastermind/view/home_needs_you_card.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-/// The latest five events from `now.digest`, newest first. Display only: the
+/// The latest three events from `now.digest`, newest first. Display only: the
 /// full feed and its "new" cursor arrive with the Activity screen.
 class HomeActivityCard extends StatelessWidget {
   const HomeActivityCard({required this.model, super.key});

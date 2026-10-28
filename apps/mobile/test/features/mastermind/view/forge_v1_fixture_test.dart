@@ -6,7 +6,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/parse/snapshot_parser.dart';
+import 'package:mobile/features/mastermind/presentation/activity_model.dart';
 import 'package:mobile/features/mastermind/presentation/home_model.dart';
+import 'package:mobile/features/mastermind/view/home/activity_strip.dart';
 import 'package:mobile/features/mastermind/view/inbox/inbox_item_tile.dart';
 import 'package:mobile/features/mastermind/view/inbox/mastermind_inbox_page.dart';
 import 'package:mobile/features/mastermind/view/inbox/mastermind_item_page.dart';
@@ -67,12 +69,9 @@ void main() {
     };
     final adapted =
         parseMastermindSnapshot(snapshotBytes(changed)) as ParseAccepted;
-    expect(MastermindHomeModel.from(adapted.snapshot).laneCounts, {
-      LaneState.running: 8,
-      LaneState.waiting: 3,
-      LaneState.idle: 2,
-      LaneState.queued: 0,
-    });
+    final lanes = MastermindHomeModel.from(adapted.snapshot).lanes;
+    expect(lanes.source, ActivitySource.hub);
+    expect((lanes.running, lanes.waiting, lanes.idle, lanes.queued), (8, 3, 2, 0));
   });
 
   for (final (name, page) in <(String, Widget)>[
@@ -122,7 +121,14 @@ void main() {
       expect(tester.takeException(), isNull);
       switch (name) {
         case 'Home':
-          expect(find.text('1 idle'), findsOneWidget);
+          final idle = find.ancestor(
+            of: find.text('Idle'),
+            matching: find.byType(MastermindCountTile),
+          );
+          expect(
+            find.descendant(of: idle, matching: find.text('1')),
+            findsOneWidget,
+          );
         case 'Inbox':
           expect(find.byType(InboxItemTile), findsNWidgets(2));
           expect(find.text('Review the plan'), findsNWidgets(2));
