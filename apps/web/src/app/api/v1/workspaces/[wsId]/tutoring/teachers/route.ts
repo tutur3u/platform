@@ -18,8 +18,8 @@ const querySchema = z.object({
   q: z.string().trim().max(200).default(''),
   tutorsOnly: z
     .enum(['true', 'false'])
-    .default('false')
-    .transform((value) => value === 'true'),
+    .optional()
+    .transform((value) => (value === undefined ? undefined : value === 'true')),
 });
 
 export async function GET(
@@ -56,9 +56,8 @@ export async function GET(
       error: policyError,
       wsId: normalizedWsId,
     });
-    // Only a tutors-only listing depends on the policy; the plain catalog
-    // still loads, just without tutor labels.
-    if (tutorsOnly)
+    // Default listings depend on policy to determine eligibility.
+    if (tutorsOnly !== false)
       return NextResponse.json(
         { message: 'Failed to load teachers' },
         { status: 500 }
@@ -68,7 +67,7 @@ export async function GET(
     policyError ? [] : (policyRows ?? [])
   );
   let query = workspaceTeachersQuery(sbAdmin, normalizedWsId);
-  if (tutorsOnly) {
+  if (tutorsOnly ?? tutorGroupIds.length > 0) {
     const { tutorIds, error } = await listWorkspaceTutorIds({
       normalizedWsId,
       sbAdmin,

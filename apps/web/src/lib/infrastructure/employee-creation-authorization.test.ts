@@ -87,6 +87,7 @@ beforeEach(() => {
       user: {
         ...user,
         email_confirmed_at: '2026-01-01T00:00:00Z',
+        identities: [{ provider: 'email', identity_data: {} }],
         banned_until: null,
       },
     },
@@ -107,7 +108,12 @@ it.each([
   async ({ signed, current }) => {
     mock.identity.mockResolvedValue({
       data: {
-        user: { ...user, email: current, email_confirmed_at: '2026-01-01' },
+        user: {
+          ...user,
+          email: current,
+          email_confirmed_at: '2026-01-01',
+          identities: [{ provider: 'email', identity_data: {} }],
+        },
       },
       error: null,
     });
@@ -148,6 +154,7 @@ it('preserves ordinary Infra acceptance of a changed internal Auth email', async
         ...user,
         email: 'renamed@tuturuuu.com',
         email_confirmed_at: '2026-01-01',
+        identities: [{ provider: 'email', identity_data: {} }],
       },
     },
     error: null,
@@ -310,7 +317,11 @@ describe('fresh root employee creation authority', () => {
   it.each([
     { ...user, email: 'actor@sub.tuturuuu.com' },
     { ...user, id: 'other' },
-    { ...user, email_confirmed_at: null },
+    {
+      ...user,
+      email_confirmed_at: null,
+      identities: [{ provider: 'email', identity_data: {} }],
+    },
     { ...user, banned_until: 'not-a-date' },
     { ...user, banned_until: '2100-01-01T00:00:00Z' },
   ])('rejects stale or invalid current identity', async (changes) => {
@@ -319,6 +330,7 @@ describe('fresh root employee creation authority', () => {
         user: {
           ...user,
           email_confirmed_at: '2026-01-01T00:00:00Z',
+          identities: [{ provider: 'email', identity_data: {} }],
           banned_until: null,
           ...changes,
         },

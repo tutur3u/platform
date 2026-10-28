@@ -5,6 +5,7 @@ import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/data/sources/device_secure_storage.dart';
 import 'package:mobile/features/profile/profile_timeline_access.dart';
 
 class ProfileTimelineItem {
@@ -57,9 +58,7 @@ class ProfileTimelineRepository {
     FlutterSecureStorage? secureStorage,
   }) : _api = apiClient ?? ApiClient(),
        _store = cacheStore ?? CacheStore.instance,
-       _access = ProfileTimelineAccess(
-         secureStorage ?? const FlutterSecureStorage(),
-       );
+       _access = ProfileTimelineAccess(secureStorage ?? deviceSecureStorage);
 
   final ApiClient _api;
   final CacheStore _store;

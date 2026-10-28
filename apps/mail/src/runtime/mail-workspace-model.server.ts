@@ -1,3 +1,6 @@
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { getVerifiedAuthUser } from '@tuturuuu/supabase/next/user';
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import '@tanstack/react-start/server-only';
 import { notFound, redirect } from '@tanstack/react-router';
 import {
@@ -11,7 +14,6 @@ import {
   parseSidebarBehavior,
 } from '@tuturuuu/satellite/workspace-layout-helpers';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
-import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { resolveNotificationWebAppUrl } from './notification-url.server';
 import { cookies, headers } from './request-context';
@@ -19,8 +21,15 @@ import { cookies, headers } from './request-context';
 export async function loadMailWorkspace(id: string) {
   const user = await getSatelliteAppSessionUser('mail');
   if (!user?.id) throw redirect({ href: '/login' });
+  const isStaff = isVerifiedTuturuuuStaffSession(
+    user &&
+      (await getVerifiedAuthUser(
+        await createAdminClient({ noCookie: true }),
+        user.id
+      ))
+  );
   const workspace = await getWorkspace(id, { useAdmin: true, user });
-  if (!workspace?.personal && !isExactTuturuuuDotComEmail(user.email))
+  if (!workspace?.personal && !isStaff)
     throw redirect({ href: '/not-available' });
   if (!workspace?.joined) {
     const invitation = await getPendingWorkspaceInvitation(id, await headers());
@@ -39,7 +48,7 @@ export async function loadMailWorkspace(id: string) {
     }),
     actorId: user.id,
     notificationWebAppUrl: resolveNotificationWebAppUrl(),
-    connectedByDefault: !isExactTuturuuuDotComEmail(user.email),
+    connectedByDefault: !isStaff,
     profile: await getSatelliteCurrentUser('mail'),
     behavior,
     behaviorUpdatedAt: getSidebarBehaviorUpdatedAt(store),

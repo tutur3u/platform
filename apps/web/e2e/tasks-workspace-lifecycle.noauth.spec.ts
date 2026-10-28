@@ -198,10 +198,12 @@ async function configureTaskThroughDialog(
   labelName: string,
   projectName: string
 ): Promise<void> {
+  const priority = page.getByRole('button', { name: 'Priority', exact: true });
   const propertiesToggle = page
     .getByRole('button', { name: /properties/i })
     .first();
-  if (await propertiesToggle.isVisible().catch(() => false)) {
+  await expect(priority.or(propertiesToggle).first()).toBeVisible();
+  if (!(await priority.isVisible())) {
     await propertiesToggle.click();
   }
 

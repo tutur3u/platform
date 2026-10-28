@@ -236,7 +236,25 @@ function shouldPreserveSupabaseAuthCookie(
   request: RequestLike,
   cookieName: string
 ) {
-  if (!getRequestHostnames(request).some(isSharedSupabaseCookieHostname)) {
+  const localSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  let localE2E = false;
+  if (process.env.TUTURUUU_LOCAL_E2E_AUTH_BYPASS === '1' && localSupabaseUrl) {
+    try {
+      const url = new URL(localSupabaseUrl);
+      localE2E =
+        url.protocol === 'http:' &&
+        ['localhost', '127.0.0.1'].includes(url.hostname);
+    } catch {
+      localE2E = false;
+    }
+  }
+  if (
+    !getRequestHostnames(request).some(
+      (hostname) =>
+        isSharedSupabaseCookieHostname(hostname) ||
+        (localE2E && ['localhost', '127.0.0.1'].includes(hostname))
+    )
+  ) {
     return false;
   }
 
