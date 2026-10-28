@@ -2456,7 +2456,8 @@ export function TaskEditDialog({
       <TaskSprintRow
         boardId={boardId}
         canEdit={!taskControlsDisabled}
-        task={task}
+        endDate={formState.endDate}
+        task={isCreateMode ? undefined : task}
         wsId={effectiveTaskWsId}
       />
       <TaskPropertiesSection
