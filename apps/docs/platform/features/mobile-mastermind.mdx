@@ -46,8 +46,7 @@ connectivity alone changes.
 
 Home, Inbox, Work, Ship and Insights share one mini-app shell: the top navbar
 shows the destination title and no Back button, and the floating dock owns Back.
-Home and Inbox are implemented; the other tabs show a "coming soon" empty state
-behind the same access gate and freshness strip.
+Every tab sits behind the same access gate and freshness strip.
 
 ## Freshness strip
 
@@ -87,9 +86,10 @@ Needs you comes first, then lanes at a glance, ship, quota, recent decisions and
 activity. Needs you lists up to three normal items (decision, then action, then
 FYI, then publisher order); "See all (N)" counts normal items only.
 
-Recent-decision rows and Ship rows are not tappable until Inbox and Ship have
-screens to open. "See all", the lane chips and "Usage" link to their tabs; a
-lane chip opens Work already filtered to that state.
+Recent-decision rows are not tappable until they have a detail screen. "See
+all", the lane chips, the Ship rows and "Usage" link to their tabs: a lane chip
+opens Work already filtered to that state, and a Ship row (a failing environment
+or a release) opens `/mastermind/ship?product=<product>`.
 
 **Security rows** render as a single non-tappable "`<Product>` · security fix"
 line in a trailing "Security" group with no count. They have no severity, title
@@ -251,6 +251,72 @@ and product, area and kind chips. State is always a glyph and a word.
   with a way back, never an error. A lane whose state changed while open shows
   "This lane was updated".
 
+## Ship
+
+`/mastermind/ship` is read-only. It lists, under the freshness strip:
+
+- **Environments by product.** A product with a failing environment (deploy or
+  CI `failure` or `error`) comes first, then the rest by name. A group opens with
+  the product's release line ("Live 2 d ago" and its age basis, "Unknown" when
+  the age is null), then production before staging. An environment shows deploy
+  and CI as a glyph and a word, its own `freshness` chip (it never follows the
+  snapshot's age), the version, the commit id (monospace, with a copy button; it
+  is a public commit id), the commit subject, the release time in GMT+7 with its
+  age, the evidence label and "Checked" time. A subject of "Withheld, open on
+  Mac" is muted with an info glyph and the tooltip "Details stay on the Mac". A
+  null version, commit id or subject hides its line.
+- **CI now.** `observability.ci[]`, queued and running per repository. A null
+  count reads "Unavailable", never 0.
+- **Release cadence.** Most recent production release first; a product with none
+  reads "No production release observed" and sits last.
+- **Pull requests and merges.** From `observability.delivery`: the latest open
+  pull request count and merge-to-live median per product, and "At least N
+  production releases observed" (a lower bound). A null count reads
+  "Unavailable"; a delivery source with no coverage says so once and shows no
+  numbers. Nothing on this tab opens a pull request, merges or syncs anything.
+  The schema carries no separate sync record, so production sync is only
+  visible as the release age and cadence above.
+- **Product filter in the URL.** Chips appear while two or more products are
+  present and write `?product=<product>` with `go`. A product the snapshot lacks
+  is removed from the URL once the frame is built. External deep links open the
+  tab root.
+
+Ship shows no security rows, ids or digests.
+
+## Insights
+
+`/mastermind/insights` is the Usage view (the Fleet, Models, Coordination and
+Delivery sections arrive later and reuse the table route below).
+
+- **Pools** come from `observability.usage.instances[]`, most urgent first:
+  SHORT, then unknown pacing, then OK, then SURPLUS, then the least session
+  budget left, then label. Pool labels are opaque display strings, shown
+  verbatim and never summed or stacked. Each pool shows session and weekly
+  budget left ("Unavailable" when null, never 0), the reset time in GMT+7, the
+  burn in pp/h, the signed projection at reset, and pacing as a word and a
+  shape (unknown is a dashed outline). Pacing is labelled "Reserve pacing (chart
+  rule)" with the note that it is not the routing decision.
+- **Charts** use the shared chart kit: one panel per pool (session solid,
+  weekly dashed, a fixed 0 to 100 percent axis, a reset marker when it falls in
+  range), and for each Codex pool in `usage.credits[]` a balance panel and a
+  burn-against-target panel. "Credits" is a unit of its own, never money or
+  tokens; a null daily target reads "Target unavailable". Each panel leads with
+  its text summary, carries a shape legend and a live readout, and has a Table
+  action. With `usage.coverage` of `missing` or `unavailable` the plot is left
+  out and the coverage note stands in; with `partial` or `stale` the summary is
+  prefixed with the coverage word. A pool with no series shows the summary only.
+- **Quota table** (`products.quotas[]`, including `Unknown account`), least left
+  first and unknown last, with "as of N min ago". **Forecasts**
+  (`quota_forecasts[]`): "Projected empty <time> GMT+7" soonest first, or "Not
+  projected to run out before reset".
+- **Chart table route.** `/mastermind/insights/:section/table/:chartId` is
+  pushed over Insights and shows the same series rows the panel draws (a null
+  cell reads "Unavailable"). The section is `usage` and the chart id is
+  `budget:<pool>`, `credits:<pool>` or `burn:<pool>`; both are route parameters
+  only. A chart the snapshot no longer has shows "This chart is no longer in
+  Mastermind" with a way back, never an error. The shell pops this location on
+  Back instead of falling back to the tab root.
+
 ## Regression coverage
 
 `apps/mobile/test/features/mastermind/view`:
@@ -280,6 +346,18 @@ and product, area and kind chips. State is always a glyph and a word.
   the snapshot is removed from the URL too, and valid filters are kept.
 - `mastermind_lane_page_test.dart` (detail, gone, updated) and
   `work_model_test.dart`.
+- `mastermind_ship_page_test.dart`: failure-first grouping, production before
+  staging, withheld subject, per-environment freshness independent of the
+  snapshot, "Unavailable" instead of 0, cadence order, pull requests and merges,
+  redaction, whole-section states, the product filter in the URL, dock
+  clearance.
+- `mastermind_insights_page_test.dart`: pool urgency order, pacing word plus
+  shape, null readings, GMT+7 resets, credits copy, quota and forecasts,
+  coverage handling, the chart table route (same series, gone chart, Back),
+  whole-section states, dock clearance.
+- `mastermind_home_links_test.dart`: Home Ship rows and the Usage link open the
+  real tabs. `presentation/ship_usage_model_test.dart`: the Ship and Usage
+  models and chart ids.
 - `apps/mobile/test/features/shell/view/shell_back_navigation_test.dart`:
   system Back from a lane over a filtered Work location returns to that
   location with its query (it fails without the shell's lane-pop rule).

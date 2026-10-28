@@ -5,9 +5,9 @@ import 'package:mobile/features/mastermind/view/mastermind_freshness_strip.dart'
 import 'package:mobile/features/mastermind/view/mastermind_section.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-enum MastermindTab { inbox, work, ship, insights }
+enum MastermindTab { inbox, work }
 
-/// The Inbox, Work, Ship and Insights tabs until they are built. They already
+/// A tab that is not built yet. They already
 /// sit behind the same access gate, freshness strip and section states.
 class MastermindPlaceholderPage extends StatelessWidget {
   const MastermindPlaceholderPage({required this.tab, super.key});
@@ -18,15 +18,11 @@ class MastermindPlaceholderPage extends StatelessWidget {
       switch (tab) {
         MastermindTab.inbox => l10n.mastermindTabInbox,
         MastermindTab.work => l10n.mastermindTabWork,
-        MastermindTab.ship => l10n.mastermindTabShip,
-        MastermindTab.insights => l10n.mastermindTabInsights,
       };
 
   static IconData icon(MastermindTab tab) => switch (tab) {
     MastermindTab.inbox => LucideIcons.inbox,
     MastermindTab.work => LucideIcons.briefcase,
-    MastermindTab.ship => LucideIcons.rocket,
-    MastermindTab.insights => LucideIcons.chartLine,
   };
 
   @override

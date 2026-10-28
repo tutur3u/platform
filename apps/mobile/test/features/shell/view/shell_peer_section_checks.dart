@@ -179,6 +179,47 @@ void registerShellPeerSectionChecks({
     expect(find.text('work state=failed&product=Mastermind'), findsOneWidget);
     expect(router.routerDelegate.currentConfiguration.uri.toString(), filtered);
   });
+
+  testWidgets('system Back from a chart table returns to Insights', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 844);
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    final router = _buildMastermindWorkRouter();
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      _buildTestApp(
+        router: router,
+        appTabCubit: appTabCubit(),
+        authCubit: authCubit(),
+        workspaceCubit: workspaceCubit(),
+      ),
+    );
+    await _pumpForTransitions(tester);
+    router.go(Routes.mastermindInsights);
+    await _pumpForTransitions(tester);
+    router
+        .push<void>(
+          Routes.mastermindInsightsTablePath('usage', 'budget:Claude pool A'),
+        )
+        .ignore();
+    await _pumpForTransitions(tester);
+    expect(find.text('table usage budget:Claude pool A'), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    await _pumpForTransitions(tester);
+
+    // The table pops to Insights instead of leaving the mini-app.
+    expect(find.text('insights'), findsOneWidget);
+    expect(
+      router.routerDelegate.currentConfiguration.uri.path,
+      Routes.mastermindInsights,
+    );
+  });
 }
 
 /// The shell with the Mastermind Work list and lane detail as stub pages.
@@ -199,6 +240,18 @@ GoRouter _buildMastermindWorkRouter() => GoRouter(
           path: Routes.mastermindWork,
           builder: (context, state) =>
               _RoutePage(label: 'work ${state.uri.query}'),
+        ),
+        GoRoute(
+          path: Routes.mastermindInsights,
+          builder: (context, state) => const _RoutePage(label: 'insights'),
+        ),
+        GoRoute(
+          path: Routes.mastermindInsightsTable,
+          builder: (context, state) => _RoutePage(
+            label:
+                'table ${state.pathParameters['section']} '
+                '${state.pathParameters['chartId']}',
+          ),
         ),
         GoRoute(
           path: Routes.mastermindWorkLane,

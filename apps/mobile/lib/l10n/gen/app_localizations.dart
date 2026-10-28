@@ -23251,6 +23251,12 @@ abstract class AppLocalizations {
   /// **'Back to Inbox'**
   String get mastermindBackToInbox;
 
+  /// No description provided for @mastermindBackToInsights.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to Insights'**
+  String get mastermindBackToInsights;
+
   /// No description provided for @mastermindBacklogEmptyTitle.
   ///
   /// In en, this message translates to:
@@ -23376,6 +23382,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Fleet structure'**
   String get mastermindChartFleetTree;
+
+  /// No description provided for @mastermindChartGoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This chart is no longer in Mastermind'**
+  String get mastermindChartGoneTitle;
 
   /// No description provided for @mastermindChartLatency.
   ///
@@ -23862,6 +23874,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This account isn\'t allowed to view Mastermind.'**
   String get mastermindForbiddenTitle;
+
+  /// No description provided for @mastermindForecastEmptyAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Projected empty {dateTime}'**
+  String mastermindForecastEmptyAt(String dateTime);
+
+  /// No description provided for @mastermindForecastNone.
+  ///
+  /// In en, this message translates to:
+  /// **'Not projected to run out before reset'**
+  String get mastermindForecastNone;
 
   /// No description provided for @mastermindFreshCached.
   ///
@@ -24523,6 +24547,12 @@ abstract class AppLocalizations {
   /// **'Reserve pacing (chart rule)'**
   String get mastermindReservePacing;
 
+  /// No description provided for @mastermindReservePacingInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'This is the chart reserve check, not the routing decision.'**
+  String get mastermindReservePacingInfo;
+
   /// No description provided for @mastermindResetsAt.
   ///
   /// In en, this message translates to:
@@ -24769,11 +24799,113 @@ abstract class AppLocalizations {
   /// **'Mastermind couldn\'t verify your session.'**
   String get mastermindSessionRejectedTitle;
 
+  /// No description provided for @mastermindShipCadenceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Release cadence'**
+  String get mastermindShipCadenceTitle;
+
+  /// No description provided for @mastermindShipChecked.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked {dateTime}'**
+  String mastermindShipChecked(String dateTime);
+
+  /// No description provided for @mastermindShipCiBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'CI {status}'**
+  String mastermindShipCiBadge(String status);
+
+  /// No description provided for @mastermindShipCiNow.
+  ///
+  /// In en, this message translates to:
+  /// **'CI now'**
+  String get mastermindShipCiNow;
+
+  /// No description provided for @mastermindShipCiQueued.
+  ///
+  /// In en, this message translates to:
+  /// **'Queued {value}'**
+  String mastermindShipCiQueued(String value);
+
+  /// No description provided for @mastermindShipCiRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Running {value}'**
+  String mastermindShipCiRunning(String value);
+
+  /// No description provided for @mastermindShipCopySha.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy commit id'**
+  String get mastermindShipCopySha;
+
+  /// No description provided for @mastermindShipDeployBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Deploy {status}'**
+  String mastermindShipDeployBadge(String status);
+
   /// No description provided for @mastermindShipEmpty.
   ///
   /// In en, this message translates to:
   /// **'No releases reported'**
   String get mastermindShipEmpty;
+
+  /// No description provided for @mastermindShipNoCadence.
+  ///
+  /// In en, this message translates to:
+  /// **'No release cadence reported'**
+  String get mastermindShipNoCadence;
+
+  /// No description provided for @mastermindShipNoEnvironments.
+  ///
+  /// In en, this message translates to:
+  /// **'No environments reported.'**
+  String get mastermindShipNoEnvironments;
+
+  /// No description provided for @mastermindShipNoProdRelease.
+  ///
+  /// In en, this message translates to:
+  /// **'No production release observed'**
+  String get mastermindShipNoProdRelease;
+
+  /// No description provided for @mastermindShipNoPullRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'No pull request data reported.'**
+  String get mastermindShipNoPullRequests;
+
+  /// No description provided for @mastermindShipOpenCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} open'**
+  String mastermindShipOpenCount(int count);
+
+  /// No description provided for @mastermindShipPullRequestsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pull requests and merges'**
+  String get mastermindShipPullRequestsTitle;
+
+  /// No description provided for @mastermindShipReleased.
+  ///
+  /// In en, this message translates to:
+  /// **'Released {dateTime}'**
+  String mastermindShipReleased(String dateTime);
+
+  /// No description provided for @mastermindShipShaCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Commit id copied'**
+  String get mastermindShipShaCopied;
+
+  /// No description provided for @mastermindShipWithheldTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Details stay on the Mac'**
+  String get mastermindShipWithheldTooltip;
 
   /// No description provided for @mastermindShowAll.
   ///
@@ -25267,11 +25399,47 @@ abstract class AppLocalizations {
   /// **'Updated {time}'**
   String mastermindUpdatedAt(String time);
 
+  /// No description provided for @mastermindUsageBudgetLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Budget left'**
+  String get mastermindUsageBudgetLeft;
+
+  /// No description provided for @mastermindUsageCreditsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Codex credits'**
+  String get mastermindUsageCreditsTitle;
+
+  /// No description provided for @mastermindUsageEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No usage data reported.'**
+  String get mastermindUsageEmpty;
+
+  /// No description provided for @mastermindUsageForecastsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Forecasts'**
+  String get mastermindUsageForecastsTitle;
+
   /// No description provided for @mastermindUsageLink.
   ///
   /// In en, this message translates to:
   /// **'Usage'**
   String get mastermindUsageLink;
+
+  /// No description provided for @mastermindUsagePacing.
+  ///
+  /// In en, this message translates to:
+  /// **'Pacing'**
+  String get mastermindUsagePacing;
+
+  /// No description provided for @mastermindUsageTargetUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Target unavailable'**
+  String get mastermindUsageTargetUnavailable;
 
   /// No description provided for @mastermindVersion.
   ///
@@ -25284,6 +25452,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Weekly'**
   String get mastermindWeekly;
+
+  /// No description provided for @mastermindWeeklyLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly {value} left'**
+  String mastermindWeeklyLeft(String value);
 
   /// No description provided for @mastermindWhy.
   ///
