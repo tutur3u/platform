@@ -1,4 +1,7 @@
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { getVerifiedAuthUser } from '@tuturuuu/supabase/next/user';
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import type { NextRequest } from 'next/server';
 
 export async function POST(request: NextRequest) {
@@ -10,7 +13,15 @@ export async function POST(request: NextRequest) {
   }
 
   // if user is not part of Tuturuuu org
-  if (!user.email?.endsWith('@tuturuuu.com')) {
+  if (
+    !isVerifiedTuturuuuStaffSession(
+      user &&
+        (await getVerifiedAuthUser(
+          await createAdminClient({ noCookie: true }),
+          user.id
+        ))
+    )
+  ) {
     return new Response('Forbidden', { status: 403 });
   }
 

@@ -4,7 +4,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { Product, SupportInquiry, SupportType } from '@tuturuuu/types';
-import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import type { Metadata } from 'next';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { InquiriesClient } from './inquiries-client';
@@ -57,7 +57,7 @@ export default async function InquiriesPage({
         // Verify user has valid Tuturuuu email
         const { user } = await resolveAuthenticatedSessionUser(supabase);
 
-        if (!isValidTuturuuuEmail(user?.email)) {
+        if (!isVerifiedTuturuuuStaffSession(user, { allowXwf: true })) {
           return (
             <div className="container mx-auto py-6">
               <div className="text-destructive">

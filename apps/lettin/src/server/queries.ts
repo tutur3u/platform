@@ -12,7 +12,7 @@ import {
   worldRole,
 } from './context';
 import { traceLettinRead } from './read-diagnostics';
-import { isTuturuuuStaffEmail } from './staff-access';
+import { isVerifiedStaff } from './staff-access';
 import { publishedReferences } from './wiki-references';
 
 export async function readWorld(
@@ -142,9 +142,7 @@ export async function readOverview(
     approved,
     canCreate: approved && actor.canManage,
     canImportExocorpse:
-      approved &&
-      actor.canManage &&
-      isTuturuuuStaffEmail(await actor.verifiedEmail()),
+      approved && actor.canManage && (await isVerifiedStaff(actor.id)),
     isAdmin: actor.isAdmin,
     canInvite,
     worlds,

@@ -1,6 +1,8 @@
 import { miraClientCapabilitiesInputSchema } from '@tuturuuu/ai/tools/mira-client-capabilities';
 import type { ChatAttachmentDraft } from '@tuturuuu/internal-api';
-import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { getVerifiedAuthUser } from '@tuturuuu/supabase/next/user';
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createLegacyHeadHandler } from '@/legacy-api-routes/head';
@@ -199,15 +201,12 @@ export const POST = withSessionAuth<RouteParams>(
     // that the model endpoint would reject after their message has been saved.
     let miraMode = false;
     if (parsed.data.miraMode === true) {
-      miraMode = isExactTuturuuuDotComEmail(auth.user.email);
-      if (!miraMode) {
-        const { data } = await auth.supabase
-          .from('user_private_details')
-          .select('email')
-          .eq('user_id', auth.user.id)
-          .maybeSingle();
-        miraMode = isExactTuturuuuDotComEmail(data?.email);
-      }
+      miraMode = isVerifiedTuturuuuStaffSession(
+        await getVerifiedAuthUser(
+          await createAdminClient({ noCookie: true }),
+          auth.user.id
+        )
+      );
     }
 
     if (isAiChatConversationId(params.conversationId)) {

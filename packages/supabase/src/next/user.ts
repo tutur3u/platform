@@ -26,3 +26,16 @@ export async function getVerifiedAuthEmail(
   }
   return getConfirmedAuthEmail(data.user);
 }
+
+/** Read current Auth state for an already authenticated subject. Fail closed. */
+export async function getVerifiedAuthUser(
+  admin: Pick<TypedSupabaseClient, 'auth'>,
+  userId: string
+): Promise<User | null> {
+  try {
+    const { data, error } = await admin.auth.admin.getUserById(userId);
+    return !error && data.user?.id === userId ? data.user : null;
+  } catch {
+    return null;
+  }
+}

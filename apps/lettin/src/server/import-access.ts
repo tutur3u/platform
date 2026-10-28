@@ -1,11 +1,11 @@
 import { EXOCORPSE_WORKSPACE_ID } from '@tuturuuu/internal-api/lettin';
 import { type Actor, isCreator, LettinError, type Store } from './context';
-import { isTuturuuuStaffEmail } from './staff-access';
+import { isVerifiedStaff } from './staff-access';
 export async function requireImportAccess(db: Store, actor: Actor) {
   if (
     !actor.canManage ||
     !(await isCreator(db, actor)) ||
-    !isTuturuuuStaffEmail(await actor.verifiedEmail())
+    !(await isVerifiedStaff(actor.id))
   )
     throw new LettinError(403);
 }

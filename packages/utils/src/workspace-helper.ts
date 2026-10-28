@@ -18,7 +18,6 @@ import {
   ROOT_WORKSPACE_ID,
   resolveWorkspaceId,
 } from './constants';
-import { isValidTuturuuuEmail } from './email/client';
 import { permissions as rolePermissions } from './permissions';
 
 export class WorkspaceAuthError extends Error {
@@ -80,7 +79,6 @@ type AuthenticatedWorkspacePrincipal = {
   id: string;
 };
 
-// Structured logging utility
 const logWorkspaceError = (
   context: string,
   error: unknown,
@@ -506,7 +504,6 @@ export async function getWorkspaceInvites() {
         .ilike('email', `%${principal.email}%`)
     : null;
 
-  // use promise.all to run both queries in parallel
   const [invites, emailInvites] = await Promise.all([
     invitesQuery,
     emailInvitesQuery,
@@ -518,33 +515,7 @@ export async function getWorkspaceInvites() {
   return data;
 }
 
-export async function getUnresolvedInquiriesCount() {
-  const supabase = await createClient();
-  const principal = await resolveAuthenticatedPrincipal(supabase);
-
-  if (!principal?.email || !isValidTuturuuuEmail(principal.email))
-    return { count: 0, latestDate: null };
-
-  const sbAdmin = await createAdminClient();
-
-  const { count } = await sbAdmin
-    .from('support_inquiries')
-    .select('*', { count: 'exact', head: true })
-    .eq('is_resolved', false);
-
-  const { data: latestInquiry } = await sbAdmin
-    .from('support_inquiries')
-    .select('created_at')
-    .eq('is_resolved', false)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  return {
-    count: count || 0,
-    latestDate: latestInquiry?.created_at || null,
-  };
-}
+export { getUnresolvedInquiriesCount } from './workspace-inquiries';
 
 export function enforceRootWorkspace(
   wsId: string,

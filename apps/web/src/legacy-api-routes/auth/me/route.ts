@@ -1,5 +1,6 @@
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import { NextResponse } from 'next/server';
 
 export async function GET() {
@@ -9,5 +10,8 @@ export async function GET() {
 
   if (!user)
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  return NextResponse.json({ user });
+  return NextResponse.json({
+    user,
+    staffVerified: isVerifiedTuturuuuStaffSession(user),
+  });
 }
