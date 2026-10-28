@@ -35,10 +35,7 @@ export const TASK_PROPERTY_POPOVER_TRIGGER_ATTRIBUTE =
   'data-task-property-popover-trigger';
 
 // Priority keeps its level icon on the value, so its name goes without one.
-const PROPERTIES: Record<
-  TaskPropertyPopoverId,
-  { icon?: ComponentType<{ className?: string }>; nameKey: string }
-> = {
+const PROPERTIES = {
   assignees: { icon: Users, nameKey: 'ws-task-boards.dialog.field.assignees' },
   dates: { icon: Calendar, nameKey: 'ws-task-boards.dialog.dates' },
   estimation: {
@@ -47,13 +44,19 @@ const PROPERTIES: Record<
   },
   labels: { icon: Tag, nameKey: 'ws-task-boards.dialog.field.labels' },
   list: { icon: CircleDashed, nameKey: 'common.status' },
-  priority: { nameKey: 'ws-task-boards.dialog.field.priority' },
+  priority: {
+    icon: undefined,
+    nameKey: 'ws-task-boards.dialog.field.priority',
+  },
   projects: { icon: Box, nameKey: 'ws-task-boards.dialog.field.projects' },
   scheduling: {
     icon: CalendarClock,
     nameKey: 'ws-task-boards.dialog.schedule',
   },
-};
+} as const satisfies Record<
+  TaskPropertyPopoverId,
+  { icon?: ComponentType<{ className?: string }>; nameKey: string }
+>;
 
 // Values read as colored text: the trigger keeps its text color and loses its
 // box. Their own icons move to the name column.

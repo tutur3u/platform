@@ -243,7 +243,10 @@ export function BoardHeader({
   return (
     // Three fixed lines that never wrap: as the header narrows, the least
     // needed parts hide or drop to icons instead of moving to a new line.
-    <div className="@container/board-header -mt-2 flex flex-col gap-2 border-b p-2">
+    <div
+      className="@container/board-header -mt-2 flex flex-col gap-2 border-b p-2"
+      data-board-header
+    >
       <div className="flex min-w-0 items-center gap-2">
         <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
           {backUrl ? (
