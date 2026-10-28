@@ -12,6 +12,9 @@ class AppLocalizationsVi extends AppLocalizations {
   AppLocalizationsVi([String locale = 'vi']) : super(locale);
 
   @override
+  String get mastermindUnrecognisedValue => 'Giá trị không được nhận diện';
+
+  @override
   String get assistantDownloadPhasePending => 'Đang chờ';
 
   @override

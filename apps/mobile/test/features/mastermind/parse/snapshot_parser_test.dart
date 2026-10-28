@@ -78,12 +78,26 @@ void main() {
         map(list(map(r['now'])['digest']).first)['kind'] = 'environment',
   };
   for (final entry in mutations.entries) {
-    test('rejects ${entry.key}', () {
+    test('validates ${entry.key}', () {
       final root = MastermindSnapshotBuilder.defaults().toJson();
       entry.value(root);
       final result = parseMastermindSnapshot(encode(root));
-      expect(result, isA<ParseRejected>());
-      expect((result as ParseRejected).reason, RejectionReason.schemaViolation);
+      if (const {
+        'invalid lane state',
+        'long title',
+        'bad item id',
+        'security wrong title',
+      }.contains(entry.key)) {
+        expect(result, isA<ParseAccepted>());
+        final lanes = (result as ParseAccepted).snapshot.lanes;
+        expect(lanes.length, (root['lanes'] as List<dynamic>).length - 1);
+      } else {
+        expect(result, isA<ParseRejected>());
+        expect(
+          (result as ParseRejected).reason,
+          RejectionReason.schemaViolation,
+        );
+      }
     });
   }
 

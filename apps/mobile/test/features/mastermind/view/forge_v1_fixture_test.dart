@@ -71,6 +71,7 @@ void main() {
       LaneState.running: 8,
       LaneState.waiting: 3,
       LaneState.idle: 2,
+      LaneState.queued: 0,
     });
   });
 

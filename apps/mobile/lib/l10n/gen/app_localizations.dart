@@ -97,6 +97,12 @@ abstract class AppLocalizations {
     Locale('vi')
   ];
 
+  /// No description provided for @mastermindUnrecognisedValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Unrecognised value'**
+  String get mastermindUnrecognisedValue;
+
   /// No description provided for @assistantDownloadPhasePending.
   ///
   /// In en, this message translates to:
