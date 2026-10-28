@@ -272,13 +272,6 @@ class WorkspacePermissionsRepository {
         (responses[2] as List<dynamic>?) ?? const <dynamic>[];
 
     final isCreator = workspaceRow?['creator_id'] == currentUserId;
-    if (isCreator) {
-      return const WorkspacePermissions(
-        permissions: <String>{},
-        isCreator: true,
-      );
-    }
-
     final combinedPermissions = <String>{
       ..._extractRolePermissions(rolePermissionRows),
       ..._extractDefaultPermissions(defaultPermissionRows),
@@ -286,7 +279,7 @@ class WorkspacePermissionsRepository {
 
     return WorkspacePermissions(
       permissions: combinedPermissions,
-      isCreator: false,
+      isCreator: isCreator,
     );
   }
 
@@ -330,7 +323,9 @@ class WorkspacePermissionsRepository {
         continue;
       }
       final permission = row['permission'];
-      if (permission is String && permission.isNotEmpty) {
+      if (permission is String &&
+          permission.isNotEmpty &&
+          !explicitGrantPermissions.contains(permission)) {
         permissions.add(permission);
       }
     }

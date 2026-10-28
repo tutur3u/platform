@@ -1,4 +1,4 @@
--- Rollback for 20261028154800_manage_mastermind_permission.sql.
+-- Rollback for 20261028092600_manage_mastermind_permission.sql.
 --
 -- Fails closed: every manage_mastermind grant is removed before the guards go,
 -- so no role or member holds it afterwards. Postgres cannot drop an enum
@@ -7,6 +7,8 @@
 -- so a creator or admin never inherits it once the guards are gone. The audit
 -- table is kept as evidence: it is private, RLS-enabled and revoked from every
 -- API role. Grants nothing to anon or PUBLIC.
+-- Drops both the conflict-aware grant guard and the owner-session grant fence;
+-- re-applying the forward migration restores them without granting access.
 
 BEGIN;
 

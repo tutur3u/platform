@@ -46,7 +46,7 @@ dedicated workspace permission `manage_mastermind`.
   `POST /api/v1/mastermind/push-events`. The mobile app reads snapshots and
   sends replies to the external hub Worker (`mastermind-hub.tutur3u.com`)
   directly; Tuturuuu serves no other Mastermind API.
-- **Default:** deny. Migration `20261028154800_manage_mastermind_permission`
+- **Default:** deny. Migration `20261028092600_manage_mastermind_permission`
   adds the permission with no grants. Unlike every other permission it is never
   implied by being the workspace creator, by `admin`, or by a default
   permission, and it counts only as a role grant in the root workspace. Database
@@ -129,6 +129,12 @@ and records `changed = false`.
   `route.delivery.test.ts` (an allowlisted owner without the permission and a
   failed lookup are skipped) and `mastermind_access_cubit_test.dart` (root and
   personal workspace, creator and admin denied).
+
+Deleting the Mastermind role or its member removes access immediately (fail
+closed). Restoring access requires the database owner to call
+`private.grant_mastermind_access(user_id, reason)` again; ordinary role edits
+cannot re-grant it. Role saves from web and mobile write permissions before the
+name, so a rejected permission save leaves the name unchanged.
 
 ## Data source
 

@@ -153,6 +153,7 @@ AS $$
   SELECT session_user::text NOT IN (
       'authenticator', 'anon', 'authenticated', 'service_role'
     )
+    AND pg_has_role(session_user, 'postgres', 'MEMBER')
     AND coalesce(
       current_setting('tuturuuu.mastermind_grant', true),
       ''
@@ -176,6 +177,17 @@ BEGIN
     AND OLD.role_id = NEW.role_id
     AND OLD.ws_id = NEW.ws_id THEN
     -- Re-saving an unchanged grant (role editor upsert) is not a new grant.
+    RETURN NEW;
+  END IF;
+
+  IF TG_OP = 'INSERT' AND EXISTS (
+    SELECT 1 FROM public.workspace_role_permissions wrp
+    WHERE wrp.ws_id = NEW.ws_id
+      AND wrp.role_id = NEW.role_id
+      AND wrp.permission = NEW.permission
+      AND wrp.enabled
+  ) THEN
+    -- BEFORE INSERT runs before ON CONFLICT resolves the existing grant.
     RETURN NEW;
   END IF;
 
@@ -280,6 +292,10 @@ DECLARE
   v_changed boolean := false;
   v_rows integer;
 BEGIN
+  IF NOT pg_has_role(session_user, 'postgres', 'MEMBER') THEN
+    RAISE EXCEPTION 'grant_mastermind_access: database owner session required'
+      USING ERRCODE = '42501';
+  END IF;
   IF p_user_id IS NULL THEN
     RAISE EXCEPTION 'grant_mastermind_access: user id is required';
   END IF;

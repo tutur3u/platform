@@ -85,14 +85,12 @@ export async function PUT(req: Request, { params }: Params) {
     name: data.name,
   };
 
-  // Update the role first so permission rows are only written for a role that
-  // belongs to the authorized workspace.
+  // Verify workspace ownership before writing permission rows.
   const roleRes = await supabase
     .from('workspace_roles')
-    .update(coreData)
+    .select('id')
     .eq('id', id)
     .eq('ws_id', resolvedWsId)
-    .select('id')
     .maybeSingle();
 
   if (roleRes.error) {
@@ -132,6 +130,21 @@ export async function PUT(req: Request, { params }: Params) {
       roleId: id,
       wsId: resolvedWsId,
     });
+    return NextResponse.json(
+      { message: 'Error updating workspace role' },
+      { status: 500 }
+    );
+  }
+
+  // A rejected permission save must leave the role name untouched.
+  const updateRes = await supabase
+    .from('workspace_roles')
+    .update(coreData)
+    .eq('id', updatedRoleId)
+    .eq('ws_id', resolvedWsId);
+
+  if (updateRes.error) {
+    console.error('Error updating workspace role', updateRes.error);
     return NextResponse.json(
       { message: 'Error updating workspace role' },
       { status: 500 }

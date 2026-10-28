@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   calls: [] as Array<{ table: string; op: string; args: unknown[] }>,
   resolveWorkspaceRouteAccess: vi.fn(),
+  permissionError: null as unknown,
   roleLookup: { data: null as unknown, error: null as unknown },
 }));
 
@@ -14,7 +15,7 @@ function createQuery(table: string) {
   const result = () =>
     table === 'workspace_roles'
       ? mocks.roleLookup
-      : { data: null, error: null };
+      : { data: null, error: mocks.permissionError };
   const query: Record<string, unknown> = {};
   for (const op of ['select', 'update', 'upsert', 'delete', 'eq']) {
     query[op] = vi.fn((...args: unknown[]) => {
@@ -26,7 +27,7 @@ function createQuery(table: string) {
   query.single = vi.fn(async () => result());
   // biome-ignore lint/suspicious/noThenProperty: mimics the awaitable query builder.
   query.then = (resolve: (value: unknown) => unknown) =>
-    Promise.resolve({ data: null, error: null }).then(resolve);
+    Promise.resolve(result()).then(resolve);
   return query;
 }
 
@@ -55,6 +56,7 @@ describe('workspace role update route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.calls.length = 0;
+    mocks.permissionError = null;
     mocks.resolveWorkspaceRouteAccess.mockResolvedValue({
       ok: true,
       permissions: { wsId: 'caller-workspace-id' },
@@ -73,6 +75,20 @@ describe('workspace role update route', () => {
         (call) =>
           call.table === 'workspace_role_permissions' &&
           (call.op === 'upsert' || call.op === 'update')
+      )
+    ).toBe(false);
+  });
+
+  it('leaves the role name unchanged when the permission save fails', async () => {
+    mocks.permissionError = { code: '42501', message: 'Grant rejected' };
+
+    const response = await putRole('own-role-id');
+
+    expect(response.status).toBe(500);
+    expect(mocks.calls.some((call) => call.op === 'upsert')).toBe(true);
+    expect(
+      mocks.calls.some(
+        (call) => call.table === 'workspace_roles' && call.op === 'update'
       )
     ).toBe(false);
   });
