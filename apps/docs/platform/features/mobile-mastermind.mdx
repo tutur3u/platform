@@ -64,7 +64,10 @@ serves threads it shows today's lane list.
 
 In-screen views (Needs you | Decisions, Lanes | Backlog | Staff) use the compact
 `MastermindSegmentedControl`: a 32 pt track whose segments each own a 44 pt hit
-area, instead of the tall pill. List search uses `MastermindCollapsibleSearch`:
+area, instead of the tall pill. When the segments cannot fit across at the
+current text size they stack into full-width 44 pt rows with a check on the
+selected one; the control never becomes a hidden horizontal scroller and labels
+are never truncated. List search uses `MastermindCollapsibleSearch`:
 hidden until the navbar search icon is tapped, kept
 open while a query is applied, folded away once cleared and unfocused. Every
 sheet opens on the root navigator so the floating dock never covers it.
