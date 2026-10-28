@@ -190,4 +190,57 @@ describe('workspace secrets collection route', () => {
       message: 'Permission denied',
     });
   });
+  it.each(
+    ['MANAGED_CRON_ENABLED', 'EMAIL_RATE_LIMIT_MINUTE'].flatMap((name) =>
+      ['ws_id', 'id', 'created_at'].map((field) => ({ name, field }))
+    )
+  )(
+    'rejects $field on $name without any database mutation',
+    async ({ name, field }) => {
+      canMutateManagedCronEnableSecretMock.mockResolvedValue(true);
+      const fromMock = vi.fn();
+      getWorkspaceSecretsAccessMock.mockResolvedValue({
+        allowed: true,
+        db: { from: fromMock },
+        resolvedWsId: 'resolved-ws',
+      });
+      const response = await POST(
+        new Request('http://localhost', {
+          method: 'POST',
+          body: JSON.stringify({
+            name,
+            value: 'true',
+            [field]: 'other-workspace',
+          }),
+        }),
+        {
+          params: Promise.resolve({
+            wsId: 'friendly-ws',
+            secretId: 'secret-1',
+          }),
+        }
+      );
+      expect(response.status).toBe(400);
+      expect(fromMock).not.toHaveBeenCalled();
+      expect(createManagedCronSecretAdminClientMock).not.toHaveBeenCalled();
+    }
+  );
+
+  it.each([
+    null,
+    [],
+    { name: 42, value: 'true' },
+    { name: 'TEST' },
+    { name: '', value: 'true' },
+  ])('rejects invalid body %j', async (body) => {
+    const response = await POST(
+      new Request('http://localhost', {
+        method: 'POST',
+        body: JSON.stringify(body),
+      }),
+      { params: Promise.resolve({ wsId: 'friendly-ws', secretId: 'secret-1' }) }
+    );
+    expect(response.status).toBe(400);
+    expect(createManagedCronSecretAdminClientMock).not.toHaveBeenCalled();
+  });
 });

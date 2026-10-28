@@ -27,6 +27,12 @@ alone cannot change it over PostgREST. Other secret names retain the root
 permission requirement without this additional restriction. Workspace role
 catalogs do not expand based on email domain.
 
+Web workspace-secret POST and PUT requests accept only nonempty string `name`
+and `value` fields. Unknown fields, including `ws_id`, `id`, and `created_at`,
+return HTTP 400 before either client writes. The workspace comes from the
+authorized route context and the secret id comes from the URL; the editor sends
+only the editable fields. This applies to ordinary and reserved secrets alike.
+
 Regression coverage lives in Infrastructure's `workspace-secrets.test.ts`,
 `infrastructure-admin-access.test.ts`, AI-agent and external-app access tests,
 Web's workspace-secrets route tests, Utils' `permissions.test.tsx`, and the

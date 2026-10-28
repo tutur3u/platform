@@ -345,4 +345,98 @@ describe('workspace secret item route', () => {
     expect(userDeleteMock).toHaveBeenCalledOnce();
     expect(response.status).toBe(200);
   });
+  it.each(
+    ['MANAGED_CRON_ENABLED', 'EMAIL_RATE_LIMIT_MINUTE'].flatMap((name) =>
+      ['ws_id', 'id', 'created_at'].map((field) => ({ name, field }))
+    )
+  )(
+    'rejects $field on $name without any database mutation',
+    async ({ name, field }) => {
+      canMutateManagedCronEnableSecretMock.mockResolvedValue(true);
+      const fromMock = vi.fn();
+      getWorkspaceSecretsAccessMock.mockResolvedValue({
+        allowed: true,
+        db: { from: fromMock },
+        resolvedWsId: 'resolved-ws',
+      });
+      const response = await PUT(
+        new Request('http://localhost', {
+          method: 'PUT',
+          body: JSON.stringify({
+            name,
+            value: 'true',
+            [field]: 'other-workspace',
+          }),
+        }),
+        {
+          params: Promise.resolve({
+            wsId: 'friendly-ws',
+            secretId: 'secret-1',
+          }),
+        }
+      );
+      expect(response.status).toBe(400);
+      expect(fromMock).not.toHaveBeenCalled();
+      expect(createManagedCronSecretAdminClientMock).not.toHaveBeenCalled();
+    }
+  );
+
+  it.each([
+    null,
+    [],
+    { name: 42, value: 'true' },
+    { name: 'TEST' },
+    { name: '', value: 'true' },
+  ])('rejects invalid body %j', async (body) => {
+    const response = await PUT(
+      new Request('http://localhost', {
+        method: 'PUT',
+        body: JSON.stringify(body),
+      }),
+      { params: Promise.resolve({ wsId: 'friendly-ws', secretId: 'secret-1' }) }
+    );
+    expect(response.status).toBe(400);
+    expect(createManagedCronSecretAdminClientMock).not.toHaveBeenCalled();
+  });
+  it('rejects a workspace move while renaming an existing reserved secret', async () => {
+    canMutateManagedCronEnableSecretMock.mockResolvedValue(true);
+    const { userUpdateMock } = mockExistingSecretLookup('MANAGED_CRON_ENABLED');
+    const { mutationMock } = mockAdminMutation('update');
+    const response = await PUT(
+      new Request('http://localhost', {
+        method: 'PUT',
+        body: JSON.stringify({
+          name: 'OTHER',
+          value: 'true',
+          ws_id: 'other-workspace',
+        }),
+      }),
+      { params: Promise.resolve({ wsId: 'friendly-ws', secretId: 'secret-1' }) }
+    );
+    expect(response.status).toBe(400);
+    expect(userUpdateMock).not.toHaveBeenCalled();
+    expect(mutationMock).not.toHaveBeenCalled();
+    expect(createManagedCronSecretAdminClientMock).not.toHaveBeenCalled();
+  });
+
+  it('keeps a valid edit of an existing reserved secret scoped to its workspace', async () => {
+    canMutateManagedCronEnableSecretMock.mockResolvedValue(true);
+    const { userUpdateMock } = mockExistingSecretLookup('MANAGED_CRON_ENABLED');
+    const { mutationMock, eqIdMock, eqWsMock } = mockAdminMutation('update');
+    const response = await PUT(
+      new Request('http://localhost', {
+        method: 'PUT',
+        body: JSON.stringify({ name: 'MANAGED_CRON_ENABLED', value: 'false' }),
+      }),
+      { params: Promise.resolve({ wsId: 'friendly-ws', secretId: 'secret-1' }) }
+    );
+    expect(response.status).toBe(200);
+    expect(mutationMock).toHaveBeenCalledWith({
+      name: 'MANAGED_CRON_ENABLED',
+      value: 'false',
+    });
+    expect(eqIdMock).toHaveBeenCalledWith('id', 'secret-1');
+    expect(eqWsMock).toHaveBeenCalledWith('ws_id', 'resolved-ws');
+    expect(userUpdateMock).not.toHaveBeenCalled();
+  });
 });

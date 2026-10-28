@@ -134,7 +134,7 @@ export default function SecretForm({
           : `/api/workspaces/${wsId}/secrets`,
         {
           method: payload.id ? 'PUT' : 'POST',
-          body: JSON.stringify(payload),
+          body: JSON.stringify({ name: payload.name, value: payload.value }),
         }
       );
 
