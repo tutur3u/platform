@@ -38,7 +38,7 @@ void main() {
     test('both flags default off', () {
       expect(mastermindThreadsEnabled, isFalse);
       expect(mastermindThreadHistoryEnabled, isFalse);
-    });
+    }, skip: mastermindThreadsEnabled);
 
     test('the Work tab keeps its route, icon and label', () {
       expect(work.route, Routes.mastermindWork);

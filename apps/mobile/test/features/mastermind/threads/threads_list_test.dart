@@ -40,16 +40,18 @@ Map<String, dynamic> _v1With(
   for (var i = 0; i < extra.length; i++) {
     final (name, role, status) = extra[i];
     final id = 'item-${(i + 1).toRadixString(16).padLeft(20, 'a')}';
-    lanes.add({
-      ...template,
-      'id': id,
-      'name': name,
-      'role': role,
-      'title': '[$name] $role',
-      'top_level': false,
-      'state': status,
-      if (status != 'queued') 'status': status,
-    });
+    lanes.add(
+      {
+        ...template,
+        'id': id,
+        'name': name,
+        'role': role,
+        'title': '[$name] $role',
+        'top_level': false,
+        'state': status,
+        'status': status,
+      }..removeWhere((key, _) => key == 'status' && status == 'queued'),
+    );
     companions.add({'id': id, if (status != 'queued') 'status': status});
   }
   return json;

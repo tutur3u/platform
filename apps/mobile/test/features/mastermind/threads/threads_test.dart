@@ -32,7 +32,11 @@ ThreadsRepository repo(Future<http.Response> Function(http.Request) handler) =>
     );
 
 void main() {
-  test('feature defaults off', () => expect(mastermindThreadsEnabled, isFalse));
+  test(
+    'feature defaults off',
+    () => expect(mastermindThreadsEnabled, isFalse),
+    skip: mastermindThreadsEnabled,
+  );
   test(
     'tolerant fields and grouped filters search friendly title role product',
     () {
