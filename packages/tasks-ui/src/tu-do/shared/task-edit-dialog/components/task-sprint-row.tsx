@@ -16,6 +16,7 @@ import {
   isBoardSprintOpen,
 } from '@tuturuuu/utils/task-helper/sprints';
 import { useLocale, useTranslations } from 'next-intl';
+import { useState } from 'react';
 import {
   useBoardSprintMutations,
   useBoardSprints,
@@ -45,6 +46,7 @@ export function TaskSprintRow({
     wsId,
   });
   const { moveTasks } = useBoardSprintMutations({ boardId, wsId });
+  const [menuOpen, setMenuOpen] = useState(false);
 
   if (!task?.id || !sprints.sprintsOn) return null;
 
@@ -77,7 +79,7 @@ export function TaskSprintRow({
           {t('sprint_field')}
         </span>
         {canEdit && targets.length ? (
-          <DropdownMenu>
+          <DropdownMenu onOpenChange={setMenuOpen} open={menuOpen}>
             <DropdownMenuTrigger asChild>
               <button
                 className="inline-flex min-w-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-left hover:bg-muted"
@@ -91,18 +93,22 @@ export function TaskSprintRow({
               {targets.map((sprint) => (
                 <DropdownMenuItem
                   key={sprint.id}
-                  onSelect={() =>
-                    moveTasks.mutate(
-                      { sprintId: sprint.id, taskIds: [task.id] },
-                      {
-                        onSuccess: () =>
-                          toast.success(
-                            t('moved_to_sprint', { name: sprint.name })
-                          ),
-                        onError: () => toast.error(t('move_failed')),
-                      }
-                    )
-                  }
+                  onSelect={() => {
+                    // The move swaps this item out of the menu, so close first.
+                    setMenuOpen(false);
+                    requestAnimationFrame(() =>
+                      moveTasks.mutate(
+                        { sprintId: sprint.id, taskIds: [task.id] },
+                        {
+                          onSuccess: () =>
+                            toast.success(
+                              t('moved_to_sprint', { name: sprint.name })
+                            ),
+                          onError: () => toast.error(t('move_failed')),
+                        }
+                      )
+                    );
+                  }}
                 >
                   {t('move_to_sprint', { name: sprint.name })}
                 </DropdownMenuItem>
