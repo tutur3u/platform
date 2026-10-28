@@ -29,17 +29,29 @@ class SupabaseSecureStorage extends LocalStorage {
 
   final FlutterSecureStorage _storage;
 
+  String get _retryKey => '$supabasePersistSessionKey.persist-retry';
+
   @override
   Future<void> initialize() async {}
 
   @override
   Future<String?> accessToken() async {
-    return await _storage.read(key: supabasePersistSessionKey);
+    final primary = await _storage.read(key: supabasePersistSessionKey);
+    if (primary != null) {
+      await _storage.delete(key: _retryKey);
+      return primary;
+    }
+    final staged = await _storage.read(key: _retryKey);
+    if (staged == null) return null;
+    await _storage.delete(key: supabasePersistSessionKey);
+    await _storage.write(key: supabasePersistSessionKey, value: staged);
+    await _storage.delete(key: _retryKey);
+    return staged;
   }
 
   @override
   Future<bool> hasAccessToken() async {
-    return await _storage.containsKey(key: supabasePersistSessionKey);
+    return await accessToken() != null;
   }
 
   @override
@@ -51,18 +63,20 @@ class SupabaseSecureStorage extends LocalStorage {
       );
     } on PlatformException catch (error) {
       if (error.details != -25299 && error.code != '-25299') rethrow;
-      // A locked start or downgrade may leave an invisible old item.
-      // Delete ignores accessibility; retry once and propagate failure.
+      // Preserve the rotated token durably before deleting the invisible item.
+      await _storage.write(key: _retryKey, value: persistSessionString);
       await _storage.delete(key: supabasePersistSessionKey);
       await _storage.write(
         key: supabasePersistSessionKey,
         value: persistSessionString,
       );
+      await _storage.delete(key: _retryKey);
     }
   }
 
   @override
   Future<void> removePersistedSession() async {
+    await _storage.delete(key: _retryKey);
     await _storage.delete(key: supabasePersistSessionKey);
   }
 }

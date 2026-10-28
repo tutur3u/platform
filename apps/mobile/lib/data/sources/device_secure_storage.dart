@@ -61,6 +61,26 @@ class DeviceSecureStorage extends FlutterSecureStorage {
   }
 
   @override
+  Future<Map<String, String>> readAll({
+    AppleOptions? iOptions,
+    AndroidOptions? aOptions,
+    LinuxOptions? lOptions,
+    WebOptions? webOptions,
+    AppleOptions? mOptions,
+    WindowsOptions? wOptions,
+  }) async => throw UnsupportedError('Device storage requires explicit keys');
+
+  @override
+  Future<void> deleteAll({
+    AppleOptions? iOptions,
+    AndroidOptions? aOptions,
+    LinuxOptions? lOptions,
+    WebOptions? webOptions,
+    AppleOptions? mOptions,
+    WindowsOptions? wOptions,
+  }) async => throw UnsupportedError('Device storage requires explicit keys');
+
+  @override
   Future<String?> read({
     required String key,
     AppleOptions? iOptions,
