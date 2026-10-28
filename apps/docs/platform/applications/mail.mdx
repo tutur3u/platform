@@ -641,6 +641,19 @@ The conversation pane constrains message width and keeps message details and
 attachments available without expanding them by default. Small screens show one
 pane at a time, with a back action returning to the message list.
 
+### Web inbox load path
+
+The thread list does not wait for bootstrap when the mailbox is already known:
+the `mailbox` URL parameter, or the default mailbox remembered from the
+previous bootstrap in this browser, starts the list request in parallel. After
+bootstrap, only returned mailboxes are used, and the server authorizes every
+mailbox ID. Per-mailbox unread counts start after the first thread page loads.
+
+Bootstrap is read-only in the common case. It reads the personal mailbox,
+memberships and display name in one parallel stage, and writes only to repair a
+stale identity, a missing owner membership, or missing or renamed system labels.
+`bootstrap-personal.test.ts` and `use-mail-bootstrap.test.ts` cover these rules.
+
 ## Distribution groups
 
 A shared address can be provisioned as a distribution group by setting

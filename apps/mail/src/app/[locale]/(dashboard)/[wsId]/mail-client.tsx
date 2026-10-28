@@ -41,6 +41,7 @@ import { getMailFolderHref, mailFolderIcons } from './mail-folders';
 import { MailIconButton } from './mail-icon-button';
 import { MailKeyboardHelp } from './mail-keyboard-help';
 import { MailLabelMenu } from './mail-label-menu';
+import { resolveActiveMailboxId, useMailboxHint } from './mail-mailbox-hint';
 import { MailMarkFolderRead } from './mail-mark-folder-read';
 import {
   getCurrentMailPaneLayout,
@@ -124,9 +125,12 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
 
   const bootstrapQuery = useMailBootstrap(workspaceId);
   const mailboxes = bootstrapQuery.data?.mailboxes ?? [];
-  const activeMailbox =
-    mailboxes.find((mailbox) => mailbox.id === mailboxId) ?? mailboxes[0];
-  const activeMailboxId = activeMailbox?.id ?? null;
+  const activeMailboxId = resolveActiveMailboxId({
+    hint: useMailboxHint(workspaceId),
+    mailboxes: bootstrapQuery.data?.mailboxes,
+    requested: mailboxId,
+  });
+  const activeMailbox = mailboxes.find(({ id }) => id === activeMailboxId);
   const FolderIcon = mailFolderIcons[folder];
   const threadQueryKey = getMailThreadsQueryKey({
     folder,
