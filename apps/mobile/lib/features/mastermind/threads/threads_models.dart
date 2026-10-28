@@ -5,6 +5,12 @@ List<dynamic> array(Object? value) => value is List ? value : <dynamic>[];
 
 const mastermindThreadsEnabled = bool.fromEnvironment('MASTERMIND_THREADS');
 
+/// P1b history has its own flag. It is keyed on a v2 `thread_ref`, never on a
+/// v1 lane id, and stays off until the hub publishes thread references.
+const bool mastermindThreadHistoryEnabled =
+    mastermindThreadsEnabled &&
+    bool.fromEnvironment('MASTERMIND_THREAD_HISTORY');
+
 class ThreadEntry {
   ThreadEntry.fromJson(Map<String, dynamic> json)
     : ref = word(json['thread_ref']),
