@@ -86,6 +86,7 @@ begin
   end if;
 end;
 $function$;
+revoke all on function public.authorize_workspace_user_audit_access(uuid) from public, anon;
 
 do $$
 declare

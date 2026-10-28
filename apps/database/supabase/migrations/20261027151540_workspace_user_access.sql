@@ -138,6 +138,7 @@ $function$;
 
 
 alter function public.authorize_workspace_user_audit_access(uuid) set search_path = pg_catalog, pg_temp;
+revoke all on function public.authorize_workspace_user_audit_access(uuid) from public, anon;
 
 revoke all on function get_featured_group_counts(uuid,uuid[],uuid[],text,text,text) from public, anon, authenticated;
 revoke all on function get_workspace_users(uuid,uuid[],uuid[],text,boolean,text,text) from public, anon, authenticated;
