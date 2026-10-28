@@ -233,8 +233,11 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
       return false;
     }
     if (text != null && !isValidReplyText(text)) return false;
-    if (!await _mayReply()) return false;
+    // A logout during either await below must not queue into the next account.
+    final generation = _generation;
+    if (!await _mayReply() || !_current(generation)) return false;
     await ensureLoaded();
+    if (!_current(generation)) return false;
     final existing = state.outbox.where(
       (entry) =>
           entry.itemId == item.id && entry.versionHash == item.versionHash,
@@ -249,7 +252,6 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
       optionLabel: optionIndex == null ? null : options[optionIndex],
       text: text?.trim(),
     );
-    final generation = _generation;
     emit(state.copyWith(outbox: [...state.outbox, entry]));
     if (!await _persist() || !_current(generation)) {
       if (_current(generation)) {

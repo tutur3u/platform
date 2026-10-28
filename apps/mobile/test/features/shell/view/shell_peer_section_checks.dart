@@ -143,4 +143,69 @@ void registerShellPeerSectionChecks({
     await _pumpForTransitions(tester);
     expect(router.routeInformationProvider.value.uri.path, Routes.apps);
   });
+
+  testWidgets('system Back from a lane keeps the filtered Work query', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 844);
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    const filtered = '${Routes.mastermindWork}?state=failed&product=Mastermind';
+    final router = _buildMastermindWorkRouter();
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      _buildTestApp(
+        router: router,
+        appTabCubit: appTabCubit(),
+        authCubit: authCubit(),
+        workspaceCubit: workspaceCubit(),
+      ),
+    );
+    await _pumpForTransitions(tester);
+    router.go(filtered);
+    await _pumpForTransitions(tester);
+    router.push<void>(Routes.mastermindWorkLanePath('item-1')).ignore();
+    await _pumpForTransitions(tester);
+    expect(find.text('lane item-1'), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    await _pumpForTransitions(tester);
+
+    // The lane pops to the list that opened it, query and all, instead of
+    // going to the bare tab root.
+    expect(find.text('work state=failed&product=Mastermind'), findsOneWidget);
+    expect(router.routerDelegate.currentConfiguration.uri.toString(), filtered);
+  });
 }
+
+/// The shell with the Mastermind Work list and lane detail as stub pages.
+GoRouter _buildMastermindWorkRouter() => GoRouter(
+  initialLocation: Routes.mastermindWork,
+  routes: [
+    ShellRoute(
+      builder: (context, state, child) => BlocProvider(
+        create: (_) => AssistantChromeCubit(),
+        child: ShellPage(
+          matchedLocation: state.uri.path,
+          enableDebugLogs: false,
+          child: child,
+        ),
+      ),
+      routes: [
+        GoRoute(
+          path: Routes.mastermindWork,
+          builder: (context, state) =>
+              _RoutePage(label: 'work ${state.uri.query}'),
+        ),
+        GoRoute(
+          path: Routes.mastermindWorkLane,
+          builder: (context, state) =>
+              _RoutePage(label: 'lane ${state.pathParameters['laneId']}'),
+        ),
+      ],
+    ),
+  ],
+);

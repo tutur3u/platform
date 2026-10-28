@@ -5497,6 +5497,16 @@
       }
     }
   },
+  "@mastermindStaffSummary": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "running": {
+        "type": "int"
+      }
+    }
+  },
   "@mastermindSummaryAsOf": {
     "placeholders": {
       "time": {
@@ -5673,6 +5683,8 @@
   "mastermindBackToInbox": "Back to Inbox",
   "mastermindBacklogEmptyTitle": "Backlog is clear",
   "mastermindBacklogLabel": "Backlog",
+  "mastermindBacklogNoMatches": "No matching backlog items",
+  "mastermindBacklogSearchPlaceholder": "Search backlog",
   "mastermindBackToWork": "Back to Work",
   "mastermindBasisCheckinWorkflow": "Check-in workflow",
   "mastermindBasisGithubDeployment": "GitHub deployment",
@@ -5947,7 +5959,10 @@
   "mastermindSourceWorkforce": "Workforce",
   "mastermindSourcesDegraded": "{count, plural, =1{1 source degraded} other{{count} sources degraded}}",
   "mastermindSourcesTitle": "Sources",
+  "mastermindStaffEmpty": "No staff roles reported.",
   "mastermindStaffGroup": "Staff",
+  "mastermindStaffSummary": "{count, plural, =1{1 role} other{{count} roles}} · {running} running",
+  "mastermindStaffUnknownModel": "Unknown model",
   "mastermindStateAnswered": "answered",
   "mastermindStateCancelled": "cancelled",
   "mastermindStateCompleted": "completed",

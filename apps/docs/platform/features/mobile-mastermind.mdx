@@ -191,7 +191,9 @@ next snapshot) is not polled yet.
 
 ## Work
 
-The Work tab lists lanes grouped by state, the one that needs attention first:
+The Work tab has three segments, a segmented control under the freshness
+strip: **Lanes** (the default), **Backlog** and **Staff**. Lanes lists lanes
+grouped by state, the one that needs attention first:
 failed, waiting, running, queued, idle, stale, completed, cancelled, then the
 rare open, answered, withdrawn and unknown. Each group shows its count and is
 ordered oldest first, a lane with no age last. A row shows the title, role and
@@ -204,20 +206,44 @@ and product, area and kind chips. State is always a glyph and a word.
   follows the product, area and search filters, so it always matches its group
   header. A product or area filter resets when its value leaves the snapshot,
   because its chip would be gone.
-- **Filters in the URL:** the state, product and area filters live in the
-  location as `?state=`, `?product=` and `?area=`, and every chip change
-  rewrites it. The Home lane chips open `/mastermind/work?state=<state>`. An
-  unknown value is ignored and "All" clears the state. A lane opens by push, so
-  Back from it (the dock included) returns to the same filtered list, search
-  text and all. External deep links open the tab root and never carry a filter
-  or a lane id.
+- **Segment and filters in the URL:** the segment lives in the location as
+  `?segment=backlog` or `?segment=staff` (Lanes is the bare tab, and an unknown
+  value reads as Lanes), beside the lane filters `?state=`, `?product=` and
+  `?area=`. Every segment or chip change rewrites the location with `go`, so
+  Back never walks through segments. The lane filters stay in the URL on the
+  other segments, so switching back to Lanes finds them. The Home lane chips
+  open `/mastermind/work?state=<state>`. An unknown value is ignored and "All"
+  clears the state. A lane opens by push, so Back from it (the dock included)
+  pops to the same filtered list, search text and all; the shell pops a lane
+  location instead of falling back to the bare tab root. External deep links
+  open the tab root and never carry a segment, filter or lane id.
+- **A filter that leaves the snapshot leaves the URL too:** when a product or
+  area filter resets because its value is gone, the location is rewritten
+  without it once the frame is built, so a later visit to that location does
+  not bring a stale filter back. Filters that are still valid stay.
 - **No matches:** a filter combination with no lanes (including a state with
   none) shows "No matching lanes" with a "Clear filters" row that resets state,
   product, area and search.
-- **Scope:** lanes only. The Backlog and Staff segments are deferred to a
-  follow-up layer; this tab has no segmented control until they exist.
-- **Security rows** keep the Home rule: one non-tappable line in a trailing
-  "Security" group with no count, never counted, searched or filtered.
+- **Backlog:** `backlog[]` grouped by product (the item count in each group's
+  header), open before answered before withdrawn, in the publisher's order
+  within a state. An item with no product sits last under "No product". Each row
+  is a title and a state glyph and word; it has no tap target, and its opaque id
+  is never shown. The search field ("Search backlog") matches the title and
+  product and is local to the segment. An empty backlog reads "Backlog is
+  clear" and hides the search; no match reads "No matching backlog items".
+- **Staff:** `observability.staff[]`, which is `{role, title, state, model}`
+  and nothing else. Rows sort by the Lanes state priority and then by role,
+  case-insensitively, never by activity. A row shows the title, the role and
+  model (display text; the literal `unknown` reads "Unknown model") and a state
+  glyph and word. A summary caption reads "11 roles · 4 running". Staff has no
+  search, filters or sort control. **Privacy rule:** the screen never shows or
+  derives a last-active time, a runs-today count, an "active today" label or
+  any activity ordering; the hub does not publish them, and a change that adds
+  one must be reviewed as a privacy change. An empty list reads "No staff roles
+  reported."
+- **Security rows** keep the Home rule on Lanes and Backlog: one non-tappable
+  line in a trailing "Security" group with no count, never counted, searched or
+  filtered. Staff has none, because the hub omits security roles.
 - **Detail:** `/mastermind/work/lane/:laneId` shows the same fields in full and
   has no action. The id is an opaque snapshot id and only ever a route
   parameter. An id that is not in the snapshot shows "This lane is no longer in
@@ -246,8 +272,17 @@ and product, area and kind chips. State is always a glyph and a word.
   filters and their URL, chip counts following the filters, Clear filters,
   Back from a lane keeping the Home chip filter, security redaction,
   whole-section states, dock clearance, deep links to the tab root.
+- `mastermind_work_segments_test.dart`: the segment control and its URL, the
+  Backlog grouping, search, empty and security rows, the Staff sort, summary,
+  privacy rule (no activity text, no sort or filter control) and unknown model,
+  dock clearance on every segment.
+- `mastermind_work_filter_url_test.dart`: a product or area filter that leaves
+  the snapshot is removed from the URL too, and valid filters are kept.
 - `mastermind_lane_page_test.dart` (detail, gone, updated) and
   `work_model_test.dart`.
+- `apps/mobile/test/features/shell/view/shell_back_navigation_test.dart`:
+  system Back from a lane over a filtered Work location returns to that
+  location with its query (it fails without the shell's lane-pop rule).
 
 The registered-destination smoke test builds every `/mastermind/**` route
 through the production router.

@@ -5333,6 +5333,16 @@
       }
     }
   },
+  "@mastermindStaffSummary": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "running": {
+        "type": "int"
+      }
+    }
+  },
   "@mastermindSummaryAsOf": {
     "placeholders": {
       "time": {
@@ -5509,6 +5519,8 @@
   "mastermindBackToInbox": "Về Hộp thư",
   "mastermindBacklogEmptyTitle": "Không còn việc tồn",
   "mastermindBacklogLabel": "Việc tồn",
+  "mastermindBacklogNoMatches": "Không có việc tồn phù hợp",
+  "mastermindBacklogSearchPlaceholder": "Tìm việc tồn",
   "mastermindBackToWork": "Về Công việc",
   "mastermindBasisCheckinWorkflow": "Quy trình kiểm tra định kỳ",
   "mastermindBasisGithubDeployment": "Triển khai GitHub",
@@ -5783,7 +5795,10 @@
   "mastermindSourceWorkforce": "Nhân lực",
   "mastermindSourcesDegraded": "{count, plural, other{{count} nguồn bị suy giảm}}",
   "mastermindSourcesTitle": "Nguồn",
+  "mastermindStaffEmpty": "Chưa có vai trò nhân sự nào được báo cáo.",
   "mastermindStaffGroup": "Nhân sự",
+  "mastermindStaffSummary": "{count, plural, other{{count} vai trò}} · {running} đang chạy",
+  "mastermindStaffUnknownModel": "Mô hình không xác định",
   "mastermindStateAnswered": "đã trả lời",
   "mastermindStateCancelled": "đã hủy",
   "mastermindStateCompleted": "hoàn tất",

@@ -26,13 +26,15 @@ final List<GoRoute> mastermindTabRoutes = [
       final query = state.uri.queryParameters;
       final router = GoRouter.of(context);
       return MastermindWorkPage(
+        initialSegment: workSegmentFromQuery(query['segment']),
         initialState: laneStateFromQuery(query['state']),
         initialProduct: productFromQuery(query['product']),
         initialArea: areaFromQuery(query['area']),
-        // The filters live in the URL, so a lane pushed from the list pops
-        // back to the same filtered location.
+        // The segment and filters live in the URL, so a lane pushed from the
+        // list pops back to the same filtered location.
         onSelection: (selection) => router.go(
           workLocation(
+            segment: selection.segment,
             state: selection.state,
             product: selection.product,
             area: selection.area,

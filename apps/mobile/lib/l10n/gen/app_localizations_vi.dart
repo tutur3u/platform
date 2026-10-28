@@ -12176,6 +12176,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindBacklogLabel => 'Việc tồn';
 
   @override
+  String get mastermindBacklogNoMatches => 'Không có việc tồn phù hợp';
+
+  @override
+  String get mastermindBacklogSearchPlaceholder => 'Tìm việc tồn';
+
+  @override
   String get mastermindBackToWork => 'Về Công việc';
 
   @override
@@ -13089,7 +13095,23 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindSourcesTitle => 'Nguồn';
 
   @override
+  String get mastermindStaffEmpty => 'Chưa có vai trò nhân sự nào được báo cáo.';
+
+  @override
   String get mastermindStaffGroup => 'Nhân sự';
+
+  @override
+  String mastermindStaffSummary(int count, int running) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count vai trò',
+    );
+    return '$_temp0 · $running đang chạy';
+  }
+
+  @override
+  String get mastermindStaffUnknownModel => 'Mô hình không xác định';
 
   @override
   String get mastermindStateAnswered => 'đã trả lời';
