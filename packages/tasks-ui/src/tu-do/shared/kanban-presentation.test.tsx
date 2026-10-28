@@ -216,12 +216,10 @@ describe('BoardPanelFrame', () => {
     );
     const frame = screen.getByTestId('board').parentElement;
     expect(surface.result.current).toBe(true);
-    expect(frame).not.toHaveClass(
-      'sm:pr-[var(--task-board-panel-width,36rem)]'
-    );
+    expect(frame).not.toHaveClass('sm:pr-[var(--task-panel-width,36rem)]');
 
     act(() => setTaskPanelOpen(true));
-    expect(frame).toHaveClass('sm:pr-[var(--task-board-panel-width,36rem)]');
+    expect(frame).toHaveClass('sm:pr-[var(--task-panel-width,36rem)]');
 
     rerender(
       <BoardPanelFrame panelSurface={false}>
@@ -229,9 +227,7 @@ describe('BoardPanelFrame', () => {
       </BoardPanelFrame>
     );
     expect(surface.result.current).toBe(false);
-    expect(frame).not.toHaveClass(
-      'sm:pr-[var(--task-board-panel-width,36rem)]'
-    );
+    expect(frame).not.toHaveClass('sm:pr-[var(--task-panel-width,36rem)]');
     unmount();
   });
 
@@ -243,7 +239,7 @@ describe('BoardPanelFrame', () => {
     );
     act(() => setTaskPanelOpen(true));
     expect(screen.getByTestId('board').parentElement).toHaveClass(
-      'sm:pr-[var(--task-board-panel-width,36rem)]'
+      'sm:pr-[var(--task-panel-width,36rem)]'
     );
     expect(
       document.documentElement.style.getPropertyValue('--task-panel-width')

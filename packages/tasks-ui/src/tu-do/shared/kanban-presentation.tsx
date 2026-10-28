@@ -127,7 +127,7 @@ export function BoardPanelFrame({
     <div
       className={cn(
         '-m-2 -mb-4 flex h-[calc(100vh-0.5rem)] flex-1 flex-col transition-[padding] [transition-duration:var(--task-board-panel-transition,200ms)] md:-mx-4',
-        panelOpen && 'sm:pr-[var(--task-board-panel-width,36rem)]'
+        panelOpen && 'sm:pr-[var(--task-panel-width,36rem)]'
       )}
     >
       {children}
