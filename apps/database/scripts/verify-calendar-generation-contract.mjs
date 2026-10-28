@@ -115,6 +115,8 @@ const runner = async (command, args, cwd) => {
           '-t',
           '-v',
           'ON_ERROR_STOP=1',
+          '-v',
+          'require_dblink=1',
           '-U',
           'supabase_admin',
           '--dbname',

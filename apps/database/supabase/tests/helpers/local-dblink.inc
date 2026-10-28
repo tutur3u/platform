@@ -20,3 +20,12 @@ exception when others then
 end;
 $$;
 select pg_temp.fixture_dblink_available() as fixture_dblink_available \gset
+\if :fixture_dblink_available
+\else
+  \if :{?require_dblink}
+    select plan(1);
+    select fail('dblink setup unavailable in CI');
+    select * from finish();
+    \quit 1
+  \endif
+\endif
