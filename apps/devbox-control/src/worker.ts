@@ -2,6 +2,7 @@ import {
   devboxPersonalRunnerAuthorized,
   devboxRunnerTokenUnexpired,
 } from '@tuturuuu/devbox/actor';
+import { reapQuotaRuns } from './quota-reaper';
 import { RunnerWake } from './wake';
 
 export { RunnerWake };
@@ -13,6 +14,7 @@ interface Env {
   SUPABASE_URL: string;
   TUTURUUU_DEVBOX_AGENT_API_ENABLED?: string;
   TUTURUUU_DEVBOX_EXPIRY_SWEEP_ENABLED?: string;
+  TUTURUUU_DEVBOX_QUOTA_REAPER_ENABLED?: string;
 }
 
 type Runner = {
@@ -417,6 +419,11 @@ async function internalTokenMatches(request: Request, env: Env) {
 
 export default {
   async scheduled(_controller: ScheduledController, env: Env): Promise<void> {
+    try {
+      await reapQuotaRuns(env, _controller.scheduledTime);
+    } catch (error) {
+      console.error('Devbox quota reaper failed', error);
+    }
     if (env.TUTURUUU_DEVBOX_EXPIRY_SWEEP_ENABLED !== 'true') return;
     if (!env.SUPABASE_URL || !env.SUPABASE_SECRET_KEY) return;
     // One transaction, at most 25 grants; the next schedule resumes remaining work.

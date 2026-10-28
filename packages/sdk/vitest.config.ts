@@ -9,6 +9,10 @@ export default defineConfig({
   resolve: {
     alias: [
       {
+        find: '@tuturuuu/devbox/actor',
+        replacement: resolve(__dirname, '../devbox/src/actor.ts'),
+      },
+      {
         find: /^@\/(.+)$/,
         replacement: `${resolve(__dirname, '../../apps/web/src')}/$1`,
       },
@@ -25,7 +29,7 @@ export default defineConfig({
         replacement: `${resolve(__dirname, '../internal-api/src')}/$1.ts`,
       },
       {
-        find: '@tuturuuu/devbox',
+        find: /^@tuturuuu\/devbox$/,
         replacement: resolve(__dirname, '../devbox/src/index.ts'),
       },
       {

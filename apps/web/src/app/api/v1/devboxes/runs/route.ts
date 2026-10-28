@@ -103,6 +103,7 @@ export async function POST(request: NextRequest) {
   try {
     const response = await createDevboxRun({
       actorId: authorization.user.id,
+      personalActor: authorization.actor.kind === 'personal',
       ...(authorization.actor.kind === 'personal' && authorization.actor.tokenId
         ? { accessTokenId: authorization.actor.tokenId }
         : {}),

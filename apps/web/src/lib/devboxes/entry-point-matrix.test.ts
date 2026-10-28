@@ -10,6 +10,7 @@ vi.mock('next/server', async (original) => ({
 vi.mock('server-only', () => ({}));
 const { guard } = vi.hoisted(() => ({ guard: vi.fn() }));
 vi.mock('./authorization', () => ({ requireDevboxActor: guard }));
+vi.mock('./collector-auth', () => ({ authorizeDevboxCollector: guard }));
 vi.mock('./agent-auth', () => ({ authorizeDevboxAgent: guard }));
 vi.mock('./agent-traffic-gate', () => ({
   isDevboxAgentApiEnabled: () => true,
@@ -48,6 +49,8 @@ const matrix = {
   'agents/shutdown/route.ts': ['POST'],
   'cache/prune/route.ts': ['POST'],
   'cache/route.ts': ['GET'],
+  'quota-raises/route.ts': ['POST'],
+  'usage/ingest/route.ts': ['POST'],
   'env/route.ts': ['POST'],
   'leases/[leaseId]/release/route.ts': ['POST'],
   'leases/route.ts': ['POST'],
@@ -99,7 +102,7 @@ describe('devbox entry-point matrix', () => {
         const handler = source.split(`export async function ${method}(`)[1];
         expect(handler, method).toBeDefined();
         expect(handler?.split(/export async function/)[0]).toMatch(
-          /await (requireDevboxActor|authorizeDevboxAgent)\(request/
+          /await (requireDevboxActor|authorizeDevboxAgent|authorizeDevboxCollector)\(request/
         );
       }
     });
@@ -148,6 +151,7 @@ describe('devbox entry-point matrix', () => {
       'runners/[runnerId]/drain/route.ts',
       'runners/[runnerId]/features/route.ts',
       'runs/reap-stale/route.ts',
+      'quota-raises/[id]/route.ts',
     ];
     expect(
       routes(base)

@@ -4372,6 +4372,81 @@ export type Database = {
           },
         ];
       };
+      devbox_host_collectors: {
+        Row: {
+          expires_at: string;
+          id: string;
+          revoked_at: string | null;
+          token_hash: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          expires_at: string;
+          id?: string;
+          revoked_at?: string | null;
+          token_hash: string;
+          user_id: string;
+        };
+        Update: {
+          expires_at?: string;
+          id?: string;
+          revoked_at?: string | null;
+          token_hash?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'devbox_host_collectors_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'devbox_personal_pool_grants';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      devbox_host_samples: {
+        Row: {
+          collector_id: string;
+          egress_bytes: number;
+          host_cpu_minutes: number;
+          idle_cpu_percent: number;
+          idle_seconds: number;
+          received_at: string;
+          sample_id: string;
+          usage_day: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          collector_id: string;
+          egress_bytes: number;
+          host_cpu_minutes: number;
+          idle_cpu_percent: number;
+          idle_seconds: number;
+          received_at?: string;
+          sample_id: string;
+          usage_day: string;
+        };
+        Update: {
+          collector_id?: string;
+          egress_bytes?: number;
+          host_cpu_minutes?: number;
+          idle_cpu_percent?: number;
+          idle_seconds?: number;
+          received_at?: string;
+          sample_id?: string;
+          usage_day?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'devbox_host_samples_collector_id_fkey';
+            columns: ['collector_id'];
+            isOneToOne: false;
+            referencedRelation: 'devbox_host_collectors';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       devbox_leases: {
         Row: {
           access_token_id: string | null;
@@ -4451,11 +4526,21 @@ export type Database = {
         Row: {
           accepted_at: string | null;
           bound_email: string;
+          cpu_minutes_daily: number;
           created_at: string;
+          default_run_seconds: number;
+          disk_gib: number;
+          egress_blocked_until: string | null;
+          egress_bytes_daily: number;
           expires_at: string;
           granted_by: string;
           id: string;
+          last_collected_at: string | null;
           max_access_tokens: number;
+          max_concurrent_boxes: number;
+          max_concurrent_runs: number;
+          max_run_seconds: number;
+          memory_mib: number;
           reason: string;
           require_mfa: boolean;
           revoked_at: string | null;
@@ -4466,16 +4551,27 @@ export type Database = {
           suspended_at: string | null;
           updated_at: string;
           user_id: string;
+          vcpus_per_box: number;
         };
         ComputedFields: never;
         Insert: {
           accepted_at?: string | null;
           bound_email: string;
+          cpu_minutes_daily?: number;
           created_at?: string;
-          expires_at: string;
+          default_run_seconds?: number;
+          disk_gib?: number;
+          egress_blocked_until?: string | null;
+          egress_bytes_daily?: number;
+          expires_at?: string;
           granted_by: string;
           id?: string;
+          last_collected_at?: string | null;
           max_access_tokens?: number;
+          max_concurrent_boxes?: number;
+          max_concurrent_runs?: number;
+          max_run_seconds?: number;
+          memory_mib?: number;
           reason: string;
           require_mfa?: boolean;
           revoked_at?: string | null;
@@ -4486,15 +4582,26 @@ export type Database = {
           suspended_at?: string | null;
           updated_at?: string;
           user_id: string;
+          vcpus_per_box?: number;
         };
         Update: {
           accepted_at?: string | null;
           bound_email?: string;
+          cpu_minutes_daily?: number;
           created_at?: string;
+          default_run_seconds?: number;
+          disk_gib?: number;
+          egress_blocked_until?: string | null;
+          egress_bytes_daily?: number;
           expires_at?: string;
           granted_by?: string;
           id?: string;
+          last_collected_at?: string | null;
           max_access_tokens?: number;
+          max_concurrent_boxes?: number;
+          max_concurrent_runs?: number;
+          max_run_seconds?: number;
+          memory_mib?: number;
           reason?: string;
           require_mfa?: boolean;
           revoked_at?: string | null;
@@ -4505,6 +4612,7 @@ export type Database = {
           suspended_at?: string | null;
           updated_at?: string;
           user_id?: string;
+          vcpus_per_box?: number;
         };
         Relationships: [
           {
@@ -4599,6 +4707,175 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'devbox_leases';
             referencedColumns: ['id'];
+          },
+        ];
+      };
+      devbox_quota_raise_requests: {
+        Row: {
+          created_at: string;
+          decided_at: string | null;
+          decided_by: string | null;
+          expires_at: string;
+          id: string;
+          limit_name: string;
+          reason: string;
+          requested_max: number;
+          status: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          decided_at?: string | null;
+          decided_by?: string | null;
+          expires_at: string;
+          id?: string;
+          limit_name: string;
+          reason: string;
+          requested_max: number;
+          status?: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          decided_at?: string | null;
+          decided_by?: string | null;
+          expires_at?: string;
+          id?: string;
+          limit_name?: string;
+          reason?: string;
+          requested_max?: number;
+          status?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'devbox_quota_raise_requests_decided_by_fkey';
+            columns: ['decided_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'devbox_quota_raise_requests_decided_by_fkey';
+            columns: ['decided_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'devbox_quota_raise_requests_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'devbox_personal_pool_grants';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      devbox_quota_reaper_progress: {
+        Row: {
+          cursor_user_id: string | null;
+          enabled: boolean;
+          id: boolean;
+          last_tick: string | null;
+          runs_reaped: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          cursor_user_id?: string | null;
+          enabled?: boolean;
+          id?: boolean;
+          last_tick?: string | null;
+          runs_reaped?: number;
+        };
+        Update: {
+          cursor_user_id?: string | null;
+          enabled?: boolean;
+          id?: boolean;
+          last_tick?: string | null;
+          runs_reaped?: number;
+        };
+        Relationships: [];
+      };
+      devbox_quota_reservations: {
+        Row: {
+          admitted_at: string;
+          allocated_vcpus: number;
+          ended_at: string | null;
+          reserved_minutes: number;
+          run_id: string;
+          started_at: string | null;
+          timeout_seconds: number;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          admitted_at?: string;
+          allocated_vcpus: number;
+          ended_at?: string | null;
+          reserved_minutes: number;
+          run_id: string;
+          started_at?: string | null;
+          timeout_seconds: number;
+          user_id: string;
+        };
+        Update: {
+          admitted_at?: string;
+          allocated_vcpus?: number;
+          ended_at?: string | null;
+          reserved_minutes?: number;
+          run_id?: string;
+          started_at?: string | null;
+          timeout_seconds?: number;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'devbox_quota_reservations_run_id_fkey';
+            columns: ['run_id'];
+            isOneToOne: true;
+            referencedRelation: 'devbox_runs';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'devbox_quota_reservations_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'devbox_personal_pool_grants';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      devbox_quota_stops: {
+        Row: {
+          acknowledged_at: string | null;
+          alert_pending: boolean;
+          reason: string;
+          requested_at: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          acknowledged_at?: string | null;
+          alert_pending?: boolean;
+          reason: string;
+          requested_at?: string;
+          user_id: string;
+        };
+        Update: {
+          acknowledged_at?: string | null;
+          alert_pending?: boolean;
+          reason?: string;
+          requested_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'devbox_quota_stops_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: true;
+            referencedRelation: 'devbox_personal_pool_grants';
+            referencedColumns: ['user_id'];
           },
         ];
       };
@@ -4917,6 +5194,43 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'devbox_runs';
             referencedColumns: ['id'];
+          },
+        ];
+      };
+      devbox_usage_ledger: {
+        Row: {
+          cpu_minutes: number;
+          run_id: string;
+          usage_day: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          cpu_minutes: number;
+          run_id: string;
+          usage_day: string;
+          user_id: string;
+        };
+        Update: {
+          cpu_minutes?: number;
+          run_id?: string;
+          usage_day?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'devbox_usage_ledger_run_id_fkey';
+            columns: ['run_id'];
+            isOneToOne: false;
+            referencedRelation: 'devbox_quota_reservations';
+            referencedColumns: ['run_id'];
+          },
+          {
+            foreignKeyName: 'devbox_usage_ledger_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'devbox_personal_pool_grants';
+            referencedColumns: ['user_id'];
           },
         ];
       };
@@ -21033,6 +21347,10 @@ export type Database = {
         };
         Returns: undefined;
       };
+      authenticate_devbox_host_collector: {
+        Args: { p_hash: string };
+        Returns: boolean;
+      };
       author_inventory_period_price: {
         Args: {
           p_actor_id: string;
@@ -22016,6 +22334,10 @@ export type Database = {
         };
         Returns: string;
       };
+      create_personal_devbox_run: {
+        Args: { p_actor_id: string; p_input: Json; p_token_id: string };
+        Returns: Json;
+      };
       create_wallet_checkpoint_reconciliation: {
         Args: {
           _actor_id: string;
@@ -22081,6 +22403,10 @@ export type Database = {
       cross_app_verified_session_data: {
         Args: { p_session_data: Json; p_user_id: string };
         Returns: Json;
+      };
+      decide_devbox_quota_raise: {
+        Args: { p_admin_id: string; p_approve: boolean; p_id: string };
+        Returns: boolean;
       };
       delete_managed_cron_whitelisted_domain: {
         Args: { p_domain: string };
@@ -22256,6 +22582,25 @@ export type Database = {
         Args: { p_user_id: string };
         Returns: boolean;
       };
+      devbox_quota_day: { Args: { p_at: string }; Returns: string };
+      devbox_quota_error: {
+        Args: {
+          p_exceeds?: boolean;
+          p_limit: string;
+          p_max: number;
+          p_used: number;
+        };
+        Returns: undefined;
+      };
+      devbox_quota_limit: {
+        Args: { p_limit: string; p_user_id: string };
+        Returns: number;
+      };
+      devbox_quota_request_stop: {
+        Args: { p_reason: string; p_user_id: string };
+        Returns: undefined;
+      };
+      devbox_quota_reset: { Args: { p_at: string }; Returns: string };
       devbox_reports_fresh_trusted: {
         Args: { p_capabilities: Json; p_capabilities_updated_at: string };
         Returns: boolean;
@@ -24625,6 +24970,10 @@ export type Database = {
         Args: { p_actor: string; p_teacher?: string; p_ws: string };
         Returns: Json;
       };
+      reap_devbox_quota_runs: {
+        Args: { p_limit?: number; p_tick: string };
+        Returns: number;
+      };
       reap_stale_devbox_runs: {
         Args: { p_limit?: number; p_runner_id?: string };
         Returns: number;
@@ -24727,6 +25076,10 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: undefined;
       };
+      reinstate_devbox_quota_grant: {
+        Args: { p_admin_id: string; p_user_id: string };
+        Returns: boolean;
+      };
       release_discord_interaction: {
         Args: {
           p_claim_token: string;
@@ -24800,6 +25153,16 @@ export type Database = {
       report_review_delivery_ready: {
         Args: { p_report_id: string };
         Returns: boolean;
+      };
+      request_devbox_quota_raise: {
+        Args: {
+          p_expires_at: string;
+          p_limit: string;
+          p_max: number;
+          p_reason: string;
+          p_user_id: string;
+        };
+        Returns: string;
       };
       request_periodic_report_delivery: {
         Args: {

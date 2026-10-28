@@ -402,3 +402,32 @@ it('a personal runner fails closed when the switch column is unavailable', async
   );
   expect(response.status).toBe(503);
 });
+
+it('still sweeps expired grants when the quota reaper fails', async () => {
+  const fetcher = vi.fn(
+    async (input: RequestInfo | URL) =>
+      new Response(
+        String(input).includes('reap_devbox_quota_runs') ? 'failed' : '0',
+        { status: String(input).includes('reap_devbox_quota_runs') ? 503 : 200 }
+      )
+  );
+  globalThis.fetch = fetcher;
+  const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+  try {
+    await worker.scheduled(
+      { scheduledTime: Date.now() } as ScheduledController,
+      {
+        ...envValues,
+        TUTURUUU_DEVBOX_QUOTA_REAPER_ENABLED: 'true',
+        TUTURUUU_DEVBOX_EXPIRY_SWEEP_ENABLED: 'true',
+      } as never
+    );
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(String(fetcher.mock.calls[1]?.[0])).toContain(
+      'expire_devbox_personal_grants'
+    );
+    expect(log).toHaveBeenCalled();
+  } finally {
+    log.mockRestore();
+  }
+});

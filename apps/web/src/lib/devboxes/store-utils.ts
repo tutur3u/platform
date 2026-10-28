@@ -1,7 +1,14 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import en from '../../../messages/en.json';
+import vi from '../../../messages/vi.json';
 
-export type DevboxStorageErrorLike = { message?: string } | null;
+export type DevboxStorageErrorLike = {
+  code?: string;
+  message?: string;
+  details?: string;
+} | null;
 
 export type DevboxPrivateSchemaClient = {
   from: (table: string) => unknown;
@@ -18,7 +25,14 @@ export class DevboxStoreError extends Error {
   constructor(
     message: string,
     public readonly status = 500,
-    public readonly code?: string
+    public readonly code?: string,
+    public readonly quota?: {
+      limit: string;
+      used: number;
+      max: number;
+      resetsAt: string;
+      messages: { en: string; vi: string };
+    }
   ) {
     super(message);
     this.name = 'DevboxStoreError';
@@ -47,6 +61,60 @@ function isDevboxReadinessError(message: string) {
 
 export function getDevboxStorageError(error: DevboxStorageErrorLike) {
   const message = error?.message ?? 'Unknown devbox storage error';
+  if (
+    message === 'DEVBOX_LIMIT_REACHED' ||
+    message === 'DEVBOX_LIMIT_EXCEEDS_GRANT'
+  ) {
+    const parsed = z
+      .object({
+        limit: z.string(),
+        used: z.number(),
+        max: z.number(),
+        resetsAt: z.iso.datetime({ offset: true }),
+      })
+      .safeParse(
+        (() => {
+          try {
+            return JSON.parse(error?.details ?? 'null');
+          } catch {
+            return null;
+          }
+        })()
+      );
+    if (parsed.success)
+      return new DevboxStoreError(
+        message,
+        message === 'DEVBOX_LIMIT_REACHED' ? 429 : 422,
+        message,
+        {
+          ...parsed.data,
+          messages: {
+            en: en['devbox-quota'].errors[
+              message === 'DEVBOX_LIMIT_REACHED'
+                ? 'limit_reached'
+                : 'limit_exceeds_grant'
+            ],
+            vi: vi['devbox-quota'].errors[
+              message === 'DEVBOX_LIMIT_REACHED'
+                ? 'limit_reached'
+                : 'limit_exceeds_grant'
+            ],
+          },
+        }
+      );
+  }
+  if (error?.code === '42501')
+    return new DevboxStoreError(
+      en['devbox-quota'].errors.grant_refused,
+      403,
+      'DEVBOX_GRANT_REFUSED'
+    );
+  if (error?.code === '22023')
+    return new DevboxStoreError(
+      en['devbox-quota'].errors.limit_exceeds_grant,
+      422,
+      'DEVBOX_LIMIT_EXCEEDS_GRANT'
+    );
   if (isDevboxReadinessError(message)) {
     return new DevboxStoreError(DEVBOX_READINESS_MESSAGE, 503);
   }
@@ -71,6 +139,7 @@ export function createDevboxRouteErrorResponse(
       {
         ...(error.code ? { code: error.code } : {}),
         message: error.message,
+        ...error.quota,
       },
       { status: error.status }
     );

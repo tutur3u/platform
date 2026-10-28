@@ -1,6 +1,10 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { z } from 'zod';
-import { createPrivateDevboxClient, DevboxStoreError } from './store-utils';
+import {
+  createPrivateDevboxClient,
+  DevboxStoreError,
+  getDevboxStorageError,
+} from './store-utils';
 
 const Scope = z.enum(['devbox:read', 'devbox:run', 'devbox:build']);
 const Grant = z.object({
@@ -30,7 +34,11 @@ const Identity = z.object({
 export async function identityRpc(name: string, args: Record<string, unknown>) {
   const client = await createPrivateDevboxClient();
   const { data, error } = await client.rpc<unknown>(name, args);
-  if (error) throw new DevboxStoreError('Devbox identity unavailable', 503);
+  if (error) {
+    const quota = getDevboxStorageError(error);
+    if (quota.code && [403, 422, 429].includes(quota.status)) throw quota;
+    throw new DevboxStoreError('Devbox identity unavailable', 503);
+  }
   return data;
 }
 export async function resolveDevboxIdentity(

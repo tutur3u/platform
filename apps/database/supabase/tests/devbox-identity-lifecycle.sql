@@ -11,6 +11,7 @@ insert into private.devbox_personal_pool_grants(user_id,bound_email,expires_at,c
  values ('00000000-0000-4000-8000-00000000e601','lifecycle@example.invalid',now()+interval '1 day',now()-interval '1 day',
  '00000000-0000-4000-8000-00000000e602','00000000-0000-4000-8000-00000000e602','disposable lifecycle');
 update private.devbox_control_settings set personal_pools_enabled=true;
+update private.devbox_personal_pool_grants set last_collected_at=now();
 select ok(private.accept_devbox_personal_grant('00000000-0000-4000-8000-00000000e601'),'accepted for lifecycle test');
 insert into private.devbox_runners(id,actor_id,name) values
  ('00000000-0000-4000-8000-00000000e630','00000000-0000-4000-8000-00000000e601','lifecycle-personal');
