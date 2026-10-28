@@ -12,11 +12,15 @@ SnapshotEvent parseSnapshotEvent(JsonReader r) {
   );
 }
 
-ProductRelease parseProductRelease(JsonReader r) {
-  r.keys(
-    ['product', 'prod_age_seconds', 'age_basis'],
-    ['product', 'prod_age_seconds', 'age_basis'],
-  );
+ProductRelease parseProductRelease(JsonReader input) {
+  final r =
+      JsonReader({
+        for (final entry in input.object().entries)
+          entry.key: HubField.parse(entry.value).value,
+      }, input.path)..keys(
+        ['product', 'prod_age_seconds', 'age_basis'],
+        ['product', 'prod_age_seconds', 'age_basis'],
+      );
   return ProductRelease(
     product: r
         .field('product')
@@ -30,11 +34,15 @@ ProductRelease parseProductRelease(JsonReader r) {
   );
 }
 
-ProductQuota parseProductQuota(JsonReader r) {
-  r.keys(
-    ['instance', 'remaining_percent', 'age_seconds'],
-    ['instance', 'remaining_percent', 'age_seconds'],
-  );
+ProductQuota parseProductQuota(JsonReader input) {
+  final r =
+      JsonReader({
+        for (final entry in input.object().entries)
+          entry.key: HubField.parse(entry.value).value,
+      }, input.path)..keys(
+        ['instance', 'remaining_percent', 'age_seconds'],
+        ['instance', 'remaining_percent', 'age_seconds'],
+      );
   return ProductQuota(
     instance: r.field('instance').stringIn(PoolLabels.quota),
     remainingPercent: r
