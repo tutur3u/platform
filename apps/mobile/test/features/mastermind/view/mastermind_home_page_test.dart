@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/layout/layout.dart';
@@ -438,6 +439,19 @@ void main() {
         expect(visited, [entry.value]);
       });
     }
+
+    testWidgets('a count tile opens its lane list from the semantics tap', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      final visited = await pumpRouted(tester);
+      final node = tester.getSemantics(find.bySemanticsLabel('Failed, 1'));
+      expect(node.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
+      tester.semantics.tap(find.semantics.byLabel('Failed, 1'));
+      await tester.pumpAndSettle();
+      expect(visited, ['/mastermind/work?state=failed']);
+      handle.dispose();
+    });
 
     testWidgets('a Needs-you row is tappable and Back returns to Home', (
       tester,

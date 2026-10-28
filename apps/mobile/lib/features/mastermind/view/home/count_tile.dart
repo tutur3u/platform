@@ -32,11 +32,13 @@ class MastermindCountTile extends StatelessWidget {
     final c = tokens.colorScheme;
     final type = tokens.typography;
     final semantics = ['$label, $count', ?caption].join('. ');
+    void open() => context.go(workLocation(state: state));
     return Semantics(
       container: true,
       button: true,
       label: semantics,
       hint: context.l10n.mastermindOpensLanes,
+      onTap: open,
       excludeSemantics: true,
       child: Material(
         color: c.card,
@@ -46,7 +48,7 @@ class MastermindCountTile extends StatelessWidget {
         ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap: () => context.go(workLocation(state: state)),
+          onTap: open,
           child: ConstrainedBox(
             constraints: const BoxConstraints(
               minHeight: 72,

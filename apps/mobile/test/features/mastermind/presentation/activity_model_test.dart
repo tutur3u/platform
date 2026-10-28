@@ -99,6 +99,50 @@ void main() {
       expect((activity.running, activity.waiting, activity.idle), (2, 1, 0));
     });
 
+    group('fleet points dated after generated_at', () {
+      // The default point sits at generated_at; moving it by [offset] keeps
+      // the other counts and makes the offset the only variable.
+      Map<String, dynamic> shifted(Duration offset) {
+        final json = homeJson();
+        final generated = DateTime.parse(json['generated_at'] as String);
+        final series = _fleet(json)['series'] as List<dynamic>;
+        (series.first as Map<String, dynamic>)['t'] = generated
+            .add(offset)
+            .toUtc()
+            .toIso8601String()
+            .replaceFirst('.000Z', '+00:00');
+        return json;
+      }
+
+      test('a point beyond the clock-skew allowance is ignored', () {
+        final activity = MastermindActivity.from(
+          parsedSnapshot(
+            shifted(
+              MastermindActivity.fleetMaxFutureSkew +
+                  const Duration(seconds: 1),
+            ),
+          ),
+        );
+        expect(activity.source, ActivitySource.lanes);
+        expect((activity.running, activity.waiting, activity.idle), (2, 1, 0));
+      });
+
+      test('a point within the clock-skew allowance is accepted', () {
+        final activity = MastermindActivity.from(
+          parsedSnapshot(shifted(MastermindActivity.fleetMaxFutureSkew)),
+        );
+        expect(activity.source, ActivitySource.fleet);
+        expect((activity.running, activity.waiting, activity.idle), (1, 1, 1));
+      });
+
+      test('all-future points fall back to the lane states', () {
+        final json = shifted(const Duration(days: 1));
+        final activity = MastermindActivity.from(parsedSnapshot(json));
+        expect(activity.source, ActivitySource.lanes);
+        expect(activity.running, 2);
+      });
+    });
+
     test('falls back to lane states when fleet coverage is missing', () {
       final json = homeJson();
       _fleet(json)['coverage'] = 'missing';

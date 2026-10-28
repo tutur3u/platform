@@ -94,6 +94,12 @@ final class MastermindActivity {
   /// A fleet point older than this is not "now" any more.
   static const fleetMaxAge = Duration(minutes: 15);
 
+  /// How far past the snapshot time a fleet point may be dated and still count
+  /// as clock skew. A point beyond it is misdated and ignored, so it can never
+  /// win the latest-point pick (its negative age would pass the freshness
+  /// check).
+  static const fleetMaxFutureSkew = Duration(minutes: 2);
+
   final int running;
   final int waiting;
   final int idle;
@@ -123,8 +129,12 @@ FleetPoint? _recentFleetPoint(MastermindSnapshot snapshot) {
   if (fleet.coverage != Coverage.ok && fleet.coverage != Coverage.partial) {
     return null;
   }
+  final newestAllowed = snapshot.generatedAt.add(
+    MastermindActivity.fleetMaxFutureSkew,
+  );
   FleetPoint? latest;
   for (final point in fleet.series) {
+    if (point.t.isAfter(newestAllowed)) continue;
     if (latest == null || point.t.isAfter(latest.t)) latest = point;
   }
   if (latest == null) return null;
