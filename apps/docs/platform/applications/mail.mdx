@@ -664,7 +664,8 @@ The thread list does not wait for bootstrap when the mailbox is already known:
 the `mailbox` URL parameter, or the default mailbox remembered from the
 previous bootstrap in this browser, starts the list request in parallel. After
 bootstrap, only returned mailboxes are used, and the server authorizes every
-mailbox ID. Per-mailbox unread counts start after the first thread page loads.
+mailbox ID. Per-mailbox unread counts wait while a first thread page is loading;
+on a first visit with no remembered mailbox they can start alongside it.
 
 Bootstrap is read-only in the common case. It reads the personal mailbox,
 memberships and display name in one parallel stage, and writes only to repair a

@@ -5,14 +5,18 @@ import {
 } from './mail-thread-date';
 
 const now = new Date(2026, 9, 28, 15, 0);
+// ICU 72+ separates the day period with U+202F; compare the visible text.
+const spaces = (value: string) => value.replace(/[\u202f\u00a0]/g, ' ');
 
 describe('formatMailThreadDate', () => {
   it('shows only the time for mail from today', () => {
     expect(
-      formatMailThreadDate(
-        new Date(2026, 9, 28, 9, 5).toISOString(),
-        'en-US',
-        now
+      spaces(
+        formatMailThreadDate(
+          new Date(2026, 9, 28, 9, 5).toISOString(),
+          'en-US',
+          now
+        )
       )
     ).toBe('9:05 AM');
   });

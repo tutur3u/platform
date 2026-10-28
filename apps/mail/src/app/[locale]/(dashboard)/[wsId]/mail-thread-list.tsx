@@ -96,7 +96,13 @@ export function MailThreadRow({
             name={participant?.displayName}
           />
           {unread ? (
-            <span className="size-2 shrink-0 rounded-full bg-foreground" />
+            <>
+              <span
+                aria-hidden="true"
+                className="size-2 shrink-0 rounded-full bg-foreground"
+              />
+              <span className="sr-only">{t('unread')}</span>
+            </>
           ) : null}
           <span
             className={cn(

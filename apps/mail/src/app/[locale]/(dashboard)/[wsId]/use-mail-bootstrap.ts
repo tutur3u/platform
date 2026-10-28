@@ -14,7 +14,9 @@ export function useMailBootstrap(workspaceId: string) {
     },
     staleTime: 30_000,
   });
-  // Unread counts fan out per mailbox; keep them off the first list load.
+  // Unread counts fan out per mailbox, so they wait while a first thread page
+  // is loading. On a first visit with no remembered mailbox, the list starts
+  // in the same render as the counts, so the two can overlap.
   const loadingFirstThreadPage = useIsFetching({
     queryKey: ['mail', workspaceId],
     predicate: (query) =>
