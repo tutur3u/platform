@@ -29,13 +29,10 @@ describe('dormant web staging configuration', () => {
     expect(template).toContain('WEB_START_NATIVE_LEGAL=off');
     expect(template).toContain('WEB_START_NATIVE_SECURITY=off');
     expect(
-      admittedOrigin(
-        new Request('https://' + stagingProfile.host + '/privacy'),
-        {
-          WEB_START_CANDIDATE: 'off',
-          NEXT_PUBLIC_SUPABASE_URL: '<owner-verified-staging-supabase-url>',
-        }
-      )
+      admittedOrigin(new Request(`https://${stagingProfile.host}/privacy`), {
+        WEB_START_CANDIDATE: 'off',
+        NEXT_PUBLIC_SUPABASE_URL: '<owner-verified-staging-supabase-url>',
+      })
     ).toBeNull();
   });
 });
