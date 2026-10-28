@@ -86,7 +86,7 @@ describe('Infrastructure admin access', () => {
     expect(mocks.createAdminClient).toHaveBeenCalledWith({ noCookie: true });
   });
 
-  it('allows workspace secret managers only for their workspace', async () => {
+  it('rejects non-root workspace owners', async () => {
     const targetPermissions = {
       containsPermission: vi.fn(
         (permission: string) => permission === 'manage_workspace_secrets'
@@ -95,20 +95,19 @@ describe('Infrastructure admin access', () => {
     const rootPermissions = {
       containsPermission: vi.fn().mockReturnValue(false),
     };
-    mocks.getPermissions.mockResolvedValueOnce(targetPermissions);
-    mocks.getPermissions.mockResolvedValueOnce(rootPermissions);
+    mocks.getPermissions.mockImplementation(async ({ wsId }) =>
+      wsId === ROOT_WORKSPACE_ID ? rootPermissions : targetPermissions
+    );
     const { authorizeInfrastructureWorkspaceSecretsRequest } = await import(
       './infrastructure-admin-access'
     );
 
-    const result =
-      await authorizeInfrastructureWorkspaceSecretsRequest('tenant-workspace');
+    const result = await authorizeInfrastructureWorkspaceSecretsRequest();
 
-    expect(result.ok).toBe(true);
-    expect(mocks.getPermissions).toHaveBeenCalledWith({
-      user,
-      wsId: 'tenant-workspace',
-    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.response.status).toBe(403);
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
+    expect(mocks.getPermissions).toHaveBeenCalledTimes(1);
     expect(mocks.getPermissions).toHaveBeenCalledWith({
       user,
       wsId: ROOT_WORKSPACE_ID,
@@ -123,33 +122,35 @@ describe('Infrastructure admin access', () => {
       './infrastructure-admin-access'
     );
 
-    const result =
-      await authorizeInfrastructureWorkspaceSecretsRequest('tenant-workspace');
+    const result = await authorizeInfrastructureWorkspaceSecretsRequest();
 
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.response.status).toBe(403);
     expect(mocks.createAdminClient).not.toHaveBeenCalled();
   });
 
-  it('preserves cross-workspace access for root secret administrators', async () => {
-    const targetPermissions = {
-      containsPermission: vi.fn().mockReturnValue(false),
-    };
-    const rootPermissions = {
-      containsPermission: vi.fn(
-        (permission: string) => permission === 'manage_workspace_secrets'
-      ),
-    };
-    mocks.getPermissions.mockResolvedValueOnce(targetPermissions);
-    mocks.getPermissions.mockResolvedValueOnce(rootPermissions);
-    const { authorizeInfrastructureWorkspaceSecretsRequest } = await import(
-      './infrastructure-admin-access'
-    );
+  it.each(['manage_workspace_secrets', 'manage_workspace_roles'])(
+    'preserves cross-workspace access for root %s administrators',
+    async (rootPermission) => {
+      const targetPermissions = {
+        containsPermission: vi.fn().mockReturnValue(false),
+      };
+      const rootPermissions = {
+        containsPermission: vi.fn(
+          (permission: string) => permission === rootPermission
+        ),
+      };
+      mocks.getPermissions.mockImplementation(async ({ wsId }) =>
+        wsId === ROOT_WORKSPACE_ID ? rootPermissions : targetPermissions
+      );
+      const { authorizeInfrastructureWorkspaceSecretsRequest } = await import(
+        './infrastructure-admin-access'
+      );
 
-    const result =
-      await authorizeInfrastructureWorkspaceSecretsRequest('tenant-workspace');
+      const result = await authorizeInfrastructureWorkspaceSecretsRequest();
 
-    expect(result.ok).toBe(true);
-    expect(mocks.createAdminClient).toHaveBeenCalledWith({ noCookie: true });
-  });
+      expect(result.ok).toBe(true);
+      expect(mocks.createAdminClient).toHaveBeenCalledWith({ noCookie: true });
+    }
+  );
 });
