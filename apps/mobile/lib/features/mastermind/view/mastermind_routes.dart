@@ -6,6 +6,7 @@ import 'package:mobile/features/mastermind/presentation/ship_model.dart';
 import 'package:mobile/features/mastermind/presentation/work_model.dart';
 import 'package:mobile/features/mastermind/threads/threads_models.dart';
 import 'package:mobile/features/mastermind/threads/threads_view.dart';
+import 'package:mobile/features/mastermind/threads/v1_threads_page.dart';
 import 'package:mobile/features/mastermind/view/inbox/mastermind_decision_page.dart';
 import 'package:mobile/features/mastermind/view/inbox/mastermind_inbox_page.dart';
 import 'package:mobile/features/mastermind/view/inbox/mastermind_item_page.dart';
@@ -24,24 +25,7 @@ final List<GoRoute> mastermindTabRoutes = [
     path: '/mastermind/threads',
     redirect: (context, state) =>
         mastermindThreadsEnabled ? null : Routes.mastermindWork,
-    builder: (context, state) => MastermindWorkPage(
-      initialSegment: workSegmentFromQuery(
-        state.uri.queryParameters['segment'],
-      ),
-      initialState: laneStateFromQuery(state.uri.queryParameters['state']),
-      initialProduct: productFromQuery(state.uri.queryParameters['product']),
-      initialArea: areaFromQuery(state.uri.queryParameters['area']),
-      onSelection: (s) => context.go(
-        Uri.parse(
-          workLocation(
-            segment: s.segment,
-            state: s.state,
-            product: s.product,
-            area: s.area,
-          ),
-        ).replace(path: '/mastermind/threads').toString(),
-      ),
-    ),
+    builder: (context, state) => const V1ThreadsPage(),
   ),
   GoRoute(
     path: '/mastermind/threads/:threadRef',

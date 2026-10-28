@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/work_model.dart';
-import 'package:mobile/features/mastermind/threads/threads_models.dart';
-import 'package:mobile/features/mastermind/threads/threads_view.dart';
 import 'package:mobile/features/mastermind/view/mastermind_freshness_strip.dart';
 import 'package:mobile/features/mastermind/view/mastermind_section.dart';
 import 'package:mobile/features/mastermind/view/work/work_backlog_section.dart';
@@ -142,16 +140,7 @@ class _MastermindWorkPageState extends State<MastermindWorkPage> {
               onChanged: (value) => _select(() => _segment = value),
             ),
             ...switch (_segment) {
-              WorkSegment.lanes =>
-                mastermindThreadsEnabled
-                    ? [
-                        ThreadsView(
-                          fallback: Column(
-                            children: _lanes(context, ready.snapshot),
-                          ),
-                        ),
-                      ]
-                    : _lanes(context, ready.snapshot),
+              WorkSegment.lanes => _lanes(context, ready.snapshot),
               WorkSegment.backlog => [
                 WorkBacklogSection(
                   snapshot: ready.snapshot,

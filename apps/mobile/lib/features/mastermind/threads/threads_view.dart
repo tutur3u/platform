@@ -194,7 +194,10 @@ class _ThreadsSessionState extends State<_ThreadsSession> {
             const LinearProgressIndicator(),
           if (widget.threadRef == null) ...[
             TextField(
-              decoration: InputDecoration(labelText: l.mastermindThreadsSearch, hintText: l.mastermindThreadsSearch),
+              decoration: InputDecoration(
+                labelText: l.mastermindThreadsSearch,
+                hintText: l.mastermindThreadsSearch,
+              ),
               onChanged: (v) {
                 setState(() => query = v);
                 updateFilters();
