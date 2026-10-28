@@ -19,6 +19,9 @@ declare
   candidate text;
   suffix integer := 1;
 begin
+  -- Serialize every key write in a workspace, chosen or generated, so a
+  -- generated key never races a chosen one into a unique violation.
+  perform pg_advisory_xact_lock(hashtextextended(new.ws_id::text, 1984));
   if new.ticket_key is not null then
     -- Choosing a key is project management; members get the derived key.
     if auth.role() = 'authenticated' and
@@ -27,8 +30,6 @@ begin
     end if;
     return new;
   end if;
-  -- Serialize generated keys within a workspace, including concurrent inserts.
-  perform pg_advisory_xact_lock(hashtextextended(new.ws_id::text, 1984));
   base_key := left(regexp_replace(regexp_replace(upper(new.name collate "C"), '[^A-Z0-9]', '', 'g'), '^[0-9]+', ''), 3);
   if length(base_key) < 2 then base_key := 'PRJ'; end if;
   candidate := base_key;
@@ -103,7 +104,16 @@ begin
        (old.project_id, old.task_id, old.ticket_number, old.created_at) then
       raise exception 'PROJECT_TICKET_IDENTITY_IMMUTABLE' using errcode = '23514';
     end if;
-  elsif new.ticket_key is distinct from old.ticket_key and
+  end if;
+  -- task_projects only from here (task_project_tasks has no ticket_key).
+  if tg_table_name <> 'task_projects' then
+    return new;
+  end if;
+  -- Key edits take the workspace key lock that key assignment uses.
+  if new.ticket_key is distinct from old.ticket_key then
+    perform pg_advisory_xact_lock(hashtextextended(new.ws_id::text, 1984));
+  end if;
+  if new.ticket_key is distinct from old.ticket_key and
     auth.role() is distinct from 'service_role' and
     not coalesce(public.has_workspace_permission(new.ws_id, auth.uid(), 'manage_projects'), false) then
     raise exception 'PROJECT_TICKET_KEY_MANAGEMENT_DENIED' using errcode = '42501';
