@@ -85,7 +85,7 @@ export const endpoints: readonly BridgeEndpoint[] = sortEndpoints([
   { pattern: "/api/workspaces/[wsId]/wallets/checkpoints/history", module: lazyRouteModule(() => import('../app/api/workspaces/[wsId]/wallets/checkpoints/history/route'), ["GET"]) },
   { pattern: "/api/workspaces/[wsId]/wallets/checkpoints", module: lazyRouteModule(() => import('../app/api/workspaces/[wsId]/wallets/checkpoints/route'), ["GET","POST"]) },
   { pattern: "/api/workspaces/[wsId]/wallets/infinite", module: lazyRouteModule(() => import('../app/api/workspaces/[wsId]/wallets/infinite/route'), ["GET"]) },
-  { pattern: "/api/workspaces/[wsId]/wallets/migrate", module: lazyRouteModule(() => import('../app/api/workspaces/[wsId]/wallets/migrate/route'), ["PUT"]) },
+  { pattern: "/api/workspaces/[wsId]/wallets/migrate", module: lazyRouteModule(() => import('../app/api/workspaces/[wsId]/wallets/migrate/route'), ["GET","HEAD","POST","PUT","PATCH","DELETE","OPTIONS"]) },
   { pattern: "/api/workspaces/[wsId]/wallets", module: lazyRouteModule(() => import('../app/api/workspaces/[wsId]/wallets/route'), ["GET","POST"]) },
   { pattern: "/api/workspaces/[wsId]/wallets/transactions/migrate", module: lazyRouteModule(() => import('../app/api/workspaces/[wsId]/wallets/transactions/migrate/route'), ["PUT"]) },
 ]);
