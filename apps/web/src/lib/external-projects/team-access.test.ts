@@ -1,3 +1,4 @@
+import type { WorkspaceDefaultPermissionsRole } from '@tuturuuu/types';
 import { describe, expect, it, vi } from 'vitest';
 import {
   addExternalProjectRoleMembers,
@@ -250,7 +251,10 @@ describe('CMS explicit grant writes', () => {
     'filters explicit grants set to %s in all writers',
     async (enabled) => {
       const { access, calls } = createAccess({ roleExists: true });
-      const payload = {
+      const payload: {
+        name: string;
+        permissions: WorkspaceDefaultPermissionsRole['permissions'];
+      } = {
         name: 'Role',
         permissions: [
           { id: 'admin', enabled: true },
