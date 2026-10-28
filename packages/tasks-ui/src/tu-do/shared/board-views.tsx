@@ -725,6 +725,7 @@ export function BoardViews({
   const boardSprints = useBoardSprints({
     boardId: board.id,
     enabled: !localTaskState,
+    tasks,
     wsId: effectiveWorkspaceId,
   });
 

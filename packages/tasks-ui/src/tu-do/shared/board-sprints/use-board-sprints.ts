@@ -11,25 +11,72 @@ import {
   updateWorkspaceTaskBoardSprint,
   updateWorkspaceTaskBoardSprintLength,
 } from '@tuturuuu/internal-api/task-sprints';
+import type { Task } from '@tuturuuu/types/primitives/Task';
 import {
   buildOpenSprintByTaskId,
   getCurrentBoardSprint,
   getPlanningBoardSprint,
+  isBoardSprintOpen,
+  isTaskFinished,
 } from '@tuturuuu/utils/task-helper/sprints';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 
 export function getBoardSprintsQueryKey(boardId: string) {
   return ['board-sprints', boardId] as const;
+}
+
+/**
+ * Refetches a board's sprints when a task appears that they do not account
+ * for: a new, moved, restored or reopened open task joins a sprint in the
+ * database, and the Board view would hide it until the sprints say so. Each
+ * task asks once until a sprint holds it, so boards cannot loop.
+ */
+function useRefreshForUnplacedTasks(
+  boardId: string,
+  data: BoardSprintsResponse | undefined,
+  tasks: Task[] | undefined
+) {
+  const queryClient = useQueryClient();
+  const requested = useRef(new Set<string>());
+  useEffect(() => {
+    if (!tasks || !data?.schemaAvailable || data.sprintLengthWeeks === null)
+      return;
+    const inSprint = new Set<string>();
+    const inOpenSprint = new Set<string>();
+    for (const sprint of data.sprints) {
+      for (const task of sprint.tasks) {
+        inSprint.add(task.task_id);
+        if (isBoardSprintOpen(sprint)) inOpenSprint.add(task.task_id);
+      }
+    }
+    for (const id of requested.current)
+      if (inOpenSprint.has(id)) requested.current.delete(id);
+    const unplaced = tasks.filter(
+      (task) =>
+        !task.deleted_at &&
+        !requested.current.has(task.id) &&
+        (!inSprint.has(task.id) ||
+          (!inOpenSprint.has(task.id) && !isTaskFinished(task)))
+    );
+    if (!unplaced.length) return;
+    for (const task of unplaced) requested.current.add(task.id);
+    void queryClient.invalidateQueries({
+      queryKey: getBoardSprintsQueryKey(boardId),
+    });
+  }, [boardId, data, queryClient, tasks]);
 }
 
 /** Sprints of one board; disabled boards and pending migrations read as off. */
 export function useBoardSprints({
   boardId,
   enabled = true,
+  tasks,
   wsId,
 }: {
   boardId: string;
   enabled?: boolean;
+  /** The board's tasks, to notice ones the sprints have not placed yet. */
+  tasks?: Task[];
   wsId: string;
 }) {
   const query = useQuery({
@@ -39,6 +86,7 @@ export function useBoardSprints({
     staleTime: 30_000,
   });
   const data = query.data;
+  useRefreshForUnplacedTasks(boardId, enabled ? data : undefined, tasks);
 
   const derived = useMemo(() => {
     const sprints: BoardSprint[] = data?.schemaAvailable ? data.sprints : [];

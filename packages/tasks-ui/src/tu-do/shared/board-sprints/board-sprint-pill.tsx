@@ -2,10 +2,7 @@
 
 import type { BoardSprint } from '@tuturuuu/internal-api/task-sprints';
 import type { Task } from '@tuturuuu/types/primitives/Task';
-import {
-  getSprintProgress,
-  isTaskFinished,
-} from '@tuturuuu/utils/task-helper/sprints';
+import { getLoadedSprintProgress } from '@tuturuuu/utils/task-helper/sprints';
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import { toast } from 'sonner';
@@ -37,15 +34,15 @@ export function BoardSprintPill({
     enabled: canManage,
     workspaceId: wsId,
   });
-  const finishedTaskIds = useMemo(
-    () => new Set(tasks.filter(isTaskFinished).map((task) => task.id)),
+  const loadedTasks = useMemo(
+    () => new Map(tasks.map((task) => [task.id, task])),
     [tasks]
   );
 
   if (!sprints.sprintsOn || !sprints.currentSprint) return null;
 
   const getProgress = (sprint: BoardSprint) =>
-    getSprintProgress(sprint, (taskId) => finishedTaskIds.has(taskId));
+    getLoadedSprintProgress(sprint, loadedTasks);
 
   return (
     <SprintPill

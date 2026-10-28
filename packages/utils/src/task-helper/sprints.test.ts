@@ -4,6 +4,7 @@ import {
   formatSprintDateRange,
   getCurrentBoardSprint,
   getDaysUntilSprintEnd,
+  getLoadedSprintProgress,
   getPlanningBoardSprint,
   getSprintProgress,
   getTaskEffectiveDueDate,
@@ -112,5 +113,24 @@ describe('board sprint helpers', () => {
     expect(formatSprintDateRange(active, 'en')).toBe(
       '19 Oct 2026 - 30 Oct 2026'
     );
+  });
+
+  it('counts unloaded finished tasks from the sprint record and loaded ones live', () => {
+    const sprint = {
+      tasks: [
+        { task_id: 'loaded-open', done: true },
+        { task_id: 'loaded-done', done: false },
+        { task_id: 'unloaded-done', done: true },
+        { task_id: 'unloaded-open', done: false },
+      ],
+    };
+    const loaded = new Map([
+      ['loaded-open', { id: 'loaded-open', completed_at: null }],
+      ['loaded-done', { id: 'loaded-done', completed_at: '2026-10-28' }],
+    ]);
+    expect(getLoadedSprintProgress(sprint, loaded)).toMatchObject({
+      done: 2,
+      total: 4,
+    });
   });
 });
