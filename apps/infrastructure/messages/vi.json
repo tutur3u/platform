@@ -21665,6 +21665,7 @@
     "create_description": "Tạo bảng nhiệm vụ",
     "description": "Bảng nhiệm vụ được sử dụng để quản lý các công việc liên quan đến một dự án hoặc mục tiêu cụ thể.",
     "dialog": {
+      "resize_panel": "Đổi độ rộng bảng công việc",
       "activity": "Hoạt động",
       "after_deadline": "sau hạn chót",
       "all_changes_synced": "Đã đồng bộ tất cả thay đổi",
