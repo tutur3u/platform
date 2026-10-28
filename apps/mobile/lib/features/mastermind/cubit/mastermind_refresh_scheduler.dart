@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:mobile/features/mastermind/cubit/mastermind_snapshot_cubit.dart';
 
 /// How one refresh attempt ended, as far as scheduling is concerned.
@@ -72,7 +73,7 @@ final class MastermindRefreshScheduler {
   Timer? _timer;
   int _attached = 0;
   bool _foreground = true;
-  bool _online = true;
+  final _online = ValueNotifier<bool>(true);
   bool _running = false;
   bool _stopped = false;
   bool _disposed = false;
@@ -81,7 +82,10 @@ final class MastermindRefreshScheduler {
   int get consecutiveFailures => _failures;
 
   /// Whether the device last reported a network connection.
-  bool get isOnline => _online;
+  bool get isOnline => _online.value;
+
+  /// [isOnline] as something a screen can rebuild on.
+  ValueListenable<bool> get online => _online;
   bool get isScheduled => _timer?.isActive ?? false;
 
   /// The delay the next scheduled attempt will wait, null when idle.
@@ -109,8 +113,8 @@ final class MastermindRefreshScheduler {
 
   /// Coming back online fires one attempt now instead of waiting out a backoff.
   void setOnline({required bool online}) {
-    if (_online == online) return;
-    _online = online;
+    if (_disposed || _online.value == online) return;
+    _online.value = online;
     if (online && _canRun) {
       _failures = 0;
       unawaited(_tick());
@@ -129,12 +133,14 @@ final class MastermindRefreshScheduler {
   }
 
   void dispose() {
+    if (_disposed) return;
     _disposed = true;
     _cancel();
+    _online.dispose();
   }
 
   bool get _canRun =>
-      !_disposed && !_stopped && _attached > 0 && _foreground && _online;
+      !_disposed && !_stopped && _attached > 0 && _foreground && _online.value;
 
   void _cancel() {
     _timer?.cancel();

@@ -118,6 +118,32 @@ void main() {
       expect(isValidReplyText('a' * 501), isFalse);
     });
 
+    group('line limit', () {
+      String lines(int count, String separator) =>
+          List.filled(count, 'x').join(separator);
+
+      for (final (name, separator) in [
+        ('LF', '\n'),
+        ('CRLF', '\r\n'),
+        ('a lone CR', '\r'),
+      ]) {
+        test('allows ten lines and refuses eleven with $name', () {
+          expect(isValidReplyText(lines(10, separator)), isTrue);
+          expect(isValidReplyText(lines(11, separator)), isFalse);
+        });
+      }
+
+      test('does not count a trailing line break or blank edges', () {
+        expect(isValidReplyText('${lines(10, '\n')}\r\n'), isTrue);
+        expect(isValidReplyText('\n\n${lines(10, '\n')}'), isTrue);
+      });
+
+      test('counts blank lines in the middle', () {
+        expect(isValidReplyText('a${'\n' * 10}b'), isFalse);
+        expect(isValidReplyText('a${'\n' * 9}b'), isTrue);
+      });
+    });
+
     test('counts code points, not UTF-16 units', () {
       // 500 astral code points are 1,000 UTF-16 units.
       expect(isValidReplyText('\u{1F600}' * 500), isTrue);

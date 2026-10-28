@@ -57,6 +57,7 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
   DateTime? _capabilityCheckedAt;
   Future<void> _storeTail = Future<void>.value();
   Future<void>? _loading;
+  Future<void>? _capabilityLoad;
 
   /// The cubit's clock, so views can count down to [ReplyItemStatus.retryAt].
   DateTime now() => _clock();
@@ -78,13 +79,17 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
   // ---- capabilities ----
 
   /// Asks the hub whether replies are on. A known answer is reused for a few
-  /// minutes; a failed re-check never flips a known answer.
-  Future<void> loadCapabilities({bool force = false}) async {
+  /// minutes; a failed re-check never flips a known answer. Callers that
+  /// overlap share one request, so a send that arrives during the first-ever
+  /// check waits for its answer instead of being refused.
+  Future<void> loadCapabilities({bool force = false}) {
     final fetch = _fetchCapabilities;
     if (fetch == null) {
       emit(state.copyWith(capability: ReplyCapability.unsupported));
-      return;
+      return Future<void>.value();
     }
+    final pending = _capabilityLoad;
+    if (pending != null) return pending;
     final known = state.capability;
     final checkedAt = _capabilityCheckedAt;
     final fresh =
@@ -92,8 +97,29 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
         _clock().difference(checkedAt) < _capabilityMaxAge &&
         (known == ReplyCapability.supported ||
             known == ReplyCapability.unsupported);
-    if (known == ReplyCapability.checking || (!force && fresh)) return;
+    if (!force && fresh) return Future<void>.value();
+    final load = Completer<void>();
+    final shared = load.future;
+    _capabilityLoad = shared;
+    unawaited(() async {
+      try {
+        await _checkCapabilities(fetch);
+        load.complete();
+      } on Object catch (error, stackTrace) {
+        load.completeError(error, stackTrace);
+      } finally {
+        // A `clear` meanwhile may already have started the next request.
+        if (identical(_capabilityLoad, shared)) _capabilityLoad = null;
+      }
+    }());
+    return shared;
+  }
+
+  Future<void> _checkCapabilities(
+    Future<CapabilitiesFetch> Function() fetch,
+  ) async {
     final generation = _generation;
+    final known = state.capability;
     final settled =
         known == ReplyCapability.supported ||
         known == ReplyCapability.unsupported;
@@ -422,6 +448,7 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
     _inFlight.clear();
     _capabilityCheckedAt = null;
     _loading = null;
+    _capabilityLoad = null;
     emit(const MastermindRepliesState());
     final future = _storeTail.then((_) async {
       try {

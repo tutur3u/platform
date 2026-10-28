@@ -114,6 +114,46 @@ void main() {
       expect(harness.source.calls, 2);
     });
 
+    testWidgets('an inactive blip (Control Centre, Face ID) is not a resume', (
+      tester,
+    ) async {
+      final harness = await _pump(tester);
+      expect(harness.source.calls, 1);
+
+      tester.binding
+        ..handleAppLifecycleStateChanged(AppLifecycleState.inactive)
+        ..handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+      expect(harness.source.calls, 1);
+      expect(find.text('content'), findsOneWidget);
+    });
+
+    testWidgets('only a real return from hidden or paused refreshes', (
+      tester,
+    ) async {
+      final harness = await _pump(tester);
+      tester.binding
+        ..handleAppLifecycleStateChanged(AppLifecycleState.inactive)
+        ..handleAppLifecycleStateChanged(AppLifecycleState.hidden)
+        ..handleAppLifecycleStateChanged(AppLifecycleState.inactive)
+        ..handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+      expect(harness.source.calls, 2);
+
+      // The flag is spent: the next blip does not reuse it.
+      tester.binding
+        ..handleAppLifecycleStateChanged(AppLifecycleState.inactive)
+        ..handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+      expect(harness.source.calls, 2);
+
+      tester.binding
+        ..handleAppLifecycleStateChanged(AppLifecycleState.paused)
+        ..handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+      expect(harness.source.calls, 3);
+    });
+
     testWidgets('resuming also clears a stopped scheduler', (tester) async {
       final source = FakeHubSource()
         ..fetcher = () async =>
@@ -127,6 +167,45 @@ void main() {
 
       expect(source.calls, greaterThan(before));
       expect(harness.scheduler.consecutiveFailures, 0);
+    });
+  });
+
+  group('freshness strip', () {
+    testWidgets('follows connectivity alone, with no new snapshot', (
+      tester,
+    ) async {
+      final source = FakeHubSource();
+      final harness = MastermindViewHarness(source: source);
+      addTearDown(harness.dispose);
+      await harness.setAccess(TestAccess.enabled);
+      await tester.pumpApp(
+        harness.wrap(
+          MastermindSection(
+            builder: (context, ready, freshness) =>
+                Text('strip:${freshness.kind.name}'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('strip:updated'), findsOneWidget);
+
+      // A failed refresh while online: the held snapshot stays on screen.
+      source.fetcher = () async =>
+          _unavailable(SnapshotUnavailableKind.unavailable);
+      await harness.scheduler.refreshNow();
+      await tester.pumpAndSettle();
+      expect(find.text('strip:couldntRefresh'), findsOneWidget);
+      final snapshotState = harness.snapshot.state;
+
+      harness.scheduler.setOnline(online: false);
+      await tester.pumpAndSettle();
+      expect(harness.snapshot.state, same(snapshotState));
+      expect(find.text('strip:offline'), findsOneWidget);
+
+      harness.scheduler.setOnline(online: true);
+      await tester.pumpAndSettle();
+      expect(find.text('strip:offline'), findsNothing);
+      expect(find.text('strip:couldntRefresh'), findsOneWidget);
     });
   });
 

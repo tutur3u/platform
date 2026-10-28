@@ -150,17 +150,56 @@ void main() {
       expect(state.entryFor(inboxItemId(9), inboxHash('a')), isNull);
     });
 
-    test('discard removes only the entry of that version', () async {
+    // The current version comes first: matching on the item id alone would
+    // find it before the old one.
+    for (final discarded in ['a', 'b']) {
+      test('discard of version $discarded removes only that entry', () async {
+        final store = SpyOutboxStore();
+        await store.inner.write([entry('a', 'current'), entry('b', 'old')]);
+        final cubit = repliesCubit(
+          store: store,
+          transport: FakeReplyTransport(const [ReplyUnavailable()]),
+        );
+        addTearDown(cubit.close);
+        await cubit.ensureLoaded();
+        await cubit.discard(_item.id, inboxHash(discarded));
+
+        final kept = discarded == 'a' ? 'b' : 'a';
+        expect(cubit.state.outbox.single.versionHash, inboxHash(kept));
+        expect((await store.inner.read()).single.versionHash, inboxHash(kept));
+      });
+    }
+  });
+
+  group('logout racing a stale reply', () {
+    test('does not refresh the snapshot or keep the words', () async {
+      var refreshed = 0;
       final store = SpyOutboxStore();
-      await store.inner.write([entry('b', 'old'), entry('a', 'current')]);
+      final transport = FakeReplyTransport(const [ReplyStale()])
+        ..gate = Completer<void>();
       final cubit = repliesCubit(
         store: store,
-        transport: FakeReplyTransport(const [ReplyUnavailable()]),
+        transport: transport,
+        refreshSnapshot: () async => refreshed++,
       );
       addTearDown(cubit.close);
-      await cubit.ensureLoaded();
-      await cubit.discard(_item.id, inboxHash('b'));
-      expect(cubit.state.outbox.single.text, 'current');
+      await cubit.loadCapabilities();
+      final submitting = cubit.submit(item: _item, text: 'Please wait');
+      await pumpEventQueue();
+      expect(transport.sent, hasLength(1));
+
+      // The drop of the stale entry is waiting on the disk when the user logs
+      // out: the new session must not be refreshed for the old one's 409.
+      store.writeGate = Completer<void>();
+      transport.gate!.complete();
+      await pumpEventQueue();
+      final cleared = cubit.clear();
+      store.writeGate!.complete();
+      await Future.wait([submitting, cleared]);
+
+      expect(refreshed, 0);
+      expect(cubit.draftFor(_item.id).isEmpty, isTrue);
+      expect(cubit.state.outbox, isEmpty);
     });
   });
 }

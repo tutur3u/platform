@@ -84,6 +84,7 @@ final class MastermindViewHarness {
   MastermindViewHarness({
     FakeHubSource? source,
     MastermindRepliesCubit? replies,
+    Stream<bool>? onlineChanges,
   }) : source = source ?? FakeHubSource() {
     access = MastermindAccessCubit(
       repository: permissions,
@@ -104,6 +105,7 @@ final class MastermindViewHarness {
       snapshot: snapshot,
       scheduler: scheduler,
       replies: replies,
+      onlineChanges: onlineChanges,
     );
   }
 

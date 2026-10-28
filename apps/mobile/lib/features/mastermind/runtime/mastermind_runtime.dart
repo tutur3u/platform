@@ -37,7 +37,9 @@ final class MastermindRuntime {
     _accessSub = access.stream.listen(_onAccess);
     _snapshotSub = snapshot.stream.listen(_onSnapshot);
     // A connectivity plugin error only means the device stays assumed online.
-    _onlineSub = onlineChanges?.listen((online) {
+    // Repeats (several interfaces changing at once) are one change: each
+    // `true` would otherwise force another capability check and flush.
+    _onlineSub = onlineChanges?.distinct().listen((online) {
       scheduler.setOnline(online: online);
       // Back online: queued replies go out without waiting for a screen, once
       // the hub confirms replies are still on.
