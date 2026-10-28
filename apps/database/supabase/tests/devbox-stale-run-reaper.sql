@@ -6,6 +6,9 @@ select plan(25);
 
 insert into public.users (id)
 values ('00000000-0000-4000-8000-00000000d001');
+insert into public.workspace_members(ws_id,user_id,type) values
+    ('00000000-0000-0000-0000-000000000000',
+        '00000000-0000-4000-8000-00000000d001','MEMBER');
 
 -- Runner A is healthy; runner B stopped heartbeating 30 minutes ago.
 insert into private.devbox_runners (
@@ -168,6 +171,10 @@ values
         '00000000-0000-4000-8000-00000000d001',
         '00000000-0000-4000-8000-00000000d100', null, 'queued', 'judge',
         array['__ttr_judge_v1__', 'next'], 60, null, now(), now());
+insert into private.learn_coding_submissions
+    (ws_id, user_id, challenge_slug, source, run_id, kind, language)
+values (gen_random_uuid(), '00000000-0000-4000-8000-00000000d001',
+    'two-sum', 'print(1)', '00000000-0000-4000-8000-00000000d208', 'test', 'python');
 select is(
     (select id from private.claim_next_devbox_run(
         '00000000-0000-4000-8000-00000000d0a1')),

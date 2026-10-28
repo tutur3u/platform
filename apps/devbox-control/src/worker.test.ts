@@ -50,6 +50,7 @@ beforeEach(() => {
       if (path.endsWith('/rpc/claim_next_devbox_run'))
         return Response.json([
           {
+            actor_id: actorId,
             id: '33333333-3333-4333-8333-333333333333',
             lease_id: '44444444-4444-4444-8444-444444444444',
             command: ['echo', 'ok'],
@@ -267,4 +268,30 @@ it('still rejects unknown top-level capability keys', async () => {
     ).status
   ).toBe(400);
   expect(writes).toBe(0);
+});
+
+it('rejects a claim missing its actor before delivering env', async () => {
+  const fetchBefore = globalThis.fetch;
+  globalThis.fetch = vi.fn(
+    async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input).includes('/rpc/claim_next_devbox_run'))
+        return Response.json([
+          {
+            id: runnerId,
+            lease_id: runnerId,
+            command: ['echo'],
+            env: { KEY: 'private' },
+          },
+        ]);
+      return fetchBefore(input, init);
+    }
+  );
+  await expect(
+    worker.fetch(
+      new Request('https://control.test/v1/poll', {
+        headers: { 'X-Devbox-Runner-Token': token },
+      }),
+      env
+    )
+  ).rejects.toThrow('Invalid claim result');
 });

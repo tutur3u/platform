@@ -514,3 +514,24 @@ Use `task-list-assignee-authorization.sql` for behavioral regression coverage.
 For rollback rehearsals, compare the observed hosted ACLs with replay first:
 historical GRANT ALL can include MAINTAIN on PostgreSQL 17 even when the hosted
 ACL excludes it. Record that fixture difference separately from migration proof.
+
+### Devbox ownership qualification
+
+When editing `private.claim_next_devbox_run`, locate its latest migration definition
+first. The live base for ownership migration 20261027152100 is 20261026145300,
+including mode admission, the bounded reaper, advisory locking, Judge requeue and
+the resource-limit envelope. Offboarding cancels queued work with a reason and
+sets running work to `cancel_requested`; it does not prove that an OS process stops. Compare function bodies, not just migration files.
+Keep SECURITY DEFINER helpers on `pg_catalog, pg_temp` with qualified object names,
+revoke PUBLIC/anon/authenticated EXECUTE, and grant only service_role.
+
+Run the actor-fence pgTAP tests RED on main and GREEN after applying the migration;
+compare full-suite failure names and round-trip the rollback. A lease ownership
+check must cover both direct run pins and inherited lease pins. Preserve dedicated
+learner Judge/playground enqueue paths. The separate 20261027152050 migration owns the shared user_id grant predicate;
+152100 delegates through a guarded lookup and binds the grant revocation hook.
+Missing contract objects or per-actor denials are inactive, and queued work is
+cancelled with an access-revocation event rather than blocking the fleet claim.
+Run `devbox-claim-cleanup.sql` with the real 152050 prerequisite before 152100;
+the suite verifies that the grant hook is installed by the ownership migration. Absence of an active grant
+is never permission to claim personal work on the fleet.

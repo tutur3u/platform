@@ -50,6 +50,15 @@ export function getDevboxStorageError(error: DevboxStorageErrorLike) {
   if (isDevboxReadinessError(message)) {
     return new DevboxStoreError(DEVBOX_READINESS_MESSAGE, 503);
   }
+  if (message === 'Devbox lease not found.')
+    return new DevboxStoreError(message, 404);
+  if (message === 'Devbox lease is not active.')
+    return new DevboxStoreError(message, 409);
+  if (
+    message === 'Devbox runner is not available to this actor.' ||
+    message === 'Devbox lease ownership is immutable.'
+  )
+    return new DevboxStoreError(message, 403);
   // Raised by the reject_devbox_run_on_draining_runner trigger.
   if (message.startsWith('Runner is draining')) {
     return new DevboxStoreError(message, 409);

@@ -4165,6 +4165,7 @@ export type Database = {
           require_reported_execution_mode: boolean;
           updated_at: string;
         };
+        ComputedFields: never;
         Insert: {
           id?: boolean;
           require_reported_execution_mode?: boolean;
@@ -4457,6 +4458,7 @@ export type Database = {
           id: string;
           last_heartbeat_at: string | null;
           name: string;
+          pool: string;
           resource_limits: NonNullable<Json>;
           status: string;
           updated_at: string;
@@ -4473,6 +4475,7 @@ export type Database = {
           id?: string;
           last_heartbeat_at?: string | null;
           name: string;
+          pool?: string;
           resource_limits?: NonNullable<Json>;
           status?: string;
           updated_at?: string;
@@ -4488,6 +4491,7 @@ export type Database = {
           id?: string;
           last_heartbeat_at?: string | null;
           name?: string;
+          pool?: string;
           resource_limits?: NonNullable<Json>;
           status?: string;
           updated_at?: string;
@@ -20709,6 +20713,10 @@ export type Database = {
         };
         Returns: Json;
       };
+      assert_cross_app_token_apps: {
+        Args: { p_origin_app: string; p_target_app: string };
+        Returns: undefined;
+      };
       assert_employee_administrator: {
         Args: { p_actor_id: string };
         Returns: undefined;
@@ -21027,9 +21035,17 @@ export type Database = {
         Args: { p_request_id: string; p_user_id: string };
         Returns: boolean;
       };
+      cancel_devbox_actor_queued_runs: {
+        Args: { p_actor_id: string };
+        Returns: undefined;
+      };
       cancel_pending_post_email_queue_for_recipient_email: {
         Args: { p_email: string; p_reason?: string };
         Returns: number;
+      };
+      cancel_unauthorized_devbox_runs: {
+        Args: { p_limit?: number };
+        Returns: undefined;
       };
       chat_actor_can_access_conversation: {
         Args: { p_actor_user_id: string; p_conversation_id: string };
@@ -21366,6 +21382,15 @@ export type Database = {
       chat_users_share_workspace: {
         Args: { p_actor_user_id: string; p_target_user_id: string };
         Returns: boolean;
+      };
+      check_devbox_write_ownership: {
+        Args: {
+          p_actor_id: string;
+          p_lease_id?: string;
+          p_runner_id?: string;
+          p_workload?: string;
+        };
+        Returns: undefined;
       };
       checkpoint_meeting_document: {
         Args: {
@@ -21790,6 +21815,18 @@ export type Database = {
           isSetofReturn: true;
         };
       };
+      cross_app_internal_app_names: {
+        Args: Record<PropertyKey, never>;
+        Returns: string[];
+      };
+      cross_app_token_lifetime_seconds: {
+        Args: { p_expiry_seconds: number; p_origin_app: string };
+        Returns: number;
+      };
+      cross_app_verified_session_data: {
+        Args: { p_session_data: Json; p_user_id: string };
+        Returns: Json;
+      };
       delete_managed_cron_whitelisted_domain: {
         Args: { p_domain: string };
         Returns: undefined;
@@ -21956,11 +21993,22 @@ export type Database = {
         Args: { _actor_id: string; _wallet_id: string; _ws_id: string };
         Returns: Json;
       };
+      devbox_actor_has_active_personal_grant: {
+        Args: { p_actor_id: string };
+        Returns: boolean;
+      };
+      devbox_actor_is_root_member: {
+        Args: { p_actor_id: string };
+        Returns: boolean;
+      };
       devbox_reports_fresh_trusted: {
         Args: { p_capabilities: Json; p_capabilities_updated_at: string };
         Returns: boolean;
       };
-      devbox_require_reported_execution_mode: { Args: never; Returns: boolean };
+      devbox_require_reported_execution_mode: {
+        Args: Record<PropertyKey, never>;
+        Returns: boolean;
+      };
       devbox_run_idempotency_ready: {
         Args: Record<PropertyKey, never>;
         Returns: boolean;
@@ -24304,6 +24352,10 @@ export type Database = {
         Args: { p_actor: string; p_teacher?: string; p_ws: string };
         Returns: Json;
       };
+      reap_stale_devbox_runs: {
+        Args: { p_limit?: number; p_runner_id?: string };
+        Returns: number;
+      };
       reconcile_creator_handle_owners: {
         Args: Record<PropertyKey, never>;
         Returns: undefined;
@@ -24524,6 +24576,10 @@ export type Database = {
       revoke_account_benefit: {
         Args: { p_actor_id: string; p_id: string };
         Returns: boolean;
+      };
+      revoke_overlong_cross_app_tokens: {
+        Args: Record<PropertyKey, never>;
+        Returns: number;
       };
       safe_parse_inet: { Args: { p_value: string }; Returns: unknown };
       save_learn_programming_problem: {
@@ -25328,10 +25384,6 @@ export type Database = {
           p_ws_id: string;
         };
         Returns: Json;
-      };
-      reap_stale_devbox_runs: {
-        Args: { p_limit?: number; p_runner_id?: string };
-        Returns: number;
       };
     };
     Enums: {
