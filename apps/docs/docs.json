@@ -395,6 +395,7 @@
                   "build/devops/mobile-store-deployment",
                   "build/devops/calendar-native-api-protection",
                   "build/devops/desktop-beta-distribution",
+                  "build/devops/desktop-release-versioning",
                   "build/devops/secrets-and-configuration",
                   "build/devops/sepay-testing-guide",
                   "build/devops/polar-storefront-integration",

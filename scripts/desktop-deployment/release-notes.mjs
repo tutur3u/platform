@@ -50,7 +50,15 @@ export function classifyChanges(subjects) {
 // ancestor. A right-only cherry-pick range skips patch-equivalent commits that
 // the previous beta already shipped.
 export function changesSince(previous, source, git = execFileSync) {
-  if (!previous) return null;
+  if (
+    ![previous, source].every(
+      (value) =>
+        typeof value === 'string' &&
+        value.length === 40 &&
+        /^[a-f0-9]{40}$/iu.test(value)
+    )
+  )
+    return null;
   try {
     return classifyChanges(
       git(
@@ -61,6 +69,7 @@ export function changesSince(previous, source, git = execFileSync) {
           '--right-only',
           '--cherry-pick',
           '--format=%s',
+          '--end-of-options',
           `${previous}...${source}`,
           '--',
           'apps/mobile',

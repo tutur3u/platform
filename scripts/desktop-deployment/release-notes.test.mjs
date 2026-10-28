@@ -130,3 +130,24 @@ test('signed builds and unknown history get honest wording', () => {
     })
   );
 });
+
+test('history rejects option-like and non-SHA revisions before invoking git', () => {
+  for (const revision of [
+    '--output=owned',
+    '-n1',
+    'production',
+    'a'.repeat(39),
+    'a'.repeat(40) + '\n',
+  ]) {
+    const never = () => assert.fail('unsafe revision reached git');
+    assert.equal(changesSince(revision, source, never), null);
+    assert.equal(changesSince(source, revision, never), null);
+  }
+  changesSince('b'.repeat(40), source, (_command, args) => {
+    assert.equal(
+      args[args.indexOf('--end-of-options') + 1],
+      `${'b'.repeat(40)}...${source}`
+    );
+    return '';
+  });
+});

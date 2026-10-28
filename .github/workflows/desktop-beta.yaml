@@ -113,6 +113,9 @@ jobs:
 
   release-status:
     name: Desktop beta availability
+    # GitHub requires push access to include draft releases in the listing.
+    permissions:
+      contents: write
     needs: check-ci
     if: (needs.check-ci.outputs.should_run == 'true' && github.ref == 'refs/heads/production' && !inputs.dry_run) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     runs-on: ubuntu-latest
@@ -333,6 +336,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: node scripts/desktop-deployment/verify-provenance.mjs
       - name: Publish immutable beta release
+        id: publication
         env:
           GH_TOKEN: ${{ github.token }}
         run: node scripts/desktop-deployment/publish.mjs
+      - name: Remove this run's failed draft
+        if: failure() && steps.publication.outputs.draft_tag != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DESKTOP_DRAFT_TAG: ${{ steps.publication.outputs.draft_tag }}
+        run: node scripts/desktop-deployment/cleanup-draft.mjs

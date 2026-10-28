@@ -59,3 +59,17 @@ test('release listing keeps desktop tags with source and draft state', () => {
     { tag: 'desktop-v0.26.0-9', source: 'b'.repeat(40), draft: false },
   ]);
 });
+
+test('a leftover failed draft reserves its version for the next queued run', () => {
+  const releases = listDesktopReleases(
+    () =>
+      `desktop-v0.26.1\t${'a'.repeat(40)}\ttrue\ndesktop-v0.26.0-9\t${'b'.repeat(40)}\tfalse\n`
+  );
+  assert.equal(
+    nextDesktopVersion(
+      pubspec,
+      releases.map(({ tag }) => tag)
+    ),
+    '0.26.2'
+  );
+});

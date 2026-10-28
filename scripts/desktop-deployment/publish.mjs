@@ -1,6 +1,6 @@
 /* biome-ignore-all lint/suspicious/noUndeclaredEnvVars: standalone CI-only scripts never run in Turbo or cache release inputs */
 import { execFileSync } from 'node:child_process';
-import { readFile, stat, writeFile } from 'node:fs/promises';
+import { appendFile, readFile, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { readDraftRelease, verifyDraftRelease } from './draft-release.mjs';
 import { changesSince, renderDesktopReleaseNotes } from './release-notes.mjs';
@@ -86,6 +86,8 @@ gh([
   notes,
   ...files.map(({ name }) => join(directory, name)),
 ]);
+if (process.env.GITHUB_OUTPUT)
+  await appendFile(process.env.GITHUB_OUTPUT, `draft_tag=${tag}\n`);
 verifyDraftRelease(readDraftRelease(tag), {
   tag,
   source: process.env.GITHUB_SHA,
