@@ -1,6 +1,7 @@
 import type { ProductionPublicationPolicy } from './scripts/ci/production-publication-policy.ts';
 
 export const ci = {
+  'contacts-start-candidate.yaml': true,
   'sso-persistence-contract.yaml': true,
   'employee-schema-contract.yaml': true,
   'actions-storage-report.yaml': true,
