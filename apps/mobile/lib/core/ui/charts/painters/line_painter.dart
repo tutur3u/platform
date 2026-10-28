@@ -5,6 +5,7 @@ import 'package:mobile/core/ui/charts/chart_gaps.dart';
 import 'package:mobile/core/ui/charts/chart_markers.dart';
 import 'package:mobile/core/ui/charts/chart_palette.dart';
 import 'package:mobile/core/ui/charts/chart_patterns.dart';
+import 'package:mobile/core/ui/charts/chart_time_axis.dart';
 import 'package:mobile/core/ui/charts/chart_value_axis.dart';
 import 'package:mobile/core/ui/charts/painters/chart_canvas.dart';
 
@@ -19,6 +20,7 @@ class LinePainter extends ChartPainter implements ChartBucketGeometry {
     this.selectedSeries = 0,
     this.axes = true,
     this.textScaler = TextScaler.noScaling,
+    this.timeLabel,
   });
   final List<ChartSeries> series;
   final AppChartPalette palette;
@@ -30,12 +32,16 @@ class LinePainter extends ChartPainter implements ChartBucketGeometry {
   final bool axes;
   final TextScaler textScaler;
 
+  /// Formats the x-axis ticks; null keeps the default labels.
+  final ChartTimeLabeler? timeLabel;
+
   ChartCanvas chartCanvas(Size size) => ChartCanvas(
     size,
     palette,
     axis: axis,
     axes: axes,
     textScaler: textScaler,
+    timeLabel: timeLabel,
   );
 
   @override
