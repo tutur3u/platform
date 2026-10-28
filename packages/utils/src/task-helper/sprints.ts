@@ -105,6 +105,22 @@ export function getSprintProgress(
   };
 }
 
+/**
+ * Progress from live task state where a task is loaded, else from the
+ * sprint's own record of it, so tasks on unloaded pages still count.
+ */
+export function getLoadedSprintProgress<T extends TaskTiming & { id: string }>(
+  sprint: { tasks: { task_id: string; done?: boolean }[] },
+  loadedTasks: ReadonlyMap<string, T>
+) {
+  return getSprintProgress(sprint, (taskId) => {
+    const loaded = loadedTasks.get(taskId);
+    return loaded
+      ? isTaskFinished(loaded)
+      : sprint.tasks.some((task) => task.task_id === taskId && task.done);
+  });
+}
+
 function parseDateOnly(value: string) {
   const [year, month, day] = value.slice(0, 10).split('-').map(Number);
   if (!year || !month || !day) return null;
