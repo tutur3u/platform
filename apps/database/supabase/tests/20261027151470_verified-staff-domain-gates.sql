@@ -26,7 +26,8 @@ select '33600000-0000-4000-8000-000000000009', 'sr336-owner@example.com', now(),
 insert into auth.identities (id, provider_id, user_id, identity_data, provider)
 select gen_random_uuid(), 'sr336-' || id, id,
   jsonb_build_object('sub', 'sr336-' || id, 'email', email, 'tid', tid,
-    'iss', 'https://login.microsoftonline.com/' || tid || '/v2.0'),
+    'iss', 'https://login.microsoftonline.com/' || tid || '/v2.0',
+    'custom_claims', jsonb_build_object('xms_edov', true)),
   'azure'
 from sr336_users where tid is not null;
 insert into auth.identities (id, provider_id, user_id, identity_data, provider)
@@ -226,7 +227,7 @@ update auth.identities set identity_data = identity_data || '{"iss":"https://log
 where user_id = '33600000-0000-4000-8000-000000000002';
 insert into auth.identities (id, provider_id, user_id, identity_data, provider)
 values (gen_random_uuid(), 'sr336-second', '33600000-0000-4000-8000-000000000002',
-  '{"sub":"sr336-second","tid":"ffffffff-ffff-4fff-8fff-ffffffffffff"}', 'azure');
+  '{"sub":"sr336-second","tid":"ffffffff-ffff-4fff-8fff-ffffffffffff","custom_claims":{"xms_edov":true}}', 'azure');
 select is(pg_temp.helper($q$select private.is_verified_tuturuuu_staff('33600000-0000-4000-8000-000000000002')::text$q$),
   'false', 'every Azure identity must belong to the home tenant');
 delete from auth.identities where provider_id = 'sr336-second';
