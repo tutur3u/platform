@@ -49,6 +49,7 @@ NeedsYou _withResolution(NeedsYou item, Map<String, dynamic> row) {
     id: item.id,
     title: item.title,
     body: item.body,
+    askTruncated: item.askTruncated,
     options: item.options,
     recommendedOption: item.recommendedOption,
     state: item.state,
@@ -56,8 +57,6 @@ NeedsYou _withResolution(NeedsYou item, Map<String, dynamic> row) {
     kind: item.kind,
     product: item.product,
     resolvedAt: at is String ? DateTime.tryParse(at)?.toUtc() : null,
-    resolution: resolution.isEmpty || resolution.length > 200
-        ? null
-        : resolution,
+    resolution: resolution.isEmpty ? null : resolution,
   );
 }

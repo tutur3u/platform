@@ -34,7 +34,6 @@ class InboxSegmentBar extends StatelessWidget {
             value: InboxSegment.resolved,
             label: l10n.mastermindInboxResolvedSegment,
           ),
-          AppSegment(value: InboxSegment.all, label: l10n.mastermindAllFilter),
           AppSegment(
             value: InboxSegment.decisions,
             label: l10n.mastermindDecisionsSegment,

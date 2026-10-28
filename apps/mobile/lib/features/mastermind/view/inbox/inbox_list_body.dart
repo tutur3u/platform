@@ -82,11 +82,6 @@ class InboxListBody extends StatelessWidget {
       title: l10n.mastermindNothingResolved,
       message: l10n.mastermindNothingResolvedReason,
     ),
-    InboxSegment.all when model.security.isEmpty => AppStateMessage.inline(
-      icon: LucideIcons.inbox,
-      title: l10n.mastermindInboxEmptyAll,
-      message: l10n.mastermindInboxEmptyAllReason,
-    ),
     _ => AppStateMessage.inline(
       icon: AppIcons.check,
       title: model.security.isEmpty
@@ -106,7 +101,8 @@ class InboxListBody extends StatelessWidget {
       caption: _groupTitle(l10n, group),
       captionTrailing: Text('${group.items.length}'),
       children: [
-        for (final item in items) InboxItemTile(item: item, now: now),
+        for (final item in items)
+          InboxItemTile(item: item, now: now, showKind: group.resolved),
         if (capped)
           MastermindShowAllRow(
             count: group.items.length,

@@ -22,6 +22,7 @@ final class NeedsYou implements NeedsYouItem {
     this.product,
     this.resolvedAt,
     this.resolution,
+    this.askTruncated = false,
   }) : options = List.unmodifiable(options);
 
   final String id;
@@ -40,6 +41,7 @@ final class NeedsYou implements NeedsYouItem {
 
   /// The answer the hub recorded ("Yes"); only on history rows.
   final String? resolution;
+  final bool askTruncated;
 }
 
 final class Lane implements LaneItem {

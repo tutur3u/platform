@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/deep_links.dart';
@@ -8,6 +9,7 @@ import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/mastermind/replies/mastermind_replies_cubit.dart';
 import 'package:mobile/features/mastermind/replies/reply_outcome.dart';
 import 'package:mobile/features/mastermind/view/inbox/mastermind_inbox_page.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 
 import '../../../helpers/helpers.dart';
 import '../../../helpers/mastermind_replies_fixture.dart';
@@ -54,10 +56,14 @@ Future<MastermindViewHarness> _pump(
   );
   addTearDown(harness.dispose);
   await harness.setAccess(TestAccess.enabled);
+  Widget wrap(Widget child) => BlocProvider(
+    create: (_) => ShellChromeActionsCubit(),
+    child: harness.wrap(child),
+  );
   if (router == null) {
-    await tester.pumpApp(harness.wrap(const MastermindInboxPage()));
+    await tester.pumpApp(wrap(const MastermindInboxPage()));
   } else {
-    await tester.pumpAppRouter(router, wrap: harness.wrap);
+    await tester.pumpAppRouter(router, wrap: wrap);
   }
   await tester.pumpAndSettle();
   return harness;
@@ -66,9 +72,15 @@ Future<MastermindViewHarness> _pump(
 double _top(WidgetTester tester, String text) =>
     tester.getTopLeft(find.text(text)).dy;
 
-/// Search starts hidden; a pull-down at the top of the list reveals it.
+/// Reveal search through the same controller as the navbar action.
 Future<void> _revealSearch(WidgetTester tester) async {
-  await tester.drag(find.byType(CustomScrollView), const Offset(0, 160));
+  tester
+      .element(find.byType(MastermindInboxPage))
+      .read<ShellChromeActionsCubit>()
+      .state
+      .resolveForLocation(Routes.mastermindInbox)
+      .singleWhere((action) => action.id == 'mastermind-inbox-search')
+      .onPressed!();
   await tester.pumpAndSettle();
   expect(find.byType(TextField), findsOneWidget);
 }
@@ -185,7 +197,7 @@ void main() {
   });
 
   group('search and filters', () {
-    testWidgets('the search field is hidden until pulled down', (tester) async {
+    testWidgets('the search field is hidden until requested', (tester) async {
       await _pump(tester, inboxJson(_mixed));
       expect(find.byType(TextField), findsNothing);
       await _revealSearch(tester);

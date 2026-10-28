@@ -25,6 +25,7 @@ NeedsYou parseNeedsYou(JsonReader input) {
       'recommended_option',
       'state',
       'version_hash',
+      'ask_truncated',
       'kind',
       'product',
     ],
@@ -42,6 +43,7 @@ NeedsYou parseNeedsYou(JsonReader input) {
     id: r.field('id').string(pattern: RegExp(r'^item-[a-f0-9]{20}$')),
     title: r.field('title').string(maxLength: 100),
     body: r.field('body').string(maxLength: 2000),
+    askTruncated: r.object()['ask_truncated'] == true,
     options: r
         .field('options')
         .list((v) => v.string(maxLength: 80), maxItems: 8, unique: true),

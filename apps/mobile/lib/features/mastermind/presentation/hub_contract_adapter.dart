@@ -6,12 +6,7 @@ Map<String, dynamic> adaptDecision(Map<String, dynamic> row) {
   if (status == 'resolved') result['state'] = 'answered';
   final ask = result.remove('ask_text');
   if (ask is String && ask.isNotEmpty) result['body'] = ask;
-  [
-    'resolved_at',
-    'resolved_by',
-    'resolution',
-    'ask_truncated',
-  ].forEach(result.remove);
+  ['resolved_at', 'resolved_by', 'resolution'].forEach(result.remove);
   return result;
 }
 

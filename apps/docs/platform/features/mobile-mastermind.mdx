@@ -146,10 +146,10 @@ summaries apply the same collapse.
 ## Inbox
 
 The Inbox tab opens on one compact segmented control: **Needs you · Resolved ·
-All · Decisions**. Needs you lists the open asks grouped by kind ("Decisions for
+Decisions**. Needs you lists the open asks grouped by kind ("Decisions for
 you", "Actions", then "For your information"), each with its count, in publisher
 order. Resolved lists the hub's `decisions_resolved` history ("Recently
-resolved", newest first); All shows both. Pull to refresh.
+resolved", newest first). Pull to refresh.
 
 - **Rows** are two lines: the friendly title (`itemDisplayTitle`, so a redacted
   `Product · area · kind` title reads "Decision for Mastermind hub"), then the
@@ -160,13 +160,13 @@ resolved", newest first); All shows both. Pull to refresh.
   detail. A row is one screen-reader node ("Decision. Review plan. Review the
   plan", hint "Opens the ask").
 - **Caps:** each group shows five rows, then "Show all N" expands it in place.
-- **Search** is hidden until the navbar search icon or a pull-down at the top
+- **Search** is hidden until the navbar search icon
   of the list reveals it ("Search asks"); it covers every ask segment, including
   the resolved answer. Product chips (one row, 44 pt targets) appear only while
   two or more products are present.
 - **Empty and no-match states say why:** "Nothing needs you" (Mastermind lists
   an ask here when a lane needs your answer), "Nothing resolved recently" (asks
-  appear once Mastermind records an answer), "The Inbox is empty" on All, and
+  appear once Mastermind records an answer), and
   "No matching items" with a "Clear search and filters" row.
 - **Security rows** keep the Home rule: one non-tappable line in a trailing
   "Security" group with no count, never counted, searched or filtered, with no
@@ -192,7 +192,7 @@ resolved", newest first); All shows both. Pull to refresh.
 ### Decisions
 
 The segment lives in the URL: Needs you is the bare `/mastermind/inbox`, and
-Resolved, All and Decisions are `?segment=resolved|all|decisions` (an unknown
+Resolved and Decisions are `?segment=resolved|decisions`; old `all` maps to Needs you (an unknown
 value is Needs you).
 Switching is a `go`, never a push, so Back does not walk the segments. Home
 links straight to the Decisions segment.
@@ -484,9 +484,9 @@ Delivery sections arrive later and reuse the table route below).
   `view/forge_v1_fixture_test.dart`.
 
 - **Resolved is the hub's word.** Scope: Inbox rows, the item detail, the
-  Resolved and All segments. Default: an ask reads "Resolved" only once the hub
+  Resolved segment. Default: an ask reads "Resolved" only once the hub
   lists it in `decisions_resolved`; a reply this device sent reads "Sent ·
-  waiting for Mastermind" (with its GMT+7 send time on the detail) until then,
+  waiting for Mastermind" (with its GMT+7 queued time on the detail) until then,
   never Resolved. Exceptions: an ask that leaves the snapshot without a history
   row reads "This was answered or withdrawn". Coverage:
   `view/mastermind_inbox_v1_test.dart` ("a sent reply reads Sent · waiting until
@@ -671,7 +671,7 @@ the outbox). `runtime/mastermind_runtime_online_test.dart` covers the
 connectivity stream (reaches the scheduler, de-duplicated, cancelled on close).
 The screens are in `view/mastermind_inbox_page_test.dart`,
 `view/mastermind_inbox_v1_test.dart` (the Forge v1 fixture: Needs you /
-Resolved / All, pull-down and navbar search, caps, row semantics, the full ask,
+Resolved, navbar search, caps, row semantics, the full ask,
 the Open on Mac alert, resolved history, Sent then Resolved, 44 pt targets and
 last-row dock clearance at 1.0 and 2.0 text),
 `view/mastermind_item_page_test.dart` and
@@ -728,6 +728,12 @@ An unreported pacing value retains its dashed status glyph beside the explicit
 reason. The label wraps within the row's content area so checked timestamps do
 not overflow narrow screens. `mastermind_insights_page_test.dart` preserves the
 one-glyph-per-window assertion for reported and unreported values.
+
+Truncated asks carry a visible Mac continuation notice. Recorded answers remain
+available regardless of length, with an expandable preview. Failed replies say
+"Not sent · tap to retry"; tapping retries the existing reply and opens its
+recovery details. Grouped open rows omit the repeated kind badge. Coverage:
+`mastermind_inbox_v1_test.dart` (truncation, long answers, failed sends).
 
 ## Read-only Threads preview
 

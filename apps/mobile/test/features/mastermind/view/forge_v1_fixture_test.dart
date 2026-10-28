@@ -139,9 +139,10 @@ void main() {
           await tester.pumpAndSettle();
           expect(find.byType(InboxItemTile), findsNWidgets(2));
           expect(find.textContaining('Resolved · Yes'), findsNWidgets(2));
-          await tester.tap(find.text('All'));
+          await tester.tap(find.text('Needs you'));
           await tester.pumpAndSettle();
-          expect(find.byType(InboxItemTile), findsNWidgets(4));
+          expect(find.byType(InboxItemTile), findsNWidgets(2));
+          expect(find.text('All'), findsNothing);
         case 'Ask detail':
           expect(find.text('Review the plan'), findsOneWidget);
         case 'Lane detail':

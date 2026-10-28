@@ -134,11 +134,13 @@ class _ReplyEntryPanelState extends State<ReplyEntryPanel> {
           // limited and sent as they change.
           title: Semantics(liveRegion: true, child: Text(title)),
           subtitle: Text(l10n.mastermindReplyYourReply(reply)),
-          // When it left this device (GMT+7), so "waiting" has a start.
+          // Creation records queue time, including after hub acceptance.
           trailing: Text(
-            Gmt7.time(
-              entry.createdAt,
-              Localizations.localeOf(context).toString(),
+            l10n.mastermindReplyQueuedAt(
+              Gmt7.time(
+                entry.createdAt,
+                Localizations.localeOf(context).toString(),
+              ),
             ),
           ),
         ),

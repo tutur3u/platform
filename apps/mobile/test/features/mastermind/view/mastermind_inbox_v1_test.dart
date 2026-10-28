@@ -138,7 +138,7 @@ void main() {
   setUpAll(initializeDateFormatting);
 
   group('filters', () {
-    testWidgets('Needs you, Resolved and All split the fixture asks', (
+    testWidgets('Needs you and Resolved split the fixture asks', (
       tester,
     ) async {
       await _pump(tester, const MastermindInboxPage(), _v1());
@@ -151,12 +151,8 @@ void main() {
       expect(find.text('Recently resolved'), findsOneWidget);
       expect(find.text('Resolved · Yes · 2 h ago'), findsNWidgets(2));
 
-      await _segment(tester, 'All');
-      expect(find.byType(InboxItemTile), findsNWidgets(4));
-      expect(
-        tester.getTopLeft(find.text('Decisions for you')).dy,
-        lessThan(tester.getTopLeft(find.text('Recently resolved')).dy),
-      );
+      expect(inboxSegmentFromQuery('all'), InboxSegment.needsYou);
+      expect(find.text('All'), findsNothing);
     });
 
     testWidgets('the segment control is compact with 44 pt segments', (
@@ -165,7 +161,7 @@ void main() {
       await _pump(tester, const MastermindInboxPage(), _v1());
       final control = find.byType(MastermindSegmentedControl<InboxSegment>);
       expect(tester.getSize(control).height, lessThanOrEqualTo(48));
-      for (final label in ['Needs you', 'Resolved', 'All', 'Decisions']) {
+      for (final label in ['Needs you', 'Resolved', 'Decisions']) {
         final hit = find.ancestor(
           of: find.text(label),
           matching: find.byType(GestureDetector),
@@ -200,12 +196,17 @@ void main() {
   });
 
   group('search', () {
-    testWidgets('a pull-down reveals it; no match offers a clear row', (
+    testWidgets('the navbar reveals it; no match offers a clear row', (
       tester,
     ) async {
-      await _pump(tester, const MastermindInboxPage(), _v1());
+      final chrome = ShellChromeActionsCubit();
+      addTearDown(chrome.close);
+      await _pump(tester, const MastermindInboxPage(), _v1(), chrome: chrome);
       expect(find.byType(TextField), findsNothing);
-      await tester.drag(find.byType(CustomScrollView), const Offset(0, 160));
+      chrome.state
+          .resolveForLocation(Routes.mastermindInbox)
+          .singleWhere((action) => action.id == 'mastermind-inbox-search')
+          .onPressed!();
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), 'zzz');
       await tester.pumpAndSettle();
@@ -241,7 +242,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(TextField), findsOneWidget);
       expect(action().icon, AppIcons.close);
-      await _segment(tester, 'All');
+      await _segment(tester, 'Resolved');
       await tester.enterText(find.byType(TextField), 'ship it');
       await tester.pumpAndSettle();
       expect(find.byType(InboxItemTile), findsOneWidget);
@@ -331,6 +332,48 @@ void main() {
     });
   });
 
+  testWidgets('failed sends differ from queued replies', (tester) async {
+    final replies = repliesCubit(
+      transport: FakeReplyTransport(const [ReplyRejected()]),
+    );
+    final json = _v1();
+    final item = parsedSnapshot(json).now.needsYou.whereType<NeedsYou>().first;
+    await replies.submit(item: item, text: 'Yes');
+    await _pump(tester, const MastermindInboxPage(), json, replies: replies);
+    expect(find.text('Not sent · tap to retry'), findsOneWidget);
+    expect(find.text('Waiting to send'), findsNothing);
+  });
+
+  testWidgets('truncated asks disclose the Mac continuation', (tester) async {
+    final json = _v1();
+    _editOpen(json, (row) => row['ask_truncated'] = true);
+    await _pump(tester, const MastermindItemPage(itemId: _openId), json);
+    expect(find.text('Ask truncated; full text on the Mac'), findsOneWidget);
+  });
+
+  testWidgets('long recorded answers survive and expand', (tester) async {
+    final json = _v1();
+    final answer = List.filled(100, 'recorded answer').join(' ');
+    for (final row in json['decisions_resolved'] as List) {
+      if ((row as Map)['id'] == _resolvedId) row['resolution'] = answer;
+    }
+    expect(
+      parsedSnapshot(
+        json,
+      ).resolvedItems.firstWhere((item) => item.id == _resolvedId).resolution,
+      answer,
+    );
+    await _pump(tester, const MastermindItemPage(itemId: _resolvedId), json);
+    expect(
+      find.text('Mastermind closed this ask without recording an answer.'),
+      findsNothing,
+    );
+    await tester.tap(find.text('Show full answer'));
+    await tester.pumpAndSettle();
+    final text = tester.widget<Text>(find.text('Answer: $answer'));
+    expect(text.maxLines, isNull);
+  });
+
   group('detail', () {
     testWidgets('shows the full ask text, titled by its kind', (tester) async {
       final json = _v1();
@@ -413,7 +456,7 @@ void main() {
         _addDecisions(json, 3);
         await _pump(
           tester,
-          const MastermindInboxPage(initialSegment: InboxSegment.all),
+          const MastermindInboxPage(initialSegment: InboxSegment.resolved),
           json,
           size: size,
           dock: dock,

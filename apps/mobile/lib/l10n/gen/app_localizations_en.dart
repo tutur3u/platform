@@ -15,6 +15,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindUnrecognisedValue => 'Unrecognised value';
 
   @override
+  String get mastermindAskTruncated => 'Ask truncated; full text on the Mac';
+
+  @override
+  String get mastermindReplyFailedShort => 'Not sent · tap to retry';
+
+  @override
+  String get mastermindAnswerExpand => 'Show full answer';
+
+  @override
+  String get mastermindAnswerCollapse => 'Show less';
+
+  @override
+  String mastermindReplyQueuedAt(String time) {
+    return 'Queued $time';
+  }
+
+  @override
   String get assistantDownloadPhasePending => 'Pending';
 
   @override
@@ -13857,9 +13874,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindGapReset => 'Quota reset';
 
   @override
-  String get mastermindAskMissing => 'Full ask not published yet';
-
-  @override
   String get mastermindRecentlyResolved => 'Recently resolved';
 
   @override
@@ -13895,12 +13909,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindResolvedState => 'Resolved';
-
-  @override
-  String get mastermindInboxEmptyAllReason => 'Open and recently resolved asks from Mastermind appear here.';
-
-  @override
-  String get mastermindInboxEmptyAll => 'The Inbox is empty';
 
   @override
   String get mastermindNothingResolvedReason => 'Asks appear here once Mastermind records an answer.';

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -24,9 +26,15 @@ import 'package:mobile/l10n/l10n.dart';
 /// The full ask, its options and the composer live on the detail page, which
 /// a tap pushes so Back returns to this list with its filters intact.
 class InboxItemTile extends StatelessWidget {
-  const InboxItemTile({required this.item, this.now, super.key});
+  const InboxItemTile({
+    required this.item,
+    this.now,
+    this.showKind = false,
+    super.key,
+  });
 
   final NeedsYou item;
+  final bool showKind;
 
   /// The section clock, for "5 min ago". Without it no age is shown.
   final DateTime? now;
@@ -37,23 +45,38 @@ class InboxItemTile extends StatelessWidget {
     return BlocSelector<
       MastermindRepliesCubit,
       MastermindRepliesState,
-      OutboxEntry?
+      (OutboxEntry?, ReplyItemStatus)
     >(
       bloc: replies,
-      selector: (state) => state.entryFor(item.id, item.versionHash),
-      builder: _row,
+      selector: (state) =>
+          (state.entryFor(item.id, item.versionHash), state.statusFor(item.id)),
+      builder: (context, value) => _row(context, value.$1, value.$2),
     );
   }
 
-  Widget _row(BuildContext context, OutboxEntry? entry) {
+  Widget _row(
+    BuildContext context,
+    OutboxEntry? entry,
+    ReplyItemStatus status,
+  ) {
     final l10n = context.l10n;
     final title = itemDisplayTitle(l10n, item);
     final kind = item.kind;
     final kindLabel = kind == null
         ? null
         : MastermindLabels.itemKind(l10n, kind);
-    final detail = [?_state(l10n, entry), ?_age(l10n)].join(' · ');
-    void open() => context.push(Routes.mastermindInboxItemPath(item.id));
+    final detail = [?_state(l10n, entry, status), ?_age(l10n)].join(' · ');
+    void open() {
+      if (status.issue != null && entry != null) {
+        unawaited(
+          MastermindRepliesWatcher.cubitOf(
+            context,
+          ).retry(item.id, item.versionHash),
+        );
+      }
+      unawaited(context.push<void>(Routes.mastermindInboxItemPath(item.id)));
+    }
+
     final large = mastermindLargeText(context);
     return Semantics(
       button: true,
@@ -69,7 +92,7 @@ class InboxItemTile extends StatelessWidget {
         ),
         subtitle: Row(
           children: [
-            if (kindLabel != null) ...[
+            if (showKind && kindLabel != null) ...[
               AppBadge(
                 variant: item.state == ItemState.answered
                     ? AppBadgeVariant.outline
@@ -97,13 +120,18 @@ class InboxItemTile extends StatelessWidget {
     );
   }
 
-  String? _state(AppLocalizations l10n, OutboxEntry? entry) {
+  String? _state(
+    AppLocalizations l10n,
+    OutboxEntry? entry,
+    ReplyItemStatus status,
+  ) {
     if (item.state == ItemState.answered) {
       return switch (item.resolution) {
         final answer? => l10n.mastermindResolvedWith(answer),
         null => l10n.mastermindResolvedState,
       };
     }
+    if (status.issue != null) return l10n.mastermindReplyFailedShort;
     if (entry != null) {
       return entry.status == OutboxStatus.sent
           ? l10n.mastermindReplySent

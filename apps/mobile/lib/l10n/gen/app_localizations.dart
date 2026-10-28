@@ -103,6 +103,36 @@ abstract class AppLocalizations {
   /// **'Unrecognised value'**
   String get mastermindUnrecognisedValue;
 
+  /// No description provided for @mastermindAskTruncated.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask truncated; full text on the Mac'**
+  String get mastermindAskTruncated;
+
+  /// No description provided for @mastermindReplyFailedShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Not sent · tap to retry'**
+  String get mastermindReplyFailedShort;
+
+  /// No description provided for @mastermindAnswerExpand.
+  ///
+  /// In en, this message translates to:
+  /// **'Show full answer'**
+  String get mastermindAnswerExpand;
+
+  /// No description provided for @mastermindAnswerCollapse.
+  ///
+  /// In en, this message translates to:
+  /// **'Show less'**
+  String get mastermindAnswerCollapse;
+
+  /// No description provided for @mastermindReplyQueuedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Queued {time}'**
+  String mastermindReplyQueuedAt(String time);
+
   /// No description provided for @assistantDownloadPhasePending.
   ///
   /// In en, this message translates to:
@@ -25957,12 +25987,6 @@ abstract class AppLocalizations {
   /// **'Quota reset'**
   String get mastermindGapReset;
 
-  /// No description provided for @mastermindAskMissing.
-  ///
-  /// In en, this message translates to:
-  /// **'Full ask not published yet'**
-  String get mastermindAskMissing;
-
   /// No description provided for @mastermindRecentlyResolved.
   ///
   /// In en, this message translates to:
@@ -26028,18 +26052,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Resolved'**
   String get mastermindResolvedState;
-
-  /// No description provided for @mastermindInboxEmptyAllReason.
-  ///
-  /// In en, this message translates to:
-  /// **'Open and recently resolved asks from Mastermind appear here.'**
-  String get mastermindInboxEmptyAllReason;
-
-  /// No description provided for @mastermindInboxEmptyAll.
-  ///
-  /// In en, this message translates to:
-  /// **'The Inbox is empty'**
-  String get mastermindInboxEmptyAll;
 
   /// No description provided for @mastermindNothingResolvedReason.
   ///

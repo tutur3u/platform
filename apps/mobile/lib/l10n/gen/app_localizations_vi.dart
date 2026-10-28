@@ -15,6 +15,23 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindUnrecognisedValue => 'Giá trị không được nhận diện';
 
   @override
+  String get mastermindAskTruncated => 'Yêu cầu bị rút gọn; xem toàn văn trên máy Mac';
+
+  @override
+  String get mastermindReplyFailedShort => 'Chưa gửi · chạm để thử lại';
+
+  @override
+  String get mastermindAnswerExpand => 'Xem toàn bộ câu trả lời';
+
+  @override
+  String get mastermindAnswerCollapse => 'Thu gọn';
+
+  @override
+  String mastermindReplyQueuedAt(String time) {
+    return 'Đã xếp hàng $time';
+  }
+
+  @override
   String get assistantDownloadPhasePending => 'Đang chờ';
 
   @override
@@ -13714,10 +13731,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindGapReset => 'Đặt lại hạn mức';
 
   @override
-  String get mastermindAskMissing => 'Chưa công bố nội dung yêu cầu đầy đủ';
-
-  @override
-  String get mastermindRecentlyResolved => 'Đã giải quyết gần đây';
+  String get mastermindRecentlyResolved => 'Đã xử lý gần đây';
 
   @override
   String get mastermindReplyPendingShort => 'Đang chờ gửi';
@@ -13752,12 +13766,6 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindResolvedState => 'Đã xử lý';
-
-  @override
-  String get mastermindInboxEmptyAllReason => 'Các yêu cầu đang mở và vừa xử lý từ Mastermind sẽ hiện ở đây.';
-
-  @override
-  String get mastermindInboxEmptyAll => 'Hộp thư trống';
 
   @override
   String get mastermindNothingResolvedReason => 'Yêu cầu sẽ hiện ở đây khi Mastermind ghi nhận câu trả lời.';

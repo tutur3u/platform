@@ -8,7 +8,6 @@ import 'package:mobile/core/router/routes.dart';
 enum InboxSegment {
   needsYou('needs-you'),
   resolved('resolved'),
-  all('all'),
   decisions('decisions');
 
   const InboxSegment(this.queryValue);

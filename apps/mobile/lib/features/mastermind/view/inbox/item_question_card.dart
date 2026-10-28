@@ -9,6 +9,7 @@ import 'package:mobile/features/mastermind/presentation/display_names.dart';
 import 'package:mobile/features/mastermind/presentation/gmt7.dart';
 import 'package:mobile/features/mastermind/presentation/inbox_model.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
+import 'package:mobile/features/mastermind/view/inbox/recorded_answer.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// The ask itself: the display title as a heading, kind and product, then the
@@ -59,6 +60,7 @@ class ItemQuestionCard extends StatelessWidget {
                   ],
                 ),
               ],
+              if (item.askTruncated) Text(l10n.mastermindAskTruncated),
               const SizedBox(height: AppSpacing.md),
               if (isOpenOnMacStandIn(body))
                 AppAlert(
@@ -111,11 +113,9 @@ class ItemResolvedPanel extends StatelessWidget {
             liveRegion: true,
             child: Text(l10n.mastermindResolvedState),
           ),
-          subtitle: Text(
-            answer == null
-                ? l10n.mastermindResolvedNoAnswer
-                : l10n.mastermindResolvedAnswer(answer),
-          ),
+          subtitle: answer == null
+              ? Text(l10n.mastermindResolvedNoAnswer)
+              : RecordedAnswer(answer: answer),
           trailing: when == null ? null : Text(when),
         ),
       ],
