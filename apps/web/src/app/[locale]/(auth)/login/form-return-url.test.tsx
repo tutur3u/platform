@@ -220,7 +220,9 @@ describe('LoginForm returnUrl navigation', () => {
     mocks.currentUserProfile = null;
     mocks.getUser.mockResolvedValue({ data: { user: null } });
     renderLoginFormSearch('?provider=azure');
-    await screen.findByRole('button', { name: 'login.staff_microsoft' });
+    await screen.findByRole('button', {
+      name: 'Microsoft login.staff_microsoft',
+    });
     expect(mocks.signInWithOAuth).not.toHaveBeenCalled();
     expect(
       screen.getByText('login.microsoft_email_recovery')
