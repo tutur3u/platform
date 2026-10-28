@@ -21,6 +21,7 @@ import {
   useBoardSprintMutations,
   useBoardSprints,
 } from '../../board-sprints/use-board-sprints';
+import { TaskPropertyRow } from '../task-property-row';
 
 /**
  * The task's sprint in the task panel: which open sprint it is in, the sprint
@@ -77,18 +78,14 @@ export function TaskSprintRow({
   return (
     <section
       aria-label={t('sprint_field')}
-      className="flex flex-col gap-1 border-b px-4 py-3 text-sm"
+      className="mb-2 border-b pb-2 text-sm"
     >
-      <div className="flex items-center gap-2">
-        <Flag className="size-3.5 shrink-0 text-muted-foreground" />
-        <span className="w-20 shrink-0 text-muted-foreground text-xs">
-          {t('sprint_field')}
-        </span>
+      <TaskPropertyRow icon={Flag} label={t('sprint_field')}>
         {canEdit && targets.length ? (
           <DropdownMenu onOpenChange={setMenuOpen} open={menuOpen}>
             <DropdownMenuTrigger asChild>
               <button
-                className="inline-flex min-w-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-left hover:bg-muted disabled:pointer-events-none disabled:opacity-60"
+                className="-ml-2 inline-flex h-8 min-w-0 max-w-full items-center gap-1.5 rounded-md px-2 text-left font-medium transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-60"
                 // One move at a time, so a later pick cannot finish first.
                 disabled={moveTasks.isPending}
                 type="button"
@@ -124,22 +121,22 @@ export function TaskSprintRow({
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
-          <span className="truncate px-1.5">{label}</span>
+          <span className="block truncate font-medium leading-8">{label}</span>
         )}
-      </div>
-      {due?.source === 'sprint' ? (
-        <p className="flex items-center gap-1 pl-[6.5rem] text-muted-foreground text-xs">
-          <CalendarDays className="size-3" />
-          {t('due_with_sprint', { date: formatDay(due.date) })}
-        </p>
-      ) : null}
-      {history.length > 1 ? (
-        <p className="pl-[6.5rem] text-muted-foreground text-xs">
-          {t('sprint_history', {
-            list: history.map((sprint) => sprint.sequence_number).join(', '),
-          })}
-        </p>
-      ) : null}
+        {due?.source === 'sprint' ? (
+          <p className="flex items-center gap-1 pt-1 text-muted-foreground text-xs">
+            <CalendarDays className="size-3" />
+            {t('due_with_sprint', { date: formatDay(due.date) })}
+          </p>
+        ) : null}
+        {history.length > 1 ? (
+          <p className="pt-0.5 text-muted-foreground text-xs">
+            {t('sprint_history', {
+              list: history.map((sprint) => sprint.sequence_number).join(', '),
+            })}
+          </p>
+        ) : null}
+      </TaskPropertyRow>
     </section>
   );
 }
