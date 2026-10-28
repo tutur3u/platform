@@ -365,9 +365,16 @@ jobs:
         run: |
           test "$CHANGES_RESULT" = success
           test "$CODE" = true || test "$CODE" = false
-      - name: Documentation-only change; no test execution needed
+      - name: Documentation-only change; require skipped shards and upload
         if: needs.changes.outputs.code == 'false'
-        run: echo "Documentation-only PR; heavy Test jobs were not allocated."
+        env:
+          TEST_RESULT: ${{ needs.test-shards.result }}
+          UPLOAD_RESULT: ${{ needs.coverage-upload.result }}
+          COVERAGE_RESULT: ${{ needs.coverage-shards.result }}
+        run: |
+          test "$TEST_RESULT" = skipped
+          test "$UPLOAD_RESULT" = skipped
+          test "$COVERAGE_RESULT" = skipped
       - name: Require tests and coverage upload
         if: needs.changes.outputs.code != 'false'
         env:
@@ -392,9 +399,11 @@ jobs:
         run: |
           test "$CHANGES_RESULT" = success
           test "$CODE" = true || test "$CODE" = false
-      - name: Documentation-only change; no test execution needed
+      - name: Documentation-only change; require skipped shards
         if: needs.changes.outputs.code == 'false'
-        run: echo "Documentation-only PR; heavy Test jobs were not allocated."
+        env:
+          TEST_RESULT: ${{ needs.test-shards.result }}
+        run: test "$TEST_RESULT" = skipped
       - name: Require root script tests
         env:
           ROOT_SCRIPT_RESULT: ${{ needs.root-script-tests.result }}

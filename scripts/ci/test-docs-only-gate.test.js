@@ -7,6 +7,7 @@ const test = require('node:test');
 const { isDocumentation, requiresCode } = require('./test-docs-only-gate');
 const { readWorkflow } = require('./workflow-yaml-test-helper');
 const { evaluateExpression } = require('./github-expression-test-helper');
+const { runWorkflowGate } = require('./workflow-gate-test-helper');
 
 const docs = [
   'README.md',
@@ -214,7 +215,10 @@ test('heavy jobs skip docs-only PRs while code, admission and summary contexts s
     );
     assert.equal(evaluateExpression(noop.if, scope('false')), true);
     assert.equal(evaluateExpression(noop.if, scope('true')), false);
-    const required = job.steps.find((step) => step.env?.TEST_RESULT);
+    const required = job.steps.find(
+      (step) =>
+        step.env?.TEST_RESULT && !step.name.startsWith('Documentation-only')
+    );
     assert.equal(evaluateExpression(required.if, scope('false')), false);
     assert.equal(evaluateExpression(required.if, scope('true')), true);
     const env = {
@@ -260,5 +264,46 @@ test('heavy jobs skip docs-only PRs while code, admission and summary contexts s
       }).status,
       0
     );
+  }
+});
+
+test('complete summaries accept only proven docs skips and always require fresh root success', () => {
+  for (const id of ['build', 'coverage-result']) {
+    const job = workflow.jobs[id];
+    const good = {
+      CHANGES_RESULT: 'success',
+      CODE: 'false',
+      ROOT_SCRIPT_RESULT: 'success',
+      TEST_RESULT: 'skipped',
+      UPLOAD_RESULT: 'skipped',
+      COVERAGE_RESULT: 'skipped',
+      RUST_QUALIFICATION_REQUIRED: 'false',
+    };
+    assert.equal(runWorkflowGate(job, good).status, 0, id);
+    for (const result of ['failure', 'cancelled', 'skipped', '']) {
+      assert.notEqual(
+        runWorkflowGate(job, { ...good, CHANGES_RESULT: result }).status,
+        0
+      );
+      if (id === 'build') {
+        assert.notEqual(
+          runWorkflowGate(job, { ...good, ROOT_SCRIPT_RESULT: result }).status,
+          0
+        );
+      }
+    }
+    for (const code of ['true', '', 'garbage']) {
+      assert.notEqual(runWorkflowGate(job, { ...good, CODE: code }).status, 0);
+    }
+    for (const key of id === 'build'
+      ? ['TEST_RESULT']
+      : ['TEST_RESULT', 'UPLOAD_RESULT', 'COVERAGE_RESULT']) {
+      for (const result of ['success', 'failure', 'cancelled', '']) {
+        assert.notEqual(
+          runWorkflowGate(job, { ...good, [key]: result }).status,
+          0
+        );
+      }
+    }
   }
 });

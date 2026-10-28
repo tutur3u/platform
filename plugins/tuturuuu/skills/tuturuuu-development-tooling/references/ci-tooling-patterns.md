@@ -255,9 +255,15 @@ For required checks use job-level gates, never workflow paths/paths-ignore. Test
 `test-docs-only-gate.js` defaults to code on unknown ranges and every push; docs-only
 PRs skip only test/coverage shards and coverage upload. Root script tests remain
 ungated by the classifier and their failures always fail the unit summary, including
-for docs-only diffs. Only the unit/coverage summary contexts may become required;
-skipped matrix jobs report unexpanded matrix names. Preserve security, admission
-and concurrency.
+for docs-only diffs. Docs-only summaries require successful classification and
+`skipped` heavy dependencies; failed, cancelled or missing results are not skips.
+Only the unit/coverage summary contexts may become required; skipped matrix jobs
+report unexpanded matrix names. Preserve security, admission and concurrency.
+Run the complete root suite using the discovery and Node flags in
+`turbo-unit-tests.yaml`, including supplemental action/database contracts, when
+changing this gate. Classifier tests alone miss existing summary contracts. Test
+every applicable summary shell step with explicit classification fixtures;
+retain all fresh root/shard/Rust, switchboard and stable-name failure cases.
 
 Self-hosted PR routing is default-off and limited to same-repository, non-bot `pull_request` jobs without secrets, installing with a frozen lockfile and no lifecycle scripts, with isolated state and an always-run workspace wipe. The variable values, canary and kill switch live in the [CI runbook](../../../../apps/docs/build/devops/github-actions-runbook.mdx#pr-runner-pool-variable-canary-and-kill-switch). When inventorying action steps, JavaScript actions have no `runs.steps`.
 
