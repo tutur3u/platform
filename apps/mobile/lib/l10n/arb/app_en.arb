@@ -6019,6 +6019,7 @@
   "mastermindShipPullRequestsTitle": "Pull requests and merges",
   "mastermindShipReleased": "Released {dateTime}",
   "mastermindShipShaCopied": "Commit id copied",
+  "mastermindShipWithheld": "Withheld, open on Mac",
   "mastermindShipWithheldTooltip": "Details stay on the Mac",
   "mastermindShowAll": "Show all",
   "mastermindSignOutAction": "Sign out and sign in again",

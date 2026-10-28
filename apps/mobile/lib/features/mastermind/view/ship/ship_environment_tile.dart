@@ -81,7 +81,9 @@ class ShipEnvironmentTile extends StatelessWidget {
                 children: [
                   Icon(AppIcons.info, size: 14, color: muted?.color),
                   const SizedBox(width: AppSpacing.xs),
-                  Flexible(child: Text(subject!, style: muted)),
+                  Flexible(
+                    child: Text(l10n.mastermindShipWithheld, style: muted),
+                  ),
                 ],
               ),
             )

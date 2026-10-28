@@ -131,6 +131,27 @@ void main() {
       ]);
     });
 
+    test('pools rank by the worse of the session and weekly pacing', () {
+      final labels = MastermindUsageModel.from(
+        parsedSnapshot(
+          usageJson(
+            instances: [
+              usagePoint('Claude pool E', session: 20),
+              usagePoint('Codex pool A', weeklyPacing: 'SHORT'),
+              usagePoint(
+                'Codex pool B',
+                session: 5,
+                sessionPacing: 'SURPLUS',
+                weeklyPacing: 'SURPLUS',
+              ),
+            ],
+          ),
+        ),
+      ).pools.map((p) => p.label);
+      // Session alone would put "Claude pool E" (20% left) first.
+      expect(labels, ['Codex pool A', 'Claude pool E', 'Codex pool B']);
+    });
+
     test(
       'quotas: least left first, unknown last; forecasts: soonest first',
       () {

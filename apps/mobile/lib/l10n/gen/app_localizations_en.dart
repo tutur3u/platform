@@ -13233,6 +13233,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindShipShaCopied => 'Commit id copied';
 
   @override
+  String get mastermindShipWithheld => 'Withheld, open on Mac';
+
+  @override
   String get mastermindShipWithheldTooltip => 'Details stay on the Mac';
 
   @override

@@ -13093,6 +13093,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindShipShaCopied => 'Đã sao chép mã commit';
 
   @override
+  String get mastermindShipWithheld => 'Đã ẩn, xem trên máy Mac';
+
+  @override
   String get mastermindShipWithheldTooltip => 'Chi tiết chỉ có trên máy Mac';
 
   @override

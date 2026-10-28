@@ -78,6 +78,7 @@ class HomeShipCard extends StatelessWidget {
           AppGroupedRow(title: Text(l10n.mastermindShipEmpty)),
         for (final row in model.failingEnvironments)
           AppGroupedRow(
+            showChevron: true,
             leading: const AppIconTile(
               icon: AppIcons.warning,
               tone: AppTone.warning,

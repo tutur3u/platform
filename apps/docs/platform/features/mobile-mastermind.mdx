@@ -262,9 +262,12 @@ and product, area and kind chips. State is always a glyph and a word.
   and CI as a glyph and a word, its own `freshness` chip (it never follows the
   snapshot's age), the version, the commit id (monospace, with a copy button; it
   is a public commit id), the commit subject, the release time in GMT+7 with its
-  age, the evidence label and "Checked" time. A subject of "Withheld, open on
-  Mac" is muted with an info glyph and the tooltip "Details stay on the Mac". A
-  null version, commit id or subject hides its line.
+  age, the evidence label and "Checked" time. The publisher's stand-in subject
+  for a commit it will not send is shown as the localized label "Withheld, open
+  on Mac", muted with an info glyph and the tooltip "Details stay on the Mac". A
+  null version, commit id or subject hides its line. A failing environment on
+  Home opens Ship on its product, and its row carries a chevron like the
+  release rows.
 - **CI now.** `observability.ci[]`, queued and running per repository. A null
   count reads "Unavailable", never 0.
 - **Release cadence.** Most recent production release first; a product with none
@@ -278,8 +281,9 @@ and product, area and kind chips. State is always a glyph and a word.
   visible as the release age and cadence above.
 - **Product filter in the URL.** Chips appear while two or more products are
   present and write `?product=<product>` with `go`. A product the snapshot lacks
-  is removed from the URL once the frame is built. External deep links open the
-  tab root.
+  is shown unfiltered at once and removed from the URL after the frame, but
+  only while Ship is the top route: a rewrite is a `go`, so one that fired under
+  an open route would drop it. External deep links open the tab root.
 
 Ship shows no security rows, ids or digests.
 
@@ -290,7 +294,8 @@ Delivery sections arrive later and reuse the table route below).
 
 - **Pools** come from `observability.usage.instances[]`, most urgent first:
   SHORT, then unknown pacing, then OK, then SURPLUS, then the least session
-  budget left, then label. Pool labels are opaque display strings, shown
+  budget left, then label. A pool's pacing is the worse of its session and
+  weekly windows, so a weekly SHORT outranks a session that is fine. Pool labels are opaque display strings, shown
   verbatim and never summed or stacked. Each pool shows session and weekly
   budget left ("Unavailable" when null, never 0), the reset time in GMT+7, the
   burn in pp/h, the signed projection at reset, and pacing as a word and a
@@ -316,6 +321,17 @@ Delivery sections arrive later and reuse the table route below).
   only. A chart the snapshot no longer has shows "This chart is no longer in
   Mastermind" with a way back, never an error. The shell pops this location on
   Back instead of falling back to the tab root.
+
+## Deferred to PR8
+
+The Insights charts ship as one session-and-weekly panel per pool. These
+chart-spec gaps are deferred to PR8 with the remaining chart sections:
+
+- separate session and weekly small multiples instead of one shared panel;
+- a signed projection axis;
+- a pp/h axis for burn;
+- diverging credit bars for `burn_vs_target`;
+- a light and dark golden image for the chart panels.
 
 ## Regression coverage
 
@@ -360,7 +376,13 @@ Delivery sections arrive later and reuse the table route below).
   models and chart ids.
 - `apps/mobile/test/features/shell/view/shell_back_navigation_test.dart`:
   system Back from a lane over a filtered Work location returns to that
-  location with its query (it fails without the shell's lane-pop rule).
+  location with its query (it fails without the shell's lane-pop rule). System
+  and dock Back from a chart table, pushed over Insights over Work, pop back to
+  the same Insights (one state created, Work still beneath it); both fail
+  without the shell's chart-table pop rule, because the mini-app parent
+  fallback's `go` rebuilds Insights and flattens the stack.
+  `mastermind_ship_url_test.dart`: a product filter with no chip shows the whole
+  list and rewrites the URL once, and not while another route is on top.
 
 The registered-destination smoke test builds every `/mastermind/**` route
 through the production router.

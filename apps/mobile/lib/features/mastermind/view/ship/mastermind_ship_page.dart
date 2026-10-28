@@ -28,6 +28,10 @@ class MastermindShipPage extends StatefulWidget {
 class _MastermindShipPageState extends State<MastermindShipPage> {
   late ReleaseProduct? _product = widget.initialProduct;
 
+  /// The product reset itself while something was open over this page, so the
+  /// URL still names it. It is rewritten once this page is on top again.
+  bool _urlStale = false;
+
   @override
   void didUpdateWidget(MastermindShipPage oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -37,26 +41,41 @@ class _MastermindShipPageState extends State<MastermindShipPage> {
   }
 
   void _select(ReleaseProduct? product) {
+    _urlStale = false;
     setState(() => _product = product);
     widget.onProduct?.call(product);
+  }
+
+  /// Rewrites the URL once this frame is built, but only while this page is on
+  /// top: a rewrite is a `go`, which would drop anything open over the page.
+  /// The route being current again rebuilds this and tries once more.
+  void _rewriteStaleUrl(BuildContext context) {
+    if (!_urlStale || !(ModalRoute.of(context)?.isCurrent ?? true)) return;
+    _urlStale = false;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() => _product = null);
+      widget.onProduct?.call(null);
+    });
   }
 
   @override
   Widget build(BuildContext context) => MastermindSection(
     builder: (context, ready, freshness) {
       final snapshot = ready.snapshot;
-      var model = MastermindShipModel.from(snapshot, product: _product);
+      var product = _product;
+      var model = MastermindShipModel.from(snapshot, product: product);
       // The chips only exist while there is a choice: a filter whose chip is
-      // gone could never be cleared and would strand the list. The URL still
-      // names it, so it is rewritten once this frame is built.
-      if (_product != null &&
-          (model.products.length < 2 || !model.products.contains(_product))) {
-        _product = null;
+      // gone could never be cleared and would strand the list. This frame
+      // shows the unfiltered list; the state and the URL that still name it
+      // are cleared after the frame, not during it.
+      if (product != null &&
+          (model.products.length < 2 || !model.products.contains(product))) {
+        product = null;
         model = MastermindShipModel.from(snapshot);
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) widget.onProduct?.call(null);
-        });
+        _urlStale = true;
       }
+      _rewriteStaleUrl(context);
       return AppPageScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
@@ -68,7 +87,7 @@ class _MastermindShipPageState extends State<MastermindShipPage> {
               if (model.products.length > 1)
                 ShipProductFilter(
                   products: model.products,
-                  selected: _product,
+                  selected: product,
                   onSelected: _select,
                 ),
               if (!model.hasEnvironments && model.groups.isEmpty)

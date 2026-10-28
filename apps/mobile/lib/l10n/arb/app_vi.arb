@@ -5792,6 +5792,7 @@
   "mastermindShipPullRequestsTitle": "Pull request và merge",
   "mastermindShipReleased": "Phát hành {dateTime}",
   "mastermindShipShaCopied": "Đã sao chép mã commit",
+  "mastermindShipWithheld": "Đã ẩn, xem trên máy Mac",
   "mastermindShipWithheldTooltip": "Chi tiết chỉ có trên máy Mac",
   "mastermindShowAll": "Xem tất cả",
   "mastermindSignOutAction": "Đăng xuất và đăng nhập lại",

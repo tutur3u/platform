@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 
 /// One account pool: its latest reading and the series behind its charts.
@@ -125,10 +127,15 @@ int _pacingRank(Pacing? pacing) => switch (pacing) {
   Pacing.surplus => 3,
 };
 
+// A pool is as urgent as its worse window: a weekly SHORT outranks a session
+// that is fine.
+int _urgencyRank(UsagePoint latest) => math.min(
+  _pacingRank(latest.session.pacing),
+  _pacingRank(latest.weekly.pacing),
+);
+
 int _byUrgency(UsagePool a, UsagePool b) {
-  final byPacing = _pacingRank(
-    a.latest.session.pacing,
-  ).compareTo(_pacingRank(b.latest.session.pacing));
+  final byPacing = _urgencyRank(a.latest).compareTo(_urgencyRank(b.latest));
   if (byPacing != 0) return byPacing;
   final byLeft = _nullsLast(
     a.latest.session.remainingPercent,

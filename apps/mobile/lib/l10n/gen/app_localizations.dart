@@ -24901,6 +24901,12 @@ abstract class AppLocalizations {
   /// **'Commit id copied'**
   String get mastermindShipShaCopied;
 
+  /// No description provided for @mastermindShipWithheld.
+  ///
+  /// In en, this message translates to:
+  /// **'Withheld, open on Mac'**
+  String get mastermindShipWithheld;
+
   /// No description provided for @mastermindShipWithheldTooltip.
   ///
   /// In en, this message translates to:

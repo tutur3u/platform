@@ -171,6 +171,18 @@ void main() {
     });
   });
 
+  group('release cadence age', () {
+    testWidgets('a production release after the snapshot reads just now', (
+      tester,
+    ) async {
+      final json = shipJson(
+        cadence: [shipCadence('Upskii', '2026-02-01T10:00:00+00:00')],
+      );
+      await pumpShip(tester, json);
+      expect(find.text('just now'), findsOneWidget);
+    });
+  });
+
   group('pull requests and merges', () {
     testWidgets('shows the latest open count and merge-to-live median', (
       tester,
