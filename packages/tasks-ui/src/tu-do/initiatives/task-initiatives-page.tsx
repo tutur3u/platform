@@ -1,12 +1,10 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { TaskInitiativesClient } from '@tuturuuu/tasks-ui/tu-do/initiatives/task-initiatives-client';
-import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { notFound, redirect } from 'next/navigation';
 
 interface Props {
-  sessionUser?: WorkspaceUser | null;
   params: Promise<{
     wsId: string;
   }>;
@@ -38,24 +36,20 @@ type InitiativeRow = {
 /**
  * Shared Task Initiatives Page component.
  * Handles workspace resolution, permissions, and data fetching.
- * Accepts the owning app session for satellite access.
+ * Used by both apps/web and apps/tasks.
  */
-export default async function TaskInitiativesPage({
-  params,
-  sessionUser,
-}: Props) {
+export default async function TaskInitiativesPage({ params }: Props) {
   const { wsId: id } = await params;
 
-  const user = sessionUser === undefined ? await getCurrentUser() : sessionUser;
+  const user = await getCurrentUser();
   if (!user) redirect('/login');
 
-  const workspace = await getWorkspace(id, { useAdmin: true, user });
+  const workspace = await getWorkspace(id);
   if (!workspace) notFound();
-  if (!workspace.joined) redirect('/');
 
   const wsId = workspace.id;
 
-  const permissions = await getPermissions({ wsId, user });
+  const permissions = await getPermissions({ wsId });
   if (!permissions) notFound();
   const { withoutPermission } = permissions;
   if (withoutPermission('manage_projects')) redirect(`/${wsId}`);

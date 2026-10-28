@@ -273,7 +273,7 @@ and sibling planning tabs are unchanged. Regression coverage lives in
 
 ```
 Workspaces (Top Level)
-└── Task Initiatives (Strategic grouping)
+└── Task Initiatives (Strategic grouping; retired from the Tasks UI, see below)
     └── Task Projects (Cross-board coordination)
         └── Workspace Boards (Kanban boards)
             └── Task Lists (Columns)
@@ -295,15 +295,20 @@ const { data: workspace } = await supabase
 
 ### 2. Task Initiatives
 
-Initiatives retirement, step 1, applies to the Tasks app. Initiatives are hidden
-from navigation, settings and settings search by default. New/Create Initiative
-controls are removed, including on bookmarked pages. Old `task_initiatives`
-settings links open general Tasks settings instead.
+Initiatives retirement, step 1, applies to the Tasks app UI only. Initiatives are
+hidden from the settings navigation and settings search by default, and the
+New/Create Initiative controls are removed. Old `task_initiatives` settings links
+open general Tasks settings instead.
 
 Existing initiatives and their project links stay in the database, untouched,
 but no Tasks page shows them in this step. No initiative data, tables,
-relationships or APIs are deleted or migrated. The create API is intentionally unchanged in this UI retirement
-step; API/data removal belongs to step 2 and requires explicit approval.
+relationships or APIs are deleted or migrated.
+
+Intentional exceptions until step 2: the mobile app still lists and creates
+initiatives, and the create API
+(`POST /api/v1/workspaces/{wsId}/task-initiatives`) still accepts them. Blocking
+creation there, and removing the API and data, belongs to step 2 and requires
+explicit approval.
 
 Regression coverage:
 

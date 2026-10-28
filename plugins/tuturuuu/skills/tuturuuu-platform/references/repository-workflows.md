@@ -72,10 +72,6 @@ generated type files.
    access through `packages/internal-api/src/*`.
 4. Update navigation for new dashboard routes.
 5. Run `bun i18n:sort` after message edits.
-   When retiring a navigation surface while retaining bookmarks, keep explicit
-   compatibility pages, the satellite proxy's owned-route prefixes and its
-   generated native page registry aligned. Verify the legacy Web redirect target
-   as well as the satellite URL; a hidden settings tab alone is not route coverage.
 6. Resolve client route aliases with `resolveWorkspaceId` from
    `@tuturuuu/utils/constants` before workspace guards, component keys, query keys
    and recovery storage scope. Compare canonical root scope to `ROOT_WORKSPACE_ID`;
