@@ -59,6 +59,18 @@ export function getTaskCardTicketIdentifier({
   return getTaskTicketLabel(task);
 }
 
+/**
+ * Projects to show as a card badge. The `[KEY-N]` prefix already names a
+ * lone project, so its badge would repeat it; several projects keep theirs.
+ */
+export function getTaskCardBadgeProjects<T>(
+  projects: T[] | null | undefined,
+  ticketIdentifier: string | null
+): T[] {
+  if (!projects?.length) return [];
+  return ticketIdentifier && projects.length === 1 ? [] : projects;
+}
+
 function buildInitialSourceList(
   task: Task,
   sourceBoardId: string

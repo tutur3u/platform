@@ -2,6 +2,7 @@ import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { describe, expect, it } from 'vitest';
 import {
+  getTaskCardBadgeProjects,
   getTaskCardHydratingOpenOptions,
   getTaskCardTicketIdentifier,
   isExternalTaskSnapshot,
@@ -221,5 +222,29 @@ describe('getTaskCardTicketIdentifier', () => {
         },
       })
     ).toBe('PLA-12');
+  });
+});
+
+describe('getTaskCardBadgeProjects', () => {
+  const platform = { id: 'p-1', name: 'Platform' };
+  const mobile = { id: 'p-2', name: 'Mobile' };
+
+  it('drops the badge when the ticket prefix already names the only project', () => {
+    expect(getTaskCardBadgeProjects([platform], 'PLA-2')).toEqual([]);
+  });
+
+  it('keeps every badge when the task has several projects', () => {
+    expect(getTaskCardBadgeProjects([platform, mobile], 'PLA-2')).toEqual([
+      platform,
+      mobile,
+    ]);
+  });
+
+  it('keeps the badge when the project has no key, so there is no prefix', () => {
+    expect(getTaskCardBadgeProjects([platform], null)).toEqual([platform]);
+  });
+
+  it('shows nothing for a task without projects', () => {
+    expect(getTaskCardBadgeProjects(undefined, null)).toEqual([]);
   });
 });

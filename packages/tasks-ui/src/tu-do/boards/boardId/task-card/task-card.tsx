@@ -157,6 +157,7 @@ import { mergeTaskCardLabelOptions } from './task-card-label-options';
 import { useTaskCardMenuGuard } from './task-card-menu-guard';
 import { TaskCardMetadataTooltip } from './task-card-metadata-tooltip';
 import {
+  getTaskCardBadgeProjects,
   getTaskCardHydratingOpenOptions,
   getTaskCardTicketIdentifier,
   getTaskCardTitleName,
@@ -288,16 +289,18 @@ function ReadOnlyTaskCard({ task, taskList }: TaskCardProps) {
                 {label.name}
               </Badge>
             ))}
-            {task.projects?.map((project) => (
-              <Badge
-                key={project.id}
-                variant="outline"
-                className="h-5 gap-1 px-1.5 font-normal text-xs"
-              >
-                <Box className="h-3 w-3" />
-                {project.name}
-              </Badge>
-            ))}
+            {getTaskCardBadgeProjects(task.projects, ticketIdentifier).map(
+              (project) => (
+                <Badge
+                  key={project.id}
+                  variant="outline"
+                  className="h-5 gap-1 px-1.5 font-normal text-xs"
+                >
+                  <Box className="h-3 w-3" />
+                  {project.name}
+                </Badge>
+              )
+            )}
             {task.assignees?.map((assignee) => (
               <Badge
                 key={assignee.id}
@@ -1422,7 +1425,9 @@ function TaskCardInner({
     }
 
     // Project indicator badge
-    if (task.projects && task.projects.length > 0) {
+    if (
+      getTaskCardBadgeProjects(task.projects, taskTicketIdentifier).length > 0
+    ) {
       badges.push({
         id: 'projects',
         element: (
@@ -1657,6 +1662,7 @@ function TaskCardInner({
     // to prevent recalculation when unrelated properties (like name) change
     task.priority,
     task.projects,
+    taskTicketIdentifier,
     task.estimation_points,
     task.total_duration,
     task.auto_schedule,
