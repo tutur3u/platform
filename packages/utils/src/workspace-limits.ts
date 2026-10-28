@@ -27,15 +27,23 @@ export async function checkWorkspaceCreationLimit(
   _userEmail: string | null | undefined
 ): Promise<WorkspaceLimitCheckResult> {
   // Tuturuuu emails have unlimited workspace creation
-  if (
-    isVerifiedTuturuuuStaffSession(
+  let isTuturuuuMember = false;
+  try {
+    isTuturuuuMember = isVerifiedTuturuuuStaffSession(
       await getVerifiedAuthUser(
         await createAdminClient({ noCookie: true }),
         userId
       ),
       { allowXwf: true }
-    )
-  ) {
+    );
+  } catch (error) {
+    console.error(
+      'Failed to resolve staff status for workspace creation limit',
+      error
+    );
+  }
+
+  if (isTuturuuuMember) {
     return {
       canCreate: true,
     };

@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const auth = vi.hoisted(() => ({ getUserById: vi.fn() }));
+const auth = vi.hoisted(() => ({
+  getUserById: vi.fn(),
+  createAdminClient: vi.fn(),
+}));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
-  createAdminClient: async () => ({
-    auth: { admin: { getUserById: auth.getUserById } },
-  }),
+  createAdminClient: auth.createAdminClient,
 }));
 
 import { MAX_WORKSPACES_FOR_FREE_USERS } from '../constants';
@@ -18,6 +19,9 @@ describe('checkWorkspaceCreationLimit', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    auth.createAdminClient.mockImplementation(async () => ({
+      auth: { admin: { getUserById: auth.getUserById } },
+    }));
     auth.getUserById.mockResolvedValue({
       data: {
         user: {
@@ -82,6 +86,32 @@ describe('checkWorkspaceCreationLimit', () => {
       expect(result.canCreate).toBe(true);
       expect(result.currentCount).toBeUndefined();
       expect(result.limit).toBeUndefined();
+    });
+  });
+
+  describe('when the staff lookup throws', () => {
+    it('fails closed to the regular workspace limit and logs the error', async () => {
+      const failure = new Error('admin client unavailable');
+      auth.createAdminClient.mockRejectedValue(failure);
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const mockSupabase = createMockSupabase({
+        count: MAX_WORKSPACES_FOR_FREE_USERS,
+        error: null,
+      });
+
+      const result = await checkWorkspaceCreationLimit(
+        mockSupabase,
+        mockUserId,
+        'user@tuturuuu.com'
+      );
+
+      expect(result.canCreate).toBe(false);
+      expect(result.errorCode).toBe(WORKSPACE_LIMIT_ERROR_CODE);
+      expect(errorSpy).toHaveBeenCalledWith(
+        'Failed to resolve staff status for workspace creation limit',
+        failure
+      );
+      errorSpy.mockRestore();
     });
   });
 
