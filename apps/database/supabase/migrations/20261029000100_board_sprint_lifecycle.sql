@@ -33,6 +33,14 @@ BEGIN
     RAISE EXCEPTION 'SPRINT_DECISIONS_INVALID' USING ERRCODE = '22023';
   END IF;
 
+  -- Board row first, then cycles: the order every sprint writer uses (see
+  -- start_board_sprint), so task membership writes cannot deadlock with it.
+  PERFORM 1
+  FROM public.workspace_boards wb
+  JOIN public.task_cycles c ON c.board_id = wb.id
+  WHERE c.id = p_cycle_id
+  FOR UPDATE OF wb;
+
   SELECT * INTO v_cycle
   FROM public.task_cycles
   WHERE id = p_cycle_id AND board_id IS NOT NULL AND deleted IS NOT TRUE
@@ -52,8 +60,6 @@ BEGIN
   IF v_cycle.status <> 'active' THEN
     RAISE EXCEPTION 'SPRINT_NOT_ACTIVE' USING ERRCODE = '55000';
   END IF;
-
-  PERFORM 1 FROM public.workspace_boards WHERE id = v_cycle.board_id FOR UPDATE;
 
   SELECT * INTO v_next
   FROM public.task_cycles
@@ -230,6 +236,10 @@ BEGIN
   IF cardinality(p_task_ids) > 500 THEN
     RAISE EXCEPTION 'SPRINT_TOO_MANY_TASKS' USING ERRCODE = '22023';
   END IF;
+
+  -- Serialize with other moves, starting and ending before validating the
+  -- target, so two moves of one task cannot both keep a membership.
+  PERFORM 1 FROM public.workspace_boards WHERE id = p_board_id FOR UPDATE;
 
   IF p_cycle_id IS NOT NULL THEN
     SELECT * INTO v_target

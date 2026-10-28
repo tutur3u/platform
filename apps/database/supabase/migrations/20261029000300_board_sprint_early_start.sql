@@ -20,6 +20,15 @@ DECLARE
   v_start DATE;
   v_end DATE;
 BEGIN
+  -- Lock order for every sprint writer: the board row first, then cycles.
+  -- Task membership writes hold the board row FOR SHARE, so taking the cycle
+  -- first could deadlock with them.
+  PERFORM 1
+  FROM public.workspace_boards wb
+  JOIN public.task_cycles c ON c.board_id = wb.id
+  WHERE c.id = p_cycle_id
+  FOR UPDATE OF wb;
+
   SELECT * INTO v_cycle
   FROM public.task_cycles
   WHERE id = p_cycle_id AND board_id IS NOT NULL AND deleted IS NOT TRUE
@@ -36,9 +45,6 @@ BEGIN
   IF v_cycle.status <> 'planned' THEN
     RAISE EXCEPTION 'SPRINT_NOT_PLANNED' USING ERRCODE = '55000';
   END IF;
-
-  -- Serialize sprint changes per board.
-  PERFORM 1 FROM public.workspace_boards WHERE id = v_cycle.board_id FOR UPDATE;
 
   IF EXISTS (
     SELECT 1
