@@ -23,9 +23,9 @@ update private.devbox_control_settings set personal_pools_enabled = true;
 select throws_ok($$select private.issue_devbox_access_token('00000000-0000-4000-8000-00000000e001',now()-interval '1 second',
  'a',repeat('a',64),'tdba_aaaaaaaa',array['devbox:run'],now()+interval '7 days')$$,
  '42501', 'Devbox session reauthentication required', 'pre-accept session cannot mint');
-select lives_ok($$select private.issue_devbox_access_token('00000000-0000-4000-8000-00000000e001',now()-interval '1 second',
+select throws_ok($$select private.issue_devbox_access_token('00000000-0000-4000-8000-00000000e001',now()-interval '1 second',
  'web-proof',repeat('c',64),'tdba_cccccccc',array['devbox:read'],now()+interval '1 day',false)$$,
- 'freshly revalidated web subject does not need a replacement JWT after acceptance');
+ '42501','Devbox session reauthentication required','web mint enforces the same authentication cutoff');
 delete from private.devbox_access_tokens where label='web-proof';
 create temp table s1_tokens(id uuid);
 insert into s1_tokens select private.issue_devbox_access_token('00000000-0000-4000-8000-00000000e001',now(),

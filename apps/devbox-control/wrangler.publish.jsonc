@@ -35,5 +35,10 @@
       "DEVBOX_CONTROL_INTERNAL_TOKEN"
     ]
   },
+  "vars": {
+    "TUTURUUU_DEVBOX_AGENT_API_ENABLED": "true",
+    "TUTURUUU_DEVBOX_EXPIRY_SWEEP_ENABLED": "false"
+  },
+  "triggers": { "crons": ["*/5 * * * *"] },
   "preview_urls": true
 }

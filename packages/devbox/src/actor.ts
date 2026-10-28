@@ -3,7 +3,8 @@ export type DevboxScope = 'devbox:read' | 'devbox:run' | 'devbox:build';
 export type DevboxGrant = {
   id: string;
   user_id: string;
-  status: 'pending' | 'active' | 'suspended' | 'revoked';
+  status: 'pending' | 'active' | 'suspended' | 'revoked' | 'expired';
+  suspended: boolean;
   accepted_at: string | null;
   revoked_at: string | null;
   expires_at: string;
@@ -108,19 +109,22 @@ export async function requireDevboxActor(input: {
   if (!grant || grant.user_id !== credential.userId)
     return deny(403, 'DEVBOX_GRANT_REQUIRED');
   if (operation === 'accept') {
-    if (grant.status !== 'pending' || Date.parse(grant.expires_at) <= now)
+    if (
+      grant.suspended ||
+      grant.status !== 'pending' ||
+      Date.parse(grant.expires_at) <= now
+    )
       return deny(403, 'DEVBOX_GRANT_NOT_PENDING');
   } else {
     const refused = grantDenied(identity, now);
     if (refused) return refused;
     if (
-      credential.cli &&
-      (credential.issuedAt === null ||
-        credential.issuedAt <
-          Math.max(
-            Date.parse(grant.sessions_not_before),
-            Date.parse(grant.accepted_at ?? '')
-          ))
+      credential.issuedAt === null ||
+      credential.issuedAt <
+        Math.max(
+          Date.parse(grant.sessions_not_before),
+          Date.parse(grant.accepted_at ?? '')
+        )
     )
       return deny(403, 'DEVBOX_SESSION_CUTOFF');
     if (operation !== 'tokens' && operation !== 'devbox:read')
@@ -143,10 +147,15 @@ function grantDenied(
 ): DevboxActorVerdict | null {
   const grant = identity?.grant;
   if (!grant) return deny(403, 'DEVBOX_GRANT_REQUIRED');
+  if (grant.suspended) return deny(403, 'DEVBOX_GRANT_SUSPENDED');
   if (grant.revoked_at !== null) return deny(403, 'DEVBOX_GRANT_REVOKED');
   if (grant.status !== 'active')
     return deny(403, `DEVBOX_GRANT_${grant.status.toUpperCase()}`);
-  if (!grant.accepted_at || Date.parse(grant.expires_at) <= now)
+  if (
+    !grant.accepted_at ||
+    Date.parse(grant.accepted_at) > now ||
+    Date.parse(grant.expires_at) <= now
+  )
     return deny(403, 'DEVBOX_GRANT_EXPIRED');
   if (!identity.enabled) return deny(403, 'DEVBOX_GRANT_DISABLED');
   return null;
@@ -190,6 +199,8 @@ export function devboxPersonalRunnerAuthorized(
     grant.user_id !== userId ||
     !('status' in grant) ||
     grant.status !== 'active' ||
+    !('suspended' in grant) ||
+    grant.suspended !== false ||
     !('revoked_at' in grant) ||
     grant.revoked_at !== null ||
     !('accepted_at' in grant) ||

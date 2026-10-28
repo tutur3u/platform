@@ -15,7 +15,10 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import { primaryProofTime } from '@tuturuuu/utils/required-mfa-policy';
+import {
+  mfaProofFromVerifiedClaims,
+  primaryProofTime,
+} from '@tuturuuu/utils/required-mfa-policy';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { connection, NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -151,7 +154,10 @@ async function requireUserActor(
     const verified = verifyCliAccessToken(sessionToken);
     if (!verified.ok) return denied(401, 'UNAUTHORIZED');
     user = createAppSessionUser(verified.claims);
-    issuedAt = verified.claims.iat * 1000;
+    issuedAt =
+      verified.claims.auth_time === undefined
+        ? null
+        : verified.claims.auth_time * 1000;
     const proof = verified.claims.mfa;
     if (
       proof &&
@@ -164,11 +170,7 @@ async function requireUserActor(
     const supabase = await createClient(request);
     user = (await resolveAuthenticatedSessionUser(supabase)).user;
     if (!user) return denied(401, 'UNAUTHORIZED');
-    if (
-      options.stepUp ||
-      operation === 'accept' ||
-      (operation === 'tokens' && request.method === 'POST')
-    ) {
+    {
       const data =
         typeof supabase.auth?.getClaims === 'function'
           ? (await supabase.auth.getClaims().catch(() => ({ data: null }))).data
@@ -178,6 +180,7 @@ async function requireUserActor(
           sub: z.string(),
           iat: z.number(),
           aal: z.string().optional(),
+          session_id: z.string().optional(),
           amr: z
             .array(z.object({ method: z.string(), timestamp: z.number() }))
             .optional(),
@@ -185,10 +188,14 @@ async function requireUserActor(
         .safeParse(data?.claims);
       if (claims.success && claims.data.sub === user.id) {
         // JWT iat alone may be a refresh; step-up comes from a verified auth method.
-        issuedAt = claims.data.iat * 1000;
         const primary = primaryProofTime(claims.data);
-        stepUpAt = primary === null ? null : primary * 1000;
-        mfa = claims.data.aal === 'aal2';
+        issuedAt = primary === null ? null : primary * 1000;
+        const proof = mfaProofFromVerifiedClaims(claims.data);
+        stepUpAt =
+          primary === null
+            ? null
+            : Math.min(primary, proof?.verifiedAt ?? primary) * 1000;
+        mfa = proof !== null;
       }
     }
   }
@@ -224,7 +231,6 @@ async function requireUserActor(
       return denied(403, 'DEVBOX_WEB_ACCEPTANCE_REQUIRED');
     if (
       operation === 'tokens' &&
-      cli &&
       issuedAt !== null &&
       identity?.grant &&
       Math.min(issuedAt, stepUpAt) <

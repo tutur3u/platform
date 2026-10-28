@@ -230,3 +230,13 @@ Desk closure of SR-332/333/334 and the later quota, observability, isolation and
 human gates. See `apps/docs/platform/features/devbox-contributor-identity.mdx`.
 Token revoke is a database transaction; it does not prove an untrusted process
 stopped. Web and Worker credential checks must read fresh state on every request.
+
+Grant authorization uses the shared service-only
+`private.devbox_identity_grant_active(p_user_id uuid)` prerequisite, with `user_id`,
+active/accepted/unexpired/not-suspended state and the global switch. SR-334 in
+#7130 remains mandatory for pinned runner ownership. CLI refresh must preserve
+`auth_time`; web checks use original verified primary AMR time. Never use refreshed
+JWT `iat` for a devbox session cutoff. See the feature page for the bounded
+Cloudflare expiry sweep and its default-OFF durable stop fence. Run
+`session-cutoff.test.ts`, `devbox-identity-lifecycle.sql` and `expiry-sweep.test.ts`
+when changing these boundaries.

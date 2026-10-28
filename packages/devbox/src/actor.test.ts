@@ -13,6 +13,7 @@ const identity = (): DevboxIdentity => ({
   enabled: true,
   grant: {
     revoked_at: null,
+    suspended: false,
     id: 'grant',
     user_id: 'user',
     status: 'active',
@@ -125,6 +126,37 @@ describe('request-local devbox identity', () => {
       ).toMatchObject({ ok: false, code: 'DEVBOX_SESSION_CUTOFF' });
     }
   );
+  it.each([false, true])(
+    'session cutoff applies independently of CLI=%s',
+    async (cli) => {
+      expect(
+        await requireDevboxActor({
+          credential: {
+            kind: 'session',
+            userId: 'user',
+            issuedAt: Date.parse('2026-10-28T09:00:00Z'),
+            cli,
+            identity: identity(),
+          },
+          operation: 'devbox:read',
+          isRootMember: async () => false,
+          now,
+        })
+      ).toMatchObject({ ok: false, code: 'DEVBOX_SESSION_CUTOFF' });
+    }
+  );
+  it('suspension flag denies an otherwise active grant', async () => {
+    const value = identity();
+    if (value.grant) value.grant.suspended = true;
+    expect(
+      await requireDevboxActor({
+        credential: { kind: 'agent', identity: value },
+        operation: 'devbox:read',
+        isRootMember: async () => false,
+        now,
+      })
+    ).toMatchObject({ ok: false, code: 'DEVBOX_GRANT_SUSPENDED' });
+  });
   it('permits a fresh session to manage its tokens', async () => {
     expect(
       await requireDevboxActor({

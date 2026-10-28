@@ -6,7 +6,8 @@ const Scope = z.enum(['devbox:read', 'devbox:run', 'devbox:build']);
 const Grant = z.object({
   id: z.uuid(),
   user_id: z.uuid(),
-  status: z.enum(['pending', 'active', 'suspended', 'revoked']),
+  status: z.enum(['pending', 'active', 'suspended', 'revoked', 'expired']),
+  suspended: z.boolean(),
   accepted_at: z.iso.datetime({ offset: true }).nullable(),
   revoked_at: z.iso.datetime({ offset: true }).nullable(),
   expires_at: z.iso.datetime({ offset: true }),

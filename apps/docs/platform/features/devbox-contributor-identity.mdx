@@ -20,19 +20,33 @@ Their labels identify agents; scopes cover `devbox:run`, `devbox:build` and
 and the grant expiry is always the upper bound. Raw tokens appear only in a
 `no-store` creation response. Lists omit hashes. A token cannot manage tokens or
 become a fleet credential, including if its owner later joins the root workspace.
-The token branch validates scope before any root-member lookup.
+The token branch validates scope before any root-member lookup. Either run or
+build scope permits same-owner stop, lease release and environment mutations.
+S1 does not yet record per-use `last_used_at`.
 
-Grant acceptance sets `sessions_not_before`. CLI token minting requires authentication
-at or after both acceptance and this cutoff, plus a recent authentication proof.
-Web token minting uses the revalidated Supabase subject and recent primary authentication.
-Refreshing a CLI access token cannot substitute for that proof. Administrators
-can advance the cutoff through the service-only grant record; the admin UI is
-part of the later observability work. All Web devbox mutations enforce the CSRF
-policy regardless of the global mode.
+Grant acceptance sets `sessions_not_before`. Every personal CLI and web session
+must originate at or after both acceptance and this cutoff, including reads and
+token list/revoke. CLI `auth_time` is signed at authentication and copied unchanged
+into both tokens on every refresh. CLI handoff takes the signed primary proof
+time, never its exchange time or caller-supplied session data. Handoffs without
+a verified primary origin and legacy refresh chains without an origin receive
+an origin of zero and require a fresh sign-in for devbox access. Web sessions use
+the original primary authentication in verified Supabase `amr`, never refreshed
+JWT `iat`. Minting also requires a recent primary proof and MFA by default. A web
+user who accepted a grant must authenticate again after acceptance before using it.
+Administrators may advance the cutoff through the service-only grant record.
+All Web devbox mutations enforce CSRF regardless of the global mode.
 
 Token revocation atomically revokes the credential, cancels its queued runs,
 requests cancellation of its running work, and releases its attributed leases.
-Status changes are audited by database triggers. Revocation permits no new
+Any direct transition to revoked, suspended or expired runs the grant cascade in
+the same transaction, including access/runner-token revocation, queued cancellation
+with completion timestamps and lease release. Events record the acting user when
+available, database/JWT role and old/new status. Previously revoked tokens retain
+their revoking principal. The operator RPC accepts `p_operator_id`; direct SQL uses
+the verified JWT actor or database role. Learner Judge/playground runs and their
+tokenless pool leases remain allowed for past or inactive grantees; trusted
+run/build work still requires an access token. Revocation permits no new
 requests; stopping an untrusted running process still requires the future host
 stop mechanism. Identity and scope triggers cover both INSERT and UPDATE.
 
@@ -41,10 +55,23 @@ switch. Runner registration remains fleet-only until reviewed enrollment exists.
 requires Security Desk closure of SR-332/333/334, atomic S2 admission and claim
 controls, enrollment and runner expiry enforcement, S3 private observability and
 secret handling, host isolation evidence, and the named human approval gates.
-The control Worker's agent API switch is also default-off and covers heartbeat,
-poll and connect. There is no deployment or enablement in this change.
+Pinned `runnerId` ownership depends on #7130 (SR-334) and its database triggers;
+S1 alone must never be enabled. Merge the shared predicate prerequisite after
+#7121, then #7130, then S1. #7130 delegates its grant check to the service-only
+`private.devbox_identity_grant_active(p_user_id uuid)` function, keyed by `user_id`.
 
-Regression coverage lives in `devbox-contributor-identity.sql`, the framework-free
+The Worker deploy config explicitly enables the existing agent API so fleet
+heartbeat/poll/connect survive deployment. This does not enable personal pools.
+Its expiry Cron runs every five minutes with a separate
+`TUTURUUU_DEVBOX_EXPIRY_SWEEP_ENABLED=false` durable stop fence. OFF performs zero
+database requests. ON makes at most one database request per invocation, with a
+10-second fetch bound, no retries and a 25-grant transactional batch. Terminal
+grants are excluded; interrupted or failed invocations resume on the next Cron.
+Disabling the fence stops database work; removing the Cron also stops invocations.
+This change does not deploy the Worker or enable personal pools.
+
+Regression coverage lives in `devbox-contributor-identity.sql`,
+`devbox-identity-lifecycle.sql`, `devbox-identity-ownership-composed.sql`, `session-cutoff.test.ts`, `expiry-sweep.test.ts`, the framework-free
 `actor.test.ts`, Web `authorization.test.ts` and `entry-point-matrix.test.ts`, and
 the control Worker tests. The entry-point matrix inventories all active devbox
 routes and executes denial checks on every listed HTTP method.

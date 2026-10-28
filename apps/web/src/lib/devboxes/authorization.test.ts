@@ -57,6 +57,7 @@ const identity = () => ({
   enabled: true,
   grant: {
     revoked_at: null,
+    suspended: false,
     id: '33333333-3333-4333-8333-333333333333',
     user_id: userId,
     status: 'active',
@@ -97,6 +98,7 @@ beforeEach(() => {
         sub: userId,
         iat: now(),
         aal: 'aal2',
+        session_id: 'web-session',
         amr: [
           { method: 'password', timestamp: now() },
           { method: 'totp', timestamp: now() },
@@ -261,6 +263,7 @@ describe('acceptance and token routes', () => {
           sub: userId,
           iat: now(),
           aal: 'aal2',
+          session_id: 'web-session',
           amr: [
             { method: 'password', timestamp: now() - 1000 },
             { method: 'token_refresh', timestamp: now() },
@@ -311,6 +314,7 @@ describe('acceptance and token routes', () => {
       claims: {
         sub: userId,
         iat: now() - 200,
+        auth_time: now() - 200,
         mfa: { verifiedAt: now(), sessionId: 's' },
       },
     });
@@ -335,6 +339,7 @@ describe('acceptance and token routes', () => {
       claims: {
         sub: userId,
         iat: now(),
+        auth_time: now(),
         mfa: { verifiedAt: now() - 200, sessionId: 's' },
       },
     });

@@ -28,6 +28,7 @@ export const SUPABASE_AUTH_COOKIE_PATTERN =
 export type AppSessionTargetApp = AppName | string;
 
 export type AppSessionTokenPayload = {
+  authTime?: number;
   email?: string | null;
   expiresInSeconds?: number;
   mfa?: MfaSessionProof;
@@ -85,6 +86,7 @@ export function createAppSessionToken(
 ) {
   return createAppCoordinationToken(
     {
+      authTime: payload.authTime,
       email: payload.email ?? null,
       expiresInSeconds: payload.expiresInSeconds,
       mfa: payload.mfa,
@@ -106,6 +108,7 @@ export function createAppSessionRefreshToken(
 ) {
   return createAppCoordinationToken(
     {
+      authTime: payload.authTime,
       email: payload.email ?? null,
       expiresInSeconds: payload.expiresInSeconds,
       mfa: payload.mfa,

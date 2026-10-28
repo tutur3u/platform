@@ -12,6 +12,7 @@ interface Env {
   SUPABASE_SECRET_KEY: string;
   SUPABASE_URL: string;
   TUTURUUU_DEVBOX_AGENT_API_ENABLED?: string;
+  TUTURUUU_DEVBOX_EXPIRY_SWEEP_ENABLED?: string;
 }
 
 type Runner = {
@@ -415,6 +416,21 @@ async function internalTokenMatches(request: Request, env: Env) {
 }
 
 export default {
+  async scheduled(_controller: ScheduledController, env: Env): Promise<void> {
+    if (env.TUTURUUU_DEVBOX_EXPIRY_SWEEP_ENABLED !== 'true') return;
+    if (!env.SUPABASE_URL || !env.SUPABASE_SECRET_KEY) return;
+    // One transaction, at most 25 grants; the next schedule resumes remaining work.
+    await query<number>(
+      env,
+      '/rest/v1/rpc/expire_devbox_personal_grants',
+      'private',
+      {
+        method: 'POST',
+        body: JSON.stringify({ p_limit: 25 }),
+        signal: AbortSignal.timeout(10000),
+      }
+    );
+  },
   async fetch(request: Request, env: Env): Promise<Response> {
     const path = new URL(request.url).pathname;
     if (path === '/health' && request.method === 'GET')

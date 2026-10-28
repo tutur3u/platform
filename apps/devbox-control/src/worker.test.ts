@@ -351,6 +351,7 @@ it('personal runner checks the grant and its expiry on every request', async () 
           user_id: actorId,
           status: 'active',
           revoked_at: null,
+          suspended: false,
           accepted_at: '2026-10-01T00:00:00Z',
           expires_at: new Date(Date.now() + 86400000).toISOString(),
         },

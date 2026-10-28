@@ -4308,28 +4308,54 @@ export type Database = {
       };
       devbox_grant_events: {
         Row: {
+          acting_role: string;
+          acting_user_id: string | null;
           created_at: string;
           event_type: string;
           id: string;
+          new_status: string | null;
+          old_status: string | null;
           subject_id: string | null;
           user_id: string;
         };
         ComputedFields: never;
         Insert: {
+          acting_role?: string;
+          acting_user_id?: string | null;
           created_at?: string;
           event_type: string;
           id?: string;
+          new_status?: string | null;
+          old_status?: string | null;
           subject_id?: string | null;
           user_id: string;
         };
         Update: {
+          acting_role?: string;
+          acting_user_id?: string | null;
           created_at?: string;
           event_type?: string;
           id?: string;
+          new_status?: string | null;
+          old_status?: string | null;
           subject_id?: string | null;
           user_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'devbox_grant_events_acting_user_id_fkey';
+            columns: ['acting_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'devbox_grant_events_acting_user_id_fkey';
+            columns: ['acting_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
           {
             foreignKeyName: 'devbox_grant_events_user_id_fkey';
             columns: ['user_id'];
@@ -4436,6 +4462,7 @@ export type Database = {
           security_signoff_by: string;
           sessions_not_before: string;
           status: string;
+          suspended: boolean;
           suspended_at: string | null;
           updated_at: string;
           user_id: string;
@@ -4455,6 +4482,7 @@ export type Database = {
           security_signoff_by: string;
           sessions_not_before?: string;
           status?: string;
+          suspended?: boolean;
           suspended_at?: string | null;
           updated_at?: string;
           user_id: string;
@@ -4473,6 +4501,7 @@ export type Database = {
           security_signoff_by?: string;
           sessions_not_before?: string;
           status?: string;
+          suspended?: boolean;
           suspended_at?: string | null;
           updated_at?: string;
           user_id?: string;
@@ -22474,6 +22503,10 @@ export type Database = {
         Args: { p_balance_id: string };
         Returns: undefined;
       };
+      expire_devbox_personal_grants: {
+        Args: { p_limit?: number };
+        Returns: number;
+      };
       expire_inventory_checkout_sessions: {
         Args: { p_limit?: number; p_now?: string; p_ws_id?: string };
         Returns: {
@@ -24826,7 +24859,11 @@ export type Database = {
         Returns: boolean;
       };
       revoke_devbox_personal_identity: {
-        Args: { p_suspend?: boolean; p_user_id: string };
+        Args: {
+          p_operator_id?: string;
+          p_suspend?: boolean;
+          p_user_id: string;
+        };
         Returns: undefined;
       };
       revoke_overlong_cross_app_tokens: {
@@ -48845,6 +48882,10 @@ export type Database = {
         };
         Returns: Json;
       };
+      can_access_task_list_board: {
+        Args: { p_board_id: string; p_write: boolean };
+        Returns: boolean;
+      };
       can_access_task_plan: {
         Args: {
           p_plan_id: string;
@@ -48854,6 +48895,10 @@ export type Database = {
         Returns: boolean;
       };
       can_create_workspace: { Args: { p_user_id: string }; Returns: boolean };
+      can_edit_task_assignees: {
+        Args: { p_task_id: string };
+        Returns: boolean;
+      };
       can_manage_indicator: {
         Args: { p_indicator_id: string };
         Returns: boolean;
