@@ -116,8 +116,10 @@ export function getSprintProgress(
  */
 export function isTaskInCurrentSprintView(
   task: TaskTiming & { id: string; created_at?: string | null },
-  sprints: readonly SprintLike[],
-  current: (SprintLike & { started_at?: string | null }) | null
+  sprints: readonly Pick<SprintLike, 'status' | 'tasks'>[],
+  current:
+    | (Pick<SprintLike, 'status' | 'tasks'> & { started_at?: string | null })
+    | null
 ) {
   if (!current) return true;
   if (current.tasks.some((member) => member.task_id === task.id)) return true;
