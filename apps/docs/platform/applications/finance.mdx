@@ -47,6 +47,14 @@ propagation remains unchanged. Regression coverage lives in
 
 ## API Ownership
 
+The standalone Finance endpoint `/api/workspaces/:wsId/wallets/migrate` is
+retired. PUT returns 410 with `MIGRATION_DISABLED` in development and the
+contract's 403 Forbidden envelope in every other environment. Other methods
+return 405 with `Allow: PUT`. No request body, actor, workspace lookup, or
+database client is used. Wallet creation and updates use the maintained wallet
+API. This retirement applies only to this obsolete endpoint. Regression coverage
+is in `apps/finance/src/app/api/workspaces/[wsId]/wallets/migrate/route.test.ts`.
+
 Inventory reconciliation parses API and database amounts into currency-bearing
 `Money` values from `@tuturuuu/utils/finance-money`. Its arithmetic and shared
 display formatter require branded money; raw major-unit numbers cannot be passed
