@@ -23,6 +23,41 @@ migration designs describe a possible future, not live traffic or a current
 setup requirement. See the [active runtime map](/build/devops/active-runtime).
 </Warning>
 
+## Immediate notification trigger credentials (SR-327)
+
+The database trigger `trigger_send_immediate_notification` on
+`private.notification_batches` calls `public.trigger_immediate_notification_send`.
+Its only allowed destination is
+`https://tuturuuu.com/api/notifications/send-immediate`, including the HTTPS
+scheme, host, default port and path. There is no configurable host or fallback:
+`app.base_url` and `app.service_role_key` are ignored, including session overrides.
+Changing the destination requires a reviewed migration.
+
+The bearer comes exclusively from the Supabase Vault secret named
+`notification_immediate_bearer` through `vault.decrypted_secrets`. Provision it
+out of band through the approved secret-management process, using a bearer that
+the Web endpoint accepts. Prefer the existing `CRON_SECRET` delivery credential
+over a Supabase service-role credential; the endpoint also accepts
+`CRON_CONTROL_DELIVERY_TOKEN`. This migration does not create, copy or activate
+any credential. Never store secret values in migrations, GUCs, docs or logs.
+
+Missing, empty or whitespace-only Vault credentials suppress the HTTP request
+and leave the batch pending. Vault or transport errors also preserve the insert
+and emit only a generic warning without exception details or credentials.
+Immediate batches retain one queued POST per batch; batched delivery does not
+use this trigger. This rule covers immediate email and push batches created by
+chat, inbound mail and other notification producers. The separate exchange-rate
+cron and the Web endpoint's accepted authorization methods are outside SR-327.
+
+Regression coverage lives in
+`apps/database/supabase/tests/notification-trigger-vault.sql`: it inserts real
+private batches, checks the actual pg_net queue, rejects session-controlled
+destinations and bearers, and verifies fail-closed delivery and client access.
+Run it only in a disposable local Supabase environment. Each test transaction
+rolls back, so pg_net never commits an outbound request. Review and rehearse the
+migration before Mastermind approves activation; a source check alone does not
+prove database application or delivered notifications.
+
 ## Residual dependency advisories
 
 `@tuturuuu/ai` no longer declares `bash-tool`. Source inspection found no
