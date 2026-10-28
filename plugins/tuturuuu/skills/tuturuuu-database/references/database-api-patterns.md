@@ -500,3 +500,25 @@ seven-day history batch; unfinished executions remain for recovery. See the
 [Cron Control runbook](../../../../../apps/docs/build/devops/cloudflare-cron-control.mdx#seven-day-database-cron-history)
 and `supabase/tests/cron-history-retention.sql` for the role, budget and replay
 regressions. Never add a cleanup pg_cron job to repair an accumulating history table.
+
+### Profile content grants
+
+When profile content uses server projection, retain only the identifier column
+privileges required by policy joins. Inventory user-scoped reads, embedded
+relationships, dependent views, and definer RPCs before changing table grants.
+Test effective column privileges and real reads/writes as caller roles on the
+full disposable schema; preserve independent MFA policies and seed real synthetic
+Auth accounts. Keep rollback SQL outside forward migration discovery and verify
+up/down/up policy and grant equality. See the user-management feature decision.
+
+
+For permission-policy changes, `STABLE` alone does not remove per-row calls.
+Put caller workspace-set evaluation in an uncorrelated scalar subquery and
+verify an initplan with one loop. Keep row workspace-binding guards separate
+from permission resolution. The owned-disposable
+`apps/database/scripts/benchmark-workspace-user-policies.mjs` checks exact
+100k/300k results, five alternating samples, unchanged eight-second acceptance,
+one permission-set call, and complete diagnostic plans with a separate bounded
+budget. Never run its variant DDL against a shared validator, staging, or
+production. Restore exact pre-migration client ACLs in rollback, rather than
+assuming that a prior SELECT revoke removed other grants.

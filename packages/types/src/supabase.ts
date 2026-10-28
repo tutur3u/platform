@@ -25283,6 +25283,10 @@ export type Database = {
         };
         Returns: Json;
       };
+      workspace_user_attendance_scope: {
+        Args: { p_group_id: string; p_user_id: string };
+        Returns: string;
+      };
       workspace_user_groups: {
         Args: { '': Database['private']['Tables']['user_group_posts']['Row'] };
         Returns: Database['public']['Tables']['workspace_user_groups']['Row'];
@@ -25292,6 +25296,14 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: true;
         };
+      };
+      workspace_user_permission_workspaces: {
+        Args: { p_permissions: string[] };
+        Returns: string[];
+      };
+      workspace_user_score_scope: {
+        Args: { p_indicator_id: string; p_user_id: string };
+        Returns: string;
       };
       workspace_users:
         | {

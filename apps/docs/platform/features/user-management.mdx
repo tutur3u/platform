@@ -729,3 +729,45 @@ collection and item contracts. The unused unversioned collection and item
 handlers are retired. The separate indicator migration endpoints retain their
 existing lifecycle. `scripts/retired-workspace-user-routes.test.mjs` checks the
 active route and inventory boundary.
+
+## Permission-aware profile access
+
+Workspace user content is served through permission-gated server routes. Public
+and private profile fields follow their respective read permissions. Direct
+authenticated table reads retain only identifiers needed by policy joins.
+Response identity metadata retains `id`, `ws_id`, `archived`,
+`archived_until`, and `is_guest`; content fields follow the read permissions.
+Attendance uses `check_user_attendance`; score reads and mutations use their
+corresponding score permissions. Profile mutations retain separate create,
+update, and delete permissions.
+
+The own-linked-profile workforce view and the server actor-link resolver retain
+their existing self-profile behavior after membership or identity checks. Other
+workforce profiles require the applicable profile read permission in addition to
+workforce access. Finance enrichments omit profile fields the actor cannot read.
+Contacts server reads continue through the existing permission-aware adapters.
+
+Regression coverage is `supabase/tests/workspace-user-access.sql`,
+`packages/utils/src/workspace-user-projection.test.ts`, and
+`packages/utils/src/workspace-user-link.test.ts`. The migration has a companion
+rollback under `apps/database/rollbacks/`. Promotion requires independent migration
+review, the original route guard matrix, and staging acceptance for EC teachers
+and permitted Contacts reads. This change must ship separately from the EC
+Fri-30 flag flip.
+
+
+### Management and policy evaluation
+A verified member can open their own linked workforce profile without profile
+directory read grants. The self check uses a server client restricted to the
+verified caller, requested profile, and workspace; other profiles still require
+the workforce and profile permissions. The usage page Members count uses a
+server count only after `manage_workspace_members`, independently of directory
+read grants. Its regression is `usage/_components/members-stats.test.tsx`.
+
+Row policies resolve the caller's permitted workspace set in an uncorrelated
+statement initplan. Same-workspace user/class/metric validation remains in the
+row scope checks. The bounded `benchmark-workspace-user-policies.mjs` compares
+the exact prior policy with the candidate on 100k profiles and 300k attendance
+rows in an owned disposable database. It retains the eight-second query
+acceptance limit, verifies complete counts, alternates variants, and captures
+separate bounded diagnostic plans.

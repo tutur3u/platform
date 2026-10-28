@@ -1,5 +1,6 @@
 import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
 import { resolveFinanceRouteAuthContext } from '@tuturuuu/finance-core/route-auth';
+import type { Tables } from '@tuturuuu/types';
 import type {
   Transaction,
   TransactionPeriod,
@@ -167,35 +168,64 @@ export async function GET(req: Request, { params }: Params) {
         .in('user_id', creatorIdsArray);
 
       // Fetch workspace users
-      const { data: workspaceUsers } = await supabase
+      const { data: workspaceUsers } = await sbAdmin
         .from('workspace_users')
         .select('id, full_name, email, avatar_url')
+        .eq('ws_id', normalizedWsId)
         .in('id', creatorIdsArray);
 
       // Build user info map
-      platformUsers?.forEach((u) => {
-        userInfoMap[u.id] = {
-          full_name: u.display_name || undefined,
-          avatar_url: u.avatar_url || undefined,
-        };
-      });
+      platformUsers?.forEach(
+        (u: Pick<Tables<'users'>, 'id' | 'display_name' | 'avatar_url'>) => {
+          userInfoMap[u.id] = {
+            full_name: u.display_name || undefined,
+            avatar_url: u.avatar_url || undefined,
+          };
+        }
+      );
 
-      platformUserDetails?.forEach((d) => {
-        if (!userInfoMap[d.user_id]) userInfoMap[d.user_id] = {};
-        userInfoMap[d.user_id]!.full_name =
-          userInfoMap[d.user_id]!.full_name || d.full_name || undefined;
-        userInfoMap[d.user_id]!.email = d.email || undefined;
-      });
+      platformUserDetails?.forEach(
+        (
+          d: Pick<
+            Tables<'user_private_details'>,
+            'user_id' | 'full_name' | 'email'
+          >
+        ) => {
+          if (!userInfoMap[d.user_id]) userInfoMap[d.user_id] = {};
+          userInfoMap[d.user_id]!.full_name =
+            userInfoMap[d.user_id]!.full_name || d.full_name || undefined;
+          userInfoMap[d.user_id]!.email = d.email || undefined;
+        }
+      );
 
-      workspaceUsers?.forEach((wu) => {
-        if (!userInfoMap[wu.id]) userInfoMap[wu.id] = {};
-        userInfoMap[wu.id]!.full_name =
-          userInfoMap[wu.id]!.full_name || wu.full_name || undefined;
-        userInfoMap[wu.id]!.email =
-          userInfoMap[wu.id]!.email || wu.email || undefined;
-        userInfoMap[wu.id]!.avatar_url =
-          userInfoMap[wu.id]!.avatar_url || wu.avatar_url || undefined;
-      });
+      workspaceUsers?.forEach(
+        (
+          wu: Pick<
+            Tables<'workspace_users'>,
+            'id' | 'full_name' | 'email' | 'avatar_url'
+          >
+        ) => {
+          if (!userInfoMap[wu.id]) userInfoMap[wu.id] = {};
+          userInfoMap[wu.id]!.full_name =
+            userInfoMap[wu.id]!.full_name ||
+            (permissions.containsPermission('view_users_public_info')
+              ? wu.full_name
+              : undefined) ||
+            undefined;
+          userInfoMap[wu.id]!.email =
+            userInfoMap[wu.id]!.email ||
+            (permissions.containsPermission('view_users_private_info')
+              ? wu.email
+              : undefined) ||
+            undefined;
+          userInfoMap[wu.id]!.avatar_url =
+            userInfoMap[wu.id]!.avatar_url ||
+            (permissions.containsPermission('view_users_public_info')
+              ? wu.avatar_url
+              : undefined) ||
+            undefined;
+        }
+      );
     }
 
     // Transform the results
