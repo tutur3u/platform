@@ -1,7 +1,7 @@
 ---
 title: 'Tutoring'
 description: 'Schedule make-up and remedial sessions, work the support queue, and enable the module per workspace.'
-updatedAt: '2026-10-26'
+updatedAt: '2026-10-28'
 ---
 
 Tutoring lives in the Contacts satellite at `/{wsId}/users/tutoring`. It turns
@@ -63,6 +63,35 @@ session's lesson content after creation, so teaching notes from the separate
 content sheet can be kept with the attendance record. Managers can permanently
 delete a pending or cancelled session after an in-app confirmation. Completed
 and no-show sessions stay intact for attendance and payroll history.
+
+## Weekly repeats in the session draft
+
+In Contacts tutoring creation, **Repeat weekly** adds the next occurrence of
+every selected weekday and start time after the latest dated session in the
+draft. Saturday plus Sunday repeats both days; a Saturday–Sunday–Monday pattern
+also stays intact across the calendar week boundary. Each occurrence keeps its
+own teacher, duration and local start time. When a weekday/time appears in
+several weeks, its latest row supplies those details. Clicking again adds one
+more occurrence of each pattern, without copying earlier weeks again.
+
+The rule applies to all tutoring reasons and workspaces, with no preset-specific
+exception. It uses the selected civil date and local time. For a GMT+7 center,
+the basis is Asia/Ho_Chi_Minh, including 22:30 and 00:30 sessions. Tutoring stores
+`session_date` as a SQL date and `start_time` as a time, rather than deriving
+weekdays from a UTC timestamp or the browser timezone. An imported UTC instant
+must first be interpreted in the center timezone.
+
+Repeat changes only the unsaved draft; the existing create action submits the
+explicit `sessions[]` array. Rows without a date do not seed repeats. The button
+is disabled if no dated rows exist or the entire repeated pattern would exceed
+the existing 50-session request limit; it never silently drops weekdays to fit.
+Existing server conflict and permission checks still apply.
+
+Regression coverage:
+[`tutoring-repeat.test.tsx`](https://github.com/tutur3u/platform/blob/main/apps/contacts/src/app/%5Blocale%5D/%5BwsId%5D/users/tutoring/tutoring-repeat.test.tsx)
+drives the real draft editor for weekend, three-day, four-day and seven-day
+patterns, week/year boundaries, GMT+7 midnight conversion, repeated clicks,
+distinct timeframes and the request limit.
 
 ## Enablement
 
