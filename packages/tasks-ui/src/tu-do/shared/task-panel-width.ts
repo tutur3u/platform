@@ -30,7 +30,12 @@ function clamp(width: number) {
 
 function preferredWidth() {
   if (preferred === null) {
-    const saved = Number(window.localStorage.getItem(WIDTH_KEY));
+    let saved = 0;
+    try {
+      saved = Number(window.localStorage.getItem(WIDTH_KEY));
+    } catch {
+      // Storage can be denied; fall back to the default width.
+    }
     preferred = saved > 0 ? saved : TASK_PANEL_DEFAULT_WIDTH;
   }
   return preferred;
@@ -67,7 +72,11 @@ export function endTaskPanelResize(width: number) {
 /** Shows and remembers the width the user chose. */
 export function saveTaskPanelWidth(width: number) {
   preferred = clamp(width);
-  window.localStorage.setItem(WIDTH_KEY, String(preferred));
+  try {
+    window.localStorage.setItem(WIDTH_KEY, String(preferred));
+  } catch {
+    // Without storage the width still applies for this page.
+  }
   return applyTaskPanelWidth(preferred);
 }
 

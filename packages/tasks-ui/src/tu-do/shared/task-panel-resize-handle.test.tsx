@@ -47,3 +47,28 @@ describe('TaskPanelResizeHandle', () => {
     expect(panelWidth()).toBe('576px');
   });
 });
+
+describe('task panel width without storage', () => {
+  it('falls back to the default and still resizes when storage is denied', async () => {
+    vi.resetModules();
+    window.innerWidth = 2000;
+    const denied = () => {
+      throw new DOMException('denied', 'SecurityError');
+    };
+    const getItem = vi
+      .spyOn(Storage.prototype, 'getItem')
+      .mockImplementation(denied);
+    const setItem = vi
+      .spyOn(Storage.prototype, 'setItem')
+      .mockImplementation(denied);
+    try {
+      const fresh = await import('./task-panel-width');
+      expect(fresh.getTaskPanelWidth()).toBe(fresh.TASK_PANEL_DEFAULT_WIDTH);
+      expect(fresh.saveTaskPanelWidth(700)).toBe(700);
+      expect(panelWidth()).toBe('700px');
+    } finally {
+      getItem.mockRestore();
+      setItem.mockRestore();
+    }
+  });
+});
