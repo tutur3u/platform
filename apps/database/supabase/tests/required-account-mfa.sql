@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(62);
+select plan(63);
 insert into auth.users (id, aud, role, email, raw_app_meta_data, created_at, updated_at)
 values ('00000000-0000-4000-8000-000000009901', 'authenticated', 'authenticated', 'mfa-policy-test@tuturuuu.com', '{}', now(), now());
 insert into public.users (id) values ('00000000-0000-4000-8000-000000009901') on conflict do nothing;
@@ -255,6 +255,7 @@ using((select public.account_required_mfa_satisfied())) with check((select publi
 select ok(not exists(select 1 from mfa_coverage_violations where relname='mfa_contract_probe'), 'Accept canonical policy');
 rollback to broken_coverage;
 select is((select count(*) from pg_policies where schemaname = 'storage' and tablename = 'objects' and policyname = 'account_required_mfa'), 1::bigint, 'Storage access receives the same policy');
+select ok((select c.relrowsecurity from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname = 'private' and c.relname = 'product_feedback_receipts'), 'private.product_feedback_receipts has row level security enabled');
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-000000009999","role":"authenticated","aal":"aal2"}', true);
 select ok(not public.account_required_mfa_satisfied(), 'Deleted or missing auth account cannot retain database access');
 select set_config('request.jwt.claims', '{"role":"authenticated"}', true);
