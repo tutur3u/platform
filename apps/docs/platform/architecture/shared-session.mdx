@@ -53,3 +53,16 @@ Cookie-authenticated changes are accepted only from the same origin. Requests
 from other sites and from sibling `*.tuturuuu.com` subdomains are rejected.
 Bearer (mobile, CLI) requests are unaffected. Status: Planned (report mode
 first, then enforce).
+
+## Local browser verification
+
+With `TUTURUUU_LOCAL_E2E_AUTH_BYPASS=1` and an HTTP loopback
+`NEXT_PUBLIC_SUPABASE_URL`, satellite cookie cleanup preserves the configured
+Supabase session cookie on `localhost` and `127.0.0.1`. Cookies are shared across
+ports, so expiring that cookie from Tasks also signs the browser out of Web.
+This applies to local verification across Web and satellites; the default
+without the bypass continues to clear unsupported cookies. Unrelated hosts and
+cloud Supabase configuration do not enable this exception. Production shared
+domain behavior is unchanged. Regression coverage lives in
+`packages/auth/src/app-session-local-cookies.test.ts`; the browser lifecycle spec
+covers signup, workspace creation, invitations and task CRUD.

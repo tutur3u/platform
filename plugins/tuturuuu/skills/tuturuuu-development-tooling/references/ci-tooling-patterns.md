@@ -1329,3 +1329,14 @@ install, and fails if `git status` reports any `bun.lock` change (an untracked
 regenerated file would slip past `git diff`). Fix a failure by running `bun install` locally and committing the result.
 Worktree setup scripts should install with `--frozen-lockfile` or `--no-save` so
 they never write the lockfile.
+
+## Web browser and fixture test discovery
+
+Playwright's authenticated project collects only `*.spec.ts`; its setup project
+owns `auth.setup.ts`. Keep Vitest fixture tests out of browser collection.
+Check discovery without starting services with
+`bun run --cwd apps/web test:e2e -- --list` and require a nonzero test count.
+The root Vitest project `web-e2e-fixtures` runs the employee fixture unit tests:
+`bun x vitest run --project web-e2e-fixtures --maxWorkers=1`.
+The chat bridge fixture remains an explicit SQL qualification target requiring
+its envelope; it is not an ordinary unit test.
