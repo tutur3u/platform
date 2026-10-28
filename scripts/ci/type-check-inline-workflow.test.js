@@ -10,6 +10,7 @@ const { readWorkflow } = require('./workflow-yaml-test-helper');
 const root = path.resolve(__dirname, '../..');
 const workflow = readWorkflow('type-check.yaml');
 const job = workflow.jobs['type-check'];
+const prJob = workflow.jobs['type-check-pr'];
 const decision =
   "steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'";
 const preflightIds = ['changed_files', 'check_config', 'release_relevance'];
@@ -38,15 +39,30 @@ test('singleton keeps the Type Check context, event surface and runner with a re
     },
     workflow_dispatch: null,
   });
-  assert.deepEqual(Object.keys(workflow.jobs), ['type-check']);
+  // Two variants share the Type Check context; exactly one runs per event. The
+  // pull request variant may route to the PR pool (see
+  // scripts/ci/workflow-pr-self-hosted.test.js) and so names no secret.
+  assert.deepEqual(Object.keys(workflow.jobs), ['type-check', 'type-check-pr']);
   assert.equal(job.name, 'Type Check');
-  // Hosted unless the PR runner route (scripts/ci/workflow-pr-self-hosted.test.js) admits it.
-  assert.match(job['runs-on'], /\|\| 'ubuntu-latest' \}\}$/);
+  assert.equal(prJob.name, 'Type Check');
+  assert.equal(job['runs-on'], 'ubuntu-latest');
+  assert.match(prJob['runs-on'], /\|\| 'ubuntu-latest' \}\}$/);
+  assert.equal(prJob.if, "github.event_name == 'pull_request'");
+  const withoutCredentials = (steps) =>
+    steps.map((step) => {
+      if (!step.with) return step;
+      const { token: _token, team: _team, ...rest } = step.with;
+      return { ...step, with: rest };
+    });
+  assert.deepEqual(
+    withoutCredentials(prJob.steps),
+    withoutCredentials(job.steps)
+  );
   assert.equal(job.concurrency, undefined);
   assert.deepEqual(workflow.permissions, { contents: 'read' });
   assert.deepEqual(job.permissions, { contents: 'read' });
   assert.equal(job.needs, undefined);
-  assert.equal(job.if, undefined);
+  assert.equal(job.if, "github.event_name != 'pull_request'");
   const checkouts = job.steps.filter((step) =>
     step.uses?.startsWith('actions/checkout@')
   );

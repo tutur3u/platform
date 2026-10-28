@@ -2471,13 +2471,31 @@ Routing never replaces the `ready-for-ci` gate.
 Routed jobs: `docs-seo-check.yaml` `validate`; `i18n-check.yaml`
 `i18n-sort-check`, `i18n-translation-check`, `i18n-key-parity-check` and
 `i18n-namespace-check`; `mobile-api-mappings.yaml` `verify`; `type-check.yaml`
-`type-check`; `biome-check.yaml` `check-ci` (through the `pr_runner` input of
+`type-check-pr`; `biome-check.yaml` `check-ci` (through the `pr_runner` input of
 `ci-check.yml`), `duplicate-validation`, `format` and `lint`;
-`turbo-unit-tests.yaml` `test-shards`. Jobs with write tokens (Biome apply,
+`turbo-unit-tests.yaml` `test-shards-pr`. Jobs with write tokens (Biome apply,
 close and comment jobs, the i18n comment job), the Codecov upload and every
 secret-bearing, deploy, release, migration or security job stay on
-`ubuntu-latest`. Pool jobs get no secrets: credential expressions evaluate to
-an empty string on pull requests, and the pool has no ambient credentials.
+`ubuntu-latest`. Pool jobs get no secrets, and the pool has no ambient
+credentials. GitHub ships every secret a job names to its runner even when a
+guard such as `github.event_name != 'pull_request'` evaluates to an empty
+string, so a pool-eligible job must not contain the substring `secrets.` at all
+(no guarded credential expressions), and a reusable workflow it calls receives no
+secrets.
+
+Type Check and the unit-test shards still need Turbo and Supabase credentials on
+push and dispatch, so each is split into two jobs that share one `name` and
+therefore one required check context: `type-check-pr` and `test-shards-pr` run
+only for `pull_request` events, may route to the pool and use fixtures or empty
+values; `type-check` and `test-shards` run only for other events on
+`ubuntu-latest` and keep their secrets. Exactly one of each pair runs, the other
+reports as skipped. Dependents of `test-shards` (`coverage-shards`,
+`coverage-upload`, `coverage-result`, `Unit Tests (24)`) need both variants and
+read the result of whichever one ran (the other is skipped), so a skipped variant
+never masks a failed one.
+`scripts/ci/workflow-pr-self-hosted.test.js` asserts that the raw text of every
+job able to select the pool has no `secrets.` substring and that the reusable
+workflows such jobs call take no secrets.
 
 Each routed job checks out without persisted credentials, runs
 `./.github/actions/pr-runner-hygiene` (disposable `HOME`, Git, Bun, npm and XDG

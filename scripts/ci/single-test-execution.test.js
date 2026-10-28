@@ -9,15 +9,16 @@ const enabled = () => ({
   result: 'success',
   outputs: { should_run: 'true', run_checks: 'true' },
 });
-function admitted(job, needs, cancelled = false) {
+function admitted(job, needs, cancelled = false, event = 'push') {
   const code = job.if
     .replace(/^\$\{\{\s*|\s*\}\}$/g, '')
     .replace(/needs\.([a-z-]+)/g, (_, id) => `needs['${id}']`);
   return Function(
     'needs',
     'cancelled',
+    'github',
     `return (${code});`
-  )(needs, () => cancelled);
+  )(needs, () => cancelled, { event_name: event });
 }
 function gate(job, env) {
   return spawnSync('bash', ['-e', '-o', 'pipefail', '-c', job.steps[0].run], {
@@ -33,7 +34,9 @@ test('one coverage-enabled shard command owns both signals without retry', () =>
     .flatMap((job) => job.steps || [])
     .map((step) => step.with?.command || step.run || '')
     .filter((command) => command.includes('run-test-shard.js'));
-  assert.equal(commands.length, 1);
+  // One command per variant (pull request, other events); exactly one runs.
+  assert.equal(commands.length, 2);
+  assert.equal(commands[0], commands[1]);
   assert.match(
     commands[0],
     /^node scripts\/ci\/run-test-shard\.js .* 4 --coverage$/
@@ -69,6 +72,15 @@ test('both switchboard entries independently admit the shared execution', () => 
       unit || coverage
     );
     assert.equal(admitted(producer.jobs['test-shards'], needs, true), false);
+    assert.equal(
+      admitted(producer.jobs['test-shards'], needs, false, 'pull_request'),
+      false
+    );
+    assert.equal(
+      admitted(producer.jobs['test-shards-pr'], needs, false, 'pull_request'),
+      unit || coverage
+    );
+    assert.equal(admitted(producer.jobs['test-shards-pr'], needs), false);
     for (const id of ['check-ci', 'coverage-check-ci']) {
       const failed = { 'check-ci': enabled(), 'coverage-check-ci': enabled() };
       failed[id].result = 'failure';
@@ -134,6 +146,7 @@ test('original check names fail closed on red, cancelled, missing or skipped res
     const needs = {
       'coverage-check-ci': enabled(),
       'test-shards': { result: state },
+      'test-shards-pr': { result: 'skipped' },
     };
     assert.equal(admitted(producer.jobs['coverage-result'], needs), true);
     assert.equal(admitted(producer.jobs['coverage-upload'], needs), false);
@@ -150,6 +163,7 @@ test('coverage artifacts stay in the same run and consumer cannot execute tests'
   const call = producer.jobs['coverage-upload'];
   assert.equal(call.uses, './.github/workflows/codecov.yaml');
   assert.ok(call.needs.includes('test-shards'));
+  assert.ok(call.needs.includes('test-shards-pr'));
   assert.deepEqual(Object.keys(call.secrets), ['CODECOV_TOKEN']);
   const upload = producer.jobs['test-shards'].steps.find((step) =>
     step.uses?.startsWith('actions/upload-artifact@')
@@ -194,6 +208,7 @@ test('shared preflight retains release relevance, least privilege and release-on
       'check-ci': enabled(),
       'coverage-check-ci': enabled(),
       'test-shards': { result: 'success' },
+      'test-shards-pr': { result: 'skipped' },
     };
     needs['check-ci'].outputs[output] = 'false';
     needs['coverage-check-ci'].outputs[output] = 'false';
