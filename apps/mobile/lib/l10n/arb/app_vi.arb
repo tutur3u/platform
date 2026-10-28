@@ -5109,6 +5109,27 @@
       }
     }
   },
+  "@mastermindDurationDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindDurationHours": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindDurationMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "@mastermindFloor": {
     "placeholders": {
       "value": {
@@ -5116,7 +5137,31 @@
       }
     }
   },
+  "@mastermindLaneAgeLine": {
+    "placeholders": {
+      "state": {
+        "type": "String"
+      },
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindLaneAgeUnknown": {
+    "placeholders": {
+      "state": {
+        "type": "String"
+      }
+    }
+  },
   "@mastermindLaneEta": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindLaneEtaAbout": {
     "placeholders": {
       "duration": {
         "type": "String"
@@ -5464,6 +5509,7 @@
   "mastermindBackToInbox": "Về Hộp thư",
   "mastermindBacklogEmptyTitle": "Không còn việc tồn",
   "mastermindBacklogLabel": "Việc tồn",
+  "mastermindBackToWork": "Về Công việc",
   "mastermindBasisCheckinWorkflow": "Quy trình kiểm tra định kỳ",
   "mastermindBasisGithubDeployment": "Triển khai GitHub",
   "mastermindBasisVercelDeployment": "Triển khai Vercel",
@@ -5537,6 +5583,9 @@
   "mastermindDeployQueued": "trong hàng đợi",
   "mastermindDeploySuccess": "thành công",
   "mastermindDigestGap": "Một số cập nhật trước đó không có ở đây.",
+  "mastermindDurationDays": "{count} ngày",
+  "mastermindDurationHours": "{count} giờ",
+  "mastermindDurationMinutes": "{count} phút",
   "mastermindEffortFilter": "Mức nỗ lực",
   "mastermindEnvProduction": "Production",
   "mastermindEnvStaging": "Staging",
@@ -5581,8 +5630,14 @@
   "mastermindKindStaff": "Nhân sự",
   "mastermindKindTest": "Kiểm thử",
   "mastermindLaneAge": "Thời gian chạy",
+  "mastermindLaneAgeLine": "{state} trong {duration}",
+  "mastermindLaneAgeUnknown": "{state} · chưa rõ thời lượng",
   "mastermindLaneArea": "Lĩnh vực",
   "mastermindLaneEta": "Dự kiến {duration}",
+  "mastermindLaneEtaAbout": "Còn khoảng {duration}",
+  "mastermindLaneEtaLabel": "Thời gian còn lại dự kiến",
+  "mastermindLaneFinishedTitle": "Luồng việc này đã kết thúc hoặc bị gỡ",
+  "mastermindLaneGoneTitle": "Luồng việc này không còn trong Mastermind",
   "mastermindLaneKind": "Loại",
   "mastermindLaneModel": "Mô hình",
   "mastermindLaneProduct": "Sản phẩm",
@@ -5591,6 +5646,7 @@
   "mastermindLanesAtAGlance": "Tổng quan luồng việc",
   "mastermindLanesEmpty": "Không có luồng việc nào trong chế độ xem này",
   "mastermindLanesLabel": "Luồng việc",
+  "mastermindLaneUpdated": "Luồng việc này đã được cập nhật",
   "mastermindLastPublished": "Mastermind cập nhật lần cuối {age} · {time}",
   "mastermindLess": "Thu gọn",
   "mastermindLiveAgo": "Đang hoạt động {age}",
@@ -5785,5 +5841,8 @@
   "mastermindUsageLink": "Mức sử dụng",
   "mastermindVersion": "Phiên bản",
   "mastermindWeekly": "Hằng tuần",
-  "mastermindWhy": "Lý do"
+  "mastermindWhy": "Lý do",
+  "mastermindWorkEmpty": "Hiện chưa có luồng việc nào",
+  "mastermindWorkNoMatches": "Không có luồng việc phù hợp",
+  "mastermindWorkSearchPlaceholder": "Tìm luồng việc"
 }

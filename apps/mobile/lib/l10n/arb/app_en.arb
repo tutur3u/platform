@@ -5273,6 +5273,27 @@
       }
     }
   },
+  "@mastermindDurationDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindDurationHours": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindDurationMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "@mastermindFloor": {
     "placeholders": {
       "value": {
@@ -5280,7 +5301,31 @@
       }
     }
   },
+  "@mastermindLaneAgeLine": {
+    "placeholders": {
+      "state": {
+        "type": "String"
+      },
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindLaneAgeUnknown": {
+    "placeholders": {
+      "state": {
+        "type": "String"
+      }
+    }
+  },
   "@mastermindLaneEta": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindLaneEtaAbout": {
     "placeholders": {
       "duration": {
         "type": "String"
@@ -5628,6 +5673,7 @@
   "mastermindBackToInbox": "Back to Inbox",
   "mastermindBacklogEmptyTitle": "Backlog is clear",
   "mastermindBacklogLabel": "Backlog",
+  "mastermindBackToWork": "Back to Work",
   "mastermindBasisCheckinWorkflow": "Check-in workflow",
   "mastermindBasisGithubDeployment": "GitHub deployment",
   "mastermindBasisVercelDeployment": "Vercel deployment",
@@ -5701,6 +5747,9 @@
   "mastermindDeployQueued": "queued",
   "mastermindDeploySuccess": "success",
   "mastermindDigestGap": "Some earlier updates aren't included.",
+  "mastermindDurationDays": "{count} d",
+  "mastermindDurationHours": "{count} h",
+  "mastermindDurationMinutes": "{count} min",
   "mastermindEffortFilter": "Effort",
   "mastermindEnvProduction": "Production",
   "mastermindEnvStaging": "Staging",
@@ -5745,8 +5794,14 @@
   "mastermindKindStaff": "Staff",
   "mastermindKindTest": "Test",
   "mastermindLaneAge": "Age",
+  "mastermindLaneAgeLine": "{state} for {duration}",
+  "mastermindLaneAgeUnknown": "{state} · age unknown",
   "mastermindLaneArea": "Area",
   "mastermindLaneEta": "ETA {duration}",
+  "mastermindLaneEtaAbout": "About {duration} left",
+  "mastermindLaneEtaLabel": "Estimated time left",
+  "mastermindLaneFinishedTitle": "This lane finished or was removed",
+  "mastermindLaneGoneTitle": "This lane is no longer in Mastermind",
   "mastermindLaneKind": "Kind",
   "mastermindLaneModel": "Model",
   "mastermindLaneProduct": "Product",
@@ -5755,6 +5810,7 @@
   "mastermindLanesAtAGlance": "Lanes at a glance",
   "mastermindLanesEmpty": "No lanes in this view",
   "mastermindLanesLabel": "Lanes",
+  "mastermindLaneUpdated": "This lane was updated",
   "mastermindLastPublished": "Mastermind last published {age} · {time}",
   "mastermindLess": "Less",
   "mastermindLiveAgo": "Live {age}",
@@ -5949,5 +6005,8 @@
   "mastermindUsageLink": "Usage",
   "mastermindVersion": "Version",
   "mastermindWeekly": "Weekly",
-  "mastermindWhy": "Why"
+  "mastermindWhy": "Why",
+  "mastermindWorkEmpty": "No lanes right now",
+  "mastermindWorkNoMatches": "No matching lanes",
+  "mastermindWorkSearchPlaceholder": "Search lanes"
 }

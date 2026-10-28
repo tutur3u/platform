@@ -12312,6 +12312,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindBacklogLabel => 'Backlog';
 
   @override
+  String get mastermindBackToWork => 'Back to Work';
+
+  @override
   String get mastermindBasisCheckinWorkflow => 'Check-in workflow';
 
   @override
@@ -12539,6 +12542,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindDigestGap => 'Some earlier updates aren\'t included.';
 
   @override
+  String mastermindDurationDays(int count) {
+    return '$count d';
+  }
+
+  @override
+  String mastermindDurationHours(int count) {
+    return '$count h';
+  }
+
+  @override
+  String mastermindDurationMinutes(int count) {
+    return '$count min';
+  }
+
+  @override
   String get mastermindEffortFilter => 'Effort';
 
   @override
@@ -12673,12 +12691,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindLaneAge => 'Age';
 
   @override
+  String mastermindLaneAgeLine(String state, String duration) {
+    return '$state for $duration';
+  }
+
+  @override
+  String mastermindLaneAgeUnknown(String state) {
+    return '$state · age unknown';
+  }
+
+  @override
   String get mastermindLaneArea => 'Area';
 
   @override
   String mastermindLaneEta(String duration) {
     return 'ETA $duration';
   }
+
+  @override
+  String mastermindLaneEtaAbout(String duration) {
+    return 'About $duration left';
+  }
+
+  @override
+  String get mastermindLaneEtaLabel => 'Estimated time left';
+
+  @override
+  String get mastermindLaneFinishedTitle => 'This lane finished or was removed';
+
+  @override
+  String get mastermindLaneGoneTitle => 'This lane is no longer in Mastermind';
 
   @override
   String get mastermindLaneKind => 'Kind';
@@ -12703,6 +12745,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindLanesLabel => 'Lanes';
+
+  @override
+  String get mastermindLaneUpdated => 'This lane was updated';
 
   @override
   String mastermindLastPublished(String age, String time) {
@@ -13398,4 +13443,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindWhy => 'Why';
+
+  @override
+  String get mastermindWorkEmpty => 'No lanes right now';
+
+  @override
+  String get mastermindWorkNoMatches => 'No matching lanes';
+
+  @override
+  String get mastermindWorkSearchPlaceholder => 'Search lanes';
 }
