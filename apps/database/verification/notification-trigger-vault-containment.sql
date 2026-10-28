@@ -3,7 +3,14 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(15);
+select plan(16);
+
+select ok(not exists (
+  select 1 from pg_db_role_setting s
+  cross join lateral unnest(s.setconfig) as settings(setting)
+  where s.setdatabase in (0, (select oid from pg_database where datname = 'postgres'))
+    and split_part(setting, '=', 1) in ('app.service_role_key', 'app.base_url')
+), 'containment does not restore either persisted legacy GUC');
 
 select ok((select prosecdef from pg_proc
   where oid = 'public.trigger_immediate_notification_send()'::regprocedure),

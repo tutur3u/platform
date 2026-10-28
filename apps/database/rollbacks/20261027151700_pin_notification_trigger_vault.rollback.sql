@@ -2,6 +2,7 @@
 -- Not a migration: apply manually only with release-authority approval.
 -- Disable trigger HTTP delivery without restoring the legacy GUC destination
 -- or bearer. cron-control recovers pending immediate notification batches.
+-- Never restore app.service_role_key or app.base_url at database or role scope.
 begin;
 set local lock_timeout = '5s';
 set local statement_timeout = '30s';

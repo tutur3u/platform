@@ -1,8 +1,24 @@
 -- Disposable local databases only. Rollback prevents pg_net from sending requests.
+-- Check combined output with verification/notification-trigger-vault-warning-check.mjs.
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(17);
+select plan(19);
+
+select ok(not exists (
+  select 1 from pg_db_role_setting s
+  cross join lateral unnest(s.setconfig) as settings(setting)
+  where s.setrole = 0
+    and s.setdatabase = (select oid from pg_database where datname = 'postgres')
+    and split_part(setting, '=', 1) in ('app.service_role_key', 'app.base_url')
+), 'forward clears both persisted database GUCs');
+select ok(not exists (
+  select 1 from pg_db_role_setting s
+  cross join lateral unnest(s.setconfig) as settings(setting)
+  where s.setrole <> 0
+    and s.setdatabase in (0, (select oid from pg_database where datname = 'postgres'))
+    and split_part(setting, '=', 1) in ('app.service_role_key', 'app.base_url')
+), 'forward clears both global and database-specific role GUCs');
 
 delete from vault.secrets where name = 'notification_immediate_bearer';
 select vault.create_secret('sr327-vault-fixture', 'notification_immediate_bearer');
@@ -82,6 +98,7 @@ select is((select count(*)::int from net.http_request_queue q
 delete from vault.secrets where name = 'notification_immediate_bearer';
 select set_config('app.base_url', 'https://attacker.invalid', true);
 select set_config('app.service_role_key', 'sr327-guc-fixture', true);
+-- Capture combined pgTAP output and run the warning checker documented below.
 select pg_temp.sr327_insert('missing Vault secret');
 select is((select count(*)::int from net.http_request_queue q
   join sr327_batches b on convert_from(q.body, 'UTF8')::jsonb->>'batch_id' = b.id::text
