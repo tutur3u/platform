@@ -105,69 +105,55 @@ describe('Infrastructure workspace secrets permission boundary', () => {
   });
 
   for (const method of methods) {
-    it.each(keys)(
-      `rejects workspace creators: ${method} %s`,
-      async (key) => {
-        expect((await mutate(method, key)).status).toBe(403);
-        expect(mocks.admin).not.toHaveBeenCalled();
-        expect(mocks.from).not.toHaveBeenCalled();
-      }
-    );
+    it.each(keys)(`rejects workspace creators: ${method} %s`, async (key) => {
+      expect((await mutate(method, key)).status).toBe(403);
+      expect(mocks.admin).not.toHaveBeenCalled();
+      expect(mocks.from).not.toHaveBeenCalled();
+    });
 
     for (const permission of [
       'manage_workspace_secrets',
       'manage_workspace_roles',
     ]) {
-      it.each(keys)(
-        `allows root ${permission}: ${method} %s`,
-        async (key) => {
-          grant(permission);
-          expect((await mutate(method, key)).status).toBe(200);
-          expect(mocks.permissions).toHaveBeenCalledExactlyOnceWith({
-            wsId: ROOT_WORKSPACE_ID,
-            user: { id: 'workspace-creator', email: 'owner@example.com' },
-          });
-          expect(
-            mocks[
-              method === 'POST'
-                ? 'insert'
-                : method === 'PUT'
-                  ? 'update'
-                  : 'delete'
-            ]
-          ).toHaveBeenCalledOnce();
-          if (method !== 'POST') {
-            expect(mocks.eq).toHaveBeenCalledWith('id', 'secret-id');
-            expect(mocks.eq).toHaveBeenCalledWith('ws_id', 'tenant-workspace');
-          }
+      it.each(keys)(`allows root ${permission}: ${method} %s`, async (key) => {
+        grant(permission);
+        expect((await mutate(method, key)).status).toBe(200);
+        expect(mocks.permissions).toHaveBeenCalledExactlyOnceWith({
+          wsId: ROOT_WORKSPACE_ID,
+          user: { id: 'workspace-creator', email: 'owner@example.com' },
+        });
+        expect(
+          mocks[
+            method === 'POST'
+              ? 'insert'
+              : method === 'PUT'
+                ? 'update'
+                : 'delete'
+          ]
+        ).toHaveBeenCalledOnce();
+        if (method !== 'POST') {
+          expect(mocks.eq).toHaveBeenCalledWith('id', 'secret-id');
+          expect(mocks.eq).toHaveBeenCalledWith('ws_id', 'tenant-workspace');
         }
-      );
+      });
     }
 
     it.each([
       'owner@example.com',
       'owner@xwf.tuturuuu.com',
       'owner@tuturuuu.com.evil.test',
-    ])(
-      `requires an employee for managed cron: ${method} %s`,
-      async (email) => {
-        grant('manage_workspace_secrets', email);
-        expect((await mutate(method, ' managed_cron_enabled ')).status).toBe(
-          403
-        );
-        expect(mocks.insert).not.toHaveBeenCalled();
-        expect(mocks.update).not.toHaveBeenCalled();
-        expect(mocks.delete).not.toHaveBeenCalled();
-      }
-    );
+    ])(`requires an employee for managed cron: ${method} %s`, async (email) => {
+      grant('manage_workspace_secrets', email);
+      expect((await mutate(method, ' managed_cron_enabled ')).status).toBe(403);
+      expect(mocks.insert).not.toHaveBeenCalled();
+      expect(mocks.update).not.toHaveBeenCalled();
+      expect(mocks.delete).not.toHaveBeenCalled();
+    });
 
-    it(
-      `allows an employee root admin to write managed cron: ${method}`,
-      async () => {
-        grant('manage_workspace_roles', 'Operator@TUTURUUU.COM');
-        expect((await mutate(method, 'MANAGED_CRON_ENABLED')).status).toBe(200);
-      }
-    );
+    it(`allows an employee root admin to write managed cron: ${method}`, async () => {
+      grant('manage_workspace_roles', 'Operator@TUTURUUU.COM');
+      expect((await mutate(method, 'MANAGED_CRON_ENABLED')).status).toBe(200);
+    });
 
     it(`still denies an employee workspace creator: ${method}`, async () => {
       grant(undefined, 'operator@tuturuuu.com');
@@ -263,22 +249,19 @@ describe('Infrastructure workspace secrets permission boundary', () => {
     'manage_workspace_roles',
     'manage_workspace_secrets',
   ]) {
-    it(
-      `checks root permissions for external app secrets: ${permission}`,
-      async () => {
-        grant(permission);
-        const result = await requireExternalAppRegistryAdmin(
-          new Request('https://infra.example.test')
-        );
-        expect(result.ok).toBe(Boolean(permission));
-        if (!result.ok) expect(result.response.status).toBe(403);
-        expect(mocks.permissions).toHaveBeenCalledWith({
-          user: { id: 'workspace-creator', email: 'owner@example.com' },
-          wsId: ROOT_WORKSPACE_ID,
-        });
-        if (!permission) expect(mocks.admin).not.toHaveBeenCalled();
-      }
-    );
+    it(`checks root permissions for external app secrets: ${permission}`, async () => {
+      grant(permission);
+      const result = await requireExternalAppRegistryAdmin(
+        new Request('https://infra.example.test')
+      );
+      expect(result.ok).toBe(Boolean(permission));
+      if (!result.ok) expect(result.response.status).toBe(403);
+      expect(mocks.permissions).toHaveBeenCalledWith({
+        user: { id: 'workspace-creator', email: 'owner@example.com' },
+        wsId: ROOT_WORKSPACE_ID,
+      });
+      if (!permission) expect(mocks.admin).not.toHaveBeenCalled();
+    });
 
     for (const method of ['GET', 'PUT']) {
       it(
