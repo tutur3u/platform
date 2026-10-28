@@ -18,6 +18,7 @@ import {
   ROOT_WORKSPACE_ID,
   resolveWorkspaceId,
 } from './constants';
+import { isAdminImpliedPermission } from './creator-grant-permissions';
 import { permissions as rolePermissions } from './permissions';
 
 export class WorkspaceAuthError extends Error {
@@ -853,12 +854,11 @@ async function getPermissionsImpl({
 
   const isAdmin = permissions.includes('admin');
 
-  const containsPermission = (permission: PermissionId) => {
-    const hasPermission =
-      isCreator || isAdmin || permissions.includes(permission);
-    // console.log(permission, 'is allowed:', hasPermission);
-    return hasPermission;
-  };
+  // Matches has_workspace_permission: admin never implies manage_subscription.
+  const containsPermission = (permission: PermissionId) =>
+    isCreator ||
+    permissions.includes(permission) ||
+    (isAdmin && isAdminImpliedPermission(permission));
 
   const withoutPermission = (permission: PermissionId) =>
     !containsPermission(permission);

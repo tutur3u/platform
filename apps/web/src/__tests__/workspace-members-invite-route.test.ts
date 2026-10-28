@@ -61,6 +61,16 @@ const mocks = vi.hoisted(() => {
         };
       }
 
+      if (table === 'workspace_role_permissions') {
+        // No requested role holds a creator-grant permission here.
+        const query: Record<string, unknown> = {};
+        for (const op of ['eq', 'in', 'select']) query[op] = vi.fn(() => query);
+        // biome-ignore lint/suspicious/noThenProperty: mimics the awaitable query builder.
+        query.then = (resolve: (value: unknown) => unknown) =>
+          Promise.resolve({ data: [], error: null }).then(resolve);
+        return query;
+      }
+
       throw new Error(`Unexpected admin table: ${table}`);
     }),
     schema: vi.fn((schema: string) => {
