@@ -619,9 +619,43 @@ and a missing lane offers "Back to Threads". There is no send UI and no row
 opens history. Loading, access loss, rate limits (the last snapshot stays) and a
 404 with nothing published use the shared Mastermind section states.
 
-Thread history is a separate P1b change, built to the design's mobile conditions
-(app lock, screenshot protection, closed parsers, localized state words and
-times). It is not part of P1a and has no flag here.
+### Thread history (P1b)
+
+`MASTERMIND_THREAD_HISTORY` is a second Dart define, default `false`, and only
+takes effect while `MASTERMIND_THREADS` is on (`mastermindThreadHistoryEnabled`,
+overridable with `debugOverrideMastermindThreadHistory`). With it off,
+`/mastermind/threads/:threadRef` redirects to the Threads list, or to Work when
+Threads is off. The route is keyed on the hub's v2 `thread_ref`, never on a v1
+lane id, so no list row links to it until the hub publishes thread references.
+
+- **Reads:** `GET /v1/threads/capabilities`, then `GET /v1/threads`, then
+  `GET /v1/threads/{ref}/messages?digest=&limit=30` (fewer when the hub's
+  `page_max` is lower). Every page is pinned to the index's `history_digest`;
+  "Load earlier" passes `before` on the same digest. A 410 reloads the index
+  once, pins the new digest, reloads the newest page and says "This thread was
+  updated"; a second 410 in a row stops with the error state instead of looping.
+- **Closed parsers:** the capabilities, index and page envelopes must match the
+  `threads-1` shape exactly, or the read fails closed. An index row or message
+  with an unknown key, a missing key, a wrong type or an oversized value
+  (title 100, preview 120, author label 40, text 2,000 code points) is skipped
+  and the rest still render. Bodies are capped before decoding.
+- **States:** 404, `read: false`, a 403 `threads_disabled`, a `none` history
+  tier or an unknown ref read "Not available on mobile". 429 reads "Limit
+  reached" with the retry time in GMT+7, and messages already shown stay. 401
+  gets one silent session refresh. A thread that leaves the index after an
+  update reads "This thread is no longer in Mastermind".
+- **Rendering:** plain text only, no links, images or Markdown. Redaction tokens
+  (`‹path›`, `‹link: host›`, `‹secret withheld›`, `‹id›`, `‹email›`,
+  `‹number›`) render as localized neutral placeholders; an unrecognised token
+  becomes "‹hidden›" so its contents never show. Invisible and bidi control
+  characters are removed. Withheld messages, truncation and the activity
+  summary use fixed copy. Times are GMT+7 wall time in the app locale.
+- **Privacy:** history is memory only for the screen's lifetime and is dropped
+  when the app lock comes up (and re-read after unlock), when the workspace
+  changes, and when the screen closes. While open, `SecureScreenScope` sets
+  Android `FLAG_SECURE` and blurs the iOS app-switcher snapshot through the
+  `mobile/secure_screen` channel, and covers the content whenever the app is not
+  in the foreground. iOS cannot block screenshots.
 
 Regression coverage lives in `apps/mobile/test/features/mastermind/threads/`:
 `threads_list_test.dart` covers the group order, filters, "Clear filters",
@@ -629,4 +663,9 @@ Backlog/Staff segments, 44 pt targets, dock clearance, rate-limit retention and
 the 404 state with the flag on; `threads_flag_test.dart` keeps the flag-off
 navigation unchanged and checks the flag-on dock selection, redirects with
 filters kept, and the lane-gone copy. Enablement remains held for exact-commit
-mobile CI and product acceptance.
+mobile CI and product acceptance. History coverage lives in
+`threads/history/`: parser good, bad and oversized rows; digest-pinned paging,
+410 reload and the no-loop guard; 404/429/401/403 mapping; flag gating; app
+lock and secure-screen behavior; and 44 pt targets at 200% text in English and
+Vietnamese. Enabling history also needs the hub's P1 routes and Selene's P1
+preconditions live in that environment.

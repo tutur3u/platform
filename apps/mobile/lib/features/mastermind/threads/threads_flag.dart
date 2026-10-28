@@ -13,3 +13,18 @@ bool get mastermindThreadsEnabled => _threadsOverride ?? _threadsDefine;
 @visibleForTesting
 void debugOverrideMastermindThreads({required bool? enabled}) =>
     _threadsOverride = enabled;
+
+const _historyDefine = bool.fromEnvironment('MASTERMIND_THREAD_HISTORY');
+bool? _historyOverride;
+
+/// Whether a thread's read-only history opens (`MASTERMIND_THREAD_HISTORY`,
+/// default off, P1b). It needs Threads on as well, and it is keyed on the
+/// hub's v2 `thread_ref`, never on a v1 lane id.
+bool get mastermindThreadHistoryEnabled =>
+    mastermindThreadsEnabled && (_historyOverride ?? _historyDefine);
+
+/// Forces the history flag on or off, or restores the build default with
+/// `null`. Tests only.
+@visibleForTesting
+void debugOverrideMastermindThreadHistory({required bool? enabled}) =>
+    _historyOverride = enabled;

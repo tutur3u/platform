@@ -25788,6 +25788,204 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Back to Threads'**
   String get mastermindBackToThreads;
+
+  /// No description provided for @mastermindThreadHistoryNotAvailableTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available on mobile'**
+  String get mastermindThreadHistoryNotAvailableTitle;
+
+  /// No description provided for @mastermindThreadHistoryNotAvailableMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Open this thread on your Mac.'**
+  String get mastermindThreadHistoryNotAvailableMessage;
+
+  /// No description provided for @mastermindThreadHistoryLimitTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Limit reached'**
+  String get mastermindThreadHistoryLimitTitle;
+
+  /// No description provided for @mastermindThreadHistoryLimitRetryAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again after {time}.'**
+  String mastermindThreadHistoryLimitRetryAt(String time);
+
+  /// No description provided for @mastermindThreadHistoryLimitLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again later.'**
+  String get mastermindThreadHistoryLimitLater;
+
+  /// No description provided for @mastermindThreadHistoryGoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This thread is no longer in Mastermind'**
+  String get mastermindThreadHistoryGoneTitle;
+
+  /// No description provided for @mastermindThreadHistoryUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'This thread was updated. Showing the newest messages.'**
+  String get mastermindThreadHistoryUpdated;
+
+  /// No description provided for @mastermindThreadHistoryAccessTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Access expired or unavailable'**
+  String get mastermindThreadHistoryAccessTitle;
+
+  /// No description provided for @mastermindThreadHistoryAccessMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in again or check your Mastermind access.'**
+  String get mastermindThreadHistoryAccessMessage;
+
+  /// No description provided for @mastermindThreadHistoryErrorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load this thread'**
+  String get mastermindThreadHistoryErrorTitle;
+
+  /// No description provided for @mastermindThreadHistoryErrorMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your connection and try again.'**
+  String get mastermindThreadHistoryErrorMessage;
+
+  /// No description provided for @mastermindThreadHistoryEarlier.
+  ///
+  /// In en, this message translates to:
+  /// **'Load earlier'**
+  String get mastermindThreadHistoryEarlier;
+
+  /// No description provided for @mastermindThreadHistoryEarlierFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load earlier messages.'**
+  String get mastermindThreadHistoryEarlierFailed;
+
+  /// No description provided for @mastermindThreadHistoryEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No messages published yet'**
+  String get mastermindThreadHistoryEmpty;
+
+  /// No description provided for @mastermindThreadHistoryWithheld.
+  ///
+  /// In en, this message translates to:
+  /// **'Message withheld. Open on Mac.'**
+  String get mastermindThreadHistoryWithheld;
+
+  /// No description provided for @mastermindThreadHistoryRest.
+  ///
+  /// In en, this message translates to:
+  /// **'Open on Mac for the rest.'**
+  String get mastermindThreadHistoryRest;
+
+  /// No description provided for @mastermindThreadHistoryRedactionNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Placeholders such as ‹path› mark details hidden for privacy.'**
+  String get mastermindThreadHistoryRedactionNote;
+
+  /// No description provided for @mastermindThreadHistoryLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock the app to see this thread'**
+  String get mastermindThreadHistoryLocked;
+
+  /// No description provided for @mastermindThreadAuthorOwnerMac.
+  ///
+  /// In en, this message translates to:
+  /// **'You (Mac)'**
+  String get mastermindThreadAuthorOwnerMac;
+
+  /// No description provided for @mastermindThreadAuthorOwnerPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'You (phone)'**
+  String get mastermindThreadAuthorOwnerPhone;
+
+  /// No description provided for @mastermindThreadAuthorSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get mastermindThreadAuthorSystem;
+
+  /// No description provided for @mastermindThreadRedactedPath.
+  ///
+  /// In en, this message translates to:
+  /// **'path'**
+  String get mastermindThreadRedactedPath;
+
+  /// No description provided for @mastermindThreadRedactedLink.
+  ///
+  /// In en, this message translates to:
+  /// **'link'**
+  String get mastermindThreadRedactedLink;
+
+  /// No description provided for @mastermindThreadRedactedLinkHost.
+  ///
+  /// In en, this message translates to:
+  /// **'link: {host}'**
+  String mastermindThreadRedactedLinkHost(String host);
+
+  /// No description provided for @mastermindThreadRedactedSecret.
+  ///
+  /// In en, this message translates to:
+  /// **'secret withheld'**
+  String get mastermindThreadRedactedSecret;
+
+  /// No description provided for @mastermindThreadRedactedId.
+  ///
+  /// In en, this message translates to:
+  /// **'id'**
+  String get mastermindThreadRedactedId;
+
+  /// No description provided for @mastermindThreadRedactedEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'email'**
+  String get mastermindThreadRedactedEmail;
+
+  /// No description provided for @mastermindThreadRedactedNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'number'**
+  String get mastermindThreadRedactedNumber;
+
+  /// No description provided for @mastermindThreadRedactedOther.
+  ///
+  /// In en, this message translates to:
+  /// **'hidden'**
+  String get mastermindThreadRedactedOther;
+
+  /// No description provided for @mastermindThreadActivityCommands.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Ran 1 command} other{Ran {count} commands}}'**
+  String mastermindThreadActivityCommands(int count);
+
+  /// No description provided for @mastermindThreadActivityEdits.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Edited 1 file} other{Edited {count} files}}'**
+  String mastermindThreadActivityEdits(int count);
+
+  /// No description provided for @mastermindThreadActivitySearches.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Searched once} other{Searched {count} times}}'**
+  String mastermindThreadActivitySearches(int count);
+
+  /// No description provided for @mastermindThreadActivitySubagents.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Ran 1 subagent} other{Ran {count} subagents}}'**
+  String mastermindThreadActivitySubagents(int count);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

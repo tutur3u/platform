@@ -6,6 +6,7 @@ import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.util.Log
+import android.view.WindowManager
 import android.widget.Toast
 import android.window.OnBackInvokedCallback
 import android.window.OnBackInvokedDispatcher
@@ -19,6 +20,7 @@ class MainActivity : FlutterFragmentActivity(), ShellBackHost {
     private var exitHintMessage: String = "Tap back once more to close the app"
     private var onBackInvokedCallback: OnBackInvokedCallback? = null
     private var shellBackChannel: MethodChannel? = null
+    private var secureScreenChannel: MethodChannel? = null
     private val mainHandler = Handler(Looper.getMainLooper())
     private val shellBack = ShellBackCoordinator(this)
 
@@ -52,6 +54,27 @@ class MainActivity : FlutterFragmentActivity(), ShellBackHost {
             flutterEngine.plugins.add(VideoPlayerPlugin())
         }.onFailure { error ->
             Log.w("MainActivity", "video_player explicit registration skipped: $error")
+        }
+
+        // While a sensitive screen is open, FLAG_SECURE keeps it out of
+        // screenshots, recordings and the recents thumbnail.
+        val secureChannel = MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "mobile/secure_screen",
+        )
+        secureScreenChannel = secureChannel
+        secureChannel.setMethodCallHandler { call, result ->
+            val secure = call.argument<Boolean>("secure")
+            if (call.method != "setSecure" || secure == null) {
+                result.notImplemented()
+                return@setMethodCallHandler
+            }
+            if (secure) {
+                window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+            } else {
+                window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+            }
+            result.success(null)
         }
 
         val channel = MethodChannel(
@@ -144,6 +167,8 @@ class MainActivity : FlutterFragmentActivity(), ShellBackHost {
         mainHandler.removeCallbacksAndMessages(null)
         shellBackChannel?.setMethodCallHandler(null)
         shellBackChannel = null
+        secureScreenChannel?.setMethodCallHandler(null)
+        secureScreenChannel = null
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             onBackInvokedCallback?.let { callback ->
                 onBackInvokedDispatcher.unregisterOnBackInvokedCallback(callback)
