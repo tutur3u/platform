@@ -16,7 +16,15 @@ DECLARE
 BEGIN
   IF TG_OP = 'UPDATE' THEN
     IF OLD.board_id IS DISTINCT FROM NEW.board_id THEN
-      -- Leaving a board drops its open sprint membership.
+      -- Leaving a board drops its open sprint membership. Lock both boards
+      -- first, in id order so opposite moves cannot deadlock, so a sprint
+      -- move on the old board (which holds it FOR UPDATE) either finishes
+      -- before this deletion or sees the task already gone.
+      PERFORM 1
+      FROM public.workspace_boards
+      WHERE id IN (OLD.board_id, NEW.board_id)
+      ORDER BY id
+      FOR SHARE;
       IF OLD.board_id IS NOT NULL THEN
         DELETE FROM public.task_cycle_tasks tct
         USING public.task_cycles c
