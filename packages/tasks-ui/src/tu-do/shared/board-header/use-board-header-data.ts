@@ -45,7 +45,9 @@ export function useBoardHeaderData({
     enabled: enabled && Boolean(workspaceId && boardId),
     staleTime: 5 * 60 * 1000,
   });
+  // Deleted lists still arrive with the board but are never loaded.
   const countsComplete = lists.every((list) => {
+    if (list.deleted) return true;
     const state = pagination[list.id];
     return state && !state.hasMore && !state.isInitialLoad && !state.isLoading;
   });
