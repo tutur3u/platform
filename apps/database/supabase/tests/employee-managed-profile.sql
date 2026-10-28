@@ -5,6 +5,10 @@ select no_plan();
 insert into auth.users(id,email,email_confirmed_at,raw_app_meta_data,raw_user_meta_data) values
 ('00000000-0000-4000-8000-000000012001','profile-admin@tuturuuu.com',now(),'{}','{}'),
 ('00000000-0000-4000-8000-000000012003','profile-foreign@example.test',now(),'{}','{}');
+-- Real Auth users carry a provider identity; verified staff checks require one.
+insert into auth.identities(id,provider_id,user_id,identity_data,provider)
+select gen_random_uuid(),u.id::text,u.id,jsonb_build_object('sub',u.id::text,'email',u.email),'email'
+from auth.users u where not exists(select 1 from auth.identities i where i.user_id=u.id);
 insert into public.workspaces(id,name,creator_id,personal) values
 ('00000000-0000-0000-0000-000000000000','Profile fixture','00000000-0000-4000-8000-000000012001',false)
 on conflict(id) do update set creator_id=excluded.creator_id;
@@ -15,6 +19,10 @@ select private.employee_creation_preflight('00000000-0000-4000-8000-000000012001
 '00000000-0000-4000-8000-000000012002','profile-target@tuturuuu.com','Original Name');
 insert into auth.users(id,email,email_confirmed_at,banned_until,raw_app_meta_data,raw_user_meta_data) values
 ('00000000-0000-4000-8000-000000012002','profile-target@tuturuuu.com',now(),now()+interval '100 years','{"employee_onboarding":true}','{}');
+-- Real Auth users carry a provider identity; verified staff checks require one.
+insert into auth.identities(id,provider_id,user_id,identity_data,provider)
+select gen_random_uuid(),u.id::text,u.id,jsonb_build_object('sub',u.id::text,'email',u.email),'email'
+from auth.users u where not exists(select 1 from auth.identities i where i.user_id=u.id);
 select private.finalize_employee_creation('00000000-0000-4000-8000-000000012001',
 '00000000-0000-4000-8000-000000012002','profile-target@tuturuuu.com','Original Name');
 update auth.users set banned_until=null where id='00000000-0000-4000-8000-000000012002';

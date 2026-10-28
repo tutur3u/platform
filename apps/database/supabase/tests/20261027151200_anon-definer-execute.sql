@@ -405,6 +405,7 @@ INSERT INTO definer_execute_expected VALUES
   ('public.is_user_task_in_board(uuid,uuid)', false, true),
   ('public.is_user_whitelisted(uuid)', false, true),
   ('public.is_valid_personal_task_placement(uuid,uuid,uuid)', true, true),
+  ('public.is_verified_tuturuuu_staff(uuid,boolean)', true, true),
   ('public.is_workspace_owner(uuid,uuid)', true, true),
   ('public.issue_profile_banner_upload(uuid,uuid)', false, true),
   ('public.list_deferred_calendar_google_imports(uuid,text,uuid)', false, true),
