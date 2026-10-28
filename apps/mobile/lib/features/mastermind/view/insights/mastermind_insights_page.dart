@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
+import 'package:mobile/features/mastermind/presentation/gmt7.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
 import 'package:mobile/features/mastermind/presentation/usage_charts.dart';
 import 'package:mobile/features/mastermind/presentation/usage_model.dart';
@@ -33,6 +34,21 @@ class MastermindInsightsPage extends StatelessWidget {
           ),
           SliverList.list(
             children: [
+              if (model.gaps.isNotEmpty)
+                AppGroupedSection.spaced(
+                  children: [
+                    for (final gap in model.gaps)
+                      AppGroupedRow(
+                        title: Text(
+                          l10n.mastermindGapSummary(
+                            Gmt7.time(gap.start, l10n.localeName),
+                            Gmt7.time(gap.end, l10n.localeName),
+                            gap.label(l10n),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               if (model.isEmpty)
                 AppGroupedSection.spaced(
                   caption: l10n.mastermindScopeUsage,

@@ -3,12 +3,12 @@ import 'dart:typed_data';
 
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/parse/strict_json.dart';
+import 'package:mobile/features/mastermind/presentation/hub_companion_adapter.dart';
 import 'package:mobile/features/mastermind/presentation/hub_contract_adapter.dart';
 import 'package:mobile/features/mastermind/presentation/hub_field.dart';
 import 'package:mobile/features/mastermind/presentation/usage_gaps.dart';
 
 part 'parse_items_0.dart';
-part 'parse_resolved_history.dart';
 part 'parse_items_1.dart';
 part 'parse_observability_delivery_0.dart';
 part 'parse_observability_delivery_1.dart';
@@ -22,6 +22,7 @@ part 'parse_products_0.dart';
 part 'parse_products_1.dart';
 part 'parse_products_2.dart';
 part 'parse_products_3.dart';
+part 'parse_resolved_history.dart';
 part 'parse_snapshot_0.dart';
 part 'parse_snapshot_1.dart';
 part 'parse_variants.dart';

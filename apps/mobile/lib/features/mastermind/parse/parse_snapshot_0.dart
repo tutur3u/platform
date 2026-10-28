@@ -4,26 +4,15 @@ MastermindSnapshot parseRootSnapshot(JsonReader input) {
   final history = parseResolvedHistory(input.object()['decisions_resolved']);
   final r =
       JsonReader(
-        adaptDecisionCollections({
-          ...input.object(),
-          'decisions_resolved': history.rows,
-        }, acceptsItem: acceptsDecisionItem),
+        adaptHubCompanions(
+          adaptDecisionCollections({
+            ...input.object(),
+            'decisions_resolved': history.rows,
+          }, acceptsItem: acceptsDecisionItem),
+        ),
         input.path,
       )..keys(
-        [
-          'decisions_resolved',
-          'schema_version',
-          'generated_at',
-          'now',
-          'lanes',
-          'backlog',
-          'products',
-          'environments',
-          'decisions',
-          'decisions_skipped',
-          'observability',
-          'sources',
-        ],
+        [...input.object().keys, 'decisions_resolved'],
         [
           'schema_version',
           'generated_at',
@@ -39,6 +28,7 @@ MastermindSnapshot parseRootSnapshot(JsonReader input) {
         ],
       );
   return MastermindSnapshot(
+    workCounts: hubWorkCounts(input.object()['work']),
     resolvedItems: history.items,
     schemaVersion: r.field('schema_version').string(constant: '1.4'),
     generatedAt: r.field('generated_at').utcTimestamp(),

@@ -580,3 +580,13 @@ then carries it across the modal navigator boundary. It uses the shared sheet
 scaffold's trailing space; the feature does not estimate dock dimensions. The
 source-sheet regression verifies that its last row stays above the dock and can
 be hit-tested after scrolling to the end.
+
+Forge v1 publishes field health beside the legacy arrays: `ship[]` supplies
+`deploy`, `ci`, and `released_at`; `work.lanes[]` supplies age/ETA observations;
+`insights[].weekly` supplies weekly budget and pacing observations. Mobile adapts
+these companion paths and can show their reasons even when legacy environment
+and usage-instance lists are empty. `work.counts` supplies Home's top-level
+running, waiting, and idle counts. Unknown root keys, `asks_source`, and
+`decisions_unknown` are safe to ignore. The exact redacted publisher fixture is
+covered by `test/features/mastermind/view/forge_v1_fixture_test.dart`; it verifies
+all five tabs, open asks, resolved history, source reasons, gaps, and counts.

@@ -32,7 +32,7 @@ void main() {
   });
 
   final mutations = <String, void Function(Map<String, dynamic>)>{
-    'unknown root key': (r) => r['unexpected'] = true,
+    'missing now': (r) => r.remove('now'),
     'unknown usage point key': (r) => usageRow(r)['unexpected'] = true,
     'invalid lane state': (r) => map(list(r['lanes']).first)['state'] = 'NEW',
     'missing required key': (r) => r.remove('sources'),
