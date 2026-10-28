@@ -1425,9 +1425,11 @@ function TaskCardInner({
     }
 
     // Project indicator badge
-    if (
-      getTaskCardBadgeProjects(task.projects, taskTicketIdentifier).length > 0
-    ) {
+    const badgeProjects = getTaskCardBadgeProjects(
+      task.projects,
+      taskTicketIdentifier
+    );
+    if (badgeProjects.length > 0) {
       badges.push({
         id: 'projects',
         element: (
@@ -1439,7 +1441,7 @@ function TaskCardInner({
             }}
           >
             <TaskCardMetadataTooltip
-              content={`${t('projects')}: ${task.projects
+              content={`${t('projects')}: ${badgeProjects
                 .map((project) => project.name)
                 .join(', ')}`}
             >
@@ -1451,9 +1453,9 @@ function TaskCardInner({
                 )}
               >
                 <Box className="h-2.5 w-2.5" />
-                {task.projects.length === 1
-                  ? task.projects[0]?.name
-                  : t('n_projects', { count: task.projects.length })}
+                {badgeProjects.length === 1
+                  ? badgeProjects[0]?.name
+                  : t('n_projects', { count: badgeProjects.length })}
               </Badge>
             </TaskCardMetadataTooltip>
           </div>
