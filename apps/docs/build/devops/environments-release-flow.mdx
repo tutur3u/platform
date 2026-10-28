@@ -329,3 +329,13 @@ integrity checks. Its contract also transfers the pristine snapshot to a separat
 runner and requires a verified restore, so a safe cold fallback cannot hide a
 broken cross-runner cache. Restore failures report only their phase, without
 printing credential-bearing child-process output.
+
+
+## Staff-session configuration
+
+`TUTURUUU_AZURE_TENANT_ID` is a server-only setting for staff-session verification.
+Operators configure it in each affected server environment: web (including Colab
+and multiplayer auth), Mail, Tasks, Infrastructure, AI, Calendar, Track, Meet,
+Parley, Lettin and Rewise. Examples list the
+name without a value; an unset setting fails closed for Azure-linked staff
+sessions. See [staff authorization](/platform/architecture/authorization#staff-session-verification).

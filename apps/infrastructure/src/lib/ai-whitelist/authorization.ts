@@ -1,10 +1,11 @@
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import 'server-only';
 
 import {
   resolveSatellitePageActor,
   resolveSatelliteRequestActor,
 } from '@tuturuuu/satellite/workspace-access';
-import { getVerifiedAuthEmail } from '@tuturuuu/supabase/next/user';
+import { getVerifiedAuthUser } from '@tuturuuu/supabase/next/user';
 
 export async function hasAIWhitelistAccess(request?: Request) {
   const actor = request
@@ -12,6 +13,7 @@ export async function hasAIWhitelistAccess(request?: Request) {
     : await resolveSatellitePageActor('infra');
 
   if (!actor) return false;
-  const email = await getVerifiedAuthEmail(actor.admin, actor.user.id);
-  return Boolean(email?.endsWith('@tuturuuu.com'));
+  return isVerifiedTuturuuuStaffSession(
+    await getVerifiedAuthUser(actor.admin, actor.user.id)
+  );
 }

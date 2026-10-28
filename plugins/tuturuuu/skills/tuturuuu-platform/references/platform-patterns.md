@@ -1366,3 +1366,17 @@ Keep editable profile/contact emails and supplied session emails for display onl
 Direct recipient ids remain valid without a confirmed mailbox. Cross-app SQL must
 canonicalize at both minting and redemption so outstanding handoffs follow the
 same rule; preserve the signed MFA transfer and existing bearer-redemption ACL.
+
+
+### Staff-session authorization
+
+Use `@tuturuuu/utils/email/staff-session` only with a current subject-bound Auth
+user containing provider identities. App-session and profile projections require
+`getVerifiedAuthUser` first. Preserve independent workspace/role and feature gates;
+an address syntax predicate or UI visibility flag never grants staff authority.
+See the staff-session decision in `apps/docs/platform/architecture/authorization.mdx`
+and the shared helper's identity matrix and route denial regressions.
+
+For AI memory or billing attribution, resolve the request scope with
+`authorizeAiWorkspace` before provider or memory work. Temporary authentication
+does not grant workspace membership; retain a canonical authorized workspace id.

@@ -13,8 +13,10 @@ import {
   parseSidebarBehavior,
 } from '@tuturuuu/satellite/workspace-layout-helpers';
 import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provider';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { getVerifiedAuthUser } from '@tuturuuu/supabase/next/user';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
-import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { cookies, headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
@@ -42,9 +44,16 @@ export default async function Layout({ children, params }: LayoutProps) {
   const user = await getSatelliteAppSessionUser('mail');
 
   if (!user?.id) redirect('/login');
+  const isStaff = isVerifiedTuturuuuStaffSession(
+    user &&
+      (await getVerifiedAuthUser(
+        await createAdminClient({ noCookie: true }),
+        user.id
+      ))
+  );
   const workspace = await getWorkspace(id, { useAdmin: true, user });
 
-  if (!workspace?.personal && !isExactTuturuuuDotComEmail(user.email)) {
+  if (!workspace?.personal && !isStaff) {
     redirect('/not-available');
   }
 
@@ -81,9 +90,7 @@ export default async function Layout({ children, params }: LayoutProps) {
   );
 
   return (
-    <MailSourceProvider
-      connectedByDefault={!isExactTuturuuuDotComEmail(user.email)}
-    >
+    <MailSourceProvider connectedByDefault={!isStaff}>
       <SidebarProvider
         initialBehavior={sidebarBehavior}
         initialBehaviorUpdatedAt={sidebarBehaviorUpdatedAt}

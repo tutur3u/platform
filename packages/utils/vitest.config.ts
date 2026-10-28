@@ -16,6 +16,17 @@ export default defineConfig({
   resolve: {
     alias: [
       {
+        find: '@tuturuuu/supabase/next/user',
+        replacement: resolve(__dirname, '../supabase/src/next/user.ts'),
+      },
+      {
+        find: '@tuturuuu/supabase/next/auth-session-user',
+        replacement: resolve(
+          __dirname,
+          '../supabase/src/next/auth-session-user.ts'
+        ),
+      },
+      {
         find: '@tuturuuu/supabase/next/common',
         replacement: resolve(__dirname, '../supabase/src/next/common.ts'),
       },

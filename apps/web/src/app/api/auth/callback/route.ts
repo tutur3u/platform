@@ -6,6 +6,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveAuthRedirectOrigin } from '@/app/[locale]/(auth)/login/auth-redirect-origin';
 import { getExternalAppByReturnUrl } from '@/lib/app-coordination/external-apps';
+import { isAzureSessionTenantAllowed } from '@/lib/auth/azure-tenant';
 import {
   createAuthDiagnosticCode,
   getReturnUrlKind,
@@ -167,13 +168,37 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const supabase = await createClient();
 
   if (_code) {
+    let sessionExchanged = false;
+    const clearLocalSession = async () => {
+      try {
+        const result = await supabase.auth.signOut({ scope: 'local' });
+        if (result?.error) {
+          console.error('[auth/callback] Failed to clear local session');
+        }
+      } catch {
+        console.error('[auth/callback] Failed to clear local session');
+      }
+    };
     try {
       // Exchange the code for a session
       const exchangeResult = await supabase.auth.exchangeCodeForSession(_code);
       if (exchangeResult?.error) {
         throw exchangeResult.error;
       }
+      sessionExchanged = true;
+      if (
+        !isAzureSessionTenantAllowed(
+          exchangeResult?.data?.session,
+          process.env.TUTURUUU_AZURE_TENANT_ID
+        )
+      ) {
+        await clearLocalSession();
+        const loginUrl = new URL('/login', redirectOrigin);
+        loginUrl.searchParams.set('error', 'azure_tenant_restricted');
+        return NextResponse.redirect(loginUrl);
+      }
     } catch (error) {
+      if (sessionExchanged) await clearLocalSession();
       const diagnosticCode = createAuthDiagnosticCode(
         'oauth_callback_exchange'
       );

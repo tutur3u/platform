@@ -103,3 +103,59 @@ test('assertSecureDartDefines throws for a cleartext file and honors args', () =
     })
   );
 });
+
+test('Linux development release guard skips missing URLs and validates configured URLs', () => {
+  const { spawnSync } = require('node:child_process');
+  const workflow = fs.readFileSync(
+    path.join(__dirname, '../.github/workflows/mobile-build-linux.yaml'),
+    'utf8'
+  );
+  const step = workflow
+    .split('      - name: Check development release configuration')[1]
+    .split('      - name: Build Linux')[0];
+  const script = step
+    .split('        run: |\n')[1]
+    .split('\n')
+    .map((line) => line.replace(/^ {10}/u, ''))
+    .join('\n');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mobile-linux-guard-'));
+  try {
+    for (const [supabase, api, status, ready] of [
+      ['', '', 0, 'false'],
+      ['https://project.supabase.co', '', 0, 'false'],
+      ['', 'https://tuturuuu.com', 0, 'false'],
+      ['https://project.supabase.co', 'https://tuturuuu.com', 0, 'true'],
+      ['http://project.supabase.co', 'https://tuturuuu.com', 1, null],
+    ]) {
+      const output = path.join(dir, 'output');
+      fs.writeFileSync(output, '');
+      const result = spawnSync('bash', ['-e', '-c', script], {
+        cwd: path.join(__dirname, '..'),
+        env: {
+          ...process.env,
+          SUPABASE_URL: supabase,
+          API_BASE_URL: api,
+          GITHUB_OUTPUT: output,
+          GITHUB_STEP_SUMMARY: path.join(dir, 'summary'),
+        },
+        encoding: 'utf8',
+      });
+      assert.equal(result.status, status, result.stderr);
+      assert.equal(
+        fs.readFileSync(output, 'utf8'),
+        ready ? `ready=${ready}\n` : ''
+      );
+    }
+    for (const name of ['Build Linux', 'Audit Linux bundle']) {
+      const section = workflow
+        .split(`      - name: ${name}\n`)[1]
+        .split('      - name: ')[0];
+      assert.match(
+        section,
+        /if: steps.release-config.outputs.ready == 'true'/u
+      );
+    }
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});

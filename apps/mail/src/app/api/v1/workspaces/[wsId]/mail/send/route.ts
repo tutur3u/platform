@@ -1,11 +1,12 @@
 import { sendWorkspaceEmail } from '@tuturuuu/email-service';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { getVerifiedAuthUser } from '@tuturuuu/supabase/next/user';
 import {
   extractIPFromHeaders,
   isIPBlocked,
 } from '@tuturuuu/utils/abuse-protection';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { DEV_MODE } from '@/constants/common';
@@ -127,11 +128,15 @@ export async function POST(
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  const userEmail = apiKeyUser.email;
-  if (!userEmail || !isValidTuturuuuEmail(userEmail)) {
+  const authUser = await getVerifiedAuthUser(sbAdmin, apiKey.user_id);
+  const userEmail = authUser?.email;
+  if (
+    !userEmail ||
+    !isVerifiedTuturuuuStaffSession(authUser, { allowXwf: true })
+  ) {
     return NextResponse.json(
       { message: 'Only Tuturuuu emails are allowed' },
-      { status: 401 }
+      { status: 403 }
     );
   }
 
