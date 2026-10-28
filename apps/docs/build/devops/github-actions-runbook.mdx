@@ -5,7 +5,8 @@ updatedAt: "2026-10-03"
 ---
 
 <Note>
-Current runtime policy: Docker setup and Docker-backed E2E/image CI are paused;
+Current runtime policy: general Docker setup and Docker-backed E2E/image CI are paused;
+the narrowly scoped [report-only Web E2E](#report-only-web-e2e) workflow is the sole exception;
 the Docker cron runner is retired. Rust and `apps/tanstack-web` remain paused.
 Calendar native candidate CI is a separately admitted application scope; it does
 not resume the retained migration runtime. Retained Docker and
@@ -2541,3 +2542,75 @@ historical timeout. A timer callback proves deadline classification before
 settlement, not daemon failure or a Node/Bun adapter defect. Keep causal diagnosis
 UNKNOWN until same-invocation evidence distinguishes those hypotheses; source
 review and mock tests do not qualify hosted runtime acceptance.
+
+## Report-only Web E2E
+
+The sole Docker exception is `.github/workflows/e2e-smoke-report-only.yaml`:
+trusted main pushes run Web browser smoke; the nightly schedule runs the full
+non-quarantined Web browser suite at 19:17 UTC. Manual main dispatch runs smoke.
+A temporary CLI compatibility launcher forwards retained helpers' `bunx` calls
+to `bun x`; dependency installation uses the repository retry helper.
+The user authorized this workflow-specific exception on 2026-10-28. Existing
+disabled E2E/image/setup jobs, general Docker commands, Rust, TanStack, and the
+Docker cron runner remain paused. This is CI browser verification, not a
+deployment or permission to run arbitrary Docker tasks.
+
+The three Chromium smoke tests cover login rendering, seeded password sign-in,
+and signup through team onboarding, workspace, board, and persisted task creation.
+The full lifecycle test retains invitation and Kanban CRUD coverage. Collect
+from Web with `bunx playwright test --list --grep @smoke --grep-invert @quarantine`.
+The target is at most six minutes of Playwright time, enforced with a 330-second
+global budget and no retries. Provisioning is separate and can require image
+builds and database setup; total runtime is not yet measured. The nightly
+Playwright budget is 40 minutes.
+
+The registered fleet labels are `self-hosted, macOS, ARM64,
+tuturuuu-mac-studio`. There is no FLEET-labelled workflow template on main.
+The scoped `scripts/ci/run-web-e2e-report-only.js` launcher admits only this
+workflow at main on a self-hosted Mac. It calls the retained launcher directly;
+the general package aliases still refuse execution. Rust backend, native host
+builds, global BuildKit pruning, and the cron runner are forced off. Only Next
+and the services/satellites required by its browser fixtures run.
+
+### Fleet isolation and recovery
+
+Each run uses unique Compose and Supabase project identities and private
+`PORTLESS_STATE_DIR` state. The retained TLS-marker cleanup honors that private
+directory. A host lock at `~/.tuturuuu/ci-web-e2e.lock` serializes these jobs
+across runner registrations and event types. An already busy Docker daemon or
+required local port fails admission before any existing runtime is touched.
+Such a failure is diagnostic, not a green or skipped smoke result.
+
+Ordinary pushes supersede older ordinary pushes. Manual dispatches and reruns
+use distinct immutable concurrency groups. The host lock additionally protects
+fixed local auth origins across those groups. The always-running cleanup step
+checks the lock's run/attempt/workspace identity before stopping only its own
+Compose project, Supabase fixture and private Portless proxy. Cleanup failure
+retains the lock. After an interrupted runner, the CI owner must inspect
+`owner.json`, verify/stop the identified resources, and verify no fixture
+processes or containers remain before removing that specific stale lock.
+Do not automatically steal locks, kill unrelated workloads, or globally prune
+Docker to recover capacity.
+
+### Observation, quarantine and graduation
+
+The job is report-only with `continue-on-error: true` and must remain outside
+branch protection during the first observation week. Its summary records the
+actual smoke/nightly/cleanup step outcomes. Seven-day HTML reports and failure
+traces are uploaded on every outcome when available. Use only disposable local
+fixtures and inspect trace content before sharing. A green workflow wrapper
+alone does not establish a successful browser run; inspect the step outcomes.
+
+Append `@quarantine` to a flaky test title, retaining `@smoke` when applicable.
+Both commands exclude that tag. File one GitHub issue per quarantined test with
+its file and exact title, failing run/artifact link, observed failure, reproduction
+command, owner, and a review date within seven days. Link the issue in a nearby
+test comment. Fix the cause, verify repeated real runs, then remove the tag and
+close the issue. Do not quarantine setup failures or the entire suite.
+Collect quarantined tests with `bunx playwright test --list --grep @quarantine`.
+
+The observation week begins with the first successful enabled run. After seven
+consecutive days of green smoke runs, propose making smoke required in a separate
+reviewed change with exact-head reports, measured runtime, flake/quarantine
+inventory, and branch-protection approval. Missing, skipped, busy-runner, timed-out,
+or failed-cleanup runs do not count green. Nightly remains diagnostic.
