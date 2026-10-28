@@ -76,7 +76,7 @@ void main() {
         'Ship',
         'Quota',
         'Activity',
-        // Last: the Decisions journal is deferred.
+        // Last: the latest few, with a link to the journal.
         'Recent decisions',
       ];
       final tops = [for (final label in order) _top(tester, label)];
@@ -211,7 +211,8 @@ void main() {
       expect(find.text('Nothing needs a reply'), findsOneWidget);
       expect(find.text("You're all caught up"), findsNothing);
       expect(find.text('Mastermind · security fix'), findsOneWidget);
-      expect(find.textContaining('See all'), findsNothing);
+      // The Decisions card's own link is not the Needs-you "See all (N)".
+      expect(find.textContaining('See all ('), findsNothing);
     });
 
     testWidgets('an empty export is all caught up with no Security group', (
@@ -353,6 +354,7 @@ void main() {
       'See all (4)': '/mastermind/inbox',
       '1 failed': '/mastermind/work?state=failed',
       'Usage': '/mastermind/insights',
+      'See all decisions': '/mastermind/inbox?segment=decisions',
     }.entries) {
       testWidgets('${entry.key} opens ${entry.value}', (tester) async {
         final visited = await pumpRouted(tester);
@@ -406,16 +408,6 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('First decision'), findsOneWidget);
     });
-
-    // Decisions have no detail screen: the journal is deferred.
-    for (final label in ['Decision log 3']) {
-      testWidgets('$label is not tappable', (tester) async {
-        final visited = await pumpRouted(tester);
-        await tester.tap(find.text(label).first, warnIfMissed: false);
-        await tester.pumpAndSettle();
-        expect(visited, isEmpty);
-      });
-    }
   });
 
   group('eventSummary', () {

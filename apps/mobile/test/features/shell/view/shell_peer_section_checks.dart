@@ -212,15 +212,21 @@ void registerShellPeerSectionChecks({
     _expectPoppedBackToInsights(router);
   });
 
-  for (final origin in [Routes.mastermind, Routes.mastermindInbox]) {
+  for (final origin in [
+    Routes.mastermind,
+    Routes.mastermindInbox,
+    '${Routes.mastermindInbox}?segment=decisions',
+  ]) {
     for (final dock in [false, true]) {
-      testWidgets(
-        '${dock ? 'dock' : 'system'} Back from an item opened on $origin '
-        'returns to $origin',
-        (tester) async {
+      for (final decision in [false, true]) {
+        final originPath = Uri.parse(origin).path;
+        testWidgets('${dock ? 'dock' : 'system'} Back from '
+            '${decision ? 'a decision' : 'an item'} opened on $origin '
+            'returns to $origin', (tester) async {
           final router = await _pumpItemOver(
             tester,
             origin: origin,
+            decision: decision,
             appTabCubit: appTabCubit(),
             authCubit: authCubit(),
             workspaceCubit: workspaceCubit(),
@@ -234,20 +240,22 @@ void registerShellPeerSectionChecks({
           await _pumpForTransitions(tester);
 
           // A real pop, not the mini-app parent fallback, which lands on the
-          // Inbox even when the item was opened from Home.
-          expect(router.routeInformationProvider.value.uri.path, origin);
+          // Inbox even when the detail was opened from Home or Decisions.
+          expect(router.routeInformationProvider.value.uri.path, originPath);
           expect(find.text('page $origin'), findsOneWidget);
-        },
-      );
+        });
+      }
     }
   }
 }
 
-/// Boots the Work shell, goes to [origin], then pushes an item over it, the
-/// way the Home Needs-you rows and the Inbox rows both open one.
+/// Boots the Work shell, goes to [origin], then pushes an item (or, with
+/// [decision], a journal decision) over it, the way the Home rows and the
+/// Inbox rows both open one.
 Future<GoRouter> _pumpItemOver(
   WidgetTester tester, {
   required String origin,
+  required bool decision,
   required AppTabCubit appTabCubit,
   required AuthCubit authCubit,
   required WorkspaceCubit workspaceCubit,
@@ -271,9 +279,15 @@ Future<GoRouter> _pumpItemOver(
   await _pumpForTransitions(tester);
   router.go(origin);
   await _pumpForTransitions(tester);
-  router.push<void>(Routes.mastermindInboxItemPath('item-1')).ignore();
+  router
+      .push<void>(
+        decision
+            ? Routes.mastermindInboxDecisionPath('d_1')
+            : Routes.mastermindInboxItemPath('item-1'),
+      )
+      .ignore();
   await _pumpForTransitions(tester);
-  expect(find.text('item item-1'), findsOneWidget);
+  expect(find.text(decision ? 'decision d_1' : 'item item-1'), findsOneWidget);
   return router;
 }
 
@@ -385,8 +399,13 @@ GoRouter _buildMastermindWorkRouter() => GoRouter(
         ),
         GoRoute(
           path: Routes.mastermindInbox,
-          builder: (context, state) =>
-              const _RoutePage(label: 'page ${Routes.mastermindInbox}'),
+          builder: (context, state) => _RoutePage(label: 'page ${state.uri}'),
+        ),
+        GoRoute(
+          path: Routes.mastermindInboxDecision,
+          builder: (context, state) => _RoutePage(
+            label: 'decision ${state.pathParameters['decisionId']}',
+          ),
         ),
         GoRoute(
           path: Routes.mastermindInboxItem,

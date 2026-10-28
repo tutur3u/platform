@@ -107,8 +107,8 @@ only. Each Needs-you row opens its item detail with a push, so Back returns to
 Home. Replies queued on the device show as "N replies waiting to send"
 directly under Needs you, the same row as in the Inbox.
 
-Recent-decision rows are display only: the Decisions journal is deferred (see
-Product decisions), so they have no tap target, no chevron and no promise text.
+Each recent-decision row opens its decision detail with a push, so Back returns
+to Home, and "See all decisions" opens the Decisions segment of the Inbox.
 "See all", the lane chips, the Ship rows and "Usage" link to their tabs: a lane
 chip opens Work already filtered to that state, and a Ship row (a failing
 environment or a release) opens `/mastermind/ship?product=<product>`. A lane
@@ -129,8 +129,8 @@ kind and product chips and the options as read-only chips; the recommended optio
 the word "Recommended" and a star, never colour alone. A search field
 ("Search Needs you") and product chips narrow the list. Pull to refresh.
 
-- **Scope:** normal Needs-you items only. The Decisions journal is a later
-  change; this tab has no segmented control until it exists.
+- **Scope:** the Needs you segment lists normal Needs-you items only; the
+  Decisions segment is the journal (below).
 - **Security rows** keep the Home rule: one non-tappable line in a trailing
   "Security" group with no count, never counted, searched or filtered, with no
   severity, id or detail.
@@ -147,6 +147,36 @@ the word "Recommended" and a star, never colour alone. A search field
 - **The "Reply on Mac" option** is a placeholder the publisher adds when an item
   has nothing to pick. It is never offered as a choice and the app never sends
   it.
+
+### Decisions
+
+The Inbox opens on a "Needs you / Decisions" segmented control. The segment
+lives in the URL: Needs you is the bare `/mastermind/inbox` and Decisions is
+`/mastermind/inbox?segment=decisions` (an unknown value is Needs you).
+Switching is a `go`, never a push, so Back does not walk the segments. Home
+links straight to the Decisions segment.
+
+The Decisions segment lists the journal (`decisions[]`) newest first, grouped by
+GMT+7 calendar day (a decision at 17:30 UTC belongs to the next GMT+7 day), each
+day with a count. A row shows the title, the GMT+7 time, category, risk as the
+words "Risk: low / medium / high" plus a signal glyph, and the product. Chips
+filter by product and by reversible / not reversible; a chip only exists while it
+can split the journal, and a filter whose chip left the data is dropped. The
+filters survive opening a decision and coming back. When `decisions_skipped` is
+above zero the list ends with "N older decisions aren't included in this
+snapshot." An empty journal says "No decisions recorded yet."
+
+`/mastermind/inbox/decision/:decisionId` opens one decision in full: why ("No
+reason recorded" when absent), decided by (Mastermind, You, or "Role: `<slug>`"
+with the slug verbatim), reversible ("Can be reversed" / "Not reversible"),
+risk, category, area, product and the absolute GMT+7 time. It is pushed from the
+Decisions list and from Home, and the shell pops it on Back like an item or
+lane. The id is an opaque snapshot id and a route parameter only. An id the
+snapshot no longer holds shows "This decision is no longer in Mastermind" with a
+way back to the Decisions segment; a decision whose fields changed while open
+shows "This decision was updated". The journal is history: there is no reply
+control. Security decisions do not exist in schema 1.4 and are never rendered;
+the Needs-you "Security" group never appears on this segment.
 
 ### Replies
 
@@ -352,12 +382,14 @@ Delivery sections arrive later and reuse the table route below).
 
 ## Product decisions
 
-- **Decisions journal deferred.** Scope: the Inbox tab, Home and the item
-  detail. Default: Home shows the latest three decisions in the last card,
-  display only, with no link, chevron or "coming soon" copy; the Inbox has no
-  segmented control. Exception: none until a later change adds the journal and
-  its detail screen. Coverage: `mastermind_home_page_test.dart` (card last, no
-  tap target).
+- **Decisions journal.** Scope: the Inbox Decisions segment, the decision
+  detail and Home's recent-decisions card. Default: the Inbox has a Needs you /
+  Decisions segmented control with the segment in the URL; Home rows open the
+  detail and "See all decisions" opens the segment. Exceptions: the journal is
+  history and is not answerable; search and risk/area filters are not offered
+  yet. Coverage: `mastermind_decisions_test.dart`,
+  `mastermind_decision_page_test.dart`, the "Back from a decision" cases in
+  `shell_peer_section_checks.dart`.
 - **Offline reply queuing.** Scope: replies from the item detail, on every app
   surface that shows the "N replies waiting to send" row (Home and Inbox).
   Default: a reply that cannot be delivered stays queued on the device and is
@@ -409,6 +441,11 @@ chart-spec gaps are deferred to PR8 with the remaining chart sections:
   pull-to-refresh.
 - `runtime/mastermind_auth_reset_test.dart`: the app-level logout and
   account-switch listener over a real `AuthCubit`.
+- `mastermind_decisions_test.dart`: journal order and GMT+7 day grouping,
+  product and reversible chips, the segment in the URL (no Back walk), Home
+  links, redaction.
+- `mastermind_decision_page_test.dart`: decision fields, the gone and updated
+  states, no reply controls.
 - `mastermind_freshness_test.dart`: strip states, the live region and the
   sources sheet opened from the strip.
 - `mastermind_sources_sheet_test.dart`: the Home navbar action opens the same
