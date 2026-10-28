@@ -5,14 +5,16 @@ import {
 } from '@tuturuuu/utils/common/page-metadata';
 import en from '../../messages/en.json';
 import vi from '../../messages/vi.json';
+import { type NativeLegalKind, nativeLegalPage } from '../native-legal';
 
-export function legalHead(kind: 'privacy' | 'terms', locale: 'en' | 'vi') {
-  const copy = (locale === 'vi' ? vi : en).marketingSeo[kind];
+export function legalHead(kind: NativeLegalKind, locale: 'en' | 'vi') {
+  const page = nativeLegalPage(kind);
+  const copy = (locale === 'vi' ? vi : en).marketingSeo[page.seoKey];
   const metadata = createPageMetadata({
     ...copy,
     baseUrl: TUTURUUU_URL,
     locale,
-    pathname: `/${kind}`,
+    pathname: `/${page.slug}`,
     localePrefix: 'as-needed',
   });
   const og = metadata.openGraph;

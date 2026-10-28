@@ -15,14 +15,23 @@ const env = {
   AUTH_COOKIE_DOMAIN: stagingProfile.cookieDomain,
   TRUSTED_PROXY_ORIGIN_SECRET: 'disposable-test-origin-proof-key-123456',
 };
-const paths = [
-  '/privacy',
-  '/terms',
-  '/en/privacy',
-  '/en/terms',
-  '/vi/privacy',
-  '/vi/terms',
-];
+const pages = [
+  { kind: 'privacy', slug: 'privacy', seoKey: 'privacy' },
+  { kind: 'terms', slug: 'terms', seoKey: 'terms' },
+  { kind: 'acceptable-use', slug: 'acceptable-use', seoKey: 'acceptable_use' },
+  { kind: 'dpa', slug: 'legal/dpa', seoKey: 'legal_dpa' },
+  { kind: 'sla', slug: 'legal/sla', seoKey: 'legal_sla' },
+  {
+    kind: 'subprocessors',
+    slug: 'legal/subprocessors',
+    seoKey: 'legal_subprocessors',
+  },
+] as const;
+const paths = pages.flatMap(({ slug }) => [
+  `/${slug}`,
+  `/en/${slug}`,
+  `/vi/${slug}`,
+]);
 function setup() {
   const start = vi.fn(async () => new Response('<main>native legal</main>'));
   const fetcher = vi.fn<Fetcher>(
@@ -55,7 +64,7 @@ describe('native legal slice dispatch and rollback', () => {
       const { start, fetcher, handler } = setup();
       for (const method of ['GET', 'HEAD']) {
         const response = await handler(
-          request(path + '?tag=1&tag=2', { method }),
+          request(`${path}?tag=1&tag=2`, { method }),
           env
         );
         expect(response.status).toBe(200);
@@ -75,24 +84,26 @@ describe('native legal slice dispatch and rollback', () => {
     }
   );
   it.each([undefined, '', 'off', 'true', 'unknown'])(
-    'rolls back to attested Next for %s',
+    'rolls back every public route to attested Next for %s',
     async (flag) => {
       const { start, fetcher, handler } = setup();
-      const response = await handler(request('/vi/privacy?keep=%2f'), {
-        ...env,
-        WEB_START_NATIVE_LEGAL: flag,
-      });
-      expect(await response.text()).toBe('Next');
-      expect(response.headers.get('x-tuturuuu-web-renderer')).toBe(
-        'Next-fallback'
-      );
+      for (const path of paths) {
+        const response = await handler(request(`${path}?keep=%2f`), {
+          ...env,
+          WEB_START_NATIVE_LEGAL: flag,
+        });
+        expect(await response.text()).toBe('Next');
+        expect(response.headers.get('x-tuturuuu-web-renderer')).toBe(
+          'Next-fallback'
+        );
+        const forwarded = fetcher.mock.calls.at(-1)?.[0];
+        expect(forwarded).toBeInstanceOf(Request);
+        expect(forwarded instanceof Request ? forwarded.url : undefined).toBe(
+          `${env.NEXT_FALLBACK_ORIGIN}${path}?keep=%2f`
+        );
+      }
       expect(start).not.toHaveBeenCalled();
-      expect(fetcher).toHaveBeenCalledOnce();
-      const forwarded = fetcher.mock.calls[0]?.[0];
-      expect(forwarded).toBeInstanceOf(Request);
-      expect(forwarded instanceof Request ? forwarded.url : undefined).toBe(
-        env.NEXT_FALLBACK_ORIGIN + '/vi/privacy?keep=%2f'
-      );
+      expect(fetcher).toHaveBeenCalledTimes(paths.length);
     }
   );
   it('keeps APIs, satellite routes, unknown locales, RSC and writes on Next', async () => {
@@ -141,7 +152,7 @@ describe('native legal slice dispatch and rollback', () => {
 
 describe('framework adapter renders canonical legal content', () => {
   for (const locale of ['en', 'vi'] as const) {
-    for (const kind of ['privacy', 'terms'] as const) {
+    for (const { kind } of pages) {
       it(`${locale}/${kind}: retains every canonical section, summary and review notice`, () => {
         const document = getLegalDocument(kind, locale);
         const page = new DOMParser().parseFromString(

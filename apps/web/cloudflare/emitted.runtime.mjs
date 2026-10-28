@@ -29,13 +29,23 @@ const secret = 'disposable-emitted-worker-proof-secret';
 const upstream = 'https://tuturuuu-next-fixture.vercel.app';
 const ref = 'fxefojytwimjiqxseqag';
 
+const legalPages = [
+  { slug: 'privacy', seoKey: 'privacy' },
+  { slug: 'terms', seoKey: 'terms' },
+  { slug: 'acceptable-use', seoKey: 'acceptable_use' },
+  { slug: 'legal/dpa', seoKey: 'legal_dpa' },
+  { slug: 'legal/sla', seoKey: 'legal_sla' },
+  { slug: 'legal/subprocessors', seoKey: 'legal_subprocessors' },
+];
+
 function assertLegalMetadata(html, path) {
   const document = new JSDOM(html).window.document;
   const locale = path.startsWith('/vi/') ? 'vi' : 'en';
-  const kind = path.endsWith('/privacy') ? 'privacy' : 'terms';
-  const copy = seoCopy[locale][kind];
-  const english = `https://tuturuuu.com/${kind}`;
-  const vietnamese = `https://tuturuuu.com/vi/${kind}`;
+  const page = legalPages.find(({ slug }) => path.endsWith(`/${slug}`));
+  assert.ok(page, `no canonical metadata fixture for ${path}`);
+  const copy = seoCopy[locale][page.seoKey];
+  const english = `https://tuturuuu.com/${page.slug}`;
+  const vietnamese = `https://tuturuuu.com/vi/${page.slug}`;
   const canonical = locale === 'vi' ? vietnamese : english;
   const content = (name) =>
     document.head.querySelector(`meta[name="${name}"]`)?.content;
@@ -195,6 +205,7 @@ test(description, { timeout: 30000 }, async (t) => {
         '/api/a',
         '/__web1',
         '/vi/privacy',
+        '/vi/legal/dpa',
         '/serwist/sw.js',
       ]) {
         const response = await disabled.dispatchFetch(`${base}${path}`, {
@@ -222,14 +233,10 @@ test(description, { timeout: 30000 }, async (t) => {
   await t.test(
     'native legal documents SSR in both languages without egress or session writes',
     async () => {
-      for (const path of [
-        '/privacy',
-        '/terms',
-        '/en/privacy',
-        '/en/terms',
-        '/vi/privacy',
-        '/vi/terms',
-      ]) {
+      for (const path of legalPages.flatMap(({ slug }) => [
+        `/${slug}`,
+        `/vi/${slug}`,
+      ])) {
         const before = egress.length;
         const response = await enabled.dispatchFetch(base + path, { headers });
         assert.equal(response.status, 200);
@@ -267,7 +274,7 @@ test(description, { timeout: 30000 }, async (t) => {
     'route rollback reaches only the attested Next fixture with the original query',
     async () => {
       const response = await rollback.dispatchFetch(
-        base + '/vi/privacy?raw=%2f&x=1&x=2',
+        `${base}/vi/legal/dpa?raw=%2f&x=1&x=2`,
         { headers }
       );
       assert.equal(response.status, 429);
@@ -275,7 +282,7 @@ test(description, { timeout: 30000 }, async (t) => {
         response.headers.get('x-tuturuuu-web-renderer'),
         'Next-fallback'
       );
-      assert.equal(egress.at(-1), upstream + '/vi/privacy?raw=%2f&x=1&x=2');
+      assert.equal(egress.at(-1), `${upstream}/vi/legal/dpa?raw=%2f&x=1&x=2`);
     }
   );
   await t.test(

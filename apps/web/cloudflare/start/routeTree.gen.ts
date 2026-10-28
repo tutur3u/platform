@@ -4,16 +4,33 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as Char91__web1Char93RouteImport } from './routes/[__web1]'
+import { Route as AcceptableUseRouteImport } from './routes/acceptable-use'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as EnAcceptableUseRouteImport } from './routes/en.acceptable-use'
 import { Route as EnPrivacyRouteImport } from './routes/en.privacy'
 import { Route as EnTermsRouteImport } from './routes/en.terms'
+import { Route as LegalDpaRouteImport } from './routes/legal.dpa'
+import { Route as LegalSlaRouteImport } from './routes/legal.sla'
+import { Route as LegalSubprocessorsRouteImport } from './routes/legal.subprocessors'
+import { Route as ViAcceptableUseRouteImport } from './routes/vi.acceptable-use'
 import { Route as ViPrivacyRouteImport } from './routes/vi.privacy'
 import { Route as ViTermsRouteImport } from './routes/vi.terms'
+import { Route as EnLegalDpaRouteImport } from './routes/en.legal.dpa'
+import { Route as EnLegalSlaRouteImport } from './routes/en.legal.sla'
+import { Route as EnLegalSubprocessorsRouteImport } from './routes/en.legal.subprocessors'
+import { Route as ViLegalDpaRouteImport } from './routes/vi.legal.dpa'
+import { Route as ViLegalSlaRouteImport } from './routes/vi.legal.sla'
+import { Route as ViLegalSubprocessorsRouteImport } from './routes/vi.legal.subprocessors'
 
 const Char91__web1Char93Route = Char91__web1Char93RouteImport.update({
   id: '/__web1',
   path: '/__web1',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AcceptableUseRoute = AcceptableUseRouteImport.update({
+  id: '/acceptable-use',
+  path: '/acceptable-use',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -26,6 +43,11 @@ const TermsRoute = TermsRouteImport.update({
   path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EnAcceptableUseRoute = EnAcceptableUseRouteImport.update({
+  id: '/en/acceptable-use',
+  path: '/en/acceptable-use',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const EnPrivacyRoute = EnPrivacyRouteImport.update({
   id: '/en/privacy',
   path: '/en/privacy',
@@ -34,6 +56,26 @@ const EnPrivacyRoute = EnPrivacyRouteImport.update({
 const EnTermsRoute = EnTermsRouteImport.update({
   id: '/en/terms',
   path: '/en/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LegalDpaRoute = LegalDpaRouteImport.update({
+  id: '/legal/dpa',
+  path: '/legal/dpa',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LegalSlaRoute = LegalSlaRouteImport.update({
+  id: '/legal/sla',
+  path: '/legal/sla',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LegalSubprocessorsRoute = LegalSubprocessorsRouteImport.update({
+  id: '/legal/subprocessors',
+  path: '/legal/subprocessors',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ViAcceptableUseRoute = ViAcceptableUseRouteImport.update({
+  id: '/vi/acceptable-use',
+  path: '/vi/acceptable-use',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ViPrivacyRoute = ViPrivacyRouteImport.update({
@@ -46,73 +88,187 @@ const ViTermsRoute = ViTermsRouteImport.update({
   path: '/vi/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EnLegalDpaRoute = EnLegalDpaRouteImport.update({
+  id: '/en/legal/dpa',
+  path: '/en/legal/dpa',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EnLegalSlaRoute = EnLegalSlaRouteImport.update({
+  id: '/en/legal/sla',
+  path: '/en/legal/sla',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EnLegalSubprocessorsRoute = EnLegalSubprocessorsRouteImport.update({
+  id: '/en/legal/subprocessors',
+  path: '/en/legal/subprocessors',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ViLegalDpaRoute = ViLegalDpaRouteImport.update({
+  id: '/vi/legal/dpa',
+  path: '/vi/legal/dpa',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ViLegalSlaRoute = ViLegalSlaRouteImport.update({
+  id: '/vi/legal/sla',
+  path: '/vi/legal/sla',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ViLegalSubprocessorsRoute = ViLegalSubprocessorsRouteImport.update({
+  id: '/vi/legal/subprocessors',
+  path: '/vi/legal/subprocessors',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/__web1': typeof Char91__web1Char93Route
+  '/acceptable-use': typeof AcceptableUseRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
+  '/en/acceptable-use': typeof EnAcceptableUseRoute
   '/en/privacy': typeof EnPrivacyRoute
   '/en/terms': typeof EnTermsRoute
+  '/legal/dpa': typeof LegalDpaRoute
+  '/legal/sla': typeof LegalSlaRoute
+  '/legal/subprocessors': typeof LegalSubprocessorsRoute
+  '/vi/acceptable-use': typeof ViAcceptableUseRoute
   '/vi/privacy': typeof ViPrivacyRoute
   '/vi/terms': typeof ViTermsRoute
+  '/en/legal/dpa': typeof EnLegalDpaRoute
+  '/en/legal/sla': typeof EnLegalSlaRoute
+  '/en/legal/subprocessors': typeof EnLegalSubprocessorsRoute
+  '/vi/legal/dpa': typeof ViLegalDpaRoute
+  '/vi/legal/sla': typeof ViLegalSlaRoute
+  '/vi/legal/subprocessors': typeof ViLegalSubprocessorsRoute
 }
 export interface FileRoutesByTo {
   '/__web1': typeof Char91__web1Char93Route
+  '/acceptable-use': typeof AcceptableUseRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
+  '/en/acceptable-use': typeof EnAcceptableUseRoute
   '/en/privacy': typeof EnPrivacyRoute
   '/en/terms': typeof EnTermsRoute
+  '/legal/dpa': typeof LegalDpaRoute
+  '/legal/sla': typeof LegalSlaRoute
+  '/legal/subprocessors': typeof LegalSubprocessorsRoute
+  '/vi/acceptable-use': typeof ViAcceptableUseRoute
   '/vi/privacy': typeof ViPrivacyRoute
   '/vi/terms': typeof ViTermsRoute
+  '/en/legal/dpa': typeof EnLegalDpaRoute
+  '/en/legal/sla': typeof EnLegalSlaRoute
+  '/en/legal/subprocessors': typeof EnLegalSubprocessorsRoute
+  '/vi/legal/dpa': typeof ViLegalDpaRoute
+  '/vi/legal/sla': typeof ViLegalSlaRoute
+  '/vi/legal/subprocessors': typeof ViLegalSubprocessorsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/__web1': typeof Char91__web1Char93Route
+  '/acceptable-use': typeof AcceptableUseRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
+  '/en/acceptable-use': typeof EnAcceptableUseRoute
   '/en/privacy': typeof EnPrivacyRoute
   '/en/terms': typeof EnTermsRoute
+  '/legal/dpa': typeof LegalDpaRoute
+  '/legal/sla': typeof LegalSlaRoute
+  '/legal/subprocessors': typeof LegalSubprocessorsRoute
+  '/vi/acceptable-use': typeof ViAcceptableUseRoute
   '/vi/privacy': typeof ViPrivacyRoute
   '/vi/terms': typeof ViTermsRoute
+  '/en/legal/dpa': typeof EnLegalDpaRoute
+  '/en/legal/sla': typeof EnLegalSlaRoute
+  '/en/legal/subprocessors': typeof EnLegalSubprocessorsRoute
+  '/vi/legal/dpa': typeof ViLegalDpaRoute
+  '/vi/legal/sla': typeof ViLegalSlaRoute
+  '/vi/legal/subprocessors': typeof ViLegalSubprocessorsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/__web1'
+    | '/acceptable-use'
     | '/privacy'
     | '/terms'
+    | '/en/acceptable-use'
     | '/en/privacy'
     | '/en/terms'
+    | '/legal/dpa'
+    | '/legal/sla'
+    | '/legal/subprocessors'
+    | '/vi/acceptable-use'
     | '/vi/privacy'
     | '/vi/terms'
+    | '/en/legal/dpa'
+    | '/en/legal/sla'
+    | '/en/legal/subprocessors'
+    | '/vi/legal/dpa'
+    | '/vi/legal/sla'
+    | '/vi/legal/subprocessors'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/__web1'
+    | '/acceptable-use'
     | '/privacy'
     | '/terms'
+    | '/en/acceptable-use'
     | '/en/privacy'
     | '/en/terms'
+    | '/legal/dpa'
+    | '/legal/sla'
+    | '/legal/subprocessors'
+    | '/vi/acceptable-use'
     | '/vi/privacy'
     | '/vi/terms'
+    | '/en/legal/dpa'
+    | '/en/legal/sla'
+    | '/en/legal/subprocessors'
+    | '/vi/legal/dpa'
+    | '/vi/legal/sla'
+    | '/vi/legal/subprocessors'
   id:
     | '__root__'
     | '/__web1'
+    | '/acceptable-use'
     | '/privacy'
     | '/terms'
+    | '/en/acceptable-use'
     | '/en/privacy'
     | '/en/terms'
+    | '/legal/dpa'
+    | '/legal/sla'
+    | '/legal/subprocessors'
+    | '/vi/acceptable-use'
     | '/vi/privacy'
     | '/vi/terms'
+    | '/en/legal/dpa'
+    | '/en/legal/sla'
+    | '/en/legal/subprocessors'
+    | '/vi/legal/dpa'
+    | '/vi/legal/sla'
+    | '/vi/legal/subprocessors'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   Char91__web1Char93Route: typeof Char91__web1Char93Route
+  AcceptableUseRoute: typeof AcceptableUseRoute
   PrivacyRoute: typeof PrivacyRoute
   TermsRoute: typeof TermsRoute
+  EnAcceptableUseRoute: typeof EnAcceptableUseRoute
   EnPrivacyRoute: typeof EnPrivacyRoute
   EnTermsRoute: typeof EnTermsRoute
+  LegalDpaRoute: typeof LegalDpaRoute
+  LegalSlaRoute: typeof LegalSlaRoute
+  LegalSubprocessorsRoute: typeof LegalSubprocessorsRoute
+  ViAcceptableUseRoute: typeof ViAcceptableUseRoute
   ViPrivacyRoute: typeof ViPrivacyRoute
   ViTermsRoute: typeof ViTermsRoute
+  EnLegalDpaRoute: typeof EnLegalDpaRoute
+  EnLegalSlaRoute: typeof EnLegalSlaRoute
+  EnLegalSubprocessorsRoute: typeof EnLegalSubprocessorsRoute
+  ViLegalDpaRoute: typeof ViLegalDpaRoute
+  ViLegalSlaRoute: typeof ViLegalSlaRoute
+  ViLegalSubprocessorsRoute: typeof ViLegalSubprocessorsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -122,6 +278,13 @@ declare module '@tanstack/react-router' {
       path: '/__web1'
       fullPath: '/__web1'
       preLoaderRoute: typeof Char91__web1Char93RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/acceptable-use': {
+      id: '/acceptable-use'
+      path: '/acceptable-use'
+      fullPath: '/acceptable-use'
+      preLoaderRoute: typeof AcceptableUseRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -138,6 +301,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/en/acceptable-use': {
+      id: '/en/acceptable-use'
+      path: '/en/acceptable-use'
+      fullPath: '/en/acceptable-use'
+      preLoaderRoute: typeof EnAcceptableUseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/en/privacy': {
       id: '/en/privacy'
       path: '/en/privacy'
@@ -150,6 +320,34 @@ declare module '@tanstack/react-router' {
       path: '/en/terms'
       fullPath: '/en/terms'
       preLoaderRoute: typeof EnTermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/legal/dpa': {
+      id: '/legal/dpa'
+      path: '/legal/dpa'
+      fullPath: '/legal/dpa'
+      preLoaderRoute: typeof LegalDpaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/legal/sla': {
+      id: '/legal/sla'
+      path: '/legal/sla'
+      fullPath: '/legal/sla'
+      preLoaderRoute: typeof LegalSlaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/legal/subprocessors': {
+      id: '/legal/subprocessors'
+      path: '/legal/subprocessors'
+      fullPath: '/legal/subprocessors'
+      preLoaderRoute: typeof LegalSubprocessorsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/vi/acceptable-use': {
+      id: '/vi/acceptable-use'
+      path: '/vi/acceptable-use'
+      fullPath: '/vi/acceptable-use'
+      preLoaderRoute: typeof ViAcceptableUseRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/vi/privacy': {
@@ -166,17 +364,71 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ViTermsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/en/legal/dpa': {
+      id: '/en/legal/dpa'
+      path: '/en/legal/dpa'
+      fullPath: '/en/legal/dpa'
+      preLoaderRoute: typeof EnLegalDpaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/en/legal/sla': {
+      id: '/en/legal/sla'
+      path: '/en/legal/sla'
+      fullPath: '/en/legal/sla'
+      preLoaderRoute: typeof EnLegalSlaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/en/legal/subprocessors': {
+      id: '/en/legal/subprocessors'
+      path: '/en/legal/subprocessors'
+      fullPath: '/en/legal/subprocessors'
+      preLoaderRoute: typeof EnLegalSubprocessorsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/vi/legal/dpa': {
+      id: '/vi/legal/dpa'
+      path: '/vi/legal/dpa'
+      fullPath: '/vi/legal/dpa'
+      preLoaderRoute: typeof ViLegalDpaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/vi/legal/sla': {
+      id: '/vi/legal/sla'
+      path: '/vi/legal/sla'
+      fullPath: '/vi/legal/sla'
+      preLoaderRoute: typeof ViLegalSlaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/vi/legal/subprocessors': {
+      id: '/vi/legal/subprocessors'
+      path: '/vi/legal/subprocessors'
+      fullPath: '/vi/legal/subprocessors'
+      preLoaderRoute: typeof ViLegalSubprocessorsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   Char91__web1Char93Route: Char91__web1Char93Route,
+  AcceptableUseRoute: AcceptableUseRoute,
   PrivacyRoute: PrivacyRoute,
   TermsRoute: TermsRoute,
+  EnAcceptableUseRoute: EnAcceptableUseRoute,
   EnPrivacyRoute: EnPrivacyRoute,
   EnTermsRoute: EnTermsRoute,
+  LegalDpaRoute: LegalDpaRoute,
+  LegalSlaRoute: LegalSlaRoute,
+  LegalSubprocessorsRoute: LegalSubprocessorsRoute,
+  ViAcceptableUseRoute: ViAcceptableUseRoute,
   ViPrivacyRoute: ViPrivacyRoute,
   ViTermsRoute: ViTermsRoute,
+  EnLegalDpaRoute: EnLegalDpaRoute,
+  EnLegalSlaRoute: EnLegalSlaRoute,
+  EnLegalSubprocessorsRoute: EnLegalSubprocessorsRoute,
+  ViLegalDpaRoute: ViLegalDpaRoute,
+  ViLegalSlaRoute: ViLegalSlaRoute,
+  ViLegalSubprocessorsRoute: ViLegalSubprocessorsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
