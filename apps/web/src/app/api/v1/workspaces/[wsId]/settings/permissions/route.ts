@@ -1,8 +1,10 @@
 import type { WorkspacePermissionsSummary } from '@tuturuuu/internal-api/settings';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { getVerifiedAuthUser } from '@tuturuuu/supabase/next/user';
 import type { PermissionId } from '@tuturuuu/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import { getPermissions, verifySecret } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { createLegacyHeadHandler } from '@/legacy-api-routes/head';
@@ -62,7 +64,21 @@ export const GET = withSessionAuth<{ wsId: string }>(
       const hasRootPermission = (permission: PermissionId) =>
         rootPermissions?.containsPermission(permission) ?? false;
       const isRootWorkspace = permissions.wsId === ROOT_WORKSPACE_ID;
-      const isTuturuuuMember = isValidTuturuuuEmail(user.email);
+      let isTuturuuuMember = false;
+      try {
+        isTuturuuuMember = isVerifiedTuturuuuStaffSession(
+          await getVerifiedAuthUser(
+            await createAdminClient({ noCookie: true }),
+            user.id
+          ),
+          { allowXwf: true }
+        );
+      } catch (error) {
+        console.error(
+          'Failed to resolve staff status for workspace permissions',
+          error
+        );
+      }
       const canManageApiKeys = hasWorkspacePermission('manage_api_keys');
       const canManageWorkspaceSecrets = hasRootPermission(
         'manage_workspace_secrets'

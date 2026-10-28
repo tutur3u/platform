@@ -40,7 +40,13 @@ class _UsagePoolCardState extends State<UsagePoolCard> {
           caption: pool.label,
           children: [
             AppGroupedRow(
-              title: PacingGlyph(pacing: pool.verdict),
+              title: PacingGlyph(
+                pacing: pool.verdict,
+                missingReason:
+                    pool.latest.session.fields['pacing']?.reason(l10n) ??
+                    pool.latest.weekly.fields['pacing']?.reason(l10n) ??
+                    l10n.mastermindNotPublished,
+              ),
               subtitle: burn == null ? null : Text(burn),
               trailing: Semantics(
                 expanded: _note,

@@ -40,6 +40,7 @@ export default defineConfig({
     // Authenticated tests (most tests)
     {
       name: 'chromium',
+      testMatch: /.*\.spec\.ts$/,
       use: {
         ...devices['Desktop Chrome'],
         storageState: 'e2e/.auth/user.json',

@@ -1,6 +1,16 @@
+vi.mock('./staff-access', () => ({ isVerifiedStaff: vi.fn(async () => true) }));
+
 import { readFile } from 'node:fs/promises';
 import { convertV4MiniflareOptions, Miniflare } from 'miniflare';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 import type { Actor, Store } from './context';
 import {
   creatorAboutSchema,

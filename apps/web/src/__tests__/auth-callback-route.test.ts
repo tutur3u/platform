@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   createAuthDiagnosticCode: vi.fn(),
   createClient: vi.fn(),
+  signOut: vi.fn(),
   exchangeCodeForSession: vi.fn(),
   getExternalAppByReturnUrl: vi.fn(),
   getReturnUrlKind: vi.fn(),
@@ -54,11 +55,56 @@ describe('auth callback route', () => {
     mocks.createClient.mockResolvedValue({
       auth: {
         exchangeCodeForSession: mocks.exchangeCodeForSession,
+        signOut: mocks.signOut,
       },
     });
     mocks.exchangeCodeForSession.mockResolvedValue(undefined);
     mocks.getExternalAppByReturnUrl.mockResolvedValue(null);
     mocks.getReturnUrlKind.mockReturnValue('external');
+  });
+
+  const staffTenant = '11111111-1111-1111-1111-111111111111';
+  const foreignTenant = '22222222-2222-2222-2222-222222222222';
+
+  it.each([
+    ['foreign tenant', foreignTenant, staffTenant, 'oauth', false],
+    ['staff tenant', staffTenant, staffTenant, 'oauth', true],
+    ['unset configuration', staffTenant, '', 'oauth', false],
+    ['email recovery with an Azure identity', foreignTenant, '', 'otp', true],
+    ['missing identity tenant', undefined, staffTenant, 'oauth', false],
+  ])('%s', async (_name, tenant, configured, method, allowed) => {
+    vi.stubEnv('TUTURUUU_AZURE_TENANT_ID', configured);
+    const payload = Buffer.from(JSON.stringify({ amr: [{ method }] })).toString(
+      'base64url'
+    );
+    mocks.exchangeCodeForSession.mockResolvedValue({
+      data: {
+        session: {
+          access_token: `e30.${payload}.signature`,
+          user: {
+            app_metadata: { provider: 'azure' },
+            identities: [{ provider: 'azure', identity_data: { tid: tenant } }],
+          },
+        },
+      },
+      error: null,
+    });
+    const { GET } = await import('@/app/api/auth/callback/route');
+    const response = await GET(
+      new NextRequest(
+        'http://localhost/api/auth/callback?code=test&multiAccount=true'
+      )
+    );
+    const location = new URL(response.headers.get('location') ?? '');
+    expect(location.pathname).toBe(allowed ? '/add-account' : '/login');
+    if (allowed) {
+      expect(mocks.signOut).not.toHaveBeenCalled();
+    } else {
+      expect(mocks.signOut).toHaveBeenCalledWith({ scope: 'local' });
+      expect(location.searchParams.get('error')).toBe(
+        'azure_tenant_restricted'
+      );
+    }
   });
 
   it('adds a safe diagnostic code when OAuth exchange fails', async () => {

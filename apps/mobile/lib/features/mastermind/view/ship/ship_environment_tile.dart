@@ -166,7 +166,7 @@ class ShipEnvironmentTile extends StatelessWidget {
       switch (status) {
         DeployStatus.success => (AppIcons.check, AppBadgeVariant.success),
         DeployStatus.failure ||
-        DeployStatus.error => (AppIcons.warning, AppBadgeVariant.warning),
+        DeployStatus.error => (AppIcons.warning, AppBadgeVariant.destructive),
         DeployStatus.pending ||
         DeployStatus.queued => (LucideIcons.hourglass, AppBadgeVariant.outline),
         DeployStatus.inProgress => (LucideIcons.play, AppBadgeVariant.outline),
@@ -177,7 +177,7 @@ class ShipEnvironmentTile extends StatelessWidget {
   static (IconData, AppBadgeVariant) _ciStyle(CiState state) => switch (state) {
     CiState.success => (AppIcons.check, AppBadgeVariant.success),
     CiState.failure ||
-    CiState.error => (AppIcons.warning, AppBadgeVariant.warning),
+    CiState.error => (AppIcons.warning, AppBadgeVariant.destructive),
     CiState.pending => (LucideIcons.hourglass, AppBadgeVariant.outline),
     CiState.unknown => (AppIcons.info, AppBadgeVariant.outline),
   };

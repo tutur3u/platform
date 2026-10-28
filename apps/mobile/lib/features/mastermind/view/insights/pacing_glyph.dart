@@ -10,9 +10,10 @@ import 'package:mobile/l10n/l10n.dart';
 /// read as a spinner). It is the chart's reserve check, not a routing
 /// recommendation.
 class PacingGlyph extends StatelessWidget {
-  const PacingGlyph({required this.pacing, super.key});
+  const PacingGlyph({required this.pacing, this.missingReason, super.key});
 
   final Pacing? pacing;
+  final String? missingReason;
 
   static String word(AppLocalizations l10n, Pacing? pacing) => switch (pacing) {
     Pacing.short => l10n.mastermindUsageVerdictShort,
@@ -28,7 +29,13 @@ class PacingGlyph extends StatelessWidget {
       Pacing.short => StatusGlyph(status: ChartStatus.short, label: label),
       Pacing.ok => StatusGlyph(status: ChartStatus.ok, label: label),
       Pacing.surplus => StatusGlyph(status: ChartStatus.surplus, label: label),
-      null => _NoPacingGlyph(label: label),
+      null => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _NoPacingGlyph(label: label),
+          if (missingReason != null) Text(missingReason!),
+        ],
+      ),
     };
   }
 }

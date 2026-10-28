@@ -72,6 +72,12 @@ Future<bool> migrateAuthKeychainAccessibility({
 
   for (final key in keys) {
     try {
+      if (key == supabasePersistSessionKey &&
+          await current.read(key: '$key.persist-retry') != null) {
+        await legacy.delete(key: key);
+        await current.delete(key: keychainMigrationStagingKey(key));
+        continue;
+      }
       final value = await legacy.read(key: key);
       if (value == null) continue;
       final staging = keychainMigrationStagingKey(key);
@@ -110,6 +116,11 @@ Future<void> _recoverStaged({
   final staging = keychainMigrationStagingKey(key);
   final staged = await current.read(key: staging);
   if (staged == null) return;
+  if (key == supabasePersistSessionKey &&
+      await current.read(key: '$key.persist-retry') != null) {
+    await current.delete(key: staging);
+    return;
+  }
 
   if (await current.read(key: key) == null) {
     // Killed after the old item was copied but possibly before it was deleted;

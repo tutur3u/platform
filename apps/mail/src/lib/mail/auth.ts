@@ -9,8 +9,9 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import { getVerifiedAuthUser } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import {
   getWorkspace,
   normalizeWorkspaceId,
@@ -87,7 +88,13 @@ export async function resolveMailRouteContext(
     return { ok: false, response: auth.response };
   }
 
-  const isStaff = isExactTuturuuuDotComEmail(auth.user.email);
+  const isStaff = isVerifiedTuturuuuStaffSession(
+    auth.user &&
+      (await getVerifiedAuthUser(
+        await createAdminClient({ noCookie: true }),
+        auth.user.id
+      ))
+  );
   let managedMailbox = false;
   if (!connectedAccount && !isStaff) {
     try {

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout.dart';
-import 'package:mobile/core/ui/components/app_badge.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/kit/app_filter_bar.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
@@ -12,7 +11,7 @@ import 'package:mobile/l10n/l10n.dart';
 
 /// One product as a compact card: a header row with its name, how long its
 /// release has been live and on what basis, then production and staging.
-/// A failing product is listed first by the model and says so in its header.
+/// Failing products come first, with a destructive header glyph.
 class ShipProductGroupSection extends StatelessWidget {
   const ShipProductGroupSection({
     required this.group,
@@ -50,12 +49,6 @@ class ShipProductGroupSection extends StatelessWidget {
                       MastermindLabels.ageBasis(l10n, release.ageBasis),
                   ].join(' · '),
                 ),
-          trailing: group.failing
-              ? AppBadge(
-                  variant: AppBadgeVariant.destructive,
-                  child: Text(l10n.mastermindShipFailing),
-                )
-              : null,
         ),
         for (final row in group.environments)
           ShipEnvironmentTile(row: row, asOf: asOf),

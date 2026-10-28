@@ -44,7 +44,8 @@ class _UsageChartPanelState extends State<UsageChartPanel> {
     final tokens = AppTokens.of(context);
     final spec = widget.spec;
     final labels = usageChartLabels(l10n);
-    final times = chartSeriesTimes(spec.series);
+    final series = spec.drawnSeries;
+    final times = chartSeriesTimes(series);
     final palette = AppChartPalette.of(context);
     final muted = tokens.typography.small.copyWith(
       color: tokens.colorScheme.mutedForeground,
@@ -93,11 +94,11 @@ class _UsageChartPanelState extends State<UsageChartPanel> {
                 ChartPlot(
                   controller: _selection,
                   bucketCount: times.length,
-                  seriesCount: spec.series.length,
+                  seriesCount: series.length,
                   summary: spec.summary,
                   height: 160,
                   painterBuilder: (selection) => LinePainter(
-                    series: spec.series,
+                    series: series,
                     palette: palette,
                     axis: spec.axis,
                     bands: spec.bands,
@@ -111,14 +112,14 @@ class _UsageChartPanelState extends State<UsageChartPanel> {
                 ChartReadout(
                   controller: _selection,
                   readout: (selection) {
-                    final series = spec.series[selection.series];
+                    final selected = series[selection.series];
                     final t = times[selection.bucket];
-                    final point = series.points
+                    final point = selected.points
                         .where((p) => p.t == t)
                         .firstOrNull;
                     return chartPointReadout(
                       point ?? ChartPoint(t: t, y: null),
-                      series,
+                      selected,
                       labels,
                       last: false,
                       formatValue: spec.formatValue,

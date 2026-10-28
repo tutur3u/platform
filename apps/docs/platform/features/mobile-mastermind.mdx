@@ -635,3 +635,8 @@ running, waiting, and idle counts. Unknown root keys, `asks_source`, and
 `decisions_unknown` are safe to ignore. The exact redacted publisher fixture is
 covered by `test/features/mastermind/view/forge_v1_fixture_test.dart`; it verifies
 all five tabs, open asks, resolved history, source reasons, gaps, and counts.
+
+An unreported pacing value retains its dashed status glyph beside the explicit
+reason. The label wraps within the row's content area so checked timestamps do
+not overflow narrow screens. `mastermind_insights_page_test.dart` preserves the
+one-glyph-per-window assertion for reported and unreported values.

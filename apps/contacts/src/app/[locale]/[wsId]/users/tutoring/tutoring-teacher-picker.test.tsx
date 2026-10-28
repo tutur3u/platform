@@ -104,7 +104,7 @@ describe('center teacher picker', () => {
       page: 2,
       pageSize: 20,
       q: undefined,
-      tutorsOnly: undefined,
+      tutorsOnly: true,
     });
     expect(state.config.getNextPageParam({ page: 1, totalPages: 2 })).toBe(2);
     expect(
@@ -117,7 +117,7 @@ describe('center teacher picker', () => {
       'tutoring-teachers',
       'center',
       'Center',
-      false,
+      true,
     ]);
     fireEvent.click(screen.getByText('Choose'));
     expect(change).toHaveBeenCalledWith('other-class-teacher');
@@ -125,7 +125,7 @@ describe('center teacher picker', () => {
       'tutoring-teachers',
       'center',
       '',
-      false,
+      true,
     ]);
   });
 
@@ -138,24 +138,31 @@ describe('center teacher picker', () => {
     ).toBeInTheDocument();
   });
 
-  it('asks only for tutors when the tutors only toggle is on', () => {
+  it('starts with tutors only and explicitly requests all teachers when toggled off', () => {
     render(<TutoringTeacherPicker onChange={vi.fn()} value="" wsId="center" />);
     const toggle = screen.getByRole('switch', { name: 'tutors_only' });
-    expect(toggle).not.toBeChecked();
-    fireEvent.click(toggle);
     expect(toggle).toBeChecked();
+    void state.config.queryFn({ pageParam: 1 });
+    expect(state.request).toHaveBeenLastCalledWith('center', {
+      page: 1,
+      pageSize: 20,
+      q: undefined,
+      tutorsOnly: true,
+    });
+    fireEvent.click(toggle);
+    expect(toggle).not.toBeChecked();
     expect(state.config.queryKey).toEqual([
       'tutoring-teachers',
       'center',
       '',
-      true,
+      false,
     ]);
     void state.config.queryFn({ pageParam: 1 });
     expect(state.request).toHaveBeenCalledWith('center', {
       page: 1,
       pageSize: 20,
       q: undefined,
-      tutorsOnly: true,
+      tutorsOnly: false,
     });
   });
 
@@ -170,7 +177,7 @@ describe('center teacher picker', () => {
     expect(toggles).toHaveLength(2);
     expect(toggles[0]?.id).not.toBe(toggles[1]?.id);
     fireEvent.click(screen.getAllByText('tutors_only')[1] as HTMLElement);
-    expect(toggles[1]).toBeChecked();
-    expect(toggles[0]).not.toBeChecked();
+    expect(toggles[1]).not.toBeChecked();
+    expect(toggles[0]).toBeChecked();
   });
 });

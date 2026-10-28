@@ -52,6 +52,32 @@ final Map<String, dynamic> _usage = usageJson(
 );
 
 void main() {
+  testWidgets('Vietnamese at 200% keeps the final control above the dock', (
+    tester,
+  ) async {
+    await pumpInsights(
+      tester,
+      _usage,
+      locale: const Locale('vi'),
+      textScale: 2,
+      size: const Size(430, 800),
+      dockClearance: 120,
+    );
+    expect(
+      Localizations.localeOf(
+        tester.element(find.byType(CustomScrollView).first),
+      ).languageCode,
+      'vi',
+    );
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -20000));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(
+      tester.getRect(find.byType(AppGroupedRow).last).bottom,
+      lessThanOrEqualTo(680),
+    );
+  });
+
   group('pools', () {
     testWidgets('most urgent first: SHORT, unknown, OK, SURPLUS', (
       tester,

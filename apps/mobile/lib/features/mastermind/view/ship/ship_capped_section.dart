@@ -58,17 +58,20 @@ class _ShipCappedSectionState extends State<ShipCappedSection> {
         if (rows.isEmpty) empty!,
         ...shown,
         if (capped)
-          AppGroupedRow(
-            title: Text(
-              _expanded
-                  ? l10n.mastermindListShowFewer
-                  : l10n.mastermindListShowAll(rows.length),
+          Semantics(
+            expanded: _expanded,
+            child: AppGroupedRow(
+              title: Text(
+                _expanded
+                    ? l10n.mastermindListShowFewer
+                    : l10n.mastermindListShowAll(rows.length),
+              ),
+              trailing: Icon(
+                _expanded ? LucideIcons.chevronUp : LucideIcons.chevronDown,
+                size: 18,
+              ),
+              onTap: () => setState(() => _expanded = !_expanded),
             ),
-            trailing: Icon(
-              _expanded ? LucideIcons.chevronUp : LucideIcons.chevronDown,
-              size: 18,
-            ),
-            onTap: () => setState(() => _expanded = !_expanded),
           ),
       ],
     );
