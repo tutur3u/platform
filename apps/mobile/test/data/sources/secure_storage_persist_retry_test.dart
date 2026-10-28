@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -53,10 +55,10 @@ void main() {
   });
 
   test('staging failure leaves the original item untouched', () async {
-    values[key] = 'old';
+    // The legacy item is invisible to reads; its duplicate write throws -25299.
     fail = 'stage';
     await expectLater(storage.persistSession('new'), throwsStateError);
-    expect(values, {key: 'old'});
+    expect(values, isEmpty);
     verifyNever(() => backend.delete(key: key));
   });
 
@@ -72,6 +74,58 @@ void main() {
       expect(values, {key: 'new'});
     });
   }
+
+  test('staging wins over a primary left by a failed delete', () async {
+    values.addAll({key: 'old', stage: 'new'});
+    writes = 1;
+    expect(await storage.accessToken(), 'new');
+    expect(values, {key: 'new'});
+  });
+
+  for (final failure in ['primary', 'cleanup']) {
+    test('returns staging despite promotion $failure failure', () async {
+      values[stage] = 'new';
+      writes = 1;
+      fail = failure;
+      expect(await storage.accessToken(), 'new');
+      expect(values[stage], 'new');
+    });
+  }
+
+  test('hasAccessToken only reads primary and staging', () async {
+    for (final seeded in [key, stage]) {
+      values
+        ..clear()
+        ..[seeded] = 'token';
+      expect(await storage.hasAccessToken(), isTrue);
+      expect(values, {seeded: 'token'});
+    }
+    verifyNever(() => backend.delete(key: any(named: 'key')));
+    verifyNever(
+      () => backend.write(
+        key: any(named: 'key'),
+        value: any(named: 'value'),
+      ),
+    );
+  });
+
+  test('sign-out waits for an in-flight retry and ends signed out', () async {
+    final entered = Completer<void>();
+    final release = Completer<void>();
+    when(() => backend.write(key: stage, value: 'new')).thenAnswer((_) async {
+      entered.complete();
+      await release.future;
+      values[stage] = 'new';
+    });
+    final persist = storage.persistSession('new');
+    await entered.future;
+    final signOut = storage.removePersistedSession();
+    release.complete();
+    await persist;
+    await signOut;
+    expect(values, isEmpty);
+    expect(await storage.accessToken(), isNull);
+  });
 
   test('successful retry clears staging', () async {
     await storage.persistSession('new');

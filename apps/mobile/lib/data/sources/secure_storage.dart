@@ -1,3 +1,5 @@
+import 'dart:developer' as developer;
+
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -34,28 +36,40 @@ class SupabaseSecureStorage extends LocalStorage {
   @override
   Future<void> initialize() async {}
 
-  @override
-  Future<String?> accessToken() async {
-    final primary = await _storage.read(key: supabasePersistSessionKey);
-    if (primary != null) {
-      await _storage.delete(key: _retryKey);
-      return primary;
-    }
-    final staged = await _storage.read(key: _retryKey);
-    if (staged == null) return null;
-    await _storage.delete(key: supabasePersistSessionKey);
-    await _storage.write(key: supabasePersistSessionKey, value: staged);
-    await _storage.delete(key: _retryKey);
-    return staged;
+  Future<void> _pending = Future<void>.value();
+
+  Future<T> _serial<T>(Future<T> Function() operation) {
+    final result = _pending.then((_) => operation());
+    _pending = result.then<void>((_) {}, onError: (Object _, StackTrace __) {});
+    return result;
   }
+
+  @override
+  Future<String?> accessToken() => _serial(() async {
+    final staged = await _storage.read(key: _retryKey);
+    if (staged == null) {
+      return _storage.read(key: supabasePersistSessionKey);
+    }
+    try {
+      await _storage.write(key: supabasePersistSessionKey, value: staged);
+      await _storage.delete(key: _retryKey);
+    } on Object catch (error) {
+      developer.log(
+        'Session recovery promotion failed: ${error.runtimeType}',
+        name: 'SupabaseSecureStorage',
+      );
+    }
+    return staged;
+  });
 
   @override
   Future<bool> hasAccessToken() async {
-    return await accessToken() != null;
+    return await _storage.read(key: _retryKey) != null ||
+        await _storage.read(key: supabasePersistSessionKey) != null;
   }
 
   @override
-  Future<void> persistSession(String persistSessionString) async {
+  Future<void> persistSession(String persistSessionString) => _serial(() async {
     try {
       await _storage.write(
         key: supabasePersistSessionKey,
@@ -70,13 +84,13 @@ class SupabaseSecureStorage extends LocalStorage {
         key: supabasePersistSessionKey,
         value: persistSessionString,
       );
-      await _storage.delete(key: _retryKey);
     }
-  }
+    await _storage.delete(key: _retryKey);
+  });
 
   @override
-  Future<void> removePersistedSession() async {
+  Future<void> removePersistedSession() => _serial(() async {
     await _storage.delete(key: _retryKey);
     await _storage.delete(key: supabasePersistSessionKey);
-  }
+  });
 }

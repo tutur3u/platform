@@ -301,6 +301,36 @@ void main() {
       'mobile-multi-account-store-v1',
     ]);
   });
+  test('migration leaves newer retry staging ahead of legacy', () async {
+    const key = supabasePersistSessionKey;
+    keychain.items[key] = (value: 'old', accessibility: _legacy);
+    keychain.items['$key.persist-retry'] = (
+      value: 'fresh',
+      accessibility: _current,
+    );
+    keychain.items[keychainMigrationStagingKey(key)] = (
+      value: 'old-migration',
+      accessibility: _current,
+    );
+    expect(
+      await migrateAuthKeychainAccessibility(
+        current: current,
+        legacy: legacy,
+        keys: [key],
+        enabled: true,
+      ),
+      isTrue,
+    );
+    expect(await legacy.read(key: key), isNull);
+    expect(await current.read(key: key), isNull);
+    expect(
+      await SupabaseSecureStorage(storage: current).accessToken(),
+      'fresh',
+    );
+    expect(await current.read(key: key), 'fresh');
+    expect(await current.read(key: '$key.persist-retry'), isNull);
+  });
+
   test('persist replaces a legacy session after a locked start', () async {
     keychain.items[supabasePersistSessionKey] = (
       value: 'old',
@@ -342,9 +372,8 @@ void main() {
   test(
     'persist retries a duplicate only once and exposes retry failure',
     () async {
-      when(
-        () => current.write(key: supabasePersistSessionKey, value: 'fresh'),
-      ).thenThrow(PlatformException(code: 'security', details: -25299));
+      when(() => current.write(key: supabasePersistSessionKey, value: 'fresh'))
+          .thenThrow(PlatformException(code: 'security', details: -25299));
       await expectLater(
         SupabaseSecureStorage(storage: current).persistSession('fresh'),
         throwsA(isA<PlatformException>()),
@@ -374,9 +403,8 @@ void main() {
       expect(await storage.read(key: 'cache-key'), 'encrypted-key');
       expect(await storage.read(key: 'cache-key'), 'encrypted-key');
       expect(await legacy.read(key: 'cache-key'), isNull);
-      verify(
-        () => legacy.read(key: 'cache-key'),
-      ).called(2); // migration + assertion
+      verify(() => legacy.read(key: 'cache-key'))
+          .called(2); // migration + assertion
       expect(keychain.items['cache-key']!.accessibility, _current);
     },
   );
