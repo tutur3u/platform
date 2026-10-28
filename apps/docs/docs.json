@@ -62,6 +62,7 @@
                   "platform/features/mira-health-planning-tools",
                   "platform/features/task-reminder-delivery",
                   "platform/features/mobile-chat",
+                  "platform/features/mobile-mastermind",
                   "platform/features/mira-client-actions",
                   "platform/features/colab",
                   "platform/features/lettin",

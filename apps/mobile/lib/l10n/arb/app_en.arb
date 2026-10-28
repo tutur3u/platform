@@ -1293,6 +1293,7 @@
   "appsHubInventoryDescription": "Run products, stock, sales, and booth operations in one place.",
   "appsHubListView": "List",
   "appsHubMailDescription": "Read and send email, manage drafts, and organize your inbox.",
+  "appsHubMastermindDescription": "Fleet status, decisions, releases and usage from Mastermind.",
   "appsHubMeetDescription": "Plan meetings, review schedules, and keep recordings visible.",
   "appsHubMoreTools": "More tools",
   "appsHubNotesDescription": "Capture ideas and connect them to your work.",
@@ -5238,6 +5239,40 @@
       }
     }
   },
+  "@mastermindCouldntReadShowing": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindCouldntRefreshShowing": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindCountState": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "state": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindDeployCiLine": {
+    "placeholders": {
+      "deploy": {
+        "type": "String"
+      },
+      "ci": {
+        "type": "String"
+      }
+    }
+  },
   "@mastermindFloor": {
     "placeholders": {
       "value": {
@@ -5248,6 +5283,23 @@
   "@mastermindLaneEta": {
     "placeholders": {
       "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindLastPublished": {
+    "placeholders": {
+      "age": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindLiveAgo": {
+    "placeholders": {
+      "age": {
         "type": "String"
       }
     }
@@ -5263,6 +5315,20 @@
     "placeholders": {
       "count": {
         "type": "int"
+      }
+    }
+  },
+  "@mastermindNeedsYouSeeAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindOfflineShowing": {
+    "placeholders": {
+      "time": {
+        "type": "String"
       }
     }
   },
@@ -5287,6 +5353,13 @@
       }
     }
   },
+  "@mastermindSecurityLine": {
+    "placeholders": {
+      "product": {
+        "type": "String"
+      }
+    }
+  },
   "@mastermindSelectedReadout": {
     "placeholders": {
       "date": {
@@ -5300,10 +5373,24 @@
       }
     }
   },
+  "@mastermindSessionLeft": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
   "@mastermindSnapshotAt": {
     "placeholders": {
       "time": {
         "type": "String"
+      }
+    }
+  },
+  "@mastermindSourcesDegraded": {
+    "placeholders": {
+      "count": {
+        "type": "int"
       }
     }
   },
@@ -5371,6 +5458,13 @@
       }
     }
   },
+  "@mastermindTabSoonTitle": {
+    "placeholders": {
+      "tab": {
+        "type": "String"
+      }
+    }
+  },
   "@mastermindUnitCredits": {
     "placeholders": {
       "value": {
@@ -5434,12 +5528,30 @@
       }
     }
   },
+  "@mastermindUpdateAppShowing": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindUpdatedAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "mastermindAccountFilter": "Account",
+  "mastermindActivityEmpty": "No recent activity",
+  "mastermindActivityTitle": "Activity",
   "mastermindAgeBasis": "Age basis",
   "mastermindAgeDays": "{count, plural, =1{1 day ago} other{{count} days ago}}",
   "mastermindAgeHours": "{count, plural, =1{1 h ago} other{{count} h ago}}",
   "mastermindAgeMinutes": "{count, plural, =0{just now} =1{1 min ago} other{{count} min ago}}",
+  "mastermindAllCaughtUp": "You're all caught up",
   "mastermindAllFilter": "All",
+  "mastermindAppName": "Mastermind",
   "mastermindAreaCi": "CI",
   "mastermindAreaCost": "Cost",
   "mastermindAreaEducation": "Education",
@@ -5508,14 +5620,19 @@
   "mastermindColumnTopLevel": "Top level",
   "mastermindColumnTotal": "Total",
   "mastermindCommit": "Commit",
+  "mastermindCouldntReadShowing": "Couldn't read the latest update · showing {time}",
+  "mastermindCouldntRefreshShowing": "Couldn't refresh · showing {time}",
+  "mastermindCountState": "{count} {state}",
   "mastermindCoverageComplete": "Complete",
   "mastermindCoverageMissing": "No source",
   "mastermindCoveragePartial": "Partial data",
   "mastermindCoverageStale": "Stale",
   "mastermindDataSourcesAction": "Data sources",
   "mastermindDecidedBy": "Decided by",
+  "mastermindDecisionsEmpty": "No decisions yet",
   "mastermindDecisionsTitle": "Decisions",
   "mastermindDeploy": "Deploy",
+  "mastermindDeployCiLine": "Deploy {deploy} · CI {ci}",
   "mastermindDeployError": "error",
   "mastermindDeployFailedFact": "Deploy failed",
   "mastermindDeployFailure": "failure",
@@ -5544,6 +5661,8 @@
   "mastermindFilterRunning": "Running",
   "mastermindFilterWaiting": "Waiting",
   "mastermindFloor": "Floor {value}",
+  "mastermindForbiddenMessage": "Ask a Mastermind owner for access.",
+  "mastermindForbiddenTitle": "This account isn't allowed to view Mastermind.",
   "mastermindFreshCached": "cached",
   "mastermindFreshFresh": "fresh",
   "mastermindInsightsLabel": "Insights",
@@ -5566,34 +5685,48 @@
   "mastermindLaneProduct": "Product",
   "mastermindLaneRole": "Role",
   "mastermindLaneState": "State",
+  "mastermindLanesAtAGlance": "Lanes at a glance",
   "mastermindLanesEmpty": "No lanes in this view",
   "mastermindLanesLabel": "Lanes",
+  "mastermindLastPublished": "Mastermind last published {age} · {time}",
+  "mastermindLiveAgo": "Live {age}",
   "mastermindLiveFor": "live {duration}",
   "mastermindMeasuredRuns": "{count, plural, =1{1 measured run} other{{count} measured runs}}",
+  "mastermindNeedsAttention": "Needs attention",
   "mastermindNeedsYouHint": "Answer in the Inbox on your Mac.",
+  "mastermindNeedsYouSeeAll": "See all ({count})",
   "mastermindNeedsYouTitle": "Needs you",
   "mastermindNoDataInPeriod": "No data in this period",
   "mastermindNoProduct": "No product",
+  "mastermindNoSnapshotTitle": "Mastermind hasn't published yet.",
+  "mastermindNotConfiguredMessage": "Mastermind isn't connected on this build.",
   "mastermindNotConnectedMessage": "Mastermind data isn't published to this app yet.",
   "mastermindNotConnectedTitle": "Not connected",
   "mastermindNotReversible": "Not reversible",
+  "mastermindNothingNeedsReply": "Nothing needs a reply",
   "mastermindNothingNeedsYou": "Nothing needs you",
   "mastermindNowLabel": "Now",
   "mastermindObservedAt": "Observed",
+  "mastermindOfflineShowing": "Offline · showing {time}",
   "mastermindOriginLabel": "Origin",
   "mastermindPartialBucket": "partial bucket",
   "mastermindProductFilter": "Product",
   "mastermindProductsLabel": "Products",
+  "mastermindQuotaEmpty": "No quota data",
+  "mastermindQuotaTitle": "Quota",
   "mastermindRange24h": "24 h",
   "mastermindRange7d": "7 days",
   "mastermindReceiptRecorded": "Receipt recorded",
+  "mastermindRecentDecisionsTitle": "Recent decisions",
   "mastermindRecentEmpty": "Nothing new.",
   "mastermindRecentTitle": "Recent",
   "mastermindRecommended": "Recommended",
   "mastermindRejectedInline": "Couldn't read the latest snapshot. Showing {time}.",
   "mastermindRejectedMessage": "It uses a format this app version doesn't read. Update the app.",
+  "mastermindRejectedOtherMessage": "The latest update couldn't be read.",
   "mastermindRejectedTitle": "This snapshot can't be shown",
   "mastermindReleasesTitle": "Releases",
+  "mastermindReservePacing": "Reserve pacing (chart rule)",
   "mastermindResetsAt": "Resets {dateTime}",
   "mastermindReversible": "Reversible",
   "mastermindRiskHigh": "high",
@@ -5607,7 +5740,10 @@
   "mastermindScopeFleet": "Fleet",
   "mastermindScopeModels": "Models",
   "mastermindScopeUsage": "Usage",
+  "mastermindSecurityFix": "Security fix",
+  "mastermindSecurityGroup": "Security",
   "mastermindSecurityIssue": "Security issue",
+  "mastermindSecurityLine": "{product} · security fix",
   "mastermindSelectedReadout": "{date} · {series} · {value}",
   "mastermindSeriesActive": "Active",
   "mastermindSeriesBalance": "Balance",
@@ -5629,7 +5765,15 @@
   "mastermindSeriesUsageLimit": "Usage limit",
   "mastermindSeriesWaiting": "waiting",
   "mastermindSession": "Session",
+  "mastermindSessionLeft": "Session {value} left",
+  "mastermindSessionRejectedMessage": "Try again. If it keeps happening, sign out and sign in again.",
+  "mastermindSessionRejectedTitle": "Mastermind couldn't verify your session.",
+  "mastermindShipEmpty": "No releases reported",
   "mastermindShowAll": "Show all",
+  "mastermindSignOutAction": "Sign out and sign in again",
+  "mastermindSignOutConfirmAction": "Sign out",
+  "mastermindSignOutConfirmMessage": "This signs you out of Tuturuuu on this device, including every saved account. You'll need to sign in again.",
+  "mastermindSignOutConfirmTitle": "Sign out of Tuturuuu?",
   "mastermindSnapshotAt": "Snapshot {time}",
   "mastermindSnapshotOutOfDate": "Snapshot out of date",
   "mastermindSnapshotSectionsTitle": "Sections",
@@ -5647,6 +5791,7 @@
   "mastermindSourceStateOk": "OK",
   "mastermindSourceT3": "T3",
   "mastermindSourceWorkforce": "Workforce",
+  "mastermindSourcesDegraded": "{count, plural, =1{1 source degraded} other{{count} sources degraded}}",
   "mastermindSourcesTitle": "Sources",
   "mastermindStaffGroup": "Staff",
   "mastermindStateAnswered": "answered",
@@ -5676,10 +5821,18 @@
   "mastermindSummaryUsageLowest": "{account} has the least left: {percent}.",
   "mastermindSummaryUsageShort": "Projected SHORT at reset {time}.",
   "mastermindSummaryWeeklyNotReported": "Weekly window not reported.",
+  "mastermindTabHome": "Home",
+  "mastermindTabInbox": "Inbox",
+  "mastermindTabInsights": "Insights",
+  "mastermindTabShip": "Ship",
+  "mastermindTabSoonMessage": "This part of Mastermind arrives in an upcoming update. Home already shows what needs you.",
+  "mastermindTabSoonTitle": "{tab} is coming soon",
+  "mastermindTabWork": "Work",
   "mastermindTableLink": "Table",
   "mastermindTentative": "tentative",
   "mastermindTimeZoneCaption": "GMT+7",
   "mastermindTitle": "Mastermind",
+  "mastermindTryAgain": "Try again",
   "mastermindUnavailable": "Unavailable",
   "mastermindUnitCredits": "{value} credits",
   "mastermindUnitCreditsPerDay": "{value} credits/day",
@@ -5690,6 +5843,12 @@
   "mastermindUnitPpPerHour": "{value} pp/h",
   "mastermindUnitSeconds": "{value} s",
   "mastermindUnitTokens": "{value} tokens",
+  "mastermindUnknown": "Unknown",
+  "mastermindUnreachableMessage": "Retries wait a little longer after each failure.",
+  "mastermindUnreachableTitle": "Can't reach Mastermind.",
+  "mastermindUpdateAppShowing": "Update the app to read the latest Mastermind data · showing {time}",
+  "mastermindUpdatedAt": "Updated {time}",
+  "mastermindUsageLink": "Usage",
   "mastermindVersion": "Version",
   "mastermindWeekly": "Weekly",
   "mastermindWhy": "Why"

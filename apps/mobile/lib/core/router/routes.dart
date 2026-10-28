@@ -44,6 +44,11 @@ abstract final class Routes {
   static const cms = '/cms';
   static const crm = '/crm';
   static const meet = '/meet';
+  static const mastermind = '/mastermind';
+  static const mastermindInbox = '/mastermind/inbox';
+  static const mastermindWork = '/mastermind/work';
+  static const mastermindShip = '/mastermind/ship';
+  static const mastermindInsights = '/mastermind/insights';
   static const timer = '/timer';
   static const settings = '/settings';
   static const settingsProfile = '/settings/profile';
@@ -224,6 +229,9 @@ abstract final class Routes {
     }
     if (normalized == meet || normalized.startsWith('$meet/')) {
       return meet;
+    }
+    if (normalized == mastermind || normalized.startsWith('$mastermind/')) {
+      return mastermind;
     }
     if (normalized == timer || normalized.startsWith('$timer/')) {
       return timer;

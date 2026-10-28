@@ -42,7 +42,7 @@ typedef RefreshTimerFactory = Timer Function(Duration delay, void Function());
 /// [setForeground]; connectivity calls [setOnline]. The timer only runs while
 /// at least one screen is attached, the app is foregrounded and the device is
 /// online. Attempts never overlap: the next one is scheduled when the
-/// previous finishes. Not wired to any UI yet.
+/// previous finishes.
 final class MastermindRefreshScheduler {
   MastermindRefreshScheduler({
     required Future<RefreshResult> Function() refresh,
@@ -79,6 +79,9 @@ final class MastermindRefreshScheduler {
   int _failures = 0;
 
   int get consecutiveFailures => _failures;
+
+  /// Whether the device last reported a network connection.
+  bool get isOnline => _online;
   bool get isScheduled => _timer?.isActive ?? false;
 
   /// The delay the next scheduled attempt will wait, null when idle.

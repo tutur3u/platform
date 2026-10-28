@@ -18,6 +18,7 @@ import 'package:mobile/features/habits/view/habits_page.dart';
 import 'package:mobile/features/inventory/cubit/inventory_access_cubit.dart';
 import 'package:mobile/features/inventory/view/inventory_page.dart';
 import 'package:mobile/features/mail/mail_module.dart';
+import 'package:mobile/features/mastermind/mastermind_module.dart';
 import 'package:mobile/features/meet/view/meet_portal_page.dart';
 import 'package:mobile/features/notes/notes_page.dart';
 import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
@@ -180,6 +181,7 @@ class AppRegistry {
       miniAppNavItems: _inventoryMiniNav,
       isVisible: _showInventoryModule,
     ),
+    mastermindModule,
     AppModule(
       id: 'timer',
       route: Routes.timer,

@@ -41,6 +41,8 @@ import 'package:mobile/features/inventory/view/inventory_manage_page.dart';
 import 'package:mobile/features/inventory/view/inventory_product_editor_page.dart';
 import 'package:mobile/features/inventory/view/inventory_products_page.dart';
 import 'package:mobile/features/inventory/view/inventory_sales_page.dart';
+import 'package:mobile/features/mastermind/access/mastermind_access_cubit.dart';
+import 'package:mobile/features/mastermind/view/mastermind_routes.dart';
 import 'package:mobile/features/notifications/view/notifications_page.dart';
 import 'package:mobile/features/profile/view/profile_overview_page.dart';
 import 'package:mobile/features/security/qr_login/view/qr_login_sign_in_page.dart';
@@ -65,6 +67,7 @@ export 'package:mobile/core/router/app_router_access_redirects.dart'
     show
         shouldRedirectDisabledEducationRoutes,
         shouldRedirectDisabledHabitsRoutes,
+        shouldRedirectDisabledMastermindRoutes,
         shouldRedirectPersonalTimerRequests;
 
 String? resolveUnauthenticatedRedirect({
@@ -163,6 +166,7 @@ GoRouter createAppRouter(
   EducationAccessCubit educationAccessCubit,
   InventoryAccessCubit inventoryAccessCubit,
   AppTabCubit appTabCubit, {
+  MastermindAccessCubit? mastermindAccessCubit,
   String? initialLocation,
 }) {
   final navigatorKey = GlobalKey<NavigatorState>();
@@ -181,6 +185,7 @@ GoRouter createAppRouter(
       habitsAccessCubit,
       educationAccessCubit,
       inventoryAccessCubit,
+      mastermindAccessCubit,
     ),
     redirect: (context, state) {
       final authState = authCubit.state;
@@ -288,6 +293,14 @@ GoRouter createAppRouter(
         return Routes.apps;
       }
 
+      if (mastermindAccessCubit != null &&
+          shouldRedirectDisabledMastermindRoutes(
+            state.matchedLocation,
+            mastermindAccessCubit.state,
+          )) {
+        return Routes.apps;
+      }
+
       // On workspace-select but already has a workspace → go home
       if (isWsSelectRoute && wsState.hasWorkspace) {
         return Routes.home;
@@ -360,6 +373,7 @@ GoRouter createAppRouter(
           ),
           ...appSettingsAliasRoutes(),
           ...AppRegistry.routes,
+          ...mastermindTabRoutes,
           GoRoute(
             path: Routes.habits,
             builder: (context, state) => const HabitsPage(),
@@ -564,6 +578,7 @@ class _AppRefreshNotifier extends ChangeNotifier {
     HabitsAccessCubit habitsAccessCubit,
     EducationAccessCubit educationAccessCubit,
     InventoryAccessCubit inventoryAccessCubit,
+    MastermindAccessCubit? mastermindAccessCubit,
   ) {
     _authSub = authCubit.stream.listen((state) {
       if (kDebugMode) {
@@ -590,6 +605,9 @@ class _AppRefreshNotifier extends ChangeNotifier {
     _inventoryAccessSub = inventoryAccessCubit.stream.listen((_) {
       notifyListeners();
     });
+    _mastermindAccessSub = mastermindAccessCubit?.stream.listen((_) {
+      notifyListeners();
+    });
   }
 
   late final StreamSubscription<AuthState> _authSub;
@@ -597,6 +615,7 @@ class _AppRefreshNotifier extends ChangeNotifier {
   late final StreamSubscription<HabitsAccessState> _habitsAccessSub;
   late final StreamSubscription<EducationAccessState> _educationAccessSub;
   late final StreamSubscription<InventoryAccessState> _inventoryAccessSub;
+  late final StreamSubscription<MastermindAccessState>? _mastermindAccessSub;
 
   @override
   Future<void> dispose() async {
@@ -605,6 +624,7 @@ class _AppRefreshNotifier extends ChangeNotifier {
     await _habitsAccessSub.cancel();
     await _educationAccessSub.cancel();
     await _inventoryAccessSub.cancel();
+    await _mastermindAccessSub?.cancel();
     super.dispose();
   }
 }
