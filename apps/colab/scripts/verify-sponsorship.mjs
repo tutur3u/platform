@@ -80,6 +80,7 @@ try {
     JSON.stringify({
       id: 'host',
       email: 'host@tuturuuu.com',
+      staffVerified: true,
       name: 'Host',
       expires: Date.now() + 60000,
     })
