@@ -47,6 +47,17 @@ BEGIN
     RETURN NEW;
   END IF;
 
+  -- Wait for any sprint start, end or move on this board to finish (they hold
+  -- the board row FOR UPDATE), so a task reopened while its sprint ends is
+  -- either carried by the end or sees the sprint completed and rejoins below.
+  PERFORM 1
+  FROM public.workspace_boards
+  WHERE id = NEW.board_id AND sprint_length_weeks IS NOT NULL
+  FOR SHARE;
+  IF NOT FOUND THEN
+    RETURN NEW;
+  END IF;
+
   -- A task sits in at most one open sprint per board.
   IF EXISTS (
     SELECT 1

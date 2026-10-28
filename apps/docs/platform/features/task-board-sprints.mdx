@@ -61,7 +61,9 @@ Board sprints change only through the service-role RPCs
 checks. Anonymous and signed-in sessions cannot execute them; the catalog check
 in `apps/database/supabase/tests/20261027151200_anon-definer-execute.sql` lists
 them as service-only. Direct row writes stay available for workspace-wide cycles
-only.
+only, and the older task-cycle edit and delete routes refuse board sprints (404).
+Every sprint writer locks the board row before its sprints, so moves, starts,
+ends and task membership changes on one board run one at a time.
 
 ## Exceptions
 
@@ -72,5 +74,6 @@ tasks count as having their own due date.
 Regression coverage: `apps/database/supabase/tests/task-board-sprints.sql`
 (run by the Task board database contract workflow),
 `apps/tasks/src/app/api/v1/workspaces/[wsId]/task-boards/[boardId]/sprints/route.test.ts`,
+`apps/tasks/src/app/api/v1/workspaces/[wsId]/task-cycles/[cycleId]/route.test.ts`,
 `packages/utils/src/task-helper/sprints.test.ts` and
 `packages/internal-api/src/task-sprints.test.ts`.
