@@ -3,14 +3,13 @@
 import { useEffect } from 'react';
 
 /**
- * The side panel's width lives in CSS variables on the page root: one for the
- * panel and one for the board's right padding. A drag writes both straight
- * from each pointer move, with transitions off, so the edge stays under the
- * cursor and nothing goes through React. The chosen width is remembered.
+ * The side panel's width lives in one CSS variable on the page root, read by
+ * the panel and by the board's right padding. A drag writes it straight from
+ * each pointer move, with the board's transition off, so the edge stays under
+ * the cursor and nothing goes through React. The chosen width is remembered.
  */
 const WIDTH_KEY = 'tasks.task-panel-width';
-const PANEL_VAR = '--task-panel-width';
-const BOARD_VAR = '--task-board-panel-width';
+const WIDTH_VAR = '--task-panel-width';
 const TRANSITION_VAR = '--task-board-panel-transition';
 export const TASK_PANEL_DEFAULT_WIDTH = 576;
 export const TASK_PANEL_MIN_WIDTH = 360;
@@ -49,9 +48,7 @@ export function getTaskPanelWidth() {
 /** Sizes the panel and the board's room for it, without remembering it. */
 export function applyTaskPanelWidth(width: number) {
   const next = clamp(width);
-  const { style } = document.documentElement;
-  style.setProperty(PANEL_VAR, `${next}px`);
-  style.setProperty(BOARD_VAR, `${next}px`);
+  document.documentElement.style.setProperty(WIDTH_VAR, `${next}px`);
   return next;
 }
 

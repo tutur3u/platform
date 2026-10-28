@@ -981,109 +981,111 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
             )}
           >
             {/* Priority Badge */}
-            <Popover
-              open={isPopoverOpen('priority')}
-              onOpenChange={(open) => setPopoverOpen('priority', open)}
-            >
-              <TaskPropertyPopoverTrigger
-                variant={variant}
-                label={
-                  priority
-                    ? t(`tasks.priority_${priority}`)
-                    : t('common.priority')
-                }
-                popoverId="priority"
+            <TaskPropertyNameRow popoverId="priority" variant={variant}>
+              <Popover
+                open={isPopoverOpen('priority')}
+                onOpenChange={(open) => setPopoverOpen('priority', open)}
               >
-                <button
-                  type="button"
-                  disabled={disabled}
-                  aria-label={
+                <TaskPropertyPopoverTrigger
+                  compact={isCompact}
+                  label={
                     priority
                       ? t(`tasks.priority_${priority}`)
                       : t('common.priority')
                   }
-                  className={cn(
-                    triggerBaseClass,
-                    priority
-                      ? PRIORITY_BADGE_COLORS[priority]
-                      : 'border-input bg-background text-foreground hover:bg-muted',
-                    disabled && 'cursor-not-allowed opacity-50'
-                  )}
+                  popoverId="priority"
                 >
-                  {priority ? (
-                    getPriorityIcon(priority, 'h-3.5 w-3.5')
-                  ) : (
-                    <Flag className="h-3.5 w-3.5" />
-                  )}
-                  <span className={compactLabelClass}>
-                    {priority
-                      ? t(`tasks.priority_${priority}`)
-                      : t('common.priority')}
-                  </span>
-                </button>
-              </TaskPropertyPopoverTrigger>
-              <PopoverContent
-                align="start"
-                className="w-56 p-0"
-                {...propertyPopoverContentProps}
-              >
-                <div className="p-1">
-                  {[
-                    {
-                      value: 'critical',
-                      label: t('tasks.priority_critical'),
-                      color: 'text-dynamic-red',
-                    },
-                    {
-                      value: 'high',
-                      label: t('tasks.priority_high'),
-                      color: 'text-dynamic-orange',
-                    },
-                    {
-                      value: 'normal',
-                      label: t('tasks.priority_normal'),
-                      color: 'text-dynamic-yellow',
-                    },
-                    {
-                      value: 'low',
-                      label: t('tasks.priority_low'),
-                      color: 'text-dynamic-blue',
-                    },
-                  ].map((opt) => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => {
-                        onPriorityChange(opt.value as TaskPriority);
-                        setPopoverOpen('priority', false);
-                      }}
-                      className={cn(
-                        'flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted',
-                        priority === opt.value && 'bg-muted font-medium'
-                      )}
-                    >
-                      {getPriorityIcon(
-                        opt.value as TaskPriority,
-                        cn('h-4 w-4', opt.color)
-                      )}
-                      <span className="flex-1">{opt.label}</span>
-                      {priority === opt.value && (
-                        <Check className="h-4 w-4 shrink-0 text-primary" />
-                      )}
-                    </button>
-                  ))}
-                  {priority && (
-                    <ClearMenuItem
-                      label={t('ws-task-boards.dialog.clear_priority')}
-                      onClick={() => {
-                        onPriorityChange(null);
-                        setPopoverOpen('priority', false);
-                      }}
-                    />
-                  )}
-                </div>
-              </PopoverContent>
-            </Popover>
+                  <button
+                    type="button"
+                    disabled={disabled}
+                    aria-label={
+                      priority
+                        ? t(`tasks.priority_${priority}`)
+                        : t('common.priority')
+                    }
+                    className={cn(
+                      triggerBaseClass,
+                      priority
+                        ? PRIORITY_BADGE_COLORS[priority]
+                        : 'border-input bg-background text-foreground hover:bg-muted',
+                      disabled && 'cursor-not-allowed opacity-50'
+                    )}
+                  >
+                    {priority ? (
+                      getPriorityIcon(priority, 'h-3.5 w-3.5')
+                    ) : (
+                      <Flag className="h-3.5 w-3.5" />
+                    )}
+                    <span className={compactLabelClass}>
+                      {priority
+                        ? t(`tasks.priority_${priority}`)
+                        : t('common.priority')}
+                    </span>
+                  </button>
+                </TaskPropertyPopoverTrigger>
+                <PopoverContent
+                  align="start"
+                  className="w-56 p-0"
+                  {...propertyPopoverContentProps}
+                >
+                  <div className="p-1">
+                    {[
+                      {
+                        value: 'critical',
+                        label: t('tasks.priority_critical'),
+                        color: 'text-dynamic-red',
+                      },
+                      {
+                        value: 'high',
+                        label: t('tasks.priority_high'),
+                        color: 'text-dynamic-orange',
+                      },
+                      {
+                        value: 'normal',
+                        label: t('tasks.priority_normal'),
+                        color: 'text-dynamic-yellow',
+                      },
+                      {
+                        value: 'low',
+                        label: t('tasks.priority_low'),
+                        color: 'text-dynamic-blue',
+                      },
+                    ].map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => {
+                          onPriorityChange(opt.value as TaskPriority);
+                          setPopoverOpen('priority', false);
+                        }}
+                        className={cn(
+                          'flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted',
+                          priority === opt.value && 'bg-muted font-medium'
+                        )}
+                      >
+                        {getPriorityIcon(
+                          opt.value as TaskPriority,
+                          cn('h-4 w-4', opt.color)
+                        )}
+                        <span className="flex-1">{opt.label}</span>
+                        {priority === opt.value && (
+                          <Check className="h-4 w-4 shrink-0 text-primary" />
+                        )}
+                      </button>
+                    ))}
+                    {priority && (
+                      <ClearMenuItem
+                        label={t('ws-task-boards.dialog.clear_priority')}
+                        onClick={() => {
+                          onPriorityChange(null);
+                          setPopoverOpen('priority', false);
+                        }}
+                      />
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </TaskPropertyNameRow>
 
             <TaskPropertyNameRow popoverId="list" variant={variant}>
               <TaskListSelector
@@ -1103,454 +1105,306 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
             </TaskPropertyNameRow>
 
             {/* Dates Badge */}
-            <Popover
-              open={isPopoverOpen('dates')}
-              onOpenChange={(open) => setPopoverOpen('dates', open)}
-            >
-              <TaskPropertyPopoverTrigger
-                variant={variant}
-                label={
-                  startDate || endDate
-                    ? `${startDate ? new Date(startDate).toLocaleDateString(t('common.locale', { defaultValue: 'en-US' }), { month: 'short', day: 'numeric' }) : t('ws-task-boards.dialog.no_start_date')} → ${endDate ? new Date(endDate).toLocaleDateString(t('common.locale', { defaultValue: 'en-US' }), { month: 'short', day: 'numeric' }) : t('ws-task-boards.dialog.no_due_date')}`
-                    : t('ws-task-boards.dialog.dates')
-                }
-                popoverId="dates"
+            <TaskPropertyNameRow popoverId="dates" variant={variant}>
+              <Popover
+                open={isPopoverOpen('dates')}
+                onOpenChange={(open) => setPopoverOpen('dates', open)}
               >
-                <button
-                  type="button"
-                  disabled={disabled}
-                  aria-label={t('ws-task-boards.dialog.dates')}
-                  className={cn(
-                    triggerBaseClass,
+                <TaskPropertyPopoverTrigger
+                  compact={isCompact}
+                  label={
                     startDate || endDate
-                      ? 'border-dynamic-orange/30 bg-dynamic-orange/15 text-dynamic-orange hover:border-dynamic-orange/50 hover:bg-dynamic-orange/20'
-                      : 'border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-muted hover:text-foreground',
-                    disabled && 'cursor-not-allowed opacity-50'
-                  )}
-                >
-                  <Calendar className="h-3.5 w-3.5" />
-                  <span className={compactLabelClass}>
-                    {startDate || endDate
                       ? `${startDate ? new Date(startDate).toLocaleDateString(t('common.locale', { defaultValue: 'en-US' }), { month: 'short', day: 'numeric' }) : t('ws-task-boards.dialog.no_start_date')} → ${endDate ? new Date(endDate).toLocaleDateString(t('common.locale', { defaultValue: 'en-US' }), { month: 'short', day: 'numeric' }) : t('ws-task-boards.dialog.no_due_date')}`
-                      : t('ws-task-boards.dialog.dates')}
-                  </span>
-                </button>
-              </TaskPropertyPopoverTrigger>
-              <PopoverContent
-                align="start"
-                className="w-80 p-0"
-                {...propertyPopoverContentProps}
-              >
-                <div className="rounded-lg p-3.5">
-                  <div className="space-y-3">
-                    {/* Start Date */}
-                    <div className="space-y-1.5">
-                      <Label className="font-normal text-muted-foreground text-xs">
-                        {t('ws-task-boards.dialog.start_date')}
-                      </Label>
-                      <DateTimePicker
-                        date={startDate}
-                        setDate={onStartDateChange}
-                        showTimeSelect={true}
-                        allowClear={true}
-                        showFooterControls={true}
-                        maxDate={endDate}
-                        preferences={{ weekStartsOn, timezone, timeFormat }}
-                      />
-                    </div>
-
-                    {/* Due Date */}
-                    <div className="space-y-1.5">
-                      <Label className="font-normal text-muted-foreground text-xs">
-                        {t('ws-task-boards.dialog.due_date')}
-                      </Label>
-                      <DateTimePicker
-                        date={endDate}
-                        setDate={handleEndDateChange}
-                        showTimeSelect={true}
-                        allowClear={true}
-                        showFooterControls={true}
-                        minDate={startDate}
-                        preferences={{ weekStartsOn, timezone, timeFormat }}
-                      />
-
-                      {/* Date Range Warning */}
-                      {startDate && endDate && startDate > endDate && (
-                        <div className="flex items-center gap-2 rounded-md border border-dynamic-orange/30 bg-dynamic-orange/10 px-3 py-2 text-xs">
-                          <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-dynamic-orange" />
-                          <span className="text-dynamic-orange">
-                            {t(
-                              'ws-task-boards.dialog.start_date_after_due_date'
-                            )}
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Quick Due Date Actions */}
-                      <div className="space-y-1.5 pt-2">
+                      : t('ws-task-boards.dialog.dates')
+                  }
+                  popoverId="dates"
+                >
+                  <button
+                    type="button"
+                    disabled={disabled}
+                    aria-label={t('ws-task-boards.dialog.dates')}
+                    className={cn(
+                      triggerBaseClass,
+                      startDate || endDate
+                        ? 'border-dynamic-orange/30 bg-dynamic-orange/15 text-dynamic-orange hover:border-dynamic-orange/50 hover:bg-dynamic-orange/20'
+                        : 'border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-muted hover:text-foreground',
+                      disabled && 'cursor-not-allowed opacity-50'
+                    )}
+                  >
+                    <Calendar className="h-3.5 w-3.5" />
+                    <span className={compactLabelClass}>
+                      {startDate || endDate
+                        ? `${startDate ? new Date(startDate).toLocaleDateString(t('common.locale', { defaultValue: 'en-US' }), { month: 'short', day: 'numeric' }) : t('ws-task-boards.dialog.no_start_date')} → ${endDate ? new Date(endDate).toLocaleDateString(t('common.locale', { defaultValue: 'en-US' }), { month: 'short', day: 'numeric' }) : t('ws-task-boards.dialog.no_due_date')}`
+                        : t('ws-task-boards.dialog.dates')}
+                    </span>
+                  </button>
+                </TaskPropertyPopoverTrigger>
+                <PopoverContent
+                  align="start"
+                  className="w-80 p-0"
+                  {...propertyPopoverContentProps}
+                >
+                  <div className="rounded-lg p-3.5">
+                    <div className="space-y-3">
+                      {/* Start Date */}
+                      <div className="space-y-1.5">
                         <Label className="font-normal text-muted-foreground text-xs">
-                          {t('ws-task-boards.dialog.quick_actions')}
+                          {t('ws-task-boards.dialog.start_date')}
                         </Label>
-                        <div className="grid grid-cols-2 gap-1.5 md:gap-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="xs"
-                            onClick={() => handleQuickDueDate(0)}
-                            disabled={isLoading}
-                            className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
-                          >
-                            {t('common.today')}
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="xs"
-                            onClick={() => handleQuickDueDate(1)}
-                            disabled={isLoading}
-                            className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
-                          >
-                            {t('common.tomorrow')}
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="xs"
-                            onClick={() => {
-                              // Calculate days until end of week (respects first day of week setting)
-                              const endOfWeekDay =
-                                ((weekStartsOn ?? 0) - 1 + 7) % 7;
-                              const daysUntilEnd =
-                                (endOfWeekDay - dayjs().day() + 7) % 7;
-                              handleQuickDueDate(daysUntilEnd);
-                            }}
-                            disabled={isLoading}
-                            className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
-                          >
-                            {t('common.this_week')}
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="xs"
-                            onClick={() => {
-                              // Calculate days until end of next week (respects first day of week setting)
-                              const endOfWeekDay =
-                                ((weekStartsOn ?? 0) - 1 + 7) % 7;
-                              const daysUntilEnd =
-                                (endOfWeekDay - dayjs().day() + 7) % 7;
-                              handleQuickDueDate(daysUntilEnd + 7);
-                            }}
-                            disabled={isLoading}
-                            className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
-                          >
-                            {t('common.next_week')}
-                          </Button>
+                        <DateTimePicker
+                          date={startDate}
+                          setDate={onStartDateChange}
+                          showTimeSelect={true}
+                          allowClear={true}
+                          showFooterControls={true}
+                          maxDate={endDate}
+                          preferences={{ weekStartsOn, timezone, timeFormat }}
+                        />
+                      </div>
+
+                      {/* Due Date */}
+                      <div className="space-y-1.5">
+                        <Label className="font-normal text-muted-foreground text-xs">
+                          {t('ws-task-boards.dialog.due_date')}
+                        </Label>
+                        <DateTimePicker
+                          date={endDate}
+                          setDate={handleEndDateChange}
+                          showTimeSelect={true}
+                          allowClear={true}
+                          showFooterControls={true}
+                          minDate={startDate}
+                          preferences={{ weekStartsOn, timezone, timeFormat }}
+                        />
+
+                        {/* Date Range Warning */}
+                        {startDate && endDate && startDate > endDate && (
+                          <div className="flex items-center gap-2 rounded-md border border-dynamic-orange/30 bg-dynamic-orange/10 px-3 py-2 text-xs">
+                            <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-dynamic-orange" />
+                            <span className="text-dynamic-orange">
+                              {t(
+                                'ws-task-boards.dialog.start_date_after_due_date'
+                              )}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Quick Due Date Actions */}
+                        <div className="space-y-1.5 pt-2">
+                          <Label className="font-normal text-muted-foreground text-xs">
+                            {t('ws-task-boards.dialog.quick_actions')}
+                          </Label>
+                          <div className="grid grid-cols-2 gap-1.5 md:gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="xs"
+                              onClick={() => handleQuickDueDate(0)}
+                              disabled={isLoading}
+                              className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
+                            >
+                              {t('common.today')}
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="xs"
+                              onClick={() => handleQuickDueDate(1)}
+                              disabled={isLoading}
+                              className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
+                            >
+                              {t('common.tomorrow')}
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="xs"
+                              onClick={() => {
+                                // Calculate days until end of week (respects first day of week setting)
+                                const endOfWeekDay =
+                                  ((weekStartsOn ?? 0) - 1 + 7) % 7;
+                                const daysUntilEnd =
+                                  (endOfWeekDay - dayjs().day() + 7) % 7;
+                                handleQuickDueDate(daysUntilEnd);
+                              }}
+                              disabled={isLoading}
+                              className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
+                            >
+                              {t('common.this_week')}
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="xs"
+                              onClick={() => {
+                                // Calculate days until end of next week (respects first day of week setting)
+                                const endOfWeekDay =
+                                  ((weekStartsOn ?? 0) - 1 + 7) % 7;
+                                const daysUntilEnd =
+                                  (endOfWeekDay - dayjs().day() + 7) % 7;
+                                handleQuickDueDate(daysUntilEnd + 7);
+                              }}
+                              disabled={isLoading}
+                              className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
+                            >
+                              {t('common.next_week')}
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </PopoverContent>
-            </Popover>
+                </PopoverContent>
+              </Popover>
+            </TaskPropertyNameRow>
 
             {/* Estimation Points Badge */}
-            <Popover
-              open={isPopoverOpen('estimation')}
-              onOpenChange={(open) => setPopoverOpen('estimation', open)}
-            >
-              <TaskPropertyPopoverTrigger
-                variant={variant}
-                label={
-                  boardConfig?.estimation_type && estimationPoints != null
-                    ? mapEstimationPoints(
-                        estimationPoints,
-                        boardConfig.estimation_type
-                      )
-                    : t('ws-task-boards.dialog.estimate')
-                }
-                popoverId="estimation"
+            <TaskPropertyNameRow popoverId="estimation" variant={variant}>
+              <Popover
+                open={isPopoverOpen('estimation')}
+                onOpenChange={(open) => setPopoverOpen('estimation', open)}
               >
-                <button
-                  type="button"
-                  disabled={disabled}
-                  aria-label={t('ws-task-boards.dialog.estimate')}
-                  className={cn(
-                    triggerBaseClass,
-                    estimationPoints != null
-                      ? 'border-dynamic-purple/30 bg-dynamic-purple/15 text-dynamic-purple hover:border-dynamic-purple/50 hover:bg-dynamic-purple/20'
-                      : 'border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-muted hover:text-foreground',
-                    disabled && 'cursor-not-allowed opacity-50'
-                  )}
+                <TaskPropertyPopoverTrigger
+                  compact={isCompact}
+                  label={
+                    boardConfig?.estimation_type && estimationPoints != null
+                      ? mapEstimationPoints(
+                          estimationPoints,
+                          boardConfig.estimation_type
+                        )
+                      : t('ws-task-boards.dialog.estimate')
+                  }
+                  popoverId="estimation"
                 >
-                  <Timer className="h-3.5 w-3.5" />
-                  <span className={compactLabelClass}>
-                    {boardConfig?.estimation_type
-                      ? estimationPoints != null
-                        ? mapEstimationPoints(
-                            estimationPoints,
-                            boardConfig.estimation_type
-                          )
-                        : t('ws-task-boards.dialog.estimate')
-                      : t('ws-task-boards.dialog.estimate')}
-                  </span>
-                </button>
-              </TaskPropertyPopoverTrigger>
-              <PopoverContent
-                align="start"
-                className="w-64 p-0"
-                {...propertyPopoverContentProps}
-              >
-                {!boardConfig?.estimation_type ? (
-                  <EmptyStateCard
-                    title={t('ws-task-boards.dialog.no_estimation_configured')}
-                    description={t(
-                      'ws-task-boards.dialog.configure_estimation_description'
+                  <button
+                    type="button"
+                    disabled={disabled}
+                    aria-label={t('ws-task-boards.dialog.estimate')}
+                    className={cn(
+                      triggerBaseClass,
+                      estimationPoints != null
+                        ? 'border-dynamic-purple/30 bg-dynamic-purple/15 text-dynamic-purple hover:border-dynamic-purple/50 hover:bg-dynamic-purple/20'
+                        : 'border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-muted hover:text-foreground',
+                      disabled && 'cursor-not-allowed opacity-50'
                     )}
-                    actionLabel={t('common.configure')}
-                    ActionIcon={Pen}
-                    onAction={() => {
-                      setPopoverOpen('estimation', false);
-                      onShowEstimationConfigDialog();
-                    }}
-                  />
-                ) : (
-                  <div className="p-1">
-                    {estimationIndices.map((idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => {
-                          onEstimationChange(idx);
-                          setPopoverOpen('estimation', false);
-                        }}
-                        className={cn(
-                          'flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted',
-                          estimationPoints === idx && 'bg-muted font-medium'
-                        )}
-                      >
-                        <Timer className="h-4 w-4 text-dynamic-purple" />
-                        <span className="flex-1">
-                          {mapEstimationPoints(
-                            idx,
-                            boardConfig.estimation_type
+                  >
+                    <Timer className="h-3.5 w-3.5" />
+                    <span className={compactLabelClass}>
+                      {boardConfig?.estimation_type
+                        ? estimationPoints != null
+                          ? mapEstimationPoints(
+                              estimationPoints,
+                              boardConfig.estimation_type
+                            )
+                          : t('ws-task-boards.dialog.estimate')
+                        : t('ws-task-boards.dialog.estimate')}
+                    </span>
+                  </button>
+                </TaskPropertyPopoverTrigger>
+                <PopoverContent
+                  align="start"
+                  className="w-64 p-0"
+                  {...propertyPopoverContentProps}
+                >
+                  {!boardConfig?.estimation_type ? (
+                    <EmptyStateCard
+                      title={t(
+                        'ws-task-boards.dialog.no_estimation_configured'
+                      )}
+                      description={t(
+                        'ws-task-boards.dialog.configure_estimation_description'
+                      )}
+                      actionLabel={t('common.configure')}
+                      ActionIcon={Pen}
+                      onAction={() => {
+                        setPopoverOpen('estimation', false);
+                        onShowEstimationConfigDialog();
+                      }}
+                    />
+                  ) : (
+                    <div className="p-1">
+                      {estimationIndices.map((idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => {
+                            onEstimationChange(idx);
+                            setPopoverOpen('estimation', false);
+                          }}
+                          className={cn(
+                            'flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted',
+                            estimationPoints === idx && 'bg-muted font-medium'
                           )}
-                        </span>
-                        {estimationPoints === idx && (
-                          <Check className="h-4 w-4 shrink-0 text-primary" />
-                        )}
-                      </button>
-                    ))}
-                    {estimationPoints != null && (
-                      <ClearMenuItem
-                        label={t('ws-task-boards.dialog.clear_estimate')}
-                        onClick={() => {
-                          onEstimationChange(null);
-                          setPopoverOpen('estimation', false);
-                        }}
-                      />
-                    )}
-                  </div>
-                )}
-              </PopoverContent>
-            </Popover>
+                        >
+                          <Timer className="h-4 w-4 text-dynamic-purple" />
+                          <span className="flex-1">
+                            {mapEstimationPoints(
+                              idx,
+                              boardConfig.estimation_type
+                            )}
+                          </span>
+                          {estimationPoints === idx && (
+                            <Check className="h-4 w-4 shrink-0 text-primary" />
+                          )}
+                        </button>
+                      ))}
+                      {estimationPoints != null && (
+                        <ClearMenuItem
+                          label={t('ws-task-boards.dialog.clear_estimate')}
+                          onClick={() => {
+                            onEstimationChange(null);
+                            setPopoverOpen('estimation', false);
+                          }}
+                        />
+                      )}
+                    </div>
+                  )}
+                </PopoverContent>
+              </Popover>
+            </TaskPropertyNameRow>
 
             {/* Labels Badge */}
-            <Popover
-              open={isPopoverOpen('labels')}
-              onOpenChange={(open) => {
-                setPopoverOpen('labels', open);
-                if (!open) setLabelSearchQuery('');
-              }}
-            >
-              <TaskPropertyPopoverTrigger
-                variant={variant}
-                label={
-                  selectedLabels.length === 0
-                    ? t('common.labels')
-                    : selectedLabels.length === 1
-                      ? selectedLabels[0]?.name
-                      : t('common.n_labels', {
-                          count: selectedLabels.length,
-                        })
-                }
-                popoverId="labels"
+            <TaskPropertyNameRow popoverId="labels" variant={variant}>
+              <Popover
+                open={isPopoverOpen('labels')}
+                onOpenChange={(open) => {
+                  setPopoverOpen('labels', open);
+                  if (!open) setLabelSearchQuery('');
+                }}
               >
-                <button
-                  type="button"
-                  disabled={disabled}
-                  aria-label={t('common.labels')}
-                  className={cn(
-                    triggerBaseClass,
-                    selectedLabels.length > 0
-                      ? 'border-dynamic-indigo/30 bg-dynamic-indigo/15 text-dynamic-indigo hover:border-dynamic-indigo/50 hover:bg-dynamic-indigo/20'
-                      : 'border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-muted hover:text-foreground',
-                    disabled && 'cursor-not-allowed opacity-50'
-                  )}
-                >
-                  <Tag className="h-3.5 w-3.5" />
-                  <span className={compactLabelClass}>
-                    {selectedLabels.length === 0
+                <TaskPropertyPopoverTrigger
+                  compact={isCompact}
+                  label={
+                    selectedLabels.length === 0
                       ? t('common.labels')
                       : selectedLabels.length === 1
                         ? selectedLabels[0]?.name
                         : t('common.n_labels', {
                             count: selectedLabels.length,
-                          })}
-                  </span>
-                </button>
-              </TaskPropertyPopoverTrigger>
-              <PopoverContent
-                align="start"
-                className="w-72 p-0"
-                {...propertyPopoverContentProps}
-              >
-                {availableLabels.length === 0 ? (
-                  <EmptyStateCard
-                    title={t('ws-task-boards.dialog.no_labels_configured')}
-                    description={t(
-                      'ws-task-boards.dialog.create_labels_description'
-                    )}
-                    actionLabel={t('ws-task-boards.dialog.create_label')}
-                    ActionIcon={Plus}
-                    onAction={() => {
-                      setPopoverOpen('labels', false);
-                      onShowNewLabelDialog();
-                    }}
-                  />
-                ) : (
-                  <>
-                    {selectedLabels.length > 0 && (
-                      <div className="border-b p-2">
-                        <div className="flex flex-wrap gap-1.5">
-                          {selectedLabels.map((label) => {
-                            const styles = computeAccessibleLabelStyles(
-                              label.color
-                            );
-                            return (
-                              <Badge
-                                key={label.id}
-                                variant="secondary"
-                                className={cn(
-                                  'h-6 cursor-pointer gap-1 px-2 text-xs transition-opacity hover:opacity-80',
-                                  disabled && 'pointer-events-none'
-                                )}
-                                style={
-                                  styles
-                                    ? {
-                                        backgroundColor: styles.bg,
-                                        borderColor: styles.border,
-                                        color: styles.text,
-                                      }
-                                    : undefined
-                                }
-                                onClick={() =>
-                                  !disabled && onLabelToggle(label)
-                                }
-                              >
-                                {label.name}
-                                {!disabled && <X className="h-2.5 w-2.5" />}
-                              </Badge>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-                    <TaskResourceSearchField
-                      value={labelSearchQuery}
-                      onChange={setLabelSearchQuery}
-                      placeholder={t('common.search_labels')}
-                    />
-                    <div
-                      className="max-h-60 overflow-y-auto overscroll-contain"
-                      onWheel={(e) => e.stopPropagation()}
-                    >
-                      <div className="p-1">
-                        {labelSearchQuery &&
-                        unselectedAvailableLabels.length > 0 &&
-                        filteredUnselectedLabels.length === 0 ? (
-                          <div className="px-2 py-4 text-center text-muted-foreground text-xs">
-                            {t('common.no_labels_found')}
-                          </div>
-                        ) : (
-                          filteredUnselectedLabels.map((label) => (
-                            <button
-                              key={label.id}
-                              type="button"
-                              onClick={() => onLabelToggle(label)}
-                              className="flex w-full items-center rounded-md px-2 py-1.5 text-left transition-colors hover:bg-muted"
-                            >
-                              <LabelChip
-                                label={label}
-                                showIcon={false}
-                                className="h-6 px-2 text-xs"
-                              />
-                            </button>
-                          ))
-                        )}
-                      </div>
-                    </div>
-                    <div className="border-t p-2">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => {
-                          setPopoverOpen('labels', false);
-                          onShowNewLabelDialog();
-                        }}
-                        className="h-8 w-full justify-start"
-                      >
-                        <Plus className="mr-1.5 h-3.5 w-3.5" />
-                        {t('ws-task-boards.dialog.create_new_label')}
-                      </Button>
-                    </div>
-                  </>
-                )}
-              </PopoverContent>
-            </Popover>
-
-            {/* Projects Badge — not available for drafts */}
-            {!isDraftMode && (
-              <Popover
-                open={isPopoverOpen('projects')}
-                onOpenChange={(open) => {
-                  setPopoverOpen('projects', open);
-                  if (!open) setProjectSearchQuery('');
-                }}
-              >
-                <TaskPropertyPopoverTrigger
-                  variant={variant}
-                  label={
-                    selectedProjects.length === 0
-                      ? t('common.projects')
-                      : selectedProjects.length === 1
-                        ? selectedProjects[0]?.name
-                        : t('common.n_projects', {
-                            count: selectedProjects.length,
                           })
                   }
-                  popoverId="projects"
+                  popoverId="labels"
                 >
                   <button
                     type="button"
                     disabled={disabled}
-                    aria-label={t('common.projects')}
+                    aria-label={t('common.labels')}
                     className={cn(
                       triggerBaseClass,
-                      selectedProjects.length > 0
-                        ? 'border-dynamic-sky/30 bg-dynamic-sky/15 text-dynamic-sky hover:border-dynamic-sky/50 hover:bg-dynamic-sky/20'
+                      selectedLabels.length > 0
+                        ? 'border-dynamic-indigo/30 bg-dynamic-indigo/15 text-dynamic-indigo hover:border-dynamic-indigo/50 hover:bg-dynamic-indigo/20'
                         : 'border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-muted hover:text-foreground',
                       disabled && 'cursor-not-allowed opacity-50'
                     )}
                   >
-                    <Box className="h-3.5 w-3.5" />
+                    <Tag className="h-3.5 w-3.5" />
                     <span className={compactLabelClass}>
-                      {selectedProjects.length === 0
-                        ? t('common.projects')
-                        : selectedProjects.length === 1
-                          ? selectedProjects[0]?.name
-                          : t('common.n_projects', {
-                              count: selectedProjects.length,
+                      {selectedLabels.length === 0
+                        ? t('common.labels')
+                        : selectedLabels.length === 1
+                          ? selectedLabels[0]?.name
+                          : t('common.n_labels', {
+                              count: selectedLabels.length,
                             })}
                     </span>
                   </button>
@@ -1560,75 +1414,86 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                   className="w-72 p-0"
                   {...propertyPopoverContentProps}
                 >
-                  {taskProjects.length === 0 ? (
+                  {availableLabels.length === 0 ? (
                     <EmptyStateCard
-                      title={t('ws-task-boards.dialog.no_projects_configured')}
+                      title={t('ws-task-boards.dialog.no_labels_configured')}
                       description={t(
-                        'ws-task-boards.dialog.create_projects_description'
+                        'ws-task-boards.dialog.create_labels_description'
                       )}
-                      actionLabel={t('ws-task-boards.dialog.create_project')}
+                      actionLabel={t('ws-task-boards.dialog.create_label')}
                       ActionIcon={Plus}
                       onAction={() => {
-                        setPopoverOpen('projects', false);
-                        onShowNewProjectDialog();
+                        setPopoverOpen('labels', false);
+                        onShowNewLabelDialog();
                       }}
                     />
                   ) : (
                     <>
-                      {selectedProjects.length > 0 && (
+                      {selectedLabels.length > 0 && (
                         <div className="border-b p-2">
                           <div className="flex flex-wrap gap-1.5">
-                            {selectedProjects.map((project) => (
-                              <Badge
-                                key={project.id}
-                                variant="secondary"
-                                className={cn(
-                                  'item-center h-auto cursor-pointer gap-1 whitespace-normal border-dynamic-sky/30 bg-dynamic-sky/10 px-2 text-dynamic-sky text-xs transition-opacity hover:opacity-80',
-                                  disabled && 'pointer-events-none'
-                                )}
-                                onClick={() =>
-                                  !disabled && onProjectToggle(project)
-                                }
-                              >
-                                <span className="wrap-break-word">
-                                  {project.name}
-                                </span>
-                                {!disabled && (
-                                  <X className="h-2.5 w-2.5 shrink-0" />
-                                )}
-                              </Badge>
-                            ))}
+                            {selectedLabels.map((label) => {
+                              const styles = computeAccessibleLabelStyles(
+                                label.color
+                              );
+                              return (
+                                <Badge
+                                  key={label.id}
+                                  variant="secondary"
+                                  className={cn(
+                                    'h-6 cursor-pointer gap-1 px-2 text-xs transition-opacity hover:opacity-80',
+                                    disabled && 'pointer-events-none'
+                                  )}
+                                  style={
+                                    styles
+                                      ? {
+                                          backgroundColor: styles.bg,
+                                          borderColor: styles.border,
+                                          color: styles.text,
+                                        }
+                                      : undefined
+                                  }
+                                  onClick={() =>
+                                    !disabled && onLabelToggle(label)
+                                  }
+                                >
+                                  {label.name}
+                                  {!disabled && <X className="h-2.5 w-2.5" />}
+                                </Badge>
+                              );
+                            })}
                           </div>
                         </div>
                       )}
                       <TaskResourceSearchField
-                        value={projectSearchQuery}
-                        onChange={setProjectSearchQuery}
-                        placeholder={t('common.search_projects')}
+                        value={labelSearchQuery}
+                        onChange={setLabelSearchQuery}
+                        placeholder={t('common.search_labels')}
                       />
                       <div
                         className="max-h-60 overflow-y-auto overscroll-contain"
                         onWheel={(e) => e.stopPropagation()}
                       >
                         <div className="p-1">
-                          {projectSearchQuery &&
-                          unselectedTaskProjects.length > 0 &&
-                          filteredUnselectedProjects.length === 0 ? (
+                          {labelSearchQuery &&
+                          unselectedAvailableLabels.length > 0 &&
+                          filteredUnselectedLabels.length === 0 ? (
                             <div className="px-2 py-4 text-center text-muted-foreground text-xs">
-                              {t('common.no_projects_found')}
+                              {t('common.no_labels_found')}
                             </div>
                           ) : (
-                            filteredUnselectedProjects.map((project) => (
+                            filteredUnselectedLabels.map((label) => (
                               <button
-                                key={project.id}
+                                key={label.id}
                                 type="button"
-                                onClick={() => onProjectToggle(project)}
-                                className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
+                                onClick={() => onLabelToggle(label)}
+                                className="flex w-full items-center rounded-md px-2 py-1.5 text-left transition-colors hover:bg-muted"
                               >
-                                <Box className="h-4 w-4 text-dynamic-sky" />
-                                <span className="wrap-break-word flex-1 whitespace-normal">
-                                  {project.name}
-                                </span>
+                                <LabelChip
+                                  label={label}
+                                  showIcon={false}
+                                  className="h-6 px-2 text-xs"
+                                />
                               </button>
                             ))
                           )}
@@ -1639,536 +1504,692 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                           size="sm"
                           variant="ghost"
                           onClick={() => {
-                            setPopoverOpen('projects', false);
-                            onShowNewProjectDialog();
+                            setPopoverOpen('labels', false);
+                            onShowNewLabelDialog();
                           }}
                           className="h-8 w-full justify-start"
                         >
                           <Plus className="mr-1.5 h-3.5 w-3.5" />
-                          {t('ws-task-boards.dialog.create_new_project')}
+                          {t('ws-task-boards.dialog.create_new_label')}
                         </Button>
                       </div>
                     </>
                   )}
                 </PopoverContent>
               </Popover>
+            </TaskPropertyNameRow>
+
+            {/* Projects Badge — not available for drafts */}
+            {!isDraftMode && (
+              <TaskPropertyNameRow popoverId="projects" variant={variant}>
+                <Popover
+                  open={isPopoverOpen('projects')}
+                  onOpenChange={(open) => {
+                    setPopoverOpen('projects', open);
+                    if (!open) setProjectSearchQuery('');
+                  }}
+                >
+                  <TaskPropertyPopoverTrigger
+                    compact={isCompact}
+                    label={
+                      selectedProjects.length === 0
+                        ? t('common.projects')
+                        : selectedProjects.length === 1
+                          ? selectedProjects[0]?.name
+                          : t('common.n_projects', {
+                              count: selectedProjects.length,
+                            })
+                    }
+                    popoverId="projects"
+                  >
+                    <button
+                      type="button"
+                      disabled={disabled}
+                      aria-label={t('common.projects')}
+                      className={cn(
+                        triggerBaseClass,
+                        selectedProjects.length > 0
+                          ? 'border-dynamic-sky/30 bg-dynamic-sky/15 text-dynamic-sky hover:border-dynamic-sky/50 hover:bg-dynamic-sky/20'
+                          : 'border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-muted hover:text-foreground',
+                        disabled && 'cursor-not-allowed opacity-50'
+                      )}
+                    >
+                      <Box className="h-3.5 w-3.5" />
+                      <span className={compactLabelClass}>
+                        {selectedProjects.length === 0
+                          ? t('common.projects')
+                          : selectedProjects.length === 1
+                            ? selectedProjects[0]?.name
+                            : t('common.n_projects', {
+                                count: selectedProjects.length,
+                              })}
+                      </span>
+                    </button>
+                  </TaskPropertyPopoverTrigger>
+                  <PopoverContent
+                    align="start"
+                    className="w-72 p-0"
+                    {...propertyPopoverContentProps}
+                  >
+                    {taskProjects.length === 0 ? (
+                      <EmptyStateCard
+                        title={t(
+                          'ws-task-boards.dialog.no_projects_configured'
+                        )}
+                        description={t(
+                          'ws-task-boards.dialog.create_projects_description'
+                        )}
+                        actionLabel={t('ws-task-boards.dialog.create_project')}
+                        ActionIcon={Plus}
+                        onAction={() => {
+                          setPopoverOpen('projects', false);
+                          onShowNewProjectDialog();
+                        }}
+                      />
+                    ) : (
+                      <>
+                        {selectedProjects.length > 0 && (
+                          <div className="border-b p-2">
+                            <div className="flex flex-wrap gap-1.5">
+                              {selectedProjects.map((project) => (
+                                <Badge
+                                  key={project.id}
+                                  variant="secondary"
+                                  className={cn(
+                                    'item-center h-auto cursor-pointer gap-1 whitespace-normal border-dynamic-sky/30 bg-dynamic-sky/10 px-2 text-dynamic-sky text-xs transition-opacity hover:opacity-80',
+                                    disabled && 'pointer-events-none'
+                                  )}
+                                  onClick={() =>
+                                    !disabled && onProjectToggle(project)
+                                  }
+                                >
+                                  <span className="wrap-break-word">
+                                    {project.name}
+                                  </span>
+                                  {!disabled && (
+                                    <X className="h-2.5 w-2.5 shrink-0" />
+                                  )}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        <TaskResourceSearchField
+                          value={projectSearchQuery}
+                          onChange={setProjectSearchQuery}
+                          placeholder={t('common.search_projects')}
+                        />
+                        <div
+                          className="max-h-60 overflow-y-auto overscroll-contain"
+                          onWheel={(e) => e.stopPropagation()}
+                        >
+                          <div className="p-1">
+                            {projectSearchQuery &&
+                            unselectedTaskProjects.length > 0 &&
+                            filteredUnselectedProjects.length === 0 ? (
+                              <div className="px-2 py-4 text-center text-muted-foreground text-xs">
+                                {t('common.no_projects_found')}
+                              </div>
+                            ) : (
+                              filteredUnselectedProjects.map((project) => (
+                                <button
+                                  key={project.id}
+                                  type="button"
+                                  onClick={() => onProjectToggle(project)}
+                                  className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
+                                >
+                                  <Box className="h-4 w-4 text-dynamic-sky" />
+                                  <span className="wrap-break-word flex-1 whitespace-normal">
+                                    {project.name}
+                                  </span>
+                                </button>
+                              ))
+                            )}
+                          </div>
+                        </div>
+                        <div className="border-t p-2">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setPopoverOpen('projects', false);
+                              onShowNewProjectDialog();
+                            }}
+                            className="h-8 w-full justify-start"
+                          >
+                            <Plus className="mr-1.5 h-3.5 w-3.5" />
+                            {t('ws-task-boards.dialog.create_new_project')}
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                  </PopoverContent>
+                </Popover>
+              </TaskPropertyNameRow>
             )}
 
             {/* Assignees Badge */}
             {canUseBoardAssignees && (
-              <Popover
-                open={isPopoverOpen('assignees')}
-                onOpenChange={(open) => {
-                  setPopoverOpen('assignees', open);
-                  if (!open) setAssigneeSearchQuery('');
-                }}
-              >
-                <TaskPropertyPopoverTrigger
-                  variant={variant}
-                  label={
-                    selectedAssignees.length === 0
-                      ? t('common.assignees')
-                      : selectedAssignees.length === 1
-                        ? selectedAssignees[0]?.display_name ||
-                          t('ws-task-boards.dialog.unknown_user')
-                        : t('common.n_assignees', {
-                            count: selectedAssignees.length,
-                          })
-                  }
-                  popoverId="assignees"
+              <TaskPropertyNameRow popoverId="assignees" variant={variant}>
+                <Popover
+                  open={isPopoverOpen('assignees')}
+                  onOpenChange={(open) => {
+                    setPopoverOpen('assignees', open);
+                    if (!open) setAssigneeSearchQuery('');
+                  }}
                 >
-                  <button
-                    type="button"
-                    disabled={disabled}
-                    aria-label={t('common.assignees')}
-                    className={cn(
-                      triggerBaseClass,
-                      selectedAssignees.length > 0
-                        ? 'border-dynamic-cyan/30 bg-dynamic-cyan/15 text-dynamic-cyan hover:border-dynamic-cyan/50 hover:bg-dynamic-cyan/20'
-                        : 'border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-muted hover:text-foreground',
-                      disabled && 'cursor-not-allowed opacity-50'
-                    )}
-                  >
-                    <Users className="h-3.5 w-3.5" />
-                    <span className={compactLabelClass}>
-                      {selectedAssignees.length === 0
+                  <TaskPropertyPopoverTrigger
+                    compact={isCompact}
+                    label={
+                      selectedAssignees.length === 0
                         ? t('common.assignees')
                         : selectedAssignees.length === 1
                           ? selectedAssignees[0]?.display_name ||
                             t('ws-task-boards.dialog.unknown_user')
                           : t('common.n_assignees', {
                               count: selectedAssignees.length,
-                            })}
-                    </span>
-                  </button>
-                </TaskPropertyPopoverTrigger>
-                <PopoverContent
-                  align="start"
-                  className="w-72 p-0"
-                  {...propertyPopoverContentProps}
-                >
-                  {workspaceMembers.length === 0 ? (
-                    <div className="p-4 text-center text-muted-foreground text-sm">
-                      {t('ws-task-boards.dialog.no_members_found')}
-                    </div>
-                  ) : (
-                    <>
-                      {selectedAssignees.length > 0 && (
-                        <div className="border-b p-2">
-                          <div className="flex flex-wrap gap-1.5">
-                            {selectedAssignees.map((assignee, index) => (
-                              <Badge
-                                key={
-                                  assignee.id ||
-                                  assignee.user_id ||
-                                  `assignee-${index}`
-                                }
-                                variant="secondary"
-                                className={cn(
-                                  'h-6 cursor-pointer gap-1.5 px-2 text-xs transition-opacity hover:opacity-80',
-                                  disabled && 'pointer-events-none'
-                                )}
-                                onClick={() =>
-                                  !disabled && onAssigneeToggle(assignee)
-                                }
-                              >
-                                <UserAvatar user={assignee} size="xs" />
-                                {assignee.display_name ||
-                                  t('ws-task-boards.dialog.unknown_user')}
-                                {!disabled && <X className="h-2.5 w-2.5" />}
-                              </Badge>
-                            ))}
+                            })
+                    }
+                    popoverId="assignees"
+                  >
+                    <button
+                      type="button"
+                      disabled={disabled}
+                      aria-label={t('common.assignees')}
+                      className={cn(
+                        triggerBaseClass,
+                        selectedAssignees.length > 0
+                          ? 'border-dynamic-cyan/30 bg-dynamic-cyan/15 text-dynamic-cyan hover:border-dynamic-cyan/50 hover:bg-dynamic-cyan/20'
+                          : 'border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-muted hover:text-foreground',
+                        disabled && 'cursor-not-allowed opacity-50'
+                      )}
+                    >
+                      <Users className="h-3.5 w-3.5" />
+                      <span className={compactLabelClass}>
+                        {selectedAssignees.length === 0
+                          ? t('common.assignees')
+                          : selectedAssignees.length === 1
+                            ? selectedAssignees[0]?.display_name ||
+                              t('ws-task-boards.dialog.unknown_user')
+                            : t('common.n_assignees', {
+                                count: selectedAssignees.length,
+                              })}
+                      </span>
+                    </button>
+                  </TaskPropertyPopoverTrigger>
+                  <PopoverContent
+                    align="start"
+                    className="w-72 p-0"
+                    {...propertyPopoverContentProps}
+                  >
+                    {workspaceMembers.length === 0 ? (
+                      <div className="p-4 text-center text-muted-foreground text-sm">
+                        {t('ws-task-boards.dialog.no_members_found')}
+                      </div>
+                    ) : (
+                      <>
+                        {selectedAssignees.length > 0 && (
+                          <div className="border-b p-2">
+                            <div className="flex flex-wrap gap-1.5">
+                              {selectedAssignees.map((assignee, index) => (
+                                <Badge
+                                  key={
+                                    assignee.id ||
+                                    assignee.user_id ||
+                                    `assignee-${index}`
+                                  }
+                                  variant="secondary"
+                                  className={cn(
+                                    'h-6 cursor-pointer gap-1.5 px-2 text-xs transition-opacity hover:opacity-80',
+                                    disabled && 'pointer-events-none'
+                                  )}
+                                  onClick={() =>
+                                    !disabled && onAssigneeToggle(assignee)
+                                  }
+                                >
+                                  <UserAvatar user={assignee} size="xs" />
+                                  {assignee.display_name ||
+                                    t('ws-task-boards.dialog.unknown_user')}
+                                  {!disabled && <X className="h-2.5 w-2.5" />}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        <TaskResourceSearchField
+                          value={assigneeSearchQuery}
+                          onChange={setAssigneeSearchQuery}
+                          placeholder={t('common.search_members')}
+                        />
+                        <div
+                          className="max-h-60 overflow-y-auto overscroll-contain"
+                          onWheel={(e) => e.stopPropagation()}
+                        >
+                          <div className="p-1">
+                            {assigneeSearchQuery &&
+                            unselectedWorkspaceMembers.length > 0 &&
+                            filteredUnselectedMembers.length === 0 ? (
+                              <div className="px-2 py-4 text-center text-muted-foreground text-xs">
+                                {t('common.no_members_found')}
+                              </div>
+                            ) : (
+                              filteredUnselectedMembers.map((member, index) => (
+                                <button
+                                  key={
+                                    member.user_id ||
+                                    member.id ||
+                                    `member-${index}`
+                                  }
+                                  type="button"
+                                  onClick={() => onAssigneeToggle(member)}
+                                  className="flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
+                                >
+                                  <UserAvatar
+                                    user={member}
+                                    size="sm"
+                                    className="shrink-0 border"
+                                  />
+                                  <span className="flex-1">
+                                    {member.display_name ||
+                                      t('ws-task-boards.dialog.unknown_user')}
+                                  </span>
+                                  <Plus className="h-4 w-4 shrink-0" />
+                                </button>
+                              ))
+                            )}
                           </div>
                         </div>
-                      )}
-                      <TaskResourceSearchField
-                        value={assigneeSearchQuery}
-                        onChange={setAssigneeSearchQuery}
-                        placeholder={t('common.search_members')}
-                      />
-                      <div
-                        className="max-h-60 overflow-y-auto overscroll-contain"
-                        onWheel={(e) => e.stopPropagation()}
-                      >
-                        <div className="p-1">
-                          {assigneeSearchQuery &&
-                          unselectedWorkspaceMembers.length > 0 &&
-                          filteredUnselectedMembers.length === 0 ? (
-                            <div className="px-2 py-4 text-center text-muted-foreground text-xs">
-                              {t('common.no_members_found')}
-                            </div>
-                          ) : (
-                            filteredUnselectedMembers.map((member, index) => (
-                              <button
-                                key={
-                                  member.user_id ||
-                                  member.id ||
-                                  `member-${index}`
-                                }
-                                type="button"
-                                onClick={() => onAssigneeToggle(member)}
-                                className="flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
-                              >
-                                <UserAvatar
-                                  user={member}
-                                  size="sm"
-                                  className="shrink-0 border"
-                                />
-                                <span className="flex-1">
-                                  {member.display_name ||
-                                    t('ws-task-boards.dialog.unknown_user')}
-                                </span>
-                                <Plus className="h-4 w-4 shrink-0" />
-                              </button>
-                            ))
-                          )}
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </PopoverContent>
-              </Popover>
+                      </>
+                    )}
+                  </PopoverContent>
+                </Popover>
+              </TaskPropertyNameRow>
             )}
 
             {/* Scheduling Badge — not available for drafts */}
             {!isDraftMode && (
-              <Popover
-                open={isPopoverOpen('scheduling')}
-                onOpenChange={(open) => setPopoverOpen('scheduling', open)}
-              >
-                <TaskPropertyPopoverTrigger
-                  variant={variant}
-                  label={
-                    totalMinutes > 0
-                      ? formatDuration(totalMinutes, t)
-                      : t('ws-task-boards.dialog.schedule')
-                  }
-                  popoverId="scheduling"
+              <TaskPropertyNameRow popoverId="scheduling" variant={variant}>
+                <Popover
+                  open={isPopoverOpen('scheduling')}
+                  onOpenChange={(open) => setPopoverOpen('scheduling', open)}
                 >
-                  <button
-                    type="button"
-                    disabled={disabled}
-                    aria-label={t('ws-task-boards.dialog.schedule')}
-                    className={cn(
-                      triggerBaseClass,
-                      hasUnsavedSchedulingChanges
-                        ? 'border-dynamic-yellow/50 border-dashed bg-dynamic-yellow/10 text-dynamic-yellow hover:border-dynamic-yellow/70 hover:bg-dynamic-yellow/15'
-                        : totalDuration
-                          ? 'border-dynamic-teal/30 bg-dynamic-teal/15 text-dynamic-teal hover:border-dynamic-teal/50 hover:bg-dynamic-teal/20'
-                          : 'border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-muted hover:text-foreground',
-                      disabled && 'cursor-not-allowed opacity-50'
-                    )}
-                  >
-                    {hasUnsavedSchedulingChanges ? (
-                      <AlertCircle className="h-3.5 w-3.5" />
-                    ) : (
-                      <CalendarClock className="h-3.5 w-3.5" />
-                    )}
-                    <span className={compactLabelClass}>
-                      {totalMinutes > 0
+                  <TaskPropertyPopoverTrigger
+                    compact={isCompact}
+                    label={
+                      totalMinutes > 0
                         ? formatDuration(totalMinutes, t)
-                        : t('ws-task-boards.dialog.schedule')}
-                    </span>
-                    {!isCompact && !disabled && hasUnsavedSchedulingChanges && (
-                      <span className="text-[10px] opacity-75">
-                        {t('ws-task-boards.dialog.unsaved')}
-                      </span>
-                    )}
-                  </button>
-                </TaskPropertyPopoverTrigger>
-                <PopoverContent
-                  align="start"
-                  className="w-72 p-0"
-                  {...propertyPopoverContentProps}
-                >
-                  <div className="rounded-lg p-3">
-                    <div className="space-y-3">
-                      {/* Duration */}
-                      <div className="space-y-2">
-                        <Label className="flex items-center gap-1.5 font-normal text-muted-foreground text-xs">
-                          <Clock className="h-3.5 w-3.5" />
-                          {t('ws-task-boards.dialog.estimated_duration')}
-                          <span className="text-dynamic-red">*</span>
-                        </Label>
-                        <div className="flex items-center gap-3">
-                          <DurationInput
-                            value={durationHours}
-                            onChange={handleDurationHoursChange}
-                            min={0}
-                            max={999}
-                            disabled={isLoading}
-                            label={t('ws-task-boards.dialog.h')}
-                          />
-                          <DurationInput
-                            value={durationMinutes}
-                            onChange={handleDurationMinutesChange}
-                            min={0}
-                            max={45}
-                            step={15}
-                            disabled={isLoading}
-                            label={t('ws-task-boards.dialog.m')}
-                            allowRollover={true}
-                            canDecrement={
-                              durationHours > 0 || durationMinutes > 0
-                            }
-                          />
-                        </div>
-                      </div>
-
-                      {/* Splittable */}
-                      <div className="flex items-center justify-between">
-                        <Label
-                          htmlFor="splittable"
-                          className="flex cursor-pointer items-center gap-1.5 font-normal text-muted-foreground text-xs"
-                        >
-                          <Scissors className="h-3.5 w-3.5" />
-                          {t('ws-task-boards.dialog.splittable')}
-                        </Label>
-                        <Switch
-                          id="splittable"
-                          checked={isSplittable}
-                          onCheckedChange={handleSplittableChange}
-                          disabled={isLoading}
-                        />
-                      </div>
-
-                      {/* Min/Max Split Duration */}
-                      {isSplittable && (
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="space-y-1.5">
-                            <Label className="font-normal text-muted-foreground text-xs">
-                              {t('ws-task-boards.dialog.min_split')}
-                            </Label>
-                            <DurationInput
-                              value={minSplitDurationMinutes ?? 30}
-                              onChange={(value) =>
-                                onMinSplitDurationChange(value)
-                              }
-                              min={15}
-                              max={maxSplitDurationMinutes ?? 480}
-                              step={15}
-                              disabled={isLoading}
-                              label={t('ws-task-boards.dialog.min')}
-                            />
-                          </div>
-                          <div className="space-y-1.5">
-                            <Label className="font-normal text-muted-foreground text-xs">
-                              {t('ws-task-boards.dialog.max_split')}
-                            </Label>
-                            <DurationInput
-                              value={maxSplitDurationMinutes ?? 120}
-                              onChange={(value) =>
-                                onMaxSplitDurationChange(value)
-                              }
-                              min={minSplitDurationMinutes ?? 15}
-                              max={480}
-                              step={15}
-                              disabled={isLoading}
-                              label={t('ws-task-boards.dialog.min')}
-                            />
-                          </div>
-                        </div>
+                        : t('ws-task-boards.dialog.schedule')
+                    }
+                    popoverId="scheduling"
+                  >
+                    <button
+                      type="button"
+                      disabled={disabled}
+                      aria-label={t('ws-task-boards.dialog.schedule')}
+                      className={cn(
+                        triggerBaseClass,
+                        hasUnsavedSchedulingChanges
+                          ? 'border-dynamic-yellow/50 border-dashed bg-dynamic-yellow/10 text-dynamic-yellow hover:border-dynamic-yellow/70 hover:bg-dynamic-yellow/15'
+                          : totalDuration
+                            ? 'border-dynamic-teal/30 bg-dynamic-teal/15 text-dynamic-teal hover:border-dynamic-teal/50 hover:bg-dynamic-teal/20'
+                            : 'border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-muted hover:text-foreground',
+                        disabled && 'cursor-not-allowed opacity-50'
                       )}
-
-                      {/* Calendar Hours Type */}
-                      <div className="space-y-1.5">
-                        <Label className="flex items-center gap-1.5 font-normal text-muted-foreground text-xs">
-                          <Briefcase className="h-3.5 w-3.5" />
-                          {t('ws-task-boards.dialog.hour_type')}
-                          <span className="text-dynamic-red">*</span>
-                        </Label>
-                        <div
-                          className={cn(
-                            'inline-flex rounded-md border p-0.5',
-                            !isCreateMode &&
-                              hasUnsavedSchedulingChanges &&
-                              !calendarHours
-                              ? 'border-dynamic-red/50 bg-dynamic-red/5'
-                              : 'border-border'
-                          )}
-                        >
-                          {getCalendarHoursOptions(t).map((option) => {
-                            const Icon = option.icon;
-                            const isSelected = calendarHours === option.value;
-                            return (
-                              <button
-                                key={option.value}
-                                type="button"
-                                onClick={() =>
-                                  onCalendarHoursChange(option.value)
-                                }
-                                className={cn(
-                                  'flex items-center gap-1.5 rounded px-2.5 py-1 text-xs transition-colors',
-                                  isSelected
-                                    ? 'bg-primary text-primary-foreground'
-                                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                                )}
-                                title={option.label}
-                              >
-                                <Icon className="h-3.5 w-3.5" />
-                                <span className="hidden sm:inline">
-                                  {option.label.split(' ')[0]}
-                                </span>
-                              </button>
-                            );
-                          })}
+                    >
+                      {hasUnsavedSchedulingChanges ? (
+                        <AlertCircle className="h-3.5 w-3.5" />
+                      ) : (
+                        <CalendarClock className="h-3.5 w-3.5" />
+                      )}
+                      <span className={compactLabelClass}>
+                        {totalMinutes > 0
+                          ? formatDuration(totalMinutes, t)
+                          : t('ws-task-boards.dialog.schedule')}
+                      </span>
+                      {!isCompact &&
+                        !disabled &&
+                        hasUnsavedSchedulingChanges && (
+                          <span className="text-[10px] opacity-75">
+                            {t('ws-task-boards.dialog.unsaved')}
+                          </span>
+                        )}
+                    </button>
+                  </TaskPropertyPopoverTrigger>
+                  <PopoverContent
+                    align="start"
+                    className="w-72 p-0"
+                    {...propertyPopoverContentProps}
+                  >
+                    <div className="rounded-lg p-3">
+                      <div className="space-y-3">
+                        {/* Duration */}
+                        <div className="space-y-2">
+                          <Label className="flex items-center gap-1.5 font-normal text-muted-foreground text-xs">
+                            <Clock className="h-3.5 w-3.5" />
+                            {t('ws-task-boards.dialog.estimated_duration')}
+                            <span className="text-dynamic-red">*</span>
+                          </Label>
+                          <div className="flex items-center gap-3">
+                            <DurationInput
+                              value={durationHours}
+                              onChange={handleDurationHoursChange}
+                              min={0}
+                              max={999}
+                              disabled={isLoading}
+                              label={t('ws-task-boards.dialog.h')}
+                            />
+                            <DurationInput
+                              value={durationMinutes}
+                              onChange={handleDurationMinutesChange}
+                              min={0}
+                              max={45}
+                              step={15}
+                              disabled={isLoading}
+                              label={t('ws-task-boards.dialog.m')}
+                              allowRollover={true}
+                              canDecrement={
+                                durationHours > 0 || durationMinutes > 0
+                              }
+                            />
+                          </div>
                         </div>
-                      </div>
 
-                      {/* Auto-schedule */}
-                      <div className="flex items-center justify-between">
-                        <Label
-                          htmlFor="auto-schedule"
-                          className="flex cursor-pointer items-center gap-1.5 font-normal text-muted-foreground text-xs"
-                        >
-                          <Zap className="h-3.5 w-3.5" />
-                          {t('ws-task-boards.dialog.auto_schedule')}
-                        </Label>
-                        <Switch
-                          id="auto-schedule"
-                          checked={autoSchedule}
-                          onCheckedChange={onAutoScheduleChange}
-                          disabled={isLoading}
-                        />
-                      </div>
+                        {/* Splittable */}
+                        <div className="flex items-center justify-between">
+                          <Label
+                            htmlFor="splittable"
+                            className="flex cursor-pointer items-center gap-1.5 font-normal text-muted-foreground text-xs"
+                          >
+                            <Scissors className="h-3.5 w-3.5" />
+                            {t('ws-task-boards.dialog.splittable')}
+                          </Label>
+                          <Switch
+                            id="splittable"
+                            checked={isSplittable}
+                            onCheckedChange={handleSplittableChange}
+                            disabled={isLoading}
+                          />
+                        </div>
 
-                      {/* Scheduled Events Progress & List */}
-                      {!isCreateMode && totalMinutes > 0 && (
-                        <div className="space-y-2 border-t pt-2">
-                          {/* Progress */}
-                          {(() => {
-                            const scheduledMinutes =
-                              scheduledEvents?.reduce(
-                                (sum, e) => sum + (e.scheduled_minutes || 0),
-                                0
-                              ) ?? 0;
-                            const progress =
-                              totalMinutes > 0
-                                ? (scheduledMinutes / totalMinutes) * 100
-                                : 0;
-                            const isFullyScheduled = progress >= 100;
+                        {/* Min/Max Split Duration */}
+                        {isSplittable && (
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1.5">
+                              <Label className="font-normal text-muted-foreground text-xs">
+                                {t('ws-task-boards.dialog.min_split')}
+                              </Label>
+                              <DurationInput
+                                value={minSplitDurationMinutes ?? 30}
+                                onChange={(value) =>
+                                  onMinSplitDurationChange(value)
+                                }
+                                min={15}
+                                max={maxSplitDurationMinutes ?? 480}
+                                step={15}
+                                disabled={isLoading}
+                                label={t('ws-task-boards.dialog.min')}
+                              />
+                            </div>
+                            <div className="space-y-1.5">
+                              <Label className="font-normal text-muted-foreground text-xs">
+                                {t('ws-task-boards.dialog.max_split')}
+                              </Label>
+                              <DurationInput
+                                value={maxSplitDurationMinutes ?? 120}
+                                onChange={(value) =>
+                                  onMaxSplitDurationChange(value)
+                                }
+                                min={minSplitDurationMinutes ?? 15}
+                                max={480}
+                                step={15}
+                                disabled={isLoading}
+                                label={t('ws-task-boards.dialog.min')}
+                              />
+                            </div>
+                          </div>
+                        )}
 
-                            // Check if any events are scheduled past the deadline
-                            const eventsAfterDeadline =
-                              endDate && scheduledEvents
-                                ? scheduledEvents.filter(
-                                    (e) => new Date(e.start_at) > endDate
-                                  )
-                                : [];
-                            const hasEventsAfterDeadline =
-                              eventsAfterDeadline.length > 0;
+                        {/* Calendar Hours Type */}
+                        <div className="space-y-1.5">
+                          <Label className="flex items-center gap-1.5 font-normal text-muted-foreground text-xs">
+                            <Briefcase className="h-3.5 w-3.5" />
+                            {t('ws-task-boards.dialog.hour_type')}
+                            <span className="text-dynamic-red">*</span>
+                          </Label>
+                          <div
+                            className={cn(
+                              'inline-flex rounded-md border p-0.5',
+                              !isCreateMode &&
+                                hasUnsavedSchedulingChanges &&
+                                !calendarHours
+                                ? 'border-dynamic-red/50 bg-dynamic-red/5'
+                                : 'border-border'
+                            )}
+                          >
+                            {getCalendarHoursOptions(t).map((option) => {
+                              const Icon = option.icon;
+                              const isSelected = calendarHours === option.value;
+                              return (
+                                <button
+                                  key={option.value}
+                                  type="button"
+                                  onClick={() =>
+                                    onCalendarHoursChange(option.value)
+                                  }
+                                  className={cn(
+                                    'flex items-center gap-1.5 rounded px-2.5 py-1 text-xs transition-colors',
+                                    isSelected
+                                      ? 'bg-primary text-primary-foreground'
+                                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                                  )}
+                                  title={option.label}
+                                >
+                                  <Icon className="h-3.5 w-3.5" />
+                                  <span className="hidden sm:inline">
+                                    {option.label.split(' ')[0]}
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
 
-                            return (
-                              <>
-                                <div className="space-y-1">
-                                  <div className="flex items-center justify-between text-xs">
-                                    <span className="text-muted-foreground">
-                                      {scheduledEvents &&
-                                      scheduledEvents.length > 0
-                                        ? t(
-                                            'ws-task-boards.dialog.events_scheduled',
-                                            {
-                                              count: scheduledEvents.length,
-                                            }
-                                          )
-                                        : t(
-                                            'ws-task-boards.dialog.not_scheduled'
-                                          )}
-                                    </span>
-                                    <span
+                        {/* Auto-schedule */}
+                        <div className="flex items-center justify-between">
+                          <Label
+                            htmlFor="auto-schedule"
+                            className="flex cursor-pointer items-center gap-1.5 font-normal text-muted-foreground text-xs"
+                          >
+                            <Zap className="h-3.5 w-3.5" />
+                            {t('ws-task-boards.dialog.auto_schedule')}
+                          </Label>
+                          <Switch
+                            id="auto-schedule"
+                            checked={autoSchedule}
+                            onCheckedChange={onAutoScheduleChange}
+                            disabled={isLoading}
+                          />
+                        </div>
+
+                        {/* Scheduled Events Progress & List */}
+                        {!isCreateMode && totalMinutes > 0 && (
+                          <div className="space-y-2 border-t pt-2">
+                            {/* Progress */}
+                            {(() => {
+                              const scheduledMinutes =
+                                scheduledEvents?.reduce(
+                                  (sum, e) => sum + (e.scheduled_minutes || 0),
+                                  0
+                                ) ?? 0;
+                              const progress =
+                                totalMinutes > 0
+                                  ? (scheduledMinutes / totalMinutes) * 100
+                                  : 0;
+                              const isFullyScheduled = progress >= 100;
+
+                              // Check if any events are scheduled past the deadline
+                              const eventsAfterDeadline =
+                                endDate && scheduledEvents
+                                  ? scheduledEvents.filter(
+                                      (e) => new Date(e.start_at) > endDate
+                                    )
+                                  : [];
+                              const hasEventsAfterDeadline =
+                                eventsAfterDeadline.length > 0;
+
+                              return (
+                                <>
+                                  <div className="space-y-1">
+                                    <div className="flex items-center justify-between text-xs">
+                                      <span className="text-muted-foreground">
+                                        {scheduledEvents &&
+                                        scheduledEvents.length > 0
+                                          ? t(
+                                              'ws-task-boards.dialog.events_scheduled',
+                                              {
+                                                count: scheduledEvents.length,
+                                              }
+                                            )
+                                          : t(
+                                              'ws-task-boards.dialog.not_scheduled'
+                                            )}
+                                      </span>
+                                      <span
+                                        className={cn(
+                                          'font-medium',
+                                          isFullyScheduled
+                                            ? 'text-dynamic-green'
+                                            : 'text-foreground'
+                                        )}
+                                      >
+                                        {formatDuration(scheduledMinutes, t)} /{' '}
+                                        {formatDuration(totalMinutes, t)}
+                                      </span>
+                                    </div>
+                                    <Progress
+                                      value={Math.min(progress, 100)}
                                       className={cn(
-                                        'font-medium',
-                                        isFullyScheduled
-                                          ? 'text-dynamic-green'
-                                          : 'text-foreground'
+                                        'h-1.5',
+                                        isFullyScheduled &&
+                                          '[&>div]:bg-dynamic-green'
                                       )}
-                                    >
-                                      {formatDuration(scheduledMinutes, t)} /{' '}
-                                      {formatDuration(totalMinutes, t)}
-                                    </span>
+                                    />
                                   </div>
-                                  <Progress
-                                    value={Math.min(progress, 100)}
-                                    className={cn(
-                                      'h-1.5',
-                                      isFullyScheduled &&
-                                        '[&>div]:bg-dynamic-green'
-                                    )}
-                                  />
-                                </div>
 
-                                {/* Warning: Events scheduled after deadline */}
-                                {hasEventsAfterDeadline && (
-                                  <div className="flex items-center gap-2 rounded-md border border-dynamic-orange/30 bg-dynamic-orange/10 px-2.5 py-1.5 text-xs">
-                                    <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-dynamic-orange" />
-                                    <span className="text-dynamic-orange">
-                                      {eventsAfterDeadline.length === 1
-                                        ? t(
-                                            'ws-task-boards.dialog.event_after_deadline_singular'
-                                          )
-                                        : t(
-                                            'ws-task-boards.dialog.event_after_deadline_plural',
-                                            {
-                                              count: eventsAfterDeadline.length,
-                                            }
-                                          )}
-                                    </span>
-                                  </div>
-                                )}
-
-                                {/* Compact Events List */}
-                                {scheduledEvents &&
-                                  scheduledEvents.length > 0 && (
-                                    <div className="flex flex-wrap gap-1">
-                                      {scheduledEvents.map((event) => {
-                                        const isAfterDeadline =
-                                          endDate &&
-                                          new Date(event.start_at) > endDate;
-                                        return (
-                                          <div
-                                            key={event.id}
-                                            className={cn(
-                                              'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px]',
-                                              event.completed
-                                                ? 'bg-dynamic-green/10 text-dynamic-green'
-                                                : isAfterDeadline
-                                                  ? 'bg-dynamic-orange/10 text-dynamic-orange'
-                                                  : 'bg-muted text-muted-foreground'
+                                  {/* Warning: Events scheduled after deadline */}
+                                  {hasEventsAfterDeadline && (
+                                    <div className="flex items-center gap-2 rounded-md border border-dynamic-orange/30 bg-dynamic-orange/10 px-2.5 py-1.5 text-xs">
+                                      <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-dynamic-orange" />
+                                      <span className="text-dynamic-orange">
+                                        {eventsAfterDeadline.length === 1
+                                          ? t(
+                                              'ws-task-boards.dialog.event_after_deadline_singular'
+                                            )
+                                          : t(
+                                              'ws-task-boards.dialog.event_after_deadline_plural',
+                                              {
+                                                count:
+                                                  eventsAfterDeadline.length,
+                                              }
                                             )}
-                                            title={`${dayjs(event.start_at).format('MMM D, h:mm A')} - ${formatDuration(event.scheduled_minutes, t)}${isAfterDeadline ? ` (${t('ws-task-boards.dialog.after_deadline', { defaultValue: 'after deadline' })})` : ''}`}
-                                          >
-                                            {event.completed ? (
-                                              <CheckCircle className="h-2.5 w-2.5" />
-                                            ) : isAfterDeadline ? (
-                                              <AlertTriangle className="h-2.5 w-2.5" />
-                                            ) : (
-                                              <Calendar className="h-2.5 w-2.5" />
-                                            )}
-                                            <span>
-                                              {dayjs(event.start_at).format(
-                                                'M/D h:mma'
-                                              )}
-                                            </span>
-                                          </div>
-                                        );
-                                      })}
+                                      </span>
                                     </div>
                                   )}
-                              </>
-                            );
-                          })()}
-                        </div>
-                      )}
 
-                      {/* Action Buttons */}
-                      {!isCreateMode && (
-                        <div className="flex items-center gap-2 border-t pt-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={handleSaveSchedulingSettings}
-                            disabled={!canSaveScheduling}
-                            className="flex-1"
-                          >
-                            {schedulingSaving ? (
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            ) : (
-                              <>
-                                <Save className="mr-1.5 h-3.5 w-3.5" />
-                                {t('common.save')}
-                              </>
-                            )}
-                          </Button>
-                          {(durationHours > 0 || durationMinutes > 0) && (
+                                  {/* Compact Events List */}
+                                  {scheduledEvents &&
+                                    scheduledEvents.length > 0 && (
+                                      <div className="flex flex-wrap gap-1">
+                                        {scheduledEvents.map((event) => {
+                                          const isAfterDeadline =
+                                            endDate &&
+                                            new Date(event.start_at) > endDate;
+                                          return (
+                                            <div
+                                              key={event.id}
+                                              className={cn(
+                                                'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px]',
+                                                event.completed
+                                                  ? 'bg-dynamic-green/10 text-dynamic-green'
+                                                  : isAfterDeadline
+                                                    ? 'bg-dynamic-orange/10 text-dynamic-orange'
+                                                    : 'bg-muted text-muted-foreground'
+                                              )}
+                                              title={`${dayjs(event.start_at).format('MMM D, h:mm A')} - ${formatDuration(event.scheduled_minutes, t)}${isAfterDeadline ? ` (${t('ws-task-boards.dialog.after_deadline', { defaultValue: 'after deadline' })})` : ''}`}
+                                            >
+                                              {event.completed ? (
+                                                <CheckCircle className="h-2.5 w-2.5" />
+                                              ) : isAfterDeadline ? (
+                                                <AlertTriangle className="h-2.5 w-2.5" />
+                                              ) : (
+                                                <Calendar className="h-2.5 w-2.5" />
+                                              )}
+                                              <span>
+                                                {dayjs(event.start_at).format(
+                                                  'M/D h:mma'
+                                                )}
+                                              </span>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
+                                </>
+                              );
+                            })()}
+                          </div>
+                        )}
+
+                        {/* Action Buttons */}
+                        {!isCreateMode && (
+                          <div className="flex items-center gap-2 border-t pt-2">
                             <Button
                               size="sm"
-                              variant="ghost"
-                              onClick={handleClearSchedulingSettings}
-                              disabled={schedulingSaving}
-                              className="px-2 text-muted-foreground hover:text-dynamic-red"
+                              variant="outline"
+                              onClick={handleSaveSchedulingSettings}
+                              disabled={!canSaveScheduling}
+                              className="flex-1"
                             >
-                              <X className="h-3.5 w-3.5" />
+                              {schedulingSaving ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <>
+                                  <Save className="mr-1.5 h-3.5 w-3.5" />
+                                  {t('common.save')}
+                                </>
+                              )}
                             </Button>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Clear Duration (create mode only) */}
-                      {isCreateMode &&
-                        totalDuration !== null &&
-                        totalDuration > 0 && (
-                          <ClearMenuItem
-                            label={t('ws-task-boards.dialog.clear_duration')}
-                            onClick={() => {
-                              onTotalDurationChange(null);
-                              setPopoverOpen('scheduling', false);
-                            }}
-                          />
+                            {(durationHours > 0 || durationMinutes > 0) && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={handleClearSchedulingSettings}
+                                disabled={schedulingSaving}
+                                className="px-2 text-muted-foreground hover:text-dynamic-red"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
+                          </div>
                         )}
+
+                        {/* Clear Duration (create mode only) */}
+                        {isCreateMode &&
+                          totalDuration !== null &&
+                          totalDuration > 0 && (
+                            <ClearMenuItem
+                              label={t('ws-task-boards.dialog.clear_duration')}
+                              onClick={() => {
+                                onTotalDurationChange(null);
+                                setPopoverOpen('scheduling', false);
+                              }}
+                            />
+                          )}
+                      </div>
                     </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
+                  </PopoverContent>
+                </Popover>
+              </TaskPropertyNameRow>
             )}
           </div>
         </div>
