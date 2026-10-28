@@ -64,14 +64,21 @@ export const GET = withSessionAuth<{ wsId: string }>(
       const hasRootPermission = (permission: PermissionId) =>
         rootPermissions?.containsPermission(permission) ?? false;
       const isRootWorkspace = permissions.wsId === ROOT_WORKSPACE_ID;
-      const isTuturuuuMember = isVerifiedTuturuuuStaffSession(
-        user &&
-          (await getVerifiedAuthUser(
+      let isTuturuuuMember = false;
+      try {
+        isTuturuuuMember = isVerifiedTuturuuuStaffSession(
+          await getVerifiedAuthUser(
             await createAdminClient({ noCookie: true }),
             user.id
-          )),
-        { allowXwf: true }
-      );
+          ),
+          { allowXwf: true }
+        );
+      } catch (error) {
+        console.error(
+          'Failed to resolve staff status for workspace permissions',
+          error
+        );
+      }
       const canManageApiKeys = hasWorkspacePermission('manage_api_keys');
       const canManageWorkspaceSecrets = hasRootPermission(
         'manage_workspace_secrets'

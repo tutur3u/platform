@@ -16,6 +16,9 @@ export default defineConfig({
         )
       ),
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+      '@tuturuuu/supabase/next/server': fileURLToPath(
+        new URL('../../packages/supabase/src/next/server.ts', import.meta.url)
+      ),
       '@tuturuuu/supabase/next/user': fileURLToPath(
         new URL('../../packages/supabase/src/next/user.ts', import.meta.url)
       ),
