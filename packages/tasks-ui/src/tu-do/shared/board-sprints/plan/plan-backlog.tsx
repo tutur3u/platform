@@ -97,7 +97,7 @@ export function PlanBacklog({
     <section
       aria-label={t('backlog')}
       className={cn(
-        'flex min-h-0 flex-col rounded-xl border-l-4 border-l-dynamic-gray/50 bg-dynamic-gray/5 transition-shadow',
+        'flex min-h-0 flex-col rounded-xl bg-dynamic-gray/5 transition-shadow',
         dropActive && 'ring-2 ring-dynamic-gray/40'
       )}
       onDragOver={onDragOver}
@@ -218,7 +218,7 @@ function BacklogCard({
   return (
     <article
       aria-label={task.name}
-      className="relative rounded-lg border border-l-4 border-l-dynamic-gray/50 bg-background p-3 shadow-xs transition-shadow focus-within:ring-2 focus-within:ring-ring hover:shadow-sm"
+      className="relative rounded-lg border bg-background p-3 shadow-xs transition-shadow focus-within:ring-2 focus-within:ring-ring hover:shadow-sm"
       data-plan-task-id={task.id}
       draggable={canEdit}
       onDragEnd={onDragEnd}
