@@ -10,15 +10,40 @@ class _MockFlutterSecureStorage extends Mock implements FlutterSecureStorage {}
 typedef _Item = ({String value, String accessibility});
 
 /// Models the iOS keychain: an item is only visible to the accessibility class
-/// it was written under, and deleting removes it for every class.
+/// it was written under, deleting removes it for every class, and writing a
+/// different class over an existing item fails with `errSecDuplicateItem`, as
+/// `flutter_secure_storage_darwin` does.
 class _Keychain {
   final items = <String, _Item>{};
   final failReads = <String>{};
+  final failWriteKeys = <String>{};
   bool failWrites = false;
+
+  /// Simulates the process being killed: once an operation matching this
+  /// `<op>:<key>` has completed, every later call throws until [restart].
+  String? crashAfter;
+  bool dead = false;
+
+  void restart() {
+    crashAfter = null;
+    dead = false;
+  }
+
+  void _guard() {
+    if (dead) throw PlatformException(code: 'killed');
+  }
+
+  void _completed(String operation, String key) {
+    if (crashAfter == '$operation:$key') {
+      dead = true;
+      throw PlatformException(code: 'killed');
+    }
+  }
 
   FlutterSecureStorage storage(String accessibility) {
     final storage = _MockFlutterSecureStorage();
     when(() => storage.read(key: any(named: 'key'))).thenAnswer((call) async {
+      _guard();
       final key = call.namedArguments[#key] as String;
       if (accessibility == _legacy && failReads.contains(key)) {
         throw PlatformException(code: 'locked');
@@ -32,16 +57,31 @@ class _Keychain {
         value: any(named: 'value'),
       ),
     ).thenAnswer((call) async {
-      if (failWrites && accessibility == _current) {
+      _guard();
+      final key = call.namedArguments[#key] as String;
+      if (accessibility == _current &&
+          (failWrites || failWriteKeys.contains(key))) {
         throw PlatformException(code: 'write-failed');
       }
-      items[call.namedArguments[#key] as String] = (
+      final existing = items[key];
+      if (existing != null && existing.accessibility != accessibility) {
+        throw PlatformException(
+          code: 'Unexpected security result code',
+          message: 'The specified item already exists in the keychain.',
+          details: -25299,
+        );
+      }
+      items[key] = (
         value: call.namedArguments[#value] as String,
         accessibility: accessibility,
       );
+      _completed('write', key);
     });
     when(() => storage.delete(key: any(named: 'key'))).thenAnswer((call) async {
-      items.remove(call.namedArguments[#key] as String);
+      _guard();
+      final key = call.namedArguments[#key] as String;
+      items.remove(key);
+      _completed('delete', key);
     });
     return storage;
   }
@@ -100,7 +140,7 @@ void main() {
     expect(keychain.items['session']!.accessibility, _legacy);
   });
 
-  test('restores the original item when the re-write fails', () async {
+  test('restores the original item when staging the copy fails', () async {
     keychain.items['session'] = (value: 'tokens', accessibility: _legacy);
     keychain.failWrites = true;
 
@@ -112,6 +152,117 @@ void main() {
     keychain.failWrites = false;
     expect(await migrate(), isTrue);
     expect(await current.read(key: 'session'), 'tokens');
+  });
+
+  test('restores the original item when the re-write fails', () async {
+    keychain.items['session'] = (value: 'tokens', accessibility: _legacy);
+    keychain.failWriteKeys.add('session');
+
+    expect(await migrate(), isFalse);
+
+    expect(await legacy.read(key: 'session'), 'tokens');
+    expect(keychain.items.containsKey('session.migrating'), isFalse);
+    expect(keychain.items.containsKey(keychainMigrationMarkerKey), isFalse);
+
+    keychain.failWriteKeys.clear();
+    expect(await migrate(), isTrue);
+    expect(await current.read(key: 'session'), 'tokens');
+  });
+
+  test('a new-class write over an old item is a duplicate error', () async {
+    keychain.items['session'] = (value: 'tokens', accessibility: _legacy);
+
+    await expectLater(
+      current.write(key: 'session', value: 'fresh'),
+      throwsA(isA<PlatformException>()),
+    );
+    expect(await legacy.read(key: 'session'), 'tokens');
+  });
+
+  test(
+    'recovers a session lost to a kill after the old item is deleted',
+    () async {
+      keychain.items['session'] = (value: 'tokens', accessibility: _legacy);
+      keychain.items['multi-account'] = (
+        value: 'accounts',
+        accessibility: _legacy,
+      );
+      keychain.crashAfter = 'delete:session';
+
+      expect(await migrate(), isFalse);
+
+      expect(keychain.dead, isTrue);
+      expect(keychain.items.containsKey('session'), isFalse);
+      expect(keychain.items['session.migrating']!.value, 'tokens');
+
+      keychain.restart();
+      expect(await migrate(), isTrue);
+
+      expect(await current.read(key: 'session'), 'tokens');
+      expect(await current.read(key: 'multi-account'), 'accounts');
+      expect(keychain.items.containsKey('session.migrating'), isFalse);
+      expect(keychain.items.containsKey('multi-account.migrating'), isFalse);
+      expect(
+        keychain.items[keychainMigrationMarkerKey]!.accessibility,
+        _current,
+      );
+    },
+  );
+
+  test(
+    'recovers every account after a kill during the multi-account re-write',
+    () async {
+      keychain.items['multi-account'] = (
+        value: 'accounts',
+        accessibility: _legacy,
+      );
+      keychain.crashAfter = 'delete:multi-account';
+
+      expect(await migrate(), isFalse);
+      expect(keychain.items.containsKey('multi-account'), isFalse);
+
+      keychain.restart();
+      expect(await migrate(), isTrue);
+
+      expect(await current.read(key: 'multi-account'), 'accounts');
+    },
+  );
+
+  test(
+    'recovers after a kill right after the staged copy is written',
+    () async {
+      keychain.items['session'] = (value: 'tokens', accessibility: _legacy);
+      keychain.crashAfter = 'write:session.migrating';
+
+      expect(await migrate(), isFalse);
+
+      // Killed with both the old item and the staged copy in place.
+      expect(keychain.dead, isTrue);
+      expect(keychain.items['session']!.accessibility, _legacy);
+      expect(keychain.items['session.migrating']!.value, 'tokens');
+
+      keychain.restart();
+      expect(await migrate(), isTrue);
+
+      expect(await current.read(key: 'session'), 'tokens');
+      expect(keychain.items['session']!.accessibility, _current);
+      expect(keychain.items.containsKey('session.migrating'), isFalse);
+    },
+  );
+
+  test('keeps a re-sign-in made during an unfinished migration', () async {
+    keychain.items['session'] = (value: 'old-tokens', accessibility: _legacy);
+    keychain.crashAfter = 'delete:session';
+    await migrate();
+    keychain.restart();
+
+    // Signed in again before the migration got to run: the new session wins.
+    await current.write(key: 'session', value: 'fresh-tokens');
+
+    expect(await migrate(), isTrue);
+
+    expect(await current.read(key: 'session'), 'fresh-tokens');
+    expect(keychain.items.containsKey('session.migrating'), isFalse);
   });
 
   test('retries next launch when an old item is unreadable', () async {

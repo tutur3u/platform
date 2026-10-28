@@ -249,6 +249,18 @@ cleartext localhost fallback. This is enforced in three places:
 - `bootstrap()` calls `Env.assertSecureForRelease()` and throws at startup in
   release. Debug and profile builds keep localhost http for local development.
 
+### Auth token storage hardening
+
+- iOS auth items use the `first_unlock_this_device` keychain class (excluded from
+  backups and never restored onto another device). Existing installs are moved
+  by `migrateAuthKeychainAccessibility`, which stages each value under
+  `<key>.migrating` before replacing the old item so a kill mid-migration cannot
+  sign the user out; leftovers are recovered on the next launch.
+- Android: `allowBackup="false"` does not stop Android 12+ device-to-device
+  transfer. `res/xml/data_extraction_rules.xml` excludes app data from both
+  `<cloud-backup>` and `<device-transfer>`, and `res/xml/backup_rules.xml`
+  (`android:fullBackupContent`) does the same for older versions.
+
 ## CI Tokens
 
 | Field | What it is | Where to get it |

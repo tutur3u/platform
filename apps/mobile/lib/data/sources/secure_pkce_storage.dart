@@ -23,8 +23,11 @@ class SecurePkceStorage extends GotrueAsyncStorage {
   @override
   Future<String?> getItem({required String key}) async {
     final secure = await _storage.read(key: key);
-    final legacy = await _takeLegacy(key);
-    return secure ?? legacy;
+    if (secure != null) {
+      await _takeLegacy(key);
+      return secure;
+    }
+    return await _migrateLegacy(key);
   }
 
   @override
@@ -39,19 +42,42 @@ class SecurePkceStorage extends GotrueAsyncStorage {
     await _takeLegacy(key);
   }
 
-  /// Returns and deletes the verifier an older version left in plaintext.
-  Future<String?> _takeLegacy(String key) async {
+  /// Moves a verifier an older version left in plaintext into secure storage,
+  /// removing the plaintext copy only once the secure write succeeded so a
+  /// failed first code exchange can retry. If the secure write fails the
+  /// plaintext copy stays and is still returned for this exchange.
+  Future<String?> _migrateLegacy(String key) async {
+    final String? value;
+    final SharedPreferences preferences;
     try {
-      final preferences = await _preferences();
-      final value = preferences.getString(key);
-      if (value != null) await preferences.remove(key);
-      return value;
+      preferences = await _preferences();
+      value = preferences.getString(key);
+      if (value == null) return null;
     } on Object catch (error) {
-      developer.log(
-        'Legacy PKCE cleanup failed: ${error.runtimeType}',
-        name: 'SecurePkceStorage',
-      );
+      _logFailure('read', error);
       return null;
     }
+    try {
+      await _storage.write(key: key, value: value);
+      await preferences.remove(key);
+    } on Object catch (error) {
+      _logFailure('migration', error);
+    }
+    return value;
   }
+
+  /// Deletes the verifier an older version left in plaintext.
+  Future<void> _takeLegacy(String key) async {
+    try {
+      final preferences = await _preferences();
+      if (preferences.containsKey(key)) await preferences.remove(key);
+    } on Object catch (error) {
+      _logFailure('cleanup', error);
+    }
+  }
+
+  void _logFailure(String step, Object error) => developer.log(
+    'Legacy PKCE $step failed: ${error.runtimeType}',
+    name: 'SecurePkceStorage',
+  );
 }

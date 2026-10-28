@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -59,13 +60,49 @@ void main() {
     expect(await storage.getItem(key: _verifierKey), isNull);
   });
 
-  test('honors a verifier left by an older version, then deletes it', () async {
+  test(
+    'moves a verifier left by an older version into secure storage',
+    () async {
+      SharedPreferences.setMockInitialValues({_verifierKey: 'old-verifier'});
+
+      expect(await storage.getItem(key: _verifierKey), 'old-verifier');
+
+      expect(secureValues, {_verifierKey: 'old-verifier'});
+      expect((await prefs()).containsKey(_verifierKey), isFalse);
+      // Still readable, so a failed first code exchange can retry.
+      expect(await storage.getItem(key: _verifierKey), 'old-verifier');
+
+      await storage.removeItem(key: _verifierKey);
+      expect(await storage.getItem(key: _verifierKey), isNull);
+    },
+  );
+
+  test('keeps the old copy when the secure write fails', () async {
     SharedPreferences.setMockInitialValues({_verifierKey: 'old-verifier'});
+    when(
+      () => secureStorage.write(
+        key: any(named: 'key'),
+        value: any(named: 'value'),
+      ),
+    ).thenThrow(PlatformException(code: 'write-failed'));
 
+    // This exchange still gets the verifier; the old copy stays for a retry.
     expect(await storage.getItem(key: _verifierKey), 'old-verifier');
+    expect((await prefs()).getString(_verifierKey), 'old-verifier');
+    expect(secureValues, isEmpty);
 
+    when(
+      () => secureStorage.write(
+        key: any(named: 'key'),
+        value: any(named: 'value'),
+      ),
+    ).thenAnswer((call) async {
+      secureValues[call.namedArguments[#key] as String] =
+          call.namedArguments[#value] as String;
+    });
+    expect(await storage.getItem(key: _verifierKey), 'old-verifier');
+    expect(secureValues, {_verifierKey: 'old-verifier'});
     expect((await prefs()).containsKey(_verifierKey), isFalse);
-    expect(await storage.getItem(key: _verifierKey), isNull);
   });
 
   test('prefers the secure verifier and still clears the old copy', () async {

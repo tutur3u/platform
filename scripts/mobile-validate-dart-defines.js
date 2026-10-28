@@ -1,7 +1,7 @@
 const fs = require('node:fs');
 
-// Keep in sync with `Env.releaseRequiredUrlDefines` and
-// `Env.releaseOptionalUrlDefines` in apps/mobile/lib/core/config/env.dart.
+// Keep in sync with `Env.releaseRequiredUrls` and
+// `Env.releaseOptionalUrls` in apps/mobile/lib/core/config/env.dart.
 // Release builds send credentials and bearer tokens to these origins, so a
 // missing or cleartext value must fail the build rather than ship.
 const REQUIRED_URL_DEFINES = ['NEXT_PUBLIC_SUPABASE_URL', 'API_BASE_URL'];
