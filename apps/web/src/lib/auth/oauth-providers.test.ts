@@ -6,11 +6,7 @@ import {
 
 describe('auth OAuth providers', () => {
   it('excludes Microsoft Azure from customer login and linking', () => {
-    expect(AUTH_OAUTH_PROVIDERS).toEqual([
-      'apple',
-      'google',
-      'github',
-    ]);
+    expect(AUTH_OAUTH_PROVIDERS).toEqual(['apple', 'google', 'github']);
   });
 
   // The email scope is what makes Azure usable for account matching at all, and
