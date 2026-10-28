@@ -76,9 +76,11 @@ class MastermindCountTile extends StatelessWidget {
                       Icon(icon, size: 14, color: tone.foreground(c)),
                     ],
                   ),
+                  // Two lines, so "Đang chạy" wraps in a narrow tile
+                  // rather than ellipsizing.
                   Text(
                     label,
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: type.small.copyWith(color: c.mutedForeground),
                   ),
