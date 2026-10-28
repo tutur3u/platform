@@ -7,9 +7,17 @@ test('public native legal pages preserve EN/VI content and reload without a sess
   page,
   acceptanceLocale,
 }) => {
-  for (const kind of ['privacy', 'terms'] as const) {
+  const pages = [
+    { kind: 'privacy', slug: 'privacy' },
+    { kind: 'terms', slug: 'terms' },
+    { kind: 'acceptable-use', slug: 'acceptable-use' },
+    { kind: 'dpa', slug: 'legal/dpa' },
+    { kind: 'sla', slug: 'legal/sla' },
+    { kind: 'subprocessors', slug: 'legal/subprocessors' },
+  ] as const;
+  for (const { kind, slug } of pages) {
     const document = getLegalDocument(kind, acceptanceLocale);
-    const path = localized('/' + kind, acceptanceLocale);
+    const path = localized(`/${slug}`, acceptanceLocale);
     const response = await page.goto(config.baseURL + path, {
       waitUntil: 'domcontentloaded',
     });
@@ -20,8 +28,12 @@ test('public native legal pages preserve EN/VI content and reload without a sess
       'lang',
       acceptanceLocale
     );
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute(
+      'content',
+      'noindex, nofollow'
+    );
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(
-      document.title + ' ' + document.highlightedWord
+      `${document.title} ${document.highlightedWord}`
     );
     for (const section of document.sections) {
       await expect(

@@ -3,9 +3,47 @@ import { createCommonMetadata } from '@tuturuuu/utils/common/metadata';
 import { describe, expect, it, vi } from 'vitest';
 import en from '../messages/en.json';
 import vietnamese from '../messages/vi.json';
+import { generateMetadata as acceptableUseMetadata } from '../src/app/[locale]/(marketing)/acceptable-use/layout';
+import { generateMetadata as dpaMetadata } from '../src/app/[locale]/(marketing)/legal/dpa/layout';
+import { generateMetadata as slaMetadata } from '../src/app/[locale]/(marketing)/legal/sla/layout';
+import { generateMetadata as subprocessorsMetadata } from '../src/app/[locale]/(marketing)/legal/subprocessors/layout';
 import { generateMetadata as privacyMetadata } from '../src/app/[locale]/(marketing)/privacy/layout';
 import { generateMetadata as termsMetadata } from '../src/app/[locale]/(marketing)/terms/layout';
 import { getRouter } from './start/router';
+
+const pages = [
+  {
+    kind: 'privacy',
+    slug: 'privacy',
+    seoKey: 'privacy',
+    metadata: privacyMetadata,
+  },
+  { kind: 'terms', slug: 'terms', seoKey: 'terms', metadata: termsMetadata },
+  {
+    kind: 'acceptable-use',
+    slug: 'acceptable-use',
+    seoKey: 'acceptable_use',
+    metadata: acceptableUseMetadata,
+  },
+  {
+    kind: 'dpa',
+    slug: 'legal/dpa',
+    seoKey: 'legal_dpa',
+    metadata: dpaMetadata,
+  },
+  {
+    kind: 'sla',
+    slug: 'legal/sla',
+    seoKey: 'legal_sla',
+    metadata: slaMetadata,
+  },
+  {
+    kind: 'subprocessors',
+    slug: 'legal/subprocessors',
+    seoKey: 'legal_subprocessors',
+    metadata: subprocessorsMetadata,
+  },
+] as const;
 
 vi.mock('next-intl/server', () => ({
   getTranslations: async ({
@@ -16,32 +54,35 @@ vi.mock('next-intl/server', () => ({
     namespace: string;
   }) => {
     const messages = locale === 'vi' ? vietnamese : en;
-    const kind = namespace === 'marketingSeo.privacy' ? 'privacy' : 'terms';
-    return (key: 'title' | 'description') => messages.marketingSeo[kind][key];
+    const key = namespace.replace(
+      'marketingSeo.',
+      ''
+    ) as keyof typeof messages.marketingSeo;
+    const copy = messages.marketingSeo[key] as {
+      title: string;
+      description: string;
+    };
+    return (name: 'title' | 'description') => copy[name];
   },
 }));
 vi.mock('@/constants/configs', () => ({
   siteConfig: { name: 'Tuturuuu', url: 'https://tuturuuu.com' },
 }));
 
-const paths = [
-  '/privacy',
-  '/terms',
-  '/en/privacy',
-  '/en/terms',
-  '/vi/privacy',
-  '/vi/terms',
-];
+const paths = pages.flatMap(({ slug }) => [
+  `/${slug}`,
+  `/en/${slug}`,
+  `/vi/${slug}`,
+]);
 
-describe('native legal route heads match canonical Next metadata', () => {
+describe('native public legal heads match canonical Next metadata', () => {
   it.each(paths)(
     '%s preserves SEO copy, locale URLs and every social tag',
     async (path) => {
       const locale = path.startsWith('/vi/') ? 'vi' : 'en';
-      const generateMetadata = path.endsWith('/privacy')
-        ? privacyMetadata
-        : termsMetadata;
-      const expected = await generateMetadata({
+      const page = pages.find(({ slug }) => path.endsWith(`/${slug}`));
+      if (!page) throw new Error(`No metadata fixture for ${path}`);
+      const expected = await page.metadata({
         params: Promise.resolve({ locale }),
       });
       const common = createCommonMetadata({
@@ -86,6 +127,7 @@ describe('native legal route heads match canonical Next metadata', () => {
         title?.replace('%s', String(expected.title))
       );
       expect(values.get('description')).toBe(expected.description);
+      expect(values.get('robots')).toBe('noindex, nofollow');
       expect(links.filter((link) => link?.rel === 'canonical')).toEqual([
         { rel: 'canonical', href: expected.alternates?.canonical },
       ]);
@@ -96,7 +138,6 @@ describe('native legal route heads match canonical Next metadata', () => {
             .map((link) => [link?.hrefLang, link?.href])
         )
       ).toEqual(expected.alternates?.languages);
-      expect(values.get('robots')).toBe('noindex, nofollow');
       expect({
         type: values.get('og:type'),
         url: values.get('og:url'),
@@ -122,15 +163,14 @@ describe('native legal route heads match canonical Next metadata', () => {
         creator: values.get('twitter:creator'),
         site: values.get('twitter:site'),
       }).toEqual(expected.twitter);
-      const kind = path.endsWith('/privacy') ? 'privacy' : 'terms';
       const prefix = locale === 'vi' ? '/vi' : '';
       expect(expected.alternates?.canonical).toBe(
-        `https://tuturuuu.com${prefix}/${kind}`
+        `https://tuturuuu.com${prefix}/${page.slug}`
       );
       expect(expected.alternates?.languages).toEqual({
-        'en-US': `https://tuturuuu.com/${kind}`,
-        'vi-VN': `https://tuturuuu.com/vi/${kind}`,
-        'x-default': `https://tuturuuu.com/${kind}`,
+        'en-US': `https://tuturuuu.com/${page.slug}`,
+        'vi-VN': `https://tuturuuu.com/vi/${page.slug}`,
+        'x-default': `https://tuturuuu.com/${page.slug}`,
       });
     }
   );

@@ -2,8 +2,9 @@ import { getLegalDocument, type LegalLocale } from '@tuturuuu/legal';
 import en from '../../messages/en.json';
 import vi from '../../messages/vi.json';
 import { LegalMarkdown } from '../../src/components/legal/legal-markdown';
+import { type NativeLegalKind, nativeLegalPage } from '../native-legal';
 
-export function legalDocument(kind: 'privacy' | 'terms', locale: LegalLocale) {
+export function legalDocument(kind: NativeLegalKind, locale: LegalLocale) {
   return getLegalDocument(kind, locale);
 }
 
@@ -11,12 +12,13 @@ export function LegalPage({
   kind,
   locale,
 }: {
-  kind: 'privacy' | 'terms';
+  kind: NativeLegalKind;
   locale: LegalLocale;
 }) {
   const document = legalDocument(kind, locale);
   const copy = locale === 'vi' ? vi.web_start_legal : en.web_start_legal;
   const prefix = locale === 'vi' ? '/vi' : '';
+  const slug = nativeLegalPage(kind).slug;
   return (
     <main>
       <header>
@@ -24,7 +26,7 @@ export function LegalPage({
           <a href={`${prefix}/privacy`}>{copy.privacy}</a>
           <a href={`${prefix}/terms`}>{copy.terms}</a>
           <a
-            href={`/${locale === 'vi' ? 'en' : 'vi'}/${kind}`}
+            href={`/${locale === 'vi' ? 'en' : 'vi'}/${slug}`}
             lang={locale === 'vi' ? 'en' : 'vi'}
           >
             {copy.language}

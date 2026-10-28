@@ -53,7 +53,7 @@
       "satellite-bridge": 12,
       "service-worker": 1
     },
-    "dispositions": { "native-Start": 3, "Next-fallback": 835 }
+    "dispositions": { "native-Start": 7, "Next-fallback": 831 }
   },
   "routes": [
     {
@@ -716,9 +716,10 @@
       "pattern": "/[locale]/acceptable-use",
       "source": "apps/web/src/app/[locale]/(marketing)/acceptable-use/page.tsx",
       "category": "page",
-      "owner": "web-next",
-      "disposition": "Next-fallback",
-      "cronOwner": null
+      "owner": "web-start",
+      "disposition": "native-Start",
+      "cronOwner": null,
+      "nativeSource": "apps/web/cloudflare/start/legal-page.tsx"
     },
     {
       "pattern": "/[locale]/account/delete",
@@ -884,25 +885,28 @@
       "pattern": "/[locale]/legal/dpa",
       "source": "apps/web/src/app/[locale]/(marketing)/legal/dpa/page.tsx",
       "category": "page",
-      "owner": "web-next",
-      "disposition": "Next-fallback",
-      "cronOwner": null
+      "owner": "web-start",
+      "disposition": "native-Start",
+      "cronOwner": null,
+      "nativeSource": "apps/web/cloudflare/start/legal-page.tsx"
     },
     {
       "pattern": "/[locale]/legal/sla",
       "source": "apps/web/src/app/[locale]/(marketing)/legal/sla/page.tsx",
       "category": "page",
-      "owner": "web-next",
-      "disposition": "Next-fallback",
-      "cronOwner": null
+      "owner": "web-start",
+      "disposition": "native-Start",
+      "cronOwner": null,
+      "nativeSource": "apps/web/cloudflare/start/legal-page.tsx"
     },
     {
       "pattern": "/[locale]/legal/subprocessors",
       "source": "apps/web/src/app/[locale]/(marketing)/legal/subprocessors/page.tsx",
       "category": "page",
-      "owner": "web-next",
-      "disposition": "Next-fallback",
-      "cronOwner": null
+      "owner": "web-start",
+      "disposition": "native-Start",
+      "cronOwner": null,
+      "nativeSource": "apps/web/cloudflare/start/legal-page.tsx"
     },
     {
       "pattern": "/[locale]/logout",
