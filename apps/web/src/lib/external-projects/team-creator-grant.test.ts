@@ -1,3 +1,4 @@
+import type { PermissionId } from '@tuturuuu/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   addExternalProjectRoleMembers,
@@ -125,7 +126,10 @@ function createAccess({
   };
 }
 
-const rolePayload = {
+const rolePayload: {
+  name: string;
+  permissions: { enabled: boolean; id: PermissionId }[];
+} = {
   name: 'Finance',
   permissions: [
     { enabled: true, id: 'manage_subscription' },
