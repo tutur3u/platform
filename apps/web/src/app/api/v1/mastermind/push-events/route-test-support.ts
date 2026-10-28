@@ -47,6 +47,7 @@ export const redis = {
   set: vi.fn(),
   get: vi.fn(),
   del: vi.fn(),
+  eval: vi.fn(),
 };
 
 export const fixture = {
@@ -84,6 +85,25 @@ export function setUpPushEventsFixture() {
   redis.get.mockImplementation(async (key: string) => liveValue(key));
   redis.del.mockImplementation(async (key: string) =>
     store.delete(key) ? 1 : 0
+  );
+  redis.eval.mockImplementation(
+    async (script: string, keys: string[], args: Array<string | number>) => {
+      const key = keys[0]!;
+      if (!script.includes("redis.call('GET', KEYS[1]) == ARGV[1]"))
+        throw new Error('Missing claim comparison');
+      if (liveValue(key) !== args[0]) return 0;
+      if (script.includes("redis.call('DEL', KEYS[1])"))
+        return store.delete(key) ? 1 : 0;
+      if (
+        !script.includes("redis.call('SET', KEYS[1], ARGV[2], 'EX', ARGV[3])")
+      )
+        throw new Error('Unexpected claim script');
+      store.set(key, {
+        value: String(args[1]),
+        expiresAt: Date.now() + Number(args[2]) * 1000,
+      });
+      return 1;
+    }
   );
   vi.mocked(getUpstashRestRedisClient).mockResolvedValue(redis as never);
 

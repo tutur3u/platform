@@ -38,16 +38,19 @@ the cap whatever `Content-Length` says, including chunked bodies without one.
   `<X-MM-Timestamp> + "." + <raw body bytes>` keyed with
   `MASTERMIND_PUSH_HMAC_SECRET` or, during a rotation,
   `MASTERMIND_PUSH_HMAC_SECRET_NEXT`. Both are compared in constant time.
-- Both secrets are trimmed of surrounding whitespace before use, and each must
-  be at least 32 characters after trimming. A set but too-short
+- Both secrets are trimmed of surrounding whitespace before use. The primary
+  secret must be at least 32 characters after trimming. A whitespace-only NEXT
+  secret is treated as unset. A nonempty but too-short
   `MASTERMIND_PUSH_HMAC_SECRET_NEXT` refuses the whole configuration (503).
 - `X-MM-Timestamp` is unix seconds; more than 5 minutes of skew in either
   direction is rejected.
 - Events are deduplicated on `(type, item_id, seq)` in Upstash Redis with a
-  two-state claim. The route writes `pending` with `SET NX` and a 2-minute TTL,
-  then overwrites it with `done` and a 24-hour TTL after a successful
-  delivery. A failed delivery deletes the claim. A duplicate that finds
-  `pending` gets 503 and should be retried; one that finds `done` gets 409. A
+  two-state claim. The route writes `pending:<random UUID>` with `SET NX` and a
+  2-minute TTL, then atomically changes its own token to `done` with a 24-hour
+  TTL after successful delivery. Failure atomically deletes only the matching
+  token. Both transitions use Redis Lua compare-and-set/delete, so an expired
+  request cannot overwrite or release its successor. A duplicate that finds
+  a pending token gets 503 and should be retried; one that finds `done` gets 409. A
   claim abandoned by a crashed request expires after 2 minutes. If the replay
   store is unreachable or a claim write throws, the route fails closed (503).
 
@@ -78,9 +81,18 @@ the cap whatever `Content-Length` says, including chunked bodies without one.
 - **Coalescing:** at most one push per type per owner per 60 seconds; later
   events in the window are dropped (the snapshot carries them). An owner counts
   as sent only when FCM reports at least one successful delivery; a send that
-  throws or delivers to zero devices is a failure and releases that owner's
-  window. Owners already reached keep theirs, so a retried event goes only to
-  the owners that missed it.
+  throws or delivers to zero devices is a failure. Coalescing claims also use
+  random tokens and compare-and-delete, allowing immediate retries without
+  releasing a newer request's window.
+- **Partial retries:** successful owners receive
+  `mastermind:push:event:<eventKey>:sent:<owner>` receipts with a 24-hour TTL.
+  Every attempt skips those owners, including retries after the 60-second
+  coalescing window expires. Receipts are never deleted by failed requests.
+- **Deadline:** the whole fan-out has a 60-second budget, below the 2-minute
+  pending TTL. A stalled lookup or FCM call ends the fan-out; unreached owners
+  count as failed and the route returns 502. Late results cannot resume it.
+  The race bounds server waiting; it cannot cancel an FCM request already
+  submitted or guarantee exactly-once delivery after an unknown FCM outcome.
 - **Invalid tokens** reported by FCM are deleted for that owner.
 - **Logs:** native `console.*` with the reject reason or the event type and
   counts only, never payload content.
@@ -98,7 +110,7 @@ Errors are `{"error":"<class>"}` and never echo input.
 | 413 | `payload_too_large` | Body over 8 KiB |
 | 502 | `delivery_failed` | At least one owner could not be sent to; the dedupe claim is released so the same event can be retried |
 | 503 | `event_in_flight` | The same event is still being delivered; retry later |
-| 503 | `unavailable` | Secret unset, either secret shorter than 32 characters, or replay store unreachable |
+| 503 | `unavailable` | Primary secret unset/short, nonempty NEXT secret too short, or replay store unreachable |
 
 ## Provisioning
 
@@ -108,3 +120,10 @@ and optionally `MASTERMIND_PUSH_LOCALE` on the web deployment.
 `MASTERMIND_PUSH_HMAC_SECRET_NEXT` is set only during a rotation. Until the secret is set the
 route answers 503 and sends nothing. The route also needs the existing Firebase
 Admin and Upstash Redis variables.
+
+## Regression coverage
+
+The route tests cover immediate and +61-second partial retries, a suspended
+request failing after a successor completes at +121 seconds, claim ownership,
+and the 60-second fan-out deadline with late FCM completion. See
+`route.delivery.test.ts` and `route.race.test.ts` beside the route.

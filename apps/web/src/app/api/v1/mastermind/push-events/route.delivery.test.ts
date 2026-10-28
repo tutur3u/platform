@@ -48,10 +48,14 @@ describe('POST /api/v1/mastermind/push-events delivery', () => {
       const response = await POST(signedRequest(baseEvent));
 
       expect(response.status).toBe(202);
-      expect(redis.set).toHaveBeenCalledWith(replayKey(baseEvent), 'pending', {
-        ex: 120,
-        nx: true,
-      });
+      expect(redis.set).toHaveBeenCalledWith(
+        replayKey(baseEvent),
+        expect.stringMatching(/^pending:[0-9a-f-]{36}$/),
+        {
+          ex: 120,
+          nx: true,
+        }
+      );
       expect(store.get(replayKey(baseEvent))).toEqual({
         value: 'done',
         expiresAt: NOW + 24 * 60 * 60 * 1000,
@@ -178,7 +182,7 @@ describe('POST /api/v1/mastermind/push-events delivery', () => {
 
     const partial = await POST(signedRequest(baseEvent));
     expect(partial.status).toBe(502);
-    expect(liveValue(coalesceKey(OWNER))).toBe('1');
+    expect(liveValue(coalesceKey(OWNER))).toMatch(/^pending:[0-9a-f-]{36}$/);
     expect(liveValue(coalesceKey(SECOND_OWNER))).toBeNull();
     expect(liveValue(replayKey(baseEvent))).toBeNull();
 
@@ -189,7 +193,11 @@ describe('POST /api/v1/mastermind/push-events delivery', () => {
     const retry = await POST(signedRequest(baseEvent));
 
     expect(retry.status).toBe(202);
-    expect(await retry.json()).toMatchObject({ sent: 1, coalesced: 1 });
+    expect(await retry.json()).toMatchObject({
+      sent: 1,
+      coalesced: 0,
+      skipped: 1,
+    });
     const owners = vi
       .mocked(sendCustomPushMessageBatch)
       .mock.calls.map(([args]) => deviceOwner(args));

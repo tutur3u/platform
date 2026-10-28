@@ -399,10 +399,16 @@ signed hub events and sends a mobile push to Mastermind owners.
   payload is never followed otherwise. An item id is never in the push.
 - **Rate:** at most one push per type per owner per minute; a burst inside the
   window is dropped, not queued, because the next snapshot shows it.
+- **Retries:** successful owners are skipped for 24 hours per event, including
+  partial retries after the coalescing window. Token-owned claims prevent stale
+  requests from releasing newer claims. Fan-out stops after 60 seconds and
+  returns 502 for unreached owners. This applies to the web push endpoint;
+  mobile tap behavior is unchanged.
 - **Default:** off until Release Desk provisions `MASTERMIND_PUSH_HMAC_SECRET`
   and `MASTERMIND_PUSH_OWNER_IDS`; without the secret the route sends nothing.
 - **Regression coverage:**
   `apps/web/src/app/api/v1/mastermind/push-events/route.test.ts`,
+  `apps/web/src/app/api/v1/mastermind/push-events/route.race.test.ts`,
   `route.delivery.test.ts` and, for the tap,
   `apps/mobile/test/features/notifications/push/mastermind_push_destination_test.dart`.
 

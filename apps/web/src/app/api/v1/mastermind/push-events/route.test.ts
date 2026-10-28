@@ -167,6 +167,11 @@ describe('POST /api/v1/mastermind/push-events', () => {
       expect(promoted.status).toBe(202);
     });
 
+    it('treats a whitespace-only next secret as unset', async () => {
+      vi.stubEnv('MASTERMIND_PUSH_HMAC_SECRET_NEXT', ' \n\t ');
+      expect((await POST(signedRequest(baseEvent))).status).toBe(202);
+    });
+
     it('refuses the configuration when the next secret is too short', async () => {
       vi.stubEnv('MASTERMIND_PUSH_HMAC_SECRET_NEXT', 'y'.repeat(31));
 

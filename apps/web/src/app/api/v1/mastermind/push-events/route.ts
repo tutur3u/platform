@@ -2,6 +2,10 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getUpstashRestRedisClient } from '@tuturuuu/utils/upstash-rest';
 import { NextResponse } from 'next/server';
 import {
+  completeMastermindPushClaim,
+  releaseMastermindPushClaim,
+} from '@/lib/mastermind/push-events/claims';
+import {
   deliverMastermindPushEvent,
   type MastermindPushAdminClient,
   parseMastermindPushOwnerIds,
@@ -20,8 +24,6 @@ import {
 const MAX_BODY_BYTES = 8 * 1024;
 /** Covers one synchronous fan-out; a crashed claim frees itself after this. */
 const EVENT_PENDING_TTL_SECONDS = 2 * 60;
-const EVENT_REPLAY_TTL_SECONDS = 24 * 60 * 60;
-const EVENT_PENDING = 'pending';
 const EVENT_DONE = 'done';
 
 const NO_STORE = { 'cache-control': 'private, no-store' };
@@ -93,10 +95,11 @@ export async function POST(request: Request) {
   const redis = await getUpstashRestRedisClient().catch(() => null);
   if (!redis) return reject('unavailable', 503);
 
-  // Two-state claim: "pending" while this request delivers, "done" after.
+  // Only this token may complete or release this pending claim.
+  const claimToken = `pending:${crypto.randomUUID()}`;
   const replayKey = `mastermind:push:event:${mastermindPushEventKey(event)}`;
   try {
-    const claimed = await redis.set(replayKey, EVENT_PENDING, {
+    const claimed = await redis.set(replayKey, claimToken, {
       ex: EVENT_PENDING_TTL_SECONDS,
       nx: true,
     });
@@ -111,7 +114,9 @@ export async function POST(request: Request) {
   }
 
   const releaseClaim = () =>
-    Promise.resolve(redis.del(replayKey)).catch(() => undefined);
+    Promise.resolve(
+      releaseMastermindPushClaim(redis, replayKey, claimToken)
+    ).catch(() => undefined);
 
   try {
     const admin = await createAdminClient({ noCookie: true });
@@ -126,8 +131,7 @@ export async function POST(request: Request) {
     });
 
     if (result.failed > 0) {
-      // Some owner missed it: let the sender retry. Owners already reached
-      // keep their coalescing window, so the retry does not push them twice.
+      // Successful owners retain per-event receipts across coalescing windows.
       await releaseClaim();
       console.warn('Mastermind push event partially failed', {
         type: event.type,
@@ -137,7 +141,7 @@ export async function POST(request: Request) {
     }
 
     await Promise.resolve(
-      redis.set(replayKey, EVENT_DONE, { ex: EVENT_REPLAY_TTL_SECONDS })
+      completeMastermindPushClaim(redis, replayKey, claimToken)
     ).catch(() =>
       console.warn('Failed to mark Mastermind push event as delivered')
     );
