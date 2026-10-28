@@ -1,5 +1,14 @@
 # Plan 320: Require Expiry for Drive Export Capabilities
 
+> **Active Web scope superseded by sr357 (2026-10-28).** The historical
+> 24-hour proposal below remained blocked in the inspected source.
+> [Drive export lifetime and revocation](../apps/docs/platform/applications/drive.mdx#export-link-lifetime-and-revocation)
+> now defines the active policy: seven days by default, positive overrides capped
+> at 30 days, zero uses the default, version-two tokens, and folder revocation.
+> The retained Rust runtime is paused and must not accept version-two exports
+> without a separately authorized migration. The old execution steps and local
+> build commands below are historical, not current instructions.
+
 > **Executor instructions:** Make Drive export bearer capabilities expire under
 > one explicit TypeScript/Rust policy. Preserve the token wire format and the
 > downstream 15-minute signed URL. Do not treat the prepared Rust handler as
@@ -12,7 +21,7 @@
 
 ## Status
 
-- **Execution status:** BLOCKED — obtain exact Rust/backend migration transfer
+- **Execution status:** SUPERSEDED for active Web; Rust migration remains paused
 - **Priority:** P0
 - **Effort:** M
 - **Risk:** MEDIUM
