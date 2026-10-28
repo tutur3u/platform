@@ -1,7 +1,9 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/data/sources/device_secure_storage.dart';
 import 'package:mobile/data/sources/keychain_accessibility_migration.dart';
+import 'package:mobile/data/sources/secure_storage.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -298,5 +300,149 @@ void main() {
       supabasePersistSessionKey,
       'mobile-multi-account-store-v1',
     ]);
+  });
+  test('persist replaces a legacy session after a locked start', () async {
+    keychain.items[supabasePersistSessionKey] = (
+      value: 'old',
+      accessibility: _legacy,
+    );
+    keychain.failReads.add(supabasePersistSessionKey);
+    await SupabaseSecureStorage(storage: current).persistSession('fresh');
+    expect(await current.read(key: supabasePersistSessionKey), 'fresh');
+    expect(keychain.items[supabasePersistSessionKey]!.accessibility, _current);
+  });
+
+  test(
+    'persist replaces a downgraded item despite the migration marker',
+    () async {
+      await migrate();
+      keychain.items[supabasePersistSessionKey] = (
+        value: 'downgraded',
+        accessibility: _legacy,
+      );
+      await SupabaseSecureStorage(storage: current).persistSession('fresh');
+      expect(await current.read(key: supabasePersistSessionKey), 'fresh');
+    },
+  );
+
+  test('persist propagates unrelated failures without deleting', () async {
+    keychain.items[supabasePersistSessionKey] = (
+      value: 'existing',
+      accessibility: _current,
+    );
+    keychain.failWrites = true;
+    await expectLater(
+      SupabaseSecureStorage(storage: current).persistSession('fresh'),
+      throwsA(isA<PlatformException>()),
+    );
+    expect(keychain.items[supabasePersistSessionKey]!.value, 'existing');
+    verifyNever(() => current.delete(key: supabasePersistSessionKey));
+  });
+
+  test(
+    'persist retries a duplicate only once and exposes retry failure',
+    () async {
+      when(
+        () => current.write(key: supabasePersistSessionKey, value: 'fresh'),
+      ).thenThrow(PlatformException(code: 'security', details: -25299));
+      await expectLater(
+        SupabaseSecureStorage(storage: current).persistSession('fresh'),
+        throwsA(isA<PlatformException>()),
+      );
+      verify(
+        () => current.write(key: supabasePersistSessionKey, value: 'fresh'),
+      ).called(2);
+      verify(() => current.delete(key: supabasePersistSessionKey)).called(1);
+    },
+  );
+
+  DeviceSecureStorage deviceStorage({bool enabled = true}) =>
+      DeviceSecureStorage(
+        current: current,
+        legacy: legacy,
+        migrateIOS: enabled,
+      );
+
+  test(
+    'device store reads legacy once and rewrites at the stronger class',
+    () async {
+      keychain.items['cache-key'] = (
+        value: 'encrypted-key',
+        accessibility: _legacy,
+      );
+      final storage = deviceStorage();
+      expect(await storage.read(key: 'cache-key'), 'encrypted-key');
+      expect(await storage.read(key: 'cache-key'), 'encrypted-key');
+      expect(await legacy.read(key: 'cache-key'), isNull);
+      verify(
+        () => legacy.read(key: 'cache-key'),
+      ).called(2); // migration + assertion
+      expect(keychain.items['cache-key']!.accessibility, _current);
+    },
+  );
+
+  for (final boundary in [
+    'write:cache-key.device-class-migration-v1',
+    'delete:cache-key',
+    'write:cache-key',
+  ]) {
+    test('device store recovers interruption at $boundary', () async {
+      keychain.items['cache-key'] = (value: 'key', accessibility: _legacy);
+      keychain.crashAfter = boundary;
+      await expectLater(
+        deviceStorage().read(key: 'cache-key'),
+        throwsA(isA<PlatformException>()),
+      );
+      keychain.restart();
+      expect(await deviceStorage().read(key: 'cache-key'), 'key');
+      expect(await legacy.read(key: 'cache-key'), isNull);
+    });
+  }
+
+  test(
+    'device store preserves locked items and retries after unlock',
+    () async {
+      keychain.items['cache-key'] = (value: 'key', accessibility: _legacy);
+      keychain.failReads.add('cache-key');
+      final storage = deviceStorage();
+      await expectLater(
+        storage.read(key: 'cache-key'),
+        throwsA(isA<PlatformException>()),
+      );
+      expect(keychain.items['cache-key']!.value, 'key');
+      keychain.failReads.clear();
+      expect(await storage.read(key: 'cache-key'), 'key');
+    },
+  );
+
+  test(
+    'device store deletes staged recovery data on explicit removal',
+    () async {
+      keychain.items['cache-key.device-class-migration-v1'] = (
+        value: 'stale',
+        accessibility: _current,
+      );
+      final storage = deviceStorage();
+      await storage.delete(key: 'cache-key');
+      expect(await storage.read(key: 'cache-key'), isNull);
+    },
+  );
+
+  test('device store serializes read then write then delete', () async {
+    keychain.items['cache-key'] = (value: 'old', accessibility: _legacy);
+    final storage = deviceStorage();
+    final read = storage.read(key: 'cache-key');
+    final write = storage.write(key: 'cache-key', value: 'new');
+    final delete = storage.delete(key: 'cache-key');
+    expect(await read, 'old');
+    await write;
+    await delete;
+    expect(await storage.read(key: 'cache-key'), isNull);
+  });
+
+  test('device store does not consult legacy off iOS', () async {
+    keychain.items['cache-key'] = (value: 'old', accessibility: _legacy);
+    expect(await deviceStorage(enabled: false).read(key: 'cache-key'), isNull);
+    verifyNever(() => legacy.read(key: 'cache-key'));
   });
 }

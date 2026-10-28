@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -43,10 +44,21 @@ class SupabaseSecureStorage extends LocalStorage {
 
   @override
   Future<void> persistSession(String persistSessionString) async {
-    await _storage.write(
-      key: supabasePersistSessionKey,
-      value: persistSessionString,
-    );
+    try {
+      await _storage.write(
+        key: supabasePersistSessionKey,
+        value: persistSessionString,
+      );
+    } on PlatformException catch (error) {
+      if (error.details != -25299 && error.code != '-25299') rethrow;
+      // A locked start or downgrade may leave an invisible old item.
+      // Delete ignores accessibility; retry once and propagate failure.
+      await _storage.delete(key: supabasePersistSessionKey);
+      await _storage.write(
+        key: supabasePersistSessionKey,
+        value: persistSessionString,
+      );
+    }
   }
 
   @override

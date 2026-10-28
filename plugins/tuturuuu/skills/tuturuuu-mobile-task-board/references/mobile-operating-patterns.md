@@ -337,3 +337,14 @@ Normalize validated PostgreSQL timestamptz receipts at active API boundaries bef
 strict mobile parsers. Preserve microseconds separately from Date milliseconds and
 validate calendar/offset/fraction before conversion. Cover actual creation and
 message handlers plus JSON/NDJSON adapters, not only hand-authored ISO fixtures.
+
+### Secure-storage accessibility upgrades
+
+Use `deviceSecureStorage` for device-bound cache keys and metadata that must
+remain readable after first unlock. Its per-key staged migration reads old iOS
+`unlocked` items before rewriting them, including dynamic scope keys. Explicit
+removal must delete staging as well. Keep unlock-only device MFA and note-lock
+secrets on `unlocked_this_device`. Exercise class-filtered reads, duplicate writes,
+locked reads and interruption recovery with
+`test/data/sources/keychain_accessibility_migration_test.dart`; a plain map fake
+cannot reproduce the native accessibility conflict.
