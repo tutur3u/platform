@@ -28,7 +28,10 @@ class LaneTile extends StatelessWidget {
     return AppGroupedRow(
       title: Text(lane.title),
       showChevron: true,
-      trailing: LaneStateBadge(state: lane.state),
+      trailing: LaneStateBadge(
+        state: lane.state,
+        reason: lane.fields['state']?.reason(l10n),
+      ),
       onTap: () => context.push(Routes.mastermindWorkLanePath(lane.id)),
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

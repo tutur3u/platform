@@ -142,7 +142,7 @@ UsageChartSpec? usageChartSpec(
         // The reset marker only helps when it falls inside what is drawn.
         bands: [
           for (final gap in usageGaps(pool.series, model.gaps))
-            ChartBand(label: gap.label(l10n), t: gap.start),
+            ChartBand(label: gap.label(l10n), t: gap.start, end: gap.end),
           if (resets != null &&
               first != null &&
               !resets.isBefore(first) &&

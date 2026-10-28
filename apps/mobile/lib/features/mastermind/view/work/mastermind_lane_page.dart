@@ -5,6 +5,7 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/age_text.dart';
+import 'package:mobile/features/mastermind/presentation/hub_field.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
 import 'package:mobile/features/mastermind/presentation/work_model.dart';
 import 'package:mobile/features/mastermind/view/mastermind_freshness_strip.dart';
@@ -115,9 +116,18 @@ class _Detail extends StatelessWidget {
         // The title is the shell's title override above; the body repeats none.
         AppGroupedSection.spaced(
           children: [
-            row(l10n.mastermindLaneState, LaneStateBadge(state: lane.state)),
-            row(l10n.mastermindLaneRole, text(lane.role)),
-            row(l10n.mastermindLaneModel, text(lane.providerModel)),
+            row(
+              l10n.mastermindLaneState,
+              LaneStateBadge(
+                state: lane.state,
+                reason: lane.fields['state']?.reason(l10n),
+              ),
+            ),
+            row(l10n.mastermindLaneRole, text(HubField.text(l10n, lane.role))),
+            row(
+              l10n.mastermindLaneModel,
+              text(HubField.text(l10n, lane.providerModel)),
+            ),
             row(
               l10n.mastermindLaneAge,
               text(

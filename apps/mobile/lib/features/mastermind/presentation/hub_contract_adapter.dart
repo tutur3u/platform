@@ -67,3 +67,13 @@ Map<String, dynamic> adaptDecisionCollections(Map<String, dynamic> raw) {
   root['decisions'] = journal;
   return root;
 }
+
+Map<String, dynamic> adaptThread(Map<String, dynamic> row) {
+  final result = Map<String, dynamic>.from(row);
+  final status = result.remove('status');
+  result.remove('name');
+  if (const {'running', 'waiting', 'idle'}.contains(status)) {
+    result['state'] = status;
+  }
+  return result;
+}

@@ -87,7 +87,10 @@ class UsagePoolCard extends StatelessWidget {
                     _line(l10n.mastermindChartProjection, pp),
                 ].join(' · '),
               ),
-        trailing: PacingGlyph(pacing: window.pacing),
+        trailing: PacingGlyph(
+          pacing: window.pacing,
+          missingReason: window.fields['pacing']?.reason(l10n),
+        ),
       ),
     ];
   }
