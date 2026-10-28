@@ -63,8 +63,12 @@ export async function proxyNext(
     });
   }
   for (const cookie of upstream.headers.getSetCookie()) {
-    const domain = /;\s*domain\s*=\s*([^;]+)/iu.exec(cookie)?.[1];
-    if (domain && domain.toLowerCase() !== stagingProfile.cookieDomain) {
+    const domains = [...cookie.matchAll(/;\s*domain\s*=\s*([^;]*)/giu)];
+    const domain = domains[0]?.[1]?.trim().toLowerCase();
+    if (
+      domains.length > 1 ||
+      (domains.length === 1 && domain !== stagingProfile.cookieDomain)
+    ) {
       await upstream.body?.cancel();
       return new Response('Upstream cookie domain rejected', { status: 502 });
     }

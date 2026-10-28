@@ -244,6 +244,38 @@ describe('Next compatibility', () => {
     );
     expect(response.headers.get('cache-control')).toBe('no-store');
   });
+  it.each([
+    'Domain=.staging.tutur3u.com; Domain=.tutur3u.com',
+    'Domain=.tutur3u.com; Domain=.staging.tutur3u.com',
+    'dOmAiN = .staging.tutur3u.com; DOMAIN\t=\t.tutur3u.com',
+    'Domain=.staging.tutur3u.com; Domain=.staging.tutur3u.com',
+    'DOMAIN=.staging.tutur3u.com; domain = .staging.tutur3u.com',
+    'Domain=.staging.tutur3u.com; Domain=; Domain=.tutur3u.com',
+    'Domain=; Domain=.staging.tutur3u.com',
+  ])('rejects ambiguous cookie domains: %s', async (attributes) => {
+    const headers = new Headers();
+    headers.append('set-cookie', '__Host-safe=fixture; Path=/; Secure');
+    headers.append('set-cookie', `sb-auth=fixture; ${attributes}; Secure`);
+    const { handler } = setup(() => reply('upstream auth body', { headers }));
+    const response = await handler(request('/login'), env);
+    expect(response.status).toBe(502);
+    expect(response.headers.has('set-cookie')).toBe(false);
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    expect(await response.text()).toBe('Upstream cookie domain rejected');
+  });
+  it.each(['Domain=.staging.tutur3u.com', 'dOmAiN\t=\t.STAGING.TUTUR3U.COM  '])(
+    'preserves a single staging cookie domain: %s',
+    async (attributes) => {
+      const cookie = `sb-auth=fixture; ${attributes}; Secure`;
+      const { handler } = setup(() =>
+        reply('auth', { headers: { 'set-cookie': cookie } })
+      );
+      const response = await handler(request('/login'), env);
+      expect(response.status).toBe(200);
+      expect(response.headers.getSetCookie()).toEqual([cookie]);
+      expect(await response.text()).toBe('auth');
+    }
+  );
   it('rejects production cookie domains', async () => {
     const { handler } = setup(() =>
       reply('auth', {
