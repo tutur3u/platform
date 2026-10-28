@@ -1221,17 +1221,30 @@ it removes these ownership fences. Test rollback and re-apply on an isolated sta
 Removing root membership cancels queued runs, sets running work to
 `cancel_requested`, records an access-revocation reason, and releases active leases
 in the same transaction. A bounded claim-time sweep also cancels stale unauthorized
-queued rows, including expired grants. Active grants authorize only the owner
-of a personal runner; they never authorize fleet execution. Contributor access is not enabled by this migration. If
-`private.devbox_personal_pool_grants` exists when this migration applies, its UPDATE
-and DELETE operations attach the same cancellation hook. If contributor grants are
-introduced later, their migration must attach
-`private.cancel_devbox_runs_on_access_revocation()` as an AFTER UPDATE OR DELETE
-row trigger before enrollment is enabled. Revocation and expiry must never make
-personal work fleet-eligible. A server-side revocation does not stop an already
+queued rows, including expired grants. Each cancelled run records an
+`access_revoked` event with reason `actor_access_revoked`; retries leave terminal
+runs alone. Two unauthorized rows ahead of legitimate work do not block its claim.
+Active grants authorize only the owner of a personal runner; they never authorize
+fleet execution. Contributor access is not enabled by this migration.
+
+Apply the shared grant contract `20261027152050` before `20261027152100`.
+The ownership helper delegates to `private.devbox_identity_grant_active(uuid)`;
+a missing predicate or table, no grant row, or an authorization denial is inactive
+and follows audited cleanup. The predicate owns the global switch, active status,
+acceptance, expiry, suspension and root-member exclusion checks. The `user_id`
+grant UPDATE/DELETE hook cancels queued work and signals running work when status
+leaves active, suspension is set, acceptance becomes invalid, or expiry is reached.
+If the grants table is absent at migration time, a NOTICE identifies the missing
+hook; its creating migration must attach
+`private.cancel_devbox_runs_on_access_revocation()` before enrollment. Natural
+expiry is caught for queued work by claim cleanup; it does not schedule a stop for
+running work. Revocation and expiry must never make personal work fleet-eligible.
+A server-side revocation does not stop an already
 running OS process; host isolation and the host stop procedure remain necessary.
 
-Regression evidence: `devbox-claim-actor-fence.sql` covers cross-owner claims,
+Regression evidence: `devbox-claim-cleanup.sql` covers audited multi-row cleanup,
+missing contract objects, shared grant admission and grant invalidation.
+`devbox-claim-actor-fence.sql` covers cross-owner claims,
 root revocation, maintenance designation, lease/env attachment and runner pins.
 The existing devbox trust-pool, drain, mode-admission, stale-reaper and commit-run
 suites remain required. Compare full-suite failures with the same main snapshot,

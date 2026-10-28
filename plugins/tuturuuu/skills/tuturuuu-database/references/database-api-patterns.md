@@ -528,6 +528,10 @@ revoke PUBLIC/anon/authenticated EXECUTE, and grant only service_role.
 Run the actor-fence pgTAP tests RED on main and GREEN after applying the migration;
 compare full-suite failure names and round-trip the rollback. A lease ownership
 check must cover both direct run pins and inherited lease pins. Preserve dedicated
-learner Judge/playground enqueue paths. A future contributor-grant table must bind
-the existing revocation cancellation hook before enrollment; absence of an active
-grant is never permission to claim personal work on the fleet.
+learner Judge/playground enqueue paths. The separate 20261027152050 migration owns the shared user_id grant predicate;
+152100 delegates through a guarded lookup and binds the grant revocation hook.
+Missing contract objects or per-actor denials are inactive, and queued work is
+cancelled with an access-revocation event rather than blocking the fleet claim.
+Run `devbox-claim-cleanup.sql` with the real 152050 prerequisite before 152100;
+the suite verifies that the grant hook is installed by the ownership migration. Absence of an active grant
+is never permission to claim personal work on the fleet.

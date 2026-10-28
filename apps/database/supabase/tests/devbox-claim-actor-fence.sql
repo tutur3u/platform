@@ -68,14 +68,14 @@ select is((select runner_id from private.devbox_runs where id='74000000-0000-400
 select is((select runner_id from private.devbox_leases where id='73000000-0000-4000-8000-000000000002'),null::uuid,'rejected lease pin UPDATE leaves runner unchanged');
 select lives_ok($$insert into private.devbox_env_revisions(actor_id,lease_id) values('71000000-0000-4000-8000-000000000001','73000000-0000-4000-8000-000000000002')$$,'own env revision remains allowed');
 -- Exercise the contributor revoke hook without enabling contributor access.
-create temp table contributor_grants(actor_id uuid,revoked_at timestamptz,expires_at timestamptz);
+create temp table contributor_grants(user_id uuid,status text,accepted_at timestamptz,expires_at timestamptz,suspended boolean);
 do $$ begin
  if to_regprocedure('private.cancel_devbox_runs_on_access_revocation()') is not null then
    execute 'create trigger revoke_grant after update or delete on contributor_grants for each row execute function private.cancel_devbox_runs_on_access_revocation()';
  end if;
 end $$;
-insert into contributor_grants values('71000000-0000-4000-8000-000000000001',null,now()+interval '1 hour');
-update contributor_grants set revoked_at=now();
+insert into contributor_grants values('71000000-0000-4000-8000-000000000001','active',now(),now()+interval '1 hour',false);
+update contributor_grants set status='revoked';
 select is((select status from private.devbox_runs where id='74000000-0000-4000-8000-000000000002'),'cancelled','contributor grant revocation cancels queued work');
 select is((select count(*) from private.claim_next_devbox_run('72000000-0000-4000-8000-000000000001')),0::bigint,'revoked contributor work cannot fall through to fleet');
 select ok(not has_function_privilege('anon','private.claim_next_devbox_run(uuid)','EXECUTE') and not has_function_privilege('authenticated','private.claim_next_devbox_run(uuid)','EXECUTE') and has_function_privilege('service_role','private.claim_next_devbox_run(uuid)','EXECUTE'),'claim execute remains service role only');
@@ -91,15 +91,10 @@ values('74000000-0000-4000-8000-000000000003','71000000-0000-4000-8000-000000000
 delete from public.workspace_members where ws_id='00000000-0000-0000-0000-000000000000' and user_id='71000000-0000-4000-8000-000000000002';
 select is((select status from private.devbox_runs where id='74000000-0000-4000-8000-000000000003'),'cancel_requested','member removal signals running work');
 select ok(exists(select 1 from private.devbox_run_events where run_id='74000000-0000-4000-8000-000000000003' and metadata->>'reason'='actor_access_revoked'),'revocation records a durable reason');
--- Fixture the future grant contract without exposing contributor APIs.
-create table if not exists private.devbox_personal_pool_grants(actor_id uuid primary key, revoked_at timestamptz,expires_at timestamptz not null);
-do $$ begin
- if to_regprocedure('private.cancel_devbox_runs_on_access_revocation()') is not null and not exists(
-    select 1 from pg_trigger where tgrelid='private.devbox_personal_pool_grants'::regclass and tgname='cancel_devbox_runs_on_access_revocation') then
-    execute 'create trigger cancel_devbox_runs_on_access_revocation after update or delete on private.devbox_personal_pool_grants for each row execute function private.cancel_devbox_runs_on_access_revocation()';
- end if;
-end $$;
-insert into private.devbox_personal_pool_grants(actor_id,expires_at) values('71000000-0000-4000-8000-000000000003',now()+interval '1 hour');
+-- The real 20261027152050 prerequisite supplies the user_id grant contract.
+update private.devbox_control_settings set personal_pools_enabled = true where id;
+insert into private.devbox_personal_pool_grants(user_id,status,accepted_at,expires_at,suspended)
+values('71000000-0000-4000-8000-000000000003','active',now(),now()+interval '1 hour',false);
 insert into private.devbox_runners(id,actor_id,name,pool,status,heartbeat_enabled,last_heartbeat_at,capabilities,enabled_features)
 values('72000000-0000-4000-8000-000000000003','71000000-0000-4000-8000-000000000003','grantee','personal','online',true,now(),'{"executionMode":"trusted"}','{"run":true}');
 select ok(pg_temp.claims('72000000-0000-4000-8000-000000000003','71000000-0000-4000-8000-000000000003','run'),'active grantee can claim only own personal work');
@@ -109,7 +104,7 @@ insert into private.devbox_leases(id,actor_id,status,expires_at) values('7300000
 insert into private.devbox_runs(id,actor_id,lease_id,status,command) values
  ('74000000-0000-4000-8000-000000000004','71000000-0000-4000-8000-000000000003','73000000-0000-4000-8000-000000000003','queued',array['echo']),
  ('74000000-0000-4000-8000-000000000005','71000000-0000-4000-8000-000000000003','73000000-0000-4000-8000-000000000003','running',array['sleep']);
-update private.devbox_personal_pool_grants set revoked_at=now() where actor_id='71000000-0000-4000-8000-000000000003';
+update private.devbox_personal_pool_grants set status='revoked' where user_id='71000000-0000-4000-8000-000000000003';
 select is((select status from private.devbox_runs where id='74000000-0000-4000-8000-000000000004'),'cancelled','canonical grant revoke cancels queued work');
 select is((select status from private.devbox_runs where id='74000000-0000-4000-8000-000000000005'),'cancel_requested','canonical grant revoke signals running work');
 select ok(not pg_temp.claims('72000000-0000-4000-8000-000000000001','71000000-0000-4000-8000-000000000003','run'),'revoked grant cannot fall through to fleet');
