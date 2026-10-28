@@ -7,6 +7,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveAuthenticatedSessionUser } from '@/lib/app-session-user';
+import { isSprintSchemaUnavailable } from '../../task-boards/[boardId]/sprints/_lib';
 
 const cycleStatusSchema = z.enum([
   'planned',
@@ -74,22 +75,24 @@ export async function PUT(
     }
     const { name, description, status, start_date, end_date } = parsed.data;
 
-    const { data: updatedCycle, error } = await supabase
-      .from('task_cycles')
-      .update({
-        name,
-        description: description || null,
-        status,
-        start_date: start_date ? start_date : null,
-        end_date: end_date ? end_date : null,
-      })
-      .eq('id', cycleId)
-      .eq('ws_id', wsId)
-      // Board sprints change only through the sprint routes, which check
-      // board access and keep start/end consistent.
-      .is('board_id', null)
-      .select(
-        `
+    // Board sprints change only through the sprint routes, which check board
+    // access and keep start/end consistent. Before the sprint migration lands
+    // there is no board_id column and every cycle is a workspace cycle.
+    const updateCycle = (scopedToWorkspaceCycles: boolean) => {
+      const query = supabase
+        .from('task_cycles')
+        .update({
+          name,
+          description: description || null,
+          status,
+          start_date: start_date ? start_date : null,
+          end_date: end_date ? end_date : null,
+        })
+        .eq('id', cycleId)
+        .eq('ws_id', wsId);
+      return (scopedToWorkspaceCycles ? query.is('board_id', null) : query)
+        .select(
+          `
           *,
           creator:users!task_cycles_creator_id_fkey(
             id,
@@ -100,8 +103,13 @@ export async function PUT(
             task_id
           )
         `
-      )
-      .maybeSingle();
+        )
+        .maybeSingle();
+    };
+    let result = await updateCycle(true);
+    if (isSprintSchemaUnavailable(result.error))
+      result = await updateCycle(false);
+    const { data: updatedCycle, error } = result;
 
     if (!error && !updatedCycle) {
       return NextResponse.json({ error: 'Cycle not found' }, { status: 404 });
@@ -171,14 +179,21 @@ export async function DELETE(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const { data: deleted, error } = await supabase
-      .from('task_cycles')
-      .delete()
-      .eq('id', cycleId)
-      .eq('ws_id', wsId)
-      // Board sprints are never deleted here; see the sprint routes.
-      .is('board_id', null)
-      .select('id');
+    // Board sprints are never deleted here; see the sprint routes and PUT.
+    const deleteCycle = (scopedToWorkspaceCycles: boolean) => {
+      const query = supabase
+        .from('task_cycles')
+        .delete()
+        .eq('id', cycleId)
+        .eq('ws_id', wsId);
+      return (
+        scopedToWorkspaceCycles ? query.is('board_id', null) : query
+      ).select('id');
+    };
+    let result = await deleteCycle(true);
+    if (isSprintSchemaUnavailable(result.error))
+      result = await deleteCycle(false);
+    const { data: deleted, error } = result;
 
     if (!error && !deleted?.length) {
       return NextResponse.json({ error: 'Cycle not found' }, { status: 404 });
