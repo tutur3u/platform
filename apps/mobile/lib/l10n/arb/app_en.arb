@@ -6117,5 +6117,51 @@
   "mastermindWorkClearFilters": "Clear filters",
   "mastermindWorkEmpty": "No lanes right now",
   "mastermindWorkNoMatches": "No matching lanes",
-  "mastermindWorkSearchPlaceholder": "Search lanes"
+  "mastermindWorkSearchPlaceholder": "Search lanes",
+  "audienceModeGeneral": "General",
+  "audienceModeEducation": "Education",
+  "audienceModeGeneralDescription": "Tasks, calendar and money first",
+  "audienceModeEducationDescription": "Classes, attendance and reports first",
+  "settingsModeTitle": "Mode",
+  "settingsModeDescription": "Changes what the app shows first. It never changes what you can access.",
+  "settingsModeMine": "Your mode here",
+  "settingsModeWorkspaceDefault": "Workspace default ({mode})",
+  "settingsModeAccountDefault": "Your default ({mode})",
+  "settingsModeWorkspaceDefaultTitle": "Default for members",
+  "settingsModeWorkspaceDefaultSubtitle": "Members can still choose their own",
+  "settingsModeNotSet": "Not set",
+  "settingsModeSaveFailed": "Couldn't save the mode. Try again.",
+  "onboardingModeTitle": "How will you use Tuturuuu?",
+  "onboardingModeSubtitle": "This sets what Home shows first. You can change it for each workspace in Settings.",
+  "classesTodayTitle": "Today's classes",
+  "classesTodayAllTitle": "All classes today",
+  "classesTodayShowAll": "Show all",
+  "classesTodayShowMine": "My classes",
+  "classesTodayEmpty": "No classes today",
+  "classesUntitled": "Untitled class",
+  "classesInProgress": "In progress",
+  "classesDone": "Done",
+  "@settingsModeWorkspaceDefault": {
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      }
+    }
+  },
+  "@settingsModeAccountDefault": {
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsModeFallbackDefault": "Default ({mode})",
+  "classesTodayStale": "Couldn't refresh. Showing the last saved classes.",
+  "@settingsModeFallbackDefault": {
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      }
+    }
+  }
 }

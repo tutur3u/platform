@@ -13444,4 +13444,85 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindWorkSearchPlaceholder => 'Tìm luồng việc';
+
+  @override
+  String get audienceModeGeneral => 'Chung';
+
+  @override
+  String get audienceModeEducation => 'Giáo dục';
+
+  @override
+  String get audienceModeGeneralDescription => 'Ưu tiên công việc, lịch và tài chính';
+
+  @override
+  String get audienceModeEducationDescription => 'Ưu tiên lớp học, điểm danh và báo cáo';
+
+  @override
+  String get settingsModeTitle => 'Chế độ';
+
+  @override
+  String get settingsModeDescription => 'Thay đổi nội dung ứng dụng hiển thị trước. Không thay đổi quyền truy cập của bạn.';
+
+  @override
+  String get settingsModeMine => 'Chế độ của bạn tại đây';
+
+  @override
+  String settingsModeWorkspaceDefault(String mode) {
+    return 'Mặc định của không gian làm việc ($mode)';
+  }
+
+  @override
+  String settingsModeAccountDefault(String mode) {
+    return 'Mặc định của bạn ($mode)';
+  }
+
+  @override
+  String get settingsModeWorkspaceDefaultTitle => 'Mặc định cho thành viên';
+
+  @override
+  String get settingsModeWorkspaceDefaultSubtitle => 'Thành viên vẫn có thể tự chọn';
+
+  @override
+  String get settingsModeNotSet => 'Chưa đặt';
+
+  @override
+  String get settingsModeSaveFailed => 'Không thể lưu chế độ. Vui lòng thử lại.';
+
+  @override
+  String get onboardingModeTitle => 'Bạn sẽ dùng Tuturuuu như thế nào?';
+
+  @override
+  String get onboardingModeSubtitle => 'Lựa chọn này quyết định Trang chủ hiển thị gì trước. Bạn có thể đổi cho từng không gian làm việc trong Cài đặt.';
+
+  @override
+  String get classesTodayTitle => 'Lớp học hôm nay';
+
+  @override
+  String get classesTodayAllTitle => 'Tất cả lớp học hôm nay';
+
+  @override
+  String get classesTodayShowAll => 'Hiện tất cả';
+
+  @override
+  String get classesTodayShowMine => 'Lớp của tôi';
+
+  @override
+  String get classesTodayEmpty => 'Hôm nay không có lớp';
+
+  @override
+  String get classesUntitled => 'Lớp chưa đặt tên';
+
+  @override
+  String get classesInProgress => 'Đang diễn ra';
+
+  @override
+  String get classesDone => 'Đã xong';
+
+  @override
+  String settingsModeFallbackDefault(String mode) {
+    return 'Mặc định ($mode)';
+  }
+
+  @override
+  String get classesTodayStale => 'Không thể làm mới. Đang hiển thị danh sách lớp đã lưu gần nhất.';
 }

@@ -25494,6 +25494,156 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Search lanes'**
   String get mastermindWorkSearchPlaceholder;
+
+  /// No description provided for @audienceModeGeneral.
+  ///
+  /// In en, this message translates to:
+  /// **'General'**
+  String get audienceModeGeneral;
+
+  /// No description provided for @audienceModeEducation.
+  ///
+  /// In en, this message translates to:
+  /// **'Education'**
+  String get audienceModeEducation;
+
+  /// No description provided for @audienceModeGeneralDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Tasks, calendar and money first'**
+  String get audienceModeGeneralDescription;
+
+  /// No description provided for @audienceModeEducationDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Classes, attendance and reports first'**
+  String get audienceModeEducationDescription;
+
+  /// No description provided for @settingsModeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Mode'**
+  String get settingsModeTitle;
+
+  /// No description provided for @settingsModeDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes what the app shows first. It never changes what you can access.'**
+  String get settingsModeDescription;
+
+  /// No description provided for @settingsModeMine.
+  ///
+  /// In en, this message translates to:
+  /// **'Your mode here'**
+  String get settingsModeMine;
+
+  /// No description provided for @settingsModeWorkspaceDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace default ({mode})'**
+  String settingsModeWorkspaceDefault(String mode);
+
+  /// No description provided for @settingsModeAccountDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Your default ({mode})'**
+  String settingsModeAccountDefault(String mode);
+
+  /// No description provided for @settingsModeWorkspaceDefaultTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Default for members'**
+  String get settingsModeWorkspaceDefaultTitle;
+
+  /// No description provided for @settingsModeWorkspaceDefaultSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Members can still choose their own'**
+  String get settingsModeWorkspaceDefaultSubtitle;
+
+  /// No description provided for @settingsModeNotSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not set'**
+  String get settingsModeNotSet;
+
+  /// No description provided for @settingsModeSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save the mode. Try again.'**
+  String get settingsModeSaveFailed;
+
+  /// No description provided for @onboardingModeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How will you use Tuturuuu?'**
+  String get onboardingModeTitle;
+
+  /// No description provided for @onboardingModeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This sets what Home shows first. You can change it for each workspace in Settings.'**
+  String get onboardingModeSubtitle;
+
+  /// No description provided for @classesTodayTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s classes'**
+  String get classesTodayTitle;
+
+  /// No description provided for @classesTodayAllTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'All classes today'**
+  String get classesTodayAllTitle;
+
+  /// No description provided for @classesTodayShowAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Show all'**
+  String get classesTodayShowAll;
+
+  /// No description provided for @classesTodayShowMine.
+  ///
+  /// In en, this message translates to:
+  /// **'My classes'**
+  String get classesTodayShowMine;
+
+  /// No description provided for @classesTodayEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No classes today'**
+  String get classesTodayEmpty;
+
+  /// No description provided for @classesUntitled.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled class'**
+  String get classesUntitled;
+
+  /// No description provided for @classesInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'In progress'**
+  String get classesInProgress;
+
+  /// No description provided for @classesDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get classesDone;
+
+  /// No description provided for @settingsModeFallbackDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Default ({mode})'**
+  String settingsModeFallbackDefault(String mode);
+
+  /// No description provided for @classesTodayStale.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t refresh. Showing the last saved classes.'**
+  String get classesTodayStale;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

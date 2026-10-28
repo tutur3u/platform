@@ -13586,4 +13586,85 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindWorkSearchPlaceholder => 'Search lanes';
+
+  @override
+  String get audienceModeGeneral => 'General';
+
+  @override
+  String get audienceModeEducation => 'Education';
+
+  @override
+  String get audienceModeGeneralDescription => 'Tasks, calendar and money first';
+
+  @override
+  String get audienceModeEducationDescription => 'Classes, attendance and reports first';
+
+  @override
+  String get settingsModeTitle => 'Mode';
+
+  @override
+  String get settingsModeDescription => 'Changes what the app shows first. It never changes what you can access.';
+
+  @override
+  String get settingsModeMine => 'Your mode here';
+
+  @override
+  String settingsModeWorkspaceDefault(String mode) {
+    return 'Workspace default ($mode)';
+  }
+
+  @override
+  String settingsModeAccountDefault(String mode) {
+    return 'Your default ($mode)';
+  }
+
+  @override
+  String get settingsModeWorkspaceDefaultTitle => 'Default for members';
+
+  @override
+  String get settingsModeWorkspaceDefaultSubtitle => 'Members can still choose their own';
+
+  @override
+  String get settingsModeNotSet => 'Not set';
+
+  @override
+  String get settingsModeSaveFailed => 'Couldn\'t save the mode. Try again.';
+
+  @override
+  String get onboardingModeTitle => 'How will you use Tuturuuu?';
+
+  @override
+  String get onboardingModeSubtitle => 'This sets what Home shows first. You can change it for each workspace in Settings.';
+
+  @override
+  String get classesTodayTitle => 'Today\'s classes';
+
+  @override
+  String get classesTodayAllTitle => 'All classes today';
+
+  @override
+  String get classesTodayShowAll => 'Show all';
+
+  @override
+  String get classesTodayShowMine => 'My classes';
+
+  @override
+  String get classesTodayEmpty => 'No classes today';
+
+  @override
+  String get classesUntitled => 'Untitled class';
+
+  @override
+  String get classesInProgress => 'In progress';
+
+  @override
+  String get classesDone => 'Done';
+
+  @override
+  String settingsModeFallbackDefault(String mode) {
+    return 'Default ($mode)';
+  }
+
+  @override
+  String get classesTodayStale => 'Couldn\'t refresh. Showing the last saved classes.';
 }

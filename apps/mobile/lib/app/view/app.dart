@@ -44,6 +44,8 @@ import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/assistant/bridge/app_assistant_client_action_bridge.dart';
 import 'package:mobile/features/assistant/bridge/assistant_client_actions.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
+import 'package:mobile/features/audience_mode/audience_mode_cubit.dart';
+import 'package:mobile/features/audience_mode/audience_mode_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
@@ -146,6 +148,7 @@ class _AppState extends State<App> {
   late final HabitsAccessCubit _habitsAccessCubit;
   late final EducationAccessCubit _educationAccessCubit;
   late final MastermindRuntime _mastermind;
+  late final AudienceModeCubit _audienceModeCubit;
   late final InventoryAccessCubit _inventoryAccessCubit;
   late final AppTabCubit _appTabCubit;
   late final ShellChromeActionsCubit _shellChromeActionsCubit;
@@ -221,6 +224,9 @@ class _AppState extends State<App> {
     _educationAccessCubit = EducationAccessCubit(
       repository: _educationAccessRepository,
     );
+    _audienceModeCubit = AudienceModeCubit(
+      repository: AudienceModeRepository(),
+    );
     _inventoryAccessCubit = InventoryAccessCubit(
       repository: _inventoryAccessRepository,
     );
@@ -291,6 +297,18 @@ class _AppState extends State<App> {
       );
       unawaited(_loadWorkspacesWithReminders());
     }
+    _bindAudienceMode();
+  }
+
+  /// The mode belongs to one account in one workspace.
+  void _bindAudienceMode() {
+    final auth = _authCubit.state;
+    unawaited(
+      _audienceModeCubit.bind(
+        userId: auth.status == AuthStatus.authenticated ? auth.user?.id : null,
+        wsId: _workspaceCubit.state.currentWorkspace?.id,
+      ),
+    );
   }
 
   static String? _appearanceAccountId(AuthState state) =>
@@ -434,6 +452,7 @@ class _AppState extends State<App> {
     unawaited(_appLockCubit.close());
     unawaited(_habitsAccessCubit.close());
     unawaited(_educationAccessCubit.close());
+    unawaited(_audienceModeCubit.close());
     unawaited(_inventoryAccessCubit.close());
     unawaited(_mastermind.close());
     _inventoryRepository.dispose();
@@ -462,6 +481,7 @@ class _AppState extends State<App> {
         BlocProvider.value(value: _appLockCubit),
         BlocProvider.value(value: _habitsAccessCubit),
         BlocProvider.value(value: _educationAccessCubit),
+        BlocProvider.value(value: _audienceModeCubit),
         BlocProvider.value(value: _inventoryAccessCubit),
         BlocProvider.value(value: _mastermind.access),
         BlocProvider.value(value: _mastermind.snapshot),
@@ -481,6 +501,7 @@ class _AppState extends State<App> {
                   prev.status != curr.status || prev.user?.id != curr.user?.id,
               listener: (context, state) {
                 _syncOfflinePreparationScope(resetWorkspace: true);
+                _bindAudienceMode();
                 ProfileCubit.clearMemoryCache();
                 // Appearance follows the account unless this device overrides.
                 unawaited(_themeCubit.bindAccount(_appearanceAccountId(state)));
@@ -519,6 +540,7 @@ class _AppState extends State<App> {
                   previous.currentWorkspace?.id != current.currentWorkspace?.id,
               listener: (context, state) {
                 _syncOfflinePreparationScope();
+                _bindAudienceMode();
                 unawaited(
                   _mastermind.access.syncWorkspace(state.currentWorkspace?.id),
                 );
