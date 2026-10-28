@@ -20,6 +20,7 @@ select throws_ok($$select private.issue_devbox_access_token('00000000-0000-4000-
  'a',repeat('a',64),'tdba_aaaaaaaa',array['devbox:run'],now()+interval '7 days')$$,
  '42501', 'Active matching devbox grant required', 'no token while disabled');
 update private.devbox_control_settings set personal_pools_enabled = true;
+update private.devbox_personal_pool_grants set last_collected_at=now();
 select throws_ok($$select private.issue_devbox_access_token('00000000-0000-4000-8000-00000000e001',now()-interval '1 second',
  'a',repeat('a',64),'tdba_aaaaaaaa',array['devbox:run'],now()+interval '7 days')$$,
  '42501', 'Devbox session reauthentication required', 'pre-accept session cannot mint');
@@ -36,7 +37,7 @@ select ok(private.resolve_devbox_identity(null,repeat('a',64))->'token' is not n
 update private.devbox_personal_pool_grants set max_access_tokens=1;
 select throws_ok($$select private.issue_devbox_access_token('00000000-0000-4000-8000-00000000e001',now(),
  'agent-b',repeat('b',64),'tdba_bbbbbbbb',array['devbox:run'],now()+interval '1 day')$$,
- '42501','Devbox token limit reached','grant-locked issuance enforces active token cap');
+ 'P0001','DEVBOX_LIMIT_REACHED','grant-locked issuance enforces active token cap');
 update private.devbox_personal_pool_grants set max_access_tokens=5;
 
 select ok(not (private.list_devbox_access_tokens('00000000-0000-4000-8000-00000000e001')->0 ? 'token_hash'), 'list never exposes hash');
@@ -55,7 +56,8 @@ insert into private.devbox_runs(id,actor_id,lease_id,access_token_id,status,comm
  '00000000-0000-4000-8000-00000000e100',id,'queued',array['true'],'run' from s1_tokens;
 insert into private.devbox_runs(id,actor_id,lease_id,access_token_id,status,command,workload)
  select '00000000-0000-4000-8000-00000000e201','00000000-0000-4000-8000-00000000e001',
- '00000000-0000-4000-8000-00000000e100',id,'running',array['true'],'run' from s1_tokens;
+ '00000000-0000-4000-8000-00000000e100',id,'queued',array['true'],'run' from s1_tokens;
+update private.devbox_runs set status='running' where id='00000000-0000-4000-8000-00000000e201';
 select throws_ok($$update private.devbox_runs set workload='serve' where status='queued'$$,
  '42501','Devbox token scope denied','UPDATE workload rechecks scope');
 select throws_ok($$update private.devbox_runs set actor_id='00000000-0000-4000-8000-00000000e002' where status='queued'$$,

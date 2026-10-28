@@ -31,6 +31,7 @@ import {
   createDevboxRestartPayload,
   createDevboxUpgradePayload,
 } from './devbox-maintenance';
+import { createRunWithQuota } from './devbox-quota';
 import { runDevboxRepairCommand } from './devbox-repair';
 import { runDevboxSetupCommand } from './devbox-setup';
 
@@ -371,7 +372,11 @@ async function createAndPrintDevboxRun({
   payload: DevboxRunPayload;
   wait?: boolean;
 }) {
-  const initial = await client.devboxes.createRun(payload);
+  const initial = await createRunWithQuota<DevboxRunResponse>(
+    () => client.devboxes.createRun(payload),
+    json
+  );
+  if (!initial) return;
   if (!wait) {
     if (json) {
       printJson(initial);

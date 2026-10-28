@@ -46,6 +46,19 @@ export async function agentRequest(
       `${label} failed: ${error instanceof Error ? `${error.name}: ${error.message}` : 'network error'}`
     );
   }
+  if (response.status === 429) {
+    const payload: unknown = await response
+      .clone()
+      .json()
+      .catch(() => null);
+    if (
+      typeof payload === 'object' &&
+      payload !== null &&
+      'code' in payload &&
+      payload.code === 'DEVBOX_LIMIT_REACHED'
+    )
+      return response;
+  }
   if (!response.ok && isTransientStatus(response.status))
     throw new DevboxAgentTransientError(
       `${label} failed: ${response.status}${response.statusText ? ` ${response.statusText}` : ''}`

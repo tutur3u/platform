@@ -8,6 +8,7 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { notifyDevboxRun } from '@tuturuuu/utils/devbox-control';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
+import { z } from 'zod';
 import { assertDevboxCommitRunRunner } from './commit-run-guard';
 import { resolveDevboxIdentity } from './identity-store';
 import { assertDevboxRunnerAcceptsRun } from './runner-drain-guard';
@@ -223,6 +224,30 @@ export async function createDevboxRun(input: CreateDevboxRunInput) {
     workload: input.workload,
   });
 
+  if (input.accessTokenId) {
+    const { data, error } = await privateClient.rpc(
+      'create_personal_devbox_run',
+      {
+        p_actor_id: input.actorId,
+        p_token_id: input.accessTokenId,
+        p_input: input,
+      }
+    );
+    if (error) throw getDevboxStorageError(error);
+    const admitted = z
+      .object({
+        lease: z.object({ id: z.string(), status: z.string() }),
+        run: z.object({
+          id: z.string(),
+          status: z.string(),
+          command: z.array(z.string()),
+          exitCode: z.number().nullable(),
+        }),
+      })
+      .parse(data);
+    await notifyDevboxRun(admitted.run.id);
+    return admitted;
+  }
   if (leaseMode === 'auto') {
     const { error } = await getPrivateTable(
       privateClient,

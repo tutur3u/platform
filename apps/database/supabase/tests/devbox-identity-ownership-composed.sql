@@ -20,6 +20,7 @@ insert into private.devbox_personal_pool_grants(user_id,bound_email,expires_at,g
  values ('00000000-0000-4000-8000-00000000e701','composed@example.invalid',now()+interval '1 day',
  '00000000-0000-4000-8000-00000000e702','00000000-0000-4000-8000-00000000e702','composed disposable test');
 update private.devbox_control_settings set personal_pools_enabled=true;
+update private.devbox_personal_pool_grants set last_collected_at=now();
 select ok(private.accept_devbox_personal_grant('00000000-0000-4000-8000-00000000e701'),'composed grant accepted');
 create temp table composed_token(id uuid);
 insert into composed_token select private.issue_devbox_access_token('00000000-0000-4000-8000-00000000e701',now(),

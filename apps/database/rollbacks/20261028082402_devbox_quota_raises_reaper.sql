@@ -1,0 +1,13 @@
+begin;
+drop trigger a_devbox_quota_guard_token on private.devbox_access_tokens;
+drop function private.devbox_quota_guard_token();
+drop function private.authenticate_devbox_host_collector(text);
+drop trigger devbox_quota_guard_capacity on private.devbox_runners;
+drop function private.devbox_quota_guard_capacity();
+drop function private.reap_devbox_quota_runs(timestamptz,integer);
+drop function private.devbox_quota_request_stop(uuid,text);
+drop function private.decide_devbox_quota_raise(uuid,uuid,boolean);
+drop function private.request_devbox_quota_raise(uuid,text,bigint,text,timestamptz);
+drop function private.devbox_quota_limit(uuid,text);
+drop table private.devbox_quota_raise_requests;
+commit;

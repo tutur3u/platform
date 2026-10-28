@@ -23904,5 +23904,11 @@
     "approval_revocable": "Approval can still be removed because no email has been sent yet.",
     "check_all": "Check all",
     "completed": "Completed"
+  },
+  "devbox-quota": {
+    "errors": {
+      "limit_reached": "Devbox limit reached. Wait until the reset or ask an administrator.",
+      "limit_exceeds_grant": "Devbox limit reached. Wait until the reset or ask an administrator."
+    }
   }
 }

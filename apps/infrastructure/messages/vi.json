@@ -23904,5 +23904,11 @@
     "approval_revocable": "Có thể gỡ phê duyệt vì chưa có email nào được gửi.",
     "check_all": "Đã kiểm tra tất cả",
     "completed": "Hoàn thành"
+  },
+  "devbox-quota": {
+    "errors": {
+      "limit_reached": "Đã đạt giới hạn devbox. Hãy chờ đặt lại hoặc liên hệ quản trị viên.",
+      "limit_exceeds_grant": "Đã đạt giới hạn devbox. Hãy chờ đặt lại hoặc liên hệ quản trị viên."
+    }
   }
 }

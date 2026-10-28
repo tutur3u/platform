@@ -6958,6 +6958,12 @@
     },
     "title": "Devbox Control"
   },
+  "devbox-quota": {
+    "errors": {
+      "limit_exceeds_grant": "Devbox limit reached. Wait until the reset or ask an administrator.",
+      "limit_reached": "Devbox limit reached. Wait until the reset or ask an administrator."
+    }
+  },
   "documents": {
     "back-to-documents": "Back to documents",
     "cancel": "Cancel",

@@ -240,3 +240,26 @@ JWT `iat` for a devbox session cutoff. See the feature page for the bounded
 Cloudflare expiry sweep and its default-OFF durable stop fence. Run
 `session-cutoff.test.ts`, `devbox-identity-lifecycle.sql` and `expiry-sweep.test.ts`
 when changing these boundaries.
+
+### Disabled contributor quota foundation
+
+Personal run creation must use `create_personal_devbox_run` so the lease,
+run and CPU reservation share the grant lock and transaction. Direct inserts
+also hit the quota trigger. Pending runs reserve concurrency and their complete
+CPU allowance; billing settles only from server timestamps and allocated vCPUs.
+Daily boundaries use `Asia/Ho_Chi_Minh`, including runs spanning midnight.
+Do not use heartbeat resources as billing or authorization inputs.
+
+The collector ingest route is an authenticated 501 stub, and both the quota
+reaper environment gate and database progress row default off. A cron trigger
+is not installed. Do not enable these independently of the Security Desk gates.
+Server cancellation or a persistent stop request does not prove the VM stopped;
+host acknowledgements, alerts, tombstones, idle burn detection and tunnel cutoffs
+remain host-stage acceptance requirements. Never automatically clear a stop row.
+
+Use the isolated Supabase lifecycle for the paired migration roundtrip.
+`apps/database/scripts/verify-devbox-quota-race.mjs <isolated-container>` runs ten
+simultaneous RPC clients against committed disposable fixtures and emits pgTAP
+assertions for the winner count and orphan leases. It accepts only `tt-` isolated
+container identities. Do not apply the fixture SQL directly as an ordinary test;
+it relies on the helper to create the concurrent requests.

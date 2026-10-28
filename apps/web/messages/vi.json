@@ -6958,6 +6958,12 @@
     },
     "title": "Điều khiển Devbox"
   },
+  "devbox-quota": {
+    "errors": {
+      "limit_exceeds_grant": "Đã đạt giới hạn devbox. Hãy chờ đặt lại hoặc liên hệ quản trị viên.",
+      "limit_reached": "Đã đạt giới hạn devbox. Hãy chờ đặt lại hoặc liên hệ quản trị viên."
+    }
+  },
   "documents": {
     "back-to-documents": "Quay lại tài liệu",
     "cancel": "Hủy",

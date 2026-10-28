@@ -75,3 +75,52 @@ Regression coverage lives in `devbox-contributor-identity.sql`,
 `actor.test.ts`, Web `authorization.test.ts` and `entry-point-matrix.test.ts`, and
 the control Worker tests. The entry-point matrix inventories all active devbox
 routes and executes denial checks on every listed HTTP method.
+
+## Server quotas (S2, disabled draft)
+
+The grant defaults to two boxes, four vCPUs, 8192 MiB and 60 GiB per box,
+two admitted runs, 480 CPU-minutes and 10 GiB egress per Vietnam calendar day,
+a 30-minute default and two-hour maximum run time, five agent tokens and a
+30-day maximum grant. Pending and running runs both reserve a slot; there is
+no extra queue allowance in this stage. This conservative rule closes admission
+and claim races without changing Security's claim RPC.
+
+Personal creation uses `create_personal_devbox_run`: a grant row lock, lease,
+run and CPU reservation commit together. The insert trigger also enforces limits
+on direct writes. Reservations span midnight until settled. Billing uses server
+start/end timestamps and the recorded allocation, split at midnight in
+`Asia/Ho_Chi_Minh`; runner resource reports never supply billing data.
+
+The soft CPU cap blocks new admissions. It does not cancel in-flight work.
+The host must stop a VM at cap plus 25 percent or maximum runtime, whichever
+comes first, and after more than 10 percent CPU for five idle minutes.
+Persistent stop requests are audited and retain an alert obligation. S2 does not
+implement VM stops, alerts or automatic restart. Host-side F2, F3, F9 and F10
+remain enablement blockers, including daily golden-disk resets, fail-closed
+watchdogs and continuous tunnel byte limits.
+
+`POST /api/v1/devboxes/usage/ingest` is an authenticated 501 stub. It accepts
+only an operator collector credential (`X-Devbox-Collector-Token`, `tdbc_` plus
+64 hex digits, SHA-256 stored privately). Runner and agent credentials are
+rejected. No collector credential or grant is seeded. The future collector
+contract needs idempotent sample IDs, server receipt timestamps, per-day host
+CPU and egress counters, idle CPU and duration, and stop acknowledgements;
+runner telemetry cannot call this contract.
+
+The Cloudflare scheduled handler makes one bounded RPC with no retries. Both
+`TUTURUUU_DEVBOX_QUOTA_REAPER_ENABLED` and the database progress row are OFF;
+no cron trigger is installed by S2. The global personal-pool switch is another
+stop fence. A tick records its minute and count transactionally, so a duplicate
+or unknown HTTP outcome can be reconciled without replaying work. A batch
+examines at most 25 grants and four overdue runs per grant. Revoked, suspended
+and expired grants remain the identity lifecycle owner's responsibility.
+
+Agents may request bounded raises, never approve their own requests. The
+Infrastructure route requires the root administrator gate; decisions are audited.
+Raises expire within seven days and before grant expiry. Effective limits return
+to the base grant when a raise expires. Hard ceilings are four boxes/runs,
+1920 CPU-minutes, 40 GiB egress, 16 GiB memory and 120 GiB disk.
+
+Migration approval, Security's claim-side acceptance, host acceptance and exact
+commit CI remain required before enablement. Regression entrypoints are
+`devbox-quota.sql`, `quota-errors.test.ts` and `quota-reaper.test.ts`.

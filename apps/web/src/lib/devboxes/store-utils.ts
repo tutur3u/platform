@@ -1,7 +1,11 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 
-export type DevboxStorageErrorLike = { message?: string } | null;
+export type DevboxStorageErrorLike = {
+  message?: string;
+  details?: string;
+} | null;
 
 export type DevboxPrivateSchemaClient = {
   from: (table: string) => unknown;
@@ -18,7 +22,14 @@ export class DevboxStoreError extends Error {
   constructor(
     message: string,
     public readonly status = 500,
-    public readonly code?: string
+    public readonly code?: string,
+    public readonly quota?: {
+      limit: string;
+      used: number;
+      max: number;
+      resetsAt: string;
+      messages: { en: string; vi: string };
+    }
   ) {
     super(message);
     this.name = 'DevboxStoreError';
@@ -47,6 +58,40 @@ function isDevboxReadinessError(message: string) {
 
 export function getDevboxStorageError(error: DevboxStorageErrorLike) {
   const message = error?.message ?? 'Unknown devbox storage error';
+  if (
+    message === 'DEVBOX_LIMIT_REACHED' ||
+    message === 'DEVBOX_LIMIT_EXCEEDS_GRANT'
+  ) {
+    const parsed = z
+      .object({
+        limit: z.string(),
+        used: z.number(),
+        max: z.number(),
+        resetsAt: z.iso.datetime({ offset: true }),
+      })
+      .safeParse(
+        (() => {
+          try {
+            return JSON.parse(error?.details ?? 'null');
+          } catch {
+            return null;
+          }
+        })()
+      );
+    if (parsed.success)
+      return new DevboxStoreError(
+        message,
+        message === 'DEVBOX_LIMIT_REACHED' ? 429 : 422,
+        message,
+        {
+          ...parsed.data,
+          messages: {
+            en: 'Devbox limit reached. Wait until the reset or ask an administrator.',
+            vi: 'Đã đạt giới hạn devbox. Hãy chờ đặt lại hoặc liên hệ quản trị viên.',
+          },
+        }
+      );
+  }
   if (isDevboxReadinessError(message)) {
     return new DevboxStoreError(DEVBOX_READINESS_MESSAGE, 503);
   }
@@ -71,6 +116,7 @@ export function createDevboxRouteErrorResponse(
       {
         ...(error.code ? { code: error.code } : {}),
         message: error.message,
+        ...error.quota,
       },
       { status: error.status }
     );
