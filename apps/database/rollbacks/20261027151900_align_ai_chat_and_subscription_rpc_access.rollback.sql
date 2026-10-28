@@ -72,7 +72,7 @@ as $function$
     and workspace.id != '00000000-0000-0000-0000-000000000000';
 $function$;
 revoke all on function public.insert_ai_chat_message(text, uuid, text) from public, anon, authenticated, service_role;
-grant execute on function public.insert_ai_chat_message(text, uuid, text) to public;
+grant execute on function public.insert_ai_chat_message(text, uuid, text) to authenticated, service_role;
 revoke all on function public.get_user_workspace_subscription_info(uuid) from public, anon, authenticated, service_role;
-grant execute on function public.get_user_workspace_subscription_info(uuid) to public, service_role;
+grant execute on function public.get_user_workspace_subscription_info(uuid) to service_role;
 commit;
