@@ -41,8 +41,19 @@ List<T> _singleSecurityPerProduct<T>(JsonReader r, List<T> items) {
 List<NeedsYouItem> parseOpenNeedsYouItems(JsonReader r) =>
     _singleSecurityPerProduct(r, r.list(parseOpenNeedsYou));
 
-List<LaneItem> parseLaneItems(JsonReader r) =>
-    _singleSecurityPerProduct(r, r.list(parseLaneItem));
+List<LaneItem> parseLaneItems(JsonReader r) {
+  final items = <LaneItem>[];
+  r.list((row) {
+    try {
+      items.add(parseLaneItem(row));
+    } on SchemaViolation {
+      if (row.value case {'title': 'Security issue'}) rethrow;
+      // Optional lane telemetry must not blank the snapshot.
+    }
+    return null;
+  });
+  return _singleSecurityPerProduct(r, items);
+}
 
 List<BacklogEntry> parseBacklogEntries(JsonReader r) =>
     _singleSecurityPerProduct(r, r.list(parseBacklogEntry));

@@ -1,4 +1,5 @@
 {
+  "mastermindUnrecognisedValue": "Giá trị không được nhận diện",
   "assistantDownloadPhasePending": "Đang chờ",
   "assistantDownloadPhaseQueued": "Trong hàng đợi",
   "assistantDownloadPhaseTransferring": "Đang tải xuống",

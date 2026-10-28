@@ -12,6 +12,9 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get mastermindUnrecognisedValue => 'Unrecognised value';
+
+  @override
   String get assistantDownloadPhasePending => 'Pending';
 
   @override

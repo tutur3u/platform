@@ -1,7 +1,13 @@
 part of 'snapshot_parser.dart';
 
 MastermindSnapshot parseRootSnapshot(JsonReader input) {
-  final history = parseResolvedHistory(input.object()['decisions_resolved']);
+  final history = parseResolvedHistory([
+    if (input.object()['decisions'] case final List<dynamic> decisions)
+      for (final row in decisions)
+        if (row is Map<String, dynamic> && row['status'] == 'resolved') row,
+    if (input.object()['decisions_resolved'] case final List<dynamic> resolved)
+      ...resolved,
+  ]);
   final r =
       JsonReader(
         adaptHubCompanions(

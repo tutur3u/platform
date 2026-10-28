@@ -590,3 +590,14 @@ running, waiting, and idle counts. Unknown root keys, `asks_source`, and
 `decisions_unknown` are safe to ignore. The exact redacted publisher fixture is
 covered by `test/features/mastermind/view/forge_v1_fixture_test.dart`; it verifies
 all five tabs, open asks, resolved history, source reasons, gaps, and counts.
+
+Optional companions are validated field by field. Ship observations apply only to
+production; null companions retain a published legacy value. Unknown enums,
+invalid numeric values and unparseable timestamps retain the legacy value with
+`not_published` status and an “Unrecognised value” reason. ISO timestamps with
+`Z` or an explicit offset normalize to UTC. These rules apply to Ship, weekly
+Insights and Work age/ETA fields. A malformed lane or unknown decision status
+is skipped without hiding the remaining snapshot. Decisions marked resolved in
+`decisions[]` also populate Recently resolved. Home keeps a queued chip when
+`work.counts` is published, deriving queued from lanes when absent.
+Regression coverage: `test/features/mastermind/presentation/companion_hardening_test.dart`.

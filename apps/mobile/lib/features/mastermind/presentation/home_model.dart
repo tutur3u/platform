@@ -29,9 +29,11 @@ final class MastermindHomeModel {
       }
     }
     if (snapshot.workCounts case final published?) {
+      final queued = counts[LaneState.queued] ?? 0;
       counts
         ..clear()
-        ..addAll(published);
+        ..addAll(published)
+        ..putIfAbsent(LaneState.queued, () => queued);
     }
     final decisions = [...snapshot.decisions]
       ..sort((a, b) => b.at.compareTo(a.at));
