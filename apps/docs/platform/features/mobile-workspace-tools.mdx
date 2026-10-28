@@ -2071,11 +2071,17 @@ existing structural exemption, and `PATCH /api/v1/workspaces/:wsId/whiteboards/:
 removes the top-level `snapshot` before structural and text checks. Whiteboard
 saves instead have an 8 MiB streamed body cap, allowing multi-hundred-shape
 boards and dense freehand strokes beyond the generic 2 MiB budget while
-bounding JSON parsing. Other whiteboard fields retain the generic validation
+bounding JSON parsing. Database writes independently cap `workspace_whiteboards.snapshot`
+at 25 MiB of serialized JSON bytes (26,214,400), preserving the contract from
+`20260326163000_set_whiteboard_snapshot_payload_limit_25mb.sql`. The payload
+helper and existing CHECK enforce the same cap; the HTTP route retains its
+smaller body bound. Other whiteboard fields retain the generic validation
 rules; other routes and methods keep the 2 MiB cap. Trusted server bypass
 credentials retain their existing behavior. Over-limit content returns
 HTTP 400 with `REQUEST_COMPLEXITY_EXCEEDED`; the earlier proxy body-size gate
 returns HTTP 413 when its route cap is exceeded. Existing invalid JSON handling
 remains with the route. Regression coverage:
-`packages/utils/src/__tests__/request-emoji-complexity.test.ts` and
-`packages/utils/src/__tests__/request-whiteboard-bounds.test.ts`.
+`packages/utils/src/__tests__/request-emoji-complexity.test.ts`,
+`packages/utils/src/__tests__/request-whiteboard-bounds.test.ts`,
+`apps/database/supabase/tests/description-table-hardening.sql`, and
+`apps/database/supabase/tests/readiness-whiteboard-contracts.sql`.
