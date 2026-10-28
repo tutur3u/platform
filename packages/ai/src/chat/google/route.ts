@@ -373,7 +373,6 @@ export function createPOST(
         return resolvedChatId.error;
       }
       const chatId = resolvedChatId.chatId;
-
       const moveFilesError = await moveTempFilesToThread({
         listFiles: (tempStoragePath) =>
           sbAdmin.storage.from('workspaces').list(tempStoragePath),
@@ -394,6 +393,7 @@ export function createPOST(
         chatId,
         req,
         {
+          actorId: user.id,
           excludeAudioVideoFiles: !!subscriptionModel,
           attachYoutubeVideoInput:
             resolvedModelId.toLowerCase().startsWith('google/') ||

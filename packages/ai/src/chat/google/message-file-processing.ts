@@ -1,5 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { FilePart, ImagePart, ModelMessage, TextPart } from 'ai';
+import { canAccessAiChatAttachments } from '../attachment-access';
 import {
   AI_CHAT_ATTACHMENT_EXTENSIONS,
   aiChatAttachmentExtension,
@@ -136,10 +137,21 @@ export async function listAllChatResourceFiles(
 async function getAllChatFiles(
   wsId: string,
   chatId: string,
-  _request?: Pick<Request, 'headers'>
+  _request?: Pick<Request, 'headers'>,
+  actorId?: string
 ): Promise<ChatFile[]> {
+  if (!actorId) return [];
   try {
     const sbAdmin = await createAdminClient();
+    if (
+      !(await canAccessAiChatAttachments({
+        supabase: sbAdmin,
+        wsId,
+        chatId,
+        actorId,
+      }))
+    )
+      return [];
 
     const storagePath = `${wsId}/chats/ai/resources/${chatId}`;
     const { files, truncated } = await listAllChatResourceFiles(
@@ -356,9 +368,12 @@ export async function processMessagesWithFiles(
   wsId: string,
   chatId: string,
   request?: Pick<Request, 'headers'>,
-  excludeAudioVideoFiles = false
+  excludeAudioVideoFiles = false,
+  actorId?: string
 ): Promise<ModelMessage[]> {
-  const chatFiles = (await getAllChatFiles(wsId, chatId, request)).filter(
+  const chatFiles = (
+    await getAllChatFiles(wsId, chatId, request, actorId)
+  ).filter(
     (file) =>
       !excludeAudioVideoFiles || !/^(audio|video)\//.test(file.mediaType)
   );

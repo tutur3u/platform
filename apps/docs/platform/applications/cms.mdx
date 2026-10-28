@@ -171,3 +171,11 @@ behavior. Page loaders and API handlers still validate the actor and CMS
 permissions. Machine-key APIs retain their ambient-cookie removal and route
 authentication. Mounted-session and redirect regressions are covered by
 `apps/cms/src/proxy.test.ts`.
+
+## Machine credential binding
+
+Machine synchronization credentials must match the enabled workspace binding.
+Built-in projects match their registered adapter id; custom projects match the
+canonical project id. The shared `custom` adapter name grants no project access.
+This follows the same identity rule as app-token handoff. Coverage:
+`apps/web/src/lib/external-projects/app-credentials.test.ts`.
