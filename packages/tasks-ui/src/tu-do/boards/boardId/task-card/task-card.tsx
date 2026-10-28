@@ -289,18 +289,16 @@ function ReadOnlyTaskCard({ task, taskList }: TaskCardProps) {
                 {label.name}
               </Badge>
             ))}
-            {getTaskCardBadgeProjects(task.projects, ticketIdentifier).map(
-              (project) => (
-                <Badge
-                  key={project.id}
-                  variant="outline"
-                  className="h-5 gap-1 px-1.5 font-normal text-xs"
-                >
-                  <Box className="h-3 w-3" />
-                  {project.name}
-                </Badge>
-              )
-            )}
+            {getTaskCardBadgeProjects(task, ticketIdentifier).map((project) => (
+              <Badge
+                key={project.id}
+                variant="outline"
+                className="h-5 gap-1 px-1.5 font-normal text-xs"
+              >
+                <Box className="h-3 w-3" />
+                {project.name}
+              </Badge>
+            ))}
             {task.assignees?.map((assignee) => (
               <Badge
                 key={assignee.id}
@@ -1425,10 +1423,7 @@ function TaskCardInner({
     }
 
     // Project indicator badge
-    const badgeProjects = getTaskCardBadgeProjects(
-      task.projects,
-      taskTicketIdentifier
-    );
+    const badgeProjects = getTaskCardBadgeProjects(task, taskTicketIdentifier);
     if (badgeProjects.length > 0) {
       badges.push({
         id: 'projects',
