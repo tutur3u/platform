@@ -25,6 +25,9 @@ export function LegalPage({
         <nav aria-label={copy.navigation}>
           <a href={`${prefix}/privacy`}>{copy.privacy}</a>
           <a href={`${prefix}/terms`}>{copy.terms}</a>
+          <a href={`${prefix}/community-guidelines`}>
+            {copy.community_guidelines}
+          </a>
           <a
             href={`/${locale === 'vi' ? 'en' : 'vi'}/${slug}`}
             lang={locale === 'vi' ? 'en' : 'vi'}

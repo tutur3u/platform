@@ -36,6 +36,7 @@ const legalPages = [
   { slug: 'legal/dpa', seoKey: 'legal_dpa' },
   { slug: 'legal/sla', seoKey: 'legal_sla' },
   { slug: 'legal/subprocessors', seoKey: 'legal_subprocessors' },
+  { slug: 'community-guidelines', seoKey: 'community_guidelines' },
 ];
 
 function assertLegalMetadata(html, path) {
@@ -206,6 +207,7 @@ test(description, { timeout: 30000 }, async (t) => {
         '/__web1',
         '/vi/privacy',
         '/vi/legal/dpa',
+        '/community-guidelines',
         '/serwist/sw.js',
       ]) {
         const response = await disabled.dispatchFetch(`${base}${path}`, {
@@ -231,7 +233,7 @@ test(description, { timeout: 30000 }, async (t) => {
     assert.deepEqual(egress, []);
   });
   await t.test(
-    'native legal documents SSR in both languages without egress or session writes',
+    'native public policy documents SSR in both languages without egress or session writes',
     async () => {
       for (const path of legalPages.flatMap(({ slug }) => [
         `/${slug}`,

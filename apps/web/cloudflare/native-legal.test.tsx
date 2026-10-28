@@ -2,6 +2,7 @@
 import { getLegalDocument } from '@tuturuuu/legal';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
+import { LegalMarkdown } from '../src/components/legal/legal-markdown';
 import type { Fetcher } from './fallback';
 import { createWebCandidateHandler } from './handler';
 import { stagingProfile } from './profile';
@@ -25,6 +26,11 @@ const pages = [
     kind: 'subprocessors',
     slug: 'legal/subprocessors',
     seoKey: 'legal_subprocessors',
+  },
+  {
+    kind: 'community-guidelines',
+    slug: 'community-guidelines',
+    seoKey: 'community_guidelines',
   },
 ] as const;
 const paths = pages.flatMap(({ slug }) => [
@@ -174,14 +180,40 @@ describe('framework adapter renders canonical legal content', () => {
         expect(page.querySelector('footer')?.textContent).toContain(
           document.footer
         );
-        for (const section of document.sections) {
-          const text = page.body.textContent ?? '';
-          // The renderer must keep paragraph content and meaningful link labels.
-          expect(text).toContain(
-            section.content
-              .split('\n')[0]
-              ?.replace(/\*\*/gu, '')
-              .replace(/\[([^\]]+)\]\([^)]+\)/gu, '$1')
+        expect(
+          page.querySelector('section[aria-labelledby="summary"] p')
+            ?.textContent
+        ).toBe(document.summaryDescription);
+        expect(
+          [...page.querySelectorAll('dl > div')].map((row) => [
+            row.querySelector('dt')?.textContent,
+            row.querySelector('dd')?.textContent,
+          ])
+        ).toEqual(document.summaryRows.map((row) => [row.topic, row.summary]));
+        for (const [index, section] of document.sections.entries()) {
+          const region = page.querySelector(
+            `section[aria-labelledby="section-${index + 1}"]`
+          );
+          expect(region?.querySelector('h2')?.textContent).toBe(section.title);
+          const canonicalContent =
+            locale === 'vi'
+              ? section.content.replace(
+                  /\]\((\/(?!\/|en\/|vi\/)[^)]+)\)/gu,
+                  (_match, path) => `](/vi${path})`
+                )
+              : section.content;
+          const canonical = new DOMParser().parseFromString(
+            renderToStaticMarkup(
+              <LegalMarkdown>{canonicalContent}</LegalMarkdown>
+            ),
+            'text/html'
+          );
+          expect(
+            [...(region?.children ?? [])]
+              .slice(1)
+              .map((element) => element.outerHTML)
+          ).toEqual(
+            [...canonical.body.children].map((element) => element.outerHTML)
           );
         }
         for (const link of page.querySelectorAll('a[href^="#"]')) {

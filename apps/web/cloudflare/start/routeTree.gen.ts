@@ -5,15 +5,18 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as Char91__web1Char93RouteImport } from './routes/[__web1]'
 import { Route as AcceptableUseRouteImport } from './routes/acceptable-use'
+import { Route as CommunityGuidelinesRouteImport } from './routes/community-guidelines'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as EnAcceptableUseRouteImport } from './routes/en.acceptable-use'
+import { Route as EnCommunityGuidelinesRouteImport } from './routes/en.community-guidelines'
 import { Route as EnPrivacyRouteImport } from './routes/en.privacy'
 import { Route as EnTermsRouteImport } from './routes/en.terms'
 import { Route as LegalDpaRouteImport } from './routes/legal.dpa'
 import { Route as LegalSlaRouteImport } from './routes/legal.sla'
 import { Route as LegalSubprocessorsRouteImport } from './routes/legal.subprocessors'
 import { Route as ViAcceptableUseRouteImport } from './routes/vi.acceptable-use'
+import { Route as ViCommunityGuidelinesRouteImport } from './routes/vi.community-guidelines'
 import { Route as ViPrivacyRouteImport } from './routes/vi.privacy'
 import { Route as ViTermsRouteImport } from './routes/vi.terms'
 import { Route as EnLegalDpaRouteImport } from './routes/en.legal.dpa'
@@ -33,6 +36,11 @@ const AcceptableUseRoute = AcceptableUseRouteImport.update({
   path: '/acceptable-use',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CommunityGuidelinesRoute = CommunityGuidelinesRouteImport.update({
+  id: '/community-guidelines',
+  path: '/community-guidelines',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
@@ -46,6 +54,11 @@ const TermsRoute = TermsRouteImport.update({
 const EnAcceptableUseRoute = EnAcceptableUseRouteImport.update({
   id: '/en/acceptable-use',
   path: '/en/acceptable-use',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EnCommunityGuidelinesRoute = EnCommunityGuidelinesRouteImport.update({
+  id: '/en/community-guidelines',
+  path: '/en/community-guidelines',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EnPrivacyRoute = EnPrivacyRouteImport.update({
@@ -76,6 +89,11 @@ const LegalSubprocessorsRoute = LegalSubprocessorsRouteImport.update({
 const ViAcceptableUseRoute = ViAcceptableUseRouteImport.update({
   id: '/vi/acceptable-use',
   path: '/vi/acceptable-use',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ViCommunityGuidelinesRoute = ViCommunityGuidelinesRouteImport.update({
+  id: '/vi/community-guidelines',
+  path: '/vi/community-guidelines',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ViPrivacyRoute = ViPrivacyRouteImport.update({
@@ -122,15 +140,18 @@ const ViLegalSubprocessorsRoute = ViLegalSubprocessorsRouteImport.update({
 export interface FileRoutesByFullPath {
   '/__web1': typeof Char91__web1Char93Route
   '/acceptable-use': typeof AcceptableUseRoute
+  '/community-guidelines': typeof CommunityGuidelinesRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/en/acceptable-use': typeof EnAcceptableUseRoute
+  '/en/community-guidelines': typeof EnCommunityGuidelinesRoute
   '/en/privacy': typeof EnPrivacyRoute
   '/en/terms': typeof EnTermsRoute
   '/legal/dpa': typeof LegalDpaRoute
   '/legal/sla': typeof LegalSlaRoute
   '/legal/subprocessors': typeof LegalSubprocessorsRoute
   '/vi/acceptable-use': typeof ViAcceptableUseRoute
+  '/vi/community-guidelines': typeof ViCommunityGuidelinesRoute
   '/vi/privacy': typeof ViPrivacyRoute
   '/vi/terms': typeof ViTermsRoute
   '/en/legal/dpa': typeof EnLegalDpaRoute
@@ -143,15 +164,18 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/__web1': typeof Char91__web1Char93Route
   '/acceptable-use': typeof AcceptableUseRoute
+  '/community-guidelines': typeof CommunityGuidelinesRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/en/acceptable-use': typeof EnAcceptableUseRoute
+  '/en/community-guidelines': typeof EnCommunityGuidelinesRoute
   '/en/privacy': typeof EnPrivacyRoute
   '/en/terms': typeof EnTermsRoute
   '/legal/dpa': typeof LegalDpaRoute
   '/legal/sla': typeof LegalSlaRoute
   '/legal/subprocessors': typeof LegalSubprocessorsRoute
   '/vi/acceptable-use': typeof ViAcceptableUseRoute
+  '/vi/community-guidelines': typeof ViCommunityGuidelinesRoute
   '/vi/privacy': typeof ViPrivacyRoute
   '/vi/terms': typeof ViTermsRoute
   '/en/legal/dpa': typeof EnLegalDpaRoute
@@ -165,15 +189,18 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/__web1': typeof Char91__web1Char93Route
   '/acceptable-use': typeof AcceptableUseRoute
+  '/community-guidelines': typeof CommunityGuidelinesRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/en/acceptable-use': typeof EnAcceptableUseRoute
+  '/en/community-guidelines': typeof EnCommunityGuidelinesRoute
   '/en/privacy': typeof EnPrivacyRoute
   '/en/terms': typeof EnTermsRoute
   '/legal/dpa': typeof LegalDpaRoute
   '/legal/sla': typeof LegalSlaRoute
   '/legal/subprocessors': typeof LegalSubprocessorsRoute
   '/vi/acceptable-use': typeof ViAcceptableUseRoute
+  '/vi/community-guidelines': typeof ViCommunityGuidelinesRoute
   '/vi/privacy': typeof ViPrivacyRoute
   '/vi/terms': typeof ViTermsRoute
   '/en/legal/dpa': typeof EnLegalDpaRoute
@@ -188,15 +215,18 @@ export interface FileRouteTypes {
   fullPaths:
     | '/__web1'
     | '/acceptable-use'
+    | '/community-guidelines'
     | '/privacy'
     | '/terms'
     | '/en/acceptable-use'
+    | '/en/community-guidelines'
     | '/en/privacy'
     | '/en/terms'
     | '/legal/dpa'
     | '/legal/sla'
     | '/legal/subprocessors'
     | '/vi/acceptable-use'
+    | '/vi/community-guidelines'
     | '/vi/privacy'
     | '/vi/terms'
     | '/en/legal/dpa'
@@ -209,15 +239,18 @@ export interface FileRouteTypes {
   to:
     | '/__web1'
     | '/acceptable-use'
+    | '/community-guidelines'
     | '/privacy'
     | '/terms'
     | '/en/acceptable-use'
+    | '/en/community-guidelines'
     | '/en/privacy'
     | '/en/terms'
     | '/legal/dpa'
     | '/legal/sla'
     | '/legal/subprocessors'
     | '/vi/acceptable-use'
+    | '/vi/community-guidelines'
     | '/vi/privacy'
     | '/vi/terms'
     | '/en/legal/dpa'
@@ -230,15 +263,18 @@ export interface FileRouteTypes {
     | '__root__'
     | '/__web1'
     | '/acceptable-use'
+    | '/community-guidelines'
     | '/privacy'
     | '/terms'
     | '/en/acceptable-use'
+    | '/en/community-guidelines'
     | '/en/privacy'
     | '/en/terms'
     | '/legal/dpa'
     | '/legal/sla'
     | '/legal/subprocessors'
     | '/vi/acceptable-use'
+    | '/vi/community-guidelines'
     | '/vi/privacy'
     | '/vi/terms'
     | '/en/legal/dpa'
@@ -252,15 +288,18 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   Char91__web1Char93Route: typeof Char91__web1Char93Route
   AcceptableUseRoute: typeof AcceptableUseRoute
+  CommunityGuidelinesRoute: typeof CommunityGuidelinesRoute
   PrivacyRoute: typeof PrivacyRoute
   TermsRoute: typeof TermsRoute
   EnAcceptableUseRoute: typeof EnAcceptableUseRoute
+  EnCommunityGuidelinesRoute: typeof EnCommunityGuidelinesRoute
   EnPrivacyRoute: typeof EnPrivacyRoute
   EnTermsRoute: typeof EnTermsRoute
   LegalDpaRoute: typeof LegalDpaRoute
   LegalSlaRoute: typeof LegalSlaRoute
   LegalSubprocessorsRoute: typeof LegalSubprocessorsRoute
   ViAcceptableUseRoute: typeof ViAcceptableUseRoute
+  ViCommunityGuidelinesRoute: typeof ViCommunityGuidelinesRoute
   ViPrivacyRoute: typeof ViPrivacyRoute
   ViTermsRoute: typeof ViTermsRoute
   EnLegalDpaRoute: typeof EnLegalDpaRoute
@@ -287,6 +326,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AcceptableUseRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/community-guidelines': {
+      id: '/community-guidelines'
+      path: '/community-guidelines'
+      fullPath: '/community-guidelines'
+      preLoaderRoute: typeof CommunityGuidelinesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/privacy': {
       id: '/privacy'
       path: '/privacy'
@@ -306,6 +352,13 @@ declare module '@tanstack/react-router' {
       path: '/en/acceptable-use'
       fullPath: '/en/acceptable-use'
       preLoaderRoute: typeof EnAcceptableUseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/en/community-guidelines': {
+      id: '/en/community-guidelines'
+      path: '/en/community-guidelines'
+      fullPath: '/en/community-guidelines'
+      preLoaderRoute: typeof EnCommunityGuidelinesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/en/privacy': {
@@ -348,6 +401,13 @@ declare module '@tanstack/react-router' {
       path: '/vi/acceptable-use'
       fullPath: '/vi/acceptable-use'
       preLoaderRoute: typeof ViAcceptableUseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/vi/community-guidelines': {
+      id: '/vi/community-guidelines'
+      path: '/vi/community-guidelines'
+      fullPath: '/vi/community-guidelines'
+      preLoaderRoute: typeof ViCommunityGuidelinesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/vi/privacy': {
@@ -412,15 +472,18 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   Char91__web1Char93Route: Char91__web1Char93Route,
   AcceptableUseRoute: AcceptableUseRoute,
+  CommunityGuidelinesRoute: CommunityGuidelinesRoute,
   PrivacyRoute: PrivacyRoute,
   TermsRoute: TermsRoute,
   EnAcceptableUseRoute: EnAcceptableUseRoute,
+  EnCommunityGuidelinesRoute: EnCommunityGuidelinesRoute,
   EnPrivacyRoute: EnPrivacyRoute,
   EnTermsRoute: EnTermsRoute,
   LegalDpaRoute: LegalDpaRoute,
   LegalSlaRoute: LegalSlaRoute,
   LegalSubprocessorsRoute: LegalSubprocessorsRoute,
   ViAcceptableUseRoute: ViAcceptableUseRoute,
+  ViCommunityGuidelinesRoute: ViCommunityGuidelinesRoute,
   ViPrivacyRoute: ViPrivacyRoute,
   ViTermsRoute: ViTermsRoute,
   EnLegalDpaRoute: EnLegalDpaRoute,

@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import en from '../messages/en.json';
 import vietnamese from '../messages/vi.json';
 import { generateMetadata as acceptableUseMetadata } from '../src/app/[locale]/(marketing)/acceptable-use/layout';
+import { generateMetadata as communityGuidelinesMetadata } from '../src/app/[locale]/(marketing)/community-guidelines/layout';
 import { generateMetadata as dpaMetadata } from '../src/app/[locale]/(marketing)/legal/dpa/layout';
 import { generateMetadata as slaMetadata } from '../src/app/[locale]/(marketing)/legal/sla/layout';
 import { generateMetadata as subprocessorsMetadata } from '../src/app/[locale]/(marketing)/legal/subprocessors/layout';
@@ -42,6 +43,12 @@ const pages = [
     slug: 'legal/subprocessors',
     seoKey: 'legal_subprocessors',
     metadata: subprocessorsMetadata,
+  },
+  {
+    kind: 'community-guidelines',
+    slug: 'community-guidelines',
+    seoKey: 'community_guidelines',
+    metadata: communityGuidelinesMetadata,
   },
 ] as const;
 
