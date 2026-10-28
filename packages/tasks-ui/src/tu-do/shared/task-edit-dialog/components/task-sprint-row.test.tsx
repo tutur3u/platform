@@ -8,6 +8,7 @@ import { TaskSprintRow } from './task-sprint-row';
 
 const state = vi.hoisted(() => ({
   mutate: vi.fn(),
+  pending: false,
   sprints: null as unknown,
 }));
 
@@ -51,7 +52,9 @@ vi.mock('@tuturuuu/ui/sonner', () => ({
 
 vi.mock('../../board-sprints/use-board-sprints', () => ({
   useBoardSprints: () => state.sprints,
-  useBoardSprintMutations: () => ({ moveTasks: { mutate: state.mutate } }),
+  useBoardSprintMutations: () => ({
+    moveTasks: { isPending: state.pending, mutate: state.mutate },
+  }),
 }));
 
 const sprint = (
@@ -106,32 +109,73 @@ const task = (extra: Partial<Task> = {}) =>
 
 beforeEach(() => {
   vi.clearAllMocks();
+  state.pending = false;
   setSprints([done, running, next]);
 });
 
 describe('TaskSprintRow', () => {
   it('shows the sprint, its end as the due date and the sprint history', () => {
-    render(<TaskSprintRow boardId="b" canEdit task={task()} wsId="w" />);
+    render(
+      <TaskSprintRow
+        boardId="b"
+        canEdit
+        endDate={undefined}
+        task={task()}
+        wsId="w"
+      />
+    );
     expect(screen.getByText(/^Sprint 2 · /)).toBeInTheDocument();
     expect(screen.getByText('due_with_sprint:6 Nov 2026')).toBeInTheDocument();
     expect(screen.getByText('sprint_history:1, 2')).toBeInTheDocument();
   });
 
-  it('keeps an own due date and shows no sprint due line', () => {
-    render(
+  it('follows the due date being edited', () => {
+    const { rerender } = render(
       <TaskSprintRow
         boardId="b"
         canEdit
-        task={task({ end_date: '2026-11-02T10:00:00Z' })}
+        endDate={new Date('2026-11-02T10:00:00Z')}
+        task={task()}
         wsId="w"
       />
     );
     expect(screen.queryByText(/due_with_sprint/)).not.toBeInTheDocument();
+
+    rerender(
+      <TaskSprintRow
+        boardId="b"
+        canEdit
+        endDate={undefined}
+        task={task({ end_date: '2026-11-02T10:00:00Z' })}
+        wsId="w"
+      />
+    );
+    expect(screen.getByText('due_with_sprint:6 Nov 2026')).toBeInTheDocument();
+  });
+
+  it('allows one move at a time', () => {
+    state.pending = true;
+    render(
+      <TaskSprintRow
+        boardId="b"
+        canEdit
+        endDate={undefined}
+        task={task()}
+        wsId="w"
+      />
+    );
+    expect(screen.getByRole('button', { name: /^Sprint 2 · / })).toBeDisabled();
   });
 
   it('closes the menu, then moves the task to another open sprint', async () => {
     const { container } = render(
-      <TaskSprintRow boardId="b" canEdit task={task()} wsId="w" />
+      <TaskSprintRow
+        boardId="b"
+        canEdit
+        endDate={undefined}
+        task={task()}
+        wsId="w"
+      />
     );
     fireEvent.click(
       screen.getByRole('menuitem', { name: 'move_to_sprint:Sprint 3' })
@@ -149,16 +193,34 @@ describe('TaskSprintRow', () => {
     );
   });
 
-  it('renders nothing with sprints off, and no menu when read-only', () => {
+  it('renders nothing for an unsaved task or with sprints off', () => {
+    const unsaved = render(
+      <TaskSprintRow boardId="b" canEdit endDate={undefined} wsId="w" />
+    );
+    expect(unsaved.container).toBeEmptyDOMElement();
+    unsaved.unmount();
+
     setSprints([], false);
     const { container, rerender } = render(
-      <TaskSprintRow boardId="b" canEdit task={task()} wsId="w" />
+      <TaskSprintRow
+        boardId="b"
+        canEdit
+        endDate={undefined}
+        task={task()}
+        wsId="w"
+      />
     );
     expect(container).toBeEmptyDOMElement();
 
     setSprints([done, running, next]);
     rerender(
-      <TaskSprintRow boardId="b" canEdit={false} task={task()} wsId="w" />
+      <TaskSprintRow
+        boardId="b"
+        canEdit={false}
+        endDate={undefined}
+        task={task()}
+        wsId="w"
+      />
     );
     expect(screen.queryByRole('menuitem')).not.toBeInTheDocument();
   });
