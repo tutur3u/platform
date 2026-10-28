@@ -13751,4 +13751,139 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindBackToThreads => 'Back to Threads';
+
+  @override
+  String get mastermindThreadHistoryNotAvailableTitle => 'Not available on mobile';
+
+  @override
+  String get mastermindThreadHistoryNotAvailableMessage => 'Open this thread on your Mac.';
+
+  @override
+  String get mastermindThreadHistoryLimitTitle => 'Limit reached';
+
+  @override
+  String mastermindThreadHistoryLimitRetryAt(String time) {
+    return 'Try again after $time.';
+  }
+
+  @override
+  String get mastermindThreadHistoryLimitLater => 'Try again later.';
+
+  @override
+  String get mastermindThreadHistoryGoneTitle => 'This thread is no longer in Mastermind';
+
+  @override
+  String get mastermindThreadHistoryUpdated => 'This thread was updated. Showing the newest messages.';
+
+  @override
+  String get mastermindThreadHistoryAccessTitle => 'Access expired or unavailable';
+
+  @override
+  String get mastermindThreadHistoryAccessMessage => 'Sign in again or check your Mastermind access.';
+
+  @override
+  String get mastermindThreadHistoryErrorTitle => 'Couldn\'t load this thread';
+
+  @override
+  String get mastermindThreadHistoryErrorMessage => 'Check your connection and try again.';
+
+  @override
+  String get mastermindThreadHistoryEarlier => 'Load earlier';
+
+  @override
+  String get mastermindThreadHistoryEarlierFailed => 'Couldn\'t load earlier messages.';
+
+  @override
+  String get mastermindThreadHistoryEmpty => 'No messages published yet';
+
+  @override
+  String get mastermindThreadHistoryWithheld => 'Message withheld. Open on Mac.';
+
+  @override
+  String get mastermindThreadHistoryRest => 'Open on Mac for the rest.';
+
+  @override
+  String get mastermindThreadHistoryRedactionNote => 'Placeholders such as ‹path› mark details hidden for privacy.';
+
+  @override
+  String get mastermindThreadHistoryLocked => 'Unlock the app to see this thread';
+
+  @override
+  String get mastermindThreadAuthorOwnerMac => 'You (Mac)';
+
+  @override
+  String get mastermindThreadAuthorOwnerPhone => 'You (phone)';
+
+  @override
+  String get mastermindThreadAuthorSystem => 'System';
+
+  @override
+  String get mastermindThreadRedactedPath => 'path';
+
+  @override
+  String get mastermindThreadRedactedLink => 'link';
+
+  @override
+  String mastermindThreadRedactedLinkHost(String host) {
+    return 'link: $host';
+  }
+
+  @override
+  String get mastermindThreadRedactedSecret => 'secret withheld';
+
+  @override
+  String get mastermindThreadRedactedId => 'id';
+
+  @override
+  String get mastermindThreadRedactedEmail => 'email';
+
+  @override
+  String get mastermindThreadRedactedNumber => 'number';
+
+  @override
+  String get mastermindThreadRedactedOther => 'hidden';
+
+  @override
+  String mastermindThreadActivityCommands(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Ran $count commands',
+      one: 'Ran 1 command',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindThreadActivityEdits(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Edited $count files',
+      one: 'Edited 1 file',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindThreadActivitySearches(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Searched $count times',
+      one: 'Searched once',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindThreadActivitySubagents(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Ran $count subagents',
+      one: 'Ran 1 subagent',
+    );
+    return '$_temp0';
+  }
 }

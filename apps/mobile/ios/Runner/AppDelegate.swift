@@ -9,6 +9,7 @@ import UserNotifications
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate, MessagingDelegate {
   private var meetNoticeSound: SystemSoundID = 0
+  private let secureScreen = SecureScreenCover()
 
   deinit {
     if meetNoticeSound != 0 { AudioServicesDisposeSystemSoundID(meetNoticeSound) }
@@ -71,6 +72,9 @@ import UserNotifications
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "LiveScreenCapturePlugin") {
       LiveScreenCapturePlugin.register(with: registrar)
     }
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "SecureScreen") {
+      secureScreen.install(messenger: registrar.messenger())
+    }
   }
 }
 
@@ -130,5 +134,62 @@ private enum NativeIntegrityChannel {
     case "generateAssertion": service.generateAssertion(key, clientDataHash: hash, completionHandler: complete)
     default: result(FlutterMethodNotImplemented)
     }
+  }
+}
+
+/// `mobile/secure_screen`: while a sensitive Flutter screen is open, the app
+/// switcher snapshot shows a blur instead of its content. iOS has no API to
+/// block a screenshot; Android uses FLAG_SECURE for the same channel.
+private final class SecureScreenCover {
+  private var secure = false
+  private var cover: UIView?
+  private var observers: [NSObjectProtocol] = []
+
+  deinit { observers.forEach { NotificationCenter.default.removeObserver($0) } }
+
+  func install(messenger: FlutterBinaryMessenger) {
+    let channel = FlutterMethodChannel(name: "mobile/secure_screen", binaryMessenger: messenger)
+    channel.setMethodCallHandler { [weak self] call, result in
+      guard call.method == "setSecure",
+            let args = call.arguments as? [String: Any],
+            let value = args["secure"] as? Bool else {
+        result(FlutterMethodNotImplemented)
+        return
+      }
+      self?.secure = value
+      if !value { self?.hideCover() }
+      result(nil)
+    }
+    guard observers.isEmpty else { return }
+    let center = NotificationCenter.default
+    observers = [
+      center.addObserver(
+        forName: UIApplication.willResignActiveNotification, object: nil, queue: .main
+      ) { [weak self] _ in self?.showCover() },
+      center.addObserver(
+        forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main
+      ) { [weak self] _ in self?.hideCover() },
+    ]
+  }
+
+  private func showCover() {
+    guard secure, cover == nil, let window = keyWindow() else { return }
+    let blur = UIVisualEffectView(effect: UIBlurEffect(style: .systemMaterial))
+    blur.frame = window.bounds
+    blur.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+    window.addSubview(blur)
+    cover = blur
+  }
+
+  private func hideCover() {
+    cover?.removeFromSuperview()
+    cover = nil
+  }
+
+  private func keyWindow() -> UIWindow? {
+    UIApplication.shared.connectedScenes
+      .compactMap { $0 as? UIWindowScene }
+      .flatMap { $0.windows }
+      .first { $0.isKeyWindow }
   }
 }

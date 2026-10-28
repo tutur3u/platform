@@ -13608,4 +13608,135 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindBackToThreads => 'Về Hội thoại';
+
+  @override
+  String get mastermindThreadHistoryNotAvailableTitle => 'Không có trên điện thoại';
+
+  @override
+  String get mastermindThreadHistoryNotAvailableMessage => 'Mở hội thoại này trên máy Mac.';
+
+  @override
+  String get mastermindThreadHistoryLimitTitle => 'Đã đạt giới hạn';
+
+  @override
+  String mastermindThreadHistoryLimitRetryAt(String time) {
+    return 'Thử lại sau $time.';
+  }
+
+  @override
+  String get mastermindThreadHistoryLimitLater => 'Hãy thử lại sau.';
+
+  @override
+  String get mastermindThreadHistoryGoneTitle => 'Hội thoại này không còn trong Mastermind';
+
+  @override
+  String get mastermindThreadHistoryUpdated => 'Hội thoại này đã được cập nhật. Đang hiện các tin mới nhất.';
+
+  @override
+  String get mastermindThreadHistoryAccessTitle => 'Quyền truy cập đã hết hạn hoặc không khả dụng';
+
+  @override
+  String get mastermindThreadHistoryAccessMessage => 'Đăng nhập lại hoặc kiểm tra quyền truy cập Mastermind.';
+
+  @override
+  String get mastermindThreadHistoryErrorTitle => 'Không tải được hội thoại này';
+
+  @override
+  String get mastermindThreadHistoryErrorMessage => 'Kiểm tra kết nối và thử lại.';
+
+  @override
+  String get mastermindThreadHistoryEarlier => 'Tải tin cũ hơn';
+
+  @override
+  String get mastermindThreadHistoryEarlierFailed => 'Không tải được tin cũ hơn.';
+
+  @override
+  String get mastermindThreadHistoryEmpty => 'Chưa có tin nhắn nào được công bố';
+
+  @override
+  String get mastermindThreadHistoryWithheld => 'Tin nhắn đã bị ẩn. Mở trên Mac.';
+
+  @override
+  String get mastermindThreadHistoryRest => 'Mở trên Mac để xem phần còn lại.';
+
+  @override
+  String get mastermindThreadHistoryRedactionNote => 'Các ký hiệu như ‹đường dẫn› đánh dấu chi tiết được ẩn để bảo vệ quyền riêng tư.';
+
+  @override
+  String get mastermindThreadHistoryLocked => 'Mở khóa ứng dụng để xem hội thoại này';
+
+  @override
+  String get mastermindThreadAuthorOwnerMac => 'Bạn (Mac)';
+
+  @override
+  String get mastermindThreadAuthorOwnerPhone => 'Bạn (điện thoại)';
+
+  @override
+  String get mastermindThreadAuthorSystem => 'Hệ thống';
+
+  @override
+  String get mastermindThreadRedactedPath => 'đường dẫn';
+
+  @override
+  String get mastermindThreadRedactedLink => 'liên kết';
+
+  @override
+  String mastermindThreadRedactedLinkHost(String host) {
+    return 'liên kết: $host';
+  }
+
+  @override
+  String get mastermindThreadRedactedSecret => 'bí mật đã ẩn';
+
+  @override
+  String get mastermindThreadRedactedId => 'mã định danh';
+
+  @override
+  String get mastermindThreadRedactedEmail => 'email';
+
+  @override
+  String get mastermindThreadRedactedNumber => 'số';
+
+  @override
+  String get mastermindThreadRedactedOther => 'đã ẩn';
+
+  @override
+  String mastermindThreadActivityCommands(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Đã chạy $count lệnh',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindThreadActivityEdits(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Đã sửa $count tệp',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindThreadActivitySearches(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Đã tìm $count lần',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindThreadActivitySubagents(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Đã chạy $count tác tử phụ',
+    );
+    return '$_temp0';
+  }
 }

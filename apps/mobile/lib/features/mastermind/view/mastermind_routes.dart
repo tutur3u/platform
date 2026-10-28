@@ -3,6 +3,7 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/mastermind/presentation/inbox_segment.dart';
 import 'package:mobile/features/mastermind/presentation/ship_model.dart';
 import 'package:mobile/features/mastermind/presentation/work_model.dart';
+import 'package:mobile/features/mastermind/threads/history/mastermind_thread_history_page.dart';
 import 'package:mobile/features/mastermind/threads/mastermind_threads_page.dart';
 import 'package:mobile/features/mastermind/threads/threads_flag.dart';
 import 'package:mobile/features/mastermind/threads/threads_location.dart';
@@ -16,8 +17,8 @@ import 'package:mobile/features/mastermind/view/work/mastermind_lane_page.dart';
 import 'package:mobile/features/mastermind/view/work/mastermind_work_page.dart';
 
 /// Tab routes other than Home, which the app registry owns at
-/// [Routes.mastermind], plus the pushed Needs-you, decision, lane and chart
-/// table details. Inside the shell route.
+/// [Routes.mastermind], plus the pushed Needs-you, decision, lane, thread
+/// history and chart table details. Inside the shell route.
 final List<GoRoute> mastermindTabRoutes = [
   GoRoute(
     path: '/mastermind/threads',
@@ -41,6 +42,17 @@ final List<GoRoute> mastermindTabRoutes = [
         ),
       );
     },
+  ),
+  GoRoute(
+    path: '/mastermind/threads/:threadRef',
+    redirect: (context, state) => mastermindThreadHistoryEnabled
+        ? null
+        : mastermindThreadsEnabled
+        ? '/mastermind/threads'
+        : Routes.mastermindWork,
+    builder: (context, state) => MastermindThreadHistoryPage(
+      threadRef: state.pathParameters['threadRef'] ?? '',
+    ),
   ),
   GoRoute(
     path: Routes.mastermindInbox,

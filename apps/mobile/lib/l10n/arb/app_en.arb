@@ -6235,5 +6235,80 @@
     }
   },
   "mastermindThreadsTitle": "Threads",
-  "mastermindBackToThreads": "Back to Threads"
+  "mastermindBackToThreads": "Back to Threads",
+  "mastermindThreadHistoryNotAvailableTitle": "Not available on mobile",
+  "mastermindThreadHistoryNotAvailableMessage": "Open this thread on your Mac.",
+  "mastermindThreadHistoryLimitTitle": "Limit reached",
+  "mastermindThreadHistoryLimitRetryAt": "Try again after {time}.",
+  "@mastermindThreadHistoryLimitRetryAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindThreadHistoryLimitLater": "Try again later.",
+  "mastermindThreadHistoryGoneTitle": "This thread is no longer in Mastermind",
+  "mastermindThreadHistoryUpdated": "This thread was updated. Showing the newest messages.",
+  "mastermindThreadHistoryAccessTitle": "Access expired or unavailable",
+  "mastermindThreadHistoryAccessMessage": "Sign in again or check your Mastermind access.",
+  "mastermindThreadHistoryErrorTitle": "Couldn't load this thread",
+  "mastermindThreadHistoryErrorMessage": "Check your connection and try again.",
+  "mastermindThreadHistoryEarlier": "Load earlier",
+  "mastermindThreadHistoryEarlierFailed": "Couldn't load earlier messages.",
+  "mastermindThreadHistoryEmpty": "No messages published yet",
+  "mastermindThreadHistoryWithheld": "Message withheld. Open on Mac.",
+  "mastermindThreadHistoryRest": "Open on Mac for the rest.",
+  "mastermindThreadHistoryRedactionNote": "Placeholders such as ‹path› mark details hidden for privacy.",
+  "mastermindThreadHistoryLocked": "Unlock the app to see this thread",
+  "mastermindThreadAuthorOwnerMac": "You (Mac)",
+  "mastermindThreadAuthorOwnerPhone": "You (phone)",
+  "mastermindThreadAuthorSystem": "System",
+  "mastermindThreadRedactedPath": "path",
+  "mastermindThreadRedactedLink": "link",
+  "mastermindThreadRedactedLinkHost": "link: {host}",
+  "@mastermindThreadRedactedLinkHost": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindThreadRedactedSecret": "secret withheld",
+  "mastermindThreadRedactedId": "id",
+  "mastermindThreadRedactedEmail": "email",
+  "mastermindThreadRedactedNumber": "number",
+  "mastermindThreadRedactedOther": "hidden",
+  "mastermindThreadActivityCommands": "{count, plural, =1{Ran 1 command} other{Ran {count} commands}}",
+  "@mastermindThreadActivityCommands": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindThreadActivityEdits": "{count, plural, =1{Edited 1 file} other{Edited {count} files}}",
+  "@mastermindThreadActivityEdits": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindThreadActivitySearches": "{count, plural, =1{Searched once} other{Searched {count} times}}",
+  "@mastermindThreadActivitySearches": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindThreadActivitySubagents": "{count, plural, =1{Ran 1 subagent} other{Ran {count} subagents}}",
+  "@mastermindThreadActivitySubagents": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }
