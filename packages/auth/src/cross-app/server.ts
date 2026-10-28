@@ -365,6 +365,7 @@ async function createCliAppSessionResponse(
 ) {
   const policy = await options.resolveCliSessionPolicy?.();
   const cliSession = createCliAppSession({
+    authTime: validation.mfa?.primaryVerifiedAt ?? 0,
     accessExpiresInSeconds: policy?.cliAccessTtlSeconds,
     email: validation.sessionData?.email ?? null,
     mfa: validation.mfa ?? undefined,

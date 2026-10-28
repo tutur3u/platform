@@ -31,9 +31,9 @@ vi.mock('@/lib/devboxes/agent-store', () => ({
   shutdownDevboxRunner: shutdownDevboxRunnerMock,
 }));
 
-import { POST as events } from '@/legacy-api-routes/v1/devboxes/agents/events/route';
-import { GET as poll } from '@/legacy-api-routes/v1/devboxes/agents/poll/route';
-import { POST as shutdown } from '@/legacy-api-routes/v1/devboxes/agents/shutdown/route';
+import { POST as events } from '@/app/api/v1/devboxes/agents/events/route';
+import { GET as poll } from '@/app/api/v1/devboxes/agents/poll/route';
+import { POST as shutdown } from '@/app/api/v1/devboxes/agents/shutdown/route';
 import { DEVBOX_AGENT_API_ENABLED_ENV } from '@/lib/devboxes/agent-traffic-gate';
 import { POST as heartbeat } from './heartbeat/route';
 

@@ -1,3 +1,4 @@
+export * from './actor';
 export * from './balancer';
 export * from './cache';
 export * from './command-policy';

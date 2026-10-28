@@ -9,7 +9,7 @@ const { authorizeMock, limitMock, stopByKeyMock } = vi.hoisted(() => ({
 }));
 
 vi.mock('@/lib/devboxes/authorization', () => ({
-  authorizeDevboxRootMember: authorizeMock,
+  requireDevboxActor: authorizeMock,
 }));
 vi.mock('@/lib/devboxes/rate-limits', () => ({
   limitDevboxStopByKey: limitMock,

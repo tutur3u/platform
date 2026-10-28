@@ -2,9 +2,11 @@ vi.mock('@tuturuuu/utils/required-mfa-app-session', () => ({
   isRequiredMfaProofAllowed: async () => true,
 }));
 
+import { createMfaTransfer } from '@tuturuuu/utils/required-mfa-transfer';
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as appSession from '../app-session';
+import { verifyCliAccessToken, verifyCliRefreshToken } from '../cli-session';
 import { createPOST, createRefreshPOST } from './server';
 
 const mocks = vi.hoisted(() => ({
@@ -391,6 +393,50 @@ describe('cross-app server verification', () => {
     );
   });
 
+  it.each([true, false])(
+    'CLI handoff preserves only the verified primary origin (proof=%s)',
+    async (hasOrigin) => {
+      const primary = Math.floor(Date.now() / 1000) - 600;
+      const mfaTransfer = createMfaTransfer('user-1', 'platform', {
+        sessionId: 'origin-session',
+        verifiedAt: primary + 300,
+        ...(hasOrigin ? { primaryVerifiedAt: primary } : {}),
+      });
+      mocks.createClient.mockResolvedValue({
+        rpc: vi.fn().mockResolvedValue({
+          data: [
+            {
+              user_id: 'user-1',
+              session_data: {
+                email: 'agent@example.com',
+                mfaTransfer,
+                authTime: Math.floor(Date.now() / 1000),
+              },
+            },
+          ],
+          error: null,
+        }),
+      });
+      const response = await createPOST('platform', {
+        sessionKind: 'cli-app-session',
+      })(
+        new NextRequest('https://tuturuuu.com/api/cli/auth/verify', {
+          method: 'POST',
+          body: JSON.stringify({ token: 'copy-token' }),
+        })
+      );
+      expect(response.status).toBe(200);
+      const body = await response.json();
+      for (const verified of [
+        verifyCliAccessToken(body.session.access_token),
+        verifyCliRefreshToken(body.session.refresh_token),
+      ]) {
+        expect(verified.ok).toBe(true);
+        if (verified.ok)
+          expect(verified.claims.auth_time).toBe(hasOrigin ? primary : 0);
+      }
+    }
+  );
   it('returns Tuturuuu-managed app-session JWTs for CLI token exchange', async () => {
     const handler = createPOST('platform', {
       sessionKind: 'cli-app-session',

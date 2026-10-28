@@ -14,6 +14,7 @@ const env = {
   },
   SUPABASE_SECRET_KEY: 'test-secret-key',
   SUPABASE_URL: 'https://db.example.test',
+  TUTURUUU_DEVBOX_AGENT_API_ENABLED: 'true',
 } as never;
 const originalFetch = globalThis.fetch;
 let patches: unknown[] = [];
@@ -28,7 +29,7 @@ beforeEach(() => {
         return new Response(null, { status: 204 });
       }
       if (path.endsWith('/devbox_runner_tokens'))
-        return Response.json([{ runner_id: runnerId }]);
+        return Response.json([{ runner_id: runnerId, expires_at: null }]);
       if (path.endsWith('/devbox_runners'))
         return Response.json([
           {

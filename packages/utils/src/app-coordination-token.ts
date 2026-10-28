@@ -10,6 +10,7 @@ const LOCAL_DEVELOPMENT_SECRET =
   'tuturuuu-local-development-app-coordination-secret';
 
 export type AppCoordinationTokenClaims = {
+  auth_time?: number;
   aud: typeof TOKEN_AUDIENCE;
   email: string | null;
   exp: number;
@@ -25,6 +26,7 @@ export type AppCoordinationTokenClaims = {
 };
 
 export type AppCoordinationTokenPayload = {
+  authTime?: number;
   email?: string | null;
   expiresInSeconds?: number;
   mfa?: MfaSessionProof;
@@ -116,6 +118,12 @@ function isClaims(value: unknown): value is AppCoordinationTokenClaims {
   const claims = value as Partial<AppCoordinationTokenClaims>;
 
   return (
+    (claims.auth_time === undefined ||
+      (Number.isSafeInteger(claims.auth_time) &&
+        typeof claims.auth_time === 'number' &&
+        claims.auth_time >= 0 &&
+        typeof claims.iat === 'number' &&
+        claims.auth_time <= claims.iat)) &&
     (claims.mfa === undefined || isMfaSessionProof(claims.mfa)) &&
     claims.typ === 'app_coordination' &&
     claims.iss === TOKEN_ISSUER &&
@@ -162,6 +170,14 @@ export function createAppCoordinationToken(
   }
   const secret = getSigningSecret(options.secret);
   const nowSeconds = Math.floor((options.now ?? new Date()).getTime() / 1000);
+  if (
+    payload.authTime !== undefined &&
+    (!Number.isSafeInteger(payload.authTime) ||
+      payload.authTime < 0 ||
+      payload.authTime > nowSeconds)
+  ) {
+    throw new Error('Invalid session origin');
+  }
   const expiresInSeconds =
     payload.expiresInSeconds ?? DEFAULT_EXPIRES_IN_SECONDS;
   const header = {
@@ -169,6 +185,7 @@ export function createAppCoordinationToken(
     typ: 'JWT',
   };
   const claims: AppCoordinationTokenClaims = {
+    ...(payload.authTime === undefined ? {} : { auth_time: payload.authTime }),
     aud: TOKEN_AUDIENCE,
     email: payload.email ?? null,
     exp: nowSeconds + expiresInSeconds,

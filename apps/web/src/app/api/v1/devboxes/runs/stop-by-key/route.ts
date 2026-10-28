@@ -1,7 +1,7 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { authorizeDevboxRootMember } from '@/lib/devboxes/authorization';
+import { requireDevboxActor } from '@/lib/devboxes/authorization';
 import { limitDevboxStopByKey } from '@/lib/devboxes/rate-limits';
 import { stopDevboxRunByKey } from '@/lib/devboxes/store';
 import { DEVBOX_IDEMPOTENCY_KEY_PATTERN } from '@/lib/devboxes/store-run-idempotency';
@@ -14,7 +14,7 @@ const StopByKeySchema = z.object({
 // Lets a client that lost a create acknowledgement (for example after Ctrl-C)
 // cancel the run by the operation ID it sent. Scoped to the caller's runs.
 export async function POST(request: NextRequest) {
-  const authorization = await authorizeDevboxRootMember(request);
+  const authorization = await requireDevboxActor(request);
   if (!authorization.ok) return authorization.response;
 
   const limited = await limitDevboxStopByKey(authorization.user.id);

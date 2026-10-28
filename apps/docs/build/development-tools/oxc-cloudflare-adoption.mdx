@@ -1,6 +1,6 @@
 ---
-title: "Oxc and Cloudflare adoption"
-description: "Incremental Oxlint/Oxfmt tooling, portable first-party libraries, and Vite-native Worker migration boundaries."
+title: 'Oxc and Cloudflare adoption'
+description: 'Incremental Oxlint/Oxfmt tooling, portable first-party libraries, and Vite-native Worker migration boundaries.'
 updatedAt: '2026-10-24'
 ---
 
@@ -46,17 +46,17 @@ and Parley. Framework replacement applies to Next/OpenNext web apps; native
 Workers retain their fetch/email/scheduled/RPC entrypoints while adopting Vite+
 and Oxc tooling. A backend service does not need React or a router to qualify.
 
-| Active surface | Current boundary | Migration acceptance |
-| --- | --- | --- |
-| Meet | Next/OpenNext web Worker and shared Meet services | Vite-native web routes; preserve meeting/session APIs, AI entrypoints, media and Durable Object classes |
-| Parley | Next/OpenNext web Worker | Vite-native studio and participant routes; preserve private reviews, snapshots and Meet bindings |
-| Lettin | Next/OpenNext web Worker with D1/R2 | Vite-native routes; preserve publication, ownership, D1 session and R2 contracts |
-| Colab | Vite React assets plus native Worker | Adopt Vite+ without changing auth, sponsorship, room Durable Objects or SPA routing |
-| Meet realtime | Native Worker and Durable Objects | Adopt shared tooling; preserve signalling, TURN/SFU contracts and realtime health checks |
-| Coordination | Native Worker service | Preserve coordination protocol, authentication, object identity and storage |
-| Devbox control | Native Worker service | Preserve control authentication, lease/state transitions and deployment identity |
-| Cron control | Scheduled/native Worker | Preserve scheduler ownership, deduplication, recovery RPC and authenticated forwarding |
-| Mail email routing | Native email Worker within Mail | Preserve MIME ingestion, R2 permissions and the owning Mail webhook contract |
+| Active surface     | Current boundary                                  | Migration acceptance                                                                                    |
+| ------------------ | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Meet               | Next/OpenNext web Worker and shared Meet services | Vite-native web routes; preserve meeting/session APIs, AI entrypoints, media and Durable Object classes |
+| Parley             | Next/OpenNext web Worker                          | Vite-native studio and participant routes; preserve private reviews, snapshots and Meet bindings        |
+| Lettin             | Next/OpenNext web Worker with D1/R2               | Vite-native routes; preserve publication, ownership, D1 session and R2 contracts                        |
+| Colab              | Vite React assets plus native Worker              | Adopt Vite+ without changing auth, sponsorship, room Durable Objects or SPA routing                     |
+| Meet realtime      | Native Worker and Durable Objects                 | Adopt shared tooling; preserve signalling, TURN/SFU contracts and realtime health checks                |
+| Coordination       | Native Worker service                             | Preserve coordination protocol, authentication, object identity and storage                             |
+| Devbox control     | Native Worker service                             | Preserve control authentication, lease/state transitions and deployment identity                        |
+| Cron control       | Scheduled/native Worker                           | Preserve scheduler ownership, deduplication, recovery RPC and authenticated forwarding                  |
+| Mail email routing | Native email Worker within Mail                   | Preserve MIME ingestion, R2 permissions and the owning Mail webhook contract                            |
 
 This inventory follows active checked-in Wrangler configurations. Existing
 `apps/backend` and `apps/tanstack-web` Wrangler files are retained paused artifacts,
@@ -238,13 +238,13 @@ primitives; they receive navigation, translated labels and data through typed
 props or a small explicitly scoped provider. React Server Components are an
 optional adapter surface, never a prerequisite for consuming the domain package.
 
-| Layer | Owns | Avoids |
-| --- | --- | --- |
-| Domain | Pure decisions, validation, immutable snapshots, permission predicates | Framework imports, request globals, storage drivers |
-| Service | Workflows with injected actor, clock, repositories and capabilities | Reading ambient cookies/env or assuming trusted clients |
-| Portable React UI | Semantic tokens, presentation, interaction state, accessibility | Next/router/translation hooks and server-only imports |
-| Framework adapter | Route loaders/actions, HTTP mapping, navigation, localization, request credentials | Duplicating domain rules or bypassing policy |
-| Runtime adapter | D1/R2/Supabase clients, Worker bindings and scheduling | Leaking credentials or runtime-specific types into portable exports |
+| Layer             | Owns                                                                               | Avoids                                                              |
+| ----------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| Domain            | Pure decisions, validation, immutable snapshots, permission predicates             | Framework imports, request globals, storage drivers                 |
+| Service           | Workflows with injected actor, clock, repositories and capabilities                | Reading ambient cookies/env or assuming trusted clients             |
+| Portable React UI | Semantic tokens, presentation, interaction state, accessibility                    | Next/router/translation hooks and server-only imports               |
+| Framework adapter | Route loaders/actions, HTTP mapping, navigation, localization, request credentials | Duplicating domain rules or bypassing policy                        |
+| Runtime adapter   | D1/R2/Supabase clients, Worker bindings and scheduling                             | Leaking credentials or runtime-specific types into portable exports |
 
 Prefer existing first-party packages and narrow public subpath exports over a new
 universal framework wrapper. Keep Next-specific compatibility entrypoints stable
@@ -272,16 +272,16 @@ Compare emitted compatibility flags against each service’s source configuratio
 Devbox Control currently has no flags, so its verifier must not require
 `nodejs_compat` simply because another Worker uses it.
 
-| Boundary | Required preservation and evidence |
-| --- | --- |
-| Routes | Public/private/API inventory, bilingual paths, redirects/rewrites, metadata, noindex and deep links |
-| Identity | Satellite app-session audience/expiry, allowlists, MFA, workspace membership, owner consent and actor attribution |
-| API | Existing internal-api contracts and TanStack Query; injected request credentials |
-| UI | Navigation/translation/server adapters extracted without changing semantic tokens |
-| Lettin | D1 session behavior, R2 permissions, schemas/data, draft/publication snapshots and writeAccess fences |
+| Boundary    | Required preservation and evidence                                                                                           |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Routes      | Public/private/API inventory, bilingual paths, redirects/rewrites, metadata, noindex and deep links                          |
+| Identity    | Satellite app-session audience/expiry, allowlists, MFA, workspace membership, owner consent and actor attribution            |
+| API         | Existing internal-api contracts and TanStack Query; injected request credentials                                             |
+| UI          | Navigation/translation/server adapters extracted without changing semantic tokens                                            |
+| Lettin      | D1 session behavior, R2 permissions, schemas/data, draft/publication snapshots and writeAccess fences                        |
 | Parley/Meet | Immutable scenarios, private facilitator reviews, participant invitations, signalling/media, Durable Objects and AI bindings |
-| Runtime | SSR, assets, auth denial/redirects, cache, errors, cancellation and bindings in real local Workers with isolated fixtures |
-| Delivery | Exact-commit CI build, staging runtime acceptance, then authorized canonical promotion with rollback and product checks |
+| Runtime     | SSR, assets, auth denial/redirects, cache, errors, cancellation and bindings in real local Workers with isolated fixtures    |
+| Delivery    | Exact-commit CI build, staging runtime acceptance, then authorized canonical promotion with rollback and product checks      |
 
 Prove a small authenticated vertical slice before replacing the complete app.
 Document fixture boundaries and hosted dependencies: local Durable Objects do not
@@ -303,15 +303,15 @@ are at-least-once and automatically retry thrown errors. Explicit rescheduling c
 create another chain beyond those retries. Ingress rate limits cannot stop work
 that an alarm, queue consumer or cron trigger already owns.
 
-| Control | Acceptance evidence |
-| --- | --- |
-| Work bounds | Bound operations, scanned rows/pages, payload size, fan-out and concurrency per wake; bound attempts and elapsed age for finite jobs. Persistent failures or no progress exhaust a durable budget rather than resetting on wake or restart. |
-| Scheduling | Empty/completed/expired/cancelled jobs do not reschedule. A valid next deadline is finite and in the future; retries use capped backoff. Recurring activity requires an explicit owner and renewable lease/expiry, with a documented stop path. |
-| Retry identity | Duplicate delivery and restarts preserve job identity, attempts, cursor and idempotency fences. A consumer cannot re-enter its own enqueue path indefinitely. Checkpoint progress without multiplying writes per item. |
-| Durable shutdown | Check a persisted stop/lease fence before expensive work and before rescheduling, including racing callbacks. Test a scoped authenticated stop path that preserves resumable data. Removing public routes or stopping ingress is insufficient. |
-| Storage amplification | Use indexed/bounded reads; avoid unbounded list/scan fallback in hot paths. Batch writes where useful, then measure the actual billing unit: batching does not necessarily reduce billed keys/rows/messages. |
-| Cost envelope | Record normal and failure-case operation counts per job/session and expected maximum admitted concurrency/volume. Include storage, queue retries, AI/media and logging; calculate with current product pricing and record assumptions. |
-| Detection and response | Verify which usage/anomaly alerts the account and products support, who receives them and how quickly they can react. Record sampled per-service rates, retry/no-progress counters and a tested independent operator stop procedure. |
+| Control                | Acceptance evidence                                                                                                                                                                                                                             |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Work bounds            | Bound operations, scanned rows/pages, payload size, fan-out and concurrency per wake; bound attempts and elapsed age for finite jobs. Persistent failures or no progress exhaust a durable budget rather than resetting on wake or restart.     |
+| Scheduling             | Empty/completed/expired/cancelled jobs do not reschedule. A valid next deadline is finite and in the future; retries use capped backoff. Recurring activity requires an explicit owner and renewable lease/expiry, with a documented stop path. |
+| Retry identity         | Duplicate delivery and restarts preserve job identity, attempts, cursor and idempotency fences. A consumer cannot re-enter its own enqueue path indefinitely. Checkpoint progress without multiplying writes per item.                          |
+| Durable shutdown       | Check a persisted stop/lease fence before expensive work and before rescheduling, including racing callbacks. Test a scoped authenticated stop path that preserves resumable data. Removing public routes or stopping ingress is insufficient.  |
+| Storage amplification  | Use indexed/bounded reads; avoid unbounded list/scan fallback in hot paths. Batch writes where useful, then measure the actual billing unit: batching does not necessarily reduce billed keys/rows/messages.                                    |
+| Cost envelope          | Record normal and failure-case operation counts per job/session and expected maximum admitted concurrency/volume. Include storage, queue retries, AI/media and logging; calculate with current product pricing and record assumptions.          |
+| Detection and response | Verify which usage/anomaly alerts the account and products support, who receives them and how quickly they can react. Record sampled per-service rates, retry/no-progress counters and a tested independent operator stop procedure.            |
 
 Require regressions for empty queues, expired state, duplicate execution, restart,
 clock/deadline boundaries, persistent downstream failure, no progress and stop-versus-
@@ -420,3 +420,14 @@ CI; a migration direction does not authorize production cutover.
 - [Oxfmt configuration](https://oxc.rs/docs/guide/usage/formatter/config.html)
 - [Vite+ migration](https://viteplus.dev/guide/migrate)
 - [TanStack Start on Cloudflare](https://developers.cloudflare.com/workers/framework-guides/web-apps/tanstack-start/)
+
+### Devbox grant expiry sweep
+
+The control Worker owns contributor grant expiry. Its five-minute Cron has an
+independent `TUTURUUU_DEVBOX_EXPIRY_SWEEP_ENABLED=false` stop fence. OFF makes no
+database requests. ON makes one bounded RPC per invocation, with no retries and
+a 25-grant transactional batch. Terminal grants are excluded from later batches.
+`expiry-sweep.test.ts` checks the stop fence, single-call bound and restart after
+failure. `devbox-identity-lifecycle.sql` checks the transactional cascade and
+terminal-state replay. See [contributor identity](/platform/features/devbox-contributor-identity)
+for invocation bounds, rollout dependencies and the separate personal-pool hold.

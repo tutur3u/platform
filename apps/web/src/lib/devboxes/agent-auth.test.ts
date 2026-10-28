@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+vi.mock('next/server', async (original) => ({
+  ...(await original<typeof import('next/server')>()),
+  connection: async () => {},
+}));
+
 const { verifyDevboxRunnerTokenMock } = vi.hoisted(() => ({
   verifyDevboxRunnerTokenMock: vi.fn(),
 }));
@@ -28,7 +33,7 @@ describe('authorizeDevboxAgent', () => {
     });
 
     const result = await authorizeDevboxAgent(
-      request({ 'x-devbox-runner-token': 'tdbx_ok' }),
+      request({ 'x-devbox-runner-token': `tdbx_${'a'.repeat(64)}` }),
       { requireOnline: true }
     );
 
@@ -36,9 +41,12 @@ describe('authorizeDevboxAgent', () => {
       ok: true,
       runner: { heartbeatEnabled: true, id: 'runner-1' },
     });
-    expect(verifyDevboxRunnerTokenMock).toHaveBeenCalledWith('tdbx_ok', {
-      requireOnline: true,
-    });
+    expect(verifyDevboxRunnerTokenMock).toHaveBeenCalledWith(
+      `tdbx_${'a'.repeat(64)}`,
+      {
+        requireOnline: true,
+      }
+    );
   });
 
   it('returns 401 for missing or rejected tokens', async () => {
@@ -48,7 +56,7 @@ describe('authorizeDevboxAgent', () => {
 
     verifyDevboxRunnerTokenMock.mockResolvedValue(null);
     const rejected = await authorizeDevboxAgent(
-      request({ authorization: 'Bearer tdbx_revoked' })
+      request({ authorization: `Bearer tdbx_${'b'.repeat(64)}` })
     );
     expect(rejected.ok || rejected.response.status).toBe(401);
   });
@@ -64,7 +72,7 @@ describe('authorizeDevboxAgent', () => {
       vi.spyOn(console, 'error').mockImplementation(() => {});
 
       const result = await authorizeDevboxAgent(
-        request({ 'x-devbox-runner-token': 'tdbx_ok' })
+        request({ 'x-devbox-runner-token': `tdbx_${'a'.repeat(64)}` })
       );
 
       expect(result.ok).toBe(false);

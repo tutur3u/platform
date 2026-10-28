@@ -114,6 +114,8 @@ export async function POST(request: NextRequest) {
   }
   const policy = await getCliAppSessionPolicy();
   const session = createCliAppSession({
+    // Legacy refresh chains have no provable origin and cannot regain devbox access.
+    authTime: verification.claims.auth_time ?? 0,
     accessExpiresInSeconds: policy.cliAccessTtlSeconds,
     email: data.user.email ?? verification.claims.email,
     mfa: verification.claims.mfa,

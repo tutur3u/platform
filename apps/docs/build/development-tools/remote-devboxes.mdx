@@ -1,6 +1,6 @@
 ---
-title: "Remote Devboxes"
-description: "Run heavy Tuturuuu development workflows on self-hosted remote runners."
+title: 'Remote Devboxes'
+description: 'Run heavy Tuturuuu development workflows on self-hosted remote runners.'
 ---
 
 ## Overview
@@ -276,6 +276,7 @@ production database path. It refuses while any run-enabled runner lacks a fresh
 `trusted` report and lists those runners; `p_force => true` overrides that guard
 deliberately; NULL does not override it, and NULL `p_enabled` is rejected. Disable the flag the same way with `false`. Regression coverage
 lives in `apps/database/supabase/tests/devbox-claim-mode-admission.sql`.
+
 ### Several runner identities on one host
 
 Keep each trust tier on its own runner identity: a separate runner token, OS
@@ -964,12 +965,12 @@ table is missing), then switches to `seq` with consistent offsets.
 The migrations are split so the run events table is never exclusively locked for
 longer than a catalog change:
 
-| Migration | Step | Lock |
-| --- | --- | --- |
-| `20261024030000` | nullable `seq`, cursor table, triggers, functions, `NOT VALID` constraints | brief `ACCESS EXCLUSIVE`, `lock_timeout` 5 s |
+| Migration                    | Step                                                                                         | Lock                                                |
+| ---------------------------- | -------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| `20261024030000`             | nullable `seq`, cursor table, triggers, functions, `NOT VALID` constraints                   | brief `ACCESS EXCLUSIVE`, `lock_timeout` 5 s        |
 | `030100`, `030150`, `030200` | unique `(run_id, seq)`, partial unsequenced and unique `(actor_id, idempotency_key)` indexes | `CREATE INDEX CONCURRENTLY`, one statement per file |
-| `030300` | backfill of at most 50 000 events in 5 000-row calls | row locks; same-run appends wait |
-| `030350` | `VALIDATE CONSTRAINT` once no event is unsequenced | `SHARE UPDATE EXCLUSIVE` |
+| `030300`                     | backfill of at most 50 000 events in 5 000-row calls                                         | row locks; same-run appends wait                    |
+| `030350`                     | `VALIDATE CONSTRAINT` once no event is unsequenced                                           | `SHARE UPDATE EXCLUSIVE`                            |
 
 The migration runner wraps a multi-statement file in one transaction, and
 `CREATE INDEX CONCURRENTLY` cannot run inside one. Each concurrent index is
@@ -1079,7 +1080,6 @@ is deferred when a runner does not report its hostname. Fleet upgrades honor
 request succeeded. Verify its run and lease before retrying or touching another
 runner, since a stop request does not prove immediate process termination.
 
-
 ## Runtime Acceptance Diagnostics
 
 Judge capacity discovery runs a strict four-second `docker info` metadata probe
@@ -1183,3 +1183,12 @@ coverage is in the devbox runs route tests. CodeQL command-line-injection alerts
 at this launcher require review of the authenticated execution boundary rather
 than treating `shell: false` alone as proof of safety. Source review does not
 verify deployed grants, runner configuration, or token custody.
+
+## Contributor identity foundation
+
+Personal grants and labelled `tdba_` tokens are described in the
+[identity decision](/platform/features/devbox-contributor-identity). The global
+switch defaults off; S1 creates no grants and leaves personal execution disabled.
+Do not enable this foundation before the Security Desk's claim, admission,
+isolation and observability gates close. Runner-token expiry is checked afresh in
+Web and the control Worker; the Worker's agent API switch is default-off too.

@@ -3,6 +3,14 @@ import { cloudflare } from '@cloudflare/vite-plugin';
 import { defineConfig } from 'vite-plus';
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      '@tuturuuu/devbox/actor': new URL(
+        '../../packages/devbox/src/actor.ts',
+        import.meta.url
+      ).pathname,
+    },
+  },
   server: { host: '127.0.0.1', port: 8799 },
   plugins: [
     cloudflare({

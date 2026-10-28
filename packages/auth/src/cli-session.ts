@@ -17,6 +17,7 @@ export const CLI_APP_ACCESS_TTL_SECONDS = 8 * 60 * 60;
 export const CLI_APP_REFRESH_TTL_SECONDS = 90 * 24 * 60 * 60;
 
 export type CliAppSessionPayload = {
+  authTime?: number;
   mfa?: MfaSessionProof;
   accessExpiresInSeconds?: number;
   email?: string | null;
@@ -52,8 +53,12 @@ export function createCliAppSession(
     secret?: string;
   } = {}
 ): CliAppSession {
+  const authTime =
+    payload.authTime ??
+    Math.floor((options.now ?? new Date()).getTime() / 1000);
   const access = createAppSessionToken(
     {
+      authTime,
       email: payload.email ?? null,
       mfa: payload.mfa,
       expiresInSeconds:
@@ -67,6 +72,7 @@ export function createCliAppSession(
   );
   const refresh = createAppCoordinationToken(
     {
+      authTime,
       email: payload.email ?? null,
       mfa: payload.mfa,
       expiresInSeconds:

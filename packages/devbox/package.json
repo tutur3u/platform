@@ -31,6 +31,11 @@
       "types": "./dist/balancer/index.d.ts",
       "import": "./dist/balancer/index.js",
       "require": "./dist/balancer/index.js"
+    },
+    "./actor": {
+      "types": "./dist/actor.d.ts",
+      "import": "./dist/actor.js",
+      "require": "./dist/actor.js"
     }
   },
   "packageManager": "bun@1.4.4",

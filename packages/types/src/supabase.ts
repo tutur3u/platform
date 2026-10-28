@@ -4042,6 +4042,81 @@ export type Database = {
           },
         ];
       };
+      devbox_access_tokens: {
+        Row: {
+          created_at: string;
+          expires_at: string;
+          grant_id: string;
+          id: string;
+          label: string;
+          last_used_at: string | null;
+          revoked_at: string | null;
+          revoked_by: string | null;
+          scopes: string[];
+          token_hash: string;
+          token_prefix: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          expires_at: string;
+          grant_id: string;
+          id?: string;
+          label: string;
+          last_used_at?: string | null;
+          revoked_at?: string | null;
+          revoked_by?: string | null;
+          scopes: string[];
+          token_hash: string;
+          token_prefix: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          expires_at?: string;
+          grant_id?: string;
+          id?: string;
+          label?: string;
+          last_used_at?: string | null;
+          revoked_at?: string | null;
+          revoked_by?: string | null;
+          scopes?: string[];
+          token_hash?: string;
+          token_prefix?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'devbox_access_tokens_grant_id_fkey';
+            columns: ['grant_id'];
+            isOneToOne: false;
+            referencedRelation: 'devbox_personal_pool_grants';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'devbox_access_tokens_revoked_by_fkey';
+            columns: ['revoked_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'devbox_access_tokens_revoked_by_fkey';
+            columns: ['revoked_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'devbox_access_tokens_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'devbox_personal_pool_grants';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
       devbox_artifacts: {
         Row: {
           artifact_type: string;
@@ -4162,16 +4237,20 @@ export type Database = {
       devbox_control_settings: {
         Row: {
           id: boolean;
+          personal_pools_enabled: boolean;
           require_reported_execution_mode: boolean;
           updated_at: string;
         };
+        ComputedFields: never;
         Insert: {
           id?: boolean;
+          personal_pools_enabled?: boolean;
           require_reported_execution_mode?: boolean;
           updated_at?: string;
         };
         Update: {
           id?: boolean;
+          personal_pools_enabled?: boolean;
           require_reported_execution_mode?: boolean;
           updated_at?: string;
         };
@@ -4227,8 +4306,75 @@ export type Database = {
           },
         ];
       };
+      devbox_grant_events: {
+        Row: {
+          acting_role: string;
+          acting_user_id: string | null;
+          created_at: string;
+          event_type: string;
+          id: string;
+          new_status: string | null;
+          old_status: string | null;
+          subject_id: string | null;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          acting_role?: string;
+          acting_user_id?: string | null;
+          created_at?: string;
+          event_type: string;
+          id?: string;
+          new_status?: string | null;
+          old_status?: string | null;
+          subject_id?: string | null;
+          user_id: string;
+        };
+        Update: {
+          acting_role?: string;
+          acting_user_id?: string | null;
+          created_at?: string;
+          event_type?: string;
+          id?: string;
+          new_status?: string | null;
+          old_status?: string | null;
+          subject_id?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'devbox_grant_events_acting_user_id_fkey';
+            columns: ['acting_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'devbox_grant_events_acting_user_id_fkey';
+            columns: ['acting_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'devbox_grant_events_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'devbox_grant_events_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
       devbox_leases: {
         Row: {
+          access_token_id: string | null;
           actor_id: string;
           cleanup_status: string;
           created_at: string;
@@ -4243,6 +4389,7 @@ export type Database = {
         };
         ComputedFields: never;
         Insert: {
+          access_token_id?: string | null;
           actor_id: string;
           cleanup_status?: string;
           created_at?: string;
@@ -4256,6 +4403,7 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          access_token_id?: string | null;
           actor_id?: string;
           cleanup_status?: string;
           created_at?: string;
@@ -4269,6 +4417,13 @@ export type Database = {
           updated_at?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'devbox_leases_access_token_id_fkey';
+            columns: ['access_token_id'];
+            isOneToOne: false;
+            referencedRelation: 'devbox_access_tokens';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'devbox_leases_actor_id_fkey';
             columns: ['actor_id'];
@@ -4289,6 +4444,110 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'devbox_runners';
             referencedColumns: ['id'];
+          },
+        ];
+      };
+      devbox_personal_pool_grants: {
+        Row: {
+          accepted_at: string | null;
+          bound_email: string;
+          created_at: string;
+          expires_at: string;
+          granted_by: string;
+          id: string;
+          max_access_tokens: number;
+          reason: string;
+          require_mfa: boolean;
+          revoked_at: string | null;
+          security_signoff_by: string;
+          sessions_not_before: string;
+          status: string;
+          suspended: boolean;
+          suspended_at: string | null;
+          updated_at: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          accepted_at?: string | null;
+          bound_email: string;
+          created_at?: string;
+          expires_at: string;
+          granted_by: string;
+          id?: string;
+          max_access_tokens?: number;
+          reason: string;
+          require_mfa?: boolean;
+          revoked_at?: string | null;
+          security_signoff_by: string;
+          sessions_not_before?: string;
+          status?: string;
+          suspended?: boolean;
+          suspended_at?: string | null;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          accepted_at?: string | null;
+          bound_email?: string;
+          created_at?: string;
+          expires_at?: string;
+          granted_by?: string;
+          id?: string;
+          max_access_tokens?: number;
+          reason?: string;
+          require_mfa?: boolean;
+          revoked_at?: string | null;
+          security_signoff_by?: string;
+          sessions_not_before?: string;
+          status?: string;
+          suspended?: boolean;
+          suspended_at?: string | null;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'devbox_personal_pool_grants_granted_by_fkey';
+            columns: ['granted_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'devbox_personal_pool_grants_granted_by_fkey';
+            columns: ['granted_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'devbox_personal_pool_grants_security_signoff_by_fkey';
+            columns: ['security_signoff_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'devbox_personal_pool_grants_security_signoff_by_fkey';
+            columns: ['security_signoff_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'devbox_personal_pool_grants_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: true;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'devbox_personal_pool_grants_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: true;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
           },
         ];
       };
@@ -4415,6 +4674,7 @@ export type Database = {
       devbox_runner_tokens: {
         Row: {
           created_at: string;
+          expires_at: string | null;
           id: string;
           revoked_at: string | null;
           runner_id: string;
@@ -4423,6 +4683,7 @@ export type Database = {
         ComputedFields: never;
         Insert: {
           created_at?: string;
+          expires_at?: string | null;
           id?: string;
           revoked_at?: string | null;
           runner_id: string;
@@ -4430,6 +4691,7 @@ export type Database = {
         };
         Update: {
           created_at?: string;
+          expires_at?: string | null;
           id?: string;
           revoked_at?: string | null;
           runner_id?: string;
@@ -4511,6 +4773,7 @@ export type Database = {
       };
       devbox_runs: {
         Row: {
+          access_token_id: string | null;
           actor_id: string;
           command: string[];
           completed_at: string | null;
@@ -4531,6 +4794,7 @@ export type Database = {
         };
         ComputedFields: never;
         Insert: {
+          access_token_id?: string | null;
           actor_id: string;
           command: string[];
           completed_at?: string | null;
@@ -4550,6 +4814,7 @@ export type Database = {
           workload?: string;
         };
         Update: {
+          access_token_id?: string | null;
           actor_id?: string;
           command?: string[];
           completed_at?: string | null;
@@ -4569,6 +4834,13 @@ export type Database = {
           workload?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'devbox_runs_access_token_id_fkey';
+            columns: ['access_token_id'];
+            isOneToOne: false;
+            referencedRelation: 'devbox_access_tokens';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'devbox_runs_actor_id_fkey';
             columns: ['actor_id'];
@@ -20359,6 +20631,10 @@ export type Database = {
         Args: { p_tier: Database['public']['Enums']['abuse_risk_tier'] };
         Returns: number;
       };
+      accept_devbox_personal_grant: {
+        Args: { p_user_id: string };
+        Returns: boolean;
+      };
       account_personal_workspace: {
         Args: { p_actor_id: string };
         Returns: string;
@@ -20708,6 +20984,10 @@ export type Database = {
           p_ws_id: string;
         };
         Returns: Json;
+      };
+      assert_cross_app_token_apps: {
+        Args: { p_origin_app: string; p_target_app: string };
+        Returns: undefined;
       };
       assert_employee_administrator: {
         Args: { p_actor_id: string };
@@ -21790,6 +22070,18 @@ export type Database = {
           isSetofReturn: true;
         };
       };
+      cross_app_internal_app_names: {
+        Args: Record<PropertyKey, never>;
+        Returns: string[];
+      };
+      cross_app_token_lifetime_seconds: {
+        Args: { p_expiry_seconds: number; p_origin_app: string };
+        Returns: number;
+      };
+      cross_app_verified_session_data: {
+        Args: { p_session_data: Json; p_user_id: string };
+        Returns: Json;
+      };
       delete_managed_cron_whitelisted_domain: {
         Args: { p_domain: string };
         Returns: undefined;
@@ -21956,11 +22248,22 @@ export type Database = {
         Args: { _actor_id: string; _wallet_id: string; _ws_id: string };
         Returns: Json;
       };
+      devbox_identity_grant_active: {
+        Args: { p_user_id: string };
+        Returns: boolean;
+      };
+      devbox_identity_is_root_member: {
+        Args: { p_user_id: string };
+        Returns: boolean;
+      };
       devbox_reports_fresh_trusted: {
         Args: { p_capabilities: Json; p_capabilities_updated_at: string };
         Returns: boolean;
       };
-      devbox_require_reported_execution_mode: { Args: never; Returns: boolean };
+      devbox_require_reported_execution_mode: {
+        Args: Record<PropertyKey, never>;
+        Returns: boolean;
+      };
       devbox_run_idempotency_ready: {
         Args: Record<PropertyKey, never>;
         Returns: boolean;
@@ -22199,6 +22502,10 @@ export type Database = {
       expire_ai_live_sessions: {
         Args: { p_balance_id: string };
         Returns: undefined;
+      };
+      expire_devbox_personal_grants: {
+        Args: { p_limit?: number };
+        Returns: number;
       };
       expire_inventory_checkout_sessions: {
         Args: { p_limit?: number; p_now?: string; p_ws_id?: string };
@@ -23611,6 +23918,19 @@ export type Database = {
         Args: { _team_id: string; _user_id: string };
         Returns: boolean;
       };
+      issue_devbox_access_token: {
+        Args: {
+          p_cli?: boolean;
+          p_expires_at: string;
+          p_hash: string;
+          p_issued_at: string;
+          p_label: string;
+          p_prefix: string;
+          p_scopes: string[];
+          p_user_id: string;
+        };
+        Returns: string;
+      };
       list_account_benefits: { Args: { p_user_id: string }; Returns: Json };
       list_ai_studio_consumption_events: {
         Args: {
@@ -23652,6 +23972,7 @@ export type Database = {
           unmetered_credits: number;
         }[];
       };
+      list_devbox_access_tokens: { Args: { p_user_id: string }; Returns: Json };
       list_enabled_managed_cron_domains: {
         Args: Record<PropertyKey, never>;
         Returns: {
@@ -24304,6 +24625,10 @@ export type Database = {
         Args: { p_actor: string; p_teacher?: string; p_ws: string };
         Returns: Json;
       };
+      reap_stale_devbox_runs: {
+        Args: { p_limit?: number; p_runner_id?: string };
+        Returns: number;
+      };
       reconcile_creator_handle_owners: {
         Args: Record<PropertyKey, never>;
         Returns: undefined;
@@ -24509,6 +24834,10 @@ export type Database = {
         };
         Returns: Json;
       };
+      resolve_devbox_identity: {
+        Args: { p_hash?: string; p_user_id?: string };
+        Returns: Json;
+      };
       resolve_user_groups_table_timezone: {
         Args: { p_ws_id: string };
         Returns: string;
@@ -24524,6 +24853,22 @@ export type Database = {
       revoke_account_benefit: {
         Args: { p_actor_id: string; p_id: string };
         Returns: boolean;
+      };
+      revoke_devbox_access_token: {
+        Args: { p_id: string; p_user_id: string };
+        Returns: boolean;
+      };
+      revoke_devbox_personal_identity: {
+        Args: {
+          p_operator_id?: string;
+          p_suspend?: boolean;
+          p_user_id: string;
+        };
+        Returns: undefined;
+      };
+      revoke_overlong_cross_app_tokens: {
+        Args: Record<PropertyKey, never>;
+        Returns: number;
       };
       safe_parse_inet: { Args: { p_value: string }; Returns: unknown };
       save_learn_programming_problem: {
@@ -25328,10 +25673,6 @@ export type Database = {
           p_ws_id: string;
         };
         Returns: Json;
-      };
-      reap_stale_devbox_runs: {
-        Args: { p_limit?: number; p_runner_id?: string };
-        Returns: number;
       };
     };
     Enums: {
@@ -48541,6 +48882,10 @@ export type Database = {
         };
         Returns: Json;
       };
+      can_access_task_list_board: {
+        Args: { p_board_id: string; p_write: boolean };
+        Returns: boolean;
+      };
       can_access_task_plan: {
         Args: {
           p_plan_id: string;
@@ -48550,6 +48895,10 @@ export type Database = {
         Returns: boolean;
       };
       can_create_workspace: { Args: { p_user_id: string }; Returns: boolean };
+      can_edit_task_assignees: {
+        Args: { p_task_id: string };
+        Returns: boolean;
+      };
       can_manage_indicator: {
         Args: { p_indicator_id: string };
         Returns: boolean;

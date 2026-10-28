@@ -51,6 +51,7 @@
                 "group": "Features",
                 "pages": [
                   "platform/features/search-indexing",
+                  "platform/features/devbox-contributor-identity",
                   "platform/features/command-center-dashboard",
                   "platform/personal-journal",
                   "platform/features/assistant-live",
