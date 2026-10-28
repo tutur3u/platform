@@ -28,26 +28,34 @@ class MastermindHomePage extends StatelessWidget {
     builder: (context, ready, freshness) {
       final model = MastermindHomeModel.from(ready.snapshot);
       return MastermindRepliesWatcher(
-        child: AppPageScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            SliverToBoxAdapter(
-              child: MastermindFreshnessStrip(freshness: freshness),
+        // Outside the scroll view: a lazy sliver child is disposed once it
+        // scrolls away, which would unregister the navbar action.
+        child: Column(
+          children: [
+            Expanded(
+              child: AppPageScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: MastermindFreshnessStrip(freshness: freshness),
+                  ),
+                  SliverList.list(
+                    children: [
+                      HomeNeedsYouCard(model: model),
+                      const PendingRepliesSection(),
+                      HomeLanesCard(model: model),
+                      HomeShipCard(model: model),
+                      HomeQuotaCard(model: model),
+                      HomeActivityCard(model: model),
+                      // Last: the Decisions journal is deferred, so this is
+                      // only the latest few, with no link to a fuller view.
+                      HomeDecisionsCard(model: model),
+                    ],
+                  ),
+                ],
+              ),
             ),
-            SliverList.list(
-              children: [
-                _SourcesAction(sources: ready.snapshot.sources),
-                HomeNeedsYouCard(model: model),
-                const PendingRepliesSection(),
-                HomeLanesCard(model: model),
-                HomeShipCard(model: model),
-                HomeQuotaCard(model: model),
-                HomeActivityCard(model: model),
-                // Last: the Decisions journal is deferred, so this is only the
-                // latest few, with no link to a fuller view.
-                HomeDecisionsCard(model: model),
-              ],
-            ),
+            _SourcesAction(sources: ready.snapshot.sources),
           ],
         ),
       );

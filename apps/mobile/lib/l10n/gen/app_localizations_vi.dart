@@ -12263,7 +12263,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindChartOpenPrs => 'Pull request đang mở';
 
   @override
-  String get mastermindChartPendingRuns => 'Lượt chạy chờ';
+  String get mastermindChartPendingRuns => 'Lượt chạy chờ xử lý';
 
   @override
   String get mastermindChartProjection => 'Dự báo khi đặt lại';

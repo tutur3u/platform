@@ -211,6 +211,70 @@ void registerShellPeerSectionChecks({
 
     _expectPoppedBackToInsights(router);
   });
+
+  for (final origin in [Routes.mastermind, Routes.mastermindInbox]) {
+    for (final dock in [false, true]) {
+      testWidgets(
+        '${dock ? 'dock' : 'system'} Back from an item opened on $origin '
+        'returns to $origin',
+        (tester) async {
+          final router = await _pumpItemOver(
+            tester,
+            origin: origin,
+            appTabCubit: appTabCubit(),
+            authCubit: authCubit(),
+            workspaceCubit: workspaceCubit(),
+          );
+
+          if (dock) {
+            await tester.tap(find.bySemanticsLabel('Back'));
+          } else {
+            await tester.binding.handlePopRoute();
+          }
+          await _pumpForTransitions(tester);
+
+          // A real pop, not the mini-app parent fallback, which lands on the
+          // Inbox even when the item was opened from Home.
+          expect(router.routeInformationProvider.value.uri.path, origin);
+          expect(find.text('page $origin'), findsOneWidget);
+        },
+      );
+    }
+  }
+}
+
+/// Boots the Work shell, goes to [origin], then pushes an item over it, the
+/// way the Home Needs-you rows and the Inbox rows both open one.
+Future<GoRouter> _pumpItemOver(
+  WidgetTester tester, {
+  required String origin,
+  required AppTabCubit appTabCubit,
+  required AuthCubit authCubit,
+  required WorkspaceCubit workspaceCubit,
+}) async {
+  tester.view.devicePixelRatio = 1;
+  tester.view.physicalSize = const Size(390, 844);
+  addTearDown(() {
+    tester.view.resetPhysicalSize();
+    tester.view.resetDevicePixelRatio();
+  });
+  final router = _buildMastermindWorkRouter();
+  addTearDown(router.dispose);
+  await tester.pumpWidget(
+    _buildTestApp(
+      router: router,
+      appTabCubit: appTabCubit,
+      authCubit: authCubit,
+      workspaceCubit: workspaceCubit,
+    ),
+  );
+  await _pumpForTransitions(tester);
+  router.go(origin);
+  await _pumpForTransitions(tester);
+  router.push<void>(Routes.mastermindInboxItemPath('item-1')).ignore();
+  await _pumpForTransitions(tester);
+  expect(find.text('item item-1'), findsOneWidget);
+  return router;
 }
 
 /// Boots the Work shell, pushes Insights over Work, then a chart table over
@@ -313,6 +377,21 @@ GoRouter _buildMastermindWorkRouter() => GoRouter(
                 'table ${state.pathParameters['section']} '
                 '${state.pathParameters['chartId']}',
           ),
+        ),
+        GoRoute(
+          path: Routes.mastermind,
+          builder: (context, state) =>
+              const _RoutePage(label: 'page ${Routes.mastermind}'),
+        ),
+        GoRoute(
+          path: Routes.mastermindInbox,
+          builder: (context, state) =>
+              const _RoutePage(label: 'page ${Routes.mastermindInbox}'),
+        ),
+        GoRoute(
+          path: Routes.mastermindInboxItem,
+          builder: (context, state) =>
+              _RoutePage(label: 'item ${state.pathParameters['itemId']}'),
         ),
         GoRoute(
           path: Routes.mastermindWorkLane,

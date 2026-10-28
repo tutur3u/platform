@@ -60,6 +60,11 @@ abstract final class Routes {
       '$mastermindInsights/${Uri.encodeComponent(section)}/table/'
       '${Uri.encodeComponent(chartId)}';
 
+  /// An item detail is pushed over the Inbox or Home, so Back pops to whichever
+  /// opened it rather than falling back to the Inbox.
+  static bool isMastermindInboxItemLocation(String location) =>
+      normalizeLocation(location).startsWith('$mastermindInbox/item/');
+
   /// A chart table is pushed over Insights, so Back pops to where it was.
   static bool isMastermindInsightsTableLocation(String location) {
     final normalized = normalizeLocation(location);

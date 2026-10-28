@@ -5534,7 +5534,7 @@
   "mastermindChartModelRuns": "Lượt chạy theo mô hình",
   "mastermindChartModelSuccess": "Thành công và làm lại",
   "mastermindChartOpenPrs": "Pull request đang mở",
-  "mastermindChartPendingRuns": "Lượt chạy chờ",
+  "mastermindChartPendingRuns": "Lượt chạy chờ xử lý",
   "mastermindChartProjection": "Dự báo khi đặt lại",
   "mastermindChartQueueDepth": "Độ sâu hàng đợi",
   "mastermindChartSessionPerSuccess": "Mức dùng phiên mỗi lần thành công",

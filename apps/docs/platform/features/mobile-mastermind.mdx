@@ -123,8 +123,9 @@ the word "Recommended" and a star, never colour alone. A search field
   "Security" group with no count, never counted, searched or filtered, with no
   severity, id or detail.
 - **Detail:** `/mastermind/inbox/item/:itemId` opens one item in full, pushed
-  from the Inbox and from Home, so Back returns to the same search text and
-  product chips. The page leads with the full title as a heading and shows the
+  from the Inbox and from Home, so Back returns to whichever opened it, with
+  the same search text and product chips (the shell pops an item location
+  instead of falling back to the Inbox). The page leads with the full title as a heading and shows the
   full question as plain text, never clamped. The id is
   an opaque snapshot id and only ever a route parameter; deep links carry tab
   roots only and never ids. An id that is not an open item shows "This item is

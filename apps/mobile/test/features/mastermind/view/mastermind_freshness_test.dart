@@ -230,11 +230,27 @@ void main() {
       handle.dispose();
     });
 
-    testWidgets('is a live region, so a change is announced', (tester) async {
+    testWidgets('is a live region only while it is a warning', (tester) async {
       final handle = tester.ensureSemantics();
       await pumpStrip(tester, _ready(), const Duration(minutes: 1));
       expect(
         tester.getSemantics(find.bySemanticsLabel('Updated $_time')),
+        isSemantics(isLiveRegion: false),
+      );
+
+      await pumpStrip(
+        tester,
+        _ready(
+          failure: const UnavailableRefresh(
+            SnapshotUnavailableKind.unavailable,
+          ),
+        ),
+        const Duration(hours: 3),
+        online: false,
+      );
+      await tester.pump();
+      expect(
+        tester.getSemantics(find.bySemanticsLabel('Offline · showing $_time')),
         isSemantics(isLiveRegion: true),
       );
       handle.dispose();

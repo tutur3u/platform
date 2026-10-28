@@ -85,11 +85,12 @@ class MastermindFreshnessStrip extends StatelessWidget {
         ],
       ),
     );
-    // A live region, so a refresh that turns the line into a warning (or
-    // clears it) is announced without the reader moving focus.
+    // A live region only while it is a warning, so a refresh that turns the
+    // line into one is announced without the reader moving focus, but the
+    // routine age ticks of a healthy "Updated" line are not.
     return Semantics(
       container: true,
-      liveRegion: true,
+      liveRegion: warning,
       label: text,
       button: onTap != null,
       onTap: onTap,
