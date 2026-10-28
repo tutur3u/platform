@@ -94,17 +94,18 @@ select private.grant_mastermind_access_by_email(
   'phucvo@tuturuuu.com',
   'GO <reference>: Mastermind access for phucvo@tuturuuu.com'
 );
-select action, target_user_id, changed, reason, performed_by, created_at from private.mastermind_access_audit order by id desc limit 5;
+select action, target_user_id, changed, reason, performed_by, created_at
+from private.mastermind_access_audit
+order by id desc limit 5;
 commit;
 ```
 
-The user must already be a root workspace member. Re-running it changes nothing
-and records `changed = false`.
+Requires root membership; re-runs record `changed = false`.
 
 - **Regression coverage:** `apps/database/supabase/tests/manage-mastermind-permission.sql`
   (no role, default permission, member or creator holds it after the
-  migration; creator and admin do not imply it; every guard; the audited,
-  idempotent grant and revoke),
+  migration; creator and admin do not imply it; grant guards except the
+  reviewed-only session_user fences; audited, idempotent grant and revoke),
   `manage-mastermind-owner-grant.sql` (the email grant: no match and a
   non-member skip, one member is granted idempotently, duplicates abort),
   `packages/utils/src/__tests__/workspace-helper-explicit-grants.test.ts`,
@@ -178,6 +179,7 @@ Flip procedure:
    access sync. Older builds rely on the hub allowlist denial.
 
 Rolling back is unsetting the flag (earlier rule again); the grant can stay.
+
 ## Data source
 
 Fixture builds (development flavor with `MASTERMIND_FIXTURE`) read the bundled
@@ -679,8 +681,7 @@ chart-spec gaps are deferred to PR8 with the remaining chart sections:
   `mastermind_ship_url_test.dart`: a product filter with no chip shows the whole
   list and rewrites the URL once, and not while another route is on top.
 
-The registered-destination smoke test builds every `/mastermind/**` route
-through the production router.
+The destination smoke test builds every `/mastermind/**` route through the production router.
 
 `apps/mobile/test/features/mastermind/replies` covers the reply path:
 `reply_models_test.dart` (key format, exact body, strict stored form, limits),
@@ -695,6 +696,5 @@ shared capability request, a send waiting on the first check) and
 `mastermind_runtime_replies_test.dart` (logout, switch and lost access clear
 the outbox). `runtime/mastermind_runtime_online_test.dart` covers the
 connectivity stream (reaches the scheduler, de-duplicated, cancelled on close).
-The screens are in `view/mastermind_inbox_page_test.dart`,
-`view/mastermind_item_page_test.dart` and
+Screen tests: `view/mastermind_inbox_page_test.dart`, `view/mastermind_item_page_test.dart` and
 `view/reply_line_limit_formatter_test.dart` (the 10-line cap and its refusals).

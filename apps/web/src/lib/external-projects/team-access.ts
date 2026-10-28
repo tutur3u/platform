@@ -5,6 +5,7 @@ import type {
   WorkspaceDefaultPermissionMemberType,
   WorkspaceDefaultPermissionsRole,
 } from '@tuturuuu/types';
+import { isExplicitGrantPermission } from '@tuturuuu/utils/explicit-grant-permissions';
 import { NextResponse } from 'next/server';
 import { getWorkspaceMembers } from '@/lib/workspace-members';
 import { normalizeRoleMembers } from '@/lib/workspace-role-members';
@@ -14,6 +15,7 @@ import {
   requireWorkspaceExternalProjectMemberBootstrapAccess,
 } from './access';
 import { attachExternalProjectInvitationRoles } from './team-invitations';
+import type { WorkspaceRolePayload } from './team-role-payload';
 
 export {
   inviteExternalProjectTeamMembers,
@@ -26,14 +28,6 @@ type WorkspaceExternalProjectAccess = Extract<
   Awaited<ReturnType<typeof requireWorkspaceExternalProjectAccess>>,
   { ok: true }
 >;
-type WorkspaceRolePayload = {
-  name: string;
-  permissions: Array<{
-    enabled: boolean;
-    id: string;
-  }>;
-};
-
 const DEFAULT_MEMBER_TYPES: WorkspaceDefaultPermissionMemberType[] = [
   'MEMBER',
   'GUEST',
@@ -338,14 +332,16 @@ export async function createExternalProjectTeamRole({
   const { error: permissionsError } = await access.admin
     .from('workspace_role_permissions')
     .insert(
-      payload.permissions.map(
-        (permission): TablesInsert<'workspace_role_permissions'> => ({
-          enabled: permission.enabled,
-          permission: permission.id as WorkspaceRolePermissionValue,
-          role_id: role.id,
-          ws_id: access.normalizedWorkspaceId,
-        })
-      )
+      payload.permissions
+        .filter((permission) => !isExplicitGrantPermission(permission.id))
+        .map(
+          (permission): TablesInsert<'workspace_role_permissions'> => ({
+            enabled: permission.enabled,
+            permission: permission.id as WorkspaceRolePermissionValue,
+            role_id: role.id,
+            ws_id: access.normalizedWorkspaceId,
+          })
+        )
     );
 
   if (permissionsError) {
@@ -398,14 +394,16 @@ export async function updateExternalProjectTeamRole({
   const permissionsQuery = access.admin
     .from('workspace_role_permissions')
     .upsert(
-      payload.permissions.map(
-        (permission): TablesInsert<'workspace_role_permissions'> => ({
-          enabled: permission.enabled,
-          permission: permission.id as WorkspaceRolePermissionValue,
-          role_id: roleId,
-          ws_id: access.normalizedWorkspaceId,
-        })
-      ),
+      payload.permissions
+        .filter((permission) => !isExplicitGrantPermission(permission.id))
+        .map(
+          (permission): TablesInsert<'workspace_role_permissions'> => ({
+            enabled: permission.enabled,
+            permission: permission.id as WorkspaceRolePermissionValue,
+            role_id: roleId,
+            ws_id: access.normalizedWorkspaceId,
+          })
+        ),
       { onConflict: 'ws_id,role_id,permission' }
     );
 
@@ -508,14 +506,16 @@ export async function updateExternalProjectTeamDefaultPermissions({
   const { error } = await access.admin
     .from('workspace_default_permissions')
     .upsert(
-      payload.permissions.map(
-        (permission): TablesInsert<'workspace_default_permissions'> => ({
-          enabled: permission.enabled,
-          member_type: memberType,
-          permission: permission.id as WorkspaceRolePermissionValue,
-          ws_id: access.normalizedWorkspaceId,
-        })
-      ),
+      payload.permissions
+        .filter((permission) => !isExplicitGrantPermission(permission.id))
+        .map(
+          (permission): TablesInsert<'workspace_default_permissions'> => ({
+            enabled: permission.enabled,
+            member_type: memberType,
+            permission: permission.id as WorkspaceRolePermissionValue,
+            ws_id: access.normalizedWorkspaceId,
+          })
+        ),
       { onConflict: 'ws_id,permission,member_type' }
     );
 
