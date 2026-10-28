@@ -8869,6 +8869,7 @@
     "singular": "Bảng nhiệm vụ",
     "sprints": {
       "active": "Đang chạy",
+      "backlog_move_failed": "Đã thêm vào sprint đang chạy: không thể chuyển vào backlog",
       "done_count": "{done}/{total} xong",
       "length_failed": "Không thể lưu độ dài sprint",
       "length_saved": "Đã lưu độ dài sprint",

@@ -9002,6 +9002,7 @@
     "singular": "Task Board",
     "sprints": {
       "active": "Active",
+      "backlog_move_failed": "Added to the running sprint: couldn't move it to the backlog",
       "done_count": "{done}/{total} done",
       "length_failed": "Couldn't save the sprint length",
       "length_saved": "Sprint length saved",
