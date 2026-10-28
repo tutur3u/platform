@@ -8,7 +8,7 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { type RefObject, useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { TaskFilters } from '../task-filter.types';
 import {
   type BoardPerson,
@@ -33,17 +33,17 @@ const NAME_CLASS = 'hidden @xl/board-header:inline';
  * query because the More menu portals out of the header, where its items
  * could not see the header's width.
  */
-function useNarrowHeader(ref: RefObject<HTMLElement | null>) {
+function useNarrowHeader(element: HTMLElement | null) {
   const [narrow, setNarrow] = useState(false);
   useEffect(() => {
-    const header = ref.current?.closest('[data-board-header]');
+    const header = element?.closest('[data-board-header]');
     if (!header || typeof ResizeObserver === 'undefined') return;
     const observer = new ResizeObserver(([entry]) => {
       if (entry) setNarrow(entry.contentRect.width < NARROW_HEADER_WIDTH);
     });
     observer.observe(header);
     return () => observer.disconnect();
-  }, [ref]);
+  }, [element]);
   return narrow;
 }
 
@@ -81,8 +81,10 @@ export function BoardPeopleFilter({
   const t = useTranslations();
   const selected = getSelectedPersonIds(filters, currentUserId);
   const anySelected = selected.size > 0 || filters.includeUnassigned;
-  const fieldsetRef = useRef<HTMLFieldSetElement>(null);
-  const narrow = useNarrowHeader(fieldsetRef);
+  // A callback ref, so measuring starts whenever the pills first render (the
+  // filter renders nothing until people or counts load).
+  const [fieldset, setFieldset] = useState<HTMLFieldSetElement | null>(null);
+  const narrow = useNarrowHeader(fieldset);
   const visibleCount = narrow ? NARROW_VISIBLE_PEOPLE : VISIBLE_PEOPLE;
   const visible = people.slice(0, visibleCount);
   const overflow = people.slice(visibleCount);
@@ -117,7 +119,7 @@ export function BoardPeopleFilter({
 
   return (
     <fieldset
-      ref={fieldsetRef}
+      ref={setFieldset}
       aria-label={t('common.people')}
       className="flex min-w-0 items-center gap-1"
     >
