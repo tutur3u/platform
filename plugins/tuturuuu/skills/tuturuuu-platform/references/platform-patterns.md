@@ -284,6 +284,13 @@ protocol and its explicitly in-memory regression boundary.
   cannot be split.
 - API routes should parse JSON inside a `try/catch` before Zod validation and
   return explicit `400` for malformed JSON.
+- For secret writes that can select a service-role client, use one strict Zod
+  allowlist before choosing the client, and construct mutations from parsed
+  editable fields only. Reject caller-supplied identity, workspace and timestamp
+  columns with HTTP 400. Keep editor request bodies aligned with that contract;
+  workspace-secret edits carry the id in the URL, not the JSON body. Regression
+  tests must cover unknown fields on both client paths and workspace predicates
+  on successful elevated updates.
 - Validate UUID path params with shared Zod GUID schemas instead of ad-hoc
   regex checks.
 - Initialize Supabase with `createClient(request)` in API routes that must

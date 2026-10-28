@@ -26,3 +26,10 @@ export async function canMutateManagedCronEnableSecret(request: Request) {
       ))
   );
 }
+
+// The database rejects anon/authenticated writes to the reserved secret, so
+// callers that passed canMutateManagedCronEnableSecret write it with the
+// service role.
+export function createManagedCronSecretAdminClient() {
+  return createAdminClient({ noCookie: true });
+}
