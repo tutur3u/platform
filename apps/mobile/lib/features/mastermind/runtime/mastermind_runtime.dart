@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/features/mastermind/access/mastermind_access_cubit.dart';
+import 'package:mobile/features/mastermind/access/mastermind_access_repository.dart';
 import 'package:mobile/features/mastermind/asks/ask_detail_source.dart';
 import 'package:mobile/features/mastermind/cubit/mastermind_refresh_scheduler.dart';
 import 'package:mobile/features/mastermind/cubit/mastermind_snapshot_cubit.dart';
@@ -58,7 +58,8 @@ final class MastermindRuntime {
   /// [createMastermindSnapshotSource].
   factory MastermindRuntime.create({
     required String? Function() userId,
-    WorkspacePermissionsRepository? permissions,
+    bool Function(String wsId)? isPersonalWorkspace,
+    MastermindAccessRepository? accessRepository,
     MastermindSnapshotSource? source,
     MastermindSnapshotStore? store,
     MastermindReplyTransport? replyTransport,
@@ -78,8 +79,10 @@ final class MastermindRuntime {
     final answered = MastermindAnsweredElsewhereCubit();
     return MastermindRuntime(
       access: MastermindAccessCubit(
-        repository: permissions ?? WorkspacePermissionsRepository(),
+        repository:
+            accessRepository ?? MastermindAccessRepository(userId: userId),
         source: resolved,
+        isPersonalWorkspace: isPersonalWorkspace,
       ),
       snapshot: cubit,
       scheduler: scheduler,
