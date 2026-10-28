@@ -546,9 +546,10 @@ describe('BoardHeader', () => {
     expect(onFiltersChange).toHaveBeenLastCalledWith(
       expect.objectContaining({ includeUnassigned: true })
     );
+    // Overflow people keep their avatar initial but show no partial count.
     expect(
-      screen.getByRole('menuitemcheckbox', { name: 'Dung' })
-    ).toHaveTextContent(/^Dung$/);
+      screen.getByRole('menuitemcheckbox', { name: /Dung$/ })
+    ).not.toHaveTextContent(/\d/);
     const project = await screen.findByRole('menuitemcheckbox', {
       name: 'Platform',
     });
