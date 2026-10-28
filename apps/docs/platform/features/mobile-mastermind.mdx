@@ -412,6 +412,38 @@ term per destination: the Home "Usage" link and the Insights page caption are
 both "Mức sử dụng", and the Insights tab and its label are both "Phân tích".
 Whole-section state titles carry no trailing period; their messages do.
 
+## Push notifications
+
+The web route `POST /api/v1/mastermind/push-events` (see the
+[API reference](/reference/api-reference/mastermind-push-events)) receives
+signed hub events and sends a mobile push to Mastermind owners.
+
+- **Scope:** `needs_you.new`, `decision.awaiting` and `pin_batch.new` only.
+  Recipients are the owners in `MASTERMIND_PUSH_OWNER_IDS` with a registered
+  device and the account push preference on.
+- **Copy:** always "Open Mastermind" (vi "Mở Mastermind") under the title
+  "Mastermind". The event carries no title, product or text, so no item content,
+  including security items, can reach a lock screen.
+- **Tap:** `openTarget: mastermind` with the tab root (`/mastermind/inbox`, or
+  `/mastermind` for pins), held by the same access gate as any deep link. The
+  app navigates only when `route` exactly matches one of those two roots; any
+  other or missing route opens the notifications screen, and a route from the
+  payload is never followed otherwise. An item id is never in the push.
+- **Rate:** at most one push per type per owner per minute; a burst inside the
+  window is dropped, not queued, because the next snapshot shows it.
+- **Retries:** successful owners are skipped for 24 hours per event, including
+  partial retries after the coalescing window. Token-owned claims prevent stale
+  requests from releasing newer claims. Fan-out stops after 60 seconds and
+  returns 502 for unreached owners. This applies to the web push endpoint;
+  mobile tap behavior is unchanged.
+- **Default:** off until Release Desk provisions `MASTERMIND_PUSH_HMAC_SECRET`
+  and `MASTERMIND_PUSH_OWNER_IDS`; without the secret the route sends nothing.
+- **Regression coverage:**
+  `apps/web/src/app/api/v1/mastermind/push-events/route.test.ts`,
+  `apps/web/src/app/api/v1/mastermind/push-events/route.race.test.ts`,
+  `route.delivery.test.ts` and, for the tap,
+  `apps/mobile/test/features/notifications/push/mastermind_push_destination_test.dart`.
+
 ## Deferred to PR8
 
 - **Activity cursor (spec 2.10).** Home shows the latest five events from

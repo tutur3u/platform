@@ -60,6 +60,7 @@ describe('upstash-rest', () => {
 
     await restClient?.get('rest-key');
     await restClient?.set('rest-key', 'value', { ex: 60 });
+    await restClient?.eval('return ARGV[1]', ['claim-key'], ['claim-token']);
     await ratelimitClient?.get('ratelimit-key');
     await ratelimitClient?.set('ratelimit-key', 'value');
     await ratelimitClient?.eval('return 1', ['k'], ['v']);
@@ -72,6 +73,11 @@ describe('upstash-rest', () => {
       'ratelimit-key',
       'value',
       undefined
+    );
+    expect(client.eval).toHaveBeenCalledWith(
+      'return ARGV[1]',
+      ['claim-key'],
+      ['claim-token']
     );
     expect(client.eval).toHaveBeenCalledWith('return 1', ['k'], ['v']);
     expect(client.evalsha).toHaveBeenCalledWith('sha', ['k'], ['v']);
