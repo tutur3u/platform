@@ -106,7 +106,7 @@ describe('Infrastructure workspace secrets permission boundary', () => {
 
   for (const method of methods) {
     it.each(keys)(
-      'rejects workspace creators: ' + method + ' %s',
+      `rejects workspace creators: ${method} %s`,
       async (key) => {
         expect((await mutate(method, key)).status).toBe(403);
         expect(mocks.admin).not.toHaveBeenCalled();
@@ -119,7 +119,7 @@ describe('Infrastructure workspace secrets permission boundary', () => {
       'manage_workspace_roles',
     ]) {
       it.each(keys)(
-        'allows root ' + permission + ': ' + method + ' %s',
+        `allows root ${permission}: ${method} %s`,
         async (key) => {
           grant(permission);
           expect((await mutate(method, key)).status).toBe(200);
@@ -149,7 +149,7 @@ describe('Infrastructure workspace secrets permission boundary', () => {
       'owner@xwf.tuturuuu.com',
       'owner@tuturuuu.com.evil.test',
     ])(
-      'requires an employee for managed cron: ' + method + ' %s',
+      `requires an employee for managed cron: ${method} %s`,
       async (email) => {
         grant('manage_workspace_secrets', email);
         expect((await mutate(method, ' managed_cron_enabled ')).status).toBe(
@@ -162,14 +162,14 @@ describe('Infrastructure workspace secrets permission boundary', () => {
     );
 
     it(
-      'allows an employee root admin to write managed cron: ' + method,
+      `allows an employee root admin to write managed cron: ${method}`,
       async () => {
         grant('manage_workspace_roles', 'Operator@TUTURUUU.COM');
         expect((await mutate(method, 'MANAGED_CRON_ENABLED')).status).toBe(200);
       }
     );
 
-    it('still denies an employee workspace creator: ' + method, async () => {
+    it(`still denies an employee workspace creator: ${method}`, async () => {
       grant(undefined, 'operator@tuturuuu.com');
       expect((await mutate(method, 'MANAGED_CRON_ENABLED')).status).toBe(403);
       expect(mocks.admin).not.toHaveBeenCalled();
@@ -264,7 +264,7 @@ describe('Infrastructure workspace secrets permission boundary', () => {
     'manage_workspace_secrets',
   ]) {
     it(
-      'checks root permissions for external app secrets: ' + permission,
+      `checks root permissions for external app secrets: ${permission}`,
       async () => {
         grant(permission);
         const result = await requireExternalAppRegistryAdmin(
