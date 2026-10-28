@@ -1,8 +1,8 @@
-import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import 'server-only';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { Effect, Either } from '@tuturuuu/utils/effect';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import { z } from 'zod';
 import { InternalAccountAdminError } from './errors';
 
@@ -197,6 +197,7 @@ export async function assertEmployeeServiceActor(
   if (
     !result.data.user ||
     result.data.user.id !== input.actorUserId ||
+    !isExactTuturuuuDotComEmail(result.data.user.email) ||
     !isVerifiedTuturuuuStaffSession(result.data.user) ||
     providerState(result.data.user) !== 'confirmed_active'
   ) {

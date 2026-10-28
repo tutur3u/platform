@@ -25,7 +25,7 @@ beforeEach(() => {
         id: 'host',
         email: 'host@tuturuuu.com',
         email_confirmed_at: '2026-01-01',
-        identities: [],
+        identities: [{ provider: 'email', identity_data: {} }],
       },
     },
   });
@@ -72,24 +72,25 @@ it('rejects body substitution', async () => {
     authenticateColabGrant(request(), 'changed', sponsor)
   ).rejects.toThrow();
 });
-it.each(['host@example.com', 'host@tuturuuu.com.attacker.test'])(
-  'rejects ineligible hosts %s',
-  async (email) => {
-    user.mockResolvedValue({
-      data: {
-        user: {
-          id: 'host',
-          email,
-          email_confirmed_at: '2026-01-01',
-          identities: [],
-        },
+it.each([
+  'host@example.com',
+  'host@tuturuuu.com.attacker.test',
+  'host@xwf.tuturuuu.com',
+])('rejects ineligible hosts %s', async (email) => {
+  user.mockResolvedValue({
+    data: {
+      user: {
+        id: 'host',
+        email,
+        email_confirmed_at: '2026-01-01',
+        identities: [{ provider: 'email', identity_data: {} }],
       },
-    });
-    await expect(
-      authenticateColabGrant(request(), body, sponsor)
-    ).rejects.toThrow();
-  }
-);
+    },
+  });
+  await expect(
+    authenticateColabGrant(request(), body, sponsor)
+  ).rejects.toThrow();
+});
 it('rejects missing capability before any outbound request', async () => {
   await expect(
     authenticateColabGrant(

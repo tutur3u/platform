@@ -32,7 +32,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  if (!isVerifiedTuturuuuStaffSession(user)) {
+  if (!isVerifiedTuturuuuStaffSession(user, { allowXwf: true })) {
     return NextResponse.json(
       { message: 'Only Tuturuuu accounts can view inquiries' },
       { status: 403 }

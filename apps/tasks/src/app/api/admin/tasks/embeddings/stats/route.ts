@@ -28,7 +28,7 @@ export async function GET() {
           user.id
         )
       : null;
-    if (!isVerifiedTuturuuuStaffSession(staffUser)) {
+    if (!isVerifiedTuturuuuStaffSession(staffUser, { allowXwf: true })) {
       return NextResponse.json(
         { message: 'Unauthorized - Tuturuuu admin access required' },
         { status: 403 }

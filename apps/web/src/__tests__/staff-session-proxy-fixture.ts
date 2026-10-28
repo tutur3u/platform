@@ -19,7 +19,7 @@ export function createAuthenticatedSupabaseClient(
           user: user && {
             ...user,
             email_confirmed_at: '2026-01-01',
-            identities: [],
+            identities: [{ provider: 'email', identity_data: {} }],
           },
         },
       }),

@@ -45,7 +45,7 @@ async function resolvePersonalWorkspaceId(
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
   const { user } = await resolveAuthenticatedSessionUser(supabase);
-  if (!user?.id || !isVerifiedTuturuuuStaffSession(user)) {
+  if (!user?.id || !isVerifiedTuturuuuStaffSession(user, { allowXwf: true })) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
   }
 

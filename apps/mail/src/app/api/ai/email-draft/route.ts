@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
 
     const admin = await createAdminClient({ noCookie: true });
     user = await getVerifiedAuthUser(admin, user.id);
-    if (!isVerifiedTuturuuuStaffSession(user)) {
+    if (!isVerifiedTuturuuuStaffSession(user, { allowXwf: true })) {
       return Response.json(
         {
           message: 'Only Tuturuuu emails are allowed',

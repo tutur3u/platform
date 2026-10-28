@@ -1113,6 +1113,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     return contactsAppRedirectResponse;
   }
 
+  // Forms moved wholesale to forms.tuturuuu.com. Public shared-form links are
   // redirected before the auth proxy runs so anonymous respondents and social
   // crawlers are never bounced to /login.
   const sharedFormRedirectResponse = handleSharedFormRedirectRoute(req);

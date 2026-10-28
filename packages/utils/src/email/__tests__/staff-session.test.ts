@@ -4,7 +4,7 @@ import { isVerifiedTuturuuuStaffSession } from '../staff-session';
 const staff = {
   email: 'staff@tuturuuu.com',
   email_confirmed_at: '2026-01-01',
-  identities: [],
+  identities: [{ provider: 'email', identity_data: {} }],
 };
 const azure = (identity_data: Record<string, unknown>) => ({
   provider: 'azure',
@@ -15,11 +15,12 @@ describe('verified staff session', () => {
   it.each([
     ['confirmed staff', staff, undefined, true],
     [
-      'confirmed xwf staff',
+      'confirmed xwf staff under the exact default',
       { ...staff, email: 'staff@xwf.tuturuuu.com' },
       undefined,
-      true,
+      false,
     ],
+    ['no linked identities', { ...staff, identities: [] }, undefined, false],
     [
       'unconfirmed',
       { ...staff, email_confirmed_at: undefined },
@@ -142,5 +143,56 @@ describe('verified staff session', () => {
   ] as const)('%s', (_name, user, configured, expected) => {
     vi.stubEnv('TUTURUUU_AZURE_TENANT_ID', configured);
     expect(isVerifiedTuturuuuStaffSession(user)).toBe(expected);
+  });
+});
+
+describe('staff session domain policy', () => {
+  const xwf = { ...staff, email: 'staff@xwf.tuturuuu.com' };
+  it.each([
+    ['exact staff', staff, {}, true],
+    ['exact staff with xwf allowed', staff, { allowXwf: true }, true],
+    ['xwf staff by default', xwf, undefined, false],
+    ['xwf staff when not allowed', xwf, { allowXwf: false }, false],
+    ['xwf staff when allowed', xwf, { allowXwf: true }, true],
+    [
+      'unconfirmed xwf staff when allowed',
+      { ...xwf, email_confirmed_at: undefined },
+      { allowXwf: true },
+      false,
+    ],
+    [
+      'other subdomain when allowed',
+      { ...staff, email: 'staff@other.tuturuuu.com' },
+      { allowXwf: true },
+      false,
+    ],
+    [
+      'uppercase exact domain',
+      { ...staff, email: 'staff@TUTURUUU.COM' },
+      undefined,
+      false,
+    ],
+    [
+      'xwf without linked identities when allowed',
+      { ...xwf, identities: [] },
+      { allowXwf: true },
+      false,
+    ],
+  ] as const)('%s', (_name, user, policy, expected) => {
+    expect(isVerifiedTuturuuuStaffSession(user, policy)).toBe(expected);
+  });
+
+  it('pins the Azure tenant for xwf staff too', () => {
+    vi.stubEnv('TUTURUUU_AZURE_TENANT_ID', 'approved');
+    const linked = (tid: string) => ({
+      ...xwf,
+      identities: [azure({ tid })],
+    });
+    expect(
+      isVerifiedTuturuuuStaffSession(linked('approved'), { allowXwf: true })
+    ).toBe(true);
+    expect(
+      isVerifiedTuturuuuStaffSession(linked('foreign'), { allowXwf: true })
+    ).toBe(false);
   });
 });

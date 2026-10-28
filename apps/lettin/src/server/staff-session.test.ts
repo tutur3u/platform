@@ -32,3 +32,18 @@ it.each([
     expect(await isVerifiedStaff('actor')).toBe(expected);
   }
 );
+
+it('denies confirmed xwf accounts', async () => {
+  f.getUserById.mockResolvedValue({
+    data: {
+      user: {
+        id: 'actor',
+        email: 'artist@xwf.tuturuuu.com',
+        email_confirmed_at: '2026-01-01',
+        identities: [{ provider: 'email', identity_data: {} }],
+      },
+    },
+    error: null,
+  });
+  expect(await isVerifiedStaff('actor')).toBe(false);
+});

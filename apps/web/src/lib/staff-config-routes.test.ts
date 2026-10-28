@@ -66,4 +66,25 @@ for (const [name, handler, body] of [
       expect(f.from).not.toHaveBeenCalled();
       expect(await response.json()).not.toHaveProperty('value');
     });
+    it('denies a verified xwf account without data', async () => {
+      f.getUserById.mockResolvedValue({
+        data: {
+          user: {
+            id: 'actor',
+            email: 'staff@xwf.tuturuuu.com',
+            email_confirmed_at: '2026-01-01',
+            identities: [{ provider: 'email', identity_data: {} }],
+          },
+        },
+        error: null,
+      });
+      const response = await handler(
+        new NextRequest('https://app.test', {
+          method: 'POST',
+          body: JSON.stringify(body),
+        })
+      );
+      expect(response.status).toBe(403);
+      expect(f.from).not.toHaveBeenCalled();
+    });
   });

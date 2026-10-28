@@ -22,6 +22,7 @@ describe('AI whitelist verified email', () => {
     ['outside@example.com', '2026-01-01', false],
     ['staff@tuturuuu.com', null, false],
     ['Staff@Tuturuuu.com', '2026-01-01', false],
+    ['staff@xwf.tuturuuu.com', '2026-01-01', false],
   ])(
     'authorizes only confirmed canonical staff email',
     async (email, confirmed, allowed) => {
@@ -31,7 +32,7 @@ describe('AI whitelist verified email', () => {
             id: 'actor',
             email,
             email_confirmed_at: confirmed,
-            identities: [],
+            identities: [{ provider: 'email', identity_data: {} }],
           },
         },
         error: null,

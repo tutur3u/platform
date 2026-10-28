@@ -32,7 +32,8 @@ export async function checkWorkspaceCreationLimit(
       await getVerifiedAuthUser(
         await createAdminClient({ noCookie: true }),
         userId
-      )
+      ),
+      { allowXwf: true }
     )
   ) {
     return {

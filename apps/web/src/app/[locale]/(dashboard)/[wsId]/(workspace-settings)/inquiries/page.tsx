@@ -57,7 +57,7 @@ export default async function InquiriesPage({
         // Verify user has valid Tuturuuu email
         const { user } = await resolveAuthenticatedSessionUser(supabase);
 
-        if (!isVerifiedTuturuuuStaffSession(user)) {
+        if (!isVerifiedTuturuuuStaffSession(user, { allowXwf: true })) {
           return (
             <div className="container mx-auto py-6">
               <div className="text-destructive">

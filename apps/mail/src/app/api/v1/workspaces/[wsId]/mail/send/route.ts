@@ -130,7 +130,10 @@ export async function POST(
 
   const authUser = await getVerifiedAuthUser(sbAdmin, apiKey.user_id);
   const userEmail = authUser?.email;
-  if (!userEmail || !isVerifiedTuturuuuStaffSession(authUser)) {
+  if (
+    !userEmail ||
+    !isVerifiedTuturuuuStaffSession(authUser, { allowXwf: true })
+  ) {
     return NextResponse.json(
       { message: 'Only Tuturuuu emails are allowed' },
       { status: 403 }

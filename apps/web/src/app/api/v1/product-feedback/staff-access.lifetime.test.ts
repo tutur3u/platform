@@ -41,7 +41,7 @@ const identity = {
   id: actor,
   email: 'synthetic@tuturuuu.com',
   email_confirmed_at: '2026-10-01T00:00:00Z',
-  identities: [],
+  identities: [{ provider: 'email', identity_data: {} }],
   banned_until: null,
   app_metadata: { employee_onboarding: true },
 };

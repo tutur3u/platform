@@ -27,7 +27,8 @@ export async function FarmGameRuntime({
         (await getVerifiedAuthUser(
           await createAdminClient({ noCookie: true }),
           user.id
-        ))
+        )),
+      { allowXwf: true }
     )
   )
     notFound();

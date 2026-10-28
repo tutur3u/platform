@@ -14,7 +14,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
               id: 'user-1',
               email: 'member@tuturuuu.com',
               email_confirmed_at: '2026-01-01',
-              identities: [],
+              identities: [{ provider: 'email', identity_data: {} }],
             },
           },
           error: null,

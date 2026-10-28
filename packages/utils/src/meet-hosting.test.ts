@@ -18,7 +18,7 @@ it.each(['PLUS', 'PRO', 'ENTERPRISE'])(
       await canVerifiedAccountHostMeeting('actor', {
         email: 'host@example.com',
         email_confirmed_at: '2026-01-01',
-        identities: [],
+        identities: [{ provider: 'email', identity_data: {} }],
       })
     ).toBe(true);
     expect(tier).toHaveBeenCalledWith('actor');
@@ -36,7 +36,7 @@ it('preserves verified company hosting without paid entitlement', async () => {
     await canVerifiedAccountHostMeeting('actor', {
       email: 'host@tuturuuu.com',
       email_confirmed_at: '2026-01-01',
-      identities: [],
+      identities: [{ provider: 'email', identity_data: {} }],
     })
   ).toBe(true);
   expect(tier).not.toHaveBeenCalled();
@@ -46,7 +46,7 @@ it('denies external Free accounts', async () => {
     await canVerifiedAccountHostMeeting('actor', {
       email: 'host@example.com',
       email_confirmed_at: '2026-01-01',
-      identities: [],
+      identities: [{ provider: 'email', identity_data: {} }],
     })
   ).toBe(false);
 });
@@ -56,7 +56,7 @@ it('fails closed when entitlement cannot be resolved', async () => {
     canVerifiedAccountHostMeeting('actor', {
       email: 'host@example.com',
       email_confirmed_at: '2026-01-01',
-      identities: [],
+      identities: [{ provider: 'email', identity_data: {} }],
     })
   ).rejects.toThrow('Unavailable');
 });
@@ -74,4 +74,14 @@ it('does not grant Free hosting from a foreign staff identity', async () => {
   } finally {
     vi.unstubAllEnvs();
   }
+});
+
+it('does not grant company hosting to xwf accounts', async () => {
+  expect(
+    await canVerifiedAccountHostMeeting('actor', {
+      email: 'host@xwf.tuturuuu.com',
+      email_confirmed_at: '2026-01-01',
+      identities: [{ provider: 'email', identity_data: {} }],
+    })
+  ).toBe(false);
 });

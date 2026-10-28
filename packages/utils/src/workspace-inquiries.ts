@@ -8,7 +8,7 @@ import { isVerifiedTuturuuuStaffSession } from './email/staff-session';
 export async function getUnresolvedInquiriesCount() {
   const supabase = await createClient();
   const { user } = await resolveAuthenticatedSessionUser(supabase);
-  if (!isVerifiedTuturuuuStaffSession(user))
+  if (!isVerifiedTuturuuuStaffSession(user, { allowXwf: true }))
     return { count: 0, latestDate: null };
   const admin = await createAdminClient();
   const { count } = await admin

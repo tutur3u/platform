@@ -41,7 +41,7 @@ export async function PATCH(
     // Verify user has valid Tuturuuu email
     const { user } = await resolveAuthenticatedSessionUser(supabase);
 
-    if (!user || !isVerifiedTuturuuuStaffSession(user)) {
+    if (!user || !isVerifiedTuturuuuStaffSession(user, { allowXwf: true })) {
       return NextResponse.json(
         { error: 'Unauthorized. Only Tuturuuu accounts can update inquiries.' },
         { status: 403 }

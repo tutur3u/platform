@@ -10,6 +10,9 @@ type StaffSessionUser = {
   >[];
 };
 
+// Case-sensitive like isValidTuturuuuEmail: Auth stores normalized addresses.
+const EXACT_STAFF_EMAIL = /^[^\s@]+@tuturuuu\.com$/;
+
 function issuerDirectory(issuer: unknown): string | null {
   if (typeof issuer !== 'string') return null;
   const match = issuer.match(
@@ -18,14 +21,26 @@ function issuerDirectory(issuer: unknown): string | null {
   return match?.[1] ?? match?.[2] ?? null;
 }
 
-/** Only pass a current, subject-bound Auth user, never a profile or JWT projection. */
+export type StaffSessionDomainPolicy = {
+  /** Also accept @xwf.tuturuuu.com. Only for gates that already accepted it. */
+  allowXwf?: boolean;
+};
+
+/**
+ * Only pass a current, subject-bound Auth user, never a profile or JWT projection.
+ * Defaults to the exact @tuturuuu.com domain.
+ */
 export function isVerifiedTuturuuuStaffSession(
-  user: StaffSessionUser | null | undefined
+  user: StaffSessionUser | null | undefined,
+  { allowXwf = false }: StaffSessionDomainPolicy = {}
 ): boolean {
   if (
     !user?.email_confirmed_at ||
-    !isValidTuturuuuEmail(user.email) ||
-    !Array.isArray(user.identities)
+    !(allowXwf
+      ? isValidTuturuuuEmail(user.email)
+      : typeof user.email === 'string' && EXACT_STAFF_EMAIL.test(user.email)) ||
+    !Array.isArray(user.identities) ||
+    user.identities.length === 0
   )
     return false;
   const azureIdentities = user.identities.filter(

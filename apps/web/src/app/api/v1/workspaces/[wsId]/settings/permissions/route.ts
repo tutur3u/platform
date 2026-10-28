@@ -69,7 +69,8 @@ export const GET = withSessionAuth<{ wsId: string }>(
           (await getVerifiedAuthUser(
             await createAdminClient({ noCookie: true }),
             user.id
-          ))
+          )),
+        { allowXwf: true }
       );
       const canManageApiKeys = hasWorkspacePermission('manage_api_keys');
       const canManageWorkspaceSecrets = hasRootPermission(

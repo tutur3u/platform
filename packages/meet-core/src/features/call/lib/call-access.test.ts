@@ -79,7 +79,7 @@ beforeEach(() => {
       user: {
         email: 'host@tuturuuu.com',
         email_confirmed_at: '2026-01-01',
-        identities: [],
+        identities: [{ provider: 'email', identity_data: {} }],
       },
     },
     error: null,
@@ -99,12 +99,12 @@ it.each([
   {
     email: 'host@example.com',
     email_confirmed_at: '2026-01-01',
-    identities: [],
+    identities: [{ provider: 'email', identity_data: {} }],
   },
   {
     email: 'host@tuturuuu.com.attacker.test',
     email_confirmed_at: '2026-01-01',
-    identities: [],
+    identities: [{ provider: 'email', identity_data: {} }],
   },
   { email: 'host@tuturuuu.com', email_confirmed_at: null },
 ])(
@@ -263,7 +263,7 @@ it.each(['PLUS', 'PRO', 'ENTERPRISE'])(
         user: {
           email: 'paid@example.test',
           email_confirmed_at: '2026-01-01',
-          identities: [],
+          identities: [{ provider: 'email', identity_data: {} }],
         },
       },
       error: null,
@@ -294,7 +294,7 @@ it('fails closed with retryable status when host entitlement is unavailable', as
       user: {
         email: 'paid@example.test',
         email_confirmed_at: '2026-01-01',
-        identities: [],
+        identities: [{ provider: 'email', identity_data: {} }],
       },
     },
     error: null,

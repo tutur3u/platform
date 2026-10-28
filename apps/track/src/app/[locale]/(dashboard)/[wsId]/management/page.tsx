@@ -48,7 +48,8 @@ export default async function TimeTrackerManagementPage({
             (await getVerifiedAuthUser(
               await createAdminClient({ noCookie: true }),
               user.id
-            ))
+            )),
+          { allowXwf: true }
         );
         if (!isRootUser) notFound();
         const supabase = await createAdminClient({ noCookie: true });

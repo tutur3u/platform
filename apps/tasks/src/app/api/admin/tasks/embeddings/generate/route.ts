@@ -32,7 +32,7 @@ export async function POST(req: Request) {
           user.id
         )
       : null;
-    if (!isVerifiedTuturuuuStaffSession(staffUser)) {
+    if (!isVerifiedTuturuuuStaffSession(staffUser, { allowXwf: true })) {
       return new Response(
         JSON.stringify({
           message: 'Unauthorized - Tuturuuu admin access required',

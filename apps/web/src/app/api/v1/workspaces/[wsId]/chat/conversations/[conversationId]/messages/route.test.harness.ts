@@ -238,7 +238,7 @@ export function createAdminClientMock(settingsError: unknown = null) {
               id,
               email: mocks.auth.user.email,
               email_confirmed_at: '2026-01-01',
-              identities: [],
+              identities: [{ provider: 'email', identity_data: {} }],
             },
           },
           error: null,

@@ -37,7 +37,7 @@ const staff = {
   id: 'staff-id',
   email: 'staff@tuturuuu.com',
   email_confirmed_at: '2026-01-01',
-  identities: [],
+  identities: [{ provider: 'email', identity_data: {} }],
 };
 const cases = [
   [
@@ -68,6 +68,12 @@ const cases = [
     true,
   ],
   ['confirmed non-Azure', staff, undefined, true],
+  [
+    'confirmed xwf',
+    { ...staff, email: 'staff@xwf.tuturuuu.com' },
+    undefined,
+    false,
+  ],
   [
     'unconfirmed',
     { ...staff, email_confirmed_at: undefined },

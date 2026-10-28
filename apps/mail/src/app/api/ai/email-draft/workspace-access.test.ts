@@ -34,7 +34,7 @@ const staff = {
   id: 'staff-id',
   email: 'staff@tuturuuu.com',
   email_confirmed_at: '2026-01-01',
-  identities: [],
+  identities: [{ provider: 'email', identity_data: {} }],
 };
 const workspace = '11111111-1111-4111-8111-111111111111';
 afterEach(() => vi.unstubAllEnvs());
