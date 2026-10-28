@@ -216,7 +216,6 @@ class _AccountSecurityPageState extends State<AccountSecurityPage>
                 OAuthProvider.google: 'Google',
                 OAuthProvider.apple: 'Apple',
                 OAuthProvider.github: 'GitHub',
-                OAuthProvider.azure: 'Microsoft',
               }.entries)
                 if (!_identities.any(
                   (identity) => identity.provider == entry.key.name,

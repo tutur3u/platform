@@ -37,6 +37,68 @@ describe('auth callback route', () => {
     vi.unstubAllEnvs();
   });
 
+  it.each([
+    ['guard throws', 'invalid-jwt', false, 'auth_failed'],
+    [
+      'reject cleanup throws',
+      'unexpected-amr',
+      true,
+      'azure_tenant_restricted',
+    ],
+    [
+      'unexpected amr shape',
+      'unexpected-amr',
+      false,
+      'azure_tenant_restricted',
+    ],
+  ])(
+    'cleans up after %s',
+    async (_name, tokenKind, cleanupThrows, errorCode) => {
+      const payload = Buffer.from(
+        JSON.stringify({ amr: { method: 'oauth' } })
+      ).toString('base64url');
+      const signOut = cleanupThrows
+        ? vi.fn().mockRejectedValue(new Error('cleanup failed'))
+        : vi.fn().mockResolvedValue({ error: null });
+      const consoleError = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+      mocks.createClient.mockResolvedValue({
+        auth: {
+          exchangeCodeForSession: vi.fn().mockResolvedValue({
+            data: {
+              session: {
+                access_token:
+                  tokenKind === 'invalid-jwt'
+                    ? 'invalid-jwt'
+                    : `e30.${payload}.signature`,
+                user: { app_metadata: { provider: 'azure' }, identities: [] },
+              },
+            },
+            error: null,
+          }),
+          signOut,
+        },
+      });
+      try {
+        const response = await GET(
+          new NextRequest('http://localhost/api/auth/callback?code=oauth-code')
+        );
+        const location = new URL(response.headers.get('location') ?? '');
+        expect(signOut).toHaveBeenCalledExactlyOnceWith({ scope: 'local' });
+        expect(location.pathname).toBe('/login');
+        expect(location.searchParams.get('error')).toBe(errorCode);
+        if (cleanupThrows) {
+          expect(consoleError).toHaveBeenCalledWith(
+            '[auth/callback] Failed to clear local session'
+          );
+        }
+      } finally {
+        consoleError.mockRestore();
+      }
+    }
+  );
+
   it('flattens same-origin nested returnUrl redirects', async () => {
     const nestedReturnUrl = encodeURIComponent(
       'http://localhost/login?returnUrl=%2Fworkspace%2Fdemo%3Ftab%3Dmail'
