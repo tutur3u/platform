@@ -77,6 +77,7 @@ test('TypeScript changes map to biome, oxlint, guards, vitest and type-check', (
     'source-size',
     'docs-inventory',
     'app-seo',
+    'sdk-portable',
     'biome',
     'oxlint',
     'server-console',
