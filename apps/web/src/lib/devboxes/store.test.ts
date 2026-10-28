@@ -33,7 +33,7 @@ describe('devbox store', () => {
     vi.clearAllMocks();
 
     tokenLimitMock.mockResolvedValue({
-      data: [{ runner_id: 'runner-1' }],
+      data: [{ runner_id: 'runner-1', expires_at: null }],
       error: null,
     });
     tokenOrderMock.mockReturnValue({ limit: tokenLimitMock });
@@ -96,7 +96,7 @@ describe('devbox store', () => {
 
     expect(schemaMock).toHaveBeenCalledWith('private');
     expect(privateFromMock).toHaveBeenCalledWith('devbox_runner_tokens');
-    expect(tokenSelectMock).toHaveBeenCalledWith('runner_id');
+    expect(tokenSelectMock).toHaveBeenCalledWith('runner_id,expires_at');
     expect(tokenEqMock).toHaveBeenCalledWith(
       'token_hash',
       createHash('sha256').update('tdbx_active').digest('hex')
@@ -236,4 +236,15 @@ describe('devbox store', () => {
     );
     expect(runnerSelectMock).toHaveBeenNthCalledWith(2, 'id, actor_id, status');
   });
+  it.each(['2020-01-01T00:00:00Z', undefined, 'malformed'])(
+    'rejects expired/missing runner expiry %s',
+    async (expires_at) => {
+      tokenLimitMock.mockResolvedValue({
+        data: [{ runner_id: 'runner-1', expires_at }],
+        error: null,
+      });
+      await expect(verifyDevboxRunnerToken('tdbx_active')).resolves.toBeNull();
+      expect(publicFromMock).not.toHaveBeenCalled();
+    }
+  );
 });

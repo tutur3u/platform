@@ -6,7 +6,7 @@ const { default: worker } = await import('./worker');
 const token = `tdbx_${'a'.repeat(64)}`;
 const runnerId = '11111111-1111-4111-8111-111111111111';
 const actorId = '22222222-2222-4222-8222-222222222222';
-const env = {
+const envValues = {
   DEVBOX_CONTROL_INTERNAL_TOKEN: 'internal-token-with-at-least-32-characters',
   RUNNER_WAKE: {
     getByName: () => ({
@@ -15,7 +15,9 @@ const env = {
   },
   SUPABASE_SECRET_KEY: 'test-secret-key',
   SUPABASE_URL: 'https://db.example.test',
-} as never;
+  TUTURUUU_DEVBOX_AGENT_API_ENABLED: 'true',
+};
+const env = envValues as never;
 const originalFetch = globalThis.fetch;
 let revoked = false;
 let member = true;
@@ -23,6 +25,7 @@ let heartbeatEnabled = true;
 let writes = 0;
 
 beforeEach(() => {
+  envValues.TUTURUUU_DEVBOX_AGENT_API_ENABLED = 'true';
   revoked = false;
   member = true;
   heartbeatEnabled = true;
@@ -35,7 +38,9 @@ beforeEach(() => {
         return new Response(null, { status: 204 });
       }
       if (path.endsWith('/devbox_runner_tokens'))
-        return Response.json(revoked ? [] : [{ runner_id: runnerId }]);
+        return Response.json(
+          revoked ? [] : [{ runner_id: runnerId, expires_at: null }]
+        );
       if (path.endsWith('/devbox_runners'))
         return Response.json([
           {
@@ -267,4 +272,132 @@ it('still rejects unknown top-level capability keys', async () => {
     ).status
   ).toBe(400);
   expect(writes).toBe(0);
+});
+
+it.each(['/v1/poll', '/v1/connect', '/v1/heartbeat'])(
+  'agent API defaults off on %s',
+  async (path) => {
+    envValues.TUTURUUU_DEVBOX_AGENT_API_ENABLED = '';
+    const response = await worker.fetch(
+      new Request(`https://control.test${path}`, {
+        method: path.endsWith('heartbeat') ? 'POST' : 'GET',
+        headers: { 'X-Devbox-Runner-Token': token },
+      }),
+      env
+    );
+    expect(response.status).toBe(403);
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+  }
+);
+it.each(['/v1/poll', '/v1/connect', '/v1/heartbeat'])(
+  'refuses tdba credentials on %s',
+  async (path) => {
+    const response = await worker.fetch(
+      new Request(`https://control.test${path}`, {
+        method: path.endsWith('heartbeat') ? 'POST' : 'GET',
+        headers: { 'X-Devbox-Runner-Token': `tdba_${'a'.repeat(64)}` },
+      }),
+      env
+    );
+    expect(response.status).toBe(401);
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+  }
+);
+it('checks expiry on every runner request', async () => {
+  vi.mocked(globalThis.fetch).mockResolvedValueOnce(
+    Response.json([{ runner_id: runnerId, expires_at: '2000-01-01T00:00:00Z' }])
+  );
+  const response = await worker.fetch(
+    new Request('https://control.test/v1/poll', {
+      headers: { 'X-Devbox-Runner-Token': token },
+    }),
+    env
+  );
+  expect(response.status).toBe(401);
+});
+it('fails closed when runner expiry column is absent', async () => {
+  vi.mocked(globalThis.fetch).mockResolvedValueOnce(
+    Response.json(
+      { message: 'column expires_at does not exist' },
+      { status: 400 }
+    )
+  );
+  const response = await worker.fetch(
+    new Request('https://control.test/v1/poll', {
+      headers: { 'X-Devbox-Runner-Token': token },
+    }),
+    env
+  );
+  expect(response.status).toBe(503);
+});
+
+it('personal runner checks the grant and its expiry on every request', async () => {
+  member = false;
+  const fetch = vi.mocked(globalThis.fetch);
+  const original = fetch.getMockImplementation();
+  fetch.mockImplementation(async (input, init) => {
+    const path = new URL(String(input)).pathname;
+    if (path.endsWith('/devbox_runner_tokens'))
+      return Response.json([
+        {
+          runner_id: runnerId,
+          expires_at: new Date(Date.now() + 3600000).toISOString(),
+        },
+      ]);
+    if (path.endsWith('/rpc/resolve_devbox_identity'))
+      return Response.json({
+        enabled: true,
+        grant: {
+          user_id: actorId,
+          status: 'active',
+          revoked_at: null,
+          accepted_at: '2026-10-01T00:00:00Z',
+          expires_at: new Date(Date.now() + 86400000).toISOString(),
+        },
+      });
+    if (!original) throw new Error('Missing fetch fixture');
+    return original(input, init);
+  });
+  const response = await worker.fetch(
+    new Request('https://control.test/v1/heartbeat', {
+      method: 'POST',
+      headers: { 'X-Devbox-Runner-Token': token },
+      body: '{}',
+    }),
+    env
+  );
+  expect(response.status).toBe(200);
+  expect(fetch).toHaveBeenCalledWith(
+    expect.any(URL),
+    expect.objectContaining({ cache: 'no-store' })
+  );
+});
+it('a personal runner fails closed when the switch column is unavailable', async () => {
+  member = false;
+  const fetch = vi.mocked(globalThis.fetch);
+  const original = fetch.getMockImplementation();
+  fetch.mockImplementation(async (input, init) => {
+    const path = new URL(String(input)).pathname;
+    if (path.endsWith('/devbox_runner_tokens'))
+      return Response.json([
+        {
+          runner_id: runnerId,
+          expires_at: new Date(Date.now() + 3600000).toISOString(),
+        },
+      ]);
+    if (path.endsWith('/rpc/resolve_devbox_identity'))
+      return Response.json(
+        { message: 'personal_pools_enabled does not exist' },
+        { status: 400 }
+      );
+    if (!original) throw new Error('Missing fetch fixture');
+    return original(input, init);
+  });
+  const response = await worker.fetch(
+    new Request('https://control.test/v1/poll', {
+      headers: { 'X-Devbox-Runner-Token': token },
+    }),
+    env
+  );
+  expect(response.status).toBe(503);
 });

@@ -5,6 +5,7 @@ import {
   parseDevboxEnvAssignments,
   redactDevboxSecrets,
 } from '@tuturuuu/devbox';
+import { devboxRunCancelRequested } from '@tuturuuu/devbox/actor';
 import {
   type DevboxAgentJob,
   recordDevboxAgentEvents,
@@ -155,11 +156,7 @@ async function readRunCancelRequested(
     payload: { runId },
     token,
   });
-  if (!response.ok) return false;
-  const body = (await response.json().catch(() => ({}))) as {
-    cancelRequested?: unknown;
-  };
-  return body.cancelRequested === true;
+  return devboxRunCancelRequested(response);
 }
 
 function parseEnvFile(raw: string) {

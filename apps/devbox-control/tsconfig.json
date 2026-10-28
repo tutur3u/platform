@@ -6,7 +6,10 @@
     "strict": true,
     "noEmit": true,
     "skipLibCheck": true,
-    "types": ["node"]
+    "types": ["node"],
+    "paths": {
+      "@tuturuuu/devbox/actor": ["../../packages/devbox/src/actor.ts"]
+    }
   },
   "include": [
     ".cloudflare/types/index.d.ts",

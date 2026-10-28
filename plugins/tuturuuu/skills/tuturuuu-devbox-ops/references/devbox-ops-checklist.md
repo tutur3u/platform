@@ -219,3 +219,14 @@ runner-trust and commit-run tests, and the API runs authorization tests. Separat
 source evidence from deployed grants, pool configuration and token custody.
 See `apps/docs/build/development-tools/remote-devboxes.mdx`, section
 “Trusted command execution boundary”, for the complete boundary and exceptions.
+
+## Contributor identity hold
+
+S1 personal grants and `tdba_` agent credentials are a disabled foundation.
+Never turn on `personal_pools_enabled`, create a contributor grant, or enroll a
+personal runner as part of implementation validation. Use a disposable local
+Supabase project for migration rehearsal and pgTAP fixtures. Preserve Security
+Desk closure of SR-332/333/334 and the later quota, observability, isolation and
+human gates. See `apps/docs/platform/features/devbox-contributor-identity.mdx`.
+Token revoke is a database transaction; it does not prove an untrusted process
+stopped. Web and Worker credential checks must read fresh state on every request.

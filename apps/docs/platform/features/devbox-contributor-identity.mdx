@@ -1,0 +1,50 @@
+---
+title: Contributor devbox identity
+description: Disabled identity foundation for personal devbox access and labelled agent credentials.
+---
+
+Contributor grants bind to a user ID. An operator resolves the confirmed email at
+creation only; acceptance and every later request use the revalidated signed-in
+subject. A pending grant requires web acceptance with recent authentication and,
+by default, MFA. Root workspace members cannot accept personal grants. Adding a
+grantee to root membership suspends the grant and revokes its credentials.
+
+`personal_pools_enabled` defaults to `false`. A missing settings row, unavailable
+identity RPC, missing column or malformed result denies personal authorization.
+S1 seeds no grants and provisions no runner or host. Existing fleet sessions keep
+their root-member authorization. Infrastructure refuses agent and runner headers.
+
+Agent credentials use the `tdba_` namespace, 256 random bits and SHA-256 storage.
+Their labels identify agents; scopes cover `devbox:run`, `devbox:build` and
+`devbox:read` only. The default life is seven days, the maximum is thirty days,
+and the grant expiry is always the upper bound. Raw tokens appear only in a
+`no-store` creation response. Lists omit hashes. A token cannot manage tokens or
+become a fleet credential, including if its owner later joins the root workspace.
+The token branch validates scope before any root-member lookup.
+
+Grant acceptance sets `sessions_not_before`. CLI token minting requires authentication
+at or after both acceptance and this cutoff, plus a recent authentication proof.
+Web token minting uses the revalidated Supabase subject and recent primary authentication.
+Refreshing a CLI access token cannot substitute for that proof. Administrators
+can advance the cutoff through the service-only grant record; the admin UI is
+part of the later observability work. All Web devbox mutations enforce the CSRF
+policy regardless of the global mode.
+
+Token revocation atomically revokes the credential, cancels its queued runs,
+requests cancellation of its running work, and releases its attributed leases.
+Status changes are audited by database triggers. Revocation permits no new
+requests; stopping an untrusted running process still requires the future host
+stop mechanism. Identity and scope triggers cover both INSERT and UPDATE.
+
+S1 admits only token-scoped run/build mutations behind the default-OFF grant
+switch. Runner registration remains fleet-only until reviewed enrollment exists. Enablement
+requires Security Desk closure of SR-332/333/334, atomic S2 admission and claim
+controls, enrollment and runner expiry enforcement, S3 private observability and
+secret handling, host isolation evidence, and the named human approval gates.
+The control Worker's agent API switch is also default-off and covers heartbeat,
+poll and connect. There is no deployment or enablement in this change.
+
+Regression coverage lives in `devbox-contributor-identity.sql`, the framework-free
+`actor.test.ts`, Web `authorization.test.ts` and `entry-point-matrix.test.ts`, and
+the control Worker tests. The entry-point matrix inventories all active devbox
+routes and executes denial checks on every listed HTTP method.

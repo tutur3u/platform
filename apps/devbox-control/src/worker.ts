@@ -1,3 +1,7 @@
+import {
+  devboxPersonalRunnerAuthorized,
+  devboxRunnerTokenUnexpired,
+} from '@tuturuuu/devbox/actor';
 import { RunnerWake } from './wake';
 
 export { RunnerWake };
@@ -7,6 +11,7 @@ interface Env {
   RUNNER_WAKE: DurableObjectNamespace<RunnerWake>;
   SUPABASE_SECRET_KEY: string;
   SUPABASE_URL: string;
+  TUTURUUU_DEVBOX_AGENT_API_ENABLED?: string;
 }
 
 type Runner = {
@@ -62,6 +67,7 @@ async function query<T>(
 ): Promise<T> {
   const response = await fetch(new URL(path, env.SUPABASE_URL), {
     ...init,
+    cache: 'no-store',
     headers: {
       ...supabaseHeaders(
         env,
@@ -86,19 +92,39 @@ async function digest(value: string) {
     .join('');
 }
 
-async function authorize(
+async function requireDevboxActor(
   request: Request,
   env: Env,
   requireOnline: boolean
-): Promise<Runner | null> {
+): Promise<Runner | null>;
+async function requireDevboxActor(
+  request: Request,
+  env: Env,
+  requireOnline: 'internal'
+): Promise<boolean>;
+async function requireDevboxActor(
+  request: Request,
+  env: Env,
+  requireOnline: boolean | 'internal'
+): Promise<Runner | null | boolean> {
+  if (requireOnline === 'internal')
+    return (
+      !request.headers.has('X-Devbox-Access-Token') &&
+      internalTokenMatches(request, env)
+    );
   const token = request.headers.get('X-Devbox-Runner-Token') ?? '';
-  if (!TOKEN.test(token)) return null;
+  if (!TOKEN.test(token) || request.headers.has('X-Devbox-Access-Token'))
+    return null;
   const hash = await digest(token);
-  const tokens = await query<{ runner_id: string }[]>(
+  const tokens = await query<
+    { runner_id: string; expires_at: string | null }[]
+  >(
     env,
-    `/rest/v1/devbox_runner_tokens?select=runner_id&token_hash=eq.${hash}&revoked_at=is.null&limit=1`,
+    `/rest/v1/devbox_runner_tokens?select=runner_id,expires_at&token_hash=eq.${hash}&revoked_at=is.null&limit=1`,
     'private'
   );
+  const expiresAt = tokens[0]?.expires_at;
+  if (!devboxRunnerTokenUnexpired(expiresAt)) return null;
   const runnerId = tokens[0]?.runner_id;
   if (!runnerId || !UUID.test(runnerId)) return null;
   const runners = await query<Runner[]>(
@@ -120,7 +146,19 @@ async function authorize(
     `/rest/v1/workspace_members?select=type&ws_id=eq.${ROOT_WORKSPACE_ID}&user_id=eq.${runner.actor_id}&limit=1`,
     'public'
   );
-  return members[0]?.type === 'MEMBER' ? runner : null;
+  if (members[0]?.type === 'MEMBER') return runner;
+  const identity = await query<unknown>(
+    env,
+    '/rest/v1/rpc/resolve_devbox_identity',
+    'private',
+    {
+      method: 'POST',
+      body: JSON.stringify({ p_user_id: runner.actor_id }),
+    }
+  );
+  return devboxPersonalRunnerAuthorized(identity, runner.actor_id, expiresAt)
+    ? runner
+    : null;
 }
 
 async function boundedJson(request: Request): Promise<unknown> {
@@ -389,7 +427,7 @@ export default {
       return json({ message: 'Unavailable' }, 503);
     try {
       if (path === '/v1/notify' && request.method === 'POST') {
-        if (!(await internalTokenMatches(request, env)))
+        if (!(await requireDevboxActor(request, env, 'internal')))
           return json({ message: 'Unauthorized' }, 401);
         let body: unknown;
         try {
@@ -426,10 +464,20 @@ export default {
       }
       if (!['/v1/heartbeat', '/v1/poll', '/v1/connect'].includes(path))
         return json({ message: 'Not found' }, 404);
+      if (
+        !['1', 'true', 'yes', 'on'].includes(
+          (env.TUTURUUU_DEVBOX_AGENT_API_ENABLED ?? '').trim().toLowerCase()
+        )
+      )
+        return json({ message: 'Devbox agent API disabled' }, 403);
       const expectedMethod = path === '/v1/heartbeat' ? 'POST' : 'GET';
       if (request.method !== expectedMethod)
         return json({ message: 'Method not allowed' }, 405);
-      const runner = await authorize(request, env, path !== '/v1/heartbeat');
+      const runner = await requireDevboxActor(
+        request,
+        env,
+        path !== '/v1/heartbeat'
+      );
       if (!runner) return json({ message: 'Unauthorized' }, 401);
       if (path === '/v1/heartbeat') return heartbeat(request, env, runner);
       if (path === '/v1/poll') return poll(env, runner);

@@ -141,7 +141,10 @@ describe('devbox runs route', () => {
     );
 
     expect(response.status).toBe(403);
-    await expect(response.json()).resolves.toEqual({ message: 'Forbidden' });
+    await expect(response.json()).resolves.toEqual({
+      message: 'DEVBOX_GRANT_REQUIRED',
+      code: 'DEVBOX_GRANT_REQUIRED',
+    });
   });
 
   it('accepts CLI app-session tokens for root workspace members', async () => {

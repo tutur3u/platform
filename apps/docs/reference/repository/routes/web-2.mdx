@@ -104,22 +104,25 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/auth/recovery/consume` | OPTIONS, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/auth/recovery/consume/route.ts) |
 | `/api/v1/calendar/auth/accounts` | DELETE, GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/calendar/auth/accounts/route.ts) |
 | `/api/v1/cms/workspaces` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/cms/workspaces/route.ts) |
+| `/api/v1/devboxes/access-tokens/[tokenId]` | DELETE | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/devboxes/access-tokens/%5BtokenId%5D/route.ts) |
+| `/api/v1/devboxes/access-tokens` | GET, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/devboxes/access-tokens/route.ts) |
 | `/api/v1/devboxes/agents/events` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/devboxes/agents/events/route.ts) |
 | `/api/v1/devboxes/agents/heartbeat` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/devboxes/agents/heartbeat/route.ts) |
 | `/api/v1/devboxes/agents/playground-files` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/devboxes/agents/playground-files/route.ts) |
-| `/api/v1/devboxes/agents/poll` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/devboxes/agents/poll/route.ts) |
+| `/api/v1/devboxes/agents/poll` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/devboxes/agents/poll/route.ts) |
 | `/api/v1/devboxes/agents/register` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/devboxes/agents/register/route.ts) |
 | `/api/v1/devboxes/agents/shutdown` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/devboxes/agents/shutdown/route.ts) |
 | `/api/v1/devboxes/cache/prune` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/devboxes/cache/prune/route.ts) |
-| `/api/v1/devboxes/cache` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/devboxes/cache/route.ts) |
+| `/api/v1/devboxes/cache` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/devboxes/cache/route.ts) |
 | `/api/v1/devboxes/env` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/devboxes/env/route.ts) |
+| `/api/v1/devboxes/grant/accept` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/devboxes/grant/accept/route.ts) |
 | `/api/v1/devboxes/leases/[leaseId]/release` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/devboxes/leases/%5BleaseId%5D/release/route.ts) |
 | `/api/v1/devboxes/leases` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/devboxes/leases/route.ts) |
 | `/api/v1/devboxes/previews` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/devboxes/previews/route.ts) |
-| `/api/v1/devboxes/runs/[runId]/logs` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/devboxes/runs/%5BrunId%5D/logs/route.ts) |
-| `/api/v1/devboxes/runs/[runId]` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/devboxes/runs/%5BrunId%5D/route.ts) |
+| `/api/v1/devboxes/runs/[runId]/logs` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/devboxes/runs/%5BrunId%5D/logs/route.ts) |
+| `/api/v1/devboxes/runs/[runId]` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/devboxes/runs/%5BrunId%5D/route.ts) |
 | `/api/v1/devboxes/runs/[runId]/stop` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/devboxes/runs/%5BrunId%5D/stop/route.ts) |
-| `/api/v1/devboxes/runs` | GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/devboxes/runs/route.ts) |
+| `/api/v1/devboxes/runs` | GET, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/devboxes/runs/route.ts) |
 | `/api/v1/devboxes/runs/stop-by-key` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/devboxes/runs/stop-by-key/route.ts) |
 | `/api/v1/documents/[documentId]` | DELETE, GET, HEAD, PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/documents/%5BdocumentId%5D/route.ts) |
 | `/api/v1/documents` | GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/documents/route.ts) |
@@ -188,8 +191,5 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/nova/me/team` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/nova/me/team/route.ts) |
 | `/api/v1/platform/users/[userId]/roles` | PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/platform/users/%5BuserId%5D/roles/route.ts) |
 | `/api/v1/product-feedback/[id]/media` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/product-feedback/%5Bid%5D/media/route.ts) |
-| `/api/v1/product-feedback/[id]` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/product-feedback/%5Bid%5D/route.ts) |
-| `/api/v1/product-feedback/eligibility` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/product-feedback/eligibility/route.ts) |
-| `/api/v1/product-feedback/receipts/[key]` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/product-feedback/receipts/%5Bkey%5D/route.ts) |
 
 [All apps and services](/reference/repository/catalog). [Versions](/reference/repository/versions).

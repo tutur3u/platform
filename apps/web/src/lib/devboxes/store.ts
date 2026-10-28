@@ -1,10 +1,15 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
+import {
+  devboxPersonalRunnerAuthorized,
+  devboxRunnerTokenUnexpired,
+} from '@tuturuuu/devbox/actor';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { notifyDevboxRun } from '@tuturuuu/utils/devbox-control';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { assertDevboxCommitRunRunner } from './commit-run-guard';
+import { resolveDevboxIdentity } from './identity-store';
 import { assertDevboxRunnerAcceptsRun } from './runner-drain-guard';
 import {
   assertDevboxIdempotencyReady,
@@ -56,6 +61,7 @@ export interface VerifiedDevboxRunner {
 
 export interface CreateDevboxRunInput {
   actorId: string;
+  accessTokenId?: string;
   command: string[];
   env?: Record<string, string>;
   envFiles?: string[];
@@ -72,6 +78,7 @@ export interface CreateDevboxRunInput {
 
 export interface CreateDevboxLeaseInput {
   actorId: string;
+  accessTokenId?: string;
   profile?: string;
   runnerId?: string;
   ttlSeconds?: number;
@@ -222,6 +229,7 @@ export async function createDevboxRun(input: CreateDevboxRunInput) {
       'devbox_leases'
     ).insert({
       actor_id: input.actorId,
+      ...(input.accessTokenId ? { access_token_id: input.accessTokenId } : {}),
       created_at: now,
       expires_at: input.keep
         ? new Date(Date.now() + 60 * 60 * 1000).toISOString()
@@ -240,6 +248,7 @@ export async function createDevboxRun(input: CreateDevboxRunInput) {
 
   const runInsert: Record<string, unknown> = {
     actor_id: input.actorId,
+    ...(input.accessTokenId ? { access_token_id: input.accessTokenId } : {}),
     command: input.command,
     created_at: now,
     env: input.env ?? {},
@@ -321,6 +330,7 @@ export async function createDevboxLease(input: CreateDevboxLeaseInput) {
     'devbox_leases'
   ).insert({
     actor_id: input.actorId,
+    ...(input.accessTokenId ? { access_token_id: input.accessTokenId } : {}),
     created_at: now,
     expires_at: new Date(
       Date.now() + (input.ttlSeconds ?? 60 * 60) * 1000
@@ -466,10 +476,7 @@ export function stopDevboxRunByKey(input: {
   return stopDevboxRunByIdempotencyKey(input, stopDevboxRun);
 }
 
-export {
-  DEVBOX_RUN_LOG_PAGE_SIZE,
-  listDevboxRunLogs,
-} from './store-run-logs';
+export { DEVBOX_RUN_LOG_PAGE_SIZE, listDevboxRunLogs } from './store-run-logs';
 
 export async function createDevboxPreview(input: {
   leaseId: string;
@@ -572,7 +579,7 @@ export async function verifyDevboxRunnerToken(
     privateClient,
     'devbox_runner_tokens'
   )
-    .select('runner_id')
+    .select('runner_id,expires_at')
     .eq('token_hash', tokenHash)
     .is('revoked_at', null)
     .order('created_at', { ascending: false })
@@ -588,7 +595,11 @@ export async function verifyDevboxRunnerToken(
       ? String(first.runner_id ?? '')
       : '';
 
-  if (!runnerId) {
+  const expiry =
+    first && typeof first === 'object' && 'expires_at' in first
+      ? first.expires_at
+      : undefined;
+  if (!runnerId || !devboxRunnerTokenUnexpired(expiry)) {
     return null;
   }
 
@@ -633,7 +644,11 @@ export async function verifyDevboxRunnerToken(
     throw new DevboxStoreError('Devbox runner membership lookup failed.', 503);
   }
 
-  return membership.ok ? { heartbeatEnabled, id: runnerId } : null;
+  if (membership.ok) return { heartbeatEnabled, id: runnerId };
+  const identity = await resolveDevboxIdentity({ userId: actorId });
+  return devboxPersonalRunnerAuthorized(identity, actorId, expiry)
+    ? { heartbeatEnabled, id: runnerId }
+    : null;
 }
 
 export async function listDevboxRuns(actorId: string) {
