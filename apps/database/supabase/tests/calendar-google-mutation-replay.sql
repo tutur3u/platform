@@ -2,6 +2,8 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
 select no_plan();
+-- On non-superuser local Postgres, set test.dblink_connstr to a password-authenticated
+-- connection to this same disposable database (loopback trust cannot authenticate dblink).
 create extension if not exists dblink with schema extensions;
 insert into auth.users(id) values ('00000000-0000-4000-8000-000000009701');
 -- The auth.users provisioning trigger may already create this public row.
@@ -64,7 +66,7 @@ commit;
 -- see it. The owning isolated lifecycle destroys this entire disposable stack.
 -- Independent backend validates actual lock ordering. Local trust-auth stacks
 -- run this fixture as their disposable DB bootstrap role.
-select dblink_connect('competitor','dbname=postgres user=postgres password=postgres host=127.0.0.1');
+select dblink_connect('competitor',coalesce(nullif(current_setting('test.dblink_connstr', true), ''), 'dbname=postgres user=postgres password=postgres host=127.0.0.1'));
 begin;
 select is(public.fixture_color_call('reserve',public.fixture_color_input(0))->>'generation','1','color admission holds first generation');
 select is(public.fixture_mutation_call('inspect',jsonb_build_object('identity',public.fixture_color_input()->'identity'))->'operation'->'intent'->>'kind',

@@ -663,7 +663,7 @@ For better performance in your RLS policies:
 
 Tuturuuu ships a large suite of database tests in
 `apps/database/supabase/tests/`. These are [pgTAP](https://pgtap.org/) test files
-(each one wraps its assertions in a transaction and rolls back), and they run
+(most wrap their assertions in a transaction and roll back), and they run
 against the local Supabase instance through the Supabase CLI.
 
 To run the database test suite locally:
@@ -681,6 +681,23 @@ To run the database test suite locally:
    `supabase test db`, which executes every `tests/*.sql` file against the local
    database. There is no dedicated `bun sb:test` alias — the test runner is the
    Supabase CLI itself.
+
+Concurrency fixtures can commit data in independent connections. Reset the isolated
+database before repeating the full suite; assertions about provenance must filter
+by the fixture actor or target rather than count unrelated committed rows.
+
+The calendar and employee concurrency tests accept the database setting
+`test.dblink_connstr`. On local images where `postgres` is not a superuser, set it
+after reset, using the disposable database administrator, to a password-authenticated
+connection to that same database. A Docker-network address uses SCRAM; loopback
+trust does not satisfy `dblink`'s password requirement even when a password is
+supplied. Supply only disposable local credentials, never a linked project DSN.
+Stop the uniquely named project with `supabase stop --no-backup` after validation.
+
+When updating security tests, distinguish restrictive MFA policies from permissive
+access grants. Preserve denied-role assertions and seed real Auth identities for
+verified staff fixtures. A runtime contract rejecting its own migrated function
+metadata is a product regression, not a reason to relax the test.
 
 Each test file begins by enabling pgTAP, then uses helpers like `plan()`,
 `is()`, and `throws_ok()` to assert behavior. A trimmed example:
