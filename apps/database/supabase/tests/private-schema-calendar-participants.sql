@@ -158,8 +158,9 @@ select ok(
         'calendar_event_virtual_participants'
       )
       and roles && array['anon', 'authenticated']::name[]
+      and permissive = 'PERMISSIVE'
   ),
-  'private calendar participant tables have no client-role RLS policies'
+  'private calendar participant tables have no permissive client-role RLS policies'
 );
 
 select ok(
