@@ -6,9 +6,10 @@ description: "Web 1 inventory, staging-only fallback Worker and prerequisites fo
 Web 1 adds an unprovisioned TanStack Start / Vite+ / Void Worker candidate in
 `apps/web`. The candidate builds from the isolated `cloudflare/` root;
 `prepare-build.mjs` mirrors the owning package manifest there for Void framework
-detection without loading or renaming Next environment files. Next retains API, satellite URL bridge and service-worker ownership. Privacy and
-Terms have a default-off native rendering slice alongside the native
-`GET /__web1` probe. `build` still builds Next; `build:candidate` builds the
+detection without loading or renaming Next environment files. Next retains API,
+satellite URL bridge and service-worker ownership. The seven static public
+legal documents have a default-off native rendering slice alongside the
+native `GET /__web1` probe. `build` still builds Next; `build:candidate` builds the
 candidate. The retired `apps/tanstack-web` app remains paused.
 
 ## Inventory and ownership
@@ -46,9 +47,9 @@ public assets into the candidate.
 
 ## Native public page slices: legal documents
 
-Scope: Privacy, Terms, Acceptable Use, DPA, SLA and Subprocessors, at
-`/privacy`, `/terms`, `/acceptable-use`, `/legal/dpa`, `/legal/sla`,
-`/legal/subprocessors` and their `/en/` and `/vi/` forms. Each uses the
+Scope: Privacy, Terms, Acceptable Use, DPA, SLA, Subprocessors and Community
+Guidelines at `/privacy`, `/terms`, `/acceptable-use`, `/legal/dpa`, `/legal/sla`,
+`/legal/subprocessors`, `/community-guidelines` and their `/en/` and `/vi/` forms. Each uses the
 canonical `@tuturuuu/legal` document
 as Next, including every section, summary, effective date and counsel-review
 notice. The package remains framework-independent; Start owns its rendering
@@ -60,11 +61,15 @@ with document navigation and language links. The default streaming transformer
 injects serialization scripts even without a Scripts component; this static
 callback intentionally omits that hydration payload and cleans up the SSR state. It deliberately has no hydrated marketing shell or session UI.
 
-The manifest remains **838 entries: 7 native-Start and 831 Next-fallback**.
+The manifest remains **838 entries: 8 native-Start and 830 Next-fallback**.
+The existing Community Guidelines route is reclassified as native-Start; the
+total census stays constant. The route still imports the canonical
+`@tuturuuu/legal` policy document, with matching Next metadata and immediate
+fallback when the slice flag is disabled.
 Native entries retain their original Next source for migration provenance and
 record `nativeSource` for the Start adapter. The full census separately records
-its `nativeBoundaries`. Six `/[locale]` entries count the native documents;
-the seventh native entry is the probe. English unprefixed aliases do not add
+its `nativeBoundaries`. Seven `/[locale]` entries count the native documents;
+the eighth native entry is the probe. English unprefixed aliases do not add
 census entries.
 
 `WEB_START_NATIVE_LEGAL` defaults to `off`, independently of candidate
@@ -96,11 +101,11 @@ checks those tags in actual HTML against the canonical message bundles and URL
 rules, alongside the existing no-egress and cookie-neutrality assertions.
 
 Regression coverage: `native-legal.test.tsx` checks GET/HEAD, rollback,
-canonical content for all six documents in both languages, cookie neutrality
+canonical content for all seven documents in both languages, cookie neutrality
 and fallback boundaries.
 `emitted.runtime.mjs` exercises the actual emitted Start renderer and rollback.
 `e2e-wave1-staging/web.spec.ts` extends the #7093 acceptance suite with EN/VI
-reads of all six public legal documents, robots noindex checks and a signed-in
+reads of all seven public legal documents, robots noindex checks and a signed-in
 workspace fallback round trip.
 Shared suite infrastructure is seeded from #7093; reconcile those shared files
 with that PR when integrating. Other app cases remain owned by #7093.

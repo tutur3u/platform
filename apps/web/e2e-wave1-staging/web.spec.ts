@@ -14,6 +14,7 @@ test('public native legal pages preserve EN/VI content and reload without a sess
     { kind: 'dpa', slug: 'legal/dpa' },
     { kind: 'sla', slug: 'legal/sla' },
     { kind: 'subprocessors', slug: 'legal/subprocessors' },
+    { kind: 'community-guidelines', slug: 'community-guidelines' },
   ] as const;
   for (const { kind, slug } of pages) {
     const document = getLegalDocument(kind, acceptanceLocale);

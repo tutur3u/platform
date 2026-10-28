@@ -36,6 +36,13 @@ export const nativeLegalPages = [
     source:
       'apps/web/src/app/[locale]/(marketing)/legal/subprocessors/page.tsx',
   },
+  {
+    kind: 'community-guidelines',
+    slug: 'community-guidelines',
+    seoKey: 'community_guidelines',
+    source:
+      'apps/web/src/app/[locale]/(marketing)/community-guidelines/page.tsx',
+  },
 ] as const;
 
 export type NativeLegalKind = (typeof nativeLegalPages)[number]['kind'];

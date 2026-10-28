@@ -53,7 +53,7 @@
       "satellite-bridge": 12,
       "service-worker": 1
     },
-    "dispositions": { "native-Start": 7, "Next-fallback": 831 }
+    "dispositions": { "native-Start": 8, "Next-fallback": 830 }
   },
   "routes": [
     {
@@ -821,9 +821,10 @@
       "pattern": "/[locale]/community-guidelines",
       "source": "apps/web/src/app/[locale]/(marketing)/community-guidelines/page.tsx",
       "category": "page",
-      "owner": "web-next",
-      "disposition": "Next-fallback",
-      "cronOwner": null
+      "owner": "web-start",
+      "disposition": "native-Start",
+      "cronOwner": null,
+      "nativeSource": "apps/web/cloudflare/start/legal-page.tsx"
     },
     {
       "pattern": "/[locale]/contact",
