@@ -39,6 +39,14 @@ A task with no due date of its own is due when its sprint ends. That date is
 derived and never written into `tasks.end_date`, so moving a sprint or carrying
 a task rewrites nothing. Only an own due date can make a task overdue.
 
+The task panel shows a Sprint row on boards with sprints on: the task's open
+sprint and its dates, "Due with the sprint" and the sprint end when the task has
+no due date of its own, the sprints it went through, and, for people who can
+edit the task, a menu to move it to the running or planned sprint. Cards do not
+repeat the sprint end.
+
+Regression coverage: `packages/tasks-ui/src/tu-do/shared/task-edit-dialog/components/task-sprint-row.test.tsx`.
+
 ## Starting and ending
 
 Starting and ending a sprint, and changing its length, are limited to workspace

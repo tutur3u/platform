@@ -64,13 +64,17 @@ import {
 } from './task-edit-dialog/components/smart-task-suggestions-panel';
 import { TaskDescriptionEditor } from './task-edit-dialog/components/task-description-editor';
 import {
-  getTaskDialogHeaderInfo,
   TaskDialogHeader,
+  useTaskDialogHeaderInfo,
 } from './task-edit-dialog/components/task-dialog-header';
 import { TaskDialogLoadingShell } from './task-edit-dialog/components/task-dialog-loading-shell';
 import { TaskNameInput } from './task-edit-dialog/components/task-name-input';
+import { TaskSprintRow } from './task-edit-dialog/components/task-sprint-row';
 import { TaskSuggestionMenus } from './task-edit-dialog/components/task-suggestion-menus';
-import { NAME_UPDATE_DEBOUNCE_MS } from './task-edit-dialog/constants';
+import {
+  EMPTY_TASK_DESCRIPTION_DOC,
+  NAME_UPDATE_DEBOUNCE_MS,
+} from './task-edit-dialog/constants';
 import { getTaskDescriptionRecoveryVersion } from './task-edit-dialog/description-reconciliation';
 import {
   buildRecoverableTaskDescriptionVersions,
@@ -162,11 +166,6 @@ import type { TaskFilters } from './types';
 import { UnsavedChangesWarningDialog } from './unsaved-changes-warning-dialog';
 
 type AssigneeMemberSource = 'workspace' | 'board' | 'workspace-and-board';
-
-const EMPTY_TASK_DESCRIPTION_DOC: JSONContent = {
-  type: 'doc',
-  content: [{ type: 'paragraph' }],
-};
 
 export {
   type DialogHeaderInfo,
@@ -2378,26 +2377,15 @@ export function TaskEditDialog({
       )}
     </div>
   ) : null;
-  const compactHeaderInfo = useMemo(
-    () =>
-      getTaskDialogHeaderInfo(
-        {
-          isCreateMode,
-          parentTaskId,
-          parentTaskName,
-          pendingRelationship,
-          draftId,
-        },
-        rootT
-      ),
-    [
+  const compactHeaderInfo = useTaskDialogHeaderInfo(
+    {
       isCreateMode,
       parentTaskId,
       parentTaskName,
       pendingRelationship,
       draftId,
-      rootT,
-    ]
+    },
+    rootT
   );
   const compactEditActions = canShowCompactEditActions ? (
     <>
@@ -2464,77 +2452,85 @@ export function TaskEditDialog({
   const renderTaskPropertiesSection = (
     variant: 'compact' | 'default' | 'embedded' = 'default'
   ) => (
-    <TaskPropertiesSection
-      wsId={effectiveTaskWsId}
-      boardId={boardId}
-      taskId={task?.id}
-      priority={formState.priority}
-      startDate={formState.startDate}
-      endDate={formState.endDate}
-      estimationPoints={formState.estimationPoints}
-      selectedLabels={formState.selectedLabels}
-      selectedProjects={formState.selectedProjects}
-      selectedListId={formState.selectedListId}
-      selectedAssignees={formState.selectedAssignees}
-      isLoading={isLoading}
-      isPersonalWorkspace={isPersonalWorkspace}
-      canUseBoardAssignees={canUseBoardAssignees ?? !isPersonalWorkspace}
-      totalDuration={formState.totalDuration}
-      isSplittable={formState.isSplittable}
-      minSplitDurationMinutes={formState.minSplitDurationMinutes}
-      maxSplitDurationMinutes={formState.maxSplitDurationMinutes}
-      calendarHours={formState.calendarHours}
-      autoSchedule={formState.autoSchedule}
-      availableLists={availableLists}
-      availableLabels={availableLabels}
-      taskProjects={taskProjects}
-      workspaceMembers={workspaceMembers}
-      boardConfig={boardConfig}
-      onPriorityChange={updatePriority}
-      onStartDateChange={updateStartDate}
-      onEndDateChange={updateEndDate}
-      onEstimationChange={updateEstimation}
-      onLabelToggle={toggleLabel}
-      onProjectToggle={toggleProject}
-      onListChange={updateList}
-      onAssigneeToggle={toggleAssignee}
-      onQuickDueDate={handleQuickDueDate}
-      onShowNewLabelDialog={() => {
-        setNewLabelColor((previousColor) =>
-          getRandomNewLabelColor(previousColor)
-        );
-        setShowNewLabelDialog(true);
-      }}
-      onShowNewProjectDialog={() => setShowNewProjectDialog(true)}
-      onShowEstimationConfigDialog={() => setShowEstimationConfigDialog(true)}
-      onTotalDurationChange={formState.setTotalDuration}
-      onIsSplittableChange={formState.setIsSplittable}
-      onMinSplitDurationChange={formState.setMinSplitDurationMinutes}
-      onMaxSplitDurationChange={formState.setMaxSplitDurationMinutes}
-      onCalendarHoursChange={formState.setCalendarHours}
-      onAutoScheduleChange={formState.setAutoSchedule}
-      isCreateMode={isCreateMode}
-      savedSchedulingSettings={
-        personalScheduleData?.task
-          ? {
-              totalDuration: personalScheduleData.task.total_duration ?? null,
-              isSplittable: !!personalScheduleData.task.is_splittable,
-              minSplitDurationMinutes:
-                personalScheduleData.task.min_split_duration_minutes ?? null,
-              maxSplitDurationMinutes:
-                personalScheduleData.task.max_split_duration_minutes ?? null,
-              calendarHours: personalScheduleData.task.calendar_hours ?? null,
-              autoSchedule: !!personalScheduleData.task.auto_schedule,
-            }
-          : undefined
-      }
-      onSaveSchedulingSettings={saveSchedulingSettings}
-      schedulingSaving={schedulingSaving}
-      scheduledEvents={localCalendarEvents}
-      disabled={taskControlsDisabled}
-      isDraftMode={!!draftId || (isCreateMode && saveAsDraft)}
-      variant={variant}
-    />
+    <>
+      <TaskSprintRow
+        boardId={boardId}
+        canEdit={!taskControlsDisabled}
+        task={task}
+        wsId={effectiveTaskWsId}
+      />
+      <TaskPropertiesSection
+        wsId={effectiveTaskWsId}
+        boardId={boardId}
+        taskId={task?.id}
+        priority={formState.priority}
+        startDate={formState.startDate}
+        endDate={formState.endDate}
+        estimationPoints={formState.estimationPoints}
+        selectedLabels={formState.selectedLabels}
+        selectedProjects={formState.selectedProjects}
+        selectedListId={formState.selectedListId}
+        selectedAssignees={formState.selectedAssignees}
+        isLoading={isLoading}
+        isPersonalWorkspace={isPersonalWorkspace}
+        canUseBoardAssignees={canUseBoardAssignees ?? !isPersonalWorkspace}
+        totalDuration={formState.totalDuration}
+        isSplittable={formState.isSplittable}
+        minSplitDurationMinutes={formState.minSplitDurationMinutes}
+        maxSplitDurationMinutes={formState.maxSplitDurationMinutes}
+        calendarHours={formState.calendarHours}
+        autoSchedule={formState.autoSchedule}
+        availableLists={availableLists}
+        availableLabels={availableLabels}
+        taskProjects={taskProjects}
+        workspaceMembers={workspaceMembers}
+        boardConfig={boardConfig}
+        onPriorityChange={updatePriority}
+        onStartDateChange={updateStartDate}
+        onEndDateChange={updateEndDate}
+        onEstimationChange={updateEstimation}
+        onLabelToggle={toggleLabel}
+        onProjectToggle={toggleProject}
+        onListChange={updateList}
+        onAssigneeToggle={toggleAssignee}
+        onQuickDueDate={handleQuickDueDate}
+        onShowNewLabelDialog={() => {
+          setNewLabelColor((previousColor) =>
+            getRandomNewLabelColor(previousColor)
+          );
+          setShowNewLabelDialog(true);
+        }}
+        onShowNewProjectDialog={() => setShowNewProjectDialog(true)}
+        onShowEstimationConfigDialog={() => setShowEstimationConfigDialog(true)}
+        onTotalDurationChange={formState.setTotalDuration}
+        onIsSplittableChange={formState.setIsSplittable}
+        onMinSplitDurationChange={formState.setMinSplitDurationMinutes}
+        onMaxSplitDurationChange={formState.setMaxSplitDurationMinutes}
+        onCalendarHoursChange={formState.setCalendarHours}
+        onAutoScheduleChange={formState.setAutoSchedule}
+        isCreateMode={isCreateMode}
+        savedSchedulingSettings={
+          personalScheduleData?.task
+            ? {
+                totalDuration: personalScheduleData.task.total_duration ?? null,
+                isSplittable: !!personalScheduleData.task.is_splittable,
+                minSplitDurationMinutes:
+                  personalScheduleData.task.min_split_duration_minutes ?? null,
+                maxSplitDurationMinutes:
+                  personalScheduleData.task.max_split_duration_minutes ?? null,
+                calendarHours: personalScheduleData.task.calendar_hours ?? null,
+                autoSchedule: !!personalScheduleData.task.auto_schedule,
+              }
+            : undefined
+        }
+        onSaveSchedulingSettings={saveSchedulingSettings}
+        schedulingSaving={schedulingSaving}
+        scheduledEvents={localCalendarEvents}
+        disabled={taskControlsDisabled}
+        isDraftMode={!!draftId || (isCreateMode && saveAsDraft)}
+        variant={variant}
+      />
+    </>
   );
 
   const renderTaskActivitySection = () => {
