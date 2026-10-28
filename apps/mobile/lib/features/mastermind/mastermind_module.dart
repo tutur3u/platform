@@ -8,8 +8,9 @@ import 'package:mobile/features/mastermind/view/mastermind_home_page.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// The Apps-hub entry. Not an experimental module: visibility comes only from
-/// the access cubit (root workspace, `view_infrastructure`, configured source).
-/// That is cosmetic; the hub's own allowlist is the real authority.
+/// the access cubit (root or personal workspace, `manage_mastermind` in root,
+/// configured source). That is cosmetic; the hub's owner allowlist and the
+/// server-side permission checks are the authority.
 const mastermindModule = AppModule(
   id: 'mastermind',
   route: Routes.mastermind,

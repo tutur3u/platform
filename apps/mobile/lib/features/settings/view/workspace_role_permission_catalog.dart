@@ -147,9 +147,17 @@ const workspacePermissionCatalog = <WorkspacePermissionGroupCatalog>[
   ),
   WorkspacePermissionGroupCatalog(
     id: 'infrastructure',
-    permissions: ['view_infrastructure', 'manage_external_migrations'],
+    permissions: [
+      'view_infrastructure',
+      'manage_external_migrations',
+      'manage_mastermind',
+    ],
   ),
 ];
+
+/// Shown with their current value but never toggled here: they are granted
+/// only through an audited database procedure.
+const readOnlyWorkspacePermissions = {'manage_mastermind'};
 
 String workspacePermissionGroupLabel(BuildContext context, String groupId) {
   switch (groupId) {
@@ -215,6 +223,7 @@ String workspacePermissionLabel(BuildContext context, String permissionId) {
     'view_payroll': 'Xem lương',
     'view_infrastructure': 'Xem hạ tầng',
     'manage_external_migrations': 'Quản lý migration ngoài',
+    'manage_mastermind': 'Quản lý Mastermind',
   };
 
   if (_isVietnamese(context)) {

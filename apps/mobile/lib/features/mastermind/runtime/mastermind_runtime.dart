@@ -53,6 +53,7 @@ final class MastermindRuntime {
   /// [createMastermindSnapshotSource].
   factory MastermindRuntime.create({
     required String? Function() userId,
+    bool Function(String wsId)? isPersonalWorkspace,
     WorkspacePermissionsRepository? permissions,
     MastermindSnapshotSource? source,
     MastermindSnapshotStore? store,
@@ -73,6 +74,7 @@ final class MastermindRuntime {
       access: MastermindAccessCubit(
         repository: permissions ?? WorkspacePermissionsRepository(),
         source: resolved,
+        isPersonalWorkspace: isPersonalWorkspace,
       ),
       snapshot: cubit,
       scheduler: scheduler,

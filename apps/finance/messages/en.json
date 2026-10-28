@@ -13316,6 +13316,8 @@
     "manage_inventory_description": "Allows members to view, create, edit, and delete inventory items in the workspace.",
     "manage_inventory_setup": "Manage Inventory Setup",
     "manage_inventory_setup_description": "Allows members to manage warehouses, units, manufacturers, suppliers, and categories.",
+    "manage_mastermind": "Manage Mastermind",
+    "manage_mastermind_description": "Open the Mastermind app and receive its alerts. Granted only to named staff through an audited procedure; admin and workspace ownership never include it.",
     "manage_members": "Manage members",
     "manage_payroll": "Manage Payroll",
     "manage_payroll_description": "Allows members to create, approve, and finalize payroll runs.",

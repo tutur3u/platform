@@ -26,7 +26,7 @@ void main() {
               () => repository.getPermissions(wsId: rootWorkspaceId),
             ).thenAnswer(
               (_) async => WorkspacePermissions(
-                permissions: {if (permission) 'view_infrastructure'},
+                permissions: {if (permission) manageMastermindPermission},
                 isCreator: false,
               ),
             );
@@ -73,8 +73,27 @@ void main() {
       const WorkspacePermissions(permissions: {}, isCreator: false),
       false,
     ),
+    'view_infrastructure only': (
+      const WorkspacePermissions(
+        permissions: {'view_infrastructure'},
+        isCreator: false,
+      ),
+      false,
+    ),
+    // Product rule: apps/docs/platform/features/mobile-mastermind.mdx#access-rule
     'the root admin permission': (
       const WorkspacePermissions(permissions: {'admin'}, isCreator: false),
+      false,
+    ),
+    'root workspace creator': (
+      const WorkspacePermissions(permissions: {}, isCreator: true),
+      false,
+    ),
+    'an explicit manage_mastermind grant': (
+      const WorkspacePermissions(
+        permissions: {manageMastermindPermission},
+        isCreator: false,
+      ),
       true,
     ),
   }.entries) {
@@ -94,6 +113,60 @@ void main() {
       await cubit.close();
     });
   }
+
+  group('personal workspace', () {
+    const personalId = 'personal-ws';
+    MastermindAccessCubit build({required bool granted}) {
+      final repository = _Permissions();
+      final source = _Source();
+      when(() => source.isConfigured).thenReturn(true);
+      when(() => repository.getPermissions(wsId: rootWorkspaceId)).thenAnswer(
+        (_) async => WorkspacePermissions(
+          permissions: {if (granted) manageMastermindPermission},
+          isCreator: false,
+        ),
+      );
+      return MastermindAccessCubit(
+        repository: repository,
+        source: source,
+        isPersonalWorkspace: (wsId) => wsId == personalId,
+      );
+    }
+
+    test('shows Mastermind with the root grant', () async {
+      final cubit = build(granted: true);
+      await cubit.sync(personalId);
+      expect(cubit.state.visible, isTrue);
+      expect(cubit.state.wsId, personalId);
+      await cubit.close();
+    });
+
+    test('hides Mastermind without the root grant', () async {
+      final cubit = build(granted: false);
+      await cubit.sync(personalId);
+      expect(cubit.state.visible, isFalse);
+      await cubit.close();
+    });
+
+    test('other workspaces never offer Mastermind', () async {
+      final cubit = build(granted: true);
+      await cubit.sync('team-ws');
+      expect(cubit.state.status, MastermindAccessStatus.loaded);
+      expect(cubit.state.visible, isFalse);
+      await cubit.close();
+    });
+  });
+
+  test('creator and admin never imply manage_mastermind', () {
+    const creator = WorkspacePermissions(permissions: {}, isCreator: true);
+    const admin = WorkspacePermissions(
+      permissions: {'admin'},
+      isCreator: false,
+    );
+    expect(creator.containsPermission(manageMastermindPermission), isFalse);
+    expect(admin.containsPermission(manageMastermindPermission), isFalse);
+    expect(admin.containsPermission('view_infrastructure'), isTrue);
+  });
 
   test('workspace ABA cannot resurrect an older permission grant', () async {
     final repository = _Permissions();
@@ -117,7 +190,7 @@ void main() {
     await cubit.sync(rootWorkspaceId);
     pending.complete(
       const WorkspacePermissions(
-        permissions: {'view_infrastructure'},
+        permissions: {manageMastermindPermission},
         isCreator: false,
       ),
     );

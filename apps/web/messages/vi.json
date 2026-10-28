@@ -24183,6 +24183,8 @@
     "manage_inventory_description": "Cho phép thành viên xem, tạo, chỉnh sửa và xóa các mặt hàng trong kho không gian làm việc.",
     "manage_inventory_setup": "Quản lý thiết lập kho",
     "manage_inventory_setup_description": "Cho phép thành viên cấu hình địa điểm, đơn vị, danh mục và dữ liệu thiết lập kho.",
+    "manage_mastermind": "Quản lý Mastermind",
+    "manage_mastermind_description": "Mở ứng dụng Mastermind và nhận cảnh báo của nó. Chỉ cấp cho nhân sự được chỉ định qua quy trình có kiểm toán; quyền quản trị và quyền sở hữu không bao gồm quyền này.",
     "manage_members": "Quản lý thành viên",
     "manage_mobile_deployment_vault": "Quản lý kho triển khai di động",
     "manage_mobile_deployment_vault_description": "Cho phép thành viên không gian làm việc gốc quản lý bí mật triển khai di động, tệp ký và token CI qua API triển khai di động.",

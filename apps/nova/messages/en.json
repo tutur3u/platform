@@ -4822,6 +4822,8 @@
     "manage_git_repositories_description": "Allows platform administrators to configure the GitHub App and approve public repositories for Git.",
     "manage_inventory": "Manage Inventory",
     "manage_inventory_description": "Allows members to view, create, edit, and delete inventory items in the workspace.",
+    "manage_mastermind": "Manage Mastermind",
+    "manage_mastermind_description": "Open the Mastermind app and receive its alerts. Granted only to named staff through an audited procedure; admin and workspace ownership never include it.",
     "manage_projects": "Manage Projects",
     "manage_projects_description": "Allows members to view, create, edit, and delete projects in the workspace.",
     "manage_sso_clients": "Manage outbound SSO applications",

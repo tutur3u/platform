@@ -31,7 +31,7 @@ void main() {
         () => harness.permissions.getPermissions(wsId: rootWorkspaceId),
       ).thenAnswer(
         (_) async => const WorkspacePermissions(
-          permissions: {'view_infrastructure'},
+          permissions: {manageMastermindPermission},
           isCreator: false,
         ),
       );

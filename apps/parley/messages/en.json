@@ -8450,6 +8450,8 @@
     "manage_projects_description": "Allows members to view, create, edit, and delete projects in the workspace.",
     "manage_sso_clients": "Manage outbound SSO applications",
     "manage_sso_clients_description": "Configure workspace SAML applications and assign members who may sign in.",
+    "manage_mastermind": "Manage Mastermind",
+    "manage_mastermind_description": "Open the Mastermind app and receive its alerts. Granted only to named staff through an audited procedure; admin and workspace ownership never include it.",
     "manage_user_report_automation": "Manage Report Automation",
     "manage_user_report_automation_description": "Configure periodic report schedules, generation modes, and workspace or group defaults.",
     "manage_user_report_templates": "Manage user report templates",

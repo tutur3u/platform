@@ -4822,6 +4822,8 @@
     "manage_git_repositories_description": "Cho phép quản trị viên nền tảng cấu hình Ứng dụng GitHub và phê duyệt các kho mã công khai cho Git.",
     "manage_inventory": "Quản lý kho",
     "manage_inventory_description": "Cho phép thành viên xem, tạo, chỉnh sửa và xóa các mặt hàng trong kho không gian làm việc.",
+    "manage_mastermind": "Quản lý Mastermind",
+    "manage_mastermind_description": "Mở ứng dụng Mastermind và nhận cảnh báo của nó. Chỉ cấp cho nhân sự được chỉ định qua quy trình có kiểm toán; quyền quản trị và quyền sở hữu không bao gồm quyền này.",
     "manage_projects": "Quản lý dự án",
     "manage_projects_description": "Cho phép thành viên xem, tạo, chỉnh sửa và xóa dự án trong không gian làm việc.",
     "manage_sso_clients": "Quản lý ứng dụng SSO bên ngoài",

@@ -67,8 +67,12 @@ the cap whatever `Content-Length` says, including chunked bodies without one.
 ## Delivery
 
 - **Recipients:** user ids in `MASTERMIND_PUSH_OWNER_IDS` (comma or whitespace
-  separated UUIDs, at most 50) that have rows in `notification_push_devices`.
-  Anyone else is never queried or sent to.
+  separated UUIDs, at most 50) that have rows in `notification_push_devices`
+  and hold `manage_mastermind` in the root workspace
+  (`has_workspace_permission`; an error or false skips the owner). The env
+  allowlist stays as defence in depth; see the
+  [access rule](/platform/features/mobile-mastermind#access-rule). Anyone else
+  is never queried or sent to.
 - **Preference:** the account-level `push_notifications` preference
   (`should_send_notification`, channel `push`). An unreadable preference counts
   as opted out.

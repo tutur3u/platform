@@ -8450,6 +8450,8 @@
     "manage_projects_description": "Cho phép thành viên xem, tạo, chỉnh sửa và xóa dự án trong không gian làm việc.",
     "manage_sso_clients": "Quản lý ứng dụng SSO bên ngoài",
     "manage_sso_clients_description": "Cấu hình ứng dụng SAML của không gian làm việc và chỉ định thành viên được đăng nhập.",
+    "manage_mastermind": "Quản lý Mastermind",
+    "manage_mastermind_description": "Mở ứng dụng Mastermind và nhận cảnh báo của nó. Chỉ cấp cho nhân sự được chỉ định qua quy trình có kiểm toán; quyền quản trị và quyền sở hữu không bao gồm quyền này.",
     "manage_user_report_automation": "Quản lý tự động hóa báo cáo",
     "manage_user_report_automation_description": "Cấu hình lịch báo cáo định kỳ, chế độ tạo và mặc định cho không gian làm việc hoặc nhóm.",
     "manage_user_report_templates": "Quản lý mẫu báo cáo người dùng",

@@ -93,7 +93,9 @@ class _PermissionToggleRow extends StatelessWidget {
 
   final String label;
   final bool value;
-  final ValueChanged<bool> onChanged;
+
+  /// Null renders a read-only switch.
+  final ValueChanged<bool>? onChanged;
 
   @override
   Widget build(BuildContext context) {

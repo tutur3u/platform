@@ -53,6 +53,7 @@ import type { PermissionId } from '@tuturuuu/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import type { ReactNode } from 'react';
 import { deploymentVaultPermissions } from './deployment-vault-permissions';
+import { rootOperationsPermissions } from './root-operations-permissions';
 import { workspaceAccessPermissions } from './workspace-access-permissions';
 
 export type RolePermission = {
@@ -123,16 +124,7 @@ export const permissionGroups = ({
                   disableOnProduction: false,
                   disabled: false,
                 },
-                {
-                  id: 'manage_internal_accounts' as PermissionId,
-                  icon: <UserCog />,
-                  title: t('ws-roles.manage_internal_accounts'),
-                  description: t(
-                    'ws-roles.manage_internal_accounts_description'
-                  ),
-                  disableOnProduction: false,
-                  disabled: false,
-                },
+                ...rootOperationsPermissions(t),
                 {
                   id: 'manage_git_repositories' as PermissionId,
                   icon: <GitBranch />,

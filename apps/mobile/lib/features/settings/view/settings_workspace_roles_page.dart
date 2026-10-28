@@ -445,11 +445,16 @@ class _WorkspaceRoleEditorPageState extends State<WorkspaceRoleEditorPage> {
                                     permissionId,
                                   ),
                                   value: _permissions[permissionId] ?? false,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _permissions[permissionId] = value;
-                                    });
-                                  },
+                                  onChanged:
+                                      readOnlyWorkspacePermissions.contains(
+                                        permissionId,
+                                      )
+                                      ? null
+                                      : (value) {
+                                          setState(() {
+                                            _permissions[permissionId] = value;
+                                          });
+                                        },
                                 ),
                               )
                               .toList(growable: false),

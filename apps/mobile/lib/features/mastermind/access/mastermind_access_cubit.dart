@@ -7,16 +7,28 @@ import 'package:mobile/features/workspace/workspace_presentation.dart';
 export 'mastermind_access_state.dart';
 
 /// Cosmetic discovery gate. This does not grant server authorization.
+///
+/// Mastermind shows in the root workspace and in the user's personal
+/// workspace, and only when the user holds `manage_mastermind` in root (an
+/// explicit grant; creator and admin access never imply it).
 final class MastermindAccessCubit extends Cubit<MastermindAccessState> {
   MastermindAccessCubit({
     required WorkspacePermissionsRepository repository,
     required MastermindSnapshotSource source,
+    bool Function(String wsId)? isPersonalWorkspace,
   }) : _repository = repository,
        _source = source,
+       _isPersonalWorkspace = isPersonalWorkspace ?? _never,
        super(const MastermindAccessState());
 
   final WorkspacePermissionsRepository _repository;
   final MastermindSnapshotSource _source;
+  final bool Function(String wsId) _isPersonalWorkspace;
+
+  static bool _never(String _) => false;
+
+  bool _offersMastermind(String wsId) =>
+      isSystemWorkspaceId(wsId) || _isPersonalWorkspace(wsId);
   int _generation = 0;
 
   /// Re-checks access for [wsId]. A [quiet] sync keeps the current answer on
@@ -27,7 +39,7 @@ final class MastermindAccessCubit extends Cubit<MastermindAccessState> {
         quiet &&
         state.status == MastermindAccessStatus.loaded &&
         state.wsId == wsId;
-    if (wsId == null || !isSystemWorkspaceId(wsId) || !_source.isConfigured) {
+    if (wsId == null || !_offersMastermind(wsId) || !_source.isConfigured) {
       emit(
         MastermindAccessState(
           status: MastermindAccessStatus.loaded,
@@ -54,7 +66,7 @@ final class MastermindAccessCubit extends Cubit<MastermindAccessState> {
           status: MastermindAccessStatus.loaded,
           wsId: wsId,
           enabled:
-              permissions.containsPermission('view_infrastructure') &&
+              permissions.containsPermission(manageMastermindPermission) &&
               _source.isConfigured,
         ),
       );
