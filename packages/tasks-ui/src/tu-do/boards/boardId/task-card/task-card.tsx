@@ -159,6 +159,7 @@ import { TaskCardMetadataTooltip } from './task-card-metadata-tooltip';
 import {
   getTaskCardHydratingOpenOptions,
   getTaskCardTicketIdentifier,
+  getTaskCardTitleName,
   isExternalTaskSnapshot,
 } from './task-card-open-options';
 import {
@@ -167,6 +168,7 @@ import {
 } from './task-card-resource-context';
 import { getTaskCardVisibilityState } from './task-card-visibility';
 import { TaskSchedulingBadge } from './task-scheduling-badge';
+import { useMinuteClock } from './use-minute-clock';
 import { useTaskCardHotkeyTarget } from './use-task-card-hotkey-target';
 
 export type TaskCardAssigneeMemberSource =
@@ -1027,7 +1029,10 @@ function TaskCardInner({
     opacity: isOverlay ? 1 : isOptimistic ? 0.6 : undefined,
   };
 
-  const now = useMemo(() => new Date(), []);
+  const nowMs = useMinuteClock(
+    Boolean(task.end_date) && !task.completed_at && !task.closed_at
+  );
+  const now = useMemo(() => new Date(nowMs), [nowMs]);
   const shouldRenderDueDate = shouldShowTaskDueDate({
     completedAt: task.completed_at,
     closedAt: task.closed_at,
@@ -2024,7 +2029,14 @@ function TaskCardInner({
                     ? 'text-muted-foreground line-through'
                     : '-mx-1 -my-0.5 rounded-sm px-1 py-0.5 text-foreground active:bg-muted/50'
                 )}
-                aria-label={t('edit_task_aria', { name: task.name })}
+                aria-label={t('edit_task_aria', {
+                  name: getTaskCardTitleName(
+                    task.name,
+                    taskList?.status === 'documents'
+                      ? null
+                      : taskTicketIdentifier
+                  ),
+                })}
                 title={t('click_to_edit_task')}
               >
                 {taskTicketIdentifier && taskList?.status !== 'documents' ? (
