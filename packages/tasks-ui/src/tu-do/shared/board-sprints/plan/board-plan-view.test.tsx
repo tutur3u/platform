@@ -291,6 +291,60 @@ describe('BoardPlanView', () => {
     ).toBeInTheDocument();
   });
 
+  it('rereads owners only after a slower move on another task succeeds', async () => {
+    let failFirst: (error: Error) => void = () => undefined;
+    let finishSecond: () => void = () => undefined;
+    api.listBoardTasksForSearch.mockResolvedValue([task('t1'), task('t5')]);
+    api.update.mockImplementation((_ws: string, id: string) =>
+      id === 't1'
+        ? new Promise((_resolve, reject) => {
+            failFirst = reject;
+          })
+        : new Promise((resolve) => {
+            finishSecond = () => {
+              api.listBoardTasksForSearch.mockResolvedValue([
+                task('t1'),
+                task('t5', {
+                  assignees: [{ id: 'u-ana', display_name: 'Ana' }],
+                }),
+              ]);
+              resolve({});
+            };
+          })
+    );
+    renderPlan({ sprints: [sprint(15, 'planned', ['t1', 't5'])] });
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'assign:Task t1' })
+    );
+    fireEvent.click(screen.getAllByRole('menuitem', { name: /Binh/ })[0]!);
+    fireEvent.click(screen.getByRole('button', { name: 'assign:Task t5' }));
+    fireEvent.click(screen.getAllByRole('menuitem', { name: /Ana/ }).at(-1)!);
+    await waitFor(() => expect(api.update).toHaveBeenCalledTimes(2));
+    const fetchesBefore = api.listBoardTasksForSearch.mock.calls.length;
+
+    failFirst(new Error('network'));
+    const backlog = screen.getByRole('region', { name: 'backlog' });
+    await waitFor(() =>
+      expect(within(backlog).getByText('Task t1')).toBeInTheDocument()
+    );
+    // t5 is still in flight, so no reread may overwrite its new owner.
+    expect(api.listBoardTasksForSearch.mock.calls.length).toBe(fetchesBefore);
+    const ana = screen.getByRole('region', { name: 'Ana' });
+    expect(within(ana).getByText('Task t5')).toBeInTheDocument();
+
+    finishSecond();
+    await waitFor(() =>
+      expect(api.listBoardTasksForSearch.mock.calls.length).toBeGreaterThan(
+        fetchesBefore
+      )
+    );
+    expect(
+      within(screen.getByRole('region', { name: 'Ana' })).getByText('Task t5')
+    ).toBeInTheDocument();
+    expect(within(backlog).queryByText('Task t5')).toBeNull();
+  });
+
   it.each([
     ['in order', [0, 1]],
     ['out of order', [1, 0]],
