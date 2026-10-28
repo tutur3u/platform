@@ -1,6 +1,6 @@
 'use client';
 
-import { useSyncExternalStore } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 
 const listeners = new Set<() => void>();
 let currentMinute = Date.now();
@@ -30,12 +30,15 @@ const getCurrentMinute = () => currentMinute;
 /**
  * One shared clock that ticks every minute, so a card's overdue state follows
  * the time while the board stays open. Only enabled callers subscribe, which
- * keeps cards without an open due date from re-rendering.
+ * keeps cards without an open due date from re-rendering; they read the time
+ * they mounted at, since the shared value goes stale while nothing subscribes.
  */
 export function useMinuteClock(enabled: boolean): number {
-  return useSyncExternalStore(
+  const [mountedAt] = useState(() => Date.now());
+  const shared = useSyncExternalStore(
     enabled ? subscribe : subscribeNever,
     getCurrentMinute,
     getCurrentMinute
   );
+  return enabled ? shared : mountedAt;
 }

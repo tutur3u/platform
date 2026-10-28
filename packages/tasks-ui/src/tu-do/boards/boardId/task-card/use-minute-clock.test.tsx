@@ -42,6 +42,18 @@ describe('useMinuteClock', () => {
     });
     expect(renders).toBe(1);
   });
+
+  it('gives a card that opts out the time it mounted, not a stale shared one', () => {
+    // The shared clock last ticked long ago; nothing has subscribed since.
+    vi.setSystemTime(new Date('2026-11-06T12:00:00Z'));
+    let seen = 0;
+    function Probe() {
+      seen = useMinuteClock(false);
+      return null;
+    }
+    render(<Probe />);
+    expect(seen).toBe(new Date('2026-11-06T12:00:00Z').getTime());
+  });
 });
 
 describe('getTaskCardTitleName', () => {
