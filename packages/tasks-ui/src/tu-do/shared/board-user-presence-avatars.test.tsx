@@ -139,7 +139,8 @@ describe('BoardUserPresenceAvatars', () => {
       />
     );
 
-    const avatarImage = screen.getByLabelText('Ada Lovelace');
+    // The popover mock also renders the viewer list, so take the frame's image.
+    const avatarImage = screen.getAllByLabelText('Ada Lovelace')[0]!;
     expect(avatarImage).toHaveClass('object-cover');
     expect(avatarImage).not.toHaveClass('p-0.5');
     expect(avatarImage.parentElement).toHaveClass('ring-inset');
