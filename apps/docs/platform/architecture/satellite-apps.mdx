@@ -52,6 +52,19 @@ secret management, also have local Infrastructure handlers protected by the
 Infrastructure app session and root-workspace membership. Do not add a new
 Infrastructure UI call that depends on an `apps/web` fallback rewrite.
 
+## Responsive sidebar defaults
+
+The shared satellite shell starts with its menu closed below the 768 px mobile
+breakpoint, including Mail and other `SidebarStructure` consumers. CSS hides the
+server-rendered menu before hydration. Mobile open/close controls use transient
+state and preserve the remembered desktop preference. Desktop expanded, collapsed,
+hover, and hidden behavior still applies. Hidden behavior suppresses navigation
+on both screen sizes.
+
+Regression coverage in
+`packages/ui/src/components/ui/custom/satellite-shell.test.tsx` checks initial
+mobile state, mobile toggles, desktop persistence, resizing, and server markup.
+
 ## Shared UI translations
 
 Each satellite must ship English and Vietnamese messages for the shared UI it
