@@ -3,7 +3,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { permitsSupportCookieMutation } from '@/lib/support-inquiry-guard';
@@ -37,17 +37,18 @@ export async function PATCH(
     }
 
     const supabase = await createClient(request);
-    const sbAdmin = await createAdminClient();
 
     // Verify user has valid Tuturuuu email
     const { user } = await resolveAuthenticatedSessionUser(supabase);
 
-    if (!user || !isValidTuturuuuEmail(user.email)) {
+    if (!user || !isVerifiedTuturuuuStaffSession(user)) {
       return NextResponse.json(
         { error: 'Unauthorized. Only Tuturuuu accounts can update inquiries.' },
-        { status: 401 }
+        { status: 403 }
       );
     }
+
+    const sbAdmin = await createAdminClient();
 
     // Update the inquiry
     const { data, error } = await sbAdmin

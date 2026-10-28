@@ -3,7 +3,9 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { getVerifiedAuthUser } from '@tuturuuu/supabase/next/user';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import { headers } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 import { validateWorkspaceApiKey } from '@/lib/workspace-api-key';
@@ -88,8 +90,16 @@ export async function POST(req: Request) {
 
   const { user } = await resolveAuthenticatedSessionUser(supabase);
 
-  if (!user?.email?.endsWith('@tuturuuu.com')) {
-    throw new Error('Unauthorized');
+  if (
+    !isVerifiedTuturuuuStaffSession(
+      user &&
+        (await getVerifiedAuthUser(
+          await createAdminClient({ noCookie: true }),
+          user.id
+        ))
+    )
+  ) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   const sbAdmin = await createAdminClient();

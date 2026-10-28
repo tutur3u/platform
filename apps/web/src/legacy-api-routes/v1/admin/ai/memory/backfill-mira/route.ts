@@ -5,7 +5,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -45,8 +45,8 @@ async function resolvePersonalWorkspaceId(
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
   const { user } = await resolveAuthenticatedSessionUser(supabase);
-  if (!user?.id || !isValidTuturuuuEmail(user.email ?? '')) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!user?.id || !isVerifiedTuturuuuStaffSession(user)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
   }
 
   const parsed = BackfillSchema.safeParse(

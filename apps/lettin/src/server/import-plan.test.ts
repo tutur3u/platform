@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { buildImportPlan } from './import-plan';
-import { isTuturuuuStaffEmail } from './staff-access';
 
 const source = (id: string, collectionSlug = 'characters') => ({
   stableSourceId: id,
@@ -9,19 +8,6 @@ const source = (id: string, collectionSlug = 'characters') => ({
 });
 
 describe('Exocorpse canonical import boundary', () => {
-  it.each(['artist@tuturuuu.com', 'Artist@TUTURUUU.COM'])(
-    'recognizes the exact staff domain: %s',
-    (email) => expect(isTuturuuuStaffEmail(email)).toBe(true)
-  );
-  it.each([
-    null,
-    'artist@example.test',
-    'artist@tuturuuu.com.evil.test',
-    'artist@@tuturuuu.com',
-    ' artist@tuturuuu.com',
-  ])('rejects an ineligible address: %s', (email) => {
-    expect(isTuturuuuStaffEmail(email)).toBe(false);
-  });
   it('supports canonical bundles and maps stable relationships without dangling links', () => {
     const plan = buildImportPlan(
       {

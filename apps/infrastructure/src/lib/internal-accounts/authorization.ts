@@ -5,6 +5,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { PermissionId } from '@tuturuuu/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
@@ -71,7 +72,7 @@ export async function authorizeInternalAccountRequest(request: Request) {
     !currentUser ||
     currentUser.id !== user.id ||
     !currentUser.email_confirmed_at ||
-    !isExactTuturuuuDotComEmail(currentUser.email) ||
+    !isVerifiedTuturuuuStaffSession(currentUser) ||
     (currentUser.banned_until &&
       Date.parse(currentUser.banned_until) > Date.now())
   ) {

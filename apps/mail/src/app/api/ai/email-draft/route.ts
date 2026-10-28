@@ -1,8 +1,12 @@
 import { google } from '@ai-sdk/google';
 import { withAiMemory } from '@tuturuuu/ai/memory';
-import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import {
+  getVerifiedAuthUser,
+  type SupabaseUser,
+} from '@tuturuuu/supabase/next/user';
 import { validateAiTempAuthRequest } from '@tuturuuu/utils/ai-temp-auth';
-import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import { generateObject } from 'ai';
 import type { NextRequest } from 'next/server';
 import { resolveMailRouteContext } from '@/lib/mail/auth';
@@ -36,15 +40,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check if user has authorized email domain
-    if (!isValidTuturuuuEmail(user.email)) {
+    user = await getVerifiedAuthUser(
+      await createAdminClient({ noCookie: true }),
+      user.id
+    );
+    if (!isVerifiedTuturuuuStaffSession(user)) {
       return Response.json(
         {
           message: 'Only Tuturuuu emails are allowed',
         },
-        { status: 401 }
+        { status: 403 }
       );
     }
+
+    if (!user) return Response.json({ message: 'Forbidden' }, { status: 403 });
 
     const {
       context,

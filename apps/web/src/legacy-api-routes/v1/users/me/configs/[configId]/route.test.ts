@@ -1,3 +1,23 @@
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: async () => ({
+    auth: {
+      admin: {
+        getUserById: async () => ({
+          data: {
+            user: {
+              id: 'user-1',
+              email: 'member@tuturuuu.com',
+              email_confirmed_at: '2026-01-01',
+              identities: [],
+            },
+          },
+          error: null,
+        }),
+      },
+    },
+  }),
+}));
+
 import { SHOW_VERSION_BADGE_CONFIG_ID } from '@tuturuuu/internal-api/users';
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';

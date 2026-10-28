@@ -76,7 +76,11 @@ beforeEach(() => {
   });
   mocks.host.mockResolvedValue({
     data: {
-      user: { email: 'host@tuturuuu.com', email_confirmed_at: '2026-01-01' },
+      user: {
+        email: 'host@tuturuuu.com',
+        email_confirmed_at: '2026-01-01',
+        identities: [],
+      },
     },
     error: null,
   });
@@ -92,10 +96,15 @@ it('allows an external signed-in invitee without granting workspace access', asy
 });
 
 it.each([
-  { email: 'host@example.com', email_confirmed_at: '2026-01-01' },
+  {
+    email: 'host@example.com',
+    email_confirmed_at: '2026-01-01',
+    identities: [],
+  },
   {
     email: 'host@tuturuuu.com.attacker.test',
     email_confirmed_at: '2026-01-01',
+    identities: [],
   },
   { email: 'host@tuturuuu.com', email_confirmed_at: null },
 ])(
@@ -251,7 +260,11 @@ it.each(['PLUS', 'PRO', 'ENTERPRISE'])(
   async (tier) => {
     mocks.host.mockResolvedValue({
       data: {
-        user: { email: 'paid@example.test', email_confirmed_at: '2026-01-01' },
+        user: {
+          email: 'paid@example.test',
+          email_confirmed_at: '2026-01-01',
+          identities: [],
+        },
       },
       error: null,
     });
@@ -278,7 +291,11 @@ it('rejects an unverified paid host', async () => {
 it('fails closed with retryable status when host entitlement is unavailable', async () => {
   mocks.host.mockResolvedValue({
     data: {
-      user: { email: 'paid@example.test', email_confirmed_at: '2026-01-01' },
+      user: {
+        email: 'paid@example.test',
+        email_confirmed_at: '2026-01-01',
+        identities: [],
+      },
     },
     error: null,
   });

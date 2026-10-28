@@ -24,7 +24,11 @@ describe('fresh Parley authorization', () => {
     vi.resetAllMocks();
     mocks.identity.mockResolvedValue({
       data: {
-        user: { email: 'user@example.test', email_confirmed_at: '2026-01-01' },
+        user: {
+          email: 'user@example.test',
+          email_confirmed_at: '2026-01-01',
+          identities: [],
+        },
       },
       error: null,
     });
@@ -40,7 +44,11 @@ describe('fresh Parley authorization', () => {
   it('does not consult the allowlist for a confirmed exact internal domain', async () => {
     mocks.identity.mockResolvedValue({
       data: {
-        user: { email: 'user@tuturuuu.com', email_confirmed_at: '2026-01-01' },
+        user: {
+          email: 'user@tuturuuu.com',
+          email_confirmed_at: '2026-01-01',
+          identities: [],
+        },
       },
       error: null,
     });

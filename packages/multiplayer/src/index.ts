@@ -1,3 +1,7 @@
+import { staff } from './staff';
+
+export { staff } from './staff';
+
 import {
   defaultTeamLimits,
   defaultWorkshopLimits,
@@ -31,11 +35,11 @@ export type {
   Trace,
   TraceStatus,
 } from './run';
-
 export type RoomMode = 'open' | 'readonly' | 'private';
 export type Identity = {
   id: string;
   email: string | null;
+  staffVerified?: boolean;
   name: string;
   expires: number;
   avatarUrl?: string;
@@ -45,6 +49,7 @@ export type Member = {
   id: string;
   name: string;
   email: string | null;
+  staffVerified?: boolean;
   teamId: string;
   teamIds: string[];
   admin: boolean;
@@ -117,7 +122,6 @@ export type Room = {
   limits: WorkshopLimits;
   revision: number;
 };
-
 export function workshopScheduleError(
   startsAt: number | null,
   endsAt: number | null,
@@ -241,12 +245,7 @@ export function requireRule(
 ): asserts condition {
   if (!condition) throw new RoomError(code, status);
 }
-export function staff(identity: Pick<Identity, 'email'>) {
-  return (
-    typeof identity.email === 'string' &&
-    /^[^@\s]+@tuturuuu\.com$/i.test(identity.email)
-  );
-}
+
 export function text(value: unknown, max: number, min = 1): string {
   requireRule(
     typeof value === 'string' &&
@@ -293,6 +292,7 @@ export function memberOf(
   );
   const effective = {
     ...member,
+    staffVerified: identity.staffVerified,
     admin: (member.admin || member.id === room.ownerId) && staff(identity),
   };
   requireRule(room.mode !== 'private' || effective.admin, 'private_room', 403);
@@ -423,6 +423,7 @@ export function createRoom(
       {
         id: identity.id,
         email: identity.email,
+        staffVerified: identity.staffVerified,
         name: identity.name,
         admin: true,
         teamId: 'team-1',
@@ -472,6 +473,7 @@ export function joinRoom(
     id: identity.id,
     name: identity.name,
     email: identity.email,
+    staffVerified: identity.staffVerified,
     teamId,
     teamIds: [teamId],
     admin: false,

@@ -3,7 +3,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import { connection, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createLegacyHeadHandler } from '@/legacy-api-routes/head';
@@ -32,7 +32,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  if (!isValidTuturuuuEmail(user.email)) {
+  if (!isVerifiedTuturuuuStaffSession(user)) {
     return NextResponse.json(
       { message: 'Only Tuturuuu accounts can view inquiries' },
       { status: 403 }

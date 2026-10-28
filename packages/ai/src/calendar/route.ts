@@ -1,6 +1,7 @@
 import { google } from '@ai-sdk/google';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import { Output, streamText } from 'ai';
 import { withAiMemory } from '../memory';
 import { calendarEventsSchema } from './events';
@@ -28,8 +29,9 @@ export async function POST(req: Request) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user?.email?.endsWith('@tuturuuu.com'))
-    return new Response('Unauthorized', { status: 401 });
+  if (!isVerifiedTuturuuuStaffSession(user))
+    return new Response('Forbidden', { status: 403 });
+  if (!user) return new Response('Forbidden', { status: 403 });
 
   // Extract timezone information from context if available
   const userTimezone = extractTimezone(context.prompt);

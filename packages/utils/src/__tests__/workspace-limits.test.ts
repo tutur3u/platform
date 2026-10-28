@@ -1,4 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const auth = vi.hoisted(() => ({ getUserById: vi.fn() }));
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: async () => ({
+    auth: { admin: { getUserById: auth.getUserById } },
+  }),
+}));
+
 import { MAX_WORKSPACES_FOR_FREE_USERS } from '../constants';
 import {
   checkWorkspaceCreationLimit,
@@ -10,9 +18,33 @@ describe('checkWorkspaceCreationLimit', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    auth.getUserById.mockResolvedValue({
+      data: {
+        user: {
+          id: mockUserId,
+          email: 'user@example.com',
+          email_confirmed_at: '2026-01-01',
+          identities: [],
+        },
+      },
+      error: null,
+    });
   });
 
   describe('when user has a Tuturuuu email', () => {
+    beforeEach(() =>
+      auth.getUserById.mockResolvedValue({
+        data: {
+          user: {
+            id: mockUserId,
+            email: 'user@tuturuuu.com',
+            email_confirmed_at: '2026-01-01',
+            identities: [],
+          },
+        },
+        error: null,
+      })
+    );
     it('should allow creation for @tuturuuu.com email', async () => {
       const mockSupabase = createMockSupabase({ count: 100, error: null });
 

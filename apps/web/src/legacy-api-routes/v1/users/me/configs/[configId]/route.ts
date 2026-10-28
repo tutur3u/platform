@@ -1,6 +1,9 @@
 import { SHOW_VERSION_BADGE_CONFIG_ID } from '@tuturuuu/internal-api/users';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { getVerifiedAuthUser } from '@tuturuuu/supabase/next/user';
 import { MAX_MEDIUM_TEXT_LENGTH } from '@tuturuuu/utils/constants';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
@@ -11,7 +14,14 @@ export const GET = withSessionAuth<{ configId: string }>(
   async (_req, { user, supabase }, { configId: id }) => {
     if (
       id === SHOW_VERSION_BADGE_CONFIG_ID &&
-      !isExactTuturuuuDotComEmail(user.email)
+      (!isExactTuturuuuDotComEmail(user.email) ||
+        !isVerifiedTuturuuuStaffSession(
+          user &&
+            (await getVerifiedAuthUser(
+              await createAdminClient({ noCookie: true }),
+              user.id
+            ))
+        ))
     ) {
       return NextResponse.json({ value: null });
     }
@@ -74,7 +84,14 @@ export const PUT = withSessionAuth<{ configId: string }>(
     if (
       isVersionBadgeConfig &&
       value === 'true' &&
-      !isExactTuturuuuDotComEmail(user.email)
+      (!isExactTuturuuuDotComEmail(user.email) ||
+        !isVerifiedTuturuuuStaffSession(
+          user &&
+            (await getVerifiedAuthUser(
+              await createAdminClient({ noCookie: true }),
+              user.id
+            ))
+        ))
     ) {
       return NextResponse.json(
         { message: 'Version badge is limited to @tuturuuu.com accounts' },

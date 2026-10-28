@@ -1,6 +1,7 @@
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
+import { getVerifiedAuthUser } from '@tuturuuu/supabase/next/user';
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
@@ -42,7 +43,13 @@ export default async function TimeTrackerManagementPage({
         const user = await getSatelliteAppSessionUser('track');
         if (!user) notFound();
 
-        const isRootUser = isValidTuturuuuEmail(user.email || '');
+        const isRootUser = isVerifiedTuturuuuStaffSession(
+          user &&
+            (await getVerifiedAuthUser(
+              await createAdminClient({ noCookie: true }),
+              user.id
+            ))
+        );
         if (!isRootUser) notFound();
         const supabase = await createAdminClient({ noCookie: true });
 
