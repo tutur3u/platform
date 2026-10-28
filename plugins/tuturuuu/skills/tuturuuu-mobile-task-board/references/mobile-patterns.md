@@ -351,3 +351,16 @@ A covered ancestor can pause a nested navigator's exit animation. Scope
 invalidation removes the exact owned settings route instead of waiting for a pop
 animation; it must preserve an unrelated covering route. The settings shell ABA
 checks cover this cancellation while the editor is covered.
+
+## Build-free Startup Inspection
+
+Trace pre-`runApp` awaits in `lib/bootstrap.dart` separately from root-provider
+construction and unawaited locale/product loads in `lib/app/view/app.dart`.
+Optional public model-transfer restoration uses `scheduleOptionalStartup` after
+first paint; keep required identity, appearance, encrypted cache and mutation
+recovery before the root mounts. Preserve feature-owned retry/error handling.
+Use `test/core/startup/optional_startup_test.dart` for paint ordering and failure
+containment; run `test/core` and `test/features/shell` for bootstrap-adjacent
+regressions. Asset bytes/dependency lists are static candidates, not release
+bundle or device startup measurements. See the Mobile application guide's
+startup recovery section for the default and platform scope.
