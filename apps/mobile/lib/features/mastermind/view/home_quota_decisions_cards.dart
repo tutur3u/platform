@@ -28,9 +28,12 @@ class HomeQuotaCard extends StatelessWidget {
       caption: l10n.mastermindQuotaTitle,
       footer: l10n.mastermindReservePacing,
       children: [
-        if (model.quotaPools.every(
-          (pool) => pool.latest.session.remainingPercent == null,
-        ))
+        // Collapse only when every pool is known and none reports: with
+        // hidden pools a reading may sit behind "Show all".
+        if (model.quotaPoolCount == model.quotaPools.length &&
+            model.quotaPools.every(
+              (pool) => pool.latest.session.remainingPercent == null,
+            ))
           AppGroupedRow(title: Text(l10n.mastermindQuotaEmpty))
         else
           for (final pool in model.quotaPools) _QuotaRow(pool: pool),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile/core/layout/layout_tokens.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/kit/app_segmented_control.dart';
 import 'package:mobile/core/ui/tokens/app_interface_tokens.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
@@ -12,7 +13,8 @@ import 'package:mobile/core/ui/tokens/app_tokens.dart';
 /// still owns a full-height hit area of at least
 /// [AppInterfaceTokens.minTouchTarget] (44 pt): the transparent band above
 /// and below the track belongs to the segment under it. Text grows with
-/// Dynamic Type; the track grows with it rather than clipping.
+/// Dynamic Type; the track grows with it rather than clipping, and when the
+/// segments no longer fit across they stack into full-width 44 pt rows.
 class MastermindSegmentedControl<T> extends StatelessWidget {
   const MastermindSegmentedControl({
     required this.segments,
@@ -41,82 +43,89 @@ class MastermindSegmentedControl<T> extends StatelessWidget {
     final solid = MediaQuery.highContrastOf(context);
     return LayoutBuilder(
       builder: (context, constraints) {
-        var wordWidth = 0.0;
-        for (final segment in segments) {
-          for (final word
-              in segment.label.split(' ').length > 2
-                  ? [
-                      segment.label.split(' ').take(2).join(' '),
-                      segment.label.split(' ').skip(2).join(' '),
-                    ]
-                  : segment.label.split(' ')) {
-            final painter = TextPainter(
-              text: TextSpan(
-                text: word,
-                style: DefaultTextStyle.of(context).style
-                    .merge(tokens.typography.small)
-                    .copyWith(fontWeight: FontWeight.w600),
+        final stacked = !_fitsAcross(context, tokens, constraints.maxWidth);
+        final track = BoxDecoration(
+          color: c.muted.withValues(alpha: solid ? 1 : 0.8),
+          borderRadius: BorderRadius.circular(AppRadius.xs + _trackPadding),
+          border: solid ? Border.all(color: c.border) : null,
+        );
+        _Segment<T> segment(AppSegment<T> value) => _Segment<T>(
+          segment: value,
+          selected: value.value == selected,
+          stacked: stacked,
+          onTap: onChanged == null ? null : () => onChanged!(value.value),
+        );
+        if (stacked) {
+          // Never a hidden scroller: when the segments cannot sit side by
+          // side, each one gets its own full-width 44 pt row.
+          return DecoratedBox(
+            decoration: track,
+            child: Padding(
+              padding: const EdgeInsets.all(_trackPadding),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [for (final value in segments) segment(value)],
               ),
-              textDirection: Directionality.of(context),
-              textScaler: MediaQuery.textScalerOf(context),
-            )..layout();
-            if (painter.width > wordWidth) wordWidth = painter.width;
-            painter.dispose();
-          }
-        }
-        final minimum =
-            (wordWidth + 2 * AppSpacing.sm + 2) * segments.length +
-            2 * _trackPadding;
-        final width = minimum > constraints.maxWidth
-            ? minimum
-            : constraints.maxWidth;
-        return SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: SizedBox(
-            width: width,
-            child: Stack(
-              children: [
-                Positioned.fill(
-                  top: trackInset,
-                  bottom: trackInset,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: c.muted.withValues(alpha: solid ? 1 : 0.8),
-                      borderRadius: BorderRadius.circular(
-                        AppRadius.xs + _trackPadding,
-                      ),
-                      border: solid ? Border.all(color: c.border) : null,
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: _trackPadding,
-                  ),
-                  child: IntrinsicHeight(
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        for (final segment in segments)
-                          Expanded(
-                            child: _Segment<T>(
-                              segment: segment,
-                              selected: segment.value == selected,
-                              onTap: onChanged == null
-                                  ? null
-                                  : () => onChanged!(segment.value),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
             ),
-          ),
+          );
+        }
+        return Stack(
+          children: [
+            Positioned.fill(
+              top: trackInset,
+              bottom: trackInset,
+              child: DecoratedBox(decoration: track),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: _trackPadding),
+              child: IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (final value in segments)
+                      Expanded(child: segment(value)),
+                  ],
+                ),
+              ),
+            ),
+          ],
         );
       },
     );
+  }
+
+  /// Whether the widest word of every label fits its share of [maxWidth]; a
+  /// label may wrap between words but never inside one.
+  bool _fitsAcross(BuildContext context, AppTokens tokens, double maxWidth) {
+    var wordWidth = 0.0;
+    var iconWidth = 0.0;
+    for (final segment in segments) {
+      final words = segment.label.split(' ');
+      final parts = words.length > 2
+          ? [words.take(2).join(' '), words.skip(2).join(' ')]
+          : words;
+      if (segment.icon != null) {
+        iconWidth = 14 + AppSpacing.xs;
+      }
+      for (final word in parts) {
+        final painter = TextPainter(
+          text: TextSpan(
+            text: word,
+            style: DefaultTextStyle.of(context).style
+                .merge(tokens.typography.small)
+                .copyWith(fontWeight: FontWeight.w600),
+          ),
+          textDirection: Directionality.of(context),
+          textScaler: MediaQuery.textScalerOf(context),
+        )..layout();
+        if (painter.width > wordWidth) wordWidth = painter.width;
+        painter.dispose();
+      }
+    }
+    final minimum =
+        (wordWidth + iconWidth + 2 * AppSpacing.sm + 2) * segments.length +
+        2 * _trackPadding;
+    return minimum <= maxWidth;
   }
 }
 
@@ -124,11 +133,13 @@ class _Segment<T> extends StatefulWidget {
   const _Segment({
     required this.segment,
     required this.selected,
+    required this.stacked,
     required this.onTap,
   });
 
   final AppSegment<T> segment;
   final bool selected;
+  final bool stacked;
   final VoidCallback? onTap;
 
   @override
@@ -144,9 +155,10 @@ class _SegmentState<T> extends State<_Segment<T>> {
     final c = tokens.colorScheme;
     final selected = widget.selected;
     final foreground = selected ? c.foreground : c.mutedForeground;
-    const pad =
-        MastermindSegmentedControl.trackInset +
-        MastermindSegmentedControl._trackPadding;
+    final pad = widget.stacked
+        ? 0.0
+        : MastermindSegmentedControl.trackInset +
+              MastermindSegmentedControl._trackPadding;
     return Semantics(
       container: true,
       selected: selected,
@@ -176,7 +188,7 @@ class _SegmentState<T> extends State<_Segment<T>> {
               minHeight: AppInterfaceTokens.minTouchTarget,
             ),
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: pad),
+              padding: EdgeInsets.symmetric(vertical: pad),
               child: Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.sm,
@@ -195,10 +207,15 @@ class _SegmentState<T> extends State<_Segment<T>> {
                   ),
                 ),
                 // Centred without filling a bounded parent's height.
-                child: Center(
-                  heightFactor: 1,
-                  child: _label(tokens, foreground),
-                ),
+                child: widget.stacked
+                    ? Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: _label(tokens, foreground),
+                      )
+                    : Center(
+                        heightFactor: 1,
+                        child: _label(tokens, foreground),
+                      ),
               ),
             ),
           ),
@@ -208,24 +225,28 @@ class _SegmentState<T> extends State<_Segment<T>> {
   }
 
   Widget _label(AppTokens tokens, Color foreground) => Row(
-    mainAxisSize: MainAxisSize.min,
+    mainAxisSize: widget.stacked ? MainAxisSize.max : MainAxisSize.min,
     children: [
       if (widget.segment.icon case final icon?) ...[
         Icon(icon, size: 14, color: foreground),
         const SizedBox(width: AppSpacing.xs),
       ],
-      Flexible(
+      // No line limit: a label wraps, it is never cut.
+      (widget.stacked ? Expanded.new : Flexible.new)(
         child: Text(
           widget.segment.label,
-          maxLines: 2,
           softWrap: true,
-          textAlign: TextAlign.center,
+          textAlign: widget.stacked ? TextAlign.start : TextAlign.center,
           style: tokens.typography.small.copyWith(
             color: foreground,
             fontWeight: widget.selected ? FontWeight.w600 : FontWeight.w500,
           ),
         ),
       ),
+      if (widget.stacked && widget.selected) ...[
+        const SizedBox(width: AppSpacing.xs),
+        Icon(AppIcons.check, size: 16, color: foreground),
+      ],
     ],
   );
 }

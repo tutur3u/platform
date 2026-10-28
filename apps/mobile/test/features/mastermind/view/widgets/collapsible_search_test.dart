@@ -13,26 +13,23 @@ Future<(MastermindSearchController, List<String>)> _pump(
   addTearDown(controller.dispose);
   final queries = <String>[];
   await tester.pumpApp(
-    MastermindPullToSearch(
-      controller: controller,
-      child: CustomScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        slivers: [
-          SliverToBoxAdapter(
-            child: MastermindCollapsibleSearch(
-              controller: controller,
-              placeholder: 'Search lanes',
-              onChanged: queries.add,
-            ),
+    CustomScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      slivers: [
+        SliverToBoxAdapter(
+          child: MastermindCollapsibleSearch(
+            controller: controller,
+            placeholder: 'Search lanes',
+            onChanged: queries.add,
           ),
-          SliverList.list(
-            children: [
-              for (var i = 0; i < 30; i++)
-                SizedBox(height: 56, child: Text('Row $i')),
-            ],
-          ),
-        ],
-      ),
+        ),
+        SliverList.list(
+          children: [
+            for (var i = 0; i < 30; i++)
+              SizedBox(height: 56, child: Text('Row $i')),
+          ],
+        ),
+      ],
     ),
   );
   return (controller, queries);

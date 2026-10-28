@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/kit/app_segmented_control.dart';
 import 'package:mobile/features/mastermind/view/widgets/mastermind_segmented_control.dart';
 
@@ -125,36 +126,119 @@ void main() {
             MediaQuery(
               data: MediaQueryData(textScaler: TextScaler.linear(scale)),
               child: Align(
-                alignment: Alignment.topCenter,
-                child: SizedBox(
-                  width: width - 32,
-                  child: MastermindSegmentedControl<int>(
-                    segments: [
-                      for (var i = 0; i < labels.length; i++)
-                        AppSegment(value: i, label: labels[i]),
-                    ],
-                    selected: 0,
-                    onChanged: (_) {},
+                // Screen left edge at x = 0, plus the page's 16 pt gutter.
+                alignment: Alignment.topLeft,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: SizedBox(
+                    width: width - 32,
+                    child: MastermindSegmentedControl<int>(
+                      segments: [
+                        for (var i = 0; i < labels.length; i++)
+                          AppSegment(value: i, label: labels[i]),
+                      ],
+                      selected: 0,
+                      onChanged: (_) {},
+                    ),
                   ),
                 ),
               ),
             ),
           );
+          final screen = Rect.fromLTWH(0, 0, width, 800);
           for (final label in labels) {
             final paragraph = tester.renderObject<RenderParagraph>(
               find.text(label),
             );
+            // Never truncated: no line limit, no ellipsis, no fade.
             expect(paragraph.didExceedMaxLines, isFalse, reason: label);
+            expect(paragraph.maxLines, isNull, reason: label);
             expect(
               tester.widget<Text>(find.text(label)).overflow,
               isNot(TextOverflow.ellipsis),
             );
+            // Fully on screen, and inside the control.
+            final rect = tester.getRect(find.text(label));
+            final control = tester.getRect(
+              find.byType(MastermindSegmentedControl<int>),
+            );
+            expect(rect.left, greaterThanOrEqualTo(screen.left), reason: label);
+            expect(rect.right, lessThanOrEqualTo(screen.right), reason: label);
+            expect(rect.top, greaterThanOrEqualTo(screen.top), reason: label);
+            expect(rect.left, greaterThanOrEqualTo(control.left));
+            expect(rect.right, lessThanOrEqualTo(control.right));
+            expect(
+              tester
+                  .getRect(find.byType(MastermindSegmentedControl<int>))
+                  .width,
+              lessThanOrEqualTo(width - 32),
+            );
           }
+          // Never a hidden horizontal scroller.
+          expect(
+            find.descendant(
+              of: find.byType(MastermindSegmentedControl<int>),
+              matching: find.byType(SingleChildScrollView),
+            ),
+            findsNothing,
+          );
           expect(tester.takeException(), isNull);
         });
       }
     }
   }
+  testWidgets('stacks into full-width 44 pt rows when it cannot fit across', (
+    tester,
+  ) async {
+    final handle = tester.ensureSemantics();
+    final changes = <int>[];
+    await tester.pumpApp(
+      MediaQuery(
+        data: const MediaQueryData(textScaler: TextScaler.linear(2)),
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: SizedBox(
+            width: 288,
+            child: MastermindSegmentedControl<int>(
+              segments: const [
+                AppSegment(value: 0, label: 'Needs you'),
+                AppSegment(value: 1, label: 'Resolved'),
+                AppSegment(value: 2, label: 'Decisions'),
+              ],
+              selected: 1,
+              onChanged: changes.add,
+            ),
+          ),
+        ),
+      ),
+    );
+    final tops = [
+      for (final label in ['Needs you', 'Resolved', 'Decisions'])
+        tester.getRect(find.text(label)).top,
+    ];
+    expect(tops[0], lessThan(tops[1]));
+    expect(tops[1], lessThan(tops[2]));
+    expect(
+      tester.getSize(find.byType(MastermindSegmentedControl<int>)).height,
+      greaterThanOrEqualTo(3 * 44),
+    );
+    // The selected row is marked by shape, not colour alone.
+    expect(find.byIcon(AppIcons.check), findsOneWidget);
+    expect(
+      tester.getSemantics(find.text('Resolved')),
+      isSemantics(
+        label: 'Resolved',
+        isButton: true,
+        isSelected: true,
+        isInMutuallyExclusiveGroup: true,
+        hasTapAction: true,
+      ),
+    );
+    await tester.tap(find.text('Decisions'));
+    expect(changes, [2]);
+    handle.dispose();
+  });
+
   test('keeps the track between the 44 pt bounds', () {
     expect(
       MastermindSegmentedControl.trackHeight +

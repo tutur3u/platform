@@ -40,6 +40,48 @@ void main() {
         );
       });
     }
+    test('tolerates a minute of hub clock skew, no more', () {
+      Map<String, dynamic> withChecked(String checked) =>
+          homeJson()
+            ..['work'] = {
+              'status': 'ok',
+              'checked_at': checked,
+              'counts': {'running': 3, 'waiting': 2, 'idle': 13},
+            };
+      final generated = DateTime.parse(homeJson()['generated_at'] as String);
+      String at(Duration offset) =>
+          generated.add(offset).toUtc().toIso8601String();
+      expect(
+        MastermindActivity.from(
+          parsedSnapshot(withChecked(at(const Duration(seconds: 45)))),
+        ).source,
+        ActivitySource.hub,
+      );
+      expect(
+        MastermindActivity.from(
+          parsedSnapshot(withChecked(at(const Duration(minutes: 5)))),
+        ).source,
+        ActivitySource.fleet,
+      );
+    });
+
+    test('ignores ok counts checked more than 15 minutes ago', () {
+      final generated = DateTime.parse(homeJson()['generated_at'] as String);
+      final json = homeJson()
+        ..['work'] = {
+          'status': 'ok',
+          'checked_at': generated
+              .subtract(const Duration(minutes: 16))
+              .toUtc()
+              .toIso8601String(),
+          'counts': {'running': 3, 'waiting': 2, 'idle': 13},
+        };
+      expect(
+        MastermindActivity.from(parsedSnapshot(json)).source,
+        ActivitySource.fleet,
+      );
+    });
+
     test('uses a recent fleet point before the lane states', () {
       final activity = MastermindActivity.from(parsedSnapshot(homeJson()));
       expect(activity.source, ActivitySource.fleet);

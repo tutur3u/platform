@@ -152,8 +152,9 @@ void main() {
       expect(find.text('GitHub deployment'), findsNothing);
       // Seven pools in the fixture: the three most urgent, then Show all 7.
       expect(find.text('Show all 7'), findsOneWidget);
-      expect(find.text('Quota not reported'), findsOneWidget);
-      expect(find.textContaining('pool'), findsNothing);
+      // Hidden pools may report, so the capped list never collapses.
+      expect(find.text('Quota not reported'), findsNothing);
+      expect(find.text('Claude pool A'), findsOneWidget);
     });
 
     testWidgets('Not reported: missing readings are an em dash', (

@@ -4,14 +4,12 @@ import 'package:mobile/core/ui/components/app_search_field.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 
-export 'package:mobile/features/mastermind/view/widgets/pull_to_search.dart';
-
 /// Whether a list's search field is shown, and its query.
 ///
 /// Search starts hidden so filters don't push the list down. It opens from a
-/// search icon in the top navbar ([searchActionSpec]) or from a pull-down at
-/// the top of the list (`MastermindPullToSearch`); it stays open while a
-/// query is applied and closes again once cleared and unfocused.
+/// search icon in the top navbar ([searchActionSpec]); a pull-down stays a
+/// refresh. It stays open while a query is applied and closes again once
+/// cleared and unfocused.
 class MastermindSearchController extends ChangeNotifier {
   MastermindSearchController({String query = ''})
     : text = TextEditingController(text: query),

@@ -78,14 +78,19 @@ class MastermindActivityStrip extends StatelessWidget {
             ],
           ),
           if (activity.waitingOnYou > 0)
-            InkWell(
-              onTap: () => context.go(inboxLocation()),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(minHeight: 44),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    l10n.mastermindWaitingOnYou(activity.waitingOnYou),
+            Semantics(
+              button: true,
+              child: InkWell(
+                onTap: () => context.go(inboxLocation()),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    minHeight: AppInterfaceTokens.minTouchTarget,
+                  ),
+                  child: Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: Text(
+                      l10n.mastermindWaitingOnYou(activity.waitingOnYou),
+                    ),
                   ),
                 ),
               ),

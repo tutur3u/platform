@@ -250,6 +250,10 @@ void main() {
       expect(find.bySemanticsLabel('Failed, 1'), findsOneWidget);
       expect(find.text('3 on you'), findsOneWidget);
       expect(
+        tester.getSemantics(find.text('3 on you')),
+        isSemantics(label: '3 on you', isButton: true, hasTapAction: true),
+      );
+      expect(
         find.text('From fleet reports · 1 queued · 1 not reporting'),
         findsOneWidget,
       );
@@ -279,6 +283,52 @@ void main() {
       expect(find.text('SHORT'), findsOneWidget);
       expect(find.text('Reserve pacing (chart rule)'), findsOneWidget);
       expect(find.text('Usage'), findsOneWidget);
+    });
+
+    Map<String, dynamic> withPools(List<double?> sessions) {
+      final json = homeJson();
+      final usage =
+          (json['observability'] as Map<String, dynamic>)['usage']
+              as Map<String, dynamic>;
+      final template =
+          (usage['instances'] as List<dynamic>).first as Map<String, dynamic>;
+      usage['instances'] = [
+        for (final (i, session) in sessions.indexed)
+          {
+            ...template,
+            'instance': 'Claude pool ${String.fromCharCode(65 + i)}',
+            'session': {
+              ...template['session'] as Map<String, dynamic>,
+              'remaining_percent': session,
+            },
+          },
+      ];
+      return json;
+    }
+
+    Finder quotaCard(String row) => find
+        .ancestor(of: find.text(row), matching: find.byType(AppGroupedSection))
+        .first;
+    final showAll = find.textContaining('Show all');
+
+    testWidgets('all pools unreported: one row, no Show all', (tester) async {
+      await _pumpHome(tester, json: withPools([null, null]));
+      expect(find.text('Quota not reported'), findsOneWidget);
+      expect(
+        find.descendant(of: quotaCard('Quota not reported'), matching: showAll),
+        findsNothing,
+      );
+    });
+
+    testWidgets('a hidden pool that reports is not collapsed away', (
+      tester,
+    ) async {
+      await _pumpHome(tester, json: withPools([null, null, null, 20]));
+      expect(find.text('Quota not reported'), findsNothing);
+      expect(
+        find.descendant(of: quotaCard('Claude pool A'), matching: showAll),
+        findsOneWidget,
+      );
     });
 
     testWidgets('lists the three newest decisions in GMT+7', (tester) async {
