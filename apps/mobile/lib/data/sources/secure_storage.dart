@@ -40,7 +40,7 @@ class SupabaseSecureStorage extends LocalStorage {
 
   Future<T> _serial<T>(Future<T> Function() operation) {
     final result = _pending.then((_) => operation());
-    _pending = result.then<void>((_) {}, onError: (Object _, StackTrace __) {});
+    _pending = result.then<void>((_) {}, onError: (Object _, StackTrace _) {});
     return result;
   }
 
@@ -48,7 +48,7 @@ class SupabaseSecureStorage extends LocalStorage {
   Future<String?> accessToken() => _serial(() async {
     final staged = await _storage.read(key: _retryKey);
     if (staged == null) {
-      return _storage.read(key: supabasePersistSessionKey);
+      return await _storage.read(key: supabasePersistSessionKey);
     }
     try {
       await _storage.write(key: supabasePersistSessionKey, value: staged);

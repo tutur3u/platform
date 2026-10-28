@@ -26,8 +26,9 @@ void main() {
     values = {};
     writes = 0;
     fail = null;
-    when(() => backend.read(key: any(named: 'key')))
-        .thenAnswer((call) async => values[call.namedArguments[#key]]);
+    when(
+      () => backend.read(key: any(named: 'key')),
+    ).thenAnswer((call) async => values[call.namedArguments[#key]]);
     when(
       () => backend.write(
         key: any(named: 'key'),

@@ -372,8 +372,9 @@ void main() {
   test(
     'persist retries a duplicate only once and exposes retry failure',
     () async {
-      when(() => current.write(key: supabasePersistSessionKey, value: 'fresh'))
-          .thenThrow(PlatformException(code: 'security', details: -25299));
+      when(
+        () => current.write(key: supabasePersistSessionKey, value: 'fresh'),
+      ).thenThrow(PlatformException(code: 'security', details: -25299));
       await expectLater(
         SupabaseSecureStorage(storage: current).persistSession('fresh'),
         throwsA(isA<PlatformException>()),
@@ -403,8 +404,9 @@ void main() {
       expect(await storage.read(key: 'cache-key'), 'encrypted-key');
       expect(await storage.read(key: 'cache-key'), 'encrypted-key');
       expect(await legacy.read(key: 'cache-key'), isNull);
-      verify(() => legacy.read(key: 'cache-key'))
-          .called(2); // migration + assertion
+      verify(
+        () => legacy.read(key: 'cache-key'),
+      ).called(2); // migration + assertion
       expect(keychain.items['cache-key']!.accessibility, _current);
     },
   );

@@ -2,10 +2,9 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
-String source(String path) =>
-    File('lib/$path')
-        .readAsStringSync()
-        .replaceAll(RegExp(r'/\*[\s\S]*?\*/|//[^\n]*'), '');
+String source(String path) => File(
+  'lib/$path',
+).readAsStringSync().replaceAll(RegExp(r'/\*[\s\S]*?\*/|//[^\n]*'), '');
 
 void main() {
   test('only approved adapters construct raw secure storage', () {
