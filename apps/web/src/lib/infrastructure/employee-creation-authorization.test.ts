@@ -56,6 +56,12 @@ beforeEach(() => {
       select: vi.fn(() => query),
       eq: vi.fn((key: string, value: unknown) => {
         mock.filters.push([key, value]);
+        if (
+          table === 'workspace_role_members' &&
+          key === 'workspace_roles.workspace_role_permissions.enabled'
+        ) {
+          return Promise.resolve({ data: [], error: null });
+        }
         return query;
       }),
       maybeSingle: mock.member,
@@ -64,7 +70,11 @@ beforeEach(() => {
         error: null,
       })),
     };
-    if (table !== 'workspace_members' && table !== 'workspaces')
+    if (
+      table !== 'workspace_members' &&
+      table !== 'workspaces' &&
+      table !== 'workspace_role_members'
+    )
       throw new Error('Unexpected authority query');
     return query;
   });
@@ -161,7 +171,19 @@ describe('fresh root employee creation authority', () => {
       await authorizeEmployeeCreation(new Request('https://web.test/employees'))
     ).toEqual({ authorized: true, actorUserId: user.id });
     expect(mock.from).not.toHaveBeenCalledWith('workspace_default_permissions');
-    expect(mock.from).not.toHaveBeenCalledWith('workspace_role_members');
+    expect(mock.from).toHaveBeenCalledWith('workspace_role_members');
+    expect(mock.filters).toContainEqual([
+      'workspace_roles.ws_id',
+      ROOT_WORKSPACE_ID,
+    ]);
+    expect(mock.filters).toContainEqual([
+      'workspace_roles.workspace_role_permissions.ws_id',
+      ROOT_WORKSPACE_ID,
+    ]);
+    expect(mock.filters).toContainEqual([
+      'workspace_roles.workspace_role_permissions.enabled',
+      true,
+    ]);
   });
 
   it('uses the registered infra session and server actor', async () => {
@@ -215,6 +237,7 @@ describe('fresh root employee creation authority', () => {
         wsId: ROOT_WORKSPACE_ID,
         request: new Request('https://web.test/employees'),
       });
+      expect(permissions?.containsPermission('manage_mastermind')).toBe(false);
       expect(permissions?.membershipType).toBe('MEMBER');
       expect(permissions?.containsPermission('manage_internal_accounts')).toBe(
         true
