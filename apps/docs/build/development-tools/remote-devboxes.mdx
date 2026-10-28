@@ -1183,3 +1183,51 @@ coverage is in the devbox runs route tests. CodeQL command-line-injection alerts
 at this launcher require review of the authenticated execution boundary rather
 than treating `shell: false` alone as proof of safety. Source review does not
 verify deployed grants, runner configuration, or token custody.
+
+
+## Run and lease ownership
+
+Runner `pool` defaults to `fleet`, preserving the existing operator-managed fleet.
+Root-member submissions can run on enabled fleet runners; root membership of both
+submitter and runner owner is checked again by the claim RPC. A `personal` runner
+claims only its owner's run/build work. Personal maintenance requires a root actor and an explicit
+runner or lease pin. Personal grants do not authorize maintenance. Unpinned maintenance is restricted to the fleet. Judge and
+playground retain their dedicated fleet gates, learner actors, envelopes, capacity
+limits, trusted-mode admission and drain requeue behavior.
+
+Web and Infrastructure check existing leases and runner pins before inserting any
+run, lease or environment revision. Lease actors must match on run and environment
+revision INSERT and UPDATE; a lease's owner is immutable. Missing and foreign leases
+both return 404, inactive leases return 409, and unavailable runner pins return 403.
+Root members may pin fleet runners, while personal runners require their owner.
+Service-only Judge/playground enqueue paths may create learner leases on dedicated
+untrusted runners; ordinary commands cannot use that exception. Neither SDK input
+nor runner self-reports confer fleet authority.
+
+Migration `20261027152100_devbox_run_ownership.sql` composes the live
+`20261026145300` claim body. The claim-body changes are ownership and maintenance
+predicates, a bounded sweep that cancels unauthorized queued work with a reason,
+and a `pg_catalog, pg_temp` search path. The rollback under
+`apps/database/rollbacks` restores the exact 145300 body and service-role-only ACL,
+and retains the additive pool column. Apply rollback only under release authority;
+it removes these ownership fences. Test rollback and re-apply on an isolated stack.
+
+Removing root membership cancels queued runs, sets running work to
+`cancel_requested`, records an access-revocation reason, and releases active leases
+in the same transaction. A bounded claim-time sweep also cancels stale unauthorized
+queued rows, including expired grants. Active grants authorize only the owner
+of a personal runner; they never authorize fleet execution. Contributor access is not enabled by this migration. If
+`private.devbox_personal_pool_grants` exists when this migration applies, its UPDATE
+and DELETE operations attach the same cancellation hook. If contributor grants are
+introduced later, their migration must attach
+`private.cancel_devbox_runs_on_access_revocation()` as an AFTER UPDATE OR DELETE
+row trigger before enrollment is enabled. Revocation and expiry must never make
+personal work fleet-eligible. A server-side revocation does not stop an already
+running OS process; host isolation and the host stop procedure remain necessary.
+
+Regression evidence: `devbox-claim-actor-fence.sql` covers cross-owner claims,
+root revocation, maintenance designation, lease/env attachment and runner pins.
+The existing devbox trust-pool, drain, mode-admission, stale-reaper and commit-run
+suites remain required. Compare full-suite failures with the same main snapshot,
+then verify rollback and re-apply. Store adapter tests cover early errors without
+partial inserts; the control Worker rejects malformed actorless claim responses.

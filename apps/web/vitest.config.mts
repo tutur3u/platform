@@ -26,6 +26,10 @@ export default defineConfig({
   resolve: {
     alias: [
       {
+        find: '@tuturuuu/devbox',
+        replacement: resolve(__dirname, '../../packages/devbox/src/index.ts'),
+      },
+      {
         find: '@tuturuuu/supabase/next/user',
         replacement: resolve(
           __dirname,
