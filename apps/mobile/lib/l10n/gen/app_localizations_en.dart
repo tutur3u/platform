@@ -12306,6 +12306,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindBackToInbox => 'Back to Inbox';
 
   @override
+  String get mastermindBackToInsights => 'Back to Insights';
+
+  @override
   String get mastermindBacklogEmptyTitle => 'Backlog is clear';
 
   @override
@@ -12367,6 +12370,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindChartFleetTree => 'Fleet structure';
+
+  @override
+  String get mastermindChartGoneTitle => 'This chart is no longer in Mastermind';
 
   @override
   String get mastermindChartLatency => 'Result pickup time';
@@ -12626,6 +12632,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindForbiddenTitle => 'This account isn\'t allowed to view Mastermind.';
+
+  @override
+  String mastermindForecastEmptyAt(String dateTime) {
+    return 'Projected empty $dateTime';
+  }
+
+  @override
+  String get mastermindForecastNone => 'Not projected to run out before reset';
 
   @override
   String get mastermindFreshCached => 'cached';
@@ -13012,6 +13026,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindReservePacing => 'Reserve pacing (chart rule)';
 
   @override
+  String get mastermindReservePacingInfo => 'This is the chart reserve check, not the routing decision.';
+
+  @override
   String mastermindResetsAt(String dateTime) {
     return 'Resets $dateTime';
   }
@@ -13151,7 +13168,75 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindSessionRejectedTitle => 'Mastermind couldn\'t verify your session.';
 
   @override
+  String get mastermindShipCadenceTitle => 'Release cadence';
+
+  @override
+  String mastermindShipChecked(String dateTime) {
+    return 'Checked $dateTime';
+  }
+
+  @override
+  String mastermindShipCiBadge(String status) {
+    return 'CI $status';
+  }
+
+  @override
+  String get mastermindShipCiNow => 'CI now';
+
+  @override
+  String mastermindShipCiQueued(String value) {
+    return 'Queued $value';
+  }
+
+  @override
+  String mastermindShipCiRunning(String value) {
+    return 'Running $value';
+  }
+
+  @override
+  String get mastermindShipCopySha => 'Copy commit id';
+
+  @override
+  String mastermindShipDeployBadge(String status) {
+    return 'Deploy $status';
+  }
+
+  @override
   String get mastermindShipEmpty => 'No releases reported';
+
+  @override
+  String get mastermindShipNoCadence => 'No release cadence reported';
+
+  @override
+  String get mastermindShipNoEnvironments => 'No environments reported.';
+
+  @override
+  String get mastermindShipNoProdRelease => 'No production release observed';
+
+  @override
+  String get mastermindShipNoPullRequests => 'No pull request data reported.';
+
+  @override
+  String mastermindShipOpenCount(int count) {
+    return '$count open';
+  }
+
+  @override
+  String get mastermindShipPullRequestsTitle => 'Pull requests and merges';
+
+  @override
+  String mastermindShipReleased(String dateTime) {
+    return 'Released $dateTime';
+  }
+
+  @override
+  String get mastermindShipShaCopied => 'Commit id copied';
+
+  @override
+  String get mastermindShipWithheld => 'Withheld, open on Mac';
+
+  @override
+  String get mastermindShipWithheldTooltip => 'Details stay on the Mac';
 
   @override
   String get mastermindShowAll => 'Show all';
@@ -13456,13 +13541,36 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get mastermindUsageBudgetLeft => 'Budget left';
+
+  @override
+  String get mastermindUsageCreditsTitle => 'Codex credits';
+
+  @override
+  String get mastermindUsageEmpty => 'No usage data reported.';
+
+  @override
+  String get mastermindUsageForecastsTitle => 'Forecasts';
+
+  @override
   String get mastermindUsageLink => 'Usage';
+
+  @override
+  String get mastermindUsagePacing => 'Pacing';
+
+  @override
+  String get mastermindUsageTargetUnavailable => 'Target unavailable';
 
   @override
   String get mastermindVersion => 'Version';
 
   @override
   String get mastermindWeekly => 'Weekly';
+
+  @override
+  String mastermindWeeklyLeft(String value) {
+    return 'Weekly $value left';
+  }
 
   @override
   String get mastermindWhy => 'Why';

@@ -292,13 +292,8 @@ void main() {
       });
     }
 
-    // Decisions and releases have no detail screen yet, so their rows are
-    // plain text until Inbox and Ship land.
-    for (final label in [
-      'Decision log 3',
-      'Live just now',
-      'Needs attention',
-    ]) {
+    // Decisions have no detail screen yet, so their rows are plain text.
+    for (final label in ['Decision log 3']) {
       testWidgets('$label is not tappable yet', (tester) async {
         final visited = await pumpRouted(tester);
         await tester.tap(find.text(label).first, warnIfMissed: false);

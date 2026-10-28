@@ -12170,6 +12170,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindBackToInbox => 'Về Hộp thư';
 
   @override
+  String get mastermindBackToInsights => 'Về Phân tích';
+
+  @override
   String get mastermindBacklogEmptyTitle => 'Không còn việc tồn';
 
   @override
@@ -12231,6 +12234,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindChartFleetTree => 'Cấu trúc đội ngũ';
+
+  @override
+  String get mastermindChartGoneTitle => 'Biểu đồ này không còn trong Mastermind';
 
   @override
   String get mastermindChartLatency => 'Thời gian nhận kết quả';
@@ -12490,6 +12496,14 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindForbiddenTitle => 'Tài khoản này không được phép xem Mastermind.';
+
+  @override
+  String mastermindForecastEmptyAt(String dateTime) {
+    return 'Dự kiến hết lúc $dateTime';
+  }
+
+  @override
+  String get mastermindForecastNone => 'Không dự kiến hết trước khi đặt lại';
 
   @override
   String get mastermindFreshCached => 'từ bộ đệm';
@@ -12873,6 +12887,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindReservePacing => 'Nhịp dự trữ (quy tắc biểu đồ)';
 
   @override
+  String get mastermindReservePacingInfo => 'Đây là phép kiểm tra dự trữ của biểu đồ, không phải quyết định định tuyến.';
+
+  @override
   String mastermindResetsAt(String dateTime) {
     return 'Đặt lại lúc $dateTime';
   }
@@ -13011,7 +13028,75 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindSessionRejectedTitle => 'Mastermind không xác minh được phiên của bạn.';
 
   @override
+  String get mastermindShipCadenceTitle => 'Nhịp phát hành';
+
+  @override
+  String mastermindShipChecked(String dateTime) {
+    return 'Kiểm tra lúc $dateTime';
+  }
+
+  @override
+  String mastermindShipCiBadge(String status) {
+    return 'CI $status';
+  }
+
+  @override
+  String get mastermindShipCiNow => 'CI hiện tại';
+
+  @override
+  String mastermindShipCiQueued(String value) {
+    return 'Đang chờ $value';
+  }
+
+  @override
+  String mastermindShipCiRunning(String value) {
+    return 'Đang chạy $value';
+  }
+
+  @override
+  String get mastermindShipCopySha => 'Sao chép mã commit';
+
+  @override
+  String mastermindShipDeployBadge(String status) {
+    return 'Triển khai $status';
+  }
+
+  @override
   String get mastermindShipEmpty => 'Chưa có bản phát hành nào';
+
+  @override
+  String get mastermindShipNoCadence => 'Chưa có nhịp phát hành nào được báo cáo';
+
+  @override
+  String get mastermindShipNoEnvironments => 'Chưa có môi trường nào được báo cáo.';
+
+  @override
+  String get mastermindShipNoProdRelease => 'Chưa ghi nhận bản phát hành production nào';
+
+  @override
+  String get mastermindShipNoPullRequests => 'Chưa có dữ liệu pull request.';
+
+  @override
+  String mastermindShipOpenCount(int count) {
+    return '$count đang mở';
+  }
+
+  @override
+  String get mastermindShipPullRequestsTitle => 'Pull request và merge';
+
+  @override
+  String mastermindShipReleased(String dateTime) {
+    return 'Phát hành $dateTime';
+  }
+
+  @override
+  String get mastermindShipShaCopied => 'Đã sao chép mã commit';
+
+  @override
+  String get mastermindShipWithheld => 'Đã ẩn, xem trên máy Mac';
+
+  @override
+  String get mastermindShipWithheldTooltip => 'Chi tiết chỉ có trên máy Mac';
 
   @override
   String get mastermindShowAll => 'Xem tất cả';
@@ -13314,13 +13399,36 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String get mastermindUsageBudgetLeft => 'Hạn mức còn lại';
+
+  @override
+  String get mastermindUsageCreditsTitle => 'Tín dụng Codex';
+
+  @override
+  String get mastermindUsageEmpty => 'Chưa có dữ liệu mức sử dụng.';
+
+  @override
+  String get mastermindUsageForecastsTitle => 'Dự báo';
+
+  @override
   String get mastermindUsageLink => 'Mức sử dụng';
+
+  @override
+  String get mastermindUsagePacing => 'Nhịp sử dụng';
+
+  @override
+  String get mastermindUsageTargetUnavailable => 'Chưa có mục tiêu';
 
   @override
   String get mastermindVersion => 'Phiên bản';
 
   @override
   String get mastermindWeekly => 'Hằng tuần';
+
+  @override
+  String mastermindWeeklyLeft(String value) {
+    return 'Tuần còn $value';
+  }
 
   @override
   String get mastermindWhy => 'Lý do';

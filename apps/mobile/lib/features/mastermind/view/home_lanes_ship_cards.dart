@@ -9,6 +9,7 @@ import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/age_text.dart';
 import 'package:mobile/features/mastermind/presentation/home_model.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
+import 'package:mobile/features/mastermind/presentation/ship_model.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// Counts by lane state as text and glyph chips; failed lanes carry a warning.
@@ -72,12 +73,12 @@ class HomeShipCard extends StatelessWidget {
     final l10n = context.l10n;
     return AppGroupedSection.spaced(
       caption: l10n.mastermindTabShip,
-      // Rows are not tappable until the Ship tab has real content.
       children: [
         if (model.failingEnvironments.isEmpty && model.releases.isEmpty)
           AppGroupedRow(title: Text(l10n.mastermindShipEmpty)),
         for (final row in model.failingEnvironments)
           AppGroupedRow(
+            showChevron: true,
             leading: const AppIconTile(
               icon: AppIcons.warning,
               tone: AppTone.warning,
@@ -96,9 +97,13 @@ class HomeShipCard extends StatelessWidget {
               variant: AppBadgeVariant.warning,
               child: Text(l10n.mastermindNeedsAttention),
             ),
+            // Opens Ship on this product, where its environments are listed.
+            onTap: () => context.go(shipLocation(product: row.product)),
           ),
         for (final release in model.releases)
           AppGroupedRow(
+            showChevron: true,
+            onTap: () => context.go(shipLocation(product: release.product)),
             title: Text(MastermindLabels.releaseProduct(release.product)),
             subtitle: Text(MastermindLabels.ageBasis(l10n, release.ageBasis)),
             trailing: Text(

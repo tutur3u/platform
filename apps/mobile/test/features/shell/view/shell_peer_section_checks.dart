@@ -179,6 +179,108 @@ void registerShellPeerSectionChecks({
     expect(find.text('work state=failed&product=Mastermind'), findsOneWidget);
     expect(router.routerDelegate.currentConfiguration.uri.toString(), filtered);
   });
+
+  testWidgets('system Back from a chart table pops back to Insights', (
+    tester,
+  ) async {
+    final router = await _pumpInsightsTable(
+      tester,
+      appTabCubit: appTabCubit(),
+      authCubit: authCubit(),
+      workspaceCubit: workspaceCubit(),
+    );
+
+    await tester.binding.handlePopRoute();
+    await _pumpForTransitions(tester);
+
+    _expectPoppedBackToInsights(router);
+  });
+
+  testWidgets('dock Back from a chart table pops back to Insights', (
+    tester,
+  ) async {
+    final router = await _pumpInsightsTable(
+      tester,
+      appTabCubit: appTabCubit(),
+      authCubit: authCubit(),
+      workspaceCubit: workspaceCubit(),
+    );
+
+    await tester.tap(find.bySemanticsLabel('Back'));
+    await _pumpForTransitions(tester);
+
+    _expectPoppedBackToInsights(router);
+  });
+}
+
+/// Boots the Work shell, pushes Insights over Work, then a chart table over
+/// Insights, so the stack is Work, Insights, table.
+Future<GoRouter> _pumpInsightsTable(
+  WidgetTester tester, {
+  required AppTabCubit appTabCubit,
+  required AuthCubit authCubit,
+  required WorkspaceCubit workspaceCubit,
+}) async {
+  tester.view.devicePixelRatio = 1;
+  tester.view.physicalSize = const Size(390, 844);
+  addTearDown(() {
+    tester.view.resetPhysicalSize();
+    tester.view.resetDevicePixelRatio();
+  });
+  _insightsStatesCreated = 0;
+  final router = _buildMastermindWorkRouter();
+  addTearDown(router.dispose);
+  await tester.pumpWidget(
+    _buildTestApp(
+      router: router,
+      appTabCubit: appTabCubit,
+      authCubit: authCubit,
+      workspaceCubit: workspaceCubit,
+    ),
+  );
+  await _pumpForTransitions(tester);
+  router.push<void>(Routes.mastermindInsights).ignore();
+  await _pumpForTransitions(tester);
+  router
+      .push<void>(
+        Routes.mastermindInsightsTablePath('usage', 'budget:Claude pool A'),
+      )
+      .ignore();
+  await _pumpForTransitions(tester);
+  expect(find.text('table usage budget:Claude pool A'), findsOneWidget);
+  expect(_insightsStatesCreated, 1);
+  return router;
+}
+
+/// A real pop keeps Insights (its element and scroll) and the Work page it was
+/// pushed over. The mini-app parent fallback also lands on Insights, but
+/// through `go`, which replaces the stack: a rebuilt Insights with nothing
+/// beneath it.
+void _expectPoppedBackToInsights(GoRouter router) {
+  expect(find.text('insights'), findsOneWidget);
+  expect(_insightsStatesCreated, 1, reason: 'Insights was rebuilt, not popped');
+  expect(router.canPop(), isTrue, reason: 'the stack under Insights is gone');
+}
+
+/// How many Insights stub states have been created since the test began.
+int _insightsStatesCreated = 0;
+
+class _CountingInsightsPage extends StatefulWidget {
+  const _CountingInsightsPage();
+
+  @override
+  State<_CountingInsightsPage> createState() => _CountingInsightsPageState();
+}
+
+class _CountingInsightsPageState extends State<_CountingInsightsPage> {
+  @override
+  void initState() {
+    super.initState();
+    _insightsStatesCreated++;
+  }
+
+  @override
+  Widget build(BuildContext context) => const Center(child: Text('insights'));
 }
 
 /// The shell with the Mastermind Work list and lane detail as stub pages.
@@ -199,6 +301,18 @@ GoRouter _buildMastermindWorkRouter() => GoRouter(
           path: Routes.mastermindWork,
           builder: (context, state) =>
               _RoutePage(label: 'work ${state.uri.query}'),
+        ),
+        GoRoute(
+          path: Routes.mastermindInsights,
+          builder: (context, state) => const _CountingInsightsPage(),
+        ),
+        GoRoute(
+          path: Routes.mastermindInsightsTable,
+          builder: (context, state) => _RoutePage(
+            label:
+                'table ${state.pathParameters['section']} '
+                '${state.pathParameters['chartId']}',
+          ),
         ),
         GoRoute(
           path: Routes.mastermindWorkLane,

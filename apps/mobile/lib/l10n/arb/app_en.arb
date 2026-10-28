@@ -5301,6 +5301,13 @@
       }
     }
   },
+  "@mastermindForecastEmptyAt": {
+    "placeholders": {
+      "dateTime": {
+        "type": "String"
+      }
+    }
+  },
   "@mastermindLaneAgeLine": {
     "placeholders": {
       "state": {
@@ -5483,6 +5490,55 @@
       }
     }
   },
+  "@mastermindShipChecked": {
+    "placeholders": {
+      "dateTime": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindShipCiBadge": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindShipCiQueued": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindShipCiRunning": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindShipDeployBadge": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindShipOpenCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindShipReleased": {
+    "placeholders": {
+      "dateTime": {
+        "type": "String"
+      }
+    }
+  },
   "@mastermindSnapshotAt": {
     "placeholders": {
       "time": {
@@ -5655,6 +5711,13 @@
       }
     }
   },
+  "@mastermindWeeklyLeft": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
   "mastermindAccountFilter": "Account",
   "mastermindActivityEmpty": "No recent activity",
   "mastermindActivityTitle": "Activity",
@@ -5681,6 +5744,7 @@
   "mastermindAreaUsers": "Users",
   "mastermindAreaUx": "UX",
   "mastermindBackToInbox": "Back to Inbox",
+  "mastermindBackToInsights": "Back to Insights",
   "mastermindBacklogEmptyTitle": "Backlog is clear",
   "mastermindBacklogLabel": "Backlog",
   "mastermindBacklogNoMatches": "No matching backlog items",
@@ -5702,6 +5766,7 @@
   "mastermindChartFleetCounts": "Threads by role",
   "mastermindChartFleetStates": "Thread states",
   "mastermindChartFleetTree": "Fleet structure",
+  "mastermindChartGoneTitle": "This chart is no longer in Mastermind",
   "mastermindChartLatency": "Result pickup time",
   "mastermindChartMergeToLive": "Merge to live",
   "mastermindChartMessageFlow": "Message flow",
@@ -5783,6 +5848,8 @@
   "mastermindFloor": "Floor {value}",
   "mastermindForbiddenMessage": "Ask a Mastermind owner for access.",
   "mastermindForbiddenTitle": "This account isn't allowed to view Mastermind.",
+  "mastermindForecastEmptyAt": "Projected empty {dateTime}",
+  "mastermindForecastNone": "Not projected to run out before reset",
   "mastermindFreshCached": "cached",
   "mastermindFreshFresh": "fresh",
   "mastermindGroupActions": "Actions",
@@ -5893,6 +5960,7 @@
   "mastermindReplyUseRecommended": "Use recommended",
   "mastermindReplyYourReply": "Your reply: {reply}",
   "mastermindReservePacing": "Reserve pacing (chart rule)",
+  "mastermindReservePacingInfo": "This is the chart reserve check, not the routing decision.",
   "mastermindResetsAt": "Resets {dateTime}",
   "mastermindReversible": "Reversible",
   "mastermindRiskHigh": "high",
@@ -5934,7 +6002,25 @@
   "mastermindSessionLeft": "Session {value} left",
   "mastermindSessionRejectedMessage": "Try again. If it keeps happening, sign out and sign in again.",
   "mastermindSessionRejectedTitle": "Mastermind couldn't verify your session.",
+  "mastermindShipCadenceTitle": "Release cadence",
+  "mastermindShipChecked": "Checked {dateTime}",
+  "mastermindShipCiBadge": "CI {status}",
+  "mastermindShipCiNow": "CI now",
+  "mastermindShipCiQueued": "Queued {value}",
+  "mastermindShipCiRunning": "Running {value}",
+  "mastermindShipCopySha": "Copy commit id",
+  "mastermindShipDeployBadge": "Deploy {status}",
   "mastermindShipEmpty": "No releases reported",
+  "mastermindShipNoCadence": "No release cadence reported",
+  "mastermindShipNoEnvironments": "No environments reported.",
+  "mastermindShipNoProdRelease": "No production release observed",
+  "mastermindShipNoPullRequests": "No pull request data reported.",
+  "mastermindShipOpenCount": "{count} open",
+  "mastermindShipPullRequestsTitle": "Pull requests and merges",
+  "mastermindShipReleased": "Released {dateTime}",
+  "mastermindShipShaCopied": "Commit id copied",
+  "mastermindShipWithheld": "Withheld, open on Mac",
+  "mastermindShipWithheldTooltip": "Details stay on the Mac",
   "mastermindShowAll": "Show all",
   "mastermindSignOutAction": "Sign out and sign in again",
   "mastermindSignOutConfirmAction": "Sign out",
@@ -6017,9 +6103,16 @@
   "mastermindUnreachableTitle": "Can't reach Mastermind.",
   "mastermindUpdateAppShowing": "Update the app to read the latest Mastermind data · showing {time}",
   "mastermindUpdatedAt": "Updated {time}",
+  "mastermindUsageBudgetLeft": "Budget left",
+  "mastermindUsageCreditsTitle": "Codex credits",
+  "mastermindUsageEmpty": "No usage data reported.",
+  "mastermindUsageForecastsTitle": "Forecasts",
   "mastermindUsageLink": "Usage",
+  "mastermindUsagePacing": "Pacing",
+  "mastermindUsageTargetUnavailable": "Target unavailable",
   "mastermindVersion": "Version",
   "mastermindWeekly": "Weekly",
+  "mastermindWeeklyLeft": "Weekly {value} left",
   "mastermindWhy": "Why",
   "mastermindWorkClearFilters": "Clear filters",
   "mastermindWorkEmpty": "No lanes right now",

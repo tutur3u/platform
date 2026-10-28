@@ -1,4 +1,5 @@
 import 'package:mobile/features/mastermind/model/snapshot.dart';
+import 'package:mobile/features/mastermind/presentation/ship_model.dart';
 
 /// What Home renders, derived once from one accepted snapshot.
 ///
@@ -40,7 +41,7 @@ final class MastermindHomeModel {
       laneCounts: counts,
       failingEnvironments: [
         for (final row in snapshot.environments)
-          if (_failing(row)) row,
+          if (environmentIsFailing(row)) row,
       ],
       releases: snapshot.products.releases,
       quotaPools: _quotaPools(snapshot.observability.usage),
@@ -74,12 +75,6 @@ final class MastermindHomeModel {
   int get needsYouCount => needsYou.length;
   List<NeedsYou> get needsYouShown =>
       needsYou.take(needsYouPreview).toList(growable: false);
-
-  static bool _failing(EnvironmentRow row) =>
-      row.deployStatus == DeployStatus.failure ||
-      row.deployStatus == DeployStatus.error ||
-      row.ciState == CiState.failure ||
-      row.ciState == CiState.error;
 }
 
 /// One pool row: its latest reading plus the session series for its sparkline.

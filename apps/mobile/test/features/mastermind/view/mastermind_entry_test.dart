@@ -121,8 +121,6 @@ void main() {
         final name = switch (tab) {
           MastermindTab.inbox => 'Inbox',
           MastermindTab.work => 'Work',
-          MastermindTab.ship => 'Ship',
-          MastermindTab.insights => 'Insights',
         };
         expect(find.text('$name is coming soon'), findsOneWidget);
         expect(
@@ -215,6 +213,8 @@ void main() {
         'mastermind/work': Routes.mastermindWork,
         'mastermind/ship': Routes.mastermindShip,
         'mastermind/insights': Routes.mastermindInsights,
+        'mastermind/insights/usage/table/budget:Claude%20pool%20A':
+            Routes.mastermindInsights,
         'mastermind/inbox/item-00000000000000000001': Routes.mastermindInbox,
         'mastermind/unknown': Routes.mastermind,
       }.entries) {

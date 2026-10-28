@@ -51,6 +51,21 @@ abstract final class Routes {
   static const mastermindInsights = '/mastermind/insights';
   static const mastermindWorkLane = '/mastermind/work/lane/:laneId';
   static const mastermindInboxItem = '/mastermind/inbox/item/:itemId';
+  static const mastermindInsightsTable =
+      '/mastermind/insights/:section/table/:chartId';
+
+  /// Section and chart ids are route parameters only: they pick a chart out of
+  /// the current snapshot and never appear in an external deep link.
+  static String mastermindInsightsTablePath(String section, String chartId) =>
+      '$mastermindInsights/${Uri.encodeComponent(section)}/table/'
+      '${Uri.encodeComponent(chartId)}';
+
+  /// A chart table is pushed over Insights, so Back pops to where it was.
+  static bool isMastermindInsightsTableLocation(String location) {
+    final normalized = normalizeLocation(location);
+    return normalized.startsWith('$mastermindInsights/') &&
+        normalized.contains('/table/');
+  }
 
   /// Item ids are opaque snapshot ids. They are route parameters only and never
   /// appear in an external deep link.
