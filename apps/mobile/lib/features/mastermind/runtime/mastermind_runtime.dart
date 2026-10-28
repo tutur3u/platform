@@ -4,12 +4,18 @@ import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/features/mastermind/access/mastermind_access_cubit.dart';
 import 'package:mobile/features/mastermind/cubit/mastermind_refresh_scheduler.dart';
 import 'package:mobile/features/mastermind/cubit/mastermind_snapshot_cubit.dart';
+import 'package:mobile/features/mastermind/data/hub_capabilities.dart';
 import 'package:mobile/features/mastermind/data/hub_http_snapshot_source.dart';
 import 'package:mobile/features/mastermind/data/mastermind_connectivity.dart';
 import 'package:mobile/features/mastermind/data/mastermind_snapshot_source.dart';
 import 'package:mobile/features/mastermind/data/mastermind_snapshot_store.dart';
 import 'package:mobile/features/mastermind/data/snapshot_source_factory.dart';
 import 'package:mobile/features/mastermind/data/snapshot_store_factory.dart';
+import 'package:mobile/features/mastermind/replies/hub_reply_transport.dart';
+import 'package:mobile/features/mastermind/replies/mastermind_replies_cubit.dart';
+import 'package:mobile/features/mastermind/replies/reply_factories.dart';
+import 'package:mobile/features/mastermind/replies/reply_outbox_store.dart';
+import 'package:mobile/features/mastermind/replies/reply_outcome.dart';
 
 /// The app-lifetime owner of everything Mastermind holds: the source, the
 /// per-user cache, both cubits and the refresh scheduler.
@@ -21,16 +27,26 @@ final class MastermindRuntime {
     required this.access,
     required this.snapshot,
     required this.scheduler,
+    MastermindRepliesCubit? replies,
     MastermindSnapshotSource? source,
+    MastermindReplyTransport? replyTransport,
     Stream<bool>? onlineChanges,
-  }) : _source = source {
+  }) : replies = replies ?? MastermindRepliesCubit(store: MemoryOutboxStore()),
+       _source = source,
+       _replyTransport = replyTransport {
     _accessSub = access.stream.listen(_onAccess);
     _snapshotSub = snapshot.stream.listen(_onSnapshot);
     // A connectivity plugin error only means the device stays assumed online.
-    _onlineSub = onlineChanges?.listen(
-      (online) => scheduler.setOnline(online: online),
-      onError: (Object _) {},
-    );
+    // Repeats (several interfaces changing at once) are one change: each
+    // `true` would otherwise force another capability check and flush.
+    _onlineSub = onlineChanges?.distinct().listen((online) {
+      scheduler.setOnline(online: online);
+      // Back online: queued replies go out without waiting for a screen, once
+      // the hub confirms replies are still on.
+      if (online) {
+        unawaited(this.replies.flush(recheckCapabilities: true));
+      }
+    }, onError: (Object _) {});
   }
 
   /// Fixture or live source per build configuration; see
@@ -40,6 +56,8 @@ final class MastermindRuntime {
     WorkspacePermissionsRepository? permissions,
     MastermindSnapshotSource? source,
     MastermindSnapshotStore? store,
+    MastermindReplyTransport? replyTransport,
+    MastermindOutboxStore? outboxStore,
     Stream<bool>? onlineChanges,
   }) {
     final resolved = source ?? createMastermindSnapshotSource();
@@ -47,14 +65,30 @@ final class MastermindRuntime {
       source: resolved,
       store: store ?? createMastermindSnapshotStore(userId: userId),
     );
+    final scheduler = MastermindRefreshScheduler.forCubit(cubit);
+    final transport =
+        replyTransport ??
+        (source == null ? createMastermindReplyTransport() : null);
     return MastermindRuntime(
       access: MastermindAccessCubit(
         repository: permissions ?? WorkspacePermissionsRepository(),
         source: resolved,
       ),
       snapshot: cubit,
-      scheduler: MastermindRefreshScheduler.forCubit(cubit),
+      scheduler: scheduler,
+      replies: MastermindRepliesCubit(
+        store: outboxStore ?? createMastermindOutboxStore(userId: userId),
+        transport: transport,
+        fetchCapabilities: resolved is HubHttpSnapshotSource
+            ? resolved.fetchCapabilities
+            : null,
+        refreshSnapshot: scheduler.refreshNow,
+        onAccessLost: (kind) => cubit.handleCapabilitiesUnavailable(
+          CapabilitiesFetchUnavailable(kind),
+        ),
+      ),
       source: resolved,
+      replyTransport: transport,
       onlineChanges: onlineChanges ?? mastermindOnlineChanges(),
     );
   }
@@ -62,7 +96,9 @@ final class MastermindRuntime {
   final MastermindAccessCubit access;
   final MastermindSnapshotCubit snapshot;
   final MastermindRefreshScheduler scheduler;
+  final MastermindRepliesCubit replies;
   final MastermindSnapshotSource? _source;
+  final MastermindReplyTransport? _replyTransport;
   late final StreamSubscription<MastermindAccessState> _accessSub;
   late final StreamSubscription<MastermindSnapshotState> _snapshotSub;
   late final StreamSubscription<bool>? _onlineSub;
@@ -77,11 +113,19 @@ final class MastermindRuntime {
   }
 
   // A 403 hides the module until the next access sync, without pulling the
-  // screen away from the explanation.
+  // screen away from the explanation. Queued replies follow the snapshot: they
+  // are erased with it, and a live snapshot tells which items are still open.
   void _onSnapshot(MastermindSnapshotState state) {
-    if (state is MastermindSnapshotUnavailable &&
-        state.kind == SnapshotUnavailableKind.forbidden) {
-      access.markForbidden();
+    switch (state) {
+      case MastermindSnapshotReady():
+        replies.syncSnapshot(state);
+      case MastermindSnapshotInitial():
+        unawaited(replies.clear());
+      case MastermindSnapshotUnavailable(:final kind) when kind.isAccessLost:
+        unawaited(replies.clear());
+        if (kind == SnapshotUnavailableKind.forbidden) access.markForbidden();
+      default:
+        break;
     }
   }
 
@@ -91,7 +135,7 @@ final class MastermindRuntime {
     // Sync first: for the root workspace it emits `loading` synchronously, so a
     // deep link on screen is held rather than redirected during the switch.
     final synced = access.sync(wsId);
-    await snapshot.clear();
+    await Future.wait([snapshot.clear(), replies.clear()]);
     await synced;
   }
 
@@ -108,8 +152,10 @@ final class MastermindRuntime {
     await _accessSub.cancel();
     await _snapshotSub.cancel();
     scheduler.dispose();
+    await replies.close();
     await snapshot.close();
     await access.close();
     if (_source case final HubHttpSnapshotSource live) live.close();
+    if (_replyTransport case final HubReplyTransport live) live.close();
   }
 }

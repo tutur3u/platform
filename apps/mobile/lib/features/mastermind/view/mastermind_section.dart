@@ -53,6 +53,7 @@ class _AttachedSection extends StatefulWidget {
 class _AttachedSectionState extends State<_AttachedSection>
     with WidgetsBindingObserver {
   late final MastermindRuntime _runtime = context.read<MastermindRuntime>();
+  bool _backgrounded = false;
 
   @override
   void initState() {
@@ -66,9 +67,19 @@ class _AttachedSectionState extends State<_AttachedSection>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     final resumed = state == AppLifecycleState.resumed;
     _runtime.scheduler.setForeground(foreground: resumed);
-    // Resuming is a refresh trigger of its own: the held snapshot may be
-    // hours old, and a backoff that grew while asleep should not delay it.
-    if (resumed) unawaited(_runtime.scheduler.refreshNow());
+    // Only `hidden`/`paused` mean the app left the screen: `inactive` alone is
+    // what Control Centre, a biometric prompt or a system sheet cause.
+    if (state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.paused) {
+      _backgrounded = true;
+    }
+    // Coming back from the background is a refresh trigger of its own: the
+    // held snapshot may be hours old, and a backoff that grew while asleep
+    // should not delay it. Returning from a mere `inactive` is not.
+    if (resumed && _backgrounded) {
+      _backgrounded = false;
+      unawaited(_runtime.scheduler.refreshNow());
+    }
   }
 
   @override
@@ -80,15 +91,20 @@ class _AttachedSectionState extends State<_AttachedSection>
 
   Future<void> _retry() => _runtime.scheduler.refreshNow();
 
+  // The strip depends on connectivity as well as the snapshot, so it listens
+  // to the scheduler's online state rather than reading it at build time.
   Widget _content(MastermindSnapshotReady ready) => RefreshIndicator(
     onRefresh: _retry,
-    child: widget.builder(
-      context,
-      ready,
-      MastermindFreshness.of(
+    child: ValueListenableBuilder<bool>(
+      valueListenable: _runtime.scheduler.online,
+      builder: (context, online, _) => widget.builder(
+        context,
         ready,
-        clock: _runtime.snapshot.clock,
-        online: _runtime.scheduler.isOnline,
+        MastermindFreshness.of(
+          ready,
+          clock: _runtime.snapshot.clock,
+          online: online,
+        ),
       ),
     ),
   );

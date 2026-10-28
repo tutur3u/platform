@@ -154,6 +154,30 @@ void main() {
     expect(h.active.delay, const Duration(seconds: 60));
   });
 
+  test('the online state is observable and only notifies on a change', () {
+    final h = _Harness();
+    final seen = <bool>[];
+    h.scheduler.online.addListener(() => seen.add(h.scheduler.online.value));
+    expect(h.scheduler.online.value, isTrue);
+
+    h.scheduler
+      ..setOnline(online: true)
+      ..setOnline(online: false)
+      ..setOnline(online: false)
+      ..setOnline(online: true);
+    expect(seen, [false, true]);
+    expect(h.scheduler.isOnline, isTrue);
+  });
+
+  test('dispose can run twice and ignores later connectivity', () {
+    final h = _Harness();
+    h.scheduler
+      ..dispose()
+      ..dispose()
+      ..setOnline(online: false);
+    expect(h.scheduler.isOnline, isTrue);
+  });
+
   test('a stop result ends scheduling until a screen re-attaches', () async {
     final h = _Harness([RefreshResult.stop])..scheduler.attach();
     await h.fire();

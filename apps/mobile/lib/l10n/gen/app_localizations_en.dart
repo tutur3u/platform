@@ -12303,6 +12303,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindAreaUx => 'UX';
 
   @override
+  String get mastermindBackToInbox => 'Back to Inbox';
+
+  @override
   String get mastermindBacklogEmptyTitle => 'Backlog is clear';
 
   @override
@@ -12607,7 +12610,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindFreshFresh => 'fresh';
 
   @override
+  String get mastermindGroupActions => 'Actions';
+
+  @override
+  String get mastermindGroupDecisions => 'Decisions for you';
+
+  @override
+  String get mastermindGroupFyi => 'For your information';
+
+  @override
+  String get mastermindInboxNoMatches => 'No matching items';
+
+  @override
+  String get mastermindInboxSearchPlaceholder => 'Search Needs you';
+
+  @override
   String get mastermindInsightsLabel => 'Insights';
+
+  @override
+  String get mastermindItemAnsweredTitle => 'This was answered or withdrawn';
+
+  @override
+  String get mastermindItemGoneTitle => 'This item is no longer in Mastermind';
+
+  @override
+  String get mastermindItemUpdated => 'This question was updated';
 
   @override
   String get mastermindKindAction => 'Action';
@@ -12683,6 +12710,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get mastermindLess => 'Less';
+
+  @override
   String mastermindLiveAgo(String age) {
     return 'Live $age';
   }
@@ -12702,6 +12732,9 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get mastermindMore => 'More';
 
   @override
   String get mastermindNeedsAttention => 'Needs attention';
@@ -12753,6 +12786,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String mastermindOfflineShowing(String time) {
     return 'Offline · showing $time';
+  }
+
+  @override
+  String mastermindOptionRecommended(String option) {
+    return '$option · Recommended';
   }
 
   @override
@@ -12810,6 +12848,114 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindReleasesTitle => 'Releases';
+
+  @override
+  String mastermindRepliesWaiting(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count replies waiting to send',
+      one: '1 reply waiting to send',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mastermindReplyCheckFailed => 'Couldn\'t check whether replies are available.';
+
+  @override
+  String get mastermindReplyChecking => 'Checking whether replies are available…';
+
+  @override
+  String get mastermindReplyChooseOrWrite => 'Choose an option or write your own reply (up to 500 characters and 10 lines).';
+
+  @override
+  String mastermindReplyConfirmMessage(String title, String reply) {
+    return 'Reply to: $title\nYour reply: $reply';
+  }
+
+  @override
+  String get mastermindReplyConfirmTitle => 'Send this reply?';
+
+  @override
+  String get mastermindReplyConflict => 'Something went wrong with this reply. Review it and send it again.';
+
+  @override
+  String mastermindReplyCounter(int count, int limit) {
+    return '$count/$limit';
+  }
+
+  @override
+  String mastermindReplyCounterSemantics(int count, int limit) {
+    return '$count of $limit characters used';
+  }
+
+  @override
+  String get mastermindReplyDiscard => 'Discard';
+
+  @override
+  String get mastermindReplyForbidden => 'This account can\'t send replies.';
+
+  @override
+  String get mastermindReplyNotSaved => 'Couldn\'t save the reply on this device, so it wasn\'t sent. Try again.';
+
+  @override
+  String get mastermindReplyOnMac => 'Reply on your Mac';
+
+  @override
+  String get mastermindReplyOptionsTitle => 'Your reply';
+
+  @override
+  String get mastermindReplyQueued => 'Saved on this device. It will be sent when Mastermind is reachable.';
+
+  @override
+  String mastermindReplyRateLimited(int minutes) {
+    String _temp0 = intl.Intl.pluralLogic(
+      minutes,
+      locale: localeName,
+      other: 'Too many replies. Try again in $minutes min.',
+      one: 'Too many replies. Try again in 1 min.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mastermindReplyRejected => 'Mastermind could not accept this reply. Check it and try again.';
+
+  @override
+  String get mastermindReplySend => 'Send reply';
+
+  @override
+  String get mastermindReplySending => 'Sending…';
+
+  @override
+  String get mastermindReplySent => 'Sent · waiting for Mastermind';
+
+  @override
+  String get mastermindReplyStale => 'This question changed or was already answered. Review it again.';
+
+  @override
+  String get mastermindReplyTextPlaceholder => 'Write a reply for Mastermind';
+
+  @override
+  String get mastermindReplyTooLarge => 'That reply is too long. Keep it to 500 characters and 10 lines, then try again.';
+
+  @override
+  String get mastermindReplyUnauthorized => 'We couldn\'t confirm your session. Try again.';
+
+  @override
+  String get mastermindReplyUnauthorizedAgain => 'Your session can\'t reach Mastermind. Try again, or sign out and sign in again.';
+
+  @override
+  String get mastermindReplyUnsafeText => 'That text can\'t be sent. Use plain words and punctuation only, without links, long numbers or personal details, in 10 lines or fewer.';
+
+  @override
+  String get mastermindReplyUseRecommended => 'Use recommended';
+
+  @override
+  String mastermindReplyYourReply(String reply) {
+    return 'Your reply: $reply';
+  }
 
   @override
   String get mastermindReservePacing => 'Reserve pacing (chart rule)';

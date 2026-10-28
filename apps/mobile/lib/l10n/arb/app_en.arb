@@ -5332,9 +5332,67 @@
       }
     }
   },
+  "@mastermindOptionRecommended": {
+    "placeholders": {
+      "option": {
+        "type": "String"
+      }
+    }
+  },
   "@mastermindRejectedInline": {
     "placeholders": {
       "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindRepliesWaiting": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindReplyConfirmMessage": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "reply": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindReplyCounter": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindReplyCounterSemantics": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindReplyRateLimited": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindReplyYourReply": {
+    "placeholders": {
+      "reply": {
         "type": "String"
       }
     }
@@ -5567,6 +5625,7 @@
   "mastermindAreaTasks": "Tasks",
   "mastermindAreaUsers": "Users",
   "mastermindAreaUx": "UX",
+  "mastermindBackToInbox": "Back to Inbox",
   "mastermindBacklogEmptyTitle": "Backlog is clear",
   "mastermindBacklogLabel": "Backlog",
   "mastermindBasisCheckinWorkflow": "Check-in workflow",
@@ -5665,7 +5724,15 @@
   "mastermindForbiddenTitle": "This account isn't allowed to view Mastermind.",
   "mastermindFreshCached": "cached",
   "mastermindFreshFresh": "fresh",
+  "mastermindGroupActions": "Actions",
+  "mastermindGroupDecisions": "Decisions for you",
+  "mastermindGroupFyi": "For your information",
+  "mastermindInboxNoMatches": "No matching items",
+  "mastermindInboxSearchPlaceholder": "Search Needs you",
   "mastermindInsightsLabel": "Insights",
+  "mastermindItemAnsweredTitle": "This was answered or withdrawn",
+  "mastermindItemGoneTitle": "This item is no longer in Mastermind",
+  "mastermindItemUpdated": "This question was updated",
   "mastermindKindAction": "Action",
   "mastermindKindBacklog": "Backlog",
   "mastermindKindDecision": "Decision",
@@ -5689,9 +5756,11 @@
   "mastermindLanesEmpty": "No lanes in this view",
   "mastermindLanesLabel": "Lanes",
   "mastermindLastPublished": "Mastermind last published {age} · {time}",
+  "mastermindLess": "Less",
   "mastermindLiveAgo": "Live {age}",
   "mastermindLiveFor": "live {duration}",
   "mastermindMeasuredRuns": "{count, plural, =1{1 measured run} other{{count} measured runs}}",
+  "mastermindMore": "More",
   "mastermindNeedsAttention": "Needs attention",
   "mastermindNeedsYouHint": "Answer in the Inbox on your Mac.",
   "mastermindNeedsYouSeeAll": "See all ({count})",
@@ -5708,6 +5777,7 @@
   "mastermindNowLabel": "Now",
   "mastermindObservedAt": "Observed",
   "mastermindOfflineShowing": "Offline · showing {time}",
+  "mastermindOptionRecommended": "{option} · Recommended",
   "mastermindOriginLabel": "Origin",
   "mastermindPartialBucket": "partial bucket",
   "mastermindProductFilter": "Product",
@@ -5726,6 +5796,34 @@
   "mastermindRejectedOtherMessage": "The latest update couldn't be read.",
   "mastermindRejectedTitle": "This snapshot can't be shown",
   "mastermindReleasesTitle": "Releases",
+  "mastermindRepliesWaiting": "{count, plural, =1{1 reply waiting to send} other{{count} replies waiting to send}}",
+  "mastermindReplyCheckFailed": "Couldn't check whether replies are available.",
+  "mastermindReplyChecking": "Checking whether replies are available…",
+  "mastermindReplyChooseOrWrite": "Choose an option or write your own reply (up to 500 characters and 10 lines).",
+  "mastermindReplyConfirmMessage": "Reply to: {title}\nYour reply: {reply}",
+  "mastermindReplyConfirmTitle": "Send this reply?",
+  "mastermindReplyConflict": "Something went wrong with this reply. Review it and send it again.",
+  "mastermindReplyCounter": "{count}/{limit}",
+  "mastermindReplyCounterSemantics": "{count} of {limit} characters used",
+  "mastermindReplyDiscard": "Discard",
+  "mastermindReplyForbidden": "This account can't send replies.",
+  "mastermindReplyNotSaved": "Couldn't save the reply on this device, so it wasn't sent. Try again.",
+  "mastermindReplyOnMac": "Reply on your Mac",
+  "mastermindReplyOptionsTitle": "Your reply",
+  "mastermindReplyQueued": "Saved on this device. It will be sent when Mastermind is reachable.",
+  "mastermindReplyRateLimited": "{minutes, plural, =1{Too many replies. Try again in 1 min.} other{Too many replies. Try again in {minutes} min.}}",
+  "mastermindReplyRejected": "Mastermind could not accept this reply. Check it and try again.",
+  "mastermindReplySend": "Send reply",
+  "mastermindReplySending": "Sending…",
+  "mastermindReplySent": "Sent · waiting for Mastermind",
+  "mastermindReplyStale": "This question changed or was already answered. Review it again.",
+  "mastermindReplyTextPlaceholder": "Write a reply for Mastermind",
+  "mastermindReplyTooLarge": "That reply is too long. Keep it to 500 characters and 10 lines, then try again.",
+  "mastermindReplyUnauthorized": "We couldn't confirm your session. Try again.",
+  "mastermindReplyUnauthorizedAgain": "Your session can't reach Mastermind. Try again, or sign out and sign in again.",
+  "mastermindReplyUnsafeText": "That text can't be sent. Use plain words and punctuation only, without links, long numbers or personal details, in 10 lines or fewer.",
+  "mastermindReplyUseRecommended": "Use recommended",
+  "mastermindReplyYourReply": "Your reply: {reply}",
   "mastermindReservePacing": "Reserve pacing (chart rule)",
   "mastermindResetsAt": "Resets {dateTime}",
   "mastermindReversible": "Reversible",

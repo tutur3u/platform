@@ -23245,6 +23245,12 @@ abstract class AppLocalizations {
   /// **'UX'**
   String get mastermindAreaUx;
 
+  /// No description provided for @mastermindBackToInbox.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to Inbox'**
+  String get mastermindBackToInbox;
+
   /// No description provided for @mastermindBacklogEmptyTitle.
   ///
   /// In en, this message translates to:
@@ -23833,11 +23839,59 @@ abstract class AppLocalizations {
   /// **'fresh'**
   String get mastermindFreshFresh;
 
+  /// No description provided for @mastermindGroupActions.
+  ///
+  /// In en, this message translates to:
+  /// **'Actions'**
+  String get mastermindGroupActions;
+
+  /// No description provided for @mastermindGroupDecisions.
+  ///
+  /// In en, this message translates to:
+  /// **'Decisions for you'**
+  String get mastermindGroupDecisions;
+
+  /// No description provided for @mastermindGroupFyi.
+  ///
+  /// In en, this message translates to:
+  /// **'For your information'**
+  String get mastermindGroupFyi;
+
+  /// No description provided for @mastermindInboxNoMatches.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching items'**
+  String get mastermindInboxNoMatches;
+
+  /// No description provided for @mastermindInboxSearchPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Search Needs you'**
+  String get mastermindInboxSearchPlaceholder;
+
   /// No description provided for @mastermindInsightsLabel.
   ///
   /// In en, this message translates to:
   /// **'Insights'**
   String get mastermindInsightsLabel;
+
+  /// No description provided for @mastermindItemAnsweredTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This was answered or withdrawn'**
+  String get mastermindItemAnsweredTitle;
+
+  /// No description provided for @mastermindItemGoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This item is no longer in Mastermind'**
+  String get mastermindItemGoneTitle;
+
+  /// No description provided for @mastermindItemUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'This question was updated'**
+  String get mastermindItemUpdated;
 
   /// No description provided for @mastermindKindAction.
   ///
@@ -23977,6 +24031,12 @@ abstract class AppLocalizations {
   /// **'Mastermind last published {age} · {time}'**
   String mastermindLastPublished(String age, String time);
 
+  /// No description provided for @mastermindLess.
+  ///
+  /// In en, this message translates to:
+  /// **'Less'**
+  String get mastermindLess;
+
   /// No description provided for @mastermindLiveAgo.
   ///
   /// In en, this message translates to:
@@ -23994,6 +24054,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{1 measured run} other{{count} measured runs}}'**
   String mastermindMeasuredRuns(int count);
+
+  /// No description provided for @mastermindMore.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get mastermindMore;
 
   /// No description provided for @mastermindNeedsAttention.
   ///
@@ -24090,6 +24156,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Offline · showing {time}'**
   String mastermindOfflineShowing(String time);
+
+  /// No description provided for @mastermindOptionRecommended.
+  ///
+  /// In en, this message translates to:
+  /// **'{option} · Recommended'**
+  String mastermindOptionRecommended(String option);
 
   /// No description provided for @mastermindOriginLabel.
   ///
@@ -24198,6 +24270,174 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Releases'**
   String get mastermindReleasesTitle;
+
+  /// No description provided for @mastermindRepliesWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 reply waiting to send} other{{count} replies waiting to send}}'**
+  String mastermindRepliesWaiting(int count);
+
+  /// No description provided for @mastermindReplyCheckFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t check whether replies are available.'**
+  String get mastermindReplyCheckFailed;
+
+  /// No description provided for @mastermindReplyChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking whether replies are available…'**
+  String get mastermindReplyChecking;
+
+  /// No description provided for @mastermindReplyChooseOrWrite.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an option or write your own reply (up to 500 characters and 10 lines).'**
+  String get mastermindReplyChooseOrWrite;
+
+  /// No description provided for @mastermindReplyConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Reply to: {title}\nYour reply: {reply}'**
+  String mastermindReplyConfirmMessage(String title, String reply);
+
+  /// No description provided for @mastermindReplyConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Send this reply?'**
+  String get mastermindReplyConfirmTitle;
+
+  /// No description provided for @mastermindReplyConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong with this reply. Review it and send it again.'**
+  String get mastermindReplyConflict;
+
+  /// No description provided for @mastermindReplyCounter.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}/{limit}'**
+  String mastermindReplyCounter(int count, int limit);
+
+  /// No description provided for @mastermindReplyCounterSemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} of {limit} characters used'**
+  String mastermindReplyCounterSemantics(int count, int limit);
+
+  /// No description provided for @mastermindReplyDiscard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get mastermindReplyDiscard;
+
+  /// No description provided for @mastermindReplyForbidden.
+  ///
+  /// In en, this message translates to:
+  /// **'This account can\'t send replies.'**
+  String get mastermindReplyForbidden;
+
+  /// No description provided for @mastermindReplyNotSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save the reply on this device, so it wasn\'t sent. Try again.'**
+  String get mastermindReplyNotSaved;
+
+  /// No description provided for @mastermindReplyOnMac.
+  ///
+  /// In en, this message translates to:
+  /// **'Reply on your Mac'**
+  String get mastermindReplyOnMac;
+
+  /// No description provided for @mastermindReplyOptionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your reply'**
+  String get mastermindReplyOptionsTitle;
+
+  /// No description provided for @mastermindReplyQueued.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved on this device. It will be sent when Mastermind is reachable.'**
+  String get mastermindReplyQueued;
+
+  /// No description provided for @mastermindReplyRateLimited.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes, plural, =1{Too many replies. Try again in 1 min.} other{Too many replies. Try again in {minutes} min.}}'**
+  String mastermindReplyRateLimited(int minutes);
+
+  /// No description provided for @mastermindReplyRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Mastermind could not accept this reply. Check it and try again.'**
+  String get mastermindReplyRejected;
+
+  /// No description provided for @mastermindReplySend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send reply'**
+  String get mastermindReplySend;
+
+  /// No description provided for @mastermindReplySending.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending…'**
+  String get mastermindReplySending;
+
+  /// No description provided for @mastermindReplySent.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent · waiting for Mastermind'**
+  String get mastermindReplySent;
+
+  /// No description provided for @mastermindReplyStale.
+  ///
+  /// In en, this message translates to:
+  /// **'This question changed or was already answered. Review it again.'**
+  String get mastermindReplyStale;
+
+  /// No description provided for @mastermindReplyTextPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Write a reply for Mastermind'**
+  String get mastermindReplyTextPlaceholder;
+
+  /// No description provided for @mastermindReplyTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'That reply is too long. Keep it to 500 characters and 10 lines, then try again.'**
+  String get mastermindReplyTooLarge;
+
+  /// No description provided for @mastermindReplyUnauthorized.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t confirm your session. Try again.'**
+  String get mastermindReplyUnauthorized;
+
+  /// No description provided for @mastermindReplyUnauthorizedAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Your session can\'t reach Mastermind. Try again, or sign out and sign in again.'**
+  String get mastermindReplyUnauthorizedAgain;
+
+  /// No description provided for @mastermindReplyUnsafeText.
+  ///
+  /// In en, this message translates to:
+  /// **'That text can\'t be sent. Use plain words and punctuation only, without links, long numbers or personal details, in 10 lines or fewer.'**
+  String get mastermindReplyUnsafeText;
+
+  /// No description provided for @mastermindReplyUseRecommended.
+  ///
+  /// In en, this message translates to:
+  /// **'Use recommended'**
+  String get mastermindReplyUseRecommended;
+
+  /// No description provided for @mastermindReplyYourReply.
+  ///
+  /// In en, this message translates to:
+  /// **'Your reply: {reply}'**
+  String mastermindReplyYourReply(String reply);
 
   /// No description provided for @mastermindReservePacing.
   ///

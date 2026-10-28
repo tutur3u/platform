@@ -5,7 +5,7 @@ description: Who sees the Mastermind section in the mobile app, how it behaves b
 
 Mastermind is an internal fleet overview. The mobile section reads one
 sanitized snapshot from the Mastermind hub Worker. This page records the
-product rules of the shell entry and the Home tab; later tabs extend it.
+product rules of the shell entry, the Home tab and the Inbox; later tabs extend it.
 
 ## Who sees it
 
@@ -36,15 +36,18 @@ disconnected, as does any value that is not an HTTPS host. The app-level runtime
 the source, the cache and the refresh scheduler and closes them with the app.
 Each Mastermind screen only attaches to and detaches from the scheduler, so
 refresh runs only while a screen is open and the app is in the foreground. It
-also runs at once when the app resumes, and the scheduler follows device
-connectivity.
+also runs at once when the app returns from the background (`hidden` or
+`paused`); a brief `inactive` blip such as Control Centre or a biometric prompt
+is not a resume and fetches nothing. The scheduler follows device connectivity,
+and the freshness line (Offline versus Couldn't refresh) updates when
+connectivity alone changes.
 
 ## Tabs
 
 Home, Inbox, Work, Ship and Insights share one mini-app shell: the top navbar
 shows the destination title and no Back button, and the floating dock owns Back.
-Only Home is implemented; the other tabs show a "coming soon" empty state behind
-the same access gate and freshness strip.
+Home and Inbox are implemented; the other tabs show a "coming soon" empty state
+behind the same access gate and freshness strip.
 
 ## Freshness strip
 
@@ -92,15 +95,126 @@ line in a trailing "Security" group with no count. They have no severity, title
 or detail anywhere, are never counted, and never reorder anything. Event
 summaries apply the same collapse.
 
+## Inbox
+
+The Inbox tab lists the open Needs-you items grouped by kind: "Decisions for
+you", "Actions", then "For your information", each with its count, in publisher
+order. Each card shows the title, the body (three lines until "More"), kind and
+product chips and the options as read-only chips; the recommended option carries
+the word "Recommended" and a star, never colour alone. A search field
+("Search Needs you") and product chips narrow the list. Pull to refresh.
+
+- **Scope:** normal Needs-you items only. The Decisions journal is a later
+  change; this tab has no segmented control until it exists.
+- **Security rows** keep the Home rule: one non-tappable line in a trailing
+  "Security" group with no count, never counted, searched or filtered, with no
+  severity, id or detail.
+- **Detail:** `/mastermind/inbox/item/:itemId` opens one item in full. The id is
+  an opaque snapshot id and only ever a route parameter; deep links carry tab
+  roots only and never ids. An id that is not an open item shows "This item is
+  no longer in Mastermind" (or "This was answered or withdrawn" when it left
+  while open) with a way back, never an error. A changed `version_hash` shows
+  "This question was updated".
+- **The "Reply on Mac" option** is a placeholder the publisher adds when an item
+  has nothing to pick. It is never offered as a choice and the app never sends
+  it.
+
+### Replies
+
+Replies are gated at runtime by `GET /v1/capabilities` (`replies`, with schema
+`1.4`), checked when an Inbox screen opens and at most every five minutes.
+Where replies are off, or the hub cannot be asked, the detail shows the options
+read-only and "Reply on your Mac"; there is no composer. The Worker owns the
+switch, so it flips without a store release.
+
+- **Gate in code:** submit, retry and flush all refuse to send unless the hub
+  says replies are on, not only the composer's visibility. Entries queued while
+  replies are off stay queued: neither sent nor dropped, until capabilities say
+  `replies: true` again. Coming back online re-asks the hub before flushing.
+- **Known answer kept offline:** a known "supported" answer survives a failed
+  re-check. Going offline never flips it, so the outbox keeps working with no
+  connection; only an answer from the hub turns replies off: `replies: false`
+  from the capabilities check, or a 403 `replies_disabled` on a send (any other
+  403 is a lost-access refusal, handled like a 403 on the snapshot).
+- **One check at a time:** overlapping capability checks, forced or not, share a
+  single request, and a reply sent during the first-ever check waits for its
+  answer instead of being refused. Connectivity changes are de-duplicated, so
+  several interfaces flipping together cause one re-check and flush.
+
+- **Contract:** `POST /v1/replies` with exactly
+  `{schema_version: "1.4", item_id, version_hash, option_index | text}`: one of
+  an option index (into the item's own `options[]`) or free text of at most 500
+  characters, counted in code points, and at most 10 lines (the hub's limit; the
+  composer caps both as you type). Choosing an option clears the text and
+  typing clears the option. The text field has a placeholder and a counter. A
+  confirmation asks before anything is sent.
+- **Idempotency:** the `Idempotency-Key` is a random v4 UUID from a secure
+  generator, made once per reply and stored in the outbox before the first send.
+  Every retry reuses it, so an unknown outcome never becomes a second reply. A
+  200 replay is treated exactly like 201. One reply per question version.
+- **Offline outbox:** a reply that cannot be delivered (offline, timeout, 5xx)
+  stays queued on the device, per user, in the snapshot cache directory, and is
+  sent again when an Inbox screen opens, when the app resumes and when the device
+  comes back online. It can be retried or discarded. Entries expire after seven
+  days and are dropped when a live snapshot no longer has the item open. Queued
+  replies live in the OS cache directory, not the documents directory: that
+  keeps them out of device backups, at the cost that the OS may purge the cache
+  under storage pressure and silently lose a queued reply. We accept that
+  trade-off, because a reply is short-lived and a lost one is re-asked; a reply
+  already accepted by the hub is unaffected. Logout,
+  account switch and lost access erase the outbox with the snapshot cache, behind
+  the same generation fences, so an in-flight send cannot revive it.
+- **409 `stale_item`:** the item is refreshed, the typed words are kept, and the
+  screen says "This question changed or was already answered. Review it again."
+  An option stays selected only if it is still the same option at the same
+  place. `idempotency_conflict` drops the queued entry with "Something went
+  wrong with this reply. Review it and send it again."
+- **Other answers:** 400 (`unsafe_text` explains the text policy) and 413 keep
+  the words to edit; 429 waits out `Retry-After` and disables the retry until
+  then; 403 `replies_disabled` hides the composer and 403 `forbidden` is lost
+  access.
+- **401:** the reply stays queued. The first failure offers "Try again"; only
+  after a repeat does "Sign out and sign in again" appear, and it asks first,
+  because signing out removes every saved account on the device.
+- **Waiting rows:** the Inbox shows "N replies waiting to send" while replies
+  are queued; with exactly one, the row opens that item. A queued reply binds to
+  its item id and `version_hash`, so a reply to an older version of a question is
+  never shown as the answer to the current one. A 429 counts down on its own and
+  re-enables "Try again" when `Retry-After` has passed.
+- **Search:** it never matches the "Reply on Mac" placeholder option.
+- **Accessibility:** the reply status line is a live region, and the character
+  counter has a spoken label ("12 of 500 characters used").
+
+Delivery status beyond "Sent · waiting for Mastermind" (the item leaving the
+next snapshot) is not polled yet.
+
 ## Regression coverage
 
 `apps/mobile/test/features/mastermind/view`: `mastermind_entry_test.dart`
 (entry gating, route gate, mini-app shell, runtime reset),
 `mastermind_section_test.dart` (access gate, scheduler lifetime, resume
-refresh, whole-section states, the sign-out confirmation),
+refresh gated on a real background, connectivity-driven freshness strip,
+whole-section states, the sign-out confirmation),
 `mastermind_access_resync_test.dart` (access recovery on resume and Apps hub
 pull-to-refresh), `runtime/mastermind_auth_reset_test.dart` (the app-level
 logout and account-switch listener over a real `AuthCubit`), `mastermind_freshness_test.dart` (strip states),
 `mastermind_home_page_test.dart` (ordering, security redaction, dock
 clearance, tab links) and `home_model_test.dart`. The registered-destination
 smoke test builds every `/mastermind/**` route through the production router.
+
+`apps/mobile/test/features/mastermind/replies` covers the reply path:
+`reply_models_test.dart` (key format, exact body, strict stored form, limits),
+`reply_outbox_store_test.dart` (per-user persistence, corruption, clear),
+`hub_reply_transport_test.dart` (headers, every status, the 401 retry with the
+same key), `mastermind_replies_cubit_test.dart` (capability gate, persist before
+send, idempotent retry, 409/400/401/403/413/429, logout fencing, snapshot sync),
+`mastermind_replies_gate_test.dart` (nothing is sent while replies are off,
+including a reconnect flush; a logout racing a refused or stale reply; entries
+bound to item id and version), `mastermind_capability_load_test.dart` (one
+shared capability request, a send waiting on the first check) and
+`mastermind_runtime_replies_test.dart` (logout, switch and lost access clear
+the outbox). `runtime/mastermind_runtime_online_test.dart` covers the
+connectivity stream (reaches the scheduler, de-duplicated, cancelled on close).
+The screens are in `view/mastermind_inbox_page_test.dart`,
+`view/mastermind_item_page_test.dart` and
+`view/reply_line_limit_formatter_test.dart` (the 10-line cap and its refusals).
