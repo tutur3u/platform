@@ -1292,6 +1292,19 @@ Realtime authorization tables. New RLS tables added after this migration must
 also include the `account_required_mfa` restrictive policy; do not assume the
 PostgREST hook protects Storage or Realtime traffic.
 
+The `Required account MFA database contract` workflow
+(`.github/workflows/required-account-mfa-contract.yaml`) enforces this. It applies
+the full migration history to an isolated database and runs the strict
+`required-account-mfa.sql` pgTAP fixture. The fixture requires every client-reachable
+relation in the `config.toml` `[api] schemas` (plus `realtime.messages`) to carry the
+exact restrictive policy, or to be an invoker view. A relation that anon and
+authenticated hold no table or column privilege on, or one with RLS enabled and no
+policy at all, cannot be reached and is not flagged. The only named exemption lives
+in the fixture's `mfa_exemptions` table with its tracking reference; the fixture
+fails when an exemption grants clients more than `SELECT` or is no longer needed.
+Changing `config.toml`, the fixture or the runner triggers the workflow and needs
+code-owner review.
+
 ### Cached clients and reconnect
 
 Optional accounts keep instant cached startup and offline access. Native startup

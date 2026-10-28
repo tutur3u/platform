@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(50);
+select plan(62);
 insert into auth.users (id, aud, role, email, raw_app_meta_data, created_at, updated_at)
 values ('00000000-0000-4000-8000-000000009901', 'authenticated', 'authenticated', 'mfa-policy-test@tuturuuu.com', '{}', now(), now());
 insert into public.users (id) values ('00000000-0000-4000-8000-000000009901') on conflict do nothing;
@@ -58,56 +58,98 @@ select pg_get_expr(polqual, polrelid) as expression from pg_policy
 where polrelid = (select oid from pg_class where relname = 'mfa_canonical'
  and relnamespace = pg_my_temp_schema()) and polname = 'canonical';
 
--- Exact names only: Supabase-owned implementation tables, never objects/buckets.
-create temporary table mfa_storage_exemptions(nspname text, relname text);
-insert into mfa_storage_exemptions values
- ('storage','migrations'), -- Supabase internal migration ledger.
- ('storage','s3_multipart_uploads'), -- Supabase internal multipart state.
- ('storage','s3_multipart_uploads_parts'), -- Supabase internal multipart parts.
- ('storage','prefixes'), -- Supabase internal object prefix index.
- ('storage','buckets_analytics'), -- Supabase internal analytics buckets.
- ('storage','buckets_vectors'), -- Supabase internal vector buckets.
- ('storage','vector_indexes'); -- Supabase internal vector indexes.
+-- Scope: config.toml [api] schemas, supplied by the contract runner. A plain
+-- `supabase test db` has no runner, so it falls back to the committed list.
+create temporary table mfa_scope(nspname text);
+insert into mfa_scope
+select unnest(string_to_array(coalesce(nullif(current_setting('test.mfa_schemas', true), ''),
+ 'public,graphql_public,storage,private'), ','));
+-- Reachable by clients outside the API schemas: Realtime broadcast/presence
+-- authorization reads this table, and the enforcement migration policies it.
+create temporary table mfa_extra_scope(nspname text, relname text);
+insert into mfa_extra_scope values ('realtime', 'messages');
 select ok(not exists (
- select 1 from mfa_storage_exemptions e join pg_namespace n on n.nspname=e.nspname
- join pg_class c on c.relnamespace=n.oid and c.relname=e.relname
- where has_table_privilege('anon',c.oid,'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER')
- or has_table_privilege('authenticated',c.oid,'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER')
-), 'Exempt storage internals have no client table privileges');
+ select 1 from mfa_extra_scope x left join pg_namespace n on n.nspname = x.nspname
+ left join pg_class c on c.relnamespace = n.oid and c.relname = x.relname
+ where c.oid is null
+), 'Every explicitly scoped relation (realtime.messages) exists');
+select ok((select count(*) from mfa_scope where nspname in ('public','graphql_public','storage','private')) = 4,
+ 'Contract scope still covers the public, graphql_public, storage and private API schemas');
 
--- Scope is supplied from config.toml by the contract runner.
+-- Exact-name exemptions only. Each names its tracking reference and is removed
+-- once the relation carries the policy (the assertion below fails otherwise).
+create temporary table mfa_exemptions(nspname text, relname text, tracking_ref text, reason text);
+insert into mfa_exemptions values
+ ('private', 'note_voice_jobs', 'SR-386',
+  'Owner-read table predates MFA coverage; delete this row when its account_required_mfa policy lands.');
+
+-- A relation carries the contract when RLS is on and the canonical restrictive
+-- policy applies to authenticated for every command with the exact expression.
+create temporary view mfa_covered as
+select c.oid from pg_class c
+where c.relkind in ('r','p') and c.relrowsecurity and exists (
+ select 1 from pg_policy p where p.polrelid = c.oid
+ and p.polname = 'account_required_mfa' and not p.polpermissive
+ and p.polcmd = '*'
+ and (0::oid = any(p.polroles) or (select oid from pg_roles where rolname = 'authenticated') = any(p.polroles))
+ and pg_get_expr(p.polqual,p.polrelid) = (select expression from mfa_expected)
+ and pg_get_expr(p.polwithcheck,p.polrelid) = (select expression from mfa_expected)
+);
+
+-- Anon/authenticated reach a relation only through a table or column privilege
+-- (PUBLIC grants included). Column-level grants count.
+create temporary view mfa_client_reachable as
+select c.oid from pg_class c
+where has_table_privilege('anon', c.oid, 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER')
+ or has_table_privilege('authenticated', c.oid, 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER')
+ or has_any_column_privilege('anon', c.oid, 'SELECT,INSERT,UPDATE,REFERENCES')
+ or has_any_column_privilege('authenticated', c.oid, 'SELECT,INSERT,UPDATE,REFERENCES');
+
+create temporary view mfa_exemption_violations as
+select e.nspname, e.relname from mfa_exemptions e
+left join pg_namespace n on n.nspname = e.nspname
+left join pg_class c on c.relnamespace = n.oid and c.relname = e.relname
+where c.oid is null
+ or e.tracking_ref !~ '^SR-[0-9]+$'
+ or has_table_privilege('anon', c.oid, 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER')
+ or has_any_column_privilege('anon', c.oid, 'SELECT,INSERT,UPDATE,REFERENCES')
+ or has_table_privilege('authenticated', c.oid, 'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER')
+ or has_any_column_privilege('authenticated', c.oid, 'INSERT,UPDATE,REFERENCES')
+ or c.oid in (select oid from mfa_covered);
+select is((select string_agg(nspname || '.' || relname, ', ' order by nspname,relname)
+ from mfa_exemption_violations), null::text,
+ 'Exemptions exist, name a tracking reference, grant clients at most SELECT and are still needed');
+
 create temporary view mfa_coverage_violations as
 select n.nspname, c.relname from pg_class c
 join pg_namespace n on n.oid = c.relnamespace
-where n.nspname = any(string_to_array(current_setting('test.mfa_schemas'), ','))
+left join mfa_extra_scope x on x.nspname = n.nspname and x.relname = c.relname
+where (x.relname is not null or n.nspname in (select nspname from mfa_scope))
 and c.relkind in ('r','p','v','m')
-and not exists (select 1 from mfa_storage_exemptions e
- where e.nspname=n.nspname and e.relname=c.relname)
-and not (
-  -- TEMPORARY SR-386: owner-read table predates complete MFA coverage.
-  n.nspname = 'private' and c.relname = 'note_voice_jobs'
-)
+and not exists (select 1 from mfa_exemptions e
+ where e.nspname = n.nspname and e.relname = c.relname)
+-- No anon/authenticated privilege means no API, Realtime or Storage path.
+and (x.relname is not null or c.oid in (select oid from mfa_client_reachable))
 and (
   c.relkind = 'm'
-  -- Invoker views read through their base tables' RLS.
-  or (c.relkind = 'v' and not coalesce(c.reloptions @> array['security_invoker=true'], false))
-  or (c.relkind in ('r','p') and (
-    not c.relrowsecurity or not exists (
-      select 1 from pg_policy p where p.polrelid = c.oid
-      and p.polname = 'account_required_mfa' and not p.polpermissive
-      and p.polcmd = '*'
-      and (0::oid = any(p.polroles) or (select oid from pg_roles where rolname = 'authenticated') = any(p.polroles))
-      and pg_get_expr(p.polqual,p.polrelid) = (select expression from mfa_expected)
-      and pg_get_expr(p.polwithcheck,p.polrelid) = (select expression from mfa_expected)
-    )
-  ))
+  -- Invoker views read through their base tables' RLS. Postgres stores the
+  -- option as written (on/true/1/yes...), so parse it with the boolean input.
+  or (c.relkind = 'v' and not coalesce((
+    select split_part(o, '=', 2)::boolean from unnest(c.reloptions) o
+    where o like 'security\_invoker=%'), false))
+  or (c.relkind in ('r','p')
+    and c.oid not in (select oid from mfa_covered)
+    -- RLS on with no policy at all denies every non-owner row.
+    and not (c.relrowsecurity and not exists (
+      select 1 from pg_policy p where p.polrelid = c.oid)))
 );
 select is((select string_agg(nspname || '.' || relname, ', ' order by nspname,relname)
  from mfa_coverage_violations), null::text,
- 'All exposed relations enforce MFA, including partitions and invoker views');
+ 'All client-reachable exposed relations enforce MFA, including partitions and invoker views');
 
 savepoint broken_coverage;
 create table public.mfa_contract_probe(id int);
+grant all on public.mfa_contract_probe to anon, authenticated;
 select ok(exists(select 1 from mfa_coverage_violations where relname='mfa_contract_probe'), 'Detect RLS off');
 alter table public.mfa_contract_probe enable row level security;
 create policy account_required_mfa on public.mfa_contract_probe as restrictive for select to authenticated using(public.account_required_mfa_satisfied());
@@ -125,6 +167,9 @@ drop policy account_required_mfa on public.mfa_contract_probe;
 create policy account_required_mfa on public.mfa_contract_probe as restrictive for all to authenticated using((select public.account_required_mfa_satisfied())) with check(true);
 select ok(exists(select 1 from mfa_coverage_violations where relname='mfa_contract_probe'), 'Detect WITH CHECK true');
 drop policy account_required_mfa on public.mfa_contract_probe;
+create policy account_required_mfa on public.mfa_contract_probe as restrictive for all to authenticated using((select public.account_required_mfa_satisfied()));
+select ok(exists(select 1 from mfa_coverage_violations where relname='mfa_contract_probe'), 'Detect FOR ALL with USING only');
+drop policy account_required_mfa on public.mfa_contract_probe;
 create policy account_required_mfa on public.mfa_contract_probe as permissive for all to authenticated using((select public.account_required_mfa_satisfied())) with check((select public.account_required_mfa_satisfied()));
 select ok(exists(select 1 from mfa_coverage_violations where relname='mfa_contract_probe'), 'Detect PERMISSIVE only');
 create schema evil_probe;
@@ -133,16 +178,77 @@ drop policy account_required_mfa on public.mfa_contract_probe;
 create policy account_required_mfa on public.mfa_contract_probe as restrictive for all to authenticated
 using((select evil_probe.account_required_mfa_satisfied())) with check((select evil_probe.account_required_mfa_satisfied()));
 select ok(exists(select 1 from mfa_coverage_violations where relname='mfa_contract_probe'), 'Detect look-alike function');
+create table private.mfa_private_probe(id int);
+grant select on private.mfa_private_probe to authenticated;
+alter table private.mfa_private_probe enable row level security;
+create policy mfa_guard on private.mfa_private_probe as restrictive for all to authenticated
+using((select public.account_required_mfa_satisfied())) with check((select public.account_required_mfa_satisfied()));
+select ok(exists(select 1 from mfa_coverage_violations where relname='mfa_private_probe'), 'Detect canonical expression under a different policy name');
+create table public.mfa_column_probe(id int, note text);
+grant select (note) on public.mfa_column_probe to authenticated;
+select ok(exists(select 1 from mfa_coverage_violations where relname='mfa_column_probe'), 'Detect column-level client grant');
+create table public.mfa_denyall_probe(id int);
+grant all on public.mfa_denyall_probe to anon, authenticated;
+alter table public.mfa_denyall_probe enable row level security;
+select ok(not exists(select 1 from mfa_coverage_violations where relname='mfa_denyall_probe'), 'Accept RLS with no policy (default deny)');
+create table public.mfa_unreachable_probe(id int);
+revoke all on public.mfa_unreachable_probe from public, anon, authenticated;
+select ok(not exists(select 1 from mfa_coverage_violations where relname='mfa_unreachable_probe'), 'Ignore a table without client privileges');
 create view public.mfa_view_probe as select 1 as id;
+grant select on public.mfa_view_probe to authenticated;
 select ok(exists(select 1 from mfa_coverage_violations where relname='mfa_view_probe'), 'Detect mfa_view_probe');
+create view public.mfa_view_off_probe with (security_invoker = off) as select 1 as id;
+grant select on public.mfa_view_off_probe to authenticated;
+select ok(exists(select 1 from mfa_coverage_violations where relname='mfa_view_off_probe'), 'Detect security_invoker = off view');
+create view public.mfa_view_on_probe with (security_invoker = on) as select 1 as id;
+grant select on public.mfa_view_on_probe to authenticated;
+select ok(not exists(select 1 from mfa_coverage_violations where relname='mfa_view_on_probe'), 'Accept security_invoker = on view');
+create view public.mfa_view_true_probe with (security_invoker = true) as select 1 as id;
+grant select on public.mfa_view_true_probe to authenticated;
+select ok(not exists(select 1 from mfa_coverage_violations where relname='mfa_view_true_probe'), 'Accept security_invoker = true view');
 create materialized view public.mfa_matview_probe as select 1 as id;
+grant select on public.mfa_matview_probe to authenticated;
 select ok(exists(select 1 from mfa_coverage_violations where relname='mfa_matview_probe'), 'Detect mfa_matview_probe');
+create materialized view private.mfa_matview_private_probe as select 1 as id;
+revoke all on private.mfa_matview_private_probe from public, anon, authenticated;
+select ok(not exists(select 1 from mfa_coverage_violations where relname='mfa_matview_private_probe'), 'Ignore a materialized view without client privileges');
 create table public.mfa_parent_probe(id int) partition by range(id); create table public.mfa_partition_probe partition of public.mfa_parent_probe for values from (0) to (10);
+grant all on public.mfa_partition_probe to authenticated;
 select ok(exists(select 1 from mfa_coverage_violations where relname='mfa_partition_probe'), 'Detect mfa_partition_probe');
-create table graphql_public.mfa_graphql_probe(id int);
-select ok(exists(select 1 from mfa_coverage_violations where relname='mfa_graphql_probe'), 'Detect mfa_graphql_probe');
-create table storage.mfa_storage_probe(id int);
-select ok(exists(select 1 from mfa_coverage_violations where relname='mfa_storage_probe'), 'Detect mfa_storage_probe');
+-- Platform-owned schemas: only a superuser (the contract runner) may create or
+-- alter objects there. Plain `supabase test db` runs as postgres, where these
+-- probes are skipped and the scope assertion above still pins the schemas.
+create temporary table mfa_platform_probes(nspname text, relname text, created boolean);
+do $$
+declare s text;
+begin
+  foreach s in array array['graphql_public', 'storage'] loop
+    begin
+      execute format('create table %I.mfa_%s_probe(id int)', s, s);
+      execute format('grant all on %I.mfa_%s_probe to authenticated', s, s);
+      insert into mfa_platform_probes values (s, 'mfa_' || s || '_probe', true);
+    exception when insufficient_privilege then
+      insert into mfa_platform_probes values (s, null, false);
+    end;
+  end loop;
+  begin
+    drop policy account_required_mfa on realtime.messages;
+    insert into mfa_platform_probes values ('realtime', 'messages', true);
+  exception when insufficient_privilege then
+    insert into mfa_platform_probes values ('realtime', 'messages', false);
+  end;
+end;
+$$;
+select ok(not exists(select 1 from mfa_platform_probes p where p.created
+ and not exists (select 1 from mfa_coverage_violations v where v.nspname = p.nspname and v.relname = p.relname)),
+ 'Detect uncovered graphql_public and storage tables and a realtime.messages missing its policy');
+create table public.mfa_exempt_probe(id int, note text);
+grant select (note), update (note) on public.mfa_exempt_probe to authenticated;
+insert into mfa_exemptions values ('public', 'mfa_exempt_probe', 'SR-1', 'fixture');
+select ok(exists(select 1 from mfa_exemption_violations where relname='mfa_exempt_probe'), 'Detect column-level write grant on an exempt relation');
+revoke all on public.mfa_exempt_probe from authenticated;
+update mfa_exemptions set tracking_ref = 'later' where relname = 'mfa_exempt_probe';
+select ok(exists(select 1 from mfa_exemption_violations where relname='mfa_exempt_probe'), 'Detect an exemption without a tracking reference');
 drop policy account_required_mfa on public.mfa_contract_probe;
 create policy account_required_mfa on public.mfa_contract_probe as restrictive for all to authenticated
 using((select public.account_required_mfa_satisfied())) with check((select public.account_required_mfa_satisfied()));

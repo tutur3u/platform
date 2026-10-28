@@ -4,6 +4,7 @@ on:
     types: [opened, synchronize, reopened, ready_for_review, labeled, converted_to_draft]
     paths:
       - 'apps/database/supabase/migrations/**'
+      - 'apps/database/supabase/config.toml'
       - 'apps/database/supabase/tests/required-account-mfa.sql'
       - 'apps/database/scripts/verify-required-account-mfa-contract.mjs'
       - 'apps/database/scripts/programming-database-tap.mjs'
