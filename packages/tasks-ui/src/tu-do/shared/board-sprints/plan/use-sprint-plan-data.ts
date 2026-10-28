@@ -12,7 +12,15 @@ import {
 } from '../../board-members-query';
 import { listBoardTasksForSearch } from '../../board-task-search';
 
-const SPRINT_LIST_STATUSES = ['not_started', 'active', 'done', 'closed'];
+// Every list a sprint task can sit in; Review is open work, so the backlog
+// and the end summary must see it.
+const SPRINT_LIST_STATUSES = [
+  'not_started',
+  'active',
+  'review',
+  'done',
+  'closed',
+];
 
 /**
  * Starts with 'tasks-full' so the shared optimistic patches (assignees, status,
