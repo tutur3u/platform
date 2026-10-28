@@ -22,10 +22,20 @@ returns boolean language plpgsql stable security definer
 set search_path = pg_catalog, pg_temp as $$
 declare v_allowed boolean;
 begin
-    if to_regclass('private.devbox_personal_pool_grants') is null then return false; end if;
-    execute 'select exists (select 1 from private.devbox_personal_pool_grants where actor_id = $1 and revoked_at is null and expires_at > now())'
+    -- 20261027152050 owns the shared user_id grant contract. Switch to its
+    -- predicate when present; earlier/partial rollouts deny personal access.
+    if to_regclass('private.devbox_personal_pool_grants') is null
+        or to_regprocedure('private.devbox_identity_grant_active(uuid)') is null then
+        return false;
+    end if;
+    execute 'select private.devbox_identity_grant_active($1)'
         into v_allowed using p_actor_id;
-    return v_allowed;
+    return coalesce(v_allowed, false);
+exception
+    -- Per-actor denials and unavailable contract objects must not abort the
+    -- fleet cleanup. They still take the audited cancellation path below.
+    when insufficient_privilege or undefined_table or undefined_column or undefined_function then
+        return false;
 end;
 $$;
 revoke all on function private.devbox_actor_has_active_personal_grant(uuid) from public, anon, authenticated;
@@ -166,9 +176,11 @@ begin
         perform private.cancel_devbox_actor_queued_runs(old.user_id);
     else
         if tg_op = 'DELETE' then
-            perform private.cancel_devbox_actor_queued_runs(old.actor_id);
-        elsif new.revoked_at is not null or new.expires_at <= now() then
-            perform private.cancel_devbox_actor_queued_runs(new.actor_id);
+            perform private.cancel_devbox_actor_queued_runs(old.user_id);
+        elsif new.status is distinct from 'active' or new.suspended is distinct from false
+            or new.accepted_at is null or new.accepted_at > now()
+            or new.expires_at is null or new.expires_at <= now() then
+            perform private.cancel_devbox_actor_queued_runs(new.user_id);
         end if;
     end if;
     return null;
@@ -183,6 +195,8 @@ create trigger cancel_devbox_runs_on_access_revocation after delete or update
 do $$ begin
     if to_regclass('private.devbox_personal_pool_grants') is not null then
         execute 'create trigger cancel_devbox_runs_on_access_revocation after delete or update on private.devbox_personal_pool_grants for each row execute function private.cancel_devbox_runs_on_access_revocation()';
+    else
+        raise notice 'Devbox grants table absent: attach cancel_devbox_runs_on_access_revocation before enrollment.';
     end if;
 end $$;
 
