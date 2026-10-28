@@ -203,4 +203,188 @@ describe('Mastermind push retry and claim races', () => {
     expect(sendCustomPushMessageBatch).not.toHaveBeenCalled();
     expect(vi.getTimerCount()).toBe(0);
   });
+
+  it.each([60_000, 61_000])(
+    'receipts an observed FCM success at +%i ms before stopping at the deadline',
+    async (elapsedMs) => {
+      vi.mocked(sendCustomPushMessageBatch).mockImplementationOnce(async () => {
+        // The request resumes before the timer callback gets CPU time.
+        vi.setSystemTime(NOW + elapsedMs);
+        return { deliveredCount: 1, invalidTokens: [] };
+      });
+      expect((await POST(signedRequest(baseEvent))).status).toBe(502);
+      expect(liveValue(sentKey(OWNER))).toBe('1');
+      expect(liveValue(replayKey(baseEvent))).toBeNull();
+      expect(sendCustomPushMessageBatch).toHaveBeenCalledTimes(1);
+      expect(console.warn).toHaveBeenCalledWith(
+        'Mastermind push event partially failed',
+        expect.objectContaining({ sent: 1, failed: 1 })
+      );
+
+      vi.setSystemTime(NOW + 61_000);
+      expect((await POST(signedRequest(baseEvent))).status).toBe(202);
+      expect(
+        vi
+          .mocked(sendCustomPushMessageBatch)
+          .mock.calls.map(([args]) => args.devices[0]?.token)
+      ).toEqual(['owner-token-a', 'second-owner-token']);
+      expect(vi.getTimerCount()).toBe(0);
+    }
+  );
+
+  it('counts FCM success and continues when its sent marker write rejects', async () => {
+    const set = redis.set.getMockImplementation();
+    if (!set) throw new Error('Missing Redis fixture');
+    redis.set.mockImplementation(async (key, value, options) => {
+      if (key === sentKey(OWNER)) {
+        throw new Error('backend failure with private diagnostic');
+      }
+      return set(key, value, options);
+    });
+    const response = await POST(signedRequest(baseEvent));
+    expect(response.status).toBe(202);
+    expect(await response.json()).toMatchObject({ sent: 2, failed: 0 });
+    expect(sendCustomPushMessageBatch).toHaveBeenCalledTimes(2);
+    expect(liveValue(sentKey(OWNER))).toBeNull();
+    expect(liveValue(sentKey(SECOND_OWNER))).toBe('1');
+    expect(liveValue(replayKey(baseEvent))).toBe('done');
+    expect(console.warn).toHaveBeenCalledExactlyOnceWith(
+      'Failed to mark Mastermind push owner as delivered',
+      { eventKey: 'needs_you.new:item-0123456789abcdef0123:41' }
+    );
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('bounds a hung sent marker write and continues to the next owner', async () => {
+    const set = redis.set.getMockImplementation();
+    if (!set) throw new Error('Missing Redis fixture');
+    redis.set.mockImplementation(async (key, value, options) => {
+      if (key === sentKey(OWNER)) return new Promise(() => {});
+      return set(key, value, options);
+    });
+    const pending = POST(signedRequest(baseEvent));
+    await flushUntil(() =>
+      expect(redis.set).toHaveBeenCalledWith(sentKey(OWNER), '1', {
+        ex: 86_400,
+      })
+    );
+    await vi.advanceTimersByTimeAsync(1000);
+    const response = await pending;
+    expect(response.status).toBe(202);
+    expect(await response.json()).toMatchObject({ sent: 2, failed: 0 });
+    expect(sendCustomPushMessageBatch).toHaveBeenCalledTimes(2);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('keeps an unresolved owner retryable inside its coalescing window after a deadline 502', async () => {
+    const slow = deferred<{
+      deliveredCount: number;
+      invalidTokens: string[];
+    }>();
+    const hanging = deferred<{
+      deliveredCount: number;
+      invalidTokens: string[];
+    }>();
+    vi.mocked(sendCustomPushMessageBatch)
+      .mockImplementationOnce(() => slow.promise)
+      .mockImplementationOnce(() => hanging.promise);
+    const first = POST(signedRequest(baseEvent));
+    await flushUntil(() =>
+      expect(sendCustomPushMessageBatch).toHaveBeenCalledTimes(1)
+    );
+    await vi.advanceTimersByTimeAsync(59_000);
+    slow.resolve({ deliveredCount: 1, invalidTokens: [] });
+    await flushUntil(() =>
+      expect(sendCustomPushMessageBatch).toHaveBeenCalledTimes(2)
+    );
+    expect(store.get(coalesceKey(OWNER))).toEqual({
+      value: 'done',
+      expiresAt: NOW + 60_000,
+    });
+    await vi.advanceTimersByTimeAsync(1000);
+    expect((await first).status).toBe(502);
+    expect(liveValue(coalesceKey(SECOND_OWNER))).toMatch(/^pending:/);
+
+    await vi.advanceTimersByTimeAsync(1000);
+    expect((await POST(signedRequest(baseEvent))).status).toBe(502);
+    expect(liveValue(replayKey(baseEvent))).toBeNull();
+    expect(sendCustomPushMessageBatch).toHaveBeenCalledTimes(2);
+    hanging.reject(new Error('FCM failed after the route timed out'));
+    await vi.advanceTimersByTimeAsync(58_001);
+    expect((await POST(signedRequest(baseEvent))).status).toBe(202);
+    expect(liveValue(sentKey(OWNER))).toBe('1');
+    expect(liveValue(sentKey(SECOND_OWNER))).toBe('1');
+    expect(sendCustomPushMessageBatch).toHaveBeenCalledTimes(3);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('token-matches a stale route coalesce delete while a successor window is pending', async () => {
+    const stale = deferred<{
+      deliveredCount: number;
+      invalidTokens: string[];
+    }>();
+    const successor = deferred<{
+      deliveredCount: number;
+      invalidTokens: string[];
+    }>();
+    vi.mocked(sendCustomPushMessageBatch)
+      .mockImplementationOnce(() => stale.promise)
+      .mockImplementationOnce(() => successor.promise);
+    const first = POST(signedRequest(baseEvent));
+    await flushUntil(() =>
+      expect(sendCustomPushMessageBatch).toHaveBeenCalledTimes(1)
+    );
+    const firstToken = liveValue(coalesceKey(OWNER));
+    // Redis can expire/evict a window independently of the request's clock.
+    store.delete(coalesceKey(OWNER));
+    const second = POST(signedRequest({ ...baseEvent, seq: 42 }));
+    await flushUntil(() =>
+      expect(sendCustomPushMessageBatch).toHaveBeenCalledTimes(2)
+    );
+    const window = store.get(coalesceKey(OWNER));
+    expect(window?.value).toMatch(/^pending:[0-9a-f-]{36}$/);
+    expect(window?.value).not.toBe(firstToken);
+    stale.reject(new Error('stale FCM failure before the deadline'));
+    expect((await first).status).toBe(502);
+    expect(redis.eval).toHaveBeenCalledWith(
+      expect.stringContaining("redis.call('DEL'"),
+      [coalesceKey(OWNER)],
+      [firstToken]
+    );
+    expect(store.get(coalesceKey(OWNER))).toEqual(window);
+    successor.resolve({ deliveredCount: 1, invalidTokens: [] });
+    expect((await second).status).toBe(202);
+    expect(
+      liveValue(`${replayKey({ ...baseEvent, seq: 42 })}:sent:${OWNER}`)
+    ).toBe('1');
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('bounds receipt waiting after observing FCM success beyond the deadline', async () => {
+    const set = redis.set.getMockImplementation();
+    if (!set) throw new Error('Missing Redis fixture');
+    redis.set.mockImplementation(async (key, value, options) => {
+      if (key === sentKey(OWNER)) return new Promise(() => {});
+      return set(key, value, options);
+    });
+    vi.mocked(sendCustomPushMessageBatch).mockImplementationOnce(async () => {
+      vi.setSystemTime(NOW + 61_000);
+      return { deliveredCount: 1, invalidTokens: [] };
+    });
+    const pending = POST(signedRequest(baseEvent));
+    await flushUntil(() =>
+      expect(redis.set).toHaveBeenCalledWith(sentKey(OWNER), '1', {
+        ex: 86_400,
+      })
+    );
+    await vi.advanceTimersByTimeAsync(1000);
+    expect((await pending).status).toBe(502);
+    expect(console.warn).toHaveBeenCalledWith(
+      'Mastermind push event partially failed',
+      expect.objectContaining({ sent: 1, failed: 1 })
+    );
+    expect(sendCustomPushMessageBatch).toHaveBeenCalledTimes(1);
+    expect(liveValue(replayKey(baseEvent))).toBeNull();
+    expect(vi.getTimerCount()).toBe(0);
+  });
 });

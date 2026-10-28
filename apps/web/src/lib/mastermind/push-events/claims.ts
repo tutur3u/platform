@@ -26,11 +26,8 @@ export function releaseMastermindPushClaim(
 export function completeMastermindPushClaim(
   redis: UpstashRestRedisClient,
   key: string,
-  token: string
+  token: string,
+  ttlSeconds = MASTERMIND_PUSH_REPLAY_SECONDS
 ) {
-  return redis.eval(
-    COMPLETE_CLAIM,
-    [key],
-    [token, 'done', MASTERMIND_PUSH_REPLAY_SECONDS]
-  );
+  return redis.eval(COMPLETE_CLAIM, [key], [token, 'done', ttlSeconds]);
 }
