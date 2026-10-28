@@ -349,41 +349,6 @@ void main() {
     );
   });
 
-  group('AuthRepository.signInWithMicrosoft', () {
-    test('launches Microsoft OAuth in the browser', () async {
-      when(
-        () => oauthUrlLauncher.launchProviderSignIn(
-          authClient: goTrueClient,
-          provider: OAuthProvider.azure,
-          redirectTo: 'com.tuturuuu.app.mobile.dev://login-callback',
-          queryParams: const {},
-          scopes: 'email',
-        ),
-      ).thenAnswer((_) async => true);
-
-      final result = await repository.signInWithMicrosoft();
-
-      expect(result.status, AuthActionStatus.externalFlowStarted);
-    });
-
-    test('returns a Microsoft launch error when OAuth cannot start', () async {
-      when(
-        () => oauthUrlLauncher.launchProviderSignIn(
-          authClient: goTrueClient,
-          provider: OAuthProvider.azure,
-          redirectTo: 'com.tuturuuu.app.mobile.dev://login-callback',
-          queryParams: const {},
-          scopes: 'email',
-        ),
-      ).thenAnswer((_) async => false);
-
-      final result = await repository.signInWithMicrosoft();
-
-      expect(result.status, AuthActionStatus.failure);
-      expect(result.errorCode, AuthErrorCode.microsoftBrowserLaunchFailed);
-    });
-  });
-
   group('AuthRepository.signInWithApple', () {
     test(
       'returns success after native Apple sign-in succeeds on iOS',

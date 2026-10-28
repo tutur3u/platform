@@ -392,18 +392,36 @@ void main() {
       expect(find.text('Retry'), findsOneWidget);
     });
 
-    testWidgets('other rejections show a category, never the debug path', (
+    testWidgets(
+      'malformed known fields show a category, never the value or path',
+      (tester) async {
+        final json = homeJson()..['generated_at'] = 'leaked_field_name';
+        await _pump(tester, source: FakeHubSource(bytes: snapshotBytes(json)));
+        expect(
+          find.text("The latest update couldn't be read."),
+          findsOneWidget,
+        );
+        final texts = tester
+            .widgetList<Text>(find.byType(Text))
+            .map((text) => text.data ?? '')
+            .join('\n');
+        expect(texts, isNot(contains('leaked_field_name')));
+        expect(texts, isNot(contains('generated_at')));
+        expect(texts, isNot(contains('/')));
+      },
+    );
+
+    testWidgets('additive root fields leave the content visible', (
       tester,
     ) async {
-      final json = homeJson()..['leaked_field_name'] = 1;
-      await _pump(tester, source: FakeHubSource(bytes: snapshotBytes(json)));
-      expect(find.text("The latest update couldn't be read."), findsOneWidget);
-      final texts = tester
-          .widgetList<Text>(find.byType(Text))
-          .map((text) => text.data ?? '')
-          .join('\n');
-      expect(texts, isNot(contains('leaked_field_name')));
-      expect(texts, isNot(contains('/')));
+      final json = homeJson()..['future_field'] = {'revision': 2};
+      final harness = await _pump(
+        tester,
+        source: FakeHubSource(bytes: snapshotBytes(json)),
+      );
+      expect(find.text('content'), findsOneWidget);
+      expect(harness.snapshot.state, isA<MastermindSnapshotReady>());
+      expect(find.text("The latest update couldn't be read."), findsNothing);
     });
 
     testWidgets('garbage bytes are rejected the same way', (tester) async {

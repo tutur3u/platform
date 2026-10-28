@@ -601,3 +601,8 @@ is skipped without hiding the remaining snapshot. Decisions marked resolved in
 `decisions[]` also populate Recently resolved. Home keeps a queued chip when
 `work.counts` is published, deriving queued from lanes when absent.
 Regression coverage: `test/features/mastermind/presentation/companion_hardening_test.dart`.
+
+An unreported pacing value retains its dashed status glyph beside the explicit
+reason. The label wraps within the row's content area so checked timestamps do
+not overflow narrow screens. `mastermind_insights_page_test.dart` preserves the
+one-glyph-per-window assertion for reported and unreported values.

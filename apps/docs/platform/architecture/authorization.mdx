@@ -314,3 +314,32 @@ Regression coverage: `apps/web/src/lib/notifications/email-eligibility.test.ts`,
 cover confirmed and unconfirmed external destinations, identity mismatch,
 account/workspace/event/channel opt-outs, suppression and transactional/security
 distinctions. These fixtures prove source behavior, not production delivery.
+
+
+## Staff-session verification
+
+Staff-only server operations use `isVerifiedTuturuuuStaffSession` from
+`@tuturuuu/utils/email/staff-session` after a current, subject-bound Auth lookup.
+A staff address alone is insufficient: email confirmation and complete provider
+identity evidence are required. `TUTURUUU_AZURE_TENANT_ID` is server-only
+configuration; leaving it unset denies Azure-linked staff sessions. Confirmed
+staff accounts using other providers retain access. Existing workspace roles,
+mailbox membership, consent and feature gates continue to apply independently.
+
+This containment covers internal Mail sending and drafting, inquiries, task
+embedding administration, Mira tools and backfill, Infrastructure controls,
+staff pages, import access, meeting exemptions and signed Colab staff assertions.
+Address syntax validation and UI visibility checks do not grant server access.
+The long-term authorization model is a server-verified staff role.
+
+Regression evidence lives in `packages/utils/src/email/__tests__/staff-session.test.ts`
+and the affected routes' `staff-session.test.ts` suites. These fixtures verify
+denials before protected reads, writes, sends or generation; hosted deployment
+configuration and production acceptance require separate operator verification.
+
+
+AI calendar generation and temporary-auth Mail drafting resolve the requested
+workspace and require MEMBER membership before memory or provider work. Memory
+attribution uses the canonical authorized workspace id, including default scopes;
+membership lookup failures stop the operation. The route scope regressions cover
+nonmembers, guests, lookup failures and canonical workspace attribution.

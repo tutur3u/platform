@@ -38,6 +38,7 @@ export class ExpiryFixture extends ColabRoom {
       {
         id: 'fixture-host',
         email: 'host@tuturuuu.com',
+        staffVerified: true,
         name: 'Host',
         expires: now + 3600_000,
       },

@@ -2,7 +2,8 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
+import { getVerifiedAuthUser } from '@tuturuuu/supabase/next/user';
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import { connection, NextResponse } from 'next/server';
 import { resolveAuthenticatedSessionUser } from '@/lib/app-session-user';
 
@@ -21,10 +22,16 @@ export async function GET() {
       await resolveAuthenticatedSessionUser(supabase);
     if (sessionSupabase) supabase = sessionSupabase;
 
-    if (!user || !isValidTuturuuuEmail(user.email)) {
+    const staffUser = user
+      ? await getVerifiedAuthUser(
+          await createAdminClient({ noCookie: true }),
+          user.id
+        )
+      : null;
+    if (!isVerifiedTuturuuuStaffSession(staffUser, { allowXwf: true })) {
       return NextResponse.json(
         { message: 'Unauthorized - Tuturuuu admin access required' },
-        { status: 401 }
+        { status: 403 }
       );
     }
 

@@ -426,7 +426,6 @@ class _LoginPageState extends State<LoginPage> {
             const shad.Gap(18),
             LoginSocialSection(
               onGoogle: context.read<AuthCubit>().signInWithGoogle,
-              onMicrosoft: context.read<AuthCubit>().signInWithMicrosoft,
               onApple: context.read<AuthCubit>().signInWithApple,
               onGithub: context.read<AuthCubit>().signInWithGithub,
             ),

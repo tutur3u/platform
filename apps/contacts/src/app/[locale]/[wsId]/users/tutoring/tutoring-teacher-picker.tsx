@@ -27,7 +27,7 @@ export function TutoringTeacherPicker({
   const t = useTranslations('ws-tutoring');
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<ComboboxOption>();
-  const [tutorsOnly, setTutorsOnly] = useState(false);
+  const [tutorsOnly, setTutorsOnly] = useState(true);
   // One picker renders per session slot, so the toggle id must be unique.
   const tutorsOnlyId = useId();
   const [q] = useDebounce(search, 250);
@@ -40,7 +40,7 @@ export function TutoringTeacherPicker({
         page: pageParam,
         pageSize: 20,
         q: q || undefined,
-        tutorsOnly: tutorsOnly || undefined,
+        tutorsOnly,
       }),
     getNextPageParam: (page) =>
       page.page < page.totalPages ? page.page + 1 : undefined,
