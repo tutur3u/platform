@@ -156,16 +156,16 @@ jobs:
         shard: [0, 1, 2, 3]
 
     env:
-      # Configure production Supabase client
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
+      # Pull request tests use local fixtures; other events retain configured values.
+      NEXT_PUBLIC_SUPABASE_URL: ${{ github.event_name != 'pull_request' && secrets.NEXT_PUBLIC_SUPABASE_URL || '' }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ github.event_name != 'pull_request' && secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY || '' }}
       # Unit tests run on same-repo pull requests, so they never receive the
       # production service-role key. Tests needing a real key bring their own.
       SUPABASE_SECRET_KEY: sb_secret_ci_placeholder
 
       # Configure infrastructure
-      PROXY_API_KEY: ${{ secrets.PROXY_API_KEY }}
-      NEXT_PUBLIC_PROXY_API_KEY: ${{ secrets.NEXT_PUBLIC_PROXY_API_KEY }}
+      PROXY_API_KEY: ${{ github.event_name != 'pull_request' && secrets.PROXY_API_KEY || '' }}
+      NEXT_PUBLIC_PROXY_API_KEY: ${{ github.event_name != 'pull_request' && secrets.NEXT_PUBLIC_PROXY_API_KEY || '' }}
 
     steps:
       - name: Check out code
