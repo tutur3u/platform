@@ -156,8 +156,8 @@ resolved", newest first). Pull to refresh.
   kind badge with the state and age: "Resolved · Yes · 2 h ago" for a resolved
   ask, "Sent · waiting for Mastermind" or "Waiting to send" for this device's
   reply. A separate two-line preview retains the ask. No age is shown where the hub
-  publishes none (open asks). Options, "More" and the full ask live on the
-  detail. A row is one screen-reader node ("Decision. Review plan. Review the
+  publishes none. Open asks expose one-tap option buttons on Home and Inbox;
+  "More" and the full ask live on detail. The summary is one screen-reader node ("Decision. Review plan. Review the
   plan", hint "Opens the ask").
 - **Caps:** each group shows five rows, then "Show all N" expands it in place.
 - **Search** is hidden until the navbar search icon
@@ -737,7 +737,8 @@ details. A 429, a 401/403 (behind the auth-failure guard) or a dropped reply
 reads "Couldn't send · open to review" and a tap only opens the details. Grouped open rows omit the repeated kind badge. Coverage:
 `mastermind_inbox_v1_test.dart` (truncation, long answers, failed sends).
 
-Ask cards on Home and Inbox share the same row. The publisher title wins;
+Ask cards on Home and Inbox share the same row. The A2 short title wins when
+present; otherwise the publisher title wins;
 a redacted title falls back to the first ask line. Cards preview two lines,
 project, status and created-at age; detail keeps the full published ask. Only
 unique open ids appear in Needs you; a hub-answered id always wins. Home's
@@ -747,7 +748,7 @@ of the ask on a row. The recorded answer shows "Show full answer" whenever it
 overflows four lines at the current width and text size.
 
 **Undo window (Theo, 2026-10-28).** Option replies stay one tap. The tap shows
-"Sending “option” · Undo" for 5 seconds on the item detail; the reply enters the outbox only then, through the same
+"Sending “option” · Undo" for 5 seconds on Home, Inbox or item detail; the reply enters the outbox only then, through the same
 `submit` and Idempotency-Key. One window per item; the other options lock
 meanwhile. Leaving the screen inside the window still sends; logout or an
 account switch cancels it, and so does a live snapshot where the ask changed or
@@ -787,3 +788,32 @@ the 404 state with the flag on; `threads_flag_test.dart` keeps the flag-off
 navigation unchanged and checks the flag-on dock selection, redirects with
 filters kept, and the lane-gone copy. Enablement remains held for exact-commit
 mobile CI and product acceptance.
+
+### Inline decision cards
+
+Scope: open asks on mobile Home and Inbox. Schema 1.4 remains the wire
+version; the existing adapter accepts optional A2 `hub_title`, `hub_text`,
+`hub_options`, `hub_recommended`, and `by`. Short title/text take precedence
+on cards; absent, null or empty copy falls back to the canonical title/body.
+The publisher's `text` and `recommended` aliases normalize to `body` and
+`recommended_option`. Open asks still come from `now.needs_you` and the
+item-identity rows in `decisions[]`; the journal is a separate history model.
+
+Short option labels must preserve the canonical option order and count.
+A mismatched list falls back to canonical labels; mobile always sends the
+original `option_index`, item ID and version hash. Recommendation is marked
+with localized text as well as a badge. Product and publisher chips wrap;
+age appears only when `created_at` is published.
+
+A tap optimistically replaces choices with the existing five-second
+Sending/Undo window, then the existing version-bound, idempotent reply outbox
+and `POST /v1/replies` transport. Undo restores choices without a send.
+Acceptance remains “Sent · waiting for Mastermind”; only the hub may resolve
+the ask. Offline, rejected and stale replies retain existing recovery behavior.
+When capabilities do not permit replies, choices are disabled with the existing
+capability explanation. No new endpoint or inferred backend capability is added.
+Full detail continues to show canonical ask text and choices.
+
+Regression coverage: `view/decision_cards_test.dart` (English/Vietnamese,
+320px, text scale 2.0, short-copy fallback, recommendation, canonical indices,
+Undo and delayed send) plus the existing reply cubit and Inbox/Home suites.

@@ -10,7 +10,7 @@ class ReplyUndoBar extends StatelessWidget {
   const ReplyUndoBar({required this.option, required this.onUndo, super.key});
 
   final String option;
-  final VoidCallback onUndo;
+  final VoidCallback? onUndo;
 
   @override
   Widget build(BuildContext context) {
@@ -23,16 +23,18 @@ class ReplyUndoBar extends StatelessWidget {
             liveRegion: true,
             child: Text(l10n.mastermindReplySendingOption(option)),
           ),
-          trailing: TextButton(
-            style: TextButton.styleFrom(
-              minimumSize: const Size(
-                AppInterfaceTokens.minTouchTarget,
-                AppInterfaceTokens.minTouchTarget,
-              ),
-            ),
-            onPressed: onUndo,
-            child: Text(l10n.mastermindReplyUndo),
-          ),
+          trailing: onUndo == null
+              ? null
+              : TextButton(
+                  style: TextButton.styleFrom(
+                    minimumSize: const Size(
+                      AppInterfaceTokens.minTouchTarget,
+                      AppInterfaceTokens.minTouchTarget,
+                    ),
+                  ),
+                  onPressed: onUndo,
+                  child: Text(l10n.mastermindReplyUndo),
+                ),
         ),
       ],
     );

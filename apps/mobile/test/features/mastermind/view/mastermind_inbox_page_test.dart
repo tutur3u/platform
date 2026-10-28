@@ -133,10 +133,11 @@ void main() {
   });
 
   group('options', () {
-    testWidgets('stay on the detail page, not in the list row', (tester) async {
+    testWidgets('appear inline with the recommendation marked', (tester) async {
       await _pump(tester, inboxJson([inboxItem(1)]));
-      expect(find.text('Approve · Recommended'), findsNothing);
-      expect(find.text('Defer'), findsNothing);
+      expect(find.text('Approve'), findsOneWidget);
+      expect(find.text('Recommended'), findsOneWidget);
+      expect(find.text('Defer'), findsOneWidget);
       expect(find.byIcon(LucideIcons.star), findsNothing);
     });
 

@@ -4,6 +4,13 @@ Map<String, dynamic> adaptDecision(Map<String, dynamic> row) {
   final status = result.remove('status');
   if (status == 'open') result['state'] = 'open';
   if (status == 'resolved') result['state'] = 'answered';
+  final text = result.remove('text');
+  if (text is String && text.isNotEmpty) result['body'] = text;
+  final recommended = result.remove('recommended');
+  if (row.containsKey('recommended') &&
+      !result.containsKey('recommended_option')) {
+    result['recommended_option'] = recommended;
+  }
   final ask = result.remove('ask_text');
   if (ask is String && ask.isNotEmpty) result['body'] = ask;
   ['resolved_at', 'resolved_by', 'resolution'].forEach(result.remove);

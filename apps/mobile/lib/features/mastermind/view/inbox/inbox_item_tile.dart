@@ -13,6 +13,7 @@ import 'package:mobile/features/mastermind/presentation/display_names.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
 import 'package:mobile/features/mastermind/replies/mastermind_replies_cubit.dart';
 import 'package:mobile/features/mastermind/replies/reply_models.dart';
+import 'package:mobile/features/mastermind/view/inbox/decision_card_actions.dart';
 import 'package:mobile/features/mastermind/view/inbox/mastermind_replies_watcher.dart';
 import 'package:mobile/features/mastermind/view/widgets/large_text.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -21,8 +22,8 @@ import 'package:mobile/l10n/l10n.dart';
 ///
 /// The state line is the hub's word first (Resolved), then this device's
 /// reply (Sent · waiting for Mastermind). The preview stays visible separately.
-/// The full ask, its options and the composer live on the detail page, which
-/// a tap pushes so Back returns to this list with its filters intact.
+/// Open asks expose inline choices; a summary tap pushes the full ask and
+/// composer, so Back returns to this list with its filters intact.
 class InboxItemTile extends StatelessWidget {
   const InboxItemTile({
     required this.item,
@@ -60,13 +61,13 @@ class InboxItemTile extends StatelessWidget {
     ReplyItemStatus status,
   ) {
     final l10n = context.l10n;
-    final title = itemDisplayTitle(l10n, item);
+    final title = item.hubTitle ?? itemDisplayTitle(l10n, item);
     final kind = item.kind;
     final kindLabel = kind == null
         ? null
         : MastermindLabels.itemKind(l10n, kind);
     final detail = [?_state(l10n, entry, status), ?_age(l10n)].join(' · ');
-    final preview = askPreviewText(item);
+    final preview = item.hubText ?? askPreviewText(item);
     void open() {
       if (_canRetry(status, entry)) {
         unawaited(
@@ -79,11 +80,13 @@ class InboxItemTile extends StatelessWidget {
     }
 
     final large = mastermindLargeText(context);
-    return Semantics(
+    final row = Semantics(
       button: true,
       label: [
         ?kindLabel,
         title,
+        if (item.product case final product?) MastermindLabels.product(product),
+        if (item.by case final by?) l10n.mastermindAskedBy(by),
         if (detail.isNotEmpty) detail,
         if (preview.isNotEmpty) spokenAskSummary(preview),
       ].join('. '),
@@ -107,7 +110,7 @@ class InboxItemTile extends StatelessWidget {
         title: Text(
           title,
           key: ValueKey('ask-title-${item.id}'),
-          maxLines: large ? 2 : 1,
+          maxLines: item.hubTitle != null ? null : (large ? 2 : 1),
           overflow: TextOverflow.ellipsis,
         ),
         subtitle: Column(
@@ -123,6 +126,8 @@ class InboxItemTile extends StatelessWidget {
                   AppBadge.outline(
                     child: Text(MastermindLabels.product(product)),
                   ),
+                if (item.by case final by?)
+                  AppBadge.outline(child: Text(l10n.mastermindAskedBy(by))),
                 Text(detail, maxLines: 2, overflow: TextOverflow.ellipsis),
               ],
             ),
@@ -130,7 +135,7 @@ class InboxItemTile extends StatelessWidget {
               Text(
                 preview,
                 key: ValueKey('ask-preview-${item.id}'),
-                maxLines: 2,
+                maxLines: item.hubText != null ? null : 2,
                 overflow: TextOverflow.ellipsis,
               ),
           ],
@@ -138,6 +143,17 @@ class InboxItemTile extends StatelessWidget {
         showChevron: true,
         onTap: open,
       ),
+    );
+    if (item.state == ItemState.answered) return row;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        row,
+        Padding(
+          padding: const EdgeInsets.all(AppSpacing.sm),
+          child: DecisionCardActions(item: item),
+        ),
+      ],
     );
   }
 
@@ -158,8 +174,9 @@ class InboxItemTile extends StatelessWidget {
           : l10n.mastermindReplyNotSentReview;
     }
     if (entry != null) {
+      // The inline reply panel owns the accepted status and answer.
       return entry.status == OutboxStatus.sent
-          ? l10n.mastermindReplySent
+          ? null
           : l10n.mastermindReplyPendingShort;
     }
     return MastermindLabels.itemState(l10n, item.state);

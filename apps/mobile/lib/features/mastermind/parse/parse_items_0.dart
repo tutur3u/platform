@@ -27,6 +27,11 @@ NeedsYou parseNeedsYou(JsonReader input) {
       'version_hash',
       'ask_truncated',
       'created_at',
+      'hub_title',
+      'hub_text',
+      'hub_options',
+      'hub_recommended',
+      'by',
       'kind',
       'product',
     ],
@@ -44,6 +49,17 @@ NeedsYou parseNeedsYou(JsonReader input) {
     id: r.field('id').string(pattern: RegExp(r'^item-[a-f0-9]{20}$')),
     title: r.field('title').string(maxLength: 100),
     body: r.field('body').string(maxLength: 2000),
+    hubTitle: _shortAskText(r, 'hub_title', 100),
+    hubText: _shortAskText(r, 'hub_text', 2000),
+    hubRecommended: _shortAskText(r, 'hub_recommended', 80),
+    by: _shortAskText(r, 'by', 100),
+    hubOptions: r.has('hub_options')
+        ? r
+              .field('hub_options')
+              .nullable(
+                (v) => v.list((v) => v.string(maxLength: 80), maxItems: 8),
+              )
+        : null,
     askTruncated: r.object()['ask_truncated'] == true,
     createdAt: DateTime.tryParse(
       r.object()['created_at']?.toString() ?? '',
@@ -140,4 +156,11 @@ Lane parseLane(JsonReader input) {
         ? r.field('kind').enumOf<LaneKind>(LaneKind.values, (v) => v.wireName)
         : null,
   );
+}
+
+/// Empty optional short copy uses the canonical fallback.
+String? _shortAskText(JsonReader r, String key, int maxLength) {
+  if (!r.has(key)) return null;
+  final value = r.field(key).nullable((v) => v.string(maxLength: maxLength));
+  return value == null || value.trim().isEmpty ? null : value;
 }

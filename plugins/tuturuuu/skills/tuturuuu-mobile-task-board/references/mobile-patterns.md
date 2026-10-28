@@ -364,3 +364,12 @@ containment; run `test/core` and `test/features/shell` for bootstrap-adjacent
 regressions. Asset bytes/dependency lists are static candidates, not release
 bundle or device startup measurements. See the Mobile application guide's
 startup recovery section for the default and platform scope.
+### Mastermind inline answers
+
+Home/Inbox cards and item detail must share `MastermindRepliesCubit.queueOption`
+and its five-second Undo window. A2 `hub_options` are display labels in canonical
+option order; preserve the original `option_index`, version hash and outbox
+label. Fall back to canonical options when short-label counts differ. Never
+infer hub resolution from a local tap or accepted reply. Exercise the real
+reply cubit with fake transport in `decision_cards_test.dart`; English/Vietnamese
+at 320px and 2x text catch wrapping regressions without a device build.

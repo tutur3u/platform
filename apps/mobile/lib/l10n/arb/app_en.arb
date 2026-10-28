@@ -1,4 +1,12 @@
 {
+  "mastermindAskedBy": "From {by}",
+  "@mastermindAskedBy": {
+    "placeholders": {
+      "by": {
+        "type": "String"
+      }
+    }
+  },
   "mastermindUnrecognisedValue": "Unrecognised value",
   "mastermindAskTruncated": "Ask truncated; full text on the Mac",
   "mastermindReplyFailedShort": "Not sent · tap to retry",

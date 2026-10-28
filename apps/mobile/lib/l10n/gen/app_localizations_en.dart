@@ -12,6 +12,11 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String mastermindAskedBy(String by) {
+    return 'From $by';
+  }
+
+  @override
   String get mastermindUnrecognisedValue => 'Unrecognised value';
 
   @override
