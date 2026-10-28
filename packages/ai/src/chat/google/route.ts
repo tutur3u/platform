@@ -57,7 +57,6 @@ import {
   persistLatestUserMessage,
   persistRequestScopedUserMessage,
   prepareProcessedMessages,
-  splitSystemMessages,
 } from './route-message-preparation';
 import { prepareMiraRuntime } from './route-mira-runtime';
 import { validateSubscriptionRoute } from './route-subscription-boundary';
@@ -69,6 +68,8 @@ import {
 export function createPOST(
   _options: {
     serverAPIKeyFallback?: boolean;
+    /** Trusted in-process instructions; never read from the request body. */
+    serverSystemInstructions?: string;
     /** Direct user-funded chat. It bypasses gateway memory, credits, and provider tools. */
     subscription?: {
       resolveModel: (
@@ -423,8 +424,6 @@ export function createPOST(
         );
       }
 
-      const promptMessages = splitSystemMessages(processedMessages);
-
       const persistUserMessageError = await persistLatestUserMessage({
         processedMessages,
         chatId,
@@ -535,28 +534,20 @@ export function createPOST(
         }));
 
       const reasoningSettings = resolveChatReasoningSettings(thinkingMode);
-      const forceWorkspaceArtifact = shouldPresentWorkspaceArtifact(
-        promptMessages.messages
-      );
-      const forceRenderUi = shouldForceRenderUiForLatestUserMessage(
-        promptMessages.messages
-      );
-      const forceGoogleSearch = shouldForceGoogleSearchForLatestUserMessage(
-        promptMessages.messages
-      );
+      const forceWorkspaceArtifact =
+        shouldPresentWorkspaceArtifact(processedMessages);
+      const forceRenderUi =
+        shouldForceRenderUiForLatestUserMessage(processedMessages);
+      const forceGoogleSearch =
+        shouldForceGoogleSearchForLatestUserMessage(processedMessages);
       const preferMarkdownTables =
-        shouldPreferMarkdownTablesForLatestUserMessage(promptMessages.messages);
+        shouldPreferMarkdownTablesForLatestUserMessage(processedMessages);
       const needsWorkspaceContextResolution =
-        shouldResolveWorkspaceContextForLatestUserMessage(
-          promptMessages.messages
-        );
+        shouldResolveWorkspaceContextForLatestUserMessage(processedMessages);
       const needsWorkspaceMembersTool =
-        shouldForceWorkspaceMembersForLatestUserMessage(
-          promptMessages.messages
-        );
-      const needsParallelChecks = shouldUseParallelChecksForLatestUserMessage(
-        promptMessages.messages
-      );
+        shouldForceWorkspaceMembersForLatestUserMessage(processedMessages);
+      const needsParallelChecks =
+        shouldUseParallelChecksForLatestUserMessage(processedMessages);
 
       type PrepareStep = NonNullable<
         NonNullable<Parameters<typeof streamText>[0]>['prepareStep']
@@ -622,11 +613,11 @@ export function createPOST(
         experimental_transform: smoothStream({ delayInMs: null }),
         maxRetries: 0,
         model: resolvedGatewayModel,
-        messages: promptMessages.messages,
+        messages: processedMessages,
         reasoning: reasoningSettings.effort,
         system: mergeSystemInstructions(
           isMiraMode && miraSystemPrompt ? miraSystemPrompt : systemInstruction,
-          promptMessages.system
+          _options.serverSystemInstructions ?? null
         ),
         ...(cappedMaxOutput ? { maxOutputTokens: cappedMaxOutput } : {}),
         tools: subscriptionModel ? undefined : resolveChatTools(miraTools),
