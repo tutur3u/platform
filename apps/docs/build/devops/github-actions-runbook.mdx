@@ -21,6 +21,15 @@ CodeRabbit runs on demand only (`.coderabbit.yaml`); comment `@coderabbitai revi
 
 ## Validation and Delivery Evidence
 
+Unit test shards use empty proxy and Supabase public-client configuration on
+`pull_request` events; other events retain their configured values. Tests that
+need this configuration must supply deterministic fixtures and restore their
+environment afterward. Validate affected packages with `env -u PROXY_API_KEY -u
+NEXT_PUBLIC_PROXY_API_KEY -u NEXT_PUBLIC_SUPABASE_URL -u
+PRODUCTION_SUPABASE_PUBLISHABLE_KEY -u NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ttr
+resources run -- bun run --cwd <package> test --maxWorkers=1`.
+`scripts/ci/unit-test-env.test.js` covers PR and non-PR event selection.
+
 Root Node tests that consume an app-owned package must resolve it with
 `createRequire` anchored to that app's real `package.json`. The satellite cohort
 tests resolve Playwright from Web; the Lettin config-loader tests load Next SWC
