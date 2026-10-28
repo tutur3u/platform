@@ -36,7 +36,7 @@ const response = (taskIds: string[]): BoardSprintsResponse => ({
     },
   ],
 });
-const task = (id: string) => ({ id, completed_at: null }) as Task;
+const task = (id: string) => ({ id, completed_at: null }) as unknown as Task;
 
 function setup(tasks: Task[]) {
   const client = new QueryClient({
