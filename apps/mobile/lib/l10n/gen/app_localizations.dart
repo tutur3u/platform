@@ -97,6 +97,12 @@ abstract class AppLocalizations {
     Locale('vi')
   ];
 
+  /// No description provided for @mastermindAskedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'From {by}'**
+  String mastermindAskedBy(String by);
+
   /// No description provided for @mastermindUnrecognisedValue.
   ///
   /// In en, this message translates to:

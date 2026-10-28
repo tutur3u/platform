@@ -12,6 +12,11 @@ class AppLocalizationsVi extends AppLocalizations {
   AppLocalizationsVi([String locale = 'vi']) : super(locale);
 
   @override
+  String mastermindAskedBy(String by) {
+    return 'Từ $by';
+  }
+
+  @override
   String get mastermindUnrecognisedValue => 'Giá trị không được nhận diện';
 
   @override

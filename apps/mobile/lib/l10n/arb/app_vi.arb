@@ -1,4 +1,12 @@
 {
+  "mastermindAskedBy": "Từ {by}",
+  "@mastermindAskedBy": {
+    "placeholders": {
+      "by": {
+        "type": "String"
+      }
+    }
+  },
   "mastermindUnrecognisedValue": "Giá trị không được nhận diện",
   "mastermindAskTruncated": "Yêu cầu bị rút gọn; xem toàn văn trên máy Mac",
   "mastermindReplyFailedShort": "Chưa gửi · chạm để thử lại",

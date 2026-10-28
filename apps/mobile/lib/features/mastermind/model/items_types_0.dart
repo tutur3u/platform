@@ -24,7 +24,13 @@ final class NeedsYou implements NeedsYouItem {
     this.resolution,
     this.askTruncated = false,
     this.createdAt,
-  }) : options = List.unmodifiable(options);
+    this.hubTitle,
+    this.hubText,
+    List<String>? hubOptions,
+    this.hubRecommended,
+    this.by,
+  }) : options = List.unmodifiable(options),
+       hubOptions = hubOptions == null ? null : List.unmodifiable(hubOptions);
 
   final String id;
   @override
@@ -44,6 +50,26 @@ final class NeedsYou implements NeedsYouItem {
   final String? resolution;
   final bool askTruncated;
   final DateTime? createdAt;
+  final String? hubTitle;
+  final String? hubText;
+
+  /// Short labels in canonical option order; never used as wire answers.
+  final List<String>? hubOptions;
+  final String? hubRecommended;
+  final String? by;
+
+  String optionLabel(int index) =>
+      hubOptions != null &&
+          hubOptions!.length == options.length &&
+          hubOptions![index].trim().isNotEmpty
+      ? hubOptions![index]
+      : options[index];
+
+  bool optionRecommended(int index) =>
+      hubRecommended != null &&
+          List.generate(options.length, optionLabel).contains(hubRecommended)
+      ? optionLabel(index) == hubRecommended
+      : options[index] == recommendedOption;
 }
 
 final class Lane implements LaneItem {
