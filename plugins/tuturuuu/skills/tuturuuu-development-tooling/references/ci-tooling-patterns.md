@@ -1340,3 +1340,12 @@ The root Vitest project `web-e2e-fixtures` runs the employee fixture unit tests:
 `bun x vitest run --project web-e2e-fixtures --maxWorkers=1`.
 The chat bridge fixture remains an explicit SQL qualification target requiring
 its envelope; it is not an ordinary unit test.
+
+
+The only Docker CI exception is the trusted-main, self-hosted
+`e2e-smoke-report-only.yaml` Web browser workflow (authorized 2026-10-28).
+Its scoped launcher enforces admission, per-run identities and owned cleanup;
+the general paused commands and existing disabled jobs remain paused, including
+Rust, TanStack and the cron runner. See the GitHub Actions runbook's
+[Report-only Web E2E](/build/devops/github-actions-runbook#report-only-web-e2e)
+section for runtime bounds, host-lock recovery and report-only acceptance.

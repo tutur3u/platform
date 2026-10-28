@@ -1,4 +1,10 @@
-import { expect, type Page, test } from '@playwright/test';
+import {
+  type Browser,
+  expect,
+  type Page,
+  type TestInfo,
+  test,
+} from '@playwright/test';
 import { clearMailpitMessages, completeOtpStage } from './helpers/auth';
 import {
   e2eClientHeaders,
@@ -261,268 +267,293 @@ test.describe('Tasks workspace lifecycle', () => {
     assertSafeTasksLifecycleEnvironment();
   });
 
+  test('signup, workspace onboarding, board and task creation @smoke', async ({
+    browser,
+  }, testInfo) => {
+    await runLifecycle(browser, testInfo, true);
+  });
   test('follows signup, onboarding, invitation, and Kanban CRUD end to end', async ({
     browser,
   }, testInfo) => {
-    test.setTimeout(600_000);
-
-    const runId = `${Date.now()}-${testInfo.workerIndex}-${testInfo.retry}`;
-    const ownerEmail = `tasks-owner-${runId}@example.com`;
-    const memberEmail = `tasks-member-${runId}@example.com`;
-    const workspaceName = `Tasks workspace ${runId}`;
-    const boardName = `Lifecycle board ${runId}`;
-    const ownerTaskName = `Plan release ${runId}`;
-    const memberTaskName = `Review release ${runId}`;
-    const renamedMemberTaskName = `Approve release ${runId}`;
-    const labelName = `E2E label ${runId}`;
-    const projectName = `E2E project ${runId}`;
-    const headers = e2eClientHeaders(e2eClientIpForTest(testInfo, 214));
-    const ownerContext = await browser.newContext({
-      extraHTTPHeaders: headers,
-    });
-    const memberContext = await browser.newContext({
-      extraHTTPHeaders: headers,
-    });
-    const ownerPage = await ownerContext.newPage();
-    const memberPage = await memberContext.newPage();
-    for (const page of [ownerPage, memberPage]) {
-      page.setDefaultTimeout(30_000);
-      page.setDefaultNavigationTimeout(60_000);
-    }
-    const userIds: string[] = [];
-    let workspaceId: string | undefined;
-    let ownerUserId = '';
-    let previousOtpState: boolean | undefined;
-
-    try {
-      await resetDbRateLimits();
-      previousOtpState = await setWebOtpEnabled(true);
-      await clearMailpitMessages();
-
-      await test.step('sign up and complete team onboarding in the browser', async () => {
-        await signUpWithEmailOtp(ownerPage, ownerEmail);
-        ownerUserId = await findLocalUserId(ownerEmail);
-        userIds.push(ownerUserId);
-        workspaceId = await completeTeamOnboarding(
-          ownerPage,
-          workspaceName,
-          memberEmail
-        );
-        expect(
-          await readServiceRows<{
-            creator_id: string;
-            workspace_members: { type: string; user_id: string }[];
-          }>(
-            'workspaces',
-            `id=eq.${workspaceId}&select=creator_id,workspace_members(type,user_id)`
-          )
-        ).toEqual([
-          {
-            creator_id: ownerUserId,
-            workspace_members: [{ type: 'MEMBER', user_id: ownerUserId }],
-          },
-        ]);
-      });
-
-      let boardId = '';
-      let ownerTaskId = '';
-      await test.step('launch Tasks and create a configured board and task through the UI', async () => {
-        const ownerTasksOrigin = await launchTasksFromAppsPicker(ownerPage);
-        await completeCrossAppLoginWhenRequested(
-          ownerPage,
-          ownerEmail,
-          ownerTasksOrigin
-        );
-        await expect(ownerPage).toHaveURL(
-          new RegExp(`/${workspaceId}/boards/[0-9a-f-]+$`),
-          { timeout: 120_000 }
-        );
-
-        boardId = await createBoardFromSwitcher(
-          ownerPage,
-          workspaceId!,
-          boardName
-        );
-        expect(
-          await readServiceRows<{ id: string; name: string; ws_id: string }>(
-            'workspace_boards',
-            `id=eq.${boardId}&select=id,name,ws_id`
-          )
-        ).toEqual([{ id: boardId, name: boardName, ws_id: workspaceId }]);
-
-        const boardLists = await readServiceRows<TaskListRow>(
-          'task_lists',
-          `board_id=eq.${boardId}&deleted=eq.false&order=position.asc&select=id,board_id,status`
-        );
-        expect(boardLists.length).toBeGreaterThanOrEqual(4);
-        const targetList = boardLists.find(
-          (list) => list.status === 'not_started'
-        );
-        expect(
-          targetList,
-          'expected the new board to have a backlog list'
-        ).toBeTruthy();
-
-        const ownerTask = await createTaskFromBoard(
-          ownerPage,
-          workspaceId!,
-          targetList!.id,
-          ownerTaskName
-        );
-        ownerTaskId = ownerTask.id;
-        await openTaskFromBoard(ownerPage, ownerTaskName);
-        await configureTaskThroughDialog(
-          ownerPage,
-          boardName,
-          labelName,
-          projectName
-        );
-
-        await expect
-          .poll(async () => {
-            const rows = await readServiceRows<TaskRow>(
-              'tasks',
-              `id=eq.${ownerTaskId}&select=name,priority,end_date,estimation_points,deleted_at`
-            );
-            return rows[0];
-          })
-          .toMatchObject({
-            deleted_at: null,
-            end_date: expect.any(String),
-            estimation_points: 3,
-            name: ownerTaskName,
-            priority: 'high',
-          });
-
-        const labelRows = await readServiceRows<{ id: string }>(
-          'workspace_task_labels',
-          `ws_id=eq.${workspaceId}&name=eq.${encodeURIComponent(labelName)}&select=id`
-        );
-        expect(labelRows).toHaveLength(1);
-        const projectRows = await readServiceRows<{ id: string }>(
-          'task_projects',
-          `ws_id=eq.${workspaceId}&name=eq.${encodeURIComponent(projectName)}&select=id`
-        );
-        expect(projectRows).toHaveLength(1);
-        await expect
-          .poll(async () => {
-            const rows = await readServiceRows<{ label_id: string }>(
-              'task_labels',
-              `task_id=eq.${ownerTaskId}&label_id=eq.${labelRows[0]!.id}&select=label_id`
-            );
-            return rows[0]?.label_id;
-          })
-          .toBe(labelRows[0]!.id);
-        await expect
-          .poll(async () => {
-            const rows = await readServiceRows<{ project_id: string }>(
-              'task_project_tasks',
-              `task_id=eq.${ownerTaskId}&project_id=eq.${projectRows[0]!.id}&select=project_id`
-            );
-            return rows[0]?.project_id;
-          })
-          .toBe(projectRows[0]!.id);
-      });
-
-      await test.step('sign up the invited member, accept, and perform task CRUD', async () => {
-        await clearMailpitMessages();
-        await signUpWithEmailOtp(memberPage, memberEmail);
-        const memberUserId = await findLocalUserId(memberEmail);
-        userIds.push(memberUserId);
-        await memberPage.goto(`${WEB_E2E_ORIGIN}/${workspaceId}`, {
-          waitUntil: 'domcontentloaded',
-        });
-
-        const acceptButton = memberPage.getByRole('button', {
-          name: /^Accept Invite$/i,
-        });
-        await expect(acceptButton).toBeVisible({ timeout: 120_000 });
-        await acceptButton.click();
-        await expect
-          .poll(async () => {
-            const rows = await readServiceRows<{ user_id: string }>(
-              'workspace_members',
-              `ws_id=eq.${workspaceId}&user_id=eq.${userIds.at(-1)}&select=user_id`
-            );
-            return rows[0]?.user_id;
-          })
-          .toBe(userIds.at(-1));
-
-        const memberTasksOrigin = await launchTasksFromAppsPicker(memberPage);
-        await completeCrossAppLoginWhenRequested(
-          memberPage,
-          memberEmail,
-          memberTasksOrigin
-        );
-
-        await selectBoardFromSwitcher(
-          memberPage,
-          workspaceId!,
-          boardId,
-          boardName
-        );
-        await expect(
-          memberPage.getByText(ownerTaskName, { exact: true }).first()
-        ).toBeVisible({ timeout: 60_000 });
-
-        const memberTask = await createTaskFromBoard(
-          memberPage,
-          workspaceId!,
-          (
-            await readServiceRows<TaskListRow>(
-              'task_lists',
-              `board_id=eq.${boardId}&status=eq.not_started&deleted=eq.false&order=position.asc&limit=1&select=id,board_id,status`
-            )
-          )[0]!.id,
-          memberTaskName
-        );
-        await openTaskFromBoard(memberPage, memberTaskName);
-        const memberTaskInput = memberPage.locator('[data-task-name-input]');
-        await memberTaskInput.fill(renamedMemberTaskName);
-        await memberTaskInput.blur();
-        await expect
-          .poll(async () => {
-            const rows = await readServiceRows<TaskRow>(
-              'tasks',
-              `id=eq.${memberTask.id}&select=name,priority,end_date,estimation_points,deleted_at`
-            );
-            return rows[0]?.name;
-          })
-          .toBe(renamedMemberTaskName);
-
-        const taskDialog = memberPage.getByRole('dialog').filter({
-          has: memberTaskInput,
-        });
-        await taskDialog.getByRole('button', { name: /more options/i }).click();
-        await memberPage.getByRole('menuitem', { name: /^delete$/i }).click();
-        await expect(
-          memberPage.getByRole('heading', { name: 'Delete task?' })
-        ).toBeVisible();
-        await memberPage
-          .getByRole('button', { name: 'Move to Trash', exact: true })
-          .click();
-        await expect
-          .poll(async () => {
-            const rows = await readServiceRows<TaskRow>(
-              'tasks',
-              `id=eq.${memberTask.id}&select=name,priority,end_date,estimation_points,deleted_at`
-            );
-            return rows[0]?.deleted_at;
-          })
-          .toEqual(expect.any(String));
-      });
-    } finally {
-      testInfo.setTimeout(testInfo.timeout + 30_000);
-      if (previousOtpState !== undefined) {
-        await setWebOtpEnabled(previousOtpState);
-      }
-      await cleanupTasksLifecycleFixtures({
-        userEmails: [ownerEmail, memberEmail],
-        userIds,
-        workspaceId,
-      });
-      await memberContext.close();
-      await ownerContext.close();
-    }
+    await runLifecycle(browser, testInfo, false);
   });
 });
+
+async function runLifecycle(
+  browser: Browser,
+  testInfo: TestInfo,
+  smoke: boolean
+) {
+  test.setTimeout(smoke ? 240_000 : 600_000);
+
+  const runId = `${Date.now()}-${testInfo.workerIndex}-${testInfo.retry}`;
+  const ownerEmail = `tasks-owner-${runId}@example.com`;
+  const memberEmail = `tasks-member-${runId}@example.com`;
+  const workspaceName = `Tasks workspace ${runId}`;
+  const boardName = `Lifecycle board ${runId}`;
+  const ownerTaskName = `Plan release ${runId}`;
+  const memberTaskName = `Review release ${runId}`;
+  const renamedMemberTaskName = `Approve release ${runId}`;
+  const labelName = `E2E label ${runId}`;
+  const projectName = `E2E project ${runId}`;
+  const headers = e2eClientHeaders(e2eClientIpForTest(testInfo, 214));
+  const ownerContext = await browser.newContext({
+    extraHTTPHeaders: headers,
+  });
+  const memberContext = await browser.newContext({
+    extraHTTPHeaders: headers,
+  });
+  const ownerPage = await ownerContext.newPage();
+  const memberPage = await memberContext.newPage();
+  for (const page of [ownerPage, memberPage]) {
+    page.setDefaultTimeout(30_000);
+    page.setDefaultNavigationTimeout(60_000);
+  }
+  const userIds: string[] = [];
+  let workspaceId: string | undefined;
+  let ownerUserId = '';
+  let previousOtpState: boolean | undefined;
+
+  try {
+    await resetDbRateLimits();
+    previousOtpState = await setWebOtpEnabled(true);
+    await clearMailpitMessages();
+
+    await test.step('sign up and complete team onboarding in the browser', async () => {
+      await signUpWithEmailOtp(ownerPage, ownerEmail);
+      ownerUserId = await findLocalUserId(ownerEmail);
+      userIds.push(ownerUserId);
+      workspaceId = await completeTeamOnboarding(
+        ownerPage,
+        workspaceName,
+        memberEmail
+      );
+      expect(
+        await readServiceRows<{
+          creator_id: string;
+          workspace_members: { type: string; user_id: string }[];
+        }>(
+          'workspaces',
+          `id=eq.${workspaceId}&select=creator_id,workspace_members(type,user_id)`
+        )
+      ).toEqual([
+        {
+          creator_id: ownerUserId,
+          workspace_members: [{ type: 'MEMBER', user_id: ownerUserId }],
+        },
+      ]);
+    });
+
+    let boardId = '';
+    let ownerTaskId = '';
+    await test.step('launch Tasks and create a configured board and task through the UI', async () => {
+      const ownerTasksOrigin = await launchTasksFromAppsPicker(ownerPage);
+      await completeCrossAppLoginWhenRequested(
+        ownerPage,
+        ownerEmail,
+        ownerTasksOrigin
+      );
+      await expect(ownerPage).toHaveURL(
+        new RegExp(`/${workspaceId}/boards/[0-9a-f-]+$`),
+        { timeout: 120_000 }
+      );
+
+      boardId = await createBoardFromSwitcher(
+        ownerPage,
+        workspaceId!,
+        boardName
+      );
+      expect(
+        await readServiceRows<{
+          id: string;
+          name: string;
+          ws_id: string;
+        }>('workspace_boards', `id=eq.${boardId}&select=id,name,ws_id`)
+      ).toEqual([{ id: boardId, name: boardName, ws_id: workspaceId }]);
+
+      const boardLists = await readServiceRows<TaskListRow>(
+        'task_lists',
+        `board_id=eq.${boardId}&deleted=eq.false&order=position.asc&select=id,board_id,status`
+      );
+      expect(boardLists.length).toBeGreaterThanOrEqual(4);
+      const targetList = boardLists.find(
+        (list) => list.status === 'not_started'
+      );
+      expect(
+        targetList,
+        'expected the new board to have a backlog list'
+      ).toBeTruthy();
+
+      const ownerTask = await createTaskFromBoard(
+        ownerPage,
+        workspaceId!,
+        targetList!.id,
+        ownerTaskName
+      );
+      ownerTaskId = ownerTask.id;
+      if (smoke) {
+        expect(
+          await readServiceRows<{ id: string; name: string }>(
+            'tasks',
+            `id=eq.${ownerTaskId}&select=id,name`
+          )
+        ).toEqual([{ id: ownerTaskId, name: ownerTaskName }]);
+        return;
+      }
+      await openTaskFromBoard(ownerPage, ownerTaskName);
+      await configureTaskThroughDialog(
+        ownerPage,
+        boardName,
+        labelName,
+        projectName
+      );
+
+      await expect
+        .poll(async () => {
+          const rows = await readServiceRows<TaskRow>(
+            'tasks',
+            `id=eq.${ownerTaskId}&select=name,priority,end_date,estimation_points,deleted_at`
+          );
+          return rows[0];
+        })
+        .toMatchObject({
+          deleted_at: null,
+          end_date: expect.any(String),
+          estimation_points: 3,
+          name: ownerTaskName,
+          priority: 'high',
+        });
+
+      const labelRows = await readServiceRows<{ id: string }>(
+        'workspace_task_labels',
+        `ws_id=eq.${workspaceId}&name=eq.${encodeURIComponent(labelName)}&select=id`
+      );
+      expect(labelRows).toHaveLength(1);
+      const projectRows = await readServiceRows<{ id: string }>(
+        'task_projects',
+        `ws_id=eq.${workspaceId}&name=eq.${encodeURIComponent(projectName)}&select=id`
+      );
+      expect(projectRows).toHaveLength(1);
+      await expect
+        .poll(async () => {
+          const rows = await readServiceRows<{ label_id: string }>(
+            'task_labels',
+            `task_id=eq.${ownerTaskId}&label_id=eq.${labelRows[0]!.id}&select=label_id`
+          );
+          return rows[0]?.label_id;
+        })
+        .toBe(labelRows[0]!.id);
+      await expect
+        .poll(async () => {
+          const rows = await readServiceRows<{ project_id: string }>(
+            'task_project_tasks',
+            `task_id=eq.${ownerTaskId}&project_id=eq.${projectRows[0]!.id}&select=project_id`
+          );
+          return rows[0]?.project_id;
+        })
+        .toBe(projectRows[0]!.id);
+    });
+
+    if (smoke) return;
+
+    await test.step('sign up the invited member, accept, and perform task CRUD', async () => {
+      await clearMailpitMessages();
+      await signUpWithEmailOtp(memberPage, memberEmail);
+      const memberUserId = await findLocalUserId(memberEmail);
+      userIds.push(memberUserId);
+      await memberPage.goto(`${WEB_E2E_ORIGIN}/${workspaceId}`, {
+        waitUntil: 'domcontentloaded',
+      });
+
+      const acceptButton = memberPage.getByRole('button', {
+        name: /^Accept Invite$/i,
+      });
+      await expect(acceptButton).toBeVisible({ timeout: 120_000 });
+      await acceptButton.click();
+      await expect
+        .poll(async () => {
+          const rows = await readServiceRows<{ user_id: string }>(
+            'workspace_members',
+            `ws_id=eq.${workspaceId}&user_id=eq.${userIds.at(-1)}&select=user_id`
+          );
+          return rows[0]?.user_id;
+        })
+        .toBe(userIds.at(-1));
+
+      const memberTasksOrigin = await launchTasksFromAppsPicker(memberPage);
+      await completeCrossAppLoginWhenRequested(
+        memberPage,
+        memberEmail,
+        memberTasksOrigin
+      );
+
+      await selectBoardFromSwitcher(
+        memberPage,
+        workspaceId!,
+        boardId,
+        boardName
+      );
+      await expect(
+        memberPage.getByText(ownerTaskName, { exact: true }).first()
+      ).toBeVisible({ timeout: 60_000 });
+
+      const memberTask = await createTaskFromBoard(
+        memberPage,
+        workspaceId!,
+        (
+          await readServiceRows<TaskListRow>(
+            'task_lists',
+            `board_id=eq.${boardId}&status=eq.not_started&deleted=eq.false&order=position.asc&limit=1&select=id,board_id,status`
+          )
+        )[0]!.id,
+        memberTaskName
+      );
+      await openTaskFromBoard(memberPage, memberTaskName);
+      const memberTaskInput = memberPage.locator('[data-task-name-input]');
+      await memberTaskInput.fill(renamedMemberTaskName);
+      await memberTaskInput.blur();
+      await expect
+        .poll(async () => {
+          const rows = await readServiceRows<TaskRow>(
+            'tasks',
+            `id=eq.${memberTask.id}&select=name,priority,end_date,estimation_points,deleted_at`
+          );
+          return rows[0]?.name;
+        })
+        .toBe(renamedMemberTaskName);
+
+      const taskDialog = memberPage.getByRole('dialog').filter({
+        has: memberTaskInput,
+      });
+      await taskDialog.getByRole('button', { name: /more options/i }).click();
+      await memberPage.getByRole('menuitem', { name: /^delete$/i }).click();
+      await expect(
+        memberPage.getByRole('heading', { name: 'Delete task?' })
+      ).toBeVisible();
+      await memberPage
+        .getByRole('button', { name: 'Move to Trash', exact: true })
+        .click();
+      await expect
+        .poll(async () => {
+          const rows = await readServiceRows<TaskRow>(
+            'tasks',
+            `id=eq.${memberTask.id}&select=name,priority,end_date,estimation_points,deleted_at`
+          );
+          return rows[0]?.deleted_at;
+        })
+        .toEqual(expect.any(String));
+    });
+  } finally {
+    testInfo.setTimeout(testInfo.timeout + 30_000);
+    if (previousOtpState !== undefined) {
+      await setWebOtpEnabled(previousOtpState);
+    }
+    await cleanupTasksLifecycleFixtures({
+      userEmails: [ownerEmail, memberEmail],
+      userIds,
+      workspaceId,
+    });
+    await memberContext.close();
+    await ownerContext.close();
+  }
+}
