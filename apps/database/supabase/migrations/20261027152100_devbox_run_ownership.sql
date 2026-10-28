@@ -327,6 +327,7 @@ begin
                 and array_length(run.command, 1) = 2
                 and coalesce(array_length(run.env_files, 1), 0) = 0
                 and runner.capabilities #>> '{judge,ready}' = 'true'
+                and exists (select 1 from private.learn_coding_submissions submission where submission.run_id = run.id)
             ))
             and (
                 run.workload = 'maintenance'

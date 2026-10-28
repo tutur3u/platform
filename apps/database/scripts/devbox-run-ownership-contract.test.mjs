@@ -37,10 +37,14 @@ test('ownership edits the latest claim definition', () => {
   );
 });
 
-test('145300 body is unchanged outside ownership predicates, cancellation and search path', () => {
+test('145300 body is unchanged outside ownership, Judge linkage, cancellation and search path', () => {
   const current = claim(migration);
   assert.ok(current);
+  const judgeLink =
+    '                and exists (select 1 from private.learn_coding_submissions submission where submission.run_id = run.id)\n';
+  assert.equal(current.split(judgeLink).length - 1, 1);
   const withoutOwnership = current
+    .replace(judgeLink, '')
     .replace(
       'set search_path = pg_catalog, pg_temp',
       'set search_path = private, public, pg_temp'

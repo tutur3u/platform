@@ -47,6 +47,9 @@ select is((select count(*) from private.claim_next_devbox_run('72000000-0000-400
 select is((select status from private.devbox_runs where id='74000000-0000-4000-8000-000000000001'),'cancelled','access revocation cancels queued runs transactionally');
 select is((select status from private.devbox_leases where id='73000000-0000-4000-8000-000000000001'),'released','access revocation releases active leases');
 select is((select count(*) from private.claim_next_devbox_run('72000000-0000-4000-8000-000000000002')),0::bigint,'runner owner membership is rechecked in database');
+update private.devbox_runners set pool='fleet' where id='72000000-0000-4000-8000-000000000002';
+select ok(not pg_temp.claims('72000000-0000-4000-8000-000000000002','71000000-0000-4000-8000-000000000001','run'),'fleet runner with removed owner cannot claim another current member run');
+update private.devbox_runners set pool='personal' where id='72000000-0000-4000-8000-000000000002';
 -- Re-establish B for subsequent independent ownership cases.
 insert into public.workspace_members(ws_id,user_id,type) values('00000000-0000-0000-0000-000000000000','71000000-0000-4000-8000-000000000002','MEMBER');
 insert into private.devbox_leases(id,actor_id,status,expires_at) values
@@ -59,6 +62,10 @@ select throws_ok($$insert into private.devbox_leases(actor_id,runner_id,expires_
 select throws_ok($$insert into private.devbox_leases(actor_id,runner_id,expires_at) values('71000000-0000-4000-8000-000000000001','72000000-0000-4000-8000-000000000002',now()+interval '1 hour')$$,'42501','Devbox runner is not available to this actor.','root actor cannot pin another personal runner');
 select throws_ok($$insert into private.devbox_runs(actor_id,lease_id,runner_id,command) values('71000000-0000-4000-8000-000000000001','73000000-0000-4000-8000-000000000002','72000000-0000-4000-8000-000000000002',array['echo'])$$,'42501','Devbox runner is not available to this actor.','run cannot bypass personal runner pin ownership');
 select throws_ok($$update private.devbox_leases set actor_id='71000000-0000-4000-8000-000000000002' where id='73000000-0000-4000-8000-000000000002'$$,'42501','Devbox lease ownership is immutable.','lease owner transfer cannot invalidate child ownership');
+select throws_ok($$update private.devbox_runs set runner_id='72000000-0000-4000-8000-000000000002' where id='74000000-0000-4000-8000-000000000002'$$,'42501','Devbox runner is not available to this actor.','run UPDATE rejects foreign personal runner ownership');
+select throws_ok($$update private.devbox_leases set runner_id='72000000-0000-4000-8000-000000000002' where id='73000000-0000-4000-8000-000000000002'$$,'42501','Devbox runner is not available to this actor.','lease UPDATE rejects foreign personal runner ownership');
+select is((select runner_id from private.devbox_runs where id='74000000-0000-4000-8000-000000000002'),null::uuid,'rejected run pin UPDATE leaves runner unchanged');
+select is((select runner_id from private.devbox_leases where id='73000000-0000-4000-8000-000000000002'),null::uuid,'rejected lease pin UPDATE leaves runner unchanged');
 select lives_ok($$insert into private.devbox_env_revisions(actor_id,lease_id) values('71000000-0000-4000-8000-000000000001','73000000-0000-4000-8000-000000000002')$$,'own env revision remains allowed');
 -- Exercise the contributor revoke hook without enabling contributor access.
 create temp table contributor_grants(actor_id uuid,revoked_at timestamptz,expires_at timestamptz);
@@ -112,5 +119,43 @@ insert into private.devbox_runs(id,actor_id,lease_id,command) values('74000000-0
 select is((select count(*) from private.claim_next_devbox_run('72000000-0000-4000-8000-000000000001')),0::bigint,'claim denies unauthorized run owner');
 select is((select status from private.devbox_runs where id='74000000-0000-4000-8000-000000000006'),'cancelled','claim backstop cancels unauthorized queued row');
 select ok(exists(select 1 from private.devbox_run_events where run_id='74000000-0000-4000-8000-000000000006' and metadata->>'reason'='actor_access_revoked'),'claim cancellation has a reason');
+-- Learners have no root membership or active personal grant.
+select ok(not exists(select 1 from public.workspace_members where ws_id='00000000-0000-0000-0000-000000000000' and user_id='71000000-0000-4000-8000-000000000003'),'Judge learner is not a root member');
+insert into private.devbox_runners(id,actor_id,name,pool,status,heartbeat_enabled,last_heartbeat_at,capabilities,enabled_features)
+values
+ ('72000000-0000-4000-8000-000000000004','71000000-0000-4000-8000-000000000001','judge-a','fleet','online',true,now(),'{"executionMode":"judge-only","judge":{"ready":true,"languages":["python"]}}','{"judge":true}'),
+ ('72000000-0000-4000-8000-000000000005','71000000-0000-4000-8000-000000000001','judge-b','fleet','offline',true,now(),'{"executionMode":"judge-only","judge":{"ready":true,"languages":["python"]}}','{"judge":true}');
+-- Valid envelope but no linked submission: even a root actor is denied.
+insert into private.devbox_leases(id,actor_id,status,expires_at) values
+ ('73000000-0000-4000-8000-000000000006','71000000-0000-4000-8000-000000000001','active',now()+interval '1 hour');
+insert into private.devbox_runs(id,actor_id,lease_id,workload,command) values
+ ('74000000-0000-4000-8000-000000000007','71000000-0000-4000-8000-000000000001','73000000-0000-4000-8000-000000000006','judge',array['__ttr_judge_v1__','x']);
+select is((select count(*) from private.claim_next_devbox_run('72000000-0000-4000-8000-000000000004')),0::bigint,'Judge envelope without linked submission is not claimable');
+update private.devbox_runs set status='cancelled' where id='74000000-0000-4000-8000-000000000007';
+create temp table learner_jobs_enqueued as
+ select private.enqueue_learn_coding_execution(
+   gen_random_uuid(),'71000000-0000-4000-8000-000000000003','two-sum','print(1)',
+   array['__ttr_judge_v1__','x'],'python','test') as submission_id;
+create temp table learner_jobs as
+ select s.run_id, r.lease_id from learner_jobs_enqueued enqueued
+ join private.learn_coding_submissions s on s.id=enqueued.submission_id
+ join private.devbox_runs r on r.id=s.run_id;
+select is((select count(*) from learner_jobs),1::bigint,'non-root learner enqueue passes lease and run ownership INSERT triggers');
+select ok(exists(select 1 from private.claim_next_devbox_run('72000000-0000-4000-8000-000000000004') c join learner_jobs j on j.run_id=c.id),'non-root learner Judge claim passes run ownership UPDATE trigger');
+select ok(exists(select 1 from private.devbox_runs r join learner_jobs j on j.run_id=r.id join private.devbox_leases l on l.id=r.lease_id where r.status='running' and r.runner_id='72000000-0000-4000-8000-000000000004' and l.runner_id=r.runner_id and r.actor_id=l.actor_id),'learner claim preserves run and lease actor and runner ownership');
+update private.devbox_runs set status='completed' where id in (select run_id from learner_jobs);
+create temp table learner_requeue_enqueued as
+ select private.enqueue_learn_coding_execution(
+   gen_random_uuid(),'71000000-0000-4000-8000-000000000003','two-sum','print(2)',
+   array['__ttr_judge_v1__','x'],'python','test') as submission_id;
+create temp table learner_requeue as
+ select s.run_id, r.lease_id from learner_requeue_enqueued enqueued
+ join private.learn_coding_submissions s on s.id=enqueued.submission_id
+ join private.devbox_runs r on r.id=s.run_id;
+select ok(exists(select 1 from private.devbox_runs r join learner_requeue j on j.run_id=r.id join private.devbox_leases l on l.id=r.lease_id where r.status='queued' and r.runner_id='72000000-0000-4000-8000-000000000004' and l.runner_id=r.runner_id),'learner requeue starts with both pins on first Judge runner');
+select ok(private.set_devbox_runner_drain('72000000-0000-4000-8000-000000000004',true) is not null,'first learner Judge runner is draining');
+update private.devbox_runners set status='online' where id='72000000-0000-4000-8000-000000000005';
+select ok(exists(select 1 from private.claim_next_devbox_run('72000000-0000-4000-8000-000000000005') c join learner_requeue j on j.run_id=c.id),'second Judge runner claims non-root learner requeue');
+select ok(exists(select 1 from private.devbox_runs r join learner_requeue j on j.run_id=r.id join private.devbox_leases l on l.id=r.lease_id where r.status='running' and r.runner_id='72000000-0000-4000-8000-000000000005' and l.runner_id=r.runner_id and r.actor_id=l.actor_id and l.actor_id='71000000-0000-4000-8000-000000000003'),'moved_lease passes ownership UPDATE trigger and retains learner actor');
 select * from finish();
 rollback;
