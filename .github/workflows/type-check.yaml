@@ -21,18 +21,24 @@ jobs:
     name: Type Check
     permissions:
       contents: read
-    runs-on: ubuntu-latest
+    runs-on: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' && github.triggering_actor != 'dependabot[bot]' && github.event.pull_request.user.login != 'dependabot[bot]' && (vars.PR_SELF_HOSTED_RUNNERS == 'true' || vars.PR_SELF_HOSTED_RUNNERS == format('pr:{0}', github.event.pull_request.number)) && fromJSON('["self-hosted","macOS","ARM64","tuturuuu-pr-ephemeral"]') || 'ubuntu-latest' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
+          clean: true
+          persist-credentials: ${{ runner.environment != 'self-hosted' }}
+      - name: Isolate persistent runner state
+        if: runner.environment == 'self-hosted'
+        uses: ./.github/actions/pr-runner-hygiene
 
       - name: Setup Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
+          package-manager-cache: ${{ runner.environment != 'self-hosted' }}
 
       # Keep script wiring aligned with ci-check.yml; shell parity is enforced by
       # scripts/ci/type-check-inline-workflow.test.js. Inline differences are the
@@ -97,7 +103,9 @@ jobs:
 
       - name: Install dependencies
         if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
-        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+        env:
+          BUN_INSTALL_FLAGS: ${{ runner.environment == 'self-hosted' && '--ignore-scripts' || '' }}
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile $BUN_INSTALL_FLAGS
 
       # --frozen-lockfile accepts orphan entries that a plain install prunes,
       # so every fresh worktree's setup rewrote bun.lock. Keep main canonical.

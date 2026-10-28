@@ -149,7 +149,7 @@ jobs:
     needs: [check-ci, coverage-check-ci]
     if: ${{ (!cancelled() && ((needs.check-ci.result == 'success' && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true') || (needs.coverage-check-ci.result == 'success' && needs.coverage-check-ci.outputs.should_run == 'true' && needs.coverage-check-ci.outputs.run_checks == 'true'))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     timeout-minutes: 20
-    runs-on: ubuntu-latest
+    runs-on: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' && github.triggering_actor != 'dependabot[bot]' && github.event.pull_request.user.login != 'dependabot[bot]' && (vars.PR_SELF_HOSTED_RUNNERS == 'true' || vars.PR_SELF_HOSTED_RUNNERS == format('pr:{0}', github.event.pull_request.number)) && fromJSON('["self-hosted","macOS","ARM64","tuturuuu-pr-ephemeral"]') || 'ubuntu-latest' }}
     strategy:
       fail-fast: false
       matrix:
@@ -172,6 +172,11 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 2
+          clean: true
+          persist-credentials: ${{ runner.environment != 'self-hosted' }}
+      - name: Isolate persistent runner state
+        if: runner.environment == 'self-hosted'
+        uses: ./.github/actions/pr-runner-hygiene
 
       - name: Setup bun
         uses: ./.github/actions/setup-bun-with-retry
@@ -187,9 +192,12 @@ jobs:
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
+          package-manager-cache: ${{ runner.environment != 'self-hosted' }}
 
       - name: Install dependencies
-        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+        env:
+          BUN_INSTALL_FLAGS: ${{ runner.environment == 'self-hosted' && '--ignore-scripts' || '' }}
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile $BUN_INSTALL_FLAGS
 
       - name: Build workspace setup
         uses: ./.github/actions/run-with-turbo-remote-cache

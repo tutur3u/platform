@@ -17,6 +17,11 @@ on:
         type: boolean
         default: false
         description: "Also detect release-only PR changes; other events always run"
+      pr_runner:
+        required: false
+        type: boolean
+        default: false
+        description: "Select the dedicated PR runner pool; callers pass the full routing condition"
     outputs:
       affected_jobs:
         description: "Affected validation jobs; absent keys retain validation"
@@ -35,7 +40,7 @@ permissions:
 jobs:
   check:
     name: Check CI Config
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.pr_runner && fromJSON('["self-hosted","macOS","ARM64","tuturuuu-pr-ephemeral"]') || 'ubuntu-latest' }}
     outputs:
       affected_jobs: ${{ steps.check_config.outputs.affected_jobs }}
       run_checks: ${{ steps.pr_release_relevance.outputs.run_checks || steps.release_relevance.outputs.run_checks || 'true' }}
@@ -46,7 +51,10 @@ jobs:
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
+          clean: true
+          persist-credentials: ${{ runner.environment != 'self-hosted' }}
           sparse-checkout: |
+            .github/actions/pr-runner-hygiene/*
             .github/workflows/*
             apps/*/package.json
             bun.lock
@@ -68,11 +76,15 @@ jobs:
             tuturuuu.ci.ts
             tuturuuu.ts
           sparse-checkout-cone-mode: false
+      - name: Isolate persistent runner state
+        if: runner.environment == 'self-hosted'
+        uses: ./.github/actions/pr-runner-hygiene
 
       - name: Setup Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
+          package-manager-cache: ${{ runner.environment != 'self-hosted' }}
 
       - name: Compute changed files
         id: changed_files
