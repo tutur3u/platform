@@ -23656,14 +23656,8 @@ abstract class AppLocalizations {
   /// No description provided for @mastermindDecisionsEmpty.
   ///
   /// In en, this message translates to:
-  /// **'No decisions yet'**
+  /// **'No recent decisions'**
   String get mastermindDecisionsEmpty;
-
-  /// No description provided for @mastermindDecisionsTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Decisions'**
-  String get mastermindDecisionsTitle;
 
   /// No description provided for @mastermindDeploy.
   ///
@@ -23724,12 +23718,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'success'**
   String get mastermindDeploySuccess;
-
-  /// No description provided for @mastermindDigestGap.
-  ///
-  /// In en, this message translates to:
-  /// **'Some earlier updates aren\'t included.'**
-  String get mastermindDigestGap;
 
   /// No description provided for @mastermindDurationDays.
   ///
@@ -23872,7 +23860,7 @@ abstract class AppLocalizations {
   /// No description provided for @mastermindForbiddenTitle.
   ///
   /// In en, this message translates to:
-  /// **'This account isn\'t allowed to view Mastermind.'**
+  /// **'This account isn\'t allowed to view Mastermind'**
   String get mastermindForbiddenTitle;
 
   /// No description provided for @mastermindForecastEmptyAt.
@@ -24202,7 +24190,7 @@ abstract class AppLocalizations {
   /// No description provided for @mastermindNoSnapshotTitle.
   ///
   /// In en, this message translates to:
-  /// **'Mastermind hasn\'t published yet.'**
+  /// **'Mastermind hasn\'t published yet'**
   String get mastermindNoSnapshotTitle;
 
   /// No description provided for @mastermindNotConfiguredMessage.
@@ -24210,12 +24198,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Mastermind isn\'t connected on this build.'**
   String get mastermindNotConfiguredMessage;
-
-  /// No description provided for @mastermindNotConnectedMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'Mastermind data isn\'t published to this app yet.'**
-  String get mastermindNotConnectedMessage;
 
   /// No description provided for @mastermindNotConnectedTitle.
   ///
@@ -24331,23 +24313,11 @@ abstract class AppLocalizations {
   /// **'Nothing new.'**
   String get mastermindRecentEmpty;
 
-  /// No description provided for @mastermindRecentTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Recent'**
-  String get mastermindRecentTitle;
-
   /// No description provided for @mastermindRecommended.
   ///
   /// In en, this message translates to:
   /// **'Recommended'**
   String get mastermindRecommended;
-
-  /// No description provided for @mastermindRejectedInline.
-  ///
-  /// In en, this message translates to:
-  /// **'Couldn\'t read the latest snapshot. Showing {time}.'**
-  String mastermindRejectedInline(String time);
 
   /// No description provided for @mastermindRejectedMessage.
   ///
@@ -24796,7 +24766,7 @@ abstract class AppLocalizations {
   /// No description provided for @mastermindSessionRejectedTitle.
   ///
   /// In en, this message translates to:
-  /// **'Mastermind couldn\'t verify your session.'**
+  /// **'Mastermind couldn\'t verify your session'**
   String get mastermindSessionRejectedTitle;
 
   /// No description provided for @mastermindShipCadenceTitle.
@@ -24912,12 +24882,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Details stay on the Mac'**
   String get mastermindShipWithheldTooltip;
-
-  /// No description provided for @mastermindShowAll.
-  ///
-  /// In en, this message translates to:
-  /// **'Show all'**
-  String get mastermindShowAll;
 
   /// No description provided for @mastermindSignOutAction.
   ///
@@ -25267,18 +25231,6 @@ abstract class AppLocalizations {
   /// **'Ship'**
   String get mastermindTabShip;
 
-  /// No description provided for @mastermindTabSoonMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'This part of Mastermind arrives in an upcoming update. Home already shows what needs you.'**
-  String get mastermindTabSoonMessage;
-
-  /// No description provided for @mastermindTabSoonTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'{tab} is coming soon'**
-  String mastermindTabSoonTitle(String tab);
-
   /// No description provided for @mastermindTabWork.
   ///
   /// In en, this message translates to:
@@ -25390,7 +25342,7 @@ abstract class AppLocalizations {
   /// No description provided for @mastermindUnreachableTitle.
   ///
   /// In en, this message translates to:
-  /// **'Can\'t reach Mastermind.'**
+  /// **'Can\'t reach Mastermind'**
   String get mastermindUnreachableTitle;
 
   /// No description provided for @mastermindUpdateAppShowing.

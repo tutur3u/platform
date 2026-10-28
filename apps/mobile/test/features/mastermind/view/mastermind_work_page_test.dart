@@ -424,7 +424,7 @@ void main() {
             const SnapshotFetch.unavailable(SnapshotUnavailableKind.forbidden);
       await pumpWork(tester, workJson(_mixed), source: source);
       expect(
-        find.text("This account isn't allowed to view Mastermind."),
+        find.text("This account isn't allowed to view Mastermind"),
         findsOneWidget,
       );
       expect(find.text('Broken lane'), findsNothing);

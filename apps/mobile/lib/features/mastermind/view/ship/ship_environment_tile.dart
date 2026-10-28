@@ -4,6 +4,7 @@ import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/components/app_badge.dart';
 import 'package:mobile/core/ui/components/app_toast.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
+import 'package:mobile/core/ui/tokens/app_interface_tokens.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/age_text.dart';
 import 'package:mobile/features/mastermind/presentation/gmt7.dart';
@@ -170,7 +171,10 @@ class _VersionLine extends StatelessWidget {
           Text(sha, style: const TextStyle(fontFamily: 'monospace')),
           IconButton(
             tooltip: l10n.mastermindShipCopySha,
-            visualDensity: VisualDensity.compact,
+            constraints: const BoxConstraints(
+              minWidth: AppInterfaceTokens.minTouchTarget,
+              minHeight: AppInterfaceTokens.minTouchTarget,
+            ),
             icon: const Icon(LucideIcons.copy, size: 16),
             onPressed: () async {
               await Clipboard.setData(ClipboardData(text: sha));

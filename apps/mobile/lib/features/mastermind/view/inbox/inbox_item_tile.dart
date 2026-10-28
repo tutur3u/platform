@@ -4,6 +4,7 @@ import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/components/app_badge.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
+import 'package:mobile/core/ui/tokens/app_interface_tokens.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/inbox_model.dart';
@@ -35,7 +36,8 @@ class _InboxItemTileState extends State<InboxItemTile> {
     return AppGroupedRow(
       title: Text(item.title),
       showChevron: true,
-      onTap: () => context.go(Routes.mastermindInboxItemPath(item.id)),
+      // Pushed, so Back returns to this list with its search and chips intact.
+      onTap: () => context.push(Routes.mastermindInboxItemPath(item.id)),
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -88,12 +90,19 @@ class _InboxItemTileState extends State<InboxItemTile> {
             if (overflows || _expanded)
               InkWell(
                 onTap: () => setState(() => _expanded = !_expanded),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-                  child: Text(
-                    _expanded ? l10n.mastermindLess : l10n.mastermindMore,
-                    style: style?.copyWith(
-                      color: AppTokens.of(context).colorScheme.primary,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    minWidth: AppInterfaceTokens.minTouchTarget,
+                    minHeight: AppInterfaceTokens.minTouchTarget,
+                  ),
+                  child: Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    widthFactor: 1,
+                    child: Text(
+                      _expanded ? l10n.mastermindLess : l10n.mastermindMore,
+                      style: style?.copyWith(
+                        color: AppTokens.of(context).colorScheme.primary,
+                      ),
                     ),
                   ),
                 ),

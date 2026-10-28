@@ -9,7 +9,8 @@ import 'package:mobile/features/mastermind/presentation/home_model.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-/// Needs-you first: up to three normal items, then a trailing Security group.
+/// Needs-you first: up to three normal items, each opening its detail, then a
+/// trailing Security group.
 ///
 /// Security rows are one fixed line each, with no tap target, no count and no
 /// severity, and never feed [MastermindHomeModel.needsYouCount].
@@ -81,6 +82,9 @@ class _NeedsYouRow extends StatelessWidget {
     final l10n = context.l10n;
     return AppGroupedRow(
       title: Text(item.title),
+      showChevron: true,
+      // Pushed, so Back returns to Home.
+      onTap: () => context.push(Routes.mastermindInboxItemPath(item.id)),
       subtitle: Wrap(
         spacing: AppSpacing.xs,
         runSpacing: AppSpacing.xs,

@@ -288,7 +288,7 @@ void main() {
       ) async {
         await _pump(tester, source: source, auth: auth);
         expect(
-          find.text("Mastermind couldn't verify your session."),
+          find.text("Mastermind couldn't verify your session"),
           findsOneWidget,
         );
         expect(find.text('Try again'), findsOneWidget);
@@ -343,7 +343,7 @@ void main() {
               _unavailable(SnapshotUnavailableKind.forbidden);
         final harness = await _pump(tester, source: source);
         expect(
-          find.text("This account isn't allowed to view Mastermind."),
+          find.text("This account isn't allowed to view Mastermind"),
           findsOneWidget,
         );
         expect(find.text('Ask a Mastermind owner for access.'), findsOneWidget);
@@ -360,7 +360,7 @@ void main() {
         ..fetcher = () async =>
             _unavailable(SnapshotUnavailableKind.noSnapshot);
       await _pump(tester, source: source);
-      expect(find.text("Mastermind hasn't published yet."), findsOneWidget);
+      expect(find.text("Mastermind hasn't published yet"), findsOneWidget);
       expect(find.text('Retry'), findsOneWidget);
     });
 
@@ -369,7 +369,7 @@ void main() {
         ..fetcher = () async =>
             _unavailable(SnapshotUnavailableKind.unavailable);
       await _pump(tester, source: source);
-      expect(find.text("Can't reach Mastermind."), findsOneWidget);
+      expect(find.text("Can't reach Mastermind"), findsOneWidget);
       final before = source.calls;
 
       await tester.tap(find.text('Retry'));

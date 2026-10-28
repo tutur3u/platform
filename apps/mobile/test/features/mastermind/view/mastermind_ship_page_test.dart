@@ -87,6 +87,9 @@ void main() {
       expect(find.text('abcdef1'), findsWidgets);
       expect(find.text('fix · ci'), findsWidgets);
       expect(find.byTooltip('Copy commit id'), findsWidgets);
+      final copy = tester.getSize(find.byTooltip('Copy commit id').first);
+      expect(copy.width, greaterThanOrEqualTo(44));
+      expect(copy.height, greaterThanOrEqualTo(44));
     });
 
     testWidgets('a withheld subject is muted with the Mac tooltip', (
@@ -267,7 +270,7 @@ void main() {
             const SnapshotFetch.unavailable(SnapshotUnavailableKind.forbidden);
       await pumpShip(tester, _mixed, source: source);
       expect(
-        find.text("This account isn't allowed to view Mastermind."),
+        find.text("This account isn't allowed to view Mastermind"),
         findsOneWidget,
       );
       expect(find.text('Deploy failure'), findsNothing);

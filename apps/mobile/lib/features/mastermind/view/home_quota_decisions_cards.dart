@@ -97,7 +97,8 @@ class _QuotaRow extends StatelessWidget {
   }
 }
 
-/// The latest three journal decisions, newest first.
+/// The latest three journal decisions, newest first. Display only: the full
+/// journal is deferred, so there is no row action and no promise of one.
 class HomeDecisionsCard extends StatelessWidget {
   const HomeDecisionsCard({required this.model, super.key});
 
@@ -122,7 +123,6 @@ class HomeDecisionsCard extends StatelessWidget {
                 Gmt7.dateTime(decision.at, locale),
               ].join(' · '),
             ),
-            // Decisions have no detail screen yet: no tap until Inbox lands.
           ),
       ],
     );

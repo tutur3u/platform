@@ -29,7 +29,7 @@ final class MastermindFreshness {
     required this.kind,
     required this.time,
     required this.age,
-    this.degradedSources = 0,
+    this.sources = const [],
   });
 
   factory MastermindFreshness.of(
@@ -59,9 +59,7 @@ final class MastermindFreshness {
       kind: kind,
       time: snapshot.generatedAt,
       age: age,
-      degradedSources: snapshot.sources
-          .where((source) => source.state != SourceState.ok)
-          .length,
+      sources: snapshot.sources,
     );
   }
 
@@ -70,7 +68,12 @@ final class MastermindFreshness {
   /// `generated_at` of the snapshot on screen.
   final DateTime time;
   final Duration age;
-  final int degradedSources;
+
+  /// Every source the snapshot reports on, for the sources sheet.
+  final List<Source> sources;
+
+  int get degradedSources =>
+      sources.where((source) => source.state != SourceState.ok).length;
 
   bool get isWarning =>
       kind == MastermindFreshnessKind.offline ||

@@ -2,13 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/components/app_chip.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
+import 'package:mobile/features/mastermind/replies/mastermind_replies_cubit.dart';
+import 'package:mobile/features/mastermind/replies/reply_outcome.dart';
 import 'package:mobile/features/mastermind/view/home_activity_card.dart';
 import 'package:mobile/features/mastermind/view/mastermind_home_page.dart';
 import 'package:mobile/l10n/gen/app_localizations_en.dart';
 
 import '../../../helpers/helpers.dart';
 import '../../../helpers/mastermind_home_fixture.dart';
+import '../../../helpers/mastermind_replies_fixture.dart';
 import '../../../helpers/mastermind_view_harness.dart';
 
 void _surface(WidgetTester tester, Size size) {
@@ -26,10 +32,12 @@ Future<MastermindViewHarness> _pumpHome(
   Map<String, dynamic>? json,
   Size size = const Size(430, 4000),
   double dockClearance = 0,
+  MastermindRepliesCubit? replies,
 }) async {
   _surface(tester, size);
   final harness = MastermindViewHarness(
     source: FakeHubSource(bytes: snapshotBytes(json ?? homeJson())),
+    replies: replies,
   );
   addTearDown(harness.dispose);
   await harness.setAccess(TestAccess.enabled);
@@ -67,8 +75,9 @@ void main() {
         'Lanes at a glance',
         'Ship',
         'Quota',
-        'Recent decisions',
         'Activity',
+        // Last: the Decisions journal is deferred.
+        'Recent decisions',
       ];
       final tops = [for (final label in order) _top(tester, label)];
       expect([...tops]..sort(), tops, reason: order.join(' < '));
@@ -94,6 +103,67 @@ void main() {
       await _pumpHome(tester);
       expect(find.text('Decision'), findsWidgets);
       expect(find.text('Tuturuuu'), findsWidgets);
+    });
+  });
+
+  group('pending replies', () {
+    testWidgets('sit directly under Needs you, above the lanes', (
+      tester,
+    ) async {
+      final replies = repliesCubit(
+        transport: FakeReplyTransport(const [ReplyUnavailable()]),
+      );
+      await replies.submit(item: parsedItem(inboxItem(1)), text: 'Hello');
+      await _pumpHome(
+        tester,
+        json: inboxJson([inboxItem(1)]),
+        replies: replies,
+      );
+      expect(find.text('1 reply waiting to send'), findsOneWidget);
+      final waiting = _top(tester, '1 reply waiting to send');
+      expect(waiting > _top(tester, 'See all (1)'), isTrue);
+      expect(waiting < _top(tester, 'Lanes at a glance'), isTrue);
+    });
+
+    testWidgets('show nothing when none are waiting', (tester) async {
+      await _pumpHome(tester);
+      expect(find.textContaining('waiting to send'), findsNothing);
+    });
+  });
+
+  group('lane chips', () {
+    testWidgets('"0 failed" uses the neutral glyph, not a warning', (
+      tester,
+    ) async {
+      final json = homeJson();
+      (json['lanes'] as List<dynamic>).removeWhere(
+        (lane) => (lane as Map<String, dynamic>)['state'] == 'failed',
+      );
+      await _pumpHome(tester, json: json);
+      final chip = find.widgetWithText(AppChip, '0 failed');
+      expect(chip, findsOneWidget);
+      expect(
+        find.descendant(of: chip, matching: find.byIcon(LucideIcons.list)),
+        findsOneWidget,
+      );
+      expect(find.byIcon(LucideIcons.circleX), findsNothing);
+      expect(
+        find.descendant(of: chip, matching: find.byIcon(AppIcons.warning)),
+        findsNothing,
+      );
+    });
+
+    testWidgets('a non-zero failed count keeps the warning glyph', (
+      tester,
+    ) async {
+      await _pumpHome(tester);
+      expect(
+        find.descendant(
+          of: find.widgetWithText(AppChip, '1 failed'),
+          matching: find.byIcon(AppIcons.warning),
+        ),
+        findsOneWidget,
+      );
     });
   });
 
@@ -292,9 +362,54 @@ void main() {
       });
     }
 
-    // Decisions have no detail screen yet, so their rows are plain text.
+    testWidgets('a Needs-you row is tappable and Back returns to Home', (
+      tester,
+    ) async {
+      _surface(tester, const Size(430, 4000));
+      final harness = MastermindViewHarness(
+        source: FakeHubSource(bytes: snapshotBytes(homeJson())),
+      );
+      addTearDown(harness.dispose);
+      await harness.setAccess(TestAccess.enabled);
+      final router = GoRouter(
+        initialLocation: '/mastermind',
+        routes: [
+          GoRoute(
+            path: '/mastermind',
+            builder: (context, state) => const MastermindHomePage(),
+          ),
+          GoRoute(
+            path: Routes.mastermindInboxItem,
+            builder: (context, state) =>
+                Text('detail ${state.pathParameters['itemId']}'),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+      await tester.pumpAppRouter(router, wrap: harness.wrap);
+      await tester.pumpAndSettle();
+
+      final row = find.ancestor(
+        of: find.text('First decision'),
+        matching: find.byType(AppGroupedRow),
+      );
+      expect(
+        find.descendant(of: row, matching: find.byIcon(AppIcons.forward)),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('First decision'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('detail item-'), findsOneWidget);
+      // Pushed over Home, so Back has somewhere to go.
+      expect(router.canPop(), isTrue);
+      router.pop();
+      await tester.pumpAndSettle();
+      expect(find.text('First decision'), findsOneWidget);
+    });
+
+    // Decisions have no detail screen: the journal is deferred.
     for (final label in ['Decision log 3']) {
-      testWidgets('$label is not tappable yet', (tester) async {
+      testWidgets('$label is not tappable', (tester) async {
         final visited = await pumpRouted(tester);
         await tester.tap(find.text(label).first, warnIfMissed: false);
         await tester.pumpAndSettle();

@@ -229,5 +229,73 @@ void main() {
       expect(find.bySemanticsLabel(sentence), findsOneWidget);
       handle.dispose();
     });
+
+    testWidgets('is a live region, so a change is announced', (tester) async {
+      final handle = tester.ensureSemantics();
+      await pumpStrip(tester, _ready(), const Duration(minutes: 1));
+      expect(
+        tester.getSemantics(find.bySemanticsLabel('Updated $_time')),
+        isSemantics(isLiveRegion: true),
+      );
+      handle.dispose();
+    });
+
+    testWidgets('degraded sources open the Sources sheet from the strip', (
+      tester,
+    ) async {
+      await pumpStrip(
+        tester,
+        _ready(
+          sources: [
+            {'source': 'inbox', 'state': 'ok'},
+            {'source': 'ci', 'state': 'stale'},
+            {'source': 'github', 'state': 'missing'},
+          ],
+        ),
+        const Duration(minutes: 1),
+      );
+      expect(find.text('Sources'), findsNothing);
+      await tester.tap(find.textContaining('2 sources degraded'));
+      await tester.pumpAndSettle();
+      expect(find.text('Sources'), findsOneWidget);
+      expect(find.text('CI'), findsOneWidget);
+      expect(find.text('Stale'), findsOneWidget);
+      expect(find.text('GitHub'), findsOneWidget);
+      expect(find.text('No source'), findsOneWidget);
+      // Degraded sources come first, then the ones that are fine.
+      expect(
+        tester.getTopLeft(find.text('CI')).dy,
+        lessThan(tester.getTopLeft(find.text('Inbox')).dy),
+      );
+      expect(find.text('OK'), findsOneWidget);
+    });
+
+    testWidgets('a healthy strip has nothing to open', (tester) async {
+      await pumpStrip(tester, _ready(), const Duration(minutes: 1));
+      await tester.tap(find.text('Updated $_time'));
+      await tester.pumpAndSettle();
+      expect(find.text('Sources'), findsNothing);
+    });
+
+    testWidgets('the tappable strip is a 44 dp target', (tester) async {
+      await pumpStrip(
+        tester,
+        _ready(
+          sources: [
+            {'source': 'ci', 'state': 'stale'},
+          ],
+        ),
+        const Duration(minutes: 1),
+      );
+      final target = tester.getSize(
+        find
+            .ancestor(
+              of: find.textContaining('1 source degraded'),
+              matching: find.byType(InkWell),
+            )
+            .first,
+      );
+      expect(target.height, greaterThanOrEqualTo(44));
+    });
   });
 }
