@@ -220,3 +220,19 @@ not installed bundle sizes. Dynamic server icon selection references many
 constant glyphs in `core/icons/platform_icon_data.dart`; retain that contract
 when evaluating font subsets. Measure release size and startup timing separately
 in admitted CI/device workflows before claiming a numeric improvement.
+
+### Independent startup state restoration
+
+After Firebase/observability handlers and Supabase have settled, bootstrap uses
+`initializeStartupState` to overlap account appearance reads with offline state
+restoration via `Future.wait`. Keep the identity/MFA boundary before appearance,
+and keep CacheStore before OfflineMutationQueue in a single branch: a cache
+failure must skip queue restoration. Each branch retains its original fallback
+or error log with the original error/stack; both finish before routes, builder
+and `runApp`. Firebase and Supabase remain sequential to preserve platform-error
+handler coverage during session restoration.
+
+`test/core/startup/startup_state_test.dart` uses completion barriers to prove
+concurrency, both completion orders, queue ordering, sync/async cache and queue
+failure reporting, appearance fallback and unexpected-error propagation. These
+are orchestration fixtures, not native-plugin or device latency measurements.
