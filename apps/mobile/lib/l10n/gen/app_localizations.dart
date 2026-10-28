@@ -115,6 +115,24 @@ abstract class AppLocalizations {
   /// **'Not sent · tap to retry'**
   String get mastermindReplyFailedShort;
 
+  /// No description provided for @mastermindReplySendingOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending “{option}”'**
+  String mastermindReplySendingOption(String option);
+
+  /// No description provided for @mastermindReplyUndo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get mastermindReplyUndo;
+
+  /// No description provided for @mastermindReplyNotSentReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t send · open to review'**
+  String get mastermindReplyNotSentReview;
+
   /// No description provided for @mastermindAnswerExpand.
   ///
   /// In en, this message translates to:

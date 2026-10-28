@@ -10,7 +10,6 @@ import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/age_text.dart';
 import 'package:mobile/features/mastermind/presentation/display_names.dart';
-import 'package:mobile/features/mastermind/presentation/inbox_model.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
 import 'package:mobile/features/mastermind/replies/mastermind_replies_cubit.dart';
 import 'package:mobile/features/mastermind/replies/reply_models.dart';
@@ -67,8 +66,9 @@ class InboxItemTile extends StatelessWidget {
         ? null
         : MastermindLabels.itemKind(l10n, kind);
     final detail = [?_state(l10n, entry, status), ?_age(l10n)].join(' · ');
+    final preview = askPreviewText(item);
     void open() {
-      if (status.issue != null && entry != null) {
+      if (_canRetry(status, entry)) {
         unawaited(
           MastermindRepliesWatcher.cubitOf(
             context,
@@ -85,7 +85,7 @@ class InboxItemTile extends StatelessWidget {
         ?kindLabel,
         title,
         if (detail.isNotEmpty) detail,
-        if (!isOpenOnMacStandIn(item.body)) item.body,
+        if (preview.isNotEmpty) spokenAskSummary(preview),
       ].join('. '),
       hint: l10n.mastermindOpensItem,
       onTap: open,
@@ -126,9 +126,9 @@ class InboxItemTile extends StatelessWidget {
                 Text(detail, maxLines: 2, overflow: TextOverflow.ellipsis),
               ],
             ),
-            if (!isOpenOnMacStandIn(item.body))
+            if (preview.isNotEmpty)
               Text(
-                item.body,
+                preview,
                 key: ValueKey('ask-preview-${item.id}'),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -152,7 +152,11 @@ class InboxItemTile extends StatelessWidget {
         null => l10n.mastermindResolvedState,
       };
     }
-    if (status.issue != null) return l10n.mastermindReplyFailedShort;
+    if (status.issue != null) {
+      return _canRetry(status, entry)
+          ? l10n.mastermindReplyFailedShort
+          : l10n.mastermindReplyNotSentReview;
+    }
     if (entry != null) {
       return entry.status == OutboxStatus.sent
           ? l10n.mastermindReplySent
@@ -160,6 +164,15 @@ class InboxItemTile extends StatelessWidget {
     }
     return MastermindLabels.itemState(l10n, item.state);
   }
+
+  /// A tap retries only when the reply is still queued and nothing blocks it:
+  /// the device was offline. A 429 waits out its time, a 401 or 403 stays
+  /// behind the auth-failure guard, and the other issues dropped the entry, so
+  /// for those a tap just opens the detail page.
+  bool _canRetry(ReplyItemStatus status, OutboxEntry? entry) =>
+      entry != null &&
+      entry.status == OutboxStatus.pending &&
+      status.issue == ReplyIssue.offline;
 
   String? _age(AppLocalizations l10n) {
     final at = item.createdAt ?? item.resolvedAt;

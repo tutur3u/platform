@@ -245,7 +245,8 @@ switch, so it flips without a store release.
   `{schema_version: "1.4", item_id, version_hash, option_index | text}`: one of
   an option index (into the item's own `options[]`) or free text of at most 500
   characters, counted in code points, and at most 10 lines (the hub's limit; the
-  composer caps both as you type). An option button sends its index directly.
+  composer caps both as you type). An option button sends its index after a
+  five-second undo window (see Undo window below).
   The text field has a placeholder and a counter; free-text sending requires
   confirmation.
 - **Idempotency:** the `Idempotency-Key` is a random v4 UUID from a secure
@@ -730,17 +731,27 @@ one-glyph-per-window assertion for reported and unreported values.
 
 Truncated asks carry a visible Mac continuation notice. Recorded answers remain
 available regardless of length, with an expandable preview. Failed replies say
-"Not sent · tap to retry"; tapping retries the existing reply and opens its
-recovery details. Grouped open rows omit the repeated kind badge. Coverage:
+"Not sent · tap to retry" while the reply is still queued and a retry can go
+out (offline); tapping retries the existing reply and opens its recovery
+details. A 429, a 401/403 (behind the auth-failure guard) or a dropped reply
+reads "Couldn't send · open to review" and a tap only opens the details. Grouped open rows omit the repeated kind badge. Coverage:
 `mastermind_inbox_v1_test.dart` (truncation, long answers, failed sends).
 
 Ask cards on Home and Inbox share the same row. The publisher title wins;
 a redacted title falls back to the first ask line. Cards preview two lines,
 project, status and created-at age; detail keeps the full published ask. Only
 unique open ids appear in Needs you; a hub-answered id always wins. Home's
-See-all link opens Needs you. Real option buttons send immediately through the
-existing outbox and retain its retry key; empty/Mac-placeholder options leave
-the free-text composer. `mastermind_ask_context_test.dart` covers these rules.
+See-all link opens Needs you. A redacted title is the first ask line, so the
+preview starts on the second line; screen readers hear at most 200 characters
+of the ask on a row. The recorded answer shows "Show full answer" whenever it
+overflows four lines at the current width and text size.
+
+**Undo window (Theo, 2026-10-28).** Option replies stay one tap. The tap shows
+"Sending “option” · Undo" for 5 seconds on the item detail; the reply enters the outbox only then, through the same
+`submit` and Idempotency-Key. One window per item; the other options lock
+meanwhile. Leaving the screen inside the window still sends; logout or an
+account switch cancels it, and so does a live snapshot where the ask changed or
+left. Coverage: `mastermind_replies_undo_test.dart`, `mastermind_option_undo_test.dart`.
 
 ## Read-only Threads preview
 

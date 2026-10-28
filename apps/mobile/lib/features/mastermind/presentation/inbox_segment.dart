@@ -3,7 +3,7 @@ import 'package:mobile/core/router/routes.dart';
 /// The Inbox segments. Needs you is the default and is never written to the
 /// URL; the others ride in `?segment=`.
 ///
-/// Needs you, Resolved and All filter the same asks; Decisions is the journal
+/// Needs you and Resolved filter the same asks; Decisions is the journal
 /// of what Mastermind decided on its own.
 enum InboxSegment {
   needsYou('needs-you'),

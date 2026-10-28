@@ -1,4 +1,5 @@
 import 'package:mobile/features/mastermind/model/snapshot.dart';
+import 'package:mobile/features/mastermind/presentation/inbox_model.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -60,11 +61,39 @@ bool _isNamedRole(String role) {
       lower != 'unknown';
 }
 
+String _firstAskLine(NeedsYou item) =>
+    item.body.trim().split(RegExp(r'\r?\n')).first.trim();
+
+/// Whether [itemDisplayTitle] is the first published ask line, because the
+/// hub's title is blank or redacted.
+bool titleIsFirstAskLine(NeedsYou item) =>
+    (redactedTitleParts(item.title) != null || item.title.trim().isEmpty) &&
+    _firstAskLine(item).isNotEmpty;
+
+/// The ask text a row previews under its title: the whole ask, or the rest of
+/// it when its first line already serves as the title. Empty for the "Open on
+/// Mac" stand-in.
+String askPreviewText(NeedsYou item) {
+  if (isOpenOnMacStandIn(item.body)) return '';
+  final body = item.body.trim();
+  if (!titleIsFirstAskLine(item)) return body;
+  return body.split(RegExp(r'\r?\n')).skip(1).join('\n').trim();
+}
+
+/// [text] on one line, cut to [limit] characters with an ellipsis. A screen
+/// reader hears this on a row; the detail page has the whole ask.
+String spokenAskSummary(String text, {int limit = 200}) {
+  final flat = text.replaceAll(RegExp(r'\s+'), ' ').trim();
+  final runes = flat.runes.toList();
+  if (runes.length <= limit) return flat;
+  return '${String.fromCharCodes(runes.take(limit)).trimRight()}…';
+}
+
 /// Keep real titles; redacted titles use the first published ask line.
 String itemDisplayTitle(AppLocalizations l10n, NeedsYou item) {
   final parts = redactedTitleParts(item.title);
   if (parts == null && item.title.trim().isNotEmpty) return item.title;
-  final firstLine = item.body.trim().split(RegExp(r'\r?\n')).first.trim();
+  final firstLine = _firstAskLine(item);
   if (firstLine.isNotEmpty) return firstLine;
   if (parts == null) return l10n.mastermindAskTitle;
   final kind =

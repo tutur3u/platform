@@ -21,6 +21,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindReplyFailedShort => 'Not sent · tap to retry';
 
   @override
+  String mastermindReplySendingOption(String option) {
+    return 'Sending “$option”';
+  }
+
+  @override
+  String get mastermindReplyUndo => 'Undo';
+
+  @override
+  String get mastermindReplyNotSentReview => 'Couldn\'t send · open to review';
+
+  @override
   String get mastermindAnswerExpand => 'Show full answer';
 
   @override

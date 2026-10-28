@@ -21,6 +21,17 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindReplyFailedShort => 'Chưa gửi · chạm để thử lại';
 
   @override
+  String mastermindReplySendingOption(String option) {
+    return 'Đang gửi “$option”';
+  }
+
+  @override
+  String get mastermindReplyUndo => 'Hoàn tác';
+
+  @override
+  String get mastermindReplyNotSentReview => 'Không gửi được · mở để xem lại';
+
+  @override
   String get mastermindAnswerExpand => 'Xem toàn bộ câu trả lời';
 
   @override

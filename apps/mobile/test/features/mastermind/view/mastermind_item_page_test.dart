@@ -195,6 +195,7 @@ void main() {
       (tester) async {
         final page = await _pump(tester);
         await tester.tap(find.text('Defer'));
+        await tester.pump(MastermindRepliesCubit.defaultOptionUndoWindow);
         await tester.pumpAndSettle();
         expect(page.transport.sent.single.versionHash, inboxHash('a'));
         page.publish(
@@ -303,6 +304,7 @@ void main() {
       final page = await _pump(tester);
       expect(_enabled(tester, _send), isFalse);
       await tester.tap(find.text('Defer'));
+      await tester.pump(MastermindRepliesCubit.defaultOptionUndoWindow);
       await tester.pumpAndSettle();
       expect(page.transport.sent.single.optionIndex, 1);
       expect(find.byType(TextField), findsNothing);
@@ -312,6 +314,7 @@ void main() {
       final page = await _pump(tester);
       await tester.enterText(find.byType(TextField), 'something else');
       await tester.tap(find.text('Approve'));
+      await tester.pump(MastermindRepliesCubit.defaultOptionUndoWindow);
       await tester.pumpAndSettle();
       expect(page.transport.sent.single.optionIndex, 0);
       expect(page.transport.sent.single.text, isNull);
@@ -321,6 +324,7 @@ void main() {
       final page = await _pump(tester);
       expect(find.text('Recommended'), findsOneWidget);
       await tester.tap(find.text('Approve'));
+      await tester.pump(MastermindRepliesCubit.defaultOptionUndoWindow);
       await tester.pumpAndSettle();
       expect(page.transport.sent.single.optionIndex, 0);
     });
@@ -341,6 +345,7 @@ void main() {
     testWidgets('an option button sends option_index', (tester) async {
       final page = await _pump(tester);
       await tester.tap(find.text('Defer'));
+      await tester.pump(MastermindRepliesCubit.defaultOptionUndoWindow);
       await tester.pumpAndSettle();
       expect(page.transport.sent.single.toRequestJson(), {
         'schema_version': '1.4',
@@ -380,6 +385,7 @@ void main() {
     testWidgets('a 200 replay reads exactly like a 201', (tester) async {
       await _pump(tester, outcomes: const [ReplyAccepted(replayed: true)]);
       await tester.tap(find.text('Defer'));
+      await tester.pump(MastermindRepliesCubit.defaultOptionUndoWindow);
       await tester.pumpAndSettle();
       expect(find.text('Sent · waiting for Mastermind'), findsOneWidget);
     });
@@ -394,6 +400,7 @@ void main() {
         outcomes: const [ReplyUnavailable(), ReplyAccepted(replayed: true)],
       );
       await tester.tap(find.text('Defer'));
+      await tester.pump(MastermindRepliesCubit.defaultOptionUndoWindow);
       await tester.pumpAndSettle();
       expect(
         find.text(

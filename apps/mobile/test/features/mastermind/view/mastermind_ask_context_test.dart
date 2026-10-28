@@ -9,6 +9,7 @@ import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/display_names.dart';
 import 'package:mobile/features/mastermind/presentation/home_model.dart';
 import 'package:mobile/features/mastermind/presentation/inbox_model.dart';
+import 'package:mobile/features/mastermind/replies/mastermind_replies_cubit.dart';
 import 'package:mobile/features/mastermind/replies/reply_outcome.dart';
 import 'package:mobile/features/mastermind/view/inbox/inbox_item_tile.dart';
 import 'package:mobile/features/mastermind/view/inbox/mastermind_inbox_page.dart';
@@ -109,7 +110,8 @@ void main() {
       final preview = tester.widget<Text>(
         find.byKey(const ValueKey('ask-preview-$_id')),
       );
-      expect(preview.data, _ask);
+      // The first line is the title, so the preview starts after it.
+      expect(preview.data, _ask.split('\n').skip(1).join('\n'));
       expect(preview.maxLines, 2);
       final row = find.ancestor(
         of: find.byKey(const ValueKey('ask-title-$_id')),
@@ -145,6 +147,7 @@ void main() {
       final option = find.widgetWithText(AppButton, 'Ship tonight');
       expect(tester.getSize(option).height, greaterThanOrEqualTo(44));
       await tester.tap(option);
+      await tester.pump(MastermindRepliesCubit.defaultOptionUndoWindow);
       await tester.pumpAndSettle();
       expect(transport.sent.single.optionIndex, 0);
       expect(transport.sent.single.optionLabel, 'Ship tonight');

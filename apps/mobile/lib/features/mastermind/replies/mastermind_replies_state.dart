@@ -68,17 +68,45 @@ final class ReplyItemStatus {
   final int authFailures;
 }
 
+/// A one-tap option reply inside its undo window: chosen, not yet queued.
+final class PendingOptionReply {
+  const PendingOptionReply({
+    required this.versionHash,
+    required this.optionIndex,
+    required this.option,
+    this.committed = false,
+  });
+
+  final String versionHash;
+  final int optionIndex;
+  final String option;
+
+  /// The window ended: the reply is being queued and sent, so Undo is gone.
+  final bool committed;
+
+  PendingOptionReply get asCommitted => PendingOptionReply(
+    versionHash: versionHash,
+    optionIndex: optionIndex,
+    option: option,
+    committed: true,
+  );
+}
+
 final class MastermindRepliesState {
   const MastermindRepliesState({
     this.capability = ReplyCapability.unknown,
     this.outbox = const [],
     this.statuses = const {},
+    this.pendingOptions = const {},
     this.loaded = false,
   });
 
   final ReplyCapability capability;
   final List<OutboxEntry> outbox;
   final Map<String, ReplyItemStatus> statuses;
+
+  /// Option taps still in their undo window, by item id.
+  final Map<String, PendingOptionReply> pendingOptions;
 
   /// The persisted outbox has been read for this user.
   final bool loaded;
@@ -97,6 +125,12 @@ final class MastermindRepliesState {
     return null;
   }
 
+  /// The option reply for [itemId] at [versionHash] in its undo window, if any.
+  PendingOptionReply? pendingOptionFor(String itemId, String versionHash) {
+    final pending = pendingOptions[itemId];
+    return pending?.versionHash == versionHash ? pending : null;
+  }
+
   ReplyItemStatus statusFor(String itemId) =>
       statuses[itemId] ?? ReplyItemStatus.idle;
 
@@ -108,11 +142,13 @@ final class MastermindRepliesState {
     ReplyCapability? capability,
     List<OutboxEntry>? outbox,
     Map<String, ReplyItemStatus>? statuses,
+    Map<String, PendingOptionReply>? pendingOptions,
     bool? loaded,
   }) => MastermindRepliesState(
     capability: capability ?? this.capability,
     outbox: outbox ?? this.outbox,
     statuses: statuses ?? this.statuses,
+    pendingOptions: pendingOptions ?? this.pendingOptions,
     loaded: loaded ?? this.loaded,
   );
 }

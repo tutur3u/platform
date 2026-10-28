@@ -158,7 +158,13 @@ void main() {
     testWidgets('the segment control is compact with 44 pt segments', (
       tester,
     ) async {
-      await _pump(tester, const MastermindInboxPage(), _v1());
+      // Wide enough for the test font, whose glyphs are one em wide.
+      await _pump(
+        tester,
+        const MastermindInboxPage(),
+        _v1(),
+        size: const Size(800, 4000),
+      );
       final control = find.byType(MastermindSegmentedControl<InboxSegment>);
       expect(tester.getSize(control).height, lessThanOrEqualTo(48));
       for (final label in ['Needs you', 'Resolved', 'Decisions']) {
@@ -279,10 +285,9 @@ void main() {
       final json = _v1();
       _editOpen(json, (row) => row['title'] = 'Mastermind · hub · decision');
       await _pump(tester, const MastermindInboxPage(), json);
+      // The first ask line is the title, so it is not read a second time.
       expect(
-        find.bySemanticsLabel(
-          'Decision. Review the plan. open. Review the plan',
-        ),
+        find.bySemanticsLabel('Decision. Review the plan. open'),
         findsOneWidget,
       );
       expect(find.textContaining('Mastermind · hub ·'), findsNothing);
@@ -340,8 +345,38 @@ void main() {
     final item = parsedSnapshot(json).now.needsYou.whereType<NeedsYou>().first;
     await replies.submit(item: item, text: 'Yes');
     await _pump(tester, const MastermindInboxPage(), json, replies: replies);
-    expect(find.text('Not sent · tap to retry'), findsOneWidget);
+    // Refused for good: no queued reply, so no promise that a tap retries.
+    expect(find.text("Couldn't send · open to review"), findsOneWidget);
+    expect(find.text('Not sent · tap to retry'), findsNothing);
     expect(find.text('Waiting to send'), findsNothing);
+  });
+
+  testWidgets('a queued offline reply says tapping retries', (tester) async {
+    final transport = FakeReplyTransport(const [
+      ReplyUnavailable(),
+      ReplyUnavailable(),
+    ]);
+    final replies = repliesCubit(transport: transport);
+    final json = _v1();
+    final item = parsedSnapshot(json).now.needsYou.whereType<NeedsYou>().first;
+    await replies.submit(item: item, text: 'Yes');
+    await _pump(tester, const MastermindInboxPage(), json, replies: replies);
+    expect(find.text('Not sent · tap to retry'), findsOneWidget);
+  });
+
+  testWidgets('a 401 stays behind the auth guard and promises no retry', (
+    tester,
+  ) async {
+    final transport = FakeReplyTransport(const [ReplyUnauthorized()]);
+    final replies = repliesCubit(transport: transport);
+    final json = _v1();
+    final item = parsedSnapshot(json).now.needsYou.whereType<NeedsYou>().first;
+    await replies.submit(item: item, text: 'Yes');
+    await _pump(tester, const MastermindInboxPage(), json, replies: replies);
+    // The page's own flush skips an entry the session was refused for.
+    expect(transport.sent, hasLength(1));
+    expect(find.text("Couldn't send · open to review"), findsOneWidget);
+    expect(find.text('Not sent · tap to retry'), findsNothing);
   });
 
   testWidgets('truncated asks disclose the Mac continuation', (tester) async {

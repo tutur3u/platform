@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/components/app_badge.dart';
 import 'package:mobile/core/ui/components/app_button.dart';
@@ -12,6 +13,7 @@ import 'package:mobile/features/mastermind/presentation/display_names.dart';
 import 'package:mobile/features/mastermind/presentation/inbox_model.dart';
 import 'package:mobile/features/mastermind/replies/mastermind_replies_cubit.dart';
 import 'package:mobile/features/mastermind/replies/reply_models.dart';
+import 'package:mobile/features/mastermind/view/inbox/reply_undo_bar.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// Caps input at [limit] code points, the unit the hub counts.
@@ -58,7 +60,9 @@ class LineLimitFormatter extends TextInputFormatter {
   }
 }
 
-/// Option buttons submit through the outbox; free text remains a saved draft.
+/// One tap on an option starts a short undo window ("Sending · Undo", see
+/// [MastermindRepliesCubit.queueOption]) and then queues the reply into the
+/// outbox. Free text remains a saved draft and still asks to confirm.
 class ReplyComposer extends StatefulWidget {
   const ReplyComposer({required this.item, required this.replies, super.key});
 
@@ -71,7 +75,6 @@ class ReplyComposer extends StatefulWidget {
 
 class _ReplyComposerState extends State<ReplyComposer> {
   final _text = TextEditingController();
-  bool _sendingOption = false;
 
   @override
   void initState() {
@@ -91,15 +94,8 @@ class _ReplyComposerState extends State<ReplyComposer> {
   void _typed(String value) => setState(_save);
   bool get _canSend => isValidReplyText(_text.text);
 
-  Future<void> _sendOption(int index) async {
-    if (_sendingOption) return;
-    setState(() => _sendingOption = true);
-    try {
-      await widget.replies.submit(item: widget.item, optionIndex: index);
-    } finally {
-      if (mounted) setState(() => _sendingOption = false);
-    }
-  }
+  void _sendOption(int index) =>
+      widget.replies.queueOption(item: widget.item, optionIndex: index);
 
   Future<void> _send() async {
     final l10n = context.l10n;
@@ -121,12 +117,35 @@ class _ReplyComposerState extends State<ReplyComposer> {
 
   @override
   Widget build(BuildContext context) {
+    final options = selectableOptions(widget.item);
+    return BlocSelector<
+      MastermindRepliesCubit,
+      MastermindRepliesState,
+      PendingOptionReply?
+    >(
+      bloc: widget.replies,
+      selector: (state) =>
+          state.pendingOptionFor(widget.item.id, widget.item.versionHash),
+      builder: (context, pending) => _form(context, options, pending),
+    );
+  }
+
+  Widget _form(
+    BuildContext context,
+    List<(int, String)> options,
+    PendingOptionReply? pending,
+  ) {
     final l10n = context.l10n;
     final item = widget.item;
-    final options = selectableOptions(item);
+    final choosing = pending != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (pending != null && !pending.committed)
+          ReplyUndoBar(
+            option: pending.option,
+            onUndo: () => widget.replies.undoOption(item.id),
+          ),
         if (options.isNotEmpty)
           AppGroupedSection.spaced(
             caption: l10n.mastermindReplyOptionsTitle,
@@ -135,9 +154,7 @@ class _ReplyComposerState extends State<ReplyComposer> {
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
                   child: AppButton.outline(
-                    onPressed: _sendingOption
-                        ? null
-                        : () => unawaited(_sendOption(index)),
+                    onPressed: choosing ? null : () => _sendOption(index),
                     child: Wrap(
                       spacing: AppSpacing.sm,
                       runSpacing: AppSpacing.xs,
@@ -188,9 +205,7 @@ class _ReplyComposerState extends State<ReplyComposer> {
         ),
         const SizedBox(height: AppSpacing.md),
         AppButton.primary(
-          onPressed: !_sendingOption && _canSend
-              ? () => unawaited(_send())
-              : null,
+          onPressed: !choosing && _canSend ? () => unawaited(_send()) : null,
           child: Text(l10n.mastermindReplySend),
         ),
         const SizedBox(height: AppSpacing.lg),

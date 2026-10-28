@@ -17,15 +17,15 @@ import 'package:mobile/features/mastermind/view/widgets/collapsible_search.dart'
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-/// `/mastermind/inbox`: the asks (Needs you, Resolved, All) and the Decisions
+/// `/mastermind/inbox`: the asks (Needs you, Resolved) and the Decisions
 /// journal beside them.
 ///
 /// [initialSegment] is the `?segment=` the location carries (a Home link opens
 /// Decisions with it). The segment control changes it and [onSegment] reports
 /// each change so the route can keep it in the URL.
 ///
-/// Search starts hidden: the navbar search icon or a pull-down at the top of
-/// the list reveals it, and it applies to every ask segment.
+/// Search starts hidden: the navbar search icon reveals it, and it applies to
+/// every ask segment. A pull-down stays a refresh.
 class MastermindInboxPage extends StatefulWidget {
   const MastermindInboxPage({
     this.initialSegment = InboxSegment.needsYou,
@@ -82,7 +82,7 @@ class _MastermindInboxPageState extends State<MastermindInboxPage> {
   Widget build(BuildContext context) => MastermindSection(
     builder: (context, ready, freshness) {
       final asks = _segment.listsAsks;
-      Widget list = AppPageScrollView(
+      final list = AppPageScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
           SliverToBoxAdapter(
@@ -105,7 +105,6 @@ class _MastermindInboxPageState extends State<MastermindInboxPage> {
           ),
         ],
       );
-      if (asks) list = MastermindPullToSearch(controller: _search, child: list);
       return MastermindRepliesWatcher(
         // The navbar action sits outside the scroll view: a lazy sliver child
         // is disposed once it scrolls away, which would unregister it.

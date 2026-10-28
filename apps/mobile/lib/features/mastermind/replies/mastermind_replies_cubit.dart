@@ -32,6 +32,7 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
     AccessLostCallback? onAccessLost,
     DateTime Function()? clock,
     Random? random,
+    this.optionUndoWindow = defaultOptionUndoWindow,
   }) : _store = store,
        _transport = transport,
        _fetchCapabilities = fetchCapabilities,
@@ -41,9 +42,12 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
        _random = random,
        super(const MastermindRepliesState());
 
+  /// How long a one-tap option reply can be undone before it is queued.
+  static const defaultOptionUndoWindow = Duration(seconds: 5);
   static const _capabilityMaxAge = Duration(minutes: 5);
   static const _defaultRetryAfter = Duration(minutes: 1);
 
+  final Duration optionUndoWindow;
   final MastermindOutboxStore _store;
   final MastermindReplyTransport? _transport;
   final Future<CapabilitiesFetch> Function()? _fetchCapabilities;
@@ -53,6 +57,7 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
   final Random? _random;
   final _drafts = <String, ReplyDraft>{};
   final _inFlight = <String>{};
+  final _undoTimers = <String, Timer>{};
   int _generation = 0;
   DateTime? _capabilityCheckedAt;
   Future<void> _storeTail = Future<void>.value();
@@ -215,6 +220,94 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
   ];
 
   // ---- sending ----
+
+  /// Starts the undo window for a one-tap option reply: nothing is queued yet.
+  /// After [optionUndoWindow] the reply is [submit]ted, unless [undoOption]
+  /// cancelled it first. Returns false when no window started (a reply or
+  /// window already exists for the item, replies are off, or no real option).
+  ///
+  /// The window belongs to the cubit, not the screen, so leaving the screen
+  /// before it ends still sends; only [clear] (logout, account switch) cancels
+  /// it. At most one window exists per item, and the send still goes through
+  /// [submit], so its outbox check and Idempotency-Key are unchanged.
+  bool queueOption({required NeedsYou item, required int optionIndex}) {
+    final options = item.options;
+    if (optionIndex < 0 ||
+        optionIndex >= options.length ||
+        options[optionIndex] == mastermindReplyPlaceholderOption ||
+        !state.canReply ||
+        state.pendingOptions.containsKey(item.id) ||
+        state.entryFor(item.id, item.versionHash) != null ||
+        state.statusFor(item.id).sending) {
+      return false;
+    }
+    final generation = _generation;
+    emit(
+      state.copyWith(
+        pendingOptions: {
+          ...state.pendingOptions,
+          item.id: PendingOptionReply(
+            versionHash: item.versionHash,
+            optionIndex: optionIndex,
+            option: options[optionIndex],
+          ),
+        },
+      ),
+    );
+    _undoTimers[item.id] = Timer(
+      optionUndoWindow,
+      () => unawaited(_commitOption(item, optionIndex, generation)),
+    );
+    return true;
+  }
+
+  /// Cancels an option reply still inside its undo window. A reply that was
+  /// already queued is not touched: it is discarded from its status panel.
+  void undoOption(String itemId) {
+    final timer = _undoTimers.remove(itemId);
+    if (timer == null) return;
+    timer.cancel();
+    _clearPending(itemId);
+  }
+
+  Future<void> _commitOption(
+    NeedsYou item,
+    int optionIndex,
+    int generation,
+  ) async {
+    _undoTimers.remove(item.id);
+    final pending = state.pendingOptions[item.id];
+    if (!_current(generation) || pending == null) return;
+    emit(
+      state.copyWith(
+        pendingOptions: {...state.pendingOptions, item.id: pending.asCommitted},
+      ),
+    );
+    try {
+      await submit(item: item, optionIndex: optionIndex);
+    } finally {
+      if (_current(generation)) _clearPending(item.id);
+    }
+  }
+
+  void _clearPending(String itemId) {
+    if (!state.pendingOptions.containsKey(itemId)) return;
+    emit(
+      state.copyWith(
+        pendingOptions: {
+          for (final entry in state.pendingOptions.entries)
+            if (entry.key != itemId) entry.key: entry.value,
+        },
+      ),
+    );
+  }
+
+  void _cancelUndoTimers() {
+    for (final timer in _undoTimers.values) {
+      timer.cancel();
+    }
+    _undoTimers.clear();
+  }
 
   /// Persists the reply (with its new key), then sends it. Returns false only
   /// when nothing was queued: no choice made, bad text, an earlier reply still
@@ -421,14 +514,24 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
   /// whose item left (answered or withdrawn) or whose question changed is no
   /// longer pending anything. Old entries age out after a week.
   void syncSnapshot(MastermindSnapshotReady ready) {
-    if (!state.loaded) return;
-    final now = _clock().toUtc();
     final open = <String, String>{
       for (final item in ready.snapshot.now.needsYou)
         if (item is NeedsYou && item.state == ItemState.open)
           item.id: item.versionHash,
     };
     final live = ready.origin == SnapshotOrigin.live;
+    if (live) {
+      // An option still inside its undo window for a question that is gone or
+      // changed would only come back stale: cancel it.
+      for (final entry in state.pendingOptions.entries.toList()) {
+        if (!entry.value.committed &&
+            open[entry.key] != entry.value.versionHash) {
+          undoOption(entry.key);
+        }
+      }
+    }
+    if (!state.loaded) return;
+    final now = _clock().toUtc();
     final kept = normalizeOutbox([
       for (final entry in state.outbox)
         if (!live ||
@@ -446,6 +549,7 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
   /// account. In-flight sends and queued store writes are fenced off first.
   Future<void> clear() {
     ++_generation;
+    _cancelUndoTimers();
     _drafts.clear();
     _inFlight.clear();
     _capabilityCheckedAt = null;
@@ -461,5 +565,11 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
     });
     _storeTail = future;
     return future;
+  }
+
+  @override
+  Future<void> close() {
+    _cancelUndoTimers();
+    return super.close();
   }
 }
