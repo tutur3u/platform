@@ -11,7 +11,7 @@ import { formatSessionTimeRange } from './tutoring-filters';
 import { TutoringTeacherPicker } from './tutoring-teacher-picker';
 import {
   DURATION_PRESETS,
-  nextWeeklySlot,
+  nextWeeklySlots,
   type TutoringFormValues,
 } from './tutoring-types';
 
@@ -166,6 +166,10 @@ export function TutoringCreateSlots({
 }) {
   const t = useTranslations('ws-tutoring');
   const atLimit = form.sessionSlots.length >= MAX_SLOTS;
+  const weeklySlots = nextWeeklySlots(form.sessionSlots, singleTeacherId ?? '');
+  const canRepeat =
+    weeklySlots.length > 0 &&
+    form.sessionSlots.length + weeklySlots.length <= MAX_SLOTS;
 
   const updateSlot = (index: number, next: Partial<SessionSlot>) =>
     onChange({
@@ -189,11 +193,12 @@ export function TutoringCreateSlots({
         </Label>
         <div className="flex items-center gap-2">
           <Button
-            disabled={atLimit}
+            disabled={!canRepeat}
             onClick={() =>
-              appendSlot(
-                nextWeeklySlot(form.sessionSlots, singleTeacherId ?? '')
-              )
+              onChange({
+                ...form,
+                sessionSlots: [...form.sessionSlots, ...weeklySlots],
+              })
             }
             size="sm"
             type="button"
