@@ -1,0 +1,85 @@
+---
+title: Mastermind push events
+description: Signed hub-to-web endpoint that turns Mastermind events into owner mobile push notifications.
+---
+
+`POST /api/v1/mastermind/push-events` on the web app receives one signed event
+from the Mastermind hub and fans it out synchronously to the configured owners'
+registered mobile devices through the existing FCM pipeline
+(`sendCustomPushMessageBatch`). It schedules nothing and keeps no queue; Fleet
+Tools owns retries.
+
+## Contract (version 1, frozen with Fleet Tools)
+
+```http
+POST /api/v1/mastermind/push-events
+Content-Type: application/json
+X-MM-Timestamp: 1798434000
+X-MM-Signature: <64 lowercase hex characters>
+
+{"v":1,"type":"needs_you.new","item_id":"item-0123456789abcdef0123","seq":41,"ts":"2026-10-28T04:59:58Z"}
+```
+
+| Field | Rule |
+|---|---|
+| `v` | Exactly `1` |
+| `type` | `needs_you.new`, `decision.awaiting` or `pin_batch.new` |
+| `item_id` | `item-` followed by 1–64 of `[A-Za-z0-9_-]` |
+| `seq` | Non-negative integer |
+| `ts` | ISO 8601 UTC (`Z`) |
+
+The object is strict: a title, product, body or any other field is rejected.
+The body is capped at 8 KiB.
+
+## Authentication
+
+- `X-MM-Signature` is the lowercase hex HMAC-SHA256 of
+  `<X-MM-Timestamp> + "." + <raw body bytes>` keyed with
+  `MASTERMIND_PUSH_HMAC_SECRET`, compared in constant time.
+- `X-MM-Timestamp` is unix seconds; more than 5 minutes of skew in either
+  direction is rejected.
+- Events are deduplicated on `(type, item_id, seq)` for 24 hours in Upstash
+  Redis (`SET NX`). If the replay store is unreachable the route fails closed.
+
+## Delivery
+
+- **Recipients:** user ids in `MASTERMIND_PUSH_OWNER_IDS` (comma or whitespace
+  separated UUIDs, at most 50) that have rows in `notification_push_devices`.
+  Anyone else is never queried or sent to.
+- **Preference:** the account-level `push_notifications` preference
+  (`should_send_notification`, channel `push`). An unreadable preference counts
+  as opted out.
+- **Copy:** fixed, never derived from the event: title "Mastermind", body
+  "Open Mastermind" (vi: "Mở Mastermind" when `MASTERMIND_PUSH_LOCALE=vi`).
+  Category `tuturuuu_mastermind`, TTL 6 hours.
+- **Deep link:** `data: {openTarget: "mastermind", route}` with the tab root
+  only: `/mastermind/inbox` for `needs_you.new` and `decision.awaiting`,
+  `/mastermind` for `pin_batch.new`. The item id never leaves the server.
+- **Coalescing:** at most one push per type per owner per 60 seconds; later
+  events in the window are dropped (the snapshot carries them). A failed FCM
+  send releases that owner's window.
+- **Invalid tokens** reported by FCM are deleted for that owner.
+- **Logs:** native `console.*` with the reject reason or the event type and
+  counts only, never payload content.
+
+## Responses
+
+Errors are `{"error":"<class>"}` and never echo input.
+
+| Status | Body | Meaning |
+|---|---|---|
+| 202 | `{accepted, sent, coalesced, skipped, failed}` | Processed |
+| 400 | `invalid_event` | Not JSON or not the v1 shape |
+| 401 | `unauthorized` | Missing, malformed, wrong or stale signature |
+| 409 | `duplicate_event` | `(type, item_id, seq)` already processed |
+| 413 | `payload_too_large` | Body over 8 KiB |
+| 502 | `delivery_failed` | No owner could be sent to; the dedupe claim is released so the same event can be retried |
+| 503 | `unavailable` | Secret unset or shorter than 32 characters, or replay store unreachable |
+
+## Provisioning
+
+Release Desk provisions `MASTERMIND_PUSH_HMAC_SECRET` (at least 32
+characters, shared with the hub), `MASTERMIND_PUSH_OWNER_IDS` and optionally
+`MASTERMIND_PUSH_LOCALE` on the web deployment. Until the secret is set the
+route answers 503 and sends nothing. The route also needs the existing Firebase
+Admin and Upstash Redis variables.
