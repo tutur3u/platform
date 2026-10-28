@@ -82,9 +82,7 @@ abstract final class MastermindLabels {
         Coverage.unavailable => l10n.mastermindUnavailable,
         Coverage.stale => l10n.mastermindCoverageStale,
       };
-  static String accountDisplayName(AccountDisplayName value) => value.wireName;
   static String pacing(Pacing value) => value.wireName;
-  static String creditDisplayName(CreditDisplayName value) => value.wireName;
   static String modelFamily(ModelFamily value) => value.wireName;
   static String runRole(RunRole value) => value.wireName;
   static String effort(Effort value) => value.wireName;
@@ -96,15 +94,6 @@ abstract final class MastermindLabels {
         FailureCause.capacity => l10n.mastermindSeriesCapacity,
         FailureCause.error => l10n.mastermindSeriesOtherError,
       };
-  static String severity(AppLocalizations l10n, Severity value) =>
-      switch (value) {
-        Severity.critical => l10n.mastermindSeverityCritical,
-        Severity.high => l10n.mastermindSeverityHigh,
-        Severity.medium => l10n.mastermindSeverityMedium,
-        Severity.low => l10n.mastermindSeverityLow,
-        Severity.unknown => l10n.mastermindSeverityUnknown,
-      };
-  static String registerStatus(RegisterStatus value) => value.wireName;
   static String sourceName(AppLocalizations l10n, SourceName value) =>
       switch (value) {
         SourceName.inbox => l10n.mastermindSourceInbox,
@@ -139,7 +128,6 @@ abstract final class MastermindLabels {
         ItemKind.decision => l10n.mastermindKindDecision,
         ItemKind.action => l10n.mastermindKindAction,
         ItemKind.fyi => l10n.mastermindKindFyi,
-        ItemKind.security => l10n.mastermindScopeSecurity,
       };
   static String area(AppLocalizations l10n, Area value) => switch (value) {
     Area.finance => l10n.mastermindAreaFinance,

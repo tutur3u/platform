@@ -25,20 +25,3 @@ OpenPrPoint parseOpenPrPoint(JsonReader r) {
     count: r.field('count').nullable((v) => v.integer(min: 0)),
   );
 }
-
-Security parseSecurity(JsonReader r) {
-  r.keys(
-    ['coverage', 'register', 'series', 'time_to_fix'],
-    ['coverage', 'register', 'series', 'time_to_fix'],
-  );
-  return Security(
-    coverage: r
-        .field('coverage')
-        .enumOf<Coverage>(Coverage.values, (v) => v.wireName),
-    register: r
-        .field('register')
-        .list(parseSecurityRegisterEntry, maxItems: 385),
-    series: r.field('series').list(parseSecurityPoint, maxItems: 5000),
-    timeToFix: r.field('time_to_fix').list(parseTimeToFixPoint, maxItems: 5000),
-  );
-}

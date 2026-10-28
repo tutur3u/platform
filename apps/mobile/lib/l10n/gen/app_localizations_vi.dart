@@ -12143,9 +12143,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindAreaRelease => 'Phát hành';
 
   @override
-  String get mastermindAreaSecurity => 'Bảo mật';
-
-  @override
   String get mastermindAreaTasks => 'Công việc';
 
   @override
@@ -12192,9 +12189,6 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindChartCreditsVsTarget => 'Tiêu hao so với mục tiêu';
-
-  @override
-  String get mastermindChartCriticalTrend => 'Phát hiện nghiêm trọng';
 
   @override
   String get mastermindChartDeliveryModes => 'Cách chuyển tin';
@@ -12245,9 +12239,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindChartQueueDepth => 'Độ sâu hàng đợi';
 
   @override
-  String get mastermindChartSecurityRegister => 'Phát hiện theo mức độ và trạng thái';
-
-  @override
   String get mastermindChartSessionPerSuccess => 'Mức dùng phiên mỗi lần thành công';
 
   @override
@@ -12255,9 +12246,6 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindChartShips => 'Bản phát hành production';
-
-  @override
-  String get mastermindChartTimeToFix => 'Thời gian khắc phục';
 
   @override
   String get mastermindChartTokensPerSuccess => 'Token mỗi lần thành công';
@@ -12308,9 +12296,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindColumnSender => 'Bên gửi';
 
   @override
-  String get mastermindColumnSeverity => 'Mức độ';
-
-  @override
   String get mastermindColumnStatus => 'Trạng thái';
 
   @override
@@ -12336,9 +12321,6 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindCoverageStale => 'Đã cũ';
-
-  @override
-  String get mastermindCriticalOpenFact => 'Nghiêm trọng đang mở';
 
   @override
   String get mastermindDataSourcesAction => 'Nguồn dữ liệu';
@@ -12513,9 +12495,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindLanesLabel => 'Luồng việc';
 
   @override
-  String get mastermindLastActive => 'Hoạt động gần nhất';
-
-  @override
   String mastermindLiveFor(String duration) {
     return 'đã chạy $duration';
   }
@@ -12625,9 +12604,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindRoleFilter => 'Vai trò';
 
   @override
-  String get mastermindRunsToday => 'Lượt chạy hôm nay';
-
-  @override
   String get mastermindSampleData => 'Dữ liệu mẫu';
 
   @override
@@ -12653,13 +12629,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindScopeModels => 'Mô hình';
 
   @override
-  String get mastermindScopeSecurity => 'Bảo mật';
-
-  @override
   String get mastermindScopeUsage => 'Sử dụng';
-
-  @override
-  String get mastermindSecurityFix => 'Bản sửa bảo mật';
 
   @override
   String get mastermindSecurityIssue => 'Vấn đề bảo mật';
@@ -12683,12 +12653,6 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindSeriesCompleted => 'Hoàn tất';
-
-  @override
-  String get mastermindSeriesCriticalClosed => 'Nghiêm trọng đã đóng';
-
-  @override
-  String get mastermindSeriesCriticalOpen => 'Nghiêm trọng đang mở';
 
   @override
   String get mastermindSeriesIdle => 'nhàn rỗi';
@@ -12734,21 +12698,6 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindSession => 'Phiên';
-
-  @override
-  String get mastermindSeverityCritical => 'Nghiêm trọng';
-
-  @override
-  String get mastermindSeverityHigh => 'Cao';
-
-  @override
-  String get mastermindSeverityLow => 'Thấp';
-
-  @override
-  String get mastermindSeverityMedium => 'Trung bình';
-
-  @override
-  String get mastermindSeverityUnknown => 'Không rõ';
 
   @override
   String get mastermindShowAll => 'Xem tất cả';
@@ -12859,9 +12808,6 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String get mastermindSummaryClosedIsState => 'Số đã đóng phản ánh trạng thái sổ đăng ký, không phải số bản sửa mới.';
-
-  @override
   String get mastermindSummaryCreditsNeedsTarget => 'Cần có mục tiêu theo ngày.';
 
   @override
@@ -12890,15 +12836,7 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String get mastermindSummaryNoFixDates => 'Không khả dụng: sổ đăng ký chưa có ngày khắc phục.';
-
-  @override
   String get mastermindSummaryNoMessageStream => 'Không khả dụng: chưa ghi nhận luồng tin nhắn.';
-
-  @override
-  String mastermindSummarySecurityCell(String product, String severity, String status, int count) {
-    return '$product, $severity, $status: $count';
-  }
 
   @override
   String mastermindSummaryShipsLowerBound(int count) {

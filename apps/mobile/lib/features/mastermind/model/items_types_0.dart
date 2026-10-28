@@ -1,16 +1,10 @@
 part of 'snapshot.dart';
 
 final class SecurityItem implements NeedsYouItem, LaneItem, BacklogEntry {
-  const SecurityItem({
-    required this.title,
-    required this.severity,
-    required this.state,
-    this.product,
-  });
+  const SecurityItem({required this.title, required this.state, this.product});
 
   @override
   final String title;
-  final Severity severity;
   final LaneState state;
   final Product? product;
 }
@@ -25,7 +19,6 @@ final class NeedsYou implements NeedsYouItem {
     required this.state,
     required this.versionHash,
     this.kind,
-    this.severity,
     this.product,
   }) : options = List.unmodifiable(options);
 
@@ -38,7 +31,6 @@ final class NeedsYou implements NeedsYouItem {
   final ItemState state;
   final String versionHash;
   final ItemKind? kind;
-  final Severity? severity;
   final Product? product;
 }
 

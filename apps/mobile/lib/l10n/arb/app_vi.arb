@@ -5183,22 +5183,6 @@
       }
     }
   },
-  "@mastermindSummarySecurityCell": {
-    "placeholders": {
-      "product": {
-        "type": "String"
-      },
-      "severity": {
-        "type": "String"
-      },
-      "status": {
-        "type": "String"
-      },
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "@mastermindSummaryShipsLowerBound": {
     "placeholders": {
       "count": {
@@ -5304,7 +5288,6 @@
   "mastermindAreaProduct": "Sản phẩm",
   "mastermindAreaQuota": "Hạn mức",
   "mastermindAreaRelease": "Phát hành",
-  "mastermindAreaSecurity": "Bảo mật",
   "mastermindAreaTasks": "Công việc",
   "mastermindAreaUsers": "Người dùng",
   "mastermindAreaUx": "Trải nghiệm",
@@ -5321,7 +5304,6 @@
   "mastermindChartCreditsBalance": "Số dư tín dụng",
   "mastermindChartCreditsBurn": "Tiêu hao mỗi ngày và mục tiêu",
   "mastermindChartCreditsVsTarget": "Tiêu hao so với mục tiêu",
-  "mastermindChartCriticalTrend": "Phát hiện nghiêm trọng",
   "mastermindChartDeliveryModes": "Cách chuyển tin",
   "mastermindChartFailures": "Lượt chạy lỗi",
   "mastermindChartFleetCounts": "Luồng theo vai trò",
@@ -5338,11 +5320,9 @@
   "mastermindChartPendingRuns": "Lượt chạy chờ",
   "mastermindChartProjection": "Dự báo khi đặt lại",
   "mastermindChartQueueDepth": "Độ sâu hàng đợi",
-  "mastermindChartSecurityRegister": "Phát hiện theo mức độ và trạng thái",
   "mastermindChartSessionPerSuccess": "Mức dùng phiên mỗi lần thành công",
   "mastermindChartSessionRemaining": "Hạn mức phiên còn lại",
   "mastermindChartShips": "Bản phát hành production",
-  "mastermindChartTimeToFix": "Thời gian khắc phục",
   "mastermindChartTokensPerSuccess": "Token mỗi lần thành công",
   "mastermindChartWeeklyRemaining": "Hạn mức tuần còn lại",
   "mastermindCi": "CI",
@@ -5359,7 +5339,6 @@
   "mastermindColumnReceiver": "Bên nhận",
   "mastermindColumnRoots": "Luồng gốc",
   "mastermindColumnSender": "Bên gửi",
-  "mastermindColumnSeverity": "Mức độ",
   "mastermindColumnStatus": "Trạng thái",
   "mastermindColumnTime": "Thời gian",
   "mastermindColumnTopLevel": "Cấp cao nhất",
@@ -5369,7 +5348,6 @@
   "mastermindCoverageMissing": "Không có nguồn",
   "mastermindCoveragePartial": "Dữ liệu một phần",
   "mastermindCoverageStale": "Đã cũ",
-  "mastermindCriticalOpenFact": "Nghiêm trọng đang mở",
   "mastermindDataSourcesAction": "Nguồn dữ liệu",
   "mastermindDecidedBy": "Người quyết định",
   "mastermindDecisionsTitle": "Quyết định",
@@ -5426,7 +5404,6 @@
   "mastermindLaneState": "Trạng thái",
   "mastermindLanesEmpty": "Không có luồng việc nào trong chế độ xem này",
   "mastermindLanesLabel": "Luồng việc",
-  "mastermindLastActive": "Hoạt động gần nhất",
   "mastermindLiveFor": "đã chạy {duration}",
   "mastermindMeasuredRuns": "{count, plural, other{{count} lượt chạy có đo}}",
   "mastermindNeedsYouHint": "Trả lời trong Inbox trên máy Mac.",
@@ -5459,16 +5436,13 @@
   "mastermindRiskLow": "thấp",
   "mastermindRiskMed": "trung bình",
   "mastermindRoleFilter": "Vai trò",
-  "mastermindRunsToday": "Lượt chạy hôm nay",
   "mastermindSampleData": "Dữ liệu mẫu",
   "mastermindSamples": "{count, plural, other{{count} mẫu}}",
   "mastermindScopeCoordination": "Điều phối",
   "mastermindScopeDelivery": "Phân phối",
   "mastermindScopeFleet": "Đội ngũ",
   "mastermindScopeModels": "Mô hình",
-  "mastermindScopeSecurity": "Bảo mật",
   "mastermindScopeUsage": "Sử dụng",
-  "mastermindSecurityFix": "Bản sửa bảo mật",
   "mastermindSecurityIssue": "Vấn đề bảo mật",
   "mastermindSelectedReadout": "{date} · {series} · {value}",
   "mastermindSeriesActive": "Đang chạy",
@@ -5476,8 +5450,6 @@
   "mastermindSeriesBurn": "Tiêu hao",
   "mastermindSeriesCapacity": "Quá tải",
   "mastermindSeriesCompleted": "Hoàn tất",
-  "mastermindSeriesCriticalClosed": "Nghiêm trọng đã đóng",
-  "mastermindSeriesCriticalOpen": "Nghiêm trọng đang mở",
   "mastermindSeriesIdle": "nhàn rỗi",
   "mastermindSeriesOtherError": "Lỗi khác",
   "mastermindSeriesOtherTerminal": "Kết thúc khác",
@@ -5493,11 +5465,6 @@
   "mastermindSeriesUsageLimit": "Hết hạn mức",
   "mastermindSeriesWaiting": "đang chờ",
   "mastermindSession": "Phiên",
-  "mastermindSeverityCritical": "Nghiêm trọng",
-  "mastermindSeverityHigh": "Cao",
-  "mastermindSeverityLow": "Thấp",
-  "mastermindSeverityMedium": "Trung bình",
-  "mastermindSeverityUnknown": "Không rõ",
   "mastermindShowAll": "Xem tất cả",
   "mastermindSnapshotAt": "Ảnh chụp lúc {time}",
   "mastermindSnapshotOutOfDate": "Ảnh chụp đã cũ",
@@ -5532,7 +5499,6 @@
   "mastermindStateWithdrawn": "đã rút",
   "mastermindSummaryAsOf": "tính đến {time}",
   "mastermindSummaryAtLeast": "ít nhất {count}",
-  "mastermindSummaryClosedIsState": "Số đã đóng phản ánh trạng thái sổ đăng ký, không phải số bản sửa mới.",
   "mastermindSummaryCreditsNeedsTarget": "Cần có mục tiêu theo ngày.",
   "mastermindSummaryCreditsNote": "Tín dụng không phải tiền hay token.",
   "mastermindSummaryCreditsTargetMissing": "Chưa có mục tiêu theo ngày.",
@@ -5541,9 +5507,7 @@
   "mastermindSummaryFleetNow": "Hiện tại: {running} đang chạy, {waiting} đang chờ, {idle} nhàn rỗi.",
   "mastermindSummaryLatencyCaveat": "Đo theo lần chạy cha đã ghi nhận.",
   "mastermindSummaryModelsTop": "{model} chạy nhiều nhất: {count} lượt, thành công {success}.",
-  "mastermindSummaryNoFixDates": "Không khả dụng: sổ đăng ký chưa có ngày khắc phục.",
   "mastermindSummaryNoMessageStream": "Không khả dụng: chưa ghi nhận luồng tin nhắn.",
-  "mastermindSummarySecurityCell": "{product}, {severity}, {status}: {count}",
   "mastermindSummaryShipsLowerBound": "Ghi nhận ít nhất {count} bản phát hành production.",
   "mastermindSummaryUsageLowest": "{account} còn ít nhất: {percent}.",
   "mastermindSummaryUsageShort": "Dự báo SHORT khi đặt lại lúc {time}.",

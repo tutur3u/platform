@@ -1,15 +1,9 @@
 part of 'snapshot_parser.dart';
 
 SecurityItem parseSecurityItem(JsonReader r) {
-  r.keys(
-    ['title', 'severity', 'state', 'product'],
-    ['title', 'severity', 'state'],
-  );
+  r.keys(['title', 'state', 'product'], ['title', 'state']);
   return SecurityItem(
     title: r.field('title').string(constant: 'Security issue'),
-    severity: r
-        .field('severity')
-        .enumOf<Severity>(Severity.values, (v) => v.wireName),
     state: r
         .field('state')
         .enumOf<LaneState>(LaneState.values, (v) => v.wireName),
@@ -30,7 +24,6 @@ NeedsYou parseNeedsYou(JsonReader r) {
       'state',
       'version_hash',
       'kind',
-      'severity',
       'product',
     ],
     [
@@ -61,11 +54,6 @@ NeedsYou parseNeedsYou(JsonReader r) {
         .string(pattern: RegExp(r'^[a-f0-9]{64}$')),
     kind: r.has('kind')
         ? r.field('kind').enumOf<ItemKind>(ItemKind.values, (v) => v.wireName)
-        : null,
-    severity: r.has('severity')
-        ? r
-              .field('severity')
-              .enumOf<Severity>(Severity.values, (v) => v.wireName)
         : null,
     product: r.has('product')
         ? r.field('product').enumOf<Product>(Product.values, (v) => v.wireName)

@@ -17,19 +17,11 @@ Usage parseUsage(JsonReader r) {
 
 UsagePoint parseUsagePoint(JsonReader r) {
   r.keys(
-    ['instance', 'display_name', 't', 'session', 'weekly'],
-    ['instance', 'display_name', 't', 'session', 'weekly'],
+    ['instance', 't', 'session', 'weekly'],
+    ['instance', 't', 'session', 'weekly'],
   );
   return UsagePoint(
-    instance: r
-        .field('instance')
-        .string(maxLength: 60, pattern: RegExp(r'^[A-Za-z0-9_]+$')),
-    displayName: r
-        .field('display_name')
-        .enumOf<AccountDisplayName>(
-          AccountDisplayName.values,
-          (v) => v.wireName,
-        ),
+    instance: r.field('instance').stringIn(PoolLabels.usage),
     t: r.field('t').utcTimestamp(),
     session: parseUsageWindow(r.field('session')),
     weekly: parseUsageWindow(r.field('weekly')),

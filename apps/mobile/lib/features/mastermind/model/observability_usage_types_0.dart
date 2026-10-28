@@ -19,14 +19,12 @@ final class Usage {
 final class UsagePoint {
   const UsagePoint({
     required this.instance,
-    required this.displayName,
     required this.t,
     required this.session,
     required this.weekly,
   });
 
   final String instance;
-  final AccountDisplayName displayName;
   final DateTime t;
   final UsageWindow session;
   final UsageWindow weekly;

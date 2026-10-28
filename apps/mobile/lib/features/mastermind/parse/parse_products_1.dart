@@ -44,9 +44,12 @@ EnvironmentRow parseEnvironmentRow(JsonReader r) {
     sha: r
         .field('sha')
         .nullable((v) => v.string(pattern: RegExp(r'^[a-f0-9]{7,12}$'))),
-    commitSubject: r
-        .field('commit_subject')
-        .nullable((v) => v.string(maxLength: 120)),
+    commitSubject: r.field('commit_subject').nullable((v) {
+      final subject = v.string(maxLength: 120);
+      // The pre-1.4 redaction marker is never a valid subject.
+      if (subject == 'Security fix') v.fail();
+      return subject;
+    }),
     deployStatus: r
         .field('deploy_status')
         .enumOf<DeployStatus>(DeployStatus.values, (v) => v.wireName),
@@ -66,9 +69,7 @@ EnvironmentRow parseEnvironmentRow(JsonReader r) {
 QuotaPoint parseQuotaPoint(JsonReader r) {
   r.keys(['instance', 't', 'pct'], ['instance', 't', 'pct']);
   return QuotaPoint(
-    instance: r
-        .field('instance')
-        .string(maxLength: 60, pattern: RegExp(r'^[A-Za-z0-9_]+$')),
+    instance: r.field('instance').stringIn(PoolLabels.quota),
     t: r.field('t').utcTimestamp(),
     pct: r.field('pct').nullable((v) => v.number(min: 0, max: 100)),
   );
@@ -80,9 +81,7 @@ QuotaForecast parseQuotaForecast(JsonReader r) {
     ['instance', 'projected_empty_at', 'resets_at'],
   );
   return QuotaForecast(
-    instance: r
-        .field('instance')
-        .string(maxLength: 60, pattern: RegExp(r'^[A-Za-z0-9_]+$')),
+    instance: r.field('instance').stringIn(PoolLabels.quota),
     projectedEmptyAt: r
         .field('projected_empty_at')
         .nullable((v) => v.utcTimestamp()),

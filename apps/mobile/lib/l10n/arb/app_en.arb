@@ -5347,22 +5347,6 @@
       }
     }
   },
-  "@mastermindSummarySecurityCell": {
-    "placeholders": {
-      "product": {
-        "type": "String"
-      },
-      "severity": {
-        "type": "String"
-      },
-      "status": {
-        "type": "String"
-      },
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "@mastermindSummaryShipsLowerBound": {
     "placeholders": {
       "count": {
@@ -5468,7 +5452,6 @@
   "mastermindAreaProduct": "Product",
   "mastermindAreaQuota": "Quota",
   "mastermindAreaRelease": "Release",
-  "mastermindAreaSecurity": "Security",
   "mastermindAreaTasks": "Tasks",
   "mastermindAreaUsers": "Users",
   "mastermindAreaUx": "UX",
@@ -5485,7 +5468,6 @@
   "mastermindChartCreditsBalance": "Credit balance",
   "mastermindChartCreditsBurn": "Daily burn and target",
   "mastermindChartCreditsVsTarget": "Burn vs target",
-  "mastermindChartCriticalTrend": "Critical findings",
   "mastermindChartDeliveryModes": "Delivery modes",
   "mastermindChartFailures": "Run failures",
   "mastermindChartFleetCounts": "Threads by role",
@@ -5502,11 +5484,9 @@
   "mastermindChartPendingRuns": "Pending runs",
   "mastermindChartProjection": "Projected at reset",
   "mastermindChartQueueDepth": "Queue depth",
-  "mastermindChartSecurityRegister": "Findings by severity and status",
   "mastermindChartSessionPerSuccess": "Session use per success",
   "mastermindChartSessionRemaining": "Session budget left",
   "mastermindChartShips": "Production releases",
-  "mastermindChartTimeToFix": "Time to fix",
   "mastermindChartTokensPerSuccess": "Tokens per success",
   "mastermindChartWeeklyRemaining": "Weekly budget left",
   "mastermindCi": "CI",
@@ -5523,7 +5503,6 @@
   "mastermindColumnReceiver": "Receiver",
   "mastermindColumnRoots": "Roots",
   "mastermindColumnSender": "Sender",
-  "mastermindColumnSeverity": "Severity",
   "mastermindColumnStatus": "Status",
   "mastermindColumnTime": "Time",
   "mastermindColumnTopLevel": "Top level",
@@ -5533,7 +5512,6 @@
   "mastermindCoverageMissing": "No source",
   "mastermindCoveragePartial": "Partial data",
   "mastermindCoverageStale": "Stale",
-  "mastermindCriticalOpenFact": "Critical open",
   "mastermindDataSourcesAction": "Data sources",
   "mastermindDecidedBy": "Decided by",
   "mastermindDecisionsTitle": "Decisions",
@@ -5590,7 +5568,6 @@
   "mastermindLaneState": "State",
   "mastermindLanesEmpty": "No lanes in this view",
   "mastermindLanesLabel": "Lanes",
-  "mastermindLastActive": "Last active",
   "mastermindLiveFor": "live {duration}",
   "mastermindMeasuredRuns": "{count, plural, =1{1 measured run} other{{count} measured runs}}",
   "mastermindNeedsYouHint": "Answer in the Inbox on your Mac.",
@@ -5623,16 +5600,13 @@
   "mastermindRiskLow": "low",
   "mastermindRiskMed": "medium",
   "mastermindRoleFilter": "Role",
-  "mastermindRunsToday": "Runs today",
   "mastermindSampleData": "Sample data",
   "mastermindSamples": "{count, plural, =1{1 sample} other{{count} samples}}",
   "mastermindScopeCoordination": "Coordination",
   "mastermindScopeDelivery": "Delivery",
   "mastermindScopeFleet": "Fleet",
   "mastermindScopeModels": "Models",
-  "mastermindScopeSecurity": "Security",
   "mastermindScopeUsage": "Usage",
-  "mastermindSecurityFix": "Security fix",
   "mastermindSecurityIssue": "Security issue",
   "mastermindSelectedReadout": "{date} · {series} · {value}",
   "mastermindSeriesActive": "Active",
@@ -5640,8 +5614,6 @@
   "mastermindSeriesBurn": "Burn",
   "mastermindSeriesCapacity": "Capacity",
   "mastermindSeriesCompleted": "Completed",
-  "mastermindSeriesCriticalClosed": "Critical closed",
-  "mastermindSeriesCriticalOpen": "Critical open",
   "mastermindSeriesIdle": "idle",
   "mastermindSeriesOtherError": "Other error",
   "mastermindSeriesOtherTerminal": "Other finished",
@@ -5657,11 +5629,6 @@
   "mastermindSeriesUsageLimit": "Usage limit",
   "mastermindSeriesWaiting": "waiting",
   "mastermindSession": "Session",
-  "mastermindSeverityCritical": "Critical",
-  "mastermindSeverityHigh": "High",
-  "mastermindSeverityLow": "Low",
-  "mastermindSeverityMedium": "Medium",
-  "mastermindSeverityUnknown": "Unknown",
   "mastermindShowAll": "Show all",
   "mastermindSnapshotAt": "Snapshot {time}",
   "mastermindSnapshotOutOfDate": "Snapshot out of date",
@@ -5696,7 +5663,6 @@
   "mastermindStateWithdrawn": "withdrawn",
   "mastermindSummaryAsOf": "as of {time}",
   "mastermindSummaryAtLeast": "at least {count}",
-  "mastermindSummaryClosedIsState": "Closed counts show register state, not new fixes.",
   "mastermindSummaryCreditsNeedsTarget": "Needs a daily target.",
   "mastermindSummaryCreditsNote": "Credits are not money or tokens.",
   "mastermindSummaryCreditsTargetMissing": "Daily target unavailable.",
@@ -5705,9 +5671,7 @@
   "mastermindSummaryFleetNow": "Now: {running} running, {waiting} waiting, {idle} idle.",
   "mastermindSummaryLatencyCaveat": "Measures recorded parent starts.",
   "mastermindSummaryModelsTop": "{model} ran most: {count} runs, {success} success.",
-  "mastermindSummaryNoFixDates": "Unavailable: the register has no fix dates.",
   "mastermindSummaryNoMessageStream": "Unavailable: no message stream recorded.",
-  "mastermindSummarySecurityCell": "{product}, {severity}, {status}: {count}",
   "mastermindSummaryShipsLowerBound": "At least {count} production releases observed.",
   "mastermindSummaryUsageLowest": "{account} has the least left: {percent}.",
   "mastermindSummaryUsageShort": "Projected SHORT at reset {time}.",

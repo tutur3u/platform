@@ -68,6 +68,12 @@ final class JsonReader {
     return v;
   }
 
+  String stringIn(Set<String> allowed) {
+    final v = string();
+    if (!allowed.contains(v)) fail();
+    return v;
+  }
+
   T enumOf<T>(List<T> values, String Function(T) wireName) {
     final name = string();
     for (final v in values) {
