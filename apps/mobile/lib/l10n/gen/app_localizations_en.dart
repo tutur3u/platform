@@ -12709,6 +12709,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindFreshFresh => 'fresh';
 
   @override
+  String get mastermindFromFleet => 'From fleet reports';
+
+  @override
   String get mastermindFromLanes => 'From lane reports';
 
   @override
@@ -12974,7 +12977,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get mastermindQuotaEmpty => 'No quota data';
+  String get mastermindQuotaEmpty => 'Quota not reported';
 
   @override
   String get mastermindQuotaTitle => 'Quota';

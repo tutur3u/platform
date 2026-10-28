@@ -39,37 +39,83 @@ class MastermindSegmentedControl<T> extends StatelessWidget {
     final tokens = AppTokens.of(context);
     final c = tokens.colorScheme;
     final solid = MediaQuery.highContrastOf(context);
-    return Stack(
-      children: [
-        Positioned.fill(
-          top: trackInset,
-          bottom: trackInset,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: c.muted.withValues(alpha: solid ? 1 : 0.8),
-              borderRadius: BorderRadius.circular(AppRadius.xs + _trackPadding),
-              border: solid ? Border.all(color: c.border) : null,
-            ),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: _trackPadding),
-          child: Row(
-            children: [
-              for (final segment in segments)
-                Expanded(
-                  child: _Segment<T>(
-                    segment: segment,
-                    selected: segment.value == selected,
-                    onTap: onChanged == null
-                        ? null
-                        : () => onChanged!(segment.value),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        var wordWidth = 0.0;
+        for (final segment in segments) {
+          for (final word
+              in segment.label.split(' ').length > 2
+                  ? [
+                      segment.label.split(' ').take(2).join(' '),
+                      segment.label.split(' ').skip(2).join(' '),
+                    ]
+                  : segment.label.split(' ')) {
+            final painter = TextPainter(
+              text: TextSpan(
+                text: word,
+                style: DefaultTextStyle.of(context).style
+                    .merge(tokens.typography.small)
+                    .copyWith(fontWeight: FontWeight.w600),
+              ),
+              textDirection: Directionality.of(context),
+              textScaler: MediaQuery.textScalerOf(context),
+            )..layout();
+            if (painter.width > wordWidth) wordWidth = painter.width;
+            painter.dispose();
+          }
+        }
+        final minimum =
+            (wordWidth + 2 * AppSpacing.sm + 2) * segments.length +
+            2 * _trackPadding;
+        final width = minimum > constraints.maxWidth
+            ? minimum
+            : constraints.maxWidth;
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: SizedBox(
+            width: width,
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  top: trackInset,
+                  bottom: trackInset,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: c.muted.withValues(alpha: solid ? 1 : 0.8),
+                      borderRadius: BorderRadius.circular(
+                        AppRadius.xs + _trackPadding,
+                      ),
+                      border: solid ? Border.all(color: c.border) : null,
+                    ),
                   ),
                 ),
-            ],
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: _trackPadding,
+                  ),
+                  child: IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        for (final segment in segments)
+                          Expanded(
+                            child: _Segment<T>(
+                              segment: segment,
+                              selected: segment.value == selected,
+                              onTap: onChanged == null
+                                  ? null
+                                  : () => onChanged!(segment.value),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
+        );
+      },
     );
   }
 }
@@ -144,7 +190,7 @@ class _SegmentState<T> extends State<_Segment<T>> {
                         ? c.ring
                         : selected
                         ? c.border
-                        : Colors.transparent,
+                        : c.border.withValues(alpha: 0),
                     width: _focused ? 2 : 1,
                   ),
                 ),
@@ -171,8 +217,9 @@ class _SegmentState<T> extends State<_Segment<T>> {
       Flexible(
         child: Text(
           widget.segment.label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
+          maxLines: 2,
+          softWrap: true,
+          textAlign: TextAlign.center,
           style: tokens.typography.small.copyWith(
             color: foreground,
             fontWeight: widget.selected ? FontWeight.w600 : FontWeight.w500,

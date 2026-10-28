@@ -245,11 +245,14 @@ void main() {
       await _pumpHome(tester);
       // The fleet point says 1 running, not the 2 lanes marked running.
       expect(find.bySemanticsLabel('Running, 1'), findsOneWidget);
-      expect(find.bySemanticsLabel('Waiting, 1. 3 on you'), findsOneWidget);
+      expect(find.bySemanticsLabel('Waiting, 1'), findsOneWidget);
       expect(find.bySemanticsLabel('Idle, 1'), findsOneWidget);
       expect(find.bySemanticsLabel('Failed, 1'), findsOneWidget);
       expect(find.text('3 on you'), findsOneWidget);
-      expect(find.text('1 queued · 1 not reporting'), findsOneWidget);
+      expect(
+        find.text('From fleet reports · 1 queued · 1 not reporting'),
+        findsOneWidget,
+      );
       handle.dispose();
     });
 
@@ -373,7 +376,8 @@ void main() {
       'Show all 4': '/mastermind/inbox',
       'Failed': '/mastermind/work?state=failed',
       'Running': '/mastermind/work?state=running',
-      '1 queued · 1 not reporting': '/mastermind/work?state=queued',
+      'From fleet reports · 1 queued · 1 not reporting':
+          '/mastermind/work?state=queued',
       'Usage': '/mastermind/insights',
       'See all decisions': '/mastermind/inbox?segment=decisions',
     }.entries) {

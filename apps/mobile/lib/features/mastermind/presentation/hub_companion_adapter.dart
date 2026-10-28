@@ -135,7 +135,15 @@ Map<String, dynamic> _shipFields(
         ),
 };
 
-Map<LaneState, int>? hubWorkCounts(Object? raw) {
+Map<LaneState, int>? hubWorkCounts(Object? raw, DateTime generatedAt) {
+  final work = _object(raw);
+  final checked = DateTime.tryParse(work['checked_at']?.toString() ?? '');
+  if (work['status'] != 'ok' ||
+      checked == null ||
+      generatedAt.difference(checked) > const Duration(minutes: 15) ||
+      checked.isAfter(generatedAt)) {
+    return null;
+  }
   final counts = _object(_object(raw)['counts']);
   if (counts.isEmpty) return null;
   final result = <LaneState, int>{};

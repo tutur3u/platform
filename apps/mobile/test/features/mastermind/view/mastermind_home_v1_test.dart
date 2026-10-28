@@ -95,7 +95,7 @@ void main() {
       }
       expect(find.bySemanticsLabel('Running, 3'), findsOneWidget);
       // Two open decisions wait on the owner; FYI would not count.
-      expect(find.bySemanticsLabel('Waiting, 2. 2 on you'), findsOneWidget);
+      expect(find.bySemanticsLabel('Waiting, 2'), findsOneWidget);
       expect(find.bySemanticsLabel('Idle, 13'), findsOneWidget);
       expect(find.bySemanticsLabel('Failed, 0'), findsOneWidget);
       // The hub's own counts need no "from lane reports" caveat.
@@ -152,7 +152,8 @@ void main() {
       expect(find.text('GitHub deployment'), findsNothing);
       // Seven pools in the fixture: the three most urgent, then Show all 7.
       expect(find.text('Show all 7'), findsOneWidget);
-      expect(find.textContaining('pool'), findsNWidgets(3));
+      expect(find.text('Quota not reported'), findsOneWidget);
+      expect(find.textContaining('pool'), findsNothing);
     });
 
     testWidgets('Not reported: missing readings are an em dash', (

@@ -28,9 +28,12 @@ class HomeQuotaCard extends StatelessWidget {
       caption: l10n.mastermindQuotaTitle,
       footer: l10n.mastermindReservePacing,
       children: [
-        if (model.quotaPools.isEmpty)
-          AppGroupedRow(title: Text(l10n.mastermindQuotaEmpty)),
-        for (final pool in model.quotaPools) _QuotaRow(pool: pool),
+        if (model.quotaPools.every(
+          (pool) => pool.latest.session.remainingPercent == null,
+        ))
+          AppGroupedRow(title: Text(l10n.mastermindQuotaEmpty))
+        else
+          for (final pool in model.quotaPools) _QuotaRow(pool: pool),
         if (model.quotaPoolCount > model.quotaPools.length)
           MastermindShowAllRow(
             count: model.quotaPoolCount,

@@ -12572,6 +12572,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindFreshFresh => 'mới';
 
   @override
+  String get mastermindFromFleet => 'Từ báo cáo đội tác nhân';
+
+  @override
   String get mastermindFromLanes => 'Theo báo cáo của luồng việc';
 
   @override
@@ -12836,7 +12839,7 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String get mastermindQuotaEmpty => 'Chưa có dữ liệu hạn mức';
+  String get mastermindQuotaEmpty => 'Chưa báo cáo hạn mức';
 
   @override
   String get mastermindQuotaTitle => 'Hạn mức';

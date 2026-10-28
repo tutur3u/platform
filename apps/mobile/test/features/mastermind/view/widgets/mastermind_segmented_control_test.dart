@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/ui/kit/app_segmented_control.dart';
 import 'package:mobile/features/mastermind/view/widgets/mastermind_segmented_control.dart';
@@ -113,6 +114,47 @@ void main() {
     expect(box.bottom, greaterThanOrEqualTo(label.bottom));
   });
 
+  for (final labels in [
+    ['Needs you', 'Resolved', 'Decisions'],
+    ['Cần bạn', 'Đã xử lý', 'Quyết định'],
+  ]) {
+    for (final width in [320.0, 375.0, 390.0]) {
+      for (final scale in [1.0, 1.3, 2.0]) {
+        testWidgets('labels $labels width $width scale $scale', (tester) async {
+          await tester.pumpApp(
+            MediaQuery(
+              data: MediaQueryData(textScaler: TextScaler.linear(scale)),
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: SizedBox(
+                  width: width - 32,
+                  child: MastermindSegmentedControl<int>(
+                    segments: [
+                      for (var i = 0; i < labels.length; i++)
+                        AppSegment(value: i, label: labels[i]),
+                    ],
+                    selected: 0,
+                    onChanged: (_) {},
+                  ),
+                ),
+              ),
+            ),
+          );
+          for (final label in labels) {
+            final paragraph = tester.renderObject<RenderParagraph>(
+              find.text(label),
+            );
+            expect(paragraph.didExceedMaxLines, isFalse, reason: label);
+            expect(
+              tester.widget<Text>(find.text(label)).overflow,
+              isNot(TextOverflow.ellipsis),
+            );
+          }
+          expect(tester.takeException(), isNull);
+        });
+      }
+    }
+  }
   test('keeps the track between the 44 pt bounds', () {
     expect(
       MastermindSegmentedControl.trackHeight +

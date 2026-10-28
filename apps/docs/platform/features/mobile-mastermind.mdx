@@ -65,7 +65,7 @@ serves threads it shows today's lane list.
 In-screen views (Needs you | Decisions, Lanes | Backlog | Staff) use the compact
 `MastermindSegmentedControl`: a 32 pt track whose segments each own a 44 pt hit
 area, instead of the tall pill. List search uses `MastermindCollapsibleSearch`:
-hidden until a pull-down at the top of the list or the navbar search icon, kept
+hidden until the navbar search icon is tapped, kept
 open while a query is applied, folded away once cleared and unfocused. Every
 sheet opens on the root navigator so the floating dock never covers it.
 
@@ -441,8 +441,9 @@ Delivery sections arrive later and reuse the table route below).
 
 - **True activity counts.** Scope: Home tiles now; the lane list header and a
   Threads badge read the same `MastermindActivity` model. Default: running,
-  waiting and idle come from the hub's `work.counts` (equal to its per-lane
-  statuses), else from the latest `observability.fleet.series` point when
+  waiting and idle come from the hub's `work.counts` only when its status is
+  `ok` and `checked_at` is within 15 minutes of the snapshot; stale/down
+  readings fall back to the latest `observability.fleet.series` point when
   coverage is ok or partial and it is at most 15 minutes older than
   `generated_at`, else from lane states, captioned "From lane reports". Queued
   and failed always come from lanes; unknown or stale lanes are a "not
@@ -571,7 +572,7 @@ chart-spec gaps are deferred to PR8 with the remaining chart sections:
   `mastermind_home_v1_test.dart`: order, tiles and links, caps, names, `—`,
   security redaction, last-row dock clearance at 1.0 and 2.0 text.
 - `widgets/mastermind_segmented_control_test.dart` (44 pt targets, semantics)
-  and `widgets/collapsible_search_test.dart` (icon, pull-down, fold-away).
+  and `widgets/collapsible_search_test.dart` (icon, refresh isolation, fold-away).
 - `mastermind_work_page_test.dart`: grouping, the state, product and area
   filters and their URL, chip counts following the filters, Clear filters,
   Back from a lane keeping the Home chip filter, security redaction,

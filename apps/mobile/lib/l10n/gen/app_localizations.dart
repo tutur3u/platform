@@ -24001,6 +24001,12 @@ abstract class AppLocalizations {
   /// **'fresh'**
   String get mastermindFreshFresh;
 
+  /// No description provided for @mastermindFromFleet.
+  ///
+  /// In en, this message translates to:
+  /// **'From fleet reports'**
+  String get mastermindFromFleet;
+
   /// No description provided for @mastermindFromLanes.
   ///
   /// In en, this message translates to:
@@ -24454,7 +24460,7 @@ abstract class AppLocalizations {
   /// No description provided for @mastermindQuotaEmpty.
   ///
   /// In en, this message translates to:
-  /// **'No quota data'**
+  /// **'Quota not reported'**
   String get mastermindQuotaEmpty;
 
   /// No description provided for @mastermindQuotaTitle.

@@ -40,7 +40,9 @@ final class MastermindActivity {
     final waitingOnYou = snapshot.now.needsYou
         .whereType<NeedsYou>()
         .where(
-          (item) => item.state == ItemState.open && item.kind != ItemKind.fyi,
+          (item) =>
+              item.state == ItemState.open &&
+              {ItemKind.decision, ItemKind.action}.contains(item.kind),
         )
         .length;
     MastermindActivity counts(

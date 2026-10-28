@@ -7,6 +7,7 @@ import 'package:mobile/core/ui/tokens/app_interface_tokens.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/activity_model.dart';
+import 'package:mobile/features/mastermind/presentation/inbox_segment.dart';
 import 'package:mobile/features/mastermind/presentation/work_model.dart';
 import 'package:mobile/features/mastermind/view/home/count_tile.dart';
 import 'package:mobile/features/mastermind/view/widgets/large_text.dart';
@@ -28,6 +29,7 @@ class MastermindActivityStrip extends StatelessWidget {
     final large = mastermindLargeText(context);
     final footnote = [
       if (activity.source == ActivitySource.lanes) l10n.mastermindFromLanes,
+      if (activity.source == ActivitySource.fleet) l10n.mastermindFromFleet,
       if (activity.queued > 0) l10n.mastermindQueuedCount(activity.queued),
       if (activity.notReporting > 0)
         l10n.mastermindNotReportingCount(activity.notReporting),
@@ -55,9 +57,6 @@ class MastermindActivityStrip extends StatelessWidget {
                 count: activity.waiting,
                 label: l10n.mastermindActivityWaiting,
                 icon: LucideIcons.hourglass,
-                caption: activity.waitingOnYou > 0
-                    ? l10n.mastermindWaitingOnYou(activity.waitingOnYou)
-                    : null,
               ),
               MastermindCountTile(
                 state: LaneState.idle,
@@ -78,6 +77,19 @@ class MastermindActivityStrip extends StatelessWidget {
               ),
             ],
           ),
+          if (activity.waitingOnYou > 0)
+            InkWell(
+              onTap: () => context.go(inboxLocation()),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 44),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    l10n.mastermindWaitingOnYou(activity.waitingOnYou),
+                  ),
+                ),
+              ),
+            ),
           if (footnote.isNotEmpty)
             _Footnote(text: footnote, activity: activity),
         ],

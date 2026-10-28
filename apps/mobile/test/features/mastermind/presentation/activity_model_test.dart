@@ -15,6 +15,8 @@ void main() {
     test('prefers the hub work.counts, which equal its lane statuses', () {
       final json = homeJson()
         ..['work'] = {
+          'status': 'ok',
+          'checked_at': homeJson()['generated_at'],
           'counts': {'running': 3, 'waiting': 2, 'idle': 13},
         };
       final activity = MastermindActivity.from(parsedSnapshot(json));
@@ -24,6 +26,20 @@ void main() {
       expect((activity.queued, activity.failed), (1, 1));
     });
 
+    for (final status in ['stale', 'source_down']) {
+      test('ignores $status hub counts', () {
+        final json = homeJson()
+          ..['work'] = {
+            'status': status,
+            'checked_at': homeJson()['generated_at'],
+            'counts': {'running': 999, 'waiting': 999, 'idle': 999},
+          };
+        expect(
+          MastermindActivity.from(parsedSnapshot(json)).source,
+          ActivitySource.fleet,
+        );
+      });
+    }
     test('uses a recent fleet point before the lane states', () {
       final activity = MastermindActivity.from(parsedSnapshot(homeJson()));
       expect(activity.source, ActivitySource.fleet);

@@ -73,12 +73,12 @@ void main() {
     expect(queries.last, '');
   });
 
-  testWidgets('a pull-down at the top reveals it', (tester) async {
+  testWidgets('a refresh pull does not reveal search', (tester) async {
     final (controller, _) = await _pump(tester);
-    await tester.drag(find.text('Row 0'), const Offset(0, 120));
+    await tester.drag(find.text('Row 0'), const Offset(0, 240));
     await tester.pumpAndSettle();
-    expect(controller.expanded, isTrue);
-    expect(find.byType(AppSearchField), findsOneWidget);
+    expect(controller.expanded, isFalse);
+    expect(find.byType(AppSearchField), findsNothing);
     // Revealed by a pull, it does not raise the keyboard on its own.
     expect(controller.focusNode.hasFocus, isFalse);
   });
