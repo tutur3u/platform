@@ -66,7 +66,12 @@ void main() {
   for (final crash in ['delete', 'primary', 'cleanup']) {
     test('recovers after $crash failure', () async {
       fail = crash;
-      await expectLater(storage.persistSession('new'), throwsStateError);
+      final persisted = storage.persistSession('new');
+      if (crash == 'cleanup') {
+        await persisted;
+      } else {
+        await expectLater(persisted, throwsStateError);
+      }
       expect(values[stage], 'new');
       fail = null;
       final restarted = SupabaseSecureStorage(storage: backend);
@@ -75,6 +80,19 @@ void main() {
       expect(values, {key: 'new'});
     });
   }
+
+  test('a later save replaces a stale staged copy', () async {
+    // An earlier retry staged T1 and failed without crashing.
+    values[stage] = 'old';
+    writes = 1;
+    fail = 'cleanup';
+    await storage.persistSession('newer');
+    expect(values, {key: 'newer', stage: 'newer'});
+    fail = null;
+    final restarted = SupabaseSecureStorage(storage: backend);
+    expect(await restarted.accessToken(), 'newer');
+    expect(values, {key: 'newer'});
+  });
 
   test('staging wins over a primary left by a failed delete', () async {
     values.addAll({key: 'old', stage: 'new'});

@@ -70,6 +70,11 @@ class SupabaseSecureStorage extends LocalStorage {
 
   @override
   Future<void> persistSession(String persistSessionString) => _serial(() async {
+    // A copy left staged by an earlier failed retry wins the next read, so
+    // replace it first; it can then never hold an older token than the primary.
+    if (await _storage.read(key: _retryKey) != null) {
+      await _storage.write(key: _retryKey, value: persistSessionString);
+    }
     try {
       await _storage.write(
         key: supabasePersistSessionKey,
@@ -85,7 +90,15 @@ class SupabaseSecureStorage extends LocalStorage {
         value: persistSessionString,
       );
     }
-    await _storage.delete(key: _retryKey);
+    try {
+      await _storage.delete(key: _retryKey);
+    } on Object catch (error) {
+      // The staged copy now matches the primary, so leaving it is harmless.
+      developer.log(
+        'Session staging cleanup failed: ${error.runtimeType}',
+        name: 'SupabaseSecureStorage',
+      );
+    }
   });
 
   @override
