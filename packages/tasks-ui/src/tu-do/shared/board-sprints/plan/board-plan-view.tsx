@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { moveTasksToWorkspaceTaskBoardSprint } from '@tuturuuu/internal-api/task-sprints';
 import {
   createWorkspaceTask,
-  deleteWorkspaceTask,
+  updateWorkspaceTask,
 } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
@@ -113,10 +113,18 @@ export function BoardPlanView({
         try {
           await toBacklog().catch(toBacklog);
         } catch (error) {
-          // Never leave it in the running sprint: undo the create, and the
-          // composer keeps the name so retrying cannot add a duplicate.
-          await deleteWorkspaceTask(wsId, task.id).catch(() => undefined);
-          throw error;
+          // Undo the create by moving it to the trash; the composer then
+          // keeps the name to retry.
+          const trashed = await updateWorkspaceTask(wsId, task.id, {
+            deleted: true,
+          }).then(
+            () => true,
+            () => false
+          );
+          if (trashed) throw error;
+          // It stays in the running sprint: say so, and let the composer
+          // clear the name so a retry cannot add a duplicate.
+          toast.error(t('backlog_move_failed'));
         }
       }
       return task as Task;
