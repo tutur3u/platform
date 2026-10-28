@@ -40,7 +40,8 @@ test('singleton keeps the Type Check context, event surface and runner with a re
   });
   assert.deepEqual(Object.keys(workflow.jobs), ['type-check']);
   assert.equal(job.name, 'Type Check');
-  assert.equal(job['runs-on'], 'ubuntu-latest');
+  // Hosted unless the PR runner route (scripts/ci/workflow-pr-self-hosted.test.js) admits it.
+  assert.match(job['runs-on'], /\|\| 'ubuntu-latest' \}\}$/);
   assert.equal(job.concurrency, undefined);
   assert.deepEqual(workflow.permissions, { contents: 'read' });
   assert.deepEqual(job.permissions, { contents: 'read' });

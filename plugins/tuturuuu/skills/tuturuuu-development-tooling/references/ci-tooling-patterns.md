@@ -255,6 +255,8 @@ change ranges before estimating skipped allocations; final PR file lists can
 differ from the run's head. Report projected savings separately from observed
 exact-head hosted improvement; never weaken a gate to improve a timing figure.
 
+Self-hosted PR routing is default-off and limited to same-repository, non-bot `pull_request` jobs without secrets, installing with a frozen lockfile and no lifecycle scripts, with isolated state and an always-run workspace wipe. The variable values, canary and kill switch live in the [CI runbook](../../../../apps/docs/build/devops/github-actions-runbook.mdx#pr-runner-pool-variable-canary-and-kill-switch). When inventorying action steps, JavaScript actions have no `runs.steps`.
+
 Mobile PR selection lives in `scripts/ci/mobile-build-selection.ts`, called by the
 switchboard after explicit disable handling. Android remains the portable smoke;
 other platforms retain native-directory PR checks. Android/Linux keep matching
