@@ -14,10 +14,9 @@ import '../../../helpers/mastermind_hub_harness.dart';
 void main() {
   group('configuration fails closed', () {
     test('base URL by flavor and override', () {
-      // Production stays unconfigured until the beta rollout.
       expect(
         MastermindHubConfig.resolve(flavor: 'production', override: ''),
-        isNull,
+        Uri.parse('https://mastermind-hub.tutur3u.com'),
       );
       expect(
         MastermindHubConfig.resolve(flavor: 'staging', override: ''),
@@ -44,19 +43,26 @@ void main() {
         'https://hub.example.test/v1',
         'https://hub.example.test?x=1',
         'https://hub.example.test#frag',
+        'https://mastermind-hub.tutur3u.com/v1',
+        'http://mastermind-hub.tutur3u.com',
+        'https://mastermind-hub.tutur3u.com@evil.test',
+        'https://evil.test#@mastermind-hub.tutur3u.com',
         'hub.example.test',
         '',
       ]) {
         expect(MastermindHubConfig.parseBaseUrl(bad), isNull, reason: bad);
       }
       // A bad override never falls back to the flavor host.
-      expect(
-        MastermindHubConfig.resolve(
-          flavor: 'production',
-          override: 'http://hub.example.test',
-        ),
-        isNull,
-      );
+      for (final flavor in ['production', 'staging']) {
+        expect(
+          MastermindHubConfig.resolve(
+            flavor: flavor,
+            override: 'http://hub.example.test',
+          ),
+          isNull,
+          reason: flavor,
+        );
+      }
     });
 
     test('an unconfigured source sends nothing', () async {

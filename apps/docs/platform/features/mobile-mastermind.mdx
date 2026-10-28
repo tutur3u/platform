@@ -10,12 +10,21 @@ product rules of the shell entry, the Home tab and the Inbox; later tabs extend 
 ## Who sees it
 
 - **Scope:** the Apps hub offers Mastermind only when the active workspace is
-  the root workspace, the root permission set contains `view_infrastructure`,
-  and the build has a hub source configured.
+  the root workspace, the root permission set contains `view_infrastructure`
+  (the root workspace creator and `admin` count, as for every permission), and
+  the build has a hub source configured. Production, staging and any build with
+  `MASTERMIND_HUB_URL` have one; see Data source.
 - **Default:** hidden. It is not an experimental module and cannot be enabled
-  from Settings.
+  from Settings. A user without root `view_infrastructure`, outside the root
+  workspace, or while access is loading or failed never sees the entry.
 - **Authority:** this check is cosmetic. The hub Worker's owner allowlist is the
   real gate, and a 403 from the hub hides the entry until the next access sync.
+- **Production beta:** the production app reads the hub for the beta behind
+  these gates: root workspace plus `view_infrastructure`, a configured source,
+  and the hub's owner allowlist. Replies stay off until the hub's
+  `GET /v1/capabilities` reports `replies: true`. Production reports
+  `replies: false` today, so the Inbox is read-only there and the reply composer
+  stays hidden; turning replies on needs no store release.
 - **Deep links and push taps:** any `/mastermind/**` location is held on a
   neutral skeleton while the access check runs, then redirected to the Apps hub
   unless access is loaded and enabled. A 403 keeps the user on the screen so it
@@ -29,10 +38,13 @@ product rules of the shell entry, the Home tab and the Inbox; later tabs extend 
 ## Data source
 
 Fixture builds (development flavor with `MASTERMIND_FIXTURE`) read the bundled
-synthetic sample. Staging reads `mastermind-hub-staging.tutur3u.com`, and any build reads
-`MASTERMIND_HUB_URL` when it is set. Production stays unconfigured, and the
-entry hidden, until the beta rollout names its host. A build with neither stays
-disconnected, as does any value that is not an HTTPS host. The app-level runtime owns
+synthetic sample. Staging reads `mastermind-hub-staging.tutur3u.com`, production
+reads `mastermind-hub.tutur3u.com`, and any build reads `MASTERMIND_HUB_URL`
+when it is set; an explicit value always wins over the flavor host, and a bad
+one never falls back to it. A build with neither (development without a
+fixture, an unknown flavor) stays disconnected, as does any value that is not
+a bare HTTPS origin: no credentials, path, query or fragment, so the bearer
+token never leaves over cleartext or to a lookalike host. The app-level runtime owns
 the source, the cache and the refresh scheduler and closes them with the app.
 Each Mastermind screen only attaches to and detaches from the scheduler, so
 refresh runs only while a screen is open and the app is in the foreground. It
@@ -338,7 +350,7 @@ chart-spec gaps are deferred to PR8 with the remaining chart sections:
 `apps/mobile/test/features/mastermind/view`:
 
 - `mastermind_entry_test.dart`: entry gating, route gate, mini-app shell,
-  runtime reset.
+  runtime reset, the flavor host (production, staging, unknown).
 - `mastermind_section_test.dart`: access gate, scheduler lifetime, resume
   refresh gated on a real background (including a section mounted while the app
   is backgrounded), connectivity-driven freshness strip, whole-section states,
@@ -374,6 +386,15 @@ chart-spec gaps are deferred to PR8 with the remaining chart sections:
 - `mastermind_home_links_test.dart`: Home Ship rows and the Usage link open the
   real tabs. `presentation/ship_usage_model_test.dart`: the Ship and Usage
   models and chart ids.
+- `apps/mobile/test/features/mastermind/access/mastermind_access_cubit_test.dart`:
+  the root workspace, permission and configured-source matrix (the entry is off
+  without root `view_infrastructure`), unrelated permissions, the `admin`
+  permission, workspace ABA and error fail-closed.
+- `apps/mobile/test/features/mastermind/data/hub_http_snapshot_source_test.dart`:
+  base URL by flavor and override (production, staging, development, a bad
+  override never falling back) and the bare-HTTPS-origin rules: non-HTTPS,
+  credentials, path, query, fragment, and lookalike shapes such as the hub host
+  hidden behind userinfo or a fragment are refused.
 - `apps/mobile/test/features/shell/view/shell_back_navigation_test.dart`:
   system Back from a lane over a filtered Work location returns to that
   location with its query (it fails without the shell's lane-pop rule). System

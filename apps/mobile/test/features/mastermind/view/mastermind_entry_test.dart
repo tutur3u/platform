@@ -264,8 +264,21 @@ void main() {
       expect(MastermindHubConfig.resolve(flavor: 'development'), isNull);
     });
 
-    test('production stays off until the beta rollout', () {
-      expect(MastermindHubConfig.resolve(flavor: 'production'), isNull);
+    test('the production flavor names the production host', () {
+      expect(
+        MastermindHubConfig.resolve(
+          flavor: 'production',
+          override: '',
+        ).toString(),
+        'https://mastermind-hub.tutur3u.com',
+      );
+    });
+
+    test('an unknown flavor stays unconfigured', () {
+      expect(
+        MastermindHubConfig.resolve(flavor: 'preview', override: ''),
+        isNull,
+      );
     });
 
     test('the staging flavor names the staging host', () {
