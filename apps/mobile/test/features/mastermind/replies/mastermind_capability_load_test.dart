@@ -1,10 +1,13 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/mastermind/data/hub_capabilities.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/replies/mastermind_replies_cubit.dart';
 
+import '../../../helpers/hub_http_source_support.dart';
+import '../../../helpers/mastermind_hub_harness.dart';
 import '../../../helpers/mastermind_replies_fixture.dart';
 
 final NeedsYou _item = parsedItem(inboxItem(1));
@@ -40,11 +43,47 @@ void main() {
       final first = cubit.loadCapabilities(force: true);
       final second = cubit.loadCapabilities(force: true);
       final third = cubit.loadCapabilities();
+      await pumpEventQueue();
       expect(source.calls, 1);
 
       source.gates.single.complete(_answer(replies: true));
       await Future.wait([first, second, third]);
       expect(source.calls, 1);
+      expect(cubit.state.capability, ReplyCapability.supported);
+    });
+
+    test('overlapping checks send one request on the wire', () async {
+      final answer = Completer<void>();
+      final hub = FakeHub((_) async {
+        await answer.future;
+        return hubReply(
+          200,
+          body: utf8.encode(
+            jsonEncode({
+              'schema_versions': ['1.4'],
+              'replies': true,
+              'push': false,
+            }),
+          ),
+        );
+      });
+      final cubit = repliesCubit(
+        fetchCapabilities: hubSource(hub, FakeTokens()).fetchCapabilities,
+      );
+      addTearDown(cubit.close);
+
+      final calls = [
+        cubit.loadCapabilities(force: true),
+        cubit.loadCapabilities(force: true),
+        cubit.loadCapabilities(),
+      ];
+      await pumpEventQueue();
+      expect(hub.requests, hasLength(1));
+      expect(hub.requests.single.url.path, '/v1/capabilities');
+
+      answer.complete();
+      await Future.wait(calls);
+      expect(hub.requests, hasLength(1));
       expect(cubit.state.capability, ReplyCapability.supported);
     });
 

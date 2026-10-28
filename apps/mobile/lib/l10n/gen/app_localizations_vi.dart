@@ -12176,6 +12176,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindBacklogLabel => 'Việc tồn';
 
   @override
+  String get mastermindBackToWork => 'Về Công việc';
+
+  @override
   String get mastermindBasisCheckinWorkflow => 'Quy trình kiểm tra định kỳ';
 
   @override
@@ -12403,6 +12406,21 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindDigestGap => 'Một số cập nhật trước đó không có ở đây.';
 
   @override
+  String mastermindDurationDays(int count) {
+    return '$count ngày';
+  }
+
+  @override
+  String mastermindDurationHours(int count) {
+    return '$count giờ';
+  }
+
+  @override
+  String mastermindDurationMinutes(int count) {
+    return '$count phút';
+  }
+
+  @override
   String get mastermindEffortFilter => 'Mức nỗ lực';
 
   @override
@@ -12537,12 +12555,36 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindLaneAge => 'Thời gian chạy';
 
   @override
+  String mastermindLaneAgeLine(String state, String duration) {
+    return '$state · $duration';
+  }
+
+  @override
+  String mastermindLaneAgeUnknown(String state) {
+    return '$state · chưa rõ thời lượng';
+  }
+
+  @override
   String get mastermindLaneArea => 'Lĩnh vực';
 
   @override
   String mastermindLaneEta(String duration) {
     return 'Dự kiến $duration';
   }
+
+  @override
+  String mastermindLaneEtaAbout(String duration) {
+    return 'Còn khoảng $duration';
+  }
+
+  @override
+  String get mastermindLaneEtaLabel => 'Thời gian còn lại dự kiến';
+
+  @override
+  String get mastermindLaneFinishedTitle => 'Luồng việc này đã kết thúc hoặc bị gỡ';
+
+  @override
+  String get mastermindLaneGoneTitle => 'Luồng việc này không còn trong Mastermind';
 
   @override
   String get mastermindLaneKind => 'Loại';
@@ -12567,6 +12609,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindLanesLabel => 'Luồng việc';
+
+  @override
+  String get mastermindLaneUpdated => 'Luồng việc này đã được cập nhật';
 
   @override
   String mastermindLastPublished(String age, String time) {
@@ -13257,4 +13302,16 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindWhy => 'Lý do';
+
+  @override
+  String get mastermindWorkClearFilters => 'Xóa bộ lọc';
+
+  @override
+  String get mastermindWorkEmpty => 'Hiện chưa có luồng việc nào';
+
+  @override
+  String get mastermindWorkNoMatches => 'Không có luồng việc phù hợp';
+
+  @override
+  String get mastermindWorkSearchPlaceholder => 'Tìm luồng việc';
 }

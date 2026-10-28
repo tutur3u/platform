@@ -49,12 +49,23 @@ abstract final class Routes {
   static const mastermindWork = '/mastermind/work';
   static const mastermindShip = '/mastermind/ship';
   static const mastermindInsights = '/mastermind/insights';
+  static const mastermindWorkLane = '/mastermind/work/lane/:laneId';
   static const mastermindInboxItem = '/mastermind/inbox/item/:itemId';
 
   /// Item ids are opaque snapshot ids. They are route parameters only and never
   /// appear in an external deep link.
   static String mastermindInboxItemPath(String itemId) =>
       '$mastermindInbox/item/${Uri.encodeComponent(itemId)}';
+
+  /// Lane ids are opaque snapshot ids. Like item ids they are route parameters
+  /// only and never appear in an external deep link.
+  static String mastermindWorkLanePath(String laneId) =>
+      '$mastermindWork/lane/${Uri.encodeComponent(laneId)}';
+
+  /// A lane detail is pushed over the filtered Work list, so Back pops to it
+  /// rather than going to the unfiltered tab root.
+  static bool isMastermindLaneLocation(String location) =>
+      normalizeLocation(location).startsWith('$mastermindWork/lane/');
   static const timer = '/timer';
   static const settings = '/settings';
   static const settingsProfile = '/settings/profile';

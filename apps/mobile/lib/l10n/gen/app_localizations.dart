@@ -23263,6 +23263,12 @@ abstract class AppLocalizations {
   /// **'Backlog'**
   String get mastermindBacklogLabel;
 
+  /// No description provided for @mastermindBackToWork.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to Work'**
+  String get mastermindBackToWork;
+
   /// No description provided for @mastermindBasisCheckinWorkflow.
   ///
   /// In en, this message translates to:
@@ -23701,6 +23707,24 @@ abstract class AppLocalizations {
   /// **'Some earlier updates aren\'t included.'**
   String get mastermindDigestGap;
 
+  /// No description provided for @mastermindDurationDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} d'**
+  String mastermindDurationDays(int count);
+
+  /// No description provided for @mastermindDurationHours.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} h'**
+  String mastermindDurationHours(int count);
+
+  /// No description provided for @mastermindDurationMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} min'**
+  String mastermindDurationMinutes(int count);
+
   /// No description provided for @mastermindEffortFilter.
   ///
   /// In en, this message translates to:
@@ -23965,6 +23989,18 @@ abstract class AppLocalizations {
   /// **'Age'**
   String get mastermindLaneAge;
 
+  /// No description provided for @mastermindLaneAgeLine.
+  ///
+  /// In en, this message translates to:
+  /// **'{state} for {duration}'**
+  String mastermindLaneAgeLine(String state, String duration);
+
+  /// No description provided for @mastermindLaneAgeUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'{state} · age unknown'**
+  String mastermindLaneAgeUnknown(String state);
+
   /// No description provided for @mastermindLaneArea.
   ///
   /// In en, this message translates to:
@@ -23976,6 +24012,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'ETA {duration}'**
   String mastermindLaneEta(String duration);
+
+  /// No description provided for @mastermindLaneEtaAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'About {duration} left'**
+  String mastermindLaneEtaAbout(String duration);
+
+  /// No description provided for @mastermindLaneEtaLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated time left'**
+  String get mastermindLaneEtaLabel;
+
+  /// No description provided for @mastermindLaneFinishedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This lane finished or was removed'**
+  String get mastermindLaneFinishedTitle;
+
+  /// No description provided for @mastermindLaneGoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This lane is no longer in Mastermind'**
+  String get mastermindLaneGoneTitle;
 
   /// No description provided for @mastermindLaneKind.
   ///
@@ -24024,6 +24084,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Lanes'**
   String get mastermindLanesLabel;
+
+  /// No description provided for @mastermindLaneUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'This lane was updated'**
+  String get mastermindLaneUpdated;
 
   /// No description provided for @mastermindLastPublished.
   ///
@@ -25194,6 +25260,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Why'**
   String get mastermindWhy;
+
+  /// No description provided for @mastermindWorkClearFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear filters'**
+  String get mastermindWorkClearFilters;
+
+  /// No description provided for @mastermindWorkEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No lanes right now'**
+  String get mastermindWorkEmpty;
+
+  /// No description provided for @mastermindWorkNoMatches.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching lanes'**
+  String get mastermindWorkNoMatches;
+
+  /// No description provided for @mastermindWorkSearchPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Search lanes'**
+  String get mastermindWorkSearchPlaceholder;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

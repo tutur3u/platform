@@ -88,7 +88,8 @@ activity. Needs you lists up to three normal items (decision, then action, then
 FYI, then publisher order); "See all (N)" counts normal items only.
 
 Recent-decision rows and Ship rows are not tappable until Inbox and Ship have
-screens to open; "See all", the lane chips and "Usage" link to their tabs.
+screens to open. "See all", the lane chips and "Usage" link to their tabs; a
+lane chip opens Work already filtered to that state.
 
 **Security rows** render as a single non-tappable "`<Product>` · security fix"
 line in a trailing "Security" group with no count. They have no severity, title
@@ -188,19 +189,68 @@ switch, so it flips without a store release.
 Delivery status beyond "Sent · waiting for Mastermind" (the item leaving the
 next snapshot) is not polled yet.
 
+## Work
+
+The Work tab lists lanes grouped by state, the one that needs attention first:
+failed, waiting, running, queued, idle, stale, completed, cancelled, then the
+rare open, answered, withdrawn and unknown. Each group shows its count and is
+ordered oldest first, a lane with no age last. A row shows the title, role and
+provider/model (display text, shown verbatim), "Running for 2 h" (or
+"Running · age unknown"), "About 20 min left" only when there is an estimate,
+and product, area and kind chips. State is always a glyph and a word.
+
+- **Filters:** a search field ("Search lanes"), one chip per state, and product
+  and area chips while two or more of each are present. A state chip's count
+  follows the product, area and search filters, so it always matches its group
+  header. A product or area filter resets when its value leaves the snapshot,
+  because its chip would be gone.
+- **Filters in the URL:** the state, product and area filters live in the
+  location as `?state=`, `?product=` and `?area=`, and every chip change
+  rewrites it. The Home lane chips open `/mastermind/work?state=<state>`. An
+  unknown value is ignored and "All" clears the state. A lane opens by push, so
+  Back from it (the dock included) returns to the same filtered list, search
+  text and all. External deep links open the tab root and never carry a filter
+  or a lane id.
+- **No matches:** a filter combination with no lanes (including a state with
+  none) shows "No matching lanes" with a "Clear filters" row that resets state,
+  product, area and search.
+- **Scope:** lanes only. The Backlog and Staff segments are deferred to a
+  follow-up layer; this tab has no segmented control until they exist.
+- **Security rows** keep the Home rule: one non-tappable line in a trailing
+  "Security" group with no count, never counted, searched or filtered.
+- **Detail:** `/mastermind/work/lane/:laneId` shows the same fields in full and
+  has no action. The id is an opaque snapshot id and only ever a route
+  parameter. An id that is not in the snapshot shows "This lane is no longer in
+  Mastermind" (or "This lane finished or was removed" when it left while open)
+  with a way back, never an error. A lane whose state changed while open shows
+  "This lane was updated".
+
 ## Regression coverage
 
-`apps/mobile/test/features/mastermind/view`: `mastermind_entry_test.dart`
-(entry gating, route gate, mini-app shell, runtime reset),
-`mastermind_section_test.dart` (access gate, scheduler lifetime, resume
-refresh gated on a real background, connectivity-driven freshness strip,
-whole-section states, the sign-out confirmation),
-`mastermind_access_resync_test.dart` (access recovery on resume and Apps hub
-pull-to-refresh), `runtime/mastermind_auth_reset_test.dart` (the app-level
-logout and account-switch listener over a real `AuthCubit`), `mastermind_freshness_test.dart` (strip states),
-`mastermind_home_page_test.dart` (ordering, security redaction, dock
-clearance, tab links) and `home_model_test.dart`. The registered-destination
-smoke test builds every `/mastermind/**` route through the production router.
+`apps/mobile/test/features/mastermind/view`:
+
+- `mastermind_entry_test.dart`: entry gating, route gate, mini-app shell,
+  runtime reset.
+- `mastermind_section_test.dart`: access gate, scheduler lifetime, resume
+  refresh gated on a real background (including a section mounted while the app
+  is backgrounded), connectivity-driven freshness strip, whole-section states,
+  the sign-out confirmation.
+- `mastermind_access_resync_test.dart`: access recovery on resume and Apps hub
+  pull-to-refresh.
+- `runtime/mastermind_auth_reset_test.dart`: the app-level logout and
+  account-switch listener over a real `AuthCubit`.
+- `mastermind_freshness_test.dart`: strip states.
+- `mastermind_home_page_test.dart` and `home_model_test.dart`: ordering,
+  security redaction, dock clearance, tab links.
+- `mastermind_work_page_test.dart`: grouping, the state, product and area
+  filters and their URL, chip counts following the filters, Clear filters,
+  Back from a lane keeping the Home chip filter, security redaction,
+  whole-section states, dock clearance, deep links to the tab root.
+- `mastermind_lane_page_test.dart` (detail, gone, updated) and
+  `work_model_test.dart`.
+
+The registered-destination smoke test builds every `/mastermind/**` route
+through the production router.
 
 `apps/mobile/test/features/mastermind/replies` covers the reply path:
 `reply_models_test.dart` (key format, exact body, strict stored form, limits),
