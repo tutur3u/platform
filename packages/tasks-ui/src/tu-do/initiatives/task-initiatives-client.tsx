@@ -9,12 +9,10 @@ import {
   Link,
   Loader2,
   MoreVertical,
-  Plus,
   Trash2,
   User,
 } from '@tuturuuu/icons';
 import {
-  createWorkspaceTaskInitiative,
   deleteWorkspaceTaskInitiative,
   linkWorkspaceTaskInitiativeProject,
   listWorkspaceTaskInitiatives,
@@ -119,14 +117,9 @@ export function TaskInitiativesClient({
 }: TaskInitiativesClientProps) {
   const t = useTranslations('dashboard.bucket_dump');
 
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingInitiative, setEditingInitiative] =
     useState<TaskInitiative | null>(null);
-  const [newInitiativeName, setNewInitiativeName] = useState('');
-  const [newInitiativeDescription, setNewInitiativeDescription] = useState('');
-  const [newInitiativeStatus, setNewInitiativeStatus] =
-    useState<InitiativeStatus>('active');
   const [editInitiativeName, setEditInitiativeName] = useState('');
   const [editInitiativeDescription, setEditInitiativeDescription] =
     useState('');
@@ -206,37 +199,6 @@ export function TaskInitiativesClient({
       setProjectToLink('');
     }
   }, [availableProjects.length]);
-
-  const createInitiativeMutation = useMutation({
-    mutationFn: async ({
-      name,
-      description,
-      status,
-    }: {
-      name: string;
-      description?: string;
-      status: InitiativeStatus;
-    }) => {
-      const payload = { name, description: description ?? '', status };
-
-      return createWorkspaceTaskInitiative(
-        wsId,
-        payload,
-        getBrowserInternalApiOptions()
-      );
-    },
-    onSuccess: () => {
-      toast.success(t('success.initiative_created'));
-      setIsCreateDialogOpen(false);
-      setNewInitiativeName('');
-      setNewInitiativeDescription('');
-      setNewInitiativeStatus('active');
-      refetchInitiatives();
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || t('errors.create_initiative'));
-    },
-  });
 
   const updateInitiativeMutation = useMutation({
     mutationFn: async ({
@@ -365,19 +327,6 @@ export function TaskInitiativesClient({
     },
   });
 
-  const handleCreateInitiative = () => {
-    if (!newInitiativeName.trim()) {
-      toast.error(t('errors.empty_initiative_name'));
-      return;
-    }
-
-    createInitiativeMutation.mutate({
-      name: newInitiativeName.trim(),
-      description: newInitiativeDescription.trim() || undefined,
-      status: newInitiativeStatus,
-    });
-  };
-
   const handleEditInitiative = (initiative: TaskInitiative) => {
     setEditingInitiative(initiative);
     setEditInitiativeName(initiative.name);
@@ -438,7 +387,6 @@ export function TaskInitiativesClient({
     deleteInitiativeMutation.mutate(initiativeId);
   };
 
-  const isCreating = createInitiativeMutation.isPending;
   const isUpdating = updateInitiativeMutation.isPending;
   const isDeleting = deleteInitiativeMutation.isPending;
   const isLinking = linkProjectMutation.isPending;
@@ -461,10 +409,6 @@ export function TaskInitiativesClient({
             {initiatives.length === 1 ? '' : 's'} total
           </p>
         </div>
-        <Button onClick={() => setIsCreateDialogOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          New Initiative
-        </Button>
       </div>
 
       {initiativesLoading ? (
@@ -476,17 +420,6 @@ export function TaskInitiativesClient({
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Archive className="h-12 w-12 text-muted-foreground" />
             <h3 className="mt-4 font-semibold text-lg">No initiatives yet</h3>
-            <p className="text-center text-muted-foreground">
-              Create your first initiative to coordinate related projects and
-              outcomes.
-            </p>
-            <Button
-              className="mt-4"
-              onClick={() => setIsCreateDialogOpen(true)}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Create Initiative
-            </Button>
           </CardContent>
         </Card>
       ) : (
@@ -588,91 +521,6 @@ export function TaskInitiativesClient({
           ))}
         </div>
       )}
-
-      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create New Initiative</DialogTitle>
-            <DialogDescription>
-              Define a strategic initiative to coordinate multiple projects.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label htmlFor="initiative-name" className="font-medium text-sm">
-                Initiative Name
-              </Label>
-              <Input
-                id="initiative-name"
-                placeholder="Enter initiative name"
-                value={newInitiativeName}
-                onChange={(event) => setNewInitiativeName(event.target.value)}
-                disabled={isCreating}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label
-                htmlFor="initiative-description"
-                className="font-medium text-sm"
-              >
-                Description (Optional)
-              </Label>
-              <Textarea
-                id="initiative-description"
-                placeholder="Describe the initiative goals"
-                value={newInitiativeDescription}
-                onChange={(event) =>
-                  setNewInitiativeDescription(event.target.value)
-                }
-                disabled={isCreating}
-                className="min-h-[80px]"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="font-medium text-sm">Status</Label>
-              <Select
-                value={newInitiativeStatus}
-                onValueChange={(value: InitiativeStatus) =>
-                  setNewInitiativeStatus(value)
-                }
-                disabled={isCreating}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  {statusOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <DialogFooter className="gap-2">
-            <Button
-              variant="ghost"
-              onClick={() => setIsCreateDialogOpen(false)}
-              disabled={isCreating}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleCreateInitiative} disabled={isCreating}>
-              {isCreating ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating...
-                </>
-              ) : (
-                'Create Initiative'
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>

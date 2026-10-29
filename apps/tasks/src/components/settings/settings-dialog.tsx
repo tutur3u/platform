@@ -19,7 +19,6 @@ import {
   PanelLeft,
   Repeat,
   Share2,
-  Sparkle,
   Tags,
 } from '@tuturuuu/icons';
 import { getWorkspace } from '@tuturuuu/internal-api/workspaces';
@@ -55,7 +54,6 @@ import {
   TaskDraftsSettings,
   TaskEstimatesSettings,
   TaskHabitsSettings,
-  TaskInitiativesSettings,
   TaskLabelsSettings,
   TaskLogsSettings,
   TaskNotesSettings,
@@ -79,7 +77,7 @@ function EstimateIcon({ className }: { className?: string }) {
 }
 
 function normalizeSettingsTab(tab: string) {
-  return tab === 'sidebar' ? 'sidebar' : tab;
+  return tab === 'task_initiatives' ? 'tasks_general' : tab;
 }
 
 export function SettingsDialog({
@@ -174,14 +172,6 @@ export function SettingsDialog({
             description: t('settings.tasks.templates_description'),
             hideContentHeader: true,
             keywords: ['Tasks', 'Templates'],
-          },
-          {
-            name: 'task_initiatives',
-            label: t('settings.tasks.initiatives'),
-            icon: Sparkle,
-            description: t('settings.tasks.initiatives_description'),
-            hideContentHeader: true,
-            keywords: ['Tasks', 'Initiatives'],
           },
         ],
       },
@@ -363,10 +353,6 @@ export function SettingsDialog({
 
       {activeTab === 'task_templates' && wsId && (
         <TaskTemplatesSettings wsId={wsId} />
-      )}
-
-      {activeTab === 'task_initiatives' && wsId && (
-        <TaskInitiativesSettings wsId={wsId} />
       )}
 
       {activeTab === 'task_estimates' && wsId && (
