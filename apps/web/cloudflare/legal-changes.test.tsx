@@ -55,9 +55,8 @@ describe('upcoming legal changes', () => {
         const html = renderToStaticMarkup(
           <LegalChanges locale={locale} full={full} />
         );
-        expect(html).not.toMatch(
-          /2026-08-15|August 15, 2026|Effective |Có hiệu lực từ/u
-        );
+        expect(html).not.toContain('2026-09-13');
+        expect(html).toContain('data-binding-notice');
         expect(html).toContain(
           full
             ? locale === 'vi'
@@ -77,12 +76,100 @@ describe('upcoming legal changes', () => {
         expect(metadata.robots).toMatchObject({ index: false });
       }
     });
-    it(`${locale} full proposals show the notice, original draft footers and current-version links`, () => {
+    it(`${locale} proposal views never show the inherited legal-review footer sentences`, () => {
+      const banned =
+        /requires legal review|counsel-review draft|cần được rà soát pháp lý|chờ rà soát pháp lý/iu;
+      for (const full of [false, true]) {
+        const page = new DOMParser().parseFromString(
+          renderToStaticMarkup(<LegalChanges locale={locale} full={full} />),
+          'text/html'
+        );
+        expect(page.body.textContent).not.toMatch(banned);
+      }
+      const full = new DOMParser().parseFromString(
+        renderToStaticMarkup(<LegalChanges locale={locale} full />),
+        'text/html'
+      );
+      for (const kind of ['privacy', 'terms'] as const) {
+        const footer = full.querySelector(`article[id="${kind}"] footer p`);
+        expect(footer?.textContent).not.toMatch(banned);
+        expect(footer?.textContent?.length).toBeGreaterThan(0);
+        // The in-force footers keep their wording (pinned by the revisions tests).
+        expect(getLegalDocument(kind, locale).footer).toMatch(banned);
+      }
+      expect(
+        full.querySelector('article[id="privacy"] footer p')?.textContent
+      ).toBe(
+        locale === 'en'
+          ? 'Not yet in effect. Questions and rights requests may be sent to privacy@tuturuuu.com.'
+          : 'Chưa có hiệu lực. Gửi câu hỏi hoặc yêu cầu về quyền dữ liệu đến privacy@tuturuuu.com.'
+      );
+      if (locale === 'en') {
+        expect(
+          full.querySelector('article[id="privacy"] footer p')?.textContent
+        ).toBe(
+          'Not yet in effect. Questions and rights requests may be sent to privacy@tuturuuu.com.'
+        );
+        expect(
+          full.querySelector('article[id="terms"] footer p')?.textContent
+        ).toBe(
+          'Not yet in effect. Enterprise order forms and mandatory consumer law may add or override terms.'
+        );
+      }
+    });
+    it(`${locale} unpublished version block shows only Proposed and Not yet in effect`, () => {
+      const copy = (locale === 'vi' ? vietnamese : en).legalRedesign;
+      const current = getLegalDocument('terms', locale);
+      const page = new DOMParser().parseFromString(
+        renderToStaticMarkup(<LegalChanges locale={locale} />),
+        'text/html'
+      );
+      expect(page.querySelector('.version-document')?.textContent).toBe(
+        `${current.title} ${current.highlightedWord}`
+      );
+      const [inForce, proposed] = page.querySelectorAll(
+        '.version-pair section'
+      );
+      expect(inForce?.textContent).toContain(current.version);
+      expect(inForce?.textContent).toContain(current.effectiveDate);
+      expect(inForce?.querySelector('strong')?.textContent).toBe(copy.from);
+      expect(proposed?.textContent).toBe(`${copy.to}${copy.notice}`);
+      expect(proposed?.querySelector('dl')).toBeNull();
+      expect(proposed?.textContent).not.toMatch(/draft|\d{4}-\d{2}-\d{2}/iu);
+      expect(page.querySelector('.change-versions')?.textContent).not.toMatch(
+        /draft/iu
+      );
+    });
+    it(`${locale} published version block shows the real version and the notice date`, () => {
+      const copy = (locale === 'vi' ? vietnamese : en).legalRedesign;
+      const page = new DOMParser().parseFromString(
+        renderToStaticMarkup(
+          <LegalChanges
+            locale={locale}
+            noticeConfig={{
+              published: true,
+              noticeDate: 'NOTICE-DATE',
+              laterDate: 'LATER-DATE',
+              archiveLinks: { [locale]: 'ARCHIVE' },
+            }}
+          />
+        ),
+        'text/html'
+      );
+      const proposed = page.querySelectorAll('.version-pair section')[1];
+      expect(proposed?.querySelector('strong')?.textContent).toBe(
+        copy.published
+      );
+      expect(proposed?.querySelector('p')?.textContent).toBe('2026-09-13');
+      expect(proposed?.textContent).toContain('NOTICE-DATE');
+      expect(proposed?.textContent).not.toMatch(/draft/iu);
+    });
+    it(`${locale} full proposals show the notice, proposal status footers and current-version links`, () => {
       const page = new DOMParser().parseFromString(
         renderToStaticMarkup(<LegalChanges locale={locale} full />),
         'text/html'
       );
-      expect(page.querySelector('header p')?.textContent).toBe(
+      expect(page.querySelector('.change-status p')?.textContent).toBe(
         legalChangesCopy[locale].notInEffect
       );
       expect(page.querySelectorAll('h1')).toHaveLength(1);
@@ -100,8 +187,25 @@ describe('upcoming legal changes', () => {
         expect(article?.querySelector('h2')?.textContent).toBe(
           `${document.title} ${document.highlightedWord}`
         );
+        const displayFooter = document.footer
+          .replace(
+            'Draft revision for review; not a newly effective agreement.',
+            'Not yet in effect.'
+          )
+          .replace(
+            'Bản sửa đổi để rà soát; chưa phải thỏa thuận mới có hiệu lực.',
+            'Chưa có hiệu lực.'
+          )
+          .split(/(?<=[.!?])\s+/u)
+          .filter(
+            (sentence) =>
+              !/requires legal review|counsel-review draft|cần được rà soát pháp lý|chờ rà soát pháp lý/iu.test(
+                sentence
+              )
+          )
+          .join(' ');
         expect(article?.querySelector('footer p')?.textContent).toBe(
-          document.footer
+          displayFooter
         );
         const path = ['dpa', 'sla', 'subprocessors'].includes(kind)
           ? `legal/${kind}`

@@ -9664,6 +9664,28 @@
       "title": "Tìm không gian làm việc phù hợp cho đội nhóm"
     }
   },
+  "legalRedesign": {
+    "added": "Đã thêm",
+    "all": "Tất cả văn bản",
+    "changes": "Những thay đổi",
+    "compare": "Mở toàn bộ bản so sánh",
+    "contents": "Nội dung",
+    "effective": "Hiệu lực",
+    "exact": "Xem chính xác thay đổi câu chữ",
+    "from": "Đang áp dụng",
+    "language": "Ngôn ngữ",
+    "navigation": "Văn bản pháp lý",
+    "notice": "Chưa có hiệu lực",
+    "print": "In hoặc lưu PDF",
+    "published": "Công bố",
+    "removed": "Đã xóa",
+    "revised": "Đã sửa",
+    "skip": "Chuyển đến nội dung pháp lý",
+    "summary": "Tóm tắt, không phải văn bản pháp lý",
+    "to": "Dự kiến",
+    "unchanged": "Không đổi",
+    "version": "Phiên bản"
+  },
   "link-shortener": {
     "access_denied": "Truy cập bị từ chối",
     "active_creators": "Người tạo hoạt động",

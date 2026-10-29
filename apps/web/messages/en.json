@@ -9664,6 +9664,28 @@
       "title": "Find the right workspace for your team"
     }
   },
+  "legalRedesign": {
+    "added": "Added",
+    "all": "All documents",
+    "changes": "What changed",
+    "compare": "Open the full redline",
+    "contents": "Contents",
+    "effective": "Effective",
+    "exact": "Show the exact wording change",
+    "from": "In force",
+    "language": "Language",
+    "navigation": "Legal documents",
+    "notice": "Not yet in effect",
+    "print": "Print or save as PDF",
+    "published": "Published",
+    "removed": "Removed",
+    "revised": "Revised",
+    "skip": "Skip to legal content",
+    "summary": "Summary, not legal text",
+    "to": "Proposed",
+    "unchanged": "Unchanged",
+    "version": "Version"
+  },
   "link-shortener": {
     "access_denied": "Access Denied",
     "active_creators": "Active Creators",
