@@ -28,6 +28,7 @@
   "dependencies": {
     "@ai-sdk/google": "^4.0.102",
     "@tuturuuu/ai": "workspace:*",
+    "@tuturuuu/auth": "workspace:*",
     "@tuturuuu/satellite": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*",
