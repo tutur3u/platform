@@ -1,4 +1,4 @@
-import { access, readFile, realpath, stat } from 'node:fs/promises';
+import { access, open, realpath, stat } from 'node:fs/promises';
 import { dirname, isAbsolute, join, parse, resolve } from 'node:path';
 import { z } from 'zod';
 
@@ -51,11 +51,16 @@ export async function externalPath(path: string): Promise<string> {
 
 async function boundedRead(path: string, bytes: number): Promise<Buffer> {
   const safe = await externalPath(path);
-  const info = await stat(safe);
-  if (!info.isFile() || info.size > bytes) throw new Error('input size');
-  const data = await readFile(safe);
-  if (data.length > bytes) throw new Error('input size');
-  return data;
+  const file = await open(safe, 'r');
+  try {
+    const info = await file.stat();
+    if (!info.isFile() || info.size > bytes) throw new Error('input size');
+    const data = await file.readFile();
+    if (data.length > bytes) throw new Error('input size');
+    return data;
+  } finally {
+    await file.close();
+  }
 }
 
 export async function loadDataset(manifestPath: string) {
