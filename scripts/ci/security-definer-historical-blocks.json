@@ -1,0 +1,334 @@
+[
+  {
+    "file": "apps/database/supabase/migrations/20230428053924_add_supa_audit_v0.3.1.sql",
+    "blockDigest": "f33efd89a344a72f25d04c55bf7b81fbacff9e5ce5d176f6f8e2dcb594ee8480"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20230428053924_add_supa_audit_v0.3.1.sql",
+    "blockDigest": "974d63520b842084d550cd72ed3033913aaabb82d476dd2e369a0dd3076a3ff2"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20230707135705_remote_commit.sql",
+    "blockDigest": "005ae358505b7bfc8466130b4f6da59ee5c3db94cd94e9580ba946c385f5661f"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20230707135705_remote_commit.sql",
+    "blockDigest": "cea3063d47fcc37b8887518e02f316aefd34f5bcad598d2d5207723551e3ae74"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20240227020600_remote_schema.sql",
+    "blockDigest": "9c3819088c6e5ce55e163a889a6cb35604cc589ef2e3cc9bf038f3045abb82cd"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20240227020600_remote_schema.sql",
+    "blockDigest": "30ca3737b2ecef89890b7528a0d60ff57bc445c2c3f3becf2eb4de609b818703"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20240501095759_remote_schema.sql",
+    "blockDigest": "9c3819088c6e5ce55e163a889a6cb35604cc589ef2e3cc9bf038f3045abb82cd"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20240501095759_remote_schema.sql",
+    "blockDigest": "30ca3737b2ecef89890b7528a0d60ff57bc445c2c3f3becf2eb4de609b818703"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20250518050504_update_nova_user_search.sql",
+    "blockDigest": "ab7d0b7c80e6975600c661388640f94d5bac341cdc93022535f0ca9fad2e81a6"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20250518050504_update_nova_user_search.sql",
+    "blockDigest": "9eac18d4e30f888a7ba7271e091655946f6482c7718159b8cc70675c5f3847e5"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20250525120533_add_user_full_name.sql",
+    "blockDigest": "76d939e9c2cffae096b85315922fec7425f31f2e44fb91958859fcd10b901c65"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20250525120533_add_user_full_name.sql",
+    "blockDigest": "9eac18d4e30f888a7ba7271e091655946f6482c7718159b8cc70675c5f3847e5"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20250901120000_time_tracking_daily_hierarchy.sql",
+    "blockDigest": "590060d9de093abe9e8b208d2518bdd70ebd05750ef1f6d6a49d022a4571ff55"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20250901120000_time_tracking_daily_hierarchy.sql",
+    "blockDigest": "88f3ccdbb33e83f48fe28ef815256d05b8dfc75154ca0985fd90668334872a90"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20250901120000_time_tracking_daily_hierarchy.sql",
+    "blockDigest": "a59e70b3ee98c05035893b26a3fdd6e2a29772b09322027b7756038766d1eadf"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20250901120000_time_tracking_daily_hierarchy.sql",
+    "blockDigest": "ec2c275e2026ab7a4eee160d9bdc1525b044399038f62c89c8e5afdb62a5600d"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20251104180627_update_time_tracking_permissions.sql",
+    "blockDigest": "6ac186d3d91deba953a2184c28dbd05f832caad3220bf35040b16f572a2e0c27"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20251104180627_update_time_tracking_permissions.sql",
+    "blockDigest": "edaaf152c680ff2b08481e1fcb5f5061a4ba855a27c2bdcf9d03fdb601e59200"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20251108173800_optimize_transaction_rpc.sql",
+    "blockDigest": "afab617800f34880d2511e1dd2daeafca06f3e93877e5ab2a686e47c37e1fead"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20251206220100_preserve_task_history_on_delete.sql",
+    "blockDigest": "6c562d5180a78b31f83566f5bf98ba6ce045b582343cd63da392a019c0dcf61e"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20260111163000_enhance_transaction_rpc_details.sql",
+    "blockDigest": "7adbc10a9e978065e616081e43e2c7380c530cb43515994c21995aae41510ccb"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20260111164500_fix_transaction_creator_join.sql",
+    "blockDigest": "abfcb7bd6ab7a8d0b6da995791661fab33527d7d83e578408f0965b28dc8d541"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20260111165000_add_transaction_platform_creator.sql",
+    "blockDigest": "b9550bd9fe2c22ac2e81607765a5fe2498a511a97a32e2d0f591d17826ab116f"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20260121100000_reintegrate_granular_transaction_permissions.sql",
+    "blockDigest": "910a45d8dc0107abeb29ff9a2830785cf46210b7cd9f0d5a4106380daf5dc65c"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20260129100001_add_category_details_to_transaction_rpc.sql",
+    "blockDigest": "7a72d91f2c6ff31f376f9abf9991a066b840be755c32529d8a9218d13d9ae093"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20260129100004_add_tag_filter_to_transaction_rpcs.sql",
+    "blockDigest": "8ad9c1e9835ca3efd0b90c385cb9fecf051134cc5eefb86cbc484b08bd59c21d"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20260130100007_add_workspace_user_merge.sql",
+    "blockDigest": "77d6d199dd0520f44090941dcc5e93295ce037b552068cb97eefbb9886e42769"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20260204110000_enhance_workspace_user_merge.sql",
+    "blockDigest": "013601ef583d82297520ed5848124df4d97f3bbdcd7ab083c11225f533cb6c39"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20260205000002_batched_workspace_user_merge.sql",
+    "blockDigest": "6ce7c129f7f20907d0f75ca6e2503541a5fe4f99dce6439723c1b4b425753f1c"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20260205000003_single_table_batch_merge.sql",
+    "blockDigest": "38daf49460250827d35069efdc467038150b98b9afa5eb32f2566cd5700a5586"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20260217120000_add_text_length_constraints.sql",
+    "blockDigest": "937304a1e2dacc8620f7bd6ecfc73b27f5e9ec18748677bfcb3f9cc8d01aed5e"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20260217120000_add_text_length_constraints.sql",
+    "blockDigest": "263e317fe7dc2c76cef4ae7ce4205846696a37f56686ef71e8cc142e99cb1896"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20260217120001_add_byte_size_constraints.sql",
+    "blockDigest": "22cad57f1965816c1bd52139e888f024f3ba64c8c1a9c6bdd01f81bc6c03912b"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20260312110000_enforce_strict_text_field_limits.sql",
+    "blockDigest": "714163108aa94a4e066b40b7138fcf1361950e32f8c778a73bc87e40b8f84ca8"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20260312190530_sync_strict_public_field_constraints.sql",
+    "blockDigest": "7427365a00930f8781df8235b4adaefd4d24dc9b9ca3003d1ac6f4d46084ed91"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20260318160000_add_platform_entity_creation_limits.sql",
+    "blockDigest": "f87e4685a4d4f97a08ac871368b0ce162070fe8a7fab8bba26754bcf2bc8589f"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20260318160000_add_platform_entity_creation_limits.sql",
+    "blockDigest": "5bf3624d6f1e3e939ac8af8c8e976df37f719ff44c0b909cafe8e946af034630"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20260318160000_add_platform_entity_creation_limits.sql",
+    "blockDigest": "4ccb2cbbd8cbe02a5e75832e0a12e0f98da0f6b08e7a9b68cd40163fa5bce9f1"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20260318160000_add_platform_entity_creation_limits.sql",
+    "blockDigest": "37c75486525b343efa4e81aa58a02e54c21504d1b2d5608460abc9351bb9be44"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20260319101300_remove_workspace_boards_rls.sql",
+    "blockDigest": "f95504b20e547a10bcf1fa397e100b66a09ca3f97d0bb6e6694ba6f48772d796"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20260426220000_exempt_ai_gateway_model_text_from_strict_limits.sql",
+    "blockDigest": "f1bf25cea3935c5d4401ac4b7d47247c93be288d4a5bc9d9625b49969ad9ed1a"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20260503100000_add_transaction_type_filter_to_transaction_rpcs.sql",
+    "blockDigest": "c45bf189341b973df06f54024e393db483aa3d3eb53e9753b740cfe3aaea0345"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20260504101000_resync_strict_public_field_constraints.sql",
+    "blockDigest": "74f210295b610566a105623902a516f2215422fc770213ab5d0d2e7f031c3c41"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20260518124435_harden_public_users_select_rls.sql",
+    "blockDigest": "c5b89827903c495c6b775d29eebf7596deb9d0938ca7c69beda6562874f1eee8"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20260519035624_harden_public_view_security.sql",
+    "blockDigest": "edec9cb39a744b236b6c29492822074746e15a27b57aac47d3ccdf0d9d129da7"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20260528141100_move_inventory_tables_private.sql",
+    "blockDigest": "64640145e2b94955c827ffe7e92a3dee2090af31418df415199f7e81104b1705"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20260529043334_remove_remaining_ai_chat_message_content_limit.sql",
+    "blockDigest": "9711187beef908ec8b81d377aae6c8c8111350dee260cb5b256aa916100934a2"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20260529123000_exempt_ai_chat_message_metadata_payload_limit.sql",
+    "blockDigest": "47ea9e2a44a468e73afaef031cc9f707246b6931e1768d5dd909daa7662e8729"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20260531204217_move_topic_announcements_private.sql",
+    "blockDigest": "4292371155a9dedb62376812dcfc27b44d313063c12a4c7efd7c161ca8a6f6c1"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20260531213003_move_user_group_posts_private.sql",
+    "blockDigest": "181023921ac62a12c00eb879dec6fc8ec9fe0288eb93f50cb195ade9c0a196cf"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20260531222033_move_time_tracking_requests_private.sql",
+    "blockDigest": "107c384f2a776e2403d99c8b8e2178b6e7c058a5f00463cd1c0e87fa17a3fee4"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20260531224930_move_workspace_credit_packs_private.sql",
+    "blockDigest": "1b2900983d7d8fc1f697681c0b964f33bdddae837b22d06c2be828d9f07b1720"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20260531230827_move_user_linked_promotions_private.sql",
+    "blockDigest": "d86bf03a027e4b6804b8ea0c6a506cd3363904020211f73abbb27ce6351e7bad"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20260531233022_move_workspace_promotions_private.sql",
+    "blockDigest": "f41a129babd89213b4e7ebb0dbb076e0e4dc3d4f5d48eb0578432fb151746a71"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20260601002502_move_workspace_wallets_private.sql",
+    "blockDigest": "ceee7b2b5d01053a5ec8d5b19eb198eafc11d503ed1d16ed7e5122c4646d8a33"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20260601002502_move_workspace_wallets_private.sql",
+    "blockDigest": "8f531f53ca6db75da0747392538797bda7fa42c6570ccc8b6efa3d33a3070699"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20260601011752_move_nova_teams_private.sql",
+    "blockDigest": "78820a952ef8eab45c78eb6e750fee18dfe88afbd0fede82bc173ba84789f6d1"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20260601011752_move_nova_teams_private.sql",
+    "blockDigest": "121d769e6108c1086d4524b6ba6324e3439ed774bd6d436393321f0214395ac9"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20260601013426_move_nova_challenge_catalog_private.sql",
+    "blockDigest": "9ebdbfdd8103399b9822fbceec23b71450f18f65b8d12987d684a0abed090d84"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20260601013426_move_nova_challenge_catalog_private.sql",
+    "blockDigest": "57c348598f09e6187ae3569be2026f537382fa4f6952b3b0bb7bd4ba98cc9763"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20260601013426_move_nova_challenge_catalog_private.sql",
+    "blockDigest": "b257ec211857e6935ed85ad9c82749d573c6464748fa8a5b3113a449a57c180f"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20260601015949_move_nova_runtime_private.sql",
+    "blockDigest": "e68b64b80d360a384d42990731e592b71dd1c42771fe44d7e25dd55123eb1338"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20260601015949_move_nova_runtime_private.sql",
+    "blockDigest": "02f3915dab5741ae71eb52c517b806c4e02c76cc195d8b9e249635176c7ad995"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20260601015949_move_nova_runtime_private.sql",
+    "blockDigest": "20a9c93e9f1e5e99bc8cc4072939dd85d00473f1266d32c3d2d26e6cac3a4f6f"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20260603000201_secure_transaction_type_confidential_filters.sql",
+    "blockDigest": "10c85fb86af5f3715034bc5b963d95d7690870fcc03c0105fb43983aad8f22e2"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20260801193100_inventory_recognized_revenue_reporting.sql",
+    "blockDigest": "8cf0d1eccf13e7574a011e60531537312c5412f644fcae0d2b9601e124e68c7d"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20260916130000_invoice_recovery_and_history.sql",
+    "blockDigest": "e2be0c880b3e9e5e0b96f0e565d708d1c9328a5efe931d964e0d9e0317b99a89"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20260923130000_required_account_mfa.sql",
+    "blockDigest": "fb43ba36c6ec64b07197a93984bc86574f7e36ce19a993250953de55ad34b4fa"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261003090000_inventory_merge_identities.sql",
+    "blockDigest": "7c36355b2839fc1291fdc6f0f4070e413449be287e1a36e3bf14a3e071970378"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261003090100_inventory_merge_preview.sql",
+    "blockDigest": "2cc59c653db7191c3d9677d5355351d6dab7739fce27a7f9c9dbc8e8893cbee7"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261003090200_inventory_merge_apply.sql",
+    "blockDigest": "8bfba91effe379e9dc003ff28ff9a41cc0c403f696ca8cd2bfefd12aa4cc6169"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261003101600_inventory_merge_identity_coordination.sql",
+    "blockDigest": "369029ba74bb029722b6ce6426fafbfc79d6a069e6cb001e1724ccc580b3ddc3"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261003101600_inventory_merge_identity_coordination.sql",
+    "blockDigest": "962743a9d39f78a706e3166f1728e759a968c9b6b315256b572583b6f678519f"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261003101600_inventory_merge_identity_coordination.sql",
+    "blockDigest": "c6dac65556902258ce51c48d2c63d31fc4bf1cfea401da4945565ae8101ca438"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261003120000_inventory_season_merge_contract.sql",
+    "blockDigest": "26ef0fc7b3f878a241d77131b42155f6d8510bc17c4310dd69f6b0765c7a7aaa"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261021010000_retained_mailbox_adoption.sql",
+    "blockDigest": "6926d63aa654f84e163aca6a9421bb0f1adf178fd41fe94a253cf4f4b217ea0c"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261024023000_harden_definer_function_grants.sql",
+    "blockDigest": "f2d36f314cd63d49f55eaadbd4e80959f93cb0d0b349a2711eda5dc9999f8084"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261024025000_harden_owned_definer_search_paths.sql",
+    "blockDigest": "f3decede333cae2b08dbd8696dae12accf6c129e346f0180e89e8a48a7350979"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261025095500_clear_notification_email_copies.sql",
+    "blockDigest": "25fde51c5d43e665d04a66c08c3a0a09729b2ee1fcc222ec259876cad32f7b52"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261025095500_clear_notification_email_copies.sql",
+    "blockDigest": "9a02e091377ab1731fa77cde92cba0eaa604286ac94c13fd9768022647c38798"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261026193000_topic_announcement_teacher_assignment.sql",
+    "blockDigest": "29decd7625dc50825be15de5bec8dc93bf487e202e5b0f6df8a0c470517174b2"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261027151400_restrict_remaining_privileged_definers.sql",
+    "blockDigest": "ffa9fd8fcf8171bf72f6f2b93d082c917df7f7fc5066090402f591c7aa4d0fbd"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261029030200_pin_notification_trigger_vault.sql",
+    "blockDigest": "2dee44313d4d36dc16e7c9f19c455823836bd0790cf937948b9e27f8476756ee"
+  }
+]

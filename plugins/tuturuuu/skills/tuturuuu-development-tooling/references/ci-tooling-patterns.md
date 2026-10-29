@@ -1412,6 +1412,12 @@ without visible privilege text. Reviewed block exceptions bind the migration
 path and raw block SHA-256 with a reason. Track role membership and EXECUTE grants
 in migration order, including transitive anon access and membership revokes.
 Report newly uncovered historical findings; never refresh a baseline to clear them.
+The definer guard's opaque-block inventory is `security-definer-historical-blocks.json`:
+only remove reviewed path/digest records. Trusted-base CI rejects growth or digest
+changes. Mixed hardening reviews additionally bind exact grant recipients; see
+`security-definer-blocks.test.js` and the security scans runbook. Keep every local
+guard dependency in the trusted CI loader so neither execution nor baseline checks
+depend on pull-request code.
 
 ## Private Meet transcription evaluation
 

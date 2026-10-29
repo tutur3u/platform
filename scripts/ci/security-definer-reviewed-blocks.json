@@ -8,5 +8,17 @@
     "file": "apps/database/supabase/migrations/20261029030500_align_cross_app_token_grant_and_private_fence.sql",
     "blockDigest": "299b7928676d3239b07440850f402be9487d812763ca40eea0b483be90a8cde1",
     "reason": "Reviewed revoke-only private defaults fence: removes PUBLIC EXECUTE from function defaults for existing schema creators; contains no GRANT."
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261029030410_restrict_nonpublic_definers.sql",
+    "blockDigest": "06158b4c4cc31ece33856355a3ba4f1d7febfbe70cb8791116ccb78371080da8",
+    "grantedRoles": ["service_role"],
+    "reason": "hardening block: revokes PUBLIC/anon(/authenticated) and conditionally re-grants service_role(/authenticated); no anon/PUBLIC grant"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261029030410_restrict_nonpublic_definers.sql",
+    "blockDigest": "5e1c65ec619a3084f43b9267d124ac5896fa2a7d56ef10e402d86c36c7050e65",
+    "grantedRoles": ["authenticated", "service_role"],
+    "reason": "hardening block: revokes PUBLIC/anon(/authenticated) and conditionally re-grants service_role(/authenticated); no anon/PUBLIC grant"
   }
 ]

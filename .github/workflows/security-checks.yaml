@@ -59,12 +59,12 @@ jobs:
           dir="$RUNNER_TEMP/definer-guard"
           mkdir -p "$dir"
           if [[ "$BASE_SHA" =~ ^[0-9a-f]{40}$ ]] && git cat-file -e "$BASE_SHA:scripts/ci/security-definer-guard.js" 2>/dev/null; then
-            for file in security-definer-guard.js security-sql.js security-definer-baseline.json; do
+            for file in security-definer-baseline.json security-definer-historical-blocks.json security-definer-blocks.js security-definer-guard.js security-definer-reviewed-blocks.json security-definer-roles.js security-sql.js sql-grant-acl.js sql-grant-frozen-definers.js sql-grant-guard.js sql-grant-identifiers.js; do
               git show "$BASE_SHA:scripts/ci/$file" > "$dir/$file"
             done
           else
             echo "::warning::Definer guard bootstrap requires independent CI/security review."
-            for file in security-definer-guard.js security-sql.js security-definer-baseline.json; do
+            for file in security-definer-baseline.json security-definer-historical-blocks.json security-definer-blocks.js security-definer-guard.js security-definer-reviewed-blocks.json security-definer-roles.js security-sql.js sql-grant-acl.js sql-grant-frozen-definers.js sql-grant-guard.js sql-grant-identifiers.js; do
               cp "scripts/ci/$file" "$dir/$file"
             done
           fi

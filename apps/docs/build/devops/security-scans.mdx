@@ -31,6 +31,10 @@ The guard rejects NULL-unsafe `auth.uid() <> value` and `!=` guards, including r
 
 Historical exceptions in `scripts/ci/security-definer-baseline.json` are generated records keyed by migration file, qualified signature, definition/ACL digest and existing rule. They record debt, not security approval. Changing a definition or ACL invalidates its exception. Copying or moving it to a new file requires fresh checks. Never regenerate the baseline to make a new failure pass. Remove obsolete exceptions through review.
 
+Opaque historical blocks are frozen in `scripts/ci/security-definer-historical-blocks.json` as exact migration paths and raw block SHA-256 digests. This reviewed inventory starts with 83 entries and may only shrink. The trusted-base guard rejects additions and digest changes before scanning; deleting an entry removes its suppression. New findings remain review blockers and must not be added to this inventory.
+
+Mixed hardening exemptions in `security-definer-reviewed-blocks.json` bind the exact path, raw block digest, exact sorted grant recipients and review reason. The two approved blocks in `20261029030410` grant only `service_role` or `authenticated, service_role`; changing the block or recipients invalidates acceptance. Trusted-base CI rejects edits to review records. `security-definer-blocks.test.js` covers source changes, recipient changes, inventory growth, digest changes and deletion.
+
 PR and push scans load the guard, parser and baseline from the trusted base commit. The initial independently reviewed introduction uses checkout files only when the base does not yet contain the guard. Migrations are read as data, never executed. Regression fixtures copy the historical session migration and the unmodified `20261027021000` fix from #6993.
 
 The SQL grant guard and definer guard import the frozen seven-entry inherited-ACL policy from `scripts/ci/sql-grant-frozen-definers.js`. An inherited exception requires the earlier revokes to survive ACL replay; the list and cutoff never authorize a new definer or a later grant.

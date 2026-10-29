@@ -11,6 +11,12 @@ const {
   definitions,
 } = require('./security-sql');
 
+const {
+  assertShrinkingBlocks,
+  assertReviewedBlocks,
+  reviewedBlockMatches,
+} = require('./security-definer-blocks');
+
 const MIGRATIONS = 'apps/database/supabase/migrations/';
 const BASELINE = 'scripts/ci/security-definer-baseline.json';
 const { inheritedFindings } = require('./security-definer-roles');
@@ -485,7 +491,10 @@ function checkRepository({
   baseline,
   files,
   reviewedBlocks,
+  historicalBlocks,
 } = {}) {
+  const historical =
+    historicalBlocks ?? require('./security-definer-historical-blocks.json');
   const blocks =
     reviewedBlocks ?? require('./security-definer-reviewed-blocks.json');
   const accepted =
@@ -548,13 +557,13 @@ function checkRepository({
     ]) {
       if (
         finding.rule === 'dynamic-execute-acl' &&
-        blocks.some(
+        (historical.some(
           (entry) =>
-            entry.file === file &&
-            entry.blockDigest === finding.blockDigest &&
-            typeof entry.reason === 'string' &&
-            entry.reason.trim().length > 0
-        )
+            entry.file === file && entry.blockDigest === finding.blockDigest
+        ) ||
+          blocks.some((entry) =>
+            reviewedBlockMatches(entry, file, finding, sql)
+          ))
       )
         continue;
       const routine =
@@ -595,7 +604,31 @@ function checkRepository({
 if (require.main === module) {
   try {
     const root = process.cwd();
-    const findings = checkRepository({ root });
+    const historicalFile = 'scripts/ci/security-definer-historical-blocks.json';
+    assertShrinkingBlocks(
+      JSON.parse(
+        fs.readFileSync(
+          path.join(__dirname, 'security-definer-historical-blocks.json'),
+          'utf8'
+        )
+      ),
+      JSON.parse(fs.readFileSync(path.join(root, historicalFile), 'utf8'))
+    );
+    const reviewedFile = 'security-definer-reviewed-blocks.json';
+    const proposedReviews = JSON.parse(
+      fs.readFileSync(path.join(root, 'scripts/ci', reviewedFile), 'utf8')
+    );
+    assertReviewedBlocks(
+      JSON.parse(fs.readFileSync(path.join(__dirname, reviewedFile), 'utf8')),
+      proposedReviews
+    );
+    const findings = checkRepository({
+      root,
+      reviewedBlocks: proposedReviews,
+      historicalBlocks: JSON.parse(
+        fs.readFileSync(path.join(root, historicalFile), 'utf8')
+      ),
+    });
     const report = process.argv[2];
     if (report)
       fs.writeFileSync(report, JSON.stringify({ findings }, null, 2) + '\n');
