@@ -1,14 +1,6 @@
 'use client';
 import { useQuery } from '@tanstack/react-query';
-import {
-  CalendarDays,
-  Circle,
-  Code2,
-  FileText,
-  Leaf,
-  Sparkles,
-  Users,
-} from '@tuturuuu/icons';
+import { CalendarDays, Code2, FileText, Sparkles } from '@tuturuuu/icons';
 import { MeetLivePanel } from '@tuturuuu/meet-core/features/live-assistant/live-panel';
 import { RoomAssistantAudio } from '@tuturuuu/meet-core/features/live-assistant/room-audio';
 import { meetingAudioSources } from '@tuturuuu/meet-core/features/meeting-ai/audio-sources';
@@ -22,6 +14,9 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import type { ComponentProps } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { TranscriptionConsentProvider as ConsentProvider } from '../../meeting-ai/consent/consent-context';
+import { TranscriptionLayer } from '../../meeting-ai/consent/transcription-layer';
+import { useTranscriptionConsent } from '../../meeting-ai/consent/use-transcription-consent';
 import { canTranscribeMeet } from '../../meeting-ai/eligibility';
 import { showMeetingAiFailure } from '../../meeting-ai/failure-toast';
 import { useCallNotifications } from '../hooks/use-call-notifications';
@@ -43,6 +38,7 @@ import { CallExtras } from './call-extras';
 import { CallResourceNotice } from './call-resource-notice';
 import { CallSettings } from './call-settings';
 import { type CallLayout, CallStage } from './call-stage';
+import { CallStatusBadges } from './call-status-badges';
 import { CollaborationStageLayout } from './collaboration-stage-layout';
 import { type CallPanel, ControlBar, ControlButton } from './control-bar';
 import { CopyInvite } from './copy-invite';
@@ -64,6 +60,7 @@ import { RoomCountdown } from './room-countdown';
 import { ScreenAudioStatus } from './screen-audio-status';
 import { SharedAudioControl } from './shared-audio-control';
 import { SidePanel } from './side-panel';
+import { WaitingRoomNotice } from './waiting-room-notice';
 
 type Device = 'microphone' | 'camera' | 'screen';
 
@@ -163,6 +160,8 @@ function CallShellContent({
     ],
     [room.localStream, room.screenStream, room.remoteStreams]
   );
+  const consent = useTranscriptionConsent({ wsId, meetingId, room });
+  const { allowedAccountIds, selfAllowed } = consent;
   const transcriptionSources = useMemo(
     () =>
       meetingAudioSources({
@@ -171,6 +170,9 @@ function CallShellContent({
         remoteMedia: room.remoteMedia,
         participants: state.participants,
         selfUserId: state.selfUserId,
+        selfAccountId: accountId,
+        allowedAccountIds,
+        selfAllowed,
       }),
     [
       room.localStream,
@@ -178,6 +180,9 @@ function CallShellContent({
       room.remoteMedia,
       state.participants,
       state.selfUserId,
+      accountId,
+      allowedAccountIds,
+      selfAllowed,
     ]
   );
   const ai = useMeetingAi(
@@ -351,336 +356,324 @@ function CallShellContent({
     );
 
   return (
-    <div className="flex h-dvh flex-col bg-background">
-      <header className="flex flex-wrap items-center gap-2 border-b px-3 py-2">
-        <MeetingTitle
-          meetingId={meetingId}
-          title={room.state.title ?? meetingName}
-          canManage={canManage}
-          onSaved={room.renameMeeting}
-        />
-        {participants.length === 1 && !state.liveAssistant && (
-          <output
-            className="inline-flex items-center gap-1.5 rounded-full border bg-muted/40 px-2.5 py-1 text-muted-foreground text-xs"
-            title={t('solo_hint')}
-          >
-            <Leaf className="size-3.5" />
-            {t('solo_mode')}
-          </output>
-        )}
-        {canReadNotes && (
-          <MeetingActionHint label={aiT('title')}>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 max-w-full rounded-full text-xs"
-              aria-expanded={showAi}
-              onClick={() => {
-                setShowAi(!showAi);
-                setShowPersonalTools(false);
-                setPanel(null);
-              }}
-            >
-              <Sparkles className="size-3.5" />
-              {aiT('title')}
-            </Button>
-          </MeetingActionHint>
-        )}
-        <CopyInvite
-          meetingId={meetingId}
-          meetingName={room.state.title ?? meetingName}
-        />
-        {state.recording.state === 'recording' && (
-          <span className="flex items-center gap-1.5 rounded-full bg-dynamic-red/10 px-2 py-1 text-dynamic-red text-xs">
-            <Circle className="size-2 fill-current motion-safe:animate-pulse" />
-            {t('recording')}
-          </span>
-        )}
-        <CallConnectionNotice
-          status={room.connectionStatus}
-          onRetry={retryConnection}
-        />
-        <RoomAssistantAudio
-          room={room}
-          audioSuppressed={sharedAudio.shared}
-          canManage={canManage}
-          meetingId={meetingId}
-          outputDeviceId={outputDeviceId}
-        />
-        <MeetLivePanel
-          accountId={accountId}
-          key="live-assistant"
-          onOpenChat={askMira}
-          room={room}
-          meetingId={meetingId}
-          outputDeviceId={outputDeviceId}
-          canManage={canManage}
-          audioSuppressed={sharedAudio.microphonePaused}
-        />
-        <PlaybackVolumeControl
-          participants={participants}
-          selfUserId={state.selfUserId}
-        />
-        <SharedAudioControl
-          audio={sharedAudio}
-          busy={!!busyDevices.microphone}
-          onShare={() => void runMediaAction(sharedAudio.share, 'microphone')}
-          onUseMicrophone={() =>
-            void runMediaAction(sharedAudio.useOwnMicrophone, 'microphone')
-          }
-        />
-        <CallSettings
-          meetingId={meetingId}
-          room={room}
-          telemetry={telemetry.data}
-          ai={ai}
-          canManage={canManage}
-          sound={notifications.sound}
-          onSound={notifications.toggleSound}
-          outputDeviceId={outputDeviceId}
-          onOutput={setOutputDeviceId}
-        />
-        <RoomCountdown expiresAt={state.roomExpiresAt} />
-      </header>
-      {canManage && state.waiting.length > 0 && (
-        <output className="flex items-center justify-between gap-3 border-b bg-muted/40 px-3 py-2">
-          <span className="text-sm">
-            {t('waiting_room', { count: state.waiting.length })}
-          </span>
-          <MeetingActionHint
-            label={t('participants', { count: participants.length })}
-          >
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-8 rounded-full"
-              onClick={() => {
-                setPanel('participants');
-                setShowAi(false);
-              }}
-            >
-              <Users className="size-3.5" />
-              {t('participants', { count: participants.length })}
-            </Button>
-          </MeetingActionHint>
-        </output>
-      )}
-      <CallResourceNotice error={state.error} />
-      <div className="flex min-h-0 flex-1 flex-col md:flex-row">
-        <main
-          className={
-            showDocument
-              ? 'relative min-h-0 flex-1'
-              : 'relative min-h-0 flex-1 p-2 sm:p-3'
-          }
-        >
-          {room.screenStream && (
-            <div className="absolute top-3 left-3 z-20">
-              <ScreenAudioStatus stream={room.screenStream} />
-            </div>
-          )}
-          <CollaborationStageLayout
-            layout={layout}
-            content={
-              showProgramming ? (
-                <ProgrammingPanel
-                  meetingId={meetingId}
-                  wsId={wsId}
-                  accountId={accountId}
-                  preparing={programming.isPending}
-                  canManage={canManage}
-                  selection={state.settings.programming ?? null}
-                />
-              ) : showDocument ? (
-                <DocumentPanel meetingId={meetingId} accountId={accountId} />
-              ) : null
-            }
-            stage={
-              <CallStage
-                onChat={askMira}
-                audioSuppressed={sharedAudio.shared}
-                outputDeviceId={outputDeviceId}
-                room={room}
-                layout={layout}
-                compact={showProgramming || showDocument}
-                focus={focus}
-                onFocus={focusFeed}
-              />
-            }
-          />
-          <ReactionOverlay state={state} />
-        </main>
-        {showPersonalTools && MEETING_APP === 'meet' && (
-          <PersonalToolsPanel
-            accountId={accountId}
-            onClose={() => setShowPersonalTools(false)}
-          />
-        )}
-        {showAi && canReadNotes && (
-          <ResizableCallPanel label={aiT('title')}>
-            <div className="min-h-0 overflow-y-auto p-3">
-              <MeetingAiPanel ai={ai} inCall />
-              {canManage && (
-                <div className="mt-3">
-                  <NotesSharingControl
-                    wsId={wsId}
-                    meetingId={meetingId}
-                    initialEnabled={state.settings.shareNotesAfterMeeting}
-                  />
-                </div>
-              )}
-            </div>
-          </ResizableCallPanel>
-        )}
-        {panel && (
-          <SidePanel
-            accountId={accountId}
-            mentionRequest={mentionRequest}
-            onMentionHandled={onMentionHandled}
+    <ConsentProvider value={consent}>
+      <div className="flex h-dvh flex-col bg-background">
+        <header className="flex flex-wrap items-center gap-2 border-b px-3 py-2">
+          <MeetingTitle
             meetingId={meetingId}
-            miraActive={!!state.liveAssistant}
+            title={room.state.title ?? meetingName}
             canManage={canManage}
-            chat={state.chat}
-            onClose={() => setPanel(null)}
-            onDecideAdmission={room.decideAdmission}
-            onMute={(userId) => room.muteParticipant(userId, ['audio'])}
-            onRemove={room.removeParticipant}
-            onSendChat={room.sendChat}
-            panel={panel}
-            participants={participants}
-            raisedHandUserIds={state.stage.raisedHandUserIds}
-            selfUserId={state.selfUserId}
-            waiting={state.waiting}
-            approved={state.approved}
-            onForget={room.forgetParticipant}
-            shareNotes={state.settings.shareNotes}
-            onShareNotes={room.shareNotes}
+            onSaved={room.renameMeeting}
           />
-        )}
-      </div>
-      <ControlBar
-        activePanel={panel}
-        cameraOn={room.media.videoEnabled}
-        micOn={!sharedAudio.microphonePaused && room.media.audioEnabled}
-        screenOn={room.media.screenEnabled}
-        handRaised={
-          state.selfUserId ? isHandRaised(state, state.selfUserId) : false
-        }
-        busyDevices={busyDevices}
-        participantCount={participants.length + (state.liveAssistant ? 1 : 0)}
-        recordingBusy={recording.isBusy}
-        recordingOn={state.recording.state === 'recording'}
-        unreadChat={
-          panel === 'chat'
-            ? 0
-            : countUnreadChatMessages(state.chat, lastReadChatId)
-        }
-        waitingCount={state.waiting.length}
-        onLeave={() => (canManage ? setLeaveDialog(true) : leaveNow())}
-        onToggleMic={() =>
-          sharedAudio.microphonePaused
-            ? void runMediaAction(sharedAudio.useOwnMicrophone, 'microphone')
-            : void runMediaAction(room.toggleMicrophone, 'microphone')
-        }
-        onToggleCamera={() => void runMediaAction(room.toggleCamera, 'camera')}
-        onToggleScreen={() =>
-          void runMediaAction(room.toggleScreenShare, 'screen')
-        }
-        onToggleHand={() =>
-          room.raiseHand(
-            !(state.selfUserId && isHandRaised(state, state.selfUserId))
-          )
-        }
-        onTogglePanel={(next) => {
-          setPanel(next);
-          setShowPersonalTools(false);
-          setShowAi(false);
-        }}
-        onToggleRecording={
-          canManage || state.settings.allowParticipantRecording
-            ? () =>
-                void recording
-                  .toggle()
-                  .catch(() => toast.error(t('record_start_failed')))
-            : undefined
-        }
-        extraControls={
-          <>
-            {MEETING_APP === 'meet' && (
-              <ControlButton
-                active={showPersonalTools}
-                icon={CalendarDays}
-                label={privateT('title')}
+          {canReadNotes && (
+            <MeetingActionHint label={aiT('title')}>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 max-w-full rounded-full text-xs"
+                aria-expanded={showAi}
                 onClick={() => {
-                  setShowPersonalTools((value) => !value);
+                  setShowAi(!showAi);
+                  setShowPersonalTools(false);
                   setPanel(null);
-                  setShowAi(false);
                 }}
-              />
+              >
+                <Sparkles className="size-3.5" />
+                {aiT('title')}
+              </Button>
+            </MeetingActionHint>
+          )}
+          <CopyInvite
+            meetingId={meetingId}
+            meetingName={room.state.title ?? meetingName}
+          />
+          <CallStatusBadges
+            solo={participants.length === 1 && !state.liveAssistant}
+            recording={state.recording.state === 'recording'}
+          />
+          <TranscriptionLayer
+            consent={consent}
+            room={room}
+            capturingSessionId={
+              ai.capturing
+                ? ai.data?.sessions.find(
+                    (entry: { ended_at: string | null; user_id: string }) =>
+                      !entry.ended_at && entry.user_id === accountId
+                  )?.id
+                : undefined
+            }
+            onOpenRoster={() => openNoticePanel('participants')}
+          />
+          <CallConnectionNotice
+            status={room.connectionStatus}
+            onRetry={retryConnection}
+          />
+          <RoomAssistantAudio
+            room={room}
+            audioSuppressed={sharedAudio.shared}
+            canManage={canManage}
+            meetingId={meetingId}
+            outputDeviceId={outputDeviceId}
+          />
+          <MeetLivePanel
+            accountId={accountId}
+            key="live-assistant"
+            onOpenChat={askMira}
+            room={room}
+            meetingId={meetingId}
+            outputDeviceId={outputDeviceId}
+            canManage={canManage}
+            audioSuppressed={sharedAudio.microphonePaused}
+          />
+          <PlaybackVolumeControl
+            participants={participants}
+            selfUserId={state.selfUserId}
+          />
+          <SharedAudioControl
+            audio={sharedAudio}
+            busy={!!busyDevices.microphone}
+            onShare={() => void runMediaAction(sharedAudio.share, 'microphone')}
+            onUseMicrophone={() =>
+              void runMediaAction(sharedAudio.useOwnMicrophone, 'microphone')
+            }
+          />
+          <CallSettings
+            meetingId={meetingId}
+            room={room}
+            telemetry={telemetry.data}
+            ai={ai}
+            canManage={canManage}
+            sound={notifications.sound}
+            onSound={notifications.toggleSound}
+            outputDeviceId={outputDeviceId}
+            onOutput={setOutputDeviceId}
+          />
+          <RoomCountdown expiresAt={state.roomExpiresAt} />
+        </header>
+        <WaitingRoomNotice
+          waiting={canManage ? state.waiting.length : 0}
+          participants={participants.length}
+          onOpen={() => openNoticePanel('participants')}
+        />
+        <CallResourceNotice error={state.error} />
+        <div className="flex min-h-0 flex-1 flex-col md:flex-row">
+          <main
+            className={
+              showDocument
+                ? 'relative min-h-0 flex-1'
+                : 'relative min-h-0 flex-1 p-2 sm:p-3'
+            }
+          >
+            {room.screenStream && (
+              <div className="absolute top-3 left-3 z-20">
+                <ScreenAudioStatus stream={room.screenStream} />
+              </div>
             )}
-            {MEETING_APP === 'meet' && (
-              <ControlButton
-                active={showProgramming}
-                icon={Code2}
-                label={programmingT('coding')}
-                onClick={() => {
-                  setShowDocument(false);
-                  setShowProgramming((value) => !value);
-                  if (!showProgramming && canManage)
-                    void programming
-                      .prepare()
-                      .catch(() => toast.error(programmingT('accessError')));
-                }}
-              />
-            )}
-            {MEETING_APP === 'meet' && (
-              <ControlButton
-                active={showDocument}
-                icon={FileText}
-                label={collaborationT('document')}
-                onClick={() => {
-                  setShowProgramming(false);
-                  setShowDocument((value) => !value);
-                }}
-              />
-            )}
-            <CallExtras
+            <CollaborationStageLayout
               layout={layout}
-              setLayout={(next) => {
-                setLayout(next);
-                setFocus(null);
-              }}
-              look={room.cameraLook}
-              setLook={(look) => {
-                void room.setCameraLook(look).catch((error) => {
-                  if (
-                    !(
-                      error instanceof DOMException &&
-                      error.name === 'AbortError'
-                    )
-                  )
-                    toast.error(t('effects_failed'));
-                });
-              }}
-              react={room.react}
+              content={
+                showProgramming ? (
+                  <ProgrammingPanel
+                    meetingId={meetingId}
+                    wsId={wsId}
+                    accountId={accountId}
+                    preparing={programming.isPending}
+                    canManage={canManage}
+                    selection={state.settings.programming ?? null}
+                  />
+                ) : showDocument ? (
+                  <DocumentPanel meetingId={meetingId} accountId={accountId} />
+                ) : null
+              }
+              stage={
+                <CallStage
+                  onChat={askMira}
+                  audioSuppressed={sharedAudio.shared}
+                  outputDeviceId={outputDeviceId}
+                  room={room}
+                  layout={layout}
+                  compact={showProgramming || showDocument}
+                  focus={focus}
+                  onFocus={focusFeed}
+                />
+              }
             />
-          </>
-        }
-      />
-      <LeaveDialog
-        open={leaveDialog}
-        onOpenChange={setLeaveDialog}
-        busy={ending}
-        onLeave={leaveNow}
-        onEnd={() => {
-          setEnding(true);
-          void room.endMeeting().catch(() => {
-            setEnding(false);
-            toast.error(t('end_failed'));
-          });
-        }}
-      />
-    </div>
+            <ReactionOverlay state={state} />
+          </main>
+          {showPersonalTools && MEETING_APP === 'meet' && (
+            <PersonalToolsPanel
+              accountId={accountId}
+              onClose={() => setShowPersonalTools(false)}
+            />
+          )}
+          {showAi && canReadNotes && (
+            <ResizableCallPanel label={aiT('title')}>
+              <div className="min-h-0 overflow-y-auto p-3">
+                <MeetingAiPanel ai={ai} inCall />
+                {canManage && (
+                  <div className="mt-3">
+                    <NotesSharingControl
+                      wsId={wsId}
+                      meetingId={meetingId}
+                      initialEnabled={state.settings.shareNotesAfterMeeting}
+                    />
+                  </div>
+                )}
+              </div>
+            </ResizableCallPanel>
+          )}
+          {panel && (
+            <SidePanel
+              accountId={accountId}
+              mentionRequest={mentionRequest}
+              onMentionHandled={onMentionHandled}
+              meetingId={meetingId}
+              miraActive={!!state.liveAssistant}
+              canManage={canManage}
+              chat={state.chat}
+              onClose={() => setPanel(null)}
+              onDecideAdmission={room.decideAdmission}
+              onMute={(userId) => room.muteParticipant(userId, ['audio'])}
+              onRemove={room.removeParticipant}
+              onSendChat={room.sendChat}
+              panel={panel}
+              participants={participants}
+              raisedHandUserIds={state.stage.raisedHandUserIds}
+              selfUserId={state.selfUserId}
+              waiting={state.waiting}
+              approved={state.approved}
+              onForget={room.forgetParticipant}
+              shareNotes={state.settings.shareNotes}
+              onShareNotes={room.shareNotes}
+            />
+          )}
+        </div>
+        <ControlBar
+          activePanel={panel}
+          cameraOn={room.media.videoEnabled}
+          micOn={!sharedAudio.microphonePaused && room.media.audioEnabled}
+          screenOn={room.media.screenEnabled}
+          handRaised={
+            state.selfUserId ? isHandRaised(state, state.selfUserId) : false
+          }
+          busyDevices={busyDevices}
+          participantCount={participants.length + (state.liveAssistant ? 1 : 0)}
+          recordingBusy={recording.isBusy}
+          recordingOn={state.recording.state === 'recording'}
+          unreadChat={
+            panel === 'chat'
+              ? 0
+              : countUnreadChatMessages(state.chat, lastReadChatId)
+          }
+          waitingCount={state.waiting.length}
+          onLeave={() => (canManage ? setLeaveDialog(true) : leaveNow())}
+          onToggleMic={() =>
+            sharedAudio.microphonePaused
+              ? void runMediaAction(sharedAudio.useOwnMicrophone, 'microphone')
+              : void runMediaAction(room.toggleMicrophone, 'microphone')
+          }
+          onToggleCamera={() =>
+            void runMediaAction(room.toggleCamera, 'camera')
+          }
+          onToggleScreen={() =>
+            void runMediaAction(room.toggleScreenShare, 'screen')
+          }
+          onToggleHand={() =>
+            room.raiseHand(
+              !(state.selfUserId && isHandRaised(state, state.selfUserId))
+            )
+          }
+          onTogglePanel={(next) => {
+            setPanel(next);
+            setShowPersonalTools(false);
+            setShowAi(false);
+          }}
+          onToggleRecording={
+            canManage || state.settings.allowParticipantRecording
+              ? () =>
+                  void recording
+                    .toggle()
+                    .catch(() => toast.error(t('record_start_failed')))
+              : undefined
+          }
+          extraControls={
+            <>
+              {MEETING_APP === 'meet' && (
+                <ControlButton
+                  active={showPersonalTools}
+                  icon={CalendarDays}
+                  label={privateT('title')}
+                  onClick={() => {
+                    setShowPersonalTools((value) => !value);
+                    setPanel(null);
+                    setShowAi(false);
+                  }}
+                />
+              )}
+              {MEETING_APP === 'meet' && (
+                <ControlButton
+                  active={showProgramming}
+                  icon={Code2}
+                  label={programmingT('coding')}
+                  onClick={() => {
+                    setShowDocument(false);
+                    setShowProgramming((value) => !value);
+                    if (!showProgramming && canManage)
+                      void programming
+                        .prepare()
+                        .catch(() => toast.error(programmingT('accessError')));
+                  }}
+                />
+              )}
+              {MEETING_APP === 'meet' && (
+                <ControlButton
+                  active={showDocument}
+                  icon={FileText}
+                  label={collaborationT('document')}
+                  onClick={() => {
+                    setShowProgramming(false);
+                    setShowDocument((value) => !value);
+                  }}
+                />
+              )}
+              <CallExtras
+                layout={layout}
+                setLayout={(next) => {
+                  setLayout(next);
+                  setFocus(null);
+                }}
+                look={room.cameraLook}
+                setLook={(look) => {
+                  void room.setCameraLook(look).catch((error) => {
+                    if (
+                      !(
+                        error instanceof DOMException &&
+                        error.name === 'AbortError'
+                      )
+                    )
+                      toast.error(t('effects_failed'));
+                  });
+                }}
+                react={room.react}
+              />
+            </>
+          }
+        />
+        <LeaveDialog
+          open={leaveDialog}
+          onOpenChange={setLeaveDialog}
+          busy={ending}
+          onLeave={leaveNow}
+          onEnd={() => {
+            setEnding(true);
+            void room.endMeeting().catch(() => {
+              setEnding(false);
+              toast.error(t('end_failed'));
+            });
+          }}
+        />
+      </div>
+    </ConsentProvider>
   );
 }
 

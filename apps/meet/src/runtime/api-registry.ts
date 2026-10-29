@@ -5,6 +5,7 @@ import * as api1 from '../app/api/auth/refresh-app-session/route';
 import * as api2 from '../app/api/auth/verify-app-token/route';
 import * as api3 from '../app/api/build-info/route';
 import * as api4 from '../app/api/meet-ai/[wsId]/[meetingId]/chunks/route';
+import * as apiConsent from '../app/api/meet-ai/[wsId]/[meetingId]/consent/route';
 import * as api5 from '../app/api/meet-ai/[wsId]/[meetingId]/followups/route';
 import * as api6 from '../app/api/meet-ai/[wsId]/[meetingId]/route';
 import * as api7 from '../app/api/meet-call/[meetingId]/assistant/personal/route';
@@ -70,6 +71,25 @@ export const meetEndpoints: Endpoint[] = [
     methods: {
       POST: (request, params) =>
         api4.POST(request, {
+          params: Promise.resolve({
+            wsId: routeParam(params, 'wsId'),
+            meetingId: routeParam(params, 'meetingId'),
+          }),
+        }),
+    },
+  },
+  {
+    pattern: '/api/meet-ai/[wsId]/[meetingId]/consent',
+    methods: {
+      GET: (request, params) =>
+        apiConsent.GET(request, {
+          params: Promise.resolve({
+            wsId: routeParam(params, 'wsId'),
+            meetingId: routeParam(params, 'meetingId'),
+          }),
+        }),
+      POST: (request, params) =>
+        apiConsent.POST(request, {
           params: Promise.resolve({
             wsId: routeParam(params, 'wsId'),
             meetingId: routeParam(params, 'meetingId'),

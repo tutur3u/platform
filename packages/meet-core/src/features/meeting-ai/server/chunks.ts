@@ -6,6 +6,8 @@ import { MeetAiError, type MeetAiParams, meetAiAccess } from './access';
 import { generateBilledMeetArtifact } from './artifact-billing';
 import { readAudioParts } from './audio-input';
 import { readMeetAudioForm } from './body';
+import { consentedSourceIndexes, needsConsentRecords } from './consent-gate';
+import { readMeetConsentRecords } from './consent-records';
 import { admitMeetCredits } from './credit-admission';
 import { resolveTranscriptSpeaker } from './transcript-speaker';
 
@@ -36,7 +38,7 @@ export async function transcribeMeetChunk(
     glossary: parsed.data.glossary,
     context: parsed.data.context,
   };
-  const parts = await readAudioParts(body, batched);
+  const received = await readAudioParts(body, batched);
   const { sessionId, id, sequence, startSeconds } = parsed.data;
   const { data: session, error } = await db
     .from('meet_ai_sessions')
@@ -60,6 +62,24 @@ export async function transcribeMeetChunk(
     Date.now() - Date.parse(session.created_at) > 3 * 60 * 60 * 1000
   )
     throw new MeetAiError(409, 'Transcription has ended');
+  // Consent is enforced here, not only in the client: other speakers' audio
+  // never reaches the provider without a current allow record.
+  const kept = consentedSourceIndexes({
+    actorId: user.id,
+    sessionStartedAt: session.created_at,
+    sources: received,
+    records: needsConsentRecords(user.id, received)
+      ? await readMeetConsentRecords(db, sessionId)
+      : [],
+  });
+  if (!kept.length)
+    throw new MeetAiError(
+      403,
+      'Transcription consent is required',
+      'MEET_AI_CONSENT_REQUIRED'
+    );
+  const parts = kept.map((index) => received[index]!);
+  const excludedSources = received.length - parts.length;
   // A credit refusal must reject the upload before it can leave a failed row.
   const admission = await admitMeetCredits(user.id);
   const resolved = await Effect.runPromise(
@@ -159,6 +179,7 @@ export async function transcribeMeetChunk(
       transcript,
       usage: {
         ...result.usage,
+        ...(excludedSources ? { excludedSources } : {}),
         ...(segments ? { segments } : speaker ? { speaker } : {}),
       },
       cost_usd: result.costUsd,

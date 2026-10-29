@@ -24,6 +24,10 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { useTranslations } from 'next-intl';
+import {
+  TranscriptionBadge,
+  TranscriptionRosterSummary,
+} from '../../meeting-ai/consent/consent-context';
 import { MiraAudioStatus } from './mira-audio-status';
 import { MiraAvatar } from './mira-profile';
 import { RoomHostControls } from './room-host-controls';
@@ -122,6 +126,7 @@ export function ParticipantsPanel({
           {participants.length + (miraActive ? 1 : 0)}
         </Badge>
       </div>
+      <TranscriptionRosterSummary participants={participants} />
       <ul className="divide-y">
         {miraActive && (
           <li className="flex items-center gap-2 bg-primary/5 px-4 py-3">
@@ -152,6 +157,7 @@ export function ParticipantsPanel({
                 ) : null}
               </span>
               {miraActive && <MiraAudioStatus participant={participant} />}
+              <TranscriptionBadge participant={participant} />
               {raisedHandUserIds.includes(participant.userId) ? (
                 <Hand className="size-3.5 shrink-0 text-dynamic-orange" />
               ) : null}

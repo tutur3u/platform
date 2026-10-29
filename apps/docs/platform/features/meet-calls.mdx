@@ -1598,6 +1598,58 @@ reducer through its serialized command executor. Its broadcast path excludes
 unadmitted sockets; consent uses direct delivery to admitted hosts rather than
 the broader participant-manager audience. Existing clients ignore unknown server
 types in the call reducer's default branch, so realtime can ship first.
-Regression coverage lives in `transcription.test.ts`,
-`transcription-routing.test.ts`, and `transcription-compat.test.ts`.
+Regression coverage lives in `transcription.test.ts` and
+`transcription-routing.test.ts`; `transcription-compat.test.ts` now covers the
+client reducer that consumes both messages.
 In-room consent survives DO hibernation only under the active session UUID and is cleared on session or room end. This is not the legal consent record; private.meet_ai_consents belongs to M1-B/M1-C. WebSocket messages over 256 KiB (UTF-8 bytes for text) are rejected before JSON parsing. Legal consent persistence, audio filtering and notices belong to subsequent milestones.
+
+## Transcription consent and capture
+
+**Decision (D3, per-person opt-in).** Scope: live meeting transcription in Meet
+and Parley (shared `packages/meet-core`). Default: every participant other than
+the host who started transcription is excluded until they choose Allow. Silence,
+staying in the call or closing the prompt is not consent; Escape means "decide
+later" and keeps the participant excluded. The host cannot override a decline.
+Guests without a signed-in account cannot record a decision and are never
+transcribed. Intentional exception: the starting host's own microphone and
+screen audio need no record, so solo meetings are unaffected.
+
+When the host starts capture, the host device announces `transcription.state`.
+Every admitted participant sees a persistent "Transcribing" pill next to REC,
+hears a short chime and gets a toast on start and stop, and (unless they started
+it) gets the consent dialog, including late joiners. Mic badges show transcribed,
+excluded or pending: hosts see everyone, participants see themselves. The host's
+pill opens the People panel with an "N of M transcribed" roster.
+
+Allow, Don't transcribe me and Stop transcribing me call
+`POST /api/meet-ai/[wsId]/[meetingId]/consent`. The route derives the actor from
+the verified app session (never a client id), requires that account to be
+admitted to the live room (room-service `read`), checks the session belongs to
+the meeting, rejects a new allow after the session ended, and appends
+`allow | deny | withdraw` with `notice_version` to `private.meet_ai_consents`
+through the service role. Only then does the client mirror the decision as
+`transcription.consent`. The host roster is `GET …/consent?sessionId=` (session
+owner only) and reads the same log.
+
+Enforcement is server-side. The chunk endpoint drops every source whose speaker
+is not the uploading host unless that account's latest decision is `allow` and an
+`allow` was already in force (10 s skew) when the clip was captured. Unattributed
+sources are dropped. Dropped audio never reaches the provider, the speaker lookup
+or billing; `usage.excludedSources` counts them. If nothing remains, the upload
+fails with 403 `MEET_AI_CONSENT_REQUIRED` before credit admission or reservation.
+Uploads containing only the host's own sources skip the lookup. If the consent
+log is not deployed yet (PR #7264), other speakers fail closed. On the host
+device, `meetingAudioSources` mirrors this rule using the database roster, so
+excluded tracks are not recorded or uploaded in the first place.
+
+Consent copy lives in the `meet.consent` message namespace (en and vi, Meet and
+Parley bundles) and is versioned by `MEET_CONSENT_NOTICE_VERSION` in
+`meeting-ai/consent/notice.ts`; bump it whenever the copy changes. The wording is
+a draft until legal review. "Remember for this workspace" is not implemented: it
+needs a durable per-account preference.
+
+Regression coverage: `chunks-consent.test.ts` (refusal without consent, declined
+and withdrawn participants excluded, pre-allow audio excluded, missing log fails
+closed, solo uploads unaffected), `consent-gate.test.ts`, `consent.test.ts`
+(origin, room admission, session-user binding, ended sessions, host-only
+roster), `audio-sources.test.ts` and `transcription-compat.test.ts`.

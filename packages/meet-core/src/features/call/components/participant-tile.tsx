@@ -17,6 +17,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { TranscriptionBadge } from '../../meeting-ai/consent/consent-context';
 import { attachMediaPlayback } from '../lib/media-playback';
 import { observeVideoPresentation } from '../lib/video-presentation';
 import { LiveAvatar } from './live-avatar';
@@ -263,6 +264,7 @@ function ParticipantTileImpl({
         {miraActive && kind === 'camera' && (
           <MiraAudioStatus participant={participant} />
         )}
+        {kind === 'camera' && <TranscriptionBadge participant={participant} />}
         {!participant.media.audioEnabled && kind === 'camera' && (
           <MicOff aria-label={t('muted')} className="size-3.5 shrink-0" />
         )}

@@ -52,6 +52,8 @@ function request() {
   body.set('sessionId', id);
   body.set('sequence', '0');
   body.set('startSeconds', '1');
+  body.set('speakerAccountId', id);
+  body.set('sourceKind', 'microphone');
   body.set('audio', encodeMeetWav(new Float32Array(16000)), 'chunk.wav');
   return new Request('https://meet.tuturuuu.com/api/meet-ai/test', {
     method: 'POST',

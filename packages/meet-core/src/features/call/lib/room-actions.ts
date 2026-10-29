@@ -2,6 +2,7 @@ import type {
   MeetReaction,
   MeetRealtimeTrackKind,
   MeetRoomSettings,
+  TranscriptionState,
 } from '@tuturuuu/realtime/meet';
 import { sendRecoverableChat } from './chat-delivery';
 import type { MeetSignaling } from './signaling';
@@ -97,6 +98,14 @@ export function createRoomActions(signaling: {
     },
     react: (reaction: MeetReaction) =>
       signaling.current?.send({ type: 'reaction.send', reaction }),
+    announceTranscription: (state: TranscriptionState) =>
+      signaling.current?.send({ type: 'transcription.state', state }),
+    sendTranscriptionConsent: (userId: string, allowed: boolean) =>
+      signaling.current?.send({
+        type: 'transcription.consent',
+        userId,
+        allowed,
+      }),
     setRecordingState: (state: 'recording' | 'idle', sessionId?: string) =>
       signaling.current?.send({
         type: 'recording.state',

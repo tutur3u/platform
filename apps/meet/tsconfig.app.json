@@ -50,6 +50,7 @@
     "src/app/api/auth/verify-app-token/route.ts",
     "src/app/api/build-info/route.ts",
     "src/app/api/meet-ai/[wsId]/[meetingId]/chunks/route.ts",
+    "src/app/api/meet-ai/[wsId]/[meetingId]/consent/route.ts",
     "src/app/api/meet-ai/[wsId]/[meetingId]/followups/route.ts",
     "src/app/api/meet-ai/[wsId]/[meetingId]/route.ts",
     "src/app/api/meet-call/[meetingId]/assistant/personal/route.ts",

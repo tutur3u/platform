@@ -12,6 +12,11 @@ import type {
   MeetRoomSettings,
 } from '@tuturuuu/realtime/meet';
 import { retainRoomChat } from '@tuturuuu/realtime/meet';
+import {
+  type CallTranscription,
+  INITIAL_CALL_TRANSCRIPTION,
+  reduceCallTranscription,
+} from './transcription-state';
 
 export type CallAdmission = 'connecting' | 'waiting' | 'admitted' | 'denied';
 
@@ -57,6 +62,7 @@ export interface CallState {
   role: MeetRealtimeRole | null;
   selfUserId: string | null;
   stage: MeetRealtimeStageState;
+  transcription: CallTranscription;
   waiting: MeetRealtimeWaitingParticipant[];
 }
 
@@ -79,6 +85,7 @@ export const INITIAL_CALL_STATE: CallState = {
     locked: false,
     raisedHandUserIds: [],
   },
+  transcription: INITIAL_CALL_TRANSCRIPTION,
   waiting: [],
 };
 
@@ -112,6 +119,7 @@ export function reduceCallState(
         liveAssistant: undefined,
         participants: {},
         remoteTracks: {},
+        transcription: INITIAL_CALL_TRANSCRIPTION,
       };
     case 'room.settings':
       return { ...state, settings: message.settings };
@@ -259,6 +267,13 @@ export function reduceCallState(
 
     case 'error':
       return { ...state, error: message.error };
+
+    case 'transcription.state':
+    case 'transcription.consent':
+      return {
+        ...state,
+        transcription: reduceCallTranscription(state.transcription, message),
+      };
 
     default:
       return state;

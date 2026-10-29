@@ -121,6 +121,45 @@ export function uploadMeetAiChunk(
   );
 }
 
+export type MeetAiConsentDecision = 'allow' | 'deny' | 'withdraw';
+
+/** Append the signed-in participant's own decision to the consent log. */
+export function recordMeetAiConsent(
+  wsId: string,
+  meetingId: string,
+  payload: {
+    sessionId: string;
+    decision: MeetAiConsentDecision;
+    noticeVersion: string;
+  },
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{
+    recorded: boolean;
+    decision: MeetAiConsentDecision;
+  }>(`${path(wsId, meetingId)}/consent`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
+/** Host-only latest decision per account for one transcription session. */
+export function getMeetAiConsents(
+  wsId: string,
+  meetingId: string,
+  sessionId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{
+    available: boolean;
+    decisions: Record<string, MeetAiConsentDecision>;
+  }>(
+    `${path(wsId, meetingId)}/consent?sessionId=${encodeURIComponent(sessionId)}`,
+    { cache: 'no-store' }
+  );
+}
+
 export function updateMeetNotesSharing(
   wsId: string,
   meetingId: string,

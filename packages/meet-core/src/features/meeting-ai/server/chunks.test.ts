@@ -49,6 +49,9 @@ function request(audio = encodeMeetWav(new Float32Array(16000))) {
   body.set('sessionId', id);
   body.set('sequence', '0');
   body.set('startSeconds', '0');
+  // The host's own microphone needs no consent record.
+  body.set('speakerAccountId', id);
+  body.set('sourceKind', 'microphone');
   body.set('audio', audio, 'chunk.wav');
   return new Request('https://meet.tuturuuu.com/api/meet-ai/test', {
     method: 'POST',
@@ -369,7 +372,7 @@ it('reserves and charges once for a multi-source upload while persisting verifie
     'sources',
     JSON.stringify([
       { speakerAccountId: id, sourceKind: 'microphone', startSeconds: 0 },
-      { sourceKind: 'shared_audio', startSeconds: 3 },
+      { speakerAccountId: id, sourceKind: 'shared_audio', startSeconds: 3 },
     ])
   );
   body.set('audio_0', encodeMeetWav(new Float32Array(160000)));

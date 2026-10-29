@@ -1,0 +1,207 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { encodeMeetWav } from '../audio';
+
+const mocks = vi.hoisted(() => ({
+  access: vi.fn(),
+  generate: vi.fn(),
+  speaker: vi.fn(),
+}));
+vi.mock('server-only', () => ({}));
+// Authorization is covered separately; avoid loading built auth packages here.
+vi.mock('@tuturuuu/satellite/auth', () => ({}));
+vi.mock('@tuturuuu/supabase/next/server', () => ({}));
+vi.mock('@tuturuuu/utils/workspace-helper', () => ({}));
+vi.mock('@tuturuuu/ai/meetings/gemini', () => ({}));
+vi.mock('./credit-admission', () => ({ admitMeetCredits: async () => ({}) }));
+vi.mock('./transcript-speaker', () => ({
+  resolveTranscriptSpeaker: mocks.speaker,
+}));
+vi.mock('./artifact-billing', () => ({
+  generateBilledMeetArtifact: mocks.generate,
+}));
+vi.mock('./access', async (original) => ({
+  ...(await original<object>()),
+  meetAiAccess: mocks.access,
+}));
+
+import { meetAiResponse } from './access';
+import { transcribeMeetChunk } from './chunks';
+
+const host = '00000000-0000-4000-8000-000000000001';
+const guest = '00000000-0000-4000-8000-000000000002';
+const decliner = '00000000-0000-4000-8000-000000000003';
+const params = { params: Promise.resolve({ wsId: host, meetingId: host }) };
+const started = new Date(Date.now() - 60_000).toISOString();
+const at = (secondsAfterStart: number) =>
+  new Date(Date.parse(started) + secondsAfterStart * 1000).toISOString();
+
+function query(result: unknown) {
+  const value = {
+    select: vi.fn(),
+    update: vi.fn(),
+    eq: vi.fn(),
+    order: vi.fn().mockResolvedValue(result),
+    maybeSingle: vi.fn().mockResolvedValue(result),
+  };
+  value.select.mockReturnValue(value);
+  value.update.mockReturnValue(value);
+  value.eq.mockReturnValue(value);
+  return value;
+}
+
+/** Session row, no duplicate chunk, then the post-reservation checks. */
+function storage(consents: { data: unknown; error: unknown }) {
+  const saved = { id: host, status: 'completed' };
+  const persisted = query({ data: saved, error: null });
+  const from = vi
+    .fn()
+    .mockReturnValueOnce(query({ data: { id: host, created_at: started } }))
+    .mockReturnValueOnce(query({ data: null, error: null }))
+    .mockReturnValueOnce(query({ data: { ended_at: null }, error: null }))
+    .mockReturnValue(persisted);
+  const log = query(consents);
+  const schema = vi.fn(() => ({ from: vi.fn(() => log) }));
+  const rpc = vi.fn().mockResolvedValue({ data: { id: host }, error: null });
+  mocks.access.mockResolvedValue({
+    db: { from, rpc, schema },
+    meetingId: host,
+    user: { id: host },
+  });
+  return { schema, rpc, persisted };
+}
+
+function upload(sources: Array<{ speakerAccountId?: string; at: number }>) {
+  const body = new FormData();
+  body.set('id', host);
+  body.set('sessionId', host);
+  body.set('sequence', '0');
+  body.set('startSeconds', '0');
+  body.set(
+    'sources',
+    JSON.stringify(
+      sources.map((source) => ({
+        speakerAccountId: source.speakerAccountId,
+        sourceKind: 'microphone',
+        startSeconds: source.at,
+      }))
+    )
+  );
+  sources.forEach((_, index) => {
+    body.set(`audio_${index}`, encodeMeetWav(new Float32Array(16000)));
+  });
+  return new Request('https://meet.tuturuuu.com/api/meet-ai/test', {
+    method: 'POST',
+    headers: { 'X-Meet-Audio-Batch': '1' },
+    body,
+  });
+}
+
+beforeEach(() => {
+  vi.resetAllMocks();
+  mocks.speaker.mockImplementation(async ({ accountId }) => ({
+    accountId,
+    displayName: accountId,
+    kind: 'microphone',
+  }));
+});
+
+describe('server-side transcription consent', () => {
+  it('refuses another participant without a consent record before any charge', async () => {
+    const { rpc } = storage({ data: [], error: null });
+    const response = await meetAiResponse(() =>
+      transcribeMeetChunk(upload([{ speakerAccountId: guest, at: 5 }]), params)
+    );
+    expect(response.status).toBe(403);
+    expect(await response.json()).toMatchObject({
+      code: 'MEET_AI_CONSENT_REQUIRED',
+    });
+    expect(rpc).not.toHaveBeenCalled();
+    expect(mocks.speaker).not.toHaveBeenCalled();
+    expect(mocks.generate).not.toHaveBeenCalled();
+  });
+
+  it('refuses unattributed audio, which cannot be matched to a decision', async () => {
+    storage({ data: [], error: null });
+    const response = await meetAiResponse(() =>
+      transcribeMeetChunk(upload([{ at: 5 }]), params)
+    );
+    expect(response.status).toBe(403);
+    expect(mocks.generate).not.toHaveBeenCalled();
+  });
+
+  it('never sends a declined or withdrawn participant to the provider', async () => {
+    const { persisted } = storage({
+      data: [
+        { user_id: guest, decision: 'allow', created_at: at(1) },
+        { user_id: decliner, decision: 'allow', created_at: at(1) },
+        { user_id: decliner, decision: 'withdraw', created_at: at(20) },
+      ],
+      error: null,
+    });
+    mocks.generate.mockResolvedValue({
+      text: '',
+      transcripts: ['host words', 'guest words'],
+      usage: {},
+      costUsd: 0.001,
+    });
+    await transcribeMeetChunk(
+      upload([
+        { speakerAccountId: host, at: 30 },
+        { speakerAccountId: decliner, at: 30 },
+        { speakerAccountId: guest, at: 30 },
+      ]),
+      params
+    );
+    expect(mocks.generate).toHaveBeenCalledOnce();
+    expect(mocks.generate.mock.calls[0]?.[0].audioSegments).toHaveLength(2);
+    expect(mocks.speaker.mock.calls.map(([call]) => call.accountId)).toEqual([
+      host,
+      guest,
+    ]);
+    const update = persisted.update.mock.calls[0]?.[0];
+    expect(update.usage.excludedSources).toBe(1);
+    expect(
+      update.usage.segments.map(
+        (segment: { speaker: { accountId: string } }) =>
+          segment.speaker.accountId
+      )
+    ).toEqual([host, guest]);
+  });
+
+  it('excludes audio captured before a participant allowed', async () => {
+    storage({
+      data: [{ user_id: guest, decision: 'allow', created_at: at(40) }],
+      error: null,
+    });
+    const response = await meetAiResponse(() =>
+      transcribeMeetChunk(upload([{ speakerAccountId: guest, at: 5 }]), params)
+    );
+    expect(response.status).toBe(403);
+    expect(mocks.generate).not.toHaveBeenCalled();
+  });
+
+  it('fails closed for others when the consent log is not deployed yet', async () => {
+    storage({ data: null, error: { code: 'PGRST205' } });
+    const response = await meetAiResponse(() =>
+      transcribeMeetChunk(upload([{ speakerAccountId: guest, at: 5 }]), params)
+    );
+    expect(response.status).toBe(403);
+    expect(mocks.generate).not.toHaveBeenCalled();
+  });
+
+  it('leaves solo host uploads unaffected and skips the consent lookup', async () => {
+    const { schema } = storage({ data: null, error: { code: 'PGRST205' } });
+    mocks.generate.mockResolvedValue({
+      text: '',
+      transcripts: ['solo words'],
+      usage: {},
+      costUsd: 0.001,
+    });
+    await transcribeMeetChunk(
+      upload([{ speakerAccountId: host, at: 5 }]),
+      params
+    );
+    expect(schema).not.toHaveBeenCalled();
+    expect(mocks.generate).toHaveBeenCalledOnce();
+  });
+});
