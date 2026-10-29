@@ -1,6 +1,15 @@
 -- Pin the SECURITY DEFINER search_path of the time tracking request functions
 -- to pg_catalog, pg_temp (least privilege) and fix rejecting a linked request.
 --
+-- 0. Contract verifier form. The security-egress catalog verifier
+--    (tests/security-definer-search-paths.sql) only accepts a path made of
+--    existing, non-creatable schemas that ends in pg_temp; an empty path is
+--    rejected because it permits implicit pg_temp type lookup. The two
+--    reference-workspace guard functions from 20261029100400 were pinned to
+--    `''`, so they are re-pinned to pg_catalog, pg_temp here. Their bodies
+--    already qualify every relation and type (public.*) and use no
+--    unqualified function other than pg_catalog built-ins.
+--
 -- 1. search_path. 20261029100400 left
 --    private.handle_request_status_change() and
 --    private.update_time_tracking_request(...) with
@@ -96,11 +105,23 @@ alter function private.update_time_tracking_request(
   text
 ) set search_path = pg_catalog, pg_temp;
 
+alter function public.enforce_time_tracking_session_category_workspace()
+set search_path = pg_catalog, pg_temp;
+
+alter function private.enforce_time_tracking_request_reference_workspace()
+set search_path = pg_catalog, pg_temp;
+
 -- Restate the ACL so this file is self-contained.
 revoke all on function private.handle_request_status_change()
 from public, anon, authenticated;
 
 revoke all on function private.delete_rejected_request_linked_session()
+from public, anon, authenticated;
+
+revoke all on function public.enforce_time_tracking_session_category_workspace()
+from public, anon, authenticated;
+
+revoke all on function private.enforce_time_tracking_request_reference_workspace()
 from public, anon, authenticated;
 
 revoke all on function private.update_time_tracking_request(

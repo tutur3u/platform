@@ -4,7 +4,8 @@
 -- body of private.handle_request_status_change (the BEFORE UPDATE trigger
 -- deletes the linked session itself, which reintroduces the SQLSTATE 27000
 -- failure when a linked request is rejected), and unpins the search_path of
--- private.update_time_tracking_request.
+-- private.update_time_tracking_request and the two reference-workspace guard
+-- functions from 20261029100400 (restored to their `''` path).
 -- The earlier path (`private, public, pg_temp`) is intentionally NOT restored:
 -- its bare `public` violates the SECURITY DEFINER standard. The functions
 -- fully schema-qualify their references, so an empty path is sufficient.
@@ -58,6 +59,11 @@ alter function private.update_time_tracking_request(
   text,
   text
 ) set search_path = '';
+
+alter function public.enforce_time_tracking_session_category_workspace()
+set search_path = '';
+alter function private.enforce_time_tracking_request_reference_workspace()
+set search_path = '';
 
 revoke all on function private.handle_request_status_change()
 from public, anon, authenticated;

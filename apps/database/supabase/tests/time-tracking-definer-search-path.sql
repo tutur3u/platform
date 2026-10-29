@@ -12,6 +12,15 @@ select is((select proconfig from pg_proc where oid='private.update_time_tracking
   array['search_path=pg_catalog, pg_temp'],'update request function pins search_path to pg_catalog, pg_temp');
 select is((select proconfig from pg_proc where oid='private.delete_rejected_request_linked_session()'::regprocedure),
   array['search_path=pg_catalog, pg_temp'],'reject cleanup trigger function pins search_path to pg_catalog, pg_temp');
+select is((select proconfig from pg_proc where oid='public.enforce_time_tracking_session_category_workspace()'::regprocedure),
+  array['search_path=pg_catalog, pg_temp'],'session category guard pins search_path to pg_catalog, pg_temp');
+select is((select proconfig from pg_proc where oid='private.enforce_time_tracking_request_reference_workspace()'::regprocedure),
+  array['search_path=pg_catalog, pg_temp'],'request reference guard pins search_path to pg_catalog, pg_temp');
+select ok(not has_function_privilege('anon','public.enforce_time_tracking_session_category_workspace()','EXECUTE')
+  and not has_function_privilege('authenticated','public.enforce_time_tracking_session_category_workspace()','EXECUTE')
+  and not has_function_privilege('anon','private.enforce_time_tracking_request_reference_workspace()','EXECUTE')
+  and not has_function_privilege('authenticated','private.enforce_time_tracking_request_reference_workspace()','EXECUTE'),
+  'client roles cannot execute the reference-workspace guard functions');
 select ok(not has_function_privilege('authenticated','private.delete_rejected_request_linked_session()','EXECUTE'),'authenticated cannot execute the reject cleanup function');
 select ok(has_function_privilege('service_role','private.update_time_tracking_request(uuid,text,uuid,uuid,text,text)','EXECUTE'),'service_role can execute the update function');
 select ok(not has_function_privilege('anon','private.update_time_tracking_request(uuid,text,uuid,uuid,text,text)','EXECUTE'),'anon cannot execute the update function');
