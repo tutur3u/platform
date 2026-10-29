@@ -1,16 +1,18 @@
 export type TranscriptionHints = {
-  language?: 'auto' | 'vi' | 'en';
+  language?: 'auto' | 'vi' | 'en' | 'vi+en';
   glossary?: string;
   context?: string;
 };
 
 export function transcriptionHintPrompt(hints: TranscriptionHints = {}) {
   const language =
-    hints.language === 'vi'
-      ? 'Vietnamese'
-      : hints.language === 'en'
-        ? 'English'
-        : 'automatic language detection';
+    hints.language === 'vi+en'
+      ? 'mixed Vietnamese and English'
+      : hints.language === 'vi'
+        ? 'Vietnamese'
+        : hints.language === 'en'
+          ? 'English'
+          : 'automatic language detection';
   const data = JSON.stringify({
     glossary: hints.glossary?.slice(0, 800) ?? '',
     context: hints.context?.slice(0, 400) ?? '',

@@ -1,5 +1,4 @@
 'use client';
-
 import { useQuery } from '@tanstack/react-query';
 import {
   CalendarDays,
@@ -187,7 +186,8 @@ function CallShellContent({
     transcriptionSources,
     canTranscribeMeet(left, Object.keys(state.participants).length),
     canReadNotes,
-    accountId
+    accountId,
+    { title: state.title ?? meetingName }
   );
   const recording = useRoomRecording(room, meetingId, audioStreams);
   const telemetry = useQuery({

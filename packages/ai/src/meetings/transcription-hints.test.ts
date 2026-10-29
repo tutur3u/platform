@@ -16,3 +16,9 @@ it('supports English and automatic detection', () => {
   expect(transcriptionHintPrompt({ language: 'en' })).toContain('English');
   expect(transcriptionHintPrompt()).toContain('automatic language detection');
 });
+
+it('supports mixed Vietnamese and English recognition', () => {
+  expect(transcriptionHintPrompt({ language: 'vi+en' })).toContain(
+    'mixed Vietnamese and English'
+  );
+});

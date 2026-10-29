@@ -10,7 +10,7 @@ import { admitMeetCredits } from './credit-admission';
 import { resolveTranscriptSpeaker } from './transcript-speaker';
 
 const schema = z.object({
-  language: z.enum(['auto', 'vi', 'en']).default('auto'),
+  language: z.enum(['auto', 'vi', 'en', 'vi+en']).default('auto'),
   glossary: z.string().max(800).optional(),
   context: z.string().max(400).optional(),
   sessionId: z.uuid(),

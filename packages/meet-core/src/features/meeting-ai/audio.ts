@@ -1,11 +1,14 @@
 export function hasMeetSpeech(samples: Float32Array, threshold = 0.000001) {
   if (!Number.isFinite(threshold) || threshold < 0)
     throw new RangeError('Invalid Meet voice energy threshold');
-  return (
-    samples.length > 0 &&
-    samples.reduce((sum, value) => sum + value * value, 0) / samples.length >
-      threshold
-  );
+  // Evaluate 20 ms frames so short utterances are not diluted by a 10 s window.
+  for (let offset = 0; offset < samples.length; offset += 320) {
+    const end = Math.min(samples.length, offset + 320);
+    let energy = 0;
+    for (let i = offset; i < end; i++) energy += samples[i]! ** 2;
+    if (energy / (end - offset) > threshold) return true;
+  }
+  return false;
 }
 
 export function encodeMeetWav(samples: Float32Array): Blob {
