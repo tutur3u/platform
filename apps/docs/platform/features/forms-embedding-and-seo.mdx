@@ -243,3 +243,18 @@ Tailwind belongs in `packages/ui` — that is why the marketing kit lives at
 Calling `connection()` at the root of a marketing page forces the entire page
 dynamic. Scope it to the session-dependent subtree instead, so the static shell
 still prerenders.
+
+## Definition and media access
+
+The Forms workspace API updates an existing definition only in the resolved
+workspace. A missing or foreign form returns 404 before definition or child
+rows are changed; creation generates its own form ID.
+
+Uploaded cover, SEO, section, question, and option images must use a safe object
+key under `<workspaceId>/forms/`. Save drops invalid upload references, and the
+reader checks the same boundary before signing persisted media. External image
+URLs without an upload reference remain supported. Signing encodes each object
+key segment. These rules apply to the studio and public form reader.
+
+Regression coverage: `server/mutations-access.test.ts` and `server/media.test.ts`
+under `apps/forms/src/features/forms`.
