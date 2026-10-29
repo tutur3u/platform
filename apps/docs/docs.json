@@ -392,6 +392,7 @@
                   "build/devops/storage-signed-url-rekey",
                   "build/devops/workspace-storage-rls",
                   "build/devops/storage-access-audit",
+                  "build/devops/meet-transcript-retention",
                   "build/devops/critical-app-rollout",
                   "build/devops/github-actions-runbook",
                   "build/devops/caching",
