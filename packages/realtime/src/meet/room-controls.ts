@@ -9,6 +9,7 @@ import type {
 import type { MeetRoomSnapshot } from './room';
 import { endMeetRoom } from './room-ending';
 import { denied, outcome } from './room-outcome';
+import { applyTranscription } from './transcription';
 
 export function approvedParticipantsMessage(
   state: MeetRoomSnapshot
@@ -53,6 +54,8 @@ export function applyRoomControl(
   token: MeetRealtimeTokenPayload,
   now: string
 ) {
+  const transcription = applyTranscription(state, message, token);
+  if (transcription) return transcription;
   if (message.type === 'reaction.send') {
     if (!state.presence[token.userId])
       return denied(state, 'awaiting_admission');
