@@ -932,7 +932,12 @@ Slots match by date, start minute and duration; seconds in a start time are
 ignored by both the APIs and draft teacher choices. Payroll exports count a
 shared slot once for its teacher: completed sessions with the same teacher,
 date, start minute and duration add one session and one duration, however many
-learners attended. Rows without a teacher are counted individually. Existing cancellation conflict handling remains conservative. The rule is
+learners attended. Rows without a teacher are counted individually.
+Export filters apply before this count, so a slot shared across groups appears
+once in each group's payroll export, and per-group exports can add up to more
+than the unfiltered total. Re-exporting a past period that has shared slots
+gives lower totals than before this rule. The Rust export route keeps the
+earlier per-row count until it is ported. Existing cancellation conflict handling remains conservative. The rule is
 enforced in application conflict checks only; the database has no
 per-teacher uniqueness or exclusion constraint on tutoring sessions. It does
 not imply room or contractual availability. Regression coverage lives in

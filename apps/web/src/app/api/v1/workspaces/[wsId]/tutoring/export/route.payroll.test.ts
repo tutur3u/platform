@@ -72,14 +72,13 @@ beforeEach(() => {
     from: (name: string) =>
       query(() =>
         name === 'workspace_users'
-          ? [
-              {
-                id: 'teacher-1',
-                full_name: 'Synthetic teacher',
-                display_name: null,
-                email: null,
-              },
-            ]
+          ? ['1', '2'].map((n) => ({
+              id: `teacher-${n}`,
+              full_name:
+                n === '1' ? 'Synthetic teacher' : 'Synthetic teacher 2',
+              display_name: null,
+              email: null,
+            }))
           : []
       ),
     schema: () => ({ from: () => query(() => sessionRows) }),
@@ -125,6 +124,37 @@ describe('tutoring payroll for shared slots', () => {
         completed_sessions: 3,
         total_minutes: 45 + 60 + 45,
       },
+    ]);
+  });
+
+  it('pays each teacher once when two teachers share a slot', async () => {
+    sessionRows = [
+      session('1', 'learner-1'),
+      session('2', 'learner-2'),
+      session('3', 'learner-3', { teacher_user_id: 'teacher-2' }),
+      session('4', 'learner-4', { teacher_user_id: 'teacher-2' }),
+    ];
+    expect(await payroll()).toEqual([
+      {
+        teacher_name: 'Synthetic teacher',
+        completed_sessions: 1,
+        total_minutes: 45,
+      },
+      {
+        teacher_name: 'Synthetic teacher 2',
+        completed_sessions: 1,
+        total_minutes: 45,
+      },
+    ]);
+  });
+
+  it('counts rows without a teacher one by one', async () => {
+    sessionRows = [
+      session('1', 'learner-1', { teacher_user_id: null }),
+      session('2', 'learner-2', { teacher_user_id: null }),
+    ];
+    expect(await payroll()).toEqual([
+      { teacher_name: 'N/A', completed_sessions: 2, total_minutes: 90 },
     ]);
   });
 });
