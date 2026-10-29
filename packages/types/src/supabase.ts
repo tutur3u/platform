@@ -17799,6 +17799,100 @@ export type Database = {
           },
         ];
       };
+      tutoring_absence_followups: {
+        Row: {
+          absence_date: string;
+          archive_reason: string | null;
+          archived_at: string | null;
+          archived_by: string | null;
+          attendance_id: string | null;
+          created_at: string;
+          group_id: string;
+          id: string;
+          reminded_at: string | null;
+          restored_at: string | null;
+          restored_by: string | null;
+          revision: number;
+          state: string;
+          student_user_id: string;
+          updated_at: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          absence_date: string;
+          archive_reason?: string | null;
+          archived_at?: string | null;
+          archived_by?: string | null;
+          attendance_id?: string | null;
+          created_at?: string;
+          group_id: string;
+          id?: string;
+          reminded_at?: string | null;
+          restored_at?: string | null;
+          restored_by?: string | null;
+          revision?: number;
+          state: string;
+          student_user_id: string;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          absence_date?: string;
+          archive_reason?: string | null;
+          archived_at?: string | null;
+          archived_by?: string | null;
+          attendance_id?: string | null;
+          created_at?: string;
+          group_id?: string;
+          id?: string;
+          reminded_at?: string | null;
+          restored_at?: string | null;
+          restored_by?: string | null;
+          revision?: number;
+          state?: string;
+          student_user_id?: string;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'tutoring_absence_followups_archived_by_fkey';
+            columns: ['archived_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'tutoring_absence_followups_archived_by_fkey';
+            columns: ['archived_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'tutoring_absence_followups_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts_dashboard_view';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'tutoring_absence_followups_restored_by_fkey';
+            columns: ['restored_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'tutoring_absence_followups_restored_by_fkey';
+            columns: ['restored_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
       tutoring_absence_write_permits: {
         Row: {
           backend_pid: number;
@@ -17833,42 +17927,153 @@ export type Database = {
         };
         Relationships: [];
       };
+      tutoring_automation_events: {
+        Row: {
+          action: string;
+          actor_user_id: string | null;
+          created_at: string;
+          detail: NonNullable<Json>;
+          id: string;
+          run_slot: string | null;
+          subject_id: string;
+          subject_kind: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          action: string;
+          actor_user_id?: string | null;
+          created_at?: string;
+          detail?: NonNullable<Json>;
+          id?: string;
+          run_slot?: string | null;
+          subject_id: string;
+          subject_kind: string;
+          ws_id: string;
+        };
+        Update: {
+          action?: string;
+          actor_user_id?: string | null;
+          created_at?: string;
+          detail?: NonNullable<Json>;
+          id?: string;
+          run_slot?: string | null;
+          subject_id?: string;
+          subject_kind?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      tutoring_automation_settings: {
+        Row: {
+          absence_followup_enabled: boolean;
+          absence_followup_enabled_at: string | null;
+          archive_after_days: number;
+          consecutive_sessions: number;
+          created_at: string;
+          lesson_report_enabled: boolean;
+          lesson_report_enabled_at: string | null;
+          reminder_after_days: number;
+          updated_at: string;
+          updated_by: string | null;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          absence_followup_enabled?: boolean;
+          absence_followup_enabled_at?: string | null;
+          archive_after_days?: number;
+          consecutive_sessions?: number;
+          created_at?: string;
+          lesson_report_enabled?: boolean;
+          lesson_report_enabled_at?: string | null;
+          reminder_after_days?: number;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          absence_followup_enabled?: boolean;
+          absence_followup_enabled_at?: string | null;
+          archive_after_days?: number;
+          consecutive_sessions?: number;
+          created_at?: string;
+          lesson_report_enabled?: boolean;
+          lesson_report_enabled_at?: string | null;
+          reminder_after_days?: number;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'tutoring_automation_settings_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'tutoring_automation_settings_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
       tutoring_notification_receipts: {
         Row: {
+          absence_followup_id: string | null;
           created_at: string;
           group_id: string | null;
           id: string;
           kind: string;
           notification_id: string | null;
           recipient_user_id: string;
+          report_date: string | null;
           review_cycle_started_at: string | null;
           student_user_id: string | null;
           tutoring_session_id: string | null;
+          ws_id: string | null;
         };
         ComputedFields: never;
         Insert: {
+          absence_followup_id?: string | null;
           created_at?: string;
           group_id?: string | null;
           id?: string;
           kind: string;
           notification_id?: string | null;
           recipient_user_id: string;
+          report_date?: string | null;
           review_cycle_started_at?: string | null;
           student_user_id?: string | null;
           tutoring_session_id?: string | null;
+          ws_id?: string | null;
         };
         Update: {
+          absence_followup_id?: string | null;
           created_at?: string;
           group_id?: string | null;
           id?: string;
           kind?: string;
           notification_id?: string | null;
           recipient_user_id?: string;
+          report_date?: string | null;
           review_cycle_started_at?: string | null;
           student_user_id?: string | null;
           tutoring_session_id?: string | null;
+          ws_id?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: 'tutoring_notification_receipts_absence_followup_id_fkey';
+            columns: ['absence_followup_id'];
+            isOneToOne: false;
+            referencedRelation: 'tutoring_absence_followups';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'tutoring_notification_receipts_group_id_fkey';
             columns: ['group_id'];
@@ -25017,6 +25222,19 @@ export type Database = {
           allowed: boolean;
           retry_after: number;
         }[];
+      };
+      tutoring_absence_followup_apply: {
+        Args: {
+          p_absence_date: string;
+          p_action: string;
+          p_actor_user_id?: string;
+          p_attendance_id?: string;
+          p_group_id: string;
+          p_run_slot?: string;
+          p_student_user_id: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
       };
       tutoring_absence_projection: {
         Args: { p_kind: string; p_row: Json };
