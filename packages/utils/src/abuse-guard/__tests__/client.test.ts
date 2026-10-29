@@ -7,7 +7,7 @@ import {
   createGuardOperationId,
   createHttpGuardTransport,
 } from '../client';
-import { verifyGuardRequest } from '../crypto';
+import { hashGuardValue, verifyGuardRequest } from '../crypto';
 import type { GuardRpc } from '../protocol';
 import { configureAbuseGuardRuntime, selectAbuseGuard } from '../select';
 
@@ -547,6 +547,13 @@ describe('request-scoped fairness identities', () => {
     const view = shared.withFairness(identity);
     identity.principal = 'user-b';
     await view.get('stable-view');
-    expect(sent[3]?.fairness).toEqual(sent[0]?.fairness);
+    expect(sent[3]?.fairness).toEqual({
+      source: await hashGuardValue(PEPPER, 'fair:source:replay', '203.0.113.4'),
+      principal: await hashGuardValue(
+        PEPPER,
+        'fair:principal:replay',
+        'user-a'
+      ),
+    });
   });
 });

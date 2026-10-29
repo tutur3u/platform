@@ -43,7 +43,12 @@ function ttlMsOf(options: GuardRedisSetOptions | undefined) {
   return GUARD_VIEW_DEFAULT_TTL_MS;
 }
 
-export function createGuardRedisView(client: AbuseGuardClient) {
+export function createGuardRedisView(
+  client: Pick<
+    AbuseGuardClient,
+    'get' | 'mget' | 'set' | 'del' | 'incr' | 'expire' | 'ttl'
+  >
+) {
   return {
     async get<T = unknown>(key: string) {
       return decode<T>(await client.get(key));
