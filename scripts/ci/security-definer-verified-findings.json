@@ -64,5 +64,16 @@
     "classification": "verified false positive",
     "effectiveRoles": ["service_role"],
     "reason": "public.merge_workspace_users_table_batch refuses any (table, column) outside the fixed phase-1a..1d VALUES allowlist before dynamic EXECUTE; the dynamic SQL updates rows only and never touches ACLs; same-file REVOKE ALL FROM PUBLIC, anon, authenticated (:262) and service_role-only EXECUTE (:264)."
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261029030500_align_cross_app_token_grant_and_private_fence.sql",
+    "line": 9,
+    "sourceDigest": "c5e60836296239e4cc6d3c75dbc799b6656465de5e55322fff9724caa69f72a2",
+    "rule": "dynamic-execute-acl",
+    "signature": "<dynamic-execute-acl>",
+    "digest": "214967bb681dd2755b95e7eab3185efa486c6f16740b9bcfdbefad7d868028bc",
+    "classification": "verified false positive",
+    "effectiveRoles": [],
+    "reason": "030500 dynamic default-privilege DO block, reviewed in #7234 (SR-331 fence); revoke-only, no GRANT."
   }
 ]
