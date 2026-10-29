@@ -81,8 +81,10 @@ test('committed 100400 entries are inactive until the 030000 hardening file exis
     assert.equal(e.requiredMigration, hardening);
     assert.match(e.reason, /^fixed forward by 20261030030000_pin_time/);
   }
-  const files = [...new Set(verifiedFindings.map((e) => e.path))];
-  const readFile = (f) => (f === hardening ? '' : fs.readFileSync(f, 'utf8'));
+  const files = [...new Set(verifiedFindings.map((e) => e.path))].filter(
+    (f) => f !== hardening
+  );
+  const readFile = (f) => fs.readFileSync(f, 'utf8');
   const run = (list) =>
     evaluateSqlFiles({ files: list, readFile, verifiedFindings });
   const failing = (list) =>

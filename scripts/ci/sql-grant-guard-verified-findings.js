@@ -102,4 +102,34 @@ module.exports = [
     requiredMigration,
     reason: `fixed forward by ${HARDENING_MIGRATION_FILENAME}; never apply without it`,
   },
+  {
+    path: 'apps/database/supabase/migrations/20261030030000_pin_time_tracking_definer_search_path.sql',
+    line: 99,
+    rule: 'definer-search-path',
+    fileDigest:
+      'f9e2e13fd29a0a9533f13fdb8e6b5c4a921840d655901d0c22b999a42c842c84',
+    digest: 'a7f5df54e0ff81187b560356f97bd83f270558f73ad0c8e9c98494592c830199',
+    reason:
+      'ALTER … SET search_path = pg_catalog, pg_temp; security-reviewed in #7281 be1dda26',
+  },
+  {
+    path: 'apps/database/supabase/migrations/20261030030000_pin_time_tracking_definer_search_path.sql',
+    line: 108,
+    rule: 'definer-search-path',
+    fileDigest:
+      'f9e2e13fd29a0a9533f13fdb8e6b5c4a921840d655901d0c22b999a42c842c84',
+    digest: 'f20204b7d28d9651846e00287dce292eb5da191e6d881bcbf56cba58f1c624e4',
+    reason:
+      'ALTER … SET search_path = pg_catalog, pg_temp; security-reviewed in #7281 be1dda26',
+  },
+  {
+    path: 'apps/database/supabase/migrations/20261030030000_pin_time_tracking_definer_search_path.sql',
+    line: 111,
+    rule: 'definer-search-path',
+    fileDigest:
+      'f9e2e13fd29a0a9533f13fdb8e6b5c4a921840d655901d0c22b999a42c842c84',
+    digest: '4995feb93f411e176f6ef6d0f760f807a3b9dc0f003cc5760605fac3555e4c18',
+    reason:
+      'ALTER … SET search_path = pg_catalog, pg_temp; security-reviewed in #7281 be1dda26',
+  },
 ];
