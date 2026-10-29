@@ -191,7 +191,9 @@ export async function readBoundedText(
   try {
     return {
       ok: true,
-      text: new TextDecoder('utf-8', { fatal: true }).decode(bytes),
+      text: new TextDecoder('utf-8', { fatal: true, ignoreBOM: false }).decode(
+        bytes
+      ),
     };
   } catch {
     return { ok: false, status: 400 };
