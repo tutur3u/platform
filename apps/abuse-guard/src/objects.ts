@@ -22,6 +22,11 @@ import {
   planCleanupRetry,
   shouldRearm,
 } from './engine';
+import {
+  admitFairCommands,
+  ensureFairAdmissionSchema,
+  type FairIdentity,
+} from './fair-admission';
 
 export type SubjectRunResult =
   | { ok: true; results: GuardResult[] }
@@ -127,6 +132,7 @@ export { type ControlState, familyOpen } from './control-state';
 export class GuardControl extends DurableObject {
   constructor(ctx: DurableObjectState, env: unknown) {
     super(ctx, env as never);
+    ensureFairAdmissionSchema(ctx.storage.sql);
     ctx.storage.sql
       .exec(
         'CREATE TABLE IF NOT EXISTS control (id INTEGER PRIMARY KEY CHECK (id = 1), state TEXT NOT NULL)'
@@ -151,6 +157,60 @@ export class GuardControl extends DurableObject {
         JSON.stringify(state)
       )
       .toArray();
+  }
+
+  /** Durable per-identity quotas and family spend commit or roll back together. */
+  async admitFair(
+    family: AbuseGuardFamily,
+    identity: FairIdentity,
+    ops: number,
+    budget: number
+  ) {
+    const now = Date.now();
+    const result = this.ctx.storage.transactionSync(() => {
+      const { state, changed } = this.load(now);
+      const result = admitFairCommands({
+        sql: this.ctx.storage.sql,
+        state,
+        family,
+        identity,
+        ops,
+        budget,
+        now,
+      });
+      if (result.kind === 'open' || changed) this.save(state);
+      return result;
+    });
+    if (
+      result.kind === 'open' &&
+      (await this.ctx.storage.getAlarm()) === null
+    ) {
+      await this.ctx.storage.setAlarm(
+        (Math.floor(now / 86_400_000) + 1) * 86_400_000 + 1000
+      );
+    }
+    return result;
+  }
+
+  /** Bounded, terminal cleanup; failure stops scheduling until a later write. */
+  async alarm() {
+    try {
+      this.ctx.storage.sql
+        .exec(
+          'DELETE FROM fair_usage WHERE k IN (SELECT k FROM fair_usage WHERE exp <= ? LIMIT 1000)',
+          Date.now()
+        )
+        .toArray();
+      const [row] = this.ctx.storage.sql
+        .exec('SELECT MIN(exp) AS next FROM fair_usage')
+        .toArray();
+      if (row?.next != null)
+        await this.ctx.storage.setAlarm(
+          Math.max(Date.now() + 1000, Number(row.next) + 1000)
+        );
+    } catch (error) {
+      console.error('[abuse-guard] fairness cleanup stopped', error);
+    }
   }
 
   /** Commit the entire allowance before any subject operation can run. */

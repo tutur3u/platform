@@ -125,6 +125,7 @@ describe('CLI auth refresh route', () => {
     expect(body.session.refresh_token).not.toBe(oldSession.refresh.token);
     expect(getUpstashRestRedisClient).toHaveBeenCalledWith({
       family: 'replay',
+      fairness: { principal: 'user-1', source: 'unknown' },
     });
     expect(refreshReplaySet).toHaveBeenCalledWith(
       `cli:refresh:used:user-1:${oldSession.refresh.claims.jti}`,

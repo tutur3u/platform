@@ -3,6 +3,7 @@ import {
   preLimitReplayAttempt,
   rememberReplay,
 } from '@tuturuuu/utils/abuse-guard/replay-guard';
+import { guardSourceBucket } from '@tuturuuu/utils/abuse-guard/source';
 import { getUpstashRestRedisClient } from '@tuturuuu/utils/upstash-rest';
 
 export type RefreshConsumeResult =
@@ -48,6 +49,7 @@ export async function consumeRefreshTokenWithGrace({
 
   const redis = await getUpstashRestRedisClient({
     family: 'replay',
+    fairness: { principal: sub, source: guardSourceBucket(ip) },
   }).catch(() => null);
   if (!redis) {
     return 'unavailable';

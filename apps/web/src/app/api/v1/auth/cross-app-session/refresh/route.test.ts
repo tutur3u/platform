@@ -110,6 +110,7 @@ describe('cross-app app-session refresh route', () => {
     expect(response.status).toBe(200);
     expect(getUpstashRestRedisClient).toHaveBeenCalledWith({
       family: 'replay',
+      fairness: { principal: 'user-1', source: 'unknown' },
     });
     expect(body).toMatchObject({
       appSessionRefreshEarlySeconds: 900,

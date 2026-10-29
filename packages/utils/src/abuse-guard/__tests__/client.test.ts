@@ -514,3 +514,39 @@ describe('selectAbuseGuard', () => {
     );
   });
 });
+
+describe('request-scoped fairness identities', () => {
+  it('purpose-hashes source/principal independently of keys and never mutates the shared client', async () => {
+    const sent: GuardRpc[] = [];
+    const shared = createAbuseGuardClient({
+      family: 'replay',
+      pepper: PEPPER,
+      transport: async (rpc) => {
+        sent.push(rpc);
+        return { v: 1, steps: [{ results: [{ op: 'kv.get', v: null }] }] };
+      },
+    });
+    await Promise.all([
+      shared
+        .withFairness({ source: '203.0.113.4', principal: 'user-a' })
+        .get('token-a'),
+      shared
+        .withFairness({ source: '203.0.113.4', principal: 'user-b' })
+        .get('token-b'),
+    ]);
+    expect(sent[0]?.fairness?.source).toEqual(sent[1]?.fairness?.source);
+    expect(sent[0]?.fairness?.source).toMatch(/^[A-Za-z0-9_-]{43}$/u);
+    expect(sent[0]?.fairness?.principal).not.toEqual(
+      sent[1]?.fairness?.principal
+    );
+    expect(JSON.stringify(sent)).not.toContain('203.0.113.4');
+    expect(JSON.stringify(sent)).not.toContain('user-a');
+    await shared.get('unscoped');
+    expect(sent[2]?.fairness).toBeUndefined();
+    const identity = { source: '203.0.113.4', principal: 'user-a' };
+    const view = shared.withFairness(identity);
+    identity.principal = 'user-b';
+    await view.get('stable-view');
+    expect(sent[3]?.fairness).toEqual(sent[0]?.fairness);
+  });
+});

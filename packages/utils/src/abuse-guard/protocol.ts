@@ -137,6 +137,10 @@ export const guardRpcSchema = z
      */
     id: z.string().regex(GUARD_OPERATION_ID_PATTERN),
     family: z.enum(ABUSE_GUARD_FAMILIES),
+    /** Trusted caller identities, purpose-hashed independently of scope/keys. */
+    fairness: z
+      .object({ source: digest, principal: digest.optional() })
+      .optional(),
     /** Run steps in order and skip the rest after the first denial. */
     sequential: z.boolean().optional(),
     steps: z.array(guardStepSchema).min(1).max(ABUSE_GUARD_LIMITS.maxSteps),
@@ -205,6 +209,7 @@ export type GuardRpcResponse = z.infer<typeof guardRpcResponseSchema>;
 export type GuardErrorCode =
   | 'bad_request'
   | 'unauthorized'
+  | 'guard_limited'
   | 'guard_stopped'
   | 'guard_unavailable';
 

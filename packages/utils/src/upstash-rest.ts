@@ -1,4 +1,5 @@
 import type { Redis } from '@upstash/redis';
+import type { GuardFairnessInput } from './abuse-guard/client';
 import type { AbuseGuardFamily } from './abuse-guard/protocol';
 import { createGuardRedisView } from './abuse-guard/redis-view';
 import { selectAbuseGuard } from './abuse-guard/select';
@@ -22,10 +23,9 @@ export type UpstashRatelimitRedisClient = Pick<
 >;
 
 export function hasUpstashRestEnv(): boolean {
-  return Boolean(
-    process.env.UPSTASH_REDIS_REST_URL?.trim() &&
-      process.env.UPSTASH_REDIS_REST_TOKEN?.trim()
-  );
+  const url = process.env.UPSTASH_REDIS_REST_URL?.trim();
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN?.trim();
+  return Boolean(url && token);
 }
 
 /**
@@ -98,13 +98,18 @@ export function withLegacyReplayReads<TView extends ReplayView>(
  */
 export async function getUpstashRestRedisClient(options?: {
   family?: AbuseGuardFamily;
+  fairness?: GuardFairnessInput;
 }): Promise<UpstashRestRedisClient | null> {
   if (options?.family) {
     const selection = selectAbuseGuard(options.family);
     if (selection.kind === 'off') return null;
     if (selection.kind === 'durable-object') {
       // Covers GET/MGET/SET/DEL/INCR/DECR/EXPIRE/TTL; SCAN throws.
-      const view = createGuardRedisView(selection.client);
+      const view = createGuardRedisView(
+        options.fairness
+          ? selection.client.withFairness(options.fairness)
+          : selection.client
+      );
       if (options.family !== 'replay') {
         return view as unknown as UpstashRestRedisClient;
       }

@@ -27,7 +27,9 @@ vi.mock('@tuturuuu/utils/abuse-guard/select', () => ({
   isAbuseGuardFamilyAssigned: () => true,
   selectAbuseGuard: () => ({
     kind: 'durable-object',
-    client: { get: mocks.storeGet, set: mocks.storeSet },
+    client: {
+      withFairness: () => ({ get: mocks.storeGet, set: mocks.storeSet }),
+    },
   }),
 }));
 

@@ -48,6 +48,7 @@ const ERROR_CODES = new Set<GuardErrorCode>([
   'bad_request',
   'unauthorized',
   'guard_stopped',
+  'guard_limited',
   'guard_unavailable',
 ]);
 
@@ -222,7 +223,12 @@ export type GuardReservation = {
   retryAfterMs: number;
 };
 
+/** Set only by trusted server adapters, after credential/ingress validation. */
+export type GuardFairnessInput = { source: string; principal?: string };
+
 export interface AbuseGuardClient {
+  /** A request-scoped view; never mutates a shared client or its identities. */
+  withFairness(identity: GuardFairnessInput): AbuseGuardClient;
   readonly family: AbuseGuardFamily;
   /** Charges each subject in order; stops at the first denied subject. */
   hitWindows(
@@ -289,8 +295,10 @@ export function createAbuseGuardClient(options: {
   family: AbuseGuardFamily;
   pepper: string;
   transport: AbuseGuardTransport;
+  fairness?: GuardFairnessInput;
 }): AbuseGuardClient {
   const { family, pepper, transport } = options;
+  const fairness = options.fairness ? { ...options.fairness } : undefined;
   const partitionOf = (raw: string) =>
     hashGuardValue(pepper, `p:${family}`, raw);
   const keyOf = (raw: string) => hashGuardValue(pepper, `k:${family}`, raw);
@@ -304,6 +312,26 @@ export function createAbuseGuardClient(options: {
       v: ABUSE_GUARD_PROTOCOL_VERSION,
       id: operationId ?? createGuardOperationId(),
       family,
+      ...(fairness
+        ? {
+            fairness: {
+              source: await hashGuardValue(
+                pepper,
+                `fair:source:${family}`,
+                fairness.source
+              ),
+              ...(fairness.principal
+                ? {
+                    principal: await hashGuardValue(
+                      pepper,
+                      `fair:principal:${family}`,
+                      fairness.principal
+                    ),
+                  }
+                : {}),
+            },
+          }
+        : {}),
       ...(sequential ? { sequential: true } : {}),
       steps: await Promise.all(
         steps.map(async (step) => ({
@@ -339,6 +367,9 @@ export function createAbuseGuardClient(options: {
 
   return {
     family,
+    withFairness(identity) {
+      return createAbuseGuardClient({ ...options, fairness: identity });
+    },
 
     async hitWindows(subjects, callOptions) {
       const steps = await Promise.all(

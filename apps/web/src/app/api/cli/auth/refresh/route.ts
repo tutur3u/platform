@@ -10,6 +10,7 @@ import {
   rememberReplay,
 } from '@tuturuuu/utils/abuse-guard/replay-guard';
 import { isAbuseGuardFamilyAssigned } from '@tuturuuu/utils/abuse-guard/select';
+import { guardSourceBucket } from '@tuturuuu/utils/abuse-guard/source';
 import { extractIPFromRequest } from '@tuturuuu/utils/abuse-protection/edge';
 import {
   readRequiredMfaPolicy,
@@ -56,6 +57,7 @@ async function consumeRefreshTokenOnce({
 
   const redis = await getUpstashRestRedisClient({
     family: 'replay',
+    fairness: { principal: sub, source: guardSourceBucket(ip) },
   }).catch(() => null);
   if (!redis) {
     return 'unavailable';

@@ -7,8 +7,8 @@
  * - A per-instance pre-limit per principal and per IP bounds how fast one
  *   caller can spend the family's daily budget.
  *
- * These do not give per-principal fairness across instances; see the
- * abuse-guard store runbook for the residual risk and the activation gate.
+ * These are shortcuts. Durable source/principal command quotas are enforced
+ * by GuardControl before the shared family allowance is spent.
  */
 import { createExpiringMap, createLocalWindowLimiter } from './local-cache';
 import { isAbuseGuardFamilyAssigned } from './select';

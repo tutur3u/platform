@@ -96,6 +96,14 @@ function httpClient(
 ): AbuseGuardClient {
   return createAbuseGuardClient({
     family,
+    ...(family === 'replay' || family === 'password'
+      ? {
+          fairness: {
+            source: 'fixture-source',
+            principal: 'fixture-principal',
+          },
+        }
+      : {}),
     pepper: PEPPER,
     transport: createHttpGuardTransport({
       url: ORIGIN,
@@ -111,6 +119,7 @@ async function bindingClient(mf: Miniflare): Promise<AbuseGuardClient> {
   const caller = await mf.getWorker('caller');
   return createAbuseGuardClient({
     family: 'password',
+    fairness: { source: 'fixture-source', principal: 'fixture-principal' },
     pepper: PEPPER,
     transport: createBindingGuardTransport(
       {
@@ -181,6 +190,7 @@ describe('abuse-guard Worker in workerd', () => {
     const captured: { url: URL; init: RequestInit }[] = [];
     const client = createAbuseGuardClient({
       family: 'password',
+      fairness: { source: 'fixture-source', principal: 'fixture-principal' },
       pepper: PEPPER,
       transport: createHttpGuardTransport({
         url: ORIGIN,
@@ -426,21 +436,26 @@ describe('daily operation budget', () => {
 
   it('persists a budget stop across restarts until an operator resumes', async () => {
     const persist = join(workDir, 'budget-state');
-    const first = createRuntime({ familyBudgets: 'replay=5', persist });
+    const first = createRuntime({ familyBudgets: 'replay=100', persist });
     const client = httpClient(first, 'replay');
-    for (let index = 0; index < 5; index += 1) {
-      await expect(client.get(`budget:${index}`)).resolves.toBeNull();
+    for (let index = 0; index < 100; index += 1) {
+      const identity = `budget-user:${Math.floor(index / 5)}`;
+      await expect(
+        client
+          .withFairness({ source: identity, principal: identity })
+          .get(`budget:${index}`)
+      ).resolves.toBeNull();
     }
     await expect(client.get('budget:over')).rejects.toMatchObject({
       code: 'guard_stopped',
     });
     expect((await control(first, 'state')).body).toMatchObject({
       stopped: false,
-      families: { replay: { stopped: true, used: 5, budget: 5 } },
+      families: { replay: { stopped: true, used: 100, budget: 100 } },
     });
     await first.dispose();
 
-    const second = createRuntime({ familyBudgets: 'replay=5', persist });
+    const second = createRuntime({ familyBudgets: 'replay=100', persist });
     await expect(
       httpClient(second, 'replay').get('budget:after')
     ).rejects.toMatchObject({ code: 'guard_stopped' });
@@ -454,7 +469,7 @@ describe('daily operation budget', () => {
     await second.dispose();
   });
 
-  it('does not bill steps skipped after a sequential denial', async () => {
+  it('retains the durable allowance for steps skipped after a sequential denial', async () => {
     const mf = createRuntime();
     const client = httpClient(mf, 'offline');
     const window = [
@@ -467,17 +482,63 @@ describe('daily operation budget', () => {
         { partition: 'session:first', windows: window },
       ])
     ).resolves.toMatchObject({ ok: true });
-    // The IP denies, so the session step is skipped and refunded.
+    // The IP denies and the session step is skipped; its allowance stays reserved.
     await expect(
       client.hitWindows([
         { partition: 'ip:203.0.113.50', windows: window },
         { partition: 'session:second', windows: window },
       ])
     ).resolves.toMatchObject({ ok: false, subjectIndex: 0 });
-    // One more command flushes the buffered usage.
+    // Later reads each reserve another command.
     await expect(client.get('flush')).resolves.toBeNull();
     await expect(client.get('flush-again')).resolves.toBeNull();
-    expect((await control(mf, 'state')).body.families.offline.used).toBe(4);
+    expect((await control(mf, 'state')).body.families.offline.used).toBe(6);
+    await mf.dispose();
+  });
+
+  it('denied reservations are counted conservatively within durable identity quotas', async () => {
+    const mf = createRuntime();
+    const client = await bindingClient(mf);
+    const reserve = (receipt: string) =>
+      client.reserve({
+        partition: 'pwd:drain-test',
+        budgets: [{ key: 'target', limit: 1, ttlMs: 900_000 }],
+        receipt,
+      });
+    await expect(reserve('r0')).resolves.toMatchObject({ ok: true });
+    for (let attempt = 1; attempt <= 5; attempt += 1) {
+      await expect(reserve(`r${attempt}`)).resolves.toMatchObject({
+        ok: false,
+      });
+    }
+    expect((await control(mf, 'state')).body.families.password.used).toBe(6);
+    await mf.dispose();
+  });
+
+  it('admits exactly the target budget under concurrent reservations', async () => {
+    const mf = createRuntime();
+    const client = await bindingClient(mf);
+    const outcomes = await Promise.all(
+      Array.from({ length: 20 }, (_, index) =>
+        client.reserve({
+          partition: 'pwd:concurrency-test',
+          budgets: [
+            { key: 'source', limit: 300, ttlMs: 900_000 },
+            { key: 'target', limit: 5, ttlMs: 900_000 },
+          ],
+          receipt: `c${index}`,
+        })
+      )
+    );
+    expect(outcomes.filter((outcome) => outcome.ok)).toHaveLength(5);
+    // A refund consumes its own receipt once.
+    await expect(
+      client.refund({
+        partition: 'pwd:concurrency-test',
+        receipt: 'c0',
+        target: 'target',
+      })
+    ).resolves.toBeGreaterThanOrEqual(0);
     await mf.dispose();
   });
 

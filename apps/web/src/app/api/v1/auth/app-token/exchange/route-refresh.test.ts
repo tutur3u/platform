@@ -128,6 +128,7 @@ describe('app token exchange route', () => {
     }
     expect(getUpstashRestRedisClient).toHaveBeenCalledWith({
       family: 'replay',
+      fairness: { principal: victimUserId, source: 'unknown' },
     });
     expect(mocks.redisSet).toHaveBeenCalledWith(
       expect.stringMatching(
