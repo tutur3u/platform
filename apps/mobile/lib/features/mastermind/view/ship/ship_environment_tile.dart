@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile/core/layout/layout.dart';
-import 'package:mobile/core/ui/components/app_badge.dart';
 import 'package:mobile/core/ui/components/app_icon_button.dart';
 import 'package:mobile/core/ui/components/app_toast.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
-import 'package:mobile/features/mastermind/presentation/age_text.dart';
-import 'package:mobile/features/mastermind/presentation/gmt7.dart';
 import 'package:mobile/features/mastermind/presentation/hub_field.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
+import 'package:mobile/features/mastermind/presentation/relative_time.dart';
 import 'package:mobile/features/mastermind/presentation/ship_model.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_clock.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_status_chip.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_time_label.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// The publisher's stand-in for a commit subject it will not send.
@@ -37,11 +38,12 @@ class ShipEnvironmentTile extends StatelessWidget {
     final muted = Theme.of(context).textTheme.bodySmall;
     final version = row.versionTag;
     final subject = row.commitSubject;
+    // The hub's own age wins over the raw release time when it sends both.
     final released = row.ageSeconds != null
-        ? Duration(seconds: row.ageSeconds!)
-        : row.releasedAt == null
-        ? null
-        : asOf.difference(row.releasedAt!);
+        ? asOf.subtract(Duration(seconds: row.ageSeconds!))
+        : row.releasedAt;
+    final zone = mastermindTimeZoneOf(context);
+    final locale = Localizations.localeOf(context).toString();
     final observed = row.observedAt;
     final deploy = _reading(
       row.fields['deploy_status'],
@@ -70,23 +72,18 @@ class ShipEnvironmentTile extends StatelessWidget {
       l10n: l10n,
       word: () => MastermindLabels.evidence(l10n, row.evidence),
     );
-    final timing = [
-      if (released != null)
-        l10n.mastermindShipReleasedAgo(mastermindAgeText(l10n, released)),
-      if (observed != null)
-        l10n.mastermindShipCheckedAgo(
-          mastermindAgeText(l10n, asOf.difference(observed)),
-        ),
-    ];
     final line = [
-      if (subject != null && subject != _withheldSubject) subject,
-      ...timing,
-    ].join(' · ');
+      if (subject != null && subject != _withheldSubject) Text(subject),
+      if (released != null)
+        MastermindTimeLabel(released, sentence: l10n.mastermindShipReleasedAgo),
+      if (observed != null)
+        MastermindTimeLabel(observed, sentence: l10n.mastermindShipCheckedAgo),
+    ];
     final badges = [
       if (failing)
-        AppBadge(
-          variant: AppBadgeVariant.destructive,
-          child: Text(l10n.mastermindShipFailing),
+        MastermindStatusChip(
+          tone: AppTone.destructive,
+          label: l10n.mastermindShipFailing,
         ),
       if (deploy != null)
         _StatusBadge(
@@ -99,19 +96,58 @@ class ShipEnvironmentTile extends StatelessWidget {
           style: _ciStyle(row.ciState),
         ),
       if (freshness != null)
-        _StatusBadge(
-          label: freshness,
-          style: (AppIcons.info, AppBadgeVariant.outline),
-        ),
+        _StatusBadge(label: freshness, style: (AppIcons.info, AppTone.neutral)),
     ];
+    // The spoken ages are recomputed on every clock tick, not cached.
+    return MastermindClockBuilder(
+      builder: (context, now) => _row(
+        context,
+        semanticLabel: [
+          if (released != null)
+            l10n.mastermindShipReleased(
+              mastermindSpokenTime(
+                l10n,
+                released,
+                now: now,
+                zone: zone,
+                locale: locale,
+              ),
+            ),
+          if (observed != null)
+            l10n.mastermindShipChecked(
+              mastermindSpokenTime(
+                l10n,
+                observed,
+                now: now,
+                zone: zone,
+                locale: locale,
+              ),
+            ),
+          ?evidence,
+        ].join(' · '),
+        failing: failing,
+        subject: subject,
+        version: version,
+        muted: muted,
+        badges: badges,
+        line: line,
+      ),
+    );
+  }
+
+  Widget _row(
+    BuildContext context, {
+    required String semanticLabel,
+    required bool failing,
+    required String? subject,
+    required String? version,
+    required TextStyle? muted,
+    required List<Widget> badges,
+    required List<Widget> line,
+  }) {
+    final l10n = context.l10n;
     return AppGroupedRow(
-      semanticLabel: [
-        if (row.releasedAt case final at?)
-          l10n.mastermindShipReleased(Gmt7.dateTime(at, l10n.localeName)),
-        if (observed != null)
-          l10n.mastermindShipChecked(Gmt7.dateTime(observed, l10n.localeName)),
-        ?evidence,
-      ].join(' · '),
+      semanticLabel: semanticLabel,
       leading: AppIconTile(
         icon: failing ? AppIcons.warning : LucideIcons.server,
         tone: failing ? AppTone.destructive : AppTone.neutral,
@@ -144,7 +180,20 @@ class ShipEnvironmentTile extends StatelessWidget {
                 ],
               ),
             ),
-          if (line.isNotEmpty) Text(line, style: muted),
+          if (line.isNotEmpty)
+            DefaultTextStyle.merge(
+              style: muted,
+              child: Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: AppSpacing.xs,
+                children: [
+                  for (final (i, part) in line.indexed) ...[
+                    if (i > 0) const Text('·'),
+                    part,
+                  ],
+                ],
+              ),
+            ),
         ],
       ),
     );
@@ -162,24 +211,23 @@ class ShipEnvironmentTile extends StatelessWidget {
     return known ? word() : null;
   }
 
-  static (IconData, AppBadgeVariant) _deployStyle(DeployStatus status) =>
+  static (IconData, AppTone) _deployStyle(DeployStatus status) =>
       switch (status) {
-        DeployStatus.success => (AppIcons.check, AppBadgeVariant.success),
+        DeployStatus.success => (AppIcons.check, AppTone.success),
         DeployStatus.failure ||
-        DeployStatus.error => (AppIcons.warning, AppBadgeVariant.destructive),
+        DeployStatus.error => (AppIcons.warning, AppTone.destructive),
         DeployStatus.pending ||
-        DeployStatus.queued => (LucideIcons.hourglass, AppBadgeVariant.outline),
-        DeployStatus.inProgress => (LucideIcons.play, AppBadgeVariant.outline),
+        DeployStatus.queued => (LucideIcons.hourglass, AppTone.neutral),
+        DeployStatus.inProgress => (LucideIcons.play, AppTone.neutral),
         DeployStatus.inactive ||
-        DeployStatus.unknown => (AppIcons.info, AppBadgeVariant.outline),
+        DeployStatus.unknown => (AppIcons.info, AppTone.neutral),
       };
 
-  static (IconData, AppBadgeVariant) _ciStyle(CiState state) => switch (state) {
-    CiState.success => (AppIcons.check, AppBadgeVariant.success),
-    CiState.failure ||
-    CiState.error => (AppIcons.warning, AppBadgeVariant.destructive),
-    CiState.pending => (LucideIcons.hourglass, AppBadgeVariant.outline),
-    CiState.unknown => (AppIcons.info, AppBadgeVariant.outline),
+  static (IconData, AppTone) _ciStyle(CiState state) => switch (state) {
+    CiState.success => (AppIcons.check, AppTone.success),
+    CiState.failure || CiState.error => (AppIcons.warning, AppTone.destructive),
+    CiState.pending => (LucideIcons.hourglass, AppTone.neutral),
+    CiState.unknown => (AppIcons.info, AppTone.neutral),
   };
 }
 
@@ -187,11 +235,11 @@ class _StatusBadge extends StatelessWidget {
   const _StatusBadge({required this.label, required this.style});
 
   final String label;
-  final (IconData, AppBadgeVariant) style;
+  final (IconData, AppTone) style;
 
   @override
   Widget build(BuildContext context) =>
-      AppBadge(variant: style.$2, leading: Icon(style.$1), child: Text(label));
+      MastermindStatusChip(tone: style.$2, icon: style.$1, label: label);
 }
 
 /// `v1.2.3 · abcdef1`, the commit id in monospace and copyable. It is a

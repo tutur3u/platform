@@ -5,6 +5,7 @@ import {
   NativeUploadError,
   productionFailureMessage,
 } from './wave1-native-upload-error.mjs';
+import { uploadLimits } from './wave1-native-upload-limits.mjs';
 
 test('upload failure exposes only numeric exit, signal and CF code metadata', async () => {
   const secret = [
@@ -35,6 +36,19 @@ test('upload failure exposes only numeric exit, signal and CF code metadata', as
       p: { accountId: 'c'.repeat(32) },
       exec: () => {
         throw failure;
+      },
+      measurements: {
+        schema: 1,
+        limits: uploadLimits,
+        script: {
+          bytes: 1,
+          moduleCount: 1,
+          maxModuleBytes: 1,
+          modules: [{ bytes: 1 }],
+        },
+        sourcemaps: { enabled: false, count: 0, encodedBytes: 0, gzipBytes: 0 },
+        assets: { count: 0, maxFileBytes: 0 },
+        variables: { count: 0, maxPlainValueBytes: 0 },
       },
     }),
     (error) => {

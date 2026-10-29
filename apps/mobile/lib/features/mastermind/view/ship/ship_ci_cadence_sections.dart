@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
-import 'package:mobile/features/mastermind/presentation/age_text.dart';
-import 'package:mobile/features/mastermind/presentation/gmt7.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
 import 'package:mobile/features/mastermind/view/ship/ship_capped_section.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_group.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_time_label.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// Queued and running CI runs per repository. A repository the hub could not
@@ -20,7 +20,7 @@ class ShipCiSection extends StatelessWidget {
     final l10n = context.l10n;
     String count(int? value) =>
         value == null ? l10n.mastermindUnavailable : '$value';
-    return AppGroupedSection.spaced(
+    return MastermindGroup(
       caption: l10n.mastermindShipCiNow,
       children: [
         if (ci.isEmpty)
@@ -65,16 +65,12 @@ class ShipCadenceSection extends StatelessWidget {
         for (final entry in cadence)
           AppGroupedRow(
             title: Text(MastermindLabels.releaseProduct(entry.product)),
-            subtitle: Text(
-              entry.lastProdAt == null
-                  ? l10n.mastermindShipNoProdRelease
-                  : Gmt7.dateTime(entry.lastProdAt!, l10n.localeName),
-            ),
+            subtitle: entry.lastProdAt == null
+                ? Text(l10n.mastermindShipNoProdRelease)
+                : null,
             trailing: entry.lastProdAt == null
                 ? null
-                : Text(
-                    mastermindAgeText(l10n, asOf.difference(entry.lastProdAt!)),
-                  ),
+                : MastermindTimeLabel(entry.lastProdAt!),
           ),
       ],
     );

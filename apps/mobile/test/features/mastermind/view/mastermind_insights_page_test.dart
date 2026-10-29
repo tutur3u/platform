@@ -8,6 +8,7 @@ import 'package:mobile/features/mastermind/view/insights/pacing_glyph.dart';
 import 'package:mobile/features/mastermind/view/insights/usage_chart_panel.dart';
 
 import '../../../helpers/mastermind_ship_pump.dart';
+import '../../../helpers/mastermind_time_finder.dart';
 import '../../../helpers/mastermind_usage_fixture.dart';
 import '../../../helpers/mastermind_view_harness.dart';
 import '../../../helpers/mastermind_work_pump.dart';
@@ -253,7 +254,7 @@ void main() {
       final json = Map<String, dynamic>.of(_usage)
         ..['generated_at'] = '2026-01-31T14:30:00+00:00';
       await pumpInsights(tester, json);
-      expect(find.textContaining('Published 3 h ago'), findsOneWidget);
+      expect(findTimeLabel('Published 3h'), findsOneWidget);
       expect(find.text('Claude pool B'), findsWidgets);
     });
 

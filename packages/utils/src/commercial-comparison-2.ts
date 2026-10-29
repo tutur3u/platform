@@ -1,6 +1,13 @@
 import type { ComparisonFeature } from './commercial-comparison-types';
 export const features2: ComparisonFeature[] = [
   {
+    id: 'ops-hub_0',
+    app: 'ops-hub',
+    category: 'internal',
+    values: ['internal', 'internal', 'internal', 'internal'],
+    detail: 'standard',
+  },
+  {
     id: 'lettin_0',
     app: 'lettin',
     category: 'learning',
@@ -220,6 +227,13 @@ export const features2: ComparisonFeature[] = [
   {
     id: 'chat-realtime_0',
     app: 'chat-realtime',
+    category: 'internal',
+    values: ['internal', 'internal', 'internal', 'internal'],
+    detail: 'standard',
+  },
+  {
+    id: 'abuse-guard_0',
+    app: 'abuse-guard',
     category: 'internal',
     values: ['internal', 'internal', 'internal', 'internal'],
     detail: 'standard',

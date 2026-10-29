@@ -3,6 +3,7 @@ import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import { auditStorageAccess } from '@/lib/storage/storage-access-audit';
 import {
   createWorkspaceStorageAccessContext,
   WorkspaceStorageAccessLookupError,
@@ -18,6 +19,7 @@ const FileUrlsRequestSchema = z.object({
 
 /** Signed read URL validity: 1 hour */
 const SIGNED_URL_EXPIRY_SECONDS = 3600;
+const AUDIT_ROUTE = '/api/ai/chat/file-urls';
 
 /**
  * POST /api/ai/chat/file-urls
@@ -59,7 +61,16 @@ export const POST = withSessionAuth(
         })
       );
 
+      const listEvent = {
+        action: 'list' as const,
+        actorId: user.id,
+        path: storagePath,
+        route: AUDIT_ROUTE,
+        wsId,
+      };
+
       if (access === 'invalid') {
+        auditStorageAccess({ ...listEvent, outcome: 'invalid' });
         return NextResponse.json(
           { message: 'Invalid storage path' },
           { status: 400 }
@@ -67,6 +78,7 @@ export const POST = withSessionAuth(
       }
 
       if (access === 'forbidden') {
+        auditStorageAccess({ ...listEvent, outcome: 'denied' });
         return NextResponse.json(
           { message: "You don't have access to this chat" },
           { status: 403 }
@@ -86,6 +98,7 @@ export const POST = withSessionAuth(
           error: listError,
           storagePath,
         });
+        auditStorageAccess({ ...listEvent, outcome: 'error' });
         return NextResponse.json(
           { message: 'Failed to list files' },
           { status: 500 }
@@ -93,6 +106,7 @@ export const POST = withSessionAuth(
       }
 
       if (!fileList || fileList.length === 0) {
+        auditStorageAccess({ ...listEvent, itemCount: 0, outcome: 'allowed' });
         return NextResponse.json({ files: [] });
       }
 
@@ -116,6 +130,12 @@ export const POST = withSessionAuth(
         (file) => verdicts.get(`${storagePath}/${file.name}`) === 'valid'
       );
 
+      auditStorageAccess({
+        ...listEvent,
+        itemCount: realFiles.length,
+        outcome: 'allowed',
+      });
+
       if (realFiles.length === 0) {
         return NextResponse.json({ files: [] });
       }
@@ -132,11 +152,24 @@ export const POST = withSessionAuth(
           error: signError,
           fileCount: filePaths.length,
         });
+        auditStorageAccess({
+          ...listEvent,
+          action: 'sign',
+          itemCount: filePaths.length,
+          outcome: 'error',
+        });
         return NextResponse.json(
           { message: 'Failed to generate file URLs' },
           { status: 500 }
         );
       }
+
+      auditStorageAccess({
+        ...listEvent,
+        action: 'sign',
+        itemCount: filePaths.length,
+        outcome: 'allowed',
+      });
 
       // Map file metadata with signed URLs
       const files = realFiles.map((file, index) => {

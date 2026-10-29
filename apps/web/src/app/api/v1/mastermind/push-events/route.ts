@@ -12,6 +12,8 @@ import {
   resolveMastermindPushLocale,
 } from '@/lib/mastermind/push-events/delivery';
 import {
+  describeMastermindPushEventRejection,
+  type MastermindPushEventRejection,
   mastermindPushEventKey,
   mastermindPushEventSchema,
 } from '@/lib/mastermind/push-events/schema';
@@ -28,9 +30,13 @@ const EVENT_DONE = 'done';
 
 const NO_STORE = { 'cache-control': 'private, no-store' };
 
-function reject(error: string, status: number) {
-  // Never echo input or payload content.
-  console.warn('Mastermind push event rejected', { reason: error });
+type RejectionDetail =
+  | MastermindPushEventRejection
+  | { issue: 'invalid_encoding' | 'invalid_json' };
+
+function reject(error: string, status: number, detail?: RejectionDetail) {
+  // Never echo input or payload content; `detail` holds closed-set values only.
+  console.warn('Mastermind push event rejected', { reason: error, ...detail });
   return NextResponse.json({ error }, { status, headers: NO_STORE });
 }
 
@@ -38,8 +44,8 @@ function reject(error: string, status: number) {
  * Reads at most `MAX_BODY_BYTES` from the stream, whatever Content-Length
  * says, and cancels the stream past the cap. Returns null when it is over.
  */
-async function readCappedBody(request: Request): Promise<string | null> {
-  if (!request.body) return '';
+async function readCappedBody(request: Request): Promise<Buffer | null> {
+  if (!request.body) return Buffer.alloc(0);
   const reader = request.body.getReader();
   const chunks: Uint8Array[] = [];
   let total = 0;
@@ -53,18 +59,22 @@ async function readCappedBody(request: Request): Promise<string | null> {
     }
     chunks.push(value);
   }
-  return Buffer.concat(chunks).toString('utf8');
+  return Buffer.concat(chunks);
 }
+
+// Keeps a BOM so it still fails JSON.parse, as before.
+const UTF8 = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true });
 
 /**
  * POST /api/v1/mastermind/push-events
- * Receives a signed Mastermind hub event and fans it out to the owners'
- * mobile devices synchronously. It schedules nothing.
+ * Receives a signed Mastermind hub event (contract v1 or v2) and fans it out
+ * to the owners' mobile devices synchronously. It schedules nothing. v2
+ * `urgency` is validated but does not change delivery yet.
  */
 export async function POST(request: Request) {
   const declaredLength = Number(request.headers.get('content-length') ?? '0');
   if (declaredLength > MAX_BODY_BYTES) return reject('payload_too_large', 413);
-  let rawBody: string | null;
+  let rawBody: Buffer | null;
   try {
     rawBody = await readCappedBody(request);
   } catch {
@@ -77,19 +87,31 @@ export async function POST(request: Request) {
     nextSecret: process.env.MASTERMIND_PUSH_HMAC_SECRET_NEXT,
     signature: request.headers.get(MASTERMIND_PUSH_SIGNATURE_HEADER),
     timestamp: request.headers.get(MASTERMIND_PUSH_TIMESTAMP_HEADER),
+    // The exact received bytes, never a re-serialization of the parsed event.
     rawBody,
   });
   if (signature === 'unconfigured') return reject('unavailable', 503);
   if (signature !== 'ok') return reject('unauthorized', 401);
 
+  let text: string;
+  try {
+    text = UTF8.decode(rawBody);
+  } catch {
+    return reject('invalid_event', 400, { issue: 'invalid_encoding' });
+  }
   let json: unknown;
   try {
-    json = JSON.parse(rawBody);
+    json = JSON.parse(text);
   } catch {
-    return reject('invalid_event', 400);
+    return reject('invalid_event', 400, { issue: 'invalid_json' });
   }
   const parsed = mastermindPushEventSchema.safeParse(json);
-  if (!parsed.success) return reject('invalid_event', 400);
+  if (!parsed.success)
+    return reject(
+      'invalid_event',
+      400,
+      describeMastermindPushEventRejection(json)
+    );
   const event = parsed.data;
 
   const redis = await getUpstashRestRedisClient().catch(() => null);

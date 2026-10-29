@@ -3,10 +3,11 @@ import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/kit/app_filter_bar.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
-import 'package:mobile/features/mastermind/presentation/age_text.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
 import 'package:mobile/features/mastermind/presentation/ship_model.dart';
 import 'package:mobile/features/mastermind/view/ship/ship_environment_tile.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_group.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_time_label.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// One product as a compact card: a header row with its name, how long its
@@ -29,7 +30,8 @@ class ShipProductGroupSection extends StatelessWidget {
     final l10n = context.l10n;
     final age = group.release?.prodAgeSeconds;
     final release = group.release;
-    return AppGroupedSection.spaced(
+    final basis = release?.ageBasis;
+    return MastermindGroup(
       children: [
         AppGroupedRow(
           leading: AppIconTile(
@@ -40,14 +42,17 @@ class ShipProductGroupSection extends StatelessWidget {
           // No release age: the line is left out rather than saying so.
           subtitle: age == null || release == null
               ? null
-              : Text(
-                  [
-                    l10n.mastermindLiveAgo(
-                      mastermindAgeText(l10n, Duration(seconds: age)),
+              : Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: AppSpacing.xs,
+                  children: [
+                    MastermindTimeLabel(
+                      asOf.subtract(Duration(seconds: age)),
+                      sentence: l10n.mastermindLiveAgo,
                     ),
-                    if (release.ageBasis != AgeBasis.unknown)
-                      MastermindLabels.ageBasis(l10n, release.ageBasis),
-                  ].join(' · '),
+                    if (basis != null && basis != AgeBasis.unknown)
+                      Text('· ${MastermindLabels.ageBasis(l10n, basis)}'),
+                  ],
                 ),
         ),
         for (final row in group.environments)

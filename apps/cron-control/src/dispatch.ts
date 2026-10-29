@@ -1,6 +1,7 @@
 import {
   CRON_JOBS,
   type CronJob,
+  DATABASE_MAINTENANCE_RPCS,
   leaseMs,
   MAX_CONCURRENT_DISPATCHES,
   MAX_CONSECUTIVE_FAILURES,
@@ -15,10 +16,12 @@ import type { ClaimResult, Ledger, RunOutcome } from './ledger';
 import { WORKER_PROCESSORS } from './processors';
 import { withinDeadline } from './processors/deadline';
 import type { ProcessorEnv } from './processors/types';
+import { isWebJob } from './web-gate';
 
 export type DispatchEnv = Partial<Record<string, string>> & {
   CRON_CONTROL_ENABLED_JOBS?: string;
   CRON_CONTROL_WORKER_PROCESSORS?: string;
+  CRON_CONTROL_WEB_MODE?: string;
 };
 
 export interface DispatchDeps {
@@ -45,11 +48,14 @@ const RETRY_BACKOFF_MS = 2_000;
 type Target = { problem: string } | { secret: string; url: URL };
 
 function resolveTarget(cronJob: CronJob, env: DispatchEnv): Target {
-  if (cronJob.workerProcessor === 'cron-history-retention') {
+  const maintenanceRpc = cronJob.workerProcessor
+    ? DATABASE_MAINTENANCE_RPCS[cronJob.workerProcessor]
+    : undefined;
+  if (maintenanceRpc) {
     if (!env.SUPABASE_SECRET_KEY)
       return { problem: 'SUPABASE_SECRET_KEY unset' };
     try {
-      const url = new URL('/rest/v1/rpc/prune_cron_history', env.SUPABASE_URL);
+      const url = new URL(`/rest/v1/rpc/${maintenanceRpc}`, env.SUPABASE_URL);
       const loopback =
         url.hostname === '127.0.0.1' || url.hostname === 'localhost';
       if (url.protocol !== 'https:' && !(loopback && url.protocol === 'http:'))
@@ -85,7 +91,7 @@ function workerProcessorFor(cronJob: CronJob, env: DispatchEnv) {
     .split(',')
     .map((id) => id.trim());
   if (
-    cronJob.workerProcessor !== 'cron-history-retention' &&
+    !DATABASE_MAINTENANCE_RPCS[cronJob.workerProcessor] &&
     !selected.includes(cronJob.id)
   )
     return null;
@@ -155,7 +161,8 @@ async function readOutcome(
 async function invoke(
   cronJob: CronJob,
   target: { secret: string; url: URL },
-  deps: DispatchDeps
+  deps: DispatchDeps,
+  slot: string
 ): Promise<{ result: Attempt; status?: number }> {
   let response: Response;
   try {
@@ -164,6 +171,9 @@ async function invoke(
       headers: {
         Authorization: `Bearer ${target.secret}`,
         'User-Agent': USER_AGENT,
+        ...(isWebJob(cronJob.id)
+          ? { 'X-Tuturuuu-Cron-Slot': String(Date.parse(slot)) }
+          : {}),
         ...(cronJob.method === 'POST'
           ? { 'Content-Type': 'application/json' }
           : {}),
@@ -177,7 +187,7 @@ async function invoke(
     const name = error instanceof Error ? error.name : '';
     if (name === 'TimeoutError' || name === 'AbortError')
       return { result: 'unknown' };
-    return { result: 'retryable' };
+    return { result: isWebJob(cronJob.id) ? 'unknown' : 'retryable' };
   }
   if (response.ok)
     return {
@@ -199,6 +209,13 @@ async function runJob(
   env: DispatchEnv,
   deps: DispatchDeps
 ): Promise<JobReport> {
+  if (isWebJob(cronJob.id) && env.CRON_CONTROL_WEB_MODE !== 'active')
+    return {
+      id: cronJob.id,
+      outcome: 'skipped',
+      reason:
+        env.CRON_CONTROL_WEB_MODE === 'shadow' ? 'shadow' : 'web-disabled',
+    };
   const target = resolveTarget(cronJob, env);
   if ('problem' in target) {
     console.error('Cron Control job misconfigured', {
@@ -257,6 +274,7 @@ async function runJob(
           fetch: deps.fetch,
           fence: () => ledger.checkFence(cronJob.id, claim.generation),
           now: deps.now,
+          sleep: deps.sleep,
           pending: {
             add: (items) => ledger.addPendingWork(cronJob.id, items),
             fail: (items) =>
@@ -312,8 +330,15 @@ async function runJob(
         break;
       }
     }
+    if (
+      isWebJob(cronJob.id) &&
+      !(await ledger.checkFence(cronJob.id, claim.generation))
+    ) {
+      outcome = 'stopped';
+      break;
+    }
     attempts = attempt;
-    const result = await invoke(cronJob, target, deps);
+    const result = await invoke(cronJob, target, deps, slot);
     status = result.status;
     if (result.result === 'retryable') continue;
     outcome = result.result;

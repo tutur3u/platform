@@ -1,12 +1,11 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { LimitRow } from '@tuturuuu/types/db';
-import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import { enforceRootWorkspaceAdmin } from '@tuturuuu/utils/workspace-helper';
 import { connection, NextResponse } from 'next/server';
 import {
   type AvailableTableRow,
   buildTableGroups,
 } from '@/app/[locale]/(dashboard)/[wsId]/entity-creation-limits/types';
+import { authorizeInfrastructureRootMemberRequest } from '@/lib/infrastructure-admin-access';
 
 async function getLimitRows(): Promise<LimitRow[]> {
   const sbAdmin = await createAdminClient();
@@ -35,7 +34,8 @@ async function getAvailableTables(): Promise<AvailableTableRow[]> {
 export async function GET() {
   await connection();
 
-  await enforceRootWorkspaceAdmin(ROOT_WORKSPACE_ID);
+  const authorization = await authorizeInfrastructureRootMemberRequest();
+  if (!authorization.ok) return authorization.response;
 
   const [rows, availableTables] = await Promise.all([
     getLimitRows(),

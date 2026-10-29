@@ -10,8 +10,11 @@ import 'package:mobile/features/mastermind/replies/mastermind_replies_cubit.dart
 import 'package:mobile/features/mastermind/replies/reply_outcome.dart';
 import 'package:mobile/features/mastermind/view/home/activity_strip.dart';
 import 'package:mobile/features/mastermind/view/home_activity_card.dart';
+import 'package:mobile/features/mastermind/view/home_needs_you_card.dart';
+import 'package:mobile/features/mastermind/view/home_quota_decisions_cards.dart';
 import 'package:mobile/features/mastermind/view/home_ship_card.dart';
 import 'package:mobile/features/mastermind/view/mastermind_home_page.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_time_label.dart';
 import 'package:mobile/l10n/gen/app_localizations_en.dart';
 
 import '../../../helpers/helpers.dart';
@@ -59,8 +62,13 @@ Future<MastermindViewHarness> _pumpHome(
   return harness;
 }
 
-double _top(WidgetTester tester, String text) =>
-    tester.getTopLeft(find.text(text)).dy;
+/// Top of the plain text [text], or of the time label reading [text].
+double _top(WidgetTester tester, String text) {
+  final plain = find.text(text);
+  return tester
+      .getTopLeft(plain.evaluate().isEmpty ? findTimeLabel(text) : plain)
+      .dy;
+}
 
 Iterable<String> _allText(WidgetTester tester) =>
     tester.widgetList<Text>(find.byType(Text)).map((text) => text.data ?? '');
@@ -72,7 +80,7 @@ void main() {
     ) async {
       await _pumpHome(tester);
       final order = [
-        'Updated 00:30',
+        'Updated 2m',
         'Running',
         'Needs you',
         'Ship · GitHub deployment',
@@ -268,9 +276,10 @@ void main() {
       expect(find.text('Tuturuuu web · Staging'), findsOneWidget);
       expect(find.text('Needs attention'), findsOneWidget);
       expect(find.text('Deploy failure · CI success'), findsOneWidget);
-      expect(find.text('Live just now'), findsOneWidget);
+      expect(findTimeLabel('Live 2m'), findsOneWidget);
       expect(
-        _top(tester, 'Tuturuuu web · Staging') < _top(tester, 'Live just now'),
+        _top(tester, 'Tuturuuu web · Staging') <
+            tester.getTopLeft(findTimeLabel('Live 2m')).dy,
         isTrue,
       );
     });
@@ -342,7 +351,18 @@ void main() {
         _top(tester, 'Decision log 3') < _top(tester, 'Decision log 1'),
         isTrue,
       );
-      expect(find.textContaining('GMT+7'), findsWidgets);
+      // Times are relative; a long press shows the GMT+7 time.
+      expect(find.textContaining('GMT+7'), findsNothing);
+      await tester.longPress(
+        find
+            .descendant(
+              of: find.byType(HomeDecisionsCard),
+              matching: find.byType(MastermindTimeLabel),
+            )
+            .first,
+      );
+      await tester.pump();
+      expect(find.textContaining('GMT+7'), findsOneWidget);
     });
 
     testWidgets('lists the three newest events, newest first', (tester) async {
@@ -508,7 +528,7 @@ void main() {
       payload: payload,
     );
 
-    test('collapses a security payload to the fixed line', () {
+    test('collapses a security payload to the constant-label line', () {
       expect(
         eventSummary(
           l10n,
@@ -520,7 +540,7 @@ void main() {
             ),
           ),
         ),
-        'Upskii · security fix',
+        'Mastermind · security fix',
       );
       expect(
         eventSummary(
@@ -529,8 +549,22 @@ void main() {
             const SecurityItem(title: 'Security issue', state: LaneState.open),
           ),
         ),
-        'Security fix',
+        'Mastermind · security fix',
       );
+    });
+
+    test('security lines carry the constant label for every product (S3)', () {
+      for (final product in [null, ...Product.values]) {
+        final line = securityLine(
+          l10n,
+          SecurityItem(
+            title: 'Security issue',
+            state: LaneState.open,
+            product: product,
+          ),
+        );
+        expect(line, 'Mastermind · security fix', reason: '$product');
+      }
     });
   });
 }

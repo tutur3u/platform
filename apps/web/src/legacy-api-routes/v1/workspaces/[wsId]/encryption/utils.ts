@@ -85,6 +85,7 @@ export async function checkE2EEPermission(
     )
     .eq('user_id', resolvedUser.id)
     .eq('workspace_roles.ws_id', wsId)
+    .eq('workspace_roles.workspace_role_permissions.ws_id', wsId)
     .eq('workspace_roles.workspace_role_permissions.permission', 'manage_e2ee')
     .eq('workspace_roles.workspace_role_permissions.enabled', true)
     .limit(1)

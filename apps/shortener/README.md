@@ -17,6 +17,17 @@ the last Vercel deployment until a reviewed cutover admits this app.
 `next.config.ts` and `src/i18n/` stay only for the repository SEO and next-intl
 registries; they are not the active runtime.
 
+## Redirect contract coverage
+
+`src/native/shortener-request.test.ts` exercises request dispatch with in-memory
+link rows and fake page, API, and asset handlers. It covers exact case-sensitive
+slug lookup, missing and invalid destinations, password pages, click recording,
+redirect status and destination, cache/security headers, HEAD behavior, malformed
+paths, and alias query preservation. `src/link/link.test.ts` covers destination
+validation, analytics metadata, password verification, and analytics write
+failures. These tests make no network or production requests. Keep this contract
+suite green when changing the runtime adapter or redirect implementation.
+
 ## Environment
 
 `env.example` is the tracked placeholder template. For local development, copy

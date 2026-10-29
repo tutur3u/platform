@@ -37,6 +37,37 @@ Track resolves the actor through its app session, then checks workspace access
 and permissions. Time histories, requests, and management pages are noindex.
 The public Track description is served by Web's product page.
 
+### Linked sessions on time requests
+
+A time request may link an existing session (`linkedSessionId`); approving the
+request then updates that session in place instead of creating a new one. The
+link is accepted only when the session belongs to the same workspace and to the
+user filing the request, and it is checked before the request is written. A
+foreign, cross-workspace, or unknown session is rejected with `400 Invalid
+linked session`. The Web and Track request routes share one validator,
+`isOwnedLinkedSession` in the existing request route helpers,
+covered by `linked-session.test.ts` beside each route.
+
+### Task and category references on time requests
+
+Like the linked-session rule above, a request's `taskId` and `categoryId` are
+copied onto the session created when the request is approved, so both must
+belong to the request's workspace: a task through its list and board
+(`ws_id`), a category through its own `ws_id`. They are checked before the
+request is written, in both the Web and Track routes, by
+`validateRequestReferences` in `@tuturuuu/utils/time-tracking-reference`. A
+foreign, unknown, or malformed reference is rejected with `400 Invalid task` or
+`400 Invalid category`, and a failed lookup returns `500`. The tests are
+`reference-validation.test.ts` beside each route. `PATCH` and `PUT` on a request
+do not accept these fields.
+
+The database enforces the same boundaries as defense in depth: a category guard
+on `public.time_tracking_sessions` (sessions already guard tasks), and task and
+category guards on `private.time_tracking_requests`. Approving or rejecting a
+request only touches a linked session that belongs to the request's workspace
+and user. The guards cover new writes only; existing mismatches are counted, not
+modified, by `apps/database/scripts/time-tracking-reference-mismatch-count.sql`.
+
 Use the [Track route reference](/reference/repository/routes/track) to locate
 handlers, and [Data fetching](/platform/architecture/data-fetching) to extend a
 shared client contract rather than adding app-local raw browser API calls.
@@ -45,6 +76,11 @@ Time-tracking bypass writers, both break-pause overloads and the workspace
 aggregate statistics RPC accept only the service role. Product routes retain
 actor, workspace and permission checks before invoking these RPCs. The database
 packet is `apps/database/supabase/tests/time-task-rpc-scoping.sql`.
+
+Linked sessions on time requests must belong to the request owner and the
+request workspace. Track and the retained Web handlers reject mismatched links
+before approval or rejection. Route coverage lives in each app's
+`time-tracking/requests/linked-session.test.ts`.
 
 ## Native Start candidate
 

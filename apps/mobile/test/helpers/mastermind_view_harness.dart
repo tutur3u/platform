@@ -6,13 +6,16 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/features/mastermind/access/mastermind_access_cubit.dart';
+import 'package:mobile/features/mastermind/asks/ask_detail_source.dart';
 import 'package:mobile/features/mastermind/cubit/mastermind_refresh_scheduler.dart';
 import 'package:mobile/features/mastermind/cubit/mastermind_snapshot_cubit.dart';
 import 'package:mobile/features/mastermind/data/mastermind_snapshot_source.dart';
 import 'package:mobile/features/mastermind/data/mastermind_snapshot_store.dart';
 import 'package:mobile/features/mastermind/parse/snapshot_parser.dart';
+import 'package:mobile/features/mastermind/replies/answered_elsewhere_cubit.dart';
 import 'package:mobile/features/mastermind/replies/mastermind_replies_cubit.dart';
 import 'package:mobile/features/mastermind/runtime/mastermind_runtime.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_clock.dart';
 import 'package:mobile/features/workspace/workspace_presentation.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -84,6 +87,8 @@ final class MastermindViewHarness {
   MastermindViewHarness({
     FakeHubSource? source,
     MastermindRepliesCubit? replies,
+    MastermindAnsweredElsewhereCubit? answered,
+    MastermindAskDetailSource? askDetails,
     Stream<bool>? onlineChanges,
   }) : source = source ?? FakeHubSource() {
     access = MastermindAccessCubit(
@@ -105,6 +110,8 @@ final class MastermindViewHarness {
       snapshot: snapshot,
       scheduler: scheduler,
       replies: replies,
+      answered: answered,
+      askDetails: askDetails,
       onlineChanges: onlineChanges,
     );
   }
@@ -141,13 +148,18 @@ final class MastermindViewHarness {
     }
   }
 
-  Widget wrap(Widget child) => MultiBlocProvider(
-    providers: [
-      BlocProvider<MastermindAccessCubit>.value(value: access),
-      BlocProvider<MastermindSnapshotCubit>.value(value: snapshot),
-      RepositoryProvider<MastermindRuntime>.value(value: runtime),
-    ],
-    child: child,
+  /// Relative times count from [testNow], so "2m" means two minutes after
+  /// the synthetic snapshot's `generated_at`.
+  Widget wrap(Widget child) => MastermindClockScope(
+    now: () => testNow,
+    child: MultiBlocProvider(
+      providers: [
+        BlocProvider<MastermindAccessCubit>.value(value: access),
+        BlocProvider<MastermindSnapshotCubit>.value(value: snapshot),
+        RepositoryProvider<MastermindRuntime>.value(value: runtime),
+      ],
+      child: child,
+    ),
   );
 
   Future<void> dispose() => runtime.close();

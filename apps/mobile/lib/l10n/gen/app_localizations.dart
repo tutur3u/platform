@@ -97,6 +97,12 @@ abstract class AppLocalizations {
     Locale('vi')
   ];
 
+  /// No description provided for @mastermindAskedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'From {by}'**
+  String mastermindAskedBy(String by);
+
   /// No description provided for @mastermindUnrecognisedValue.
   ///
   /// In en, this message translates to:
@@ -120,6 +126,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sending “{option}”'**
   String mastermindReplySendingOption(String option);
+
+  /// No description provided for @mastermindReplyWriteOwn.
+  ///
+  /// In en, this message translates to:
+  /// **'Write your own'**
+  String get mastermindReplyWriteOwn;
+
+  /// No description provided for @mastermindReplySendOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Send “{option}”'**
+  String mastermindReplySendOption(String option);
+
+  /// No description provided for @mastermindAskedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Asked {age} · {time}'**
+  String mastermindAskedAt(String age, String time);
 
   /// No description provided for @mastermindReplyUndo.
   ///
@@ -810,6 +834,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Upload interrupted. Check your connection and tap Retry.'**
   String get assistantAttachmentFailureNetwork;
+
+  /// No description provided for @assistantAttachmentFailureNewChatRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Start a new chat first, then attach the file again.'**
+  String get assistantAttachmentFailureNewChatRequired;
 
   /// No description provided for @assistantAttachmentFailureServer.
   ///
@@ -9721,6 +9751,120 @@ abstract class AppLocalizations {
   /// **'Search products'**
   String get inventorySearchProducts;
 
+  /// No description provided for @inventoryItemArchived.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived'**
+  String get inventoryItemArchived;
+
+  /// No description provided for @inventoryItemsLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load products'**
+  String get inventoryItemsLoadFailed;
+
+  /// No description provided for @inventoryItemsLoadMoreFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load more products'**
+  String get inventoryItemsLoadMoreFailed;
+
+  /// No description provided for @inventoryItemAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} available'**
+  String inventoryItemAvailable(String amount);
+
+  /// No description provided for @inventoryItemMoreLocations.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 more location} other{{count} more locations}}'**
+  String inventoryItemMoreLocations(int count);
+
+  /// No description provided for @inventoryItemNoStock.
+  ///
+  /// In en, this message translates to:
+  /// **'No stock configured'**
+  String get inventoryItemNoStock;
+
+  /// No description provided for @inventoryItemStockHidden.
+  ///
+  /// In en, this message translates to:
+  /// **'Stock hidden'**
+  String get inventoryItemStockHidden;
+
+  /// No description provided for @inventoryItemsEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No products yet'**
+  String get inventoryItemsEmptyTitle;
+
+  /// No description provided for @inventoryItemsNoMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'No products match'**
+  String get inventoryItemsNoMatch;
+
+  /// No description provided for @inventoryItemsNoMatchMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Search matches product names. Try another name or clear the search.'**
+  String get inventoryItemsNoMatchMessage;
+
+  /// No description provided for @inventoryItemsNoneArchived.
+  ///
+  /// In en, this message translates to:
+  /// **'No archived products'**
+  String get inventoryItemsNoneArchived;
+
+  /// No description provided for @inventoryScanAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan code'**
+  String get inventoryScanAction;
+
+  /// No description provided for @inventoryScanHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Point the camera at a product QR code or barcode.'**
+  String get inventoryScanHint;
+
+  /// No description provided for @inventoryScanMatches.
+  ///
+  /// In en, this message translates to:
+  /// **'Name matches for “{code}”'**
+  String inventoryScanMatches(String code);
+
+  /// No description provided for @inventoryScanNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No product in this workspace matches this code.'**
+  String get inventoryScanNotFound;
+
+  /// No description provided for @inventoryScanNotProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'This code can\'t be matched to a product.'**
+  String get inventoryScanNotProduct;
+
+  /// No description provided for @inventoryScanSearchInstead.
+  ///
+  /// In en, this message translates to:
+  /// **'Search instead'**
+  String get inventoryScanSearchInstead;
+
+  /// No description provided for @inventoryScanTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan a code'**
+  String get inventoryScanTitle;
+
+  /// No description provided for @inventoryScanUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera unavailable'**
+  String get inventoryScanUnavailable;
+
   /// No description provided for @inventorySeasonHistoricalReadOnly.
   ///
   /// In en, this message translates to:
@@ -17383,35 +17527,11 @@ abstract class AppLocalizations {
   /// **'Priority'**
   String get taskBoardDetailPriority;
 
-  /// No description provided for @taskBoardDetailPriorityCritical.
-  ///
-  /// In en, this message translates to:
-  /// **'Critical'**
-  String get taskBoardDetailPriorityCritical;
-
-  /// No description provided for @taskBoardDetailPriorityHigh.
-  ///
-  /// In en, this message translates to:
-  /// **'High'**
-  String get taskBoardDetailPriorityHigh;
-
-  /// No description provided for @taskBoardDetailPriorityLow.
-  ///
-  /// In en, this message translates to:
-  /// **'Low'**
-  String get taskBoardDetailPriorityLow;
-
   /// No description provided for @taskBoardDetailPriorityNone.
   ///
   /// In en, this message translates to:
   /// **'No priority'**
   String get taskBoardDetailPriorityNone;
-
-  /// No description provided for @taskBoardDetailPriorityNormal.
-  ///
-  /// In en, this message translates to:
-  /// **'Normal'**
-  String get taskBoardDetailPriorityNormal;
 
   /// No description provided for @taskBoardDetailPriorityUpdated.
   ///
@@ -17424,12 +17544,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Properties'**
   String get taskBoardDetailProperties;
-
-  /// No description provided for @taskBoardDetailQuickActions.
-  ///
-  /// In en, this message translates to:
-  /// **'Quick actions'**
-  String get taskBoardDetailQuickActions;
 
   /// No description provided for @taskBoardDetailRecycleBin.
   ///
@@ -19357,6 +19471,102 @@ abstract class AppLocalizations {
   /// **'Update saved.'**
   String get taskPortfolioUpdateSaved;
 
+  /// No description provided for @taskQuickActionsDueDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Due date'**
+  String get taskQuickActionsDueDate;
+
+  /// No description provided for @taskQuickActionsNoDate.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get taskQuickActionsNoDate;
+
+  /// No description provided for @taskQuickActionsNoLabels.
+  ///
+  /// In en, this message translates to:
+  /// **'No labels'**
+  String get taskQuickActionsNoLabels;
+
+  /// No description provided for @taskQuickActionsRemoveStartDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove start date'**
+  String get taskQuickActionsRemoveStartDate;
+
+  /// No description provided for @taskQuickActionsStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get taskQuickActionsStatus;
+
+  /// No description provided for @taskQuickActionsUnassigned.
+  ///
+  /// In en, this message translates to:
+  /// **'Unassigned'**
+  String get taskQuickActionsUnassigned;
+
+  /// No description provided for @taskTimelineLoadingTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading tasks…'**
+  String get taskTimelineLoadingTasks;
+
+  /// No description provided for @taskTimelineNotAllLoaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Some tasks aren\'t loaded yet'**
+  String get taskTimelineNotAllLoaded;
+
+  /// No description provided for @taskTimelineNothingToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing scheduled today'**
+  String get taskTimelineNothingToday;
+
+  /// No description provided for @taskTimelineOngoing.
+  ///
+  /// In en, this message translates to:
+  /// **'Day {day} of {total}, ends {date}'**
+  String taskTimelineOngoing(int day, int total, String date);
+
+  /// No description provided for @taskTimelineRangeAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get taskTimelineRangeAll;
+
+  /// No description provided for @taskTimelineRangeMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Month'**
+  String get taskTimelineRangeMonth;
+
+  /// No description provided for @taskTimelineRangeWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Week'**
+  String get taskTimelineRangeWeek;
+
+  /// No description provided for @taskTimelineShowLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Show later tasks'**
+  String get taskTimelineShowLater;
+
+  /// No description provided for @taskTimelineShowOverdue.
+  ///
+  /// In en, this message translates to:
+  /// **'Show overdue'**
+  String get taskTimelineShowOverdue;
+
+  /// No description provided for @taskTimelineStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Started {date}'**
+  String taskTimelineStarted(String date);
+
   /// No description provided for @tasksAllCaughtUp.
   ///
   /// In en, this message translates to:
@@ -19447,12 +19657,6 @@ abstract class AppLocalizations {
   /// **'Plan ahead'**
   String get tasksPlanAhead;
 
-  /// No description provided for @tasksPriorityCritical.
-  ///
-  /// In en, this message translates to:
-  /// **'Critical'**
-  String get tasksPriorityCritical;
-
   /// No description provided for @tasksPriorityHigh.
   ///
   /// In en, this message translates to:
@@ -19465,11 +19669,23 @@ abstract class AppLocalizations {
   /// **'Low'**
   String get tasksPriorityLow;
 
-  /// No description provided for @tasksPriorityNormal.
+  /// No description provided for @tasksPriorityMedium.
   ///
   /// In en, this message translates to:
-  /// **'Normal'**
-  String get tasksPriorityNormal;
+  /// **'Medium'**
+  String get tasksPriorityMedium;
+
+  /// No description provided for @tasksPriorityNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get tasksPriorityNone;
+
+  /// No description provided for @tasksPriorityUrgent.
+  ///
+  /// In en, this message translates to:
+  /// **'Urgent'**
+  String get tasksPriorityUrgent;
 
   /// No description provided for @tasksRequiresAttention.
   ///
@@ -21198,6 +21414,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Workspace visibility preferences are unavailable. Saved hidden choices are kept.'**
   String get workspaceHiddenLoadError;
+
+  /// No description provided for @workspaceManageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage workspaces'**
+  String get workspaceManageTitle;
+
+  /// No description provided for @workspaceVisibleTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Visible workspaces'**
+  String get workspaceVisibleTitle;
+
+  /// No description provided for @workspaceHiddenCurrentToast.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace hidden. Switched to another visible workspace.'**
+  String get workspaceHiddenCurrentToast;
+
+  /// No description provided for @workspaceHiddenLastToast.
+  ///
+  /// In en, this message translates to:
+  /// **'All workspaces are hidden. Show a workspace to continue.'**
+  String get workspaceHiddenLastToast;
 
   /// No description provided for @workspaceHiddenTitle.
   ///
@@ -24871,12 +25111,6 @@ abstract class AppLocalizations {
   /// **'{section} · {basis}'**
   String mastermindSectionWithBasis(String section, String basis);
 
-  /// No description provided for @mastermindSecurityFix.
-  ///
-  /// In en, this message translates to:
-  /// **'Security fix'**
-  String get mastermindSecurityFix;
-
   /// No description provided for @mastermindSecurityGroup.
   ///
   /// In en, this message translates to:
@@ -25522,7 +25756,7 @@ abstract class AppLocalizations {
   /// No description provided for @mastermindTabHome.
   ///
   /// In en, this message translates to:
-  /// **'Home'**
+  /// **'Today'**
   String get mastermindTabHome;
 
   /// No description provided for @mastermindTabInbox.
@@ -25578,6 +25812,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Try again'**
   String get mastermindTryAgain;
+
+  /// No description provided for @mastermindTimeDaysShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}d'**
+  String mastermindTimeDaysShort(int count);
+
+  /// No description provided for @mastermindTimeHoursShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}h'**
+  String mastermindTimeHoursShort(int count);
+
+  /// No description provided for @mastermindTimeMinutesShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}m'**
+  String mastermindTimeMinutesShort(int count);
+
+  /// No description provided for @mastermindTimeNow.
+  ///
+  /// In en, this message translates to:
+  /// **'now'**
+  String get mastermindTimeNow;
+
+  /// No description provided for @mastermindAskedTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Asked {time}'**
+  String mastermindAskedTime(String time);
+
+  /// No description provided for @mastermindTimeSpoken.
+  ///
+  /// In en, this message translates to:
+  /// **'{relative}, {absolute}'**
+  String mastermindTimeSpoken(String relative, String absolute);
+
+  /// No description provided for @mastermindTimeSpokenDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 day ago} other{{count} days ago}}'**
+  String mastermindTimeSpokenDays(int count);
+
+  /// No description provided for @mastermindTimeSpokenHours.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 hour ago} other{{count} hours ago}}'**
+  String mastermindTimeSpokenHours(int count);
+
+  /// No description provided for @mastermindTimeSpokenMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 minute ago} other{{count} minutes ago}}'**
+  String mastermindTimeSpokenMinutes(int count);
+
+  /// No description provided for @mastermindTimeSpokenNow.
+  ///
+  /// In en, this message translates to:
+  /// **'just now'**
+  String get mastermindTimeSpokenNow;
 
   /// No description provided for @mastermindUnavailable.
   ///
@@ -26107,6 +26401,24 @@ abstract class AppLocalizations {
   /// **'Search Inbox'**
   String get mastermindInboxSearchAction;
 
+  /// No description provided for @mastermindInboxLoadingMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading more'**
+  String get mastermindInboxLoadingMore;
+
+  /// No description provided for @mastermindInboxLoadMoreFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load more asks.'**
+  String get mastermindInboxLoadMoreFailed;
+
+  /// No description provided for @mastermindInboxEndOfList.
+  ///
+  /// In en, this message translates to:
+  /// **'That\'s every ask'**
+  String get mastermindInboxEndOfList;
+
   /// No description provided for @mastermindInboxResolvedSegment.
   ///
   /// In en, this message translates to:
@@ -26136,6 +26448,960 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Back to Threads'**
   String get mastermindBackToThreads;
+
+  /// No description provided for @mastermindAnsweredOnPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Answered on phone'**
+  String get mastermindAnsweredOnPhone;
+
+  /// No description provided for @mastermindAnsweredOnMac.
+  ///
+  /// In en, this message translates to:
+  /// **'Answered on Mac'**
+  String get mastermindAnsweredOnMac;
+
+  /// No description provided for @mastermindAnsweredInChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Answered in chat'**
+  String get mastermindAnsweredInChat;
+
+  /// No description provided for @mastermindAnsweredAutomatically.
+  ///
+  /// In en, this message translates to:
+  /// **'Answered automatically'**
+  String get mastermindAnsweredAutomatically;
+
+  /// No description provided for @mastermindAnsweredElsewhere.
+  ///
+  /// In en, this message translates to:
+  /// **'Answered elsewhere'**
+  String get mastermindAnsweredElsewhere;
+
+  /// No description provided for @mastermindAlreadyAnsweredOnPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Already answered on phone'**
+  String get mastermindAlreadyAnsweredOnPhone;
+
+  /// No description provided for @mastermindAlreadyAnsweredOnMac.
+  ///
+  /// In en, this message translates to:
+  /// **'Already answered on Mac'**
+  String get mastermindAlreadyAnsweredOnMac;
+
+  /// No description provided for @mastermindAlreadyAnsweredInChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Already answered in chat'**
+  String get mastermindAlreadyAnsweredInChat;
+
+  /// No description provided for @mastermindAlreadyAnsweredAutomatically.
+  ///
+  /// In en, this message translates to:
+  /// **'Already answered automatically'**
+  String get mastermindAlreadyAnsweredAutomatically;
+
+  /// No description provided for @mastermindAlreadyAnsweredElsewhere.
+  ///
+  /// In en, this message translates to:
+  /// **'Already answered elsewhere'**
+  String get mastermindAlreadyAnsweredElsewhere;
+
+  /// No description provided for @mastermindWithdrawnNoLongerNeeded.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdrawn · no longer needed'**
+  String get mastermindWithdrawnNoLongerNeeded;
+
+  /// No description provided for @mastermindAnsweredByYou.
+  ///
+  /// In en, this message translates to:
+  /// **'you'**
+  String get mastermindAnsweredByYou;
+
+  /// No description provided for @mastermindViaPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'on phone'**
+  String get mastermindViaPhone;
+
+  /// No description provided for @mastermindViaMac.
+  ///
+  /// In en, this message translates to:
+  /// **'on Mac'**
+  String get mastermindViaMac;
+
+  /// No description provided for @mastermindViaChat.
+  ///
+  /// In en, this message translates to:
+  /// **'in chat'**
+  String get mastermindViaChat;
+
+  /// No description provided for @mastermindViaAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'automatically'**
+  String get mastermindViaAuto;
+
+  /// No description provided for @mastermindAnsweredInBatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Answered in batch'**
+  String get mastermindAnsweredInBatch;
+
+  /// No description provided for @mastermindAlreadyAnsweredInBatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Already answered in batch'**
+  String get mastermindAlreadyAnsweredInBatch;
+
+  /// No description provided for @mastermindViaBatch.
+  ///
+  /// In en, this message translates to:
+  /// **'in batch'**
+  String get mastermindViaBatch;
+
+  /// No description provided for @mastermindAskDeadlineWithinHours.
+  ///
+  /// In en, this message translates to:
+  /// **'Answer within hours'**
+  String get mastermindAskDeadlineWithinHours;
+
+  /// No description provided for @mastermindAskDeadlineToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Answer today'**
+  String get mastermindAskDeadlineToday;
+
+  /// No description provided for @mastermindAskDeadlineTonight.
+  ///
+  /// In en, this message translates to:
+  /// **'Answer tonight'**
+  String get mastermindAskDeadlineTonight;
+
+  /// No description provided for @mastermindAskDeadlineThisWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Answer this week'**
+  String get mastermindAskDeadlineThisWeek;
+
+  /// No description provided for @mastermindAskUrgencyHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'High priority'**
+  String get mastermindAskUrgencyHigh;
+
+  /// No description provided for @mastermindAskUrgencyUrgent.
+  ///
+  /// In en, this message translates to:
+  /// **'Urgent'**
+  String get mastermindAskUrgencyUrgent;
+
+  /// No description provided for @mastermindAskWhyRecommended.
+  ///
+  /// In en, this message translates to:
+  /// **'Why recommended'**
+  String get mastermindAskWhyRecommended;
+
+  /// No description provided for @mastermindAskIfNoAnswerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'If you don\'t answer'**
+  String get mastermindAskIfNoAnswerTitle;
+
+  /// No description provided for @mastermindAskIfNoAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'If no answer: {option}'**
+  String mastermindAskIfNoAnswer(String option);
+
+  /// No description provided for @mastermindAskRisk.
+  ///
+  /// In en, this message translates to:
+  /// **'Risk: {risk}'**
+  String mastermindAskRisk(String risk);
+
+  /// No description provided for @mastermindAskReversible.
+  ///
+  /// In en, this message translates to:
+  /// **'Can be undone later'**
+  String get mastermindAskReversible;
+
+  /// No description provided for @mastermindAskNotReversible.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t be undone'**
+  String get mastermindAskNotReversible;
+
+  /// No description provided for @mastermindAskBlocks.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Blocks 1 lane} other{Blocks {count} lanes}}'**
+  String mastermindAskBlocks(int count);
+
+  /// No description provided for @mastermindAskDueAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Due {time}'**
+  String mastermindAskDueAt(String time);
+
+  /// No description provided for @mastermindAskAnsweredPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Answered on the phone'**
+  String get mastermindAskAnsweredPhone;
+
+  /// No description provided for @mastermindAskAnsweredMac.
+  ///
+  /// In en, this message translates to:
+  /// **'Answered on the Mac'**
+  String get mastermindAskAnsweredMac;
+
+  /// No description provided for @mastermindAskAnsweredChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Answered in chat'**
+  String get mastermindAskAnsweredChat;
+
+  /// No description provided for @mastermindAskAnsweredAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Answered automatically'**
+  String get mastermindAskAnsweredAuto;
+
+  /// No description provided for @mastermindAskAnsweredBatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Answered in a batch'**
+  String get mastermindAskAnsweredBatch;
+
+  /// No description provided for @mastermindAskAnsweredElsewhere.
+  ///
+  /// In en, this message translates to:
+  /// **'Answered elsewhere'**
+  String get mastermindAskAnsweredElsewhere;
+
+  /// No description provided for @mastermindAskLinksTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Links'**
+  String get mastermindAskLinksTitle;
+
+  /// No description provided for @mastermindAskLaneLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Lane ⟶'**
+  String get mastermindAskLaneLink;
+
+  /// No description provided for @mastermindAskActionAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Answer here'**
+  String get mastermindAskActionAnswer;
+
+  /// No description provided for @mastermindAskActionRunOnMac.
+  ///
+  /// In en, this message translates to:
+  /// **'Run at your Mac'**
+  String get mastermindAskActionRunOnMac;
+
+  /// No description provided for @mastermindAskActionPhysical.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs a physical step'**
+  String get mastermindAskActionPhysical;
+
+  /// No description provided for @mastermindAskActionFyi.
+  ///
+  /// In en, this message translates to:
+  /// **'For your information'**
+  String get mastermindAskActionFyi;
+
+  /// No description provided for @mastermindAskRemindAtMac.
+  ///
+  /// In en, this message translates to:
+  /// **'Remind me at Mac'**
+  String get mastermindAskRemindAtMac;
+
+  /// No description provided for @mastermindAskRemindAtMacSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Coming soon'**
+  String get mastermindAskRemindAtMacSoon;
+
+  /// No description provided for @mastermindMachineUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'As of {time}'**
+  String mastermindMachineUpdated(String time);
+
+  /// No description provided for @mastermindMachineLastSeen.
+  ///
+  /// In en, this message translates to:
+  /// **'Last seen {time}'**
+  String mastermindMachineLastSeen(String time);
+
+  /// No description provided for @mastermindMachineSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{total} machines · {online} online · {attention} need attention'**
+  String mastermindMachineSummary(int total, int online, int attention);
+
+  /// No description provided for @machineTextMachines.
+  ///
+  /// In en, this message translates to:
+  /// **'Machines'**
+  String get machineTextMachines;
+
+  /// No description provided for @machineTextAttention.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs attention'**
+  String get machineTextAttention;
+
+  /// No description provided for @machineTextOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'Online'**
+  String get machineTextOnline;
+
+  /// No description provided for @machineTextAsleep.
+  ///
+  /// In en, this message translates to:
+  /// **'Asleep'**
+  String get machineTextAsleep;
+
+  /// No description provided for @machineTextOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline'**
+  String get machineTextOffline;
+
+  /// No description provided for @machineTextUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get machineTextUnknown;
+
+  /// No description provided for @machineTextOfflineGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Asleep or offline'**
+  String get machineTextOfflineGroup;
+
+  /// No description provided for @machineTextNotPublished.
+  ///
+  /// In en, this message translates to:
+  /// **'Machine data is not published yet'**
+  String get machineTextNotPublished;
+
+  /// No description provided for @machineTextEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No machines reported'**
+  String get machineTextEmpty;
+
+  /// No description provided for @machineTextGone.
+  ///
+  /// In en, this message translates to:
+  /// **'This machine is no longer reported'**
+  String get machineTextGone;
+
+  /// No description provided for @machineTextUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable'**
+  String get machineTextUnavailable;
+
+  /// No description provided for @machineTextStale.
+  ///
+  /// In en, this message translates to:
+  /// **'Collector data is stale; values are last known'**
+  String get machineTextStale;
+
+  /// No description provided for @machineTextPartial.
+  ///
+  /// In en, this message translates to:
+  /// **'Collector coverage is partial'**
+  String get machineTextPartial;
+
+  /// No description provided for @machineTextNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Now'**
+  String get machineTextNow;
+
+  /// No description provided for @machineTextRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Running'**
+  String get machineTextRunning;
+
+  /// No description provided for @machineTextRules.
+  ///
+  /// In en, this message translates to:
+  /// **'Rules'**
+  String get machineTextRules;
+
+  /// No description provided for @machineTextAlerts.
+  ///
+  /// In en, this message translates to:
+  /// **'Alerts'**
+  String get machineTextAlerts;
+
+  /// No description provided for @machineTextHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'History'**
+  String get machineTextHistory;
+
+  /// No description provided for @machineTextKeepAwake.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep awake'**
+  String get machineTextKeepAwake;
+
+  /// No description provided for @machineTextSample.
+  ///
+  /// In en, this message translates to:
+  /// **'SAMPLE data'**
+  String get machineTextSample;
+
+  /// No description provided for @machineTextSampleToggle.
+  ///
+  /// In en, this message translates to:
+  /// **'Use sample machine data'**
+  String get machineTextSampleToggle;
+
+  /// No description provided for @machineTextStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Status and specs'**
+  String get machineTextStatus;
+
+  /// No description provided for @machineTextCpu.
+  ///
+  /// In en, this message translates to:
+  /// **'CPU'**
+  String get machineTextCpu;
+
+  /// No description provided for @machineTextRam.
+  ///
+  /// In en, this message translates to:
+  /// **'Memory'**
+  String get machineTextRam;
+
+  /// No description provided for @machineTextDisk.
+  ///
+  /// In en, this message translates to:
+  /// **'Disk free'**
+  String get machineTextDisk;
+
+  /// No description provided for @machineTextSwap.
+  ///
+  /// In en, this message translates to:
+  /// **'Swap'**
+  String get machineTextSwap;
+
+  /// No description provided for @machineTextTemperature.
+  ///
+  /// In en, this message translates to:
+  /// **'Temperature'**
+  String get machineTextTemperature;
+
+  /// No description provided for @machineTextBuild.
+  ///
+  /// In en, this message translates to:
+  /// **'Build'**
+  String get machineTextBuild;
+
+  /// No description provided for @machineTextStudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Studio'**
+  String get machineTextStudio;
+
+  /// No description provided for @machineTextLaptop.
+  ///
+  /// In en, this message translates to:
+  /// **'Laptop'**
+  String get machineTextLaptop;
+
+  /// No description provided for @machineTextDevbox.
+  ///
+  /// In en, this message translates to:
+  /// **'Devbox'**
+  String get machineTextDevbox;
+
+  /// No description provided for @machineTextLane.
+  ///
+  /// In en, this message translates to:
+  /// **'Lanes'**
+  String get machineTextLane;
+
+  /// No description provided for @machineTextTest.
+  ///
+  /// In en, this message translates to:
+  /// **'Tests'**
+  String get machineTextTest;
+
+  /// No description provided for @machineTextActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduling active'**
+  String get machineTextActive;
+
+  /// No description provided for @machineTextDraining.
+  ///
+  /// In en, this message translates to:
+  /// **'Draining'**
+  String get machineTextDraining;
+
+  /// No description provided for @machineTextPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduling paused'**
+  String get machineTextPaused;
+
+  /// No description provided for @machineTextThermal.
+  ///
+  /// In en, this message translates to:
+  /// **'Thermal alert'**
+  String get machineTextThermal;
+
+  /// No description provided for @machineTextWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Warning'**
+  String get machineTextWarning;
+
+  /// No description provided for @machineTextCritical.
+  ///
+  /// In en, this message translates to:
+  /// **'Critical'**
+  String get machineTextCritical;
+
+  /// No description provided for @machineTextNominal.
+  ///
+  /// In en, this message translates to:
+  /// **'Nominal'**
+  String get machineTextNominal;
+
+  /// No description provided for @machineTextFair.
+  ///
+  /// In en, this message translates to:
+  /// **'Fair'**
+  String get machineTextFair;
+
+  /// No description provided for @machineTextSerious.
+  ///
+  /// In en, this message translates to:
+  /// **'Serious'**
+  String get machineTextSerious;
+
+  /// No description provided for @machineTextMacos.
+  ///
+  /// In en, this message translates to:
+  /// **'macOS'**
+  String get machineTextMacos;
+
+  /// No description provided for @machineTextLinux.
+  ///
+  /// In en, this message translates to:
+  /// **'Linux'**
+  String get machineTextLinux;
+
+  /// No description provided for @machineTextWindows.
+  ///
+  /// In en, this message translates to:
+  /// **'Windows'**
+  String get machineTextWindows;
+
+  /// No description provided for @machineTextNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None reported'**
+  String get machineTextNone;
+
+  /// No description provided for @machineTextLastKnown.
+  ///
+  /// In en, this message translates to:
+  /// **'Last-known values'**
+  String get machineTextLastKnown;
+
+  /// No description provided for @machineTextDay.
+  ///
+  /// In en, this message translates to:
+  /// **'24 h'**
+  String get machineTextDay;
+
+  /// No description provided for @machineTextWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'7 d'**
+  String get machineTextWeek;
+
+  /// No description provided for @machineTextTable.
+  ///
+  /// In en, this message translates to:
+  /// **'Table'**
+  String get machineTextTable;
+
+  /// No description provided for @machineTextTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get machineTextTime;
+
+  /// No description provided for @machineTextCores.
+  ///
+  /// In en, this message translates to:
+  /// **'Cores'**
+  String get machineTextCores;
+
+  /// No description provided for @machineTextLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Load (1 min)'**
+  String get machineTextLoad;
+
+  /// No description provided for @machineTextMacGuide.
+  ///
+  /// In en, this message translates to:
+  /// **'In System Settings, open Energy and prevent automatic sleeping on power. Plug in and keep the lid open. Mastermind does not control this machine.'**
+  String get machineTextMacGuide;
+
+  /// No description provided for @machineTextLinuxGuide.
+  ///
+  /// In en, this message translates to:
+  /// **'Use your desktop Power settings to prevent automatic suspend while plugged in. Mastermind does not control this machine.'**
+  String get machineTextLinuxGuide;
+
+  /// No description provided for @machineTextWindowsGuide.
+  ///
+  /// In en, this message translates to:
+  /// **'In Settings, open System > Power and battery > Screen and sleep. Choose the plugged-in sleep setting. Mastermind does not control this machine.'**
+  String get machineTextWindowsGuide;
+
+  /// No description provided for @machineTextUnknownGuide.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the operating system power settings to keep the machine awake while plugged in. Mastermind does not control this machine.'**
+  String get machineTextUnknownGuide;
+
+  /// No description provided for @machineTextOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get machineTextOther;
+
+  /// No description provided for @machineTextProdHost.
+  ///
+  /// In en, this message translates to:
+  /// **'Production host'**
+  String get machineTextProdHost;
+
+  /// No description provided for @machineTextMergeTrain.
+  ///
+  /// In en, this message translates to:
+  /// **'Merge train'**
+  String get machineTextMergeTrain;
+
+  /// No description provided for @machineTextFindingsOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Findings only'**
+  String get machineTextFindingsOnly;
+
+  /// No description provided for @machineTextProdReadsHereOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Production reads only here'**
+  String get machineTextProdReadsHereOnly;
+
+  /// No description provided for @machineTextNeverBuilds.
+  ///
+  /// In en, this message translates to:
+  /// **'Never builds'**
+  String get machineTextNeverBuilds;
+
+  /// No description provided for @machineTextNoHeavyWork.
+  ///
+  /// In en, this message translates to:
+  /// **'No heavy work'**
+  String get machineTextNoHeavyWork;
+
+  /// No description provided for @machineTextLightWorkOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Light work only'**
+  String get machineTextLightWorkOnly;
+
+  /// No description provided for @machineTextProdHostReadOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Production host: read-only'**
+  String get machineTextProdHostReadOnly;
+
+  /// No description provided for @machineTextDiskLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Low disk space'**
+  String get machineTextDiskLow;
+
+  /// No description provided for @machineTextLoadHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'Load above cores'**
+  String get machineTextLoadHigh;
+
+  /// No description provided for @machineTextSwapHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'High swap use'**
+  String get machineTextSwapHigh;
+
+  /// No description provided for @machineTextRamGb.
+  ///
+  /// In en, this message translates to:
+  /// **'RAM (GB)'**
+  String get machineTextRamGb;
+
+  /// No description provided for @machineTextDiskGb.
+  ///
+  /// In en, this message translates to:
+  /// **'Disk (GB)'**
+  String get machineTextDiskGb;
+
+  /// No description provided for @mastermindCatchupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Since you last looked'**
+  String get mastermindCatchupTitle;
+
+  /// No description provided for @mastermindCatchupWindowSince.
+  ///
+  /// In en, this message translates to:
+  /// **'Since your last visit'**
+  String get mastermindCatchupWindowSince;
+
+  /// No description provided for @mastermindCatchupWindowDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Last 24 hours'**
+  String get mastermindCatchupWindowDay;
+
+  /// No description provided for @mastermindCatchupWelcome.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome to Mastermind. Here\'s what happened in the last day.'**
+  String get mastermindCatchupWelcome;
+
+  /// No description provided for @mastermindCatchupQuiet.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiet since you last looked'**
+  String get mastermindCatchupQuiet;
+
+  /// No description provided for @mastermindCatchupQuietFirstRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing has happened in the last day.'**
+  String get mastermindCatchupQuietFirstRun;
+
+  /// No description provided for @mastermindCatchupPartial.
+  ///
+  /// In en, this message translates to:
+  /// **'Some updates may be missing'**
+  String get mastermindCatchupPartial;
+
+  /// No description provided for @mastermindCatchupSectionShipped.
+  ///
+  /// In en, this message translates to:
+  /// **'Shipped'**
+  String get mastermindCatchupSectionShipped;
+
+  /// No description provided for @mastermindCatchupSectionBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked'**
+  String get mastermindCatchupSectionBlocked;
+
+  /// No description provided for @mastermindCatchupSectionChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Changed'**
+  String get mastermindCatchupSectionChanged;
+
+  /// No description provided for @mastermindCatchupSectionUsage.
+  ///
+  /// In en, this message translates to:
+  /// **'Usage & health'**
+  String get mastermindCatchupSectionUsage;
+
+  /// No description provided for @mastermindCatchupSectionOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other updates'**
+  String get mastermindCatchupSectionOther;
+
+  /// No description provided for @mastermindCatchupCountNeedsYou.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 needs you} other{{count} need you}}'**
+  String mastermindCatchupCountNeedsYou(int count);
+
+  /// No description provided for @mastermindCatchupCountShipped.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} shipped'**
+  String mastermindCatchupCountShipped(int count);
+
+  /// No description provided for @mastermindCatchupCountBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} blocked'**
+  String mastermindCatchupCountBlocked(int count);
+
+  /// No description provided for @mastermindCatchupCountChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} changed'**
+  String mastermindCatchupCountChanged(int count);
+
+  /// No description provided for @mastermindCatchupNewDivider.
+  ///
+  /// In en, this message translates to:
+  /// **'New since your last visit'**
+  String get mastermindCatchupNewDivider;
+
+  /// No description provided for @mastermindCatchupShowEarlier.
+  ///
+  /// In en, this message translates to:
+  /// **'Show {count} earlier'**
+  String mastermindCatchupShowEarlier(int count);
+
+  /// No description provided for @mastermindCatchupSecurityUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Security update'**
+  String get mastermindCatchupSecurityUpdate;
+
+  /// No description provided for @mastermindCatchupOnIt.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is on it'**
+  String mastermindCatchupOnIt(String name);
+
+  /// No description provided for @mastermindCatchupButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Catch me up'**
+  String get mastermindCatchupButton;
+
+  /// No description provided for @mastermindCatchupRefreshing.
+  ///
+  /// In en, this message translates to:
+  /// **'Catching up…'**
+  String get mastermindCatchupRefreshing;
+
+  /// No description provided for @mastermindCatchupUpToDate.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re up to date'**
+  String get mastermindCatchupUpToDate;
+
+  /// No description provided for @mastermindCatchupFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t catch up. Try again.'**
+  String get mastermindCatchupFailed;
+
+  /// No description provided for @mastermindCatchupOpensLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Opens in your browser'**
+  String get mastermindCatchupOpensLink;
+
+  /// No description provided for @mastermindCatchupGroupLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'{product}, {count, plural, =1{1 update} other{{count} updates}}'**
+  String mastermindCatchupGroupLabel(String product, int count);
+
+  /// No description provided for @mastermindRelNow.
+  ///
+  /// In en, this message translates to:
+  /// **'now'**
+  String get mastermindRelNow;
+
+  /// No description provided for @mastermindRelMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}m'**
+  String mastermindRelMinutes(int count);
+
+  /// No description provided for @mastermindRelHours.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}h'**
+  String mastermindRelHours(int count);
+
+  /// No description provided for @mastermindRelHoursMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours}h {minutes}m'**
+  String mastermindRelHoursMinutes(int hours, int minutes);
+
+  /// No description provided for @mastermindRelDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}d'**
+  String mastermindRelDays(int count);
+
+  /// No description provided for @mastermindRelShowExact.
+  ///
+  /// In en, this message translates to:
+  /// **'Show exact time'**
+  String get mastermindRelShowExact;
+
+  /// No description provided for @mastermindCatchupSettingsAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Catch-up settings'**
+  String get mastermindCatchupSettingsAction;
+
+  /// No description provided for @mastermindMorningCatchup.
+  ///
+  /// In en, this message translates to:
+  /// **'Morning catch-up'**
+  String get mastermindMorningCatchup;
+
+  /// No description provided for @mastermindMorningCatchupSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'A notification that says your catch-up is ready. Saved on this device; sent once the hub supports it.'**
+  String get mastermindMorningCatchupSubtitle;
+
+  /// No description provided for @mastermindMorningCatchupTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get mastermindMorningCatchupTime;
+
+  /// No description provided for @mastermindCatchupPushBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your catch-up is ready'**
+  String get mastermindCatchupPushBody;
+
+  /// No description provided for @mastermindSecurityFix.
+  ///
+  /// In en, this message translates to:
+  /// **'Security fix'**
+  String get mastermindSecurityFix;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -1,4 +1,10 @@
-import { nativeMethodStatus } from './mail-api-policy';
+import { retarget } from '@tuturuuu/start-bridge/base-path';
+import {
+  MAIL_FUNCTION_BASE,
+  MAIL_LEGACY_FUNCTION_BASE,
+  nativeMethodStatus,
+} from './mail-api-policy';
+import { mailAppPath } from './mail-mount';
 export const MAIL_FUNCTION_BODY_LIMIT = 1024 * 1024;
 export async function boundNativeFunctionRequest(
   request: Request
@@ -36,4 +42,25 @@ export async function boundNativeFunctionRequest(
     offset += chunk.byteLength;
   }
   return new Request(request, { body: bytes });
+}
+
+export async function prepareMailFunctionRequest(request: Request) {
+  const path = mailAppPath(request);
+  if (
+    path === MAIL_LEGACY_FUNCTION_BASE ||
+    path?.startsWith(`${MAIL_LEGACY_FUNCTION_BASE}/`)
+  ) {
+    const url = new URL(request.url);
+    url.pathname =
+      url.pathname.slice(0, -path.length) +
+      MAIL_FUNCTION_BASE +
+      path.slice(MAIL_LEGACY_FUNCTION_BASE.length);
+    request = retarget(request, url);
+  } else if (
+    path !== MAIL_FUNCTION_BASE &&
+    !path?.startsWith(`${MAIL_FUNCTION_BASE}/`)
+  ) {
+    return request;
+  }
+  return boundNativeFunctionRequest(request);
 }

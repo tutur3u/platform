@@ -1,3 +1,4 @@
+import { isWorkspaceTemplateBackgroundPath } from '@tuturuuu/utils/template-background-path';
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
 import {
@@ -29,7 +30,12 @@ export const GET = withSessionAuth<Params>(
       );
       if (response) return response;
 
-      if (!template.background_path) {
+      if (
+        !isWorkspaceTemplateBackgroundPath(
+          template.background_path,
+          template.ws_id
+        )
+      ) {
         return NextResponse.json({ signedUrl: null });
       }
 

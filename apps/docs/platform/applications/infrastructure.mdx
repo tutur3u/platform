@@ -38,6 +38,30 @@ Regression coverage lives in Infrastructure's `workspace-secrets.test.ts`,
 Web's workspace-secrets route tests, Utils' `permissions.test.tsx`, and the
 `workspace-reserved-secrets-guard.sql` pgTAP suite.
 
+## Export and request identity boundaries
+
+Migration exports require `manage_external_migrations` in the requested workspace,
+normalize workspace aliases before querying, and return at most 1,000 rows per
+page. Root `view_infrastructure` alone does not authorize tenant migration data.
+Wallet transaction exports retain their SQL-enforced transaction permissions.
+
+AI-agent, suspension and calendar-sync handlers resolve the Infrastructure actor
+through the canonical satellite helpers with the `infra` audience. The helpers
+retain their supported Supabase session fallback when no app-session token is
+present; a token for another app cannot select that fallback. Calendar metrics
+and logs verify target workspace membership before admin-backed reads. STT
+requires root `manage_workspace_roles` before calling its provider.
+
+Global task-embedding statistics require root `ai_lab`; generation requires root
+`manage_workspace_roles`. Employee email alone does not grant either operation.
+The external SDK storage demo is development-only; production requests are denied
+by its API proxy before SDK access. Hosted integrations must supply their own
+user authorization.
+
+Regression coverage includes the migration export boundary tests, Infrastructure
+session boundary tests, Tasks embedding admin-access tests, and External proxy
+admission tests in their owning apps.
+
 ## Operational areas
 
 - Workspace/user administration, internal accounts, external-app registration,
@@ -743,3 +767,29 @@ Regression coverage: `employee-managed-profile.sql`,
 `employee-admin-profile-usernames.sql`, managed-profile transport
 checks, and read-only CREATE observation/client negative controls. Hosted
 qualification and production acceptance are separate delivery gates.
+
+## Platform administration permissions
+
+Infrastructure API handlers and server actions enforce the same root-workspace
+permissions as their corresponding administrative operations. An employee email
+or root membership alone does not grant platform administration.
+
+- AI whitelist changes require `manage_workspace_roles` in the root workspace.
+- Managed-cron domain administration requires root `manage_workspace_roles` or
+  `manage_workspace_secrets`.
+- AI-credit configuration, grants, abuse-control mutations, entity-limit changes,
+  manual post-email queue drains, and project GitHub synchronization require root
+  `manage_workspace_roles`.
+- Queue inspection and entity-limit reads retain `view_infrastructure`. Devbox
+  control snapshots require root membership and `view_infrastructure`.
+
+These rules apply to the Infrastructure app, including direct API requests and
+server-action calls. Existing CLI identity support for devbox reads is retained;
+it still requires the viewer permission. Regression coverage lives in
+`apps/infrastructure/src/lib/platform-admin-boundaries.test.ts`.
+
+Entity-limit reads and all four entity-limit server actions additionally require
+root-workspace `MEMBER` membership. Root guests are denied even when guest-default
+permissions grant the corresponding read or mutation permission. This preserves
+the previous membership fence without changing other administration endpoints.
+Regression coverage: `apps/infrastructure/src/lib/entity-limit-membership.test.ts`.

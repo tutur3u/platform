@@ -84,7 +84,12 @@
 
 # Code-execution infrastructure (devbox and Judge runners)
 /apps/devbox-control/              @vhpx
+/apps/ops-hub/                     @vhpx
 /packages/devbox/                  @vhpx
+
+# Abuse-protection store (Durable Object Worker and its clients)
+/apps/abuse-guard/                 @vhpx
+/packages/utils/src/abuse-guard/   @vhpx
 
 # Payments
 /packages/payment/                 @vhpx

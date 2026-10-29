@@ -74,7 +74,7 @@ void _removeOpen(Map<String, dynamic> json, {String? id}) {
   (json['decisions'] as List).removeWhere(drop);
 }
 
-/// [count] extra open decisions, so a group runs past its cap.
+/// [count] extra open decisions, so a group runs past its first page.
 void _addDecisions(Map<String, dynamic> json, int count) {
   _needsYou(json).addAll([
     for (var i = 1; i <= count; i++)
@@ -148,8 +148,9 @@ void main() {
 
       await _segment(tester, 'Resolved');
       expect(find.byType(InboxItemTile), findsNWidgets(2));
-      expect(find.text('Recently resolved'), findsOneWidget);
-      expect(find.text('Resolved · Yes · 2 h ago'), findsNWidgets(2));
+      // Resolved rows group under their GMT+7 day and read the time.
+      expect(find.text('Jan 31, 2026'), findsOneWidget);
+      expect(find.text('Resolved · Yes · 22:32'), findsNWidgets(2));
 
       expect(inboxSegmentFromQuery('all'), InboxSegment.needsYou);
       expect(find.text('All'), findsNothing);
@@ -252,28 +253,12 @@ void main() {
       await tester.enterText(find.byType(TextField), 'ship it');
       await tester.pumpAndSettle();
       expect(find.byType(InboxItemTile), findsOneWidget);
-      expect(find.text('Resolved · Ship it · 2 h ago'), findsOneWidget);
+      expect(find.text('Resolved · Ship it · 22:32'), findsOneWidget);
 
       // Decisions has its own filters: no ask search there.
       await _segment(tester, 'Decisions');
       expect(find.byType(TextField), findsNothing);
       expect(chrome.state.resolveForLocation(Routes.mastermindInbox), isEmpty);
-    });
-  });
-
-  group('caps', () {
-    testWidgets('a group shows five, then Show all N expands it', (
-      tester,
-    ) async {
-      final json = _v1();
-      _addDecisions(json, 5);
-      await _pump(tester, const MastermindInboxPage(), json);
-      expect(find.byType(InboxItemTile), findsNWidgets(5));
-      expect(find.text('Show all 7'), findsOneWidget);
-      await tester.tap(find.text('Show all 7'));
-      await tester.pumpAndSettle();
-      expect(find.byType(InboxItemTile), findsNWidgets(7));
-      expect(find.text('Show all 7'), findsNothing);
     });
   });
 
@@ -452,8 +437,11 @@ void main() {
       expect(find.text('Outcome'), findsOneWidget);
       expect(find.text('Resolved'), findsOneWidget);
       expect(find.text('Answer: Yes'), findsOneWidget);
-      // Two hours before 17:32 UTC is 22:32 in GMT+7.
-      expect(find.text('Jan 31, 22:32'), findsOneWidget);
+      // Resolved two hours before 17:32 UTC; the full time is on long press.
+      expect(findTimeLabel('2h'), findsOneWidget);
+      await tester.longPress(findTimeLabel('2h'));
+      await tester.pump();
+      expect(find.text('31 Jan, 22:32 GMT+7'), findsOneWidget);
       expect(find.byType(TextField), findsNothing);
       expect(find.text('This was answered or withdrawn'), findsNothing);
     });

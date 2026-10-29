@@ -84,7 +84,8 @@ function mapConfiguredUrlToApp(
 }
 
 async function resolveTargetApp(
-  returnUrl: string
+  returnUrl: string,
+  request: NextRequest
 ): Promise<ResolvedCrossAppTarget | null> {
   const configuredTarget = mapConfiguredUrlToApp(returnUrl);
 
@@ -92,7 +93,9 @@ async function resolveTargetApp(
     return configuredTarget;
   }
 
-  const managedReturnUrl = normalizeManagedTuturuuuReturnUrl(returnUrl);
+  const managedReturnUrl = normalizeManagedTuturuuuReturnUrl(returnUrl, {
+    currentHost: request,
+  });
 
   if (managedReturnUrl) {
     return {
@@ -156,7 +159,7 @@ async function createCrossAppReturn(request: NextRequest) {
   }
 
   const decodedReturnUrl = decodeReturnUrl(parsed.data.returnUrl);
-  const target = await resolveTargetApp(decodedReturnUrl);
+  const target = await resolveTargetApp(decodedReturnUrl, request);
 
   if (!target) {
     return NextResponse.json({ error: 'Invalid returnUrl' }, { status: 400 });

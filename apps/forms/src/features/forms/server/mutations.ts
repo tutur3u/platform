@@ -3,6 +3,7 @@ import type { Database } from '@tuturuuu/types';
 import type { FormStudioInput } from '../schema';
 import type { FormRow } from '../types';
 import { getPrivateFormsClient } from './client';
+import { FormNotFoundError } from './errors';
 import {
   type DEFAULT_FORM_MEDIA,
   hasFormMedia,
@@ -96,8 +97,17 @@ export async function saveFormDefinition({
 }): Promise<string> {
   const formsClient = getPrivateFormsClient(supabase);
   const existing = formId
-    ? await formsClient.from('forms').select('*').eq('id', formId).maybeSingle()
-    : { data: null };
+    ? await formsClient
+        .from('forms')
+        .select('*')
+        .eq('id', formId)
+        .eq('ws_id', wsId)
+        .maybeSingle()
+    : { data: null, error: null };
+  if (existing.error) throw new Error(existing.error.message);
+  if (formId && (!existing.data || existing.data.ws_id !== wsId)) {
+    throw new FormNotFoundError();
+  }
   const resolvedFormId = formId ?? createClientUuid();
   const timestamps = buildFormTimestamps(existing.data, input);
 
@@ -114,12 +124,12 @@ export async function saveFormDefinition({
     max_responses: input.maxResponses ?? null,
     theme: {
       ...input.theme,
-      coverImage: sanitizeFormMediaForStorage(input.theme.coverImage),
+      coverImage: sanitizeFormMediaForStorage(input.theme.coverImage, wsId),
       sectionImages: input.sections.reduce<
         Record<string, typeof DEFAULT_FORM_MEDIA>
       >((accumulator, section, index) => {
         const key = section.id ?? `section:${index}`;
-        const media = sanitizeFormMediaForStorage(section.image);
+        const media = sanitizeFormMediaForStorage(section.image, wsId);
 
         if (hasFormMedia(media)) {
           accumulator[key] = media;
@@ -136,7 +146,7 @@ export async function saveFormDefinition({
       ...input.seo,
       // The signed URL on an uploaded card expires; only the storage path is
       // durable, so it is re-signed on read the same way cover art is.
-      image: sanitizeFormMediaForStorage(input.seo.image),
+      image: sanitizeFormMediaForStorage(input.seo.image, wsId),
     },
     published_at: timestamps.publishedAt,
     closed_at: timestamps.closedAt,
@@ -193,7 +203,7 @@ export async function saveFormDefinition({
         description: question.description,
         required: question.required,
         position: questionIndex,
-        image: sanitizeFormMediaForStorage(question.image),
+        image: sanitizeFormMediaForStorage(question.image, wsId),
         settings: question.settings,
       };
     })
@@ -237,7 +247,7 @@ export async function saveFormDefinition({
             question_id: questionId,
             label: option.label,
             value: option.value,
-            image: sanitizeFormMediaForStorage(option.image),
+            image: sanitizeFormMediaForStorage(option.image, wsId),
             position: optionIndex,
           }))
         : [];

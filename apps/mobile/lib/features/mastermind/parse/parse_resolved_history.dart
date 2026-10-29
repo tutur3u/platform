@@ -40,11 +40,15 @@ bool acceptsDecisionItem(Map<String, dynamic> row) {
 
 /// The strict item parser drops `resolved_at` and `resolution`; history rows
 /// keep them so the Inbox can say when and how an ask was closed. A malformed
-/// value is left out rather than rejecting the row.
+/// value is left out rather than rejecting the row. A row whose `state` or
+/// `status` says `withdrawn` stays withdrawn: it closed without an answer.
 NeedsYou _withResolution(NeedsYou item, Map<String, dynamic> row) {
   final at = row['resolved_at'];
   final answer = row['resolution'];
-  final resolution = answer is String ? answer.trim() : '';
+  final withdrawn =
+      row['state'] == ItemState.withdrawn.wireName ||
+      row['status'] == ItemState.withdrawn.wireName;
+  final resolution = answer is String && !withdrawn ? answer.trim() : '';
   return NeedsYou(
     id: item.id,
     title: item.title,
@@ -53,7 +57,15 @@ NeedsYou _withResolution(NeedsYou item, Map<String, dynamic> row) {
     createdAt: item.createdAt,
     options: item.options,
     recommendedOption: item.recommendedOption,
-    state: item.state,
+    hubTitle: item.hubTitle,
+    hubText: item.hubText,
+    hubOptions: item.hubOptions,
+    optionKeys: item.optionKeys,
+    hubOptionKeys: item.hubOptionKeys,
+    hubRecommended: item.hubRecommended,
+    by: item.by,
+    answeredVia: withdrawn ? null : item.answeredVia,
+    state: withdrawn ? ItemState.withdrawn : item.state,
     versionHash: item.versionHash,
     kind: item.kind,
     product: item.product,

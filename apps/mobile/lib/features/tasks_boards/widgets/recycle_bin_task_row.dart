@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/theme/dynamic_colors.dart';
 import 'package:mobile/data/models/task_board_task.dart';
+import 'package:mobile/features/tasks_boards/widgets/task_priority_visuals.dart';
+import 'package:mobile/features/tasks_estimates/utils/task_label_colors.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -28,7 +31,8 @@ class RecycleBinTaskRow extends StatelessWidget {
     final firstProjectName = task.projects.isNotEmpty
         ? task.projects.first.name?.trim()
         : null;
-    final priorityConfig = _getPriorityConfig(context, task.priority);
+    final palette = context.dynamicColors;
+    final priority = TaskPriorityLevel.tryParse(task.priority);
 
     return Opacity(
       opacity: disabled ? 0.5 : 1.0,
@@ -76,31 +80,27 @@ class RecycleBinTaskRow extends StatelessWidget {
                     spacing: 6,
                     runSpacing: 6,
                     children: [
-                      if (priorityConfig != null)
+                      if (priority != null)
                         _buildBadge(
-                          label: priorityConfig.label,
-                          backgroundColor: priorityConfig.backgroundColor,
-                          foregroundColor: priorityConfig.foregroundColor,
+                          label: priority.label(context.l10n),
+                          color: priority.color(palette),
+                          icon: priority.icon,
                         ),
                       if (listName != null && listName!.isNotEmpty)
                         _buildBadge(
                           label: context.l10n.taskBoardDetailFromList(
                             listName!,
                           ),
-                          backgroundColor: Colors.purple.withValues(
-                            alpha: 0.15,
-                          ),
-                          foregroundColor: Colors.purple,
+                          color: palette.purple,
                           icon: Icons.folder_open_outlined,
                         ),
-                      ..._buildLabelBadges(),
+                      ..._buildLabelBadges(palette),
                       if (task.estimationPoints != null)
                         _buildBadge(
                           label: context.l10n.taskBoardDetailPoints(
                             task.estimationPoints!,
                           ),
-                          backgroundColor: const Color(0x334BADD1),
-                          foregroundColor: const Color(0xFF7DD3FC),
+                          color: palette.sky,
                         ),
                       if (task.projects.isNotEmpty)
                         _buildBadge(
@@ -112,8 +112,7 @@ class RecycleBinTaskRow extends StatelessWidget {
                               : context.l10n.taskBoardDetailNProjects(
                                   task.projects.length,
                                 ),
-                          backgroundColor: const Color(0x334BADD1),
-                          foregroundColor: const Color(0xFF7DD3FC),
+                          color: palette.sky,
                           icon: Icons.folder_outlined,
                         ),
                     ],
@@ -145,40 +144,7 @@ class RecycleBinTaskRow extends StatelessWidget {
     );
   }
 
-  _PriorityConfig? _getPriorityConfig(BuildContext context, String? priority) {
-    if (priority == null) return null;
-
-    switch (priority.toLowerCase()) {
-      case 'critical':
-        return _PriorityConfig(
-          label: context.l10n.taskBoardDetailPriorityCritical,
-          backgroundColor: const Color(0x33FF4444),
-          foregroundColor: const Color(0xFFFF6B6B),
-        );
-      case 'high':
-        return _PriorityConfig(
-          label: context.l10n.taskBoardDetailPriorityHigh,
-          backgroundColor: const Color(0x33FF8C42),
-          foregroundColor: const Color(0xFFFFA726),
-        );
-      case 'normal':
-        return _PriorityConfig(
-          label: context.l10n.taskBoardDetailPriorityNormal,
-          backgroundColor: const Color(0x334285F4),
-          foregroundColor: const Color(0xFF6699FF),
-        );
-      case 'low':
-        return _PriorityConfig(
-          label: context.l10n.taskBoardDetailPriorityLow,
-          backgroundColor: const Color(0x33666666),
-          foregroundColor: const Color(0xFFAAAAAA),
-        );
-      default:
-        return null;
-    }
-  }
-
-  List<Widget> _buildLabelBadges() {
+  List<Widget> _buildLabelBadges(DynamicColors palette) {
     final validLabels = task.labels
         .where((l) => l.name?.trim().isNotEmpty == true)
         .take(3)
@@ -187,11 +153,9 @@ class RecycleBinTaskRow extends StatelessWidget {
 
     return validLabels
         .map((label) {
-          final color = _parseColor(label.color);
           return _buildBadge(
             label: label.name!.trim(),
-            backgroundColor: color.withValues(alpha: 0.15),
-            foregroundColor: color,
+            color: _labelColor(palette, label.color),
           );
         })
         .toList(growable: false);
@@ -199,10 +163,11 @@ class RecycleBinTaskRow extends StatelessWidget {
 
   Widget _buildBadge({
     required String label,
-    required Color backgroundColor,
-    required Color foregroundColor,
+    required Color color,
     IconData? icon,
   }) {
+    final backgroundColor = color.withValues(alpha: 0.15);
+    final foregroundColor = color;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
@@ -252,49 +217,17 @@ class RecycleBinTaskRow extends StatelessWidget {
     return context.l10n.taskBoardDetailDeletedAgo(timeAgo);
   }
 
-  Color _parseColor(String? colorString) {
-    if (colorString == null || colorString.isEmpty) {
-      return const Color(0xFFAAAAAA);
-    }
-
-    switch (colorString.toUpperCase()) {
-      case 'RED':
-        return const Color(0xFFFF6B6B);
-      case 'ORANGE':
-        return const Color(0xFFFFA726);
-      case 'YELLOW':
-        return const Color(0xFFFFD54F);
-      case 'GREEN':
-        return const Color(0xFF66BB6A);
-      case 'BLUE':
-      case 'SKY':
-        return const Color(0xFF6699FF);
-      case 'PURPLE':
-        return const Color(0xFFB388FF);
-      case 'PINK':
-        return const Color(0xFFFF8A80);
-      case 'GRAY':
-      case 'GREY':
-        return const Color(0xFFAAAAAA);
-      default:
-        try {
-          final hex = colorString.replaceFirst('#', '');
-          return Color(int.parse('FF$hex', radix: 16));
-        } on FormatException {
-          return const Color(0xFFAAAAAA);
-        }
-    }
-  }
-}
-
-class _PriorityConfig {
-  const _PriorityConfig({
-    required this.label,
-    required this.backgroundColor,
-    required this.foregroundColor,
-  });
-
-  final String label;
-  final Color backgroundColor;
-  final Color foregroundColor;
+  /// Named label colours use the shared dynamic tokens; hex values are the
+  /// label's own stored colour.
+  Color _labelColor(DynamicColors palette, String? raw) =>
+      switch (raw?.trim().toUpperCase()) {
+        'RED' => palette.red,
+        'ORANGE' => palette.orange,
+        'YELLOW' => palette.yellow,
+        'GREEN' => palette.green,
+        'BLUE' || 'SKY' => palette.blue,
+        'PURPLE' => palette.purple,
+        'PINK' => palette.pink,
+        _ => parseTaskLabelColor(raw) ?? palette.gray,
+      };
 }

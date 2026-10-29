@@ -23,6 +23,7 @@ import {
   TutoringPolicySection,
 } from './tutoring-policy-section';
 import { TutoringShiftRulesEditor } from './tutoring-shift-rules-editor';
+import { TutoringSupportGroups } from './tutoring-support-groups';
 import { TutoringTutorGroups } from './tutoring-tutor-groups';
 import { TutoringWeakRules } from './tutoring-weak-rules';
 
@@ -64,6 +65,7 @@ export function TutoringPolicyCard({
       'weakContentReviewDays',
       'restrictWeakContentEditors',
       'groupExclusions',
+      'supportGroupIds',
     ],
     campuses: ['campusByGroupId', 'campusOptions'],
     tutors: ['tutorGroupIds'],
@@ -243,6 +245,12 @@ export function TutoringPolicyCard({
       <TutoringPolicySection {...sectionProps} id="weak">
         <TutoringWeakRules
           canConfigure={canConfigure}
+          onChange={edit}
+          policy={draft}
+        />
+        <TutoringSupportGroups
+          canConfigure={canConfigure}
+          groups={groups}
           onChange={edit}
           policy={draft}
         />

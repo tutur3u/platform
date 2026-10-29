@@ -1,4 +1,5 @@
 import type { CookieOptions, CookieOptionsWithName } from '@supabase/ssr';
+import { getTuturuuuSharedCookieDomains } from '../shared-cookie-domains';
 
 export type SupabaseCookie = {
   name: string;
@@ -8,18 +9,6 @@ export type SupabaseCookie = {
 
 const HOST_ONLY_COOKIE_CLEAR_DATE = 'Thu, 01 Jan 1970 00:00:00 GMT';
 const SAFE_COOKIE_NAME_PATTERN = /^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$/u;
-const SHARED_COOKIE_DOMAINS = [
-  {
-    cookieDomain: '.tuturuuu.com',
-    hostname: 'tuturuuu.com',
-    secure: true,
-  },
-  {
-    cookieDomain: '.tuturuuu.localhost',
-    hostname: 'tuturuuu.localhost',
-    secure: false,
-  },
-] as const;
 const OPTIONAL_AUTH_COOKIE_URL_ENV_KEYS = [
   'NEXT_PUBLIC_SUPABASE_URL',
   'SUPABASE_SERVER_URL',
@@ -105,7 +94,7 @@ function resolveSharedCookieDomainForUrl(url: string | URL | null | undefined) {
   }
 
   return (
-    SHARED_COOKIE_DOMAINS.find(
+    getTuturuuuSharedCookieDomains().find(
       (entry) =>
         hostname === entry.hostname || hostname.endsWith(`.${entry.hostname}`)
     ) ?? null

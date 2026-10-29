@@ -24,8 +24,10 @@ the runner, DLLs and `data` directory with Inno Setup. The installer is per-user
 and does not require administrator privileges.
 
 Release Please owns `apps/mobile/pubspec.yaml` (currently the common version
-source). Desktop tags use `desktop-v<pubspec-version>-<run-id>` to identify
-immutable GitHub Releases. Production pushes affecting the mobile app trigger
+source). Mobile and desktop both publish the next unused patch of that
+`major.minor` from their own release history; desktop tags are
+`desktop-v<version>` with the run ID kept in the release body (see
+[desktop versions](/build/devops/desktop-beta-distribution#versions-and-release-notes)). Production pushes affecting the mobile app trigger
 both store delivery and the existing desktop release flow; desktop publication
 retains `DESKTOP_BETA_ENABLED`, platform selection, protected environment, bundle
 audit and provenance gates. Manual `desktop-beta.yaml` dispatch with

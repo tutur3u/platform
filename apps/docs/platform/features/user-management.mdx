@@ -377,8 +377,10 @@ module unchanged.
   retried every 15 minutes. The claim matches the exact status it read and is
   released to that status. If a Send now never finishes (the function was
   stopped, or the release failed), the queue marks the session `failed` with
-  `PROCESSING_TIMEOUT` after 15 minutes: editable, and never sent
-  automatically. Other announcements send exactly as before.
+  `PROCESSING_TIMEOUT` 15–30 minutes later (the queue runs every 15 minutes
+  and reclaims claims older than 15): editable, and never sent automatically.
+  This sweep runs first in every queue run, so it still happens when the rest
+  of the run fails. Other announcements send exactly as before.
 - **Save & notify teachers.** Saving the schedule or committing a clone can
   notify each GVCN of the sessions that request assigned to them: new
   sessions, or a class change that gives a session another teacher. The
@@ -577,6 +579,30 @@ proven by
 `apps/database/verification/topic-announcement-teacher-assignment-rollback-roundtrip.sql`.
 
 
+
+### Teacher deadline notices (schema only)
+
+Migration `20261029050200_topic_teacher_deadline_notices` prepares the GVCN
+deadline notices; no sender is wired yet, so nothing changes for users.
+
+- **Types.** `topic_due_soon` (one reminder before the 24-hour deadline,
+  `send_due_at`) and `topic_late` (one notice after it passes unsent).
+- **One email, not two.** These notices email the teacher directly
+  (`sendWorkspaceEmail`, with the email audit) at their confirmed account
+  email. `should_send_notification` answers false for their email channel,
+  so `create_notification` records only the in-app notification and never
+  queues a digest email for them. Other types are unchanged.
+- **At most one of each.** `private.topic_announcement_teacher_notices` holds
+  one receipt per announcement, kind and `send_due_at`, claimed with
+  `insert ... on conflict do nothing` before notifying. A rerun, restart or
+  overlapping run never notifies twice, deleting the notification keeps the
+  receipt, and a new `send_due_at` (the session moved) re-arms both notices.
+  Receipts are service-role only, belong to their announcement's workspace
+  (composite foreign key on announcement and workspace) and cascade with it.
+- **Rollback.** `apps/database/rollbacks/20261029050200_topic_teacher_deadline_notices.rollback.sql`,
+  proved by `apps/database/verification/topic-teacher-deadline-notices-rollback-roundtrip.sql`.
+
+Regression coverage: `apps/database/supabase/tests/topic-teacher-deadline-notices.sql`.
 ### Mobile profile image optimization
 
 Mobile avatars use a square crop; choose 512–1024 pixels per side. Banners use
@@ -756,3 +782,44 @@ collection and item contracts. The unused unversioned collection and item
 handlers are retired. The separate indicator migration endpoints retain their
 existing lifecycle. `scripts/retired-workspace-user-routes.test.mjs` checks the
 active route and inventory boundary.
+
+## Post Approval And Delivery Eligibility
+
+Post approval lists and their counts use the selected workspace for both the
+post and its recipient. Web and Infrastructure email enqueueing and queued or
+immediate delivery require that the recipient and post group share a workspace.
+A queue row must also refer to that post's group.
+
+An existing check is the recipient association. Moving to another group does not
+remove that association, cancel queued or retrying messages, or prevent a new
+enqueue for that check. Delivery recovery still recognizes provider-accepted
+messages and restores their recorded sent state without resending.
+
+Guest status is derived from membership in a group marked `is_guest`; it does not
+replace the existing check association or the workspace rule. Regression coverage
+lives in the approval read, queue-core, batch history and delivery recovery tests.
+
+
+## User data access boundaries
+
+The Web and Contacts user routes apply workspace permissions before returning
+private user data. Sent-email history requires `view_users_private_info`.
+Post review lists, filter options and status require `view_user_groups_posts` or
+`approve_posts`; review rows mask email, recipient and phone fields unless the
+reader also has `view_users_private_info`. Referral lists retain public names for
+public-info readers and user editors, with email and phone masked unless the
+reader has private-info access.
+
+Post approval snapshots are read only after verifying that the post's group
+belongs to the authorized workspace. Follow-up delivery resolves its recipient
+inside that workspace before sending. Announcement contact edits validate linked
+workspace users, including when updating an existing contact. User updates retain
+the route's user ID and ignore a body-supplied identity key.
+
+Parameterized workspace summaries are a server-only helper. The Web workspace
+selector exposes only its existing zero-argument server action; authenticated
+Web and Hive API adapters can still pass their verified user identity internally.
+
+Regression coverage: `packages/users-core/tests/routes/user-privacy-boundaries.test.ts`,
+`apps/web/src/__tests__/post-review-permissions.test.ts`, and
+`scripts/workspace-summary-server-boundary.test.js`.

@@ -13,16 +13,25 @@
  * IMPORTANT: All migration timestamps are interpreted as GMT+7 (Asia/Ho_Chi_Minh)
  * to ensure consistent behavior across different CI/local environments.
  *
+ * In pull request context (GITHUB_BASE_REF set), it also requires every
+ * migration the PR adds or renames to sort after the newest migration already
+ * on the base branch. Production `supabase db push` rejects out-of-order
+ * migrations, so they must fail here first. Shallow checkouts are handled by
+ * fetching the base ref and deepening until the merge-base resolves.
+ * Locally, the order check uses MIGRATION_BASE_REF (default `main`) against
+ * the existing `origin/<ref>` without fetching, and skips if it is missing.
+ *
  * Usage:
  *   node scripts/check-migration-timestamps.js
  *
  * Exit codes:
- *   0 - All migrations have valid (past/present) timestamps
- *   1 - One or more migrations have future timestamps
+ *   0 - All migrations have valid timestamps
+ *   1 - A migration is future-dated, unparseable, or out of order
  */
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { spawnSync } = require('node:child_process');
 
 // Migration directory
 const MIGRATIONS_DIR = 'apps/database/supabase/migrations';
@@ -86,8 +95,7 @@ function formatDate(date) {
 /**
  * Find all SQL migration files
  */
-function findMigrationFiles() {
-  const rootDir = process.cwd();
+function findMigrationFiles(rootDir = process.cwd()) {
   const fullDir = path.join(rootDir, MIGRATIONS_DIR);
 
   if (!fs.existsSync(fullDir)) {
@@ -144,6 +152,206 @@ function checkMigration(file, now) {
   };
 }
 
+const MAX_DEEPEN_ATTEMPTS = 5;
+const DEEPEN_STEP = 200;
+
+function git(args, cwd) {
+  const result = spawnSync('git', args, { cwd, encoding: 'utf8' });
+  return {
+    ok: result.status === 0,
+    stdout: (result.stdout || '').trim(),
+    stderr: (result.stderr || '').trim(),
+  };
+}
+
+function isMigrationPath(filePath) {
+  return (
+    path.posix.dirname(filePath) === MIGRATIONS_DIR && filePath.endsWith('.sql')
+  );
+}
+
+/**
+ * Paths added or renamed-to under the migrations directory, given
+ * `git diff --name-status -M` output.
+ */
+function parseAddedMigrations(nameStatus) {
+  const added = [];
+  for (const line of nameStatus.split('\n')) {
+    if (!line) continue;
+    const [status, ...paths] = line.split('\t');
+    let target = null;
+    if (status === 'A') target = paths[0];
+    else if (status.startsWith('R')) target = paths[1];
+    if (target && isMigrationPath(target)) added.push(target);
+  }
+  return added;
+}
+
+/**
+ * Newest migration on the base tree, given `git ls-tree --name-only` output.
+ */
+function findNewestMigration(paths) {
+  let newest = null;
+  for (const filePath of paths) {
+    if (!isMigrationPath(filePath)) continue;
+    const filename = path.posix.basename(filePath);
+    const timestamp = extractTimestamp(filename);
+    if (timestamp && (!newest || timestamp > newest.timestamp)) {
+      newest = { filename, timestamp };
+    }
+  }
+  return newest;
+}
+
+/**
+ * Added migrations whose timestamp is not strictly after the base's newest.
+ */
+function findOutOfOrderMigrations(addedPaths, newest) {
+  if (!newest) return [];
+  return addedPaths
+    .map((filePath) => path.posix.basename(filePath))
+    .filter((filename) => {
+      const timestamp = extractTimestamp(filename);
+      return timestamp !== null && timestamp <= newest.timestamp;
+    })
+    .sort();
+}
+
+function resolveBaseRef(env) {
+  if (env.GITHUB_BASE_REF) {
+    return { branch: env.GITHUB_BASE_REF, fetch: true };
+  }
+  if (env.CI) return null;
+  return { branch: env.MIGRATION_BASE_REF || 'main', fetch: false };
+}
+
+function fetchBase(branch, remoteRef, cwd, extraArgs) {
+  return git(
+    [
+      'fetch',
+      '--no-tags',
+      '--quiet',
+      ...extraArgs,
+      'origin',
+      `+refs/heads/${branch}:${remoteRef}`,
+    ],
+    cwd
+  );
+}
+
+/**
+ * Resolve the merge-base with the base ref, fetching and deepening shallow
+ * history when allowed. Returns null when the base cannot be resolved.
+ */
+function resolveMergeBase(base, cwd) {
+  const remoteRef = `refs/remotes/origin/${base.branch}`;
+  if (base.fetch) {
+    const fetched = fetchBase(base.branch, remoteRef, cwd, ['--depth=1']);
+    if (!fetched.ok) {
+      throw new Error(
+        `Could not fetch base branch "${base.branch}": ${fetched.stderr}`
+      );
+    }
+  } else if (!git(['rev-parse', '--verify', '--quiet', remoteRef], cwd).ok) {
+    return null;
+  }
+
+  for (let attempt = 0; ; attempt++) {
+    const mergeBase = git(['merge-base', remoteRef, 'HEAD'], cwd);
+    if (mergeBase.ok) return { mergeBase: mergeBase.stdout, remoteRef };
+    const shallow =
+      git(['rev-parse', '--is-shallow-repository'], cwd).stdout === 'true';
+    if (!base.fetch || !shallow) {
+      throw new Error(
+        `No merge-base between ${remoteRef} and HEAD: ${mergeBase.stderr}`
+      );
+    }
+    const deepen =
+      attempt < MAX_DEEPEN_ATTEMPTS
+        ? [`--deepen=${DEEPEN_STEP}`]
+        : ['--unshallow'];
+    const fetched = fetchBase(base.branch, remoteRef, cwd, deepen);
+    if (!fetched.ok) {
+      throw new Error(`Could not deepen history: ${fetched.stderr}`);
+    }
+  }
+}
+
+/**
+ * Check that migrations added since the merge-base sort after the base's
+ * newest migration. Returns a result describing what was compared.
+ */
+function checkMigrationOrder({ cwd = process.cwd(), env = process.env } = {}) {
+  const base = resolveBaseRef(env);
+  if (!base) return { skipped: 'no pull request base ref' };
+
+  const resolved = resolveMergeBase(base, cwd);
+  if (!resolved) return { skipped: `origin/${base.branch} not available` };
+
+  const diff = git(
+    [
+      'diff',
+      '--name-status',
+      '-M',
+      '--diff-filter=AR',
+      resolved.mergeBase,
+      'HEAD',
+      '--',
+      MIGRATIONS_DIR,
+    ],
+    cwd
+  );
+  if (!diff.ok) throw new Error(`git diff failed: ${diff.stderr}`);
+
+  const tree = git(
+    ['ls-tree', '--name-only', resolved.remoteRef, '--', `${MIGRATIONS_DIR}/`],
+    cwd
+  );
+  if (!tree.ok) throw new Error(`git ls-tree failed: ${tree.stderr}`);
+
+  const added = parseAddedMigrations(diff.stdout);
+  const newest = findNewestMigration(tree.stdout.split('\n'));
+  return {
+    baseBranch: base.branch,
+    added,
+    newest,
+    outOfOrder: findOutOfOrderMigrations(added, newest),
+  };
+}
+
+function reportMigrationOrder(env = process.env) {
+  let result;
+  try {
+    result = checkMigrationOrder({ env });
+  } catch (error) {
+    console.error(`Migration order check failed: ${error.message}`);
+    return false;
+  }
+
+  if (result.skipped) {
+    console.log(`Skipping migration order check (${result.skipped}).`);
+    return true;
+  }
+
+  if (result.outOfOrder.length > 0) {
+    console.error(
+      `The following new migrations do not sort after the newest migration on ${result.baseBranch} (${result.newest.timestamp}, ${result.newest.filename}):\n`
+    );
+    for (const filename of result.outOfOrder) {
+      console.error(`   ${filename}`);
+    }
+    console.error(
+      `\nRename them to a timestamp after ${result.newest.timestamp}; production \`supabase db push\` rejects out-of-order migrations.`
+    );
+    return false;
+  }
+
+  console.log(
+    `All ${result.added.length} new migration(s) sort after ${result.baseBranch}'s newest (${result.newest?.timestamp ?? 'none'}).`
+  );
+  return true;
+}
+
 /**
  * Main function
  */
@@ -191,7 +399,20 @@ function main() {
     process.exit(1);
   }
 
-  console.log('All migration timestamps are valid (not in the future).');
+  console.log('All migration timestamps are valid (not in the future).\n');
+
+  if (!reportMigrationOrder()) {
+    process.exit(1);
+  }
 }
 
-main();
+if (require.main === module) {
+  main();
+}
+
+module.exports = {
+  checkMigrationOrder,
+  findNewestMigration,
+  findOutOfOrderMigrations,
+  parseAddedMigrations,
+};

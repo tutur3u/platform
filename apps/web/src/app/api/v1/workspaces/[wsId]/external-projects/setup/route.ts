@@ -10,6 +10,7 @@ import {
   syncManifestSchema,
 } from '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/sync/shared';
 import {
+  ExternalProjectSetupForbiddenError,
   ensureWorkspaceExternalProjectStudio,
   requireWorkspaceExternalProjectSetupAccess,
 } from '@/lib/external-projects/access';
@@ -66,6 +67,7 @@ async function setupExternalProjectStudio(
       adapter,
       admin: access.admin,
       schema,
+      scope: access.setupScope,
       template: (payload.template ?? manifest?.template) as
         | ExternalProjectSyncManifest['template']
         | undefined,
@@ -89,6 +91,10 @@ async function setupExternalProjectStudio(
         },
         { status: 400 }
       );
+    }
+
+    if (error instanceof ExternalProjectSetupForbiddenError) {
+      return NextResponse.json({ error: error.message }, { status: 403 });
     }
 
     if (

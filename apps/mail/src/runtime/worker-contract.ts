@@ -1,5 +1,7 @@
+import type { AssetsBinding } from '@tuturuuu/start-bridge/assets';
+
 export interface MailRuntimeEnv {
-  ASSETS: { fetch(request: Request): Promise<Response> };
+  ASSETS: AssetsBinding;
 }
 export interface MailExecutionContext {
   waitUntil(work: Promise<unknown>): void;

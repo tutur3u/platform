@@ -8,6 +8,14 @@ const { getWorkspaceRouteContextMock, safeParseMock, saveFormDefinitionMock } =
     saveFormDefinitionMock: vi.fn(),
   }));
 
+vi.mock('@tuturuuu/satellite/auth', () => ({
+  getSatelliteAppSessionUser: vi.fn(),
+}));
+vi.mock('@tuturuuu/utils/workspace-helper', () => ({
+  getWorkspace: vi.fn(),
+  verifyWorkspaceMembershipType: vi.fn(),
+}));
+
 vi.mock('@/features/forms/route-utils', async () => {
   const actual = await vi.importActual<
     typeof import('@/features/forms/route-utils')

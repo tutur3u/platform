@@ -8,15 +8,6 @@ on:
     outputs:
       staging_allowed:
         value: ${{ jobs.policy-staging.outputs.allowed }}
-    secrets:
-      CLOUDFLARE_STAGING_API_TOKEN:
-        required: false
-      WAVE1_CONTROL_READ_TOKEN:
-        required: false
-      STAGING_SUPABASE_URL:
-        required: false
-      STAGING_SUPABASE_PUBLISHABLE_KEY:
-        required: false
 permissions:
   contents: read
   actions: read
@@ -72,8 +63,8 @@ jobs:
       PROFILE: ${{ matrix.profile }}
       SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       CLOUDFLARE_WORKERS_SUBDOMAIN: ${{ vars.CLOUDFLARE_WORKERS_SUBDOMAIN || 'wave1-ci-fixture' }}
-      NEXT_PUBLIC_SUPABASE_URL: ${{ matrix.profile == 'staging' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.STAGING_SUPABASE_URL || 'https://wave1-ci.supabase.invalid' }}
-      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ matrix.profile == 'staging' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.STAGING_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_wave1_ci_placeholder' }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ matrix.profile == 'staging' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && vars.STAGING_SUPABASE_URL || 'https://wave1-ci.supabase.invalid' }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ matrix.profile == 'staging' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && vars.STAGING_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_wave1_ci_placeholder' }}
       WRANGLER_SEND_METRICS: 'false'
       WRANGLER_WRITE_LOGS: 'false'
       NODE_OPTIONS: --max-old-space-size=8192
@@ -96,7 +87,8 @@ jobs:
           import { appendFileSync } from 'node:fs';
           import { profileFor } from './scripts/ci/wave1-native-profile.mjs';
           const p = profileFor(process.env.APP, process.env.PROFILE, process.env.CLOUDFLARE_WORKERS_SUBDOMAIN);
-          appendFileSync(process.env.GITHUB_ENV, `NEXT_PUBLIC_APP_URL=https://${p.host}\nNEXT_PUBLIC_${p.app.toUpperCase()}_APP_URL=https://${p.host}\nNEXT_PUBLIC_WEB_APP_URL=${p.environment === 'production' ? 'https://tuturuuu.com' : 'https://staging.tuturuuu.com'}\n`);
+          if (p.environment !== 'production') appendFileSync(process.env.GITHUB_ENV, 'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN=.staging.tutur3u.com\n');
+          appendFileSync(process.env.GITHUB_ENV, `NEXT_PUBLIC_APP_URL=https://${p.host}\nNEXT_PUBLIC_${p.app.toUpperCase()}_APP_URL=https://${p.host}\nNEXT_PUBLIC_WEB_APP_URL=${p.environment === 'production' ? 'https://tuturuuu.com' : 'https://web.staging.tutur3u.com'}\n`);
           JS
       - name: Generate canonical bundled build metadata
         env:
@@ -115,9 +107,8 @@ jobs:
       - name: Original emitted workerd acceptance including Mail and Apps fence
         timeout-minutes: 3
         run: node scripts/ci/wave1-native-runtime.mjs "$APP" "$PROFILE" "$SOURCE_SHA"
-      - name: Dry-run exact prebundled publication profile
-        working-directory: apps/${{ inputs.app }}
-        run: bun x --no-install wrangler deploy --dry-run --config dist/wave1/wrangler.json --outdir "$RUNNER_TEMP/native-dry-run"
+      - name: Measure exact prebundled publication profile against upload limits
+        run: node scripts/ci/wave1-native-publish.mjs dry-run "$APP" "$PROFILE" "$SOURCE_SHA"
       - name: Verify and pack accepted bytes
         run: |
           node scripts/ci/wave1-native-artifact.mjs verify "$APP" "$PROFILE" "$SOURCE_SHA"
@@ -169,5 +160,5 @@ jobs:
         run: node scripts/ci/wave1-native-runtime.mjs "$APP" "$PROFILE" "$SOURCE_SHA"
       - name: Restored exact bytes dry-run and final seal
         run: |
-          (cd "apps/$APP" && bun x --no-install wrangler deploy --dry-run --config dist/wave1/wrangler.json --outdir "$RUNNER_TEMP/restored-dry-run")
+          node scripts/ci/wave1-native-publish.mjs dry-run "$APP" "$PROFILE" "$SOURCE_SHA"
           node scripts/ci/wave1-native-artifact.mjs verify "$APP" "$PROFILE" "$SOURCE_SHA"

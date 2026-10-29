@@ -377,6 +377,35 @@ existing summary-retention policy; it is outside this Supabase cleanup. Domain
 audit history such as task and finance history is also excluded. No hosted row
 counts are inferred from the disposable fixtures.
 
+## Storage access audit retention
+
+`database-storage-access-audit-retention` is a second default-off native
+database maintenance job on the ten-minute trigger.
+- It calls `private.prune_storage_access_events(1000)` once per slot, deleting
+  at most 1,000 `private.storage_access_events` rows older than 90 days.
+- The RPC uses the retention index, `SKIP LOCKED`, a ten-second statement
+  timeout and a one-second lock timeout.
+- It needs only `SUPABASE_URL` and `SUPABASE_SECRET_KEY`. Enable it after the
+  approved migration is applied; see
+  [Storage access audit log](/build/devops/storage-access-audit).
+
+Both retention jobs share `processors/maintenance-rpc.ts`:
+- one request per slot, with no in-slot retry;
+- a 1 KiB summary cap, integer counters up to the batch size, and manual
+  redirects;
+- the same ledger stop and failure budgets.
+
+At most 144 slots/day add 144 database requests, 432 ledger requests and
+144,000 deleted rows/day for this job.
+
+## Meet transcript retention
+
+`meet-transcript-retention` is a default-off native database job on the daily
+`17 3 * * *` trigger. Unlike the single-request retention jobs, it runs up to 20
+bounded batches per slot behind a database-owned fence and dry-run switch, with
+at most three in-run retries. See
+[Meet transcript retention](/build/devops/meet-transcript-retention).
+
 The existing `refresh-posts-dashboard` pg_cron job remains pure database
 maintenance at its ten-minute cadence. Its command must explicitly call
 `private.refresh_posts_dashboard_view()` after the private-schema migration

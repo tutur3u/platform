@@ -1,5 +1,8 @@
+import { EDUCATION_ATTEMPTS_WORKSPACE_PERMISSION } from '@tuturuuu/education-core/education/access';
 import { ArrowLeft, CircleCheck, CircleX } from '@tuturuuu/icons';
+import { getSatelliteWorkspacePermissions } from '@tuturuuu/satellite/workspace-access';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { Tables } from '@tuturuuu/types/supabase';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
@@ -30,7 +33,20 @@ export default async function AttemptDetailsPage({ params }: Props) {
 
   const t = await getTranslations();
   const { attemptId, wsId: routeWsId } = await params;
-  const { resolvedWsId } = await resolveRouteWorkspace(routeWsId);
+  const { resolvedWsId } = await resolveRouteWorkspace(
+    routeWsId,
+    EDUCATION_ATTEMPTS_WORKSPACE_PERMISSION
+  );
+  const permissions = await getSatelliteWorkspacePermissions(
+    'teach',
+    resolvedWsId
+  );
+  if (
+    !permissions ||
+    permissions.withoutPermission(EDUCATION_ATTEMPTS_WORKSPACE_PERMISSION)
+  ) {
+    notFound();
+  }
   const sbAdmin = await createAdminClient();
 
   const { data: attempt, error: attemptError } = await sbAdmin
@@ -89,12 +105,14 @@ export default async function AttemptDetailsPage({ params }: Props) {
   if (selectedOptionsResponse.error) throw selectedOptionsResponse.error;
   if (allOptionsResponse.error) throw allOptionsResponse.error;
 
-  const quizById = new Map(
-    (quizzesResponse.data ?? []).map((quiz) => [quiz.id, quiz])
-  );
-  const selectedOptionById = new Map(
-    (selectedOptionsResponse.data ?? []).map((option) => [option.id, option])
-  );
+  const quizById = new Map<
+    string,
+    Pick<Tables<'workspace_quizzes'>, 'id' | 'question'>
+  >((quizzesResponse.data ?? []).map((quiz) => [quiz.id, quiz]));
+  const selectedOptionById = new Map<
+    string,
+    Pick<Tables<'quiz_options'>, 'id' | 'quiz_id' | 'value' | 'is_correct'>
+  >((selectedOptionsResponse.data ?? []).map((option) => [option.id, option]));
   const optionsByQuizId = new Map<
     string,
     { id: string; is_correct: boolean; value: string }[]

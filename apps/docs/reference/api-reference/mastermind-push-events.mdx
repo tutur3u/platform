@@ -9,7 +9,11 @@ registered mobile devices through the existing FCM pipeline
 (`sendCustomPushMessageBatch`). It schedules nothing and keeps no queue; Fleet
 Tools owns retries.
 
-## Contract (version 1, frozen with Fleet Tools)
+## Contract (versions 1 and 2, agreed with Fleet Tools)
+
+The route accepts both versions. The hub sends version 2 only for items that
+carry a valid urgency and keeps the byte-identical version 1 body otherwise, so
+mixed traffic is normal.
 
 ```http
 POST /api/v1/mastermind/push-events
@@ -20,15 +24,29 @@ X-MM-Signature: <64 lowercase hex characters>
 {"v":1,"type":"needs_you.new","item_id":"item-0123456789abcdef0123","seq":41,"ts":"2026-10-28T04:59:58Z"}
 ```
 
+```json
+{"item_id":"item-0123456789abcdef0123","seq":41,"ts":"2026-10-28T04:59:58Z","type":"needs_you.new","urgency":"now","v":2}
+```
+
 | Field | Rule |
 |---|---|
-| `v` | Exactly `1` |
+| `v` | Exactly `1` or `2`; any other value is rejected |
 | `type` | `needs_you.new`, `decision.awaiting` or `pin_batch.new` |
 | `item_id` | `item-` followed by exactly 20 lowercase hex characters (`^item-[0-9a-f]{20}$`) |
 | `seq` | Non-negative integer |
 | `ts` | ISO 8601 UTC (`Z`) |
+| `urgency` | Version 2 only, required: `now`, `today`, `soon` or `whenever`. Version 1 counts as `today` |
 
-The object is strict: a title, product, body or any other field is rejected.
+Urgency is validated but does not change delivery yet; every accepted event is
+delivered exactly as version 1. Deduplication ignores `v` and `urgency`, so a
+version 1 and a version 2 body with the same `(type, item_id, seq)` are the same
+event.
+
+**Deploy order:** the route must accept version 2 in production before the hub
+emits it, because the hub treats `400 invalid_event` as a failed delivery.
+
+Each version is strict: a title, product, body or any other field is rejected,
+including `urgency` on version 1.
 The body is capped at 8 KiB. The route reads the body as a stream and stops at
 the cap whatever `Content-Length` says, including chunked bodies without one.
 
@@ -38,6 +56,10 @@ the cap whatever `Content-Length` says, including chunked bodies without one.
   `<X-MM-Timestamp> + "." + <raw body bytes>` keyed with
   `MASTERMIND_PUSH_HMAC_SECRET` or, during a rotation,
   `MASTERMIND_PUSH_HMAC_SECRET_NEXT`. Both are compared in constant time.
+  The HMAC covers the bytes exactly as received, before UTF-8 decoding or JSON
+  parsing; the route never re-serializes the event, so key order and
+  whitespace must match what the hub signed. Both versions are signed the same
+  way.
 - Both secrets are trimmed of surrounding whitespace before use. The primary
   secret must be at least 32 characters after trimming. A whitespace-only NEXT
   secret is treated as unset. A nonempty but too-short
@@ -111,6 +133,10 @@ the cap whatever `Content-Length` says, including chunked bodies without one.
   unknown FCM outcome.
 - **Invalid tokens** reported by FCM are deleted for that owner.
 - **Logs:** native `console.*` with the reject reason, event type and counts,
+  plus for a rejected body only closed-set fields: `version` (`1`, `2` or
+  `unknown`), `type` (a known type or `unknown`) and `issue` (`invalid_encoding`,
+  `invalid_json`, `not_object`, `unsupported_version`, `missing_urgency`,
+  `invalid_urgency` or `invalid_fields`),
   or event key for receipt/window-write warnings. Never owner/device ids,
   device tokens, claim tokens, raw backend errors or secrets.
 
@@ -121,7 +147,7 @@ Errors are `{"error":"<class>"}` and never echo input.
 | Status | Body | Meaning |
 |---|---|---|
 | 202 | `{accepted, sent, coalesced, skipped, failed}` | Processed |
-| 400 | `invalid_event` | Not JSON or not the v1 shape |
+| 400 | `invalid_event` | Not UTF-8 JSON, unknown `v`, or not the v1/v2 shape (including a missing or unknown v2 `urgency`) |
 | 401 | `unauthorized` | Missing, malformed, wrong or stale signature |
 | 409 | `duplicate_event` | `(type, item_id, seq)` already delivered |
 | 413 | `payload_too_large` | Body over 8 KiB |
@@ -147,3 +173,6 @@ completes at +121 seconds, and a stale route executing compare-and-delete
 against a successor's pending coalescing token before the deadline. They also
 cover the fan-out deadline when FCM finishes only after timeout wins. See
 `route.delivery.test.ts` and `route.race.test.ts` beside the route.
+`route.v2.test.ts` covers the version 2 contract: every urgency, rejected
+versions and urgencies with their log fields, the signature over the canonical
+hub bytes, skew boundaries and dedupe shared across versions.

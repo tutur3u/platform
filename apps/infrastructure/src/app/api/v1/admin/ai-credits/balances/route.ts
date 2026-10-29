@@ -140,7 +140,7 @@ const bonusSchema = z.object({
 
 export async function POST(req: Request) {
   try {
-    const auth = await authorizeAiCreditsAdminRequest();
+    const auth = await authorizeAiCreditsAdminRequest('manage_workspace_roles');
     if (!auth.ok) return auth.response;
 
     const body = await req.json();

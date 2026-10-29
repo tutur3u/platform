@@ -34,12 +34,14 @@ MastermindSnapshot parseRootSnapshot(JsonReader input) {
         ],
       );
   return MastermindSnapshot(
+    machines: parseMachineSnapshot(input.object()),
     workCounts: hubWorkCounts(
       input.object()['work'],
       r.field('generated_at').utcTimestamp(),
     ),
     resolvedItems: history.items,
-    schemaVersion: r.field('schema_version').string(constant: '1.4'),
+    catchup: parseCatchup(input.object()['catchup']),
+    schemaVersion: r.field('schema_version').stringIn({'1.4', '1.5'}),
     generatedAt: r.field('generated_at').utcTimestamp(),
     now: parseSnapshotNow(r.field('now')),
     lanes: parseLaneItems(r.field('lanes')),

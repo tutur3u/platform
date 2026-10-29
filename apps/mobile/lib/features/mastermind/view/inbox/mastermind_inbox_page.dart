@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/decisions_model.dart';
 import 'package:mobile/features/mastermind/presentation/inbox_model.dart';
+import 'package:mobile/features/mastermind/presentation/inbox_paging.dart';
 import 'package:mobile/features/mastermind/presentation/inbox_segment.dart';
+import 'package:mobile/features/mastermind/replies/answered_elsewhere_cubit.dart';
 import 'package:mobile/features/mastermind/view/inbox/decisions_body.dart';
 import 'package:mobile/features/mastermind/view/inbox/inbox_filters.dart';
 import 'package:mobile/features/mastermind/view/inbox/inbox_list_body.dart';
@@ -25,16 +28,22 @@ import 'package:mobile/l10n/l10n.dart';
 /// each change so the route can keep it in the URL.
 ///
 /// Search starts hidden: the navbar search icon reveals it, and it applies to
-/// every ask segment. A pull-down stays a refresh.
+/// every ask segment. A pull-down is a refresh and starts the list over from
+/// its first page.
+///
+/// The ask segments show every ask, built lazily a page at a time;
+/// [pageLoader] is the seam for a server-backed page (see [InboxPageLoader]).
 class MastermindInboxPage extends StatefulWidget {
   const MastermindInboxPage({
     this.initialSegment = InboxSegment.needsYou,
     this.onSegment,
+    this.pageLoader,
     super.key,
   });
 
   final InboxSegment initialSegment;
   final ValueChanged<InboxSegment>? onSegment;
+  final InboxPageLoader? pageLoader;
 
   @override
   State<MastermindInboxPage> createState() => _MastermindInboxPageState();
@@ -45,7 +54,9 @@ class _MastermindInboxPageState extends State<MastermindInboxPage> {
   String _query = '';
   Product? _product;
   late InboxSegment _segment = widget.initialSegment;
-  final Set<String> _expanded = {};
+  late final InboxPagingController _paging = InboxPagingController(
+    loader: widget.pageLoader,
+  );
   Product? _decisionProduct;
   bool? _decisionReversible;
 
@@ -56,22 +67,26 @@ class _MastermindInboxPageState extends State<MastermindInboxPage> {
     // already open.
     if (oldWidget.initialSegment != widget.initialSegment) {
       _segment = widget.initialSegment;
+      _paging.reset();
     }
   }
 
   @override
   void dispose() {
     _search.dispose();
+    _paging.dispose();
     super.dispose();
   }
 
   void _selectSegment(InboxSegment value) {
+    _paging.reset();
     setState(() => _segment = value);
     widget.onSegment?.call(value);
   }
 
   void _clearFilters() {
     _search.collapse();
+    _paging.reset();
     setState(() {
       _query = '';
       _product = null;
@@ -80,50 +95,76 @@ class _MastermindInboxPageState extends State<MastermindInboxPage> {
 
   @override
   Widget build(BuildContext context) => MastermindSection(
-    builder: (context, ready, freshness) {
-      final asks = _segment.listsAsks;
-      final list = AppPageScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        slivers: [
-          SliverToBoxAdapter(
-            child: MastermindFreshnessStrip(freshness: freshness),
-          ),
-          SliverList.list(
-            children: [
-              if (asks)
-                MastermindCollapsibleSearch(
-                  controller: _search,
-                  placeholder: context.l10n.mastermindInboxSearchPlaceholder,
-                  onChanged: (value) => setState(() => _query = value),
+    onRefresh: _paging.reset,
+    builder: (context, ready, freshness) =>
+        BlocBuilder<
+          MastermindAnsweredElsewhereCubit,
+          Map<String, AnsweredElsewhere>
+        >(
+          bloc: MastermindRepliesWatcher.answeredOf(context),
+          builder: (context, lingering) {
+            final asks = _segment.listsAsks;
+            final model = asks
+                ? _askModel(ready.snapshot, lingering.values)
+                : null;
+            final list = AppPageScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                SliverToBoxAdapter(
+                  child: MastermindFreshnessStrip(freshness: freshness),
                 ),
-              InboxSegmentBar(selected: _segment, onChanged: _selectSegment),
-              if (asks)
-                ..._asks(ready.snapshot, freshness.time.add(freshness.age))
-              else
-                _decisions(ready.snapshot),
-            ],
-          ),
-        ],
-      );
-      return MastermindRepliesWatcher(
-        // The navbar action sits outside the scroll view: a lazy sliver child
-        // is disposed once it scrolls away, which would unregister it.
-        child: Column(
-          children: [
-            Expanded(child: list),
-            if (asks) _SearchAction(controller: _search),
-          ],
+                SliverList.list(
+                  children: [
+                    if (asks)
+                      MastermindCollapsibleSearch(
+                        controller: _search,
+                        placeholder:
+                            context.l10n.mastermindInboxSearchPlaceholder,
+                        onChanged: (value) {
+                          _paging.reset();
+                          setState(() => _query = value);
+                        },
+                      ),
+                    InboxSegmentBar(
+                      selected: _segment,
+                      onChanged: _selectSegment,
+                    ),
+                    if (model != null) ..._askHeader(model),
+                    if (!asks) _decisions(ready.snapshot),
+                  ],
+                ),
+                if (model != null)
+                  InboxListBody(
+                    model: model,
+                    paging: _paging,
+                    onClearFilters: _clearFilters,
+                    now: freshness.time.add(freshness.age),
+                  ),
+              ],
+            );
+            return MastermindRepliesWatcher(
+              // Keep the navbar action mounted when lazy rows scroll away.
+              child: Column(
+                children: [
+                  Expanded(child: list),
+                  if (asks) _SearchAction(controller: _search),
+                ],
+              ),
+            );
+          },
         ),
-      );
-    },
   );
 
-  List<Widget> _asks(MastermindSnapshot snapshot, DateTime now) {
+  MastermindInboxModel _askModel(
+    MastermindSnapshot snapshot,
+    Iterable<AnsweredElsewhere> lingering,
+  ) {
     var model = MastermindInboxModel.from(
       snapshot,
       segment: _segment,
       query: _query,
       product: _product,
+      answeredElsewhere: lingering,
     );
     // The chips only exist while two products are present: a filter whose
     // chip is gone could never be cleared and would strand the list.
@@ -134,25 +175,24 @@ class _MastermindInboxPageState extends State<MastermindInboxPage> {
         snapshot,
         segment: _segment,
         query: _query,
+        answeredElsewhere: lingering,
       );
     }
-    return [
-      if (_segment != InboxSegment.resolved) const PendingRepliesSection(),
-      if (model.products.length > 1)
-        InboxFilters(
-          products: model.products,
-          selected: _product,
-          onProduct: (value) => setState(() => _product = value),
-        ),
-      InboxListBody(
-        model: model,
-        expanded: _expanded,
-        onExpand: (key) => setState(() => _expanded.add(key)),
-        onClearFilters: _clearFilters,
-        now: now,
-      ),
-    ];
+    return model;
   }
+
+  List<Widget> _askHeader(MastermindInboxModel model) => [
+    if (_segment != InboxSegment.resolved) const PendingRepliesSection(),
+    if (model.products.length > 1)
+      InboxFilters(
+        products: model.products,
+        selected: _product,
+        onProduct: (value) {
+          _paging.reset();
+          setState(() => _product = value);
+        },
+      ),
+  ];
 
   Widget _decisions(MastermindSnapshot snapshot) {
     var model = MastermindDecisionsModel.from(

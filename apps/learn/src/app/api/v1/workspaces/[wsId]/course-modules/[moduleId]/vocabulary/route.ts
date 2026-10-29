@@ -1,9 +1,15 @@
 import { attachSupabaseAuthUser } from '@tuturuuu/auth/app-session';
+import {
+  getLearnerModuleDetail,
+  resolveTulearnSubject,
+  tulearnAccessErrorResponse,
+} from '@tuturuuu/education-core/tulearn/service';
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import {
+  getPermissions,
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
@@ -124,7 +130,7 @@ export async function GET(
   const sbAdmin = await createAdminClient();
   const { data, error } = await sbAdmin
     .from('workspace_course_modules')
-    .select('id, vocabulary, workspace_user_groups!inner(ws_id)')
+    .select('id, group_id, vocabulary, workspace_user_groups!inner(ws_id)')
     .eq('id', moduleId)
     .eq('workspace_user_groups.ws_id', normalizedWsId)
     .maybeSingle();
@@ -144,6 +150,42 @@ export async function GET(
 
   if (!data) {
     return NextResponse.json({ message: 'Module not found' }, { status: 404 });
+  }
+
+  const permissions = await getPermissions({
+    user: session.user,
+    wsId: normalizedWsId,
+  });
+  if (!permissions?.containsPermission('ai_lab')) {
+    try {
+      const subject = await resolveTulearnSubject({
+        requestSupabase: session.supabase,
+        studentId: request.nextUrl.searchParams.get('studentId'),
+        user: session.user,
+        wsId: normalizedWsId,
+      });
+      const module = await getLearnerModuleDetail({
+        courseId: data.group_id,
+        db: sbAdmin,
+        moduleId,
+        studentPlatformUserId: subject.studentPlatformUserId,
+        studentWorkspaceUserId: subject.studentWorkspaceUserId,
+        wsId: subject.wsId,
+      });
+      if (!module)
+        return NextResponse.json(
+          { message: 'Module not found' },
+          { status: 404 }
+        );
+    } catch (error) {
+      const response = tulearnAccessErrorResponse(error);
+      if (response) return response;
+      console.error('Failed to verify vocabulary access', error);
+      return NextResponse.json(
+        { message: 'Failed to verify vocabulary access' },
+        { status: 500 }
+      );
+    }
   }
 
   return NextResponse.json({

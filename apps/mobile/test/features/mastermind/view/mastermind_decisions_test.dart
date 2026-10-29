@@ -8,6 +8,7 @@ import 'package:mobile/features/mastermind/presentation/inbox_segment.dart';
 
 import '../../../helpers/mastermind_decisions_fixture.dart';
 import '../../../helpers/mastermind_home_fixture.dart';
+import '../../../helpers/mastermind_time_finder.dart';
 import '../../../helpers/mastermind_view_harness.dart';
 import '../../../helpers/mastermind_work_pump.dart';
 
@@ -90,8 +91,8 @@ void main() {
       );
       expect(find.text('Jan 31, 2026'), findsOneWidget);
       expect(find.text('Feb 1, 2026'), findsOneWidget);
-      expect(find.text('23:59'), findsOneWidget);
-      expect(find.text('00:00'), findsOneWidget);
+      // Both are 32 minutes before the 17:32Z clock.
+      expect(findTimeLabel('32m'), findsNWidgets(2));
       final order = ['Feb 1, 2026', 'Midnight', 'Jan 31, 2026', 'Last second'];
       final tops = [for (final label in order) _top(tester, label)];
       expect([...tops]..sort(), tops, reason: order.join(' < '));
@@ -100,9 +101,13 @@ void main() {
 
     testWidgets('shows the GMT+7 time of each decision', (tester) async {
       await _pump(tester, decisionsJson(_rows));
-      expect(find.text('01:30'), findsOneWidget); // 18:30 UTC
-      expect(find.text('00:30'), findsOneWidget); // 17:30 UTC
-      expect(find.text('23:30'), findsOneWidget); // 16:30 UTC
+      // Relative to the 17:32Z clock; the GMT+7 time is on long press.
+      expect(findTimeLabel('now'), findsOneWidget); // 18:30 UTC, ahead
+      expect(findTimeLabel('2m'), findsOneWidget); // 17:30 UTC
+      expect(findTimeLabel('1h'), findsOneWidget); // 16:30 UTC
+      await tester.longPress(findTimeLabel('1h'));
+      await tester.pump();
+      expect(find.text('31 Jan, 23:30 GMT+7'), findsOneWidget);
     });
 
     testWidgets('orders decisions at the same instant by id', (tester) async {

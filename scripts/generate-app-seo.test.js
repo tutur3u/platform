@@ -144,11 +144,15 @@ test('rejects noncanonical hosts, private routes, duplicate paths and oversized 
   );
 });
 
+// Apps intentionally left out of the policy (no sitemap, robots or public host
+// advertised) until their access hardening is live. Keep this list short.
+const UNLISTED_APPS = new Set(['playground']);
+
 test('registers every Next app so new apps cannot silently miss sitemap policy', () => {
   for (const entry of fs.readdirSync(path.join(root, 'apps'), {
     withFileTypes: true,
   })) {
-    if (!entry.isDirectory()) continue;
+    if (!entry.isDirectory() || UNLISTED_APPS.has(entry.name)) continue;
     const manifest = path.join(root, 'apps', entry.name, 'package.json');
     if (!fs.existsSync(manifest)) continue;
     const config = JSON.parse(fs.readFileSync(manifest, 'utf8'));

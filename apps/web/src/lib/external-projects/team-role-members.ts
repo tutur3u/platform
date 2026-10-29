@@ -3,6 +3,7 @@ import {
   isWorkspaceCreator,
   roleHasCreatorGrantPermission,
 } from '@/lib/workspace-creator-grant-permissions';
+import { addWorkspaceRoleMembers } from '@/lib/workspace-role-member-mutations';
 import { normalizeRoleMembers } from '@/lib/workspace-role-members';
 import type { ExternalProjectTeamAccess } from './team-access';
 
@@ -42,12 +43,6 @@ export async function addExternalProjectRoleMembers({
   request: Request;
   roleId: string;
 }) {
-  const data = (await request.json()) as { memberIds?: string[] };
-
-  if (!data?.memberIds) {
-    return NextResponse.json({ message: 'Invalid request' }, { status: 400 });
-  }
-
   const roleAccess = await requireExternalProjectRoleInWorkspace({
     access,
     roleId,
@@ -79,26 +74,12 @@ export async function addExternalProjectRoleMembers({
     );
   }
 
-  const { error } = await access.admin.from('workspace_role_members').insert(
-    data.memberIds.map((memberId) => ({
-      role_id: roleId,
-      user_id: memberId,
-    }))
-  );
-
-  if (error) {
-    console.error('Error adding CMS team role members', {
-      error,
-      roleId,
-      wsId: access.normalizedWorkspaceId,
-    });
-    return NextResponse.json(
-      { message: 'Error adding people to access level' },
-      { status: 500 }
-    );
-  }
-
-  return NextResponse.json({ message: 'success' });
+  return addWorkspaceRoleMembers({
+    request,
+    admin: access.admin,
+    wsId: access.normalizedWorkspaceId,
+    roleId,
+  });
 }
 
 export async function listExternalProjectRoleMembers({

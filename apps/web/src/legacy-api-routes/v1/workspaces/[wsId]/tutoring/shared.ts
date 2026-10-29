@@ -186,6 +186,21 @@ function toComparableSlot<T extends TutoringSessionSlotInput>(slot: T) {
   };
 }
 
+/**
+ * One teacher tutors many learners in the same session, whatever their class
+ * group, so an identical date, start and duration never blocks the teacher.
+ * Partially overlapping intervals still do.
+ */
+function isSameTutoringSlot(
+  a: { absoluteStartMinutes: number; absoluteEndMinutes: number },
+  b: { absoluteStartMinutes: number; absoluteEndMinutes: number }
+) {
+  return (
+    a.absoluteStartMinutes === b.absoluteStartMinutes &&
+    a.absoluteEndMinutes === b.absoluteEndMinutes
+  );
+}
+
 export function findConflictsWithinSlots(slots: TutoringSessionSlotInput[]) {
   const conflicts: TutoringSessionConflict[] = [];
   const normalized = slots
@@ -215,12 +230,7 @@ export function findConflictsWithinSlots(slots: TutoringSessionSlotInput[]) {
         current.teacherUserId &&
         candidate.teacherUserId &&
         current.teacherUserId === candidate.teacherUserId &&
-        !(
-          current.groupId &&
-          current.groupId === candidate.groupId &&
-          current.absoluteStartMinutes === candidate.absoluteStartMinutes &&
-          current.absoluteEndMinutes === candidate.absoluteEndMinutes
-        )
+        !isSameTutoringSlot(current, candidate)
       ) {
         conflicts.push({
           conflictType: 'teacher',
@@ -303,12 +313,7 @@ export function findConflictsWithExistingSessions(
         incoming.teacherUserId &&
         existing.teacherUserId &&
         incoming.teacherUserId === existing.teacherUserId &&
-        !(
-          incoming.groupId &&
-          incoming.groupId === existing.groupId &&
-          incoming.absoluteStartMinutes === existing.absoluteStartMinutes &&
-          incoming.absoluteEndMinutes === existing.absoluteEndMinutes
-        )
+        !isSameTutoringSlot(incoming, existing)
       ) {
         conflicts.push({
           conflictType: 'teacher',
