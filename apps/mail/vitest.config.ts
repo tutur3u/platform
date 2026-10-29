@@ -7,8 +7,12 @@ export default defineConfig({
   esbuild: { jsx: 'automatic' },
   oxc: false,
   resolve: {
-    conditions: ['bun', 'module', 'node', 'development|production'],
+    conditions: ['bun', 'node', 'development|production'],
     alias: [
+      {
+        find: /^server-only$/u,
+        replacement: '@tanstack/react-start/server-only',
+      },
       {
         find: /^next\/headers(?:\.js)?$/u,
         replacement: resolve(__dirname, 'src/runtime/request-context.ts'),
@@ -41,7 +45,7 @@ export default defineConfig({
   },
   ssr: {
     resolve: {
-      conditions: ['bun', 'module', 'node', 'development|production'],
+      conditions: ['bun', 'node', 'development|production'],
     },
   },
   test: {

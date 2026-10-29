@@ -42,6 +42,21 @@ The hold applies to runs using this source. Rerunning an older workflow retains
 its original source and cannot acquire a later policy. The release owner retains
 custody of pre-hold runs and their resulting deployment baselines.
 
+## Mail bridge request ordering
+
+Mail checks host/path ownership and rejects mounted session-writing endpoints
+before shared-origin routing, request preparation or bridge dispatch. The mount
+resolver determines mounted versus root requests; session routes use the same
+segment matching as the endpoint dispatcher, including repeated/trailing slashes.
+Root-host session endpoints retain their existing behavior. Shared-origin routing
+keeps its separate mode and readiness gates; bridge adoption does not admit traffic.
+
+Every response retains Mail's response policy, and HTML responses also receive the
+per-app document security headers. The focused
+`apps/mail/src/runtime/mounted-session-endpoints.test.ts` suite checks ordering,
+route variants, root and neighbouring-route controls, routing refusal and document
+headers through the real bridge with fixture application/provider boundaries.
+
 ## Release gates
 
 Each app needs its own reviewed admission PR and exact accepted production SHA.
