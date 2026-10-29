@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/replies/mastermind_replies_cubit.dart';
 import 'package:mobile/features/mastermind/replies/reply_models.dart';
 
@@ -22,7 +23,7 @@ class ReplyChoice extends ChangeNotifier {
 
   late String _lastText;
   int? _selected;
-  String? _version;
+  String? _shown;
 
   /// The index into the ask's `options[]` the person chose, if any.
   int? get selected => _selected;
@@ -44,10 +45,15 @@ class ReplyChoice extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Called with the shown item's version on every build.
-  void bindVersion(String version) {
-    if (_version != null && _version != version) _selected = null;
-    _version = version;
+  /// Called with the shown item on every build.
+  void bindItem(NeedsYou item) {
+    final shown = [
+      item.versionHash,
+      ...item.options,
+      ...?item.hubOptions,
+    ].join('\u0000');
+    if (_shown != null && _shown != shown) _selected = null;
+    _shown = shown;
   }
 
   void _typed() {

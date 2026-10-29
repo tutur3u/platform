@@ -60,7 +60,7 @@ class _MastermindItemPageState extends State<MastermindItemPage> {
           : null;
       if (item != null) {
         _openedVersion ??= item.versionHash;
-        _choice.bindVersion(item.versionHash);
+        _choice.bindItem(item);
       }
       return MastermindRepliesWatcher(
         child: MastermindStickyActionLayout(

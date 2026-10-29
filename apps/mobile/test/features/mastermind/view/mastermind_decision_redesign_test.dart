@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/ui/components/app_button.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
+import 'package:mobile/features/mastermind/cubit/mastermind_snapshot_cubit.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/option_labels.dart';
 import 'package:mobile/features/mastermind/replies/mastermind_replies_cubit.dart';
 import 'package:mobile/features/mastermind/view/inbox/mastermind_item_page.dart';
+import 'package:mobile/features/mastermind/view/widgets/linkified_text.dart';
 import 'package:mobile/features/mastermind/view/widgets/mastermind_group.dart';
 import 'package:mobile/features/mastermind/view/widgets/mastermind_list_row.dart';
 
@@ -111,24 +113,38 @@ void main() {
       );
     });
 
-    testWidgets('tapping selects one row, announced as selected', (
+    testWidgets('tapping checks one radio row; the others stay unchecked', (
       tester,
     ) async {
       final semantics = tester.ensureSemantics();
       final transport = await _pump(tester);
       expect(find.text('Send reply'), findsOneWidget);
+      Matcher radio({required String label, required bool checked}) =>
+          matchesSemantics(
+            label: label,
+            hasCheckedState: true,
+            isChecked: checked,
+            isInMutuallyExclusiveGroup: true,
+            isEnabled: true,
+            hasEnabledState: true,
+            hasTapAction: true,
+          );
+      expect(
+        tester.getSemantics(find.text('A staff member as contact')),
+        radio(label: 'A staff member as contact', checked: false),
+      );
       await tapVisible(tester, find.text('A staff member as contact'));
       expect(
         tester.getSemantics(find.text('A staff member as contact')),
-        matchesSemantics(
-          label: 'A staff member as contact',
-          isButton: true,
-          isSelected: true,
-          hasSelectedState: true,
-          isInMutuallyExclusiveGroup: true,
-          isEnabled: true,
-          hasEnabledState: true,
-          hasTapAction: true,
+        radio(label: 'A staff member as contact', checked: true),
+      );
+      expect(
+        tester.getSemantics(
+          find.text('The company, with you as contact for now'),
+        ),
+        radio(
+          label: 'The company, with you as contact for now · Recommended',
+          checked: false,
         ),
       );
       final selected = tester
@@ -292,5 +308,134 @@ void main() {
       expect(plainOptionLabel(ask, 0), 'The company');
       expect(plainOptionLabel(ask, 1), 'Yes');
     });
+
+    test('matches upper and mixed case keys to their explanation', () {
+      final ask = item(
+        ['ENTITY_PHUC', 'entity_Staff', 'entityLawyer'],
+        '- entity_phuc: the company\n'
+        '- ENTITY-STAFF - a staff member\n'
+        '- entity lawyer: an outside lawyer',
+      );
+      expect(plainOptionLabel(ask, 0), 'The company');
+      expect(plainOptionLabel(ask, 1), 'A staff member');
+      expect(plainOptionLabel(ask, 2), 'An outside lawyer');
+    });
+
+    test('humanizes upper and mixed case keys with no label anywhere', () {
+      final ask = item(
+        ['ENTITY_PHUC', 'entity_Staff', 'Entity-LAWYER', 'entityOwner'],
+        'Pick one.',
+        hub: ['', '', '', ''],
+      );
+      expect(
+        [for (var i = 0; i < 4; i++) plainOptionLabel(ask, i)],
+        ['Entity phuc', 'Entity staff', 'Entity lawyer', 'Entity owner'],
+      );
+    });
+
+    test('never returns a raw key, but leaves words and initialisms', () {
+      for (final key in ['ENTITY_PHUC', 'entity_Phuc', 'a-b', 'NOPE_x']) {
+        final label = plainOptionLabel(item([key], ''), 0);
+        expect(label, isNot(key));
+        expect(label, isNot(contains('_')));
+      }
+      expect(plainOptionLabel(item(['OK'], ''), 0), 'OK');
+      expect(plainOptionLabel(item(['Ship tonight'], ''), 0), 'Ship tonight');
+    });
   });
+
+  group('linkRuns', () {
+    Uri? only(String text) =>
+        linkRuns(text).where((run) => run.uri != null).single.uri;
+
+    test('keeps balanced parentheses inside a link', () {
+      expect(
+        only('See https://en.wikipedia.org/wiki/Privacy_(disambiguation).'),
+        Uri.parse('https://en.wikipedia.org/wiki/Privacy_(disambiguation)'),
+      );
+      expect(
+        only('(see https://en.wikipedia.org/wiki/Privacy_(disambiguation))'),
+        Uri.parse('https://en.wikipedia.org/wiki/Privacy_(disambiguation)'),
+      );
+    });
+
+    test('trims sentence punctuation and a wrapping parenthesis', () {
+      expect(
+        only('Details: https://example.com/privacy-draft.'),
+        Uri.parse('https://example.com/privacy-draft'),
+      );
+      expect(
+        only('Read it (https://example.com/a), then reply!'),
+        Uri.parse('https://example.com/a'),
+      );
+      final runs = linkRuns('Go to https://example.com/x?');
+      expect(runs.last.text, '?');
+    });
+  });
+
+  group('refresh', () {
+    for (final (name, options) in [
+      ('changed', ['Approve', 'Escalate']),
+      ('reordered', ['Defer', 'Approve']),
+      ('removed', ['Approve']),
+    ]) {
+      testWidgets('an unsent selection clears when options are $name', (
+        tester,
+      ) async {
+        final page = await _pumpRefreshable(tester);
+        await tapVisible(tester, find.text('Defer'));
+        expect(sendOptionButton('Defer'), findsOneWidget);
+        for (final hash in ['a', 'b']) {
+          // Same version, then a new one: either way the choice is dropped.
+          page.publish(inboxJson([inboxItem(1, options: options, hash: hash)]));
+          await page.snapshot.refresh();
+          await tester.pumpAndSettle();
+          expect(
+            tester
+                .widgetList<MastermindOptionRow>(
+                  find.byType(MastermindOptionRow),
+                )
+                .where((row) => row.selected),
+            isEmpty,
+          );
+          final send = find.widgetWithText(AppButton, 'Send reply');
+          expect(send, findsOneWidget);
+          expect(tester.widget<AppButton>(send).onPressed, isNull);
+          expect(page.transport.sent, isEmpty);
+          await tapVisible(tester, find.text('Approve'));
+        }
+      });
+    }
+  });
+}
+
+final class _Refreshable {
+  _Refreshable(this.harness, this.transport);
+  final MastermindViewHarness harness;
+  final FakeReplyTransport transport;
+
+  MastermindSnapshotCubit get snapshot => harness.snapshot;
+
+  void publish(Map<String, dynamic> json) =>
+      harness.source.bytes = snapshotBytes(json);
+}
+
+Future<_Refreshable> _pumpRefreshable(WidgetTester tester) async {
+  tester.view
+    ..devicePixelRatio = 1
+    ..physicalSize = const Size(390, 1400)
+    ..padding = const FakeViewPadding(bottom: _dock);
+  addTearDown(tester.view.reset);
+  final transport = FakeReplyTransport();
+  final harness = MastermindViewHarness(
+    source: FakeHubSource(bytes: snapshotBytes(inboxJson([inboxItem(1)]))),
+    replies: repliesCubit(transport: transport),
+  );
+  addTearDown(harness.dispose);
+  await harness.setAccess(TestAccess.enabled);
+  await tester.pumpApp(
+    harness.wrap(MastermindItemPage(itemId: inboxItemId(1))),
+  );
+  await tester.pumpAndSettle();
+  return _Refreshable(harness, transport);
 }

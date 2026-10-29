@@ -3,25 +3,43 @@ import 'package:flutter/material.dart';
 import 'package:mobile/core/router/mobile_link_launcher.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 
-final _url = RegExp(r'https?://[^\s<>()"“”]+', caseSensitive: false);
+final _url = RegExp(r'https?://[^\s<>"“”]+', caseSensitive: false);
 
-/// Splits [text] into plain runs and http(s) URLs. Trailing sentence
-/// punctuation stays outside the link.
+/// Sentence punctuation that ends prose, not the link it follows.
+final _trailingProse = RegExp(r"[.,;:!?'’]+$");
+
+/// [raw] without the prose around it: trailing sentence punctuation, and a
+/// closing parenthesis that has no opening one inside the link (the link was
+/// written in parentheses). Balanced parentheses, as in
+/// `https://en.wikipedia.org/wiki/Privacy_(disambiguation)`, stay.
+String _trimLink(String raw) {
+  var link = raw;
+  while (true) {
+    final trimmed = link.replaceFirst(_trailingProse, '');
+    final opens = '('.allMatches(trimmed).length;
+    final closes = ')'.allMatches(trimmed).length;
+    final next = trimmed.endsWith(')') && closes > opens
+        ? trimmed.substring(0, trimmed.length - 1)
+        : trimmed;
+    if (next == link) return link;
+    link = next;
+  }
+}
+
+/// Splits [text] into plain runs and http(s) URLs. Prose punctuation and
+/// unbalanced closing parentheses stay outside the link.
 List<({String text, Uri? uri})> linkRuns(String text) {
   final runs = <({String text, Uri? uri})>[];
   var start = 0;
   for (final match in _url.allMatches(text)) {
-    var raw = match.group(0)!;
-    final trimmed = raw.replaceFirst(RegExp(r'[.,;:!?’]+$'), '');
-    final end = match.start + trimmed.length;
-    raw = trimmed;
-    final uri = Uri.tryParse(raw);
+    final link = _trimLink(match.group(0)!);
+    final uri = Uri.tryParse(link);
     if (uri == null || uri.host.isEmpty) continue;
     if (match.start > start) {
       runs.add((text: text.substring(start, match.start), uri: null));
     }
-    runs.add((text: raw, uri: uri));
-    start = end;
+    runs.add((text: link, uri: uri));
+    start = match.start + link.length;
   }
   if (start < text.length) runs.add((text: text.substring(start), uri: null));
   return runs;

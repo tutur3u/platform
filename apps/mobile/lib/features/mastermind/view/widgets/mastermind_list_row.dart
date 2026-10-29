@@ -36,7 +36,7 @@ class MastermindListRow extends StatelessWidget {
 /// One choice of an ask, as a full-width tappable row: a radio glyph, the
 /// plain-language label and, for the recommended choice, a star and the word
 /// "Recommended" in the accent colour (never a border, never colour alone).
-/// Announced as a selectable item of a mutually exclusive group.
+/// Announced as a radio button: checked or unchecked, in one exclusive group.
 class MastermindOptionRow extends StatelessWidget {
   const MastermindOptionRow({
     required this.label,
@@ -58,9 +58,9 @@ class MastermindOptionRow extends StatelessWidget {
     final l10n = context.l10n;
     final enabled = onTap != null;
     final mark = selected ? c.primary : c.mutedForeground;
+    // A radio: checked or unchecked within one mutually exclusive group.
     return Semantics(
-      button: true,
-      selected: selected,
+      checked: selected,
       inMutuallyExclusiveGroup: true,
       enabled: enabled,
       label: recommended ? l10n.mastermindOptionRecommended(label) : label,
