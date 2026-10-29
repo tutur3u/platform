@@ -4,13 +4,19 @@ import {
   type ImmediateNotificationsEnv,
   processImmediateNotifications,
 } from './immediate-notifications';
-import { CRON_TRIGGERS, IMMEDIATE_NOTIFICATIONS_CRON } from './jobs';
+import {
+  CRON_TRIGGERS,
+  IMMEDIATE_NOTIFICATIONS_CRON,
+  scheduleSlot,
+} from './jobs';
 import type { Ledger } from './ledger';
 import { CronLedger } from './ledger-object';
+import { handleWebGate, type WebGateEnv } from './web-gate-http';
 
 export { CronLedger, processImmediateNotifications };
 
-type Env = DispatchEnv &
+type Env = WebGateEnv &
+  DispatchEnv &
   ImmediateNotificationsEnv & {
     CRON_CONTROL_OPERATOR_TOKEN?: string;
     CRON_LEDGER: DurableObjectNamespace<CronLedger>;
@@ -37,6 +43,12 @@ export default {
         { headers: { 'Cache-Control': 'no-store' } }
       );
     }
+    const webGate = await handleWebGate(request, env, (job, action) =>
+      env.CRON_LEDGER.get(
+        env.CRON_LEDGER.idFromName('cron-control-ledger')
+      ).webCron(job, action)
+    );
+    if (webGate) return webGate;
     const control = await handleControlRequest(request, env, ledgerFor(env));
     if (control) return control;
     return Response.json({ message: 'Not found' }, { status: 404 });
@@ -57,7 +69,11 @@ export default {
       }),
     ]);
     if (jobs.status === 'fulfilled' && jobs.value.length > 0)
-      console.log('Cron Control jobs completed', jobs.value);
+      console.log('Cron Control jobs completed', {
+        cron: controller.cron,
+        slot: scheduleSlot(controller.scheduledTime),
+        jobs: jobs.value,
+      });
     if (jobs.status === 'rejected')
       console.error('Cron Control dispatch failed', jobs.reason);
     if (immediate.status === 'rejected') throw immediate.reason;

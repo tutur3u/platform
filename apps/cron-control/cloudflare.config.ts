@@ -41,6 +41,7 @@ export default defineConfig({
         'database-cron-history-retention'
       ),
       CRON_CONTROL_WORKER_PROCESSORS: bindings.text(''),
+      CRON_CONTROL_WEB_MODE: bindings.text('off'),
       SUPABASE_URL: bindings.secret(),
       SUPABASE_SECRET_KEY: bindings.secret(),
       CRON_CONTROL_DELIVERY_TOKEN: bindings.secret(),

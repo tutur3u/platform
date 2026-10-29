@@ -1,0 +1,176 @@
+---
+title: "Web Cloudflare migration"
+description: "Move web scheduling to Cron Control behind a default-off gate, before any frontend cutover."
+---
+
+## Scope
+
+Web goes first for the next migration step: its five Vercel schedules move to the
+existing `apps/cron-control` Worker. This change prepares dormant scheduling and
+keeps the existing authenticated Next.js processors and Supabase job state.
+It does not change canonical web traffic, deploy a Worker, enable a job, or remove
+any Vercel cron. The paused `apps/tanstack-web` runtime stays paused.
+
+## Cron migration
+
+| Job id | Existing endpoint suffix under `/api/cron/` | UTC schedule |
+| --- | --- | --- |
+| `web-notification-batches` | `process-notification-batches` | `*/15 * * * *` |
+| `web-post-email-queue` | `process-post-email-queue` | `*/30 * * * *` |
+| `web-report-automation` | `process-report-automation` | `*/15 * * * *` |
+| `web-topic-announcements` | `process-topic-announcement-queue` | `*/15 * * * *` |
+| `web-deadline-reminders` | `tasks/deadline-reminders` | `*/5 * * * *` |
+
+`CRON_CONTROL_WEB_MODE` defaults to `off`, in addition to the existing per-job
+`CRON_CONTROL_ENABLED_JOBS` allowlist. `shadow` reports due selected jobs as
+skipped with reason `shadow`; it does no ledger, database or processor work.
+`active` permits one authenticated HTTP attempt per job and slot, with the
+existing timeout and five-failed-slot circuit breaker. There are no web retries,
+Queue redeliveries or self-rearming alarms. Vercel entries remain unchanged.
+
+The Worker uses `WEB_ORIGIN` and secret `CRON_SECRET_WEB`, which matches web's
+existing `CRON_SECRET`. Provision secrets only during an authorized rollout;
+this change does not add them to the deployment workflow. Requests include the
+scheduled slot in `X-Tuturuuu-Cron-Slot`, the existing user agent, and a bearer
+token. Redirects are refused. The slot alone grants no authority.
+
+The web fence compares the bearer token without a content-dependent early exit,
+using the same byte comparison as Cron Control's operator endpoint. It preserves
+each handler's secret selection: post-email, report automation and topic
+announcements fall back to `VERCEL_CRON_SECRET` only when `CRON_SECRET` is absent.
+Notification batches and deadline reminders require `CRON_SECRET`. Configure
+`CRON_SECRET_WEB` to the selected secret; an empty `CRON_SECRET` does not activate
+the fallback.
+
+### Processor timeout budgets
+
+| Job | Dispatch timeout | Existing processor budget |
+| --- | --- | --- |
+| `web-notification-batches` | 310 seconds | `batched-helpers.ts` sets a 165-second processing deadline; Cloudflare selects at most 25 batches and permits 20 shared page reads. |
+| `web-post-email-queue` | 310 seconds | The route gives `processPostEmailQueue` 165 seconds, after cleanup, reenqueuing and a reconciliation scan with a 10-second admission budget; fallback pagination permits 20 pages. |
+| `web-report-automation` | 120 seconds | At most 25 due schedules with 1,000-entry catalog/group guards, eight generation claims at concurrency three, and five email batches of 20 at concurrency four. The email drain stops admitting batches after 30 seconds but settles an admitted batch. |
+| `web-topic-announcements` | 120 seconds | At most 25 announcement claims per invocation, processed sequentially; recipient delivery has no whole-invocation elapsed deadline. |
+| `web-deadline-reminders` | 120 seconds | At most 20 combined settings/task pages, 500 tasks and 1,000 watcher entries; reminder creation has no whole-invocation elapsed deadline. |
+
+Both 165-second processors need the long timeout; neither fits the 120-second
+default. The remaining three jobs have work-count bounds, not proof that every
+invocation finishes within 120 seconds. Before enabling them, measure production
+database/provider latency with representative fan-out and verify completion
+within the dispatch window. A dispatch timeout cannot cancel server-side work;
+it leaves an unknown outcome and the shared gate retains the original operation
+for reconciliation. Each gate call has a separate 10-second deadline. Catalog
+timeouts and the additional 30-second dispatch lease margin are covered by
+`apps/cron-control/src/web-crons.test.ts`; secret precedence, per-job fallback and
+invalid bearers are covered by `apps/web/src/lib/cron/web-cron-fence.test.ts`.
+
+### Shared write lease and durable stop
+
+Web's five GET processors use `withWebCronFence` before job work. Without
+`WEB_CRON_GATE_ORIGIN`, Vercel retains its current behavior and Cloudflare
+requests are refused. Once configured, **both schedulers** must acquire the
+same per-job SQLite execution gate in Cron Control's existing `CronLedger`.
+Set `CRON_CONTROL_WEB_GATE_TOKEN` on web and Cron Control to the same separately
+provisioned secret, at least 32 characters. The Worker reads this optional secret
+only for `/web-crons/<job-id>`; it is intentionally not a required deployment
+binding while the migration is dormant. Use an HTTPS `WEB_CRON_GATE_ORIGIN`.
+Gate calls have a 10-second deadline and no retry.
+
+Each gate defaults to owner `vercel`. It persists the last admitted slot and an
+active operation id **before** the processor runs. Concurrent requests, duplicate
+or older slots, stopped gates and requests from the other owner cannot write.
+The web server generates a fresh operation id once and uses it for completion.
+A failed request or lost acknowledgement retains an unresolved operation; lease
+expiry never grants replay permission. A successful completion releases the
+active run but preserves the slot. Completed slots survive owner changes and
+Worker restarts. No database migration or production write is part of preparation.
+
+Operator actions use `CRON_CONTROL_OPERATOR_TOKEN` and POST JSON to
+`/control/web-crons/<job-id>`:
+
+| JSON action | Effect |
+| --- | --- |
+| `{"kind":"status"}` | Inspect owner, stop, last slot and active operation |
+| `{"kind":"stop"}` | Persist stop; no subsequent invocation can start |
+| `{"kind":"owner","owner":"cloudflare"}` | Change owner only with no unresolved operation |
+| `{"kind":"owner","owner":"vercel"}` | Restore Vercel ownership under the same rule |
+| `{"kind":"resume"}` | Clear stop only with no unresolved operation; preserve the slot |
+| `{"kind":"resolve","id":"<original-operation-id>"}` | Clear the matching active operation only while stopped and after its 15-minute drain deadline |
+
+Stop prevents new processor starts; it cannot retract an email or cancel work
+already admitted. A normal in-flight run can complete while stopped. Before
+`resolve`, confirm the old invocation has ended and reconcile its original job
+claims and provider outcome. Resolution is an explicit operator acknowledgement,
+not an automatic timeout retry. Never clear an unknown email send just to unlock
+a job. Keep both the gate and dispatch ledger stopped until reconciliation ends.
+
+### Work and operation bounds
+
+Cloudflare invokes one existing processor per selected job per slot, at most four
+concurrently. A successful guarded invocation makes two gate calls (acquire and
+complete); a rejected invocation makes one. The scheduled ledger adds one claim
+and one completion write per admitted dispatch. A stopped or duplicate gate makes
+no gate-state write. Disabled and shadow web jobs make zero gate/processor calls.
+Repeated failure stops dispatch after five slots, including across restarts.
+These bounds do not claim a dollar saving or bound hosted ingress abuse.
+
+Cloudflare requests also have an invocation-scoped work budget. Notification
+batches select at most 25 pending batches; shared notification pagination permits
+20 page reads per invocation and throws before the next read. Remaining pending
+batches keep their existing status for the next scheduled slot. Deadline reminders
+allow 20 combined settings/task page reads, at most 500 tasks and 1,000 watcher
+entries, checked before reminder creation. Supported intervals are deduplicated
+by the existing processor. Exceeding a bound fails visibly and retains the active
+operation for investigation; it does not silently truncate reminders. Vercel's
+current pagination behavior is unchanged.
+
+Post-email fallback pagination shares the 20-page budget. Post emails retain
+the existing clamped drain/send limits and 165-second processing budget; topic announcements retain their 25-row claim limit; report automation
+reconciles at most 25 due schedules per invocation (later schedules stay due),
+with 1,000-entry catalog and group guards, and retains its eight-run claim and
+finite email-drain batches. Their business claims,
+provider reconciliation and terminal statuses remain authoritative. The shared
+execution gate supplies exclusive scheduling for deadline reminders, whose receipt
+check and notification creation are still separate RPCs. For Cloudflare, a
+creation error, missing notification id or receipt persistence error fails the
+invocation and retains its original execution lease for reconciliation. Do not remove the gate
+or enable another reminder scheduler until those writes have an atomic claim.
+
+### Authorized handover and rollback
+
+1. Deploy the dormant Worker and the five guarded web adapters under a separate
+   rollout authorization. Configure the shared gate secret and HTTPS origin on
+   web while the gate owner remains Vercel. Drain invocations from the earlier
+   unguarded deployment for at least the platform's maximum invocation lifetime.
+   Verify Vercel acquires/completes leases and that a duplicate slot is refused.
+2. Select the five ids and set mode `shadow`. Compare the due job ids and slots
+   against Vercel execution logs over each cadence, including the 30-minute job.
+   Shadow compares scheduling only; processor result parity needs isolated fixtures
+   and later authorized active acceptance. Confirm no Cloudflare processor writes.
+3. For one job at a time, stop its execution gate and its dispatch ledger via
+   `/control/jobs/<job-id>/stop`. Drain/reconcile its active operation. Verify
+   `active: null`; change gate owner to `cloudflare`. Keep the durable gate wired
+   on web throughout. Vercel now fails the owner check even while still scheduled.
+4. Resume the execution gate, set mode `active` and resume that job's dispatch
+   ledger. Observe one terminal processor result and duplicate rejection. Only
+   after that acceptance, disable that Vercel cron in a separately reviewed change
+   and shrink the backend ownership allowlist. Do not run `sync-web-crons` against
+   the stale retired Docker catalog.
+5. To roll back, stop both fences, drain/reconcile the active operation, change
+   gate owner to `vercel`, turn Cloudflare mode off (or deselect the job), restore
+   the Vercel schedule if removed, then resume the gate. Keep its origin and
+   secret configured. Clearing the gate environment is not a safe rollback.
+
+Retain exact source/deployment ids, per-job slots, invocation/claim counts, provider
+reconciliation, failure-stop evidence and rollback observations in the private
+cutover receipt. This PR supplies source and remote validation, not hosted acceptance.
+
+## Regression evidence
+
+`apps/cron-control/src/web-crons.test.ts` pins Vercel/catalog/adapter schedule
+parity, dormant/shadow operation counts, duplicate dispatch, failure budgets and
+stop races. `web-gate.test.ts` covers owner exclusion, retained UNKNOWN operations,
+reconciliation identity and durable stop decisions. The existing Worker runtime
+harness now repeats lease, stop, owner and duplicate checks across real workerd
+restarts backed by local SQLite. Web's `web-cron-fence.test.ts` covers admission,
+authentication, network/completion failure and work-budget boundaries. Run Worker
+types, focused tests and `bun check:changed` on an admitted validation host.

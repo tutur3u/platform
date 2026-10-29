@@ -7,6 +7,12 @@ import {
   type LedgerStore,
   type PendingClaim,
 } from './ledger';
+import {
+  type WebGateAction,
+  type WebGateState,
+  type WebJobId,
+  webGateAction,
+} from './web-gate';
 
 // One SQLite row per job. Each RPC runs synchronously against storage, so a
 // claim's read and write cannot interleave with another request.
@@ -47,6 +53,36 @@ export class CronLedger extends DurableObject<unknown> {
   constructor(ctx: DurableObjectState, env: unknown) {
     super(ctx, env);
     this.#core = new LedgerCore(sqlStore(ctx.storage.sql));
+  }
+
+  webCron(job: WebJobId, action: WebGateAction) {
+    const sql = this.ctx.storage.sql;
+    sql.exec(
+      'CREATE TABLE IF NOT EXISTS web_cron_gate (job_id TEXT PRIMARY KEY, state TEXT NOT NULL)'
+    );
+    return webGateAction(
+      {
+        read: (id) => {
+          const row = sql
+            .exec<{ state: string }>(
+              'SELECT state FROM web_cron_gate WHERE job_id = ?',
+              id
+            )
+            .toArray()[0];
+          return row ? (JSON.parse(row.state) as WebGateState) : null;
+        },
+        write: (id, state) => {
+          sql.exec(
+            'INSERT INTO web_cron_gate VALUES (?, ?) ON CONFLICT(job_id) DO UPDATE SET state = excluded.state',
+            id,
+            JSON.stringify(state)
+          );
+        },
+      },
+      job,
+      action,
+      Date.now()
+    );
   }
 
   addPendingWork(jobId: string, items: string[]) {
