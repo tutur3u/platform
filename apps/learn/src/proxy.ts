@@ -212,7 +212,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    const response = intlMiddleware(request);
+    const response = withInviteReferrerPolicy(request, intlMiddleware(request));
     if (appSessionRefresh.ok) {
       propagateAuthCookies(appSessionRefresh.response, response);
     }

@@ -41,25 +41,33 @@ export async function findOpenParentLinks(
 }
 
 /**
- * Every link (any status, including revoked) for the parent and student that
- * was created at or after `since`. Used to tell an interrupted acceptance
- * apart from one an admin has since revoked.
+ * True once an acceptance of the invite (accepted at `acceptedAt`) has been
+ * carried out for this parent and student, whatever has happened to the link
+ * since. Only timestamps written by this app from one clock are compared:
+ * activation stamps `accepted_at` with the invite's value, and admin revoke
+ * and re-open keep `accepted_at`/`revoked_at` as history. Database-generated
+ * columns such as `created_at` are never used, so clock skew cannot open a gap.
  */
-export async function findParentLinksCreatedSince(
+export async function hasCompletedInviteAcceptance(
   sbAdmin: TypedSupabaseClient,
   { parentUserId, studentWorkspaceUserId, wsId }: ParentLinkKey,
-  since: string
+  acceptedAt: string
 ) {
   const { data, error } = await sbAdmin
     .from('tulearn_parent_student_links')
-    .select('id')
+    .select('accepted_at, revoked_at')
     .eq('ws_id', wsId)
     .eq('parent_user_id', parentUserId)
-    .eq('student_workspace_user_id', studentWorkspaceUserId)
-    .gte('created_at', since);
+    .eq('student_workspace_user_id', studentWorkspaceUserId);
 
   if (error) throw error;
-  return (data ?? []) as Pick<ParentLinkRow, 'id'>[];
+
+  const threshold = Date.parse(acceptedAt);
+  const reached = (value: string | null) =>
+    value !== null && Date.parse(value) >= threshold;
+  return (data ?? []).some(
+    (row) => reached(row.accepted_at) || reached(row.revoked_at)
+  );
 }
 
 export async function getBoundStudentPlatformUserId(
@@ -96,11 +104,14 @@ export async function hasVerifiedStudentBinding(
 async function activatePendingLink(
   sbAdmin: TypedSupabaseClient,
   {
+    acceptedAt,
     linkId,
     parentUserId,
     studentPlatformUserId,
     wsId,
   }: {
+    /** Defaults to the current time; invites pass their own acceptance time. */
+    acceptedAt?: string;
     linkId: string;
     parentUserId: string;
     /** Re-pins the link to the student's current binding when provided. */
@@ -114,7 +125,7 @@ async function activatePendingLink(
   return sbAdmin
     .from('tulearn_parent_student_links')
     .update({
-      accepted_at: now,
+      accepted_at: acceptedAt ?? now,
       revoked_at: null,
       status: 'active',
       ...(studentPlatformUserId
@@ -198,20 +209,20 @@ export async function acceptPendingParentLink(
 /**
  * Grants access from a consenting parent (verified invite): activates their
  * pending link for the student (re-pinned to the student's current binding),
- * or creates an active one. With `activatePending: false` an existing pending
- * link is left untouched and a fresh active link is inserted instead.
+ * or creates an active one. `acceptedAt` stamps the link with the invite's own
+ * acceptance time so an interrupted acceptance can be recognised as complete.
  */
 export async function grantParentLink(
   sbAdmin: TypedSupabaseClient,
   {
-    activatePending = true,
+    acceptedAt,
     createdBy,
     parentUserId,
     studentPlatformUserId,
     studentWorkspaceUserId,
     wsId,
   }: ParentLinkKey & {
-    activatePending?: boolean;
+    acceptedAt: string;
     createdBy: string | null;
     studentPlatformUserId: string;
   }
@@ -220,8 +231,9 @@ export async function grantParentLink(
   const open = await findOpenParentLinks(sbAdmin, key);
   if (open.active) return open.active;
 
-  if (open.pending && activatePending) {
+  if (open.pending) {
     const { data, error } = await activatePendingLink(sbAdmin, {
+      acceptedAt,
       linkId: open.pending.id,
       parentUserId,
       studentPlatformUserId,
@@ -230,11 +242,10 @@ export async function grantParentLink(
     if (error && error.code !== PG_UNIQUE_VIOLATION) throw error;
     if (data) return data as ParentLinkRow;
   } else {
-    const now = new Date().toISOString();
     const { data, error } = await sbAdmin
       .from('tulearn_parent_student_links')
       .insert({
-        accepted_at: now,
+        accepted_at: acceptedAt,
         created_by: createdBy,
         parent_user_id: parentUserId,
         status: 'active',

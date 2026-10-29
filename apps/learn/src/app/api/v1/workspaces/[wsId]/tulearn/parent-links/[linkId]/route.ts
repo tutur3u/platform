@@ -78,19 +78,33 @@ export const PATCH = withSessionAuth<Params>(
         const { data: parent, error: parentError } =
           await sbAdmin.auth.admin.getUserById(current.parent_user_id);
         if (parentError) throw parentError;
-        if (parent.user?.email) {
-          await revokePendingParentInvites(sbAdmin, {
-            parentEmail: parent.user.email,
-            studentWorkspaceUserId: current.student_workspace_user_id,
-            wsId: normalizedWsId,
-          });
+        const invitesRevoked = parent.user?.email
+          ? await revokePendingParentInvites(sbAdmin, {
+              parentEmail: parent.user.email,
+              studentWorkspaceUserId: current.student_workspace_user_id,
+              wsId: normalizedWsId,
+            })
+          : true;
+        if (!invitesRevoked) {
+          // The link is revoked, but a pending invite could still restore it.
+          // Revoking again is idempotent, so the caller can simply retry.
+          return NextResponse.json(
+            {
+              link: revoked,
+              message:
+                'Link revoked, but pending invites could not be revoked; retry',
+            },
+            { status: 500 }
+          );
         }
 
         return NextResponse.json({ link: revoked });
       }
 
       // Re-consent: an admin can reopen a revoked link but only the parent can
-      // make it active again. Pending/active links are left untouched.
+      // make it active again. Pending/active links are left untouched. The
+      // accepted_at/revoked_at history is kept so a replayed invite token can
+      // still tell its acceptance was already carried out.
       if (current.status !== 'revoked') {
         return NextResponse.json({ link: current });
       }
@@ -109,12 +123,7 @@ export const PATCH = withSessionAuth<Params>(
 
       const { data, error } = await sbAdmin
         .from('tulearn_parent_student_links')
-        .update({
-          accepted_at: null,
-          revoked_at: null,
-          status: 'pending',
-          updated_at: now,
-        })
+        .update({ status: 'pending', updated_at: now })
         .eq('id', linkId)
         .eq('ws_id', normalizedWsId)
         .eq('status', 'revoked')

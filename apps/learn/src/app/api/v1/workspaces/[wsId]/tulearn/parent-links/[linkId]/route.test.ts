@@ -39,7 +39,8 @@ const link = (overrides: Record<string, unknown>) => ({
 function patch(
   rows: Record<string, unknown>[],
   status: string,
-  invites: Record<string, unknown>[] = []
+  invites: Record<string, unknown>[] = [],
+  { failInviteRevoke = false } = {}
 ) {
   const admin = createFakeSupabase(
     { tulearn_parent_invites: invites, tulearn_parent_student_links: rows },
@@ -53,6 +54,20 @@ function patch(
       unique: { tulearn_parent_student_links: activeLinkUnique },
     }
   );
+  if (failInviteRevoke) {
+    const from = admin.from;
+    admin.from = (table: string) => {
+      const query = from(table);
+      if (table === 'tulearn_parent_invites') {
+        query.update = () => ({
+          in: () => ({
+            eq: async () => ({ data: null, error: { message: 'boom' } }),
+          }),
+        });
+      }
+      return query;
+    };
+  }
   state.admin = admin;
   return {
     admin,
@@ -74,9 +89,11 @@ it('sends a revoked link back to pending for re-consent, never active', async ()
   const res = await response;
 
   expect(res.status).toBe(200);
+  // The accepted_at/revoked_at history is kept so a replayed invite token
+  // can tell its acceptance was already carried out.
   expect((await res.json()).link).toMatchObject({
-    accepted_at: null,
-    revoked_at: null,
+    accepted_at: '2026-01-01T00:00:00.000Z',
+    revoked_at: '2026-02-01T00:00:00.000Z',
     status: 'pending',
   });
   expect(admin.rows('tulearn_parent_student_links')[0]?.status).toBe('pending');
@@ -142,4 +159,26 @@ it('revokes pending invites for the same parent and learner when revoking a link
     'other-student': 'pending',
     'same-parent': 'revoked',
   });
+});
+
+it('reports a failure to revoke pending invites so the caller can retry', async () => {
+  const { admin, response } = patch(
+    [link({ status: 'active' })],
+    'revoked',
+    [
+      {
+        id: 'invite',
+        parent_email: 'parent@example.com',
+        status: 'pending',
+        student_workspace_user_id: 'student',
+        ws_id: 'workspace-a',
+      },
+    ],
+    { failInviteRevoke: true }
+  );
+  const res = await response;
+
+  expect(res.status).toBe(500);
+  expect((await res.json()).link).toMatchObject({ status: 'revoked' });
+  expect(admin.rows('tulearn_parent_student_links')[0]?.status).toBe('revoked');
 });

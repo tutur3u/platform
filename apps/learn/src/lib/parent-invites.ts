@@ -6,9 +6,9 @@ import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { LEARN_APP_URL } from '@/constants/common';
 import {
   findOpenParentLinks,
-  findParentLinksCreatedSince,
   getBoundStudentPlatformUserId,
   grantParentLink,
+  hasCompletedInviteAcceptance,
   type ParentLinkRow,
 } from './parent-links';
 
@@ -83,8 +83,9 @@ function buildParentInviteEmail(acceptUrl: string) {
 
 /**
  * Revokes pending invites, either by id or every pending invite for the
- * student addressed to `parentEmail`. Failures are logged, not thrown, so a
- * revocation hiccup never undoes the action that triggered it.
+ * student addressed to `parentEmail`. Failures are logged and reported as
+ * `false`, not thrown, so a revocation hiccup never undoes the action that
+ * triggered it and callers can surface it.
  */
 export async function revokePendingParentInvites(
   sbAdmin: TypedSupabaseClient,
@@ -96,7 +97,7 @@ export async function revokePendingParentInvites(
         studentWorkspaceUserId: string;
         wsId: string;
       }
-) {
+): Promise<boolean> {
   let ids: string[];
   if ('ids' in target) {
     ids = target.ids;
@@ -109,7 +110,7 @@ export async function revokePendingParentInvites(
       .eq('status', 'pending');
     if (error) {
       console.error('Failed to list pending parent invites', error);
-      return;
+      return false;
     }
     ids = (data ?? [])
       .filter(
@@ -120,7 +121,7 @@ export async function revokePendingParentInvites(
       .map((pending) => pending.id);
   }
 
-  if (!ids.length) return;
+  if (!ids.length) return true;
 
   const now = new Date().toISOString();
   const { error } = await sbAdmin
@@ -129,6 +130,7 @@ export async function revokePendingParentInvites(
     .in('id', ids)
     .eq('status', 'pending');
   if (error) console.error('Failed to revoke parent invites', error);
+  return !error;
 }
 
 /**
@@ -233,10 +235,12 @@ export type AcceptParentInviteResult =
     };
 
 /**
- * Resumes an invite this parent already accepted. It only ever returns an
- * ACTIVE link: it never activates a pending link and never re-grants after an
- * admin revoked access. The one repair is an interrupted acceptance, where no
- * link of any status has been created since the invite was accepted.
+ * Resumes an invite this parent already accepted. It returns an existing
+ * ACTIVE link, and never grants again once the acceptance was carried out
+ * (see `hasCompletedInviteAcceptance`), so an admin revoke or re-open sticks.
+ * The one repair is an interrupted acceptance, where the claim succeeded but
+ * no link carries the invite's acceptance time yet: it completes the grant
+ * with that same time, so a repeat is recognised as complete.
  */
 async function resumeAcceptedParentInvite(
   sbAdmin: TypedSupabaseClient,
@@ -258,13 +262,11 @@ async function resumeAcceptedParentInvite(
 
   if (!invite.accepted_at) return { ok: false, reason: 'unavailable' };
 
-  const created = await findParentLinksCreatedSince(
-    sbAdmin,
-    key,
-    invite.accepted_at
-  );
-  if (created.length) {
-    // A concurrent submit may have granted the link since the read above.
+  // Once any link for this parent and student carries this acceptance (or a
+  // later revocation), the acceptance was carried out and access is governed
+  // by admins and the parent, not by the token. A concurrent submit may also
+  // have granted the link since the read above.
+  if (await hasCompletedInviteAcceptance(sbAdmin, key, invite.accepted_at)) {
     const { active: granted } = await findOpenParentLinks(sbAdmin, key);
     return granted
       ? { link: granted, ok: true }
@@ -278,7 +280,7 @@ async function resumeAcceptedParentInvite(
   if (!studentPlatformUserId) return { ok: false, reason: 'student_unbound' };
 
   const link = await grantParentLink(sbAdmin, {
-    activatePending: false,
+    acceptedAt: invite.accepted_at,
     createdBy: invite.invited_by,
     parentUserId: userId,
     studentPlatformUserId,
@@ -380,6 +382,7 @@ export async function acceptParentInvite(
   }
 
   const link = await grantParentLink(sbAdmin, {
+    acceptedAt: now,
     createdBy: invite.invited_by,
     parentUserId: userId,
     studentPlatformUserId,

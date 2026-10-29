@@ -252,6 +252,112 @@ it('does not restore access an admin revoked when the same token is replayed', a
   expect(links.some((row) => row.status === 'active')).toBe(false);
 });
 
+const stagedLink = (createdAt: string) => ({
+  accepted_at: null,
+  created_at: createdAt,
+  id: 'staff-pending',
+  parent_user_id: 'parent',
+  revoked_at: null,
+  status: 'pending',
+  student_platform_user_id: 'student-platform',
+  student_workspace_user_id: 'student-ws',
+  ws_id: 'workspace-a',
+});
+
+// created_at is written by the database clock; neither an earlier nor a later
+// value than the app clock may reopen a revoked acceptance.
+it.each([
+  ['before', new Date(Date.now() - 24 * 3600_000).toISOString()],
+  ['after', new Date(Date.now() + 24 * 3600_000).toISOString()],
+])(
+  'does not mint a new link after a staff-pending link was activated then revoked (created_at %s the app clock)',
+  async (_label, createdAt) => {
+    const admin = setup({ links: [stagedLink(createdAt)] });
+    const first = await (await accept()).json();
+
+    expect(first.link).toMatchObject({ id: 'staff-pending', status: 'active' });
+    expect(first.link.accepted_at).toBe(
+      admin.rows('tulearn_parent_invites')[0]?.accepted_at
+    );
+
+    expect((await patchLink('staff-pending', 'revoked')).status).toBe(200);
+    expect((await accept()).status).toBe(410);
+
+    const links = admin.rows('tulearn_parent_student_links');
+    expect(links).toHaveLength(1);
+    expect(links[0]?.status).toBe('revoked');
+  }
+);
+
+it('does not activate a staff-pending link an admin revoked after acceptance and re-opened', async () => {
+  const admin = setup({
+    links: [stagedLink(new Date(Date.now() - 3600_000).toISOString())],
+  });
+  await accept();
+  await patchLink('staff-pending', 'revoked');
+  await patchLink('staff-pending', 'pending');
+
+  expect((await accept()).status).toBe(410);
+  const links = admin.rows('tulearn_parent_student_links');
+  expect(links).toHaveLength(1);
+  expect(links[0]?.status).toBe('pending');
+});
+
+it('completes an interrupted acceptance by activating the staff-pending link with the invite acceptance time', async () => {
+  const acceptedAt = new Date(Date.now() - 1000).toISOString();
+  const admin = setup({
+    invites: [
+      invite({
+        accepted_at: acceptedAt,
+        parent_user_id: 'parent',
+        status: 'accepted',
+      }),
+    ],
+    links: [stagedLink(new Date(Date.now() - 3600_000).toISOString())],
+  });
+
+  expect((await accept()).status).toBe(200);
+  const links = admin.rows('tulearn_parent_student_links');
+  expect(links).toHaveLength(1);
+  expect(links[0]).toMatchObject({
+    accepted_at: acceptedAt,
+    id: 'staff-pending',
+    status: 'active',
+  });
+});
+
+it('stamps a repaired link with the invite acceptance time so a revoked repair is not repeated', async () => {
+  const acceptedAt = new Date(Date.now() - 1000).toISOString();
+  const admin = setup({
+    invites: [
+      invite({
+        accepted_at: acceptedAt,
+        parent_user_id: 'parent',
+        status: 'accepted',
+      }),
+    ],
+  });
+
+  const repaired = await (await accept()).json();
+  expect(repaired.link.accepted_at).toBe(acceptedAt);
+
+  await patchLink(repaired.link.id, 'revoked');
+  expect((await accept()).status).toBe(410);
+  expect(admin.rows('tulearn_parent_student_links')).toHaveLength(1);
+});
+
+it('leaves no pending link beside the active one when a staff-pending link meets a concurrent double submit', async () => {
+  const admin = setup({
+    links: [stagedLink(new Date(Date.now() - 3600_000).toISOString())],
+  });
+  const responses = await Promise.all([accept(), accept()]);
+
+  expect(responses.map((response) => response.status)).toEqual([200, 200]);
+  const links = admin.rows('tulearn_parent_student_links');
+  expect(links).toHaveLength(1);
+  expect(links[0]).toMatchObject({ id: 'staff-pending', status: 'active' });
+});
+
 it('does not activate a link an admin reopened as pending when the token is replayed', async () => {
   const admin = setup();
   const first = await (await accept()).json();
