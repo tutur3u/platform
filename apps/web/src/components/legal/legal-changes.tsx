@@ -28,16 +28,22 @@ export function LegalChanges({
       : text;
   return (
     <main className="mx-auto max-w-4xl space-y-8 px-6 py-16">
+      {full && (
+        <header>
+          <h1>{copy.fullTitle}</h1>
+          <p>{copy.notInEffect}</p>
+        </header>
+      )}
       {full
         ? kinds.map((kind) => {
             const document = getProposedLegalDocument(kind, locale);
             return (
               <article key={kind} id={kind} className="space-y-4">
                 <p>{copy.proposed}</p>
-                <h1>
+                <h2>
                   {document.title} {document.highlightedWord}
-                </h1>
-                <h2>{document.summaryTitle}</h2>
+                </h2>
+                <h3>{document.summaryTitle}</h3>
                 <p>{document.summaryDescription}</p>
                 <dl>
                   {document.summaryRows.map((row) => (
@@ -49,10 +55,18 @@ export function LegalChanges({
                 </dl>
                 {document.sections.map((section) => (
                   <section key={section.title}>
-                    <h2>{section.title}</h2>
+                    <h3>{section.title}</h3>
                     <LegalMarkdown>{section.content}</LegalMarkdown>
                   </section>
                 ))}
+                <footer>
+                  <p>{document.footer}</p>
+                  <a
+                    href={`${locale === 'vi' ? '/vi' : ''}/${['dpa', 'sla', 'subprocessors'].includes(kind) ? 'legal/' : ''}${kind}`}
+                  >
+                    {copy.currentVersion}
+                  </a>
+                </footer>
               </article>
             );
           })

@@ -1,4 +1,11 @@
+// @vitest-environment jsdom
+
 import { createMemoryHistory } from '@tanstack/react-router';
+import {
+  getLegalDocument,
+  getProposedLegalDocument,
+  legalChangesCopy,
+} from '@tuturuuu/legal';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import en from '../messages/en.json';
@@ -70,6 +77,43 @@ describe('upcoming legal changes', () => {
         expect(metadata.robots).toMatchObject({ index: false });
       }
     });
+    it(`${locale} full proposals show the notice, original draft footers and current-version links`, () => {
+      const page = new DOMParser().parseFromString(
+        renderToStaticMarkup(<LegalChanges locale={locale} full />),
+        'text/html'
+      );
+      expect(page.querySelector('header p')?.textContent).toBe(
+        legalChangesCopy[locale].notInEffect
+      );
+      expect(page.querySelectorAll('h1')).toHaveLength(1);
+      for (const kind of [
+        'privacy',
+        'terms',
+        'dpa',
+        'sla',
+        'subprocessors',
+        'acceptable-use',
+        'community-guidelines',
+      ] as const) {
+        const article = page.querySelector(`article[id="${kind}"]`);
+        const document = getProposedLegalDocument(kind, locale);
+        expect(article?.querySelector('h2')?.textContent).toBe(
+          `${document.title} ${document.highlightedWord}`
+        );
+        expect(article?.querySelector('footer p')?.textContent).toBe(
+          document.footer
+        );
+        const path = ['dpa', 'sla', 'subprocessors'].includes(kind)
+          ? `legal/${kind}`
+          : kind;
+        expect(article?.querySelector('footer a')?.getAttribute('href')).toBe(
+          `${locale === 'vi' ? '/vi' : ''}/${path}`
+        );
+        expect(article?.querySelector('footer a')?.textContent).toBe(
+          legalChangesCopy[locale].currentVersion
+        );
+      }
+    });
     it(`${locale} canonical pages restore dates and link once to changes`, () => {
       for (const kind of [
         'privacy',
@@ -83,8 +127,9 @@ describe('upcoming legal changes', () => {
         const html = renderToStaticMarkup(
           <LegalPage kind={kind} locale={locale} />
         );
-        expect(html).not.toMatch(
-          /Draft for review|draft requires|counsel-review draft|Bản dự thảo|bản dự thảo/u
+        const page = new DOMParser().parseFromString(html, 'text/html');
+        expect(page.querySelector('footer p')?.textContent).toBe(
+          getLegalDocument(kind, locale).footer
         );
         expect(html.match(/href="(?:\/vi)?\/legal\/changes"/gu)).toHaveLength(
           1

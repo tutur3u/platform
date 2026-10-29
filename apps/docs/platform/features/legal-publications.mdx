@@ -1,0 +1,21 @@
+---
+title: "Legal publications"
+description: "Preserve effective legal text and distinguish proposed revisions."
+---
+
+Canonical legal pages preserve each in-force document in full, including its footer.
+Footer sentences mentioning draft review remain part of the published text until an
+authorized revision replaces that document. Presentation adapters must not remove or
+rewrite them. This applies to English and Vietnamese Next.js pages, the Worker/Start
+candidate, and the retained TanStack display adapter; the latter runtime stays paused.
+
+The `/legal/changes/full` page and its English and Vietnamese variants show proposals
+with no effective date and with noindex metadata. The page begins with the notice that
+updates are not yet in effect. Each proposed document keeps its own draft footer and
+links to its currently effective page. One page heading contains document subheadings.
+These pages do not change acceptance records or publish a newly effective agreement.
+
+Regression coverage lives in `packages/legal/src/legal-revisions.test.ts` (historical
+SHA-256 content and literal footer assertions), `apps/web/cloudflare/native-legal.test.tsx`
+(canonical rendering), and `apps/web/cloudflare/legal-changes.test.tsx` (localized notices,
+proposal footers, current-version links, headings, dates and indexing).

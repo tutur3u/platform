@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
-import { getLegalDocument, liveLegalFooter } from '@tuturuuu/legal';
+import { getLegalDocument } from '@tuturuuu/legal';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
+import { toLegalPageConfig } from '../src/components/legal/canonical-legal-config';
 import { LegalMarkdown } from '../src/components/legal/legal-markdown';
 import type { Fetcher } from './fallback';
 import { createWebCandidateHandler } from './handler';
@@ -161,6 +162,7 @@ describe('framework adapter renders canonical legal content', () => {
     for (const { kind } of pages) {
       it(`${locale}/${kind}: retains every canonical section and summary with the live footer`, () => {
         const document = getLegalDocument(kind, locale);
+        expect(toLegalPageConfig(document).footerText).toBe(document.footer);
         const page = new DOMParser().parseFromString(
           renderToStaticMarkup(<LegalPage kind={kind} locale={locale} />),
           'text/html'
@@ -178,7 +180,7 @@ describe('framework adapter renders canonical legal content', () => {
           document.summaryRows.length
         );
         expect(page.querySelector('footer')?.textContent).toContain(
-          liveLegalFooter(document.footer)
+          document.footer
         );
         expect(
           page.querySelector('section[aria-labelledby="summary"] p')

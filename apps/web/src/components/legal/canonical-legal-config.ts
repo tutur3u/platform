@@ -17,7 +17,6 @@ import {
   type LegalDocument,
   type LegalSection,
   legalChangesCopy,
-  liveLegalFooter,
 } from '@tuturuuu/legal';
 import type { LegalPageConfig } from './legal-types';
 
@@ -43,7 +42,7 @@ export function toLegalPageConfig(document: LegalDocument): LegalPageConfig {
     locale: document.locale,
     upcomingChanges: legalChangesCopy[document.locale].linkLine,
     effectiveDate: document.effectiveDate,
-    footerText: liveLegalFooter(document.footer),
+    footerText: document.footer,
     highlightedWord: document.highlightedWord,
     sections: document.sections.map((section) => ({
       color: section.tone,

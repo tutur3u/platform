@@ -2,7 +2,6 @@ import {
   getLegalDocument,
   type LegalLocale,
   legalChangesCopy,
-  liveLegalFooter,
 } from '@tuturuuu/legal';
 import en from '../../messages/en.json';
 import vi from '../../messages/vi.json';
@@ -97,7 +96,7 @@ export function LegalPage({
         </section>
       ))}
       <footer>
-        <p>{liveLegalFooter(document.footer)}</p>
+        <p>{document.footer}</p>
         <a href="mailto:legal@tuturuuu.com">{copy.contact}</a>
       </footer>
     </main>

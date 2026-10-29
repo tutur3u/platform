@@ -5,6 +5,10 @@ export const legalChangesCopy = {
     linkLine:
       'Proposed updates to this document are published at [Upcoming changes](/legal/changes).',
     proposed: 'Proposed',
+    fullTitle: 'Full proposed legal documents',
+    notInEffect:
+      'These updates are not yet in effect. The documents linked from each page remain the versions currently in force.',
+    currentVersion: 'Read the version currently in force',
   },
   vi: {
     summary:
@@ -12,5 +16,9 @@ export const legalChangesCopy = {
     linkLine:
       'Các cập nhật dự kiến cho tài liệu này được công bố tại [Thay đổi sắp tới](/legal/changes).',
     proposed: 'Dự kiến',
+    fullTitle: 'Toàn văn các văn bản pháp lý dự kiến',
+    notInEffect:
+      'Các cập nhật này chưa có hiệu lực. Văn bản trên từng trang hiện vẫn là phiên bản đang áp dụng.',
+    currentVersion: 'Đọc phiên bản đang áp dụng',
   },
 } as const;

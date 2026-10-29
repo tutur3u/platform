@@ -5,6 +5,29 @@ import { getLegalDocument } from './documents';
 import { getProposedLegalDocument } from './proposed';
 
 // Recovered from c967e8d2db75fc65159c7dcb31ed1b27673ae924, before c0ce0bb108b.
+const footers = {
+  en: {
+    privacy:
+      'Questions and rights requests may be sent to privacy@tuturuuu.com. This draft requires legal review before production publication.',
+    terms:
+      'These Terms are a counsel-review draft. Enterprise order forms and mandatory consumer law may add or override terms.',
+    dpa: 'The DPA forms part of an applicable customer agreement when Tuturuuu processes personal data on the customer’s behalf.',
+    sla: 'No numerical uptime commitment or service credit applies unless an enterprise order form expressly activates it.',
+    subprocessors:
+      'The registry is maintained as providers change. Customers with contractual notice rights receive applicable material-change notices.',
+  },
+  vi: {
+    privacy:
+      'Gửi câu hỏi hoặc yêu cầu về quyền dữ liệu đến privacy@tuturuuu.com. Bản dự thảo này cần được rà soát pháp lý trước khi công bố.',
+    terms:
+      'Điều khoản này là bản dự thảo chờ rà soát pháp lý. Đơn đặt hàng doanh nghiệp và luật bảo vệ người tiêu dùng bắt buộc có thể bổ sung hoặc thay thế.',
+    dpa: 'DPA là một phần của thỏa thuận khách hàng áp dụng khi Tuturuuu xử lý dữ liệu cá nhân thay mặt khách hàng.',
+    sla: 'Không có cam kết thời gian hoạt động hoặc tín dụng dịch vụ nếu đơn đặt hàng doanh nghiệp không kích hoạt rõ ràng.',
+    subprocessors:
+      'Danh mục được duy trì khi nhà cung cấp thay đổi. Khách hàng có quyền thông báo theo hợp đồng sẽ nhận thông báo phù hợp.',
+  },
+} as const;
+
 const hashes = {
   en: {
     dpa: '103d06c26c2b148bb1f2ba178e9c649792597f98c3e884efc3c5257ad9ad9593',
@@ -36,6 +59,7 @@ describe('effective legal publications', () => {
         const d = getLegalDocument(kind, locale);
         expect(d.effectiveDate).toBe('2026-08-15');
         expect(d.version).toBe('2026-08-15');
+        expect(d.footer).toBe(footers[locale][kind]);
         const text = JSON.stringify({
           effectiveDate: d.effectiveDate,
           sections: d.sections.map(({ content, title }) => ({
