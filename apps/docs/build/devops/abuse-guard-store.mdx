@@ -110,7 +110,7 @@ store's budget would switch its protection off.
 | `replay` | Cross-app session refresh | Closed: 503 | Closed: 503 |
 | `replay` | CLI refresh, app-token exchange | Closed: 503 with `Retry-After: 30` | Open: continue without the fence (existing policy) |
 | `proxy` | API proxy route rate limits | Per-instance limits (the same windows, enforced in memory) while the store errors, is stopped or is `off`; IP blocks, auth and edge controls still apply | Open: no route limits without Upstash |
-| `password` | Meet guest and Nova password attempts | Not routed yet (legacy Upstash path) | Open: the KDF cost is the only bound |
+| `password` | Meet guest and Nova password attempts | Closed: the attempt is refused with `retryAfter: 30` | Open: the KDF cost is the only bound |
 
 The `proxy` family never fails every request closed, since that would be a
 platform-wide outage. While the store is unavailable it degrades to per-instance

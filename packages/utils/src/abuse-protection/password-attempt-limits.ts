@@ -1,11 +1,18 @@
 /**
  * Atomic pre-work budgets for Meet guest creation/login and Nova challenges.
  * Verified logins refund only their own target reservation.
- * Missing or unavailable Upstash preserves the existing fail-open policy.
+ * Backed by the Durable Object guard store when the `password` family is
+ * assigned, else Upstash. On the legacy path a missing or unavailable store
+ * keeps the existing fail-open policy; an assigned guard store fails closed.
  */
 
 import { createHash, randomUUID } from 'node:crypto';
 import { isIP } from 'node:net';
+import type { AbuseGuardClient } from '../abuse-guard/client';
+import {
+  type AbuseGuardSelection,
+  selectAbuseGuard,
+} from '../abuse-guard/select';
 import {
   getUpstashRatelimitRedisClient,
   hasUpstashRestEnv,
@@ -146,13 +153,101 @@ end
 return 0
 `;
 
+/** Fail-closed result while an assigned guard store is unavailable. */
+function storeUnavailable(): AttemptResult {
+  return {
+    allowed: false,
+    reason: 'Password verification temporarily unavailable',
+    retryAfter: 30,
+    remainingAttempts: 0,
+  };
+}
+
+function attemptBudgets(subject: PasswordAttemptSubject) {
+  return {
+    sourceLimit:
+      subject.scope === 'nova-challenge'
+        ? PASSWORD_ATTEMPT_LIMITS.USER_MAX
+        : PASSWORD_ATTEMPT_LIMITS.IP_FAILED_MAX,
+    sourceWindowMs: PASSWORD_ATTEMPT_LIMITS.IP_WINDOW_MS,
+    targetLimit: PASSWORD_ATTEMPT_LIMITS.TARGET_FAILED_MAX,
+    targetWindowMs: PASSWORD_ATTEMPT_LIMITS.TARGET_WINDOW_MS,
+  };
+}
+
+/**
+ * Same reservation as the Lua script, run atomically inside one guard
+ * partition per scope so the source and target budgets commit together.
+ */
+async function reserveInGuardStore(
+  client: AbuseGuardClient,
+  subject: PasswordAttemptSubject
+): Promise<AttemptResult> {
+  const keys = getPasswordAttemptKeys(subject);
+  const budgets = attemptBudgets(subject);
+  const partition = `pwd:${subject.scope}`;
+  const receipt = `pwd:reservation:${randomUUID()}`;
+  const result = await client.reserve({
+    partition,
+    budgets: [
+      {
+        key: keys.source,
+        limit: budgets.sourceLimit,
+        ttlMs: budgets.sourceWindowMs,
+      },
+      {
+        key: keys.target,
+        limit: budgets.targetLimit,
+        ttlMs: budgets.targetWindowMs,
+      },
+    ],
+    receipt,
+  });
+  if (!result.ok) {
+    return {
+      allowed: false,
+      reason: 'Too many failed password attempts',
+      retryAfter: Math.max(1, Math.ceil(result.retryAfterMs / 1000)),
+      remainingAttempts: 0,
+    };
+  }
+  return {
+    allowed: true,
+    remainingAttempts: result.remaining,
+    refund: async () => {
+      try {
+        await client.refund({ partition, receipt, target: keys.target });
+      } catch (error) {
+        failOpen('Password attempt refund failed:', error);
+      }
+    },
+  };
+}
+
 export function createPasswordAttemptLimiter(
-  getRedis: () => Promise<CounterClient | null> = defaultRedis
+  getRedis: () => Promise<CounterClient | null> = defaultRedis,
+  selectStore: () => AbuseGuardSelection = () => selectAbuseGuard('password')
 ) {
   /** Reserve before KDF; call refund only after verifying the stored secret. */
   async function check(
     subject: PasswordAttemptSubject
   ): Promise<AttemptResult> {
+    // Once the guard store owns this family, an unavailable store fails
+    // closed: exhausting its budget must not switch the limit off.
+    const selection = selectStore();
+    if (selection.kind === 'off') {
+      failOpen('Password attempt store disabled:', undefined);
+      return storeUnavailable();
+    }
+    if (selection.kind === 'durable-object') {
+      try {
+        return await reserveInGuardStore(selection.client, subject);
+      } catch (error) {
+        failOpen('Password attempt reservation failed:', error);
+        return storeUnavailable();
+      }
+    }
+
     const redis = await getRedis().catch(() => null);
     if (!redis) {
       failOpen('Password attempt Redis unavailable:', undefined);
@@ -169,9 +264,7 @@ export function createPasswordAttemptLimiter(
         RESERVE_PASSWORD_ATTEMPT_SCRIPT,
         [keys.source, keys.target, receipt],
         [
-          subject.scope === 'nova-challenge'
-            ? PASSWORD_ATTEMPT_LIMITS.USER_MAX
-            : PASSWORD_ATTEMPT_LIMITS.IP_FAILED_MAX,
+          attemptBudgets(subject).sourceLimit,
           Math.ceil(PASSWORD_ATTEMPT_LIMITS.IP_WINDOW_MS / 1000),
           PASSWORD_ATTEMPT_LIMITS.TARGET_FAILED_MAX,
           Math.ceil(PASSWORD_ATTEMPT_LIMITS.TARGET_WINDOW_MS / 1000),
