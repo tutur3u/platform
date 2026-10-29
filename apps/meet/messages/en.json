@@ -4399,7 +4399,7 @@
       "decline": "Don't transcribe me",
       "description": "Your voice is sent to Google's Gemini through Mira to be turned into text. <strong>{audience}</strong> can read the transcript and notes after the call. You can change your answer at any time.",
       "details": "Details and privacy",
-      "fact_storage": "No audio is stored. Transcripts are kept under your workspace's retention settings",
+      "fact_storage": "No audio is stored. Transcripts are kept until they are deleted",
       "fact_text": "If you don't allow, you stay out of the transcript",
       "fact_withdraw": "You can stop being transcribed at any time. Text already written stays in the transcript until it is deleted",
       "pill": "Transcribing",

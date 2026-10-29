@@ -1642,18 +1642,30 @@ log is not deployed yet (PR #7264), other speakers fail closed. On the host
 device, `meetingAudioSources` mirrors this rule using the database roster, so
 excluded tracks are not recorded or uploaded in the first place.
 
+Limits of this check: the speaker account and the capture time of each clip come
+from the uploading participant's client. The server verifies that the speaker
+is admitted to the room and has a current consent record, but it cannot confirm
+that the audio belongs to that speaker or was captured when stated. The gate
+therefore protects against mistakes by an honest client, such as stale consent
+state or a race with a withdrawal. It does not protect against a host who
+modifies their client to mislabel audio. Self-capture mode (M2), where each
+participant uploads only their own microphone and the server binds the speaker
+to the authenticated actor, removes the speaker part of this limit.
+
 Consent copy lives in the `meet.consent` message namespace (en and vi, Meet and
 Parley bundles) and is versioned by `MEET_CONSENT_NOTICE_VERSION` in
-`meeting-ai/consent/notice.ts` (currently `meet-transcription-v1-2026-10-30`,
-legal-reviewed wording); bump it whenever the copy changes so each record names
+`meeting-ai/consent/notice.ts` (currently `meet-transcription-v2-2026-10-30`,
+legal-approved wording); bump it whenever the copy changes so each record names
 the notice it accepted. The notice states that the voice is sent to Google's
 Gemini through Mira, that people who do not allow stay out of the transcript, and
 that withdrawal is forward-only: text already written stays until it is deleted.
 
-The notice makes no deletion promise because no transcript purge job exists yet;
-it says transcripts are kept under the workspace's retention settings. State a
-retention period only after the Cloudflare-scheduled purge ships (tracked
-separately; see the TODO in `notice.ts`). The audience line reflects current
+Transcripts are kept until they are deleted: there is no automatic retention
+yet. No purge job exists and no workspace retention setting applies to Meet
+transcripts (see the data-protection inventory), so the notice says only that.
+A Cloudflare-scheduled purge with a 365-day default is planned. State a retention period only after that purge ships
+(tracked separately; see `TODO(meet-transcript-retention-purge)` in
+`notice.ts`) and bump the notice version. The audience line reflects current
 access: members of the workspace who can open the meeting can read transcripts
 and notes (the recordings read path is workspace-scoped). A tighter visibility
 model arrives with the meeting page redesign (M1-F); update the string then.

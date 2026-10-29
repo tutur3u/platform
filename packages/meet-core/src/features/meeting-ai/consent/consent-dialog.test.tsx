@@ -53,14 +53,15 @@ describe('transcription consent dialog', () => {
     const markup = render(undefined);
     expect(markup).toContain('Google&#x27;s Gemini');
     expect(markup).toContain('Members of this workspace');
-    expect(markup).not.toMatch(/deleted after|365/);
+    expect(markup).not.toMatch(/deleted after|365|retention settings/);
+    expect(markup).toContain('Transcripts are kept until they are deleted');
     for (const bundle of [messages, viMessages])
       expect(JSON.stringify(bundle.meet.consent)).not.toMatch(/365|\{days\}/);
   });
 
   it('records a final, dated notice version', () => {
     expect(MEET_CONSENT_NOTICE_VERSION).toBe(
-      'meet-transcription-v1-2026-10-30'
+      'meet-transcription-v2-2026-10-30'
     );
     expect(MEET_CONSENT_NOTICE_VERSION).not.toContain('draft');
   });
