@@ -6,9 +6,8 @@ import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import { requireQuizSetPageAccess } from '@/lib/quiz-set-page-access';
-import { getQuizSetSummary } from './data';
-
 import { requireTeachWorkspaceMember } from '@/lib/require-teach-workspace-member';
+import { getQuizSetSummary } from './data';
 
 interface Props {
   children: ReactNode;
