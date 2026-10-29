@@ -1,9 +1,14 @@
 import { z } from 'zod';
 import { signRealtimePayload, verifyRealtimePayload } from '../core/token';
 import {
+  beginFinalizationAttempt,
+  dueFinalizations,
+  finalizationDeadline,
   MEET_FINALIZE_MAX_ACCOUNTS,
   type MeetFinalization,
+  type MeetFinalizationState,
   type MeetFinalizeDelivery,
+  settleFinalization,
 } from './finalization';
 
 // Node crypto lives here, apart from the pure ledger, so the browser bundle of
@@ -94,4 +99,39 @@ export async function deliverMeetFinalization(
     status?: unknown;
   } | null;
   return body?.status === 'pending' ? 'retry' : 'done';
+}
+
+/**
+ * Deliver due finalizations. Each attempt is persisted before its request is
+ * sent, so a restart cannot grant extra attempts. Returns when to wake next.
+ */
+export async function drainFinalizations<T extends MeetFinalizationState>(
+  env: { MEET_FINALIZE_URL?: string; MEET_REALTIME_TOKEN_SECRET: string },
+  io: {
+    read: () => T;
+    write: (state: T) => Promise<void>;
+    now?: () => number;
+    fetch?: typeof fetch;
+  }
+) {
+  const url = env.MEET_FINALIZE_URL;
+  if (!url) return undefined;
+  const now = io.now ?? Date.now;
+  try {
+    for (const due of dueFinalizations(io.read(), now())) {
+      const begun = beginFinalizationAttempt(io.read(), due.sessionId, now());
+      await io.write(begun.state);
+      if (!begun.record) continue;
+      const outcome = await deliverMeetFinalization(begun.record, {
+        url,
+        secret: env.MEET_REALTIME_TOKEN_SECRET,
+        now: now(),
+        fetch: io.fetch,
+      });
+      await io.write(settleFinalization(io.read(), due.sessionId, outcome));
+    }
+  } catch {
+    console.error('Meeting finalization delivery deferred');
+  }
+  return finalizationDeadline(io.read());
 }

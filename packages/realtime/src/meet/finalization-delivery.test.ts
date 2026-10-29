@@ -1,13 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
-import type {
-  MeetFinalization,
-  MeetFinalizationState,
-} from '../../../packages/realtime/src/meet/finalization';
-import { runRoomFinalizations } from './room-finalization';
+import type { MeetFinalization, MeetFinalizationState } from './finalization';
+import { drainFinalizations } from './finalization-token';
 
 const sessionId = '44444444-4444-4444-8444-444444444444';
 const id = '11111111-1111-4111-8111-111111111111';
 const base = 1_800_000_000_000;
+const env = {
+  MEET_FINALIZE_URL: 'https://meet.example/api/meet-ai/finalize',
+  MEET_REALTIME_TOKEN_SECRET: 'secret',
+};
 const record = (patch: Partial<MeetFinalization> = {}): MeetFinalization => ({
   sessionId,
   meetingId: id,
@@ -30,20 +31,18 @@ function harness(fetcher: typeof fetch, initial = record()) {
       box.state = next;
       writes.push(next.finalizations?.[sessionId]);
     },
-    url: 'https://meet.example/api/meet-ai/finalize',
-    secret: 'secret',
     now: () => clock,
     fetch: fetcher,
   });
   return {
     box,
     writes,
-    run: () => runRoomFinalizations(io()),
+    run: () => drainFinalizations(env, io()),
     advance: (ms: number) => (clock += ms),
   };
 }
 
-describe('room finalization delivery', () => {
+describe('finalization delivery', () => {
   it('persists the spent attempt before the request leaves', async () => {
     let persistedAtSend: MeetFinalization | undefined;
     const h = harness(
@@ -86,15 +85,16 @@ describe('room finalization delivery', () => {
   it('does nothing while the finalize URL is unset', async () => {
     const fetcher = vi.fn();
     const h = harness(fetcher as unknown as typeof fetch);
-    await runRoomFinalizations({
-      read: () => h.box.state,
-      write: async () => {
-        throw new Error('unexpected write');
-      },
-      url: undefined,
-      secret: 'secret',
-      fetch: fetcher as unknown as typeof fetch,
-    });
+    await drainFinalizations(
+      { MEET_REALTIME_TOKEN_SECRET: 'secret' },
+      {
+        read: () => h.box.state,
+        write: async () => {
+          throw new Error('unexpected write');
+        },
+        fetch: fetcher as unknown as typeof fetch,
+      }
+    );
     expect(fetcher).not.toHaveBeenCalled();
   });
 });

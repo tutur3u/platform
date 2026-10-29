@@ -116,6 +116,14 @@ export function finalizationDeadline(state: MeetFinalizationState) {
   return times.length ? Math.min(...times) : undefined;
 }
 
+/** When the room must wake to deliver, or undefined when delivery is off or idle. */
+export function finalizationWake(
+  state: MeetFinalizationState,
+  url: string | undefined
+) {
+  return url ? finalizationDeadline(state) : undefined;
+}
+
 export function dueFinalizations(state: MeetFinalizationState, now: number) {
   return Object.values(state.finalizations ?? {})
     .filter((entry) => entry.status === 'pending' && entry.nextAttemptAt <= now)

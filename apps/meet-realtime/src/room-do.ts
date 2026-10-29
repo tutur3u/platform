@@ -20,7 +20,8 @@ import {
   releaseParticipant,
   remoteMeetTracks,
 } from '../../../packages/realtime/src/meet';
-import { finalizationDeadline } from '../../../packages/realtime/src/meet/finalization';
+import { finalizationWake } from '../../../packages/realtime/src/meet/finalization';
+import { drainFinalizations } from '../../../packages/realtime/src/meet/finalization-token';
 import { isMeetMessageWithinLimit } from '../../../packages/realtime/src/meet/message-size';
 import {
   emptyRoomDeadline,
@@ -35,7 +36,7 @@ import { parseMeetRoomSettingsPatch } from '../../../packages/realtime/src/meet/
 import { createRoomUsage } from '../../../packages/realtime/src/meet/room-usage';
 import { normalizeTranscriptionConsent } from '../../../packages/realtime/src/meet/transcription';
 import { personalReceiptStorage } from './personal-receipt-storage';
-import { runRoomFinalizations } from './room-finalization';
+import { restoreUsageCounter, stampPendingRequests } from './room-restore';
 import { type RoomServiceState, roomService } from './room-service';
 import { runRoomSfuIntent } from './room-sfu-intent';
 import type { TurnEnv } from './turn-credentials';
@@ -45,7 +46,6 @@ export interface MeetRoomEnv extends TurnEnv {
   CLOUDFLARE_REALTIME_APP_SECRET: string;
   MEET_REALTIME_TOKEN_SECRET: string;
   MEET_ROOM: DurableObjectNamespace;
-  /** Meet finalize endpoint. Unset keeps automatic notes dormant. */
   MEET_FINALIZE_URL?: string;
 }
 const SNAPSHOT_KEY = 'snapshot';
@@ -79,26 +79,10 @@ export class MeetRoomDurableObject implements DurableObject {
       const counter = await this.state.storage.get<
         number | { requests: number; writes: number }
       >('usage-http-requests');
-      if (counter !== undefined) {
-        this.snapshot.usage ??= createRoomUsage();
-        this.snapshot.usage.httpRequests = Math.max(
-          this.snapshot.usage.httpRequests,
-          typeof counter === 'number' ? counter : counter.requests
-        );
-        this.snapshot.usage.httpCounterWrites = Math.max(
-          this.snapshot.usage.httpCounterWrites ?? 0,
-          typeof counter === 'number' ? counter : counter.writes
-        );
-      }
-      let migrated =
+      if (counter !== undefined) restoreUsageCounter(this.snapshot, counter);
+      const migrated =
         stored?.transcriptionConsents !== this.snapshot.transcriptionConsents;
-      for (const request of Object.values(this.snapshot.aiRequests ?? {})) {
-        if (request.status === 'pending' && request.startedAt === undefined) {
-          request.startedAt = Date.now();
-          migrated = true;
-        }
-      }
-      if (migrated) {
+      if (stampPendingRequests(this.snapshot) || migrated) {
         this.snapshot.usage ??= createRoomUsage();
         this.snapshot.usage.storageWrites++;
         await this.state.storage.put(SNAPSHOT_KEY, this.snapshot);
@@ -114,12 +98,10 @@ export class MeetRoomDurableObject implements DurableObject {
       ...this.snapshot,
       chat: this.snapshot.chat?.filter((message) => message.retained !== false),
     });
-    const finalizeAt = this.env.MEET_FINALIZE_URL
-      ? finalizationDeadline(this.snapshot)
-      : undefined;
-    return finalizeAt === undefined
+    const wake = finalizationWake(this.snapshot, this.env.MEET_FINALIZE_URL);
+    return wake === undefined
       ? write
-      : write.then(() => this.scheduleSweep(finalizeAt));
+      : write.then(() => this.scheduleSweep(wake));
   }
 
   private sockets() {
@@ -702,20 +684,13 @@ export class MeetRoomDurableObject implements DurableObject {
     if (this.snapshot.budget && !this.snapshot.ended)
       await this.scheduleSweep(this.snapshot.budget.expiresAt);
     // Last, so a slow Meet response never delays presence or media cleanup.
-    await runRoomFinalizations({
+    const wake = await drainFinalizations(this.env, {
       read: () => this.snapshot,
       write: async (next) => {
         this.snapshot = next;
         await this.persist();
       },
-      url: this.env.MEET_FINALIZE_URL,
-      secret: this.env.MEET_REALTIME_TOKEN_SECRET,
-    }).catch(() => {
-      console.error('Meeting finalization delivery deferred');
     });
-    const finalizeAt = this.env.MEET_FINALIZE_URL
-      ? finalizationDeadline(this.snapshot)
-      : undefined;
-    if (finalizeAt !== undefined) await this.scheduleSweep(finalizeAt);
+    if (wake !== undefined) await this.scheduleSweep(wake);
   }
 }
