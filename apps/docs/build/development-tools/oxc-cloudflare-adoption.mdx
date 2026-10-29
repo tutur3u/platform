@@ -338,6 +338,18 @@ pgTAP cover the bounds and seven-day cutoff. The
 records the daily operation envelope and stop procedure. Hosted scheduled execution,
 independent operator-stop acceptance and billed usage remain rollout evidence.
 
+The abuse-guard store Worker (`apps/abuse-guard`) keeps its bounded-work and
+stop-fence evidence in the [abuse-guard store runbook](/build/devops/abuse-guard-store).
+It carries a few accounting limits:
+- Its daily budget counts admitted commands, not billed rows. One `win.hit` writes
+  up to four window rows plus a dedupe record, and one `res.reserve` writes up to
+  three rows plus a dedupe record.
+- Each isolate buffers fewer than 200 admitted commands, and those are lost if the
+  isolate is evicted. A budget or operator stop takes up to 5 seconds per isolate
+  to observe.
+- The theoretical storage ceiling is 2 KiB × 120-day retention × the daily budget.
+  Only replay fences use long TTLs, and their values are tiny.
+
 CPU limits constrain an invocation, not the number of invocations or all billable
 services. Usage notifications are detection, not an automatic spending cutoff.
 Choose service-specific limits with measured workloads; do not silently apply an
