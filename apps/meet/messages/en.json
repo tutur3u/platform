@@ -4530,6 +4530,9 @@
       "sign_in": "Sign in to continue",
       "transcription_hint": "Each transcription session lasts up to 3 hours. Start a new session to continue taking notes during a longer call."
     },
+    "recording_permissions": {
+      "denied": "Only the recording creator or a workspace admin can stop this recording. The recording is still active."
+    },
     "transcription": {
       "empty": "This recording contains no audio to transcribe. The saved recording remains available.",
       "too_large": "This recording is too large for inline transcription. The saved recording remains available.",
