@@ -1,7 +1,7 @@
 ---
 title: "Finance"
 description: "Shared Finance product surface across apps/web and apps/finance."
-updatedAt: "2026-10-26"
+updatedAt: "2026-10-28"
 ---
 
 ## Overview
@@ -44,6 +44,45 @@ fallback. Root hosting has no mount prefix. A `/finance` mount stays inside
 `/finance`; this rule does not activate that hosting mode. Authentication cookie
 propagation remains unchanged. Regression coverage lives in
 `apps/finance/src/proxy-base-path.test.ts`.
+
+## Transaction workspace boundaries
+
+Transaction creation and updates in Web and standalone Finance validate wallet and
+category references against the resolved route workspace before an admin write.
+Foreign or unavailable references return 403. Omitted categories retain their
+existing behavior; explicit null remains invalid. Database lookup errors return
+500 rather than an authorization denial.
+
+Transaction list RPC category joins match the wallet workspace. Category rollups
+sum and count only transactions whose wallet belongs to the category workspace.
+Historical cross-workspace references therefore cannot expose another workspace's
+category metadata or alter its category totals. Categories with no matching
+transactions remain visible with zero totals.
+
+Direct client reads and writes to `wallet_transactions` remain closed. Migration
+`20260312113000_lock_description_tables_to_server_apis.sql` already removed its
+permissive client policies and revoked client table grants through the
+description-table lockdown.
+The restrictive account MFA policy remains intact.
+Guests, members without finance permissions, and permissioned members must use
+the application APIs. Transaction POST/PUT use admin clients after application
+membership and action-specific permission checks; service-role access bypasses
+RLS intentionally. Transaction read APIs use the permission/redaction RPC.
+The older Mobile direct-reader methods and the Web Live assistant tools using
+an authenticated session client still have this existing restriction. Mobile
+uses the API-backed infinite transaction reader for its maintained path; Live
+temporary-auth tools use an admin client. This change does not reopen client grants.
+
+The workspace-scoping migration retains the client-write revoke and removes any
+retained legacy policies. It does not grant access to the private wallet table.
+Regression coverage is in
+`packages/apis/src/finance/transactions/workspace-scoping.test.ts` and
+`apps/database/supabase/tests/finance-workspace-scoping.sql`. Migration
+`20261029030700_finance_workspace_scoping.sql` has a matching rollback under
+`apps/database/rollbacks/`; rollback restores the prior RPC bodies without
+granting client access.
+The rollback and re-apply are checked against function definitions, owners, grants,
+settings, transaction policies, and wallet/transaction table grants.
 
 ## API Ownership
 
