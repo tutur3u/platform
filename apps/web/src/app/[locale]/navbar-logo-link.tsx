@@ -3,7 +3,7 @@
 import { cn } from '@tuturuuu/utils/format';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import type { ReactNode } from 'react';
 
 interface NavbarLogoLinkProps {
@@ -18,6 +18,8 @@ export default function NavbarLogoLink({
   logoClassName,
 }: NavbarLogoLinkProps) {
   const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const legalChanges = /\/legal\/changes(?:\/full)?\/?$/u.test(pathname);
   const hasNoRedirect = searchParams.get('noredirect') === '1';
 
   const href = hasNoRedirect ? '/' : '/home';
@@ -31,13 +33,17 @@ export default function NavbarLogoLink({
       )}
     >
       <Image
-        src={logo}
-        className="h-8 w-8 transition-transform hover:scale-105"
-        width={32}
-        height={32}
-        alt="logo"
+        src={legalChanges ? '/media/branding/brand-mark-light.svg' : logo}
+        className={
+          legalChanges
+            ? 'h-6 w-auto'
+            : 'h-8 w-8 transition-transform hover:scale-105'
+        }
+        width={legalChanges ? 111 : 32}
+        height={legalChanges ? 24 : 32}
+        alt={legalChanges ? 'Tuturuuu' : 'logo'}
       />
-      {title}
+      {legalChanges ? null : title}
     </Link>
   );
 }

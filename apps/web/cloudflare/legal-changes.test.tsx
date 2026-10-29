@@ -55,9 +55,8 @@ describe('upcoming legal changes', () => {
         const html = renderToStaticMarkup(
           <LegalChanges locale={locale} full={full} />
         );
-        expect(html).not.toMatch(
-          /2026-08-15|August 15, 2026|Effective |Có hiệu lực từ/u
-        );
+        expect(html).toContain('2026-09-13-draft');
+        expect(html).toContain('data-binding-notice');
         expect(html).toContain(
           full
             ? locale === 'vi'
@@ -82,7 +81,7 @@ describe('upcoming legal changes', () => {
         renderToStaticMarkup(<LegalChanges locale={locale} full />),
         'text/html'
       );
-      expect(page.querySelector('header p')?.textContent).toBe(
+      expect(page.querySelector('.change-status p')?.textContent).toBe(
         legalChangesCopy[locale].notInEffect
       );
       expect(page.querySelectorAll('h1')).toHaveLength(1);
@@ -100,8 +99,15 @@ describe('upcoming legal changes', () => {
         expect(article?.querySelector('h2')?.textContent).toBe(
           `${document.title} ${document.highlightedWord}`
         );
+        const inheritedFooter = getLegalDocument(kind, locale).footer;
+        const displayFooter =
+          /legal review|counsel-review|rà soát pháp lý|chờ rà soát/iu.test(
+            inheritedFooter
+          ) && document.footer.endsWith(inheritedFooter)
+            ? document.footer.slice(0, -inheritedFooter.length).trimEnd()
+            : document.footer;
         expect(article?.querySelector('footer p')?.textContent).toBe(
-          document.footer
+          displayFooter
         );
         const path = ['dpa', 'sla', 'subprocessors'].includes(kind)
           ? `legal/${kind}`

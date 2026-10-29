@@ -1,0 +1,175 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`legal redesign source integrity > en: notice copy matches Lex's source verbatim 1`] = `
+{
+  "binding": "On {N} we updated our Terms of Service, Privacy Policy, Data Processing Addendum, Service Level terms, Subprocessor list, Acceptable Use Policy and Community Guidelines.
+
+**When the changes apply to you**
+- **New accounts and free accounts:** all changes apply from {N}.
+- **Every customer, including existing paid subscribers:** changes that improve or clarify your position (the items marked "Clarifies" or "Better for you" below) apply from {N}.
+- **Existing paid subscriptions bought before {N}:** changes that reduce a benefit you had (the items marked "Applies later" below) apply from the **later of {N30} and your next renewal date**. Until then, the previous terms continue to apply to your subscription.
+
+You can read the full updated text, and the previous text, from the links at the end of this page. Questions: legal@tuturuuu.com. Privacy requests: privacy@tuturuuu.com.",
+  "links": "- Full updated text: /legal/changes/full
+- Previous text (in force until {N}): link to the archived 15 Aug 2026 versions (and 6 Feb 2026 for the Acceptable Use Policy and Community Guidelines)
+- Terms of Service · Privacy Policy · Data Processing Addendum · Service Levels · Subprocessors",
+  "nonbinding": "This summary is a convenience. It is not part of the terms or policies and does not change them. If it differs from the full text, the full text applies.",
+  "rows": [
+    [
+      "Purchases through Polar",
+      "Polar acts as merchant of record for checkout, and Polar's Buyer Terms apply to those transactions. The order or checkout page states plan, price, seats and taxes.",
+      "Clarifies",
+      "{N}",
+    ],
+    [
+      "Refunds and consumer rights",
+      "No blanket "no refund" rule. Statutory refund, withdrawal and consumer rights are not limited.",
+      "Better for you",
+      "{N}",
+    ],
+    [
+      "Seats and renewals",
+      "An invitation alone does not create an undisclosed charge. Price changes do not alter an existing subscription without the notice the law and your plan require.",
+      "Clarifies",
+      "{N}",
+    ],
+    [
+      "Cancelling",
+      "Cancel through the billing portal. Leaving a workspace or deleting an app does not cancel a subscription.",
+      "Applies later (existing paid)",
+      "{N30} or next renewal, whichever is later",
+    ],
+    [
+      "AI credits and usage allowances",
+      "Allowances belong to the purchasing account or workspace. AI credits are service units, not money, and may expire under rules shown before purchase. If your allowance goes down, new use is limited but your data stays accessible and exportable where possible.",
+      "Credit expiry: Applies later (existing paid). The rest: Clarifies",
+      "Expiry: {N30} or next renewal; rest {N}",
+    ],
+    [
+      "Service levels (SLA)",
+      "A service-level commitment applies only where a signed order states it, with its own targets, exclusions and claims process. The public SLA page does not by itself create a commitment.",
+      "Applies later (existing paid)",
+      "{N30} or next renewal, whichever is later",
+    ],
+    [
+      "Privacy Policy",
+      "Clearer description of billing data. It now cites Vietnam's Law on Personal Data Protection (in force since 1 January 2026), GDPR/UK GDPR where they apply. Schools and administrators must give notices and get guardian consent where required before using the services with children.",
+      "Clarifies",
+      "{N}",
+    ],
+    [
+      "Data Processing Addendum",
+      "Clearer roles. Breach notice without undue delay. Return or deletion of customer data on exit.",
+      "Better for you",
+      "{N}",
+    ],
+    [
+      "Subprocessors",
+      "The list shows providers that may process data. Which ones apply depends on the features you use.",
+      "Clarifies",
+      "{N}",
+    ],
+    [
+      "Acceptable Use Policy and Community Guidelines",
+      "Both are rewritten in clearer form. The new Acceptable Use Policy covers lawful use, fair use of finite resources, communications and automation, security reporting and enforcement. The new Community Guidelines cover respect, responsible sharing, protecting learners, shared capacity, and reports and appeals. We kept the rules that matter most for safety: the bans on child sexual abuse material, terrorism content, non-consensual intimate imagery, harassment and deepfakes; AI features for adults (18+) only; the graduated enforcement steps; and the 30-day appeal right. Some detailed rules of the old versions are not repeated (for example specific rate-limit figures). Vietnamese versions are provided for the first time; before this, the Vietnamese pages showed the English text.",
+      "Clarifies; safety rules kept",
+      "{N}",
+    ],
+  ],
+  "summaryTitle": "Summary of changes",
+  "tableHead": [
+    "Area",
+    "What changes",
+    "Effect on you",
+    "Applies from",
+  ],
+  "title": "What changed in Tuturuuu's legal documents",
+}
+`;
+
+exports[`legal redesign source integrity > vi: notice copy matches Lex's source verbatim 1`] = `
+{
+  "binding": "Vào ngày {N}, chúng tôi đã cập nhật Điều khoản dịch vụ, Chính sách quyền riêng tư, Phụ lục xử lý dữ liệu, Thỏa thuận mức dịch vụ, Danh mục bên xử lý phụ, Chính sách sử dụng chấp nhận được và Nguyên tắc cộng đồng.
+
+**Khi nào các thay đổi áp dụng với bạn**
+- **Tài khoản mới và tài khoản miễn phí:** mọi thay đổi áp dụng từ {N}.
+- **Mọi khách hàng, kể cả người đăng ký trả phí hiện có:** các thay đổi có lợi hoặc làm rõ quyền của bạn (mục ghi "Làm rõ" hoặc "Có lợi cho bạn" bên dưới) áp dụng từ {N}.
+- **Gói trả phí đã mua trước {N}:** các thay đổi làm giảm một quyền lợi bạn đang có (mục ghi "Áp dụng sau" bên dưới) áp dụng từ **ngày muộn hơn giữa {N30} và ngày gia hạn tiếp theo của bạn**. Trước thời điểm đó, điều khoản cũ tiếp tục áp dụng cho gói của bạn.
+
+Bạn có thể đọc toàn văn bản mới và văn bản trước đây qua các liên kết ở cuối trang. Câu hỏi: legal@tuturuuu.com. Yêu cầu về quyền riêng tư: privacy@tuturuuu.com.",
+  "links": "- Toàn văn bản mới: /vi/legal/changes/full
+- Văn bản trước đây (có hiệu lực đến {N}): liên kết tới các bản lưu trữ ngày 15/8/2026 (và 6/2/2026 đối với Chính sách sử dụng chấp nhận được và Nguyên tắc cộng đồng)
+- Điều khoản dịch vụ · Chính sách quyền riêng tư · Phụ lục xử lý dữ liệu · Mức dịch vụ · Bên xử lý phụ",
+  "nonbinding": "Bản tóm tắt này chỉ để tiện theo dõi. Nó không phải là một phần của điều khoản hay chính sách và không làm thay đổi chúng. Nếu có khác biệt với toàn văn, thì toàn văn được áp dụng.",
+  "rows": [
+    [
+      "Mua qua Polar",
+      "Polar là bên bán (merchant of record) cho giao dịch thanh toán, và Điều khoản người mua của Polar áp dụng cho các giao dịch đó. Trang thanh toán hoặc đơn đặt hàng nêu gói, giá, số thành viên và thuế.",
+      "Làm rõ",
+      "{N}",
+    ],
+    [
+      "Hoàn tiền và quyền người tiêu dùng",
+      "Không có quy tắc "không hoàn tiền" áp dụng chung. Quyền hoàn tiền, rút lại và quyền người tiêu dùng theo luật không bị hạn chế.",
+      "Có lợi cho bạn",
+      "{N}",
+    ],
+    [
+      "Thành viên và gia hạn",
+      "Lời mời không tự tạo ra khoản phí không được nêu rõ. Thay đổi giá không làm thay đổi gói hiện có nếu chưa có thông báo theo luật và theo gói của bạn.",
+      "Làm rõ",
+      "{N}",
+    ],
+    [
+      "Hủy gói",
+      "Hủy qua cổng thanh toán. Rời không gian làm việc hoặc xóa ứng dụng không phải là hủy gói.",
+      "Áp dụng sau (gói trả phí hiện có)",
+      "{N30} hoặc kỳ gia hạn tiếp theo, tùy ngày nào muộn hơn",
+    ],
+    [
+      "Tín dụng AI và hạn mức sử dụng",
+      "Hạn mức thuộc tài khoản hoặc không gian làm việc đã mua. Tín dụng AI là đơn vị dịch vụ, không phải tiền, và có thể hết hạn theo quy định được nêu trước khi mua. Nếu hạn mức của bạn giảm, việc dùng mới bị giới hạn nhưng dữ liệu của bạn vẫn truy cập và xuất được khi có thể.",
+      "Hết hạn tín dụng: Áp dụng sau (gói trả phí hiện có). Phần còn lại: Làm rõ",
+      "Hết hạn: {N30} hoặc kỳ gia hạn tiếp theo; phần còn lại {N}",
+    ],
+    [
+      "Mức dịch vụ (SLA)",
+      "Cam kết mức dịch vụ chỉ áp dụng khi đơn đặt hàng đã ký nêu rõ, kèm mục tiêu, ngoại lệ và quy trình khiếu nại riêng. Trang SLA công khai tự nó không tạo ra cam kết.",
+      "Áp dụng sau (gói trả phí hiện có)",
+      "{N30} hoặc kỳ gia hạn tiếp theo, tùy ngày nào muộn hơn",
+    ],
+    [
+      "Chính sách quyền riêng tư",
+      "Mô tả rõ hơn dữ liệu thanh toán. Nay dẫn chiếu Luật Bảo vệ dữ liệu cá nhân của Việt Nam (có hiệu lực từ 1/1/2026) và GDPR/UK GDPR khi áp dụng. Nhà trường và quản trị viên phải thông báo và có sự đồng ý của người giám hộ khi cần trước khi dùng dịch vụ với trẻ em.",
+      "Làm rõ",
+      "{N}",
+    ],
+    [
+      "Phụ lục xử lý dữ liệu",
+      "Vai trò rõ hơn. Thông báo vi phạm dữ liệu không chậm trễ. Trả lại hoặc xóa dữ liệu khách hàng khi kết thúc.",
+      "Có lợi cho bạn",
+      "{N}",
+    ],
+    [
+      "Bên xử lý phụ",
+      "Danh mục thể hiện các nhà cung cấp có thể xử lý dữ liệu. Nhà cung cấp nào áp dụng tùy theo tính năng bạn dùng.",
+      "Làm rõ",
+      "{N}",
+    ],
+    [
+      "Chính sách sử dụng chấp nhận được và Nguyên tắc cộng đồng",
+      "Cả hai được viết lại rõ ràng hơn. Chính sách sử dụng chấp nhận được mới nêu về sử dụng hợp pháp, sử dụng công bằng tài nguyên hữu hạn, liên lạc và tự động hóa, báo cáo bảo mật và thực thi. Nguyên tắc cộng đồng mới nêu về tôn trọng, chia sẻ có trách nhiệm, bảo vệ người học, dùng chung năng lực hệ thống, và báo cáo, kiểm duyệt, khiếu nại. Chúng tôi giữ các quy tắc quan trọng nhất về an toàn: cấm nội dung lạm dụng tình dục trẻ em, nội dung khủng bố, hình ảnh thân mật không có sự đồng ý, quấy rối và deepfake; tính năng AI chỉ dành cho người từ đủ 18 tuổi; các bước xử lý theo mức độ; và quyền kháng nghị trong 30 ngày. Một số quy tắc chi tiết của bản cũ không còn được lặp lại (ví dụ con số giới hạn tần suất cụ thể). Lần đầu có bản tiếng Việt; trước đây các trang tiếng Việt hiển thị văn bản tiếng Anh.",
+      "Làm rõ; giữ các quy tắc an toàn",
+      "{N}",
+    ],
+  ],
+  "summaryTitle": "Tóm tắt thay đổi",
+  "tableHead": [
+    "Nội dung",
+    "Thay đổi",
+    "Ảnh hưởng đến bạn",
+    "Áp dụng từ",
+  ],
+  "title": "Những thay đổi trong các văn bản pháp lý của Tuturuuu",
+}
+`;
