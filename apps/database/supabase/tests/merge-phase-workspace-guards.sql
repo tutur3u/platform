@@ -16,6 +16,12 @@ begin
 end;
 $$;
 
+-- Main revokes default EXECUTE from PUBLIC on functions created by the migration role (20261027151200),
+-- which also covers these session-local helpers. Grant them to the roles the test switches to; the
+-- helpers live in pg_temp and vanish with the transaction, so no persistent grant is added.
+grant execute on function pg_temp.merge_phases(), pg_temp.run_merge_phase(text, uuid, uuid, uuid)
+  to anon, authenticated, service_role;
+
 select ok(not has_function_privilege('anon', format('public.merge_workspace_users_phase%s(uuid,uuid,uuid)', phase), 'execute'),
   phase || ': anon has no execute') from pg_temp.merge_phases() phase;
 select ok(has_function_privilege('authenticated', format('public.merge_workspace_users_phase%s(uuid,uuid,uuid)', phase), 'execute'),

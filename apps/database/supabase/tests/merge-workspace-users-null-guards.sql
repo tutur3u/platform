@@ -96,6 +96,14 @@ create function pg_temp.source_intact() returns boolean language sql as $$
     and (select count(*) from public.user_feedbacks where user_id = '00000000-0000-4000-8000-00000000c101') = 1
 $$;
 
+-- Main revokes default EXECUTE from PUBLIC on functions created by the migration role (20261027151200),
+-- which also covers these session-local helpers. Grant them to the roles the test switches to; the
+-- helpers live in pg_temp and vanish with the transaction, so no persistent grant is added.
+grant execute on function pg_temp.merge_entry_points(), pg_temp.merge_helpers(), pg_temp.merge_functions(),
+  pg_temp.merge_signature(text), pg_temp.run_merge(text, uuid, uuid, uuid),
+  pg_temp.run_helper(text, text, text), pg_temp.source_intact()
+  to anon, authenticated, service_role;
+
 set local role anon;
 select set_config('request.jwt.claims', '{"role":"anon"}', true);
 select throws_ok(format('select pg_temp.run_merge(%L, %L, %L, %L)', fn,
