@@ -65,6 +65,7 @@ const HEAVY_PR_WORKFLOWS = [
   'mobile-build-windows.yaml',
   'mobile.yaml',
   'nova-cloudflare.yaml',
+  'ops-hub-cloudflare.yaml',
   'parley-cloudflare.yaml',
   'periodic-report-delivery-contract.yaml',
   'playground-runtime-acceptance.yaml',
