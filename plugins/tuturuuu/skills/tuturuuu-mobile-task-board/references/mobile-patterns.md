@@ -445,6 +445,23 @@ and the pre-`runApp` join. Completion-barrier tests live in
   defaults. Keep the native gates (Android `TelemetryConsentGateProvider`
   above `FirebaseInitProvider`, iOS `willFinishLaunching`) and Dart's unsent-
   report deletion when collection is off; recheck the gate keys on SDK upgrades.
+- The first-run prompt (`TelemetryConsentPage`, `/telemetry-consent`) is driven by
+  `TelemetryPreference.consentPending` and the router redirect in
+  `app_router_telemetry_consent.dart`; it is production-only, opens above the
+  shell, has equal-weight answers and persists through `setEnabled`.
 - See `apps/docs/platform/features/mobile-telemetry-privacy.mdx` for regional
   defaults, unknown-region handling and exceptions. Verify startup ordering,
   persistence, native defaults and Settings controls with the telemetry suites.
+
+## Mastermind Machines
+
+- The read-only Machines parser lives in `features/mastermind/machines/`. Keep
+  aliases and arbitrary collector prose outside the app model; display names use
+  the fixed neutral table, and production hosts always retain their read-only rule.
+- Missing machines and empty machines are distinct states. Preserve null metrics
+  and last-known offline values. The debug sample branch must remain guarded by
+  `kDebugMode`; release uses the real accepted snapshot only.
+- The machine regression fixtures include hostile aliases. Run the focused
+  `test/features/mastermind/machines/` suite along with Mastermind, shell and router
+  coverage. Collector schema freeze, hub acceptance and security review remain
+  separate from widget/parser verification; see the mobile Machines feature page.

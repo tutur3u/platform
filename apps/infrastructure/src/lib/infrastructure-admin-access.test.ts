@@ -162,3 +162,88 @@ describe('Infrastructure admin access', () => {
     }
   );
 });
+
+describe('Infrastructure Bearer session authorization', () => {
+  beforeEach(() => vi.resetAllMocks());
+  it('checks the root permission for the verified Bearer actor', async () => {
+    const user = { id: '11111111-1111-4111-8111-111111111111' };
+    const getUser = vi.fn().mockResolvedValue({ data: { user }, error: null });
+    mocks.createAdminClient.mockResolvedValue({ auth: { getUser } });
+    mocks.getPermissions.mockResolvedValue({
+      containsPermission: vi.fn().mockReturnValue(true),
+      membershipType: 'MEMBER',
+    });
+    const { authorizeInfrastructureAdminRequest } = await import(
+      './infrastructure-admin-access'
+    );
+    const result = await authorizeInfrastructureAdminRequest(
+      'view_infrastructure',
+      true,
+      new Request('https://infrastructure.tuturuuu.com', {
+        headers: { Authorization: 'Bearer fixture-session' },
+      })
+    );
+    expect(result.ok).toBe(true);
+    expect(getUser).toHaveBeenCalledWith('fixture-session');
+    expect(mocks.getPermissions).toHaveBeenCalledWith({
+      user,
+      wsId: ROOT_WORKSPACE_ID,
+    });
+    expect(mocks.getSatelliteAppSessionUser).not.toHaveBeenCalled();
+  });
+  it('denies a verified Bearer guest of the root workspace', async () => {
+    const user = { id: '22222222-2222-4222-8222-222222222222' };
+    mocks.createAdminClient.mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({ data: { user }, error: null }),
+      },
+    });
+    mocks.getPermissions.mockResolvedValue({
+      containsPermission: vi.fn().mockReturnValue(true),
+      membershipType: 'GUEST',
+    });
+    const { authorizeInfrastructureAdminRequest } = await import(
+      './infrastructure-admin-access'
+    );
+    const result = await authorizeInfrastructureAdminRequest(
+      'view_infrastructure',
+      true,
+      new Request('https://infrastructure.tuturuuu.com', {
+        headers: { Authorization: 'Bearer fixture-session' },
+      })
+    );
+    expect(result.ok).toBe(false);
+  });
+  it.each(['Basic invalid', 'Bearer invalid'])(
+    'never falls back from rejected %s to a cookie',
+    async (authorization) => {
+      mocks.createAdminClient.mockResolvedValue({
+        auth: {
+          getUser: vi.fn().mockResolvedValue({
+            data: { user: null },
+            error: { status: 401 },
+          }),
+        },
+      });
+      mocks.getSatelliteAppSessionUser.mockResolvedValue({
+        id: 'cookie-actor',
+      });
+      const { authorizeInfrastructureAdminRequest } = await import(
+        './infrastructure-admin-access'
+      );
+      expect(
+        (
+          await authorizeInfrastructureAdminRequest(
+            'view_infrastructure',
+            true,
+            new Request('https://infrastructure.tuturuuu.com', {
+              headers: { Authorization: authorization, Cookie: 'valid=cookie' },
+            })
+          )
+        ).ok
+      ).toBe(false);
+      expect(mocks.getSatelliteAppSessionUser).not.toHaveBeenCalled();
+      expect(mocks.getPermissions).not.toHaveBeenCalled();
+    }
+  );
+});

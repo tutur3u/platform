@@ -231,7 +231,11 @@ Agents never write as a global service user in v1. Each inbound external user
 must map to a Tuturuuu workspace user before task or calendar tools can run.
 
 Discord uses the existing `discord_guild_members` mapping for the configured
-guild. Zalo uses root secret identity links:
+guild, and only when `discord_integrations` binds that guild to the channel's
+workspace (including `ROOT_WORKSPACE_ID` for internal agents). Connect the guild
+from that workspace's Discord integration page before deploying the channel;
+otherwise every Discord author is treated as unmapped. Zalo uses root secret
+identity links:
 
 ```txt
 AI_AGENT_IDENTITY:<wsId>:zalo:<oaId>:<zaloUserId> = <platformUserId>

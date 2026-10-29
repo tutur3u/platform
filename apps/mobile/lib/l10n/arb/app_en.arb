@@ -11,18 +11,45 @@
   "mastermindAskTruncated": "Ask truncated; full text on the Mac",
   "mastermindReplyFailedShort": "Not sent · tap to retry",
   "mastermindReplySendingOption": "Sending “{option}”",
-  "@mastermindReplySendingOption": {"placeholders": {"option": {"type": "String"}}},
+  "@mastermindReplySendingOption": {
+    "placeholders": {
+      "option": {
+        "type": "String"
+      }
+    }
+  },
   "mastermindReplyWriteOwn": "Write your own",
   "mastermindReplySendOption": "Send “{option}”",
-  "@mastermindReplySendOption": {"placeholders": {"option": {"type": "String"}}},
+  "@mastermindReplySendOption": {
+    "placeholders": {
+      "option": {
+        "type": "String"
+      }
+    }
+  },
   "mastermindAskedAt": "Asked {age} · {time}",
-  "@mastermindAskedAt": {"placeholders": {"age": {"type": "String"}, "time": {"type": "String"}}},
+  "@mastermindAskedAt": {
+    "placeholders": {
+      "age": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "mastermindReplyUndo": "Undo",
   "mastermindReplyNotSentReview": "Couldn't send · open to review",
   "mastermindAnswerExpand": "Show full answer",
   "mastermindAnswerCollapse": "Show less",
   "mastermindReplyQueuedAt": "Queued {time}",
-  "@mastermindReplyQueuedAt": {"placeholders": {"time": {"type": "String"}}},
+  "@mastermindReplyQueuedAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "assistantDownloadPhasePending": "Pending",
   "assistantDownloadPhaseQueued": "Queued",
   "assistantDownloadPhaseTransferring": "Downloading",
@@ -4572,9 +4599,15 @@
   "taskTimelineOngoing": "Day {day} of {total}, ends {date}",
   "@taskTimelineOngoing": {
     "placeholders": {
-      "day": {"type": "int"},
-      "total": {"type": "int"},
-      "date": {"type": "String"}
+      "day": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "date": {
+        "type": "String"
+      }
     }
   },
   "taskTimelineRangeAll": "All",
@@ -4585,7 +4618,9 @@
   "taskTimelineStarted": "Started {date}",
   "@taskTimelineStarted": {
     "placeholders": {
-      "date": {"type": "String"}
+      "date": {
+        "type": "String"
+      }
     }
   },
   "tasksAllCaughtUp": "You're all caught up!",
@@ -5736,9 +5771,9 @@
     "placeholders": {
       "age": {
         "type": "String"
-        }
       }
-    },
+    }
+  },
   "@mastermindShowAll": {
     "placeholders": {
       "count": {
@@ -5834,6 +5869,58 @@
       }
     }
   },
+  "@mastermindTimeDaysShort": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindTimeHoursShort": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindTimeMinutesShort": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindTimeSpoken": {
+    "placeholders": {
+      "relative": {
+        "type": "String"
+      },
+      "absolute": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindTimeSpokenDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindTimeSpokenHours": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindTimeSpokenMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "@mastermindUnitCredits": {
     "placeholders": {
       "value": {
@@ -5915,9 +6002,9 @@
     "placeholders": {
       "chart": {
         "type": "String"
-        }
       }
-    },
+    }
+  },
   "@mastermindWaitingOnYou": {
     "placeholders": {
       "count": {
@@ -6219,7 +6306,6 @@
   "mastermindScopeModels": "Models",
   "mastermindScopeUsage": "Usage",
   "mastermindSectionWithBasis": "{section} · {basis}",
-  "mastermindSecurityFix": "Security fix",
   "mastermindSecurityGroup": "Security",
   "mastermindSecurityIssue": "Security issue",
   "mastermindSecurityLine": "{product} · security fix",
@@ -6337,6 +6423,23 @@
   "mastermindTimeZoneCaption": "GMT+7",
   "mastermindTitle": "Mastermind",
   "mastermindTryAgain": "Try again",
+  "mastermindTimeDaysShort": "{count}d",
+  "mastermindTimeHoursShort": "{count}h",
+  "mastermindTimeMinutesShort": "{count}m",
+  "mastermindTimeNow": "now",
+  "mastermindAskedTime": "Asked {time}",
+  "@mastermindAskedTime": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindTimeSpoken": "{relative}, {absolute}",
+  "mastermindTimeSpokenDays": "{count, plural, =1{1 day ago} other{{count} days ago}}",
+  "mastermindTimeSpokenHours": "{count, plural, =1{1 hour ago} other{{count} hours ago}}",
+  "mastermindTimeSpokenMinutes": "{count, plural, =1{1 minute ago} other{{count} minutes ago}}",
+  "mastermindTimeSpokenNow": "just now",
   "mastermindUnavailable": "Unavailable",
   "mastermindUnitCredits": "{value} credits",
   "mastermindUnitCreditsPerDay": "{value} credits/day",
@@ -6566,6 +6669,107 @@
   "settingsShareTelemetry": "Share analytics and crash reports",
   "settingsPrivacy": "Privacy",
   "settingsTelemetryError": "Could not update sharing. Tap to retry.",
+  "mastermindMachineUpdated": "As of {time}",
+  "@mastermindMachineUpdated": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindMachineLastSeen": "Last seen {time}",
+  "@mastermindMachineLastSeen": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindMachineSummary": "{total} machines · {online} online · {attention} need attention",
+  "@mastermindMachineSummary": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      },
+      "online": {
+        "type": "int"
+      },
+      "attention": {
+        "type": "int"
+      }
+    }
+  },
+  "machineTextMachines": "Machines",
+  "machineTextAttention": "Needs attention",
+  "machineTextOnline": "Online",
+  "machineTextAsleep": "Asleep",
+  "machineTextOffline": "Offline",
+  "machineTextUnknown": "Unknown",
+  "machineTextOfflineGroup": "Asleep or offline",
+  "machineTextNotPublished": "Machine data is not published yet",
+  "machineTextEmpty": "No machines reported",
+  "machineTextGone": "This machine is no longer reported",
+  "machineTextUnavailable": "Unavailable",
+  "machineTextStale": "Collector data is stale; values are last known",
+  "machineTextPartial": "Collector coverage is partial",
+  "machineTextNow": "Now",
+  "machineTextRunning": "Running",
+  "machineTextRules": "Rules",
+  "machineTextAlerts": "Alerts",
+  "machineTextHistory": "History",
+  "machineTextKeepAwake": "Keep awake",
+  "machineTextSample": "SAMPLE data",
+  "machineTextSampleToggle": "Use sample machine data",
+  "machineTextStatus": "Status and specs",
+  "machineTextCpu": "CPU",
+  "machineTextRam": "Memory",
+  "machineTextDisk": "Disk free",
+  "machineTextSwap": "Swap",
+  "machineTextTemperature": "Temperature",
+  "machineTextBuild": "Build",
+  "machineTextStudio": "Studio",
+  "machineTextLaptop": "Laptop",
+  "machineTextDevbox": "Devbox",
+  "machineTextLane": "Lanes",
+  "machineTextTest": "Tests",
+  "machineTextActive": "Scheduling active",
+  "machineTextDraining": "Draining",
+  "machineTextPaused": "Scheduling paused",
+  "machineTextThermal": "Thermal alert",
+  "machineTextWarning": "Warning",
+  "machineTextCritical": "Critical",
+  "machineTextNominal": "Nominal",
+  "machineTextFair": "Fair",
+  "machineTextSerious": "Serious",
+  "machineTextMacos": "macOS",
+  "machineTextLinux": "Linux",
+  "machineTextWindows": "Windows",
+  "machineTextNone": "None reported",
+  "machineTextLastKnown": "Last-known values",
+  "machineTextDay": "24 h",
+  "machineTextWeek": "7 d",
+  "machineTextTable": "Table",
+  "machineTextTime": "Time",
+  "machineTextCores": "Cores",
+  "machineTextLoad": "Load (1 min)",
+  "machineTextMacGuide": "In System Settings, open Energy and prevent automatic sleeping on power. Plug in and keep the lid open. Mastermind does not control this machine.",
+  "machineTextLinuxGuide": "Use your desktop Power settings to prevent automatic suspend while plugged in. Mastermind does not control this machine.",
+  "machineTextWindowsGuide": "In Settings, open System > Power and battery > Screen and sleep. Choose the plugged-in sleep setting. Mastermind does not control this machine.",
+  "machineTextUnknownGuide": "Use the operating system power settings to keep the machine awake while plugged in. Mastermind does not control this machine.",
+  "machineTextOther": "Other",
+  "machineTextProdHost": "Production host",
+  "machineTextMergeTrain": "Merge train",
+  "machineTextFindingsOnly": "Findings only",
+  "machineTextProdReadsHereOnly": "Production reads only here",
+  "machineTextNeverBuilds": "Never builds",
+  "machineTextNoHeavyWork": "No heavy work",
+  "machineTextLightWorkOnly": "Light work only",
+  "machineTextProdHostReadOnly": "Production host: read-only",
+  "machineTextDiskLow": "Low disk space",
+  "machineTextLoadHigh": "Load above cores",
+  "machineTextSwapHigh": "High swap use",
+  "machineTextRamGb": "RAM (GB)",
+  "machineTextDiskGb": "Disk (GB)",
   "mastermindCatchupTitle": "Since you last looked",
   "mastermindCatchupWindowSince": "Since your last visit",
   "mastermindCatchupWindowDay": "Last 24 hours",
@@ -6685,5 +6889,13 @@
   "mastermindMorningCatchup": "Morning catch-up",
   "mastermindMorningCatchupSubtitle": "A notification that says your catch-up is ready. Saved on this device; sent once the hub supports it.",
   "mastermindMorningCatchupTime": "Time",
-  "mastermindCatchupPushBody": "Your catch-up is ready"
+  "mastermindCatchupPushBody": "Your catch-up is ready",
+  "mastermindSecurityFix": "Security fix",
+  "telemetryConsentTitle": "Help improve Tuturuuu",
+  "telemetryConsentBody": "Tuturuuu can use Firebase Analytics and Firebase Crashlytics, services provided by Google, to see how the app is used and to find and fix crashes.",
+  "telemetryConsentCollected": "If you allow this, the app shares usage events, crash and error reports, and technical details such as your device model, operating system version and app version. Your messages, files and task content are not included.",
+  "telemetryConsentSettingsNote": "You can change this at any time in Settings > Preferences > Privacy.",
+  "telemetryConsentAllow": "Allow",
+  "telemetryConsentDeny": "Don't allow",
+  "telemetryConsentLearnMore": "Learn more"
 }

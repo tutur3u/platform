@@ -13368,9 +13368,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get mastermindSecurityFix => 'Security fix';
-
-  @override
   String get mastermindSecurityGroup => 'Security';
 
   @override
@@ -13778,6 +13775,70 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindTryAgain => 'Try again';
+
+  @override
+  String mastermindTimeDaysShort(int count) {
+    return '${count}d';
+  }
+
+  @override
+  String mastermindTimeHoursShort(int count) {
+    return '${count}h';
+  }
+
+  @override
+  String mastermindTimeMinutesShort(int count) {
+    return '${count}m';
+  }
+
+  @override
+  String get mastermindTimeNow => 'now';
+
+  @override
+  String mastermindAskedTime(String time) {
+    return 'Asked $time';
+  }
+
+  @override
+  String mastermindTimeSpoken(String relative, String absolute) {
+    return '$relative, $absolute';
+  }
+
+  @override
+  String mastermindTimeSpokenDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days ago',
+      one: '1 day ago',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindTimeSpokenHours(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count hours ago',
+      one: '1 hour ago',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindTimeSpokenMinutes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count minutes ago',
+      one: '1 minute ago',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mastermindTimeSpokenNow => 'just now';
 
   @override
   String get mastermindUnavailable => 'Unavailable';
@@ -14265,13 +14326,232 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindAskRemindAtMacSoon => 'Coming soon';
 
   @override
-  String get settingsShareTelemetry => 'Share analytics and crash reports';
+  String mastermindMachineUpdated(String time) {
+    return 'As of $time';
+  }
 
   @override
-  String get settingsPrivacy => 'Privacy';
+  String mastermindMachineLastSeen(String time) {
+    return 'Last seen $time';
+  }
 
   @override
-  String get settingsTelemetryError => 'Could not update sharing. Tap to retry.';
+  String mastermindMachineSummary(int total, int online, int attention) {
+    return '$total machines · $online online · $attention need attention';
+  }
+
+  @override
+  String get machineTextMachines => 'Machines';
+
+  @override
+  String get machineTextAttention => 'Needs attention';
+
+  @override
+  String get machineTextOnline => 'Online';
+
+  @override
+  String get machineTextAsleep => 'Asleep';
+
+  @override
+  String get machineTextOffline => 'Offline';
+
+  @override
+  String get machineTextUnknown => 'Unknown';
+
+  @override
+  String get machineTextOfflineGroup => 'Asleep or offline';
+
+  @override
+  String get machineTextNotPublished => 'Machine data is not published yet';
+
+  @override
+  String get machineTextEmpty => 'No machines reported';
+
+  @override
+  String get machineTextGone => 'This machine is no longer reported';
+
+  @override
+  String get machineTextUnavailable => 'Unavailable';
+
+  @override
+  String get machineTextStale => 'Collector data is stale; values are last known';
+
+  @override
+  String get machineTextPartial => 'Collector coverage is partial';
+
+  @override
+  String get machineTextNow => 'Now';
+
+  @override
+  String get machineTextRunning => 'Running';
+
+  @override
+  String get machineTextRules => 'Rules';
+
+  @override
+  String get machineTextAlerts => 'Alerts';
+
+  @override
+  String get machineTextHistory => 'History';
+
+  @override
+  String get machineTextKeepAwake => 'Keep awake';
+
+  @override
+  String get machineTextSample => 'SAMPLE data';
+
+  @override
+  String get machineTextSampleToggle => 'Use sample machine data';
+
+  @override
+  String get machineTextStatus => 'Status and specs';
+
+  @override
+  String get machineTextCpu => 'CPU';
+
+  @override
+  String get machineTextRam => 'Memory';
+
+  @override
+  String get machineTextDisk => 'Disk free';
+
+  @override
+  String get machineTextSwap => 'Swap';
+
+  @override
+  String get machineTextTemperature => 'Temperature';
+
+  @override
+  String get machineTextBuild => 'Build';
+
+  @override
+  String get machineTextStudio => 'Studio';
+
+  @override
+  String get machineTextLaptop => 'Laptop';
+
+  @override
+  String get machineTextDevbox => 'Devbox';
+
+  @override
+  String get machineTextLane => 'Lanes';
+
+  @override
+  String get machineTextTest => 'Tests';
+
+  @override
+  String get machineTextActive => 'Scheduling active';
+
+  @override
+  String get machineTextDraining => 'Draining';
+
+  @override
+  String get machineTextPaused => 'Scheduling paused';
+
+  @override
+  String get machineTextThermal => 'Thermal alert';
+
+  @override
+  String get machineTextWarning => 'Warning';
+
+  @override
+  String get machineTextCritical => 'Critical';
+
+  @override
+  String get machineTextNominal => 'Nominal';
+
+  @override
+  String get machineTextFair => 'Fair';
+
+  @override
+  String get machineTextSerious => 'Serious';
+
+  @override
+  String get machineTextMacos => 'macOS';
+
+  @override
+  String get machineTextLinux => 'Linux';
+
+  @override
+  String get machineTextWindows => 'Windows';
+
+  @override
+  String get machineTextNone => 'None reported';
+
+  @override
+  String get machineTextLastKnown => 'Last-known values';
+
+  @override
+  String get machineTextDay => '24 h';
+
+  @override
+  String get machineTextWeek => '7 d';
+
+  @override
+  String get machineTextTable => 'Table';
+
+  @override
+  String get machineTextTime => 'Time';
+
+  @override
+  String get machineTextCores => 'Cores';
+
+  @override
+  String get machineTextLoad => 'Load (1 min)';
+
+  @override
+  String get machineTextMacGuide => 'In System Settings, open Energy and prevent automatic sleeping on power. Plug in and keep the lid open. Mastermind does not control this machine.';
+
+  @override
+  String get machineTextLinuxGuide => 'Use your desktop Power settings to prevent automatic suspend while plugged in. Mastermind does not control this machine.';
+
+  @override
+  String get machineTextWindowsGuide => 'In Settings, open System > Power and battery > Screen and sleep. Choose the plugged-in sleep setting. Mastermind does not control this machine.';
+
+  @override
+  String get machineTextUnknownGuide => 'Use the operating system power settings to keep the machine awake while plugged in. Mastermind does not control this machine.';
+
+  @override
+  String get machineTextOther => 'Other';
+
+  @override
+  String get machineTextProdHost => 'Production host';
+
+  @override
+  String get machineTextMergeTrain => 'Merge train';
+
+  @override
+  String get machineTextFindingsOnly => 'Findings only';
+
+  @override
+  String get machineTextProdReadsHereOnly => 'Production reads only here';
+
+  @override
+  String get machineTextNeverBuilds => 'Never builds';
+
+  @override
+  String get machineTextNoHeavyWork => 'No heavy work';
+
+  @override
+  String get machineTextLightWorkOnly => 'Light work only';
+
+  @override
+  String get machineTextProdHostReadOnly => 'Production host: read-only';
+
+  @override
+  String get machineTextDiskLow => 'Low disk space';
+
+  @override
+  String get machineTextLoadHigh => 'Load above cores';
+
+  @override
+  String get machineTextSwapHigh => 'High swap use';
+
+  @override
+  String get machineTextRamGb => 'RAM (GB)';
+
+  @override
+  String get machineTextDiskGb => 'Disk (GB)';
 
   @override
   String get mastermindCatchupTitle => 'Since you last looked';
@@ -14417,4 +14697,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindCatchupPushBody => 'Your catch-up is ready';
+
+  @override
+  String get mastermindSecurityFix => 'Security fix';
 }

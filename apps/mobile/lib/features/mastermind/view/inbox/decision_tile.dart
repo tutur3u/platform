@@ -4,13 +4,13 @@ import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
-import 'package:mobile/features/mastermind/presentation/gmt7.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
 import 'package:mobile/features/mastermind/view/widgets/mastermind_status_chip.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_time_label.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// One journal decision in the Decisions list: title, category, risk as a word
-/// plus shape, product and GMT+7 time. Tapping opens the detail.
+/// plus shape, product and relative time. Tapping opens the detail.
 class DecisionTile extends StatelessWidget {
   const DecisionTile({required this.decision, super.key});
 
@@ -19,7 +19,6 @@ class DecisionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final locale = Localizations.localeOf(context).toString();
     return AppGroupedRow(
       title: Text(decision.title),
       showChevron: true,
@@ -29,7 +28,7 @@ class DecisionTile extends StatelessWidget {
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(Gmt7.time(decision.at, locale)),
+          MastermindTimeLabel(decision.at),
           const SizedBox(height: AppSpacing.xs),
           Wrap(
             spacing: AppSpacing.xs,

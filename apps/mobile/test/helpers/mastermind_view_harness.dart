@@ -15,6 +15,7 @@ import 'package:mobile/features/mastermind/parse/snapshot_parser.dart';
 import 'package:mobile/features/mastermind/replies/answered_elsewhere_cubit.dart';
 import 'package:mobile/features/mastermind/replies/mastermind_replies_cubit.dart';
 import 'package:mobile/features/mastermind/runtime/mastermind_runtime.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_clock.dart';
 import 'package:mobile/features/workspace/workspace_presentation.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -147,13 +148,18 @@ final class MastermindViewHarness {
     }
   }
 
-  Widget wrap(Widget child) => MultiBlocProvider(
-    providers: [
-      BlocProvider<MastermindAccessCubit>.value(value: access),
-      BlocProvider<MastermindSnapshotCubit>.value(value: snapshot),
-      RepositoryProvider<MastermindRuntime>.value(value: runtime),
-    ],
-    child: child,
+  /// Relative times count from [testNow], so "2m" means two minutes after
+  /// the synthetic snapshot's `generated_at`.
+  Widget wrap(Widget child) => MastermindClockScope(
+    now: () => testNow,
+    child: MultiBlocProvider(
+      providers: [
+        BlocProvider<MastermindAccessCubit>.value(value: access),
+        BlocProvider<MastermindSnapshotCubit>.value(value: snapshot),
+        RepositoryProvider<MastermindRuntime>.value(value: runtime),
+      ],
+      child: child,
+    ),
   );
 
   Future<void> dispose() => runtime.close();

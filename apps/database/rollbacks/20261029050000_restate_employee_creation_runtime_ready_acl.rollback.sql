@@ -1,0 +1,1 @@
+-- No-op: the ACL was already service-only before this migration.
