@@ -13,7 +13,7 @@
 --    transition and settings change, written in the same transaction.
 --
 -- The notification types and receipt kinds are in
--- 20261029192010_tutoring_automation_notifications.sql.
+-- 20261030051010_tutoring_automation_notifications.sql.
 --
 -- All tables are service-role only, with RLS enabled and no client policies.
 -- private.tutoring_absence_followup_apply is the only writer of follow-up

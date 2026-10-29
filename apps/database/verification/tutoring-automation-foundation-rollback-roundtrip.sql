@@ -1,8 +1,8 @@
--- Rollback proof for 20261029192000 and 20261029192010 (tutoring automation).
+-- Rollback proof for 20261030051000 and 20261030051010 (tutoring automation).
 -- Run ONLY against a disposable local stack, after creating a notification of
 -- each new type so the kept-row case is exercised:
---   psql "$DB_URL" -v ON_ERROR_STOP=1 -f apps/database/rollbacks/20261029192010_tutoring_automation_notifications.rollback.sql
---   psql "$DB_URL" -v ON_ERROR_STOP=1 -f apps/database/rollbacks/20261029192000_tutoring_automation_foundation.rollback.sql
+--   psql "$DB_URL" -v ON_ERROR_STOP=1 -f apps/database/rollbacks/20261030051010_tutoring_automation_notifications.rollback.sql
+--   psql "$DB_URL" -v ON_ERROR_STOP=1 -f apps/database/rollbacks/20261030051000_tutoring_automation_foundation.rollback.sql
 --   psql "$DB_URL" -v ON_ERROR_STOP=1 -f apps/database/verification/tutoring-automation-foundation-rollback-roundtrip.sql
 -- then re-apply both forward migrations and re-run
 -- supabase/tests/tutoring-automation-foundation.sql.

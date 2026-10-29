@@ -698,8 +698,8 @@ later job.
 Regression coverage:
 `apps/database/supabase/tests/tutoring-automation-foundation.sql` and
 `tutoring-automation-hardening.sql`. Rollback: run
-`20261029192010_tutoring_automation_notifications.rollback.sql`, then
-`20261029192000_tutoring_automation_foundation.rollback.sql`, and prove it with
+`20261030051010_tutoring_automation_notifications.rollback.sql`, then
+`20261030051000_tutoring_automation_foundation.rollback.sql`, and prove it with
 `apps/database/verification/tutoring-automation-foundation-rollback-roundtrip.sql`.
 The rollback keeps both notification types, because a CHECK constraint is
 re-checked on every update and removing them would make existing

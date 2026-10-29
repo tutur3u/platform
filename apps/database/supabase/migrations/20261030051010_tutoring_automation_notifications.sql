@@ -8,7 +8,7 @@
 --    local date and recipient. Receipts are claimed before notifying, so a
 --    rerun never notifies twice.
 --
--- Depends on 20261029192000_tutoring_automation_foundation.sql. No grants
+-- Depends on 20261030051000_tutoring_automation_foundation.sql. No grants
 -- change: the receipts table stays service-role only.
 set local lock_timeout = '5s';
 set local statement_timeout = '30s';

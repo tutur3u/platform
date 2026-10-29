@@ -1,5 +1,5 @@
--- Rollback for 20261029192010_tutoring_automation_notifications.sql.
--- Run before the 20261029192000 rollback. Deletes absence-reminder and
+-- Rollback for 20261030051010_tutoring_automation_notifications.sql.
+-- Run before the 20261030051000 rollback. Deletes absence-reminder and
 -- lesson-report receipts (their data is lost), drops their columns and keys,
 -- and restores the previous receipt kind check.
 --

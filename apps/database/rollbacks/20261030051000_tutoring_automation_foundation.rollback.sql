@@ -1,5 +1,5 @@
--- Rollback for 20261029192000_tutoring_automation_foundation.sql.
--- Run the 20261029192010 rollback first; this one refuses to run while the
+-- Rollback for 20261030051000_tutoring_automation_foundation.sql.
+-- Run the 20261030051010 rollback first; this one refuses to run while the
 -- receipts still reference follow-ups. Drops the automation settings, absence
 -- follow-ups, their audit, and their functions (their data is lost). Nothing
 -- outside these objects changes, and it grants nothing.
@@ -16,7 +16,7 @@ begin
       and table_name = 'tutoring_notification_receipts'
       and column_name = 'absence_followup_id'
   ) then
-    raise exception 'Roll back 20261029192010_tutoring_automation_notifications first';
+    raise exception 'Roll back 20261030051010_tutoring_automation_notifications first';
   end if;
 end;
 $$;
