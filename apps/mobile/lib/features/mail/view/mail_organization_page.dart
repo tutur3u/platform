@@ -38,9 +38,9 @@ class _MailOrganizationPageState extends State<MailOrganizationPage> {
     unawaited(_load());
   }
 
-  Future<void> _load() async {
+  Future<void> _load({bool showLoader = true}) async {
     setState(() {
-      _busy = true;
+      _busy = showLoader;
       _failed = false;
     });
     try {
@@ -296,44 +296,51 @@ class _MailOrganizationPageState extends State<MailOrganizationPage> {
         tooltip: l10n.commonCreate,
         child: const Icon(Icons.add),
       ),
-      body: _busy
-          ? const AppLoadingIndicator.page()
-          : _failed
-          ? Center(
-              child: TextButton(
-                onPressed: _load,
-                child: Text(l10n.commonRetry),
-              ),
-            )
-          : LayoutBuilder(
-              builder: (context, constraints) => ListView(
-                padding: AppPageInsets.of(
-                  context,
-                  width: constraints.maxWidth,
-                  endGap: _mailOrganizationFabGap,
-                ),
+      body: NovaRefreshIndicator(
+        onRefresh: () => _load(showLoader: false),
+        child: _busy
+            ? const AppLoadingIndicator.page()
+            : _failed
+            ? AppPageListView(
+                physics: const AlwaysScrollableScrollPhysics(),
                 children: [
-                  for (final item in _items)
-                    ListTile(
-                      title: Text(
-                        item[_members ? 'email' : 'name'] as String? ?? '',
-                      ),
-                      subtitle: _members ? Text(item['role'] as String) : null,
-                      onTap: item['kind'] == 'system' || item['role'] == 'owner'
-                          ? null
-                          : () => _edit(item),
-                      trailing:
-                          item['kind'] == 'system' || item['role'] == 'owner'
-                          ? null
-                          : IconButton(
-                              tooltip: l10n.commonDelete,
-                              onPressed: () => _remove(item),
-                              icon: const Icon(Icons.delete_outline),
-                            ),
-                    ),
+                  TextButton(onPressed: _load, child: Text(l10n.commonRetry)),
                 ],
+              )
+            : LayoutBuilder(
+                builder: (context, constraints) => ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: AppPageInsets.of(
+                    context,
+                    width: constraints.maxWidth,
+                    endGap: _mailOrganizationFabGap,
+                  ),
+                  children: [
+                    for (final item in _items)
+                      ListTile(
+                        title: Text(
+                          item[_members ? 'email' : 'name'] as String? ?? '',
+                        ),
+                        subtitle: _members
+                            ? Text(item['role'] as String)
+                            : null,
+                        onTap:
+                            item['kind'] == 'system' || item['role'] == 'owner'
+                            ? null
+                            : () => _edit(item),
+                        trailing:
+                            item['kind'] == 'system' || item['role'] == 'owner'
+                            ? null
+                            : IconButton(
+                                tooltip: l10n.commonDelete,
+                                onPressed: () => _remove(item),
+                                icon: const Icon(Icons.delete_outline),
+                              ),
+                      ),
+                  ],
+                ),
               ),
-            ),
+      ),
     );
   }
 }

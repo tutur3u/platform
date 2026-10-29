@@ -70,6 +70,7 @@ import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:mobile/widgets/pending_sync_frame.dart';
 
 part 'task_board_detail_page_actions.dart';
+part 'task_board_recycle_bin_sheet.dart';
 part 'task_board_detail_page_actions_filter_sheet.dart';
 part 'task_board_detail_page_actions_filter_widgets.dart';
 part 'task_board_detail_page_board_layout.dart';

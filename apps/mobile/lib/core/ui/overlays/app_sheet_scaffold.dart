@@ -7,6 +7,7 @@ import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/overlays/app_modal_scope.dart';
 import 'package:mobile/core/ui/overlays/app_sheet_search.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
+import 'package:mobile/widgets/nova_refresh_indicator.dart';
 
 /// Below this height (scaled with text) the chrome scrolls with the body.
 const double _tightHeight = 280;
@@ -25,6 +26,7 @@ class AppSheetScaffold extends StatelessWidget {
     this.slivers,
     this.actions = const [],
     this.search,
+    this.onRefresh,
     this.showCloseButton = true,
     this.padding = const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
     super.key,
@@ -44,6 +46,7 @@ class AppSheetScaffold extends StatelessWidget {
 
   /// Registers a dynamic shell search action instead of an inline field.
   final AppSheetSearch? search;
+  final RefreshCallback? onRefresh;
   final bool showCloseButton;
   final EdgeInsetsGeometry padding;
 
@@ -145,6 +148,7 @@ class AppSheetScaffold extends StatelessWidget {
     // When the keyboard or large text leaves little room, the header, search
     // and actions scroll with the body instead of overflowing.
     Widget body({required bool tight}) => CustomScrollView(
+      physics: onRefresh == null ? null : const AlwaysScrollableScrollPhysics(),
       controller: scope?.scrollController,
       shrinkWrap: !expands,
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
@@ -184,7 +188,12 @@ class AppSheetScaffold extends StatelessWidget {
                 child: NotificationListener<ScrollNotification>(
                   // Keep sheet scrolling from driving the page's dock reveal.
                   onNotification: (_) => true,
-                  child: body(tight: tight),
+                  child: onRefresh == null
+                      ? body(tight: tight)
+                      : NovaRefreshIndicator(
+                          onRefresh: onRefresh!,
+                          child: body(tight: tight),
+                        ),
                 ),
               ),
               if (!tight && footer != null) footer,

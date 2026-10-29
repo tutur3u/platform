@@ -147,6 +147,13 @@ class _AssistantModelPickerSheetState extends State<AssistantModelPickerSheet> {
         widget.models.map((model) => model.provider).toSet().toList()..sort();
     final visible = _visible;
     return AppSheetScaffold(
+      onRefresh: () async {
+        if (_canSyncFavorites &&
+            !_favoritesLoading &&
+            _pendingFavorite == null) {
+          await _loadFavorites();
+        }
+      },
       title: context.l10n.assistantModelLabel,
       search: AppSheetSearch(
         controller: _search,

@@ -434,3 +434,22 @@ skip the queue on cache failure. Preserve branch fallbacks, error/stack reportin
 and the pre-`runApp` join. Completion-barrier tests live in
 `test/core/startup/startup_state_test.dart`. See the Mobile application guide's
 [ordering contract](../../../../../apps/docs/platform/applications/mobile.mdx#independent-startup-state-restoration).
+
+## Remote list refresh
+
+Use NovaRefreshIndicator around the existing awaitable cubit/repository refresh.
+Set AlwaysScrollableScrollPhysics only on its owning vertical scroll view;
+never inherit that physics into nested or horizontal scrollables. The affordance
+adds header clearance only when the shell header scrolls over the body. Use NovaRefreshIndicator.state for an existing
+empty/error widget that has no scrollable; it preserves the widget's page insets.
+Sheets expose AppSheetScaffold.onRefresh inside their scroll-notification fence;
+an indicator outside the scaffold cannot receive those notifications. Keep
+canvas-specific notification predicates and realtime reverse-list gestures.
+Audit routed lists plus remote list overlays; record local-only/form exceptions
+in the mobile application page. Regression targets are
+notifications_pull_to_refresh_test.dart and nova_refresh_indicator_test.dart.
+
+Pull gestures retain the current error message while refreshing. Explicit Retry
+returns to loading feedback. Compact sheet empty/error states use a plain
+indicator with a shrink-wrapped scroll view. Regression coverage includes
+calendar_cubit_test.dart and nova_refresh_indicator_test.dart.

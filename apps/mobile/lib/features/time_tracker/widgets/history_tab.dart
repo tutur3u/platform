@@ -159,6 +159,7 @@ class _HistoryTabState extends State<HistoryTab> {
                 );
               },
               child: AppPageScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
                 controller: _scrollController,
                 slivers: [
                   SliverToBoxAdapter(
