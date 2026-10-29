@@ -83,6 +83,8 @@ const prExceptions = {
 };
 const mainExceptions = {
   ...prExceptions,
+  'supabase-staging.yaml':
+    'Protected main migrations serialize exact-SHA marker evidence',
   'release-sdk-dev.yaml':
     'Dev publication retains its serial npm dist-tag lock',
   // PR revisions supersede; main never cancels an active staging upload.

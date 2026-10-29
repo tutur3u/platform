@@ -40,6 +40,8 @@ test('the staging contract allowlist is exactly current plus main history', () =
     'ec2f81d196eff45ba05d2b87ad5bd1bb98b194da',
     // main: before #6948 moved migration credentials into environments
     'd880c279f37b63628706b195e5397be1cf25acd5',
+    // main: #6948 protected migration environments and project binding
+    '40f1cc37c1b4c0ed2b9976019c95eb145311c77d',
     current,
   ]);
   for (const rejected of [
