@@ -176,7 +176,11 @@ test('a removed, commented-out or relocated block gets no exception', () => {
 });
 
 test('any change to the file bytes, even outside the block, gets no exception', () => {
-  const edits = [`${SQL}\n-- trailing note\n`, `\n${SQL}`, SQL.replace('_ws_id', '_wsid')];
+  const edits = [
+    `${SQL}\n-- trailing note\n`,
+    `\n${SQL}`,
+    SQL.replace('_ws_id', '_wsid'),
+  ];
   for (const edited of edits) {
     assert.notEqual(edited, SQL);
     const result = run({ [FILE]: edited });
@@ -203,7 +207,10 @@ test('only the four reviewed findings are covered', () => {
     'public.get_daily_invoice_totals(uuid,integer,uuid[],uuid[],date,date,integer)',
   ]) {
     for (const line of [197, 267, 341, 415]) {
-      assert.equal(matchReviewedException({ ...base, key, definerLine: line }), null);
+      assert.equal(
+        matchReviewedException({ ...base, key, definerLine: line }),
+        null
+      );
     }
   }
   // The covered finding in a different file.

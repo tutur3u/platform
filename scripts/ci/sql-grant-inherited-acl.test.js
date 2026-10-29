@@ -295,7 +295,9 @@ test('the repository passes with every remaining inherited pass evidenced', () =
   assert.notEqual(direct.mode, 'inherited-acl');
   assert.ok(
     direct.evidence.some((item) =>
-      item.file.endsWith('20261029050000_restate_employee_creation_runtime_ready_acl.sql')
+      item.file.endsWith(
+        '20261029050000_restate_employee_creation_runtime_ready_acl.sql'
+      )
     )
   );
   for (const entry of inherited) {

@@ -101,7 +101,9 @@ function findDoBlocks(sql, code) {
 
 // Returns { entry, block } when the exception covers this definer, else null.
 function matchReviewedException({ file, sql, code, key, definerLine }) {
-  const entry = REVIEWED_EXCEPTIONS.find((candidate) => candidate.file === file);
+  const entry = REVIEWED_EXCEPTIONS.find(
+    (candidate) => candidate.file === file
+  );
   if (!entry || digestFile(sql) !== entry.fileSha256) return null;
   const covered = entry.findings.some(
     (finding) =>

@@ -549,17 +549,17 @@ by `supabase/tests/finance-invoice-totals-definer-acl.sql`.
 The guard prints each covered signature as a reviewed exception. Never add
 entries without a security review.
 
-**Schema-scoped default privileges do not fence new functions.** `ALTER DEFAULT
-PRIVILEGES ... IN SCHEMA private REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC` (as in
-`20261029030500_align_cross_app_token_grant_and_private_fence.sql`) does not
-stop a function created in `private` afterwards from being executable by
-`public` and `anon`: schema-scoped entries can only add privileges, so
-PostgreSQL's global PUBLIC `EXECUTE` default still applies. The control is the
-guard's explicit same-file `REVOKE` rule for every new definer. Do not rely on
-that statement. No global default-privilege change is part of this rule; it is
-a separate tracked decision. The pgTAP test
+**Default EXECUTE on new `private` functions.** A function that `postgres`
+creates in `private` is closed to `public` and `anon` but open to `authenticated`
+and `service_role`, through the global default privilege that
+`20261027151200_restrict_anon_definer_execute.sql` sets for role `postgres`. The
+schema-scoped `ALTER DEFAULT PRIVILEGES ... IN SCHEMA private REVOKE EXECUTE`
+in `20261029030500_align_cross_app_token_grant_and_private_fence.sql` adds
+nothing beyond it, because schema-scoped entries can only add privileges. A
+definer in `private` that must not reach `authenticated` still needs the guard's
+explicit same-file `REVOKE`. The pgTAP test
 `apps/database/supabase/tests/private-schema-default-execute-limitation.sql`
-documents the behavior and must be updated when that decision lands.
+asserts this default and must be updated if the global default changes.
 
 The guard ignores text in comments, string literals and dollar-quoted bodies,
 so dynamic `EXECUTE 'grant ...'` inside PL/pgSQL is not detected; review
