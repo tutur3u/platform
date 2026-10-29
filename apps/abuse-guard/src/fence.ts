@@ -1,9 +1,4 @@
 import { createExpiringMap } from '@tuturuuu/utils/abuse-guard/local-cache';
-import {
-  type FairIdentity,
-  type FairAdmission,
-  fairIdentityKeys,
-} from './fair-admission';
 /**
  * Per-isolate view of the durable stop fence and per-family daily budgets in
  * `GuardControl`, with durable reservation before execution.
@@ -12,6 +7,11 @@ import {
   ABUSE_GUARD_FAMILIES,
   type AbuseGuardFamily,
 } from '@tuturuuu/utils/abuse-guard/protocol';
+import {
+  type FairAdmission,
+  type FairIdentity,
+  fairIdentityKeys,
+} from './fair-admission';
 import type { GuardControl } from './objects';
 
 export interface FenceEnv {
