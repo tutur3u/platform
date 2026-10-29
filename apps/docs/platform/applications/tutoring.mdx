@@ -914,18 +914,40 @@ to avoid ambiguous SQL references before admission. Regression evidence lives in
 `apps/database/supabase/tests/tutoring-absence-credit-lifecycle.sql`; the exact-head
 database contract must pass before this foundation is considered verified.
 
-## Group tutoring slots
+## Shared tutoring slots
 
-Every workspace allows multiple learners with one teacher in the same group,
-date, start time and duration by default. Each learner keeps a separate session
-row for attendance, absence recovery, lesson notes and payroll history; there is
-no shared-session identifier or capacity limit. Staff schedule each learner
+One teacher tutors many learners in the same session. Every workspace allows
+any number of learners with one teacher at the same date, start time and
+duration by default, whether the learners come from the same class group or
+from different ones. Each learner keeps a separate session row for attendance,
+absence recovery, lesson notes and payroll history; there is no
+shared-session identifier or capacity limit. Staff schedule each learner
 through the Contacts schedule or support queue. The create and edit APIs and
 draft teacher choices apply this same rule.
 
-A different group or any overlapping interval with a different start or duration
-still blocks the teacher. A learner cannot have overlapping bookings, including
-a duplicate booking in the same group slot. Existing cancellation conflict
-handling remains conservative. This rule does not imply room or contractual
-availability. Regression coverage lives in tutoring `shared.test.ts` and
-`packages/internal-api/src/tutoring-draft-plan.test.ts`.
+Booking the teacher for an overlapping interval with a different start or
+duration still blocks the teacher. A learner cannot have overlapping
+bookings, including a second booking in the same slot under any group.
+Slots match by date, start minute and duration; seconds in a start time are
+ignored by both the APIs and draft teacher choices. Payroll exports count a
+shared slot once for its teacher: completed sessions with the same teacher,
+date, start minute and duration add one session and one duration, however many
+learners attended. For every workspace, teacher payroll công defaults to teaching
+time divided by 45 minutes: 45 minutes is 1 công and 90 minutes is 2 công.
+The active Web payroll API returns `total_cong`; Contacts payroll CSV and XLSX
+include `TotalCong`. Fractional công are retained without rounding, matching
+the existing exact-minute aggregation. Detailed learner exports and attendance
+remain per learner. This conversion does not calculate currency or alter pay rates.
+Regression coverage: [payroll route tests](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/tutoring/export/route.payroll.test.ts).
+Rows without a teacher are counted individually.
+Export filters apply before this count, so a slot shared across groups appears
+once in each group's payroll export, and per-group exports can add up to more
+than the unfiltered total. Re-exporting a past period that has shared slots
+gives lower totals than before this rule. The Rust export route keeps the
+earlier per-row count until it is ported. Existing cancellation conflict handling remains conservative. The rule is
+enforced in application conflict checks only; the database has no
+per-teacher uniqueness or exclusion constraint on tutoring sessions. It does
+not imply room or contractual availability. Regression coverage lives in
+tutoring `shared.test.ts`, `apps/web/src/lib/tutoring/teacher-assignment-routes.test.ts`,
+`packages/internal-api/src/tutoring-draft-plan.test.ts`, `export/route.payroll.test.ts` and the Contacts
+`use-tutoring-create.test.ts`.
