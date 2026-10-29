@@ -11283,6 +11283,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workspaceHiddenLoadError => 'Workspace visibility preferences are unavailable. Saved hidden choices are kept.';
 
   @override
+  String get workspaceManageTitle => 'Manage workspaces';
+
+  @override
+  String get workspaceVisibleTitle => 'Visible workspaces';
+
+  @override
+  String get workspaceHiddenCurrentToast => 'Workspace hidden. Switched to another visible workspace.';
+
+  @override
+  String get workspaceHiddenLastToast => 'All workspaces are hidden. Show a workspace to continue.';
+
+  @override
   String get workspaceHiddenTitle => 'Hidden workspaces';
 
   @override

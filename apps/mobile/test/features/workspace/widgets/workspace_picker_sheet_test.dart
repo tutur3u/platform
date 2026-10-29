@@ -472,7 +472,11 @@ void main() {
         when(
           () => workspaceCubit.selectWorkspace(proWorkspace),
         ).thenAnswer((_) async {});
-        await tester.tap(find.byKey(const ValueKey('workspace-result-ws_1')));
+        await tester.ensureVisible(
+          find.byKey(const ValueKey('workspace-result-ws_1')),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Product'));
         await tester.pumpAndSettle();
         verify(() => workspaceCubit.selectWorkspace(proWorkspace)).called(1);
         verifyNever(
@@ -483,26 +487,25 @@ void main() {
         );
       },
     );
-    testWidgets(
-      'normal picker leaves hidden-workspace management in Settings',
-      (tester) async {
-        const state = WorkspaceState(
-          status: WorkspaceStatus.loaded,
-          workspaces: [proWorkspace],
-          hiddenWorkspaceIds: ['ws_1'],
-          visibilityResolved: true,
-          visibilityStatus: WorkspaceStatus.loaded,
-        );
-        when(() => workspaceCubit.hasAuthenticatedActor).thenReturn(true);
-        await openPicker(tester, state);
-        expect(find.text('Hidden workspaces'), findsNothing);
-        expect(find.byTooltip('Restore: Product'), findsNothing);
-        expect(find.byTooltip('Hide: Product'), findsNothing);
-        await tester.binding.handlePopRoute();
-        await tester.pumpAndSettle();
-        expect(find.byType(AppSheetScaffold), findsNothing);
-      },
-    );
+    testWidgets('normal picker keeps hidden entries behind management', (
+      tester,
+    ) async {
+      const state = WorkspaceState(
+        status: WorkspaceStatus.loaded,
+        workspaces: [proWorkspace],
+        hiddenWorkspaceIds: ['ws_1'],
+        visibilityResolved: true,
+        visibilityStatus: WorkspaceStatus.loaded,
+      );
+      when(() => workspaceCubit.hasAuthenticatedActor).thenReturn(true);
+      await openPicker(tester, state);
+      expect(find.text('Hidden workspaces'), findsNothing);
+      expect(find.byTooltip('Restore: Product'), findsNothing);
+      expect(find.byTooltip('Hide: Product'), findsNothing);
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(find.byType(AppSheetScaffold), findsNothing);
+    });
     testWidgets(
       'save error keeps the whole viewport scrollable to the last row',
       (tester) async {
