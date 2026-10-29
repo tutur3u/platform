@@ -1,5 +1,5 @@
 -- Step 2 of the D rollback: validate original definitions after the swap COMMIT.
--- Run separately from 20261027060400_workspace_delete_fk_cascade.rollback.sql.
+-- Run separately from 20261029041200_workspace_delete_fk_cascade.rollback.sql.
 -- The swap's ACCESS EXCLUSIVE locks must not survive into these scans.
 -- Manual rollback only with release-authority approval.
 begin;
