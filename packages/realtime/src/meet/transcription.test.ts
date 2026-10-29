@@ -131,6 +131,10 @@ it('binds consent to the participant device, including withdrawal; host cannot o
   expect(result.state.transcriptionConsents).toEqual({
     sessionId,
     decisions: { [device]: true },
+    // Recorded so finalization can resolve the account after the device leaves.
+    accounts: { [device]: account },
+    meetingId: host.meetingId,
+    wsId: host.wsId,
   });
   expect(result.broadcast).toEqual([]);
   expect(result.toManagers).toEqual([]);
@@ -218,6 +222,9 @@ it('resets consent for a new session and supports host stop', () => {
   expect(state.transcriptionConsents).toEqual({
     sessionId: state.transcription?.sessionId,
     decisions: {},
+    accounts: {},
+    meetingId: host.meetingId,
+    wsId: host.wsId,
   });
 });
 
