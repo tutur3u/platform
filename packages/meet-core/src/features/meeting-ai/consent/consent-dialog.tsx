@@ -12,7 +12,6 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
-import { MEET_CONSENT_DEFAULT_RETENTION_DAYS } from './notice';
 import type { TranscriptionConsent } from './use-transcription-consent';
 
 const FACTS = [
@@ -31,13 +30,11 @@ export function TranscriptionConsentDialog({
   open,
   onOpenChange,
   hostName,
-  audience,
 }: {
   consent: TranscriptionConsent;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   hostName?: string;
-  audience: 'host' | 'participants';
 }) {
   const t = useTranslations('meet.consent');
   const busy = consent.decide.isPending;
@@ -62,7 +59,8 @@ export function TranscriptionConsentDialog({
           </DialogTitle>
           <DialogDescription>
             {t.rich('description', {
-              audience: t(`audience_${audience}`),
+              // Today any workspace member who can open the meeting can read it.
+              audience: t('audience_workspace'),
               strong: (chunks) => (
                 <strong className="font-semibold text-foreground">
                   {chunks}
@@ -78,14 +76,12 @@ export function TranscriptionConsentDialog({
                 aria-hidden="true"
                 className="mt-0.5 size-4 shrink-0 text-muted-foreground"
               />
-              <span>
-                {t(key, { days: MEET_CONSENT_DEFAULT_RETENTION_DAYS })}
-              </span>
+              <span>{t(key)}</span>
             </li>
           ))}
         </ul>
         <DialogFooter className="grid grid-cols-2 gap-2 sm:space-x-0">
-          {consent.selfDecision ? (
+          {consent.selfDecision === true ? (
             <Button
               variant="outline"
               className="col-span-2"

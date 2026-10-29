@@ -1644,12 +1644,34 @@ excluded tracks are not recorded or uploaded in the first place.
 
 Consent copy lives in the `meet.consent` message namespace (en and vi, Meet and
 Parley bundles) and is versioned by `MEET_CONSENT_NOTICE_VERSION` in
-`meeting-ai/consent/notice.ts`; bump it whenever the copy changes. The wording is
-a draft until legal review. "Remember for this workspace" is not implemented: it
-needs a durable per-account preference.
+`meeting-ai/consent/notice.ts` (currently `meet-transcription-v1-2026-10-30`,
+legal-reviewed wording); bump it whenever the copy changes so each record names
+the notice it accepted. The notice states that the voice is sent to Google's
+Gemini through Mira, that people who do not allow stay out of the transcript, and
+that withdrawal is forward-only: text already written stays until it is deleted.
+
+The notice makes no deletion promise because no transcript purge job exists yet;
+it says transcripts are kept under the workspace's retention settings. State a
+retention period only after the Cloudflare-scheduled purge ships (tracked
+separately; see the TODO in `notice.ts`). The audience line reflects current
+access: members of the workspace who can open the meeting can read transcripts
+and notes (the recordings read path is workspace-scoped). A tighter visibility
+model arrives with the meeting page redesign (M1-F); update the string then.
+"Stop transcribing me" appears only after the participant allowed; a declined
+participant sees Allow and Don't transcribe me again.
+
+Deferred: "Remember for this workspace" from the approved D3 decision is not
+implemented; it needs a durable per-account preference, and a standing consent
+must re-prompt on a notice version change and stay easy to revoke. The "Details
+and privacy" link points to tuturuuu.com/privacy, which does not yet cover Meet
+transcription (voice processing, Gemini as processor, retention); a
+privacy-policy section is pending with legal. Until then the dialog itself
+carries the essential notice.
 
 Regression coverage: `chunks-consent.test.ts` (refusal without consent, declined
 and withdrawn participants excluded, pre-allow audio excluded, missing log fails
 closed, solo uploads unaffected), `consent-gate.test.ts`, `consent.test.ts`
 (origin, room admission, session-user binding, ended sessions, host-only
-roster), `audio-sources.test.ts` and `transcription-compat.test.ts`.
+roster), `consent-dialog.test.tsx` (withdraw shown only after allow; no
+deletion or retention-period promise), `audio-sources.test.ts` and
+`transcription-compat.test.ts`.

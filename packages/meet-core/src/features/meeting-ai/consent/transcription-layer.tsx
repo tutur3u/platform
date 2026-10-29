@@ -79,7 +79,6 @@ export function TranscriptionLayer({
           setDeferred(consent.sessionId);
         }}
         hostName={host}
-        audience={room.state.settings.shareNotes ? 'participants' : 'host'}
       />
     </>
   );

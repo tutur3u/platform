@@ -4392,17 +4392,16 @@
     },
     "consent": {
       "allow": "Cho phép",
-      "audience_host": "Chỉ người chủ trì",
-      "audience_participants": "Người tham dự",
+      "audience_workspace": "Thành viên của không gian làm việc này có thể mở cuộc họp",
       "badge_excluded": "Không chép lời",
       "badge_pending": "Chờ đồng ý",
       "badge_transcribed": "Đang chép lời",
-      "decline": "Không chép lời tôi",
-      "description": "Mira (Gemini) sẽ chuyển lời bạn nói thành văn bản. <strong>{audience}</strong> có thể đọc bản chép lời và ghi chú sau cuộc họp. Bạn có thể đổi lựa chọn bất cứ lúc nào.",
+      "decline": "Không chép lời của tôi",
+      "description": "Giọng nói của bạn sẽ được gửi tới Gemini (Google) thông qua Mira để chuyển thành văn bản. <strong>{audience}</strong> có thể đọc bản chép lời và ghi chú sau cuộc họp. Bạn có thể đổi lựa chọn bất cứ lúc nào.",
       "details": "Chi tiết và quyền riêng tư",
-      "fact_storage": "Không lưu âm thanh. Văn bản sẽ bị xóa sau {days} ngày",
-      "fact_text": "Chỉ người cho phép mới được chép lời; những người khác không bị chép lời",
-      "fact_withdraw": "Bạn có thể dừng chép lời của mình bất cứ lúc nào",
+      "fact_storage": "Không lưu âm thanh. Bản chép lời được lưu giữ theo cài đặt lưu giữ của không gian làm việc",
+      "fact_text": "Nếu bạn không cho phép, bạn sẽ không có trong bản chép lời",
+      "fact_withdraw": "Bạn có thể dừng chép lời của mình bất cứ lúc nào. Nội dung đã chép vẫn nằm trong bản chép lời cho đến khi bị xóa",
       "pill": "Đang chép lời",
       "pill_roster": "Xem ai đã cho phép",
       "pill_you_allowed": "Bạn: đang được chép lời",
@@ -4415,7 +4414,7 @@
       "stopped_toast": "Đã dừng chép lời",
       "title": "{name} đã bắt đầu chép lời",
       "title_host": "Người chủ trì đã bắt đầu chép lời",
-      "withdraw": "Dừng chép lời tôi"
+      "withdraw": "Dừng chép lời của tôi"
     },
     "details": {
       "back": "Quay lại danh sách cuộc họp",
