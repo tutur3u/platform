@@ -3,6 +3,11 @@ import type {
   BlueGreenMonitoringDeployment,
   InfrastructureProject,
 } from '@tuturuuu/internal-api/infrastructure/monitoring';
+import {
+  isReservedManagedProjectHostname,
+  isSafeManagedProjectHostname,
+  normalizeManagedProjectHostname,
+} from '@tuturuuu/utils/managed-project-hostnames';
 import { readBlueGreenMonitoringSnapshot } from './blue-green-monitoring';
 import { ensureLogDrainSchema, getLogDrainSqlClient } from './log-drain';
 import {
@@ -62,33 +67,6 @@ interface QueuedPlatformProjectRow {
   updated_at: Date | string | null;
 }
 
-const RESERVED_MANAGED_PROJECT_HOSTNAMES = new Set([
-  'api.tuturuuu.com',
-  'apps.tuturuuu.com',
-  'calendar.tuturuuu.com',
-  'cms.tuturuuu.com',
-  'dev.staging.tutur3u.com',
-  'finance.tuturuuu.com',
-  'hive.tuturuuu.com',
-  'inventory.tuturuuu.com',
-  'learn.tuturuuu.com',
-  'localhost',
-  'mail.tuturuuu.com',
-  'mira.tuturuuu.com',
-  'nova.ai.vn',
-  'platform.tuturuuu.com',
-  'qr.tuturuuu.com',
-  'rewise.me',
-  'staging.tuturuuu.com',
-  'tasks.tuturuuu.com',
-  'teach.tuturuuu.com',
-  'track.tuturuuu.com',
-  'tuturuuu.com',
-  'www.tuturuuu.com',
-]);
-const SAFE_MANAGED_PROJECT_HOSTNAME_PATTERN =
-  /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
-
 export interface CreateInfrastructureProjectInput {
   appRoot?: string | null;
   hostnames?: string[] | null;
@@ -107,28 +85,20 @@ export interface UpdateInfrastructureProjectInput {
   selectedBranch?: string;
 }
 
-function normalizeHostname(hostname: string) {
-  return hostname
-    .trim()
-    .toLowerCase()
-    .replace(/^https?:\/\//, '')
-    .replace(/\/.*$/, '');
-}
-
 export function normalizeInfrastructureProjectHostnames(
   hostnames: string[] | null | undefined
 ) {
   const normalizedHostnames = [
     ...new Set(
       (hostnames ?? [])
-        .map(normalizeHostname)
+        .map(normalizeManagedProjectHostname)
         .filter((hostname) => hostname.length > 0)
     ),
   ];
 
   if (
     normalizedHostnames.some(
-      (hostname) => !SAFE_MANAGED_PROJECT_HOSTNAME_PATTERN.test(hostname)
+      (hostname) => !isSafeManagedProjectHostname(hostname)
     )
   ) {
     throw new Error(
@@ -138,7 +108,7 @@ export function normalizeInfrastructureProjectHostnames(
 
   if (
     normalizedHostnames.some((hostname) =>
-      RESERVED_MANAGED_PROJECT_HOSTNAMES.has(hostname)
+      isReservedManagedProjectHostname(hostname)
     )
   ) {
     throw new Error(

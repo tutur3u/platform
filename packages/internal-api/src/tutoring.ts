@@ -73,6 +73,11 @@ export interface TutoringQueueItem {
   content_review_due: boolean;
   content_unchanged_since: string | null;
   review_only: boolean;
+  /**
+   * The learner is in a needs-tutoring group. Ending weak support cannot take
+   * them off the queue; staff remove them from the group instead.
+   */
+  support_group?: boolean;
 }
 
 export interface TutoringQueueSummary {
@@ -98,6 +103,7 @@ export interface TutoringPayrollExportRow {
   teacher_name: string;
   completed_sessions: number;
   total_minutes: number;
+  total_cong: number;
 }
 
 export interface ListTutoringSessionsParams extends InternalApiQuery {

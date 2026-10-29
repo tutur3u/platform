@@ -7,7 +7,8 @@
 # Placeholder Discord snowflake in a test fixture (sequential digits); Desk-reviewed 29 Oct. Exact fingerprint only.
 cc59d0ba1527509297ec18ac6a1d559991f1fe64:apps/web/src/__tests__/discord-members-route.test.ts:discord-client-id:72
 
-# SQL grant guard content digests and source SHA; verified non-secrets.
+# SQL grant guard baseline SHA-256 and git-SHA digests, not credentials.
+# Security-classified as false positives by Tess; exact fingerprints from PR #7249.
 89143180afa03085f737e8918d384b8863cf858c:scripts/ci/sql-grant-guard.baseline.json:generic-api-key:1019
 89143180afa03085f737e8918d384b8863cf858c:scripts/ci/sql-grant-guard.baseline.json:generic-api-key:109
 89143180afa03085f737e8918d384b8863cf858c:scripts/ci/sql-grant-guard.baseline.json:generic-api-key:116

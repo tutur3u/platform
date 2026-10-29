@@ -1382,3 +1382,13 @@ and pre-push comparison. Generate from current main only for reviewed bootstrap;
 ordinary fixes remove entries. Follow the migrations guide for signature-scoped
 client-grant markers and statement-scoped dynamic/ALTER review markers. Test both
 real line comments and forged markers in strings, dollar bodies and block comments.
+
+## Private Meet transcription evaluation
+
+The evaluation-only CLI and manifest/scoring contract live in
+[the AI package eval README](../../../../../packages/ai/src/meetings/eval/README.md).
+Keep consented audio, reference transcripts and reports outside every Git checkout.
+Run synthetic metrics, dataset-boundary and runner tests with the AI workspace's
+Vitest config before the build-free changed-files gate. Provider calls are a
+separate consented-data experiment; synthetic green does not confirm D1 or enable
+a production provider. Never attach content-bearing provider errors to evidence.
