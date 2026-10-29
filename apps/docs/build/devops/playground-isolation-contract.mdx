@@ -1,0 +1,90 @@
+---
+title: "Playground isolation contract"
+description: "Behaviour and isolation invariants the Playground app must keep across its TanStack Start and Cloudflare migration, each linked to its contract test."
+updatedAt: '2026-10-29'
+---
+
+## Scope
+
+This page records the current behaviour of `apps/playground` (Next.js 16.4) that
+the TanStack Start + Void + Vite+ + Cloudflare migration must preserve. It is the
+first Playground PR from the
+[migration inventory](/build/devops/tanstack-cloudflare-migration-inventory):
+contracts only, with no framework or hosting change.
+
+The contract tests live in `apps/playground` and run with `bun run test` from
+that directory. They use module fakes for the API proxy guard, the AI provider
+and AI memory, so they make no network calls and need no credentials.
+
+### What Playground does not own
+
+`apps/playground` is an internal experiment surface. It does not evaluate
+user-supplied code. Code-execution playgrounds (sandboxed runtimes, previews and
+checkpoints) are owned by the devbox sandbox in `packages/sdk` and by Web routes
+under `/api/v1/users/me/playgrounds/**`, and are accepted by
+`playground-runtime-acceptance.yaml`. The migration must not move execution,
+preview or sandbox responsibilities into this app. Adding any of them is a new
+trust boundary that needs its own design, review and contract tests first.
+
+## Current shape
+
+| Area | Current behaviour |
+| --- | --- |
+| Pages | `/` and `/tool-calling`, both client components that fetch a same-origin `/api/ai/*` route |
+| Local route handlers | `GET /api/ai/object-generation`, `GET /api/ai/tool-calling`, `GET /api/build-info` |
+| Proxy | `src/proxy.ts` runs on `/api/:path*` and applies the shared API proxy guard with the `proxy:playground:api` bucket prefix |
+| Web API | Unmatched `/api/*` paths reach Web through a Next `fallback` rewrite, after local routes and pages |
+| Headers | Shared `createTuturuuuNextConfig`: no `X-Powered-By`, anti-framing on every path outside the platform framable list, `X-Robots-Tag` noindex on every response |
+| Session | Resolved by the shared satellite `Providers`; access-control changes are out of scope for the migration and need their own reviewed change |
+| i18n | English-only request config with an empty catalog |
+| Storage | No app-owned storage, database writes or bindings; AI memory is written through `@tuturuuu/ai/memory` |
+
+## Invariants and tests
+
+Paths are relative to `apps/playground`.
+
+| # | Invariant | Test |
+| ---: | --- | --- |
+| 1 | Pages are exactly `/` and `/tool-calling` | `src/contracts/surface.test.ts` → serves exactly the inventoried pages |
+| 2 | Local route handlers are exactly the three inventoried `/api` routes | `src/contracts/surface.test.ts` → serves exactly the inventoried local route handlers |
+| 3 | One root layout plus the shared error and global error boundaries | `src/contracts/surface.test.ts` → keeps one root layout |
+| 4 | No dynamic or catch-all segments that could shadow proxied `/api` paths | `src/contracts/surface.test.ts` → has no catch-all or dynamic segments |
+| 5 | No server actions | `src/contracts/surface.test.ts` → declares no server actions |
+| 6 | No execution or cross-origin messaging primitives: iframes, `srcdoc`, `postMessage`, message listeners, workers, service workers, `eval`, `new Function`, string timers, `dangerouslySetInnerHTML`, `child_process`, `vm`, `window.open`, `document.domain` | `src/contracts/surface.test.ts` → isolation: no execution surface |
+| 7 | Client code fetches only same-origin relative `/api` paths | `src/contracts/surface.test.ts` → only fetches same-origin relative /api paths |
+| 8 | Client code reads no non-public environment variables | `src/contracts/surface.test.ts` → reads no server secrets from client code |
+| 9 | No `X-Powered-By` header | `src/contracts/next-config.test.ts` → hides the framework fingerprint header |
+| 10 | `frame-ancestors 'none'` and `X-Frame-Options: DENY` on pages, local routes and proxied API paths | `src/contracts/next-config.test.ts` → denies framing of every playground path |
+| 11 | No app-specific framable exceptions beyond the platform list | `src/contracts/next-config.test.ts` → adds no app-specific framable exceptions |
+| 12 | Every response carries a noindex `X-Robots-Tag` | `src/contracts/next-config.test.ts` → marks every response noindex |
+| 13 | Only unmatched `/api/*` proxies to the configured Web origin, after local routes; no `beforeFiles` or `afterFiles` rewrites | `src/contracts/next-config.test.ts` → proxies only unmatched /api paths to web |
+| 14 | Deployed builds default the Web origin to `https://tuturuuu.com` | `src/contracts/next-config.test.ts` → defaults the proxied web origin |
+| 15 | Remote image optimization is https-only | `src/contracts/next-config.test.ts` → only optimizes remote images over https |
+| 16 | No custom redirects | `src/contracts/next-config.test.ts` → declares no custom redirects |
+| 17 | The proxy runs only on `/api/:path*` | `src/proxy.test.ts` → runs only for /api paths |
+| 18 | Local and proxied API requests pass the shared guard with the `proxy:playground:api` prefix | `src/proxy.test.ts` → guards local and proxied API requests |
+| 19 | A guard rejection is returned unchanged | `src/proxy.test.ts` → returns the guard rejection unchanged |
+| 20 | Non-API paths are not guarded | `src/proxy.test.ts` → does not guard non-API paths |
+| 21 | A guard failure is raised, never treated as a pass | `src/proxy.test.ts` → propagates guard failures |
+| 22 | Every local route handler exposes only `GET` | `src/app/api/routes.test.ts` → exposes only GET |
+| 23 | `/api/ai/tool-calling` returns `{}` with no model call | `src/app/api/routes.test.ts` → tool-calling returns an empty JSON object |
+| 24 | `/api/build-info` returns uncached JSON | `src/app/api/routes.test.ts` → build-info returns uncached JSON |
+| 25 | `/api/ai/object-generation` reads no request input, uses a fixed server prompt, the pinned model and AI memory attribution, and passes no tools | `src/app/api/routes.test.ts` → object-generation takes no request input |
+| 26 | Object generation output is validated against the task schema | `src/app/api/routes.test.ts` → validates model output against the task schema |
+| 27 | Provider failures surface as errors | `src/app/api/routes.test.ts` → surfaces provider failures as errors |
+| 28 | i18n is English-only with an empty catalog | `src/i18n/request.test.ts` → is English-only with no message catalog |
+
+## Migration rules
+
+- Port these tests with the app; keep each invariant green on the Start/Worker
+  runtime before any cutover. Changing an invariant is a reviewed behaviour change,
+  not a migration detail.
+- Header invariants (9–12) must be reproduced by the Worker response path, using
+  the shared framable-path list from `@tuturuuu/utils/framable-paths` as the
+  start-bridge Worker does.
+- The `/api` ordering in invariant 13 must hold on Cloudflare: local handlers
+  answer first, then Web. Do not add a catch-all route that captures `/api/*`.
+- Keep the API proxy guard (17–21) in front of local and proxied `/api` traffic.
+- Keep API ownership with Web; do not copy Web handlers into this app.
+- Keep the current host until the app's explicit cutover, per the
+  [active runtime](/build/devops/active-runtime) rules.
