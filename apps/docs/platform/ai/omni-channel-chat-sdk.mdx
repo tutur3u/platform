@@ -183,3 +183,122 @@ security review before integration.
 
 Upstream references: [MSAL advisory](https://github.com/AzureAD/microsoft-authentication-library-for-js/security/advisories/GHSA-xcx6-jx8p-x3h5)
 and [MSAL v7 migration guide](https://github.com/AzureAD/microsoft-authentication-library-for-js/blob/dev/lib/msal-node/docs/v7-migration.md).
+
+## Discord mapping scope
+
+A Discord integration binds one guild to one workspace. Reading an integration
+requires the `allow_discord_integrations` platform flag and MEMBER access to its
+workspace. Connecting, changing or disconnecting one also requires
+`manage_workspace_integrations` in that workspace, the same permission that
+gates the integrations pages, and a connect must record the actor as creator.
+The guild, workspace and creator of an existing integration are immutable for
+every role, including `service_role`; rebinding means disconnecting and
+connecting again. This also blocks the `workspaces.id` `ON UPDATE CASCADE`
+path through `ws_id` and the `users.id` `ON UPDATE CASCADE` path through
+`creator_id`, which are accepted because neither id is ever renumbered. The connect
+handler reports a guild already bound elsewhere as `409`, because the actor can
+no longer see other workspaces' integrations; other unique conflicts return a
+generic `409`.
+
+Discord mapping reads require MEMBER access to the workspace linked to that
+mapping's guild. Creating, changing or deleting a mapping also requires
+`manage_workspace_integrations` there: a mapping lets the bot and the AI agent
+runtime act as the mapped user, so the platform flag alone must not let a member
+map a coworker, including an admin, to an arbitrary Discord id. Mapped users
+must be MEMBERs, not GUESTs, of the same workspace, matching the members
+handler, and moving a mapping to another guild rechecks the destination
+workspace. The web members handler applies the same
+permission check before writing. Because the mapping policy reads the
+integration under its own policy, the platform flag remains required; GUEST
+members and anonymous clients cannot read or change integrations or mappings.
+These rules apply to direct Data API access as well as the web handlers. The
+Discord bot and the AI agent runtime read as `service_role`; the agent runtime
+resolves a Discord user only when the channel's configured guild is the one
+bound to the channel's workspace. Both web and infrastructure resolve the
+mapping and binding in one inner-joined statement, filtered by the channel's
+workspace, guild and Discord user. A concurrent disconnect/reconnect cannot
+substitute the new workspace's mapping between an authorization read and an
+identity read. A reconnect to the same workspace can resolve newly created
+mappings normally; missing bindings or mappings resolve no identity.
+
+Disconnecting a guild deletes all of its mappings in the same transaction,
+through the `discord_guild_members_discord_guild_id_fkey` foreign key to
+`discord_integrations.discord_guild_id` with `ON DELETE CASCADE`; deleting the
+workspace does the same through its cascade to the integration. The disconnect
+dialog states this, and reconnecting does not restore them. A foreign key
+rather than a delete trigger closes the disconnect race: a mapping insert
+racing a disconnect either commits first and is cascaded, or fails with
+`23503`, so no mapping outlives its integration. A mapping can only be written
+for a guild that has an integration.
+
+The foreign key is added `NOT VALID`, so mappings already orphaned by earlier
+disconnects do not fail the migration and stay until cleaned up.
+`VALIDATE CONSTRAINT` is a later step, run only after a Mastermind-approved
+orphan cleanup (Rollout step 5).
+
+Once the unique index `discord_guild_members_guild_discord_user_key` exists,
+each guild allows one mapping per Discord user. The migration skips the index
+when duplicates exist; see Rollout step 4.
+
+Coverage: `apps/database/supabase/tests/discord-guild-mapping-boundary.sql`,
+`apps/web/src/__tests__/discord-integration-route.test.ts`,
+`apps/web/src/__tests__/discord-members-route.test.ts` and
+`src/lib/ai-agents/discord-user-mapping.test.ts` in web and infrastructure.
+
+### Rollout and triage
+
+The migration changes no existing mapping rows. Cleaning up rows that predate
+it is a separate data change that Mastermind approves; it is never part of the
+migration. The migration sets `lock_timeout` to `5s`, so a long transaction
+holding either table fails the apply instead of queueing the bot and agent
+runtime behind it.
+
+1. Before the PR merges, run the read-only
+   `apps/database/scripts/discord-guild-mapping-exposure.sql` on staging and
+   on production. Staging applies the migration on merge, so a post-merge run
+   is too late. Run it with `psql`, not the Supabase SQL editor, which shows
+   only the last result set:
+
+   ```bash
+   psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 \
+     -f apps/database/scripts/discord-guild-mapping-exposure.sql
+   ```
+
+   The script runs in one read-only transaction and rolls back. Send every
+   result set from both environments to Security and Mastermind. The first
+   result is the duplicate `(discord_guild_id, discord_user_id)` count. If it
+   is above `0` in either environment, STOP: do not merge until Mastermind
+   approves a remap or purge. Applied with duplicates, the migration would
+   skip the unique index with a `NOTICE` instead of failing.
+2. Review the per-guild dangerous-shape counts with Security and Mastermind
+   before merge. A forged legacy mapping usually binds an attacker's Discord id
+   to a real MEMBER of the guild's workspace, so the outside-workspace count
+   alone misses it. Look at mappings to the creator or admins, platform users
+   with more than one Discord id, Discord ids with more than one mapping,
+   non-MEMBER targets, orphaned mappings for guilds with no integration, and
+   monthly creation bursts since 2025-09-13. Existing GUEST targets still
+   resolve for `service_role` until they are remapped or purged.
+3. For each guild with suspicious counts, choose one path with Mastermind:
+   the guild's workspace owner re-verifies every mapping, or all of that
+   guild's mappings are purged and members are mapped again. Orphaned
+   mappings have no owning workspace and are purged.
+4. After apply, run the read-only
+   `apps/database/scripts/discord-guild-mapping-index-check.sql` with `psql`
+   on staging and production, and send the result to Security and Mastermind:
+
+   ```sql
+   select 1 from pg_indexes
+   where schemaname = 'public'
+     and indexname = 'discord_guild_members_guild_discord_user_key';
+   ```
+
+   No row means the index was skipped and the finding stays open. After the
+   approved remap or purge, the migration role runs
+   `select public.ensure_discord_guild_member_identity_index();` and repeats
+   the check.
+5. After the approved orphan cleanup leaves no mapping without an
+   integration, the migration role runs
+   `alter table public.discord_guild_members validate constraint discord_guild_members_discord_guild_id_fkey;`
+   as a separate, Mastermind-approved change. It takes only a
+   `SHARE UPDATE EXCLUSIVE` lock and fails without changing data if an orphan
+   remains.

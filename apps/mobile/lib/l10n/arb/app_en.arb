@@ -4561,8 +4561,9 @@
   "taskPortfolioUpdatePosted": "Update posted.",
   "taskPortfolioUpdateSaved": "Update saved.",
   "taskQuickActionsDueDate": "Due date",
-  "taskQuickActionsNoDueDate": "No due date",
+  "taskQuickActionsNoDate": "None",
   "taskQuickActionsNoLabels": "No labels",
+  "taskQuickActionsRemoveStartDate": "Remove start date",
   "taskQuickActionsStatus": "Status",
   "taskQuickActionsUnassigned": "Unassigned",
   "taskTimelineLoadingTasks": "Loading tasks…",
@@ -6218,7 +6219,6 @@
   "mastermindScopeModels": "Models",
   "mastermindScopeUsage": "Usage",
   "mastermindSectionWithBasis": "{section} · {basis}",
-  "mastermindSecurityFix": "Security fix",
   "mastermindSecurityGroup": "Security",
   "mastermindSecurityIssue": "Security issue",
   "mastermindSecurityLine": "{product} · security fix",
@@ -6326,7 +6326,7 @@
   "mastermindSummaryUsageLowest": "{account} has the least left: {percent}.",
   "mastermindSummaryUsageShort": "Projected SHORT at reset {time}.",
   "mastermindSummaryWeeklyNotReported": "Weekly window not reported.",
-  "mastermindTabHome": "Home",
+  "mastermindTabHome": "Today",
   "mastermindTabInbox": "Inbox",
   "mastermindTabInsights": "Insights",
   "mastermindTabShip": "Ship",
@@ -6561,5 +6561,125 @@
   "mastermindAskActionPhysical": "Needs a physical step",
   "mastermindAskActionFyi": "For your information",
   "mastermindAskRemindAtMac": "Remind me at Mac",
-  "mastermindAskRemindAtMacSoon": "Coming soon"
+  "mastermindAskRemindAtMacSoon": "Coming soon",
+  "mastermindCatchupTitle": "Since you last looked",
+  "mastermindCatchupWindowSince": "Since your last visit",
+  "mastermindCatchupWindowDay": "Last 24 hours",
+  "mastermindCatchupWelcome": "Welcome to Mastermind. Here's what happened in the last day.",
+  "mastermindCatchupQuiet": "Quiet since you last looked",
+  "mastermindCatchupQuietFirstRun": "Nothing has happened in the last day.",
+  "mastermindCatchupPartial": "Some updates may be missing",
+  "mastermindCatchupSectionShipped": "Shipped",
+  "mastermindCatchupSectionBlocked": "Blocked",
+  "mastermindCatchupSectionChanged": "Changed",
+  "mastermindCatchupSectionUsage": "Usage & health",
+  "mastermindCatchupSectionOther": "Other updates",
+  "mastermindCatchupCountNeedsYou": "{count, plural, =1{1 needs you} other{{count} need you}}",
+  "@mastermindCatchupCountNeedsYou": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindCatchupCountShipped": "{count} shipped",
+  "@mastermindCatchupCountShipped": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindCatchupCountBlocked": "{count} blocked",
+  "@mastermindCatchupCountBlocked": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindCatchupCountChanged": "{count} changed",
+  "@mastermindCatchupCountChanged": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindCatchupNewDivider": "New since your last visit",
+  "mastermindCatchupShowEarlier": "Show {count} earlier",
+  "@mastermindCatchupShowEarlier": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindCatchupSecurityUpdate": "Security update",
+  "mastermindCatchupOnIt": "{name} is on it",
+  "@mastermindCatchupOnIt": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindCatchupButton": "Catch me up",
+  "mastermindCatchupRefreshing": "Catching up…",
+  "mastermindCatchupUpToDate": "You're up to date",
+  "mastermindCatchupFailed": "Couldn't catch up. Try again.",
+  "mastermindCatchupOpensLink": "Opens in your browser",
+  "mastermindCatchupGroupLabel": "{product}, {count, plural, =1{1 update} other{{count} updates}}",
+  "@mastermindCatchupGroupLabel": {
+    "placeholders": {
+      "product": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindRelNow": "now",
+  "mastermindRelMinutes": "{count}m",
+  "@mastermindRelMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindRelHours": "{count}h",
+  "@mastermindRelHours": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindRelHoursMinutes": "{hours}h {minutes}m",
+  "@mastermindRelHoursMinutes": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindRelDays": "{count}d",
+  "@mastermindRelDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindRelShowExact": "Show exact time",
+  "mastermindCatchupSettingsAction": "Catch-up settings",
+  "mastermindMorningCatchup": "Morning catch-up",
+  "mastermindMorningCatchupSubtitle": "A notification that says your catch-up is ready. Saved on this device; sent once the hub supports it.",
+  "mastermindMorningCatchupTime": "Time",
+  "mastermindCatchupPushBody": "Your catch-up is ready"
 }

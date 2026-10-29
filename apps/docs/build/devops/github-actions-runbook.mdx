@@ -545,7 +545,9 @@ queue-latency improvement or an org concurrency reservation.
 ### Label-gated heavy PR CI (`ready-for-ci`)
 
 Heavy PR workflows run their jobs only when the PR carries the `ready-for-ci`
-label. These include Test, Type Check, Biome, CodeQL, i18n, docs/SEO, coverage,
+label for every human, bot and fleet actor, including stack layers. This covers
+`opened`, `synchronize`, `reopened` and `labeled`. These include Test, Type Check,
+Biome, CodeQL, i18n, docs/SEO and coverage,
 the per-app and Cloudflare Source builds, mobile builds and database contracts.
 `scripts/ci/pr-label-gate.js` is the inventory of record. On an unlabelled PR,
 every job is skipped by a job-level `if:`. The checks show as skipped rather
@@ -616,22 +618,22 @@ starts its reusable callee.
   readiness admission. Security Checks (gitleaks, dependency review and audit)
   and Security Review Classification keep their separate always-on entrypoints. Paused
   Docker, Rust, TanStack and E2E workflows keep their retained policy.
-- **Unchanged:** `main`, `production` and release-please pushes,
-  `workflow_dispatch`, schedules and `workflow_call`. Test, Type Check, Biome,
-  Discord Python CI and the Supabase baseline previously validated every branch
+- **Push admission:** heavy workflows have no feature-branch push trigger.
+  Mail/Calendar/Tasks pushes target only `main`; Programming has no push trigger;
+  i18n targets `main` and `production`. Keep these protected-ref triggers intact.
+  Test, Type Check, Biome, Discord Python CI and the Supabase baseline validated
+  every branch
   push. They now push-validate only protected and generated refs, and validate
-  feature branches through the gated `pull_request` trigger. Biome's
+  feature branches through gated PR events. The `release-please--branches--**`
+  selector includes production and release-notes branches. Manual, schedule and
+  reusable triggers remain independent of PR labels. Biome's
   auto-format PR and outdated-PR cleanup stay push-only. Its PR comment is
   limited to same-repository PRs.
 - `scripts/ci/pr-label-gate.test.js` enforces this. It checks that every heavy
-  job is gated, that always-on and paused checks carry no gate, and that every
-  PR-reachable workflow is classified. It also pins digests of each heavy
+  job is gated for all actors/events, feature pushes cannot bypass admission,
+  always-on/paused checks carry no gate, and every PR workflow is classified. It also pins digests of each heavy
   workflow's push, schedule, manual and reusable triggers. When adding a PR
   workflow, classify it there and gate every job with `PR_LABEL_GATE`.
-
-A possible follow-up is to move PR CI onto self-hosted fleet runners so hosted
-capacity serves only protected refs. That needs runner custody, untrusted-fork
-isolation and secret-scoping review first, and is not implemented.
 
 ## Authorized CI Queue Cleanup
 

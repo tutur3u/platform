@@ -13,6 +13,7 @@ import 'package:mobile/data/models/workspace_user_option.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/data/sources/api_exception.dart';
+import 'package:mobile/features/settings/cubit/timezone_settings_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/tasks_boards/cubit/task_board_detail_cubit.dart';
 import 'package:mobile/features/tasks_boards/view/task_board_detail_page.dart';
@@ -157,17 +158,21 @@ RowActionsWorkspaceCubit rowActionsWorkspaceCubit() {
 }
 
 /// Pumps the board page in List view and lets its first loads finish.
+/// [timezone] provides the user's timezone setting.
 Future<void> pumpRowActionsBoard(
   WidgetTester tester, {
   required RowActionsWorkspaceCubit workspaceCubit,
   required RowActionsRepository repository,
   ITimeTrackerRepository? timeTrackerRepository,
+  TimezoneSettingsCubit? timezone,
 }) async {
   await tester.pumpApp(
     MultiBlocProvider(
       providers: [
         BlocProvider<WorkspaceCubit>.value(value: workspaceCubit),
         BlocProvider(create: (_) => ShellChromeActionsCubit()),
+        if (timezone != null)
+          BlocProvider<TimezoneSettingsCubit>.value(value: timezone),
       ],
       child: TaskBoardDetailPage(
         boardId: 'board-1',

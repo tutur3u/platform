@@ -881,6 +881,18 @@
     "step_try_description": "Thực hành ngay trong ngữ cảnh. Bạn có thể bỏ qua hoặc đóng hướng dẫn bất cứ lúc nào.",
     "title": "Hướng dẫn và học lại"
   },
+  "parentInvite": {
+    "accept": "Chấp nhận lời mời",
+    "accepting": "Đang chấp nhận...",
+    "description": "Chia sẻ quyền xem tiến trình của học viên trên Learn. Hãy đăng nhập bằng địa chỉ email nhận được lời mời này.",
+    "emailMismatch": "Hãy đăng nhập bằng địa chỉ email đã xác minh nhận được lời mời này.",
+    "failed": "Chúng tôi không thể chấp nhận lời mời này. Vui lòng thử lại.",
+    "incomplete": "Liên kết lời mời này chưa đầy đủ. Hãy mở lại liên kết trong email của bạn.",
+    "open": "Mở Learn",
+    "success": "Đã chấp nhận lời mời. Bạn có thể theo dõi tiến trình của học viên.",
+    "title": "Lời mời phụ huynh",
+    "unavailable": "Lời mời này đã hết hạn, đã được sử dụng hoặc đã bị thu hồi. Hãy nhờ nhà trường gửi lời mời mới."
+  },
   "practice": {
     "again": "Thử lại",
     "correct": "Chính xác",

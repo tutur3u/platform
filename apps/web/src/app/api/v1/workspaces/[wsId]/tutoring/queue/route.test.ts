@@ -41,6 +41,9 @@ function query(rows: () => unknown[]) {
     neq() {
       return this;
     },
+    or() {
+      return this;
+    },
     like() {
       return this;
     },
@@ -112,6 +115,9 @@ beforeEach(() => {
     from: (name: string) => {
       if (name === 'user_group_attendance') return query(() => attendanceRows);
       if (name === 'user_feedbacks') return query(() => feedbackRows);
+      // Every learner is a current member of each class its rows name.
+      if (name === 'workspace_user_groups_users')
+        return query(() => [...attendanceRows, ...feedbackRows]);
       if (name === 'workspace_configs')
         return {
           ...query(() => configRows),

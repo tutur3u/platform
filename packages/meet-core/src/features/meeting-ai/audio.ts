@@ -1,3 +1,16 @@
+export function hasMeetSpeech(samples: Float32Array, threshold = 0.000001) {
+  if (!Number.isFinite(threshold) || threshold < 0)
+    throw new RangeError('Invalid Meet voice energy threshold');
+  // Evaluate 20 ms frames so short utterances are not diluted by a 10 s window.
+  for (let offset = 0; offset < samples.length; offset += 320) {
+    const end = Math.min(samples.length, offset + 320);
+    let energy = 0;
+    for (let i = offset; i < end; i++) energy += samples[i]! ** 2;
+    if (energy / (end - offset) > threshold) return true;
+  }
+  return false;
+}
+
 export function encodeMeetWav(samples: Float32Array): Blob {
   const data = new ArrayBuffer(44 + samples.length * 2);
   const view = new DataView(data);
@@ -56,7 +69,8 @@ export class MeetAudioCapture {
       audio: Blob,
       startSeconds: number,
       source?: Omit<MeetAudioSource, 'stream'>
-    ) => void
+    ) => void,
+    private readonly energyThreshold = 0.000001
   ) {}
   async start() {
     this.stopping = false;
@@ -102,10 +116,7 @@ export class MeetAudioCapture {
         if (data.samples?.length) {
           const start = elapsed;
           elapsed += data.samples.length / 16000;
-          const energy =
-            data.samples.reduce((sum, value) => sum + value * value, 0) /
-            data.samples.length;
-          if (energy > 0.000001)
+          if (hasMeetSpeech(data.samples, this.energyThreshold))
             this.onChunk(encodeMeetWav(data.samples), start, {
               accountId: input.accountId,
               kind: input.kind,
