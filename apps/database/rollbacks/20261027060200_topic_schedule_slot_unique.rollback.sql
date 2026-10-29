@@ -8,7 +8,6 @@ begin;
 set local lock_timeout = '5s';
 set local statement_timeout = '30s';
 
-drop index if exists private.topic_announcements_schedule_slot_unique;
 drop function if exists private.set_topic_schedule_recipient(uuid, uuid, uuid);
 
 notify pgrst, 'reload schema';
