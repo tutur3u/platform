@@ -142,7 +142,7 @@ export async function finishMeetAiSession(input: {
       ? await generateBilledMeetArtifact(
           {
             transcript,
-            meetingStartedAt: input.meetingStartedAt,
+            meetingStartedAt: input.meetingStartedAt ?? undefined,
             timezone: input.timezone,
           },
           {
@@ -153,7 +153,7 @@ export async function finishMeetAiSession(input: {
         )
       : null;
     if (result?.notes) {
-      const roster = new Map(
+      const roster = new Map<string, string>(
         usable.flatMap((chunk) =>
           transcriptSpeakers(chunk.usage).map(
             (speaker) => [speaker.accountId, speaker.displayName] as const

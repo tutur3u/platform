@@ -18,7 +18,8 @@ vi.mock('./artifact-billing', () => ({
 import { finalizeMeetAi } from './finalize';
 
 const SECRET = 'finalize-test-secret';
-const id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
+const id = (n: number) =>
+  `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
 const ws = id(1);
 const meeting = id(2);
 const sessionId = id(3);
@@ -88,6 +89,7 @@ function fakeDb(tables: Record<string, Row[]>, log: string[] = []) {
       order: () => chain,
       range: () => chain,
       maybeSingle: async () => ({ data: run()[0] ?? null, error: null }),
+      // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally awaitable.
       then: (resolve: (value: unknown) => void) =>
         resolve({ data: run(), error: null }),
     };
@@ -99,9 +101,17 @@ function setup(overrides: { chunks?: Row[]; session?: Row } = {}) {
   const log: string[] = [];
   const tables = {
     workspace_meetings: [
-      { id: meeting, ws_id: ws, creator_id: host, time: '2026-10-30T00:00:00Z' },
+      {
+        id: meeting,
+        ws_id: ws,
+        creator_id: host,
+        time: '2026-10-30T00:00:00Z',
+      },
     ],
-    workspace_members: [{ ws_id: ws, user_id: host }, { ws_id: ws, user_id: ada }],
+    workspace_members: [
+      { ws_id: ws, user_id: host },
+      { ws_id: ws, user_id: ada },
+    ],
     meet_ai_sessions: [
       {
         id: sessionId,
@@ -183,9 +193,9 @@ describe('finalizeMeetAi', () => {
     const results = await Promise.all([call(), call(), call()]);
     expect(mocks.generate).toHaveBeenCalledTimes(1);
     expect(results.filter((r) => r.generated).length).toBe(1);
-    expect(results.every((r) => ['completed', 'pending'].includes(r.status))).toBe(
-      true
-    );
+    expect(
+      results.every((r) => ['completed', 'pending'].includes(r.status))
+    ).toBe(true);
     expect(tables.meet_ai_sessions[0]).toMatchObject({
       notes_status: 'completed',
     });
@@ -207,15 +217,21 @@ describe('finalizeMeetAi', () => {
     expect(mocks.generate).not.toHaveBeenCalled();
     // Ending is fenced first, and the lease was never taken while audio ran.
     expect(log).toContain('meet_ai_sessions.update:ended_at');
-    expect(log).not.toContain('meet_ai_sessions.update:notes_started_at,notes_status');
-    expect(tables.meet_ai_sessions[0]).toMatchObject({ notes_status: 'pending' });
+    expect(log).not.toContain(
+      'meet_ai_sessions.update:notes_started_at,notes_status'
+    );
+    expect(tables.meet_ai_sessions[0]).toMatchObject({
+      notes_status: 'pending',
+    });
 
     Object.assign(inflight, { status: 'completed', attempt_started_at: null });
     log.length = 0;
     expect(await call()).toEqual({ status: 'completed', generated: true });
     const ended = log.indexOf('meet_ai_sessions.update:ended_at');
     const read = log.indexOf('meet_ai_chunks.select');
-    const claim = log.indexOf('meet_ai_sessions.update:notes_started_at,notes_status');
+    const claim = log.indexOf(
+      'meet_ai_sessions.update:notes_started_at,notes_status'
+    );
     expect(ended).toBeGreaterThanOrEqual(0);
     expect(ended).toBeLessThan(read);
     expect(read).toBeLessThan(claim);
@@ -261,7 +277,8 @@ describe('finalizeMeetAi', () => {
     const { db } = setup();
     await call();
     const params = db.rpc.mock.calls.map(
-      (callArgs) => (callArgs as unknown as [string, Record<string, unknown>])[1]
+      (callArgs) =>
+        (callArgs as unknown as [string, Record<string, unknown>])[1]
     );
     expect(params.map((p) => p.p_user_id).sort()).toEqual([ada, host].sort());
     const text = JSON.stringify(params);

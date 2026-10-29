@@ -1,3 +1,4 @@
+import type { MeetFinalizationState } from './finalization';
 import type { RoomBudget } from './room-budget';
 import type { MeetApprovedParticipant, MeetRoomSettings } from './room-options';
 import { outcome } from './room-outcome';
@@ -8,7 +9,6 @@ import {
 } from './room-recording';
 import type { RoomAttachment } from './room-service';
 import type { RoomUsage } from './room-usage';
-import type { MeetFinalizationState } from './finalization';
 import type { TranscriptionRoomState } from './transcription';
 
 export { meetTrackKey } from './room-tracks';

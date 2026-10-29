@@ -1,10 +1,10 @@
 import { z } from 'zod';
+import { queueTranscriptionFinalization } from './finalization';
 import type {
   MeetRealtimeClientMessage,
   MeetRealtimeServerMessage,
 } from './messages';
 import type { MeetRealtimeTokenPayload } from './primitives';
-import { queueTranscriptionFinalization } from './finalization';
 import type { MeetRoomSnapshot } from './room';
 import { denied, outcome } from './room-outcome';
 
@@ -110,7 +110,9 @@ export function applyTranscription(
             decisions: changedSession
               ? {}
               : currentTranscriptionConsents(state),
-            accounts: changedSession ? {} : state.transcriptionConsents?.accounts,
+            accounts: changedSession
+              ? {}
+              : state.transcriptionConsents?.accounts,
             meetingId: token.meetingId,
             wsId: token.wsId,
           }

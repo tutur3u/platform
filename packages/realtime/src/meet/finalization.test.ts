@@ -264,7 +264,9 @@ describe('the signed request', () => {
       record().consentedAccountIds
     );
     expect(verifyMeetFinalizeToken(token, 'other', at)).toBeNull();
-    expect(verifyMeetFinalizeToken(token, 'secret', at + 11 * 60_000)).toBeNull();
+    expect(
+      verifyMeetFinalizeToken(token, 'secret', at + 11 * 60_000)
+    ).toBeNull();
     const [body, signature] = token.split('.');
     const forged = Buffer.from(
       JSON.stringify({
@@ -272,9 +274,9 @@ describe('the signed request', () => {
         consented: [quiet.accountId],
       })
     ).toString('base64url');
-    expect(verifyMeetFinalizeToken(`${forged}.${signature}`, 'secret', at)).toBe(
-      null
-    );
+    expect(
+      verifyMeetFinalizeToken(`${forged}.${signature}`, 'secret', at)
+    ).toBe(null);
     const join = signMeetRealtimeToken(host, 'secret');
     expect(verifyMeetFinalizeToken(join, 'secret', at)).toBeNull();
   });
@@ -292,9 +294,8 @@ describe('the signed request', () => {
     });
     expect(outcome).toBe('done');
     expect(calls[0]?.init.body).toBe('{}');
-    const bearer = String(
-      (calls[0]?.init.headers as Record<string, string>).Authorization
-    ).slice(7);
+    const headers = calls[0]?.init.headers as Record<string, string>;
+    const bearer = String(headers.Authorization).slice(7);
     const claims = verifyMeetFinalizeToken(bearer, 'secret', at)!;
     expect(Object.keys(claims).sort()).toEqual([
       'aud',

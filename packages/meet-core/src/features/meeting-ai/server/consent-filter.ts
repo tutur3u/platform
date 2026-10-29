@@ -26,7 +26,9 @@ export function consentedChunks<
           ? chunk
           : {
               ...chunk,
-              transcript: allowed.map((segment) => segment.transcript).join(' '),
+              transcript: allowed
+                .map((segment) => segment.transcript)
+                .join(' '),
               usage: { ...(chunk.usage as object), segments: allowed },
             }
       );

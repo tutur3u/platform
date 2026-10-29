@@ -62,9 +62,7 @@ export function queueTranscriptionFinalization(
   )
     return state;
   const accountOf = (userId: string) =>
-    consents.accounts?.[userId] ??
-    state.presence[userId]?.accountId ??
-    userId;
+    consents.accounts?.[userId] ?? state.presence[userId]?.accountId ?? userId;
   const consented = accountSet(
     Object.entries(consents.decisions)
       .filter(([, allowed]) => allowed)
@@ -140,7 +138,7 @@ export function beginFinalizationAttempt<T extends MeetFinalizationState>(
   now: number
 ): { state: T; record: MeetFinalization | null } {
   const entry = state.finalizations?.[sessionId];
-  if (!entry || entry.status !== 'pending' || entry.nextAttemptAt > now)
+  if (entry?.status !== 'pending' || entry.nextAttemptAt > now)
     return { state, record: null };
   const attempts = entry.attempts + 1;
   if (attempts > MEET_FINALIZE_MAX_ATTEMPTS)
@@ -166,7 +164,7 @@ export function settleFinalization<T extends MeetFinalizationState>(
   outcome: MeetFinalizeDelivery
 ): T {
   const entry = state.finalizations?.[sessionId];
-  if (!entry || entry.status !== 'pending') return state;
+  if (entry?.status !== 'pending') return state;
   if (outcome === 'done')
     return replaceFinalization(state, { ...entry, status: 'done' });
   if (outcome === 'fatal' || entry.attempts >= MEET_FINALIZE_MAX_ATTEMPTS)
@@ -183,6 +181,5 @@ function replaceFinalization<T extends MeetFinalizationState>(
     finalizations: { ...state.finalizations, [entry.sessionId]: entry },
   };
 }
-
 
 export type MeetFinalizeDelivery = 'done' | 'retry' | 'fatal';

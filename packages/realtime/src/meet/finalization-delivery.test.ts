@@ -22,7 +22,9 @@ const record = (patch: Partial<MeetFinalization> = {}): MeetFinalization => ({
   ...patch,
 });
 function harness(fetcher: typeof fetch, initial = record()) {
-  const box = { state: { finalizations: { [sessionId]: initial } } as MeetFinalizationState };
+  const box = {
+    state: { finalizations: { [sessionId]: initial } } as MeetFinalizationState,
+  };
   const writes: Array<MeetFinalization | undefined> = [];
   let clock = base;
   const io = () => ({
