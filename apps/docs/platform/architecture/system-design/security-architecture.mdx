@@ -23,6 +23,79 @@ migration designs describe a possible future, not live traffic or a current
 setup requirement. See the [active runtime map](/build/devops/active-runtime).
 </Warning>
 
+## Immediate notification trigger credentials (SR-327)
+
+The database trigger `trigger_send_immediate_notification` on
+`private.notification_batches` calls `public.trigger_immediate_notification_send`.
+Its only allowed destination is
+`https://tuturuuu.com/api/notifications/send-immediate`, including the HTTPS
+scheme, host, default port and path. There is no configurable host or fallback:
+`app.base_url` and `app.service_role_key` are ignored, including session overrides.
+Changing the destination requires a reviewed migration.
+
+The bearer comes exclusively from the Supabase Vault secret named
+`notification_immediate_bearer` through `vault.decrypted_secrets`. Provision it
+out of band through the approved secret-management process, using a bearer that
+the Web endpoint accepts. Prefer `CRON_CONTROL_DELIVERY_TOKEN`, which only this
+endpoint accepts, or a new dedicated token added to the route. Do not use
+`CRON_SECRET`, which also unlocks other cron routes, or the Supabase service-role
+key. Create the Vault secret only after this migration applies, following
+`20261027151600`; until then, the trigger is a no-op and cron-control delivers
+pending batches. The migration resets both legacy GUCs on the `postgres` database
+and on roles, globally and within that database. A restricted hosted owner emits
+a NOTICE with only the setting name and SQLSTATE if a reset is denied; an operator
+with the necessary privileges must then clear that setting. Values are never logged.
+Desk's production check found both GUCs unset, so no key rotation is needed;
+the reset is hygiene for local, staging and other environments. This migration
+does not create, copy or activate any credential. Never store secret values in
+migrations, GUCs, docs or logs.
+
+pg_net follows redirects. The destination is our own apex, and libcurl drops the
+Authorization header on a cross-host redirect.
+
+Missing, empty or whitespace-only Vault credentials suppress the HTTP request
+and leave the batch pending, with the warning
+`notification_immediate_bearer is not configured; immediate send suppressed`.
+Vault or transport errors also preserve the insert and emit only a generic
+warning without exception details or credentials.
+Immediate batches retain one queued POST per batch; batched delivery does not
+use this trigger. This rule covers immediate email and push batches created by
+chat, inbound mail and other notification producers. The separate exchange-rate
+cron and the Web endpoint's accepted authorization methods are outside SR-327.
+
+The manual containment rollback
+`apps/database/rollbacks/20261029030200_pin_notification_trigger_vault.rollback.sql`
+disables all trigger HTTP calls while retaining the definer, trusted search path
+and service-role-only execution. cron-control recovers pending batches; it never
+restores the legacy GUC destination, bearer or persisted settings. Its disposable
+regression is
+`apps/database/verification/notification-trigger-vault-containment.sql`.
+
+Regression coverage lives in
+`apps/database/supabase/tests/notification-trigger-vault.sql`: it inserts real
+private batches, checks the actual pg_net queue, rejects session-controlled
+destinations and bearers, and verifies fail-closed delivery and client access.
+Capture the combined stdout/stderr from each forward pgTAP run, then run
+`node apps/database/verification/notification-trigger-vault-warning-check.mjs <log>`.
+This additionally asserts that missing and blank Vault secrets each emitted the
+exact safe warning; a passing pgTAP suite alone does not assert log messages.
+For persisted-GUC cleanup rehearsal, complete `bun sb:reset` first. In that
+disposable stack, seed the database and role settings as local `supabase_admin`,
+then replay the actual forward SQL before running the suite. Repeat the seeded
+replay after containment rollback. The local migration role may lack permission
+to seed protected persisted parameters, so keep this fixture setup outside the
+reset migration chain and keep runtime assertions under normal `postgres`
+privileges. If the CLI host-port connection times out before SQL executes, run
+the same files through the owned database container's local socket with
+`psql -X -U postgres -d postgres -v ON_ERROR_STOP=1 -qAt`. Validate the TAP plan,
+every sequential assertion and absence of `not ok` or bail-out output; SQL exit
+status alone does not prove pgTAP passed. Capture warnings as well.
+
+Run it only in a disposable local Supabase environment. Each test transaction
+rolls back, so pg_net never commits an outbound request. Review and rehearse the
+migration before Mastermind approves activation; a source check alone does not
+prove database application or delivered notifications.
+
 ## Residual dependency advisories
 
 `@tuturuuu/ai` no longer declares `bash-tool`. Source inspection found no
