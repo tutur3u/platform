@@ -1,4 +1,4 @@
--- Rollback for 20261029041000_topic_schedule_slot_unique.sql.
+-- Rollback for 20261029050210_topic_schedule_slot_unique.sql.
 -- Drops the slot uniqueness index and the atomic recipient restore. The
 -- editor and clone keep their own slot checks, so only the same-instant race
 -- reopens. No data changes. Roll back the editor code that calls
