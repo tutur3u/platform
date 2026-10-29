@@ -1,9 +1,10 @@
--- Board sprints: with several planned sprints (see
--- 20261029020600_board_sprint_horizon.sql), work that moves on goes to the
--- earliest planned one. Ending a sprint carries its open tasks there, and a new,
--- moved or reopened task joins the running sprint, else that next sprint.
+-- Manual rollback only: restores the 20261029060010 end_board_sprint and the
+-- 20261029060020 membership sync, which assume one planned sprint per board.
+-- Run before the 20261029060060 rollback.
+BEGIN;
+SET LOCAL lock_timeout = '5s';
+SET LOCAL statement_timeout = '30s';
 
--- 1. Ending carries work into the earliest planned sprint.
 CREATE OR REPLACE FUNCTION public.end_board_sprint(
   p_cycle_id UUID,
   p_actor_id UUID DEFAULT NULL,
@@ -61,12 +62,9 @@ BEGIN
     RAISE EXCEPTION 'SPRINT_NOT_ACTIVE' USING ERRCODE = '55000';
   END IF;
 
-  -- Carried work goes to the next sprint: the earliest planned one.
   SELECT * INTO v_next
   FROM public.task_cycles
   WHERE board_id = v_cycle.board_id AND status = 'planned' AND deleted IS NOT TRUE
-  ORDER BY sequence_number
-  LIMIT 1
   FOR UPDATE;
 
   IF v_next.id IS NULL THEN
@@ -216,8 +214,6 @@ BEGIN
 END;
 $$;
 
--- 2. New, moved and reopened tasks join the running sprint, else the
--- earliest planned one.
 CREATE OR REPLACE FUNCTION private.sync_task_board_sprint_membership()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -301,7 +297,7 @@ BEGIN
     AND wb.sprint_length_weeks IS NOT NULL
     AND c.status IN ('active', 'planned')
     AND c.deleted IS NOT TRUE
-  ORDER BY (c.status = 'active') DESC, c.sequence_number
+  ORDER BY (c.status = 'active') DESC
   LIMIT 1;
 
   IF v_cycle.id IS NULL THEN
@@ -317,5 +313,7 @@ END;
 $$;
 
 REVOKE ALL ON FUNCTION public.end_board_sprint(UUID, UUID, JSONB, TEXT) FROM PUBLIC, anon, authenticated;
-REVOKE ALL ON FUNCTION private.sync_task_board_sprint_membership() FROM PUBLIC;
+REVOKE ALL ON FUNCTION private.sync_task_board_sprint_membership() FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.end_board_sprint(UUID, UUID, JSONB, TEXT) TO service_role;
+
+COMMIT;
