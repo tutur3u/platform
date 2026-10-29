@@ -10143,10 +10143,13 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskQuickActionsDueDate => 'Hạn chót';
 
   @override
-  String get taskQuickActionsNoDueDate => 'Chưa đặt hạn';
+  String get taskQuickActionsNoDate => 'Không có';
 
   @override
   String get taskQuickActionsNoLabels => 'Chưa có nhãn';
+
+  @override
+  String get taskQuickActionsRemoveStartDate => 'Xóa ngày bắt đầu';
 
   @override
   String get taskQuickActionsStatus => 'Trạng thái';
