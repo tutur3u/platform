@@ -107,16 +107,15 @@ export function getSprintProgress(
 
 /**
  * Whether the Board view shows a task while its board runs sprints: tasks of
- * the current sprint, and tasks no open sprint holds yet that the database has
- * already put in the current sprint, so they never vanish while the sprints
- * refresh. An open task always sits in an open sprint, so that covers every
- * open task (just created, moved onto the board, restored or reopened) and
- * every task finished during the running sprint, which was open in it.
- * Hidden: tasks waiting in another open sprint, and work finished before the
- * running sprint started.
+ * the current sprint, and open tasks no open sprint holds yet (just created,
+ * moved onto the board, restored or reopened), which the database has already
+ * put in the current sprint, so they never vanish while the sprints refresh.
+ * Hidden: tasks waiting in another open sprint, and finished tasks from past
+ * sprints or from before sprints were on. A task created finished during the
+ * running sprint shows too.
  */
 export function isTaskInCurrentSprintView(
-  task: TaskTiming & { id: string },
+  task: TaskTiming & { id: string; created_at?: string | null },
   sprints: readonly Pick<SprintLike, 'status' | 'tasks'>[],
   current:
     | (Pick<SprintLike, 'status' | 'tasks'> & { started_at?: string | null })
@@ -124,22 +123,15 @@ export function isTaskInCurrentSprintView(
 ) {
   if (!current) return true;
   if (current.tasks.some((member) => member.task_id === task.id)) return true;
-  const waitsElsewhere = sprints.some(
-    (sprint) =>
-      isBoardSprintOpen(sprint) &&
-      sprint.tasks.some((member) => member.task_id === task.id)
-  );
-  if (waitsElsewhere) return false;
+  let inAnySprint = false;
+  for (const sprint of sprints) {
+    if (!sprint.tasks.some((member) => member.task_id === task.id)) continue;
+    if (isBoardSprintOpen(sprint)) return false;
+    inAnySprint = true;
+  }
   if (!isTaskFinished(task)) return true;
-  if (!current.started_at) return false;
-  // Moving finished work from Done to Closed stamps closed_at without
-  // reopening it, so the task finished at its earlier stamp.
-  const finishedAt = Math.min(
-    ...[task.completed_at, task.closed_at]
-      .filter((at): at is string => Boolean(at))
-      .map(Date.parse)
-  );
-  return finishedAt >= Date.parse(current.started_at);
+  if (inAnySprint || !current.started_at || !task.created_at) return false;
+  return Date.parse(task.created_at) >= Date.parse(current.started_at);
 }
 
 /**
