@@ -25,6 +25,7 @@ vi.mock('@tuturuuu/payment-core/seat-limits', () => ({
 const BILLING_ROLE_ID = '8f98318a-a101-4729-9e2a-b59f28b9c302';
 const STAFF_ROLE_ID = '0b0e7f4e-2f8a-4c55-9a51-0f2d3c3b1a10';
 const CREATOR_ID = 'creator-1';
+const MEMBER_ID = '11111111-1111-4111-8111-111111111111';
 
 function createAccess({
   actorId,
@@ -41,6 +42,12 @@ function createAccess({
     const result = () => {
       if (table === 'workspaces') {
         return { data: { creator_id: CREATOR_ID }, error: null };
+      }
+      if (table === 'workspace_members') {
+        return {
+          data: filters.type === 'MEMBER' ? [{ user_id: MEMBER_ID }] : [],
+          error: null,
+        };
       }
       if (table === 'workspace_roles') {
         const ids = (filters.id as string[] | string | undefined) ?? [];
@@ -200,7 +207,7 @@ describe('external project team creator-grant permissions', () => {
       const response = await addExternalProjectRoleMembers({
         access: team.access,
         request: new Request('http://localhost', {
-          body: JSON.stringify({ memberIds: ['user-1'] }),
+          body: JSON.stringify({ memberIds: [MEMBER_ID] }),
           method: 'POST',
         }),
         roleId: BILLING_ROLE_ID,

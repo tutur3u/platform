@@ -1,10 +1,10 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
-import { addWorkspaceRoleMembers } from '@/lib/workspace-role-member-mutations';
 import {
   isWorkspaceCreator,
   roleHasCreatorGrantPermission,
 } from '@/lib/workspace-creator-grant-permissions';
+import { addWorkspaceRoleMembers } from '@/lib/workspace-role-member-mutations';
 import { normalizeRoleMembers } from '@/lib/workspace-role-members';
 import { resolveWorkspaceRouteAccess } from '@/lib/workspace-route-access';
 
