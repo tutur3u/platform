@@ -211,3 +211,26 @@ each section until nextAfter is null, passing the first page's seq throughout;
 409 means the hub changed and export must restart. Every page is bounded to 200
 rows and filters expired content. This keeps the full export usable with the
 same two-MiB gateway response ceiling even at the quota storage cap.
+
+## Infrastructure gateway acceptance
+
+The P0 gateway at /api/v1/ops-hub/[...path] authenticates each request through
+authorizeInfrastructureAdminRequest with view_infrastructure on the root
+workspace. An Authorization header selects Bearer verification using auth.getUser;
+an invalid Bearer header never falls back to a cookie identity. Without that
+header the existing infrastructure satellite session is used. The verified actor
+must also appear in the server allowlist. Auth failures are consistently 404.
+
+Only the read routes and DELETE /hub are forwarded; ingest, replies and unknown
+paths remain hidden. Cookie erasure additionally requires the exact same Origin.
+The upstream request receives a fresh, method-and-target-bound HMAC assertion,
+never the caller's Bearer token, cookie or assertion. Forwarding has a ten-second
+timeout and a two-MiB streamed response ceiling, rejects redirects and non-JSON,
+and strips upstream cookies. The configured origin must be an HTTPS workers.dev
+origin with no credentials, port, path, query or fragment.
+
+Run the focused gateway and authorizer tests from apps/infrastructure with
+`ttr resources run -- bun x vitest run src/lib/ops-hub/gateway.test.ts 'src/app/api/v1/ops-hub/[...path]/route.test.ts' src/lib/infrastructure-admin-access.test.ts --maxWorkers=1`.
+These tests cover non-admin and non-allowlisted 404s, verified Bearer actor/root
+permission binding, cookie fallback prevention, fresh and expired assertions,
+credential stripping, CSRF and bounded upstream behavior.
