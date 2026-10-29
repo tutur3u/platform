@@ -64,6 +64,10 @@ export interface TutoringQueueItem {
   missed_lesson_content?: string;
   /** Class posts (`YYYY-MM-DD: title` and body) created on the missed dates. */
   missed_post_content?: string;
+  /** `missed_lesson_content` split per missed date (one make-up session each). */
+  missed_lesson_by_date?: Record<string, string>;
+  /** `missed_post_content` split per missed date. */
+  missed_post_by_date?: Record<string, string>;
   /** Missed dates with neither class session notes nor a class post. */
   missing_lesson_dates?: string[];
   content_review_due: boolean;
@@ -119,6 +123,8 @@ export interface CreateTutoringSessionPayload {
     startTime: string;
     durationMinutes: number;
     teacherUserId?: string | null;
+    /** This session's own content; falls back to the payload `content`. */
+    content?: string;
   }[];
   sessionDate?: string;
   startTime?: string;
