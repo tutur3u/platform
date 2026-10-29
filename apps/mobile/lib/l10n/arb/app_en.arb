@@ -6563,6 +6563,107 @@
   "mastermindAskActionFyi": "For your information",
   "mastermindAskRemindAtMac": "Remind me at Mac",
   "mastermindAskRemindAtMacSoon": "Coming soon",
+  "mastermindMachineUpdated": "As of {time}",
+  "@mastermindMachineUpdated": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindMachineLastSeen": "Last seen {time}",
+  "@mastermindMachineLastSeen": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindMachineSummary": "{total} machines · {online} online · {attention} need attention",
+  "@mastermindMachineSummary": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      },
+      "online": {
+        "type": "int"
+      },
+      "attention": {
+        "type": "int"
+      }
+    }
+  },
+  "machineTextMachines": "Machines",
+  "machineTextAttention": "Needs attention",
+  "machineTextOnline": "Online",
+  "machineTextAsleep": "Asleep",
+  "machineTextOffline": "Offline",
+  "machineTextUnknown": "Unknown",
+  "machineTextOfflineGroup": "Asleep or offline",
+  "machineTextNotPublished": "Machine data is not published yet",
+  "machineTextEmpty": "No machines reported",
+  "machineTextGone": "This machine is no longer reported",
+  "machineTextUnavailable": "Unavailable",
+  "machineTextStale": "Collector data is stale; values are last known",
+  "machineTextPartial": "Collector coverage is partial",
+  "machineTextNow": "Now",
+  "machineTextRunning": "Running",
+  "machineTextRules": "Rules",
+  "machineTextAlerts": "Alerts",
+  "machineTextHistory": "History",
+  "machineTextKeepAwake": "Keep awake",
+  "machineTextSample": "SAMPLE data",
+  "machineTextSampleToggle": "Use sample machine data",
+  "machineTextStatus": "Status and specs",
+  "machineTextCpu": "CPU",
+  "machineTextRam": "Memory",
+  "machineTextDisk": "Disk free",
+  "machineTextSwap": "Swap",
+  "machineTextTemperature": "Temperature",
+  "machineTextBuild": "Build",
+  "machineTextStudio": "Studio",
+  "machineTextLaptop": "Laptop",
+  "machineTextDevbox": "Devbox",
+  "machineTextLane": "Lanes",
+  "machineTextTest": "Tests",
+  "machineTextActive": "Scheduling active",
+  "machineTextDraining": "Draining",
+  "machineTextPaused": "Scheduling paused",
+  "machineTextThermal": "Thermal alert",
+  "machineTextWarning": "Warning",
+  "machineTextCritical": "Critical",
+  "machineTextNominal": "Nominal",
+  "machineTextFair": "Fair",
+  "machineTextSerious": "Serious",
+  "machineTextMacos": "macOS",
+  "machineTextLinux": "Linux",
+  "machineTextWindows": "Windows",
+  "machineTextNone": "None reported",
+  "machineTextLastKnown": "Last-known values",
+  "machineTextDay": "24 h",
+  "machineTextWeek": "7 d",
+  "machineTextTable": "Table",
+  "machineTextTime": "Time",
+  "machineTextCores": "Cores",
+  "machineTextLoad": "Load (1 min)",
+  "machineTextMacGuide": "In System Settings, open Energy and prevent automatic sleeping on power. Plug in and keep the lid open. Mastermind does not control this machine.",
+  "machineTextLinuxGuide": "Use your desktop Power settings to prevent automatic suspend while plugged in. Mastermind does not control this machine.",
+  "machineTextWindowsGuide": "In Settings, open System > Power and battery > Screen and sleep. Choose the plugged-in sleep setting. Mastermind does not control this machine.",
+  "machineTextUnknownGuide": "Use the operating system power settings to keep the machine awake while plugged in. Mastermind does not control this machine.",
+  "machineTextOther": "Other",
+  "machineTextProdHost": "Production host",
+  "machineTextMergeTrain": "Merge train",
+  "machineTextFindingsOnly": "Findings only",
+  "machineTextProdReadsHereOnly": "Production reads only here",
+  "machineTextNeverBuilds": "Never builds",
+  "machineTextNoHeavyWork": "No heavy work",
+  "machineTextLightWorkOnly": "Light work only",
+  "machineTextProdHostReadOnly": "Production host: read-only",
+  "machineTextDiskLow": "Low disk space",
+  "machineTextLoadHigh": "Load above cores",
+  "machineTextSwapHigh": "High swap use",
+  "machineTextRamGb": "RAM (GB)",
+  "machineTextDiskGb": "Disk (GB)",
   "mastermindCatchupTitle": "Since you last looked",
   "mastermindCatchupWindowSince": "Since your last visit",
   "mastermindCatchupWindowDay": "Last 24 hours",

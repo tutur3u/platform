@@ -18,11 +18,12 @@ const List<LaneState> laneStatePriority = [
 ];
 
 /// The Work tab segments. Lanes is the default and is never written to the
-/// URL; the other two ride in `?segment=`.
+/// URL; the others ride in `?segment=`.
 enum WorkSegment {
   lanes('lanes'),
   backlog('backlog'),
-  staff('staff');
+  staff('staff'),
+  machines('machines');
 
   const WorkSegment(this.queryValue);
 
