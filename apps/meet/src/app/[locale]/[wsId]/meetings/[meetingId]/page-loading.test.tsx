@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   policy: vi.fn(),
   calendar: vi.fn(),
   eq: vi.fn(),
+  workspace: vi.fn(() => null),
 }));
 vi.mock('../../workspace-context', () => ({
   getMeetWorkspaceContext: mocks.context,
@@ -68,15 +69,26 @@ vi.mock('@/features/call/components/meeting-local-time', () => ({
 vi.mock('@/features/call/components/meeting-public-settings', () => ({
   MeetingPublicSettings: () => null,
 }));
-vi.mock('@/features/meeting-ai/meeting-ai-overview', () => ({
-  MeetingAiOverview: () => null,
+vi.mock('@/features/meeting-notes/meeting-notes-workspace', () => ({
+  MeetingNotesWorkspace: mocks.workspace,
 }));
 vi.mock('./meeting-actions', () => ({ MeetingActions: () => null }));
 vi.mock('./recording-sessions-overview', () => ({
   RecordingSessionsOverview: () => null,
 }));
 
+import type { ReactElement, ReactNode } from 'react';
 import MeetingDetailPage from './page';
+
+function findByType(node: ReactNode, type: unknown): ReactElement[] {
+  if (Array.isArray(node)) return node.flatMap((n) => findByType(n, type));
+  if (!node || typeof node !== 'object' || !('props' in node)) return [];
+  const element = node as ReactElement<{ children?: ReactNode }>;
+  return [
+    ...(element.type === type ? [element] : []),
+    ...findByType(element.props.children, type),
+  ];
+}
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -224,3 +236,27 @@ test.each([
     expect(mocks.permissions).not.toHaveBeenCalled();
   }
 );
+
+test('viewers the room policy denies never mount the notes and transcript reader', async () => {
+  mocks.policy.mockResolvedValue({ ended: false, canReadNotes: false });
+  const result = await MeetingDetailPage(props);
+  expect(findByType(result, mocks.workspace)).toHaveLength(0);
+  expect(JSON.stringify(result)).toContain('not_shared');
+});
+
+test('authorized viewers get the reader with the room sharing state', async () => {
+  mocks.policy.mockResolvedValue({
+    ended: false,
+    canReadNotes: true,
+    settings: { shareNotesAfterMeeting: true },
+  });
+  const result = await MeetingDetailPage(props);
+  const [reader] = findByType(result, mocks.workspace);
+  expect(reader?.props).toEqual({
+    wsId: 'canonical-workspace',
+    meetingId: '10000000-0000-4000-8000-000000000001',
+    title: 'Meeting',
+    isHost: true,
+    shared: true,
+  });
+});
