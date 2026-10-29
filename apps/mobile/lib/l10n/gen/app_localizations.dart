@@ -25111,12 +25111,6 @@ abstract class AppLocalizations {
   /// **'{section} · {basis}'**
   String mastermindSectionWithBasis(String section, String basis);
 
-  /// No description provided for @mastermindSecurityFix.
-  ///
-  /// In en, this message translates to:
-  /// **'Security fix'**
-  String get mastermindSecurityFix;
-
   /// No description provided for @mastermindSecurityGroup.
   ///
   /// In en, this message translates to:
@@ -25818,6 +25812,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Try again'**
   String get mastermindTryAgain;
+
+  /// No description provided for @mastermindTimeDaysShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}d'**
+  String mastermindTimeDaysShort(int count);
+
+  /// No description provided for @mastermindTimeHoursShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}h'**
+  String mastermindTimeHoursShort(int count);
+
+  /// No description provided for @mastermindTimeMinutesShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}m'**
+  String mastermindTimeMinutesShort(int count);
+
+  /// No description provided for @mastermindTimeNow.
+  ///
+  /// In en, this message translates to:
+  /// **'now'**
+  String get mastermindTimeNow;
+
+  /// No description provided for @mastermindAskedTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Asked {time}'**
+  String mastermindAskedTime(String time);
+
+  /// No description provided for @mastermindTimeSpoken.
+  ///
+  /// In en, this message translates to:
+  /// **'{relative}, {absolute}'**
+  String mastermindTimeSpoken(String relative, String absolute);
+
+  /// No description provided for @mastermindTimeSpokenDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 day ago} other{{count} days ago}}'**
+  String mastermindTimeSpokenDays(int count);
+
+  /// No description provided for @mastermindTimeSpokenHours.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 hour ago} other{{count} hours ago}}'**
+  String mastermindTimeSpokenHours(int count);
+
+  /// No description provided for @mastermindTimeSpokenMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 minute ago} other{{count} minutes ago}}'**
+  String mastermindTimeSpokenMinutes(int count);
+
+  /// No description provided for @mastermindTimeSpokenNow.
+  ///
+  /// In en, this message translates to:
+  /// **'just now'**
+  String get mastermindTimeSpokenNow;
 
   /// No description provided for @mastermindUnavailable.
   ///
@@ -26677,6 +26731,450 @@ abstract class AppLocalizations {
   /// **'Coming soon'**
   String get mastermindAskRemindAtMacSoon;
 
+  /// No description provided for @mastermindMachineUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'As of {time}'**
+  String mastermindMachineUpdated(String time);
+
+  /// No description provided for @mastermindMachineLastSeen.
+  ///
+  /// In en, this message translates to:
+  /// **'Last seen {time}'**
+  String mastermindMachineLastSeen(String time);
+
+  /// No description provided for @mastermindMachineSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{total} machines · {online} online · {attention} need attention'**
+  String mastermindMachineSummary(int total, int online, int attention);
+
+  /// No description provided for @machineTextMachines.
+  ///
+  /// In en, this message translates to:
+  /// **'Machines'**
+  String get machineTextMachines;
+
+  /// No description provided for @machineTextAttention.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs attention'**
+  String get machineTextAttention;
+
+  /// No description provided for @machineTextOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'Online'**
+  String get machineTextOnline;
+
+  /// No description provided for @machineTextAsleep.
+  ///
+  /// In en, this message translates to:
+  /// **'Asleep'**
+  String get machineTextAsleep;
+
+  /// No description provided for @machineTextOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline'**
+  String get machineTextOffline;
+
+  /// No description provided for @machineTextUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get machineTextUnknown;
+
+  /// No description provided for @machineTextOfflineGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Asleep or offline'**
+  String get machineTextOfflineGroup;
+
+  /// No description provided for @machineTextNotPublished.
+  ///
+  /// In en, this message translates to:
+  /// **'Machine data is not published yet'**
+  String get machineTextNotPublished;
+
+  /// No description provided for @machineTextEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No machines reported'**
+  String get machineTextEmpty;
+
+  /// No description provided for @machineTextGone.
+  ///
+  /// In en, this message translates to:
+  /// **'This machine is no longer reported'**
+  String get machineTextGone;
+
+  /// No description provided for @machineTextUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable'**
+  String get machineTextUnavailable;
+
+  /// No description provided for @machineTextStale.
+  ///
+  /// In en, this message translates to:
+  /// **'Collector data is stale; values are last known'**
+  String get machineTextStale;
+
+  /// No description provided for @machineTextPartial.
+  ///
+  /// In en, this message translates to:
+  /// **'Collector coverage is partial'**
+  String get machineTextPartial;
+
+  /// No description provided for @machineTextNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Now'**
+  String get machineTextNow;
+
+  /// No description provided for @machineTextRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Running'**
+  String get machineTextRunning;
+
+  /// No description provided for @machineTextRules.
+  ///
+  /// In en, this message translates to:
+  /// **'Rules'**
+  String get machineTextRules;
+
+  /// No description provided for @machineTextAlerts.
+  ///
+  /// In en, this message translates to:
+  /// **'Alerts'**
+  String get machineTextAlerts;
+
+  /// No description provided for @machineTextHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'History'**
+  String get machineTextHistory;
+
+  /// No description provided for @machineTextKeepAwake.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep awake'**
+  String get machineTextKeepAwake;
+
+  /// No description provided for @machineTextSample.
+  ///
+  /// In en, this message translates to:
+  /// **'SAMPLE data'**
+  String get machineTextSample;
+
+  /// No description provided for @machineTextSampleToggle.
+  ///
+  /// In en, this message translates to:
+  /// **'Use sample machine data'**
+  String get machineTextSampleToggle;
+
+  /// No description provided for @machineTextStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Status and specs'**
+  String get machineTextStatus;
+
+  /// No description provided for @machineTextCpu.
+  ///
+  /// In en, this message translates to:
+  /// **'CPU'**
+  String get machineTextCpu;
+
+  /// No description provided for @machineTextRam.
+  ///
+  /// In en, this message translates to:
+  /// **'Memory'**
+  String get machineTextRam;
+
+  /// No description provided for @machineTextDisk.
+  ///
+  /// In en, this message translates to:
+  /// **'Disk free'**
+  String get machineTextDisk;
+
+  /// No description provided for @machineTextSwap.
+  ///
+  /// In en, this message translates to:
+  /// **'Swap'**
+  String get machineTextSwap;
+
+  /// No description provided for @machineTextTemperature.
+  ///
+  /// In en, this message translates to:
+  /// **'Temperature'**
+  String get machineTextTemperature;
+
+  /// No description provided for @machineTextBuild.
+  ///
+  /// In en, this message translates to:
+  /// **'Build'**
+  String get machineTextBuild;
+
+  /// No description provided for @machineTextStudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Studio'**
+  String get machineTextStudio;
+
+  /// No description provided for @machineTextLaptop.
+  ///
+  /// In en, this message translates to:
+  /// **'Laptop'**
+  String get machineTextLaptop;
+
+  /// No description provided for @machineTextDevbox.
+  ///
+  /// In en, this message translates to:
+  /// **'Devbox'**
+  String get machineTextDevbox;
+
+  /// No description provided for @machineTextLane.
+  ///
+  /// In en, this message translates to:
+  /// **'Lanes'**
+  String get machineTextLane;
+
+  /// No description provided for @machineTextTest.
+  ///
+  /// In en, this message translates to:
+  /// **'Tests'**
+  String get machineTextTest;
+
+  /// No description provided for @machineTextActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduling active'**
+  String get machineTextActive;
+
+  /// No description provided for @machineTextDraining.
+  ///
+  /// In en, this message translates to:
+  /// **'Draining'**
+  String get machineTextDraining;
+
+  /// No description provided for @machineTextPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduling paused'**
+  String get machineTextPaused;
+
+  /// No description provided for @machineTextThermal.
+  ///
+  /// In en, this message translates to:
+  /// **'Thermal alert'**
+  String get machineTextThermal;
+
+  /// No description provided for @machineTextWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Warning'**
+  String get machineTextWarning;
+
+  /// No description provided for @machineTextCritical.
+  ///
+  /// In en, this message translates to:
+  /// **'Critical'**
+  String get machineTextCritical;
+
+  /// No description provided for @machineTextNominal.
+  ///
+  /// In en, this message translates to:
+  /// **'Nominal'**
+  String get machineTextNominal;
+
+  /// No description provided for @machineTextFair.
+  ///
+  /// In en, this message translates to:
+  /// **'Fair'**
+  String get machineTextFair;
+
+  /// No description provided for @machineTextSerious.
+  ///
+  /// In en, this message translates to:
+  /// **'Serious'**
+  String get machineTextSerious;
+
+  /// No description provided for @machineTextMacos.
+  ///
+  /// In en, this message translates to:
+  /// **'macOS'**
+  String get machineTextMacos;
+
+  /// No description provided for @machineTextLinux.
+  ///
+  /// In en, this message translates to:
+  /// **'Linux'**
+  String get machineTextLinux;
+
+  /// No description provided for @machineTextWindows.
+  ///
+  /// In en, this message translates to:
+  /// **'Windows'**
+  String get machineTextWindows;
+
+  /// No description provided for @machineTextNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None reported'**
+  String get machineTextNone;
+
+  /// No description provided for @machineTextLastKnown.
+  ///
+  /// In en, this message translates to:
+  /// **'Last-known values'**
+  String get machineTextLastKnown;
+
+  /// No description provided for @machineTextDay.
+  ///
+  /// In en, this message translates to:
+  /// **'24 h'**
+  String get machineTextDay;
+
+  /// No description provided for @machineTextWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'7 d'**
+  String get machineTextWeek;
+
+  /// No description provided for @machineTextTable.
+  ///
+  /// In en, this message translates to:
+  /// **'Table'**
+  String get machineTextTable;
+
+  /// No description provided for @machineTextTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get machineTextTime;
+
+  /// No description provided for @machineTextCores.
+  ///
+  /// In en, this message translates to:
+  /// **'Cores'**
+  String get machineTextCores;
+
+  /// No description provided for @machineTextLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Load (1 min)'**
+  String get machineTextLoad;
+
+  /// No description provided for @machineTextMacGuide.
+  ///
+  /// In en, this message translates to:
+  /// **'In System Settings, open Energy and prevent automatic sleeping on power. Plug in and keep the lid open. Mastermind does not control this machine.'**
+  String get machineTextMacGuide;
+
+  /// No description provided for @machineTextLinuxGuide.
+  ///
+  /// In en, this message translates to:
+  /// **'Use your desktop Power settings to prevent automatic suspend while plugged in. Mastermind does not control this machine.'**
+  String get machineTextLinuxGuide;
+
+  /// No description provided for @machineTextWindowsGuide.
+  ///
+  /// In en, this message translates to:
+  /// **'In Settings, open System > Power and battery > Screen and sleep. Choose the plugged-in sleep setting. Mastermind does not control this machine.'**
+  String get machineTextWindowsGuide;
+
+  /// No description provided for @machineTextUnknownGuide.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the operating system power settings to keep the machine awake while plugged in. Mastermind does not control this machine.'**
+  String get machineTextUnknownGuide;
+
+  /// No description provided for @machineTextOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get machineTextOther;
+
+  /// No description provided for @machineTextProdHost.
+  ///
+  /// In en, this message translates to:
+  /// **'Production host'**
+  String get machineTextProdHost;
+
+  /// No description provided for @machineTextMergeTrain.
+  ///
+  /// In en, this message translates to:
+  /// **'Merge train'**
+  String get machineTextMergeTrain;
+
+  /// No description provided for @machineTextFindingsOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Findings only'**
+  String get machineTextFindingsOnly;
+
+  /// No description provided for @machineTextProdReadsHereOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Production reads only here'**
+  String get machineTextProdReadsHereOnly;
+
+  /// No description provided for @machineTextNeverBuilds.
+  ///
+  /// In en, this message translates to:
+  /// **'Never builds'**
+  String get machineTextNeverBuilds;
+
+  /// No description provided for @machineTextNoHeavyWork.
+  ///
+  /// In en, this message translates to:
+  /// **'No heavy work'**
+  String get machineTextNoHeavyWork;
+
+  /// No description provided for @machineTextLightWorkOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Light work only'**
+  String get machineTextLightWorkOnly;
+
+  /// No description provided for @machineTextProdHostReadOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Production host: read-only'**
+  String get machineTextProdHostReadOnly;
+
+  /// No description provided for @machineTextDiskLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Low disk space'**
+  String get machineTextDiskLow;
+
+  /// No description provided for @machineTextLoadHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'Load above cores'**
+  String get machineTextLoadHigh;
+
+  /// No description provided for @machineTextSwapHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'High swap use'**
+  String get machineTextSwapHigh;
+
+  /// No description provided for @machineTextRamGb.
+  ///
+  /// In en, this message translates to:
+  /// **'RAM (GB)'**
+  String get machineTextRamGb;
+
+  /// No description provided for @machineTextDiskGb.
+  ///
+  /// In en, this message translates to:
+  /// **'Disk (GB)'**
+  String get machineTextDiskGb;
+
   /// No description provided for @mastermindCatchupTitle.
   ///
   /// In en, this message translates to:
@@ -26898,6 +27396,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your catch-up is ready'**
   String get mastermindCatchupPushBody;
+
+  /// No description provided for @mastermindSecurityFix.
+  ///
+  /// In en, this message translates to:
+  /// **'Security fix'**
+  String get mastermindSecurityFix;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

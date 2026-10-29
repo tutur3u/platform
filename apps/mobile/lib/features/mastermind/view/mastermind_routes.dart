@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/features/mastermind/machines/machine_detail.dart';
 import 'package:mobile/features/mastermind/presentation/inbox_segment.dart';
 import 'package:mobile/features/mastermind/presentation/ship_model.dart';
 import 'package:mobile/features/mastermind/presentation/work_model.dart';
@@ -19,6 +20,11 @@ import 'package:mobile/features/mastermind/view/work/mastermind_work_page.dart';
 /// [Routes.mastermind], plus the pushed Needs-you, decision, lane and chart
 /// table details. Inside the shell route.
 final List<GoRoute> mastermindTabRoutes = [
+  GoRoute(
+    path: '/mastermind/work/machine/:machineId',
+    builder: (context, state) =>
+        MachineDetailPage(machineId: state.pathParameters['machineId'] ?? ''),
+  ),
   GoRoute(
     path: '/mastermind/threads',
     redirect: (context, state) =>
