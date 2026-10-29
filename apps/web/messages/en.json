@@ -8872,9 +8872,9 @@
         "capabilities": {
           "contextAware": "Context-Aware",
           "learning": "Always Learning",
-          "proactive": "Proactive AI"
+          "proactive": "Takes action"
         },
-        "description": "Mira is your proactive AI companion. She plans, reasons, and acts on your behalf, synchronizing calendars, goals, and communications to surface proactive recommendations.",
+        "description": "Mira is your AI assistant inside Tuturuuu. Ask her to plan your day, schedule tasks into your calendar, draft email replies or log your spending, all from what's already in your workspace.",
         "prompts": [
           "Schedule my standup for tomorrow at 9am",
           "Summarize my tasks for this week",
@@ -8943,7 +8943,7 @@
         "role": "Bridge to Humanity"
       },
       "mira": {
-        "description": "Mira is your proactive AI companion—the JARVIS we envisioned. She plans, reasons, and acts on your behalf, synchronizing calendars, goals, finances, and communications to surface proactive recommendations instead of passive reminders.",
+        "description": "Mira is your AI assistant inside Tuturuuu. She works with your tasks, calendar, mail, finances and time tracking: ask, and she plans, schedules, drafts and logs for you, and remembers what you tell her.",
         "title": "Mira: Your AI Partner"
       },
       "nova": {
@@ -8995,7 +8995,7 @@
           "tasks": "Show my tasks"
         },
         "status": "Online",
-        "subtitle": "Your proactive AI companion",
+        "subtitle": "Your AI assistant for work",
         "title": "AI Assistant (Mira)",
         "toolCall": {
           "checking": "Checking 3 calendars",
@@ -9030,9 +9030,9 @@
         "mira": {
           "badges": {
             "learning": "Always Learning",
-            "proactive": "Proactive AI"
+            "proactive": "Takes action"
           },
-          "description": "Mira is your proactive AI companion—the JARVIS we envisioned. She plans, reasons, and acts on your behalf, synchronizing calendars, goals, finances, and communications to surface proactive recommendations instead of passive reminders.",
+          "description": "Mira is your AI assistant inside Tuturuuu. She works with your tasks, calendar, mail, finances and time tracking: ask, and she plans, schedules, drafts and logs for you, and remembers what you tell her.",
           "title": "Mira: Your AI Partner"
         },
         "subtitle": "Meet Mira and the AI core that makes Tuturuuu truly intelligent",
@@ -13751,7 +13751,7 @@
         },
         "eyebrow": "The AI core",
         "mira": {
-          "description": "The assistant you talk to. She plans, reasons and acts on your behalf across calendar, goals, finances and communications, surfacing proactive recommendations rather than passive reminders.",
+          "description": "The assistant you talk to. Ask, and she plans, schedules, drafts and logs across your tasks, calendar, mail and finances.",
           "title": "Mira, your AI partner"
         },
         "nova": {

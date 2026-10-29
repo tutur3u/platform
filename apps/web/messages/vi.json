@@ -8872,9 +8872,9 @@
         "capabilities": {
           "contextAware": "Hiểu ngữ cảnh",
           "learning": "Học liên tục",
-          "proactive": "Chủ động"
+          "proactive": "Làm việc thực tế"
         },
-        "description": "Mira là AI thực sự hiểu bạn. Cô ấy lên kế hoạch, suy nghĩ và hành động thay bạn—đồng bộ lịch, mục tiêu và tin nhắn để gợi ý đúng lúc bạn cần.",
+        "description": "Mira là trợ lý AI ngay trong Tuturuuu. Bạn chỉ cần nhờ, Mira sẽ sắp xếp ngày làm việc, xếp task vào lịch, soạn thư trả lời hay ghi lại chi tiêu, dựa trên những gì đã có trong workspace của bạn.",
         "prompts": [
           "Đặt lịch standup 9h sáng mai",
           "Tóm tắt việc tuần này",
@@ -8943,7 +8943,7 @@
         "role": "Cầu nối con người"
       },
       "mira": {
-        "description": "Mira là JARVIS mà chúng ta từng mơ. Cô ấy lên kế hoạch, suy nghĩ và hành động thay bạn—đồng bộ lịch, mục tiêu, tài chính và tin nhắn để gợi ý chủ động thay vì chỉ nhắc thụ động.",
+        "description": "Mira là trợ lý AI ngay trong Tuturuuu. Mira làm việc cùng task, lịch, email, tài chính và thời gian của bạn: bạn nhờ, Mira lên kế hoạch, xếp lịch, soạn thư, ghi chép, và nhớ những gì bạn dặn.",
         "title": "Gặp Mira - Trợ Lý AI"
       },
       "nova": {
@@ -8995,7 +8995,7 @@
           "tasks": "Xem task"
         },
         "status": "Online",
-        "subtitle": "Trợ lý AI chủ động của bạn",
+        "subtitle": "Trợ lý AI cho công việc của bạn",
         "title": "Mira - Trợ Lý AI",
         "toolCall": {
           "checking": "Đang kiểm tra 3 lịch",
@@ -9030,9 +9030,9 @@
         "mira": {
           "badges": {
             "learning": "Luôn Học Hỏi",
-            "proactive": "AI Chủ Động"
+            "proactive": "Làm việc thực tế"
           },
-          "description": "Mira là trợ lý AI chủ động của bạn—JARVIS mà chúng ta hằng mơ ước. Cô ấy lập kế hoạch, suy luận và hành động thay mặt bạn, đồng bộ hóa lịch, mục tiêu, tài chính và giao tiếp để đưa ra các đề xuất chủ động thay vì chỉ nhắc nhở thụ động.",
+          "description": "Mira là trợ lý AI ngay trong Tuturuuu. Mira làm việc cùng task, lịch, email, tài chính và thời gian của bạn: bạn nhờ, Mira lên kế hoạch, xếp lịch, soạn thư, ghi chép, và nhớ những gì bạn dặn.",
           "title": "Mira: Đối Tác AI Của Bạn"
         },
         "subtitle": "Gặp gỡ Mira và hệ thống AI giúp Tuturuuu thực sự thông minh",
@@ -13758,7 +13758,7 @@
         },
         "eyebrow": "Lõi AI",
         "mira": {
-          "description": "Trợ lý bạn trò chuyện. Cô ấy lên kế hoạch, suy luận và hành động thay bạn trên lịch, mục tiêu, tài chính và tin nhắn, đưa ra gợi ý chủ động thay vì lời nhắc thụ động.",
+          "description": "Trợ lý bạn trò chuyện cùng. Bạn nhờ, Mira lên kế hoạch, xếp lịch, soạn thư và ghi chép trên task, lịch, email và tài chính của bạn.",
           "title": "Mira, người bạn đồng hành AI"
         },
         "nova": {
