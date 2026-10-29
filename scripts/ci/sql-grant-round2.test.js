@@ -236,7 +236,7 @@ test('the 030500 rollback restores only service_role access and never grants to 
       /\bgrant\b[\s\S]*?\bto\s+([a-z_, ]+?)(?=['\s;]*(?:;|\$|\)|,\s*pg_get))/g
     ),
   ].map((m) => m[1].trim());
-  assert.ok(grantees.length >= 2);
+  assert.ok(grantees.length >= 1);
   assert.deepEqual([...new Set(grantees)], ['service_role']);
   assert.ok(!/\bto\s+(?:public|anon)\b/.test(code));
   assert.ok(
@@ -245,4 +245,6 @@ test('the 030500 rollback restores only service_role access and never grants to 
     )
   );
   assert.ok(!/\bto\s+authenticated\b/.test(code));
+  // Default privileges are not restored: the baseline guard rejects restoring them.
+  assert.ok(!/alter\s+default\s+privileges/.test(code));
 });

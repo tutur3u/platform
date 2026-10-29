@@ -14,6 +14,7 @@ FROM service_role;
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA private
 REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC;
 
+-- tuturuuu: reviewed(dynamic-sql-review): SR-331 revoke-only default-privilege fence; the format() input is the owner role name from pg_catalog, with no GRANT
 DO $private_defaults$
 DECLARE creator record;
 BEGIN
