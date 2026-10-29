@@ -54,8 +54,13 @@ export function nativeLegalPage(kind: NativeLegalKind) {
 }
 
 export function nativeLegalPath(path: string) {
-  return nativeLegalPages.some(({ slug }) =>
-    [`/${slug}`, `/en/${slug}`, `/vi/${slug}`].includes(path)
+  return (
+    ['/legal/changes', '/legal/changes/full'].some((slug) =>
+      [slug, `/en${slug}`, `/vi${slug}`].includes(path)
+    ) ||
+    nativeLegalPages.some(({ slug }) =>
+      [`/${slug}`, `/en/${slug}`, `/vi/${slug}`].includes(path)
+    )
   );
 }
 
@@ -75,3 +80,14 @@ export function shouldRenderNativeLegal(
     ].some((name) => request.headers.has(name))
   );
 }
+
+export const nativeLegalChangesPages = [
+  {
+    slug: 'legal/changes',
+    source: 'apps/web/src/app/[locale]/(marketing)/legal/changes/page.tsx',
+  },
+  {
+    slug: 'legal/changes/full',
+    source: 'apps/web/src/app/[locale]/(marketing)/legal/changes/full/page.tsx',
+  },
+] as const;

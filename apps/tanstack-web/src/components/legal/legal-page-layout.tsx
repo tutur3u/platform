@@ -1,6 +1,7 @@
 import { Code2, ExternalLink, Mail } from '@tuturuuu/icons/lucide';
 import { AnimateInView } from './animate-in-view';
 import { LegalSectionCard } from './legal-section-card';
+import { LegalMarkdown } from './legal-markdown';
 import { LegalSummaryCard } from './legal-summary-card';
 import type { LegalPageConfig } from './legal-types';
 import { TableOfContents } from './table-of-contents';
@@ -107,6 +108,9 @@ export function LegalPageLayout({ config }: { config: LegalPageConfig }) {
             })}
           </p>
 
+          {config.upcomingChanges && (
+            <LegalMarkdown>{config.upcomingChanges}</LegalMarkdown>
+          )}
           <div className="flex gap-3">
             <a
               className={buttonClassName}
