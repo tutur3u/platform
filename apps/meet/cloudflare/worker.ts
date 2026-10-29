@@ -1,4 +1,12 @@
 import {
+  type AnalyticsEngineWriter,
+  readCountry,
+} from '@tuturuuu/utils/app-switch-rum';
+import {
+  createAppSwitchWriteBudget,
+  handleAppSwitchBeacon,
+} from '@tuturuuu/utils/app-switch-rum-ingest';
+import {
   applyOneOriginNoindex,
   decideOneOriginRequest,
 } from '@tuturuuu/utils/one-origin-routing';
@@ -6,6 +14,9 @@ import { verifyLiveSession } from '../src/features/live-assistant/token';
 import { handleMeetRequest } from '../src/runtime/handler';
 import { meetOneOriginConfig } from './one-origin';
 import { applyMeetDocumentHeaders } from './security-profile';
+
+/** Per-isolate app-switch metrics write budget (see app-switch-rum). */
+const appSwitchWriteBudget = createAppSwitchWriteBudget();
 
 export { MeetLiveDurableObject } from './live/session';
 export { MeetingAIProvider } from './provider';
@@ -28,6 +39,20 @@ async function serveMeet(
   ctx: ExecutionContext
 ) {
   const url = new URL(request.url);
+  if (url.pathname === '/_rum' || url.pathname === '/meet/_rum')
+    return handleAppSwitchBeacon(
+      request,
+      (env as { APP_SWITCH_RUM?: AnalyticsEngineWriter }).APP_SWITCH_RUM,
+      {
+        ingest: (env as { APP_SWITCH_RUM_INGEST?: unknown })
+          .APP_SWITCH_RUM_INGEST,
+        budget: appSwitchWriteBudget,
+        // No durable admission is bound yet, so ingest cannot write. The
+        // admission and the dataset binding ship together, after review.
+        admission: undefined,
+        country: readCountry(request),
+      }
+    );
   if (url.pathname === '/.well-known/meeting-runtime')
     return Response.json(
       { version: 1 },
