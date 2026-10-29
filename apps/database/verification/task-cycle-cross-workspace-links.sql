@@ -1,4 +1,4 @@
--- Read-only audit for 20261027000100_guard_task_cycle_task_workspace.sql.
+-- Read-only audit for 20261029025200_guard_task_cycle_task_workspace.sql.
 -- Counts existing task_cycle_tasks rows whose task board workspace differs
 -- from the cycle workspace (or whose task has no resolvable workspace).
 -- The forward migration does not delete or rewrite these rows; any cleanup

@@ -1,7 +1,7 @@
--- Rollback proof for 20261027000100_guard_task_cycle_task_workspace.sql.
+-- Rollback proof for 20261029025200_guard_task_cycle_task_workspace.sql.
 -- Run ONLY against a disposable local stack, after applying
--- apps/database/rollbacks/20261027000100_guard_task_cycle_task_workspace.rollback.sql:
---   psql "$DB_URL" -v ON_ERROR_STOP=1 -f apps/database/rollbacks/20261027000100_guard_task_cycle_task_workspace.rollback.sql
+-- apps/database/rollbacks/20261029025200_guard_task_cycle_task_workspace.rollback.sql:
+--   psql "$DB_URL" -v ON_ERROR_STOP=1 -f apps/database/rollbacks/20261029025200_guard_task_cycle_task_workspace.rollback.sql
 --   psql "$DB_URL" -v ON_ERROR_STOP=1 -f apps/database/verification/task-cycle-workspace-guard-rollback-roundtrip.sql
 -- then re-apply the forward migration and re-run
 -- supabase/tests/task-cycle-workspace-guard.sql.
