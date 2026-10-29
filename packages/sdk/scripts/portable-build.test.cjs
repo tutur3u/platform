@@ -219,3 +219,29 @@ test('omits shared test fixtures that import test runners', (t) => {
     false
   );
 });
+
+test('check-only rejects an unapproved reachable source without emitting files', (t) => {
+  const { checkPortableSources } = require('./portable-build.cjs');
+  const f = fixture(t);
+  checkPortableSources(f.root);
+  assert.equal(
+    fs.existsSync(path.join(f.root, 'packages/sdk/.portable-check')),
+    false
+  );
+  f.write(
+    'packages/internal-api/src/client.ts',
+    "export * from './private-service';"
+  );
+  f.write(
+    'packages/internal-api/src/private-service.ts',
+    'export const value = 42;'
+  );
+  assert.throws(
+    () => checkPortableSources(f.root),
+    /Unapproved portable source: internal-api\/private-service.ts/
+  );
+  assert.equal(
+    fs.existsSync(path.join(f.root, 'packages/sdk/.portable-check')),
+    false
+  );
+});

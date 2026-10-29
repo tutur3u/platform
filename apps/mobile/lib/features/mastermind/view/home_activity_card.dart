@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
-import 'package:mobile/features/mastermind/presentation/gmt7.dart';
 import 'package:mobile/features/mastermind/presentation/home_model.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
 import 'package:mobile/features/mastermind/view/home_needs_you_card.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_time_label.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// The latest three events from `now.digest`, newest first. Display only: the
@@ -17,7 +17,6 @@ class HomeActivityCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final locale = Localizations.localeOf(context).toString();
     return AppGroupedSection.spaced(
       caption: l10n.mastermindActivityTitle,
       children: [
@@ -26,9 +25,10 @@ class HomeActivityCard extends StatelessWidget {
         for (final event in model.activity)
           AppGroupedRow(
             title: Text(eventSummary(l10n, event)),
-            subtitle: Text(
-              '${MastermindLabels.eventKind(l10n, event.kind)} · '
-              '${Gmt7.dateTime(event.ts, locale)}',
+            subtitle: MastermindTimeLabel(
+              event.ts,
+              sentence: (time) =>
+                  '${MastermindLabels.eventKind(l10n, event.kind)} · $time',
             ),
           ),
       ],

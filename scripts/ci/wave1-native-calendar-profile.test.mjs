@@ -64,3 +64,37 @@ test('production and other apps keep their existing profile identities', () => {
     );
   }
 });
+
+test('production Worker configs never set a shared cookie-domain override', (t) => {
+  // Cloudflare Workers have no VERCEL_ENV, so the runtime production guard
+  // cannot fire there; the published production vars must omit the override.
+  const { apps } = JSON.parse(
+    readFileSync(new URL('./wave1-native-profiles.json', import.meta.url))
+  );
+  for (const app of Object.keys(apps)) {
+    const root = fixture(t, app);
+    prepare(root, app, 'production', undefined, sha);
+    const restored = verify(root, app, 'production', sha);
+    const config = JSON.parse(readFileSync(restored.config, 'utf8'));
+    assert.equal(
+      Object.hasOwn(config.vars, 'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN'),
+      false,
+      app
+    );
+  }
+  const finance = JSON.parse(
+    readFileSync(
+      new URL(
+        '../../apps/finance/cloudflare/native-profiles.json',
+        import.meta.url
+      )
+    )
+  );
+  assert.equal(
+    Object.hasOwn(
+      finance.production.vars,
+      'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN'
+    ),
+    false
+  );
+});

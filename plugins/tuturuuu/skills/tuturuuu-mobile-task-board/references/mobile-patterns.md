@@ -434,3 +434,16 @@ skip the queue on cache failure. Preserve branch fallbacks, error/stack reportin
 and the pre-`runApp` join. Completion-barrier tests live in
 `test/core/startup/startup_state_test.dart`. See the Mobile application guide's
 [ordering contract](../../../../../apps/docs/platform/applications/mobile.mdx#independent-startup-state-restoration).
+
+## Mastermind Machines
+
+- The read-only Machines parser lives in `features/mastermind/machines/`. Keep
+  aliases and arbitrary collector prose outside the app model; display names use
+  the fixed neutral table, and production hosts always retain their read-only rule.
+- Missing machines and empty machines are distinct states. Preserve null metrics
+  and last-known offline values. The debug sample branch must remain guarded by
+  `kDebugMode`; release uses the real accepted snapshot only.
+- The machine regression fixtures include hostile aliases. Run the focused
+  `test/features/mastermind/machines/` suite along with Mastermind, shell and router
+  coverage. Collector schema freeze, hub acceptance and security review remain
+  separate from widget/parser verification; see the mobile Machines feature page.

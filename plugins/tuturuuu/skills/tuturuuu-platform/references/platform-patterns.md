@@ -1425,3 +1425,13 @@ All abuse-guard RPCs reserve family commands durably before subject execution.
 Retain reservations for interrupted or skipped work; never defer accounting to an
 isolate-local flush. Verify the budget across isolate replacement in workerd.
 This limits subject commands, while the request-cost activation hold remains.
+
+### Staff identity checks before permission reads
+
+For staff-only routes, reject unverified, foreign-tenant and disallowed-domain
+identities before calling workspace permission readers: those readers query data.
+Keep role permissions as an additional gate after verified identity checks.
+The export and crawler denial matrix is covered by
+`apps/web/src/lib/staff-session.test.ts` and `staff-exact-domain.test.ts`.
+When a role gate is added to an identity-policy test, mock its permission boundary
+and assert denied identities never call it; keep role-reader coverage separate.

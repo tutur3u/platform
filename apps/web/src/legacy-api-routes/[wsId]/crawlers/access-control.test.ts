@@ -17,6 +17,14 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createClient: mocks.createClient,
 }));
 
+vi.mock('@tuturuuu/supabase/next/user', () => ({
+  getVerifiedAuthUser: async () => ({
+    id: 'staff',
+    email: 'staff@tuturuuu.com',
+    email_confirmed_at: '2026-01-01',
+    identities: [{ provider: 'email', identity_data: {} }],
+  }),
+}));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getPermissions: mocks.getPermissions,
 }));
@@ -152,7 +160,8 @@ it('SR-270 denies staff crawler list and create without root AI permission', asy
   query.select.mockReturnValue(query);
   query.order.mockReturnValue(query);
   query.eq.mockReturnValue(query);
-  mocks.createAdminClient.mockResolvedValue({ from: () => query });
+  const from = vi.fn(() => query);
+  mocks.createAdminClient.mockResolvedValue({ from });
   const { GET } = await import('./list/route');
   const { POST } = await import('../../v1/workspaces/[wsId]/crawlers/route');
   expect((await GET(new Request('http://localhost/api/crawlers'))).status).toBe(
@@ -168,7 +177,12 @@ it('SR-270 denies staff crawler list and create without root AI permission', asy
       )
     ).status
   ).toBe(403);
-  expect(mocks.createAdminClient).not.toHaveBeenCalled();
+  expect(mocks.getPermissions).toHaveBeenCalledTimes(2);
+  expect(mocks.createAdminClient).toHaveBeenCalledTimes(2);
+  for (const [options] of mocks.createAdminClient.mock.calls)
+    expect(options).toEqual({ noCookie: true });
+  expect(from).not.toHaveBeenCalled();
+  expect(query.select).not.toHaveBeenCalled();
 });
 
 it('allows global crawler reads for a root AI operator', async () => {
