@@ -145,7 +145,6 @@ export async function POST(request: NextRequest) {
     });
     const result = await rememberAiMemory({
       category: memory.category,
-      ignoreSettings: true,
       key: memory.key,
       scope,
       value: memory.value,
