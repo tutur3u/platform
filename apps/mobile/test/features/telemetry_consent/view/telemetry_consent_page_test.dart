@@ -87,7 +87,7 @@ void main() {
   });
 
   group('no collection before an explicit Allow', () {
-    for (final country in ['DE', 'FR', 'CH', 'GB', 'IS', null]) {
+    for (final country in ['DE', 'FR', 'CH', 'GB', 'IS', 'VN', null]) {
       test('${country ?? 'unknown region'} stays off at startup', () async {
         final (preference, controls, observability) = await _start(
           country: country,

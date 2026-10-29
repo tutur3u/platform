@@ -11,8 +11,10 @@ sign-in, sign-out and workspace changes; it is not synchronized to an account.
 
 Without an explicit choice, sharing defaults off in the EU (AT, BE, BG, HR, CY,
 CZ, DK, EE, FI, FR, DE, GR, HU, IE, IT, LV, LT, LU, MT, NL, PL, PT, RO, SK,
-SI, ES, SE), the additional EEA countries (IS, LI, NO), Switzerland (CH) and the
-United Kingdom (GB). It defaults on elsewhere. An unavailable device region
+SI, ES, SE), the additional EEA countries (IS, LI, NO), Switzerland (CH), the
+United Kingdom (GB) and Vietnam (VN). It defaults on elsewhere. The final list is
+pending Legal confirmation; it lives in the single
+`TelemetryPreference.privateRegions` constant. An unavailable device region
 fails closed (off). Region comes only from the operating system's device locale,
 not the selected app language, an IP lookup or a network request. An explicit
 saved choice always takes precedence, including after a device region change.
@@ -25,7 +27,7 @@ the device has no explicit stored choice. **Allow** and **Don't allow** have
 equal weight, nothing is preselected, and **Learn more** opens the public
 privacy notice. Until the user answers, collection follows the regional default,
 so nothing is collected before an explicit Allow in the EU/EEA, Switzerland, the
-United Kingdom or an unknown region. An answer persists exactly like the
+United Kingdom, Vietnam or an unknown region. An answer persists exactly like the
 Settings switch (declining revokes before persisting), is never asked again, and
 the Settings switch stays the place to change it. Choosing in Settings first also
 ends the prompt. Settings routes are never interrupted, and a deep link is

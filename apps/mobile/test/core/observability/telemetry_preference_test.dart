@@ -9,12 +9,15 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
-  test('every EU/EEA, Swiss and UK region defaults off', () {
+  test('every EU/EEA, Swiss, UK and Vietnamese region defaults off', () {
     for (final region in TelemetryPreference.privateRegions) {
       expect(TelemetryPreference.defaultEnabled(region), isFalse);
       expect(TelemetryPreference.defaultEnabled(region.toLowerCase()), isFalse);
     }
-    for (final region in ['US', 'VN', 'AU', 'CA', 'JP']) {
+    expect(TelemetryPreference.privateRegions, contains('VN'));
+    expect(TelemetryPreference.defaultEnabled('VN'), isFalse);
+    expect(TelemetryPreference.defaultEnabled('vn'), isFalse);
+    for (final region in ['US', 'AU', 'CA', 'JP', 'SG']) {
       expect(TelemetryPreference.defaultEnabled(region), isTrue);
     }
     expect(TelemetryPreference.defaultEnabled(null), isFalse);

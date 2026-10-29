@@ -7,6 +7,9 @@ class TelemetryPreference extends ChangeNotifier {
 
   static final instance = TelemetryPreference(countryCode: null);
   static const preferenceKey = 'share-analytics-and-crash-reports';
+
+  /// Regions where collection stays off until an explicit Allow: the EU/EEA,
+  /// Switzerland, the United Kingdom and Vietnam. Final list pending Legal.
   static const privateRegions = {
     'AT',
     'BE',
@@ -40,6 +43,7 @@ class TelemetryPreference extends ChangeNotifier {
     'NO',
     'CH',
     'GB',
+    'VN',
   };
 
   final String? countryCode;
