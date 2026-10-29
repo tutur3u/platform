@@ -2,8 +2,7 @@
 // Hardening migration from the separate pin-definer-search-path PR; absent means fail closed.
 const HARDENING_MIGRATION_FILENAME =
   '20261030030000_pin_time_tracking_definer_search_path.sql';
-const requiredMigration =
-  'apps/database/supabase/migrations/' + HARDENING_MIGRATION_FILENAME;
+const requiredMigration = `apps/database/supabase/migrations/${HARDENING_MIGRATION_FILENAME}`;
 module.exports = [
   {
     path: 'apps/database/supabase/migrations/20261029100310_tighten_legacy_meet_rls.sql',

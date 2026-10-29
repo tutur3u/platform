@@ -45,7 +45,7 @@ test('verified findings bind path, line, rule, file bytes, finding and reason', 
       1
     );
   assert.equal(
-    pathFindings({ readFile: () => sql + '\n-- changed' }).length,
+    pathFindings({ readFile: () => `${sql}\n-- changed` }).length,
     1
   );
 });
@@ -72,7 +72,9 @@ test('committed 100400 entries are inactive until the 030000 hardening file exis
   const verifiedFindings = require('./sql-grant-guard-verified-findings');
   const hardening =
     'apps/database/supabase/migrations/20261030030000_pin_time_tracking_definer_search_path.sql';
-  const bound = verifiedFindings.filter((e) => e.path.includes('20261029100400'));
+  const bound = verifiedFindings.filter((e) =>
+    e.path.includes('20261029100400')
+  );
   assert.equal(bound.length, 8);
   for (const e of bound) {
     assert.equal(e.class, 'fixed-forward');
