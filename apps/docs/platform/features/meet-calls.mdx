@@ -1611,8 +1611,9 @@ the host who started transcription is excluded until they choose Allow. Silence,
 staying in the call or closing the prompt is not consent; Escape means "decide
 later" and keeps the participant excluded. The host cannot override a decline.
 Guests without a signed-in account cannot record a decision and are never
-transcribed. Intentional exception: the starting host's own microphone and
-screen audio need no record, so solo meetings are unaffected.
+transcribed. Intentional exception: the starting host's own microphone needs
+no record, so solo meetings are unaffected; host screen audio needs none only
+while at most one other person is admitted (see below).
 
 When the host starts capture, the host device announces `transcription.state`.
 Every admitted participant sees a persistent "Transcribing" pill next to REC,
