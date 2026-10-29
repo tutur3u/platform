@@ -24,7 +24,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useLocale, useTranslations } from 'next-intl';
 import { parseAsInteger, parseAsString, useQueryState } from 'nuqs';
 import { useEffect, useLayoutEffect, useState } from 'react';
-import { getMissedLessonContent } from './tutoring-content';
+import {
+  buildQueueDraftContent,
+  getMissedLessonNotes,
+} from './tutoring-content';
 import {
   addDaysToIsoDate,
   buildTutoringSessionQuery,
@@ -295,7 +298,13 @@ export function TutoringClient({ wsId, canManage, canConfigure }: Props) {
       )
     );
     let suggestions: ReturnType<typeof suggestTutoringSlots> = [];
-    let makeupContent = '';
+    // The queue already carries the notes for the missed dates; an older
+    // response without them falls back to reading the class sessions here.
+    let notes = {
+      content: item.missed_lesson_content ?? '',
+      postContent: item.missed_post_content ?? '',
+      missingDates: item.missing_lesson_dates ?? [],
+    };
     const [futureSchedule, missedLessons] = await Promise.allSettled([
       queryClient.fetchQuery({
         queryKey: [
@@ -313,7 +322,7 @@ export function TutoringClient({ wsId, canManage, canConfigure }: Props) {
           }),
         staleTime: 5 * 60_000,
       }),
-      item.missed_class_dates.length
+      item.missed_class_dates.length && item.missed_lesson_content === undefined
         ? queryClient.fetchQuery({
             queryKey: [
               'tutoring-missed-lessons',
@@ -342,20 +351,26 @@ export function TutoringClient({ wsId, canManage, canConfigure }: Props) {
       );
     }
     if (missedLessons.status === 'fulfilled' && missedLessons.value) {
-      makeupContent = getMissedLessonContent(
-        missedLessons.value.data ?? [],
-        item.missed_class_dates
-      );
+      notes = {
+        ...getMissedLessonNotes(
+          missedLessons.value.data ?? [],
+          item.missed_class_dates
+        ),
+        postContent: '',
+      };
     }
+    const draft = buildQueueDraftContent(item, notes, {
+      absent: t('content_section_absent'),
+      lessonNotes: t('content_label_lesson_notes'),
+      posts: t('content_label_posts'),
+      weak: t('content_section_weak'),
+    });
     setForm((current) => ({
       ...current,
-      content:
-        item.reason_type === 'WEAK_SUPPORT'
-          ? item.feedback_content
-          : makeupContent,
+      content: draft.content,
       groupId: item.group_id,
-      linkedContent:
-        item.reason_type === 'WEAK_SUPPORT' ? undefined : makeupContent,
+      linkedContent: draft.linkedContent,
+      missingLessonDates: draft.missingLessonDates,
       missedClassDate: oldestMissedDate(item.missed_class_dates),
       reasonDetail: item.feedback_content,
       reasonType:

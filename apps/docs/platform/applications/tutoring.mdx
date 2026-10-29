@@ -270,12 +270,55 @@ names are built in or seeded; each center enters its own. Coverage:
 center's tuition remains free to
 learners; payroll exports count completed teaching time.
 
-When scheduling from **Needs support**, a make-up draft copies the recorded
-lesson description from the missed class date. If that class has no recorded
-content, the field stays empty for staff to fill. A weak-support draft uses the
-teacher's flagged feedback content. Staff can review and edit either draft
-before saving; content is never invented from a class title or an unrelated
-lesson.
+When scheduling from **Needs support**, the draft's content follows the
+[content-to-teach rule](#content-to-teach-follows-the-reason). Staff can review
+and edit any draft before saving; content is never invented from a class title
+or an unrelated lesson.
+
+### Content to teach follows the reason
+
+Decision (applies to every row of **Needs support** in Contacts → Tutoring;
+always on, no setting):
+
+- **Kèm nghỉ (absent make-up)** teaches what the class covered on the day the
+  learner was absent: the class session's notes for that date, then the class's
+  **posts** (bài viết) created that day. When both exist the draft labels
+  them "Lesson notes" and "Class posts". Posts have no date field of their own,
+  so a post belongs to the missed date it was created on, in the class's time
+  zone (the class session's own zone, falling back to Asia/Ho_Chi_Minh when the
+  group has no session in range). Rejected posts are skipped, and only the
+  post's title and content are read, not its internal notes. Post text is
+  included only for viewers who may read group posts
+  (`view_user_groups_posts`).
+- **Kèm yếu (weak support)** teaches what the homeroom teacher (GVCN) wrote when
+  moving the learner into support: the flagged feedback a support session was
+  first opened from. Later flagged notes do not replace it; with no session yet
+  tied to a flagged note, the latest one is used. Scheduling and reassessment
+  still follow the latest flagged feedback, so queue membership is unchanged.
+- **Both reasons** put both texts in one draft under the headings "Kèm nghỉ"
+  and "Kèm yếu" (English: "Absent make-up" and "Weak support"), so the
+  homeroom teacher's note is never dropped.
+- The queue table shows the same content per row. The server derives the notes
+  for the visible page in the queue response (`missed_lesson_content`,
+  `missed_post_content`, `missing_lesson_dates`, `content_feedback_id`), so the
+  list does not fetch per row.
+- A missed date with neither session notes nor a post shows the inline hint "No
+  lesson notes recorded for {dates}" in the queue and the draft, instead of an
+  empty field.
+- A make-up draft that is only session notes still follows the class notes while
+  pending ([linked content](#make-up-content-follows-the-missed-lessons-notes)).
+  A draft that includes a post, or a homeroom note, is saved as written.
+
+Existing sessions are not rewritten; only new drafts use this rule.
+
+Regression coverage:
+[`queue/route.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/tutoring/queue/route.test.ts)
+(absent with and without notes, posts by date and permission, both reasons,
+triggering versus latest feedback),
+[`tutoring-content.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/contacts/src/app/%5Blocale%5D/%5BwsId%5D/users/tutoring/tutoring-content.test.ts),
+[`tutoring-queue-content.test.tsx`](https://github.com/tutur3u/platform/blob/main/apps/contacts/src/app/%5Blocale%5D/%5BwsId%5D/users/tutoring/tutoring-queue-content.test.tsx)
+and the prefill cases in
+[`tutoring-handoff.test.tsx`](https://github.com/tutur3u/platform/blob/main/apps/contacts/src/app/%5Blocale%5D/%5BwsId%5D/users/tutoring/tutoring-handoff.test.tsx).
 
 ### Weak-support content comes from the homeroom teacher
 

@@ -19,6 +19,8 @@ export interface TutoringFormValues {
   content: string;
   /** Lesson notes drafted from the missed class; unchanged drafts stay linked. */
   linkedContent?: string;
+  /** Missed dates whose class has no recorded notes, shown as an inline hint. */
+  missingLessonDates?: string[];
   sourceFeedbackId?: string | null;
 }
 
