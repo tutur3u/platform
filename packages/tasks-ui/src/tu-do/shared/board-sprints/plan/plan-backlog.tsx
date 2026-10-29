@@ -38,7 +38,6 @@ interface PlanBacklogProps {
   onDrop: (event: DragEvent) => void;
   onOpen: (task: Task) => void;
   tasks: Task[];
-  ticketPrefix?: string | null;
   workspaceId: string;
 }
 
@@ -54,7 +53,6 @@ export function PlanBacklog({
   onDrop,
   onOpen,
   tasks,
-  ticketPrefix,
   workspaceId,
 }: PlanBacklogProps) {
   const t = useTranslations('ws-task-boards.sprints');
@@ -175,7 +173,6 @@ export function PlanBacklog({
             onDragEnd={onDragEnd}
             onOpen={() => onOpen(task)}
             task={task}
-            ticketPrefix={ticketPrefix}
           />
         ))}
         {visible.length === 0 ? (
@@ -207,7 +204,6 @@ function BacklogCard({
   onDragEnd,
   onOpen,
   task,
-  ticketPrefix,
 }: {
   canEdit: boolean;
   members: BoardMember[];
@@ -215,7 +211,6 @@ function BacklogCard({
   onDragEnd: () => void;
   onOpen: () => void;
   task: Task;
-  ticketPrefix?: string | null;
 }) {
   const t = useTranslations('ws-task-boards.sprints');
   const project = task.projects?.[0];
@@ -236,7 +231,7 @@ function BacklogCard({
           onClick={onOpen}
           type="button"
         >
-          <PlanTaskTitle task={task} ticketPrefix={ticketPrefix} />
+          <PlanTaskTitle task={task} />
         </button>
         {canEdit ? (
           <DropdownMenu>

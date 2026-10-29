@@ -23,7 +23,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { MAX_TASK_DESCRIPTION_LENGTH } from '@tuturuuu/utils/constants';
 import { convertListItemToTask } from '@tuturuuu/utils/editor';
 import {
-  getTicketIdentifier,
+  getTaskTicketLabel,
   invalidateTaskCaches,
 } from '@tuturuuu/utils/task-helper';
 import {
@@ -93,6 +93,7 @@ import { useTaskDescriptionReceipt } from './task-edit-dialog/hooks/use-task-des
 import { useTaskDialogClose } from './task-edit-dialog/hooks/use-task-dialog-close';
 import { useTaskDialogKeyboardShortcuts } from './task-edit-dialog/hooks/use-task-dialog-keyboard-shortcuts';
 import { useTaskDialogSettling } from './task-edit-dialog/hooks/use-task-dialog-settling';
+import { useTaskDocumentTitle } from './task-edit-dialog/hooks/use-task-document-title';
 import { useTaskFormReset } from './task-edit-dialog/hooks/use-task-form-reset';
 import { useTaskFormState } from './task-edit-dialog/hooks/use-task-form-state';
 import { useTaskMediaUpload } from './task-edit-dialog/hooks/use-task-media-upload';
@@ -707,15 +708,7 @@ export function TaskEditDialog({
     [currentList?.status, draftId, mode, panelSurface, presentationPreferences]
   );
 
-  // Update browser tab title
-  useEffect(() => {
-    if (!isOpen || isCreateMode || !task) return;
-    const originalTitle = document.title;
-    document.title = `${getTicketIdentifier(boardConfig?.ticket_prefix, task.display_number)} - ${task.name}`;
-    return () => {
-      document.title = originalTitle;
-    };
-  }, [isOpen, isCreateMode, task, boardConfig?.ticket_prefix]);
+  useTaskDocumentTitle(isOpen && !isCreateMode ? (task ?? null) : null);
 
   // Labels state
   const [availableLabels, setAvailableLabels] = useState<WorkspaceTaskLabel[]>(
@@ -2743,8 +2736,7 @@ export function TaskEditDialog({
                     draftId={draftId}
                     isTitleVisible={isTitleVisible}
                     taskName={formState.name}
-                    ticketPrefix={boardConfig?.ticket_prefix}
-                    displayNumber={task?.display_number}
+                    ticketLabel={task ? getTaskTicketLabel(task) : null}
                     user={
                       user
                         ? {

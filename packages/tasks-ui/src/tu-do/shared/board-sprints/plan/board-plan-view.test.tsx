@@ -181,7 +181,6 @@ function renderPlan({
         defaultListId={defaultListId}
         lists={lists}
         sprints={sprintsState(sprints)}
-        ticketPrefix="DEV"
         wsId="ws-1"
       />
     </QueryClientProvider>
@@ -242,6 +241,37 @@ describe('BoardPlanView', () => {
     const ana = screen.getByRole('region', { name: 'Ana' });
     expect(within(ana).getByText('Task t2')).toBeInTheDocument();
     expect(screen.queryByText('Task t4')).not.toBeInTheDocument();
+  });
+
+  it('labels tasks with their first project key, and nothing without one', async () => {
+    api.listBoardTasksForSearch.mockResolvedValue([
+      task('t1', {
+        projects: [
+          {
+            id: 'p-2',
+            name: 'Mobile',
+            status: 'active',
+            ticket_key: 'MOB',
+            ticket_number: 3,
+            created_at: '2026-10-21T00:00:00Z',
+          },
+          {
+            id: 'p-1',
+            name: 'Platform',
+            status: 'active',
+            ticket_key: 'PLA',
+            ticket_number: 12,
+            created_at: '2026-10-20T00:00:00Z',
+          },
+        ],
+      } as Partial<Task>),
+      task('t2', { assignees: [{ id: 'u-ana', display_name: 'Ana' }] }),
+    ]);
+    renderPlan({ sprints: [planned] });
+
+    expect(await screen.findByText('[PLA-12]')).toBeInTheDocument();
+    const ana = screen.getByRole('region', { name: 'Ana' });
+    expect(within(ana).getByText('Task t2').textContent).toBe('Task t2');
   });
 
   it('assigns a backlog task from its avatar button', async () => {
