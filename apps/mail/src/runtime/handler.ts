@@ -5,6 +5,11 @@ import { matchRoute } from '@tuturuuu/start-bridge/route-match';
 import { runtimeAppBase } from '@tuturuuu/start-bridge/start/base-path';
 import { createBridgeHandler } from '@tuturuuu/start-bridge/start/handler';
 import { createBridgeStartHandler } from '@tuturuuu/start-bridge/start/server-entry';
+import {
+  type AnalyticsEngineWriter,
+  handleAppSwitchBeacon,
+  readCountry,
+} from '@tuturuuu/utils/app-switch-rum';
 import { resolveTuturuuuWebAppUrl } from '@tuturuuu/utils/next-config';
 import {
   applyOneOriginNoindex,
@@ -81,6 +86,13 @@ export async function handleMailRequest(
   const decision = decideOneOriginRequest(incoming, mailOneOriginConfig(env));
   if (decision.action !== 'serve') return finish(decision.response);
   const { request } = decision;
+  const { pathname } = new URL(request.url);
+  if (pathname === '/_rum' || pathname === '/mail/_rum')
+    return handleAppSwitchBeacon(
+      request,
+      (env as { APP_SWITCH_RUM?: AnalyticsEngineWriter }).APP_SWITCH_RUM,
+      readCountry(request)
+    );
   if (path === '/api/build-info') {
     const url = new URL(request.url);
     url.pathname = path;

@@ -267,3 +267,37 @@ an app is routed onto the shared origin in any mode, `shadow` included.
 Enforcement needs a per-request script nonce passed to the Start router
 (`ssr.nonce`) through the Start bridge request context, and zero remaining
 violations for each app. Inline scripts are expected to report until then.
+
+### App-switch metrics
+
+App-switch time-to-interactive (ASI) is measured from the click on a link to
+another app until the destination's `ttr:app-ready` mark. It runs on both
+topologies, so the subdomain baseline and the shared-origin result are
+comparable.
+
+- **Source:** `AppSwitchTracker` (`@tuturuuu/satellite/app-switch-tracker`) is
+  rendered by the satellite `ClientProviders` and by Web's client providers. On a
+  click to another app it writes a 30-second `ttr_switch=<epoch-ms>.<from>` cookie
+  on `.tuturuuu.com`.
+- **Destination:** Meet and Mail read the cookie two frames after hydration on a
+  non-auth page, clear it and set `ttr:app-ready`. A sign-in handoff on the way is
+  recorded as `handoff`. 10% of switches send a beacon to `<mount>/_rum`.
+- **Payload:** app slugs, topology, duration, prerender/handoff flags, protocol,
+  connect time and effective connection type. No user, URL or workspace
+  identifiers.
+- **Ingest:** `handleAppSwitchBeacon` (`@tuturuuu/utils/app-switch-rum`) accepts one
+  POST of at most 1 KiB and writes one Workers Analytics Engine data point. It does
+  this only when the Worker has an `APP_SWITCH_RUM` dataset binding. Without the
+  binding it answers 204 and drops the beacon. Adding the binding (dataset
+  `ttr_app_switch`) is a reviewed Worker configuration change.
+
+`scripts/perf/app-switch-lab.mjs` is the lab counterpart. Run it on a Studio host
+through `ttr resources run`.
+
+- `switch` mode clicks a link from `--from` and waits for `ttr:app-ready`. It falls
+  back to `--ready-selector` or the load event on builds without the tracker. It
+  reports p50/p75/p95 over `--runs` with optional `--throttle slow4g` and `--warm`.
+- `ttfb` mode compares `--urls` for gate W1 (Web through Cloudflare compared with
+  direct Vercel).
+- Signed-in runs take a Playwright `--storage-state` file for a synthetic account,
+  created out of band. The report never includes its path.

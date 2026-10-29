@@ -1,4 +1,9 @@
 import {
+  type AnalyticsEngineWriter,
+  handleAppSwitchBeacon,
+  readCountry,
+} from '@tuturuuu/utils/app-switch-rum';
+import {
   applyOneOriginNoindex,
   decideOneOriginRequest,
 } from '@tuturuuu/utils/one-origin-routing';
@@ -28,6 +33,12 @@ async function serveMeet(
   ctx: ExecutionContext
 ) {
   const url = new URL(request.url);
+  if (url.pathname === '/_rum' || url.pathname === '/meet/_rum')
+    return handleAppSwitchBeacon(
+      request,
+      (env as { APP_SWITCH_RUM?: AnalyticsEngineWriter }).APP_SWITCH_RUM,
+      readCountry(request)
+    );
   if (url.pathname === '/.well-known/meeting-runtime')
     return Response.json(
       { version: 1 },
