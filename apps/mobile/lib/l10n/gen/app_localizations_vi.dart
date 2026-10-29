@@ -13601,7 +13601,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindSummaryWeeklyNotReported => 'Nguồn không báo cáo hạn mức tuần.';
 
   @override
-  String get mastermindTabHome => 'Tổng quan';
+  String get mastermindTabHome => 'Hôm nay';
 
   @override
   String get mastermindTabInbox => 'Hộp thư';
@@ -14113,4 +14113,147 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindAskRemindAtMacSoon => 'Sắp ra mắt';
+
+  @override
+  String get mastermindCatchupTitle => 'Từ lần bạn xem gần nhất';
+
+  @override
+  String get mastermindCatchupWindowSince => 'Từ lần ghé thăm trước';
+
+  @override
+  String get mastermindCatchupWindowDay => '24 giờ qua';
+
+  @override
+  String get mastermindCatchupWelcome => 'Chào mừng đến với Mastermind. Đây là những gì đã diễn ra trong ngày qua.';
+
+  @override
+  String get mastermindCatchupQuiet => 'Không có gì mới từ lần bạn xem trước';
+
+  @override
+  String get mastermindCatchupQuietFirstRun => 'Chưa có gì xảy ra trong ngày qua.';
+
+  @override
+  String get mastermindCatchupPartial => 'Một số cập nhật có thể bị thiếu';
+
+  @override
+  String get mastermindCatchupSectionShipped => 'Đã phát hành';
+
+  @override
+  String get mastermindCatchupSectionBlocked => 'Bị chặn';
+
+  @override
+  String get mastermindCatchupSectionChanged => 'Thay đổi';
+
+  @override
+  String get mastermindCatchupSectionUsage => 'Mức dùng & sức khỏe';
+
+  @override
+  String get mastermindCatchupSectionOther => 'Cập nhật khác';
+
+  @override
+  String mastermindCatchupCountNeedsYou(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count cần bạn',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindCatchupCountShipped(int count) {
+    return '$count đã phát hành';
+  }
+
+  @override
+  String mastermindCatchupCountBlocked(int count) {
+    return '$count bị chặn';
+  }
+
+  @override
+  String mastermindCatchupCountChanged(int count) {
+    return '$count thay đổi';
+  }
+
+  @override
+  String get mastermindCatchupNewDivider => 'Mới từ lần ghé thăm trước';
+
+  @override
+  String mastermindCatchupShowEarlier(int count) {
+    return 'Hiện $count mục cũ hơn';
+  }
+
+  @override
+  String get mastermindCatchupSecurityUpdate => 'Cập nhật bảo mật';
+
+  @override
+  String mastermindCatchupOnIt(String name) {
+    return '$name đang xử lý';
+  }
+
+  @override
+  String get mastermindCatchupButton => 'Cập nhật cho tôi';
+
+  @override
+  String get mastermindCatchupRefreshing => 'Đang cập nhật…';
+
+  @override
+  String get mastermindCatchupUpToDate => 'Bạn đã cập nhật mới nhất';
+
+  @override
+  String get mastermindCatchupFailed => 'Không cập nhật được. Thử lại.';
+
+  @override
+  String get mastermindCatchupOpensLink => 'Mở trong trình duyệt';
+
+  @override
+  String mastermindCatchupGroupLabel(String product, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count cập nhật',
+    );
+    return '$product, $_temp0';
+  }
+
+  @override
+  String get mastermindRelNow => 'vừa xong';
+
+  @override
+  String mastermindRelMinutes(int count) {
+    return '$count phút';
+  }
+
+  @override
+  String mastermindRelHours(int count) {
+    return '$count giờ';
+  }
+
+  @override
+  String mastermindRelHoursMinutes(int hours, int minutes) {
+    return '$hours giờ $minutes phút';
+  }
+
+  @override
+  String mastermindRelDays(int count) {
+    return '$count ngày';
+  }
+
+  @override
+  String get mastermindRelShowExact => 'Xem giờ chính xác';
+
+  @override
+  String get mastermindCatchupSettingsAction => 'Cài đặt bản tin';
+
+  @override
+  String get mastermindMorningCatchup => 'Bản tin buổi sáng';
+
+  @override
+  String get mastermindMorningCatchupSubtitle => 'Một thông báo cho biết bản tin đã sẵn sàng. Lưu trên thiết bị này; việc gửi sẽ bắt đầu khi hub hỗ trợ.';
+
+  @override
+  String get mastermindMorningCatchupTime => 'Giờ';
+
+  @override
+  String get mastermindCatchupPushBody => 'Bản tin của bạn đã sẵn sàng';
 }

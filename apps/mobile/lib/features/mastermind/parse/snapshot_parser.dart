@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:mobile/features/mastermind/catchup/catchup_parser.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/parse/strict_json.dart';
 import 'package:mobile/features/mastermind/presentation/hub_companion_adapter.dart';
