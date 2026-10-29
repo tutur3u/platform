@@ -7,7 +7,11 @@ function assertShrinkingBlocks(reviewed, proposed) {
   const seen = new Set();
   for (const entry of proposed) {
     const key = JSON.stringify([entry.file, entry.blockDigest]);
-    if (!keys.has(key) || seen.has(key))
+    if (
+      entry.classification !== 'historical debt, not safe' ||
+      !keys.has(key) ||
+      seen.has(key)
+    )
       throw new Error(
         'Historical block baseline may only shrink: ' + entry.file
       );

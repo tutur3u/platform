@@ -195,3 +195,18 @@ test('trusted CI guard rejects inventory expansion and digest edits, permits shr
   assert.equal(changedRoles.status, 1);
   assert.match(changedRoles.stderr, /grant roles changed/);
 });
+
+test('historical inventory is explicitly debt and cannot be relabeled safe', () => {
+  assert.ok(
+    historical.every(
+      (entry) => entry.classification === 'historical debt, not safe'
+    )
+  );
+  assert.throws(
+    () =>
+      assertShrinkingBlocks(historical, [
+        { ...historical[0], classification: 'safe' },
+      ]),
+    /only shrink/
+  );
+});
