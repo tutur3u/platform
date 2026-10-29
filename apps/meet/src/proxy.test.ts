@@ -380,6 +380,16 @@ describe('Meet public build identity boundary', () => {
       expect((await identity.json()).appName).toBe('meet');
     }
   );
+  it('admits only POST finalize without a session; the route verifies its bearer', async () => {
+    const response = await proxy(
+      new NextRequest('https://meet.tuturuuu.com/api/meet-ai/finalize', {
+        method: 'POST',
+      })
+    );
+    expect(response.headers.get('x-middleware-next')).toBe('1');
+    expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
+    expect(mocks.guardApiProxyRequest).toHaveBeenCalledOnce();
+  });
   it.each([
     ['POST', '/api/build-info'],
     ['HEAD', '/api/build-info'],
@@ -387,6 +397,9 @@ describe('Meet public build identity boundary', () => {
     ['GET', '/api/build-info-extra'],
     ['GET', '/api/build-info/private'],
     ['GET', '/api/meet-ai/private'],
+    ['GET', '/api/meet-ai/finalize'],
+    ['POST', '/api/meet-ai/finalize/'],
+    ['POST', '/api/meet-ai/finalize/extra'],
   ])('retains session admission for %s %s', async (method, path) => {
     const response = await proxy(
       new NextRequest(`https://meet.tuturuuu.com${path}`, { method })

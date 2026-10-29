@@ -20,6 +20,7 @@ import {
   releaseParticipant,
   remoteMeetTracks,
 } from '../../../packages/realtime/src/meet';
+import { finalizationDeadline } from '../../../packages/realtime/src/meet/finalization';
 import { isMeetMessageWithinLimit } from '../../../packages/realtime/src/meet/message-size';
 import {
   emptyRoomDeadline,
@@ -34,6 +35,7 @@ import { parseMeetRoomSettingsPatch } from '../../../packages/realtime/src/meet/
 import { createRoomUsage } from '../../../packages/realtime/src/meet/room-usage';
 import { normalizeTranscriptionConsent } from '../../../packages/realtime/src/meet/transcription';
 import { personalReceiptStorage } from './personal-receipt-storage';
+import { runRoomFinalizations } from './room-finalization';
 import { type RoomServiceState, roomService } from './room-service';
 import { runRoomSfuIntent } from './room-sfu-intent';
 import type { TurnEnv } from './turn-credentials';
@@ -43,6 +45,8 @@ export interface MeetRoomEnv extends TurnEnv {
   CLOUDFLARE_REALTIME_APP_SECRET: string;
   MEET_REALTIME_TOKEN_SECRET: string;
   MEET_ROOM: DurableObjectNamespace;
+  /** Meet finalize endpoint. Unset keeps automatic notes dormant. */
+  MEET_FINALIZE_URL?: string;
 }
 const SNAPSHOT_KEY = 'snapshot';
 const PRESENCE_SWEEP_MS = 10_000;
@@ -106,10 +110,16 @@ export class MeetRoomDurableObject implements DurableObject {
   private persist() {
     if (this.snapshot.usage) this.snapshot.usage.storageWrites++;
     // Output gating keeps acknowledgements behind the durable write.
-    return this.state.storage.put(SNAPSHOT_KEY, {
+    const write = this.state.storage.put(SNAPSHOT_KEY, {
       ...this.snapshot,
       chat: this.snapshot.chat?.filter((message) => message.retained !== false),
     });
+    const finalizeAt = this.env.MEET_FINALIZE_URL
+      ? finalizationDeadline(this.snapshot)
+      : undefined;
+    return finalizeAt === undefined
+      ? write
+      : write.then(() => this.scheduleSweep(finalizeAt));
   }
 
   private sockets() {
@@ -691,5 +701,21 @@ export class MeetRoomDurableObject implements DurableObject {
       );
     if (this.snapshot.budget && !this.snapshot.ended)
       await this.scheduleSweep(this.snapshot.budget.expiresAt);
+    // Last, so a slow Meet response never delays presence or media cleanup.
+    await runRoomFinalizations({
+      read: () => this.snapshot,
+      write: async (next) => {
+        this.snapshot = next;
+        await this.persist();
+      },
+      url: this.env.MEET_FINALIZE_URL,
+      secret: this.env.MEET_REALTIME_TOKEN_SECRET,
+    }).catch(() => {
+      console.error('Meeting finalization delivery deferred');
+    });
+    const finalizeAt = this.env.MEET_FINALIZE_URL
+      ? finalizationDeadline(this.snapshot)
+      : undefined;
+    if (finalizeAt !== undefined) await this.scheduleSweep(finalizeAt);
   }
 }

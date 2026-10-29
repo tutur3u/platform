@@ -4,6 +4,7 @@ import type {
   MeetRealtimeServerMessage,
 } from './messages';
 import type { MeetRealtimeTokenPayload } from './primitives';
+import { queueTranscriptionFinalization } from './finalization';
 import type { MeetRoomSnapshot } from './room';
 import { denied, outcome } from './room-outcome';
 
@@ -46,6 +47,11 @@ export interface TranscriptionRoomState {
   transcriptionConsents?: {
     sessionId: string;
     decisions: Record<string, boolean>;
+    // Device id -> account id, recorded when the decision is made so it
+    // survives the participant leaving. Used only to finalize the session.
+    accounts?: Record<string, string>;
+    meetingId?: string;
+    wsId?: string;
   };
 }
 export function transcriptionAnnouncements(
@@ -70,7 +76,8 @@ export function transcriptionAnnouncements(
 export function applyTranscription(
   state: MeetRoomSnapshot,
   message: MeetRealtimeClientMessage,
-  token: MeetRealtimeTokenPayload
+  token: MeetRealtimeTokenPayload,
+  now = new Date().toISOString()
 ) {
   if (
     message.type !== 'transcription.state' &&
@@ -87,8 +94,15 @@ export function applyTranscription(
       return denied(state, 'permission_denied', message.requestId);
     const changedSession =
       state.transcription?.sessionId !== message.state.sessionId;
+    // A stopped or replaced session is finalized while its consent is readable.
+    const finalizing =
+      changedSession || !message.state.active
+        ? queueTranscriptionFinalization(state, Date.parse(now), {
+            ending: false,
+          })
+        : state;
     const next = {
-      ...state,
+      ...finalizing,
       transcription: message.state,
       transcriptionConsents: message.state.active
         ? {
@@ -96,6 +110,9 @@ export function applyTranscription(
             decisions: changedSession
               ? {}
               : currentTranscriptionConsents(state),
+            accounts: changedSession ? {} : state.transcriptionConsents?.accounts,
+            meetingId: token.meetingId,
+            wsId: token.wsId,
           }
         : undefined,
     };
@@ -115,6 +132,12 @@ export function applyTranscription(
         ...currentTranscriptionConsents(state),
         [token.userId]: message.allowed,
       },
+      accounts: {
+        ...state.transcriptionConsents?.accounts,
+        [token.userId]: token.accountId ?? token.userId,
+      },
+      meetingId: token.meetingId,
+      wsId: token.wsId,
     },
   };
   return outcome(next, {

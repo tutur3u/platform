@@ -8,6 +8,7 @@ import {
 } from './room-recording';
 import type { RoomAttachment } from './room-service';
 import type { RoomUsage } from './room-usage';
+import type { MeetFinalizationState } from './finalization';
 import type { TranscriptionRoomState } from './transcription';
 
 export { meetTrackKey } from './room-tracks';
@@ -31,7 +32,9 @@ export const MEET_PRESENCE_TTL_MS = 30_000;
 // Historical boundary retained for regression tests; open sockets no longer expire.
 export const MEET_CONNECTED_PRESENCE_TTL_MS = 10 * 60_000;
 
-export interface MeetRoomSnapshot extends TranscriptionRoomState {
+export interface MeetRoomSnapshot
+  extends TranscriptionRoomState,
+    MeetFinalizationState {
   lifecycle?: import('./room-lifecycle').MeetRoomLifecycle;
   liveAssistant?: import('./room-live').RoomLiveState;
   budget?: RoomBudget;

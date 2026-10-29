@@ -18,6 +18,8 @@
     "./hive/yjs": "./src/hive/yjs.ts",
     "./meet": "./src/meet/index.ts",
     "./meet/token": "./src/meet/token.ts",
+    "./meet/finalization": "./src/meet/finalization.ts",
+    "./meet/finalization-token": "./src/meet/finalization-token.ts",
     "./core/token": "./src/core/token.ts",
     "./collaboration": "./src/collaboration/index.ts",
     "./channels": "./src/channels/index.ts",

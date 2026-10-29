@@ -23,6 +23,7 @@ import * as api19 from '../app/api/meet-call/[meetingId]/token/route';
 import * as api20 from '../app/api/meet-live/[meetingId]/review/route';
 import * as api21 from '../app/api/meet-live/[meetingId]/route';
 import * as api22 from '../app/api/meet-live/memory/route';
+import * as api23 from '../app/api/meet-ai/finalize/route';
 import {
   matchRoute,
   type RouteParams,
@@ -113,6 +114,13 @@ export const meetEndpoints: Endpoint[] = [
             meetingId: routeParam(params, 'meetingId'),
           }),
         }),
+    },
+  },
+  {
+    // Room-signed server call; authenticated by its bearer token, not a session.
+    pattern: '/api/meet-ai/finalize',
+    methods: {
+      POST: (request) => api23.POST(request),
     },
   },
   {

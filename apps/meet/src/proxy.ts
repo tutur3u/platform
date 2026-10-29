@@ -165,8 +165,12 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     // Build identity is public metadata; all other API admission is unchanged.
     const isPublicBuildInfo =
       req.method === 'GET' && req.nextUrl.pathname === '/api/build-info';
+    // The room Durable Object calls finalize with its own signed bearer token;
+    // it has no browser session. The route rejects anything else with 401.
+    const isRoomFinalize =
+      req.method === 'POST' && req.nextUrl.pathname === '/api/meet-ai/finalize';
     const appSessionRefresh =
-      isLocalAuthApi || isPublicBuildInfo
+      isLocalAuthApi || isPublicBuildInfo || isRoomFinalize
         ? null
         : await refreshAppSessionForRequest(req, {
             sessionMode: 'supabase-first',
