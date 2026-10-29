@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
-import 'dart:ui' as ui;
 
-import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_quill/flutter_quill.dart';
@@ -19,6 +17,7 @@ import 'package:mobile/core/responsive/breakpoints.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/theme/dynamic_colors.dart';
+import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/core/utils/form_dirty_utils.dart';
 import 'package:mobile/core/utils/tiptap_description_parser.dart';
@@ -46,7 +45,8 @@ import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/features/tasks/utils/task_board_navigation.dart';
 import 'package:mobile/features/tasks_boards/cubit/task_board_detail_cubit.dart';
-import 'package:mobile/features/tasks_boards/utils/task_board_timeline_window.dart';
+import 'package:mobile/features/tasks_boards/utils/task_board_timeline_agenda.dart';
+import 'package:mobile/features/tasks_boards/utils/task_board_timeline_paging.dart';
 import 'package:mobile/features/tasks_boards/utils/task_description_payload.dart';
 import 'package:mobile/features/tasks_boards/utils/task_description_tiptap_converter.dart';
 import 'package:mobile/features/tasks_boards/utils/task_due_dates.dart';
@@ -111,6 +111,10 @@ part 'task_board_detail_page_task_row_actions.dart';
 part 'task_board_detail_page_task_row_assign.dart';
 part 'task_board_detail_page_task_row_swipe.dart';
 part 'task_board_detail_page_timeline.dart';
+part 'task_board_detail_page_timeline_headers.dart';
+part 'task_board_detail_page_timeline_items.dart';
+part 'task_board_detail_page_timeline_loading.dart';
+part 'task_board_detail_page_timeline_rows.dart';
 part 'task_board_detail_page_utils.dart';
 part 'task_board_detail_page_view.dart';
 

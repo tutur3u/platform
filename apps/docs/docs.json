@@ -295,6 +295,8 @@
                   "platform/applications/overview",
                   "platform/applications/apps",
                   "platform/applications/calendar",
+                  "platform/applications/calendar-details-1",
+                  "platform/applications/calendar-details-2",
                   "platform/features/calendar-scheduling-summary",
                   "platform/features/shared-secret-password-reset",
                   "platform/applications/chat",

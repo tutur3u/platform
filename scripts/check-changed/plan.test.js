@@ -26,7 +26,8 @@ function context(existing = [], overrides = {}) {
   };
 }
 
-const ids = (plan) => plan.steps.map((step) => step.id);
+const ids = (plan) =>
+  plan.steps.map((step) => step.id).filter((id) => id !== 'staging-hosts');
 const changed = (...files) => files.map((file) => ({ status: 'M', file }));
 
 test('branch-name pattern mirrors the branch-name-check workflow', () => {
@@ -352,4 +353,12 @@ test('REV-6467-6: Git app dash route directories remain valid tool arguments', (
   const plan = planChecks(changed(file), context([file]));
   assert.ok(plan.steps.some((step) => step.id === 'type-check:apps/git'));
   assert.ok(plan.steps.find((step) => step.id === 'biome').args.includes(file));
+});
+
+test('staging host isolation always runs', () => {
+  const plan = planChecks(changed('README.md'), context());
+  assert.deepEqual(
+    plan.steps.find((step) => step.id === 'staging-hosts').args,
+    ['scripts/check-staging-hosts.js']
+  );
 });

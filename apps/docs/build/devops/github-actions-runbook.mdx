@@ -214,19 +214,30 @@ when updating the installer; do not enable caching explicitly for `workflow_run`
 
 ## Workflow Gatekeeping
 
-Every major workflow can be disabled centrally through
-`tuturuuu.ts`.
-
-The reusable workflow
-`ci-check.yml`
-reads that config and emits `should_run`, which downstream jobs use before doing
-real work.
-
-For rollback or mixed-version recovery, use `$tuturuuu-rollout-recovery` from the
-[Codex plugin](../development-tools/codex-plugin) and the
-[critical rollout gates](./critical-app-rollout). Audit canonical alias identities
-and API upstreams: a Git branch or successful deployment marker can disagree
-with the artifact selected by Instant Rollback.
+`ci-check.yml` reads `tuturuuu.ts` and emits `should_run` before real work.
+`Test` additionally classifies the complete PR merge-base diff in a `changes` job.
+Only Markdown/MDX under `apps/docs` or outside `apps/` and `packages/` can skip
+unit/coverage shards and upload. Root script tests run for every admitted PR
+and their success is always required by the unit summary, because they validate
+documentation links, content and the `AGENTS.md` allocation marker. Executable docs tooling,
+assets, workflows, manifests, lockfiles, source, mixed or unknown/empty diffs run; both rename endpoints participate. Push validation and ready-for-ci admission stay intact.
+`Unit Tests (24)` and `Run tests and collect coverage` retain successful summaries
+for docs-only PRs only after classification succeeds, root script tests succeed
+for the unit summary, and the gated shards/upload report `skipped`. Failed,
+cancelled, missing or unexpectedly successful heavy results cannot pass as docs
+skips. Code changes retain every original failure assertion. Only these two
+summary contexts may ever be made required in branch protection or rulesets. A skipped matrix job reports its
+unexpanded `(${{ matrix.shard }})` name, so expanded shard contexts must never be
+required.
+Never use workflow-level path filters for required checks: they can remain pending.
+Security, CodeQL, secret scanning, i18n and deployment/release gates are unchanged.
+Regression coverage: `node --test scripts/ci/test-docs-only-gate.test.js` plus the
+complete root script suite discovered by `scripts/run-script-tests.js`. Summary
+contracts execute every applicable assertion step, including classification and
+root success; testing only the first step can miss shard failures.
+For rollback, use `$tuturuuu-rollout-recovery` from the [Codex plugin](../development-tools/codex-plugin)
+and [critical rollout gates](./critical-app-rollout). Audit canonical aliases and API upstreams:
+a branch or deployment marker can disagree with the artifact selected by Instant Rollback.
 
 For Vercel deployments, the production planner and platform preview perform
 affected-app gating before any install, build, or deploy step starts. They check

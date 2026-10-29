@@ -8,7 +8,7 @@ import appConfig from '../../start-bridge.config';
 
 const config: BridgeAppConfig = appConfig;
 const canonical = 'nova.ai.vn';
-const staging = 'nova-staging.tuturuuu.com';
+const staging = 'nova.staging.tutur3u.com';
 const publicFile = '/favicon.ico';
 
 function apply(path: string, method = 'GET', host = canonical) {

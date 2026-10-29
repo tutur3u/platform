@@ -384,7 +384,7 @@ describe('app robots from seo-policy.json', () => {
       'https://forms.tuturuuu.com/api/v1/forms',
       'https://forms.tuturuuu.com/login',
       'https://forms.tuturuuu.com/f/abc/edit',
-      'https://forms-staging.tuturuuu.com/',
+      'https://forms.staging.tutur3u.com/',
     ])
       expect(robotsOf(url), url).toBe('noindex, nofollow, nosnippet');
     expect(
